@@ -57,6 +57,9 @@ Vagrantfile
 /writable/session/*
 !/writable/session/index.html
 
+/public/WRITEPATH . session/*
+!/public/WRITEPATH . session/.gitkeep
+
 /writable/uploads/*
 !/writable/uploads/index.html
 
