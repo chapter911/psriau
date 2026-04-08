@@ -227,8 +227,21 @@ $canEdit = (bool) ($can_edit ?? false);
 
                     <div class="form-group mb-0">
                         <label for="photos">Foto Lapangan</label>
-                        <input type="file" class="form-control" id="photos" name="photos[]" accept="image/*" capture="environment" multiple>
-                        <small class="text-muted d-block mt-1">Di HP, browser akan diarahkan ke kamera jika didukung. Beberapa browser tetap dapat menampilkan galeri.</small>
+                        <input type="file" class="d-none" id="photos" name="photos[]" accept="image/*" capture="environment" multiple>
+                        <div class="daily-photo-uploader border rounded p-3" id="photoDropzone">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between mb-2">
+                                <div class="mb-2 mb-md-0">
+                                    <strong>Tambahkan foto lapangan</strong>
+                                    <div class="text-muted small">Klik tombol di bawah atau seret beberapa file ke area ini.</div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btnPickPhotos">Tambah Foto</button>
+                            </div>
+                            <div class="daily-photo-dropzone text-center text-muted small py-3 px-2">
+                                Drop file di sini untuk upload cepat dari laptop, atau gunakan tombol tambah foto dari HP.
+                            </div>
+                            <div class="d-flex flex-wrap mt-3" id="selectedPhotoThumbnails"></div>
+                        </div>
+                        <small class="text-muted d-block mt-1">Di HP, browser akan diarahkan ke kamera jika didukung. Jika memilih ulang, foto akan ditambahkan ke daftar yang sudah ada.</small>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -268,6 +281,70 @@ $canEdit = (bool) ($can_edit ?? false);
         gap: 8px;
         max-height: 160px;
         overflow-y: auto;
+    }
+
+    .daily-photo-uploader {
+        background: #fafafa;
+    }
+
+    .daily-photo-dropzone {
+        border: 1px dashed #ced4da;
+        border-radius: 8px;
+        background: #fff;
+        transition: border-color .15s ease, background-color .15s ease;
+    }
+
+    .daily-photo-uploader.is-dragover .daily-photo-dropzone {
+        border-color: #007bff;
+        background: #eef5ff;
+    }
+
+    #selectedPhotoThumbnails {
+        gap: 10px;
+    }
+
+    .selected-photo-thumb {
+        width: 96px;
+    }
+
+    .selected-photo-thumb__preview {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #dee2e6;
+        background: #fff;
+    }
+
+    .selected-photo-thumb__preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .selected-photo-thumb__remove {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 24px;
+        height: 24px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        line-height: 24px;
+        text-align: center;
+        padding: 0;
+    }
+
+    .selected-photo-thumb__name {
+        font-size: 11px;
+        line-height: 1.2;
+        margin-top: 6px;
+        color: #6c757d;
+        word-break: break-word;
     }
 
     .preview-thumb-btn {
@@ -428,6 +505,10 @@ $canEdit = (bool) ($can_edit ?? false);
     const sectionsContainer = document.getElementById('dailySections');
     const sectionTemplate = document.getElementById('sectionTemplate');
     const addButton = document.getElementById('btnAddSection');
+    const photoInput = document.getElementById('photos');
+    const photoDropzone = document.getElementById('photoDropzone');
+    const pickPhotosButton = document.getElementById('btnPickPhotos');
+    const selectedPhotoThumbnails = document.getElementById('selectedPhotoThumbnails');
     const reportDateInput = document.getElementById('report_date');
     const latitudeInput = document.getElementById('latitude');
     const longitudeInput = document.getElementById('longitude');
@@ -441,7 +522,7 @@ $canEdit = (bool) ($can_edit ?? false);
     const cuacaHujanStartInput = document.getElementById('cuaca_hujan_start');
     const cuacaHujanEndInput = document.getElementById('cuaca_hujan_end');
 
-    if (!form || !modalTitle || !reportIdInput || !sectionsContainer || !sectionTemplate || !addButton || !latitudeInput || !longitudeInput || !getLocationButton || !cuacaCerahInput || !cuacaHujanInput || !cuacaCerahStartInput || !cuacaCerahEndInput || !cuacaHujanStartInput || !cuacaHujanEndInput) {
+    if (!form || !modalTitle || !reportIdInput || !sectionsContainer || !sectionTemplate || !addButton || !latitudeInput || !longitudeInput || !getLocationButton || !cuacaCerahInput || !cuacaHujanInput || !cuacaCerahStartInput || !cuacaCerahEndInput || !cuacaHujanStartInput || !cuacaHujanEndInput || !photoInput || !photoDropzone || !pickPhotosButton || !selectedPhotoThumbnails) {
         return;
     }
 
@@ -477,6 +558,147 @@ $canEdit = (bool) ($can_edit ?? false);
         return '';
     };
 
+    const selectedPhotos = [];
+
+    const fileKey = (file) => [file.name, file.size, file.lastModified].join('|');
+
+    const syncPhotoInput = () => {
+        const transfer = new DataTransfer();
+        selectedPhotos.forEach((item) => {
+            transfer.items.add(item.file);
+        });
+
+        photoInput.files = transfer.files;
+    };
+
+    const renderSelectedPhotos = () => {
+        selectedPhotoThumbnails.innerHTML = '';
+
+        if (selectedPhotos.length === 0) {
+            const emptyState = document.createElement('div');
+            emptyState.className = 'text-muted small';
+            emptyState.textContent = 'Belum ada foto yang dipilih.';
+            selectedPhotoThumbnails.appendChild(emptyState);
+            return;
+        }
+
+        selectedPhotos.forEach((item, index) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'selected-photo-thumb';
+
+            const preview = document.createElement('div');
+            preview.className = 'selected-photo-thumb__preview';
+
+            const image = document.createElement('img');
+            image.src = item.url;
+            image.alt = `Foto terpilih ${index + 1}`;
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'selected-photo-thumb__remove';
+            removeButton.innerHTML = '&times;';
+            removeButton.title = 'Hapus foto ini';
+            removeButton.addEventListener('click', () => {
+                URL.revokeObjectURL(item.url);
+                selectedPhotos.splice(index, 1);
+                syncPhotoInput();
+                renderSelectedPhotos();
+            });
+
+            preview.appendChild(image);
+            preview.appendChild(removeButton);
+
+            const label = document.createElement('div');
+            label.className = 'selected-photo-thumb__name';
+            label.textContent = item.file.name;
+
+            wrapper.appendChild(preview);
+            wrapper.appendChild(label);
+            selectedPhotoThumbnails.appendChild(wrapper);
+        });
+    };
+
+    const addPhotoFiles = (files) => {
+        const list = Array.from(files || []);
+        if (list.length === 0) {
+            return;
+        }
+
+        let changed = false;
+
+        list.forEach((file) => {
+            if (!file || ! String(file.type || '').startsWith('image/')) {
+                return;
+            }
+
+            const key = fileKey(file);
+            if (selectedPhotos.some((item) => item.key === key)) {
+                return;
+            }
+
+            selectedPhotos.push({
+                key,
+                file,
+                url: URL.createObjectURL(file),
+            });
+            changed = true;
+        });
+
+        if (changed) {
+            syncPhotoInput();
+            renderSelectedPhotos();
+        }
+    };
+
+    const clearSelectedPhotos = () => {
+        while (selectedPhotos.length > 0) {
+            const item = selectedPhotos.pop();
+            URL.revokeObjectURL(item.url);
+        }
+
+        photoInput.value = '';
+        syncPhotoInput();
+        renderSelectedPhotos();
+    };
+
+    pickPhotosButton.addEventListener('click', () => {
+        photoInput.click();
+    });
+
+    photoInput.addEventListener('change', () => {
+        addPhotoFiles(photoInput.files);
+        photoInput.value = '';
+    });
+
+    ['dragenter', 'dragover'].forEach((eventName) => {
+        photoDropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            photoDropzone.classList.add('is-dragover');
+        });
+    });
+
+    ['dragleave', 'dragend', 'drop'].forEach((eventName) => {
+        photoDropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            photoDropzone.classList.remove('is-dragover');
+
+            if (eventName === 'drop') {
+                const dropFiles = event.dataTransfer ? event.dataTransfer.files : [];
+                addPhotoFiles(dropFiles);
+            }
+        });
+    });
+
+    photoDropzone.addEventListener('click', (event) => {
+        if (event.target.closest('button')) {
+            return;
+        }
+
+        photoInput.click();
+    });
+
     const resetForm = () => {
         form.reset();
         reportIdInput.value = '';
@@ -493,6 +715,7 @@ $canEdit = (bool) ($can_edit ?? false);
         cuacaHujanEndInput.value = '';
         cuacaCerahInput.value = '';
         cuacaHujanInput.value = '';
+        clearSelectedPhotos();
         sectionsContainer.innerHTML = '';
         addSection();
     };
@@ -570,6 +793,7 @@ $canEdit = (bool) ($can_edit ?? false);
                 payload = {};
             }
             form.reset();
+            clearSelectedPhotos();
             reportIdInput.value = payload.id || '';
             form.action = '<?= site_url('admin/laporan/harian/tambah'); ?>';
             modalTitle.textContent = 'Edit Laporan Harian';
