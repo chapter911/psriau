@@ -12,7 +12,7 @@ class LaporanHarianReportModel extends Model
     protected $allowedFields = [
         'id', 'sekolah_id', 'report_date', 'sections_json',
         'personil_pekerja', 'personil_tukang', 'cuaca_cerah', 'cuaca_hujan',
-        'latitude', 'longitude',
+        'latitude', 'longitude', 'input_device',
         'photo_paths_json', 'created_at', 'updated_at',
     ];
     protected $useTimestamps = false;

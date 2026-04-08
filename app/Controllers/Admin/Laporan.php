@@ -429,7 +429,19 @@ class Laporan extends BaseController
             'cuaca_hujan' => trim((string) $this->request->getPost('cuaca_hujan')) ?: null,
             'latitude' => $latitude,
             'longitude' => $longitude,
+            'input_device' => $this->resolveInputDevice(),
         ];
+    }
+
+    private function resolveInputDevice(): string
+    {
+        $userAgent = strtolower((string) $this->request->getServer('HTTP_USER_AGENT'));
+
+        if ($userAgent !== '' && preg_match('/android|iphone|ipod|ipad|mobile|windows phone|blackberry|opera mini/', $userAgent)) {
+            return 'mobile';
+        }
+
+        return 'laptop';
     }
 
     private function buildSectionsFromRequest(): array
