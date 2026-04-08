@@ -11,6 +11,7 @@ use CodeIgniter\HTTP\RedirectResponse;
 class Laporan extends BaseController
 {
     private const WEEKLY_MAX_FILE_SIZE_BYTES = 10485760; // 10 MB
+    private const DAILY_MAX_FILE_SIZE_BYTES = 10485760; // 10 MB per image
 
     public function index()
     {
@@ -158,7 +159,12 @@ class Laporan extends BaseController
             }
 
             $payload['updated_at'] = date('Y-m-d H:i:s');
-            $newPhotos = $this->uploadDailyPhotos('photos');
+            $uploadResult = $this->uploadDailyPhotos('photos');
+            if ($uploadResult['error'] !== null) {
+                return redirect()->to($this->dailyRedirectUrl((int) ($payload['sekolah_id'] ?? 0)))->withInput()->with('error', $uploadResult['error']);
+            }
+
+            $newPhotos = $uploadResult['photos'];
             if ($newPhotos !== []) {
                 $existingPhotos = $this->decodeJsonArray((string) ($existing['photo_paths_json'] ?? '[]'));
                 $payload['photo_paths_json'] = json_encode(array_values(array_merge($existingPhotos, $newPhotos)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -168,7 +174,12 @@ class Laporan extends BaseController
             return redirect()->to($this->dailyRedirectUrl((int) ($payload['sekolah_id'] ?? 0)))->with('success', 'Laporan harian berhasil diperbarui.');
         }
 
-        $photos = $this->uploadDailyPhotos('photos');
+        $uploadResult = $this->uploadDailyPhotos('photos');
+        if ($uploadResult['error'] !== null) {
+            return redirect()->to($this->dailyRedirectUrl((int) ($payload['sekolah_id'] ?? 0)))->withInput()->with('error', $uploadResult['error']);
+        }
+
+        $photos = $uploadResult['photos'];
         $payload['photo_paths_json'] = json_encode($photos, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $payload['created_at'] = date('Y-m-d H:i:s');
         $payload['updated_at'] = date('Y-m-d H:i:s');
@@ -459,6 +470,13 @@ class Laporan extends BaseController
 
     private function uploadDailyPhotos(string $fieldName): array
     {
+        if ($this->isPostBodyTooLarge()) {
+            return [
+                'photos' => [],
+                'error' => 'Upload gagal karena batas server lebih kecil dari total foto yang diunggah. Perbesar post_max_size/upload_max_filesize di server, lalu coba lagi.',
+            ];
+        }
+
         $files = $this->request->getFileMultiple($fieldName);
         if (! is_array($files) || $files === []) {
             $files = $this->request->getFileMultiple($fieldName . '[]');
@@ -474,7 +492,10 @@ class Laporan extends BaseController
         }
 
         if (! is_array($files) || $files === []) {
-            return [];
+            return [
+                'photos' => [],
+                'error' => null,
+            ];
         }
 
         $flatFiles = [];
@@ -483,26 +504,101 @@ class Laporan extends BaseController
         });
 
         $result = [];
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
         foreach ($flatFiles as $file) {
-            if (! $file || $file->getError() === UPLOAD_ERR_NO_FILE || ! $file->isValid()) {
+            if (! $file || $file->getError() === UPLOAD_ERR_NO_FILE) {
                 continue;
             }
 
-            if (! in_array(strtolower((string) $file->getExtension()), ['jpg', 'jpeg', 'png', 'webp'], true)) {
-                continue;
+            $error = (int) $file->getError();
+            if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) {
+                return [
+                    'photos' => [],
+                    'error' => 'Ukuran foto terlalu besar. Maksimal 10MB per foto.',
+                ];
+            }
+
+            if ($error !== UPLOAD_ERR_OK || ! $file->isValid()) {
+                return [
+                    'photos' => [],
+                    'error' => 'Upload foto gagal. Silakan pilih ulang foto dan coba lagi.',
+                ];
+            }
+
+            if ((int) $file->getSize() > self::DAILY_MAX_FILE_SIZE_BYTES) {
+                return [
+                    'photos' => [],
+                    'error' => 'Ukuran foto terlalu besar. Maksimal 10MB per foto.',
+                ];
+            }
+
+            $clientExtension = strtolower((string) $file->getClientExtension());
+            $mimeType = strtolower((string) $file->getMimeType());
+            $isAllowedImage = in_array($clientExtension, $allowedExtensions, true) || str_starts_with($mimeType, 'image/');
+
+            if (! $isAllowedImage) {
+                return [
+                    'photos' => [],
+                    'error' => 'Format foto tidak didukung. Gunakan JPG, JPEG, PNG, WEBP, atau HEIC.',
+                ];
             }
 
             $directory = FCPATH . 'uploads/laporan/harian';
-            if (! is_dir($directory)) {
-                mkdir($directory, 0775, true);
+            if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
+                return [
+                    'photos' => [],
+                    'error' => 'Folder upload foto tidak dapat dibuat di server.',
+                ];
             }
 
-            $newName = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $file->getExtension();
-            $file->move($directory, $newName);
+            if (! is_writable($directory)) {
+                return [
+                    'photos' => [],
+                    'error' => 'Folder upload foto tidak dapat ditulis. Periksa permission folder uploads/laporan/harian.',
+                ];
+            }
+
+            $extension = $clientExtension;
+            if (! in_array($extension, $allowedExtensions, true)) {
+                $extension = strtolower((string) $file->getExtension());
+            }
+
+            if (! in_array($extension, $allowedExtensions, true)) {
+                $extension = 'jpg';
+            }
+
+            try {
+                $newName = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
+            } catch (\Throwable $e) {
+                return [
+                    'photos' => [],
+                    'error' => 'Gagal menyiapkan nama file upload. Silakan coba lagi.',
+                ];
+            }
+
+            try {
+                $file->move($directory, $newName);
+            } catch (\Throwable $e) {
+                return [
+                    'photos' => [],
+                    'error' => 'Gagal menyimpan foto ke server. Periksa permission folder uploads/laporan/harian.',
+                ];
+            }
+
+            if (! is_file($directory . DIRECTORY_SEPARATOR . $newName)) {
+                return [
+                    'photos' => [],
+                    'error' => 'Foto tidak tersimpan di server. Silakan coba lagi.',
+                ];
+            }
+
             $result[] = '/uploads/laporan/harian/' . $newName;
         }
 
-        return $result;
+        return [
+            'photos' => $result,
+            'error' => null,
+        ];
     }
 
     private function uploadWeeklyFile(string $fieldName): ?array
