@@ -32,7 +32,7 @@ class MasterWilayah extends BaseController
             ->orderBy('kode_provinsi', 'ASC')
             ->findAll();
 
-        return view('admin/master/provinsi', $this->buildPageData('Master Provinsi', $items));
+        return view('admin/master/provinsi', $this->buildPageData(self::MENU_LINK_PROVINSI, 'Master Provinsi', $items));
     }
 
     public function provinsiCreate()
@@ -125,7 +125,7 @@ class MasterWilayah extends BaseController
             ->getResultArray();
 
         return view('admin/master/kabupaten', array_merge(
-            $this->buildPageData('Master Kabupaten/Kota', $items),
+            $this->buildPageData(self::MENU_LINK_KABUPATEN, 'Master Kabupaten/Kota', $items),
             ['provinsiOptions' => $this->provinsiOptions()]
         ));
     }
@@ -247,7 +247,7 @@ class MasterWilayah extends BaseController
             ->getResultArray();
 
         return view('admin/master/kecamatan', array_merge(
-            $this->buildPageData('Master Kecamatan', $items),
+            $this->buildPageData(self::MENU_LINK_KECAMATAN, 'Master Kecamatan', $items),
             [
                 'provinsiOptions' => $this->provinsiOptions(),
                 'kabupatenOptions' => $this->kabupatenOptions(),
@@ -389,7 +389,7 @@ class MasterWilayah extends BaseController
             ->getResultArray();
 
         return view('admin/master/kelurahan', array_merge(
-            $this->buildPageData('Master Kelurahan', $items),
+            $this->buildPageData(self::MENU_LINK_KELURAHAN, 'Master Kelurahan', $items),
             [
                 'provinsiOptions' => $this->provinsiOptions(),
                 'kabupatenOptions' => $this->kabupatenOptions(),
@@ -522,11 +522,9 @@ class MasterWilayah extends BaseController
         return redirect()->to('/admin/master/kelurahan')->with('message', 'Data kelurahan berhasil diperbarui.');
     }
 
-    private function buildPageData(string $pageTitle, array $items): array
+    private function buildPageData(string $menuLink, string $pageTitle, array $items): array
     {
-        $menuPermissions = is_array(service('renderer')->getVar('currentMenuPermissions'))
-            ? service('renderer')->getVar('currentMenuPermissions')
-            : [];
+        $menuPermissions = $this->resolveMenuPermissions($menuLink);
 
         $canManage = $this->canManageMasterData();
 
@@ -535,6 +533,50 @@ class MasterWilayah extends BaseController
             'items' => $items,
             'can_add' => $canManage && (bool) ($menuPermissions['add'] ?? false),
             'can_edit' => $canManage && (bool) ($menuPermissions['edit'] ?? false),
+        ];
+    }
+
+    private function resolveMenuPermissions(string $menuLink): array
+    {
+        $default = [
+            'add' => false,
+            'edit' => false,
+            'delete' => false,
+            'export' => false,
+            'import' => false,
+            'approval' => false,
+        ];
+
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return $default;
+        }
+
+        $roleId = $this->resolveRoleId((string) session()->get('role'), $db);
+        $menuId = $this->resolveMenuIdByLink($menuLink, $db);
+        if ($roleId === null || $menuId === null) {
+            return $default;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        $row = $db->table('menu_akses')
+            ->select('FiturAdd, FiturEdit, FiturDelete, FiturExport, FiturImport, FiturApproval')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($row)) {
+            return $default;
+        }
+
+        return [
+            'add' => (bool) ((int) ($row['FiturAdd'] ?? 0)),
+            'edit' => (bool) ((int) ($row['FiturEdit'] ?? 0)),
+            'delete' => (bool) ((int) ($row['FiturDelete'] ?? 0)),
+            'export' => (bool) ((int) ($row['FiturExport'] ?? 0)),
+            'import' => (bool) ((int) ($row['FiturImport'] ?? 0)),
+            'approval' => (bool) ((int) ($row['FiturApproval'] ?? 0)),
         ];
     }
 

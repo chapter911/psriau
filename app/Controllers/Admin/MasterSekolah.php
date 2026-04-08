@@ -21,9 +21,7 @@ class MasterSekolah extends BaseController
             ->orderBy('nama', 'ASC')
             ->findAll();
 
-        $menuPermissions = is_array(service('renderer')->getVar('currentMenuPermissions'))
-            ? service('renderer')->getVar('currentMenuPermissions')
-            : [];
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
 
         $canManage = $this->canManageMasterData();
 
@@ -197,6 +195,50 @@ class MasterSekolah extends BaseController
             ->where($roleColumn, $roleId)
             ->where('menu_id', $menuId)
             ->countAllResults() > 0;
+    }
+
+    private function resolveMenuPermissions(string $menuLink): array
+    {
+        $default = [
+            'add' => false,
+            'edit' => false,
+            'delete' => false,
+            'export' => false,
+            'import' => false,
+            'approval' => false,
+        ];
+
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return $default;
+        }
+
+        $roleId = $this->resolveRoleId((string) session()->get('role'), $db);
+        $menuId = $this->resolveMenuIdByLink($menuLink, $db);
+        if ($roleId === null || $menuId === null) {
+            return $default;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        $row = $db->table('menu_akses')
+            ->select('FiturAdd, FiturEdit, FiturDelete, FiturExport, FiturImport, FiturApproval')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($row)) {
+            return $default;
+        }
+
+        return [
+            'add' => (bool) ((int) ($row['FiturAdd'] ?? 0)),
+            'edit' => (bool) ((int) ($row['FiturEdit'] ?? 0)),
+            'delete' => (bool) ((int) ($row['FiturDelete'] ?? 0)),
+            'export' => (bool) ((int) ($row['FiturExport'] ?? 0)),
+            'import' => (bool) ((int) ($row['FiturImport'] ?? 0)),
+            'approval' => (bool) ((int) ($row['FiturApproval'] ?? 0)),
+        ];
     }
 
     private function resolveRoleId(string $role, $db): ?int
