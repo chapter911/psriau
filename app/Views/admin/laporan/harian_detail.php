@@ -197,7 +197,6 @@ $canEdit = (bool) ($can_edit ?? false);
                         <div class="form-group col-md-4 d-flex align-items-end">
                             <div class="w-100">
                                 <button type="button" class="btn btn-info btn-block mb-2" id="btnGetLocation">Ambil Koordinat Lokasi</button>
-                                <button type="button" class="btn btn-outline-secondary btn-block" id="btnManualLocation">Isi Koordinat Manual</button>
                                 <small class="text-muted d-block mt-1" id="locationStatus">Belum ada koordinat lokasi.</small>
                             </div>
                         </div>
@@ -517,7 +516,6 @@ $canEdit = (bool) ($can_edit ?? false);
     const latitudeInput = document.getElementById('latitude');
     const longitudeInput = document.getElementById('longitude');
     const getLocationButton = document.getElementById('btnGetLocation');
-    const manualLocationButton = document.getElementById('btnManualLocation');
     const locationStatus = document.getElementById('locationStatus');
     const pekerjaInput = document.getElementById('personil_pekerja');
     const tukangInput = document.getElementById('personil_tukang');
@@ -528,7 +526,7 @@ $canEdit = (bool) ($can_edit ?? false);
     const cuacaHujanStartInput = document.getElementById('cuaca_hujan_start');
     const cuacaHujanEndInput = document.getElementById('cuaca_hujan_end');
 
-    if (!form || !modalTitle || !reportIdInput || !sectionsContainer || !sectionTemplate || !addButton || !latitudeInput || !longitudeInput || !getLocationButton || !manualLocationButton || !locationStatus || !cuacaCerahInput || !cuacaHujanInput || !cuacaCerahStartInput || !cuacaCerahEndInput || !cuacaHujanStartInput || !cuacaHujanEndInput || !photoInput || !photoDropzone || !pickPhotosButton || !selectedPhotoThumbnails) {
+    if (!form || !modalTitle || !reportIdInput || !sectionsContainer || !sectionTemplate || !addButton || !latitudeInput || !longitudeInput || !getLocationButton || !locationStatus || !cuacaCerahInput || !cuacaHujanInput || !cuacaCerahStartInput || !cuacaCerahEndInput || !cuacaHujanStartInput || !cuacaHujanEndInput || !photoInput || !photoDropzone || !pickPhotosButton || !selectedPhotoThumbnails) {
         return;
     }
 
@@ -949,10 +947,6 @@ $canEdit = (bool) ($can_edit ?? false);
                 maximumAge: 0,
             }
         );
-    });
-
-    manualLocationButton.addEventListener('click', () => {
-        enableManualLocationInput();
     });
 
     document.querySelectorAll('.js-edit-harian').forEach((button) => {
