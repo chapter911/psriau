@@ -194,10 +194,9 @@ $canEdit = (bool) ($can_edit ?? false);
                             <label for="longitude">Longitude</label>
                             <input type="text" class="form-control" id="longitude" name="longitude" readonly required>
                         </div>
-                        <div class="form-group col-md-4 d-flex align-items-end">
-                            <div class="w-100">
-                                <button type="button" class="btn btn-info btn-block mb-2" id="btnGetLocation">Ambil Koordinat Lokasi</button>
-                            </div>
+                        <div class="form-group col-md-4">
+                            <label class="d-block" style="visibility:hidden;">Aksi Lokasi</label>
+                            <button type="button" class="btn btn-info btn-block" id="btnGetLocation">Ambil Koordinat Lokasi</button>
                         </div>
                         <div class="form-group col-md-6">
                             <label for="personil_pekerja">Personil - Pekerja</label>
