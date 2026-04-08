@@ -559,10 +559,26 @@ $canEdit = (bool) ($can_edit ?? false);
     };
 
     const selectedPhotos = [];
+    const canUseDataTransfer = (() => {
+        if (typeof DataTransfer === 'undefined') {
+            return false;
+        }
+
+        try {
+            const transfer = new DataTransfer();
+            return !!transfer.items;
+        } catch (error) {
+            return false;
+        }
+    })();
 
     const fileKey = (file) => [file.name, file.size, file.lastModified].join('|');
 
     const syncPhotoInput = () => {
+        if (!canUseDataTransfer) {
+            return;
+        }
+
         const transfer = new DataTransfer();
         selectedPhotos.forEach((item) => {
             transfer.items.add(item.file);
@@ -618,7 +634,53 @@ $canEdit = (bool) ($can_edit ?? false);
         });
     };
 
+    const renderSelectedPhotosFromInput = () => {
+        selectedPhotoThumbnails.innerHTML = '';
+        const files = Array.from(photoInput.files || []);
+
+        if (files.length === 0) {
+            const emptyState = document.createElement('div');
+            emptyState.className = 'text-muted small';
+            emptyState.textContent = 'Belum ada foto yang dipilih.';
+            selectedPhotoThumbnails.appendChild(emptyState);
+            return;
+        }
+
+        files.forEach((file, index) => {
+            if (!file || !String(file.type || '').startsWith('image/')) {
+                return;
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'selected-photo-thumb';
+
+            const preview = document.createElement('div');
+            preview.className = 'selected-photo-thumb__preview';
+
+            const image = document.createElement('img');
+            image.src = URL.createObjectURL(file);
+            image.alt = `Foto terpilih ${index + 1}`;
+            image.onload = () => {
+                URL.revokeObjectURL(image.src);
+            };
+
+            preview.appendChild(image);
+
+            const label = document.createElement('div');
+            label.className = 'selected-photo-thumb__name';
+            label.textContent = file.name;
+
+            wrapper.appendChild(preview);
+            wrapper.appendChild(label);
+            selectedPhotoThumbnails.appendChild(wrapper);
+        });
+    };
+
     const addPhotoFiles = (files) => {
+        if (!canUseDataTransfer) {
+            return;
+        }
+
         const list = Array.from(files || []);
         if (list.length === 0) {
             return;
@@ -651,6 +713,12 @@ $canEdit = (bool) ($can_edit ?? false);
     };
 
     const clearSelectedPhotos = () => {
+        if (!canUseDataTransfer) {
+            photoInput.value = '';
+            renderSelectedPhotosFromInput();
+            return;
+        }
+
         while (selectedPhotos.length > 0) {
             const item = selectedPhotos.pop();
             URL.revokeObjectURL(item.url);
@@ -666,12 +734,21 @@ $canEdit = (bool) ($can_edit ?? false);
     });
 
     photoInput.addEventListener('change', () => {
-        addPhotoFiles(photoInput.files);
-        photoInput.value = '';
+        if (canUseDataTransfer) {
+            addPhotoFiles(photoInput.files);
+            photoInput.value = '';
+            return;
+        }
+
+        renderSelectedPhotosFromInput();
     });
 
     ['dragenter', 'dragover'].forEach((eventName) => {
         photoDropzone.addEventListener(eventName, (event) => {
+            if (!canUseDataTransfer) {
+                return;
+            }
+
             event.preventDefault();
             event.stopPropagation();
             photoDropzone.classList.add('is-dragover');
@@ -680,6 +757,10 @@ $canEdit = (bool) ($can_edit ?? false);
 
     ['dragleave', 'dragend', 'drop'].forEach((eventName) => {
         photoDropzone.addEventListener(eventName, (event) => {
+            if (!canUseDataTransfer) {
+                return;
+            }
+
             event.preventDefault();
             event.stopPropagation();
             photoDropzone.classList.remove('is-dragover');
@@ -698,6 +779,15 @@ $canEdit = (bool) ($can_edit ?? false);
 
         photoInput.click();
     });
+
+    if (!canUseDataTransfer) {
+        const helperText = document.createElement('div');
+        helperText.className = 'text-warning small mt-2';
+        helperText.textContent = 'Browser ini memakai mode kompatibilitas: pilih semua foto sekaligus dalam satu kali pilih.';
+        photoDropzone.appendChild(helperText);
+    }
+
+    renderSelectedPhotosFromInput();
 
     const resetForm = () => {
         form.reset();
