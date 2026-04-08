@@ -195,7 +195,11 @@ $canEdit = (bool) ($can_edit ?? false);
                             <input type="text" class="form-control" id="longitude" name="longitude" readonly required>
                         </div>
                         <div class="form-group col-md-4 d-flex align-items-end">
-                            <button type="button" class="btn btn-info btn-block" id="btnGetLocation">Ambil Koordinat Lokasi</button>
+                            <div class="w-100">
+                                <button type="button" class="btn btn-info btn-block mb-2" id="btnGetLocation">Ambil Koordinat Lokasi</button>
+                                <button type="button" class="btn btn-outline-secondary btn-block" id="btnManualLocation">Isi Koordinat Manual</button>
+                                <small class="text-muted d-block mt-1" id="locationStatus">Belum ada koordinat lokasi.</small>
+                            </div>
                         </div>
                         <div class="form-group col-md-6">
                             <label for="personil_pekerja">Personil - Pekerja</label>
@@ -513,6 +517,8 @@ $canEdit = (bool) ($can_edit ?? false);
     const latitudeInput = document.getElementById('latitude');
     const longitudeInput = document.getElementById('longitude');
     const getLocationButton = document.getElementById('btnGetLocation');
+    const manualLocationButton = document.getElementById('btnManualLocation');
+    const locationStatus = document.getElementById('locationStatus');
     const pekerjaInput = document.getElementById('personil_pekerja');
     const tukangInput = document.getElementById('personil_tukang');
     const cuacaCerahInput = document.getElementById('cuaca_cerah');
@@ -522,7 +528,7 @@ $canEdit = (bool) ($can_edit ?? false);
     const cuacaHujanStartInput = document.getElementById('cuaca_hujan_start');
     const cuacaHujanEndInput = document.getElementById('cuaca_hujan_end');
 
-    if (!form || !modalTitle || !reportIdInput || !sectionsContainer || !sectionTemplate || !addButton || !latitudeInput || !longitudeInput || !getLocationButton || !cuacaCerahInput || !cuacaHujanInput || !cuacaCerahStartInput || !cuacaCerahEndInput || !cuacaHujanStartInput || !cuacaHujanEndInput || !photoInput || !photoDropzone || !pickPhotosButton || !selectedPhotoThumbnails) {
+    if (!form || !modalTitle || !reportIdInput || !sectionsContainer || !sectionTemplate || !addButton || !latitudeInput || !longitudeInput || !getLocationButton || !manualLocationButton || !locationStatus || !cuacaCerahInput || !cuacaHujanInput || !cuacaCerahStartInput || !cuacaCerahEndInput || !cuacaHujanStartInput || !cuacaHujanEndInput || !photoInput || !photoDropzone || !pickPhotosButton || !selectedPhotoThumbnails) {
         return;
     }
 
@@ -799,6 +805,8 @@ $canEdit = (bool) ($can_edit ?? false);
         }
         latitudeInput.value = '';
         longitudeInput.value = '';
+        setCoordinateReadOnly(true);
+        setLocationStatus('Belum ada koordinat lokasi.', 'muted');
         cuacaCerahStartInput.value = '';
         cuacaCerahEndInput.value = '';
         cuacaHujanStartInput.value = '';
@@ -837,34 +845,103 @@ $canEdit = (bool) ($can_edit ?? false);
         getLocationButton.textContent = loading ? 'Mengambil lokasi...' : 'Ambil Koordinat Lokasi';
     };
 
+    const setCoordinateReadOnly = (readonly) => {
+        latitudeInput.readOnly = readonly;
+        longitudeInput.readOnly = readonly;
+    };
+
+    const setLocationStatus = (message, tone = 'muted') => {
+        locationStatus.textContent = message;
+        locationStatus.classList.remove('text-muted', 'text-success', 'text-warning', 'text-danger');
+        locationStatus.classList.add(`text-${tone}`);
+    };
+
+    const applyCoordinates = (latitude, longitude, sourceMessage) => {
+        latitudeInput.value = Number(latitude || 0).toFixed(7);
+        longitudeInput.value = Number(longitude || 0).toFixed(7);
+        setCoordinateReadOnly(true);
+        setLocationStatus(sourceMessage, 'success');
+    };
+
+    const enableManualLocationInput = (message = 'Isi koordinat secara manual, lalu simpan laporan.') => {
+        setCoordinateReadOnly(false);
+        setLocationStatus(message, 'warning');
+        latitudeInput.focus();
+    };
+
+    const fetchCoordinatesFromIp = async () => {
+        try {
+            const response = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+            if (!response.ok) {
+                return false;
+            }
+
+            const payload = await response.json();
+            const latitude = Number(payload.latitude);
+            const longitude = Number(payload.longitude);
+
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                return false;
+            }
+
+            applyCoordinates(latitude, longitude, 'Koordinat diambil dari lokasi jaringan (IP).');
+            return true;
+        } catch (error) {
+            return false;
+        }
+    };
+
     const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
     const randomInRange = (min, max) => (min + Math.random() * (max - min)).toFixed(7);
     const setRandomCoordinates = () => {
-        latitudeInput.value = randomInRange(-90, 90);
-        longitudeInput.value = randomInRange(-180, 180);
+        applyCoordinates(randomInRange(-90, 90), randomInRange(-180, 180), 'Koordinat dummy localhost terisi otomatis.');
     };
 
-    getLocationButton.addEventListener('click', () => {
+    const userAgent = String(navigator.userAgent || '').toLowerCase();
+    const isDesktopDevice = !/(android|iphone|ipad|ipod|mobile)/.test(userAgent);
+
+    getLocationButton.addEventListener('click', async () => {
         if (isLocalhost) {
             setRandomCoordinates();
             return;
         }
 
         if (!navigator.geolocation) {
-            window.alert('Browser tidak mendukung pengambilan lokasi.');
+            const ipLocationLoaded = await fetchCoordinatesFromIp();
+            if (!ipLocationLoaded) {
+                enableManualLocationInput('Browser tidak mendukung geolocation. Silakan isi manual.');
+                window.alert('Browser tidak mendukung pengambilan lokasi otomatis. Silakan isi koordinat manual.');
+            }
             return;
         }
 
         setLocationButtonState(true);
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                latitudeInput.value = Number(position.coords.latitude || 0).toFixed(7);
-                longitudeInput.value = Number(position.coords.longitude || 0).toFixed(7);
+                applyCoordinates(position.coords.latitude || 0, position.coords.longitude || 0, 'Koordinat diambil dari GPS/browser.');
                 setLocationButtonState(false);
             },
-            () => {
+            async (error) => {
                 setLocationButtonState(false);
-                window.alert('Lokasi gagal diambil. Pastikan izin lokasi di browser sudah diizinkan.');
+
+                const ipLocationLoaded = await fetchCoordinatesFromIp();
+                if (ipLocationLoaded) {
+                    return;
+                }
+
+                let reason = 'Lokasi gagal diambil. Pastikan izin lokasi di browser sudah diizinkan.';
+                if (error && error.code === 1) {
+                    reason = 'Izin lokasi ditolak oleh browser. Aktifkan izin lokasi atau isi koordinat manual.';
+                } else if (error && error.code === 2) {
+                    reason = 'Lokasi tidak tersedia pada perangkat ini saat ini. Silakan isi koordinat manual.';
+                } else if (error && error.code === 3) {
+                    reason = 'Pengambilan lokasi timeout. Silakan coba lagi atau isi koordinat manual.';
+                } else if (!window.isSecureContext && isDesktopDevice) {
+                    reason = 'Pada laptop/komputer, geolocation biasanya membutuhkan HTTPS. Silakan isi koordinat manual.';
+                }
+
+                enableManualLocationInput('Koordinat otomatis gagal. Anda bisa isi manual.');
+                window.alert(reason);
             },
             {
                 enableHighAccuracy: true,
@@ -872,6 +949,10 @@ $canEdit = (bool) ($can_edit ?? false);
                 maximumAge: 0,
             }
         );
+    });
+
+    manualLocationButton.addEventListener('click', () => {
+        enableManualLocationInput();
     });
 
     document.querySelectorAll('.js-edit-harian').forEach((button) => {
@@ -892,6 +973,12 @@ $canEdit = (bool) ($can_edit ?? false);
             if (reportDateInput) reportDateInput.value = payload.report_date || '';
             if (latitudeInput) latitudeInput.value = payload.latitude || '';
             if (longitudeInput) longitudeInput.value = payload.longitude || '';
+            setCoordinateReadOnly(true);
+            if ((payload.latitude || '') !== '' && (payload.longitude || '') !== '') {
+                setLocationStatus('Koordinat laporan sudah terisi.', 'success');
+            } else {
+                setLocationStatus('Belum ada koordinat lokasi.', 'muted');
+            }
             if (pekerjaInput) pekerjaInput.value = payload.personil_pekerja || '';
             if (tukangInput) tukangInput.value = payload.personil_tukang || '';
             if (cuacaCerahInput) cuacaCerahInput.value = payload.cuaca_cerah || '';
