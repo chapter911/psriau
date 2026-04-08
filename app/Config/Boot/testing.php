@@ -36,3 +36,11 @@ defined('SHOW_DEBUG_BACKTRACE') || define('SHOW_DEBUG_BACKTRACE', true);
  | release of the framework.
  */
 defined('CI_DEBUG') || define('CI_DEBUG', true);
+
+/*
+ |--------------------------------------------------------------------------
+ | SET DEFAULT TIMEZONE
+ |--------------------------------------------------------------------------
+ | Set the default timezone for Indonesia (Asia/Jakarta)
+ */
+date_default_timezone_set('Asia/Jakarta');

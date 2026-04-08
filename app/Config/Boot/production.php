@@ -23,3 +23,11 @@ ini_set('display_errors', '0');
  | release of the framework.
  */
 defined('CI_DEBUG') || define('CI_DEBUG', false);
+
+/*
+ |--------------------------------------------------------------------------
+ | SET DEFAULT TIMEZONE
+ |--------------------------------------------------------------------------
+ | Set the default timezone for Indonesia (Asia/Jakarta)
+ */
+date_default_timezone_set('Asia/Jakarta');
