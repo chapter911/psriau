@@ -101,8 +101,13 @@ class Setting extends BaseController
             return redirect()->to($redirectTarget)->with('error', 'Akses ditolak. Fitur ini hanya untuk super administrator di production.');
         }
 
-        $phpBinary = escapeshellarg(PHP_BINARY);
-        [$success, $output] = $this->runShellCommand('cd ' . escapeshellarg(ROOTPATH) . ' && ' . $phpBinary . ' spark migrate 2>&1');
+        $phpCli = $this->resolvePhpCliCommand();
+        [$success, $output] = $this->runShellCommand('cd ' . escapeshellarg(ROOTPATH) . ' && ' . $phpCli . ' spark migrate 2>&1');
+
+        if (! $success && strpos($output, 'CodeIgniter\\CLI\\STDOUT') !== false) {
+            $output .= PHP_EOL . PHP_EOL . 'Hint: Proses migrate terdeteksi berjalan dengan PHP non-CLI (fpm/cgi). Pastikan command menggunakan PHP CLI.';
+        }
+
         $message = $success ? 'Merge database (migrate) selesai.' : 'Merge database (migrate) gagal.';
 
         return redirect()->to($redirectTarget)
@@ -112,6 +117,30 @@ class Setting extends BaseController
                 'success' => $success,
                 'output' => $output !== '' ? $output : 'Tidak ada output.',
             ]);
+    }
+
+    private function resolvePhpCliCommand(): string
+    {
+        // Prefer the "php" command from PATH because web SAPIs often point PHP_BINARY to fpm/cgi.
+        if ($this->hasShellCommand('php')) {
+            return 'php';
+        }
+
+        $phpBinary = trim((string) PHP_BINARY);
+        if ($phpBinary !== '' && stripos($phpBinary, 'cgi') === false && stripos($phpBinary, 'fpm') === false) {
+            return escapeshellarg($phpBinary);
+        }
+
+        return 'php';
+    }
+
+    private function hasShellCommand(string $command): bool
+    {
+        $output = [];
+        $exitCode = 1;
+        @exec('command -v ' . escapeshellarg($command) . ' >/dev/null 2>&1', $output, $exitCode);
+
+        return $exitCode === 0;
     }
 
     private function resolveOpsRedirectTarget(): string
