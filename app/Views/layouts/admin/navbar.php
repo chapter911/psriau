@@ -17,12 +17,14 @@
                 <div class="dropdown-menu" aria-labelledby="opsToolsDropdown">
                     <form action="<?= site_url('/admin/pengaturan/application/git-pull'); ?>" method="post" class="px-3 py-1">
                         <?= csrf_field(); ?>
+                        <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
                         <button type="submit" class="btn btn-sm btn-light btn-block text-left">
                             <i class="fas fa-code-branch mr-1"></i> Git Pull
                         </button>
                     </form>
                     <form action="<?= site_url('/admin/pengaturan/application/merge-database'); ?>" method="post" class="px-3 py-1">
                         <?= csrf_field(); ?>
+                        <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
                         <button type="submit" class="btn btn-sm btn-light btn-block text-left">
                             <i class="fas fa-database mr-1"></i> Merge Database
                         </button>

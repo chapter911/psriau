@@ -75,14 +75,16 @@ class Setting extends BaseController
 
     public function gitPull()
     {
+        $redirectTarget = $this->resolveOpsRedirectTarget();
+
         if (! $this->canAccessProductionUtilities()) {
-            return redirect()->to('/admin/pengaturan/application')->with('error', 'Akses ditolak. Fitur ini hanya untuk super administrator di production.');
+            return redirect()->to($redirectTarget)->with('error', 'Akses ditolak. Fitur ini hanya untuk super administrator di production.');
         }
 
         [$success, $output] = $this->runShellCommand('cd ' . escapeshellarg(ROOTPATH) . ' && git pull --ff-only 2>&1');
         $message = $success ? 'Git pull selesai.' : 'Git pull gagal.';
 
-        return redirect()->to('/admin/pengaturan/application')
+        return redirect()->to($redirectTarget)
             ->with($success ? 'message' : 'error', $message)
             ->with('command_result', [
                 'title' => 'Hasil Git Pull',
@@ -93,21 +95,64 @@ class Setting extends BaseController
 
     public function mergeDatabase()
     {
+        $redirectTarget = $this->resolveOpsRedirectTarget();
+
         if (! $this->canAccessProductionUtilities()) {
-            return redirect()->to('/admin/pengaturan/application')->with('error', 'Akses ditolak. Fitur ini hanya untuk super administrator di production.');
+            return redirect()->to($redirectTarget)->with('error', 'Akses ditolak. Fitur ini hanya untuk super administrator di production.');
         }
 
         $phpBinary = escapeshellarg(PHP_BINARY);
         [$success, $output] = $this->runShellCommand('cd ' . escapeshellarg(ROOTPATH) . ' && ' . $phpBinary . ' spark migrate 2>&1');
         $message = $success ? 'Merge database (migrate) selesai.' : 'Merge database (migrate) gagal.';
 
-        return redirect()->to('/admin/pengaturan/application')
+        return redirect()->to($redirectTarget)
             ->with($success ? 'message' : 'error', $message)
             ->with('command_result', [
                 'title' => 'Hasil Merge Database',
                 'success' => $success,
                 'output' => $output !== '' ? $output : 'Tidak ada output.',
             ]);
+    }
+
+    private function resolveOpsRedirectTarget(): string
+    {
+        $fallback = '/admin/pengaturan/application';
+        $candidates = [
+            (string) $this->request->getPost('redirect_to'),
+            (string) $this->request->getServer('HTTP_REFERER'),
+        ];
+
+        foreach ($candidates as $candidate) {
+            $candidate = trim($candidate);
+            if ($candidate === '') {
+                continue;
+            }
+
+            if (strpos($candidate, '://') !== false) {
+                $parts = parse_url($candidate);
+                $host = strtolower((string) ($parts['host'] ?? ''));
+                $currentHost = strtolower((string) $this->request->getServer('HTTP_HOST'));
+                $currentHost = trim(explode(':', $currentHost)[0] ?? $currentHost);
+
+                if ($host === '' || $host !== $currentHost) {
+                    continue;
+                }
+
+                $path = (string) ($parts['path'] ?? '');
+                $query = (string) ($parts['query'] ?? '');
+                if ($path === '' || $path[0] !== '/') {
+                    continue;
+                }
+
+                return $path . ($query !== '' ? '?' . $query : '');
+            }
+
+            if ($candidate[0] === '/') {
+                return $candidate;
+            }
+        }
+
+        return $fallback;
     }
 
     public function errorLogsByDate()
