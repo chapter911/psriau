@@ -197,7 +197,6 @@ $canEdit = (bool) ($can_edit ?? false);
                         <div class="form-group col-md-4 d-flex align-items-end">
                             <div class="w-100">
                                 <button type="button" class="btn btn-info btn-block mb-2" id="btnGetLocation">Ambil Koordinat Lokasi</button>
-                                <small class="text-muted d-block mt-1" id="locationStatus">Belum ada koordinat lokasi.</small>
                             </div>
                         </div>
                         <div class="form-group col-md-6">
@@ -526,7 +525,7 @@ $canEdit = (bool) ($can_edit ?? false);
     const cuacaHujanStartInput = document.getElementById('cuaca_hujan_start');
     const cuacaHujanEndInput = document.getElementById('cuaca_hujan_end');
 
-    if (!form || !modalTitle || !reportIdInput || !sectionsContainer || !sectionTemplate || !addButton || !latitudeInput || !longitudeInput || !getLocationButton || !locationStatus || !cuacaCerahInput || !cuacaHujanInput || !cuacaCerahStartInput || !cuacaCerahEndInput || !cuacaHujanStartInput || !cuacaHujanEndInput || !photoInput || !photoDropzone || !pickPhotosButton || !selectedPhotoThumbnails) {
+    if (!form || !modalTitle || !reportIdInput || !sectionsContainer || !sectionTemplate || !addButton || !latitudeInput || !longitudeInput || !getLocationButton || !cuacaCerahInput || !cuacaHujanInput || !cuacaCerahStartInput || !cuacaCerahEndInput || !cuacaHujanStartInput || !cuacaHujanEndInput || !photoInput || !photoDropzone || !pickPhotosButton || !selectedPhotoThumbnails) {
         return;
     }
 
@@ -849,6 +848,10 @@ $canEdit = (bool) ($can_edit ?? false);
     };
 
     const setLocationStatus = (message, tone = 'muted') => {
+        if (!locationStatus) {
+            return;
+        }
+
         locationStatus.textContent = message;
         locationStatus.classList.remove('text-muted', 'text-success', 'text-warning', 'text-danger');
         locationStatus.classList.add(`text-${tone}`);
