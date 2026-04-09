@@ -154,7 +154,19 @@
             return;
         }
 
+        const blurActiveElement = (modalElement) => {
+            const active = document.activeElement;
+            if (!active || typeof active.blur !== 'function') {
+                return;
+            }
+
+            if (!modalElement || modalElement.contains(active)) {
+                active.blur();
+            }
+        };
+
         const modal = window.jQuery ? window.jQuery('#modalUpdatePassword') : null;
+        const modalElement = document.getElementById('modalUpdatePassword');
         const errorBox = document.getElementById('navbarPasswordError');
         const successBox = document.getElementById('navbarPasswordSuccess');
         const submitButton = document.getElementById('navbarPasswordSubmitBtn');
@@ -184,6 +196,9 @@
         };
 
         if (modal && typeof modal.on === 'function') {
+            modal.on('hide.bs.modal', () => {
+                blurActiveElement(modalElement);
+            });
             modal.on('hidden.bs.modal', resetFormState);
         }
 
@@ -316,9 +331,25 @@
         });
 
         if (window.jQuery) {
+            const blurActiveElementInModal = (modalId) => {
+                const modalEl = document.getElementById(modalId);
+                const active = document.activeElement;
+                if (!active || typeof active.blur !== 'function') {
+                    return;
+                }
+
+                if (!modalEl || modalEl.contains(active)) {
+                    active.blur();
+                }
+            };
+
             window.jQuery('#errorLogModalNavbar').on('show.bs.modal', () => {
                 resultBox.innerHTML = '<div class="text-muted">Pilih tanggal untuk melihat log error.</div>';
                 loadDates();
+            });
+
+            window.jQuery('#errorLogModalNavbar').on('hide.bs.modal', () => {
+                blurActiveElementInModal('errorLogModalNavbar');
             });
 
             window.jQuery('#errorLogModalNavbar').on('hidden.bs.modal', () => {
@@ -327,6 +358,10 @@
             });
 
             <?php if (is_array($commandResult)): ?>
+            window.jQuery('#navbarCommandResultModal').on('hide.bs.modal', () => {
+                blurActiveElementInModal('navbarCommandResultModal');
+            });
+
             window.jQuery('#navbarCommandResultModal').modal('show');
             <?php endif; ?>
         }
