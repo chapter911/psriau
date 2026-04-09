@@ -8,17 +8,25 @@
 <script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
 <script>
     (() => {
+        const preloaderShownAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const minimumVisibleMs = 500;
+
         window.addEventListener('load', () => {
             const preloader = document.querySelector('.preloader');
             if (!preloader) {
                 return;
             }
 
-            preloader.style.transition = 'opacity .28s ease';
-            preloader.style.opacity = '0';
+            const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+            const remaining = Math.max(0, minimumVisibleMs - (now - preloaderShownAt));
+
             window.setTimeout(() => {
-                preloader.style.display = 'none';
-            }, 300);
+                preloader.style.transition = 'opacity .28s ease';
+                preloader.style.opacity = '0';
+                window.setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 300);
+            }, remaining);
         });
     })();
 

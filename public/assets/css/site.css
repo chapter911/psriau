@@ -125,6 +125,39 @@ body {
   max-width: 280px;
 }
 
+.app-preloader-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.app-preloader-subtitle {
+  margin-top: 0.14rem;
+  font-size: 0.78rem;
+  color: #6b7785;
+  font-weight: 600;
+  max-width: 320px;
+}
+
+.app-preloader-bar {
+  width: min(220px, 62vw);
+  height: 3px;
+  margin-top: 0.95rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(31, 108, 113, 0.14);
+}
+
+.app-preloader-bar span {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1f6c71, #c4471f, #1f6c71);
+  background-size: 200% 100%;
+  animation: preloader-bar-move 1.2s ease-in-out infinite;
+}
+
 h1,
 h2,
 h3,
@@ -1035,6 +1068,15 @@ td {
   }
 }
 
+@keyframes preloader-bar-move {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
 @media (max-width: 900px) {
   .admin-shell {
     grid-template-columns: 1fr;
@@ -1100,6 +1142,15 @@ td {
     max-width: 210px;
     font-size: 0.95rem;
   }
+
+  .app-preloader-subtitle {
+    max-width: 240px;
+    font-size: 0.74rem;
+  }
+
+  .app-preloader-bar {
+    width: min(180px, 62vw);
+  }
 }
 
 @media (max-width: 480px) {
@@ -1132,6 +1183,35 @@ td {
     max-width: 180px;
     font-size: 0.88rem;
   }
+
+  .app-preloader-subtitle {
+    max-width: 185px;
+    font-size: 0.71rem;
+  }
+
+  .app-preloader-bar {
+    width: min(160px, 68vw);
+  }
+
+  .app-preloader-brand {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.45rem;
+  }
+
+  .app-preloader-text {
+    align-items: center;
+  }
+
+  .app-preloader-name {
+    max-width: 185px;
+    font-size: 0.92rem;
+  }
+
+  .app-preloader-bar {
+    width: min(150px, 72vw);
+    margin-top: 0.72rem;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1163,9 +1243,17 @@ td {
     color: #dce8ec;
   }
 
+  .app-preloader-subtitle {
+    color: #9eb4bd;
+  }
+
   .app-preloader-logo {
     background: #102027;
     border-color: #2f454d;
+  }
+
+  .app-preloader-bar {
+    background: rgba(158, 180, 189, 0.16);
   }
 
   nav {

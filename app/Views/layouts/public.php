@@ -27,6 +27,11 @@
 <?php
     $preloaderName = trim((string) ($appSetting['app_name'] ?? $globalSetting['official_name'] ?? 'Aplikasi'));
     $preloaderLogo = trim((string) ($globalSetting['logo_url'] ?? ''));
+    $officialName = trim((string) ($globalSetting['official_name'] ?? ''));
+    $preloaderSubtitle = '';
+    if ($officialName !== '' && strtolower($officialName) !== strtolower($preloaderName)) {
+        $preloaderSubtitle = $officialName;
+    }
 ?>
 <div class="app-preloader" id="appPreloader" aria-hidden="true">
     <div class="app-preloader-brand">
@@ -35,8 +40,14 @@
         <?php else: ?>
             <span class="app-preloader-fallback"><?= esc(strtoupper(substr($preloaderName, 0, 2))); ?></span>
         <?php endif; ?>
-        <span class="app-preloader-name"><?= esc($preloaderName); ?></span>
+        <div class="app-preloader-text">
+            <span class="app-preloader-name"><?= esc($preloaderName); ?></span>
+            <?php if ($preloaderSubtitle !== ''): ?>
+                <small class="app-preloader-subtitle"><?= esc($preloaderSubtitle); ?></small>
+            <?php endif; ?>
+        </div>
     </div>
+    <div class="app-preloader-bar" aria-hidden="true"><span></span></div>
 </div>
 
 <header class="site-header">
@@ -141,16 +152,24 @@
 <script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
 <script>
     (() => {
+        const preloaderShownAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const minimumVisibleMs = 500;
+
         window.addEventListener('load', () => {
             const preloader = document.getElementById('appPreloader');
             if (!preloader) {
                 return;
             }
 
-            preloader.classList.add('is-hidden');
+            const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+            const remaining = Math.max(0, minimumVisibleMs - (now - preloaderShownAt));
+
             window.setTimeout(() => {
-                preloader.remove();
-            }, 320);
+                preloader.classList.add('is-hidden');
+                window.setTimeout(() => {
+                    preloader.remove();
+                }, 320);
+            }, remaining);
         });
     })();
 

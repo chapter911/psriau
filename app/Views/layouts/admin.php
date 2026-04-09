@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php
         $appName = trim((string) ($appSetting['app_name'] ?? 'PLN EPM-Digi'));
+        $officialName = trim((string) ($globalSetting['official_name'] ?? ''));
+        $preloaderSubtitle = '';
+        if ($officialName !== '' && strtolower($officialName) !== strtolower($appName)) {
+            $preloaderSubtitle = $officialName;
+        }
         $pageDocTitle = trim((string) ($title ?? $pageTitle ?? ''));
         $docTitle = $pageDocTitle !== '' ? $pageDocTitle . ' | ' . $appName : $appName;
     ?>
@@ -182,6 +187,75 @@
             line-height: 1.2;
             max-width: 260px;
         }
+
+        .app-preloader-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .app-preloader-subtitle {
+            font-size: 0.78rem;
+            color: #6b7785;
+            font-weight: 600;
+            margin-top: 0.15rem;
+            max-width: 300px;
+        }
+
+        .app-preloader-bar {
+            width: min(220px, 62vw);
+            height: 3px;
+            margin-top: 0.95rem;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(31, 108, 113, 0.14);
+        }
+
+        .app-preloader-bar span {
+            display: block;
+            width: 40%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #1f6c71, #c4471f, #1f6c71);
+            background-size: 200% 100%;
+            animation: preloader-bar-move 1.2s ease-in-out infinite;
+        }
+
+        @media (max-width: 480px) {
+            .app-preloader-brand {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.45rem;
+            }
+
+            .app-preloader-text {
+                align-items: center;
+            }
+
+            .app-preloader-name {
+                font-size: 0.92rem;
+                max-width: 185px;
+            }
+
+            .app-preloader-subtitle {
+                max-width: 210px;
+                font-size: 0.7rem;
+            }
+
+            .app-preloader-bar {
+                width: min(150px, 72vw);
+                margin-top: 0.7rem;
+            }
+        }
+
+        @keyframes preloader-bar-move {
+            0% {
+                transform: translateX(-120%);
+            }
+            100% {
+                transform: translateX(320%);
+            }
+        }
     </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
@@ -193,8 +267,14 @@
             <?php else: ?>
                 <span class="app-preloader-fallback"><?= esc(strtoupper(substr($appName, 0, 2))); ?></span>
             <?php endif; ?>
-            <span class="app-preloader-name"><?= esc($appName); ?></span>
+            <div class="app-preloader-text">
+                <span class="app-preloader-name"><?= esc($appName); ?></span>
+                <?php if ($preloaderSubtitle !== ''): ?>
+                    <small class="app-preloader-subtitle"><?= esc($preloaderSubtitle); ?></small>
+                <?php endif; ?>
+            </div>
         </div>
+        <div class="app-preloader-bar" aria-hidden="true"><span></span></div>
     </div>
 
     <?= $this->include('layouts/admin/navbar'); ?>
