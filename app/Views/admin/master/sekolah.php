@@ -106,9 +106,15 @@
                             <div class="font-weight-bold" id="map-school-name">-</div>
                             <div class="text-muted small" id="map-school-coordinates">-</div>
                         </div>
-                        <div class="text-right mt-2 mt-md-0">
-                            <span class="badge badge-primary">Leaflet</span>
-                            <span class="badge badge-secondary">Google Maps Style</span>
+                        <div class="text-right mt-2 mt-md-0 d-flex align-items-center">
+                            <label for="schoolMapType" class="mb-0 mr-2 small text-muted">Tipe Map</label>
+                            <select id="schoolMapType" class="form-control form-control-sm" style="min-width: 220px;">
+                                <?php foreach (($mapTypes ?? []) as $mapType): ?>
+                                    <option value="<?= esc((string) ($mapType['id'] ?? ''), 'attr'); ?>" <?= (int) ($mapType['id'] ?? 0) === (int) ($mapDefaultId ?? 1) ? 'selected' : ''; ?>>
+                                        <?= esc((string) ($mapType['map_name'] ?? 'Leaflet Map')); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -299,19 +305,81 @@
             return;
         }
 
+        const mapTypes = <?= json_encode($mapTypes ?? [], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+
         const mapContainer = document.getElementById('school-map');
         const schoolName = document.getElementById('map-school-name');
         const schoolSubtitle = document.getElementById('map-school-subtitle');
         const schoolCoordinates = document.getElementById('map-school-coordinates');
         const googleMapButton = document.getElementById('btn-open-google-maps');
+        const mapTypeSelect = document.getElementById('schoolMapType');
         let leafletMap = null;
         let marker = null;
 
-        const googleTile = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-            attribution: '&copy; Google'
-        });
+        const clearTileLayers = () => {
+            if (!leafletMap) {
+                return;
+            }
+
+            leafletMap.eachLayer((layer) => {
+                if (layer instanceof L.TileLayer) {
+                    leafletMap.removeLayer(layer);
+                }
+            });
+        };
+
+        const clearScaleControls = () => {
+            const controls = mapContainer.querySelectorAll('.leaflet-control-scale');
+            controls.forEach((el) => {
+                if (el && el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            });
+        };
+
+        const getSelectedMapScript = () => {
+            if (!Array.isArray(mapTypes) || mapTypes.length === 0) {
+                return '';
+            }
+
+            const selectedId = mapTypeSelect ? String(mapTypeSelect.value || '') : '';
+            const found = mapTypes.find((item) => String(item && item.id != null ? item.id : '') === selectedId);
+            if (found && typeof found.map_script === 'string') {
+                return found.map_script;
+            }
+
+            const first = mapTypes[0] || {};
+            return typeof first.map_script === 'string' ? first.map_script : '';
+        };
+
+        const applyMapScript = () => {
+            if (!leafletMap) {
+                return;
+            }
+
+            clearTileLayers();
+            clearScaleControls();
+
+            const script = getSelectedMapScript();
+            const normalized = String(script || '').replace(/http:\/\//g, 'https://');
+            let applied = false;
+
+            if (normalized.trim() !== '') {
+                try {
+                    const fn = new Function('map', 'L', normalized);
+                    fn(leafletMap, L);
+                    applied = true;
+                } catch (error) {
+                    applied = false;
+                }
+            }
+
+            if (!applied) {
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(leafletMap);
+            }
+        };
 
         const formatCoordinate = (value) => {
             const number = Number(value);
@@ -391,8 +459,9 @@
                     zoomControl: true,
                     preferCanvas: true,
                 });
-                googleTile.addTo(leafletMap);
             }
+
+            applyMapScript();
 
             if (marker) {
                 marker.remove();
@@ -425,6 +494,16 @@
             applyMapDataFromTrigger(trigger);
             showMapModal();
         });
+
+        if (mapTypeSelect) {
+            mapTypeSelect.addEventListener('change', function () {
+                if (!leafletMap) {
+                    return;
+                }
+
+                applyMapScript();
+            });
+        }
 
         mapModal.addEventListener('show.bs.modal', function (event) {
             if (!event.relatedTarget) {

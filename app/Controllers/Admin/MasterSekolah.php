@@ -22,15 +22,49 @@ class MasterSekolah extends BaseController
             ->findAll();
 
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        $mapTypes = $this->getMapTypes();
 
         $canManage = $this->canManageMasterData();
 
         return view('admin/master/sekolah', [
             'pageTitle' => 'Master Sekolah',
             'items' => $items,
+            'mapTypes' => $mapTypes,
+            'mapDefaultId' => (int) ($mapTypes[0]['id'] ?? 1),
             'can_add' => $canManage && (bool) ($menuPermissions['add'] ?? false),
             'can_edit' => $canManage && (bool) ($menuPermissions['edit'] ?? false),
         ]);
+    }
+
+    private function getMapTypes(): array
+    {
+        $db = db_connect();
+
+        if ($db->tableExists('mst_map_type')) {
+            $rows = $db->table('mst_map_type')
+                ->select('id, map_name, map_script')
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            if ($rows !== []) {
+                return array_map(static function (array $row): array {
+                    return [
+                        'id' => (int) ($row['id'] ?? 0),
+                        'map_name' => (string) ($row['map_name'] ?? 'Leaflet Map'),
+                        'map_script' => str_replace('http://', 'https://', (string) ($row['map_script'] ?? '')),
+                    ];
+                }, $rows);
+            }
+        }
+
+        return [
+            [
+                'id' => 1,
+                'map_name' => 'Leaflet Map',
+                'map_script' => "L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);",
+            ],
+        ];
     }
 
     public function create()
