@@ -34,12 +34,15 @@
         if (typeof $ === 'undefined' || ! $.fn.DataTable) return;
 
         $('.js-datatable').each(function () {
+            const tableOrder = $(this).data('order') || [[0, 'asc']];
+
             $(this).DataTable({
                 responsive: {
                     details: false
                 },
                 autoWidth: false,
                 scrollX: true,
+                order: tableOrder,
                 language: {
                     search: 'Cari:',
                     lengthMenu: 'Tampilkan _MENU_ data',

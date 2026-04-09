@@ -22,6 +22,33 @@ $reasonLabel = static function (?string $reason): string {
         default => ucwords(str_replace(['_', '-'], ' ', $normalized)),
     };
 };
+
+$formatAttemptedAt = static function (string $value): array {
+    $trimmed = trim($value);
+    if ($trimmed === '') {
+        return [
+            'full' => '-',
+            'date' => '-',
+            'time' => '-',
+        ];
+    }
+
+    try {
+        $dateTime = new DateTimeImmutable($trimmed);
+        $datePart = $dateTime->format('Y-m-d');
+        return [
+            'full' => tanggal_indonesia($datePart) . ' ' . $dateTime->format('H:i:s'),
+            'date' => tanggal_indonesia($datePart),
+            'time' => $dateTime->format('H:i:s'),
+        ];
+    } catch (Throwable $exception) {
+        return [
+            'full' => $trimmed,
+            'date' => $trimmed,
+            'time' => $trimmed,
+        ];
+    }
+};
 ?>
 <div class="row mb-3">
     <div class="col-12 col-md-6 col-xl-3 mb-2">
@@ -101,7 +128,7 @@ $reasonLabel = static function (?string $reason): string {
             </form>
 
             <div class="table-responsive">
-                <table class="table table-bordered table-striped w-100 js-datatable" id="tableLoginHistory">
+                <table class="table table-bordered table-striped w-100 js-datatable" id="tableLoginHistory" data-order='[[0,"desc"]]'>
                     <thead>
                         <tr>
                             <th style="width:170px;">Waktu</th>
@@ -120,9 +147,11 @@ $reasonLabel = static function (?string $reason): string {
                             $isSuccess = (int) ($row['is_success'] ?? 0) === 1;
                             $badgeClass = $isSuccess ? 'badge badge-success' : 'badge badge-danger';
                             $badgeText = $isSuccess ? 'Sukses' : 'Gagal';
+                            $attemptedAtRaw = (string) ($row['attempted_at'] ?? '');
+                            $attemptedAtDisplay = $formatAttemptedAt($attemptedAtRaw);
 
                             $detail = [
-                                'attempted_at' => (string) ($row['attempted_at'] ?? ''),
+                                'attempted_at' => $attemptedAtRaw,
                                 'username_input' => (string) ($row['username_input'] ?? ''),
                                 'user_id' => (string) ($row['user_id'] ?? ''),
                                 'full_name' => (string) ($row['full_name'] ?? ''),
@@ -140,7 +169,13 @@ $reasonLabel = static function (?string $reason): string {
                             ];
                             ?>
                             <tr>
-                                <td><?= esc((string) ($row['attempted_at'] ?? '-')); ?></td>
+                                <td data-order="<?= esc($attemptedAtRaw, 'attr'); ?>">
+                                    <div class="d-none d-md-block text-nowrap"><?= esc($attemptedAtDisplay['full']); ?></div>
+                                    <div class="d-md-none">
+                                        <div><?= esc($attemptedAtDisplay['date']); ?></div>
+                                        <small class="text-muted"><?= esc($attemptedAtDisplay['time']); ?></small>
+                                    </div>
+                                </td>
                                 <td class="text-center"><span class="<?= $badgeClass; ?>"><?= esc($badgeText); ?></span></td>
                                 <td><?= esc((string) ($row['username_input'] ?? '-')); ?></td>
                                 <td><?= esc((string) ($row['full_name'] ?? '-')); ?></td>
