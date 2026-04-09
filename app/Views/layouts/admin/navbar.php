@@ -10,30 +10,27 @@
             <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
         </li>
         <?php if ($canUseProductionUtilities): ?>
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="opsToolsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <li class="nav-item d-flex align-items-center flex-wrap py-1">
+                <span class="nav-link text-dark font-weight-bold pr-2 mb-0" style="cursor: default;">
                     <i class="fas fa-tools mr-1"></i> Ops Tools
-                </a>
-                <div class="dropdown-menu" aria-labelledby="opsToolsDropdown">
-                    <form action="<?= site_url('/admin/pengaturan/application/git-pull'); ?>" method="post" class="px-3 py-1">
-                        <?= csrf_field(); ?>
-                        <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
-                        <button type="submit" class="btn btn-sm btn-light btn-block text-left">
-                            <i class="fas fa-code-branch mr-1"></i> Git Pull
-                        </button>
-                    </form>
-                    <form action="<?= site_url('/admin/pengaturan/application/merge-database'); ?>" method="post" class="px-3 py-1">
-                        <?= csrf_field(); ?>
-                        <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
-                        <button type="submit" class="btn btn-sm btn-light btn-block text-left">
-                            <i class="fas fa-database mr-1"></i> Merge Database
-                        </button>
-                    </form>
-                    <div class="dropdown-divider"></div>
-                    <button type="button" class="dropdown-item" data-toggle="modal" data-target="#errorLogModalNavbar">
-                        <i class="fas fa-triangle-exclamation mr-1"></i> Lihat Log Error
+                </span>
+                <form action="<?= site_url('/admin/pengaturan/application/git-pull'); ?>" method="post" class="mr-1 mb-0">
+                    <?= csrf_field(); ?>
+                    <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-code-branch mr-1"></i> Git Pull
                     </button>
-                </div>
+                </form>
+                <form action="<?= site_url('/admin/pengaturan/application/merge-database'); ?>" method="post" class="mr-1 mb-0">
+                    <?= csrf_field(); ?>
+                    <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-database mr-1"></i> Merge Database
+                    </button>
+                </form>
+                <button type="button" class="btn btn-sm btn-outline-warning mb-0" data-toggle="modal" data-target="#errorLogModalNavbar">
+                    <i class="fas fa-triangle-exclamation mr-1"></i> Lihat Log Error
+                </button>
             </li>
         <?php endif; ?>
     </ul>
