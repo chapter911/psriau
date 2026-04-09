@@ -34,6 +34,7 @@ class Setting extends BaseController
                 'app_logo_file'       => 'if_exist|is_image[app_logo_file]|max_size[app_logo_file,2048]|mime_in[app_logo_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]',
                 'login_bg_file'       => 'if_exist|is_image[login_bg_file]|max_size[login_bg_file,4096]|mime_in[login_bg_file,image/jpg,image/jpeg,image/png,image/webp]',
                 'auto_logout_minutes' => 'required|integer|greater_than_equal_to[1]|less_than_equal_to[1440]',
+                'preloader_duration_ms' => 'required|integer|greater_than_equal_to[0]|less_than_equal_to[10000]',
             ];
 
             if (! $this->validate($rules)) {
@@ -61,6 +62,7 @@ class Setting extends BaseController
                 'app_logo_url'         => $appLogoPath ?? ($setting['app_logo_url'] ?? null),
                 'login_background_url' => $loginBgPath ?? ($setting['login_background_url'] ?? null),
                 'auto_logout_minutes'  => (int) $this->request->getPost('auto_logout_minutes'),
+                'preloader_duration_ms' => (int) $this->request->getPost('preloader_duration_ms'),
                 'updated_at'           => date('Y-m-d H:i:s'),
                 'updated_by'           => (int) session()->get('userId'),
             ]);
@@ -801,6 +803,7 @@ class Setting extends BaseController
             'app_logo_url'         => null,
             'login_background_url' => null,
             'auto_logout_minutes'  => 60,
+            'preloader_duration_ms' => 500,
             'updated_at'           => date('Y-m-d H:i:s'),
             'updated_by'           => (int) session()->get('userId'),
         ], true);

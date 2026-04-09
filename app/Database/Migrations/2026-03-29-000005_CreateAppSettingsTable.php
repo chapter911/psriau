@@ -39,6 +39,11 @@ class CreateAppSettingsTable extends Migration
                 'constraint' => 11,
                 'default'    => 60,
             ],
+            'preloader_duration_ms' => [
+                'type'       => 'INT',
+                'constraint' => 11,
+                'default'    => 500,
+            ],
             'updated_at' => [
                 'type' => 'DATETIME',
                 'null' => true,
@@ -59,6 +64,7 @@ class CreateAppSettingsTable extends Migration
             'app_logo_url'         => null,
             'login_background_url' => null,
             'auto_logout_minutes'  => 60,
+            'preloader_duration_ms' => 500,
             'updated_at'           => date('Y-m-d H:i:s'),
             'updated_by'           => null,
         ]);

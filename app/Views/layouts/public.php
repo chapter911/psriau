@@ -153,7 +153,7 @@
 <script>
     (() => {
         const preloaderShownAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
-        const minimumVisibleMs = 500;
+        const minimumVisibleMs = <?= (int) ($appSetting['preloader_duration_ms'] ?? 500); ?>;
 
         window.addEventListener('load', () => {
             const preloader = document.getElementById('appPreloader');

@@ -70,6 +70,7 @@ abstract class BaseController extends Controller
             'app_logo_url'         => '',
             'login_background_url' => '',
             'auto_logout_minutes'  => 60,
+            'preloader_duration_ms' => 500,
         ];
 
         try {

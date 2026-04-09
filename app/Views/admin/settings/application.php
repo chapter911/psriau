@@ -123,6 +123,22 @@
                 >
                 <small class="text-muted">Pengguna akan otomatis logout jika tidak ada aktivitas sesuai durasi ini.</small>
             </div>
+
+            <div class="form-group">
+                <label for="preloader_duration_ms">Durasi Preloader Halaman (ms)</label>
+                <input
+                    type="number"
+                    id="preloader_duration_ms"
+                    name="preloader_duration_ms"
+                    class="form-control"
+                    value="<?= old('preloader_duration_ms', (int) ($setting['preloader_duration_ms'] ?? 500)); ?>"
+                    min="0"
+                    max="10000"
+                    step="1"
+                    required
+                >
+                <small class="text-muted">Digunakan untuk menentukan berapa lama preloader tampil sebelum halaman disembunyikan. Contoh: 500 ms.</small>
+            </div>
         </div>
 
         <div class="card-footer d-flex align-items-center justify-content-between">

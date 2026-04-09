@@ -19,6 +19,7 @@ class AppSettingModel extends Model
         'app_logo_url',
         'login_background_url',
         'auto_logout_minutes',
+        'preloader_duration_ms',
         'updated_at',
         'updated_by',
     ];
