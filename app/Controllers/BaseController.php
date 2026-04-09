@@ -146,7 +146,7 @@ abstract class BaseController extends Controller
                         'id'             => (string) $row['id'],
                         'label'          => (string) $row['label'],
                         'url'            => $row['link'],
-                        'icon'           => $row['icon'],
+                        'icon'           => 'far fa-dot-circle',
                         'active_pattern' => $this->toActivePattern($row['link']),
                         'children'       => [],
                     ];
@@ -162,7 +162,7 @@ abstract class BaseController extends Controller
                         'id'             => $menuId,
                         'label'          => (string) $row['label'],
                         'url'            => $row['link'],
-                        'icon'           => $row['icon'],
+                        'icon'           => 'far fa-circle',
                         'active_pattern' => $this->toActivePattern($row['link']),
                         'children'       => $lv3ByHeader[$menuId] ?? [],
                     ];

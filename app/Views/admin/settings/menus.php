@@ -62,7 +62,7 @@
                                     <div class="menu-row">
                                         <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
                                         <span class="menu-label">
-                                            <i class="fas fa-folder-open"></i>
+                                            <i class="far fa-circle"></i>
                                             <?= esc($lv2Item['label'] ?? '-') ?>
                                         </span>
                                         <span class="menu-link"><?= esc($lv2Item['link'] ?? '#') ?></span>
@@ -78,14 +78,6 @@
                                                 <?= empty($menu_access['edit']) ? 'disabled' : '' ?>>
                                                 <i class="fas fa-pen"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-info btn-change-icon"
-                                                data-level="2"
-                                                data-id="<?= esc($lv2Item['id']) ?>"
-                                                data-label="<?= esc($lv2Item['label'] ?? '') ?>"
-                                                data-icon="<?= esc($lv2Item['icon'] ?? '') ?>"
-                                                <?= empty($menu_access['edit']) ? 'disabled' : '' ?>>
-                                                <i class="fas fa-icons"></i>
-                                            </button>
                                         </span>
                                     </div>
                                     <ul class="menu-tree menu-lv3-list">
@@ -94,7 +86,7 @@
                                                 <div class="menu-row">
                                                     <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
                                                     <span class="menu-label">
-                                                        <i class="fas fa-file-alt"></i>
+                                                        <i class="far fa-dot-circle"></i>
                                                         <?= esc($lv3Item['label'] ?? '-') ?>
                                                     </span>
                                                     <span class="menu-link"><?= esc($lv3Item['link'] ?? '#') ?></span>
@@ -109,14 +101,6 @@
                                                             data-header="<?= esc((string) ($lv3Item['header'] ?? '')) ?>"
                                                             <?= empty($menu_access['edit']) ? 'disabled' : '' ?>>
                                                             <i class="fas fa-pen"></i>
-                                                        </button>
-                                                        <button type="button" class="btn btn-sm btn-outline-info btn-change-icon"
-                                                            data-level="3"
-                                                            data-id="<?= esc($lv3Item['id']) ?>"
-                                                            data-label="<?= esc($lv3Item['label'] ?? '') ?>"
-                                                            data-icon="<?= esc($lv3Item['icon'] ?? '') ?>"
-                                                            <?= empty($menu_access['edit']) ? 'disabled' : '' ?>>
-                                                            <i class="fas fa-icons"></i>
                                                         </button>
                                                     </span>
                                                 </div>

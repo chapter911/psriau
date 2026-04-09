@@ -457,7 +457,7 @@ class Setting extends BaseController
                 'id' => $id,
                 'label' => $label,
                 'link' => '#',
-                'icon' => $icon !== '' ? $icon : '#',
+                'icon' => 'far fa-circle',
                 'header' => $header,
                 'ordering' => $this->getNextOrdering('menu_lv2', ['header' => $header]),
             ]);
@@ -471,7 +471,7 @@ class Setting extends BaseController
             (new MenuLv3Model())->insert([
                 'id' => $id,
                 'label' => $label,
-                'icon' => $icon !== '' ? $icon : '#',
+                'icon' => 'far fa-dot-circle',
                 'link' => '#',
                 'header' => $header,
                 'ordering' => $this->getNextOrdering('menu_lv3', ['header' => $header]),
@@ -601,26 +601,14 @@ class Setting extends BaseController
             return redirect()->to('/admin/pengaturan/menus')->with('error', 'Data ganti icon tidak valid.');
         }
 
+        if (in_array($level, [2, 3], true)) {
+            return redirect()->to('/admin/pengaturan/menus')->with('error', 'Icon level 2 dan level 3 menggunakan default sistem.');
+        }
+
         if ($level === 1) {
             $model = new MenuLv1Model();
             if (! $model->find($id)) {
                 return redirect()->to('/admin/pengaturan/menus')->with('error', 'Menu level 1 tidak ditemukan.');
-            }
-            $model->update($id, ['icon' => $icon]);
-        }
-
-        if ($level === 2) {
-            $model = new MenuLv2Model();
-            if (! $model->find($id)) {
-                return redirect()->to('/admin/pengaturan/menus')->with('error', 'Menu level 2 tidak ditemukan.');
-            }
-            $model->update($id, ['icon' => $icon]);
-        }
-
-        if ($level === 3) {
-            $model = new MenuLv3Model();
-            if (! $model->find($id)) {
-                return redirect()->to('/admin/pengaturan/menus')->with('error', 'Menu level 3 tidak ditemukan.');
             }
             $model->update($id, ['icon' => $icon]);
         }
