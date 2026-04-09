@@ -23,6 +23,7 @@ $routes->get('forbidden', 'Home::forbidden');
 
 $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($routes): void {
 	$routes->get('/', 'Admin\\Dashboard::index');
+	$routes->get('dashboard/map', 'Admin\\Dashboard::index');
 	$routes->get('dashboard/map-data', 'Admin\\Dashboard::mapData');
 
 	// Update password user
