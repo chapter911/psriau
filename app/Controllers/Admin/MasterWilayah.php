@@ -645,23 +645,22 @@ class MasterWilayah extends BaseController
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KELURAHAN);
         if ($forbidden instanceof RedirectResponse) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Akses ditolak.',
+                ]);
+            }
+
             return $forbidden;
         }
 
-        $items = db_connect()->table('mst_kelurahan kl')
-            ->select('kl.kode_provinsi, p.nama_provinsi, kl.kode_kabupaten, kb.nama_kabupaten, kl.kode_kecamatan, kc.nama_kecamatan, kl.kode_kelurahan, kl.nama_kelurahan, kl.kategori_konflik')
-            ->join('mst_provinsi p', 'p.kode_provinsi = kl.kode_provinsi', 'left')
-            ->join('mst_kabupaten kb', 'kb.kode_provinsi = kl.kode_provinsi AND kb.kode_kabupaten = kl.kode_kabupaten', 'left')
-            ->join('mst_kecamatan kc', 'kc.kode_provinsi = kl.kode_provinsi AND kc.kode_kabupaten = kl.kode_kabupaten AND kc.kode_kecamatan = kl.kode_kecamatan', 'left')
-            ->orderBy('kl.kode_provinsi', 'ASC')
-            ->orderBy('kl.kode_kabupaten', 'ASC')
-            ->orderBy('kl.kode_kecamatan', 'ASC')
-            ->orderBy('kl.kode_kelurahan', 'ASC')
-            ->get()
-            ->getResultArray();
+        if ($this->request->isAJAX()) {
+            return $this->kelurahanDataTable();
+        }
 
         return view('admin/master/kelurahan', array_merge(
-            $this->buildPageData(self::MENU_LINK_KELURAHAN, 'Master Kelurahan', $items),
+            $this->buildPageData(self::MENU_LINK_KELURAHAN, 'Master Kelurahan', []),
             [
                 'provinsiOptions' => $this->provinsiOptions(),
                 'kabupatenOptions' => $this->kabupatenOptions(),
