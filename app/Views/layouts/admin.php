@@ -143,10 +143,60 @@
         .modal .table-responsive-xl {
             overflow: auto;
         }
+
+        .app-preloader-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            color: #1f2d3d;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .app-preloader-logo {
+            width: 54px;
+            height: 54px;
+            border-radius: 12px;
+            object-fit: contain;
+            background: #fff;
+            border: 1px solid #d8dee4;
+            padding: 6px;
+            box-shadow: 0 8px 22px rgba(15, 23, 32, 0.14);
+        }
+
+        .app-preloader-fallback {
+            width: 54px;
+            height: 54px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, #1f6c71, #0f3f43);
+            color: #fff;
+            font-weight: 800;
+            box-shadow: 0 8px 22px rgba(15, 23, 32, 0.2);
+        }
+
+        .app-preloader-name {
+            font-size: 1.05rem;
+            line-height: 1.2;
+            max-width: 260px;
+        }
     </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
 <div class="wrapper">
+    <div class="preloader flex-column justify-content-center align-items-center">
+        <div class="app-preloader-brand animation__shake">
+            <?php if (! empty($globalSetting['logo_url'] ?? '')): ?>
+                <img src="<?= esc($globalSetting['logo_url']); ?>" alt="Logo <?= esc($appName); ?>" class="app-preloader-logo">
+            <?php else: ?>
+                <span class="app-preloader-fallback"><?= esc(strtoupper(substr($appName, 0, 2))); ?></span>
+            <?php endif; ?>
+            <span class="app-preloader-name"><?= esc($appName); ?></span>
+        </div>
+    </div>
+
     <?= $this->include('layouts/admin/navbar'); ?>
     <?= $this->include('layouts/admin/sidebar'); ?>
     <?= $this->include('layouts/admin/content'); ?>

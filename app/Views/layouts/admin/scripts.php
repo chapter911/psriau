@@ -8,6 +8,21 @@
 <script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
 <script>
     (() => {
+        window.addEventListener('load', () => {
+            const preloader = document.querySelector('.preloader');
+            if (!preloader) {
+                return;
+            }
+
+            preloader.style.transition = 'opacity .28s ease';
+            preloader.style.opacity = '0';
+            window.setTimeout(() => {
+                preloader.style.display = 'none';
+            }, 300);
+        });
+    })();
+
+    (() => {
         if (typeof $ === 'undefined' || ! $.fn.DataTable) return;
 
         $('.js-datatable').each(function () {

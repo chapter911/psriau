@@ -67,6 +67,64 @@ body {
     radial-gradient(circle at 90% 0%, #dceef0, transparent 35%), var(--bg);
 }
 
+.app-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #f4f7f8, #e9eff1);
+  transition:
+    opacity 0.28s ease,
+    visibility 0.28s ease;
+}
+
+.app-preloader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.app-preloader-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.68rem;
+  color: #1f2d3d;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  animation: preloader-shake 1.8s ease-in-out infinite;
+}
+
+.app-preloader-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid #d8dee4;
+  padding: 6px;
+  box-shadow: 0 10px 26px rgba(15, 23, 32, 0.14);
+}
+
+.app-preloader-fallback {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #1f6c71, #0f3f43);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 10px 26px rgba(15, 23, 32, 0.22);
+}
+
+.app-preloader-name {
+  font-size: 1.05rem;
+  line-height: 1.2;
+  max-width: 280px;
+}
+
 h1,
 h2,
 h3,
@@ -958,6 +1016,25 @@ td {
   }
 }
 
+@keyframes preloader-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-1.2px);
+  }
+  40% {
+    transform: translateX(1.2px);
+  }
+  60% {
+    transform: translateX(-0.6px);
+  }
+  80% {
+    transform: translateX(0.6px);
+  }
+}
+
 @media (max-width: 900px) {
   .admin-shell {
     grid-template-columns: 1fr;
@@ -1018,6 +1095,11 @@ td {
   .hero-indicators {
     bottom: 2.1rem;
   }
+
+  .app-preloader-name {
+    max-width: 210px;
+    font-size: 0.95rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1038,6 +1120,17 @@ td {
   .hero-panel {
     border-radius: 14px;
     padding: 0.88rem;
+  }
+
+  .app-preloader-logo,
+  .app-preloader-fallback {
+    width: 50px;
+    height: 50px;
+  }
+
+  .app-preloader-name {
+    max-width: 180px;
+    font-size: 0.88rem;
   }
 }
 
@@ -1060,6 +1153,19 @@ td {
 
   .site-header {
     background: rgba(10, 16, 20, 0.9);
+  }
+
+  .app-preloader {
+    background: linear-gradient(145deg, #0c151a, #121e24);
+  }
+
+  .app-preloader-brand {
+    color: #dce8ec;
+  }
+
+  .app-preloader-logo {
+    background: #102027;
+    border-color: #2f454d;
   }
 
   nav {
