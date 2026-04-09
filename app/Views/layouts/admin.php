@@ -124,8 +124,24 @@
         }
 
         table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
             border-color: var(--sidebar-bg) !important;
             font-weight: 600;
+            background-clip: padding-box;
+        }
+
+        .modal table thead th {
+            z-index: 1056;
+        }
+
+        .modal .table-responsive,
+        .modal .table-responsive-sm,
+        .modal .table-responsive-md,
+        .modal .table-responsive-lg,
+        .modal .table-responsive-xl {
+            overflow: auto;
         }
     </style>
 </head>
