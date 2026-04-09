@@ -12,8 +12,11 @@
 
         $('.js-datatable').each(function () {
             $(this).DataTable({
-                responsive: true,
+                responsive: {
+                    details: false
+                },
                 autoWidth: false,
+                scrollX: true,
                 language: {
                     search: 'Cari:',
                     lengthMenu: 'Tampilkan _MENU_ data',
