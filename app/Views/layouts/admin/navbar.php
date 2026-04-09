@@ -104,11 +104,11 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="navbarErrorLogDate">Pilih Tanggal Error</label>
+                    <label for="navbarErrorLogDate">Pilih File Log Error</label>
                     <select class="form-control" id="navbarErrorLogDate">
-                        <option value="">- pilih tanggal -</option>
+                        <option value="">- pilih file log -</option>
                     </select>
-                    <small class="text-muted">Pilih tanggal terlebih dahulu, lalu tampil 3 error terbaru.</small>
+                    <small class="text-muted">Menampilkan 3 file log terbaru. Pilih salah satu untuk melihat isi file.</small>
                 </div>
                 <div id="navbarErrorLogResult" class="border rounded p-3" style="max-height: 50vh; overflow:auto;">
                     <div class="text-muted">Belum ada data ditampilkan.</div>
@@ -292,65 +292,74 @@
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
 
-        const renderLogs = (items) => {
-            if (!Array.isArray(items) || items.length === 0) {
-                resultBox.innerHTML = '<div class="text-muted">Tidak ada error pada tanggal ini.</div>';
+        const renderLogContent = (payload) => {
+            const fileName = payload && payload.file ? String(payload.file) : '-';
+            const content = payload && payload.content ? String(payload.content) : '';
+            const isTruncated = Boolean(payload && payload.isTruncated);
+            const totalLines = Number(payload && payload.totalLines ? payload.totalLines : 0);
+            const displayedLines = Number(payload && payload.displayedLines ? payload.displayedLines : 0);
+
+            if (!content.trim()) {
+                resultBox.innerHTML = `<div class="text-muted">File ${escapeHtml(fileName)} kosong.</div>`;
                 return;
             }
 
-            resultBox.innerHTML = items.map((item, idx) => `
-                <div class="mb-3 pb-2 border-bottom ${idx === items.length - 1 ? 'mb-0 pb-0 border-0' : ''}">
-                    <div><strong>Waktu:</strong> ${escapeHtml(item.time || '-')}</div>
-                    <div><strong>Pesan:</strong> ${escapeHtml(item.message || '-')}</div>
-                </div>
-            `).join('');
+            const meta = isTruncated
+                ? `<div class="alert alert-warning py-2 px-3 mb-2">Menampilkan ${escapeHtml(String(displayedLines))} dari ${escapeHtml(String(totalLines))} baris terakhir.</div>`
+                : '';
+
+            resultBox.innerHTML = `
+                <div class="mb-2"><strong>File:</strong> ${escapeHtml(fileName)}</div>
+                ${meta}
+                <pre class="mb-0" style="white-space: pre-wrap; background:#0b1220; color:#d6e1ff; padding:12px; border-radius:8px;">${escapeHtml(content)}</pre>
+            `;
         };
 
         const loadDates = async () => {
-            dateSelect.innerHTML = '<option value="">Memuat tanggal...</option>';
+            dateSelect.innerHTML = '<option value="">Memuat file log...</option>';
             try {
                 const response = await fetch('<?= site_url('/admin/pengaturan/application/error-log-dates'); ?>', {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 });
                 const payload = await response.json();
                 if (!response.ok || payload.status !== 'ok') {
-                    throw new Error(payload.message || 'Gagal memuat daftar tanggal log.');
+                    throw new Error(payload.message || 'Gagal memuat daftar file log.');
                 }
 
                 const dates = Array.isArray(payload.data) ? payload.data : [];
                 if (dates.length === 0) {
-                    dateSelect.innerHTML = '<option value="">- tidak ada tanggal log -</option>';
+                    dateSelect.innerHTML = '<option value="">- tidak ada file log -</option>';
                     return;
                 }
 
-                dateSelect.innerHTML = '<option value="">- pilih tanggal -</option>' + dates
+                dateSelect.innerHTML = '<option value="">- pilih file log -</option>' + dates
                     .map((date) => `<option value="${escapeHtml(date)}">${escapeHtml(date)}</option>`)
                     .join('');
             } catch (error) {
-                dateSelect.innerHTML = '<option value="">- gagal memuat tanggal -</option>';
-                resultBox.innerHTML = `<div class="text-danger">${escapeHtml(error.message || 'Gagal memuat tanggal log.')}</div>`;
+                dateSelect.innerHTML = '<option value="">- gagal memuat file log -</option>';
+                resultBox.innerHTML = `<div class="text-danger">${escapeHtml(error.message || 'Gagal memuat file log.')}</div>`;
             }
         };
 
         const fetchLogsByDate = async (date) => {
             if (!date) {
-                resultBox.innerHTML = '<div class="text-muted">Pilih tanggal untuk melihat log error.</div>';
+                resultBox.innerHTML = '<div class="text-muted">Pilih file log untuk melihat isinya.</div>';
                 return;
             }
 
-            resultBox.innerHTML = '<div class="text-muted">Memuat log error...</div>';
+            resultBox.innerHTML = '<div class="text-muted">Memuat isi file log...</div>';
             try {
-                const response = await fetch(`<?= site_url('/admin/pengaturan/application/error-logs'); ?>?date=${encodeURIComponent(date)}`, {
+                const response = await fetch(`<?= site_url('/admin/pengaturan/application/error-logs'); ?>?file=${encodeURIComponent(date)}`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 });
                 const payload = await response.json();
                 if (!response.ok || payload.status !== 'ok') {
-                    throw new Error(payload.message || 'Gagal memuat log error.');
+                    throw new Error(payload.message || 'Gagal memuat isi file log.');
                 }
 
-                renderLogs(payload.data || []);
+                renderLogContent(payload.data || {});
             } catch (error) {
-                resultBox.innerHTML = `<div class="text-danger">${escapeHtml(error.message || 'Gagal memuat log error.')}</div>`;
+                resultBox.innerHTML = `<div class="text-danger">${escapeHtml(error.message || 'Gagal memuat isi file log.')}</div>`;
             }
         };
 
@@ -372,7 +381,7 @@
             };
 
             window.jQuery('#errorLogModalNavbar').on('show.bs.modal', () => {
-                resultBox.innerHTML = '<div class="text-muted">Pilih tanggal untuk melihat log error.</div>';
+                resultBox.innerHTML = '<div class="text-muted">Pilih file log untuk melihat isinya.</div>';
                 loadDates();
             });
 
@@ -381,7 +390,7 @@
             });
 
             window.jQuery('#errorLogModalNavbar').on('hidden.bs.modal', () => {
-                dateSelect.innerHTML = '<option value="">- pilih tanggal -</option>';
+                dateSelect.innerHTML = '<option value="">- pilih file log -</option>';
                 resultBox.innerHTML = '<div class="text-muted">Belum ada data ditampilkan.</div>';
             });
 

@@ -200,56 +200,44 @@ class Setting extends BaseController
             ]);
         }
 
-        $date = trim((string) $this->request->getGet('date'));
-        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        $fileName = trim((string) $this->request->getGet('file'));
+        if ($fileName === '') {
             return $this->response->setStatusCode(422)->setJSON([
                 'status' => 'error',
-                'message' => 'Tanggal log tidak valid.',
+                'message' => 'File log tidak valid.',
             ]);
         }
 
-        $logFile = WRITEPATH . 'logs/log-' . $date . '.php';
+        $availableFiles = $this->getAvailableErrorLogFiles(50);
+        if (! in_array($fileName, $availableFiles, true)) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status' => 'error',
+                'message' => 'File log tidak ditemukan.',
+            ]);
+        }
+
+        $logFile = WRITEPATH . 'logs/' . $fileName;
         if (! is_file($logFile)) {
             return $this->response->setJSON([
                 'status' => 'ok',
-                'data' => [],
+                'data' => [
+                    'file' => $fileName,
+                    'content' => '',
+                ],
             ]);
         }
 
-        $contents = @file_get_contents($logFile);
-        if (! is_string($contents) || trim($contents) === '') {
-            return $this->response->setJSON([
-                'status' => 'ok',
-                'data' => [],
-            ]);
-        }
-
-        $lines = preg_split('/\r\n|\r|\n/', $contents) ?: [];
-        $errors = [];
-        foreach ($lines as $line) {
-            if (strpos($line, 'ERROR - ') === false) {
-                continue;
-            }
-
-            if (preg_match('/ERROR\s-\s([^\s]+\s[^\s]+)\s-->\s(.+)/', $line, $matches)) {
-                $errors[] = [
-                    'time' => trim((string) ($matches[1] ?? '')),
-                    'message' => trim((string) ($matches[2] ?? '')),
-                ];
-                continue;
-            }
-
-            $errors[] = [
-                'time' => '-',
-                'message' => trim((string) $line),
-            ];
-        }
-
-        $errors = array_slice(array_reverse($errors), 0, 3);
+        $contentData = $this->readLogTailContent($logFile, 1000);
 
         return $this->response->setJSON([
             'status' => 'ok',
-            'data' => $errors,
+            'data' => [
+                'file' => $fileName,
+                'content' => $contentData['content'],
+                'isTruncated' => $contentData['isTruncated'],
+                'totalLines' => $contentData['totalLines'],
+                'displayedLines' => $contentData['displayedLines'],
+            ],
         ]);
     }
 
@@ -271,7 +259,7 @@ class Setting extends BaseController
 
         return $this->response->setJSON([
             'status' => 'ok',
-            'data' => $this->getAvailableErrorLogDates(),
+            'data' => $this->getAvailableErrorLogFiles(3),
         ]);
     }
 
@@ -877,24 +865,66 @@ class Setting extends BaseController
         return basename($logFiles[0]);
     }
 
-    private function getAvailableErrorLogDates(): array
+    private function getAvailableErrorLogFiles(int $limit = 3): array
     {
-        $logFiles = glob(WRITEPATH . 'logs/log-*.php') ?: [];
+        $logFiles = array_merge(
+            glob(WRITEPATH . 'logs/log-*.log') ?: [],
+            glob(WRITEPATH . 'logs/log-*.php') ?: []
+        );
+
         if ($logFiles === []) {
             return [];
         }
 
-        $dates = [];
+        usort($logFiles, static function (string $a, string $b): int {
+            return filemtime($b) <=> filemtime($a);
+        });
+
+        $files = [];
         foreach ($logFiles as $file) {
-            if (preg_match('/log-(\d{4}-\d{2}-\d{2})\.php$/', basename($file), $matches)) {
-                $dates[] = (string) $matches[1];
+            $base = basename($file);
+            if (preg_match('/^log-\d{4}-\d{2}-\d{2}\.(log|php)$/', $base) === 1) {
+                $files[] = $base;
             }
         }
 
-        $dates = array_values(array_unique($dates));
-        rsort($dates);
+        $files = array_values(array_unique($files));
+        if ($limit > 0) {
+            $files = array_slice($files, 0, $limit);
+        }
 
-        return $dates;
+        return $files;
+    }
+
+    private function readLogTailContent(string $filePath, int $maxLines = 1000): array
+    {
+        $contents = @file_get_contents($filePath);
+        if (! is_string($contents) || trim($contents) === '') {
+            return [
+                'content' => '',
+                'isTruncated' => false,
+                'totalLines' => 0,
+                'displayedLines' => 0,
+            ];
+        }
+
+        $lines = preg_split('/\r\n|\r|\n/', trim($contents)) ?: [];
+        $totalLines = count($lines);
+        $displayedLines = $totalLines;
+        $isTruncated = false;
+
+        if ($maxLines > 0 && $totalLines > $maxLines) {
+            $lines = array_slice($lines, -$maxLines);
+            $displayedLines = count($lines);
+            $isTruncated = true;
+        }
+
+        return [
+            'content' => implode(PHP_EOL, $lines),
+            'isTruncated' => $isTruncated,
+            'totalLines' => $totalLines,
+            'displayedLines' => $displayedLines,
+        ];
     }
 
     private function runShellCommand(string $command): array
