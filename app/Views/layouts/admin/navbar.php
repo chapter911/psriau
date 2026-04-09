@@ -35,7 +35,7 @@
 
             <li class="nav-item dropdown d-md-none">
                 <a class="nav-link dropdown-toggle text-dark font-weight-bold" href="#" id="opsToolsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-tools mr-1"></i> Ops Tools
+                    <i class="fas fa-tools mr-1"></i>
                 </a>
                 <div class="dropdown-menu" aria-labelledby="opsToolsDropdown">
                     <form action="<?= site_url('/admin/pengaturan/application/git-pull'); ?>" method="post" class="js-ops-tool-form mb-0" data-loading-text="Menjalankan Git Pull..." data-skip-confirm="1">
