@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="<?= base_url('assets/leaflet/leaflet.css'); ?>">
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Daftar Sekolah</h3>
@@ -244,7 +244,7 @@
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="<?= base_url('assets/leaflet/leaflet.js'); ?>"></script>
 <script>
     (function () {
         const modalEdit = document.getElementById('modal-ubah-sekolah');
@@ -262,9 +262,10 @@
             longitude: document.getElementById('edit_longitude'),
         };
 
-        modalEdit.addEventListener('show.bs.modal', function (event) {
-            const trigger = event.relatedTarget;
-            if (!trigger) return;
+        const applyEditData = (trigger) => {
+            if (!trigger) {
+                return;
+            }
 
             const originalNpsn = trigger.getAttribute('data-npsn') || '';
             form.action = '<?= site_url('/admin/master/sekolah'); ?>/' + encodeURIComponent(originalNpsn) + '/ubah';
@@ -276,6 +277,19 @@
             fields.kecamatan.value = trigger.getAttribute('data-kecamatan') || '';
             fields.latitude.value = trigger.getAttribute('data-latitude') || '';
             fields.longitude.value = trigger.getAttribute('data-longitude') || '';
+        };
+
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('button[data-target="#modal-ubah-sekolah"]');
+            if (!trigger) {
+                return;
+            }
+
+            applyEditData(trigger);
+        });
+
+        modalEdit.addEventListener('show.bs.modal', function (event) {
+            applyEditData(event.relatedTarget);
         });
     })();
 
@@ -373,6 +387,12 @@
             schoolSubtitle.textContent = 'NPSN ' + npsn;
             schoolCoordinates.textContent = 'Lat: ' + formatCoordinate(latitude) + ' | Lng: ' + formatCoordinate(longitude);
             renderMap(latitude, longitude, nama);
+        });
+
+        mapModal.addEventListener('shown.bs.modal', function () {
+            if (leafletMap) {
+                leafletMap.invalidateSize();
+            }
         });
 
         mapModal.addEventListener('hidden.bs.modal', function () {
