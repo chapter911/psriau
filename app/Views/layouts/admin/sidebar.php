@@ -6,7 +6,7 @@
         <?php else: ?>
             <span class="brand-fallback">SP</span>
         <?php endif; ?>
-        <span class="brand-text font-weight-light">Panel Admin</span>
+        <span class="brand-text font-weight-light">Prasarana Strategis</span>
     </a>
 
     <div class="sidebar">
