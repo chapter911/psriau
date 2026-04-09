@@ -210,8 +210,7 @@ $canEdit = (bool) ($can_edit ?? false);
         const editKabupaten = document.getElementById('edit_kode_kabupaten');
         const editNama = document.getElementById('edit_nama_kabupaten');
 
-        modalEdit.addEventListener('show.bs.modal', function (event) {
-            const trigger = event.relatedTarget;
+        const applyEditData = (trigger) => {
             if (!trigger) return;
 
             const oldProvinsi = trigger.getAttribute('data-kode-provinsi') || '';
@@ -221,6 +220,16 @@ $canEdit = (bool) ($can_edit ?? false);
             editKabupaten.value = oldKabupaten;
             editNama.value = trigger.getAttribute('data-nama-kabupaten') || '';
             form.action = <?= json_encode(site_url('/admin/master/kabupaten'), JSON_UNESCAPED_UNICODE); ?> + '/' + encodeURIComponent(oldProvinsi) + '/' + encodeURIComponent(oldKabupaten) + '/ubah';
+        };
+
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('button[data-target="#modal-ubah-kabupaten"]');
+            if (!trigger) return;
+            applyEditData(trigger);
+        });
+
+        modalEdit.addEventListener('show.bs.modal', function (event) {
+            applyEditData(event.relatedTarget);
         });
     })();
 </script>

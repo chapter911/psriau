@@ -358,6 +358,35 @@ $canEdit = (bool) ($can_edit ?? false);
         const editNamaKelurahan = document.getElementById('edit_nama_kelurahan');
         const editKategoriKonflik = document.getElementById('edit_kategori_konflik');
 
+        const applyEditData = (trigger) => {
+            if (!trigger) return;
+
+            const oldProvinsi = trigger.getAttribute('data-kode-provinsi') || '';
+            const oldKabupaten = trigger.getAttribute('data-kode-kabupaten') || '';
+            const oldKecamatan = trigger.getAttribute('data-kode-kecamatan') || '';
+            const oldKelurahan = trigger.getAttribute('data-kode-kelurahan') || '';
+
+            form.reset();
+            editProvinsi.value = oldProvinsi;
+            fillKabupatenSelect(editKabupaten, oldProvinsi, oldKabupaten);
+            fillKecamatanSelect(editKecamatan, oldProvinsi, oldKabupaten, oldKecamatan);
+            editKodeKelurahan.value = oldKelurahan;
+            editNamaKelurahan.value = trigger.getAttribute('data-nama-kelurahan') || '';
+            editKategoriKonflik.value = trigger.getAttribute('data-kategori-konflik') || '';
+
+            form.action = <?= json_encode(site_url('/admin/master/kelurahan'), JSON_UNESCAPED_UNICODE); ?> + '/' + encodeURIComponent(oldProvinsi)
+                + '/' + encodeURIComponent(oldKabupaten)
+                + '/' + encodeURIComponent(oldKecamatan)
+                + '/' + encodeURIComponent(oldKelurahan)
+                + '/ubah';
+        };
+
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('button[data-target="#modal-ubah-kelurahan"]');
+            if (!trigger) return;
+            applyEditData(trigger);
+        });
+
         if (editProvinsi && editKabupaten && editKecamatan) {
             editProvinsi.addEventListener('change', function () {
                 fillKabupatenSelect(editKabupaten, editProvinsi.value, '');
@@ -370,28 +399,7 @@ $canEdit = (bool) ($can_edit ?? false);
         }
 
         modalEdit.addEventListener('show.bs.modal', function (event) {
-            const trigger = event.relatedTarget;
-            if (!trigger) return;
-
-            const oldProvinsi = trigger.getAttribute('data-kode-provinsi') || '';
-            const oldKabupaten = trigger.getAttribute('data-kode-kabupaten') || '';
-            const oldKecamatan = trigger.getAttribute('data-kode-kecamatan') || '';
-            const oldKelurahan = trigger.getAttribute('data-kode-kelurahan') || '';
-
-            form.reset();
-            editProvinsi.value = oldProvinsi;
-            fillKabupatenSelect(editKabupaten, oldProvinsi, oldKabupaten);
-            fillKecamatanSelect(editKecamatan, oldProvinsi, oldKabupaten, oldKecamatan);
-
-            editKodeKelurahan.value = oldKelurahan;
-            editNamaKelurahan.value = trigger.getAttribute('data-nama-kelurahan') || '';
-            editKategoriKonflik.value = trigger.getAttribute('data-kategori-konflik') || '';
-
-            form.action = <?= json_encode(site_url('/admin/master/kelurahan'), JSON_UNESCAPED_UNICODE); ?> + '/' + encodeURIComponent(oldProvinsi)
-                + '/' + encodeURIComponent(oldKabupaten)
-                + '/' + encodeURIComponent(oldKecamatan)
-                + '/' + encodeURIComponent(oldKelurahan)
-                + '/ubah';
+            applyEditData(event.relatedTarget);
         });
     })();
 </script>

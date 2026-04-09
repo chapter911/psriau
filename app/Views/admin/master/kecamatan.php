@@ -288,14 +288,7 @@ $canEdit = (bool) ($can_edit ?? false);
         const editNamaKecamatan = document.getElementById('edit_nama_kecamatan');
         const editKategoriKonflik = document.getElementById('edit_kategori_konflik');
 
-        if (editProvinsi && editKabupaten) {
-            editProvinsi.addEventListener('change', function () {
-                fillKabupatenSelect(editKabupaten, editProvinsi.value, '');
-            });
-        }
-
-        modalEdit.addEventListener('show.bs.modal', function (event) {
-            const trigger = event.relatedTarget;
+        const applyEditData = (trigger) => {
             if (!trigger) return;
 
             const oldProvinsi = trigger.getAttribute('data-kode-provinsi') || '';
@@ -310,6 +303,22 @@ $canEdit = (bool) ($can_edit ?? false);
             editKategoriKonflik.value = trigger.getAttribute('data-kategori-konflik') || '';
 
             form.action = <?= json_encode(site_url('/admin/master/kecamatan'), JSON_UNESCAPED_UNICODE); ?> + '/' + encodeURIComponent(oldProvinsi) + '/' + encodeURIComponent(oldKabupaten) + '/' + encodeURIComponent(oldKecamatan) + '/ubah';
+        };
+
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('button[data-target="#modal-ubah-kecamatan"]');
+            if (!trigger) return;
+            applyEditData(trigger);
+        });
+
+        if (editProvinsi && editKabupaten) {
+            editProvinsi.addEventListener('change', function () {
+                fillKabupatenSelect(editKabupaten, editProvinsi.value, '');
+            });
+        }
+
+        modalEdit.addEventListener('show.bs.modal', function (event) {
+            applyEditData(event.relatedTarget);
         });
     })();
 </script>

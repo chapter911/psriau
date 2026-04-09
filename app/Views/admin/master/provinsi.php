@@ -122,8 +122,7 @@
         const editKode = document.getElementById('edit_kode_provinsi');
         const editNama = document.getElementById('edit_nama_provinsi');
 
-        modalEdit.addEventListener('show.bs.modal', function (event) {
-            const trigger = event.relatedTarget;
+        const applyEditData = (trigger) => {
             if (!trigger) return;
 
             const kode = trigger.getAttribute('data-kode') || '';
@@ -131,6 +130,16 @@
             editKode.value = kode;
             editNama.value = trigger.getAttribute('data-nama') || '';
             form.action = '<?= site_url('/admin/master/provinsi'); ?>/' + encodeURIComponent(kode) + '/ubah';
+        };
+
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('button[data-target="#modal-ubah-provinsi"]');
+            if (!trigger) return;
+            applyEditData(trigger);
+        });
+
+        modalEdit.addEventListener('show.bs.modal', function (event) {
+            applyEditData(event.relatedTarget);
         });
     })();
 </script>
