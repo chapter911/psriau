@@ -236,6 +236,9 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <a id="mapOpenGoogleBtn" class="btn btn-outline-primary" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">
+                    <i class="fas fa-map-marked-alt mr-1"></i> Buka Google Maps
+                </a>
                 <button type="button" class="btn btn-primary" data-dismiss="modal">Tutup</button>
             </div>
         </div>
@@ -268,6 +271,7 @@
     };
 
     const modalEl = document.getElementById('dashboardMapDetailModal');
+    const googleMapBtn = document.getElementById('mapOpenGoogleBtn');
     const detailFields = {
         npsn: document.getElementById('dtl_npsn'),
         nama: document.getElementById('dtl_nama'),
@@ -303,8 +307,18 @@
         });
     };
 
+    const clearScaleControls = () => {
+        const controls = mapElement.querySelectorAll('.leaflet-control-scale');
+        controls.forEach((el) => {
+            if (el && el.parentNode) {
+                el.parentNode.removeChild(el);
+            }
+        });
+    };
+
     const applyMapScript = (script) => {
         clearTileLayers();
+        clearScaleControls();
 
         const normalized = String(script || '').replace(/http:\/\//g, 'https://');
         let applied = false;
@@ -507,6 +521,22 @@
         setInputValue(detailFields.eksposTingkatKerusakan, surveyData.ekspos_tingkat_kerusakan);
         setInputValue(detailFields.eksposKlasifikasiKerusakan, surveyData.ekspos_klasifikasi_kerusakan);
         setInputValue(detailFields.eksposStatus, surveyData.ekspos_status);
+
+        if (googleMapBtn) {
+            const lat = Number(schoolData.latitude);
+            const lng = Number(schoolData.longitude);
+            if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                googleMapBtn.href = 'https://www.google.com/maps?q=' + encodeURIComponent(String(lat) + ',' + String(lng));
+                googleMapBtn.classList.remove('disabled');
+                googleMapBtn.setAttribute('aria-disabled', 'false');
+                googleMapBtn.removeAttribute('tabindex');
+            } else {
+                googleMapBtn.href = '#';
+                googleMapBtn.classList.add('disabled');
+                googleMapBtn.setAttribute('aria-disabled', 'true');
+                googleMapBtn.setAttribute('tabindex', '-1');
+            }
+        }
     };
 
     const showDetailModal = () => {
