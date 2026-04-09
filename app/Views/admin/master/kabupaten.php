@@ -216,6 +216,7 @@ $canEdit = (bool) ($can_edit ?? false);
 
             const oldProvinsi = trigger.getAttribute('data-kode-provinsi') || '';
             const oldKabupaten = trigger.getAttribute('data-kode-kabupaten') || '';
+            form.reset();
             editProvinsi.value = oldProvinsi;
             editKabupaten.value = oldKabupaten;
             editNama.value = trigger.getAttribute('data-nama-kabupaten') || '';

@@ -302,6 +302,7 @@ $canEdit = (bool) ($can_edit ?? false);
             const oldKabupaten = trigger.getAttribute('data-kode-kabupaten') || '';
             const oldKecamatan = trigger.getAttribute('data-kode-kecamatan') || '';
 
+            form.reset();
             editProvinsi.value = oldProvinsi;
             fillKabupatenSelect(editKabupaten, oldProvinsi, oldKabupaten);
             editKodeKecamatan.value = oldKecamatan;

@@ -127,6 +127,7 @@
             if (!trigger) return;
 
             const kode = trigger.getAttribute('data-kode') || '';
+            form.reset();
             editKode.value = kode;
             editNama.value = trigger.getAttribute('data-nama') || '';
             form.action = '<?= site_url('/admin/master/provinsi'); ?>/' + encodeURIComponent(kode) + '/ubah';
