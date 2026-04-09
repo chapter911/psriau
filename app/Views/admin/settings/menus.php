@@ -18,9 +18,6 @@
                 <button type="button" class="btn btn-outline-secondary" id="btnAddMenu" <?= empty($menu_access['edit']) ? 'disabled' : '' ?>>
                     <i class="fas fa-plus"></i> Tambah Menu
                 </button>
-                <button type="button" class="btn btn-primary" id="btnSaveMenu" <?= empty($menu_access['edit']) ? 'disabled' : '' ?>>
-                    <i class="fas fa-save"></i> Simpan Urutan
-                </button>
             </div>
         </div>
     </div>
@@ -134,6 +131,12 @@
             </ul>
         </div>
     </div>
+</div>
+
+<div class="floating-save-wrap">
+    <button type="button" class="btn btn-primary btn-lg floating-save-btn" id="btnSaveMenu" <?= empty($menu_access['edit']) ? 'disabled' : '' ?>>
+        <i class="fas fa-save"></i> Simpan Urutan
+    </button>
 </div>
 
 <div class="modal fade" id="iconModal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -263,6 +266,20 @@
         color: #516173;
     }
 
+    .floating-save-wrap {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 1050;
+    }
+
+    .floating-save-btn {
+        border-radius: 999px;
+        box-shadow: 0 10px 24px rgba(17, 24, 39, 0.22);
+        padding: 10px 18px;
+        font-weight: 600;
+    }
+
     .menu-tree {
         list-style: none;
         padding-left: 0;
@@ -373,6 +390,19 @@
 
     .sortable-ghost {
         opacity: 0.6;
+    }
+
+    @media (max-width: 767.98px) {
+        .floating-save-wrap {
+            right: 14px;
+            left: 14px;
+            bottom: 14px;
+        }
+
+        .floating-save-btn {
+            width: 100%;
+            border-radius: 12px;
+        }
     }
 </style>
 

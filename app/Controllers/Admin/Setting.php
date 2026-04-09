@@ -332,7 +332,7 @@ class Setting extends BaseController
 
     public function menusSave()
     {
-        if ((string) session('role') !== 'admin') {
+        if (! $this->canManageMenu()) {
             return $this->response->setStatusCode(403)->setJSON([
                 'status' => 'error',
                 'message' => 'Tidak memiliki akses untuk mengubah menu.',
