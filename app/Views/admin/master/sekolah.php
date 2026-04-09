@@ -329,6 +329,49 @@
             return 'https://www.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng);
         };
 
+        const showMapModal = () => {
+            if (window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+                const ModalCtor = window.bootstrap.Modal;
+
+                if (typeof ModalCtor.getOrCreateInstance === 'function') {
+                    ModalCtor.getOrCreateInstance(mapModal).show();
+                    return;
+                }
+
+                let instance = null;
+                if (typeof ModalCtor.getInstance === 'function') {
+                    instance = ModalCtor.getInstance(mapModal);
+                }
+                if (!instance) {
+                    instance = new ModalCtor(mapModal);
+                }
+                if (instance && typeof instance.show === 'function') {
+                    instance.show();
+                    return;
+                }
+            }
+
+            if (typeof $ !== 'undefined' && typeof $(mapModal).modal === 'function') {
+                $(mapModal).modal('show');
+            }
+        };
+
+        const applyMapDataFromTrigger = (trigger) => {
+            if (!trigger) {
+                return;
+            }
+
+            const nama = trigger.getAttribute('data-nama') || '-';
+            const npsn = trigger.getAttribute('data-npsn') || '-';
+            const latitude = trigger.getAttribute('data-latitude') || '';
+            const longitude = trigger.getAttribute('data-longitude') || '';
+
+            schoolName.textContent = nama;
+            schoolSubtitle.textContent = 'NPSN ' + npsn;
+            schoolCoordinates.textContent = 'Lat: ' + formatCoordinate(latitude) + ' | Lng: ' + formatCoordinate(longitude);
+            renderMap(latitude, longitude, nama);
+        };
+
         const renderMap = (latitude, longitude, label) => {
             const lat = Number(latitude);
             const lng = Number(longitude);
@@ -372,21 +415,23 @@
             googleMapButton.setAttribute('rel', 'noopener noreferrer');
         };
 
-        mapModal.addEventListener('show.bs.modal', function (event) {
-            const trigger = event.relatedTarget;
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('.js-open-map');
             if (!trigger) {
                 return;
             }
 
-            const nama = trigger.getAttribute('data-nama') || '-';
-            const npsn = trigger.getAttribute('data-npsn') || '-';
-            const latitude = trigger.getAttribute('data-latitude') || '';
-            const longitude = trigger.getAttribute('data-longitude') || '';
+            event.preventDefault();
+            applyMapDataFromTrigger(trigger);
+            showMapModal();
+        });
 
-            schoolName.textContent = nama;
-            schoolSubtitle.textContent = 'NPSN ' + npsn;
-            schoolCoordinates.textContent = 'Lat: ' + formatCoordinate(latitude) + ' | Lng: ' + formatCoordinate(longitude);
-            renderMap(latitude, longitude, nama);
+        mapModal.addEventListener('show.bs.modal', function (event) {
+            if (!event.relatedTarget) {
+                return;
+            }
+
+            applyMapDataFromTrigger(event.relatedTarget);
         });
 
         mapModal.addEventListener('shown.bs.modal', function () {
