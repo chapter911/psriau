@@ -14,14 +14,14 @@
                 <span class="nav-link text-dark font-weight-bold pr-2 mb-0" style="cursor: default;">
                     <i class="fas fa-tools mr-1"></i> Ops Tools
                 </span>
-                <form action="<?= site_url('/admin/pengaturan/application/git-pull'); ?>" method="post" class="mr-1 mb-0">
+                <form action="<?= site_url('/admin/pengaturan/application/git-pull'); ?>" method="post" class="mr-1 mb-0 js-ops-tool-form" data-loading-text="Menjalankan Git Pull...">
                     <?= csrf_field(); ?>
                     <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
                     <button type="submit" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-code-branch mr-1"></i> Git Pull
                     </button>
                 </form>
-                <form action="<?= site_url('/admin/pengaturan/application/merge-database'); ?>" method="post" class="mr-1 mb-0">
+                <form action="<?= site_url('/admin/pengaturan/application/merge-database'); ?>" method="post" class="mr-1 mb-0 js-ops-tool-form" data-loading-text="Menjalankan Merge Database...">
                     <?= csrf_field(); ?>
                     <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
                     <button type="submit" class="btn btn-sm btn-outline-primary">
@@ -253,6 +253,34 @@
     document.addEventListener('DOMContentLoaded', () => {
         const dateSelect = document.getElementById('navbarErrorLogDate');
         const resultBox = document.getElementById('navbarErrorLogResult');
+
+        const opsForms = document.querySelectorAll('form.js-ops-tool-form');
+        if (opsForms.length > 0) {
+            opsForms.forEach((form) => {
+                form.addEventListener('submit', () => {
+                    if (form.dataset.submitting === '1') {
+                        return;
+                    }
+
+                    form.dataset.submitting = '1';
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Mohon Tunggu',
+                            text: form.getAttribute('data-loading-text') || 'Memproses perintah...',
+                            allowOutsideClick: false,
+                            showConfirmButton: false,
+                            didOpen: () => Swal.showLoading(),
+                        });
+                    }
+                });
+            });
+        }
+
         if (!dateSelect || !resultBox) {
             return;
         }
