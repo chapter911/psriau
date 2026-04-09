@@ -6,6 +6,8 @@ use App\Controllers\BaseController;
 use App\Models\ArticleModel;
 use App\Models\EventModel;
 use App\Models\HomeSlideModel;
+use App\Models\AuditHistoryModel;
+use App\Models\LoginHistoryModel;
 
 class Dashboard extends BaseController
 {
@@ -13,10 +15,12 @@ class Dashboard extends BaseController
 
     public function index(): string
     {
+        $db = db_connect();
         $eventModel   = new EventModel();
         $articleModel = new ArticleModel();
         $slideModel   = new HomeSlideModel();
 
+        // Content Statistics
         $eventCount = $eventModel->countAllResults();
         $eventPublishedCount = (new EventModel())->where('is_published', 1)->countAllResults();
         $eventDraftCount = max(0, $eventCount - $eventPublishedCount);
@@ -28,6 +32,41 @@ class Dashboard extends BaseController
         $slideCount = $slideModel->countAllResults();
         $slideActiveCount = (new HomeSlideModel())->where('is_active', 1)->countAllResults();
 
+        // School Statistics
+        $schoolCount = 0;
+        $schoolWithSurvey = 0;
+        $damageClassification = [];
+        if ($db->tableExists('mst_sekolah')) {
+            $schoolCount = $db->table('mst_sekolah')->countAllResults();
+            
+            if ($db->tableExists('trn_survey_sekolah')) {
+                $schoolWithSurvey = $db->table('mst_sekolah')
+                    ->join('trn_survey_sekolah', 'mst_sekolah.id = trn_survey_sekolah.sekolah_id', 'inner')
+                    ->select('DISTINCT mst_sekolah.id')
+                    ->countAllResults();
+
+                $damageClassification = $db->table('trn_survey_sekolah')
+                    ->select('survey_klasifikasi_kerusakan, COUNT(*) as count')
+                    ->where('survey_klasifikasi_kerusakan IS NOT NULL', null, false)
+                    ->where('survey_klasifikasi_kerusakan !=', '')
+                    ->groupBy('survey_klasifikasi_kerusakan')
+                    ->orderBy('count', 'DESC')
+                    ->get()
+                    ->getResultArray();
+            }
+        }
+
+        // Report Statistics
+        $harianReportCount = 0;
+        $mingguanReportCount = 0;
+        if ($db->tableExists('trn_laporan_harian')) {
+            $harianReportCount = $db->table('trn_laporan_harian')->countAllResults();
+        }
+        if ($db->tableExists('trn_laporan_mingguan')) {
+            $mingguanReportCount = $db->table('trn_laporan_mingguan')->countAllResults();
+        }
+
+        // Latest Activities
         $latestEvents = (new EventModel())
             ->select('title, event_date, is_published')
             ->orderBy('updated_at', 'DESC')
@@ -38,8 +77,39 @@ class Dashboard extends BaseController
             ->orderBy('updated_at', 'DESC')
             ->findAll(5);
 
+        $latestAudit = [];
+        if ($db->tableExists('audit_histories')) {
+            $latestAudit = $db->table('audit_histories')
+                ->select('action, description, created_at, created_by')
+                ->orderBy('created_at', 'DESC')
+                ->limit(8)
+                ->get()
+                ->getResultArray();
+        }
+
+        $latestLogins = [];
+        if ($db->tableExists('login_histories')) {
+            $latestLogins = $db->table('login_histories')
+                ->select('user_id, login_time')
+                ->orderBy('login_time', 'DESC')
+                ->limit(5)
+                ->get()
+                ->getResultArray();
+        }
+
+        // Wilayah Statistics
+        $kabupatenCount = 0;
+        $kecamatanCount = 0;
+        if ($db->tableExists('mst_kabupaten')) {
+            $kabupatenCount = $db->table('mst_kabupaten')->countAllResults();
+        }
+        if ($db->tableExists('mst_kecamatan')) {
+            $kecamatanCount = $db->table('mst_kecamatan')->countAllResults();
+        }
+
         return view('admin/dashboard', [
             'pageTitle' => 'Dashboard Admin',
+            // Content
             'eventCount' => $eventCount,
             'eventPublishedCount' => $eventPublishedCount,
             'eventDraftCount' => $eventDraftCount,
@@ -48,8 +118,21 @@ class Dashboard extends BaseController
             'articleDraftCount' => $articleDraftCount,
             'slideCount' => $slideCount,
             'slideActiveCount' => $slideActiveCount,
+            // Schools
+            'schoolCount' => $schoolCount,
+            'schoolWithSurvey' => $schoolWithSurvey,
+            'damageClassification' => $damageClassification,
+            // Reports
+            'harianReportCount' => $harianReportCount,
+            'mingguanReportCount' => $mingguanReportCount,
+            // Activities
             'latestEvents' => $latestEvents,
             'latestInstagramPosts' => $latestInstagramPosts,
+            'latestAudit' => $latestAudit,
+            'latestLogins' => $latestLogins,
+            // Wilayah
+            'kabupatenCount' => $kabupatenCount,
+            'kecamatanCount' => $kecamatanCount,
         ]);
     }
 
