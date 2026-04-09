@@ -41,8 +41,8 @@ class Dashboard extends BaseController
             
             if ($db->tableExists('trn_survey_sekolah')) {
                 $schoolWithSurvey = $db->table('mst_sekolah')
-                    ->join('trn_survey_sekolah', 'mst_sekolah.id = trn_survey_sekolah.sekolah_id', 'inner')
-                    ->select('DISTINCT mst_sekolah.id')
+                    ->join('trn_survey_sekolah', 'mst_sekolah.npsn = trn_survey_sekolah.npsn', 'inner')
+                    ->select('DISTINCT mst_sekolah.npsn')
                     ->countAllResults();
 
                 $damageClassification = $db->table('trn_survey_sekolah')
