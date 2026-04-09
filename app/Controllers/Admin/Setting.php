@@ -325,7 +325,7 @@ class Setting extends BaseController
             'lv3_by_parent' => $menuLv3ByHeader,
             'lv2' => $menuLv2,
             'menu_access' => [
-                'edit' => (string) session('role') === 'admin',
+                'edit' => $this->canManageMenu(),
             ],
         ]);
     }
@@ -666,7 +666,9 @@ class Setting extends BaseController
 
     private function canManageMenu(): bool
     {
-        return (string) session('role') === 'admin';
+        $role = strtolower(trim((string) session('role')));
+
+        return in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
     }
 
     private function canAccessProductionUtilities(): bool
