@@ -408,39 +408,53 @@ class MasterWilayah extends BaseController
 
     private function respondDataTable(callable $queryFactory, callable $filterApplier, array $searchColumns, array $orderColumns, ?callable $rowMapper = null)
     {
-        $draw = $this->getDataTableDraw();
-        $start = $this->getDataTableStart();
-        $length = $this->getDataTableLength();
-        $search = $this->getDataTableSearchTerm();
-        $orderIndex = $this->getDataTableOrderColumnIndex();
-        $orderDirection = $this->getDataTableOrderDirection();
+        try {
+            $draw = $this->getDataTableDraw();
+            $start = $this->getDataTableStart();
+            $length = $this->getDataTableLength();
+            $search = $this->getDataTableSearchTerm();
+            $orderIndex = $this->getDataTableOrderColumnIndex();
+            $orderDirection = $this->getDataTableOrderDirection();
 
-        $totalBuilder = $queryFactory();
-        $filterApplier($totalBuilder);
-        $recordsTotal = (int) $totalBuilder->countAllResults(false);
+            $totalBuilder = $queryFactory();
+            $filterApplier($totalBuilder);
+            $recordsTotal = (int) $totalBuilder->countAllResults(false);
 
-        $filteredBuilder = $queryFactory();
-        $filterApplier($filteredBuilder);
-        $this->applyDataTableSearch($filteredBuilder, $searchColumns, $search);
-        $recordsFiltered = (int) $filteredBuilder->countAllResults(false);
+            $filteredBuilder = $queryFactory();
+            $filterApplier($filteredBuilder);
+            $this->applyDataTableSearch($filteredBuilder, $searchColumns, $search);
+            $recordsFiltered = (int) $filteredBuilder->countAllResults(false);
 
-        $orderColumn = $orderColumns[$orderIndex] ?? $orderColumns[0] ?? '';
-        if ($orderColumn !== '') {
-            $filteredBuilder->orderBy($orderColumn, $orderDirection);
+            $orderColumn = $orderColumns[$orderIndex] ?? $orderColumns[0] ?? '';
+            if ($orderColumn !== '') {
+                $filteredBuilder->orderBy($orderColumn, $orderDirection);
+            }
+
+            $rows = $filteredBuilder->limit($length, $start)->get()->getResultArray();
+
+            if ($rowMapper !== null) {
+                $rows = array_map($rowMapper, $rows);
+            }
+
+            return $this->response->setJSON([
+                'draw' => $draw,
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $rows,
+            ]);
+        } catch (\Throwable $exception) {
+            log_message('error', 'DataTable master wilayah gagal dimuat: {message}', [
+                'message' => $exception->getMessage(),
+            ]);
+
+            return $this->response->setJSON([
+                'draw' => $this->getDataTableDraw(),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => 'Gagal memuat data wilayah.',
+            ]);
         }
-
-        $rows = $filteredBuilder->limit($length, $start)->get()->getResultArray();
-
-        if ($rowMapper !== null) {
-            $rows = array_map($rowMapper, $rows);
-        }
-
-        return $this->response->setJSON([
-            'draw' => $draw,
-            'recordsTotal' => $recordsTotal,
-            'recordsFiltered' => $recordsFiltered,
-            'data' => $rows,
-        ]);
     }
 
     private function applyDataTableSearch($builder, array $columns, string $searchTerm): void
