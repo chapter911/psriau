@@ -12,7 +12,7 @@
         <?php if ($canUseProductionUtilities): ?>
             <li class="nav-item d-none d-md-flex align-items-center flex-wrap py-1">
                 <span class="nav-link text-dark font-weight-bold pr-2 mb-0" style="cursor: default;">
-                    <i class="fas fa-tools mr-1"></i> Ops Tools
+                    <i class="fas fa-tools mr-1"></i>
                 </span>
                 <form action="<?= site_url('/admin/pengaturan/application/git-pull'); ?>" method="post" class="mr-1 mb-0 js-ops-tool-form" data-loading-text="Menjalankan Git Pull..." data-skip-confirm="1">
                     <?= csrf_field(); ?>
