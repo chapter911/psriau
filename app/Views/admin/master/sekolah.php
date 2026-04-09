@@ -311,11 +311,23 @@
         const schoolCoordinates = document.getElementById('map-school-coordinates');
         const googleMapButton = document.getElementById('btn-open-google-maps');
         const mapTypeSelect = document.getElementById('schoolMapType');
+        const jqModal = (typeof $ !== 'undefined' && typeof $(mapModal).on === 'function') ? $(mapModal) : null;
         const defaultCenter = [-0.51544, 101.44415];
         const defaultZoom = 8;
         let leafletMap = null;
         let marker = null;
         let pendingLocation = null;
+
+        const onModalEvent = (eventName, handler) => {
+            if (jqModal) {
+                jqModal.on(eventName, function (event) {
+                    handler(event);
+                });
+                return;
+            }
+
+            mapModal.addEventListener(eventName, handler);
+        };
 
         const clearTileLayers = () => {
             if (!leafletMap) {
@@ -503,6 +515,13 @@
             event.preventDefault();
             applyMapDataFromTrigger(trigger);
             showMapModal();
+
+            // Fallback for Bootstrap variants where shown.bs.modal may not propagate to native listeners.
+            window.setTimeout(() => {
+                if (pendingLocation) {
+                    renderMap(pendingLocation.latitude, pendingLocation.longitude, pendingLocation.label);
+                }
+            }, 180);
         });
 
         if (mapTypeSelect) {
@@ -515,7 +534,7 @@
             });
         }
 
-        mapModal.addEventListener('show.bs.modal', function (event) {
+        onModalEvent('show.bs.modal', function (event) {
             if (!event.relatedTarget) {
                 return;
             }
@@ -523,7 +542,7 @@
             applyMapDataFromTrigger(event.relatedTarget);
         });
 
-        mapModal.addEventListener('shown.bs.modal', function () {
+        onModalEvent('shown.bs.modal', function () {
             if (pendingLocation) {
                 renderMap(pendingLocation.latitude, pendingLocation.longitude, pendingLocation.label);
             }
@@ -535,14 +554,14 @@
             }
         });
 
-        mapModal.addEventListener('hide.bs.modal', function () {
+        onModalEvent('hide.bs.modal', function () {
             const active = document.activeElement;
             if (active && typeof active.blur === 'function') {
                 active.blur();
             }
         });
 
-        mapModal.addEventListener('hidden.bs.modal', function () {
+        onModalEvent('hidden.bs.modal', function () {
             if (marker) {
                 marker.remove();
                 marker = null;
