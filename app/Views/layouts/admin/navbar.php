@@ -10,7 +10,7 @@
             <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
         </li>
         <?php if ($canUseProductionUtilities): ?>
-            <li class="nav-item d-flex align-items-center flex-wrap py-1">
+            <li class="nav-item d-none d-md-flex align-items-center flex-wrap py-1">
                 <span class="nav-link text-dark font-weight-bold pr-2 mb-0" style="cursor: default;">
                     <i class="fas fa-tools mr-1"></i> Ops Tools
                 </span>
@@ -31,6 +31,31 @@
                 <button type="button" class="btn btn-sm btn-outline-warning mb-0" data-toggle="modal" data-target="#errorLogModalNavbar">
                     <i class="fas fa-triangle-exclamation mr-1"></i> Lihat Log Error
                 </button>
+            </li>
+
+            <li class="nav-item dropdown d-md-none">
+                <a class="nav-link dropdown-toggle text-dark font-weight-bold" href="#" id="opsToolsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-tools mr-1"></i> Ops Tools
+                </a>
+                <div class="dropdown-menu" aria-labelledby="opsToolsDropdown">
+                    <form action="<?= site_url('/admin/pengaturan/application/git-pull'); ?>" method="post" class="js-ops-tool-form mb-0" data-loading-text="Menjalankan Git Pull..." data-skip-confirm="1">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
+                        <button type="submit" class="dropdown-item">
+                            <i class="fas fa-code-branch mr-2 text-primary"></i> Git Pull
+                        </button>
+                    </form>
+                    <form action="<?= site_url('/admin/pengaturan/application/merge-database'); ?>" method="post" class="js-ops-tool-form mb-0" data-loading-text="Menjalankan Merge Database..." data-skip-confirm="1">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
+                        <button type="submit" class="dropdown-item">
+                            <i class="fas fa-database mr-2 text-primary"></i> Merge Database
+                        </button>
+                    </form>
+                    <button type="button" class="dropdown-item text-warning" data-toggle="modal" data-target="#errorLogModalNavbar">
+                        <i class="fas fa-triangle-exclamation mr-2"></i> Lihat Log Error
+                    </button>
+                </div>
             </li>
         <?php endif; ?>
     </ul>
