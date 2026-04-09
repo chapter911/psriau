@@ -37,22 +37,34 @@ class Dashboard extends BaseController
         $schoolWithSurvey = 0;
         $damageClassification = [];
         if ($db->tableExists('mst_sekolah')) {
-            $schoolCount = $db->table('mst_sekolah')->countAllResults();
+            try {
+                $schoolCount = (int) $db->table('mst_sekolah')->countAllResults();
+            } catch (\Throwable $e) {
+                $schoolCount = 0;
+            }
             
             if ($db->tableExists('trn_survey_sekolah')) {
-                $schoolWithSurvey = $db->table('mst_sekolah')
-                    ->join('trn_survey_sekolah', 'mst_sekolah.npsn = trn_survey_sekolah.npsn', 'inner')
-                    ->select('DISTINCT mst_sekolah.npsn')
-                    ->countAllResults();
+                try {
+                    $schoolWithSurvey = (int) $db->table('mst_sekolah')
+                        ->join('trn_survey_sekolah', 'mst_sekolah.npsn = trn_survey_sekolah.npsn', 'inner')
+                        ->select('DISTINCT mst_sekolah.npsn')
+                        ->countAllResults();
+                } catch (\Throwable $e) {
+                    $schoolWithSurvey = 0;
+                }
 
-                $damageClassification = $db->table('trn_survey_sekolah')
-                    ->select('survey_klasifikasi_kerusakan, COUNT(*) as count')
-                    ->where('survey_klasifikasi_kerusakan IS NOT NULL', null, false)
-                    ->where('survey_klasifikasi_kerusakan !=', '')
-                    ->groupBy('survey_klasifikasi_kerusakan')
-                    ->orderBy('count', 'DESC')
-                    ->get()
-                    ->getResultArray();
+                try {
+                    $damageClassification = $db->table('trn_survey_sekolah')
+                        ->select('survey_klasifikasi_kerusakan, COUNT(*) as count')
+                        ->where('survey_klasifikasi_kerusakan IS NOT NULL', null, false)
+                        ->where('survey_klasifikasi_kerusakan !=', '')
+                        ->groupBy('survey_klasifikasi_kerusakan')
+                        ->orderBy('count', 'DESC')
+                        ->get()
+                        ->getResultArray() ?? [];
+                } catch (\Throwable $e) {
+                    $damageClassification = [];
+                }
             }
         }
 
@@ -60,10 +72,18 @@ class Dashboard extends BaseController
         $harianReportCount = 0;
         $mingguanReportCount = 0;
         if ($db->tableExists('trn_laporan_harian')) {
-            $harianReportCount = $db->table('trn_laporan_harian')->countAllResults();
+            try {
+                $harianReportCount = (int) $db->table('trn_laporan_harian')->countAllResults();
+            } catch (\Throwable $e) {
+                $harianReportCount = 0;
+            }
         }
         if ($db->tableExists('trn_laporan_mingguan')) {
-            $mingguanReportCount = $db->table('trn_laporan_mingguan')->countAllResults();
+            try {
+                $mingguanReportCount = (int) $db->table('trn_laporan_mingguan')->countAllResults();
+            } catch (\Throwable $e) {
+                $mingguanReportCount = 0;
+            }
         }
 
         // Latest Activities
@@ -79,32 +99,50 @@ class Dashboard extends BaseController
 
         $latestAudit = [];
         if ($db->tableExists('audit_histories')) {
-            $latestAudit = $db->table('audit_histories')
-                ->select('action_type, module_path, happened_at, username')
-                ->orderBy('happened_at', 'DESC')
-                ->limit(8)
-                ->get()
-                ->getResultArray();
+            try {
+                $latestAudit = $db->table('audit_histories')
+                    ->select('action_type, module_path, happened_at, username')
+                    ->orderBy('happened_at', 'DESC')
+                    ->limit(8)
+                    ->get()
+                    ->getResultArray() ?? [];
+            } catch (\Throwable $e) {
+                // Silently fail, audit history is optional
+                $latestAudit = [];
+            }
         }
 
         $latestLogins = [];
         if ($db->tableExists('login_histories')) {
-            $latestLogins = $db->table('login_histories')
-                ->select('user_id, login_time')
-                ->orderBy('login_time', 'DESC')
-                ->limit(5)
-                ->get()
-                ->getResultArray();
+            try {
+                $latestLogins = $db->table('login_histories')
+                    ->select('user_id, login_time')
+                    ->orderBy('login_time', 'DESC')
+                    ->limit(5)
+                    ->get()
+                    ->getResultArray() ?? [];
+            } catch (\Throwable $e) {
+                // Silently fail, login history is optional
+                $latestLogins = [];
+            }
         }
 
         // Wilayah Statistics
         $kabupatenCount = 0;
         $kecamatanCount = 0;
         if ($db->tableExists('mst_kabupaten')) {
-            $kabupatenCount = $db->table('mst_kabupaten')->countAllResults();
+            try {
+                $kabupatenCount = (int) $db->table('mst_kabupaten')->countAllResults();
+            } catch (\Throwable $e) {
+                $kabupatenCount = 0;
+            }
         }
         if ($db->tableExists('mst_kecamatan')) {
-            $kecamatanCount = $db->table('mst_kecamatan')->countAllResults();
+            try {
+                $kecamatanCount = (int) $db->table('mst_kecamatan')->countAllResults();
+            } catch (\Throwable $e) {
+                $kecamatanCount = 0;
+            }
         }
 
         return view('admin/dashboard', [
