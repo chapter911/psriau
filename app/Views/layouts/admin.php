@@ -18,6 +18,9 @@
         <link rel="icon" type="image/png" href="<?= esc($globalSetting['logo_url']); ?>">
         <link rel="apple-touch-icon" href="<?= esc($globalSetting['logo_url']); ?>">
     <?php endif; ?>
+    <script>
+        window.__appPreloaderStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    </script>
     <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/fontawesome-free/css/all.min.css'); ?>">
     <link rel="stylesheet" href="<?= base_url('assets/adminlte/dist/css/adminlte.min.css'); ?>">
     <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css'); ?>">
@@ -258,7 +261,7 @@
         }
     </style>
 </head>
-<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed" data-preloader-duration="<?= (int) ($appSetting['preloader_duration_ms'] ?? 500); ?>">
 <div class="wrapper">
     <div class="preloader flex-column justify-content-center align-items-center">
         <div class="app-preloader-brand animation__shake">

@@ -8,8 +8,10 @@
 <script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
 <script>
     (() => {
-        const preloaderShownAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
-        const minimumVisibleMs = <?= (int) ($appSetting['preloader_duration_ms'] ?? 500); ?>;
+        const preloaderShownAt = typeof window.__appPreloaderStart === 'number'
+            ? window.__appPreloaderStart
+            : (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        const minimumVisibleMs = Number(document.body?.dataset.preloaderDuration || <?= (int) ($appSetting['preloader_duration_ms'] ?? 500); ?>);
 
         window.addEventListener('load', () => {
             const preloader = document.querySelector('.preloader');

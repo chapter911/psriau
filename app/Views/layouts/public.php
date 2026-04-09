@@ -21,9 +21,12 @@
         <link rel="icon" type="image/png" href="<?= esc($globalSetting['logo_url']); ?>">
         <link rel="apple-touch-icon" href="<?= esc($globalSetting['logo_url']); ?>">
     <?php endif; ?>
+    <script>
+        window.__appPreloaderStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    </script>
     <link rel="stylesheet" href="<?= base_url('assets/css/site.css'); ?>">
 </head>
-<body>
+<body data-preloader-duration="<?= (int) ($appSetting['preloader_duration_ms'] ?? 500); ?>">
 <?php
     $preloaderName = trim((string) ($appSetting['app_name'] ?? $globalSetting['official_name'] ?? 'Aplikasi'));
     $preloaderLogo = trim((string) ($globalSetting['logo_url'] ?? ''));
@@ -152,8 +155,10 @@
 <script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
 <script>
     (() => {
-        const preloaderShownAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
-        const minimumVisibleMs = <?= (int) ($appSetting['preloader_duration_ms'] ?? 500); ?>;
+        const preloaderShownAt = typeof window.__appPreloaderStart === 'number'
+            ? window.__appPreloaderStart
+            : (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        const minimumVisibleMs = Number(document.body?.dataset.preloaderDuration || <?= (int) ($appSetting['preloader_duration_ms'] ?? 500); ?>);
 
         window.addEventListener('load', () => {
             const preloader = document.getElementById('appPreloader');
