@@ -515,12 +515,28 @@
         }
 
         if (window.bootstrap && typeof window.bootstrap.Modal === 'function') {
-            const instance = window.bootstrap.Modal.getOrCreateInstance(modalEl);
-            instance.show();
-            return;
+            const ModalCtor = window.bootstrap.Modal;
+
+            if (typeof ModalCtor.getOrCreateInstance === 'function') {
+                const instance = ModalCtor.getOrCreateInstance(modalEl);
+                instance.show();
+                return;
+            }
+
+            let instance = null;
+            if (typeof ModalCtor.getInstance === 'function') {
+                instance = ModalCtor.getInstance(modalEl);
+            }
+            if (!instance) {
+                instance = new ModalCtor(modalEl);
+            }
+            if (instance && typeof instance.show === 'function') {
+                instance.show();
+                return;
+            }
         }
 
-        if (typeof $ !== 'undefined') {
+        if (typeof $ !== 'undefined' && typeof $(modalEl).modal === 'function') {
             $(modalEl).modal('show');
         }
     };
