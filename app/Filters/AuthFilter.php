@@ -13,8 +13,12 @@ class AuthFilter implements FilterInterface
 
     public function before(RequestInterface $request, $arguments = null)
     {
+        $isDataTableRequest = $this->isDataTableRequest($request);
+
         if (! session()->get('isLoggedIn')) {
-            return redirect()->to('/masuk')->with('error', 'Silakan masuk terlebih dahulu.');
+            return $isDataTableRequest
+                ? $this->jsonTableError($request, 'Silakan masuk terlebih dahulu.')
+                : redirect()->to('/masuk')->with('error', 'Silakan masuk terlebih dahulu.');
         }
 
         $allowedRoles = [];
@@ -34,17 +38,23 @@ class AuthFilter implements FilterInterface
         if ($allowedRoles !== []) {
             $effectiveAllowedRoles = $this->expandAllowedRoles($allowedRoles);
             if (! in_array($userRole, $effectiveAllowedRoles, true)) {
-                return redirect()->to($this->forbiddenUrl($request));
+                return $isDataTableRequest
+                    ? $this->jsonTableError($request, 'Anda tidak memiliki akses ke data ini.')
+                    : redirect()->to($this->forbiddenUrl($request));
             }
         }
 
         $path = trim((string) $request->getUri()->getPath(), '/');
         if (strpos($path, 'admin') === 0 && ! $this->canAccessMenuManagedPath($path, $userRole)) {
-            return redirect()->to($this->forbiddenUrl($request));
+            return $isDataTableRequest
+                ? $this->jsonTableError($request, 'Anda tidak memiliki akses ke data ini.')
+                : redirect()->to($this->forbiddenUrl($request));
         }
 
         if (strpos($path, 'admin') === 0 && ! $this->canAccessFeatureByRequest($request, $path, $userRole)) {
-            return redirect()->to($this->forbiddenUrl($request));
+            return $isDataTableRequest
+                ? $this->jsonTableError($request, 'Anda tidak memiliki akses ke data ini.')
+                : redirect()->to($this->forbiddenUrl($request));
         }
 
         $this->prepareAuditContext($request, $userRole);
@@ -260,6 +270,26 @@ class AuthFilter implements FilterInterface
     {
         $path = trim((string) $request->getUri()->getPath(), '/');
         return '/forbidden?from=' . rawurlencode($path);
+    }
+
+    private function isDataTableRequest(RequestInterface $request): bool
+    {
+        return $request->getGet('draw') !== null
+            && $request->getGet('start') !== null
+            && $request->getGet('length') !== null;
+    }
+
+    private function jsonTableError(RequestInterface $request, string $message): ResponseInterface
+    {
+        $draw = (int) $request->getGet('draw');
+
+        return service('response')->setJSON([
+            'draw' => $draw > 0 ? $draw : 0,
+            'recordsTotal' => 0,
+            'recordsFiltered' => 0,
+            'data' => [],
+            'error' => $message,
+        ]);
     }
 
     private function prepareAuditContext(RequestInterface $request, string $role): void
