@@ -217,6 +217,7 @@
 
     const map = L.map('dashboardMapBox').setView([-0.51544, 101.44415], 8);
     const markerLayer = L.layerGroup().addTo(map);
+    const boundaryLayer = L.layerGroup().addTo(map);
     let mapScript = '';
     const markerIconCache = new Map();
 
@@ -248,6 +249,65 @@
             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
+        }
+    };
+
+    const loadRiauBoundary = async () => {
+        const candidates = [
+            '<?= base_url('geojson/provinsi_riau.json'); ?>',
+            '<?= base_url('geojson/kabupaten.json'); ?>'
+        ];
+
+        for (const url of candidates) {
+            try {
+                const response = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+                if (!response.ok) {
+                    continue;
+                }
+
+                const geojson = await response.json();
+                if (!geojson || !Array.isArray(geojson.features)) {
+                    continue;
+                }
+
+                const sourceFeatures = geojson.features;
+                const riauFeatures = sourceFeatures.filter((feature) => {
+                    const props = feature && feature.properties ? feature.properties : {};
+                    return String(props.WADMPR || '').trim().toLowerCase() === 'riau';
+                });
+
+                const features = riauFeatures.length > 0 ? riauFeatures : sourceFeatures;
+                if (features.length === 0) {
+                    continue;
+                }
+
+                const layer = L.geoJSON({ type: 'FeatureCollection', features }, {
+                    style: {
+                        color: '#2563eb',
+                        weight: 1.8,
+                        fillColor: '#93c5fd',
+                        fillOpacity: 0.08,
+                    },
+                    onEachFeature: (feature, featureLayer) => {
+                        const props = feature && feature.properties ? feature.properties : {};
+                        const tooltipText = String(props.WADMKK || props.NAMOBJ || '').trim();
+                        if (tooltipText !== '') {
+                            featureLayer.bindTooltip(tooltipText);
+                        }
+                    }
+                });
+
+                boundaryLayer.clearLayers();
+                layer.addTo(boundaryLayer);
+                boundaryLayer.eachLayer((item) => {
+                    if (item && typeof item.bringToBack === 'function') {
+                        item.bringToBack();
+                    }
+                });
+                return;
+            } catch (error) {
+                // Try next candidate source.
+            }
         }
     };
 
@@ -480,6 +540,7 @@
     });
 
     applyMapScript(mapScript);
+    loadRiauBoundary();
     loadKecamatanOptions(inputs.kabupaten.value, '*').then(loadMapData);
 })();
 </script>
