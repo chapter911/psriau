@@ -97,54 +97,6 @@ class Dashboard extends BaseController
             ->orderBy('updated_at', 'DESC')
             ->findAll(5);
 
-        $latestAudit = [];
-        if ($db->tableExists('audit_histories')) {
-            try {
-                $latestAudit = $db->table('audit_histories')
-                    ->select('action_type, module_path, happened_at, username')
-                    ->orderBy('happened_at', 'DESC')
-                    ->limit(8)
-                    ->get()
-                    ->getResultArray() ?? [];
-            } catch (\Throwable $e) {
-                // Silently fail, audit history is optional
-                $latestAudit = [];
-            }
-        }
-
-        $latestLogins = [];
-        if ($db->tableExists('login_histories')) {
-            try {
-                $latestLogins = $db->table('login_histories')
-                    ->select('user_id, login_time')
-                    ->orderBy('login_time', 'DESC')
-                    ->limit(5)
-                    ->get()
-                    ->getResultArray() ?? [];
-            } catch (\Throwable $e) {
-                // Silently fail, login history is optional
-                $latestLogins = [];
-            }
-        }
-
-        // Wilayah Statistics
-        $kabupatenCount = 0;
-        $kecamatanCount = 0;
-        if ($db->tableExists('mst_kabupaten')) {
-            try {
-                $kabupatenCount = (int) $db->table('mst_kabupaten')->countAllResults();
-            } catch (\Throwable $e) {
-                $kabupatenCount = 0;
-            }
-        }
-        if ($db->tableExists('mst_kecamatan')) {
-            try {
-                $kecamatanCount = (int) $db->table('mst_kecamatan')->countAllResults();
-            } catch (\Throwable $e) {
-                $kecamatanCount = 0;
-            }
-        }
-
         return view('admin/dashboard', [
             'pageTitle' => 'Dashboard Admin',
             // Content
@@ -166,11 +118,6 @@ class Dashboard extends BaseController
             // Activities
             'latestEvents' => $latestEvents,
             'latestInstagramPosts' => $latestInstagramPosts,
-            'latestAudit' => $latestAudit,
-            'latestLogins' => $latestLogins,
-            // Wilayah
-            'kabupatenCount' => $kabupatenCount,
-            'kecamatanCount' => $kecamatanCount,
         ]);
     }
 

@@ -375,41 +375,9 @@
         </div>
     </div>
 
-    <!-- Wilayah Section -->
-    <h5 class="mt-3" style="color: #1f2f43; font-weight: 700;">🗺️ Data Wilayah</h5>
-    <div class="row">
-        <div class="col-lg-6 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Total Kabupaten</strong>
-                        <span class="metric-icon wilayah"><i class="fas fa-map"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) $kabupatenCount); ?></div>
-                    <p class="metric-label">Kabupaten dalam sistem.</p>
-                    <a href="<?= site_url('/admin/master/kabupaten'); ?>" class="btn btn-sm btn-outline-primary mt-3">Kelola Kabupaten</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Total Kecamatan</strong>
-                        <span class="metric-icon wilayah"><i class="fas fa-compass"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) $kecamatanCount); ?></div>
-                    <p class="metric-label">Kecamatan dalam sistem.</p>
-                    <a href="<?= site_url('/admin/master/kecamatan'); ?>" class="btn btn-sm btn-outline-primary mt-3">Kelola Kecamatan</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Charts & Activities Row -->
     <div class="row mt-3">
-        <div class="col-lg-7 col-12 mb-3">
+        <div class="col-lg-12 col-12 mb-3">
             <div class="card panel-card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title mb-0">Klasifikasi Kerusakan Sekolah</h3>
@@ -451,31 +419,6 @@
                     <?php else: ?>
                         <div class="alert alert-info mb-0">
                             <i class="fas fa-info-circle mr-2"></i> Belum ada data klasifikasi kerusakan sekolah.
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-5 col-12 mb-3">
-            <div class="card panel-card h-100">
-                <div class="card-header">
-                    <h3 class="card-title mb-0">Aktivitas Terbaru</h3>
-                </div>
-                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                    <?php if (!empty($latestAudit)): ?>
-                        <?php foreach ($latestAudit as $audit): ?>
-                            <div class="activity-item">
-                                <div class="activity-dot"></div>
-                                <div class="activity-content">
-                                    <div class="activity-action"><?= esc((string) ($audit['action_type'] ?? '-')); ?> • <?= esc((string) ($audit['module_path'] ?? '-')); ?></div>
-                                    <small class="activity-time">oleh <?= esc((string) ($audit['username'] ?? '-')); ?> • <?= esc((string) ($audit['happened_at'] ?? '-')); ?></small>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <div class="alert alert-secondary mb-0">
-                            <i class="fas fa-inbox mr-2"></i> Belum ada aktivitas tercatat.
                         </div>
                     <?php endif; ?>
                 </div>
