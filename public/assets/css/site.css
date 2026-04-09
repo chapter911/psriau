@@ -47,6 +47,7 @@
   --muted: #657780;
   --line: #d8dfdf;
   --deep: #0c2024;
+  color-scheme: light;
 }
 
 * {
@@ -982,6 +983,7 @@ td {
 
   .hero-content {
     padding-top: 5.5rem;
+    padding-bottom: 8.25rem;
   }
 
   .hero-grid {
@@ -990,5 +992,142 @@ td {
 
   .hero-panel {
     max-width: 430px;
+  }
+
+  .hero-nav {
+    top: auto;
+    bottom: 1.25rem;
+    transform: none;
+    width: 44px;
+    height: 44px;
+    font-size: 22px;
+  }
+
+  .hero-nav:hover {
+    transform: scale(1.08);
+  }
+
+  .hero-nav-prev {
+    left: 0.9rem;
+  }
+
+  .hero-nav-next {
+    right: 0.9rem;
+  }
+
+  .hero-indicators {
+    bottom: 2.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-content {
+    padding-top: 5rem;
+    padding-bottom: 8.75rem;
+  }
+
+  .hero-cta {
+    gap: 0.55rem;
+  }
+
+  .hero-cta .btn-primary,
+  .hero-cta .btn-ghost {
+    padding: 0.58rem 0.82rem;
+  }
+
+  .hero-panel {
+    border-radius: 14px;
+    padding: 0.88rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1114;
+    --ink: #d9e6ea;
+    --paper: #121b20;
+    --muted: #9bb0b9;
+    --line: #2a3a40;
+    --deep: #eff6f7;
+    color-scheme: dark;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 10% 10%, #1a252c, transparent 38%),
+      radial-gradient(circle at 90% 0%, #132126, transparent 45%), var(--bg);
+  }
+
+  .site-header {
+    background: rgba(10, 16, 20, 0.9);
+  }
+
+  nav {
+    background: rgba(10, 16, 20, 0.97);
+  }
+
+  .btn-ghost {
+    border-color: rgba(233, 245, 246, 0.45);
+    color: #f2f8f9;
+  }
+
+  .hero-overlay {
+    background: linear-gradient(
+      115deg,
+      rgba(6, 11, 14, 0.92),
+      rgba(6, 11, 14, 0.45)
+    );
+  }
+
+  .hero-panel {
+    background: linear-gradient(
+      165deg,
+      rgba(18, 30, 36, 0.85),
+      rgba(12, 20, 25, 0.72)
+    );
+    border-color: rgba(188, 216, 223, 0.26);
+  }
+
+  .hero-panel p,
+  .hero-stats small {
+    color: #d8e6ea;
+  }
+
+  .hero-stats div {
+    background: rgba(167, 197, 203, 0.16);
+  }
+
+  .section-about {
+    background: linear-gradient(
+      135deg,
+      rgba(31, 108, 113, 0.18),
+      rgba(196, 71, 31, 0.16)
+    );
+  }
+
+  .card,
+  .content-wrap,
+  .table-wrap,
+  .admin-topbar {
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+  }
+
+  .card-body h3,
+  .section-head h2 {
+    color: var(--deep);
+  }
+
+  .site-footer {
+    background: linear-gradient(135deg, #10373b 0%, #081f22 100%);
+  }
+
+  .flash.success {
+    background: #18342a;
+    color: #a9ebc8;
+  }
+
+  .flash.error {
+    background: #42231f;
+    color: #ffc0b1;
   }
 }
