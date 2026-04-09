@@ -315,6 +315,7 @@
         const defaultZoom = 8;
         let leafletMap = null;
         let marker = null;
+        let pendingLocation = null;
 
         const clearTileLayers = () => {
             if (!leafletMap) {
@@ -437,7 +438,12 @@
             schoolName.textContent = nama;
             schoolSubtitle.textContent = 'NPSN ' + npsn;
             schoolCoordinates.textContent = 'Lat: ' + formatCoordinate(latitude) + ' | Lng: ' + formatCoordinate(longitude);
-            renderMap(latitude, longitude, nama);
+
+            pendingLocation = {
+                latitude,
+                longitude,
+                label: nama,
+            };
         };
 
         const renderMap = (latitude, longitude, label) => {
@@ -461,7 +467,7 @@
             if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
                 leafletMap.setView(defaultCenter, defaultZoom);
                 window.setTimeout(() => {
-                    leafletMap.invalidateSize();
+                    leafletMap.invalidateSize({ pan: false });
                 }, 150);
 
                 googleMapButton.setAttribute('href', '#');
@@ -470,14 +476,15 @@
                 return;
             }
 
-            leafletMap.setView([lat, lng], 16);
+            leafletMap.setView([lat, lng], 15);
             marker = L.marker([lat, lng]).addTo(leafletMap);
             marker.bindPopup(label || 'Lokasi sekolah').openPopup();
 
+            leafletMap.invalidateSize({ pan: false });
             window.setTimeout(() => {
-                leafletMap.invalidateSize();
-                leafletMap.setView([lat, lng], 16);
-            }, 150);
+                leafletMap.invalidateSize({ pan: false });
+                leafletMap.panTo([lat, lng], { animate: false });
+            }, 180);
 
             const googleUrl = openGoogleMaps(lat, lng);
             googleMapButton.setAttribute('href', googleUrl);
@@ -517,9 +524,13 @@
         });
 
         mapModal.addEventListener('shown.bs.modal', function () {
+            if (pendingLocation) {
+                renderMap(pendingLocation.latitude, pendingLocation.longitude, pendingLocation.label);
+            }
+
             if (leafletMap) {
                 window.setTimeout(() => {
-                    leafletMap.invalidateSize();
+                    leafletMap.invalidateSize({ pan: false });
                 }, 120);
             }
         });
@@ -536,6 +547,8 @@
                 marker.remove();
                 marker = null;
             }
+
+            pendingLocation = null;
 
             if (leafletMap) {
                 leafletMap.closePopup();
