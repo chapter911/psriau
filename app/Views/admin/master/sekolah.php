@@ -46,8 +46,6 @@
                                 <button
                                     type="button"
                                     class="btn btn-info btn-sm js-open-map"
-                                    data-toggle="modal"
-                                    data-target="#modal-peta-sekolah"
                                     data-nama="<?= esc((string) ($item['nama'] ?? ''), 'attr'); ?>"
                                     data-npsn="<?= esc((string) ($item['npsn'] ?? ''), 'attr'); ?>"
                                     data-latitude="<?= esc($latitude, 'attr'); ?>"
@@ -519,13 +517,22 @@
             }
         });
 
+        mapModal.addEventListener('hide.bs.modal', function () {
+            const active = document.activeElement;
+            if (active && typeof active.blur === 'function') {
+                active.blur();
+            }
+        });
+
         mapModal.addEventListener('hidden.bs.modal', function () {
-            if (leafletMap) {
-                leafletMap.remove();
-                leafletMap = null;
+            if (marker) {
+                marker.remove();
                 marker = null;
             }
-            mapContainer.innerHTML = '';
+
+            if (leafletMap) {
+                leafletMap.closePopup();
+            }
         });
     })();
 </script>
