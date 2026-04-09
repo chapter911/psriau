@@ -27,6 +27,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('dashboard/map', 'Admin\\Dashboard::map');
 	$routes->get('dashboard/map-data', 'Admin\\Dashboard::mapData');
 	$routes->get('dashboard/map-kecamatan-options', 'Admin\\Dashboard::mapKecamatanOptions');
+	$routes->get('dashboard/map-detail', 'Admin\\Dashboard::mapDetail');
 
 	// Update password user
 	$routes->get('password', 'Admin\\Password::index');

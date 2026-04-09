@@ -142,27 +142,97 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Detail Sekolah</h5>
+                <h5 class="modal-title">Keterangan</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6 mb-2"><strong>NPSN:</strong> <span id="mapDtlNpsn">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Nama:</strong> <span id="mapDtlNama">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Jenis:</strong> <span id="mapDtlJenis">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>NSM:</strong> <span id="mapDtlNsm">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Kabupaten:</strong> <span id="mapDtlKabupaten">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Kecamatan:</strong> <span id="mapDtlKecamatan">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Latitude:</strong> <span id="mapDtlLatitude">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Longitude:</strong> <span id="mapDtlLongitude">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Periode Survey:</strong> <span id="mapDtlPeriode">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Klasifikasi:</strong> <span id="mapDtlKlasifikasi">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Tingkat Kerusakan:</strong> <span id="mapDtlTingkat">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Status Lahan:</strong> <span id="mapDtlStatusLahan">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Status Penanganan:</strong> <span id="mapDtlPenanganan">-</span></div>
-                    <div class="col-md-6 mb-2"><strong>Ekspos Status:</strong> <span id="mapDtlEkspos">-</span></div>
+                <ul class="nav nav-tabs" id="map-detail-tab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="map-tab-sekolah" data-toggle="pill" href="#map-pane-sekolah" role="tab" aria-controls="map-pane-sekolah" aria-selected="true">Madrasah</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="map-tab-survey" data-toggle="pill" href="#map-pane-survey" role="tab" aria-controls="map-pane-survey" aria-selected="false">Survey</a>
+                    </li>
+                </ul>
+                <div class="tab-content pt-3">
+                    <div class="tab-pane fade show active" id="map-pane-sekolah" role="tabpanel" aria-labelledby="map-tab-sekolah">
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">NPSN</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_npsn" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">NAMA</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_nama" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">JENIS</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_jenis" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">NSM</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_nsm" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">KABUPATEN</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_kabupaten" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">KECAMATAN</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_kecamatan" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">LATITUDE</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_latitude" readonly></div>
+                        </div>
+                        <div class="form-group row mb-0">
+                            <label class="col-sm-4 col-form-label">LONGITUDE</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_longitude" readonly></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="map-pane-survey" role="tabpanel" aria-labelledby="map-tab-survey">
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">PERIODE</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_periode" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">EMIS JUMLAH SISWA</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_emis_jumlah_siswa" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">SURVEY JUMLAH SISWA</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_survey_jumlah_siswa" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">SURVEY TINGKAT KERUSAKAN</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_survey_tingat_kerusakan" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">SURVEY KLASIFIKASI</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_survey_klasifikasi_kerusakan" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">STATUS LAHAN</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_status_lahan" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">STATUS PENANGANAN</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_status_penanganan" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">EKSPOS TINGKAT KERUSAKAN</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_ekspos_tingkat_kerusakan" readonly></div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label">EKSPOS KLASIFIKASI</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_ekspos_klasifikasi_kerusakan" readonly></div>
+                        </div>
+                        <div class="form-group row mb-0">
+                            <label class="col-sm-4 col-form-label">EKSPOS STATUS</label>
+                            <div class="col-sm-8"><input type="text" class="form-control" id="dtl_ekspos_status" readonly></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -199,20 +269,24 @@
 
     const modalEl = document.getElementById('dashboardMapDetailModal');
     const detailFields = {
-        npsn: document.getElementById('mapDtlNpsn'),
-        nama: document.getElementById('mapDtlNama'),
-        jenis: document.getElementById('mapDtlJenis'),
-        nsm: document.getElementById('mapDtlNsm'),
-        kabupaten: document.getElementById('mapDtlKabupaten'),
-        kecamatan: document.getElementById('mapDtlKecamatan'),
-        latitude: document.getElementById('mapDtlLatitude'),
-        longitude: document.getElementById('mapDtlLongitude'),
-        periode: document.getElementById('mapDtlPeriode'),
-        klasifikasi: document.getElementById('mapDtlKlasifikasi'),
-        tingkat: document.getElementById('mapDtlTingkat'),
-        statusLahan: document.getElementById('mapDtlStatusLahan'),
-        penanganan: document.getElementById('mapDtlPenanganan'),
-        ekspos: document.getElementById('mapDtlEkspos'),
+        npsn: document.getElementById('dtl_npsn'),
+        nama: document.getElementById('dtl_nama'),
+        jenis: document.getElementById('dtl_jenis'),
+        nsm: document.getElementById('dtl_nsm'),
+        kabupaten: document.getElementById('dtl_kabupaten'),
+        kecamatan: document.getElementById('dtl_kecamatan'),
+        latitude: document.getElementById('dtl_latitude'),
+        longitude: document.getElementById('dtl_longitude'),
+        periode: document.getElementById('dtl_periode'),
+        emisJumlahSiswa: document.getElementById('dtl_emis_jumlah_siswa'),
+        surveyJumlahSiswa: document.getElementById('dtl_survey_jumlah_siswa'),
+        surveyTingkatKerusakan: document.getElementById('dtl_survey_tingat_kerusakan'),
+        surveyKlasifikasiKerusakan: document.getElementById('dtl_survey_klasifikasi_kerusakan'),
+        statusLahan: document.getElementById('dtl_status_lahan'),
+        statusPenanganan: document.getElementById('dtl_status_penanganan'),
+        eksposTingkatKerusakan: document.getElementById('dtl_ekspos_tingkat_kerusakan'),
+        eksposKlasifikasiKerusakan: document.getElementById('dtl_ekspos_klasifikasi_kerusakan'),
+        eksposStatus: document.getElementById('dtl_ekspos_status'),
     };
 
     const map = L.map('dashboardMapBox').setView([-0.51544, 101.44415], 8);
@@ -402,25 +476,44 @@
         }
     };
 
-    const updateDetailModal = (item) => {
-        detailFields.npsn.textContent = item.npsn || '-';
-        detailFields.nama.textContent = item.nama || '-';
-        detailFields.jenis.textContent = item.jenis || '-';
-        detailFields.nsm.textContent = item.nsm || '-';
-        detailFields.kabupaten.textContent = item.kabupaten || '-';
-        detailFields.kecamatan.textContent = item.kecamatan || '-';
-        detailFields.latitude.textContent = item.latitude != null ? String(item.latitude) : '-';
-        detailFields.longitude.textContent = item.longitude != null ? String(item.longitude) : '-';
-        detailFields.periode.textContent = item.periode || '-';
-        detailFields.klasifikasi.textContent = item.survey_klasifikasi_kerusakan || '-';
-        detailFields.tingkat.textContent = item.survey_tingat_kerusakan || '-';
-        detailFields.statusLahan.textContent = item.status_lahan || '-';
-        detailFields.penanganan.textContent = item.status_penanganan || '-';
-        detailFields.ekspos.textContent = item.ekspos_status || '-';
+    const setInputValue = (element, value) => {
+        if (!element) {
+            return;
+        }
+
+        element.value = (value === null || value === undefined || String(value).trim() === '') ? '-' : String(value);
     };
 
-    const openDetailModal = (item) => {
-        updateDetailModal(item);
+    const updateDetailModal = (school, survey) => {
+        const schoolData = school || {};
+        const surveyData = survey || {};
+
+        setInputValue(detailFields.npsn, schoolData.npsn);
+        setInputValue(detailFields.nama, schoolData.nama);
+        setInputValue(detailFields.jenis, schoolData.jenis);
+        setInputValue(detailFields.nsm, schoolData.nsm);
+        setInputValue(detailFields.kabupaten, schoolData.kabupaten);
+        setInputValue(detailFields.kecamatan, schoolData.kecamatan);
+        setInputValue(detailFields.latitude, schoolData.latitude);
+        setInputValue(detailFields.longitude, schoolData.longitude);
+
+        setInputValue(detailFields.periode, surveyData.periode);
+        setInputValue(detailFields.emisJumlahSiswa, surveyData.emis_jumlah_siswa);
+        setInputValue(detailFields.surveyJumlahSiswa, surveyData.survey_jumlah_siswa);
+        setInputValue(detailFields.surveyTingkatKerusakan, surveyData.survey_tingat_kerusakan);
+        setInputValue(detailFields.surveyKlasifikasiKerusakan, surveyData.survey_klasifikasi_kerusakan);
+        setInputValue(detailFields.statusLahan, surveyData.status_lahan);
+        setInputValue(detailFields.statusPenanganan, surveyData.status_penanganan);
+        setInputValue(detailFields.eksposTingkatKerusakan, surveyData.ekspos_tingkat_kerusakan);
+        setInputValue(detailFields.eksposKlasifikasiKerusakan, surveyData.ekspos_klasifikasi_kerusakan);
+        setInputValue(detailFields.eksposStatus, surveyData.ekspos_status);
+    };
+
+    const showDetailModal = () => {
+        if (typeof $ !== 'undefined') {
+            $('#map-tab-sekolah').tab('show');
+        }
+
         if (window.bootstrap && typeof window.bootstrap.Modal === 'function') {
             const instance = window.bootstrap.Modal.getOrCreateInstance(modalEl);
             instance.show();
@@ -429,6 +522,47 @@
 
         if (typeof $ !== 'undefined') {
             $(modalEl).modal('show');
+        }
+    };
+
+    const openDetailModal = async (item) => {
+        const npsn = String(item && item.npsn ? item.npsn : '').trim();
+        if (npsn === '') {
+            updateDetailModal(item || {}, {});
+            showDetailModal();
+            return;
+        }
+
+        try {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Mohon Tunggu',
+                    text: 'Mengambil detail data sekolah...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => Swal.showLoading(),
+                });
+            }
+
+            const endpoint = '<?= site_url('admin/dashboard/map-detail'); ?>?npsn=' + encodeURIComponent(npsn);
+            const response = await fetch(endpoint, { method: 'GET', headers: { 'Accept': 'application/json' } });
+            const payload = await response.json();
+
+            if (!response.ok || payload.status !== 'ok') {
+                throw new Error(payload.message || 'Gagal mengambil detail sekolah.');
+            }
+
+            updateDetailModal(payload.school || item || {}, payload.survey || {});
+            showDetailModal();
+            if (typeof Swal !== 'undefined') {
+                Swal.close();
+            }
+        } catch (error) {
+            updateDetailModal(item || {}, {});
+            showDetailModal();
+            if (typeof Swal !== 'undefined') {
+                Swal.close();
+            }
         }
     };
 

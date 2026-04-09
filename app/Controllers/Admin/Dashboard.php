@@ -252,6 +252,79 @@ class Dashboard extends BaseController
         ]);
     }
 
+    public function mapDetail()
+    {
+        $npsn = trim((string) $this->request->getGet('npsn'));
+        if ($npsn === '') {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'message' => 'Parameter npsn wajib diisi.',
+            ]);
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('mst_sekolah')) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => 'Tabel mst_sekolah belum tersedia.',
+            ]);
+        }
+
+        $school = $db->table('mst_sekolah')
+            ->select('npsn, nama, jenis, nsm, kabupaten, kecamatan, latitude, longitude')
+            ->where('npsn', $npsn)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($school)) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status' => 'error',
+                'message' => 'Data sekolah tidak ditemukan.',
+            ]);
+        }
+
+        $survey = [];
+        if ($db->tableExists('trn_survey_sekolah')) {
+            $availableColumns = $db->getFieldNames('trn_survey_sekolah');
+            $desiredColumns = [
+                'id',
+                'npsn',
+                'periode',
+                'emis_jumlah_siswa',
+                'survey_jumlah_siswa',
+                'survey_tingat_kerusakan',
+                'survey_klasifikasi_kerusakan',
+                'status_lahan',
+                'status_penanganan',
+                'ekspos_tingkat_kerusakan',
+                'ekspos_klasifikasi_kerusakan',
+                'ekspos_status',
+            ];
+
+            $columns = array_values(array_intersect($desiredColumns, $availableColumns));
+            if ($columns !== []) {
+                $builder = $db->table('trn_survey_sekolah')
+                    ->select(implode(',', $columns))
+                    ->where('npsn', $npsn);
+
+                if (in_array('periode', $columns, true)) {
+                    $builder->orderBy('periode', 'DESC');
+                }
+                if (in_array('id', $columns, true)) {
+                    $builder->orderBy('id', 'DESC');
+                }
+
+                $survey = $builder->get()->getRowArray() ?? [];
+            }
+        }
+
+        return $this->response->setJSON([
+            'status' => 'ok',
+            'school' => $school,
+            'survey' => $survey,
+        ]);
+    }
+
     private function getMapTypes($db): array
     {
         if ($db->tableExists('mst_map_type')) {
