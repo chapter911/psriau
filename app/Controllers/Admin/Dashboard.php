@@ -331,7 +331,6 @@ class Dashboard extends BaseController
             ->get()
             ->getResultArray();
 
-            echo '<pre>'; print_r($rows); echo '</pre>';die();
         return array_values(array_filter(array_map(static function (array $row): string {
             return trim((string) ($row['nama_kabupaten'] ?? ''));
         }, $rows), static fn (string $value): bool => $value !== ''));
