@@ -311,6 +311,8 @@
         const schoolCoordinates = document.getElementById('map-school-coordinates');
         const googleMapButton = document.getElementById('btn-open-google-maps');
         const mapTypeSelect = document.getElementById('schoolMapType');
+        const defaultCenter = [-0.51544, 101.44415];
+        const defaultZoom = 8;
         let leafletMap = null;
         let marker = null;
 
@@ -442,16 +444,6 @@
             const lat = Number(latitude);
             const lng = Number(longitude);
 
-            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-                mapContainer.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted">Koordinat tidak tersedia.</div>';
-                googleMapButton.setAttribute('href', '#');
-                googleMapButton.classList.add('disabled');
-                googleMapButton.setAttribute('aria-disabled', 'true');
-                return;
-            }
-
-            mapContainer.innerHTML = '';
-
             if (!leafletMap) {
                 leafletMap = L.map(mapContainer, {
                     zoomControl: true,
@@ -463,6 +455,19 @@
 
             if (marker) {
                 marker.remove();
+                marker = null;
+            }
+
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                leafletMap.setView(defaultCenter, defaultZoom);
+                window.setTimeout(() => {
+                    leafletMap.invalidateSize();
+                }, 150);
+
+                googleMapButton.setAttribute('href', '#');
+                googleMapButton.classList.add('disabled');
+                googleMapButton.setAttribute('aria-disabled', 'true');
+                return;
             }
 
             leafletMap.setView([lat, lng], 16);
@@ -513,7 +518,9 @@
 
         mapModal.addEventListener('shown.bs.modal', function () {
             if (leafletMap) {
-                leafletMap.invalidateSize();
+                window.setTimeout(() => {
+                    leafletMap.invalidateSize();
+                }, 120);
             }
         });
 
