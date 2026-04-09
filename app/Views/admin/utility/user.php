@@ -68,6 +68,7 @@
                 <div class="form-group">
                     <label for="username">Username</label>
                     <input type="text" class="form-control" id="username" required>
+                    <small class="text-muted d-block" id="usernameHint">Username tidak dapat diubah setelah user dibuat.</small>
                     <small class="text-danger d-none" data-error="username"></small>
                 </div>
                 <div class="form-group">
@@ -122,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const isActive = document.getElementById('isActive');
     const password = document.getElementById('password');
     const passwordHint = document.getElementById('passwordHint');
+    const usernameHint = document.getElementById('usernameHint');
 
     function getModalController(el) {
         if (!el) {
@@ -265,6 +267,10 @@ document.addEventListener('DOMContentLoaded', function () {
         userSubmitBtn.textContent = 'Simpan';
         userId.value = '';
         username.value = '';
+        username.readOnly = false;
+        if (usernameHint) {
+            usernameHint.textContent = 'Username digunakan untuk login dan tidak bisa diubah setelah dibuat.';
+        }
         fullName.value = '';
         role.value = 'editor';
         isActive.checked = true;
@@ -280,6 +286,10 @@ document.addEventListener('DOMContentLoaded', function () {
         userSubmitBtn.textContent = 'Perbarui';
         userId.value = row.getAttribute('data-id') || '';
         username.value = row.dataset.username || '';
+        username.readOnly = true;
+        if (usernameHint) {
+            usernameHint.textContent = 'Username dikunci dan tidak dapat diubah.';
+        }
         fullName.value = row.dataset.fullName || '';
         role.value = row.dataset.role || 'editor';
         isActive.checked = String(row.dataset.isActive || '1') === '1';
@@ -343,7 +353,6 @@ document.addEventListener('DOMContentLoaded', function () {
             clearErrors();
 
             const payload = {
-                username: username.value.trim(),
                 full_name: fullName.value.trim(),
                 role: role.value,
                 is_active: isActive && isActive.checked ? '1' : '0',
@@ -354,6 +363,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const url = currentId
                 ? '<?= site_url('admin/utility/user') ?>/' + encodeURIComponent(currentId) + '/ubah'
                 : '<?= site_url('admin/utility/user/tambah') ?>';
+
+            if (!currentId) {
+                payload.username = username.value.trim();
+            }
 
             request(url, payload)
                 .then(function (result) {

@@ -263,7 +263,6 @@ class Utility extends BaseController
         }
 
         $rules = [
-            'username' => 'required|min_length[3]|max_length[100]|alpha_numeric_punct',
             'full_name' => 'required|min_length[3]|max_length[150]',
             'role' => 'required|in_list[admin,editor,super administrator,super_administrator,super-admin,superadmin]',
             'password' => 'permit_empty|min_length[6]|max_length[72]',
@@ -287,22 +286,11 @@ class Utility extends BaseController
             ]);
         }
 
-        $username = strtolower(trim((string) $this->request->getPost('username')));
         $fullName = trim((string) $this->request->getPost('full_name'));
         $role = trim((string) $this->request->getPost('role'));
         $password = (string) $this->request->getPost('password');
 
-        $duplicate = $model->where('username', $username)->where('id !=', $id)->countAllResults();
-        if ($duplicate > 0) {
-            return $this->response->setStatusCode(422)->setJSON([
-                'status' => 'error',
-                'errors' => ['username' => 'Username sudah digunakan.'],
-                'csrfHash' => csrf_hash(),
-            ]);
-        }
-
         $data = [
-            'username' => $username,
             'full_name' => $fullName,
             'role' => $role,
             'is_active' => $this->request->getPost('is_active') ? 1 : 0,
