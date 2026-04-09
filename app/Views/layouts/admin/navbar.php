@@ -14,14 +14,14 @@
                 <span class="nav-link text-dark font-weight-bold pr-2 mb-0" style="cursor: default;">
                     <i class="fas fa-tools mr-1"></i> Ops Tools
                 </span>
-                <form action="<?= site_url('/admin/pengaturan/application/git-pull'); ?>" method="post" class="mr-1 mb-0 js-ops-tool-form" data-loading-text="Menjalankan Git Pull...">
+                <form action="<?= site_url('/admin/pengaturan/application/git-pull'); ?>" method="post" class="mr-1 mb-0 js-ops-tool-form" data-loading-text="Menjalankan Git Pull..." data-skip-confirm="1">
                     <?= csrf_field(); ?>
                     <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
                     <button type="submit" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-code-branch mr-1"></i> Git Pull
                     </button>
                 </form>
-                <form action="<?= site_url('/admin/pengaturan/application/merge-database'); ?>" method="post" class="mr-1 mb-0 js-ops-tool-form" data-loading-text="Menjalankan Merge Database...">
+                <form action="<?= site_url('/admin/pengaturan/application/merge-database'); ?>" method="post" class="mr-1 mb-0 js-ops-tool-form" data-loading-text="Menjalankan Merge Database..." data-skip-confirm="1">
                     <?= csrf_field(); ?>
                     <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
                     <button type="submit" class="btn btn-sm btn-outline-primary">
