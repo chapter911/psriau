@@ -23,9 +23,10 @@ $routes->get('forbidden', 'Home::forbidden');
 
 $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($routes): void {
 	$routes->get('/', 'Admin\\Dashboard::index');
-	$routes->get('map', 'Admin\\Dashboard::index');
-	$routes->get('dashboard/map', 'Admin\\Dashboard::index');
+	$routes->get('map', 'Admin\\Dashboard::map');
+	$routes->get('dashboard/map', 'Admin\\Dashboard::map');
 	$routes->get('dashboard/map-data', 'Admin\\Dashboard::mapData');
+	$routes->get('dashboard/map-kecamatan-options', 'Admin\\Dashboard::mapKecamatanOptions');
 
 	// Update password user
 	$routes->get('password', 'Admin\\Password::index');

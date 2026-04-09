@@ -9,12 +9,13 @@ use App\Models\HomeSlideModel;
 
 class Dashboard extends BaseController
 {
+    private const RIAU_PROVINCE_CODE = '14';
+
     public function index(): string
     {
         $eventModel   = new EventModel();
         $articleModel = new ArticleModel();
         $slideModel   = new HomeSlideModel();
-        $db = db_connect();
 
         $eventCount = $eventModel->countAllResults();
         $eventPublishedCount = (new EventModel())->where('is_published', 1)->countAllResults();
@@ -37,34 +38,29 @@ class Dashboard extends BaseController
             ->orderBy('updated_at', 'DESC')
             ->findAll(5);
 
-        $mapTypes = $this->getMapTypes($db);
+        return view('admin/dashboard', [
+            'pageTitle' => 'Dashboard Admin',
+            'eventCount' => $eventCount,
+            'eventPublishedCount' => $eventPublishedCount,
+            'eventDraftCount' => $eventDraftCount,
+            'articleCount' => $articleCount,
+            'articlePublishedCount' => $articlePublishedCount,
+            'articleDraftCount' => $articleDraftCount,
+            'slideCount' => $slideCount,
+            'slideActiveCount' => $slideActiveCount,
+            'latestEvents' => $latestEvents,
+            'latestInstagramPosts' => $latestInstagramPosts,
+        ]);
+    }
 
-        $kabupatenOptions = [];
+    public function map(): string
+    {
+        $db = db_connect();
+
+        $mapTypes = $this->getMapTypes($db);
+        $kabupatenOptions = $this->getRiauKabupatenOptions($db);
         $kecamatanOptions = [];
         $klasifikasiOptions = [];
-
-        if ($db->tableExists('mst_sekolah')) {
-            $kabupatenRows = $db->table('mst_sekolah')
-                ->select('kabupaten')
-                ->where('kabupaten IS NOT NULL', null, false)
-                ->where('kabupaten !=', '')
-                ->groupBy('kabupaten')
-                ->orderBy('kabupaten', 'ASC')
-                ->get()
-                ->getResultArray();
-
-            $kecamatanRows = $db->table('mst_sekolah')
-                ->select('kecamatan')
-                ->where('kecamatan IS NOT NULL', null, false)
-                ->where('kecamatan !=', '')
-                ->groupBy('kecamatan')
-                ->orderBy('kecamatan', 'ASC')
-                ->get()
-                ->getResultArray();
-
-            $kabupatenOptions = array_values(array_map(static fn (array $row): string => (string) ($row['kabupaten'] ?? ''), $kabupatenRows));
-            $kecamatanOptions = array_values(array_map(static fn (array $row): string => (string) ($row['kecamatan'] ?? ''), $kecamatanRows));
-        }
 
         if ($db->tableExists('trn_survey_sekolah')) {
             $klasifikasiRows = $db->table('trn_survey_sekolah')
@@ -79,24 +75,59 @@ class Dashboard extends BaseController
             $klasifikasiOptions = array_values(array_map(static fn (array $row): string => (string) ($row['survey_klasifikasi_kerusakan'] ?? ''), $klasifikasiRows));
         }
 
-        return view('admin/dashboard', [
-            'pageTitle' => 'Dashboard Admin',
-            'eventCount' => $eventCount,
-            'eventPublishedCount' => $eventPublishedCount,
-            'eventDraftCount' => $eventDraftCount,
-            'articleCount' => $articleCount,
-            'articlePublishedCount' => $articlePublishedCount,
-            'articleDraftCount' => $articleDraftCount,
-            'slideCount' => $slideCount,
-            'slideActiveCount' => $slideActiveCount,
-            'latestEvents' => $latestEvents,
-            'latestInstagramPosts' => $latestInstagramPosts,
+        return view('admin/map', [
+            'pageTitle' => 'Map',
             'mapTypes' => $mapTypes,
             'mapDefaultId' => (int) ($mapTypes[0]['id'] ?? 1),
             'kabupatenOptions' => $kabupatenOptions,
             'kecamatanOptions' => $kecamatanOptions,
             'klasifikasiOptions' => $klasifikasiOptions,
         ]);
+    }
+
+    public function mapKecamatanOptions()
+    {
+        $kabupaten = trim((string) $this->request->getGet('kabupaten'));
+        if ($kabupaten === '' || $kabupaten === '*') {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'kecamatan' => [],
+            ]);
+        }
+
+        $db = db_connect();
+        $kecamatan = $this->getKecamatanByKabupaten($db, $kabupaten);
+
+        return $this->response->setJSON([
+            'status' => 'ok',
+            'kecamatan' => $kecamatan,
+        ]);
+    }
+
+    private function getKecamatanByKabupaten($db, string $kabupaten): array
+    {
+        $fromMaster = $this->getKecamatanByKabupatenFromMaster($db, $kabupaten);
+        if ($fromMaster !== []) {
+            return $fromMaster;
+        }
+
+        if (! $db->tableExists('mst_sekolah')) {
+            return [];
+        }
+
+        $rows = $db->table('mst_sekolah')
+            ->select('kecamatan')
+            ->where('kabupaten', $kabupaten)
+            ->where('kecamatan IS NOT NULL', null, false)
+            ->where('kecamatan !=', '')
+            ->groupBy('kecamatan')
+            ->orderBy('kecamatan', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        return array_values(array_filter(array_map(static function (array $row): string {
+            return trim((string) ($row['kecamatan'] ?? ''));
+        }, $rows), static fn (string $value): bool => $value !== ''));
     }
 
     public function mapData()
@@ -187,8 +218,8 @@ class Dashboard extends BaseController
 
         $markers = [];
         foreach ($rows as $row) {
-            $lat = is_numeric($row['latitude'] ?? null) ? (float) $row['latitude'] : null;
-            $lng = is_numeric($row['longitude'] ?? null) ? (float) $row['longitude'] : null;
+            $lat = $this->parseCoordinate($row['latitude'] ?? null);
+            $lng = $this->parseCoordinate($row['longitude'] ?? null);
 
             if ($lat === null || $lng === null) {
                 continue;
@@ -250,5 +281,171 @@ class Dashboard extends BaseController
                 'map_script' => "L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);",
             ],
         ];
+    }
+
+    private function getRiauKabupatenOptions($db): array
+    {
+        $riauMasterKabupaten = $this->getRiauMasterKabupaten($db);
+        if ($riauMasterKabupaten !== []) {
+            return $riauMasterKabupaten;
+        }
+
+        if (! $db->tableExists('mst_sekolah')) {
+            return [];
+        }
+
+        $kabupatenRows = $db->table('mst_sekolah')
+            ->select('kabupaten')
+            ->where('kabupaten IS NOT NULL', null, false)
+            ->where('kabupaten !=', '')
+            ->groupBy('kabupaten')
+            ->orderBy('kabupaten', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $sekolahKabupaten = array_values(array_filter(array_map(static function (array $row): string {
+            return trim((string) ($row['kabupaten'] ?? ''));
+        }, $kabupatenRows), static fn (string $value): bool => $value !== ''));
+
+        return $sekolahKabupaten;
+    }
+
+    private function getRiauMasterKabupaten($db): array
+    {
+        if (! $db->tableExists('mst_kabupaten')) {
+            return [];
+        }
+
+        $kodeProvinsiRiau = $this->detectRiauProvinceCode($db);
+        if ($kodeProvinsiRiau === null) {
+            return [];
+        }
+
+        $rows = $db->table('mst_kabupaten')
+            ->select('nama_kabupaten')
+            ->where('kode_provinsi', $kodeProvinsiRiau)
+            ->where('nama_kabupaten IS NOT NULL', null, false)
+            ->where('nama_kabupaten !=', '')
+            ->groupBy('nama_kabupaten')
+            ->orderBy('nama_kabupaten', 'ASC')
+            ->get()
+            ->getResultArray();
+
+            echo '<pre>'; print_r($rows); echo '</pre>';die();
+        return array_values(array_filter(array_map(static function (array $row): string {
+            return trim((string) ($row['nama_kabupaten'] ?? ''));
+        }, $rows), static fn (string $value): bool => $value !== ''));
+    }
+
+    private function detectRiauProvinceCode($db): ?string
+    {
+        if ($db->tableExists('mst_provinsi')) {
+            $riau = $db->table('mst_provinsi')
+                ->select('kode_provinsi')
+                ->where('LOWER(TRIM(nama_provinsi))', 'riau')
+                ->get()
+                ->getRowArray();
+
+            $kode = trim((string) ($riau['kode_provinsi'] ?? ''));
+            if ($kode !== '') {
+                return $kode;
+            }
+        }
+
+        if ($db->tableExists('mst_kabupaten')) {
+            $exists = $db->table('mst_kabupaten')
+                ->where('kode_provinsi', self::RIAU_PROVINCE_CODE)
+                ->countAllResults();
+
+            if ($exists > 0) {
+                return self::RIAU_PROVINCE_CODE;
+            }
+        }
+
+        return null;
+    }
+
+    private function getKecamatanByKabupatenFromMaster($db, string $kabupaten): array
+    {
+        if (! $db->tableExists('mst_kabupaten') || ! $db->tableExists('mst_kecamatan')) {
+            return [];
+        }
+
+        $kodeProvinsiRiau = $this->detectRiauProvinceCode($db);
+        if ($kodeProvinsiRiau === null) {
+            return [];
+        }
+
+        $kabupatenRows = $db->table('mst_kabupaten')
+            ->select('kode_kabupaten, nama_kabupaten')
+            ->where('kode_provinsi', $kodeProvinsiRiau)
+            ->get()
+            ->getResultArray();
+
+        $selectedNormalized = $this->normalizeWilayahName($kabupaten);
+        $kodeKabupaten = null;
+
+        foreach ($kabupatenRows as $row) {
+            $namaKabupaten = trim((string) ($row['nama_kabupaten'] ?? ''));
+            $kode = trim((string) ($row['kode_kabupaten'] ?? ''));
+            if ($namaKabupaten === '' || $kode === '') {
+                continue;
+            }
+
+            $masterNormalized = $this->normalizeWilayahName($namaKabupaten);
+            if ($masterNormalized === '') {
+                continue;
+            }
+
+            if ($selectedNormalized === $masterNormalized || str_contains($selectedNormalized, $masterNormalized) || str_contains($masterNormalized, $selectedNormalized)) {
+                $kodeKabupaten = $kode;
+                break;
+            }
+        }
+
+        if ($kodeKabupaten === null) {
+            return [];
+        }
+
+        $rows = $db->table('mst_kecamatan')
+            ->select('nama_kecamatan')
+            ->where('kode_provinsi', $kodeProvinsiRiau)
+            ->where('kode_kabupaten', $kodeKabupaten)
+            ->where('nama_kecamatan IS NOT NULL', null, false)
+            ->where('nama_kecamatan !=', '')
+            ->groupBy('nama_kecamatan')
+            ->orderBy('nama_kecamatan', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        return array_values(array_filter(array_map(static function (array $row): string {
+            return trim((string) ($row['nama_kecamatan'] ?? ''));
+        }, $rows), static fn (string $value): bool => $value !== ''));
+    }
+
+    private function normalizeWilayahName(string $value): string
+    {
+        $value = strtolower(trim($value));
+        $value = preg_replace('/[^a-z0-9]+/', '', $value) ?? '';
+
+        return $value;
+    }
+
+    private function parseCoordinate($value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        $normalized = str_replace(',', '.', trim((string) $value));
+        if (! is_numeric($normalized)) {
+            return null;
+        }
+
+        return (float) $normalized;
     }
 }
