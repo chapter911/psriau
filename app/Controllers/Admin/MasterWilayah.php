@@ -111,9 +111,10 @@ class MasterWilayah extends BaseController
 
     public function kabupaten()
     {
+        $isDataTableRequest = $this->isDataTableRequest();
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KABUPATEN);
         if ($forbidden instanceof RedirectResponse) {
-            if ($this->request->isAJAX()) {
+            if ($this->request->isAJAX() || $isDataTableRequest) {
                 return $this->response->setStatusCode(403)->setJSON([
                     'status' => 'error',
                     'message' => 'Akses ditolak.',
@@ -123,7 +124,7 @@ class MasterWilayah extends BaseController
             return $forbidden;
         }
 
-        if ($this->request->isAJAX()) {
+        if ($this->request->isAJAX() || $isDataTableRequest) {
             return $this->kabupatenDataTable();
         }
 
@@ -234,9 +235,10 @@ class MasterWilayah extends BaseController
 
     public function kecamatan()
     {
+        $isDataTableRequest = $this->isDataTableRequest();
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KECAMATAN);
         if ($forbidden instanceof RedirectResponse) {
-            if ($this->request->isAJAX()) {
+            if ($this->request->isAJAX() || $isDataTableRequest) {
                 return $this->response->setStatusCode(403)->setJSON([
                     'status' => 'error',
                     'message' => 'Akses ditolak.',
@@ -246,7 +248,7 @@ class MasterWilayah extends BaseController
             return $forbidden;
         }
 
-        if ($this->request->isAJAX()) {
+        if ($this->request->isAJAX() || $isDataTableRequest) {
             return $this->kecamatanDataTable();
         }
 
@@ -533,6 +535,13 @@ class MasterWilayah extends BaseController
         return strtolower((string) ($first['dir'] ?? 'asc')) === 'desc' ? 'DESC' : 'ASC';
     }
 
+    private function isDataTableRequest(): bool
+    {
+        return $this->request->getGet('draw') !== null
+            && $this->request->getGet('start') !== null
+            && $this->request->getGet('length') !== null;
+    }
+
     private function canEditMasterDataFor(string $menuLink): bool
     {
         static $cache = [];
@@ -643,9 +652,10 @@ class MasterWilayah extends BaseController
 
     public function kelurahan()
     {
+        $isDataTableRequest = $this->isDataTableRequest();
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KELURAHAN);
         if ($forbidden instanceof RedirectResponse) {
-            if ($this->request->isAJAX()) {
+            if ($this->request->isAJAX() || $isDataTableRequest) {
                 return $this->response->setStatusCode(403)->setJSON([
                     'status' => 'error',
                     'message' => 'Akses ditolak.',
@@ -655,7 +665,7 @@ class MasterWilayah extends BaseController
             return $forbidden;
         }
 
-        if ($this->request->isAJAX()) {
+        if ($this->request->isAJAX() || $isDataTableRequest) {
             return $this->kelurahanDataTable();
         }
 
