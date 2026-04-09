@@ -468,8 +468,8 @@
                             <div class="activity-item">
                                 <div class="activity-dot"></div>
                                 <div class="activity-content">
-                                    <div class="activity-action"><?= esc((string) ($audit['action'] ?? '-')); ?></div>
-                                    <small class="activity-time"><?= esc((string) ($audit['created_at'] ?? '-')); ?></small>
+                                    <div class="activity-action"><?= esc((string) ($audit['action_type'] ?? '-')); ?> • <?= esc((string) ($audit['module_path'] ?? '-')); ?></div>
+                                    <small class="activity-time">oleh <?= esc((string) ($audit['username'] ?? '-')); ?> • <?= esc((string) ($audit['happened_at'] ?? '-')); ?></small>
                                 </div>
                             </div>
                         <?php endforeach; ?>

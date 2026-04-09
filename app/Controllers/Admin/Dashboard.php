@@ -80,8 +80,8 @@ class Dashboard extends BaseController
         $latestAudit = [];
         if ($db->tableExists('audit_histories')) {
             $latestAudit = $db->table('audit_histories')
-                ->select('action, description, created_at, created_by')
-                ->orderBy('created_at', 'DESC')
+                ->select('action_type, module_path, happened_at, username')
+                ->orderBy('happened_at', 'DESC')
                 ->limit(8)
                 ->get()
                 ->getResultArray();
