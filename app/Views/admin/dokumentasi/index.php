@@ -13,7 +13,18 @@
 
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Daftar Kegiatan Lapangan</h3>
+        <div class="d-flex flex-wrap justify-content-between align-items-center" style="gap:12px;">
+            <h3 class="card-title mb-0">Daftar Kegiatan Lapangan</h3>
+            <div class="search-filter-box">
+                <label class="sr-only" for="activitySearch">Cari kegiatan</label>
+                <div class="input-group input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    </div>
+                    <input type="text" class="form-control" id="activitySearch" placeholder="Cari judul, lokasi, atau nama pembuat">
+                </div>
+            </div>
+        </div>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -128,9 +139,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const thumbnailsEl = document.getElementById('activityPhotoThumbnails');
     const prevBtn = document.getElementById('photoPrevBtn');
     const nextBtn = document.getElementById('photoNextBtn');
+    const searchInput = document.getElementById('activitySearch');
     const photoCards = document.querySelectorAll('[data-photo-gallery]');
     let currentPhotos = [];
     let currentIndex = 0;
+    const tableEl = document.querySelector('.js-datatable');
+    const dataTable = window.jQuery && tableEl && window.jQuery.fn.DataTable && window.jQuery.fn.DataTable.isDataTable(tableEl)
+        ? window.jQuery(tableEl).DataTable()
+        : null;
 
     const showPhoto = (index) => {
         if (!currentPhotos.length) {
@@ -195,6 +211,12 @@ document.addEventListener('DOMContentLoaded', () => {
             openGallery(card.getAttribute('data-activity-title') || '', card.getAttribute('data-activity-date') || '', photos);
         });
     });
+
+    searchInput?.addEventListener('input', () => {
+        if (dataTable) {
+            dataTable.search(searchInput.value).draw();
+        }
+    });
 });
 </script>
 
@@ -204,6 +226,10 @@ document.addEventListener('DOMContentLoaded', () => {
         border-radius: 18px;
         overflow: hidden;
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+    }
+
+    .search-filter-box {
+        min-width: min(420px, 100%);
     }
 
     .photo-viewer-shell {

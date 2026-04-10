@@ -14,6 +14,17 @@
             </div>
 
             <div class="form-group">
+                <label for="compression_percent">Persentase Kompresi Foto</label>
+                <div class="input-group">
+                    <input type="number" id="compression_percent" class="form-control" min="10" max="100" step="1" value="10">
+                    <div class="input-group-append">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <small class="text-muted d-block mt-1">Semakin kecil nilainya, semakin kecil ukuran foto hasil proses di browser. Contoh: 10 berarti ukuran foto dibuat 10% dari ukuran asli.</small>
+            </div>
+
+            <div class="form-group">
                 <label for="title">Judul Kegiatan</label>
                 <input type="text" id="title" name="title" class="form-control" value="<?= old('title', $activity['title'] ?? ''); ?>" required>
             </div>
@@ -195,6 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dropzone = document.getElementById('photoDropzone');
     const previewContainer = document.getElementById('selectedPhotoPreview');
     const counter = document.getElementById('photoCounter');
+    const compressionPercentInput = document.getElementById('compression_percent');
     const maxPhotos = 50;
     const existingPhotoCount = <?= (int) ($existingPhotoCount ?? 0); ?>;
     const selectedItems = [];
@@ -325,14 +337,17 @@ document.addEventListener('DOMContentLoaded', () => {
             incomingFiles.length = remainingSlots;
         }
 
+        const compressionPercent = Math.max(10, Math.min(100, Number(compressionPercentInput?.value || 10)));
+        const scaleFactor = compressionPercent / 100;
+
         for (const file of incomingFiles) {
-            const resizedFile = await resizeFile(file, 0.1);
+            const resizedFile = await resizeFile(file, scaleFactor);
             const previewUrl = URL.createObjectURL(resizedFile);
             selectedItems.push({
                 file: resizedFile,
                 previewUrl,
                 name: resizedFile.name,
-                sizeLabel: `${Math.max(1, Math.round(resizedFile.size / 1024))} KB setelah resize`,
+                sizeLabel: `${Math.max(1, Math.round(resizedFile.size / 1024))} KB setelah resize (${compressionPercent}%)`,
             });
         }
 
