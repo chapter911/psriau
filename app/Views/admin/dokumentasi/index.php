@@ -28,7 +28,10 @@
                         <label for="filterLocation" class="small text-muted mb-1">Lokasi</label>
                         <input type="text" class="form-control form-control-sm" id="filterLocation" placeholder="Cari lokasi">
                     </div>
-                    <div class="form-group col-md-2 mb-0 text-md-right">
+                    <div class="form-group col-md-2 mb-0">
+                        <button type="button" class="btn btn-sm btn-primary w-100 mb-1" id="applyFilters">
+                            Terapkan
+                        </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="resetFilters">
                             Reset
                         </button>
@@ -153,14 +156,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterTitle = document.getElementById('filterTitle');
     const filterDate = document.getElementById('filterDate');
     const filterLocation = document.getElementById('filterLocation');
+    const applyFiltersBtn = document.getElementById('applyFilters');
     const resetFiltersBtn = document.getElementById('resetFilters');
     const photoCards = document.querySelectorAll('[data-photo-gallery]');
     let currentPhotos = [];
     let currentIndex = 0;
     const tableEl = document.querySelector('.js-datatable');
-    const dataTable = window.jQuery && tableEl && window.jQuery.fn.DataTable && window.jQuery.fn.DataTable.isDataTable(tableEl)
-        ? window.jQuery(tableEl).DataTable()
-        : null;
+
+    const getDataTable = () => {
+        if (!window.jQuery || !tableEl || !window.jQuery.fn.DataTable) {
+            return null;
+        }
+
+        if (!window.jQuery.fn.DataTable.isDataTable(tableEl)) {
+            return null;
+        }
+
+        return window.jQuery(tableEl).DataTable();
+    };
+
+    const hideDefaultDataTableSearch = () => {
+        const dataTable = getDataTable();
+        if (!dataTable) {
+            return;
+        }
+
+        const wrapper = window.jQuery(dataTable.table().container());
+        wrapper.find('.dataTables_filter').hide();
+    };
+
+    setTimeout(hideDefaultDataTableSearch, 0);
+    setTimeout(hideDefaultDataTableSearch, 250);
 
     const showPhoto = (index) => {
         if (!currentPhotos.length) {
@@ -227,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const applyFilters = () => {
+        const dataTable = getDataTable();
         if (dataTable) {
             dataTable.column(0).search(filterTitle?.value || '');
             dataTable.column(1).search(filterDate?.value || '');
@@ -235,9 +262,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    filterTitle?.addEventListener('input', applyFilters);
+    applyFiltersBtn?.addEventListener('click', applyFilters);
+
+    filterTitle?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            applyFilters();
+        }
+    });
+
+    filterLocation?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            applyFilters();
+        }
+    });
+
     filterDate?.addEventListener('change', applyFilters);
-    filterLocation?.addEventListener('input', applyFilters);
 
     resetFiltersBtn?.addEventListener('click', () => {
         if (filterTitle) {
@@ -255,6 +296,10 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <style>
+    .dataTables_wrapper .dataTables_filter {
+        display: none !important;
+    }
+
     .photo-modal-content {
         border: 0;
         border-radius: 18px;

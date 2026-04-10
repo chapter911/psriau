@@ -16,22 +16,20 @@
 
             <div class="form-row">
                 <div class="form-group col-md-6">
-                    <label for="activity_date">Tanggal Kegiatan</label>
-                    <input type="date" id="activity_date" name="activity_date" class="form-control" value="<?= old('activity_date', $activity['activity_date'] ?? ''); ?>">
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="location">Lokasi Kegiatan</label>
-                    <input type="text" id="location" name="location" class="form-control" value="<?= old('location', $activity['location'] ?? ''); ?>" required>
+                <select id="compression_percent" class="form-control">
+                    <?php foreach ([30, 40, 50, 60, 70, 80, 90, 100] as $percent): ?>
+                        <option value="<?= $percent; ?>" <?= $percent === 30 ? 'selected' : ''; ?>><?= $percent; ?>%</option>
+                    <?php endforeach; ?>
+                </select>
                 </div>
             </div>
             <div class="form-group">
                 <label for="compression_percent">Persentase Kompresi Foto</label>
-                <div class="input-group">
-                    <input type="number" id="compression_percent" class="form-control" min="30" max="100" step="1" value="30">
-                    <div class="input-group-append">
-                        <span class="input-group-text">%</span>
-                    </div>
-                </div>
+                <select id="compression_percent" class="form-control">
+                    <?php foreach ([30, 40, 50, 60, 70, 80, 90, 100] as $percent): ?>
+                        <option value="<?= $percent; ?>" <?= $percent === 30 ? 'selected' : ''; ?>><?= $percent; ?>%</option>
+                    <?php endforeach; ?>
+                </select>
                 <small class="text-muted d-block mt-1">Semakin kecil nilainya, semakin kecil ukuran foto hasil proses di browser. Contoh: 30 berarti ukuran foto dibuat 30% dari ukuran asli.</small>
             </div>
             <div class="form-group mb-4">
@@ -331,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             incomingFiles.length = remainingSlots;
         }
 
-        const compressionPercent = Math.max(10, Math.min(100, Number(compressionPercentInput?.value || 10)));
+        const compressionPercent = Math.max(30, Math.min(100, Number(compressionPercentInput?.value || 30)));
         const scaleFactor = compressionPercent / 100;
 
         for (const file of incomingFiles) {
