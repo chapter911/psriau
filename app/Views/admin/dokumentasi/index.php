@@ -367,6 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gap: 8px;
         overflow-x: auto;
         padding-bottom: 4px;
+        justify-content: center;
     }
 
     .gallery-thumb {
