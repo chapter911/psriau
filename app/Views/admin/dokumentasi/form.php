@@ -43,7 +43,7 @@
                         </div>
                         <div class="text-right">
                             <button type="button" class="btn btn-outline-primary" id="btnPickPhotos">Pilih Foto</button>
-                            <div class="small text-muted mt-1" id="photoCounter"><?= (int) ($existingPhotoCount ?? 0); ?>/50 foto</div>
+                            <div class="small text-muted mt-1" id="photoCounter"><?= (int) ($existingPhotoCount ?? 0); ?>/250 foto</div>
                         </div>
                     </div>
                     <div class="photo-dropzone__target text-center text-muted">
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewContainer = document.getElementById('selectedPhotoPreview');
     const counter = document.getElementById('photoCounter');
     const compressionPercentInput = document.getElementById('compression_percent');
-    const maxPhotos = 50;
+    const maxPhotos = 250;
     const existingPhotoCount = <?= (int) ($existingPhotoCount ?? 0); ?>;
     const selectedItems = [];
     const actionUrl = <?= json_encode(site_url($actionUrl), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const remainingSlots = maxPhotos - existingPhotoCount - selectedItems.length;
         if (remainingSlots <= 0) {
-            showNotice('Batas 50 foto sudah tercapai untuk kegiatan ini.', 'danger');
+            showNotice('Batas 250 foto sudah tercapai untuk kegiatan ini.', 'danger');
             return;
         }
 
