@@ -165,18 +165,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPhotos = [];
     let currentIndex = 0;
     const tableEl = document.querySelector('.js-datatable');
+    let activeFilters = {
+        title: '',
+        date: '',
+        location: '',
+    };
 
     const getDataTable = () => {
         if (!window.jQuery || !tableEl || !window.jQuery.fn || !window.jQuery.fn.DataTable) {
             return null;
         }
 
-        const isDataTableFn = window.jQuery.fn.dataTable && window.jQuery.fn.dataTable.isDataTable;
-        if (typeof isDataTableFn === 'function' && !isDataTableFn(tableEl)) {
+        try {
+            return window.jQuery(tableEl).DataTable();
+        } catch (error) {
             return null;
         }
-
-        return window.jQuery(tableEl).DataTable();
     };
 
     const applyManualTableFilter = () => {
@@ -219,6 +223,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setTimeout(hideDefaultDataTableSearch, 0);
     setTimeout(hideDefaultDataTableSearch, 250);
+
+    const registerDataTableCustomFilter = () => {
+        if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.dataTable || !window.jQuery.fn.dataTable.ext) {
+            return;
+        }
+
+        const extSearch = window.jQuery.fn.dataTable.ext.search;
+        const filterName = '__kegiatanLapanganFilterRegistered';
+
+        if (tableEl && tableEl.dataset && tableEl.dataset[filterName] === '1') {
+            return;
+        }
+
+        extSearch.push((settings, data) => {
+            if (!tableEl || settings.nTable !== tableEl) {
+                return true;
+            }
+
+            const rowTitle = (data[0] || '').toLowerCase();
+            const rowDate = (data[1] || '').trim();
+            const rowLocation = (data[2] || '').toLowerCase();
+
+            const titleMatch = activeFilters.title === '' || rowTitle.includes(activeFilters.title);
+            const dateMatch = activeFilters.date === '' || rowDate.includes(activeFilters.date);
+            const locationMatch = activeFilters.location === '' || rowLocation.includes(activeFilters.location);
+
+            return titleMatch && dateMatch && locationMatch;
+        });
+
+        if (tableEl && tableEl.dataset) {
+            tableEl.dataset[filterName] = '1';
+        }
+    };
+
+    registerDataTableCustomFilter();
 
     const showPhoto = (index) => {
         if (!currentPhotos.length) {
@@ -285,11 +324,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const applyFilters = () => {
+        activeFilters = {
+            title: (filterTitle ? filterTitle.value : '').trim().toLowerCase(),
+            date: (filterDate ? filterDate.value : '').trim(),
+            location: (filterLocation ? filterLocation.value : '').trim().toLowerCase(),
+        };
+
         const dataTable = getDataTable();
         if (dataTable) {
-            dataTable.column(0).search((filterTitle?.value || '').trim(), false, true);
-            dataTable.column(1).search((filterDate?.value || '').trim(), false, true);
-            dataTable.column(2).search((filterLocation?.value || '').trim(), false, true);
+            hideDefaultDataTableSearch();
             dataTable.draw();
             return;
         }
