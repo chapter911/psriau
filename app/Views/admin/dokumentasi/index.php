@@ -188,9 +188,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const titleQuery = (filterTitle?.value || '').trim().toLowerCase();
-        const dateQuery = (filterDate?.value || '').trim();
-        const locationQuery = (filterLocation?.value || '').trim().toLowerCase();
+        const titleQuery = (filterTitle ? filterTitle.value : '').trim().toLowerCase();
+        const dateQuery = (filterDate ? filterDate.value : '').trim();
+        const locationQuery = (filterLocation ? filterLocation.value : '').trim().toLowerCase();
         const rows = tableEl.querySelectorAll('tbody tr');
 
         rows.forEach((row) => {
@@ -199,9 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const titleText = (cells[0]?.textContent || '').trim().toLowerCase();
-            const dateText = (cells[1]?.textContent || '').trim();
-            const locationText = (cells[2]?.textContent || '').trim().toLowerCase();
+            const titleText = ((cells[0] && cells[0].textContent) || '').trim().toLowerCase();
+            const dateText = ((cells[1] && cells[1].textContent) || '').trim();
+            const locationText = ((cells[2] && cells[2].textContent) || '').trim().toLowerCase();
 
             const isTitleMatch = titleQuery === '' || titleText.includes(titleQuery);
             const isDateMatch = dateQuery === '' || dateText.includes(dateQuery);
@@ -313,8 +313,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    prevBtn?.addEventListener('click', () => showPhoto(currentIndex - 1));
-    nextBtn?.addEventListener('click', () => showPhoto(currentIndex + 1));
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => showPhoto(currentIndex - 1));
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => showPhoto(currentIndex + 1));
+    }
 
     photoCards.forEach((card) => {
         card.addEventListener('click', () => {
@@ -340,25 +345,36 @@ document.addEventListener('DOMContentLoaded', () => {
         applyManualTableFilter();
     };
 
-    applyFiltersBtn?.addEventListener('click', applyFilters);
-
-    filterTitle?.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
+    if (applyFiltersBtn) {
+        applyFiltersBtn.addEventListener('click', (event) => {
             event.preventDefault();
             applyFilters();
-        }
-    });
+        });
+    }
 
-    filterLocation?.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            applyFilters();
-        }
-    });
+    if (filterTitle) {
+        filterTitle.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                applyFilters();
+            }
+        });
+    }
 
-    filterDate?.addEventListener('change', applyFilters);
+    if (filterLocation) {
+        filterLocation.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                applyFilters();
+            }
+        });
+    }
 
-    resetFiltersBtn?.addEventListener('click', () => {
+    if (filterDate) {
+        filterDate.addEventListener('change', applyFilters);
+    }
+
+    const resetFilters = () => {
         if (filterTitle) {
             filterTitle.value = '';
         }
@@ -369,7 +385,30 @@ document.addEventListener('DOMContentLoaded', () => {
             filterLocation.value = '';
         }
         applyFilters();
-    });
+    };
+
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            resetFilters();
+        });
+    }
+
+    if (window.jQuery) {
+        window.jQuery(document)
+            .off('click.kegiatanFilterApply', '#applyFilters')
+            .on('click.kegiatanFilterApply', '#applyFilters', function (event) {
+                event.preventDefault();
+                applyFilters();
+            });
+
+        window.jQuery(document)
+            .off('click.kegiatanFilterReset', '#resetFilters')
+            .on('click.kegiatanFilterReset', '#resetFilters', function (event) {
+                event.preventDefault();
+                resetFilters();
+            });
+    }
 });
 </script>
 
