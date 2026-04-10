@@ -47,7 +47,7 @@
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-striped table-hover js-datatable w-100" data-order='[[1,"desc"]]'>
+            <table class="table table-striped table-hover js-kegiatan-lapangan-table w-100" data-order='[[1,"desc"]]'>
                 <thead>
                 <tr>
                     <th>Judul Kegiatan</th>
@@ -58,60 +58,7 @@
                     <th class="text-right">Aksi</th>
                 </tr>
                 </thead>
-                <tbody>
-                <?php foreach ($activities as $activity): ?>
-                    <?php $coverPhoto = (string) ($activity['cover_photo'] ?? ''); ?>
-                    <?php $galleryPhotos = array_map(static function (array $photo): array {
-                        return [
-                            'path' => (string) ($photo['photo_path'] ?? ''),
-                            'name' => (string) ($photo['photo_name'] ?? 'Foto kegiatan'),
-                        ];
-                    }, $activity['photos'] ?? []); ?>
-                    <tr>
-                        <td><?= esc((string) ($activity['title'] ?? '-')); ?></td>
-                        <td><?= esc((string) ($activity['activity_date'] ?? '-')); ?></td>
-                        <td><?= esc((string) ($activity['location'] ?? '-')); ?></td>
-                        <td>
-                            <button
-                                type="button"
-                                class="btn btn-link p-0 text-left"
-                                data-photo-gallery='<?= esc(json_encode($galleryPhotos, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)); ?>'
-                                data-activity-title="<?= esc((string) ($activity['title'] ?? '-')); ?>"
-                                data-activity-date="<?= esc((string) ($activity['activity_date'] ?? '-')); ?>"
-                            >
-                                <div class="d-flex align-items-center" style="gap:10px;">
-                                    <?php if ($coverPhoto !== ''): ?>
-                                        <img src="<?= esc($coverPhoto); ?>" alt="Foto kegiatan" style="width:54px;height:54px;object-fit:cover;border-radius:10px;border:1px solid #dee2e6;">
-                                    <?php else: ?>
-                                        <div class="d-flex align-items-center justify-content-center bg-light text-muted" style="width:54px;height:54px;border-radius:10px;border:1px solid #dee2e6;">
-                                            <i class="far fa-image"></i>
-                                        </div>
-                                    <?php endif; ?>
-                                    <div>
-                                        <div class="font-weight-bold"><?= (int) ($activity['photo_count'] ?? 0); ?> foto</div>
-                                        <small class="text-muted">Klik untuk lihat galeri</small>
-                                    </div>
-                                </div>
-                            </button>
-                        </td>
-                        <td><?= esc((string) ($activity['created_by'] ?? '-')); ?></td>
-                        <td class="text-right">
-                            <a class="btn btn-sm btn-warning" href="<?= site_url('/admin/dokumentasi/kegiatan-lapangan/' . $activity['id'] . '/ubah'); ?>">Ubah</a>
-                            <form
-                                class="inline-form"
-                                method="post"
-                                action="<?= site_url('/admin/dokumentasi/kegiatan-lapangan/' . $activity['id'] . '/hapus'); ?>"
-                                data-confirm-title="Hapus Kegiatan"
-                                data-confirm-text="Hapus kegiatan lapangan ini beserta seluruh fotonya?"
-                                data-confirm-button="Ya, hapus"
-                            >
-                                <?= csrf_field(); ?>
-                                <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
     </div>
@@ -149,7 +96,19 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.DataTable) {
+        return;
+    }
+
+    const $ = window.jQuery;
+    const tableEl = document.querySelector('.js-kegiatan-lapangan-table');
+    const filterTitle = document.getElementById('serverFilterTitle');
+    const filterDate = document.getElementById('serverFilterDate');
+    const filterLocation = document.getElementById('serverFilterLocation');
+    const applyButton = document.getElementById('applyServerFilters');
+    const resetButton = document.getElementById('resetServerFilters');
+
     const modalEl = document.getElementById('activityPhotoModal');
     const modalTitle = document.getElementById('activityPhotoModalTitle');
     const modalMeta = document.getElementById('activityPhotoModalMeta');
@@ -158,119 +117,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const thumbnailsEl = document.getElementById('activityPhotoThumbnails');
     const prevBtn = document.getElementById('photoPrevBtn');
     const nextBtn = document.getElementById('photoNextBtn');
-    const filterTitle = document.getElementById('filterTitle');
-    const filterDate = document.getElementById('filterDate');
-    const filterLocation = document.getElementById('filterLocation');
-    const applyFiltersBtn = document.getElementById('applyFilters');
-    const resetFiltersBtn = document.getElementById('resetFilters');
-    const photoCards = document.querySelectorAll('[data-photo-gallery]');
+
     let currentPhotos = [];
     let currentIndex = 0;
-    const tableEl = document.querySelector('.js-datatable');
-    let activeFilters = {
-        title: '',
-        date: '',
-        location: '',
+
+    const csrfTokenName = <?= json_encode(csrf_token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    const csrfTokenValue = <?= json_encode(csrf_hash(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    const dataUrl = <?= json_encode(site_url('/admin/dokumentasi/kegiatan-lapangan/data'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+
+    const escapeHtml = function (value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     };
 
-    const getDataTable = () => {
-        if (!window.jQuery || !tableEl || !window.jQuery.fn || !window.jQuery.fn.DataTable) {
-            return null;
-        }
-
-        try {
-            return window.jQuery(tableEl).DataTable();
-        } catch (error) {
-            return null;
-        }
-    };
-
-    const applyManualTableFilter = () => {
-        if (!tableEl) {
-            return;
-        }
-
-        const titleQuery = (filterTitle ? filterTitle.value : '').trim().toLowerCase();
-        const dateQuery = (filterDate ? filterDate.value : '').trim();
-        const locationQuery = (filterLocation ? filterLocation.value : '').trim().toLowerCase();
-        const rows = tableEl.querySelectorAll('tbody tr');
-
-        rows.forEach((row) => {
-            const cells = row.querySelectorAll('td');
-            if (cells.length < 3) {
-                return;
-            }
-
-            const titleText = ((cells[0] && cells[0].textContent) || '').trim().toLowerCase();
-            const dateText = ((cells[1] && cells[1].textContent) || '').trim();
-            const locationText = ((cells[2] && cells[2].textContent) || '').trim().toLowerCase();
-
-            const isTitleMatch = titleQuery === '' || titleText.includes(titleQuery);
-            const isDateMatch = dateQuery === '' || dateText.includes(dateQuery);
-            const isLocationMatch = locationQuery === '' || locationText.includes(locationQuery);
-
-            row.style.display = isTitleMatch && isDateMatch && isLocationMatch ? '' : 'none';
-        });
-    };
-
-    const hideDefaultDataTableSearch = () => {
-        const dataTable = getDataTable();
-        if (!dataTable) {
-            return;
-        }
-
-        const wrapper = window.jQuery(dataTable.table().container());
-        wrapper.find('.dataTables_filter').hide();
-    };
-
-    setTimeout(hideDefaultDataTableSearch, 0);
-    setTimeout(hideDefaultDataTableSearch, 250);
-
-    const registerDataTableCustomFilter = () => {
-        if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.dataTable || !window.jQuery.fn.dataTable.ext) {
-            return;
-        }
-
-        const extSearch = window.jQuery.fn.dataTable.ext.search;
-        const filterName = '__kegiatanLapanganFilterRegistered';
-
-        if (tableEl && tableEl.dataset && tableEl.dataset[filterName] === '1') {
-            return;
-        }
-
-        extSearch.push((settings, data) => {
-            if (!tableEl || settings.nTable !== tableEl) {
-                return true;
-            }
-
-            const rowTitle = (data[0] || '').toLowerCase();
-            const rowDate = (data[1] || '').trim();
-            const rowLocation = (data[2] || '').toLowerCase();
-
-            const titleMatch = activeFilters.title === '' || rowTitle.includes(activeFilters.title);
-            const dateMatch = activeFilters.date === '' || rowDate.includes(activeFilters.date);
-            const locationMatch = activeFilters.location === '' || rowLocation.includes(activeFilters.location);
-
-            return titleMatch && dateMatch && locationMatch;
-        });
-
-        if (tableEl && tableEl.dataset) {
-            tableEl.dataset[filterName] = '1';
-        }
-    };
-
-    registerDataTableCustomFilter();
-
-    const showPhoto = (index) => {
+    const showPhoto = function (index) {
         if (!currentPhotos.length) {
             return;
         }
 
         currentIndex = (index + currentPhotos.length) % currentPhotos.length;
-        const photo = currentPhotos[currentIndex];
+        const photo = currentPhotos[currentIndex] || {};
 
         if (modalImage) {
-            modalImage.src = photo.path;
+            modalImage.src = photo.path || '';
             modalImage.alt = photo.name || 'Foto kegiatan';
         }
 
@@ -280,18 +153,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (thumbnailsEl) {
             thumbnailsEl.innerHTML = '';
-            currentPhotos.forEach((item, thumbIndex) => {
+            currentPhotos.forEach(function (item, thumbIndex) {
                 const thumbButton = document.createElement('button');
                 thumbButton.type = 'button';
                 thumbButton.className = 'gallery-thumb' + (thumbIndex === currentIndex ? ' active' : '');
-                thumbButton.innerHTML = `<img src="${item.path}" alt="${item.name || 'Foto kegiatan'}">`;
-                thumbButton.addEventListener('click', () => showPhoto(thumbIndex));
+                thumbButton.innerHTML = '<img src="' + escapeHtml(item.path || '') + '" alt="' + escapeHtml(item.name || 'Foto kegiatan') + '">';
+                thumbButton.addEventListener('click', function () {
+                    showPhoto(thumbIndex);
+                });
                 thumbnailsEl.appendChild(thumbButton);
             });
         }
     };
 
-    const openGallery = (activityTitle, activityDate, photos) => {
+    const openGallery = function (activityTitle, activityDate, photos) {
         currentPhotos = Array.isArray(photos) ? photos : [];
         currentIndex = 0;
 
@@ -304,257 +179,212 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (modalMeta) {
-            const dateLabel = activityDate || '-';
-            modalMeta.textContent = `${dateLabel} · ${currentPhotos.length} foto`;
+            modalMeta.textContent = (activityDate || '-') + ' · ' + currentPhotos.length + ' foto';
         }
 
         showPhoto(0);
 
-        if (window.jQuery && typeof window.jQuery.fn.modal === 'function') {
-            window.jQuery(modalEl).modal('show');
+        if (typeof $.fn.modal === 'function') {
+            $(modalEl).modal('show');
         }
     };
 
     if (prevBtn) {
-        prevBtn.addEventListener('click', () => showPhoto(currentIndex - 1));
+        prevBtn.addEventListener('click', function () {
+            showPhoto(currentIndex - 1);
+        });
     }
 
     if (nextBtn) {
-        nextBtn.addEventListener('click', () => showPhoto(currentIndex + 1));
+        nextBtn.addEventListener('click', function () {
+            showPhoto(currentIndex + 1);
+        });
     }
 
-    photoCards.forEach((card) => {
-        card.addEventListener('click', () => {
-            const photos = JSON.parse(card.getAttribute('data-photo-gallery') || '[]');
-            openGallery(card.getAttribute('data-activity-title') || '', card.getAttribute('data-activity-date') || '', photos);
-        });
+    if (!tableEl) {
+        return;
+    }
+
+    const dt = $(tableEl).DataTable({
+        processing: true,
+        serverSide: true,
+        responsive: false,
+        autoWidth: false,
+        scrollX: true,
+        scrollCollapse: true,
+        searching: false,
+        order: [[1, 'desc']],
+        ajax: {
+            url: dataUrl,
+            type: 'GET',
+            data: function (d) {
+                d.title = filterTitle ? filterTitle.value : '';
+                d.date = filterDate ? filterDate.value : '';
+                d.location = filterLocation ? filterLocation.value : '';
+            }
+        },
+        columns: [
+            {
+                data: 'title',
+                defaultContent: '-',
+                render: function (data) {
+                    return escapeHtml(data || '-');
+                }
+            },
+            {
+                data: 'activity_date',
+                defaultContent: '-',
+                render: function (data) {
+                    return escapeHtml(data || '-');
+                }
+            },
+            {
+                data: 'location',
+                defaultContent: '-',
+                render: function (data) {
+                    return escapeHtml(data || '-');
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                render: function (row) {
+                    const photos = Array.isArray(row.photos) ? row.photos : [];
+                    const coverPhoto = row.cover_photo || '';
+                    const title = row.title || '-';
+                    const activityDate = row.activity_date || '-';
+                    const photosJson = encodeURIComponent(JSON.stringify(photos));
+
+                    let thumbHtml = '';
+                    if (coverPhoto !== '') {
+                        thumbHtml = '<img src="' + escapeHtml(coverPhoto) + '" alt="Foto kegiatan" style="width:54px;height:54px;object-fit:cover;border-radius:10px;border:1px solid #dee2e6;">';
+                    } else {
+                        thumbHtml = '<div class="d-flex align-items-center justify-content-center bg-light text-muted" style="width:54px;height:54px;border-radius:10px;border:1px solid #dee2e6;"><i class="far fa-image"></i></div>';
+                    }
+
+                    return ''
+                        + '<button type="button" class="btn btn-link p-0 text-left js-open-gallery"'
+                        + ' data-gallery="' + photosJson + '"'
+                        + ' data-title="' + encodeURIComponent(title) + '"'
+                        + ' data-date="' + encodeURIComponent(activityDate) + '">'
+                        + '<div class="d-flex align-items-center" style="gap:10px;">'
+                        + thumbHtml
+                        + '<div>'
+                        + '<div class="font-weight-bold">' + Number(row.photo_count || 0) + ' foto</div>'
+                        + '<small class="text-muted">Klik untuk lihat galeri</small>'
+                        + '</div>'
+                        + '</div>'
+                        + '</button>';
+                }
+            },
+            {
+                data: 'created_by',
+                defaultContent: '-',
+                render: function (data) {
+                    return escapeHtml(data || '-');
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                className: 'text-right',
+                render: function (row) {
+                    const editUrl = row.edit_url || '#';
+                    const deleteUrl = row.delete_url || '#';
+
+                    return ''
+                        + '<a class="btn btn-sm btn-warning" href="' + escapeHtml(editUrl) + '">Ubah</a> '
+                        + '<form class="inline-form" method="post" action="' + escapeHtml(deleteUrl) + '"'
+                        + ' data-confirm-title="Hapus Kegiatan"'
+                        + ' data-confirm-text="Hapus kegiatan lapangan ini beserta seluruh fotonya?"'
+                        + ' data-confirm-button="Ya, hapus">'
+                        + '<input type="hidden" name="' + escapeHtml(csrfTokenName) + '" value="' + escapeHtml(csrfTokenValue) + '">'
+                        + '<button type="submit" class="btn btn-sm btn-danger">Hapus</button>'
+                        + '</form>';
+                }
+            }
+        ],
+        language: {
+            search: 'Cari:',
+            lengthMenu: 'Tampilkan _MENU_ data',
+            info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+            infoEmpty: 'Tidak ada data',
+            zeroRecords: 'Data tidak ditemukan',
+            paginate: {
+                first: 'Awal',
+                last: 'Akhir',
+                next: 'Berikutnya',
+                previous: 'Sebelumnya'
+            }
+        }
     });
 
-    const applyFilters = () => {
-        activeFilters = {
-            title: (filterTitle ? filterTitle.value : '').trim().toLowerCase(),
-            date: (filterDate ? filterDate.value : '').trim(),
-            location: (filterLocation ? filterLocation.value : '').trim().toLowerCase(),
-        };
+    $(dt.table().container()).find('.dataTables_filter').hide();
 
-        const dataTable = getDataTable();
-        if (dataTable) {
-            hideDefaultDataTableSearch();
-            dataTable.draw();
-            return;
+    $(tableEl).on('click', '.js-open-gallery', function () {
+        let photos = [];
+        try {
+            photos = JSON.parse(decodeURIComponent(this.getAttribute('data-gallery') || '[]'));
+        } catch (error) {
+            photos = [];
         }
 
-        applyManualTableFilter();
-    };
+        openGallery(
+            decodeURIComponent(this.getAttribute('data-title') || ''),
+            decodeURIComponent(this.getAttribute('data-date') || ''),
+            photos
+        );
+    });
 
-    if (applyFiltersBtn) {
-        applyFiltersBtn.addEventListener('click', (event) => {
+    if (applyButton) {
+        applyButton.addEventListener('click', function (event) {
             event.preventDefault();
-            applyFilters();
+            dt.ajax.reload();
+        });
+    }
+
+    if (resetButton) {
+        resetButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            if (filterTitle) {
+                filterTitle.value = '';
+            }
+            if (filterDate) {
+                filterDate.value = '';
+            }
+            if (filterLocation) {
+                filterLocation.value = '';
+            }
+            dt.ajax.reload();
         });
     }
 
     if (filterTitle) {
-        filterTitle.addEventListener('keydown', (event) => {
+        filterTitle.addEventListener('keydown', function (event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                applyFilters();
+                dt.ajax.reload();
             }
         });
     }
 
     if (filterLocation) {
-        filterLocation.addEventListener('keydown', (event) => {
+        filterLocation.addEventListener('keydown', function (event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                applyFilters();
+                dt.ajax.reload();
             }
         });
     }
 
     if (filterDate) {
-        filterDate.addEventListener('change', applyFilters);
-    }
-
-    const resetFilters = () => {
-        if (filterTitle) {
-            filterTitle.value = '';
-        }
-        if (filterDate) {
-            filterDate.value = '';
-        }
-        if (filterLocation) {
-            filterLocation.value = '';
-        }
-        applyFilters();
-    };
-
-    if (resetFiltersBtn) {
-        resetFiltersBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            resetFilters();
+        filterDate.addEventListener('change', function () {
+            dt.ajax.reload();
         });
-    }
-
-    if (window.jQuery) {
-        window.jQuery(document)
-            .off('click.kegiatanFilterApply', '#applyFilters')
-            .on('click.kegiatanFilterApply', '#applyFilters', function (event) {
-                event.preventDefault();
-                applyFilters();
-            });
-
-        window.jQuery(document)
-            .off('click.kegiatanFilterReset', '#resetFilters')
-            .on('click.kegiatanFilterReset', '#resetFilters', function (event) {
-                event.preventDefault();
-                resetFilters();
-            });
     }
 });
-</script>
-
-<script>
-(function () {
-    function getFilterElements() {
-        return {
-            title: document.getElementById('filterTitle'),
-            date: document.getElementById('filterDate'),
-            location: document.getElementById('filterLocation'),
-            apply: document.getElementById('applyFilters'),
-            reset: document.getElementById('resetFilters'),
-            table: document.querySelector('.js-datatable')
-        };
-    }
-
-    function readFilterValues() {
-        var els = getFilterElements();
-
-        return {
-            title: els.title ? String(els.title.value || '').trim() : '',
-            date: els.date ? String(els.date.value || '').trim() : '',
-            location: els.location ? String(els.location.value || '').trim() : ''
-        };
-    }
-
-    function applyManualFilter() {
-        var els = getFilterElements();
-        if (!els.table) {
-            return;
-        }
-
-        var values = readFilterValues();
-        var titleQuery = values.title.toLowerCase();
-        var dateQuery = values.date;
-        var locationQuery = values.location.toLowerCase();
-        var rows = els.table.querySelectorAll('tbody tr');
-
-        Array.prototype.forEach.call(rows, function (row) {
-            var cells = row.querySelectorAll('td');
-            if (!cells || cells.length < 3) {
-                return;
-            }
-
-            var titleText = (cells[0] && cells[0].textContent ? cells[0].textContent : '').trim().toLowerCase();
-            var dateText = (cells[1] && cells[1].textContent ? cells[1].textContent : '').trim();
-            var locationText = (cells[2] && cells[2].textContent ? cells[2].textContent : '').trim().toLowerCase();
-
-            var matched =
-                (titleQuery === '' || titleText.indexOf(titleQuery) !== -1) &&
-                (dateQuery === '' || dateText.indexOf(dateQuery) !== -1) &&
-                (locationQuery === '' || locationText.indexOf(locationQuery) !== -1);
-
-            row.style.display = matched ? '' : 'none';
-        });
-    }
-
-    function applyDataTableFilter() {
-        if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.DataTable) {
-            return false;
-        }
-
-        var els = getFilterElements();
-        if (!els.table) {
-            return false;
-        }
-
-        var dataTable = null;
-        try {
-            dataTable = window.jQuery(els.table).DataTable();
-        } catch (error) {
-            dataTable = null;
-        }
-
-        if (!dataTable) {
-            return false;
-        }
-
-        var values = readFilterValues();
-        dataTable.column(0).search(values.title, false, false);
-        dataTable.column(1).search(values.date, false, false);
-        dataTable.column(2).search(values.location, false, false);
-        dataTable.draw();
-        return true;
-    }
-
-    function applyFiltersFromButton() {
-        if (!applyDataTableFilter()) {
-            applyManualFilter();
-        }
-    }
-
-    function resetFiltersFromButton() {
-        var els = getFilterElements();
-        if (els.title) {
-            els.title.value = '';
-        }
-        if (els.date) {
-            els.date.value = '';
-        }
-        if (els.location) {
-            els.location.value = '';
-        }
-
-        applyFiltersFromButton();
-    }
-
-    function bindFilterEvents() {
-        var els = getFilterElements();
-
-        if (els.apply) {
-            els.apply.setAttribute('onclick', 'window.applyKegiatanLapanganFilters(); return false;');
-        }
-
-        if (els.reset) {
-            els.reset.setAttribute('onclick', 'window.resetKegiatanLapanganFilters(); return false;');
-        }
-
-        if (window.jQuery) {
-            window.jQuery(document)
-                .off('click.kegiatanFilterApplyFallback', '#applyFilters')
-                .on('click.kegiatanFilterApplyFallback', '#applyFilters', function (event) {
-                    event.preventDefault();
-                    applyFiltersFromButton();
-                });
-
-            window.jQuery(document)
-                .off('click.kegiatanFilterResetFallback', '#resetFilters')
-                .on('click.kegiatanFilterResetFallback', '#resetFilters', function (event) {
-                    event.preventDefault();
-                    resetFiltersFromButton();
-                });
-        }
-    }
-
-    window.applyKegiatanLapanganFilters = applyFiltersFromButton;
-    window.resetKegiatanLapanganFilters = resetFiltersFromButton;
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', bindFilterEvents);
-    } else {
-        bindFilterEvents();
-    }
-})();
 </script>
 
 <style>

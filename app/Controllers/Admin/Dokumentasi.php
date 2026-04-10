@@ -12,63 +12,132 @@ class Dokumentasi extends BaseController
 
     public function index(): string
     {
-        $activityModel = new KegiatanLapanganModel();
-        $photoModel = new KegiatanLapanganPhotoModel();
-
         $filterTitle = trim((string) $this->request->getGet('title'));
         $filterDate = trim((string) $this->request->getGet('date'));
         $filterLocation = trim((string) $this->request->getGet('location'));
 
-        if ($filterTitle !== '') {
-            $activityModel->like('title', $filterTitle);
-        }
-
-        if ($filterDate !== '' && $this->validateDate($filterDate)) {
-            $activityModel->where('activity_date', $filterDate);
-        }
-
-        if ($filterLocation !== '') {
-            $activityModel->like('location', $filterLocation);
-        }
-
-        $activities = $activityModel
-            ->orderBy('activity_date', 'DESC')
-            ->orderBy('id', 'DESC')
-            ->findAll();
-
-        $activityIds = array_values(array_filter(array_map(static fn (array $row): string => (string) ($row['id'] ?? ''), $activities)));
-        $photosByActivity = [];
-
-        if ($activityIds !== []) {
-            $photos = $photoModel
-                ->whereIn('activity_id', $activityIds)
-                ->orderBy('sort_order', 'ASC')
-                ->orderBy('id', 'ASC')
-                ->findAll();
-
-            foreach ($photos as $photo) {
-                $activityId = (string) ($photo['activity_id'] ?? '');
-                $photosByActivity[$activityId][] = $photo;
-            }
-        }
-
-        foreach ($activities as &$activity) {
-            $activityId = (string) ($activity['id'] ?? '');
-            $activityPhotos = $photosByActivity[$activityId] ?? [];
-            $activity['photos'] = $activityPhotos;
-            $activity['photo_count'] = count($activityPhotos);
-            $activity['cover_photo'] = $activityPhotos[0]['photo_path'] ?? null;
-        }
-        unset($activity);
-
         return view('admin/dokumentasi/index', [
-            'activities' => $activities,
             'pageTitle' => 'Kegiatan Lapangan',
             'filters' => [
                 'title' => $filterTitle,
                 'date' => $filterDate,
                 'location' => $filterLocation,
             ],
+        ]);
+    }
+
+    public function dataTable()
+    {
+        $db = db_connect();
+
+        $draw = (int) $this->request->getGet('draw');
+        $start = max(0, (int) $this->request->getGet('start'));
+        $length = (int) $this->request->getGet('length');
+        if ($length <= 0) {
+            $length = 10;
+        }
+
+        $filterTitle = trim((string) $this->request->getGet('title'));
+        $filterDate = trim((string) $this->request->getGet('date'));
+        $filterLocation = trim((string) $this->request->getGet('location'));
+        $globalSearch = trim((string) ($this->request->getGet('search')['value'] ?? ''));
+
+        $orderColumns = [
+            0 => 'title',
+            1 => 'activity_date',
+            2 => 'location',
+            4 => 'created_by',
+            5 => 'id',
+        ];
+
+        $orderColumnIndex = (int) ($this->request->getGet('order')[0]['column'] ?? 1);
+        $orderDirection = strtolower((string) ($this->request->getGet('order')[0]['dir'] ?? 'desc')) === 'asc' ? 'ASC' : 'DESC';
+        $orderBy = $orderColumns[$orderColumnIndex] ?? 'activity_date';
+
+        $applyFilters = static function ($builder) use ($filterTitle, $filterDate, $filterLocation, $globalSearch): void {
+            if ($filterTitle !== '') {
+                $builder->like('title', $filterTitle);
+            }
+
+            if ($filterDate !== '') {
+                $builder->where('activity_date', $filterDate);
+            }
+
+            if ($filterLocation !== '') {
+                $builder->like('location', $filterLocation);
+            }
+
+            if ($globalSearch !== '') {
+                $builder->groupStart()
+                    ->like('title', $globalSearch)
+                    ->orLike('location', $globalSearch)
+                    ->orLike('created_by', $globalSearch)
+                    ->groupEnd();
+            }
+        };
+
+        $recordsTotal = (int) $db->table('kegiatan_lapangan')->countAllResults();
+
+        $filteredCountBuilder = $db->table('kegiatan_lapangan');
+        $applyFilters($filteredCountBuilder);
+        $recordsFiltered = (int) $filteredCountBuilder->countAllResults();
+
+        $dataBuilder = $db->table('kegiatan_lapangan');
+        $applyFilters($dataBuilder);
+        $rows = $dataBuilder
+            ->orderBy($orderBy, $orderDirection)
+            ->orderBy('id', 'DESC')
+            ->get($length, $start)
+            ->getResultArray();
+
+        $activityIds = array_values(array_filter(array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $rows)));
+        $photosByActivity = [];
+
+        if ($activityIds !== []) {
+            $photoRows = $db->table('kegiatan_lapangan_photos')
+                ->whereIn('activity_id', $activityIds)
+                ->orderBy('sort_order', 'ASC')
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            foreach ($photoRows as $photoRow) {
+                $activityId = (int) ($photoRow['activity_id'] ?? 0);
+                if ($activityId <= 0) {
+                    continue;
+                }
+
+                $photosByActivity[$activityId][] = [
+                    'path' => (string) ($photoRow['photo_path'] ?? ''),
+                    'name' => (string) ($photoRow['photo_name'] ?? 'Foto kegiatan'),
+                ];
+            }
+        }
+
+        $data = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            $photos = $photosByActivity[$id] ?? [];
+
+            $data[] = [
+                'id' => $id,
+                'title' => (string) ($row['title'] ?? '-'),
+                'activity_date' => (string) ($row['activity_date'] ?? '-'),
+                'location' => (string) ($row['location'] ?? '-'),
+                'created_by' => (string) ($row['created_by'] ?? '-'),
+                'photos' => $photos,
+                'photo_count' => count($photos),
+                'cover_photo' => $photos[0]['path'] ?? '',
+                'edit_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/ubah'),
+                'delete_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/hapus'),
+            ];
+        }
+
+        return $this->response->setJSON([
+            'draw' => $draw,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
         ]);
     }
 
