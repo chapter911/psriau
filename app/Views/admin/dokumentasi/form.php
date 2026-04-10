@@ -13,15 +13,13 @@
                 <label for="title">Judul Kegiatan</label>
                 <input type="text" id="title" name="title" class="form-control" value="<?= old('title', $activity['title'] ?? ''); ?>" required>
             </div>
-
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                <select id="compression_percent" class="form-control">
-                    <?php foreach ([30, 40, 50, 60, 70, 80, 90, 100] as $percent): ?>
-                        <option value="<?= $percent; ?>" <?= $percent === 30 ? 'selected' : ''; ?>><?= $percent; ?>%</option>
-                    <?php endforeach; ?>
-                </select>
-                </div>
+            <div class="form-group">
+                <label for="activity_date">Tanggal Kegiatan</label>
+                <input type="date" id="activity_date" name="activity_date" class="form-control" value="<?= old('activity_date', isset($activity['activity_date']) ? date('Y-m-d', strtotime($activity['activity_date'])) : ''); ?>" required>
+            </div>
+            <div class="form-group">
+                <label for="location">Lokasi Kegiatan</label>
+                <input type="text" id="location" name="location" class="form-control" value="<?= old('location', $activity['location'] ?? ''); ?>" required>
             </div>
             <div class="form-group">
                 <label for="compression_percent">Persentase Kompresi Foto</label>
