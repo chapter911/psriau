@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
         image.src = objectUrl;
     });
 
-    const addFiles = async (fileList) => {
+    const addFiles = (fileList) => {
         const incomingFiles = Array.from(fileList || []).filter((file) => file && file.type && file.type.startsWith('image/'));
         if (incomingFiles.length === 0) {
             showNotice('Silakan pilih file gambar yang valid.', 'danger');
@@ -329,24 +329,20 @@ document.addEventListener('DOMContentLoaded', () => {
             incomingFiles.length = remainingSlots;
         }
 
-        const compressionPercent = Math.max(30, Math.min(100, Number(compressionPercentInput?.value || 30)));
-        const scaleFactor = compressionPercent / 100;
-
         for (const file of incomingFiles) {
-            const resizedFile = await resizeFile(file, scaleFactor);
-            const previewUrl = URL.createObjectURL(resizedFile);
+            const previewUrl = URL.createObjectURL(file);
             selectedItems.push({
-                file: resizedFile,
+                file,
                 previewUrl,
-                name: resizedFile.name,
-                sizeLabel: `${Math.max(1, Math.round(resizedFile.size / 1024))} KB setelah resize (${compressionPercent}%)`,
+                name: file.name,
+                sizeLabel: `${Math.max(1, Math.round(file.size / 1024))} KB (kompresi saat simpan)`,
             });
         }
 
         syncFileInput();
         renderPreview();
         updateCounter();
-        showNotice('Foto berhasil diproses di browser dan siap diunggah.', 'info');
+        showNotice('Preview foto ditampilkan cepat. Kompresi dilakukan saat Anda klik Simpan.', 'info');
     };
 
     const buildProgressHtml = () => `
@@ -375,13 +371,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const submitWithProgress = () => {
+    const compressSelectedFiles = async (scaleFactor) => {
+        const compressed = [];
+        const total = selectedItems.length;
+
+        for (let index = 0; index < total; index += 1) {
+            const item = selectedItems[index];
+            setProgress(5 + ((index + 1) / Math.max(total, 1)) * 35, `Memproses kompresi foto ${index + 1}/${total}...`);
+            const resizedFile = await resizeFile(item.file, scaleFactor);
+            compressed.push({
+                file: resizedFile,
+                name: resizedFile.name || item.name,
+            });
+        }
+
+        return compressed;
+    };
+
+    const submitWithProgress = async () => {
         const formData = new FormData(form);
         formData.delete('activity_photos[]');
         formData.delete('activity_photos');
-        selectedItems.forEach((item) => {
-            formData.append('activity_photos[]', item.file, item.file.name || item.name || 'photo.jpg');
-        });
 
         const xhr = new XMLHttpRequest();
 
@@ -400,17 +410,39 @@ document.addEventListener('DOMContentLoaded', () => {
             },
         });
 
+        try {
+            const compressionPercent = Math.max(30, Math.min(100, Number(compressionPercentInput?.value || 30)));
+            const scaleFactor = compressionPercent / 100;
+            const compressedFiles = await compressSelectedFiles(scaleFactor);
+
+            compressedFiles.forEach((item) => {
+                formData.append('activity_photos[]', item.file, item.file.name || 'photo.jpg');
+            });
+        } catch (error) {
+            if (submitButton) {
+                submitButton.disabled = false;
+            }
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: 'Gagal memproses kompresi foto sebelum upload.',
+            });
+            return;
+        }
+
         xhr.open('POST', actionUrl, true);
         xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
         xhr.upload.addEventListener('progress', (event) => {
             if (!event.lengthComputable) {
-                setProgress(0, 'Menghitung ukuran upload...');
+                setProgress(40, 'Menghitung ukuran upload...');
                 return;
             }
 
-            const percent = (event.loaded / event.total) * 100;
-            setProgress(percent, `Mengunggah ${Math.round(percent)}%`);
+            const uploadPercent = (event.loaded / event.total) * 60;
+            const totalPercent = 40 + uploadPercent;
+            setProgress(totalPercent, `Mengunggah ${Math.round(totalPercent)}%`);
         });
 
         xhr.addEventListener('load', () => {
