@@ -96,6 +96,7 @@ $canEdit = (bool) ($can_edit ?? false);
         $table.DataTable({
             responsive: false,
             autoWidth: false,
+            scrollX: true,
             pageLength: 10,
             lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'Semua']],
             language: {

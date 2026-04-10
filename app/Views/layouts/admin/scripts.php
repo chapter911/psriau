@@ -39,11 +39,10 @@
             const tableOrder = $(this).data('order') || [[0, 'asc']];
 
             $(this).DataTable({
-                responsive: {
-                    details: false
-                },
+                responsive: false,
                 autoWidth: false,
                 scrollX: true,
+                scrollCollapse: true,
                 order: tableOrder,
                 language: {
                     search: 'Cari:',
