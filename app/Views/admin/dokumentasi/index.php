@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let currentPhotos = [];
     let currentIndex = 0;
+    let isFilterLoading = false;
 
     const csrfTokenName = <?= json_encode(csrf_token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     const csrfTokenValue = <?= json_encode(csrf_hash(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
@@ -132,6 +133,39 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    };
+
+    const showFilterLoading = function () {
+        if (typeof Swal === 'undefined') {
+            return;
+        }
+
+        Swal.fire({
+            title: 'Memuat data...',
+            html: 'Menerapkan filter',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: function () {
+                Swal.showLoading();
+            }
+        });
+    };
+
+    const hideFilterLoading = function () {
+        if (typeof Swal === 'undefined') {
+            return;
+        }
+
+        if (Swal.isVisible()) {
+            Swal.close();
+        }
+    };
+
+    const reloadWithFilterLoading = function () {
+        isFilterLoading = true;
+        showFilterLoading();
+        dt.ajax.reload();
     };
 
     const showPhoto = function (index) {
@@ -323,6 +357,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     $(dt.table().container()).find('.dataTables_filter').hide();
 
+    $(tableEl).on('draw.dt', function () {
+        if (!isFilterLoading) {
+            return;
+        }
+
+        isFilterLoading = false;
+        hideFilterLoading();
+    });
+
     $(tableEl).on('click', '.js-open-gallery', function () {
         let photos = [];
         try {
@@ -341,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (applyButton) {
         applyButton.addEventListener('click', function (event) {
             event.preventDefault();
-            dt.ajax.reload();
+            reloadWithFilterLoading();
         });
     }
 
@@ -357,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (filterLocation) {
                 filterLocation.value = '';
             }
-            dt.ajax.reload();
+            reloadWithFilterLoading();
         });
     }
 
@@ -365,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function () {
         filterTitle.addEventListener('keydown', function (event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                dt.ajax.reload();
+                reloadWithFilterLoading();
             }
         });
     }
@@ -374,14 +417,14 @@ document.addEventListener('DOMContentLoaded', function () {
         filterLocation.addEventListener('keydown', function (event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                dt.ajax.reload();
+                reloadWithFilterLoading();
             }
         });
     }
 
     if (filterDate) {
         filterDate.addEventListener('change', function () {
-            dt.ajax.reload();
+            reloadWithFilterLoading();
         });
     }
 });
