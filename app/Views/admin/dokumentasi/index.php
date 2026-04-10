@@ -412,6 +412,149 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<script>
+(function () {
+    function getFilterElements() {
+        return {
+            title: document.getElementById('filterTitle'),
+            date: document.getElementById('filterDate'),
+            location: document.getElementById('filterLocation'),
+            apply: document.getElementById('applyFilters'),
+            reset: document.getElementById('resetFilters'),
+            table: document.querySelector('.js-datatable')
+        };
+    }
+
+    function readFilterValues() {
+        var els = getFilterElements();
+
+        return {
+            title: els.title ? String(els.title.value || '').trim() : '',
+            date: els.date ? String(els.date.value || '').trim() : '',
+            location: els.location ? String(els.location.value || '').trim() : ''
+        };
+    }
+
+    function applyManualFilter() {
+        var els = getFilterElements();
+        if (!els.table) {
+            return;
+        }
+
+        var values = readFilterValues();
+        var titleQuery = values.title.toLowerCase();
+        var dateQuery = values.date;
+        var locationQuery = values.location.toLowerCase();
+        var rows = els.table.querySelectorAll('tbody tr');
+
+        Array.prototype.forEach.call(rows, function (row) {
+            var cells = row.querySelectorAll('td');
+            if (!cells || cells.length < 3) {
+                return;
+            }
+
+            var titleText = (cells[0] && cells[0].textContent ? cells[0].textContent : '').trim().toLowerCase();
+            var dateText = (cells[1] && cells[1].textContent ? cells[1].textContent : '').trim();
+            var locationText = (cells[2] && cells[2].textContent ? cells[2].textContent : '').trim().toLowerCase();
+
+            var matched =
+                (titleQuery === '' || titleText.indexOf(titleQuery) !== -1) &&
+                (dateQuery === '' || dateText.indexOf(dateQuery) !== -1) &&
+                (locationQuery === '' || locationText.indexOf(locationQuery) !== -1);
+
+            row.style.display = matched ? '' : 'none';
+        });
+    }
+
+    function applyDataTableFilter() {
+        if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.DataTable) {
+            return false;
+        }
+
+        var els = getFilterElements();
+        if (!els.table) {
+            return false;
+        }
+
+        var dataTable = null;
+        try {
+            dataTable = window.jQuery(els.table).DataTable();
+        } catch (error) {
+            dataTable = null;
+        }
+
+        if (!dataTable) {
+            return false;
+        }
+
+        var values = readFilterValues();
+        dataTable.column(0).search(values.title, false, false);
+        dataTable.column(1).search(values.date, false, false);
+        dataTable.column(2).search(values.location, false, false);
+        dataTable.draw();
+        return true;
+    }
+
+    function applyFiltersFromButton() {
+        if (!applyDataTableFilter()) {
+            applyManualFilter();
+        }
+    }
+
+    function resetFiltersFromButton() {
+        var els = getFilterElements();
+        if (els.title) {
+            els.title.value = '';
+        }
+        if (els.date) {
+            els.date.value = '';
+        }
+        if (els.location) {
+            els.location.value = '';
+        }
+
+        applyFiltersFromButton();
+    }
+
+    function bindFilterEvents() {
+        var els = getFilterElements();
+
+        if (els.apply) {
+            els.apply.setAttribute('onclick', 'window.applyKegiatanLapanganFilters(); return false;');
+        }
+
+        if (els.reset) {
+            els.reset.setAttribute('onclick', 'window.resetKegiatanLapanganFilters(); return false;');
+        }
+
+        if (window.jQuery) {
+            window.jQuery(document)
+                .off('click.kegiatanFilterApplyFallback', '#applyFilters')
+                .on('click.kegiatanFilterApplyFallback', '#applyFilters', function (event) {
+                    event.preventDefault();
+                    applyFiltersFromButton();
+                });
+
+            window.jQuery(document)
+                .off('click.kegiatanFilterResetFallback', '#resetFilters')
+                .on('click.kegiatanFilterResetFallback', '#resetFilters', function (event) {
+                    event.preventDefault();
+                    resetFiltersFromButton();
+                });
+        }
+    }
+
+    window.applyKegiatanLapanganFilters = applyFiltersFromButton;
+    window.resetKegiatanLapanganFilters = resetFiltersFromButton;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindFilterEvents);
+    } else {
+        bindFilterEvents();
+    }
+})();
+</script>
+
 <style>
     .dataTables_wrapper .dataTables_filter {
         display: none !important;
