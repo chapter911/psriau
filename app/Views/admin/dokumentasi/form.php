@@ -9,21 +9,6 @@
         <div class="card-body">
             <?= csrf_field(); ?>
 
-            <div class="alert alert-info">
-                Foto akan diperkecil menjadi 10% dari ukuran aslinya di sisi klien sebelum diunggah. Maksimal 50 foto per kegiatan.
-            </div>
-
-            <div class="form-group">
-                <label for="compression_percent">Persentase Kompresi Foto</label>
-                <div class="input-group">
-                    <input type="number" id="compression_percent" class="form-control" min="10" max="100" step="1" value="10">
-                    <div class="input-group-append">
-                        <span class="input-group-text">%</span>
-                    </div>
-                </div>
-                <small class="text-muted d-block mt-1">Semakin kecil nilainya, semakin kecil ukuran foto hasil proses di browser. Contoh: 10 berarti ukuran foto dibuat 10% dari ukuran asli.</small>
-            </div>
-
             <div class="form-group">
                 <label for="title">Judul Kegiatan</label>
                 <input type="text" id="title" name="title" class="form-control" value="<?= old('title', $activity['title'] ?? ''); ?>" required>
@@ -39,7 +24,16 @@
                     <input type="text" id="location" name="location" class="form-control" value="<?= old('location', $activity['location'] ?? ''); ?>" required>
                 </div>
             </div>
-
+            <div class="form-group">
+                <label for="compression_percent">Persentase Kompresi Foto</label>
+                <div class="input-group">
+                    <input type="number" id="compression_percent" class="form-control" min="30" max="100" step="1" value="30">
+                    <div class="input-group-append">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <small class="text-muted d-block mt-1">Semakin kecil nilainya, semakin kecil ukuran foto hasil proses di browser. Contoh: 30 berarti ukuran foto dibuat 30% dari ukuran asli.</small>
+            </div>
             <div class="form-group mb-4">
                 <label class="d-block">Foto Kegiatan</label>
                 <input type="file" id="activity_photos" name="activity_photos[]" accept="image/*" multiple class="d-none">
