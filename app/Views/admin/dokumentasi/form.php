@@ -14,12 +14,14 @@
                 <input type="text" id="title" name="title" class="form-control" value="<?= old('title', $activity['title'] ?? ''); ?>" required>
             </div>
             <div class="form-group">
-                <label for="activity_date">Tanggal Kegiatan</label>
-                <input type="date" id="activity_date" name="activity_date" class="form-control" value="<?= old('activity_date', isset($activity['activity_date']) ? date('Y-m-d', strtotime($activity['activity_date'])) : ''); ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="location">Lokasi Kegiatan</label>
-                <input type="text" id="location" name="location" class="form-control" value="<?= old('location', $activity['location'] ?? ''); ?>" required>
+                <div class="col-6">
+                    <label for="activity_date">Tanggal Kegiatan</label>
+                    <input type="date" id="activity_date" name="activity_date" class="form-control" value="<?= old('activity_date', isset($activity['activity_date']) ? date('Y-m-d', strtotime($activity['activity_date'])) : ''); ?>" required>
+                </div>
+                <div class="col-6">
+                    <label for="location">Lokasi Kegiatan</label>
+                    <input type="text" id="location" name="location" class="form-control" value="<?= old('location', $activity['location'] ?? ''); ?>" required>
+                </div>
             </div>
             <div class="form-group">
                 <label for="compression_percent">Persentase Kompresi Foto</label>
