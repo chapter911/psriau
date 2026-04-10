@@ -15,6 +15,22 @@ class Dokumentasi extends BaseController
         $activityModel = new KegiatanLapanganModel();
         $photoModel = new KegiatanLapanganPhotoModel();
 
+        $filterTitle = trim((string) $this->request->getGet('title'));
+        $filterDate = trim((string) $this->request->getGet('date'));
+        $filterLocation = trim((string) $this->request->getGet('location'));
+
+        if ($filterTitle !== '') {
+            $activityModel->like('title', $filterTitle);
+        }
+
+        if ($filterDate !== '' && $this->validateDate($filterDate)) {
+            $activityModel->where('activity_date', $filterDate);
+        }
+
+        if ($filterLocation !== '') {
+            $activityModel->like('location', $filterLocation);
+        }
+
         $activities = $activityModel
             ->orderBy('activity_date', 'DESC')
             ->orderBy('id', 'DESC')
@@ -48,6 +64,11 @@ class Dokumentasi extends BaseController
         return view('admin/dokumentasi/index', [
             'activities' => $activities,
             'pageTitle' => 'Kegiatan Lapangan',
+            'filters' => [
+                'title' => $filterTitle,
+                'date' => $filterDate,
+                'location' => $filterLocation,
+            ],
         ]);
     }
 

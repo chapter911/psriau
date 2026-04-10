@@ -15,31 +15,33 @@
                 <small class="text-muted">Gunakan filter untuk mempersempit data berdasarkan kolom.</small>
             </div>
             <div class="search-filter-box w-100">
+                <form method="get" action="<?= site_url('/admin/dokumentasi/kegiatan-lapangan'); ?>" class="mb-0">
                 <div class="form-row align-items-end mb-0">
                     <div class="form-group col-md-4 mb-2 mb-md-0">
-                        <label for="filterTitle" class="small text-muted mb-1">Judul</label>
-                        <input type="text" class="form-control form-control-sm" id="filterTitle" placeholder="Cari judul kegiatan">
+                        <label for="serverFilterTitle" class="small text-muted mb-1">Judul</label>
+                        <input type="text" class="form-control form-control-sm" id="serverFilterTitle" name="title" value="<?= esc((string) ($filters['title'] ?? '')); ?>" placeholder="Cari judul kegiatan">
                     </div>
                     <div class="form-group col-md-3 mb-2 mb-md-0">
-                        <label for="filterDate" class="small text-muted mb-1">Tanggal</label>
-                        <input type="date" class="form-control form-control-sm" id="filterDate">
+                        <label for="serverFilterDate" class="small text-muted mb-1">Tanggal</label>
+                        <input type="date" class="form-control form-control-sm" id="serverFilterDate" name="date" value="<?= esc((string) ($filters['date'] ?? '')); ?>">
                     </div>
                     <div class="form-group col-md-3 mb-2 mb-md-0">
-                        <label for="filterLocation" class="small text-muted mb-1">Lokasi</label>
-                        <input type="text" class="form-control form-control-sm" id="filterLocation" placeholder="Cari lokasi">
+                        <label for="serverFilterLocation" class="small text-muted mb-1">Lokasi</label>
+                        <input type="text" class="form-control form-control-sm" id="serverFilterLocation" name="location" value="<?= esc((string) ($filters['location'] ?? '')); ?>" placeholder="Cari lokasi">
                     </div>
                     <div class="form-group col-md-2 mb-2 mb-md-0">
                         <label class="small text-muted mb-1 d-block invisible">Aksi</label>
                         <div class="d-flex align-items-end" style="gap:8px;">
-                            <button type="button" class="btn btn-sm btn-primary w-100" id="applyFilters">
+                            <button type="submit" class="btn btn-sm btn-primary w-100" id="applyServerFilters">
                                 Terapkan
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="resetFilters">
+                            <a class="btn btn-sm btn-outline-secondary w-100" id="resetServerFilters" href="<?= site_url('/admin/dokumentasi/kegiatan-lapangan'); ?>">
                                 Reset
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
+                </form>
             </div>
         </div>
     </div>
