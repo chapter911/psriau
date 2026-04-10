@@ -9,15 +9,30 @@
 
 <div class="card">
     <div class="card-header">
-        <div class="d-flex flex-wrap justify-content-between align-items-center" style="gap:12px;">
-            <h3 class="card-title mb-0">Daftar Kegiatan Lapangan</h3>
-            <div class="search-filter-box">
-                <label class="sr-only" for="activitySearch">Cari kegiatan</label>
-                <div class="input-group input-group-sm">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+        <div class="d-flex flex-wrap justify-content-between align-items-end" style="gap:12px;">
+            <div>
+                <h3 class="card-title mb-0">Daftar Kegiatan Lapangan</h3>
+                <small class="text-muted">Gunakan filter untuk mempersempit data berdasarkan kolom.</small>
+            </div>
+            <div class="search-filter-box w-100">
+                <div class="form-row align-items-end mb-0">
+                    <div class="form-group col-md-4 mb-2 mb-md-0">
+                        <label for="filterTitle" class="small text-muted mb-1">Judul</label>
+                        <input type="text" class="form-control form-control-sm" id="filterTitle" placeholder="Cari judul kegiatan">
                     </div>
-                    <input type="text" class="form-control" id="activitySearch" placeholder="Cari judul, lokasi, atau nama pembuat">
+                    <div class="form-group col-md-3 mb-2 mb-md-0">
+                        <label for="filterDate" class="small text-muted mb-1">Tanggal</label>
+                        <input type="date" class="form-control form-control-sm" id="filterDate">
+                    </div>
+                    <div class="form-group col-md-3 mb-2 mb-md-0">
+                        <label for="filterLocation" class="small text-muted mb-1">Lokasi</label>
+                        <input type="text" class="form-control form-control-sm" id="filterLocation" placeholder="Cari lokasi">
+                    </div>
+                    <div class="form-group col-md-2 mb-0 text-md-right">
+                        <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="resetFilters">
+                            Reset
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -135,7 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const thumbnailsEl = document.getElementById('activityPhotoThumbnails');
     const prevBtn = document.getElementById('photoPrevBtn');
     const nextBtn = document.getElementById('photoNextBtn');
-    const searchInput = document.getElementById('activitySearch');
+    const filterTitle = document.getElementById('filterTitle');
+    const filterDate = document.getElementById('filterDate');
+    const filterLocation = document.getElementById('filterLocation');
+    const resetFiltersBtn = document.getElementById('resetFilters');
     const photoCards = document.querySelectorAll('[data-photo-gallery]');
     let currentPhotos = [];
     let currentIndex = 0;
@@ -208,10 +226,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    searchInput?.addEventListener('input', () => {
+    const applyFilters = () => {
         if (dataTable) {
-            dataTable.search(searchInput.value).draw();
+            dataTable.column(0).search(filterTitle?.value || '');
+            dataTable.column(1).search(filterDate?.value || '');
+            dataTable.column(2).search(filterLocation?.value || '');
+            dataTable.draw();
         }
+    };
+
+    filterTitle?.addEventListener('input', applyFilters);
+    filterDate?.addEventListener('change', applyFilters);
+    filterLocation?.addEventListener('input', applyFilters);
+
+    resetFiltersBtn?.addEventListener('click', () => {
+        if (filterTitle) {
+            filterTitle.value = '';
+        }
+        if (filterDate) {
+            filterDate.value = '';
+        }
+        if (filterLocation) {
+            filterLocation.value = '';
+        }
+        applyFilters();
     });
 });
 </script>
@@ -225,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     .search-filter-box {
-        min-width: min(420px, 100%);
+        min-width: min(760px, 100%);
     }
 
     .photo-viewer-shell {
