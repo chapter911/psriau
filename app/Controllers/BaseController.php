@@ -228,6 +228,21 @@ abstract class BaseController extends Controller
                     ],
                 ],
                 [
+                    'label'          => 'Dokumentasi',
+                    'url'            => null,
+                    'icon'           => 'fas fa-images',
+                    'active_pattern' => null,
+                    'children'       => [
+                        [
+                            'label'          => 'Kegiatan Lapangan',
+                            'url'            => '/admin/dokumentasi/kegiatan-lapangan',
+                            'icon'           => 'far fa-circle',
+                            'active_pattern' => 'admin/dokumentasi/kegiatan-lapangan*',
+                            'children'       => [],
+                        ],
+                    ],
+                ],
+                [
                     'label'          => 'Pengaturan',
                     'url'            => null,
                     'icon'           => 'fas fa-gear',

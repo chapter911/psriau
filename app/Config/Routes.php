@@ -108,6 +108,11 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('slide/(:num)/ubah', 'Admin\\HomeSetting::updateSlide/$1');
 	$routes->post('slide/(:num)/hapus', 'Admin\\HomeSetting::deleteSlide/$1');
 
+	$routes->get('dokumentasi/kegiatan-lapangan', 'Admin\\Dokumentasi::index');
+	$routes->match(['get', 'post'], 'dokumentasi/kegiatan-lapangan/tambah', 'Admin\\Dokumentasi::create');
+	$routes->match(['get', 'post'], 'dokumentasi/kegiatan-lapangan/(:num)/ubah', 'Admin\\Dokumentasi::edit/$1');
+	$routes->post('dokumentasi/kegiatan-lapangan/(:num)/hapus', 'Admin\\Dokumentasi::delete/$1');
+
 	$routes->get('acara', 'Admin\\Event::index');
 	$routes->match(['get', 'post'], 'acara/tambah', 'Admin\\Event::create');
 	$routes->match(['get', 'post'], 'acara/(:num)/ubah', 'Admin\\Event::edit/$1');
