@@ -121,13 +121,28 @@ class Dokumentasi extends BaseController
         $activityDate = trim((string) $this->request->getPost('activity_date'));
         $location = trim((string) $this->request->getPost('location'));
 
-        if ($activityTitle === '' || mb_strlen($activityTitle) < 5 || $location === '' || mb_strlen($location) < 3) {
+        $validationErrors = [];
+        if ($activityTitle === '') {
+            $validationErrors['title'] = 'Judul kegiatan wajib diisi.';
+        } elseif (mb_strlen($activityTitle) < 3) {
+            $validationErrors['title'] = 'Judul kegiatan minimal 3 karakter.';
+        }
+
+        if ($location === '') {
+            $validationErrors['location'] = 'Lokasi kegiatan wajib diisi.';
+        } elseif (mb_strlen($location) < 3) {
+            $validationErrors['location'] = 'Lokasi kegiatan minimal 3 karakter.';
+        }
+
+        if ($validationErrors !== []) {
+            $message = array_values($validationErrors)[0];
             return $isAjax
                 ? $this->response->setStatusCode(422)->setJSON([
                     'status' => 'error',
-                    'message' => 'Data kegiatan belum lengkap.',
+                    'message' => $message,
+                    'errors' => $validationErrors,
                 ])
-                : redirect()->back()->withInput()->with('error', 'Data kegiatan belum lengkap.');
+                : redirect()->back()->withInput()->with('error', $message);
         }
 
         if ($activityDate !== '' && ! $this->validateDate($activityDate)) {

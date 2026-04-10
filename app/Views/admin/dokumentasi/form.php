@@ -370,6 +370,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const submitWithProgress = () => {
         const formData = new FormData(form);
+        formData.delete('activity_photos[]');
+        formData.delete('activity_photos');
+        selectedItems.forEach((item) => {
+            formData.append('activity_photos[]', item.file, item.file.name || item.name || 'photo.jpg');
+        });
+
         const xhr = new XMLHttpRequest();
 
         if (submitButton) {
@@ -426,10 +432,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const message = payload && payload.message ? payload.message : 'Gagal menyimpan data.';
+            const errorDetails = payload && payload.errors && typeof payload.errors === 'object'
+                ? Object.values(payload.errors).filter(Boolean).join('<br>')
+                : '';
             Swal.fire({
                 icon: 'error',
                 title: 'Gagal',
-                text: message,
+                html: errorDetails ? `<div>${message}</div><div class="mt-2 text-left">${errorDetails}</div>` : message,
             });
         });
 
