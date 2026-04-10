@@ -2,10 +2,6 @@
 
 <?= $this->section('content'); ?>
 <div class="mb-3 d-flex flex-wrap justify-content-between align-items-center" style="gap:12px;">
-    <div>
-        <h3 class="mb-1">Kegiatan Lapangan</h3>
-        <p class="text-muted mb-0">Dokumentasi foto kegiatan lapangan dengan tampilan tabel dan preview foto utama.</p>
-    </div>
     <a class="btn btn-primary" href="<?= site_url('/admin/dokumentasi/kegiatan-lapangan/tambah'); ?>">
         <i class="fas fa-plus mr-1"></i> Tambah Kegiatan
     </a>
