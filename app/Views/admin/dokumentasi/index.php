@@ -167,15 +167,44 @@ document.addEventListener('DOMContentLoaded', () => {
     const tableEl = document.querySelector('.js-datatable');
 
     const getDataTable = () => {
-        if (!window.jQuery || !tableEl || !window.jQuery.fn.DataTable) {
+        if (!window.jQuery || !tableEl || !window.jQuery.fn || !window.jQuery.fn.DataTable) {
             return null;
         }
 
-        if (!window.jQuery.fn.DataTable.isDataTable(tableEl)) {
+        const isDataTableFn = window.jQuery.fn.dataTable && window.jQuery.fn.dataTable.isDataTable;
+        if (typeof isDataTableFn === 'function' && !isDataTableFn(tableEl)) {
             return null;
         }
 
         return window.jQuery(tableEl).DataTable();
+    };
+
+    const applyManualTableFilter = () => {
+        if (!tableEl) {
+            return;
+        }
+
+        const titleQuery = (filterTitle?.value || '').trim().toLowerCase();
+        const dateQuery = (filterDate?.value || '').trim();
+        const locationQuery = (filterLocation?.value || '').trim().toLowerCase();
+        const rows = tableEl.querySelectorAll('tbody tr');
+
+        rows.forEach((row) => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 3) {
+                return;
+            }
+
+            const titleText = (cells[0]?.textContent || '').trim().toLowerCase();
+            const dateText = (cells[1]?.textContent || '').trim();
+            const locationText = (cells[2]?.textContent || '').trim().toLowerCase();
+
+            const isTitleMatch = titleQuery === '' || titleText.includes(titleQuery);
+            const isDateMatch = dateQuery === '' || dateText.includes(dateQuery);
+            const isLocationMatch = locationQuery === '' || locationText.includes(locationQuery);
+
+            row.style.display = isTitleMatch && isDateMatch && isLocationMatch ? '' : 'none';
+        });
     };
 
     const hideDefaultDataTableSearch = () => {
@@ -258,11 +287,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyFilters = () => {
         const dataTable = getDataTable();
         if (dataTable) {
-            dataTable.column(0).search(filterTitle?.value || '');
-            dataTable.column(1).search(filterDate?.value || '');
-            dataTable.column(2).search(filterLocation?.value || '');
+            dataTable.column(0).search((filterTitle?.value || '').trim(), false, true);
+            dataTable.column(1).search((filterDate?.value || '').trim(), false, true);
+            dataTable.column(2).search((filterLocation?.value || '').trim(), false, true);
             dataTable.draw();
+            return;
         }
+
+        applyManualTableFilter();
     };
 
     applyFiltersBtn?.addEventListener('click', applyFilters);
