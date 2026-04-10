@@ -28,10 +28,12 @@
                         <label for="filterLocation" class="small text-muted mb-1">Lokasi</label>
                         <input type="text" class="form-control form-control-sm" id="filterLocation" placeholder="Cari lokasi">
                     </div>
-                    <div class="form-group col-md-2 mb-0">
+                    <div class="form-group col-md-1 mb-0">
                         <button type="button" class="btn btn-sm btn-primary w-100 mb-1" id="applyFilters">
                             Terapkan
                         </button>
+                    </div>
+                    <div class="form-group col-md-1 mb-0">
                         <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="resetFilters">
                             Reset
                         </button>
