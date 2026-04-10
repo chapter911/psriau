@@ -198,6 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxPhotos = 50;
     const existingPhotoCount = <?= (int) ($existingPhotoCount ?? 0); ?>;
     const selectedItems = [];
+    const actionUrl = <?= json_encode(site_url($actionUrl), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    const submitButton = form?.querySelector('button[type="submit"]');
 
     const supportsDataTransfer = typeof DataTransfer !== 'undefined';
 
@@ -340,6 +342,118 @@ document.addEventListener('DOMContentLoaded', () => {
         showNotice('Foto berhasil diproses di browser dan siap diunggah.', 'info');
     };
 
+    const buildProgressHtml = () => `
+        <div class="text-left">
+            <div class="mb-2">Sedang mengunggah data dan foto...</div>
+            <div class="progress" style="height: 12px;">
+                <div class="progress-bar" id="uploadProgressBar" role="progressbar" style="width: 0%">0%</div>
+            </div>
+            <div class="small text-muted mt-2" id="uploadProgressText">Menyiapkan file...</div>
+        </div>
+    `;
+
+    const setProgress = (percent, label) => {
+        const progressBar = document.getElementById('uploadProgressBar');
+        const progressText = document.getElementById('uploadProgressText');
+
+        if (progressBar) {
+            const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+            progressBar.style.width = `${safePercent}%`;
+            progressBar.textContent = `${safePercent}%`;
+            progressBar.setAttribute('aria-valuenow', String(safePercent));
+        }
+
+        if (progressText && label) {
+            progressText.textContent = label;
+        }
+    };
+
+    const submitWithProgress = () => {
+        const formData = new FormData(form);
+        const xhr = new XMLHttpRequest();
+
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        Swal.fire({
+            title: 'Menyimpan data',
+            html: buildProgressHtml(),
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
+
+        xhr.open('POST', actionUrl, true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+        xhr.upload.addEventListener('progress', (event) => {
+            if (!event.lengthComputable) {
+                setProgress(0, 'Menghitung ukuran upload...');
+                return;
+            }
+
+            const percent = (event.loaded / event.total) * 100;
+            setProgress(percent, `Mengunggah ${Math.round(percent)}%`);
+        });
+
+        xhr.addEventListener('load', () => {
+            if (submitButton) {
+                submitButton.disabled = false;
+            }
+
+            let payload = null;
+            try {
+                payload = JSON.parse(xhr.responseText || '{}');
+            } catch (error) {
+                payload = null;
+            }
+
+            if (xhr.status >= 200 && xhr.status < 300 && payload && payload.status === 'ok') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: payload.message || 'Data berhasil disimpan.',
+                    timer: 900,
+                    showConfirmButton: false,
+                }).then(() => {
+                    window.location.href = payload.redirect || '<?= site_url('/admin/dokumentasi/kegiatan-lapangan'); ?>';
+                });
+                return;
+            }
+
+            const message = payload && payload.message ? payload.message : 'Gagal menyimpan data.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: message,
+            });
+        });
+
+        xhr.addEventListener('error', () => {
+            if (submitButton) {
+                submitButton.disabled = false;
+            }
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: 'Koneksi bermasalah saat mengunggah data.',
+            });
+        });
+
+        xhr.addEventListener('loadend', () => {
+            if (submitButton) {
+                submitButton.disabled = false;
+            }
+        });
+
+        xhr.send(formData);
+    };
+
     pickButton?.addEventListener('click', () => fileInput.click());
     fileInput?.addEventListener('change', async () => {
         try {
@@ -372,10 +486,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     form?.addEventListener('submit', (event) => {
+        event.preventDefault();
+
         if (existingPhotoCount + selectedItems.length === 0) {
-            event.preventDefault();
             showNotice('Minimal satu foto kegiatan harus dipilih.', 'danger');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Foto belum dipilih',
+                text: 'Minimal satu foto kegiatan harus dipilih.',
+            });
+            return;
         }
+
+        submitWithProgress();
     });
 
     updateCounter();

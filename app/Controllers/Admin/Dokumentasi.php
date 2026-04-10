@@ -116,16 +116,27 @@ class Dokumentasi extends BaseController
 
     private function saveData(?int $id = null, ?array $existing = null)
     {
+        $isAjax = $this->request->isAJAX();
         $activityTitle = trim((string) $this->request->getPost('title'));
         $activityDate = trim((string) $this->request->getPost('activity_date'));
         $location = trim((string) $this->request->getPost('location'));
 
         if ($activityTitle === '' || mb_strlen($activityTitle) < 5 || $location === '' || mb_strlen($location) < 3) {
-            return redirect()->back()->withInput()->with('error', 'Data kegiatan belum lengkap.');
+            return $isAjax
+                ? $this->response->setStatusCode(422)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data kegiatan belum lengkap.',
+                ])
+                : redirect()->back()->withInput()->with('error', 'Data kegiatan belum lengkap.');
         }
 
         if ($activityDate !== '' && ! $this->validateDate($activityDate)) {
-            return redirect()->back()->withInput()->with('error', 'Tanggal kegiatan tidak valid.');
+            return $isAjax
+                ? $this->response->setStatusCode(422)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Tanggal kegiatan tidak valid.',
+                ])
+                : redirect()->back()->withInput()->with('error', 'Tanggal kegiatan tidak valid.');
         }
 
         $activityModel = new KegiatanLapanganModel();
@@ -142,15 +153,30 @@ class Dokumentasi extends BaseController
 
         $uploadedPhotos = $this->processUploadedPhotos('activity_photos', count($existingPhotoRows));
         if ($uploadedPhotos['error'] !== null) {
-            return redirect()->back()->withInput()->with('error', $uploadedPhotos['error']);
+            return $isAjax
+                ? $this->response->setStatusCode(422)->setJSON([
+                    'status' => 'error',
+                    'message' => $uploadedPhotos['error'],
+                ])
+                : redirect()->back()->withInput()->with('error', $uploadedPhotos['error']);
         }
 
         if ($id === null && $uploadedPhotos['photos'] === []) {
-            return redirect()->back()->withInput()->with('error', 'Minimal satu foto kegiatan harus dipilih.');
+            return $isAjax
+                ? $this->response->setStatusCode(422)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Minimal satu foto kegiatan harus dipilih.',
+                ])
+                : redirect()->back()->withInput()->with('error', 'Minimal satu foto kegiatan harus dipilih.');
         }
 
         if ($id !== null && $existingPhotoRows === [] && $uploadedPhotos['photos'] === []) {
-            return redirect()->back()->withInput()->with('error', 'Minimal satu foto kegiatan harus dipilih.');
+            return $isAjax
+                ? $this->response->setStatusCode(422)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Minimal satu foto kegiatan harus dipilih.',
+                ])
+                : redirect()->back()->withInput()->with('error', 'Minimal satu foto kegiatan harus dipilih.');
         }
 
         $creatorName = trim((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system'));
@@ -169,13 +195,25 @@ class Dokumentasi extends BaseController
             $newId = (int) $activityModel->getInsertID();
             $this->storeActivityPhotos($newId, $uploadedPhotos['photos'], 1);
 
-            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan lapangan berhasil ditambahkan.');
+            return $isAjax
+                ? $this->response->setJSON([
+                    'status' => 'ok',
+                    'message' => 'Kegiatan lapangan berhasil ditambahkan.',
+                    'redirect' => site_url('/admin/dokumentasi/kegiatan-lapangan'),
+                ])
+                : redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan lapangan berhasil ditambahkan.');
         }
 
         $activityModel->update($id, $payload);
         $this->storeActivityPhotos($id, $uploadedPhotos['photos'], count($existingPhotoRows) + 1);
 
-        return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan lapangan berhasil diperbarui.');
+        return $isAjax
+            ? $this->response->setJSON([
+                'status' => 'ok',
+                'message' => 'Kegiatan lapangan berhasil diperbarui.',
+                'redirect' => site_url('/admin/dokumentasi/kegiatan-lapangan'),
+            ])
+            : redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan lapangan berhasil diperbarui.');
     }
 
     private function processUploadedPhotos(string $fieldName, int $existingPhotoCount = 0): array
