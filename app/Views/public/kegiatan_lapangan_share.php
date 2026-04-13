@@ -65,11 +65,11 @@
     <div class="lightbox-content">
         <div class="lightbox-image-shell">
             <button type="button" class="lightbox-nav-btn lightbox-nav-btn-left" id="btnLightboxPrev" aria-label="Foto sebelumnya">
-                <span aria-hidden="true">&#8592;</span>
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
             </button>
             <img id="lightboxImage" src="" alt="Foto kegiatan">
             <button type="button" class="lightbox-nav-btn lightbox-nav-btn-right" id="btnLightboxNext" aria-label="Foto berikutnya">
-                <span aria-hidden="true">&#8594;</span>
+                <i class="fas fa-chevron-right" aria-hidden="true"></i>
             </button>
         </div>
         <div class="lightbox-thumbnails-wrap">
@@ -195,25 +195,33 @@
         position: absolute;
         top: 50%;
         transform: translateY(-50%);
-        width: 42px;
-        height: 42px;
+        width: 44px;
+        height: 44px;
         border: 0;
         border-radius: 999px;
-        background: #ffffff;
-        color: #1f2937;
-        font-size: 22px;
-        font-weight: 700;
+        background: rgba(15, 23, 42, 0.8);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 600;
         line-height: 1;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         z-index: 2;
         cursor: pointer;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease, background 0.2s ease;
+    }
+
+    .share-lightbox.nav-visible .lightbox-nav-btn {
+        opacity: 1;
+        pointer-events: auto;
     }
 
     .lightbox-nav-btn:hover {
-        background: #f3f4f6;
+        background: rgba(15, 23, 42, 0.95);
     }
 
     .lightbox-nav-btn-left {
@@ -304,6 +312,8 @@
         .lightbox-nav-btn {
             width: 36px;
             height: 36px;
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .lightbox-thumb {
@@ -335,6 +345,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let touchStartX = 0;
     let touchEndX = 0;
     const minSwipeDistance = 45;
+    let navHideTimer = null;
 
     const setView = function () {
         if (!galleryEl) {
@@ -403,6 +414,39 @@ document.addEventListener('DOMContentLoaded', function () {
         renderLightboxThumbnails();
     };
 
+    const hideNavControls = function () {
+        if (!lightbox) {
+            return;
+        }
+
+        lightbox.classList.remove('nav-visible');
+    };
+
+    const revealNavControls = function () {
+        if (!lightbox || !lightbox.classList.contains('is-open')) {
+            return;
+        }
+
+        if (photoButtons.length <= 1) {
+            hideNavControls();
+            return;
+        }
+
+        lightbox.classList.add('nav-visible');
+
+        if (window.matchMedia('(pointer: coarse)').matches) {
+            return;
+        }
+
+        if (navHideTimer) {
+            window.clearTimeout(navHideTimer);
+        }
+
+        navHideTimer = window.setTimeout(function () {
+            hideNavControls();
+        }, 1200);
+    };
+
     const openLightbox = function (index) {
         if (!lightbox || !lightboxImage || !lightboxName || !lightboxDownload) {
             return;
@@ -411,6 +455,7 @@ document.addEventListener('DOMContentLoaded', function () {
         showPhotoAt(index);
         lightbox.classList.add('is-open');
         lightbox.setAttribute('aria-hidden', 'false');
+        revealNavControls();
     };
 
     const closeBox = function () {
@@ -419,7 +464,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         lightbox.classList.remove('is-open');
+        lightbox.classList.remove('nav-visible');
         lightbox.setAttribute('aria-hidden', 'true');
+
+        if (navHideTimer) {
+            window.clearTimeout(navHideTimer);
+            navHideTimer = null;
+        }
     };
 
     if (galleryEl) {
@@ -436,10 +487,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     btnLightboxPrev && btnLightboxPrev.addEventListener('click', function () {
         showPhotoAt(currentPhotoIndex - 1);
+        revealNavControls();
     });
 
     btnLightboxNext && btnLightboxNext.addEventListener('click', function () {
         showPhotoAt(currentPhotoIndex + 1);
+        revealNavControls();
     });
 
     lightboxImage && lightboxImage.addEventListener('load', function () {
@@ -447,6 +500,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     if (lightboxImageShell) {
+        lightboxImageShell.addEventListener('mousemove', function () {
+            revealNavControls();
+        });
+
         lightboxImageShell.addEventListener('touchstart', function (event) {
             if (!event.touches || !event.touches.length) {
                 return;
@@ -454,6 +511,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             touchStartX = event.touches[0].clientX;
             touchEndX = touchStartX;
+            revealNavControls();
         }, { passive: true });
 
         lightboxImageShell.addEventListener('touchmove', function (event) {
