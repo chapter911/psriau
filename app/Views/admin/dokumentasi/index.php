@@ -38,7 +38,7 @@
                     <div class="form-group col-md-1 mb-2 mb-md-0">
                         <label for="serverFilterLocation" class="small text-muted mb-1">&nbsp;&nbsp;&nbsp;&nbsp;</label>
                         <a class="btn btn-primary" href="<?= site_url('/admin/dokumentasi/kegiatan-lapangan/tambah'); ?>">
-                            <i class="fas fa-plus mr-1"></i> Tambah Kegiatan
+                            <i class="fas fa-plus mr-1"></i> Kegiatan
                         </a>
                     </div>
                 </div>
