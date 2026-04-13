@@ -197,6 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const dataUrl = <?= json_encode(site_url('/admin/dokumentasi/kegiatan-lapangan/data'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     let selectedShareConfig = {
         title: '',
+        activityDate: '',
         shareUrl: '',
         deactivateUrl: '',
         currentShareUrl: '',
@@ -425,6 +426,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const shareCreateUrl = row.share_create_url || '#';
                     const shareDeactivateUrl = row.share_deactivate_url || '#';
                     const title = row.title || '-';
+                    const activityDate = row.activity_date || '-';
                     const sharePublicUrl = row.share_public_url || '';
                     const shareExpiresAt = row.share_expires_at || '';
                     const shareIsActive = Boolean(row.share_is_active);
@@ -457,6 +459,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         + ' data-share-url="' + escapeHtml(shareCreateUrl) + '"'
                         + ' data-share-deactivate-url="' + escapeHtml(shareDeactivateUrl) + '"'
                         + ' data-share-title="' + escapeHtml(encodeURIComponent(title)) + '"'
+                        + ' data-share-activity-date="' + escapeHtml(encodeURIComponent(activityDate)) + '"'
                         + ' data-share-public-url="' + escapeHtml(sharePublicUrl) + '"'
                         + ' data-share-expires-at="' + escapeHtml(shareExpiresAt) + '"'
                         + ' data-share-active="' + (shareIsActive ? '1' : '0') + '"'
@@ -468,6 +471,17 @@ document.addEventListener('DOMContentLoaded', function () {
                         + '</div>';
                 }
             },
+                const buildShareCopyText = function (title, activityDate, url) {
+                    return [
+                        'Izin mengirimkan dokumentasi',
+                        '',
+                        'acara : ' + (title || '-'),
+                        'tanggal : ' + (activityDate || '-'),
+                        'link : ' + (url || '-'),
+                        '',
+                        'Terima kasih.'
+                    ].join('\n');
+                };
             {
                 data: null,
                 orderable: false,
@@ -681,7 +695,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         input.setSelectionRange(0, 99999);
 
                         if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-                            return navigator.clipboard.writeText(input.value);
+                            return navigator.clipboard.writeText(formattedText);
                         }
 
                         document.execCommand('copy');
@@ -715,6 +729,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            const formattedText = buildShareCopyText(
+                selectedShareConfig.title,
+                selectedShareConfig.activityDate,
+                url
+            );
+
             const onSuccess = function () {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
@@ -728,14 +748,16 @@ document.addEventListener('DOMContentLoaded', function () {
             };
 
             if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-                navigator.clipboard.writeText(url).then(onSuccess);
+                navigator.clipboard.writeText(formattedText).then(onSuccess);
                 return;
             }
 
             if (shareCurrentLinkInput) {
+                shareCurrentLinkInput.value = formattedText;
                 shareCurrentLinkInput.select();
                 shareCurrentLinkInput.setSelectionRange(0, 99999);
                 document.execCommand('copy');
+                shareCurrentLinkInput.value = url;
                 onSuccess();
             }
         });
