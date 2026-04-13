@@ -58,7 +58,7 @@
                     <th>Dibuat Oleh</th>
                     <th class="text-center">Download Foto</th>
                     <th class="text-center">Bagikan Foto</th>
-                    <th class="text-right">Aksi</th>
+                    <th class="text-center">Aksi</th>
                 </tr>
                 </thead>
                 <tbody></tbody>
