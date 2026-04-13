@@ -47,7 +47,7 @@ class Dokumentasi extends BaseController
             1 => 'activity_date',
             2 => 'location',
             4 => 'created_by',
-            5 => 'id',
+            6 => 'id',
         ];
 
         $orderColumnIndex = (int) ($this->request->getGet('order')[0]['column'] ?? 1);
@@ -128,6 +128,7 @@ class Dokumentasi extends BaseController
                 'photos' => $photos,
                 'photo_count' => count($photos),
                 'cover_photo' => $photos[0]['path'] ?? '',
+                'download_zip_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/download-zip'),
                 'edit_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/ubah'),
                 'delete_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/hapus'),
             ];
@@ -202,6 +203,96 @@ class Dokumentasi extends BaseController
         }
 
         return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan lapangan berhasil dihapus.');
+    }
+
+    public function downloadZip(int $id)
+    {
+        $activityModel = new KegiatanLapanganModel();
+        $photoModel = new KegiatanLapanganPhotoModel();
+
+        $activity = $activityModel->find($id);
+        if (! $activity) {
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Kegiatan lapangan tidak ditemukan.');
+        }
+
+        $photos = $photoModel
+            ->where('activity_id', $id)
+            ->orderBy('sort_order', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->findAll();
+
+        if ($photos === []) {
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Tidak ada foto untuk diunduh.');
+        }
+
+        if (! class_exists('ZipArchive')) {
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Ekstensi ZIP tidak tersedia di server.');
+        }
+
+        $downloadDir = WRITEPATH . 'downloads';
+        if (! is_dir($downloadDir) && ! @mkdir($downloadDir, 0775, true) && ! is_dir($downloadDir)) {
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Folder sementara unduhan tidak dapat dibuat.');
+        }
+
+        $zipTempPath = $downloadDir . DIRECTORY_SEPARATOR . 'kegiatan_lapangan_' . $id . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.zip';
+
+        $zip = new \ZipArchive();
+        $openResult = $zip->open($zipTempPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        if ($openResult !== true) {
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Gagal membuat file ZIP.');
+        }
+
+        $addedFiles = 0;
+        $usedNames = [];
+        foreach ($photos as $index => $photo) {
+            $photoPath = (string) ($photo['photo_path'] ?? '');
+            if ($photoPath === '' || strpos($photoPath, '/uploads/') !== 0) {
+                continue;
+            }
+
+            $absolutePath = FCPATH . ltrim($photoPath, '/');
+            if (! is_file($absolutePath)) {
+                continue;
+            }
+
+            $originalName = trim((string) ($photo['photo_name'] ?? ''));
+            $baseName = $originalName !== '' ? $originalName : basename($absolutePath);
+            $baseName = preg_replace('/[^A-Za-z0-9._-]/', '_', $baseName) ?: ('foto_' . ($index + 1));
+
+            $zipEntryName = $baseName;
+            $counter = 1;
+            while (isset($usedNames[$zipEntryName])) {
+                $ext = pathinfo($baseName, PATHINFO_EXTENSION);
+                $nameOnly = pathinfo($baseName, PATHINFO_FILENAME);
+                $zipEntryName = $nameOnly . '_' . $counter . ($ext !== '' ? '.' . $ext : '');
+                $counter++;
+            }
+
+            $usedNames[$zipEntryName] = true;
+
+            if ($zip->addFile($absolutePath, $zipEntryName)) {
+                $addedFiles++;
+            }
+        }
+
+        $zip->close();
+
+        if ($addedFiles === 0) {
+            @unlink($zipTempPath);
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Tidak ada file foto valid yang dapat dimasukkan ke ZIP.');
+        }
+
+        $safeTitle = strtolower(trim((string) ($activity['title'] ?? 'kegiatan-lapangan')));
+        $safeTitle = preg_replace('/[^A-Za-z0-9]+/', '-', $safeTitle) ?: 'kegiatan-lapangan';
+        $downloadName = 'dokumentasi-' . $safeTitle . '-' . date('Ymd') . '.zip';
+
+        register_shutdown_function(static function () use ($zipTempPath): void {
+            if (is_file($zipTempPath)) {
+                @unlink($zipTempPath);
+            }
+        });
+
+        return $this->response->download($zipTempPath, null)->setFileName($downloadName);
     }
 
     private function saveData(?int $id = null, ?array $existing = null)

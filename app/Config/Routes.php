@@ -110,6 +110,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 
 	$routes->get('dokumentasi/kegiatan-lapangan', 'Admin\\Dokumentasi::index');
 	$routes->get('dokumentasi/kegiatan-lapangan/data', 'Admin\\Dokumentasi::dataTable');
+	$routes->get('dokumentasi/kegiatan-lapangan/(:num)/download-zip', 'Admin\\Dokumentasi::downloadZip/$1');
 	$routes->match(['get', 'post'], 'dokumentasi/kegiatan-lapangan/tambah', 'Admin\\Dokumentasi::create');
 	$routes->match(['get', 'post'], 'dokumentasi/kegiatan-lapangan/(:num)/ubah', 'Admin\\Dokumentasi::edit/$1');
 	$routes->post('dokumentasi/kegiatan-lapangan/(:num)/hapus', 'Admin\\Dokumentasi::delete/$1');

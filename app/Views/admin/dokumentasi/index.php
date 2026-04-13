@@ -55,6 +55,7 @@
                     <th>Lokasi Kegiatan</th>
                     <th>Foto Kegiatan</th>
                     <th>Dibuat Oleh</th>
+                    <th class="text-center">Download Foto</th>
                     <th class="text-right">Aksi</th>
                 </tr>
                 </thead>
@@ -323,6 +324,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 data: null,
                 orderable: false,
                 searchable: false,
+                className: 'text-center',
+                render: function (row) {
+                    const zipUrl = row.download_zip_url || '#';
+                    const hasPhotos = Number(row.photo_count || 0) > 0;
+
+                    if (!hasPhotos) {
+                        return '<button type="button" class="btn btn-sm btn-secondary" disabled>Tidak ada foto</button>';
+                    }
+
+                    return ''
+                        + '<a class="btn btn-sm btn-info" href="' + escapeHtml(zipUrl) + '">'
+                        + '<i class="fas fa-file-archive mr-1"></i> ZIP'
+                        + '</a>';
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
                 className: 'text-right',
                 render: function (row) {
                     const editUrl = row.edit_url || '#';
@@ -379,6 +399,45 @@ document.addEventListener('DOMContentLoaded', function () {
             decodeURIComponent(this.getAttribute('data-date') || ''),
             photos
         );
+    });
+
+    $(tableEl).on('submit', 'form.inline-form', function (event) {
+        if (this.dataset.confirmed === '1') {
+            return;
+        }
+
+        event.preventDefault();
+
+        const formEl = this;
+        const title = formEl.getAttribute('data-confirm-title') || 'Konfirmasi';
+        const text = formEl.getAttribute('data-confirm-text') || 'Yakin ingin melanjutkan?';
+        const confirmButtonText = formEl.getAttribute('data-confirm-button') || 'Ya, lanjutkan';
+
+        if (typeof Swal === 'undefined') {
+            if (window.confirm(text)) {
+                formEl.dataset.confirmed = '1';
+                formEl.submit();
+            }
+            return;
+        }
+
+        Swal.fire({
+            icon: 'question',
+            title: title,
+            text: text,
+            showCancelButton: true,
+            confirmButtonText: confirmButtonText,
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            focusCancel: true
+        }).then(function (result) {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            formEl.dataset.confirmed = '1';
+            formEl.submit();
+        });
     });
 
     if (applyButton) {
