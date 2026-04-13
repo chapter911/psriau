@@ -136,13 +136,14 @@ class Dokumentasi extends BaseController
             $photos = $photosByActivity[$id] ?? [];
             $share = $sharesByActivity[$id] ?? null;
             $shareToken = is_array($share) ? (string) ($share['share_token'] ?? '') : '';
-            $shareExpiresAt = is_array($share) ? (string) ($share['expires_at'] ?? '') : '';
-            $shareIsActive = $shareToken !== '' && ($shareExpiresAt === '' || strtotime($shareExpiresAt) >= time());
+            $shareExpiresAtRaw = is_array($share) ? (string) ($share['expires_at'] ?? '') : '';
+            $shareExpiresAt = $this->extractDateOnly($shareExpiresAtRaw);
+            $shareIsActive = $shareToken !== '' && $this->isShareActiveByDate($shareExpiresAtRaw);
             $shareStatus = 'none';
             if ($shareToken !== '') {
-                if ($shareExpiresAt === '') {
+                if ($shareExpiresAtRaw === '') {
                     $shareStatus = 'permanent';
-                } elseif (strtotime($shareExpiresAt) >= time()) {
+                } elseif ($this->isShareActiveByDate($shareExpiresAtRaw)) {
                     $shareStatus = 'active';
                 } else {
                     $shareStatus = 'expired';
@@ -277,8 +278,10 @@ class Dokumentasi extends BaseController
         }
 
         $expiresAt = null;
+        $expiresAtDate = null;
         if ($durationMap[$duration] !== null) {
-            $expiresAt = date('Y-m-d H:i:s', strtotime($durationMap[$duration]));
+            $expiresAtDate = date('Y-m-d', strtotime($durationMap[$duration]));
+            $expiresAt = $expiresAtDate . ' 23:59:59';
         }
 
         $existingShare = $shareModel->where('activity_id', $id)->first();
@@ -312,7 +315,7 @@ class Dokumentasi extends BaseController
             'status' => 'ok',
             'message' => $isUpdate ? 'Durasi tautan berbagi berhasil diperbarui.' : 'Tautan berbagi berhasil dibuat.',
             'share_url' => site_url('/kegiatan-lapangan/share/' . $token),
-            'expires_at' => $expiresAt,
+            'expires_at' => $expiresAtDate,
             'is_update' => $isUpdate,
             'csrf_token' => csrf_token(),
             'csrf_hash' => csrf_hash(),
@@ -339,7 +342,7 @@ class Dokumentasi extends BaseController
         }
 
         $shareModel->update((int) $share['id'], [
-            'expires_at' => date('Y-m-d H:i:s', time() - 60),
+            'expires_at' => date('Y-m-d', strtotime('-1 day')) . ' 23:59:59',
         ]);
 
         return $this->response->setJSON([
@@ -362,7 +365,7 @@ class Dokumentasi extends BaseController
             'activity' => $sharedActivity['activity'],
             'photos' => $sharedActivity['photos'],
             'shareToken' => $token,
-            'expiresAt' => $sharedActivity['share']['expires_at'] ?? null,
+            'expiresAt' => $this->extractDateOnly((string) ($sharedActivity['share']['expires_at'] ?? '')),
         ]);
     }
 
@@ -477,7 +480,7 @@ class Dokumentasi extends BaseController
         }
 
         $expiresAt = (string) ($share['expires_at'] ?? '');
-        if ($expiresAt !== '' && strtotime($expiresAt) < time()) {
+        if (! $this->isShareActiveByDate($expiresAt)) {
             return null;
         }
 
@@ -955,6 +958,31 @@ class Dokumentasi extends BaseController
     {
         $dateTime = \DateTime::createFromFormat('Y-m-d', $date);
         return $dateTime instanceof \DateTime && $dateTime->format('Y-m-d') === $date;
+    }
+
+    private function extractDateOnly(string $dateTime): string
+    {
+        $trimmed = trim($dateTime);
+        if ($trimmed === '') {
+            return '';
+        }
+
+        $timestamp = strtotime($trimmed);
+        if ($timestamp === false) {
+            return '';
+        }
+
+        return date('Y-m-d', $timestamp);
+    }
+
+    private function isShareActiveByDate(string $expiresAt): bool
+    {
+        $dateOnly = $this->extractDateOnly($expiresAt);
+        if ($dateOnly === '') {
+            return true;
+        }
+
+        return $dateOnly >= date('Y-m-d');
     }
 
     private function deleteLocalImage(?string $path): void

@@ -83,21 +83,33 @@
 
                 <div class="alert alert-info py-2 px-3 d-none" id="shareActiveInfo"></div>
 
-                <div class="custom-control custom-radio mb-2">
-                    <input type="radio" id="shareDuration1Day" name="shareDuration" class="custom-control-input" value="1day">
-                    <label class="custom-control-label" for="shareDuration1Day">1 hari</label>
+                <div class="mb-3 d-none" id="shareCurrentLinkSection">
+                    <label for="shareCurrentLinkInput" class="small text-muted mb-1">Link Share Aktif</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="shareCurrentLinkInput" readonly>
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-outline-primary" id="btnCopyCurrentShareLink">Salin</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="custom-control custom-radio mb-2">
-                    <input type="radio" id="shareDuration1Week" name="shareDuration" class="custom-control-input" value="1week" checked>
-                    <label class="custom-control-label" for="shareDuration1Week">1 minggu</label>
-                </div>
-                <div class="custom-control custom-radio mb-2">
-                    <input type="radio" id="shareDuration1Month" name="shareDuration" class="custom-control-input" value="1month">
-                    <label class="custom-control-label" for="shareDuration1Month">1 bulan</label>
-                </div>
-                <div class="custom-control custom-radio">
-                    <input type="radio" id="shareDurationPermanent" name="shareDuration" class="custom-control-input" value="permanent">
-                    <label class="custom-control-label" for="shareDurationPermanent">Permanen</label>
+
+                <div id="shareDurationSection">
+                    <div class="custom-control custom-radio mb-2">
+                        <input type="radio" id="shareDuration1Day" name="shareDuration" class="custom-control-input" value="1day">
+                        <label class="custom-control-label" for="shareDuration1Day">1 hari</label>
+                    </div>
+                    <div class="custom-control custom-radio mb-2">
+                        <input type="radio" id="shareDuration1Week" name="shareDuration" class="custom-control-input" value="1week" checked>
+                        <label class="custom-control-label" for="shareDuration1Week">1 minggu</label>
+                    </div>
+                    <div class="custom-control custom-radio mb-2">
+                        <input type="radio" id="shareDuration1Month" name="shareDuration" class="custom-control-input" value="1month">
+                        <label class="custom-control-label" for="shareDuration1Month">1 bulan</label>
+                    </div>
+                    <div class="custom-control custom-radio">
+                        <input type="radio" id="shareDurationPermanent" name="shareDuration" class="custom-control-input" value="permanent">
+                        <label class="custom-control-label" for="shareDurationPermanent">Permanen</label>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -160,6 +172,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const shareModalEl = document.getElementById('shareDurationModal');
     const shareActivityName = document.getElementById('shareActivityName');
     const shareActiveInfo = document.getElementById('shareActiveInfo');
+    const shareDurationSection = document.getElementById('shareDurationSection');
+    const shareCurrentLinkSection = document.getElementById('shareCurrentLinkSection');
+    const shareCurrentLinkInput = document.getElementById('shareCurrentLinkInput');
+    const btnCopyCurrentShareLink = document.getElementById('btnCopyCurrentShareLink');
     const btnGenerateShareLink = document.getElementById('btnGenerateShareLink');
     const btnDeactivateShareLink = document.getElementById('btnDeactivateShareLink');
 
@@ -555,14 +571,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (shareActiveInfo) {
             if (selectedShareConfig.isActive) {
-                const expiresText = selectedShareConfig.expiresAt
-                    ? 'Link aktif sampai: <strong>' + escapeHtml(selectedShareConfig.expiresAt) + '</strong>'
-                    : 'Link aktif <strong>permanen</strong>';
-                const linkText = selectedShareConfig.currentShareUrl
-                    ? '<br><small>URL aktif: ' + escapeHtml(selectedShareConfig.currentShareUrl) + '</small>'
-                    : '';
-
-                shareActiveInfo.innerHTML = 'Saat ini masih ada link berbagi yang aktif. ' + expiresText + linkText;
+                shareActiveInfo.innerHTML = 'Saat ini masih ada link berbagi yang aktif.';
                 shareActiveInfo.classList.remove('d-none');
             } else {
                 shareActiveInfo.innerHTML = '';
@@ -570,10 +579,31 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        if (shareDurationSection) {
+            if (selectedShareConfig.isActive) {
+                shareDurationSection.classList.add('d-none');
+            } else {
+                shareDurationSection.classList.remove('d-none');
+            }
+        }
+
+        if (shareCurrentLinkSection && shareCurrentLinkInput) {
+            if (selectedShareConfig.isActive && selectedShareConfig.currentShareUrl) {
+                shareCurrentLinkInput.value = selectedShareConfig.currentShareUrl;
+                shareCurrentLinkSection.classList.remove('d-none');
+            } else {
+                shareCurrentLinkInput.value = '';
+                shareCurrentLinkSection.classList.add('d-none');
+            }
+        }
+
         if (btnGenerateShareLink) {
-            btnGenerateShareLink.textContent = selectedShareConfig.isActive
-                ? 'Perbarui Durasi Link'
-                : 'Buat Link Bagikan';
+            if (selectedShareConfig.isActive) {
+                btnGenerateShareLink.classList.add('d-none');
+            } else {
+                btnGenerateShareLink.classList.remove('d-none');
+                btnGenerateShareLink.textContent = 'Buat Link Bagikan';
+            }
         }
 
         if (btnDeactivateShareLink) {
@@ -675,6 +705,39 @@ document.addEventListener('DOMContentLoaded', function () {
                     text: message,
                 });
             });
+        });
+    }
+
+    if (btnCopyCurrentShareLink) {
+        btnCopyCurrentShareLink.addEventListener('click', function () {
+            const url = shareCurrentLinkInput ? shareCurrentLinkInput.value : '';
+            if (!url) {
+                return;
+            }
+
+            const onSuccess = function () {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Tersalin',
+                        text: 'Link share berhasil disalin.',
+                        timer: 1200,
+                        showConfirmButton: false,
+                    });
+                }
+            };
+
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                navigator.clipboard.writeText(url).then(onSuccess);
+                return;
+            }
+
+            if (shareCurrentLinkInput) {
+                shareCurrentLinkInput.select();
+                shareCurrentLinkInput.setSelectionRange(0, 99999);
+                document.execCommand('copy');
+                onSuccess();
+            }
         });
     }
 
