@@ -16,7 +16,7 @@
                     <?php endif; ?>
                 </p>
             </div>
-            <div class="d-flex flex-wrap" style="gap:8px;">
+            <div class="d-flex flex-wrap ml-auto justify-content-end" style="gap:8px;">
                 <a class="btn btn-primary" href="<?= site_url('/kegiatan-lapangan/share/' . $shareToken . '/download-zip'); ?>">
                     <i class="fas fa-file-archive mr-1"></i> Download Semua (ZIP)
                 </a>
