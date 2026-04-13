@@ -315,6 +315,7 @@ class Dokumentasi extends BaseController
             'status' => 'ok',
             'message' => $isUpdate ? 'Durasi tautan berbagi berhasil diperbarui.' : 'Tautan berbagi berhasil dibuat.',
             'share_url' => site_url('/kegiatan-lapangan/share/' . $token),
+            'activity_date' => (string) ($activity['activity_date'] ?? ''),
             'expires_at' => $expiresAtDate,
             'is_update' => $isUpdate,
             'csrf_token' => csrf_token(),

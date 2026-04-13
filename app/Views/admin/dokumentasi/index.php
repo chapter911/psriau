@@ -216,11 +216,12 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     const buildShareCopyText = function (title, activityDate, url) {
+        const safeActivityDate = String(activityDate || '').trim();
         return [
             'Izin mengirimkan dokumentasi',
             '',
             'acara : ' + (title || '-'),
-            'tanggal : ' + (activityDate || '-'),
+            'tanggal : ' + safeActivityDate,
             'link : ' + (url || '-'),
             '',
             'Terima kasih.'
@@ -570,8 +571,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     $(tableEl).on('click', '.js-share-photo', function () {
+        const rowData = dt.row($(this).closest('tr')).data() || {};
+        const shareActivityDate = decodeURIComponent(this.getAttribute('data-share-activity-date') || '') || (rowData.activity_date || '');
+
         selectedShareConfig = {
             title: decodeURIComponent(this.getAttribute('data-share-title') || ''),
+            activityDate: shareActivityDate === '-' ? '' : shareActivityDate,
             shareUrl: this.getAttribute('data-share-url') || '',
             deactivateUrl: this.getAttribute('data-share-deactivate-url') || '',
             currentShareUrl: this.getAttribute('data-share-public-url') || '',
@@ -673,6 +678,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const shareUrl = response && response.share_url ? response.share_url : '';
+                const responseActivityDate = response && response.activity_date ? String(response.activity_date).trim() : '';
+                if (responseActivityDate) {
+                    selectedShareConfig.activityDate = responseActivityDate;
+                }
 
                 if (typeof Swal === 'undefined') {
                     window.prompt('Salin link berikut:', shareUrl);
