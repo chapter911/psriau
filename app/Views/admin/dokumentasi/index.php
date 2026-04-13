@@ -1,11 +1,6 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
-<div class="mb-3 d-flex flex-wrap justify-content-between align-items-center" style="gap:12px;">
-    <a class="btn btn-primary" href="<?= site_url('/admin/dokumentasi/kegiatan-lapangan/tambah'); ?>">
-        <i class="fas fa-plus mr-1"></i> Tambah Kegiatan
-    </a>
-</div>
 
 <div class="card">
     <div class="card-header">
@@ -17,7 +12,7 @@
             <div class="search-filter-box w-100">
                 <form method="get" action="<?= site_url('/admin/dokumentasi/kegiatan-lapangan'); ?>" class="mb-0">
                 <div class="form-row align-items-end mb-0">
-                    <div class="form-group col-md-4 mb-2 mb-md-0">
+                    <div class="form-group col-md-3 mb-2 mb-md-0">
                         <label for="serverFilterTitle" class="small text-muted mb-1">Judul</label>
                         <input type="text" class="form-control form-control-sm" id="serverFilterTitle" name="title" value="<?= esc((string) ($filters['title'] ?? '')); ?>" placeholder="Cari judul kegiatan">
                     </div>
@@ -39,6 +34,12 @@
                                 Reset
                             </a>
                         </div>
+                    </div>
+                    <div class="form-group col-md-1 mb-2 mb-md-0">
+                        <label for="serverFilterLocation" class="small text-muted mb-1">&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                        <a class="btn btn-primary" href="<?= site_url('/admin/dokumentasi/kegiatan-lapangan/tambah'); ?>">
+                            <i class="fas fa-plus mr-1"></i> Tambah Kegiatan
+                        </a>
                     </div>
                 </div>
                 </form>
