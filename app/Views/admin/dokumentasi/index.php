@@ -355,7 +355,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         + thumbHtml
                         + '<div>'
                         + '<div class="font-weight-bold">' + Number(row.photo_count || 0) + ' foto</div>'
-                        + '<small class="text-muted">Klik untuk lihat galeri</small>'
                         + '</div>'
                         + '</div>'
                         + '</button>';
@@ -400,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         + '<button type="button" class="btn btn-sm btn-success js-share-photo"'
                         + ' data-share-url="' + escapeHtml(shareCreateUrl) + '"'
                         + ' data-share-title="' + escapeHtml(encodeURIComponent(title)) + '">'
-                        + '<i class="fas fa-share-alt mr-1"></i> Bagikan Foto'
+                        + '<i class="fas fa-share-alt mr-1"></i>'
                         + '</button>';
                 }
             },
