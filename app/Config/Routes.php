@@ -16,6 +16,10 @@ $routes->get('instagram/(:segment)', 'Articles::show/$1');
 $routes->addRedirect('berita', 'instagram', 301);
 $routes->addRedirect('berita/(.*)', 'instagram/$1', 301);
 
+$routes->get('kegiatan-lapangan/share/(:segment)', 'Admin\\Dokumentasi::sharedGallery/$1');
+$routes->get('kegiatan-lapangan/share/(:segment)/download-zip', 'Admin\\Dokumentasi::sharedDownloadZip/$1');
+$routes->get('kegiatan-lapangan/share/(:segment)/download-photo/(:num)', 'Admin\\Dokumentasi::sharedDownloadPhoto/$1/$2');
+
 $routes->get('masuk', 'Auth::loginForm');
 $routes->post('masuk', 'Auth::login');
 $routes->get('keluar', 'Auth::logout');
@@ -111,6 +115,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('dokumentasi/kegiatan-lapangan', 'Admin\\Dokumentasi::index');
 	$routes->get('dokumentasi/kegiatan-lapangan/data', 'Admin\\Dokumentasi::dataTable');
 	$routes->get('dokumentasi/kegiatan-lapangan/(:num)/download-zip', 'Admin\\Dokumentasi::downloadZip/$1');
+	$routes->post('dokumentasi/kegiatan-lapangan/(:num)/share', 'Admin\\Dokumentasi::createShare/$1');
 	$routes->match(['get', 'post'], 'dokumentasi/kegiatan-lapangan/tambah', 'Admin\\Dokumentasi::create');
 	$routes->match(['get', 'post'], 'dokumentasi/kegiatan-lapangan/(:num)/ubah', 'Admin\\Dokumentasi::edit/$1');
 	$routes->post('dokumentasi/kegiatan-lapangan/(:num)/hapus', 'Admin\\Dokumentasi::delete/$1');

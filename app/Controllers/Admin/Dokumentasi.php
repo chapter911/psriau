@@ -5,6 +5,7 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\KegiatanLapanganModel;
 use App\Models\KegiatanLapanganPhotoModel;
+use App\Models\KegiatanLapanganShareModel;
 
 class Dokumentasi extends BaseController
 {
@@ -47,7 +48,7 @@ class Dokumentasi extends BaseController
             1 => 'activity_date',
             2 => 'location',
             4 => 'created_by',
-            6 => 'id',
+            7 => 'id',
         ];
 
         $orderColumnIndex = (int) ($this->request->getGet('order')[0]['column'] ?? 1);
@@ -129,6 +130,7 @@ class Dokumentasi extends BaseController
                 'photo_count' => count($photos),
                 'cover_photo' => $photos[0]['path'] ?? '',
                 'download_zip_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/download-zip'),
+                'share_create_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/share'),
                 'edit_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/ubah'),
                 'delete_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/hapus'),
             ];
@@ -205,41 +207,290 @@ class Dokumentasi extends BaseController
         return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan lapangan berhasil dihapus.');
     }
 
+    public function createShare(int $id)
+    {
+        if (! $this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status' => 'error',
+                'message' => 'Permintaan tidak valid.',
+            ]);
+        }
+
+        $activityModel = new KegiatanLapanganModel();
+        $shareModel = new KegiatanLapanganShareModel();
+
+        $activity = $activityModel->find($id);
+        if (! $activity) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status' => 'error',
+                'message' => 'Kegiatan lapangan tidak ditemukan.',
+            ]);
+        }
+
+        $duration = trim((string) $this->request->getPost('duration'));
+        $durationMap = [
+            '1day' => '+1 day',
+            '1week' => '+1 week',
+            '1month' => '+1 month',
+            'permanent' => null,
+        ];
+
+        if (! array_key_exists($duration, $durationMap)) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'message' => 'Durasi berbagi tidak valid.',
+            ]);
+        }
+
+        $expiresAt = null;
+        if ($durationMap[$duration] !== null) {
+            $expiresAt = date('Y-m-d H:i:s', strtotime($durationMap[$duration]));
+        }
+
+        $token = $this->generateShareToken();
+        if ($token === null) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal membuat tautan berbagi.',
+            ]);
+        }
+
+        $sharePayload = [
+            'activity_id' => $id,
+            'share_token' => $token,
+            'expires_at' => $expiresAt,
+            'created_by_user_id' => (int) (session()->get('userId') ?: 0) ?: null,
+        ];
+
+        $existingShare = $shareModel->where('activity_id', $id)->first();
+        if ($existingShare) {
+            $shareModel->update((int) $existingShare['id'], $sharePayload);
+        } else {
+            $shareModel->insert($sharePayload);
+        }
+
+        return $this->response->setJSON([
+            'status' => 'ok',
+            'message' => 'Tautan berbagi berhasil dibuat.',
+            'share_url' => site_url('/kegiatan-lapangan/share/' . $token),
+            'expires_at' => $expiresAt,
+            'csrf_token' => csrf_token(),
+            'csrf_hash' => csrf_hash(),
+        ]);
+    }
+
+    public function sharedGallery(string $token): string
+    {
+        $sharedActivity = $this->resolveSharedActivity($token);
+        if ($sharedActivity === null) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tautan berbagi tidak valid atau sudah kedaluwarsa.');
+        }
+
+        return view('public/kegiatan_lapangan_share', [
+            'title' => 'Galeri Kegiatan Lapangan',
+            'activity' => $sharedActivity['activity'],
+            'photos' => $sharedActivity['photos'],
+            'shareToken' => $token,
+            'expiresAt' => $sharedActivity['share']['expires_at'] ?? null,
+        ]);
+    }
+
+    public function sharedDownloadZip(string $token)
+    {
+        $sharedActivity = $this->resolveSharedActivity($token);
+        if ($sharedActivity === null) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tautan berbagi tidak valid atau sudah kedaluwarsa.');
+        }
+
+        $zipResult = $this->buildActivityZip((int) ($sharedActivity['activity']['id'] ?? 0), (string) ($sharedActivity['activity']['title'] ?? 'kegiatan-lapangan'));
+        if ($zipResult['error'] !== null) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound($zipResult['error']);
+        }
+
+        $zipPath = (string) ($zipResult['path'] ?? '');
+        $downloadName = (string) ($zipResult['name'] ?? 'dokumentasi-kegiatan.zip');
+
+        register_shutdown_function(static function () use ($zipPath): void {
+            if (is_file($zipPath)) {
+                @unlink($zipPath);
+            }
+        });
+
+        return $this->response->download($zipPath, null)->setFileName($downloadName);
+    }
+
+    public function sharedDownloadPhoto(string $token, int $photoId)
+    {
+        $sharedActivity = $this->resolveSharedActivity($token);
+        if ($sharedActivity === null) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tautan berbagi tidak valid atau sudah kedaluwarsa.');
+        }
+
+        $photoModel = new KegiatanLapanganPhotoModel();
+        $photo = $photoModel
+            ->where('id', $photoId)
+            ->where('activity_id', (int) ($sharedActivity['activity']['id'] ?? 0))
+            ->first();
+
+        if (! is_array($photo)) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Foto tidak ditemukan.');
+        }
+
+        $photoPath = (string) ($photo['photo_path'] ?? '');
+        if ($photoPath === '' || strpos($photoPath, '/uploads/') !== 0) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Foto tidak valid.');
+        }
+
+        $absolutePath = FCPATH . ltrim($photoPath, '/');
+        if (! is_file($absolutePath)) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('File foto tidak ditemukan.');
+        }
+
+        $fileName = trim((string) ($photo['photo_name'] ?? ''));
+        if ($fileName === '') {
+            $fileName = basename($absolutePath);
+        }
+
+        return $this->response->download($absolutePath, null)->setFileName($fileName);
+    }
+
     public function downloadZip(int $id)
     {
         $activityModel = new KegiatanLapanganModel();
-        $photoModel = new KegiatanLapanganPhotoModel();
 
         $activity = $activityModel->find($id);
         if (! $activity) {
             return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Kegiatan lapangan tidak ditemukan.');
         }
 
+        $zipResult = $this->buildActivityZip((int) $id, (string) ($activity['title'] ?? 'kegiatan-lapangan'));
+        if ($zipResult['error'] !== null) {
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', (string) $zipResult['error']);
+        }
+
+        $zipPath = (string) ($zipResult['path'] ?? '');
+        $downloadName = (string) ($zipResult['name'] ?? 'dokumentasi-kegiatan.zip');
+
+        register_shutdown_function(static function () use ($zipPath): void {
+            if (is_file($zipPath)) {
+                @unlink($zipPath);
+            }
+        });
+
+        return $this->response->download($zipPath, null)->setFileName($downloadName);
+    }
+
+    private function generateShareToken(): ?string
+    {
+        try {
+            return bin2hex(random_bytes(24));
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function resolveSharedActivity(string $token): ?array
+    {
+        $token = trim($token);
+        if ($token === '') {
+            return null;
+        }
+
+        $shareModel = new KegiatanLapanganShareModel();
+        $activityModel = new KegiatanLapanganModel();
+        $photoModel = new KegiatanLapanganPhotoModel();
+
+        $share = $shareModel->where('share_token', $token)->first();
+        if (! is_array($share)) {
+            return null;
+        }
+
+        $expiresAt = (string) ($share['expires_at'] ?? '');
+        if ($expiresAt !== '' && strtotime($expiresAt) < time()) {
+            return null;
+        }
+
+        $activityId = (int) ($share['activity_id'] ?? 0);
+        if ($activityId <= 0) {
+            return null;
+        }
+
+        $activity = $activityModel->find($activityId);
+        if (! is_array($activity)) {
+            return null;
+        }
+
         $photos = $photoModel
-            ->where('activity_id', $id)
+            ->where('activity_id', $activityId)
+            ->orderBy('sort_order', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->findAll();
+
+        return [
+            'share' => $share,
+            'activity' => $activity,
+            'photos' => $photos,
+        ];
+    }
+
+    private function buildActivityZip(int $activityId, string $activityTitle): array
+    {
+        if ($activityId <= 0) {
+            return [
+                'path' => null,
+                'name' => null,
+                'error' => 'Kegiatan tidak valid.',
+            ];
+        }
+
+        $photoModel = new KegiatanLapanganPhotoModel();
+        $photos = $photoModel
+            ->where('activity_id', $activityId)
             ->orderBy('sort_order', 'ASC')
             ->orderBy('id', 'ASC')
             ->findAll();
 
         if ($photos === []) {
-            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Tidak ada foto untuk diunduh.');
+            return [
+                'path' => null,
+                'name' => null,
+                'error' => 'Tidak ada foto untuk diunduh.',
+            ];
         }
 
         if (! class_exists('ZipArchive')) {
-            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Ekstensi ZIP tidak tersedia di server.');
+            return [
+                'path' => null,
+                'name' => null,
+                'error' => 'Ekstensi ZIP tidak tersedia di server.',
+            ];
         }
 
         $downloadDir = WRITEPATH . 'downloads';
         if (! is_dir($downloadDir) && ! @mkdir($downloadDir, 0775, true) && ! is_dir($downloadDir)) {
-            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Folder sementara unduhan tidak dapat dibuat.');
+            return [
+                'path' => null,
+                'name' => null,
+                'error' => 'Folder sementara unduhan tidak dapat dibuat.',
+            ];
         }
 
-        $zipTempPath = $downloadDir . DIRECTORY_SEPARATOR . 'kegiatan_lapangan_' . $id . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.zip';
+        try {
+            $randomSuffix = bin2hex(random_bytes(4));
+        } catch (\Throwable $e) {
+            $randomSuffix = (string) mt_rand(1000, 9999);
+        }
+
+        $zipTempPath = $downloadDir . DIRECTORY_SEPARATOR . 'kegiatan_lapangan_' . $activityId . '_' . date('YmdHis') . '_' . $randomSuffix . '.zip';
 
         $zip = new \ZipArchive();
         $openResult = $zip->open($zipTempPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
         if ($openResult !== true) {
-            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Gagal membuat file ZIP.');
+            return [
+                'path' => null,
+                'name' => null,
+                'error' => 'Gagal membuat file ZIP.',
+            ];
         }
 
         $addedFiles = 0;
@@ -279,20 +530,21 @@ class Dokumentasi extends BaseController
 
         if ($addedFiles === 0) {
             @unlink($zipTempPath);
-            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Tidak ada file foto valid yang dapat dimasukkan ke ZIP.');
+            return [
+                'path' => null,
+                'name' => null,
+                'error' => 'Tidak ada file foto valid yang dapat dimasukkan ke ZIP.',
+            ];
         }
 
-        $safeTitle = strtolower(trim((string) ($activity['title'] ?? 'kegiatan-lapangan')));
+        $safeTitle = strtolower(trim($activityTitle !== '' ? $activityTitle : 'kegiatan-lapangan'));
         $safeTitle = preg_replace('/[^A-Za-z0-9]+/', '-', $safeTitle) ?: 'kegiatan-lapangan';
-        $downloadName = 'dokumentasi-' . $safeTitle . '-' . date('Ymd') . '.zip';
 
-        register_shutdown_function(static function () use ($zipTempPath): void {
-            if (is_file($zipTempPath)) {
-                @unlink($zipTempPath);
-            }
-        });
-
-        return $this->response->download($zipTempPath, null)->setFileName($downloadName);
+        return [
+            'path' => $zipTempPath,
+            'name' => 'dokumentasi-' . $safeTitle . '-' . date('Ymd') . '.zip',
+            'error' => null,
+        ];
     }
 
     private function saveData(?int $id = null, ?array $existing = null)
@@ -338,43 +590,6 @@ class Dokumentasi extends BaseController
         $activityModel = new KegiatanLapanganModel();
         $photoModel = new KegiatanLapanganPhotoModel();
 
-        $existingPhotoRows = [];
-        if ($id !== null) {
-            $existingPhotoRows = $photoModel
-                ->where('activity_id', $id)
-                ->orderBy('sort_order', 'ASC')
-                ->orderBy('id', 'ASC')
-                ->findAll();
-        }
-
-        $uploadedPhotos = $this->processUploadedPhotos('activity_photos', count($existingPhotoRows));
-        if ($uploadedPhotos['error'] !== null) {
-            return $isAjax
-                ? $this->response->setStatusCode(422)->setJSON([
-                    'status' => 'error',
-                    'message' => $uploadedPhotos['error'],
-                ])
-                : redirect()->back()->withInput()->with('error', $uploadedPhotos['error']);
-        }
-
-        if ($id === null && $uploadedPhotos['photos'] === []) {
-            return $isAjax
-                ? $this->response->setStatusCode(422)->setJSON([
-                    'status' => 'error',
-                    'message' => 'Minimal satu foto kegiatan harus dipilih.',
-                ])
-                : redirect()->back()->withInput()->with('error', 'Minimal satu foto kegiatan harus dipilih.');
-        }
-
-        if ($id !== null && $existingPhotoRows === [] && $uploadedPhotos['photos'] === []) {
-            return $isAjax
-                ? $this->response->setStatusCode(422)->setJSON([
-                    'status' => 'error',
-                    'message' => 'Minimal satu foto kegiatan harus dipilih.',
-                ])
-                : redirect()->back()->withInput()->with('error', 'Minimal satu foto kegiatan harus dipilih.');
-        }
-
         $creatorName = trim((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system'));
         $creatorUserId = (int) session()->get('userId');
 
@@ -389,6 +604,30 @@ class Dokumentasi extends BaseController
         if ($id === null) {
             $activityModel->insert($payload);
             $newId = (int) $activityModel->getInsertID();
+
+            $uploadedPhotos = $this->processUploadedPhotos('activity_photos', 0, $newId, $activityTitle);
+            if ($uploadedPhotos['error'] !== null) {
+                $this->cleanupUploadedPhotos($uploadedPhotos['photos'] ?? []);
+                $activityModel->delete($newId);
+
+                return $isAjax
+                    ? $this->response->setStatusCode(422)->setJSON([
+                        'status' => 'error',
+                        'message' => $uploadedPhotos['error'],
+                    ])
+                    : redirect()->back()->withInput()->with('error', $uploadedPhotos['error']);
+            }
+
+            if (($uploadedPhotos['photos'] ?? []) === []) {
+                $activityModel->delete($newId);
+                return $isAjax
+                    ? $this->response->setStatusCode(422)->setJSON([
+                        'status' => 'error',
+                        'message' => 'Minimal satu foto kegiatan harus dipilih.',
+                    ])
+                    : redirect()->back()->withInput()->with('error', 'Minimal satu foto kegiatan harus dipilih.');
+            }
+
             $this->storeActivityPhotos($newId, $uploadedPhotos['photos'], 1);
 
             return $isAjax
@@ -398,6 +637,33 @@ class Dokumentasi extends BaseController
                     'redirect' => site_url('/admin/dokumentasi/kegiatan-lapangan'),
                 ])
                 : redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan lapangan berhasil ditambahkan.');
+        }
+
+        $existingPhotoRows = $photoModel
+            ->where('activity_id', $id)
+            ->orderBy('sort_order', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->findAll();
+
+        $uploadedPhotos = $this->processUploadedPhotos('activity_photos', count($existingPhotoRows), $id, $activityTitle);
+        if ($uploadedPhotos['error'] !== null) {
+            $this->cleanupUploadedPhotos($uploadedPhotos['photos'] ?? []);
+
+            return $isAjax
+                ? $this->response->setStatusCode(422)->setJSON([
+                    'status' => 'error',
+                    'message' => $uploadedPhotos['error'],
+                ])
+                : redirect()->back()->withInput()->with('error', $uploadedPhotos['error']);
+        }
+
+        if ($existingPhotoRows === [] && ($uploadedPhotos['photos'] ?? []) === []) {
+            return $isAjax
+                ? $this->response->setStatusCode(422)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Minimal satu foto kegiatan harus dipilih.',
+                ])
+                : redirect()->back()->withInput()->with('error', 'Minimal satu foto kegiatan harus dipilih.');
         }
 
         $activityModel->update($id, $payload);
@@ -412,7 +678,7 @@ class Dokumentasi extends BaseController
             : redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan lapangan berhasil diperbarui.');
     }
 
-    private function processUploadedPhotos(string $fieldName, int $existingPhotoCount = 0): array
+    private function processUploadedPhotos(string $fieldName, int $existingPhotoCount = 0, int $activityId = 0, ?string $activityTitle = null): array
     {
         $files = $this->request->getFileMultiple($fieldName);
         if (! is_array($files) || $files === []) {
@@ -455,7 +721,17 @@ class Dokumentasi extends BaseController
             ];
         }
 
-        $directory = FCPATH . 'uploads/dokumentasi/kegiatan-lapangan';
+        if ($activityId <= 0) {
+            return [
+                'photos' => [],
+                'error' => 'Kegiatan tidak valid untuk proses upload foto.',
+            ];
+        }
+
+        $folderConfig = $this->resolveActivityUploadFolder($activityId, $activityTitle);
+        $directory = $folderConfig['absolute'];
+        $publicBasePath = $folderConfig['public'];
+
         if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
             return [
                 'photos' => [],
@@ -471,6 +747,7 @@ class Dokumentasi extends BaseController
         }
 
         $result = [];
+        $movedFiles = [];
         foreach ($flatFiles as $file) {
             if (! is_object($file) || ! method_exists($file, 'getError')) {
                 continue;
@@ -481,16 +758,18 @@ class Dokumentasi extends BaseController
             }
 
             if (! $file->isValid() || $file->hasMoved()) {
+                $this->cleanupUploadedPhotos($movedFiles);
                 return [
-                    'photos' => [],
+                    'photos' => $movedFiles,
                     'error' => 'Salah satu foto tidak valid. Silakan pilih ulang foto.',
                 ];
             }
 
             $mimeType = strtolower((string) $file->getMimeType());
             if (! str_starts_with($mimeType, 'image/')) {
+                $this->cleanupUploadedPhotos($movedFiles);
                 return [
-                    'photos' => [],
+                    'photos' => $movedFiles,
                     'error' => 'Semua file harus berupa gambar.',
                 ];
             }
@@ -507,8 +786,9 @@ class Dokumentasi extends BaseController
             try {
                 $newName = date('YmdHis') . '_' . bin2hex(random_bytes(6)) . '.' . $extension;
             } catch (\Throwable $e) {
+                $this->cleanupUploadedPhotos($movedFiles);
                 return [
-                    'photos' => [],
+                    'photos' => $movedFiles,
                     'error' => 'Gagal membuat nama file foto.',
                 ];
             }
@@ -516,29 +796,69 @@ class Dokumentasi extends BaseController
             try {
                 $file->move($directory, $newName);
             } catch (\Throwable $e) {
+                $this->cleanupUploadedPhotos($movedFiles);
                 return [
-                    'photos' => [],
+                    'photos' => $movedFiles,
                     'error' => 'Gagal menyimpan foto ke server.',
                 ];
             }
 
             if (! is_file($directory . DIRECTORY_SEPARATOR . $newName)) {
+                $this->cleanupUploadedPhotos($movedFiles);
                 return [
-                    'photos' => [],
+                    'photos' => $movedFiles,
                     'error' => 'Foto tidak tersimpan dengan benar di server.',
                 ];
             }
 
-            $result[] = [
-                'photo_path' => '/uploads/dokumentasi/kegiatan-lapangan/' . $newName,
+            $uploadedPhoto = [
+                'photo_path' => $publicBasePath . '/' . $newName,
                 'photo_name' => (string) ($file->getClientName() ?: $newName),
             ];
+
+            $result[] = $uploadedPhoto;
+            $movedFiles[] = $uploadedPhoto;
         }
 
         return [
             'photos' => $result,
             'error' => null,
         ];
+    }
+
+    private function resolveActivityUploadFolder(int $activityId, ?string $activityTitle = null): array
+    {
+        $year = date('Y');
+        $month = date('m');
+        $activityCode = 'kegiatan-' . str_pad((string) $activityId, 6, '0', STR_PAD_LEFT);
+        $activitySlug = $this->slugifyFolderName($activityTitle ?: 'kegiatan-lapangan');
+
+        $relative = 'uploads/dokumentasi/kegiatan-lapangan/' . $year . '/' . $month . '/' . $activityCode . '-' . $activitySlug;
+
+        return [
+            'absolute' => FCPATH . $relative,
+            'public' => '/' . $relative,
+        ];
+    }
+
+    private function slugifyFolderName(string $text): string
+    {
+        $slug = strtolower(trim($text));
+        $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
+        $slug = trim($slug, '-');
+
+        if ($slug === '') {
+            return 'kegiatan';
+        }
+
+        return substr($slug, 0, 48);
+    }
+
+    private function cleanupUploadedPhotos(array $photos): void
+    {
+        foreach ($photos as $photo) {
+            $this->deleteLocalImage((string) ($photo['photo_path'] ?? ''));
+        }
     }
 
     private function storeActivityPhotos(int $activityId, array $photos, int $startingOrder): void

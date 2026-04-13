@@ -56,11 +56,52 @@
                     <th>Foto Kegiatan</th>
                     <th>Dibuat Oleh</th>
                     <th class="text-center">Download Foto</th>
+                    <th class="text-center">Bagikan Foto</th>
                     <th class="text-right">Aksi</th>
                 </tr>
                 </thead>
                 <tbody></tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="shareDurationModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bagikan Foto</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Berapa lama durasi foto ini akan dibagikan?</p>
+                <p class="small text-muted mb-3" id="shareActivityName">-</p>
+
+                <div class="custom-control custom-radio mb-2">
+                    <input type="radio" id="shareDuration1Day" name="shareDuration" class="custom-control-input" value="1day">
+                    <label class="custom-control-label" for="shareDuration1Day">1 hari</label>
+                </div>
+                <div class="custom-control custom-radio mb-2">
+                    <input type="radio" id="shareDuration1Week" name="shareDuration" class="custom-control-input" value="1week" checked>
+                    <label class="custom-control-label" for="shareDuration1Week">1 minggu</label>
+                </div>
+                <div class="custom-control custom-radio mb-2">
+                    <input type="radio" id="shareDuration1Month" name="shareDuration" class="custom-control-input" value="1month">
+                    <label class="custom-control-label" for="shareDuration1Month">1 bulan</label>
+                </div>
+                <div class="custom-control custom-radio">
+                    <input type="radio" id="shareDurationPermanent" name="shareDuration" class="custom-control-input" value="permanent">
+                    <label class="custom-control-label" for="shareDurationPermanent">Permanen</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnGenerateShareLink">
+                    Buat Link Bagikan
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -109,6 +150,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const filterLocation = document.getElementById('serverFilterLocation');
     const applyButton = document.getElementById('applyServerFilters');
     const resetButton = document.getElementById('resetServerFilters');
+    const shareModalEl = document.getElementById('shareDurationModal');
+    const shareActivityName = document.getElementById('shareActivityName');
+    const btnGenerateShareLink = document.getElementById('btnGenerateShareLink');
 
     const modalEl = document.getElementById('activityPhotoModal');
     const modalTitle = document.getElementById('activityPhotoModalTitle');
@@ -124,8 +168,12 @@ document.addEventListener('DOMContentLoaded', function () {
     let isFilterLoading = false;
 
     const csrfTokenName = <?= json_encode(csrf_token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
-    const csrfTokenValue = <?= json_encode(csrf_hash(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    let csrfTokenValue = <?= json_encode(csrf_hash(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     const dataUrl = <?= json_encode(site_url('/admin/dokumentasi/kegiatan-lapangan/data'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    let selectedShareConfig = {
+        title: '',
+        shareUrl: '',
+    };
 
     const escapeHtml = function (value) {
         return String(value || '')
@@ -343,6 +391,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 data: null,
                 orderable: false,
                 searchable: false,
+                className: 'text-center',
+                render: function (row) {
+                    const shareCreateUrl = row.share_create_url || '#';
+                    const title = row.title || '-';
+
+                    return ''
+                        + '<button type="button" class="btn btn-sm btn-success js-share-photo"'
+                        + ' data-share-url="' + escapeHtml(shareCreateUrl) + '"'
+                        + ' data-share-title="' + escapeHtml(encodeURIComponent(title)) + '">'
+                        + '<i class="fas fa-share-alt mr-1"></i> Bagikan Foto'
+                        + '</button>';
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
                 className: 'text-right',
                 render: function (row) {
                     const editUrl = row.edit_url || '#';
@@ -400,6 +465,108 @@ document.addEventListener('DOMContentLoaded', function () {
             photos
         );
     });
+
+    $(tableEl).on('click', '.js-share-photo', function () {
+        selectedShareConfig = {
+            title: decodeURIComponent(this.getAttribute('data-share-title') || ''),
+            shareUrl: this.getAttribute('data-share-url') || '',
+        };
+
+        if (shareActivityName) {
+            shareActivityName.textContent = selectedShareConfig.title || '-';
+        }
+
+        if (typeof $.fn.modal === 'function') {
+            $(shareModalEl).modal('show');
+        }
+    });
+
+    if (btnGenerateShareLink) {
+        btnGenerateShareLink.addEventListener('click', function () {
+            if (!selectedShareConfig.shareUrl) {
+                return;
+            }
+
+            const selectedDurationInput = document.querySelector('input[name="shareDuration"]:checked');
+            const duration = selectedDurationInput ? selectedDurationInput.value : '1week';
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Membuat link...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: function () {
+                        Swal.showLoading();
+                    }
+                });
+            }
+
+            $.ajax({
+                url: selectedShareConfig.shareUrl,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    duration: duration,
+                    [csrfTokenName]: csrfTokenValue,
+                },
+            }).done(function (response) {
+                if (response && response.csrf_hash) {
+                    csrfTokenValue = response.csrf_hash;
+                }
+
+                if (typeof $.fn.modal === 'function') {
+                    $(shareModalEl).modal('hide');
+                }
+
+                const shareUrl = response && response.share_url ? response.share_url : '';
+
+                if (typeof Swal === 'undefined') {
+                    window.prompt('Salin link berikut:', shareUrl);
+                    return;
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Link Berhasil Dibuat',
+                    html: '<div class="text-left"><small class="text-muted">Bagikan tautan berikut:</small><input id="shareLinkInput" class="form-control mt-2" value="' + escapeHtml(shareUrl) + '" readonly></div>',
+                    showCancelButton: true,
+                    confirmButtonText: 'Salin Link',
+                    cancelButtonText: 'Tutup',
+                    preConfirm: function () {
+                        const input = document.getElementById('shareLinkInput');
+                        if (!input) {
+                            return;
+                        }
+
+                        input.select();
+                        input.setSelectionRange(0, 99999);
+
+                        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                            return navigator.clipboard.writeText(input.value);
+                        }
+
+                        document.execCommand('copy');
+                    }
+                });
+            }).fail(function (xhr) {
+                const message = xhr && xhr.responseJSON && xhr.responseJSON.message
+                    ? xhr.responseJSON.message
+                    : 'Gagal membuat link berbagi.';
+
+                if (typeof Swal === 'undefined') {
+                    window.alert(message);
+                    return;
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: message,
+                });
+            });
+        });
+    }
 
     $(tableEl).on('submit', 'form.inline-form', function (event) {
         if (this.dataset.confirmed === '1') {
