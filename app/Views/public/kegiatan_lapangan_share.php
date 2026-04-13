@@ -20,12 +20,6 @@
                 <a class="btn btn-primary gallery-toolbar-btn" href="<?= site_url('/kegiatan-lapangan/share/' . $shareToken . '/download-zip'); ?>">
                     <i class="fas fa-file-archive mr-1"></i> Download Semua (ZIP)
                 </a>
-                <button type="button" class="btn btn-outline-secondary gallery-toolbar-btn gallery-toolbar-icon-btn" id="btnGridView" title="Tampilan kotak" aria-label="Tampilan kotak">
-                    <i class="fas fa-th"></i>
-                </button>
-                <button type="button" class="btn btn-outline-secondary gallery-toolbar-btn gallery-toolbar-icon-btn" id="btnListView" title="Tampilan list" aria-label="Tampilan list">
-                    <i class="fas fa-list"></i>
-                </button>
             </div>
         </div>
 
@@ -117,10 +111,6 @@
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
 
-    .gallery-list {
-        grid-template-columns: 1fr;
-    }
-
     .gallery-item {
         background: #fff;
         border: 1px solid #e3e8ef;
@@ -143,15 +133,6 @@
         height: 220px;
         object-fit: cover;
         display: block;
-    }
-
-    .gallery-list .gallery-item {
-        display: grid;
-        grid-template-columns: minmax(200px, 260px) 1fr;
-    }
-
-    .gallery-list .gallery-photo-btn img {
-        height: 160px;
     }
 
     .gallery-meta {
@@ -307,11 +288,6 @@
     }
 
     @media (max-width: 767.98px) {
-        .gallery-list .gallery-item {
-            grid-template-columns: 1fr;
-        }
-
-        .gallery-list .gallery-photo-btn img,
         .gallery-grid .gallery-photo-btn img {
             height: 200px;
         }
@@ -340,8 +316,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const galleryEl = document.getElementById('photoGallery');
-    const btnGrid = document.getElementById('btnGridView');
-    const btnList = document.getElementById('btnListView');
 
     const lightbox = document.getElementById('shareLightbox');
     const lightboxImage = document.getElementById('lightboxImage');
@@ -358,26 +332,13 @@ document.addEventListener('DOMContentLoaded', function () {
     let touchEndX = 0;
     const minSwipeDistance = 45;
 
-    const setView = function (viewType) {
+    const setView = function () {
         if (!galleryEl) {
             return;
         }
 
-        galleryEl.classList.remove('gallery-grid', 'gallery-list');
-        if (viewType === 'list') {
-            galleryEl.classList.add('gallery-list');
-            btnList && btnList.classList.add('btn-primary');
-            btnList && btnList.classList.remove('btn-outline-secondary');
-            btnGrid && btnGrid.classList.add('btn-outline-secondary');
-            btnGrid && btnGrid.classList.remove('btn-primary');
-            return;
-        }
-
+        galleryEl.classList.remove('gallery-list');
         galleryEl.classList.add('gallery-grid');
-        btnGrid && btnGrid.classList.add('btn-primary');
-        btnGrid && btnGrid.classList.remove('btn-outline-secondary');
-        btnList && btnList.classList.add('btn-outline-secondary');
-        btnList && btnList.classList.remove('btn-primary');
     };
 
     const renderLightboxThumbnails = function () {
@@ -456,14 +417,6 @@ document.addEventListener('DOMContentLoaded', function () {
         lightbox.classList.remove('is-open');
         lightbox.setAttribute('aria-hidden', 'true');
     };
-
-    btnGrid && btnGrid.addEventListener('click', function () {
-        setView('grid');
-    });
-
-    btnList && btnList.addEventListener('click', function () {
-        setView('list');
-    });
 
     if (galleryEl) {
         galleryEl.addEventListener('click', function (event) {
@@ -550,7 +503,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    setView('grid');
+    setView();
 });
 </script>
 <?= $this->endSection(); ?>
