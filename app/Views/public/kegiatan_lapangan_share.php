@@ -65,11 +65,11 @@
     <div class="lightbox-content">
         <div class="lightbox-image-shell">
             <button type="button" class="lightbox-nav-btn lightbox-nav-btn-left" id="btnLightboxPrev" aria-label="Foto sebelumnya">
-                <i class="fas fa-chevron-left"></i>
+                <span aria-hidden="true">&#8592;</span>
             </button>
             <img id="lightboxImage" src="" alt="Foto kegiatan">
             <button type="button" class="lightbox-nav-btn lightbox-nav-btn-right" id="btnLightboxNext" aria-label="Foto berikutnya">
-                <i class="fas fa-chevron-right"></i>
+                <span aria-hidden="true">&#8594;</span>
             </button>
         </div>
         <div class="lightbox-thumbnails-wrap">
@@ -199,17 +199,21 @@
         height: 42px;
         border: 0;
         border-radius: 999px;
-        background: rgba(0, 0, 0, 0.68);
-        color: #fff;
+        background: #ffffff;
+        color: #1f2937;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         z-index: 2;
         cursor: pointer;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
     }
 
     .lightbox-nav-btn:hover {
-        background: rgba(0, 0, 0, 0.88);
+        background: #f3f4f6;
     }
 
     .lightbox-nav-btn-left {
