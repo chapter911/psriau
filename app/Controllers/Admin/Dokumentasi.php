@@ -48,7 +48,7 @@ class Dokumentasi extends BaseController
             1 => 'activity_date',
             2 => 'location',
             4 => 'created_by',
-            7 => 'id',
+            8 => 'id',
         ];
 
         $orderColumnIndex = (int) ($this->request->getGet('order')[0]['column'] ?? 1);
@@ -93,6 +93,7 @@ class Dokumentasi extends BaseController
 
         $activityIds = array_values(array_filter(array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $rows)));
         $photosByActivity = [];
+        $sharesByActivity = [];
 
         if ($activityIds !== []) {
             $photoRows = $db->table('kegiatan_lapangan_photos')
@@ -113,12 +114,40 @@ class Dokumentasi extends BaseController
                     'name' => (string) ($photoRow['photo_name'] ?? 'Foto kegiatan'),
                 ];
             }
+
+            $shareRows = $db->table('kegiatan_lapangan_shares')
+                ->whereIn('activity_id', $activityIds)
+                ->get()
+                ->getResultArray();
+
+            foreach ($shareRows as $shareRow) {
+                $activityId = (int) ($shareRow['activity_id'] ?? 0);
+                if ($activityId <= 0) {
+                    continue;
+                }
+
+                $sharesByActivity[$activityId] = $shareRow;
+            }
         }
 
         $data = [];
         foreach ($rows as $row) {
             $id = (int) ($row['id'] ?? 0);
             $photos = $photosByActivity[$id] ?? [];
+            $share = $sharesByActivity[$id] ?? null;
+            $shareToken = is_array($share) ? (string) ($share['share_token'] ?? '') : '';
+            $shareExpiresAt = is_array($share) ? (string) ($share['expires_at'] ?? '') : '';
+            $shareIsActive = $shareToken !== '' && ($shareExpiresAt === '' || strtotime($shareExpiresAt) >= time());
+            $shareStatus = 'none';
+            if ($shareToken !== '') {
+                if ($shareExpiresAt === '') {
+                    $shareStatus = 'permanent';
+                } elseif (strtotime($shareExpiresAt) >= time()) {
+                    $shareStatus = 'active';
+                } else {
+                    $shareStatus = 'expired';
+                }
+            }
 
             $data[] = [
                 'id' => $id,
@@ -131,6 +160,11 @@ class Dokumentasi extends BaseController
                 'cover_photo' => $photos[0]['path'] ?? '',
                 'download_zip_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/download-zip'),
                 'share_create_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/share'),
+                'share_deactivate_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/share/deactivate'),
+                'share_public_url' => $shareToken !== '' ? site_url('/kegiatan-lapangan/share/' . $shareToken) : null,
+                'share_expires_at' => $shareExpiresAt !== '' ? $shareExpiresAt : null,
+                'share_is_active' => $shareIsActive,
+                'share_status' => $shareStatus,
                 'edit_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/ubah'),
                 'delete_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/hapus'),
             ];
@@ -247,12 +281,16 @@ class Dokumentasi extends BaseController
             $expiresAt = date('Y-m-d H:i:s', strtotime($durationMap[$duration]));
         }
 
-        $token = $this->generateShareToken();
-        if ($token === null) {
-            return $this->response->setStatusCode(500)->setJSON([
-                'status' => 'error',
-                'message' => 'Gagal membuat tautan berbagi.',
-            ]);
+        $existingShare = $shareModel->where('activity_id', $id)->first();
+        $token = is_array($existingShare) ? (string) ($existingShare['share_token'] ?? '') : '';
+        if ($token === '') {
+            $token = $this->generateShareToken();
+            if ($token === null) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Gagal membuat tautan berbagi.',
+                ]);
+            }
         }
 
         $sharePayload = [
@@ -262,18 +300,51 @@ class Dokumentasi extends BaseController
             'created_by_user_id' => (int) (session()->get('userId') ?: 0) ?: null,
         ];
 
-        $existingShare = $shareModel->where('activity_id', $id)->first();
         if ($existingShare) {
             $shareModel->update((int) $existingShare['id'], $sharePayload);
         } else {
             $shareModel->insert($sharePayload);
         }
 
+        $isUpdate = (bool) $existingShare;
+
         return $this->response->setJSON([
             'status' => 'ok',
-            'message' => 'Tautan berbagi berhasil dibuat.',
+            'message' => $isUpdate ? 'Durasi tautan berbagi berhasil diperbarui.' : 'Tautan berbagi berhasil dibuat.',
             'share_url' => site_url('/kegiatan-lapangan/share/' . $token),
             'expires_at' => $expiresAt,
+            'is_update' => $isUpdate,
+            'csrf_token' => csrf_token(),
+            'csrf_hash' => csrf_hash(),
+        ]);
+    }
+
+    public function deactivateShare(int $id)
+    {
+        if (! $this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status' => 'error',
+                'message' => 'Permintaan tidak valid.',
+            ]);
+        }
+
+        $shareModel = new KegiatanLapanganShareModel();
+        $share = $shareModel->where('activity_id', $id)->first();
+
+        if (! is_array($share)) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status' => 'error',
+                'message' => 'Link berbagi tidak ditemukan.',
+            ]);
+        }
+
+        $shareModel->update((int) $share['id'], [
+            'expires_at' => date('Y-m-d H:i:s', time() - 60),
+        ]);
+
+        return $this->response->setJSON([
+            'status' => 'ok',
+            'message' => 'Link berbagi berhasil dinonaktifkan.',
             'csrf_token' => csrf_token(),
             'csrf_hash' => csrf_hash(),
         ]);

@@ -58,6 +58,7 @@
                     <th>Dibuat Oleh</th>
                     <th class="text-center">Download Foto</th>
                     <th class="text-center">Bagikan Foto</th>
+                    <th class="text-center">Berlaku Sampai</th>
                     <th class="text-center">Aksi</th>
                 </tr>
                 </thead>
@@ -80,6 +81,8 @@
                 <p class="mb-2">Berapa lama durasi foto ini akan dibagikan?</p>
                 <p class="small text-muted mb-3" id="shareActivityName">-</p>
 
+                <div class="alert alert-info py-2 px-3 d-none" id="shareActiveInfo"></div>
+
                 <div class="custom-control custom-radio mb-2">
                     <input type="radio" id="shareDuration1Day" name="shareDuration" class="custom-control-input" value="1day">
                     <label class="custom-control-label" for="shareDuration1Day">1 hari</label>
@@ -98,6 +101,9 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <button type="button" class="btn btn-danger mr-auto d-none" id="btnDeactivateShareLink">
+                    Nonaktifkan Link
+                </button>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                 <button type="button" class="btn btn-primary" id="btnGenerateShareLink">
                     Buat Link Bagikan
@@ -153,7 +159,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const resetButton = document.getElementById('resetServerFilters');
     const shareModalEl = document.getElementById('shareDurationModal');
     const shareActivityName = document.getElementById('shareActivityName');
+    const shareActiveInfo = document.getElementById('shareActiveInfo');
     const btnGenerateShareLink = document.getElementById('btnGenerateShareLink');
+    const btnDeactivateShareLink = document.getElementById('btnDeactivateShareLink');
 
     const modalEl = document.getElementById('activityPhotoModal');
     const modalTitle = document.getElementById('activityPhotoModalTitle');
@@ -174,6 +182,11 @@ document.addEventListener('DOMContentLoaded', function () {
     let selectedShareConfig = {
         title: '',
         shareUrl: '',
+        deactivateUrl: '',
+        currentShareUrl: '',
+        isActive: false,
+        expiresAt: null,
+        status: 'none',
     };
 
     const escapeHtml = function (value) {
@@ -394,14 +407,73 @@ document.addEventListener('DOMContentLoaded', function () {
                 className: 'text-center',
                 render: function (row) {
                     const shareCreateUrl = row.share_create_url || '#';
+                    const shareDeactivateUrl = row.share_deactivate_url || '#';
                     const title = row.title || '-';
+                    const sharePublicUrl = row.share_public_url || '';
+                    const shareExpiresAt = row.share_expires_at || '';
+                    const shareIsActive = Boolean(row.share_is_active);
+                    const shareStatus = row.share_status || 'none';
+
+                    let btnClass = 'btn btn-sm js-share-photo ';
+                    btnClass += shareIsActive ? 'btn-warning' : 'btn-success';
+                    const tooltipText = shareStatus === 'active'
+                        ? 'Link aktif sampai ' + (shareExpiresAt || '-')
+                        : (shareStatus === 'permanent'
+                            ? 'Link aktif permanen'
+                            : (shareStatus === 'expired' ? 'Link sudah kedaluwarsa' : 'Belum ada link aktif'));
+
+                    let statusClass = 'secondary';
+                    let statusText = 'Belum Dibagikan';
+                    if (shareStatus === 'active') {
+                        statusClass = 'success';
+                        statusText = 'Aktif';
+                    } else if (shareStatus === 'permanent') {
+                        statusClass = 'primary';
+                        statusText = 'Permanen';
+                    } else if (shareStatus === 'expired') {
+                        statusClass = 'dark';
+                        statusText = 'Kedaluwarsa';
+                    }
 
                     return ''
-                        + '<button type="button" class="btn btn-sm btn-success js-share-photo"'
+                        + '<div class="d-flex flex-column align-items-center" style="gap:6px;">'
+                        + '<button type="button" class="' + btnClass + '"'
                         + ' data-share-url="' + escapeHtml(shareCreateUrl) + '"'
-                        + ' data-share-title="' + escapeHtml(encodeURIComponent(title)) + '">'
+                        + ' data-share-deactivate-url="' + escapeHtml(shareDeactivateUrl) + '"'
+                        + ' data-share-title="' + escapeHtml(encodeURIComponent(title)) + '"'
+                        + ' data-share-public-url="' + escapeHtml(sharePublicUrl) + '"'
+                        + ' data-share-expires-at="' + escapeHtml(shareExpiresAt) + '"'
+                        + ' data-share-active="' + (shareIsActive ? '1' : '0') + '"'
+                        + ' data-share-status="' + escapeHtml(shareStatus) + '"'
+                        + ' title="' + escapeHtml(tooltipText) + '">'
                         + '<i class="fas fa-share-alt mr-1"></i>'
-                        + '</button>';
+                        + '</button>'
+                        + '<span class="badge badge-' + statusClass + '">' + statusText + '</span>'
+                        + '</div>';
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                className: 'text-center',
+                render: function (row) {
+                    const shareStatus = row.share_status || 'none';
+                    const expiresAt = row.share_expires_at || '';
+
+                    if (shareStatus === 'permanent') {
+                        return '<span class="text-primary font-weight-bold">Permanen</span>';
+                    }
+
+                    if (shareStatus === 'active' && expiresAt) {
+                        return '<span class="text-success font-weight-bold">' + escapeHtml(expiresAt) + '</span>';
+                    }
+
+                    if (shareStatus === 'expired' && expiresAt) {
+                        return '<span class="text-muted">' + escapeHtml(expiresAt) + '</span>';
+                    }
+
+                    return '<span class="text-muted">-</span>';
                 }
             },
             {
@@ -470,10 +542,46 @@ document.addEventListener('DOMContentLoaded', function () {
         selectedShareConfig = {
             title: decodeURIComponent(this.getAttribute('data-share-title') || ''),
             shareUrl: this.getAttribute('data-share-url') || '',
+            deactivateUrl: this.getAttribute('data-share-deactivate-url') || '',
+            currentShareUrl: this.getAttribute('data-share-public-url') || '',
+            isActive: this.getAttribute('data-share-active') === '1',
+            expiresAt: this.getAttribute('data-share-expires-at') || null,
+            status: this.getAttribute('data-share-status') || 'none',
         };
 
         if (shareActivityName) {
             shareActivityName.textContent = selectedShareConfig.title || '-';
+        }
+
+        if (shareActiveInfo) {
+            if (selectedShareConfig.isActive) {
+                const expiresText = selectedShareConfig.expiresAt
+                    ? 'Link aktif sampai: <strong>' + escapeHtml(selectedShareConfig.expiresAt) + '</strong>'
+                    : 'Link aktif <strong>permanen</strong>';
+                const linkText = selectedShareConfig.currentShareUrl
+                    ? '<br><small>URL aktif: ' + escapeHtml(selectedShareConfig.currentShareUrl) + '</small>'
+                    : '';
+
+                shareActiveInfo.innerHTML = 'Saat ini masih ada link berbagi yang aktif. ' + expiresText + linkText;
+                shareActiveInfo.classList.remove('d-none');
+            } else {
+                shareActiveInfo.innerHTML = '';
+                shareActiveInfo.classList.add('d-none');
+            }
+        }
+
+        if (btnGenerateShareLink) {
+            btnGenerateShareLink.textContent = selectedShareConfig.isActive
+                ? 'Perbarui Durasi Link'
+                : 'Buat Link Bagikan';
+        }
+
+        if (btnDeactivateShareLink) {
+            if (selectedShareConfig.isActive) {
+                btnDeactivateShareLink.classList.remove('d-none');
+            } else {
+                btnDeactivateShareLink.classList.add('d-none');
+            }
         }
 
         if (typeof $.fn.modal === 'function') {
@@ -528,7 +636,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Link Berhasil Dibuat',
+                    title: response && response.is_update ? 'Durasi Link Diperbarui' : 'Link Berhasil Dibuat',
                     html: '<div class="text-left"><small class="text-muted">Bagikan tautan berikut:</small><input id="shareLinkInput" class="form-control mt-2" value="' + escapeHtml(shareUrl) + '" readonly></div>',
                     showCancelButton: true,
                     confirmButtonText: 'Salin Link',
@@ -549,6 +657,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         document.execCommand('copy');
                     }
                 });
+
+                dt.ajax.reload(null, false);
             }).fail(function (xhr) {
                 const message = xhr && xhr.responseJSON && xhr.responseJSON.message
                     ? xhr.responseJSON.message
@@ -564,6 +674,81 @@ document.addEventListener('DOMContentLoaded', function () {
                     title: 'Gagal',
                     text: message,
                 });
+            });
+        });
+    }
+
+    if (btnDeactivateShareLink) {
+        btnDeactivateShareLink.addEventListener('click', function () {
+            if (!selectedShareConfig.deactivateUrl || !selectedShareConfig.isActive) {
+                return;
+            }
+
+            const proceed = function () {
+                $.ajax({
+                    url: selectedShareConfig.deactivateUrl,
+                    method: 'POST',
+                    dataType: 'json',
+                    data: {
+                        [csrfTokenName]: csrfTokenValue,
+                    },
+                }).done(function (response) {
+                    if (response && response.csrf_hash) {
+                        csrfTokenValue = response.csrf_hash;
+                    }
+
+                    if (typeof $.fn.modal === 'function') {
+                        $(shareModalEl).modal('hide');
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response && response.message ? response.message : 'Link berhasil dinonaktifkan.',
+                        });
+                    }
+
+                    dt.ajax.reload(null, false);
+                }).fail(function (xhr) {
+                    const message = xhr && xhr.responseJSON && xhr.responseJSON.message
+                        ? xhr.responseJSON.message
+                        : 'Gagal menonaktifkan link.';
+
+                    if (typeof Swal === 'undefined') {
+                        window.alert(message);
+                        return;
+                    }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: message,
+                    });
+                });
+            };
+
+            if (typeof Swal === 'undefined') {
+                if (window.confirm('Yakin ingin menonaktifkan link berbagi ini?')) {
+                    proceed();
+                }
+                return;
+            }
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'Nonaktifkan Link?',
+                text: 'Link publik yang aktif akan langsung tidak bisa diakses.',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, nonaktifkan',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+            }).then(function (result) {
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                proceed();
             });
         });
     }
