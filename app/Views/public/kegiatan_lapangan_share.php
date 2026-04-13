@@ -16,15 +16,15 @@
                     <?php endif; ?>
                 </p>
             </div>
-            <div class="d-flex flex-wrap ml-auto justify-content-end" style="gap:8px;">
-                <a class="btn btn-primary" href="<?= site_url('/kegiatan-lapangan/share/' . $shareToken . '/download-zip'); ?>">
+            <div class="d-flex flex-wrap ml-auto justify-content-end gallery-toolbar" style="gap:8px;">
+                <a class="btn btn-primary gallery-toolbar-btn" href="<?= site_url('/kegiatan-lapangan/share/' . $shareToken . '/download-zip'); ?>">
                     <i class="fas fa-file-archive mr-1"></i> Download Semua (ZIP)
                 </a>
-                <button type="button" class="btn btn-outline-secondary" id="btnGridView">
-                    <i class="fas fa-th mr-1"></i> Kotak
+                <button type="button" class="btn btn-outline-secondary gallery-toolbar-btn gallery-toolbar-icon-btn" id="btnGridView" title="Tampilan kotak" aria-label="Tampilan kotak">
+                    <i class="fas fa-th"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary" id="btnListView">
-                    <i class="fas fa-list mr-1"></i> List
+                <button type="button" class="btn btn-outline-secondary gallery-toolbar-btn gallery-toolbar-icon-btn" id="btnListView" title="Tampilan list" aria-label="Tampilan list">
+                    <i class="fas fa-list"></i>
                 </button>
             </div>
         </div>
@@ -87,6 +87,18 @@
     .gallery {
         display: grid;
         gap: 14px;
+    }
+
+    .gallery-toolbar-btn {
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .gallery-toolbar-icon-btn {
+        width: 42px;
+        padding: 0;
     }
 
     .gallery-grid {
