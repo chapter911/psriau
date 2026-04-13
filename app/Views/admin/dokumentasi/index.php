@@ -215,6 +215,18 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/'/g, '&#39;');
     };
 
+    const buildShareCopyText = function (title, activityDate, url) {
+        return [
+            'Izin mengirimkan dokumentasi',
+            '',
+            'acara : ' + (title || '-'),
+            'tanggal : ' + (activityDate || '-'),
+            'link : ' + (url || '-'),
+            '',
+            'Terima kasih.'
+        ].join('\n');
+    };
+
     const showFilterLoading = function () {
         if (typeof Swal === 'undefined') {
             return;
@@ -471,17 +483,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         + '</div>';
                 }
             },
-                const buildShareCopyText = function (title, activityDate, url) {
-                    return [
-                        'Izin mengirimkan dokumentasi',
-                        '',
-                        'acara : ' + (title || '-'),
-                        'tanggal : ' + (activityDate || '-'),
-                        'link : ' + (url || '-'),
-                        '',
-                        'Terima kasih.'
-                    ].join('\n');
-                };
             {
                 data: null,
                 orderable: false,
@@ -693,6 +694,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         input.select();
                         input.setSelectionRange(0, 99999);
+                        const formattedText = buildShareCopyText(
+                            selectedShareConfig.title,
+                            selectedShareConfig.activityDate,
+                            input.value
+                        );
 
                         if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
                             return navigator.clipboard.writeText(formattedText);
