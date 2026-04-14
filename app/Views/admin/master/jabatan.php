@@ -1,98 +1,190 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
-<style>
-    .jabatan-hero {
-        border: 0;
-        border-radius: 18px;
-        overflow: hidden;
-        color: #fff;
-        background: linear-gradient(130deg, #0b3c68 0%, #0e7490 50%, #b45309 100%);
-        box-shadow: 0 16px 40px rgba(16, 24, 40, .14);
-    }
-
-    .jabatan-hero .card-body {
-        padding: 1.5rem;
-    }
-
-    .jabatan-kicker {
-        display: inline-flex;
-        align-items: center;
-        gap: .45rem;
-        padding: .35rem .75rem;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, .16);
-        font-size: .85rem;
-        font-weight: 600;
-        letter-spacing: .02em;
-        margin-bottom: 1rem;
-    }
-
-    .jabatan-title {
-        font-size: clamp(1.8rem, 3vw, 2.45rem);
-        margin-bottom: .55rem;
-        font-weight: 700;
-    }
-
-    .jabatan-subtitle {
-        max-width: 720px;
-        margin-bottom: 1.25rem;
-        color: rgba(255, 255, 255, .9);
-        line-height: 1.65;
-    }
-
-    .jabatan-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: .75rem;
-    }
-
-    .jabatan-meta .badge {
-        padding: .55rem .8rem;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, .16);
-        color: #fff;
-        font-weight: 600;
-    }
-
-    .jabatan-panel {
-        border: 1px solid #e7edf4;
-        border-radius: 16px;
-        box-shadow: 0 10px 28px rgba(16, 24, 40, .06);
-    }
-
-    .jabatan-panel .card-body {
-        padding: 1.25rem;
-    }
-</style>
-
-<div class="container-fluid px-0">
-    <div class="card jabatan-hero mb-4">
-        <div class="card-body">
-            <div class="jabatan-kicker">
-                <i class="fas fa-user-tag"></i>
-                Menu Master
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Daftar Jabatan</h3>
+        <?php if (! empty($can_add)): ?>
+            <div class="float-right">
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-jabatan">Tambah Jabatan</button>
             </div>
-            <h1 class="jabatan-title">Jabatan</h1>
-            <p class="jabatan-subtitle">
-                Halaman ini disiapkan sebagai titik awal pengelolaan master jabatan.
-                Struktur submenu sudah ditambahkan di dalam menu Master, sehingga pengembangan fitur lanjutan bisa langsung dilanjutkan.
-            </p>
-            <div class="jabatan-meta">
-                <span class="badge"><i class="fas fa-sitemap mr-1"></i> Master</span>
-                <span class="badge"><i class="fas fa-link mr-1"></i> admin/master/jabatan</span>
-                <span class="badge"><i class="fas fa-shield-alt mr-1"></i> Tersambung ke akses menu</span>
-            </div>
-        </div>
+        <?php endif; ?>
     </div>
+    <div class="card-body">
+        <table class="table table-bordered table-striped w-100 nowrap js-datatable">
+            <thead>
+                <tr style="white-space: nowrap;">
+                    <th class="text-center">#</th>
+                    <th class="text-center">JABATAN</th>
+                    <th class="text-center">JENIS JABATAN</th>
+                    <th class="text-center">DESKRIPSI JABATAN</th>
+                    <th class="text-center">STATUS</th>
+                    <?php if (! empty($can_edit)): ?>
+                        <th class="text-center">ACTION</th>
+                    <?php endif; ?>
+                </tr>
+            </thead>
+            <tbody>
+                <?php $i = 1; foreach (($items ?? []) as $item): ?>
+                    <?php $isActive = (int) ($item['is_active'] ?? 1) === 1; ?>
+                    <tr>
+                        <td><?= esc((string) $i++); ?></td>
+                        <td><?= esc((string) ($item['jabatan'] ?? '-')); ?></td>
+                        <td><?= esc((string) ($item['jenis_jabatan'] ?? '-')); ?></td>
+                        <td><?= esc((string) ($item['deskripsi_jabatan'] ?? '-')); ?></td>
+                        <td class="text-center">
+                            <?php if ($isActive): ?>
+                                <span class="badge badge-success">Aktif</span>
+                            <?php else: ?>
+                                <span class="badge badge-secondary">Nonaktif</span>
+                            <?php endif; ?>
+                        </td>
+                        <?php if (! empty($can_edit)): ?>
+                            <td class="text-center" style="white-space: nowrap;">
+                                <button
+                                    type="button"
+                                    class="btn btn-warning btn-sm"
+                                    data-toggle="modal"
+                                    data-target="#modal-ubah-jabatan"
+                                    data-id="<?= esc((string) ($item['id'] ?? ''), 'attr'); ?>"
+                                    data-jabatan="<?= esc((string) ($item['jabatan'] ?? ''), 'attr'); ?>"
+                                    data-jenis_jabatan="<?= esc((string) ($item['jenis_jabatan'] ?? ''), 'attr'); ?>"
+                                    data-deskripsi_jabatan="<?= esc((string) ($item['deskripsi_jabatan'] ?? ''), 'attr'); ?>"
+                                >UBAH</button>
 
-    <div class="card jabatan-panel">
-        <div class="card-body">
-            <h4 class="mb-3">Status Modul</h4>
-            <p class="mb-0 text-muted">
-                Menu Jabatan sudah tersedia di sidebar. Silakan lanjutkan pengisian fitur dan data master jabatan sesuai kebutuhan aplikasi.
-            </p>
+                                <form action="<?= site_url('/admin/master/jabatan/' . (int) ($item['id'] ?? 0) . '/status'); ?>" method="post" class="d-inline-block" onsubmit="return confirm('Yakin ingin mengubah status jabatan ini?');">
+                                    <?= csrf_field(); ?>
+                                    <input type="hidden" name="is_active" value="<?= $isActive ? '0' : '1'; ?>">
+                                    <button type="submit" class="btn btn-sm <?= $isActive ? 'btn-secondary' : 'btn-success'; ?>">
+                                        <?= $isActive ? 'NONAKTIFKAN' : 'AKTIFKAN'; ?>
+                                    </button>
+                                </form>
+                            </td>
+                        <?php endif; ?>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<?php if (! empty($can_add)): ?>
+<div class="modal fade" id="modal-tambah-jabatan" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tambah Jabatan</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="<?= site_url('/admin/master/jabatan/tambah'); ?>" method="post">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Jabatan</label>
+                        <input type="text" name="jabatan" class="form-control" required maxlength="150">
+                    </div>
+                    <div class="form-group">
+                        <label>Jenis Jabatan</label>
+                        <select name="jenis_jabatan" class="form-control" required>
+                            <option value="">Pilih jenis jabatan</option>
+                            <option value="Fungsional">Fungsional</option>
+                            <option value="Perbendaharaan">Perbendaharaan</option>
+                            <option value="Pelaksana">Pelaksana</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label>Deskripsi Jabatan</label>
+                        <textarea name="deskripsi_jabatan" class="form-control" rows="3" maxlength="1000"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+<?php endif; ?>
+
+<?php if (! empty($can_edit)): ?>
+<div class="modal fade" id="modal-ubah-jabatan" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ubah Jabatan</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="form-ubah-jabatan" action="" method="post">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Jabatan</label>
+                        <input type="text" id="edit_jabatan" name="jabatan" class="form-control" required maxlength="150">
+                    </div>
+                    <div class="form-group">
+                        <label>Jenis Jabatan</label>
+                        <select id="edit_jenis_jabatan" name="jenis_jabatan" class="form-control" required>
+                            <option value="Fungsional">Fungsional</option>
+                            <option value="Perbendaharaan">Perbendaharaan</option>
+                            <option value="Pelaksana">Pelaksana</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label>Deskripsi Jabatan</label>
+                        <textarea id="edit_deskripsi_jabatan" name="deskripsi_jabatan" class="form-control" rows="3" maxlength="1000"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+<?= $this->endSection(); ?>
+
+<?= $this->section('pageScripts'); ?>
+<script>
+    (function () {
+        const modalEdit = document.getElementById('modal-ubah-jabatan');
+        if (!modalEdit) return;
+
+        const form = document.getElementById('form-ubah-jabatan');
+        const fieldJabatan = document.getElementById('edit_jabatan');
+        const fieldJenisJabatan = document.getElementById('edit_jenis_jabatan');
+        const fieldDeskripsiJabatan = document.getElementById('edit_deskripsi_jabatan');
+
+        const applyEditData = (trigger) => {
+            if (!trigger) {
+                return;
+            }
+
+            const id = trigger.getAttribute('data-id') || '';
+            form.action = '<?= site_url('/admin/master/jabatan'); ?>/' + encodeURIComponent(id) + '/ubah';
+            fieldJabatan.value = trigger.getAttribute('data-jabatan') || '';
+            fieldJenisJabatan.value = trigger.getAttribute('data-jenis_jabatan') || 'Pelaksana';
+            fieldDeskripsiJabatan.value = trigger.getAttribute('data-deskripsi_jabatan') || '';
+        };
+
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('button[data-target="#modal-ubah-jabatan"]');
+            if (!trigger) {
+                return;
+            }
+
+            applyEditData(trigger);
+        });
+
+        modalEdit.addEventListener('show.bs.modal', function (event) {
+            applyEditData(event.relatedTarget);
+        });
+    })();
+</script>
 <?= $this->endSection(); ?>
