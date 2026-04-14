@@ -10,8 +10,11 @@
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Daftar Pegawai</h3>
-        <?php if (! empty($can_add) || ! empty($can_import)): ?>
+        <?php if (! empty($can_add) || ! empty($can_import) || ! empty($can_export)): ?>
             <div class="float-right">
+                <?php if (! empty($can_export)): ?>
+                    <a href="<?= site_url('/admin/master/pegawai/export'); ?>" class="btn btn-success mr-2">Export Excel</a>
+                <?php endif; ?>
                 <?php if (! empty($can_import)): ?>
                     <button type="button" class="btn btn-info mr-2" data-toggle="modal" data-target="#modal-import-pegawai">Import Excel</button>
                 <?php endif; ?>

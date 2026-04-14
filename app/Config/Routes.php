@@ -82,6 +82,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/sekolah/(:segment)/ubah', 'Admin\\MasterSekolah::edit/$1');
 	$routes->get('master/pegawai', 'Admin\\Pegawai::index');
 	$routes->get('master/pegawai/template', 'Admin\\Pegawai::downloadTemplate');
+	$routes->get('master/pegawai/export', 'Admin\\Pegawai::export');
 	$routes->post('master/pegawai/tambah', 'Admin\\Pegawai::create');
 	$routes->post('master/pegawai/import', 'Admin\\Pegawai::import');
 	$routes->post('master/pegawai/(:num)/ubah', 'Admin\\Pegawai::edit/$1');

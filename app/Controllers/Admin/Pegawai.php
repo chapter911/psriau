@@ -8,6 +8,10 @@ use App\Models\MstPegawaiModel;
 use CodeIgniter\HTTP\RedirectResponse;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class Pegawai extends BaseController
@@ -45,8 +49,172 @@ class Pegawai extends BaseController
             'can_add' => $canManage && (bool) ($menuPermissions['add'] ?? false),
             'can_edit' => $canManage && (bool) ($menuPermissions['edit'] ?? false),
             'can_import' => $canManage && (bool) ($menuPermissions['import'] ?? false),
+            'can_export' => (bool) ($menuPermissions['export'] ?? false),
             'table_ready' => $this->isPegawaiTableReady(),
         ]);
+    }
+
+    public function export()
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        if (! $this->isPegawaiTableReady()) {
+            return redirect()->to('/admin/master/pegawai')->with('error', 'Tabel pegawai belum tersedia. Jalankan migration.');
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (! (bool) ($menuPermissions['export'] ?? false)) {
+            return redirect()->to('/admin/master/pegawai')->with('error', 'Anda tidak memiliki izin export pada menu Pegawai.');
+        }
+
+        $items = db_connect()
+            ->table('mst_pegawai p')
+            ->select('p.*, ju.jabatan AS jabatan_utama_label, jp.jabatan AS jabatan_perbendaharaan_label')
+            ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left')
+            ->join('mst_jabatan jp', 'jp.id = p.jabatan_perbendaharaan_id', 'left')
+            ->orderBy('p.nama', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Daftar Pegawai');
+
+        $sheet->mergeCells('A1:J1');
+        $sheet->mergeCells('A2:J2');
+        $sheet->mergeCells('A3:J3');
+        $sheet->mergeCells('A4:J4');
+
+        $sheet->setCellValue('A1', 'DAFTAR PEGAWAI');
+        $sheet->setCellValue('A2', 'SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU');
+        $sheet->setCellValue('A3', 'DIREKTORAT JENDERAL PRASARANA STRATEGIS');
+        $sheet->setCellValue('A4', 'KEMENTERIAN PEKERJAAN UMUM');
+
+        $sheet->setCellValue('A6', 'NO.');
+        $sheet->setCellValue('B6', 'FOTO');
+        $sheet->setCellValue('C6', 'NAMA');
+        $sheet->setCellValue('D6', 'NIP');
+        $sheet->setCellValue('E6', 'JABATAN');
+        $sheet->setCellValue('G6', 'ESELON');
+        $sheet->setCellValue('H6', 'GOLONGAN');
+        $sheet->setCellValue('I6', 'MASA KERJA');
+        $sheet->setCellValue('J6', 'STATUS');
+
+        $sheet->mergeCells('A6:A7');
+        $sheet->mergeCells('B6:B7');
+        $sheet->mergeCells('C6:C7');
+        $sheet->mergeCells('D6:D7');
+        $sheet->mergeCells('E6:F6');
+        $sheet->mergeCells('G6:G7');
+        $sheet->mergeCells('H6:H7');
+        $sheet->mergeCells('I6:I7');
+        $sheet->mergeCells('J6:J7');
+        $sheet->setCellValue('E7', 'JABATAN FUNGSIONAL / PELAKSANA');
+        $sheet->setCellValue('F7', 'JABATAN PERBENDAHARAAN');
+
+        $sheet->setCellValue('A8', '1');
+        $sheet->setCellValue('B8', '2');
+        $sheet->setCellValue('C8', '3');
+        $sheet->setCellValue('D8', '4');
+        $sheet->mergeCells('E8:F8');
+        $sheet->setCellValue('E8', '5');
+        $sheet->setCellValue('G8', '6');
+        $sheet->setCellValue('H8', '7');
+        $sheet->setCellValue('I8', '8');
+        $sheet->setCellValue('J8', '9');
+
+        $sheet->getColumnDimension('A')->setWidth(6);
+        $sheet->getColumnDimension('B')->setWidth(16);
+        $sheet->getColumnDimension('C')->setWidth(32);
+        $sheet->getColumnDimension('D')->setWidth(24);
+        $sheet->getColumnDimension('E')->setWidth(42);
+        $sheet->getColumnDimension('F')->setWidth(42);
+        $sheet->getColumnDimension('G')->setWidth(14);
+        $sheet->getColumnDimension('H')->setWidth(18);
+        $sheet->getColumnDimension('I')->setWidth(16);
+        $sheet->getColumnDimension('J')->setWidth(16);
+
+        $sheet->getStyle('A1:J4')->getFont()->setBold(true)->setSize(12);
+        $sheet->getStyle('A1:J4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:J4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getRowDimension(1)->setRowHeight(28);
+        $sheet->getRowDimension(2)->setRowHeight(28);
+        $sheet->getRowDimension(3)->setRowHeight(28);
+        $sheet->getRowDimension(4)->setRowHeight(28);
+
+        $sheet->getStyle('A6:J8')->getFont()->setBold(true);
+        $sheet->getStyle('A6:J8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A6:J8')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A6:J8')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A6:J8')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEAEAEA');
+        $sheet->getRowDimension(6)->setRowHeight(30);
+        $sheet->getRowDimension(7)->setRowHeight(28);
+        $sheet->getRowDimension(8)->setRowHeight(22);
+
+        $row = 9;
+        $no = 1;
+        foreach ($items as $item) {
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValue('C' . $row, (string) ($item['nama'] ?? ''));
+            $sheet->setCellValue('D' . $row, (string) ($item['nip'] ?? ''));
+            $sheet->setCellValue('E' . $row, (string) ($item['jabatan_utama_label'] ?? ''));
+            $sheet->setCellValue('F' . $row, (string) ($item['jabatan_perbendaharaan_label'] ?? ''));
+            $sheet->setCellValue('G' . $row, (string) ($item['eselon'] ?? ''));
+            $sheet->setCellValue('H' . $row, (string) ($item['golongan'] ?? ''));
+            $sheet->setCellValue('I' . $row, (string) ($item['masa_kerja'] ?? ''));
+            $sheet->setCellValue('J' . $row, (int) ($item['is_active'] ?? 1) === 1 ? 'AKTIF' : 'NONAKTIF');
+
+            $sheet->getRowDimension($row)->setRowHeight(82);
+
+            $fotoPath = trim((string) ($item['foto'] ?? ''));
+            if ($fotoPath !== '') {
+                $absolutePath = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, ltrim($fotoPath, '/'));
+                if (is_file($absolutePath)) {
+                    $drawing = new Drawing();
+                    $drawing->setPath($absolutePath);
+                    $drawing->setCoordinates('B' . $row);
+                    $drawing->setHeight(72);
+                    $drawing->setOffsetX(8);
+                    $drawing->setOffsetY(4);
+                    $drawing->setWorksheet($sheet);
+                }
+            }
+
+            $row++;
+        }
+
+        $lastRow = max(9, $row - 1);
+        $sheet->getStyle('A9:J' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+        $sheet->getStyle('A9:J' . $lastRow)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A9:A' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('B9:B' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('D9:D' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('G9:J' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->getStyle('A6:J' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyle('A6:J' . $lastRow)->getBorders()->getOutline()->setBorderStyle(Border::BORDER_MEDIUM);
+        $sheet->getStyle('A6:J' . $lastRow)->getBorders()->getOutline()->getColor()->setARGB('FF1E3A8A');
+
+        $footerRow = $lastRow + 1;
+        $sheet->setCellValue('J' . $footerRow, 'Page 1');
+        $sheet->getStyle('J' . $footerRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('J' . $footerRow)->getFont()->setItalic(true)->getColor()->setARGB('FF8A8A8A');
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'pegawai_export_');
+        if ($tmpFile === false) {
+            return redirect()->to('/admin/master/pegawai')->with('error', 'Gagal menyiapkan file export.');
+        }
+
+        $xlsxFile = $tmpFile . '.xlsx';
+        @rename($tmpFile, $xlsxFile);
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($xlsxFile);
+
+        return $this->response->download($xlsxFile, null)->setFileName('daftar_pegawai.xlsx');
     }
 
     public function create()
