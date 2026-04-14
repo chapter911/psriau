@@ -393,3 +393,19 @@ if (! function_exists('bulan_tahun_indonesia')) {
         return $bulan[(int) date('n', $timestamp)] . ' ' . date('Y', $timestamp);
     }
 }
+
+if (! function_exists('formatBytes')) {
+    /**
+     * Format bytes to human readable format (KB, MB, GB, etc).
+     */
+    function formatBytes(int $bytes, int $precision = 2): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+            $bytes /= 1024;
+        }
+
+        return round($bytes, $precision) . ' ' . $units[$i];
+    }
+}
