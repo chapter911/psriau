@@ -195,18 +195,16 @@ class AddSimakMenu extends Migration
                 continue;
             }
 
-            $isPrivileged = $roleId === 1;
-            $value = $isPrivileged ? 1 : 0;
-
+            // Grant full access to all roles
             $this->db->table('menu_akses')->insert([
                 $roleColumn => $roleId,
                 'menu_id' => $menuId,
-                'FiturAdd' => $value,
-                'FiturEdit' => $value,
-                'FiturDelete' => $value,
-                'FiturExport' => $value,
-                'FiturImport' => $value,
-                'FiturApproval' => $value,
+                'FiturAdd' => 1,
+                'FiturEdit' => 1,
+                'FiturDelete' => 1,
+                'FiturExport' => 1,
+                'FiturImport' => 1,
+                'FiturApproval' => 0,
             ]);
         }
     }
