@@ -51,7 +51,15 @@
                         <td><?= esc((string) $i++); ?></td>
                         <td class="text-center">
                             <?php if ($fotoUrl !== ''): ?>
-                                <img src="<?= esc($fotoUrl); ?>" alt="Foto Pegawai" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 1px solid #dee2e6;">
+                                <button
+                                    type="button"
+                                    class="btn p-0 border-0 bg-transparent js-open-foto-modal"
+                                    data-foto-url="<?= esc($fotoUrl, 'attr'); ?>"
+                                    data-nama="<?= esc((string) ($item['nama'] ?? 'Pegawai'), 'attr'); ?>"
+                                    title="Lihat foto"
+                                >
+                                    <img src="<?= esc($fotoUrl); ?>" alt="Foto Pegawai" style="width: 56px; height: 56px; border-radius: 6px; object-fit: cover; border: 1px solid #dee2e6;">
+                                </button>
                             <?php else: ?>
                                 <span class="badge badge-light border">-</span>
                             <?php endif; ?>
@@ -304,6 +312,22 @@
     </div>
 </div>
 <?php endif; ?>
+
+<div class="modal fade" id="modal-foto-pegawai" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fotoPegawaiModalTitle">Foto Pegawai</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="fotoPegawaiModalImage" src="" alt="Foto Pegawai" style="max-width: 100%; max-height: 70vh; border-radius: 8px; border: 1px solid #dee2e6;">
+            </div>
+        </div>
+    </div>
+</div>
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>
@@ -360,6 +384,35 @@
 
         modalEdit.addEventListener('show.bs.modal', function (event) {
             applyEditData(event.relatedTarget);
+        });
+    })();
+
+    (function () {
+        const fotoModal = document.getElementById('modal-foto-pegawai');
+        if (!fotoModal) return;
+
+        const fotoTitle = document.getElementById('fotoPegawaiModalTitle');
+        const fotoImage = document.getElementById('fotoPegawaiModalImage');
+
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('.js-open-foto-modal');
+            if (!trigger) {
+                return;
+            }
+
+            const fotoUrl = trigger.getAttribute('data-foto-url') || '';
+            const nama = trigger.getAttribute('data-nama') || 'Pegawai';
+
+            fotoTitle.textContent = 'Foto - ' + nama;
+            fotoImage.src = fotoUrl;
+
+            if (typeof $ !== 'undefined') {
+                $('#modal-foto-pegawai').modal('show');
+            }
+        });
+
+        fotoModal.addEventListener('hidden.bs.modal', function () {
+            fotoImage.src = '';
         });
     })();
 </script>
