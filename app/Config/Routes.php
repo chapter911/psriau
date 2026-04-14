@@ -80,6 +80,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('master/sekolah', 'Admin\\MasterSekolah::index');
 	$routes->post('master/sekolah/tambah', 'Admin\\MasterSekolah::create');
 	$routes->post('master/sekolah/(:segment)/ubah', 'Admin\\MasterSekolah::edit/$1');
+	$routes->get('master/pegawai', 'Admin\\Pegawai::index');
+	$routes->get('master/jabatan', 'Admin\\Jabatan::index');
 	$routes->get('master/wilayah', 'Admin\\MasterWilayah::wilayah');
 	$routes->get('master/provinsi', 'Admin\\MasterWilayah::provinsi');
 	$routes->post('master/provinsi/tambah', 'Admin\\MasterWilayah::provinsiCreate');
