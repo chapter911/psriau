@@ -185,31 +185,31 @@ class AddSimakMenus extends Migration
             return;
         }
 
-        $groupRows = $this->db->table('menu_akses')
-            ->select('group_id')
+        $roleRows = $this->db->table('menu_akses')
+            ->select('role_id')
             ->distinct()
             ->get()
             ->getResultArray();
 
-        if ($groupRows === []) {
-            $groupRows = [['group_id' => 1]];
+        if ($roleRows === []) {
+            $roleRows = [['role_id' => 1]];
         }
 
-        foreach ($groupRows as $row) {
-            $groupId = (int) ($row['group_id'] ?? 0);
-            if ($groupId <= 0) {
+        foreach ($roleRows as $row) {
+            $roleId = (int) ($row['role_id'] ?? 0);
+            if ($roleId <= 0) {
                 continue;
             }
 
             $existing = $this->db->table('menu_akses')
                 ->where('menu_id', $menuId)
-                ->where('group_id', $groupId)
+                ->where('role_id', $roleId)
                 ->countAllResults();
 
             if ($existing === 0) {
                 $this->db->table('menu_akses')->insert([
                     'menu_id' => $menuId,
-                    'group_id' => $groupId,
+                    'role_id' => $roleId,
                 ]);
             }
         }
