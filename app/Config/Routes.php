@@ -99,17 +99,6 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('kontrak/ki/(:num)/import', 'Admin\\Kontrak::importKi/$1');
 	$routes->get('kontrak/ki/(:num)/export', 'Admin\\Kontrak::exportKi/$1');
 
-	// SIMAK Routes
-	$routes->get('paket/simak', 'Admin\\Simak::index');
-	$routes->get('paket/simak/create', 'Admin\\Simak::create');
-	$routes->get('paket/simak/(:num)', 'Admin\\Simak::show/$1');
-	$routes->get('paket/simak/(:num)/edit', 'Admin\\Simak::edit/$1');
-	$routes->post('paket/simak/store', 'Admin\\Simak::store');
-	$routes->post('paket/simak/(:num)/upload-file', 'Admin\\Simak::uploadFile/$1');
-	$routes->get('paket/simak/download/(:num)', 'Admin\\Simak::downloadFile/$1');
-	$routes->post('paket/simak/delete-file/(:num)', 'Admin\\Simak::deleteFile/$1');
-	$routes->post('paket/simak/(:num)/delete', 'Admin\\Simak::delete/$1');
-
 	$routes->get('laporan', 'Admin\\Laporan::index');
 	$routes->get('laporan/harian', 'Admin\\Laporan::harian');
 	$routes->get('laporan/harian/(:num)', 'Admin\\Laporan::harianDetail/$1');
