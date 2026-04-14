@@ -81,6 +81,11 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/sekolah/tambah', 'Admin\\MasterSekolah::create');
 	$routes->post('master/sekolah/(:segment)/ubah', 'Admin\\MasterSekolah::edit/$1');
 	$routes->get('master/pegawai', 'Admin\\Pegawai::index');
+	$routes->get('master/pegawai/template', 'Admin\\Pegawai::downloadTemplate');
+	$routes->post('master/pegawai/tambah', 'Admin\\Pegawai::create');
+	$routes->post('master/pegawai/import', 'Admin\\Pegawai::import');
+	$routes->post('master/pegawai/(:num)/ubah', 'Admin\\Pegawai::edit/$1');
+	$routes->post('master/pegawai/(:num)/status', 'Admin\\Pegawai::updateStatus/$1');
 	$routes->get('master/jabatan', 'Admin\\Jabatan::index');
 	$routes->get('master/jabatan/template', 'Admin\\Jabatan::downloadTemplate');
 	$routes->post('master/jabatan/tambah', 'Admin\\Jabatan::create');

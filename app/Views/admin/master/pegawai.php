@@ -1,98 +1,366 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
-<style>
-    .pegawai-hero {
-        border: 0;
-        border-radius: 18px;
-        overflow: hidden;
-        color: #fff;
-        background: linear-gradient(135deg, #0f4c81 0%, #0b7f6d 52%, #d97706 100%);
-        box-shadow: 0 16px 40px rgba(16, 24, 40, .14);
-    }
-
-    .pegawai-hero .card-body {
-        padding: 1.5rem;
-    }
-
-    .pegawai-kicker {
-        display: inline-flex;
-        align-items: center;
-        gap: .45rem;
-        padding: .35rem .75rem;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, .16);
-        font-size: .85rem;
-        font-weight: 600;
-        letter-spacing: .02em;
-        margin-bottom: 1rem;
-    }
-
-    .pegawai-title {
-        font-size: clamp(1.8rem, 3vw, 2.45rem);
-        margin-bottom: .55rem;
-        font-weight: 700;
-    }
-
-    .pegawai-subtitle {
-        max-width: 720px;
-        margin-bottom: 1.25rem;
-        color: rgba(255, 255, 255, .9);
-        line-height: 1.65;
-    }
-
-    .pegawai-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: .75rem;
-    }
-
-    .pegawai-meta .badge {
-        padding: .55rem .8rem;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, .16);
-        color: #fff;
-        font-weight: 600;
-    }
-
-    .pegawai-panel {
-        border: 1px solid #e7edf4;
-        border-radius: 16px;
-        box-shadow: 0 10px 28px rgba(16, 24, 40, .06);
-    }
-
-    .pegawai-panel .card-body {
-        padding: 1.25rem;
-    }
-</style>
-
-<div class="container-fluid px-0">
-    <div class="card pegawai-hero mb-4">
-        <div class="card-body">
-            <div class="pegawai-kicker">
-                <i class="fas fa-user-tie"></i>
-                Menu Master
-            </div>
-            <h1 class="pegawai-title">Pegawai</h1>
-            <p class="pegawai-subtitle">
-                Halaman ini disiapkan sebagai pintu masuk pengelolaan data pegawai di dalam kelompok menu Master.
-                Struktur menu sudah tersedia, sehingga modul ini bisa diisi fitur CRUD atau data referensi berikutnya tanpa mengubah sidebar lagi.
-            </p>
-            <div class="pegawai-meta">
-                <span class="badge"><i class="fas fa-sitemap mr-1"></i> Master</span>
-                <span class="badge"><i class="fas fa-link mr-1"></i> admin/master/pegawai</span>
-                <span class="badge"><i class="fas fa-shield-alt mr-1"></i> Tersambung ke akses menu</span>
-            </div>
-        </div>
+<?php if (empty($table_ready)): ?>
+    <div class="alert alert-warning">
+        Tabel pegawai belum tersedia. Jalankan migration terlebih dahulu.
     </div>
+<?php endif; ?>
 
-    <div class="card pegawai-panel">
-        <div class="card-body">
-            <h4 class="mb-3">Status Modul</h4>
-            <p class="mb-0 text-muted">
-                Menu Pegawai sudah tersedia di sidebar. Silakan lanjutkan pengisian fitur dan data master pegawai sesuai kebutuhan aplikasi.
-            </p>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Daftar Pegawai</h3>
+        <?php if (! empty($can_add) || ! empty($can_import)): ?>
+            <div class="float-right">
+                <?php if (! empty($can_import)): ?>
+                    <button type="button" class="btn btn-info mr-2" data-toggle="modal" data-target="#modal-import-pegawai">Import Excel</button>
+                <?php endif; ?>
+                <?php if (! empty($can_add)): ?>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-pegawai">Tambah Pegawai</button>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered table-striped w-100 nowrap js-datatable">
+            <thead>
+                <tr style="white-space: nowrap;">
+                    <th class="text-center">#</th>
+                    <th class="text-center">FOTO</th>
+                    <th class="text-center">NIP</th>
+                    <th class="text-center">NAMA</th>
+                    <th class="text-center">JABATAN (FUNGSIONAL/PELAKSANA)</th>
+                    <th class="text-center">JABATAN (PERBENDAHARAAN)</th>
+                    <th class="text-center">ESELON</th>
+                    <th class="text-center">GOLONGAN</th>
+                    <th class="text-center">MASA KERJA</th>
+                    <th class="text-center">STATUS</th>
+                    <?php if (! empty($can_edit)): ?>
+                        <th class="text-center">ACTION</th>
+                    <?php endif; ?>
+                </tr>
+            </thead>
+            <tbody>
+                <?php $i = 1; foreach (($items ?? []) as $item): ?>
+                    <?php
+                        $isActive = (int) ($item['is_active'] ?? 1) === 1;
+                        $fotoPath = trim((string) ($item['foto'] ?? ''));
+                        $fotoUrl = $fotoPath !== '' ? base_url($fotoPath) : '';
+                    ?>
+                    <tr>
+                        <td><?= esc((string) $i++); ?></td>
+                        <td class="text-center">
+                            <?php if ($fotoUrl !== ''): ?>
+                                <img src="<?= esc($fotoUrl); ?>" alt="Foto Pegawai" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 1px solid #dee2e6;">
+                            <?php else: ?>
+                                <span class="badge badge-light border">-</span>
+                            <?php endif; ?>
+                        </td>
+                        <td><?= esc((string) ($item['nip'] ?? '-')); ?></td>
+                        <td><?= esc((string) ($item['nama'] ?? '-')); ?></td>
+                        <td><?= esc((string) ($item['jabatan_utama_label'] ?? '-')); ?></td>
+                        <td><?= esc((string) ($item['jabatan_perbendaharaan_label'] ?? '-')); ?></td>
+                        <td><?= esc((string) ($item['eselon'] ?? '-')); ?></td>
+                        <td><?= esc((string) ($item['golongan'] ?? '-')); ?></td>
+                        <td><?= esc((string) ($item['masa_kerja'] ?? '-')); ?></td>
+                        <td class="text-center">
+                            <?php if ($isActive): ?>
+                                <span class="badge badge-success">Aktif</span>
+                            <?php else: ?>
+                                <span class="badge badge-secondary">Nonaktif</span>
+                            <?php endif; ?>
+                        </td>
+                        <?php if (! empty($can_edit)): ?>
+                            <td class="text-center" style="white-space: nowrap;">
+                                <button
+                                    type="button"
+                                    class="btn btn-warning btn-sm"
+                                    data-toggle="modal"
+                                    data-target="#modal-ubah-pegawai"
+                                    data-id="<?= esc((string) ($item['id'] ?? ''), 'attr'); ?>"
+                                    data-nip="<?= esc((string) ($item['nip'] ?? ''), 'attr'); ?>"
+                                    data-nama="<?= esc((string) ($item['nama'] ?? ''), 'attr'); ?>"
+                                    data-foto-url="<?= esc($fotoUrl, 'attr'); ?>"
+                                    data-jabatan_utama_id="<?= esc((string) ($item['jabatan_utama_id'] ?? ''), 'attr'); ?>"
+                                    data-jabatan_perbendaharaan_id="<?= esc((string) ($item['jabatan_perbendaharaan_id'] ?? ''), 'attr'); ?>"
+                                    data-eselon="<?= esc((string) ($item['eselon'] ?? ''), 'attr'); ?>"
+                                    data-golongan="<?= esc((string) ($item['golongan'] ?? ''), 'attr'); ?>"
+                                    data-masa_kerja="<?= esc((string) ($item['masa_kerja'] ?? ''), 'attr'); ?>"
+                                    data-is_active="<?= esc((string) ($item['is_active'] ?? 1), 'attr'); ?>"
+                                >UBAH</button>
+
+                                <form action="<?= site_url('/admin/master/pegawai/' . (int) ($item['id'] ?? 0) . '/status'); ?>" method="post" class="d-inline-block" onsubmit="return confirm('Yakin ingin mengubah status pegawai ini?');">
+                                    <?= csrf_field(); ?>
+                                    <input type="hidden" name="is_active" value="<?= $isActive ? '0' : '1'; ?>">
+                                    <button type="submit" class="btn btn-sm <?= $isActive ? 'btn-secondary' : 'btn-success'; ?>">
+                                        <?= $isActive ? 'NONAKTIFKAN' : 'AKTIFKAN'; ?>
+                                    </button>
+                                </form>
+                            </td>
+                        <?php endif; ?>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<?php if (! empty($can_import)): ?>
+<div class="modal fade" id="modal-import-pegawai" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Pegawai (Excel)</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="<?= site_url('/admin/master/pegawai/import'); ?>" method="post" enctype="multipart/form-data">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="alert alert-info mb-3">
+                        Kolom wajib: <strong>nip</strong>, <strong>nama</strong>, <strong>jabatan_utama</strong>.<br>
+                        Kolom opsional: <strong>jabatan_perbendaharaan</strong>, <strong>eselon</strong>, <strong>golongan</strong>, <strong>masa_kerja</strong>, <strong>status</strong>.
+                    </div>
+                    <div class="mb-3">
+                        <a href="<?= site_url('/admin/master/pegawai/template'); ?>" class="btn btn-success btn-sm">
+                            <i class="fas fa-download mr-1"></i> Download Template Excel
+                        </a>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label for="file_excel_pegawai">File Excel</label>
+                        <input type="file" class="form-control" id="file_excel_pegawai" name="file_excel" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                        <small class="text-muted">Import hanya untuk data teks. Foto tetap diupload dari form tambah/ubah.</small>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-info">Import</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+<?php endif; ?>
+
+<?php if (! empty($can_add)): ?>
+<div class="modal fade" id="modal-tambah-pegawai" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tambah Pegawai</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="<?= site_url('/admin/master/pegawai/tambah'); ?>" method="post" enctype="multipart/form-data">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>NIP</label>
+                            <input type="text" name="nip" class="form-control" required maxlength="30">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Nama</label>
+                            <input type="text" name="nama" class="form-control" required maxlength="150">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Foto</label>
+                            <input type="file" name="foto" class="form-control" accept="image/*">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Status</label>
+                            <select name="is_active" class="form-control" required>
+                                <option value="1">Aktif</option>
+                                <option value="0">Nonaktif</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Jabatan (Fungsional/Pelaksana)</label>
+                        <select name="jabatan_utama_id" class="form-control" required>
+                            <option value="">Pilih jabatan</option>
+                            <?php foreach (($jabatan_utama_options ?? []) as $option): ?>
+                                <option value="<?= esc((string) ($option['id'] ?? '')); ?>"><?= esc((string) ($option['label'] ?? '')); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jabatan (Perbendaharaan/Opsional)</label>
+                        <select name="jabatan_perbendaharaan_id" class="form-control">
+                            <option value="">Kosongkan jika tidak ada</option>
+                            <?php foreach (($jabatan_perbendaharaan_options ?? []) as $option): ?>
+                                <option value="<?= esc((string) ($option['id'] ?? '')); ?>"><?= esc((string) ($option['label'] ?? '')); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Eselon</label>
+                            <input type="text" name="eselon" class="form-control" maxlength="50">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Golongan</label>
+                            <input type="text" name="golongan" class="form-control" maxlength="50">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Masa Kerja</label>
+                            <input type="text" name="masa_kerja" class="form-control" maxlength="50">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if (! empty($can_edit)): ?>
+<div class="modal fade" id="modal-ubah-pegawai" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ubah Pegawai</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="form-ubah-pegawai" action="" method="post" enctype="multipart/form-data">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>NIP</label>
+                            <input type="text" id="edit_nip" name="nip" class="form-control" required maxlength="30">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Nama</label>
+                            <input type="text" id="edit_nama" name="nama" class="form-control" required maxlength="150">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Foto</label>
+                            <input type="file" name="foto" class="form-control" accept="image/*">
+                            <small class="text-muted">Kosongkan jika foto tidak diubah.</small>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Status</label>
+                            <select id="edit_is_active" name="is_active" class="form-control" required>
+                                <option value="1">Aktif</option>
+                                <option value="0">Nonaktif</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <img id="edit_foto_preview" src="" alt="Preview Foto" style="display:none;width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid #dee2e6;">
+                    </div>
+                    <div class="form-group">
+                        <label>Jabatan (Fungsional/Pelaksana)</label>
+                        <select id="edit_jabatan_utama_id" name="jabatan_utama_id" class="form-control" required>
+                            <option value="">Pilih jabatan</option>
+                            <?php foreach (($jabatan_utama_options ?? []) as $option): ?>
+                                <option value="<?= esc((string) ($option['id'] ?? '')); ?>"><?= esc((string) ($option['label'] ?? '')); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jabatan (Perbendaharaan/Opsional)</label>
+                        <select id="edit_jabatan_perbendaharaan_id" name="jabatan_perbendaharaan_id" class="form-control">
+                            <option value="">Kosongkan jika tidak ada</option>
+                            <?php foreach (($jabatan_perbendaharaan_options ?? []) as $option): ?>
+                                <option value="<?= esc((string) ($option['id'] ?? '')); ?>"><?= esc((string) ($option['label'] ?? '')); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Eselon</label>
+                            <input type="text" id="edit_eselon" name="eselon" class="form-control" maxlength="50">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Golongan</label>
+                            <input type="text" id="edit_golongan" name="golongan" class="form-control" maxlength="50">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Masa Kerja</label>
+                            <input type="text" id="edit_masa_kerja" name="masa_kerja" class="form-control" maxlength="50">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+<?= $this->endSection(); ?>
+
+<?= $this->section('pageScripts'); ?>
+<script>
+    (function () {
+        const modalEdit = document.getElementById('modal-ubah-pegawai');
+        if (!modalEdit) return;
+
+        const form = document.getElementById('form-ubah-pegawai');
+        const fieldNip = document.getElementById('edit_nip');
+        const fieldNama = document.getElementById('edit_nama');
+        const fieldJabatanUtama = document.getElementById('edit_jabatan_utama_id');
+        const fieldJabatanPerbend = document.getElementById('edit_jabatan_perbendaharaan_id');
+        const fieldEselon = document.getElementById('edit_eselon');
+        const fieldGolongan = document.getElementById('edit_golongan');
+        const fieldMasaKerja = document.getElementById('edit_masa_kerja');
+        const fieldStatus = document.getElementById('edit_is_active');
+        const fotoPreview = document.getElementById('edit_foto_preview');
+
+        const applyEditData = (trigger) => {
+            if (!trigger) {
+                return;
+            }
+
+            const id = trigger.getAttribute('data-id') || '';
+            form.action = '<?= site_url('/admin/master/pegawai'); ?>/' + encodeURIComponent(id) + '/ubah';
+            fieldNip.value = trigger.getAttribute('data-nip') || '';
+            fieldNama.value = trigger.getAttribute('data-nama') || '';
+            fieldJabatanUtama.value = trigger.getAttribute('data-jabatan_utama_id') || '';
+            fieldJabatanPerbend.value = trigger.getAttribute('data-jabatan_perbendaharaan_id') || '';
+            fieldEselon.value = trigger.getAttribute('data-eselon') || '';
+            fieldGolongan.value = trigger.getAttribute('data-golongan') || '';
+            fieldMasaKerja.value = trigger.getAttribute('data-masa_kerja') || '';
+            fieldStatus.value = trigger.getAttribute('data-is_active') || '1';
+
+            const fotoUrl = trigger.getAttribute('data-foto-url') || '';
+            if (fotoUrl) {
+                fotoPreview.src = fotoUrl;
+                fotoPreview.style.display = 'inline-block';
+            } else {
+                fotoPreview.src = '';
+                fotoPreview.style.display = 'none';
+            }
+        };
+
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('button[data-target="#modal-ubah-pegawai"]');
+            if (!trigger) {
+                return;
+            }
+
+            applyEditData(trigger);
+        });
+
+        modalEdit.addEventListener('show.bs.modal', function (event) {
+            applyEditData(event.relatedTarget);
+        });
+    })();
+</script>
 <?= $this->endSection(); ?>
