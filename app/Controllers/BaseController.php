@@ -453,6 +453,6 @@ abstract class BaseController extends Controller
             }
         }
 
-        return array_keys($expanded);
+        return array_map(static fn ($key): string => (string) $key, array_keys($expanded));
     }
 }
