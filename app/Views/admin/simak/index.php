@@ -1,4 +1,4 @@
-<?= $this->extend('layouts/app'); ?>
+<?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content') ?>
 <div class="container-fluid">
@@ -121,7 +121,7 @@
     <!-- PAGINATION -->
     <?php if (!empty($pager)) : ?>
         <div class="mt-3">
-            <?= $pager->links('default', 'bootstrap') ?>
+            <?= $pager->links('default', 'default_full') ?>
         </div>
     <?php endif; ?>
 </div>
