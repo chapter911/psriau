@@ -336,4 +336,16 @@ class Simak extends BaseController
         // Same permission as Kontrak
         return $this->canManageKontrak();
     }
+
+    private function canViewKontrak(): bool
+    {
+        $role = strtolower((string) session()->get('role'));
+        return in_array($role, ['admin', 'editor', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+    }
+
+    private function canManageKontrak(): bool
+    {
+        $role = strtolower((string) session()->get('role'));
+        return in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+    }
 }
