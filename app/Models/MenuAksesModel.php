@@ -7,7 +7,7 @@ use CodeIgniter\Model;
 class MenuAksesModel extends Model
 {
     protected $table         = 'menu_akses';
-    protected $primaryKey    = '';
+    protected $primaryKey    = 'role_id';
     protected $returnType    = 'array';
     protected $allowedFields = [
         'role_id',
