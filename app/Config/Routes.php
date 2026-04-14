@@ -122,14 +122,6 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'dokumentasi/kegiatan-lapangan/(:num)/ubah', 'Admin\\Dokumentasi::edit/$1');
 	$routes->post('dokumentasi/kegiatan-lapangan/(:num)/hapus', 'Admin\\Dokumentasi::delete/$1');
 
-	$routes->get('simak/paket', 'Admin\\Simak::paket');
-	$routes->get('simak/paket/data', 'Admin\\Simak::dataTable');
-	$routes->get('simak/paket/tambah', 'Admin\\Simak::create');
-	$routes->post('simak/paket/simpan', 'Admin\\Simak::store');
-	$routes->get('simak/paket/ubah/(:num)', 'Admin\\Simak::edit/$1');
-	$routes->post('simak/paket/ubah/(:num)', 'Admin\\Simak::update/$1');
-	$routes->post('simak/paket/hapus/(:num)', 'Admin\\Simak::delete/$1');
-
 	$routes->get('acara', 'Admin\\Event::index');
 	$routes->match(['get', 'post'], 'acara/tambah', 'Admin\\Event::create');
 	$routes->match(['get', 'post'], 'acara/(:num)/ubah', 'Admin\\Event::edit/$1');
