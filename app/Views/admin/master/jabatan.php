@@ -4,9 +4,14 @@
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Daftar Jabatan</h3>
-        <?php if (! empty($can_add)): ?>
+        <?php if (! empty($can_add) || ! empty($can_import)): ?>
             <div class="float-right">
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-jabatan">Tambah Jabatan</button>
+                <?php if (! empty($can_import)): ?>
+                    <button type="button" class="btn btn-info mr-2" data-toggle="modal" data-target="#modal-import-jabatan">Import Excel</button>
+                <?php endif; ?>
+                <?php if (! empty($can_add)): ?>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-jabatan">Tambah Jabatan</button>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
     </div>
@@ -67,6 +72,44 @@
         </table>
     </div>
 </div>
+
+<?php if (! empty($can_import)): ?>
+<div class="modal fade" id="modal-import-jabatan" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Jabatan (Excel)</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="<?= site_url('/admin/master/jabatan/import'); ?>" method="post" enctype="multipart/form-data">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="alert alert-info mb-3">
+                        Kolom wajib: <strong>jabatan</strong>, <strong>jenis_jabatan</strong>.<br>
+                        Kolom opsional: <strong>deskripsi_jabatan</strong>, <strong>status</strong> (aktif/nonaktif atau 1/0).
+                    </div>
+                    <div class="mb-3">
+                        <a href="<?= site_url('/admin/master/jabatan/template'); ?>" class="btn btn-success btn-sm">
+                            <i class="fas fa-download mr-1"></i> Download Template Excel
+                        </a>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label for="file_excel_jabatan">File Excel</label>
+                        <input type="file" class="form-control" id="file_excel_jabatan" name="file_excel" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                        <small class="text-muted">Jika nama jabatan sudah ada, data akan diperbarui. Jika belum ada, data baru akan ditambahkan.</small>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-info">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php if (! empty($can_add)): ?>
 <div class="modal fade" id="modal-tambah-jabatan" tabindex="-1" role="dialog" aria-hidden="true">

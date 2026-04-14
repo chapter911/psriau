@@ -82,7 +82,9 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/sekolah/(:segment)/ubah', 'Admin\\MasterSekolah::edit/$1');
 	$routes->get('master/pegawai', 'Admin\\Pegawai::index');
 	$routes->get('master/jabatan', 'Admin\\Jabatan::index');
+	$routes->get('master/jabatan/template', 'Admin\\Jabatan::downloadTemplate');
 	$routes->post('master/jabatan/tambah', 'Admin\\Jabatan::create');
+	$routes->post('master/jabatan/import', 'Admin\\Jabatan::import');
 	$routes->post('master/jabatan/(:num)/ubah', 'Admin\\Jabatan::edit/$1');
 	$routes->post('master/jabatan/(:num)/status', 'Admin\\Jabatan::updateStatus/$1');
 	$routes->get('master/wilayah', 'Admin\\MasterWilayah::wilayah');

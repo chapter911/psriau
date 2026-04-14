@@ -5,6 +5,9 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\MstJabatanModel;
 use CodeIgniter\HTTP\RedirectResponse;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class Jabatan extends BaseController
 {
@@ -29,6 +32,7 @@ class Jabatan extends BaseController
             'items' => $items,
             'can_add' => $canManage && (bool) ($menuPermissions['add'] ?? false),
             'can_edit' => $canManage && (bool) ($menuPermissions['edit'] ?? false),
+            'can_import' => $canManage && (bool) ($menuPermissions['import'] ?? false),
         ]);
     }
 
@@ -75,6 +79,193 @@ class Jabatan extends BaseController
         ]);
 
         return redirect()->to('/admin/master/jabatan')->with('message', 'Data jabatan berhasil ditambahkan.');
+    }
+
+    public function downloadTemplate()
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (! $this->canManageMasterData() || ! (bool) ($menuPermissions['import'] ?? false)) {
+            return redirect()->to('/admin/master/jabatan')->with('error', 'Anda tidak memiliki akses untuk mengunduh template import.');
+        }
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Template Jabatan');
+
+        $sheet->setCellValue('A1', 'jabatan');
+        $sheet->setCellValue('B1', 'jenis_jabatan');
+        $sheet->setCellValue('C1', 'deskripsi_jabatan');
+        $sheet->setCellValue('D1', 'status');
+
+        $sheet->setCellValue('A2', 'Contoh Jabatan');
+        $sheet->setCellValue('B2', 'Fungsional');
+        $sheet->setCellValue('C2', 'Deskripsi singkat jabatan');
+        $sheet->setCellValue('D2', 'aktif');
+
+        foreach (['A', 'B', 'C', 'D'] as $col) {
+            $sheet->getStyle($col . '1')->getFont()->setBold(true);
+        }
+        $sheet->getColumnDimension('A')->setWidth(35);
+        $sheet->getColumnDimension('B')->setWidth(22);
+        $sheet->getColumnDimension('C')->setWidth(50);
+        $sheet->getColumnDimension('D')->setWidth(14);
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'jabatan_template_');
+        if ($tmpFile === false) {
+            return redirect()->to('/admin/master/jabatan')->with('error', 'Gagal menyiapkan file template.');
+        }
+
+        $xlsxFile = $tmpFile . '.xlsx';
+        @rename($tmpFile, $xlsxFile);
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($xlsxFile);
+
+        return $this->response
+            ->download($xlsxFile, null)
+            ->setFileName('template_import_jabatan.xlsx');
+    }
+
+    public function import()
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        if (! $this->canManageMasterData()) {
+            return redirect()->to('/admin/master/jabatan')->with('error', 'Anda tidak memiliki akses untuk import data jabatan.');
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (! (bool) ($menuPermissions['import'] ?? false)) {
+            return redirect()->to('/admin/master/jabatan')->with('error', 'Anda tidak memiliki izin import pada menu Jabatan.');
+        }
+
+        $file = $this->request->getFile('file_excel');
+        if (! $file || ! $file->isValid()) {
+            return redirect()->to('/admin/master/jabatan')->with('error', 'File import tidak valid.');
+        }
+
+        $ext = strtolower((string) $file->getExtension());
+        if (! in_array($ext, ['xls', 'xlsx'], true)) {
+            return redirect()->to('/admin/master/jabatan')->with('error', 'Format file harus .xls atau .xlsx.');
+        }
+
+        try {
+            $spreadsheet = IOFactory::load($file->getTempName());
+        } catch (\Throwable $e) {
+            return redirect()->to('/admin/master/jabatan')->with('error', 'File Excel gagal dibaca. Pastikan format file valid.');
+        }
+
+        $rows = $spreadsheet->getActiveSheet()->toArray('', true, true, true);
+        if ($rows === []) {
+            return redirect()->to('/admin/master/jabatan')->with('error', 'File Excel kosong.');
+        }
+
+        $headerRow = array_shift($rows);
+        if (! is_array($headerRow) || $headerRow === []) {
+            return redirect()->to('/admin/master/jabatan')->with('error', 'Header Excel tidak ditemukan.');
+        }
+
+        $headers = [];
+        foreach ($headerRow as $column => $name) {
+            $normalized = $this->normalizeExcelHeader((string) $name);
+            if ($normalized !== '') {
+                $headers[$column] = $normalized;
+            }
+        }
+
+        if ($headers === []) {
+            return redirect()->to('/admin/master/jabatan')->with('error', 'Header Excel tidak dikenali.');
+        }
+
+        $requiredHeaders = ['jabatan', 'jenis_jabatan'];
+        foreach ($requiredHeaders as $requiredHeader) {
+            if (! in_array($requiredHeader, array_values($headers), true)) {
+                return redirect()->to('/admin/master/jabatan')->with('error', 'Kolom wajib tidak ditemukan: ' . $requiredHeader . '.');
+            }
+        }
+
+        $allowedJenis = ['fungsional', 'perbendaharaan', 'pelaksana'];
+        $model = new MstJabatanModel();
+        $inserted = 0;
+        $updated = 0;
+        $skipped = 0;
+        $now = date('Y-m-d H:i:s');
+        $username = (string) (session()->get('username') ?? 'system');
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                $skipped++;
+                continue;
+            }
+
+            $rowData = [];
+            foreach ($headers as $column => $headerName) {
+                $rowData[$headerName] = trim((string) ($row[$column] ?? ''));
+            }
+
+            $jabatan = trim((string) ($rowData['jabatan'] ?? ''));
+            $jenis = strtolower(trim((string) ($rowData['jenis_jabatan'] ?? '')));
+            $deskripsi = trim((string) ($rowData['deskripsi_jabatan'] ?? ''));
+            $statusRaw = strtolower(trim((string) ($rowData['status'] ?? '')));
+
+            if ($jabatan === '' || $jenis === '' || ! in_array($jenis, $allowedJenis, true)) {
+                $skipped++;
+                continue;
+            }
+
+            $jenisLabel = ucfirst($jenis);
+            if ($jenis === 'perbendaharaan') {
+                $jenisLabel = 'Perbendaharaan';
+            }
+
+            $isActive = 1;
+            if ($statusRaw !== '') {
+                if (in_array($statusRaw, ['0', 'nonaktif', 'non-active', 'inactive'], true)) {
+                    $isActive = 0;
+                } elseif (in_array($statusRaw, ['1', 'aktif', 'active'], true)) {
+                    $isActive = 1;
+                }
+            }
+
+            $existing = $model
+                ->where('LOWER(jabatan)', strtolower($jabatan))
+                ->first();
+
+            if (is_array($existing)) {
+                $model->update((int) $existing['id'], [
+                    'jabatan' => $jabatan,
+                    'jenis_jabatan' => $jenisLabel,
+                    'deskripsi_jabatan' => $deskripsi === '' ? null : $deskripsi,
+                    'is_active' => $isActive,
+                    'updated_by' => $username,
+                    'updated_date' => $now,
+                ]);
+                $updated++;
+                continue;
+            }
+
+            $model->insert([
+                'jabatan' => $jabatan,
+                'jenis_jabatan' => $jenisLabel,
+                'deskripsi_jabatan' => $deskripsi === '' ? null : $deskripsi,
+                'is_active' => $isActive,
+                'created_by' => $username,
+                'created_date' => $now,
+                'updated_by' => $username,
+                'updated_date' => $now,
+            ]);
+            $inserted++;
+        }
+
+        return redirect()->to('/admin/master/jabatan')->with('message', 'Import selesai. Data baru: ' . $inserted . ', diperbarui: ' . $updated . ', dilewati: ' . $skipped . '.');
     }
 
     public function edit(int $id)
@@ -307,5 +498,20 @@ class Jabatan extends BaseController
         }
 
         return null;
+    }
+
+    private function normalizeExcelHeader(string $value): string
+    {
+        $header = strtolower(trim($value));
+        $header = str_replace(['-', '/', ' '], '_', $header);
+        $header = preg_replace('/[^a-z0-9_]/', '', $header) ?? $header;
+
+        return match ($header) {
+            'jabatan', 'nama_jabatan', 'nama' => 'jabatan',
+            'jenis_jabatan', 'jenis' => 'jenis_jabatan',
+            'deskripsi_jabatan', 'deskripsi', 'keterangan' => 'deskripsi_jabatan',
+            'status', 'is_active', 'aktif' => 'status',
+            default => $header,
+        };
     }
 }
