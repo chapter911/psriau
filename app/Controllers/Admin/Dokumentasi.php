@@ -14,14 +14,16 @@ class Dokumentasi extends BaseController
     public function index(): string
     {
         $filterTitle = trim((string) $this->request->getGet('title'));
-        $filterDate = trim((string) $this->request->getGet('date'));
+        $filterDateFrom = trim((string) $this->request->getGet('date_from'));
+        $filterDateTo = trim((string) $this->request->getGet('date_to'));
         $filterLocation = trim((string) $this->request->getGet('location'));
 
         return view('admin/dokumentasi/index', [
             'pageTitle' => 'Kegiatan Lapangan',
             'filters' => [
                 'title' => $filterTitle,
-                'date' => $filterDate,
+                'date_from' => $filterDateFrom,
+                'date_to' => $filterDateTo,
                 'location' => $filterLocation,
             ],
         ]);
@@ -39,7 +41,8 @@ class Dokumentasi extends BaseController
         }
 
         $filterTitle = trim((string) $this->request->getGet('title'));
-        $filterDate = trim((string) $this->request->getGet('date'));
+        $filterDateFrom = trim((string) $this->request->getGet('date_from'));
+        $filterDateTo = trim((string) $this->request->getGet('date_to'));
         $filterLocation = trim((string) $this->request->getGet('location'));
         $globalSearch = trim((string) ($this->request->getGet('search')['value'] ?? ''));
 
@@ -55,13 +58,18 @@ class Dokumentasi extends BaseController
         $orderDirection = strtolower((string) ($this->request->getGet('order')[0]['dir'] ?? 'desc')) === 'asc' ? 'ASC' : 'DESC';
         $orderBy = $orderColumns[$orderColumnIndex] ?? 'activity_date';
 
-        $applyFilters = static function ($builder) use ($filterTitle, $filterDate, $filterLocation, $globalSearch): void {
+        $applyFilters = static function ($builder) use ($filterTitle, $filterDateFrom, $filterDateTo, $filterLocation, $globalSearch): void {
             if ($filterTitle !== '') {
                 $builder->like('title', $filterTitle);
             }
 
-            if ($filterDate !== '') {
-                $builder->where('activity_date', $filterDate);
+            if ($filterDateFrom !== '' && $filterDateTo !== '') {
+                $builder->where('activity_date >=', $filterDateFrom)
+                    ->where('activity_date <=', $filterDateTo);
+            } elseif ($filterDateFrom !== '') {
+                $builder->where('activity_date >=', $filterDateFrom);
+            } elseif ($filterDateTo !== '') {
+                $builder->where('activity_date <=', $filterDateTo);
             }
 
             if ($filterLocation !== '') {

@@ -16,11 +16,15 @@
                         <label for="serverFilterTitle" class="small text-muted mb-1">Judul</label>
                         <input type="text" class="form-control form-control-sm" id="serverFilterTitle" name="title" value="<?= esc((string) ($filters['title'] ?? '')); ?>" placeholder="Cari judul kegiatan">
                     </div>
-                    <div class="form-group col-md-3 mb-2 mb-md-0">
-                        <label for="serverFilterDate" class="small text-muted mb-1">Tanggal</label>
-                        <input type="date" class="form-control form-control-sm" id="serverFilterDate" name="date" value="<?= esc((string) ($filters['date'] ?? '')); ?>">
+                    <div class="form-group col-md-2 mb-2 mb-md-0">
+                        <label for="serverFilterDateFrom" class="small text-muted mb-1">Tanggal Dari</label>
+                        <input type="date" class="form-control form-control-sm" id="serverFilterDateFrom" name="date_from" value="<?= esc((string) ($filters['date_from'] ?? '')); ?>">
                     </div>
-                    <div class="form-group col-md-3 mb-2 mb-md-0">
+                    <div class="form-group col-md-2 mb-2 mb-md-0">
+                        <label for="serverFilterDateTo" class="small text-muted mb-1">Tanggal Sampai</label>
+                        <input type="date" class="form-control form-control-sm" id="serverFilterDateTo" name="date_to" value="<?= esc((string) ($filters['date_to'] ?? '')); ?>">
+                    </div>
+                    <div class="form-group col-md-2 mb-2 mb-md-0">
                         <label for="serverFilterLocation" class="small text-muted mb-1">Lokasi</label>
                         <input type="text" class="form-control form-control-sm" id="serverFilterLocation" name="location" value="<?= esc((string) ($filters['location'] ?? '')); ?>" placeholder="Cari lokasi">
                     </div>
@@ -165,7 +169,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const $ = window.jQuery;
     const tableEl = document.querySelector('.js-kegiatan-lapangan-table');
     const filterTitle = document.getElementById('serverFilterTitle');
-    const filterDate = document.getElementById('serverFilterDate');
+    const filterDateFrom = document.getElementById('serverFilterDateFrom');
+    const filterDateTo = document.getElementById('serverFilterDateTo');
     const filterLocation = document.getElementById('serverFilterLocation');
     const applyButton = document.getElementById('applyServerFilters');
     const resetButton = document.getElementById('resetServerFilters');
@@ -346,7 +351,8 @@ document.addEventListener('DOMContentLoaded', function () {
             type: 'GET',
             data: function (d) {
                 d.title = filterTitle ? filterTitle.value : '';
-                d.date = filterDate ? filterDate.value : '';
+                d.date_from = filterDateFrom ? filterDateFrom.value : '';
+                d.date_to = filterDateTo ? filterDateTo.value : '';
                 d.location = filterLocation ? filterLocation.value : '';
             }
         },
