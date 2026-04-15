@@ -39,6 +39,8 @@ class Pegawai extends BaseController
                 ->orderBy('p.nama', 'ASC')
                 ->get()
                 ->getResultArray();
+
+            $items = $this->applyMasaKerjaDefaults($items);
         }
 
         return view('admin/master/pegawai', [
@@ -78,6 +80,8 @@ class Pegawai extends BaseController
             ->orderBy('p.nama', 'ASC')
             ->get()
             ->getResultArray();
+
+        $items = $this->applyMasaKerjaDefaults($items);
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -383,7 +387,7 @@ class Pegawai extends BaseController
             'jabatan_perbendaharaan_id' => $jabatanPerbendaharaanId > 0 ? $jabatanPerbendaharaanId : null,
             'eselon' => $this->nullableString($this->request->getPost('eselon')),
             'golongan' => $this->nullableString($this->request->getPost('golongan')),
-            'masa_kerja' => $this->nullableString($this->request->getPost('masa_kerja')),
+            'masa_kerja' => $this->resolveMasaKerjaFromNip($nip) ?? $this->nullableString($this->request->getPost('masa_kerja')),
             'is_active' => (int) $this->request->getPost('is_active'),
             'created_by' => $username,
             'created_date' => $now,
@@ -461,7 +465,7 @@ class Pegawai extends BaseController
             'jabatan_perbendaharaan_id' => $jabatanPerbendaharaanId > 0 ? $jabatanPerbendaharaanId : null,
             'eselon' => $this->nullableString($this->request->getPost('eselon')),
             'golongan' => $this->nullableString($this->request->getPost('golongan')),
-            'masa_kerja' => $this->nullableString($this->request->getPost('masa_kerja')),
+            'masa_kerja' => $this->resolveMasaKerjaFromNip($nip) ?? $this->nullableString($this->request->getPost('masa_kerja')),
             'is_active' => (int) $this->request->getPost('is_active'),
             'updated_by' => (string) (session()->get('username') ?? 'system'),
             'updated_date' => date('Y-m-d H:i:s'),
@@ -690,7 +694,7 @@ class Pegawai extends BaseController
                 'jabatan_perbendaharaan_id' => $jabatanPerbendId,
                 'eselon' => $this->nullableString($rowData['eselon'] ?? ''),
                 'golongan' => $this->nullableString($rowData['golongan'] ?? ''),
-                'masa_kerja' => $this->nullableString($rowData['masa_kerja'] ?? ''),
+                'masa_kerja' => $this->resolveMasaKerjaFromNip($nip) ?? $this->nullableString($rowData['masa_kerja'] ?? ''),
                 'is_active' => $isActive,
                 'updated_by' => $username,
                 'updated_date' => $now,
@@ -779,6 +783,56 @@ class Pegawai extends BaseController
         }
 
         return $lookup;
+    }
+
+    private function applyMasaKerjaDefaults(array $items): array
+    {
+        foreach ($items as &$item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $computedMasaKerja = $this->resolveMasaKerjaFromNip((string) ($item['nip'] ?? ''));
+            if ($computedMasaKerja !== null && trim((string) ($item['masa_kerja'] ?? '')) === '') {
+                $item['masa_kerja'] = $computedMasaKerja;
+            }
+        }
+
+        return $items;
+    }
+
+    private function resolveMasaKerjaFromNip(string $nip): ?string
+    {
+        $digits = preg_replace('/\D+/', '', $nip) ?? '';
+        if (strlen($digits) < 8) {
+            return null;
+        }
+
+        $datePart = substr($digits, 0, 8);
+        $birthDate = \DateTimeImmutable::createFromFormat('Ymd', $datePart);
+        if (! $birthDate || $birthDate->format('Ymd') !== $datePart) {
+            return null;
+        }
+
+        $today = new \DateTimeImmutable('today');
+        if ($birthDate > $today) {
+            return null;
+        }
+
+        $diff = $birthDate->diff($today);
+        $parts = [];
+        if ($diff->y > 0) {
+            $parts[] = $diff->y . ' Tahun';
+        }
+        if ($diff->m > 0) {
+            $parts[] = $diff->m . ' Bulan';
+        }
+
+        if ($parts === []) {
+            $parts[] = '0 Bulan';
+        }
+
+        return implode(' ', $parts);
     }
 
     private function resolveOrCreateJabatanId(string $jabatanName, array &$lookup, string $username, string $timestamp): ?int

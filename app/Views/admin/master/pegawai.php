@@ -252,7 +252,8 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label>Masa Kerja</label>
-                            <input type="text" name="masa_kerja" class="form-control" maxlength="50">
+                            <input type="text" name="masa_kerja" class="form-control js-masa-kerja-input" maxlength="50" readonly>
+                            <small class="text-muted">Otomatis dihitung dari NIP.</small>
                         </div>
                     </div>
                 </div>
@@ -343,7 +344,8 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label>Masa Kerja</label>
-                            <input type="text" id="edit_masa_kerja" name="masa_kerja" class="form-control" maxlength="50">
+                            <input type="text" id="edit_masa_kerja" name="masa_kerja" class="form-control js-masa-kerja-input" maxlength="50" readonly>
+                            <small class="text-muted">Otomatis dihitung dari NIP.</small>
                         </div>
                     </div>
                 </div>
@@ -377,6 +379,85 @@
 <?= $this->section('pageScripts'); ?>
 <script>
     (function () {
+        const masaKerjaInputs = Array.from(document.querySelectorAll('.js-masa-kerja-input'));
+
+        const computeMasaKerjaFromNip = (nip) => {
+            const digits = (nip || '').replace(/\D+/g, '');
+            if (digits.length < 8) {
+                return '';
+            }
+
+            const year = Number(digits.slice(0, 4));
+            const month = Number(digits.slice(4, 6));
+            const day = Number(digits.slice(6, 8));
+            if (!year || !month || !day) {
+                return '';
+            }
+
+            const birthDate = new Date(year, month - 1, day);
+            if (Number.isNaN(birthDate.getTime())) {
+                return '';
+            }
+
+            const checkDate = new Date(year, month - 1, day);
+            if (
+                checkDate.getFullYear() !== year ||
+                checkDate.getMonth() !== month - 1 ||
+                checkDate.getDate() !== day
+            ) {
+                return '';
+            }
+
+            const today = new Date();
+            if (birthDate > today) {
+                return '';
+            }
+
+            let years = today.getFullYear() - birthDate.getFullYear();
+            let months = today.getMonth() - birthDate.getMonth();
+            if (today.getDate() < birthDate.getDate()) {
+                months -= 1;
+            }
+            if (months < 0) {
+                years -= 1;
+                months += 12;
+            }
+
+            const parts = [];
+            if (years > 0) {
+                parts.push(years + ' Tahun');
+            }
+            if (months > 0) {
+                parts.push(months + ' Bulan');
+            }
+
+            return parts.length > 0 ? parts.join(' ') : '0 Bulan';
+        };
+
+        const syncMasaKerja = (nipValue, fallbackValue = '') => {
+            const computed = computeMasaKerjaFromNip(nipValue);
+            const nextValue = computed || fallbackValue || '';
+            masaKerjaInputs.forEach((input) => {
+                input.value = nextValue;
+            });
+        };
+
+        const initNipAutoFill = (inputSelector) => {
+            const input = document.querySelector(inputSelector);
+            if (!input) {
+                return;
+            }
+
+            input.addEventListener('input', function () {
+                syncMasaKerja(this.value);
+            });
+        };
+
+        initNipAutoFill('input[name="nip"]');
+        initNipAutoFill('#edit_nip');
+    })();
+
+    (function () {
         const modalEdit = document.getElementById('modal-ubah-pegawai');
         if (!modalEdit) return;
 
@@ -408,6 +489,8 @@
             fieldGolongan.value = trigger.getAttribute('data-golongan') || '';
             fieldMasaKerja.value = trigger.getAttribute('data-masa_kerja') || '';
             fieldStatus.value = trigger.getAttribute('data-is_active') || '1';
+
+            syncMasaKerja(fieldNip.value, fieldMasaKerja.value);
 
             const fotoUrl = trigger.getAttribute('data-foto-url') || '';
             if (fotoUrl) {
