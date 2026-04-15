@@ -64,6 +64,28 @@
                                 >
                                     <img src="<?= esc($fotoUrl); ?>" alt="Foto Pegawai" style="width: 56px; height: 56px; border-radius: 6px; object-fit: cover; border: 1px solid #dee2e6;">
                                 </button>
+                            <?php elseif (! empty($can_edit)): ?>
+                                <button
+                                    type="button"
+                                    class="btn btn-light border d-inline-flex align-items-center justify-content-center js-open-edit-pegawai-foto"
+                                    data-toggle="modal"
+                                    data-target="#modal-ubah-pegawai"
+                                    data-id="<?= esc((string) ($item['id'] ?? ''), 'attr'); ?>"
+                                    data-nip="<?= esc((string) ($item['nip'] ?? ''), 'attr'); ?>"
+                                    data-nama="<?= esc((string) ($item['nama'] ?? ''), 'attr'); ?>"
+                                    data-foto-url=""
+                                    data-jabatan_utama_id="<?= esc((string) ($item['jabatan_utama_id'] ?? ''), 'attr'); ?>"
+                                    data-jabatan_perbendaharaan_id="<?= esc((string) ($item['jabatan_perbendaharaan_id'] ?? ''), 'attr'); ?>"
+                                    data-jenis_pegawai="<?= esc((string) ($item['jenis_pegawai'] ?? 'pns'), 'attr'); ?>"
+                                    data-eselon="<?= esc((string) ($item['eselon'] ?? ''), 'attr'); ?>"
+                                    data-golongan="<?= esc((string) ($item['golongan'] ?? ''), 'attr'); ?>"
+                                    data-masa_kerja="<?= esc((string) ($item['masa_kerja'] ?? ''), 'attr'); ?>"
+                                    data-is_active="<?= esc((string) ($item['is_active'] ?? 1), 'attr'); ?>"
+                                    title="Klik untuk update foto"
+                                    style="width: 56px; height: 56px; border-radius: 6px;"
+                                >
+                                    <span class="text-muted font-weight-bold">+</span>
+                                </button>
                             <?php else: ?>
                                 <span class="badge badge-light border">-</span>
                             <?php endif; ?>
