@@ -40,6 +40,10 @@
         <h2 class="card-title">SIMAK Kontrak</h2>
         <?php if (($can_edit ?? false) === true): ?>
             <div class="float-right">
+                <?php if (($can_import ?? false) === true): ?>
+                    <a href="<?= site_url('admin/kontrak/simak/template'); ?>" class="btn btn-outline-success mr-2">Download Template</a>
+                    <button type="button" class="btn btn-outline-info mr-2" data-toggle="modal" data-target="#modal-import-simak">Import Excel</button>
+                <?php endif; ?>
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-simak">Input Data SIMAK</button>
             </div>
         <?php endif; ?>
@@ -283,6 +287,37 @@
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-import-simak" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Excel SIMAK</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="<?= site_url('admin/kontrak/simak/import'); ?>" method="post" enctype="multipart/form-data">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        Gunakan file template yang sudah disediakan. Field minimum yang wajib ada: ppk_nip, ppk_nama, nama_paket, tahun_anggaran, nomor_kontrak, nilai_kontrak.
+                    </div>
+
+                    <div class="form-group">
+                        <label for="file_excel_simak">File Excel</label>
+                        <input type="file" class="form-control-file" id="file_excel_simak" name="file_excel" accept=".xls,.xlsx" required>
+                        <small class="text-muted">Format file: .xls atau .xlsx</small>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-info">Import</button>
                 </div>
             </form>
         </div>

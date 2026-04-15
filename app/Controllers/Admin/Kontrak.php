@@ -841,6 +841,7 @@ class Kontrak extends BaseController
                 'addOnsBySimakId' => [],
                 'pegawaiOptions' => $this->getSimakPegawaiOptions(),
                 'can_edit' => $this->canViewKontrak(),
+                'can_import' => $this->canManageKontrak(),
                 'error' => 'Tabel SIMAK belum tersedia. Jalankan migration.',
             ]);
         }
@@ -886,7 +887,220 @@ class Kontrak extends BaseController
             'addOnsBySimakId' => $this->getSimakAddOnsBySimakId(),
             'pegawaiOptions' => $this->getSimakPegawaiOptions(),
             'can_edit' => $this->canViewKontrak(),
+            'can_import' => $this->canManageKontrak(),
         ]);
+    }
+
+    public function importSimak()
+    {
+        if (! $this->canManageKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Anda tidak memiliki akses untuk import data SIMAK.');
+        }
+
+        if (! $this->isKontrakTableReady()) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Tabel SIMAK belum tersedia. Jalankan migration.');
+        }
+
+        $file = $this->request->getFile('file_excel');
+        if (! $file || ! $file->isValid()) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'File import tidak valid.');
+        }
+
+        $ext = strtolower((string) $file->getExtension());
+        if (! in_array($ext, ['xls', 'xlsx'], true)) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Format file harus .xls atau .xlsx.');
+        }
+
+        try {
+            $spreadsheet = IOFactory::load($file->getTempName());
+        } catch (\Throwable $e) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'File Excel gagal dibaca. Pastikan format file valid (.xls/.xlsx).');
+        }
+
+        $rows = $spreadsheet->getActiveSheet()->toArray('', true, true, true);
+        if ($rows === []) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'File Excel kosong.');
+        }
+
+        $headerRow = array_shift($rows);
+        if (! is_array($headerRow) || $headerRow === []) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Header Excel tidak ditemukan.');
+        }
+
+        $normalizeHeader = static function ($value): string {
+            $header = strtolower(trim((string) $value));
+            $header = str_replace(['-', '/', ' '], '_', $header);
+            $header = preg_replace('/[^a-z0-9_]/', '', $header) ?? $header;
+            return $header;
+        };
+
+        $headers = [];
+        foreach ($headerRow as $column => $name) {
+            $normalized = $normalizeHeader($name);
+            if ($normalized !== '') {
+                $headers[$column] = $normalized;
+            }
+        }
+
+        if ($headers === []) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Header Excel tidak dikenali.');
+        }
+
+        $requiredFields = ['ppk_nip', 'ppk_nama', 'nama_paket', 'tahun_anggaran', 'nomor_kontrak', 'nilai_kontrak'];
+        $optionalFields = ['satker', 'penyedia', 'tahapan_pekerjaan', 'tanggal_pemeriksaan'];
+
+        $db = db_connect();
+        $inserted = 0;
+        $updated = 0;
+        $skipped = 0;
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                $skipped++;
+                continue;
+            }
+
+            $rowData = [];
+            foreach ($headers as $column => $headerName) {
+                $rowData[$headerName] = trim((string) ($row[$column] ?? ''));
+            }
+
+            $ppkNip = trim((string) ($rowData['ppk_nip'] ?? ''));
+            $ppkNama = trim((string) ($rowData['ppk_nama'] ?? ''));
+            $namaPaket = trim((string) ($rowData['nama_paket'] ?? ''));
+            $tahunAnggaran = trim((string) ($rowData['tahun_anggaran'] ?? ''));
+            $nomorKontrak = trim((string) ($rowData['nomor_kontrak'] ?? ''));
+            $nilaiKontrak = $this->parseMoneyToFloat($rowData['nilai_kontrak'] ?? 0);
+
+            if ($ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $tahunAnggaran === '' || $nomorKontrak === '') {
+                $skipped++;
+                continue;
+            }
+
+            if (! preg_match('/^\d{4}\s*-\s*\d{4}$/', $tahunAnggaran)) {
+                $skipped++;
+                continue;
+            }
+
+            $payload = [
+                'satker' => trim((string) ($rowData['satker'] ?? '')) ?: 'Perencanaan Prasarana Strategis',
+                'ppk_nama' => $ppkNama,
+                'ppk_nip' => $ppkNip,
+                'nama_paket' => $namaPaket,
+                'tahun_anggaran' => $tahunAnggaran,
+                'penyedia' => trim((string) ($rowData['penyedia'] ?? '')),
+                'nomor_kontrak' => $nomorKontrak,
+                'nilai_kontrak' => $nilaiKontrak,
+                'tahapan_pekerjaan' => trim((string) ($rowData['tahapan_pekerjaan'] ?? '')),
+                'tanggal_pemeriksaan' => $this->normalizeDateValue((string) ($rowData['tanggal_pemeriksaan'] ?? '')),
+            ];
+
+            if ($db->tableExists('mst_pegawai')) {
+                $pegawai = $db->table('mst_pegawai')->select('nip, nama')->where('nip', $ppkNip)->get()->getRowArray();
+                if (is_array($pegawai) && trim((string) ($pegawai['nama'] ?? '')) !== '') {
+                    $payload['ppk_nama'] = trim((string) $pegawai['nama']);
+                }
+            }
+
+            $existingBuilder = $db->table('trn_kontrak_simak')->select('id')->where('nomor_kontrak', $nomorKontrak);
+            $this->applyNotDeletedWhere($existingBuilder, 'trn_kontrak_simak');
+            $existing = $existingBuilder->get()->getRowArray();
+
+            if (is_array($existing)) {
+                if ($this->tableHasColumn('trn_kontrak_simak', 'updated_by')) {
+                    $payload['updated_by'] = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+                }
+                if ($this->tableHasColumn('trn_kontrak_simak', 'updated_date')) {
+                    $payload['updated_date'] = date('Y-m-d');
+                }
+                if ($this->tableHasColumn('trn_kontrak_simak', 'updated_at')) {
+                    $payload['updated_at'] = date('Y-m-d H:i:s');
+                }
+
+                if ($db->table('trn_kontrak_simak')->where('id', (int) $existing['id'])->update($payload)) {
+                    $updated++;
+                } else {
+                    $skipped++;
+                }
+                continue;
+            }
+
+            if ($this->tableHasColumn('trn_kontrak_simak', 'created_by')) {
+                $payload['created_by'] = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+            }
+            if ($this->tableHasColumn('trn_kontrak_simak', 'created_date')) {
+                $payload['created_date'] = date('Y-m-d');
+            }
+            if ($this->tableHasColumn('trn_kontrak_simak', 'created_at')) {
+                $payload['created_at'] = date('Y-m-d H:i:s');
+            }
+
+            if ($db->table('trn_kontrak_simak')->insert($payload)) {
+                $inserted++;
+            } else {
+                $skipped++;
+            }
+        }
+
+        if ($inserted === 0 && $updated === 0) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Tidak ada data yang diproses. Pastikan kolom minimal: ppk_nip, ppk_nama, nama_paket, tahun_anggaran, nomor_kontrak, nilai_kontrak.');
+        }
+
+        $message = 'Import SIMAK selesai. Insert: ' . $inserted . ', Update: ' . $updated . ', Dilewati: ' . $skipped . '.';
+        return redirect()->to(site_url('admin/kontrak/simak'))->with('success', $message);
+    }
+
+    public function exportSimakTemplate()
+    {
+        if (! $this->canManageKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Anda tidak memiliki akses untuk mengunduh template SIMAK.');
+        }
+
+        $headers = [
+            'satker',
+            'ppk_nip',
+            'ppk_nama',
+            'nama_paket',
+            'tahun_anggaran',
+            'penyedia',
+            'nomor_kontrak',
+            'nilai_kontrak',
+            'tahapan_pekerjaan',
+            'tanggal_pemeriksaan',
+        ];
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Template SIMAK');
+        $sheet->fromArray($headers, null, 'A1');
+        $sheet->fromArray([
+            'Perencanaan Prasarana Strategis',
+            '199012212018021001',
+            'Nama PPK',
+            'Nama Paket Contoh',
+            '2026 - 2027',
+            'Penyedia Contoh',
+            'SIMAK/001/2026',
+            1000000000,
+            'Tahapan Contoh',
+            '2026-04-15',
+        ], null, 'A2');
+
+        $sheet->getStyle('A1:J1')->getFont()->setBold(true);
+        foreach (range('A', 'J') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $filename = 'template_import_simak_' . date('Ymd_His') . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        ob_start();
+        $writer->save('php://output');
+        $binary = ob_get_clean();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($binary === false ? '' : $binary);
     }
 
     public function createSimak()

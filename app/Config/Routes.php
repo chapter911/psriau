@@ -73,6 +73,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('kontrak/syarat-umum/get', 'Admin\\Kontrak::getSyaratUmumByPaketId');
 	$routes->post('kontrak/syarat-umum/save', 'Admin\\Kontrak::saveSyaratUmumByJabatan');
 	$routes->get('kontrak/simak', 'Admin\\Kontrak::simak');
+	$routes->post('kontrak/simak/import', 'Admin\\Kontrak::importSimak');
+	$routes->get('kontrak/simak/template', 'Admin\\Kontrak::exportSimakTemplate');
 	$routes->post('kontrak/simak/tambah', 'Admin\\Kontrak::createSimak');
 	$routes->post('kontrak/simak/(:num)/ubah', 'Admin\\Kontrak::updateSimak/$1');
 	$routes->post('kontrak/simak/(:num)/verifikasi', 'Admin\\Kontrak::saveSimakVerifikasi/$1');
