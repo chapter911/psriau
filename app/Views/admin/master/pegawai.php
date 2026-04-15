@@ -34,6 +34,7 @@
                     <th class="text-center">NAMA</th>
                     <th class="text-center">JABATAN (FUNGSIONAL/PELAKSANA)</th>
                     <th class="text-center">JABATAN (PERBENDAHARAAN)</th>
+                    <th class="text-center">JENIS PEGAWAI</th>
                     <th class="text-center">ESELON</th>
                     <th class="text-center">GOLONGAN</th>
                     <th class="text-center">MASA KERJA</th>
@@ -71,6 +72,7 @@
                         <td><?= esc((string) ($item['nama'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['jabatan_utama_label'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['jabatan_perbendaharaan_label'] ?? '-')); ?></td>
+                        <td class="text-center text-uppercase"><?= esc((string) ($item['jenis_pegawai'] ?? 'pns')); ?></td>
                         <td><?= esc((string) ($item['eselon'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['golongan'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['masa_kerja'] ?? '-')); ?></td>
@@ -94,6 +96,7 @@
                                     data-foto-url="<?= esc($fotoUrl, 'attr'); ?>"
                                     data-jabatan_utama_id="<?= esc((string) ($item['jabatan_utama_id'] ?? ''), 'attr'); ?>"
                                     data-jabatan_perbendaharaan_id="<?= esc((string) ($item['jabatan_perbendaharaan_id'] ?? ''), 'attr'); ?>"
+                                    data-jenis_pegawai="<?= esc((string) ($item['jenis_pegawai'] ?? 'pns'), 'attr'); ?>"
                                     data-eselon="<?= esc((string) ($item['eselon'] ?? ''), 'attr'); ?>"
                                     data-golongan="<?= esc((string) ($item['golongan'] ?? ''), 'attr'); ?>"
                                     data-masa_kerja="<?= esc((string) ($item['masa_kerja'] ?? ''), 'attr'); ?>"
@@ -130,7 +133,7 @@
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <div class="alert alert-info mb-3">
-                        Kolom wajib: <strong>nip</strong>, <strong>nama</strong>, <strong>jabatan_utama</strong>.<br>
+                        Kolom wajib: <strong>nip</strong>, <strong>nama</strong>, <strong>jabatan_utama</strong>, <strong>jenis_pegawai</strong> (cpns/pns/konsultan).<br>
                         Kolom opsional: <strong>jabatan_perbendaharaan</strong>, <strong>eselon</strong>, <strong>golongan</strong>, <strong>masa_kerja</strong>, <strong>status</strong>.
                     </div>
                     <div class="mb-3">
@@ -206,6 +209,14 @@
                             <?php foreach (($jabatan_perbendaharaan_options ?? []) as $option): ?>
                                 <option value="<?= esc((string) ($option['id'] ?? '')); ?>"><?= esc((string) ($option['label'] ?? '')); ?></option>
                             <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jenis Pegawai</label>
+                        <select name="jenis_pegawai" class="form-control" required>
+                            <option value="pns">PNS</option>
+                            <option value="cpns">CPNS</option>
+                            <option value="konsultan">Konsultan</option>
                         </select>
                     </div>
                     <div class="form-row">
@@ -291,6 +302,14 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Jenis Pegawai</label>
+                        <select id="edit_jenis_pegawai" name="jenis_pegawai" class="form-control" required>
+                            <option value="pns">PNS</option>
+                            <option value="cpns">CPNS</option>
+                            <option value="konsultan">Konsultan</option>
+                        </select>
+                    </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label>Eselon</label>
@@ -344,6 +363,7 @@
         const fieldNama = document.getElementById('edit_nama');
         const fieldJabatanUtama = document.getElementById('edit_jabatan_utama_id');
         const fieldJabatanPerbend = document.getElementById('edit_jabatan_perbendaharaan_id');
+        const fieldJenisPegawai = document.getElementById('edit_jenis_pegawai');
         const fieldEselon = document.getElementById('edit_eselon');
         const fieldGolongan = document.getElementById('edit_golongan');
         const fieldMasaKerja = document.getElementById('edit_masa_kerja');
@@ -361,6 +381,7 @@
             fieldNama.value = trigger.getAttribute('data-nama') || '';
             fieldJabatanUtama.value = trigger.getAttribute('data-jabatan_utama_id') || '';
             fieldJabatanPerbend.value = trigger.getAttribute('data-jabatan_perbendaharaan_id') || '';
+            fieldJenisPegawai.value = (trigger.getAttribute('data-jenis_pegawai') || 'pns').toLowerCase();
             fieldEselon.value = trigger.getAttribute('data-eselon') || '';
             fieldGolongan.value = trigger.getAttribute('data-golongan') || '';
             fieldMasaKerja.value = trigger.getAttribute('data-masa_kerja') || '';

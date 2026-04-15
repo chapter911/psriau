@@ -83,10 +83,10 @@ class Pegawai extends BaseController
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Daftar Pegawai');
 
-        $sheet->mergeCells('A1:J1');
-        $sheet->mergeCells('A2:J2');
-        $sheet->mergeCells('A3:J3');
-        $sheet->mergeCells('A4:J4');
+        $sheet->mergeCells('A1:K1');
+        $sheet->mergeCells('A2:K2');
+        $sheet->mergeCells('A3:K3');
+        $sheet->mergeCells('A4:K4');
 
         $sheet->setCellValue('A1', 'DAFTAR PEGAWAI');
         $sheet->setCellValue('A2', 'SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU');
@@ -101,7 +101,8 @@ class Pegawai extends BaseController
         $sheet->setCellValue('G6', 'ESELON');
         $sheet->setCellValue('H6', 'GOLONGAN');
         $sheet->setCellValue('I6', 'MASA KERJA');
-        $sheet->setCellValue('J6', 'STATUS');
+        $sheet->setCellValue('J6', 'JENIS PEGAWAI');
+        $sheet->setCellValue('K6', 'STATUS');
 
         $sheet->mergeCells('A6:A7');
         $sheet->mergeCells('B6:B7');
@@ -112,6 +113,7 @@ class Pegawai extends BaseController
         $sheet->mergeCells('H6:H7');
         $sheet->mergeCells('I6:I7');
         $sheet->mergeCells('J6:J7');
+        $sheet->mergeCells('K6:K7');
         $sheet->setCellValue('E7', 'JABATAN FUNGSIONAL / PELAKSANA');
         $sheet->setCellValue('F7', 'JABATAN PERBENDAHARAAN');
 
@@ -125,6 +127,7 @@ class Pegawai extends BaseController
         $sheet->setCellValue('H8', '7');
         $sheet->setCellValue('I8', '8');
         $sheet->setCellValue('J8', '9');
+        $sheet->setCellValue('K8', '10');
 
         $sheet->getColumnDimension('A')->setWidth(6);
         $sheet->getColumnDimension('B')->setWidth(16);
@@ -135,21 +138,22 @@ class Pegawai extends BaseController
         $sheet->getColumnDimension('G')->setWidth(14);
         $sheet->getColumnDimension('H')->setWidth(18);
         $sheet->getColumnDimension('I')->setWidth(16);
-        $sheet->getColumnDimension('J')->setWidth(16);
+        $sheet->getColumnDimension('J')->setWidth(18);
+        $sheet->getColumnDimension('K')->setWidth(16);
 
-        $sheet->getStyle('A1:J4')->getFont()->setBold(true)->setSize(12);
-        $sheet->getStyle('A1:J4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A1:J4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A1:K4')->getFont()->setBold(true)->setSize(12);
+        $sheet->getStyle('A1:K4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:K4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
         $sheet->getRowDimension(1)->setRowHeight(28);
         $sheet->getRowDimension(2)->setRowHeight(28);
         $sheet->getRowDimension(3)->setRowHeight(28);
         $sheet->getRowDimension(4)->setRowHeight(28);
 
-        $sheet->getStyle('A6:J8')->getFont()->setBold(true);
-        $sheet->getStyle('A6:J8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A6:J8')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A6:J8')->getAlignment()->setWrapText(true);
-        $sheet->getStyle('A6:J8')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEAEAEA');
+        $sheet->getStyle('A6:K8')->getFont()->setBold(true);
+        $sheet->getStyle('A6:K8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A6:K8')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A6:K8')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A6:K8')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEAEAEA');
         $sheet->getRowDimension(6)->setRowHeight(30);
         $sheet->getRowDimension(7)->setRowHeight(28);
         $sheet->getRowDimension(8)->setRowHeight(22);
@@ -165,7 +169,8 @@ class Pegawai extends BaseController
             $sheet->setCellValue('G' . $row, (string) ($item['eselon'] ?? ''));
             $sheet->setCellValue('H' . $row, (string) ($item['golongan'] ?? ''));
             $sheet->setCellValue('I' . $row, (string) ($item['masa_kerja'] ?? ''));
-            $sheet->setCellValue('J' . $row, (int) ($item['is_active'] ?? 1) === 1 ? 'AKTIF' : 'NONAKTIF');
+            $sheet->setCellValue('J' . $row, strtoupper((string) ($item['jenis_pegawai'] ?? 'PNS')));
+            $sheet->setCellValue('K' . $row, (int) ($item['is_active'] ?? 1) === 1 ? 'AKTIF' : 'NONAKTIF');
 
             $sheet->getRowDimension($row)->setRowHeight(82);
 
@@ -187,21 +192,21 @@ class Pegawai extends BaseController
         }
 
         $lastRow = max(9, $row - 1);
-        $sheet->getStyle('A9:J' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-        $sheet->getStyle('A9:J' . $lastRow)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A9:K' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+        $sheet->getStyle('A9:K' . $lastRow)->getAlignment()->setWrapText(true);
         $sheet->getStyle('A9:A' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('B9:B' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('D9:D' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('G9:J' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('G9:K' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $sheet->getStyle('A6:J' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-        $sheet->getStyle('A6:J' . $lastRow)->getBorders()->getOutline()->setBorderStyle(Border::BORDER_MEDIUM);
-        $sheet->getStyle('A6:J' . $lastRow)->getBorders()->getOutline()->getColor()->setARGB('FF1E3A8A');
+        $sheet->getStyle('A6:K' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyle('A6:K' . $lastRow)->getBorders()->getOutline()->setBorderStyle(Border::BORDER_MEDIUM);
+        $sheet->getStyle('A6:K' . $lastRow)->getBorders()->getOutline()->getColor()->setARGB('FF1E3A8A');
 
         $footerRow = $lastRow + 1;
-        $sheet->setCellValue('J' . $footerRow, 'Page 1');
-        $sheet->getStyle('J' . $footerRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->getStyle('J' . $footerRow)->getFont()->setItalic(true)->getColor()->setARGB('FF8A8A8A');
+        $sheet->setCellValue('K' . $footerRow, 'Page 1');
+        $sheet->getStyle('K' . $footerRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('K' . $footerRow)->getFont()->setItalic(true)->getColor()->setARGB('FF8A8A8A');
 
         $tmpFile = tempnam(sys_get_temp_dir(), 'pegawai_export_');
         if ($tmpFile === false) {
@@ -235,6 +240,7 @@ class Pegawai extends BaseController
         $rules = [
             'nip' => 'required|max_length[30]',
             'nama' => 'required|max_length[150]',
+            'jenis_pegawai' => 'required|in_list[cpns,pns,konsultan]',
             'jabatan_utama_id' => 'required|integer',
             'jabatan_perbendaharaan_id' => 'permit_empty|integer',
             'eselon' => 'permit_empty|max_length[50]',
@@ -274,6 +280,7 @@ class Pegawai extends BaseController
         $model->insert([
             'nip' => $nip,
             'nama' => trim((string) $this->request->getPost('nama')),
+            'jenis_pegawai' => strtolower(trim((string) $this->request->getPost('jenis_pegawai'))),
             'foto' => $fotoPath,
             'jabatan_utama_id' => $jabatanUtamaId,
             'jabatan_perbendaharaan_id' => $jabatanPerbendaharaanId > 0 ? $jabatanPerbendaharaanId : null,
@@ -308,6 +315,7 @@ class Pegawai extends BaseController
         $rules = [
             'nip' => 'required|max_length[30]',
             'nama' => 'required|max_length[150]',
+            'jenis_pegawai' => 'required|in_list[cpns,pns,konsultan]',
             'jabatan_utama_id' => 'required|integer',
             'jabatan_perbendaharaan_id' => 'permit_empty|integer',
             'eselon' => 'permit_empty|max_length[50]',
@@ -350,6 +358,7 @@ class Pegawai extends BaseController
         $model->update($id, [
             'nip' => $nip,
             'nama' => trim((string) $this->request->getPost('nama')),
+            'jenis_pegawai' => strtolower(trim((string) $this->request->getPost('jenis_pegawai'))),
             'foto' => $fotoPath,
             'jabatan_utama_id' => $jabatanUtamaId,
             'jabatan_perbendaharaan_id' => $jabatanPerbendaharaanId > 0 ? $jabatanPerbendaharaanId : null,
@@ -420,6 +429,7 @@ class Pegawai extends BaseController
         $sheet->setCellValue('F1', 'golongan');
         $sheet->setCellValue('G1', 'masa_kerja');
         $sheet->setCellValue('H1', 'status');
+        $sheet->setCellValue('I1', 'jenis_pegawai');
 
         $sheet->setCellValue('A2', '198301012008011001');
         $sheet->setCellValue('B2', 'Nama Pegawai');
@@ -429,8 +439,9 @@ class Pegawai extends BaseController
         $sheet->setCellValue('F2', 'III/b');
         $sheet->setCellValue('G2', '10 Tahun');
         $sheet->setCellValue('H2', 'aktif');
+        $sheet->setCellValue('I2', 'pns');
 
-        foreach (range('A', 'H') as $col) {
+        foreach (range('A', 'I') as $col) {
             $sheet->getStyle($col . '1')->getFont()->setBold(true);
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
@@ -507,15 +518,13 @@ class Pegawai extends BaseController
             return redirect()->to('/admin/master/pegawai')->with('error', 'Header Excel tidak dikenali.');
         }
 
-        foreach (['nip', 'nama', 'jabatan_utama'] as $requiredHeader) {
+        foreach (['nip', 'nama', 'jabatan_utama', 'jenis_pegawai'] as $requiredHeader) {
             if (! in_array($requiredHeader, array_values($headers), true)) {
                 return redirect()->to('/admin/master/pegawai')->with('error', 'Kolom wajib tidak ditemukan: ' . $requiredHeader . '.');
             }
         }
 
-        $jabatanOptions = $this->resolveJabatanOptions();
-        $utamaByName = $jabatanOptions['utama_by_name'];
-        $perbendByName = $jabatanOptions['perbendaharaan_by_name'];
+        $jabatanByName = $this->buildJabatanLookupByName();
 
         $model = new MstPegawaiModel();
         $inserted = 0;
@@ -537,15 +546,21 @@ class Pegawai extends BaseController
 
             $nip = trim((string) ($rowData['nip'] ?? ''));
             $nama = trim((string) ($rowData['nama'] ?? ''));
-            $jabatanUtamaName = strtolower(trim((string) ($rowData['jabatan_utama'] ?? '')));
-            $jabatanPerbendName = strtolower(trim((string) ($rowData['jabatan_perbendaharaan'] ?? '')));
+            $jabatanUtamaName = trim((string) ($rowData['jabatan_utama'] ?? ''));
+            $jabatanPerbendName = trim((string) ($rowData['jabatan_perbendaharaan'] ?? ''));
+            $jenisPegawai = strtolower(trim((string) ($rowData['jenis_pegawai'] ?? '')));
 
             if ($nip === '' || $nama === '' || $jabatanUtamaName === '') {
                 $skipped++;
                 continue;
             }
 
-            $jabatanUtamaId = $utamaByName[$jabatanUtamaName] ?? null;
+            if (! in_array($jenisPegawai, ['cpns', 'pns', 'konsultan'], true)) {
+                $skipped++;
+                continue;
+            }
+
+            $jabatanUtamaId = $this->resolveOrCreateJabatanId($jabatanUtamaName, $jabatanByName, $username, $now);
             if ($jabatanUtamaId === null) {
                 $skipped++;
                 continue;
@@ -553,7 +568,7 @@ class Pegawai extends BaseController
 
             $jabatanPerbendId = null;
             if ($jabatanPerbendName !== '') {
-                $jabatanPerbendId = $perbendByName[$jabatanPerbendName] ?? null;
+                $jabatanPerbendId = $this->resolveOrCreateJabatanId($jabatanPerbendName, $jabatanByName, $username, $now);
                 if ($jabatanPerbendId === null) {
                     $skipped++;
                     continue;
@@ -573,6 +588,7 @@ class Pegawai extends BaseController
             $payload = [
                 'nip' => $nip,
                 'nama' => $nama,
+                'jenis_pegawai' => $jenisPegawai,
                 'jabatan_utama_id' => $jabatanUtamaId,
                 'jabatan_perbendaharaan_id' => $jabatanPerbendId,
                 'eselon' => $this->nullableString($rowData['eselon'] ?? ''),
@@ -648,6 +664,78 @@ class Pegawai extends BaseController
         ];
     }
 
+    private function buildJabatanLookupByName(): array
+    {
+        $rows = (new MstJabatanModel())
+            ->select('id, jabatan')
+            ->findAll();
+
+        $lookup = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            $jabatan = trim((string) ($row['jabatan'] ?? ''));
+            if ($id <= 0 || $jabatan === '') {
+                continue;
+            }
+
+            $lookup[strtolower($jabatan)] = $id;
+        }
+
+        return $lookup;
+    }
+
+    private function resolveOrCreateJabatanId(string $jabatanName, array &$lookup, string $username, string $timestamp): ?int
+    {
+        $jabatanName = trim($jabatanName);
+        if ($jabatanName === '') {
+            return null;
+        }
+
+        $key = strtolower($jabatanName);
+        if (isset($lookup[$key])) {
+            return (int) $lookup[$key];
+        }
+
+        $model = new MstJabatanModel();
+        $existing = $model
+            ->select('id')
+            ->where('LOWER(jabatan)', $key)
+            ->first();
+
+        if (is_array($existing) && (int) ($existing['id'] ?? 0) > 0) {
+            $lookup[$key] = (int) $existing['id'];
+            return (int) $existing['id'];
+        }
+
+        $insertId = $model->insert([
+            'jabatan' => $jabatanName,
+            'jenis_jabatan' => 'Fungsional',
+            'deskripsi_jabatan' => null,
+            'is_active' => 1,
+            'created_by' => $username,
+            'created_date' => $timestamp,
+            'updated_by' => $username,
+            'updated_date' => $timestamp,
+        ]);
+
+        if (is_numeric($insertId) && (int) $insertId > 0) {
+            $lookup[$key] = (int) $insertId;
+            return (int) $insertId;
+        }
+
+        $existing = $model
+            ->select('id')
+            ->where('LOWER(jabatan)', $key)
+            ->first();
+
+        if (is_array($existing) && (int) ($existing['id'] ?? 0) > 0) {
+            $lookup[$key] = (int) $existing['id'];
+            return (int) $existing['id'];
+        }
+
+        return null;
+    }
+
     private function handleFotoUpload(string $fieldName, ?string $oldPath): ?string
     {
         $file = $this->request->getFile($fieldName);
@@ -701,6 +789,7 @@ class Pegawai extends BaseController
             'eselon' => 'eselon',
             'golongan' => 'golongan',
             'masa_kerja' => 'masa_kerja',
+            'jenis_pegawai', 'jenis', 'jenis_kepegawaian' => 'jenis_pegawai',
             'status', 'is_active', 'aktif' => 'status',
             default => $header,
         };

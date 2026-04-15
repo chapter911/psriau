@@ -12,6 +12,7 @@ class MstPegawaiModel extends Model
     protected $allowedFields = [
         'nip',
         'nama',
+        'jenis_pegawai',
         'foto',
         'jabatan_utama_id',
         'jabatan_perbendaharaan_id',
