@@ -72,6 +72,13 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('kontrak/syarat-umum/jabatan', 'Admin\\Kontrak::getJabaranSyaratUmum');
 	$routes->post('kontrak/syarat-umum/get', 'Admin\\Kontrak::getSyaratUmumByPaketId');
 	$routes->post('kontrak/syarat-umum/save', 'Admin\\Kontrak::saveSyaratUmumByJabatan');
+	$routes->get('kontrak/simak', 'Admin\\Kontrak::simak');
+	$routes->post('kontrak/simak/tambah', 'Admin\\Kontrak::createSimak');
+	$routes->post('kontrak/simak/(:num)/ubah', 'Admin\\Kontrak::updateSimak/$1');
+	$routes->post('kontrak/simak/(:num)/verifikasi', 'Admin\\Kontrak::saveSimakVerifikasi/$1');
+	$routes->post('kontrak/simak/(:num)/verifikasi/upload', 'Admin\\Kontrak::uploadSimakVerifikasiDokumen/$1');
+	$routes->get('kontrak/simak/verifikasi-dokumen/(:num)', 'Admin\\Kontrak::viewSimakVerifikasiDokumen/$1');
+	$routes->get('kontrak/simak/(:num)', 'Admin\\Kontrak::detailSimak/$1');
 	$routes->get('master/kop-surat', 'Admin\\KopSurat::index');
 	$routes->match(['get', 'post'], 'master/kop-surat/tambah', 'Admin\\KopSurat::create');
 	$routes->match(['get', 'post'], 'master/kop-surat/(:num)/ubah', 'Admin\\KopSurat::edit/$1');

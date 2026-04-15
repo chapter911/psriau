@@ -177,6 +177,16 @@ if (! function_exists('rupiah')) {
     }
 }
 
+if (! function_exists('angka_ribuan_id')) {
+    /**
+     * Format angka ribuan Indonesia tanpa desimal.
+     */
+    function angka_ribuan_id($nominal): string
+    {
+        return number_format((float) $nominal, 0, ',', '.');
+    }
+}
+
 if (! function_exists('tanggal_lengkap_indonesia')) {
     /**
      * Format tanggal lengkap Indonesia dengan hari.

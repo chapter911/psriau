@@ -24,6 +24,8 @@
     <script>
         window.__appPreloaderStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
     </script>
+    <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/select2/css/select2.min.css'); ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css'); ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/site.css'); ?>">
 </head>
 <body data-preloader-duration="<?= (int) ($appSetting['preloader_duration_ms'] ?? 500); ?>">
@@ -152,8 +154,88 @@
         </div>
     </div>
 </footer>
+<script src="<?= base_url('assets/adminlte/plugins/jquery/jquery.min.js'); ?>"></script>
+<script src="<?= base_url('assets/adminlte/plugins/select2/js/select2.full.min.js'); ?>"></script>
 <script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
 <script>
+    (() => {
+        if (typeof $ === 'undefined' || ! $.fn || ! $.fn.select2) {
+            return;
+        }
+
+        const initSelect2 = (root) => {
+            const $root = root ? $(root) : $(document);
+            const $targets = $root.find('select').add($root.filter('select'));
+
+            const buildPlaceholder = ($select) => {
+                const explicitPlaceholder = ($select.data('placeholder') || '').toString().trim();
+                if (explicitPlaceholder !== '') {
+                    return explicitPlaceholder;
+                }
+
+                const firstOption = $select.find('option').first();
+                if (firstOption.length === 0) {
+                    return '';
+                }
+
+                const firstValue = (firstOption.attr('value') || '').toString().trim();
+                const firstText = (firstOption.text() || '').toString().trim();
+                if (firstValue === '' && firstText !== '') {
+                    return firstText;
+                }
+
+                return '';
+            };
+
+            $targets.each(function () {
+                const $select = $(this);
+
+                if ($select.closest('.swal2-container, .swal2-popup').length > 0 || $select.hasClass('swal2-select')) {
+                    return;
+                }
+
+                if ($select.hasClass('no-select2') || $select.data('select2')) {
+                    return;
+                }
+
+                const options = {
+                    theme: 'bootstrap4',
+                    width: '100%',
+                    minimumResultsForSearch: 0,
+                    closeOnSelect: false,
+                    selectOnClose: false,
+                };
+
+                const placeholder = buildPlaceholder($select);
+                if (placeholder !== '') {
+                    options.placeholder = placeholder;
+                }
+
+                const isRequired = $select.prop('required') === true;
+                const isMultiple = $select.prop('multiple') === true;
+                if (!isRequired && !isMultiple) {
+                    options.allowClear = true;
+                }
+
+                $select.select2(options);
+            });
+        };
+
+        initSelect2(document);
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) {
+                        initSelect2(node);
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    })();
+
     (() => {
         const preloaderShownAt = typeof window.__appPreloaderStart === 'number'
             ? window.__appPreloaderStart

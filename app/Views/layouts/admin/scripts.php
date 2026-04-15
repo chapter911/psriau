@@ -4,6 +4,7 @@
 <script src="<?= base_url('assets/adminlte/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js'); ?>"></script>
 <script src="<?= base_url('assets/adminlte/plugins/datatables-responsive/js/dataTables.responsive.min.js'); ?>"></script>
 <script src="<?= base_url('assets/adminlte/plugins/datatables-responsive/js/responsive.bootstrap4.min.js'); ?>"></script>
+<script src="<?= base_url('assets/adminlte/plugins/select2/js/select2.full.min.js'); ?>"></script>
 <script src="<?= base_url('assets/adminlte/dist/js/adminlte.min.js'); ?>"></script>
 <script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
 <script>
@@ -30,6 +31,97 @@
                 }, 300);
             }, remaining);
         });
+    })();
+
+    (() => {
+        if (typeof $ === 'undefined' || ! $.fn || ! $.fn.select2) {
+            return;
+        }
+
+        const initSelect2 = (root) => {
+            const $root = root ? $(root) : $(document);
+            const $targets = $root.find('select').add($root.filter('select'));
+
+            const buildPlaceholder = ($select) => {
+                const explicitPlaceholder = ($select.data('placeholder') || '').toString().trim();
+                if (explicitPlaceholder !== '') {
+                    return explicitPlaceholder;
+                }
+
+                const firstOption = $select.find('option').first();
+                if (firstOption.length === 0) {
+                    return '';
+                }
+
+                const firstValue = (firstOption.attr('value') || '').toString().trim();
+                const firstText = (firstOption.text() || '').toString().trim();
+                if (firstValue === '' && firstText !== '') {
+                    return firstText;
+                }
+
+                return '';
+            };
+
+            $targets.each(function () {
+                const $select = $(this);
+
+                if ($select.closest('.swal2-container, .swal2-popup').length > 0 || $select.hasClass('swal2-select')) {
+                    return;
+                }
+
+                if ($select.closest('.dataTables_length').length > 0 || ($select.attr('name') || '').endsWith('_length')) {
+                    return;
+                }
+
+                if ($select.hasClass('no-select2') || $select.data('select2')) {
+                    return;
+                }
+
+                const inModal = $select.closest('.modal').length > 0;
+                const options = {
+                    theme: 'bootstrap4',
+                    width: '100%',
+                    minimumResultsForSearch: 0,
+                    closeOnSelect: false,
+                    selectOnClose: false,
+                };
+
+                const placeholder = buildPlaceholder($select);
+                if (placeholder !== '') {
+                    options.placeholder = placeholder;
+                }
+
+                const isRequired = $select.prop('required') === true;
+                const isMultiple = $select.prop('multiple') === true;
+                if (!isRequired && !isMultiple) {
+                    options.allowClear = true;
+                }
+
+                if (inModal) {
+                    options.dropdownParent = $select.closest('.modal');
+                }
+
+                $select.select2(options);
+            });
+        };
+
+        initSelect2(document);
+
+        $(document).on('shown.bs.modal', '.modal', function () {
+            initSelect2(this);
+        });
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) {
+                        initSelect2(node);
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
     })();
 
     (() => {
