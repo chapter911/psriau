@@ -160,6 +160,7 @@ class Pegawai extends BaseController
 
         $row = 9;
         $no = 1;
+        $tempExportPhotos = [];
         foreach ($items as $item) {
             $sheet->setCellValue('A' . $row, $no++);
             $sheet->setCellValue('C' . $row, (string) ($item['nama'] ?? ''));
@@ -178,8 +179,9 @@ class Pegawai extends BaseController
             if ($fotoPath !== '') {
                 $absolutePath = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, ltrim($fotoPath, '/'));
                 if (is_file($absolutePath)) {
+                    $exportPhotoPath = $this->prepareFotoForExcelExport($absolutePath, $tempExportPhotos);
                     $drawing = new Drawing();
-                    $drawing->setPath($absolutePath);
+                    $drawing->setPath($exportPhotoPath ?? $absolutePath);
                     $drawing->setCoordinates('B' . $row);
                     $drawing->setHeight(72);
                     $drawing->setOffsetX(8);
@@ -217,9 +219,104 @@ class Pegawai extends BaseController
         @rename($tmpFile, $xlsxFile);
 
         $writer = new Xlsx($spreadsheet);
-        $writer->save($xlsxFile);
+        try {
+            $writer->save($xlsxFile);
+        } finally {
+            foreach ($tempExportPhotos as $tempPhotoPath) {
+                if (is_string($tempPhotoPath) && $tempPhotoPath !== '' && is_file($tempPhotoPath)) {
+                    @unlink($tempPhotoPath);
+                }
+            }
+        }
 
         return $this->response->download($xlsxFile, null)->setFileName('daftar_pegawai.xlsx');
+    }
+
+    private function prepareFotoForExcelExport(string $sourcePath, array &$tempFiles): ?string
+    {
+        if (! is_file($sourcePath) || ! extension_loaded('gd')) {
+            return null;
+        }
+
+        $imageInfo = @getimagesize($sourcePath);
+        if (! is_array($imageInfo)) {
+            return null;
+        }
+
+        $width = (int) ($imageInfo[0] ?? 0);
+        $height = (int) ($imageInfo[1] ?? 0);
+        $type = (int) ($imageInfo[2] ?? 0);
+        if ($width <= 0 || $height <= 0) {
+            return null;
+        }
+
+        $sourceImage = $this->createGdImageFromFile($sourcePath, $type);
+        if ($sourceImage === false) {
+            return null;
+        }
+
+        $maxWidth = 220;
+        $maxHeight = 220;
+        $ratio = min($maxWidth / $width, $maxHeight / $height, 1);
+        $targetWidth = max(1, (int) floor($width * $ratio));
+        $targetHeight = max(1, (int) floor($height * $ratio));
+
+        $targetImage = imagecreatetruecolor($targetWidth, $targetHeight);
+        if ($targetImage === false) {
+            imagedestroy($sourceImage);
+            return null;
+        }
+
+        $white = imagecolorallocate($targetImage, 255, 255, 255);
+        imagefill($targetImage, 0, 0, $white);
+
+        imagecopyresampled(
+            $targetImage,
+            $sourceImage,
+            0,
+            0,
+            0,
+            0,
+            $targetWidth,
+            $targetHeight,
+            $width,
+            $height
+        );
+
+        imagedestroy($sourceImage);
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'pegawai_export_foto_');
+        if ($tmpFile === false) {
+            imagedestroy($targetImage);
+            return null;
+        }
+
+        $tmpJpg = $tmpFile . '.jpg';
+        @rename($tmpFile, $tmpJpg);
+
+        $saved = imagejpeg($targetImage, $tmpJpg, 60);
+        imagedestroy($targetImage);
+
+        if ($saved !== true) {
+            if (is_file($tmpJpg)) {
+                @unlink($tmpJpg);
+            }
+            return null;
+        }
+
+        $tempFiles[] = $tmpJpg;
+        return $tmpJpg;
+    }
+
+    private function createGdImageFromFile(string $sourcePath, int $type)
+    {
+        return match ($type) {
+            IMAGETYPE_JPEG => @imagecreatefromjpeg($sourcePath),
+            IMAGETYPE_PNG => @imagecreatefrompng($sourcePath),
+            IMAGETYPE_GIF => @imagecreatefromgif($sourcePath),
+            IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($sourcePath) : false,
+            default => false,
+        };
     }
 
     public function create()
