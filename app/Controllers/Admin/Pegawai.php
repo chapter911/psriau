@@ -804,11 +804,11 @@ class Pegawai extends BaseController
     private function resolveMasaKerjaFromNip(string $nip): ?string
     {
         $digits = preg_replace('/\D+/', '', $nip) ?? '';
-        if (strlen($digits) < 8) {
+        if (strlen($digits) < 16) {
             return null;
         }
 
-        $datePart = substr($digits, 0, 8);
+        $datePart = substr($digits, 8, 8);
         $birthDate = \DateTimeImmutable::createFromFormat('Ymd', $datePart);
         if (! $birthDate || $birthDate->format('Ymd') !== $datePart) {
             return null;

@@ -383,13 +383,13 @@
 
         const computeMasaKerjaFromNip = (nip) => {
             const digits = (nip || '').replace(/\D+/g, '');
-            if (digits.length < 8) {
+            if (digits.length < 16) {
                 return '';
             }
 
-            const year = Number(digits.slice(0, 4));
-            const month = Number(digits.slice(4, 6));
-            const day = Number(digits.slice(6, 8));
+            const year = Number(digits.slice(8, 12));
+            const month = Number(digits.slice(12, 14));
+            const day = Number(digits.slice(14, 16));
             if (!year || !month || !day) {
                 return '';
             }
