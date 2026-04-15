@@ -1659,7 +1659,7 @@ class Kontrak extends BaseController
 
     private function getSimakPelaksanaanFisikTemplateItems(): array
     {
-        $filePath = ROOTPATH . 'contoh_simak.xlsx';
+        $filePath = WRITEPATH . 'templates/contoh_simak.xlsx';
         if (! is_file($filePath)) {
             return [];
         }
