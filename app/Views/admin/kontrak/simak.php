@@ -813,6 +813,9 @@
         isActive: false,
         nomorKontrak: '',
         namaPaket: '',
+        statusLengkap: '',
+        statusBelumLengkap: '',
+        statusBelumAda: '',
     };
 
     var escapeHtml = function (value) {
@@ -822,6 +825,16 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    };
+
+    var formatPercent = function (value) {
+        var numberValue = Number(value || 0);
+
+        if (!isFinite(numberValue)) {
+            numberValue = 0;
+        }
+
+        return numberValue.toFixed(2).replace('.', ',') + '%';
     };
 
     if (window.jQuery && window.jQuery.fn && window.jQuery.fn.DataTable) {
@@ -930,11 +943,15 @@
 
     shareModalButtons.forEach(function (button) {
         button.addEventListener('click', function () {
+            var row = this.closest('tr');
             var shareUrl = String(this.getAttribute('data-share-url') || '').trim();
             var deactivateUrl = String(this.getAttribute('data-share-deactivate-url') || '').trim();
             var currentShareUrl = String(this.getAttribute('data-share-public-url') || '').trim();
             var nomorKontrak = String(this.getAttribute('data-nomor-kontrak') || '-').trim();
             var namaPaket = String(this.getAttribute('data-nama-paket') || '-').trim();
+            var statusLengkap = row ? String(row.getAttribute('data-kelengkapan-lengkap') || '0').trim() : '0';
+            var statusBelumLengkap = row ? String(row.getAttribute('data-kelengkapan-belum-lengkap') || '0').trim() : '0';
+            var statusBelumAda = row ? String(row.getAttribute('data-kelengkapan-belum-ada') || '0').trim() : '0';
 
             selectedShareConfig.shareUrl = shareUrl;
             selectedShareConfig.deactivateUrl = deactivateUrl;
@@ -942,6 +959,9 @@
             selectedShareConfig.isActive = currentShareUrl !== '';
             selectedShareConfig.nomorKontrak = nomorKontrak;
             selectedShareConfig.namaPaket = namaPaket;
+            selectedShareConfig.statusLengkap = statusLengkap;
+            selectedShareConfig.statusBelumLengkap = statusBelumLengkap;
+            selectedShareConfig.statusBelumAda = statusBelumAda;
 
             if (shareNomorKontrakEl) {
                 shareNomorKontrakEl.textContent = nomorKontrak !== '' ? nomorKontrak : '-';
@@ -1074,7 +1094,7 @@
 
             var nomorKontrak = selectedShareConfig.nomorKontrak || '-';
             var namaPaket = selectedShareConfig.namaPaket || '-';
-            var messageTemplate = "Mohon untuk melengkapi Kelengkapan Dokumen Administrasi.\n\nNomor Kontrak : " + nomorKontrak + "\nNama Paket : " + namaPaket + "\n\nSesuai :\nBelum Sesuai :\nBelum Ada :\n\nLink Dokumen :\n" + url;
+            var messageTemplate = "Mohon untuk melengkapi Kelengkapan Dokumen Administrasi.\n\nNomor Kontrak : " + nomorKontrak + "\nNama Paket : " + namaPaket + "\n\nSesuai : " + formatPercent(selectedShareConfig.statusLengkap) + "\nBelum Sesuai : " + formatPercent(selectedShareConfig.statusBelumLengkap) + "\nBelum Ada : " + formatPercent(selectedShareConfig.statusBelumAda) + "\n\nLink Dokumen :\n" + url;
 
             var onSuccess = function () {
                 if (typeof Swal !== 'undefined') {
