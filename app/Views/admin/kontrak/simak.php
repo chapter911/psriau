@@ -41,8 +41,7 @@
         <?php if (($can_edit ?? false) === true): ?>
             <div class="float-right">
                 <?php if (($can_import ?? false) === true): ?>
-                    <a href="<?= site_url('admin/kontrak/simak/template'); ?>" class="btn btn-outline-success mr-2">Download Template</a>
-                    <button type="button" class="btn btn-outline-info mr-2" data-toggle="modal" data-target="#modal-import-simak">Import Excel</button>
+                    <button type="button" class="btn btn-success mr-2" data-toggle="modal" data-target="#modal-import-simak">Import Excel</button>
                 <?php endif; ?>
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-simak">Input Data SIMAK</button>
             </div>
@@ -55,6 +54,31 @@
 
         <?php if (session()->getFlashdata('error')): ?>
             <div class="alert alert-danger"><?= esc((string) session()->getFlashdata('error')); ?></div>
+        <?php endif; ?>
+
+        <?php $simakShareLink = (string) (session()->getFlashdata('simak_share_link') ?? ''); ?>
+        <?php if ($simakShareLink !== ''): ?>
+            <div class="alert alert-info">
+                <strong>Link share terbaru:</strong>
+                <a href="<?= esc($simakShareLink); ?>" target="_blank" rel="noopener"><?= esc($simakShareLink); ?></a>
+            </div>
+        <?php endif; ?>
+
+        <?php $simakShareNotice = (string) (session()->getFlashdata('simak_share_notice') ?? ''); ?>
+        <?php if ($simakShareNotice !== ''): ?>
+            <div class="alert alert-warning"><?= esc($simakShareNotice); ?></div>
+        <?php endif; ?>
+
+        <?php $importSimakReport = session()->getFlashdata('import_simak_report'); ?>
+        <?php if (is_array($importSimakReport) && $importSimakReport !== []): ?>
+            <div class="alert alert-warning">
+                <strong>Detail Baris Import:</strong>
+                <ul class="mb-0 mt-2 pl-3">
+                    <?php foreach ($importSimakReport as $reportLine): ?>
+                        <li><?= esc((string) $reportLine); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
         <?php endif; ?>
 
         <?php if (! empty($error ?? '')): ?>
@@ -122,6 +146,7 @@
                         <th class="text-right">Total Kontrak (Rp)</th>
                         <th class="text-center">Kelengkapan Dokumen Administrasi (%)</th>
                         <th class="text-center">Action</th>
+                        <th class="text-center">Share</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -177,6 +202,24 @@
                                 <?php endif; ?>
                                 <a href="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0)); ?>" class="btn btn-success btn-sm">DETAIL</a>
                             </td>
+                            <td class="text-center">
+                                <?php if (($can_share ?? false) === true): ?>
+                                    <button
+                                        type="button"
+                                        class="btn btn-primary btn-sm js-open-share-modal"
+                                        data-toggle="modal"
+                                        data-target="#shareDurationModal"
+                                        data-share-url="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0) . '/share'); ?>"
+                                        data-share-deactivate-url="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0) . '/share/deactivate'); ?>"
+                                        data-share-public-url="<?= esc(trim((string) ($item['share_public_url'] ?? ''))); ?>"
+                                        data-nomor-kontrak="<?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?>"
+                                    >
+                                        <i class="fas fa-share-alt mr-1"></i>
+                                    </button>
+                                <?php else: ?>
+                                    <span class="text-muted">-</span>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -184,6 +227,57 @@
         </div>
     </div>
 </div>
+
+<?php if (($can_share ?? false) === true): ?>
+<div class="modal fade" id="shareDurationModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bagikan SIMAK</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Berapa lama durasi dokumen ini akan dibagikan?</p>
+                <p class="small text-muted mb-3" id="shareSimakNomorKontrak">-</p>
+
+                <div class="alert alert-info py-2 px-3 d-none" id="shareActiveInfo"></div>
+
+                <div class="mb-3 d-none" id="shareCurrentLinkSection">
+                    <label for="shareCurrentLinkInput" class="small text-muted mb-1">Link Share Aktif</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="shareCurrentLinkInput" readonly>
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-outline-primary" id="btnCopyCurrentShareLink">Salin</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="shareDurationSection">
+                    <div class="custom-control custom-radio mb-2">
+                        <input type="radio" id="shareDuration1Week" name="shareDuration" class="custom-control-input" value="1week" checked>
+                        <label class="custom-control-label" for="shareDuration1Week">1 minggu</label>
+                    </div>
+                    <div class="custom-control custom-radio mb-2">
+                        <input type="radio" id="shareDuration30Days" name="shareDuration" class="custom-control-input" value="30days">
+                        <label class="custom-control-label" for="shareDuration30Days">30 hari</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger mr-auto d-none" id="btnDeactivateShareLink">
+                    Nonaktifkan Link
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnGenerateShareLink">
+                    Buat Link Bagikan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php if (($can_edit ?? false) === true): ?>
 <?php
@@ -306,7 +400,13 @@
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <div class="alert alert-info">
-                        Gunakan file template yang sudah disediakan. Field minimum yang wajib ada: ppk_nip, ppk_nama, nama_paket, tahun_anggaran, nomor_kontrak, nilai_kontrak.
+                        Gunakan file template yang sudah disediakan. Field minimum yang wajib ada: ppk_nip, nama_paket, tahun_anggaran, nomor_kontrak, nilai_kontrak. Nama PPK akan diambil otomatis dari master pegawai berdasarkan NIP.
+                    </div>
+
+                    <div class="mb-3">
+                        <a href="<?= site_url('admin/kontrak/simak/template'); ?>" class="btn btn-success btn-sm" target="_blank">
+                            <i class="fas fa-download mr-1"></i> Download Template (XLSX)
+                        </a>
                     </div>
 
                     <div class="form-group">
@@ -684,6 +784,16 @@
 
     var formEdit = document.getElementById('form-edit-simak');
     var editButtons = document.querySelectorAll('.js-open-edit-simak');
+    var shareModalButtons = document.querySelectorAll('.js-open-share-modal');
+    var shareModalEl = document.getElementById('shareDurationModal');
+    var shareNomorKontrakEl = document.getElementById('shareSimakNomorKontrak');
+    var shareActiveInfo = document.getElementById('shareActiveInfo');
+    var shareDurationSection = document.getElementById('shareDurationSection');
+    var shareCurrentLinkSection = document.getElementById('shareCurrentLinkSection');
+    var shareCurrentLinkInput = document.getElementById('shareCurrentLinkInput');
+    var btnCopyCurrentShareLink = document.getElementById('btnCopyCurrentShareLink');
+    var btnGenerateShareLink = document.getElementById('btnGenerateShareLink');
+    var btnDeactivateShareLink = document.getElementById('btnDeactivateShareLink');
     var btnTambahAddOn = document.getElementById('btn-tambah-add-on');
     var filterNomorKontrak = document.getElementById('filter_simak_nomor_kontrak');
     var filterNamaPaket = document.getElementById('filter_simak_nama_paket');
@@ -691,6 +801,26 @@
     var filterPpk = document.getElementById('filter_simak_ppk');
     var filterStatus = document.getElementById('filter_simak_status');
     var btnResetFilter = document.getElementById('btn-reset-filter-simak');
+
+    var csrfTokenName = <?= json_encode(csrf_token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    var csrfTokenValue = <?= json_encode(csrf_hash(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+
+    var selectedShareConfig = {
+        shareUrl: '',
+        deactivateUrl: '',
+        currentShareUrl: '',
+        isActive: false,
+        nomorKontrak: '',
+    };
+
+    var escapeHtml = function (value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
 
     if (window.jQuery && window.jQuery.fn && window.jQuery.fn.DataTable) {
         var tableNode = document.querySelector('.simak-list-table');
@@ -794,6 +924,248 @@
 
     if (btnTambahAddOn) {
         btnTambahAddOn.addEventListener('click', appendAddOnRow);
+    }
+
+    shareModalButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            var shareUrl = String(this.getAttribute('data-share-url') || '').trim();
+            var deactivateUrl = String(this.getAttribute('data-share-deactivate-url') || '').trim();
+            var currentShareUrl = String(this.getAttribute('data-share-public-url') || '').trim();
+            var nomorKontrak = String(this.getAttribute('data-nomor-kontrak') || '-').trim();
+
+            selectedShareConfig.shareUrl = shareUrl;
+            selectedShareConfig.deactivateUrl = deactivateUrl;
+            selectedShareConfig.currentShareUrl = currentShareUrl;
+            selectedShareConfig.isActive = currentShareUrl !== '';
+            selectedShareConfig.nomorKontrak = nomorKontrak;
+
+            if (shareNomorKontrakEl) {
+                shareNomorKontrakEl.textContent = nomorKontrak !== '' ? nomorKontrak : '-';
+            }
+
+            if (shareCurrentLinkSection && shareCurrentLinkInput) {
+                if (currentShareUrl !== '') {
+                    shareCurrentLinkSection.classList.remove('d-none');
+                    shareCurrentLinkInput.value = currentShareUrl;
+                } else {
+                    shareCurrentLinkSection.classList.add('d-none');
+                    shareCurrentLinkInput.value = '';
+                }
+            }
+
+            if (btnDeactivateShareLink) {
+                if (currentShareUrl !== '') {
+                    btnDeactivateShareLink.classList.remove('d-none');
+                } else {
+                    btnDeactivateShareLink.classList.add('d-none');
+                }
+            }
+
+            if (shareActiveInfo) {
+                if (currentShareUrl !== '') {
+                    shareActiveInfo.classList.remove('d-none');
+                    shareActiveInfo.innerHTML = '<strong>Link aktif saat ini:</strong> Sebaiknya bagikan link yang sudah ada agar kontraktor tidak bingung.';
+                } else {
+                    shareActiveInfo.classList.add('d-none');
+                }
+            }
+        });
+    });
+
+    if (btnGenerateShareLink) {
+        btnGenerateShareLink.addEventListener('click', function () {
+            if (!selectedShareConfig.shareUrl) {
+                return;
+            }
+
+            var selectedDurationInput = document.querySelector('input[name="shareDuration"]:checked');
+            var duration = selectedDurationInput ? selectedDurationInput.value : '1week';
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Membuat link...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: function () {
+                        Swal.showLoading();
+                    }
+                });
+            }
+
+            $.ajax({
+                url: selectedShareConfig.shareUrl,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    duration: duration,
+                    [csrfTokenName]: csrfTokenValue,
+                },
+            }).done(function (response) {
+                if (response && response.csrf_hash) {
+                    csrfTokenValue = response.csrf_hash;
+                }
+
+                if (typeof $.fn.modal === 'function') {
+                    $(shareModalEl).modal('hide');
+                }
+
+                var shareUrl = response && response.share_url ? response.share_url : '';
+                
+                if (typeof Swal === 'undefined') {
+                    window.alert('Link share berhasil dibuat:\n\n' + shareUrl);
+                    return;
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: response && response.is_update ? 'Durasi Link Diperbarui' : 'Link Berhasil Dibuat',
+                    html: '<div class="text-left"><small class="text-muted">Bagikan tautan berikut:</small><input id="shareLinkInput" class="form-control mt-2" value="' + escapeHtml(shareUrl) + '" readonly></div>',
+                    showCancelButton: true,
+                    confirmButtonText: 'Salin Link',
+                    cancelButtonText: 'Tutup',
+                    preConfirm: function () {
+                        var input = document.getElementById('shareLinkInput');
+                        if (!input) {
+                            return;
+                        }
+
+                        input.select();
+                        input.setSelectionRange(0, 99999);
+
+                        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                            return navigator.clipboard.writeText(input.value);
+                        }
+
+                        document.execCommand('copy');
+                    }
+                });
+
+                simakTableInstance.ajax.reload(null, false);
+            }).fail(function (xhr) {
+                var message = xhr && xhr.responseJSON && xhr.responseJSON.message
+                    ? xhr.responseJSON.message
+                    : 'Gagal membuat link berbagi.';
+
+                if (typeof Swal === 'undefined') {
+                    window.alert(message);
+                    return;
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: message,
+                });
+            });
+        });
+    }
+
+    if (btnCopyCurrentShareLink) {
+        btnCopyCurrentShareLink.addEventListener('click', function () {
+            var url = shareCurrentLinkInput ? shareCurrentLinkInput.value : '';
+            if (!url) {
+                return;
+            }
+
+            var onSuccess = function () {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Tersalin',
+                        text: 'Link share berhasil disalin.',
+                        timer: 1200,
+                        showConfirmButton: false,
+                    });
+                }
+            };
+
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                navigator.clipboard.writeText(url).then(onSuccess);
+                return;
+            }
+
+            if (shareCurrentLinkInput) {
+                shareCurrentLinkInput.value = url;
+                shareCurrentLinkInput.select();
+                shareCurrentLinkInput.setSelectionRange(0, 99999);
+                document.execCommand('copy');
+                shareCurrentLinkInput.value = url;
+                onSuccess();
+            }
+        });
+    }
+
+    if (btnDeactivateShareLink) {
+        btnDeactivateShareLink.addEventListener('click', function () {
+            if (!selectedShareConfig.deactivateUrl || !selectedShareConfig.isActive) {
+                return;
+            }
+
+            var proceed = function () {
+                $.ajax({
+                    url: selectedShareConfig.deactivateUrl,
+                    method: 'POST',
+                    dataType: 'json',
+                    data: {
+                        [csrfTokenName]: csrfTokenValue,
+                    },
+                }).done(function (response) {
+                    if (response && response.csrf_hash) {
+                        csrfTokenValue = response.csrf_hash;
+                    }
+
+                    if (typeof $.fn.modal === 'function') {
+                        $(shareModalEl).modal('hide');
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response && response.message ? response.message : 'Link berbagi berhasil dinonaktifkan.',
+                        });
+                    }
+
+                    simakTableInstance.ajax.reload(null, false);
+                }).fail(function (xhr) {
+                    var message = xhr && xhr.responseJSON && xhr.responseJSON.message
+                        ? xhr.responseJSON.message
+                        : 'Gagal menonaktifkan link.';
+
+                    if (typeof Swal === 'undefined') {
+                        window.alert(message);
+                        return;
+                    }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: message,
+                    });
+                });
+            };
+
+            if (typeof Swal === 'undefined') {
+                if (window.confirm('Yakin ingin menonaktifkan link berbagi ini?')) {
+                    proceed();
+                }
+                return;
+            }
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'Nonaktifkan Link',
+                text: 'Yakin ingin menonaktifkan link berbagi ini?',
+                showCancelButton: true,
+                confirmButtonText: 'Ya',
+                cancelButtonText: 'Batal',
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    proceed();
+                }
+            });
+        });
     }
 
     document.addEventListener('click', function (event) {

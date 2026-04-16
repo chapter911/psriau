@@ -870,6 +870,7 @@ class Kontrak extends BaseController
         }));
 
         $kelengkapanBySimakId = $this->getSimakAdministrasiKelengkapanBySimakId($simakIds);
+        $shareUrlBySimakId = $this->getSimakSharePublicUrlBySimakId($simakIds);
 
         foreach ($rows as &$row) {
             $simakId = (int) ($row['id'] ?? 0);
@@ -878,6 +879,7 @@ class Kontrak extends BaseController
             $row['kelengkapan_dokumen_lengkap_persen'] = (float) ($summary['lengkap_persen'] ?? 0);
             $row['kelengkapan_dokumen_belum_lengkap_persen'] = (float) ($summary['belum_lengkap_persen'] ?? 0);
             $row['kelengkapan_dokumen_belum_ada_persen'] = (float) ($summary['belum_ada_persen'] ?? 0);
+            $row['share_public_url'] = (string) ($shareUrlBySimakId[$simakId] ?? '');
         }
         unset($row);
 
@@ -888,7 +890,99 @@ class Kontrak extends BaseController
             'pegawaiOptions' => $this->getSimakPegawaiOptions(),
             'can_edit' => $this->canViewKontrak(),
             'can_import' => $this->canManageKontrak(),
+            'can_share' => $this->canManageKontrak(),
         ]);
+    }
+
+    public function createSimakShare(int $id)
+    {
+        if (! $this->canManageKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Anda tidak memiliki akses untuk membuat link share SIMAK.');
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak') || ! $db->tableExists('trn_kontrak_simak_share')) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Tabel share SIMAK belum tersedia. Jalankan migration terbaru.');
+        }
+        $shareHasExpiresCol = $this->tableHasColumn('trn_kontrak_simak_share', 'expires_at');
+
+        $simakBuilder = $db->table('trn_kontrak_simak')->select('id')->where('id', $id);
+        $this->applyNotDeletedWhere($simakBuilder, 'trn_kontrak_simak');
+        $simak = $simakBuilder->get()->getRowArray();
+        if (! is_array($simak)) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Data SIMAK tidak ditemukan.');
+        }
+
+        $duration = strtolower(trim((string) $this->request->getPost('share_duration')));
+        $durationMap = [
+            '1week' => '+1 week',
+            '30days' => '+30 days',
+        ];
+
+        if (! array_key_exists($duration, $durationMap)) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Durasi link share tidak valid. Pilih 1 minggu atau 30 hari.');
+        }
+
+        $expiresAtDate = date('Y-m-d', strtotime($durationMap[$duration]));
+        $expiresAt = $expiresAtDate . ' 23:59:59';
+
+        $token = $this->generateSimakShareToken();
+        if ($token === null) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Gagal membuat token share SIMAK. Silakan coba lagi.');
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $today = date('Y-m-d');
+        $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+
+        $existingSelect = 'id, share_token';
+        if ($shareHasExpiresCol) {
+            $existingSelect .= ', expires_at';
+        }
+
+        $existing = $db->table('trn_kontrak_simak_share')
+            ->select($existingSelect)
+            ->where('simak_id', $id)
+            ->get()
+            ->getRowArray();
+
+        $payload = [
+            'simak_id' => $id,
+            'share_token' => $token,
+            'is_active' => 1,
+            'updated_by' => $actor,
+            'updated_date' => $today,
+            'updated_at' => $now,
+        ];
+
+        if ($shareHasExpiresCol) {
+            $payload['expires_at'] = $expiresAt;
+        }
+
+        if (is_array($existing)) {
+            $ok = $db->table('trn_kontrak_simak_share')->where('id', (int) ($existing['id'] ?? 0))->update($payload);
+        } else {
+            $payload['created_by'] = $actor;
+            $payload['created_date'] = $today;
+            $payload['created_at'] = $now;
+            $ok = $db->table('trn_kontrak_simak_share')->insert($payload);
+        }
+
+        if (! $ok) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Gagal menyimpan link share SIMAK.');
+        }
+
+        $shareUrl = site_url('simak/share/' . $token);
+        $successMessage = 'Link share SIMAK berhasil dibuat. Berlaku sampai ' . $expiresAtDate . '.';
+        $redirect = redirect()->to(site_url('admin/kontrak/simak'))
+            ->with('success', $successMessage)
+            ->with('simak_share_link', $shareUrl);
+
+        if (is_array($existing) && trim((string) ($existing['share_token'] ?? '')) !== '') {
+            $redirect = $redirect->with('simak_share_notice', 'Sebaiknya bagikan link yang sudah ada agar pihak kontraktor tidak bingung. Buat link baru hanya jika memang diperlukan karena link lama akan tidak berlaku.');
+        }
+
+        return $redirect;
     }
 
     public function importSimak()
@@ -946,17 +1040,30 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Header Excel tidak dikenali.');
         }
 
-        $requiredFields = ['ppk_nip', 'ppk_nama', 'nama_paket', 'tahun_anggaran', 'nomor_kontrak', 'nilai_kontrak'];
-        $optionalFields = ['satker', 'penyedia', 'tahapan_pekerjaan', 'tanggal_pemeriksaan'];
-
         $db = db_connect();
+        if (! $db->tableExists('mst_pegawai')) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Master pegawai tidak tersedia. Import SIMAK membutuhkan referensi nama PPK dari NIP.');
+        }
+
         $inserted = 0;
         $updated = 0;
         $skipped = 0;
+        $importReport = [];
+        $maxReportRows = 100;
+        $appendReport = static function (array &$report, int $rowNumber, string $message) use ($maxReportRows): void {
+            if (count($report) >= $maxReportRows) {
+                return;
+            }
 
-        foreach ($rows as $row) {
+            $report[] = 'Baris ' . $rowNumber . ': ' . $message;
+        };
+
+        foreach ($rows as $index => $row) {
+            $excelRow = (int) $index + 2;
+
             if (! is_array($row)) {
                 $skipped++;
+                $appendReport($importReport, $excelRow, 'Format baris tidak valid.');
                 continue;
             }
 
@@ -966,21 +1073,31 @@ class Kontrak extends BaseController
             }
 
             $ppkNip = trim((string) ($rowData['ppk_nip'] ?? ''));
-            $ppkNama = trim((string) ($rowData['ppk_nama'] ?? ''));
             $namaPaket = trim((string) ($rowData['nama_paket'] ?? ''));
             $tahunAnggaran = trim((string) ($rowData['tahun_anggaran'] ?? ''));
             $nomorKontrak = trim((string) ($rowData['nomor_kontrak'] ?? ''));
             $nilaiKontrak = $this->parseMoneyToFloat($rowData['nilai_kontrak'] ?? 0);
 
-            if ($ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $tahunAnggaran === '' || $nomorKontrak === '') {
+            if ($ppkNip === '' || $namaPaket === '' || $tahunAnggaran === '' || $nomorKontrak === '') {
                 $skipped++;
+                $appendReport($importReport, $excelRow, 'Field wajib belum lengkap (ppk_nip, nama_paket, tahun_anggaran, nomor_kontrak).');
                 continue;
             }
 
             if (! preg_match('/^\d{4}\s*-\s*\d{4}$/', $tahunAnggaran)) {
                 $skipped++;
+                $appendReport($importReport, $excelRow, 'Format tahun anggaran tidak valid. Gunakan format YYYY - YYYY.');
                 continue;
             }
+
+            $pegawai = $db->table('mst_pegawai')->select('nip, nama')->where('nip', $ppkNip)->get()->getRowArray();
+            if (! is_array($pegawai) || trim((string) ($pegawai['nama'] ?? '')) === '') {
+                $skipped++;
+                $appendReport($importReport, $excelRow, 'NIP PPK tidak ditemukan pada master pegawai.');
+                continue;
+            }
+
+            $ppkNama = trim((string) $pegawai['nama']);
 
             $payload = [
                 'satker' => trim((string) ($rowData['satker'] ?? '')) ?: 'Perencanaan Prasarana Strategis',
@@ -994,13 +1111,6 @@ class Kontrak extends BaseController
                 'tahapan_pekerjaan' => trim((string) ($rowData['tahapan_pekerjaan'] ?? '')),
                 'tanggal_pemeriksaan' => $this->normalizeDateValue((string) ($rowData['tanggal_pemeriksaan'] ?? '')),
             ];
-
-            if ($db->tableExists('mst_pegawai')) {
-                $pegawai = $db->table('mst_pegawai')->select('nip, nama')->where('nip', $ppkNip)->get()->getRowArray();
-                if (is_array($pegawai) && trim((string) ($pegawai['nama'] ?? '')) !== '') {
-                    $payload['ppk_nama'] = trim((string) $pegawai['nama']);
-                }
-            }
 
             $existingBuilder = $db->table('trn_kontrak_simak')->select('id')->where('nomor_kontrak', $nomorKontrak);
             $this->applyNotDeletedWhere($existingBuilder, 'trn_kontrak_simak');
@@ -1021,6 +1131,7 @@ class Kontrak extends BaseController
                     $updated++;
                 } else {
                     $skipped++;
+                    $appendReport($importReport, $excelRow, 'Gagal update data SIMAK dengan nomor kontrak ' . $nomorKontrak . '.');
                 }
                 continue;
             }
@@ -1039,15 +1150,28 @@ class Kontrak extends BaseController
                 $inserted++;
             } else {
                 $skipped++;
+                $appendReport($importReport, $excelRow, 'Gagal insert data SIMAK dengan nomor kontrak ' . $nomorKontrak . '.');
             }
         }
 
         if ($inserted === 0 && $updated === 0) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Tidak ada data yang diproses. Pastikan kolom minimal: ppk_nip, ppk_nama, nama_paket, tahun_anggaran, nomor_kontrak, nilai_kontrak.');
+            $redirect = redirect()->to(site_url('admin/kontrak/simak'))
+                ->with('error', 'Tidak ada data yang diproses. Pastikan kolom minimal: ppk_nip, nama_paket, tahun_anggaran, nomor_kontrak, nilai_kontrak dan NIP tersedia di master pegawai.');
+
+            if ($importReport !== []) {
+                $redirect = $redirect->with('import_simak_report', $importReport);
+            }
+
+            return $redirect;
         }
 
         $message = 'Import SIMAK selesai. Insert: ' . $inserted . ', Update: ' . $updated . ', Dilewati: ' . $skipped . '.';
-        return redirect()->to(site_url('admin/kontrak/simak'))->with('success', $message);
+        $redirect = redirect()->to(site_url('admin/kontrak/simak'))->with('success', $message);
+        if ($importReport !== []) {
+            $redirect = $redirect->with('import_simak_report', $importReport);
+        }
+
+        return $redirect;
     }
 
     public function exportSimakTemplate()
@@ -1059,7 +1183,6 @@ class Kontrak extends BaseController
         $headers = [
             'satker',
             'ppk_nip',
-            'ppk_nama',
             'nama_paket',
             'tahun_anggaran',
             'penyedia',
@@ -1076,7 +1199,6 @@ class Kontrak extends BaseController
         $sheet->fromArray([
             'Perencanaan Prasarana Strategis',
             '199012212018021001',
-            'Nama PPK',
             'Nama Paket Contoh',
             '2026 - 2027',
             'Penyedia Contoh',
@@ -1086,8 +1208,8 @@ class Kontrak extends BaseController
             '2026-04-15',
         ], null, 'A2');
 
-        $sheet->getStyle('A1:J1')->getFont()->setBold(true);
-        foreach (range('A', 'J') as $column) {
+        $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+        foreach (range('A', 'I') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
@@ -1635,6 +1757,141 @@ class Kontrak extends BaseController
             ->setBody($content === false ? '' : $content);
     }
 
+    public function sharedSimak(string $token): string
+    {
+        $shared = $this->resolveSharedSimak($token);
+        if ($shared === null) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tautan share SIMAK tidak valid.');
+        }
+
+        return view('public/simak_share_upload', [
+            'title' => 'Upload Dokumen SIMAK',
+            'token' => $token,
+            'item' => $shared['item'],
+            'templateItems' => $shared['templateItems'],
+            'verifikasiByRow' => $shared['verifikasiByRow'],
+            'dokumenByRow' => $shared['dokumenByRow'],
+        ]);
+    }
+
+    public function sharedUploadSimakDokumen(string $token)
+    {
+        $shared = $this->resolveSharedSimak($token);
+        if ($shared === null) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tautan share SIMAK tidak valid.');
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_verifikasi') || ! $db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Tabel dokumen verifikasi SIMAK belum tersedia. Jalankan migration terbaru.');
+        }
+
+        $simakId = (int) ($shared['item']['id'] ?? 0);
+        $rowNo = (int) ($this->request->getPost('row_no') ?? 0);
+        if ($simakId <= 0 || $rowNo <= 0) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Baris verifikasi tidak valid.');
+        }
+
+        $templateByRow = [];
+        foreach (($shared['templateItems'] ?? []) as $templateItem) {
+            $templateByRow[(int) ($templateItem['row_no'] ?? 0)] = $templateItem;
+        }
+
+        $targetTemplate = $templateByRow[$rowNo] ?? null;
+        if (! is_array($targetTemplate) || (($targetTemplate['is_leaf'] ?? false) !== true)) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
+        }
+
+        $file = $this->request->getFile('dokumen_file');
+        if (! $file || ! $file->isValid() || $file->hasMoved()) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'File upload tidak valid.');
+        }
+
+        $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
+        $ext = strtolower((string) $file->getClientExtension());
+        if (! in_array($ext, $allowedExt, true)) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
+        }
+
+        $subDir = 'uploads/simak_verifikasi/' . $simakId . '/' . $rowNo;
+        $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
+        if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal membuat direktori upload dokumen.');
+        }
+
+        $storedName = $file->getRandomName();
+        $file->move($absDir, $storedName, true);
+        $relativePath = $subDir . '/' . $storedName;
+
+        $today = date('Y-m-d');
+        $now = date('Y-m-d H:i:s');
+        $uploaderName = trim((string) $this->request->getPost('uploader_name'));
+        $actor = $uploaderName !== '' ? ('kontraktor: ' . $uploaderName) : 'kontraktor';
+
+        $existingVerifikasi = $db->table('trn_kontrak_simak_verifikasi')
+            ->select('verifikasi_ki, keterangan, pic')
+            ->where('simak_id', $simakId)
+            ->where('row_no', $rowNo)
+            ->get()
+            ->getRowArray();
+
+        $verifikasi = is_array($existingVerifikasi) ? strtolower(trim((string) ($existingVerifikasi['verifikasi_ki'] ?? ''))) : '';
+        if (! in_array($verifikasi, ['sesuai', 'tidak_sesuai'], true)) {
+            $verifikasi = null;
+        }
+
+        $keterangan = is_array($existingVerifikasi) ? trim((string) ($existingVerifikasi['keterangan'] ?? '')) : '';
+        $pic = is_array($existingVerifikasi) ? trim((string) ($existingVerifikasi['pic'] ?? '')) : '';
+
+        $verifikasiRow = [
+            'simak_id' => $simakId,
+            'row_no' => $rowNo,
+            'kode' => (string) ($targetTemplate['display_no'] ?? ''),
+            'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
+            'kelengkapan_dokumen' => 'ada',
+            'verifikasi_ki' => $verifikasi,
+            'keterangan' => $keterangan,
+            'pic' => $pic,
+            'updated_by' => $actor,
+            'updated_date' => $today,
+            'updated_at' => $now,
+            'created_by' => $actor,
+            'created_date' => $today,
+            'created_at' => $now,
+        ];
+
+        $dokumenRow = [
+            'simak_id' => $simakId,
+            'row_no' => $rowNo,
+            'kode' => (string) ($targetTemplate['display_no'] ?? ''),
+            'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
+            'kelengkapan_dokumen' => 'ada',
+            'verifikasi_ki' => $verifikasi,
+            'keterangan' => $keterangan,
+            'pic' => $pic,
+            'file_original_name' => (string) $file->getClientName(),
+            'file_stored_name' => $storedName,
+            'file_relative_path' => $relativePath,
+            'file_mime' => (string) ($file->getClientMimeType() ?: ''),
+            'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+            'created_by' => $actor,
+            'created_date' => $today,
+            'created_at' => $now,
+        ];
+
+        $db->transStart();
+        $db->table('trn_kontrak_simak_verifikasi')->where('simak_id', $simakId)->where('row_no', $rowNo)->delete();
+        $db->table('trn_kontrak_simak_verifikasi')->insert($verifikasiRow);
+        $db->table('trn_kontrak_simak_verifikasi_dokumen')->insert($dokumenRow);
+        $db->transComplete();
+
+        if (! $db->transStatus()) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal menyimpan upload dokumen.');
+        }
+
+        return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Dokumen berhasil diupload. Status kelengkapan dokumen diperbarui menjadi Ada.');
+    }
+
     private function sanitizeRichText($value): string
     {
         if (! function_exists('normalize_syarat_umum_html')) {
@@ -1650,6 +1907,192 @@ class Kontrak extends BaseController
         $this->applyNotDeletedWhere($builder, 'trn_kontrak_paket');
         $row = $builder->where('id', $paketId)->get()->getRowArray();
         return is_array($row) ? $row : null;
+    }
+
+    private function getSimakSharePublicUrlBySimakId(array $simakIds): array
+    {
+        $simakIds = array_values(array_unique(array_filter(array_map('intval', $simakIds), static function (int $id): bool {
+            return $id > 0;
+        })));
+
+        if ($simakIds === []) {
+            return [];
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_share')) {
+            return [];
+        }
+        $shareHasExpiresCol = $this->tableHasColumn('trn_kontrak_simak_share', 'expires_at');
+
+        $select = 'simak_id, share_token';
+        if ($shareHasExpiresCol) {
+            $select .= ', expires_at';
+        }
+
+        $rows = $db->table('trn_kontrak_simak_share')
+            ->select($select)
+            ->whereIn('simak_id', $simakIds)
+            ->where('is_active', 1)
+            ->get()
+            ->getResultArray();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $simakId = (int) ($row['simak_id'] ?? 0);
+            $token = trim((string) ($row['share_token'] ?? ''));
+            $expiresAt = trim((string) ($row['expires_at'] ?? ''));
+            if ($simakId <= 0 || $token === '') {
+                continue;
+            }
+
+            if ($shareHasExpiresCol && ! $this->isSimakShareActiveByDate($expiresAt)) {
+                continue;
+            }
+
+            $result[$simakId] = site_url('simak/share/' . $token);
+        }
+
+        return $result;
+    }
+
+    private function generateSimakShareToken(): ?string
+    {
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_share')) {
+            return null;
+        }
+
+        try {
+            for ($i = 0; $i < 5; $i++) {
+                $token = bin2hex(random_bytes(24));
+                $exists = $db->table('trn_kontrak_simak_share')
+                    ->select('id')
+                    ->where('share_token', $token)
+                    ->get()
+                    ->getRowArray();
+
+                if (! is_array($exists)) {
+                    return $token;
+                }
+            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private function resolveSharedSimak(string $token): ?array
+    {
+        $token = trim($token);
+        if ($token === '') {
+            return null;
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_share') || ! $db->tableExists('trn_kontrak_simak')) {
+            return null;
+        }
+        $shareHasExpiresCol = $this->tableHasColumn('trn_kontrak_simak_share', 'expires_at');
+
+        $shareSelect = 'id, simak_id, share_token, is_active';
+        if ($shareHasExpiresCol) {
+            $shareSelect .= ', expires_at';
+        }
+
+        $share = $db->table('trn_kontrak_simak_share')
+            ->select($shareSelect)
+            ->where('share_token', $token)
+            ->where('is_active', 1)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($share)) {
+            return null;
+        }
+
+        $expiresAt = trim((string) ($share['expires_at'] ?? ''));
+        if ($shareHasExpiresCol && ! $this->isSimakShareActiveByDate($expiresAt)) {
+            return null;
+        }
+
+        $shareSimakId = (int) ($share['simak_id'] ?? 0);
+        if ($shareSimakId <= 0) {
+            return null;
+        }
+
+        $simakBuilder = $db->table('trn_kontrak_simak')->select('*')->where('id', $shareSimakId);
+        $this->applyNotDeletedWhere($simakBuilder, 'trn_kontrak_simak');
+        $item = $simakBuilder->get()->getRowArray();
+        if (! is_array($item)) {
+            return null;
+        }
+
+        $templateItems = $this->getSimakPelaksanaanFisikTemplateItems();
+        if ($templateItems === []) {
+            return null;
+        }
+
+        $verifikasiByRow = [];
+        if ($db->tableExists('trn_kontrak_simak_verifikasi')) {
+            $verifikasiRows = $db->table('trn_kontrak_simak_verifikasi')
+                ->select('row_no, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
+                ->where('simak_id', $shareSimakId)
+                ->orderBy('row_no', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            foreach ($verifikasiRows as $row) {
+                $verifikasiByRow[(int) ($row['row_no'] ?? 0)] = $row;
+            }
+        }
+
+        $dokumenByRow = [];
+        if ($db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
+            $dokumenBuilder = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+                ->select('id, row_no, file_original_name, file_mime, file_size, created_at, created_by')
+                ->where('simak_id', $shareSimakId)
+                ->orderBy('row_no', 'ASC')
+                ->orderBy('id', 'DESC');
+            $this->applyNotDeletedWhere($dokumenBuilder, 'trn_kontrak_simak_verifikasi_dokumen');
+            $dokumenRows = $dokumenBuilder->get()->getResultArray();
+
+            foreach ($dokumenRows as $doc) {
+                $rowNo = (int) ($doc['row_no'] ?? 0);
+                if ($rowNo <= 0) {
+                    continue;
+                }
+
+                if (! isset($dokumenByRow[$rowNo])) {
+                    $dokumenByRow[$rowNo] = [];
+                }
+                $dokumenByRow[$rowNo][] = $doc;
+            }
+        }
+
+        return [
+            'share' => $share,
+            'item' => $item,
+            'templateItems' => $templateItems,
+            'verifikasiByRow' => $verifikasiByRow,
+            'dokumenByRow' => $dokumenByRow,
+        ];
+    }
+
+    private function isSimakShareActiveByDate(string $expiresAt): bool
+    {
+        $expiresAt = trim($expiresAt);
+        if ($expiresAt === '') {
+            return false;
+        }
+
+        $expiresTimestamp = strtotime($expiresAt);
+        if ($expiresTimestamp === false) {
+            return false;
+        }
+
+        return $expiresTimestamp >= time();
     }
 
     private function normalizeDateValue(string $date): ?string

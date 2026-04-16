@@ -19,6 +19,8 @@ $routes->addRedirect('berita/(.*)', 'instagram/$1', 301);
 $routes->get('kegiatan-lapangan/share/(:segment)', 'Admin\\Dokumentasi::sharedGallery/$1');
 $routes->get('kegiatan-lapangan/share/(:segment)/download-zip', 'Admin\\Dokumentasi::sharedDownloadZip/$1');
 $routes->get('kegiatan-lapangan/share/(:segment)/download-photo/(:num)', 'Admin\\Dokumentasi::sharedDownloadPhoto/$1/$2');
+$routes->get('simak/share/(:segment)', 'Admin\\Kontrak::sharedSimak/$1');
+$routes->post('simak/share/(:segment)/upload', 'Admin\\Kontrak::sharedUploadSimakDokumen/$1');
 
 $routes->get('masuk', 'Auth::loginForm');
 $routes->post('masuk', 'Auth::login');
@@ -79,6 +81,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('kontrak/simak/(:num)/ubah', 'Admin\\Kontrak::updateSimak/$1');
 	$routes->post('kontrak/simak/(:num)/verifikasi', 'Admin\\Kontrak::saveSimakVerifikasi/$1');
 	$routes->post('kontrak/simak/(:num)/verifikasi/upload', 'Admin\\Kontrak::uploadSimakVerifikasiDokumen/$1');
+	$routes->post('kontrak/simak/(:num)/share', 'Admin\\Kontrak::createSimakShare/$1');
+	$routes->post('kontrak/simak/(:num)/share/deactivate', 'Admin\\Kontrak::deactivateSimakShare/$1');
 	$routes->get('kontrak/simak/verifikasi-dokumen/(:num)', 'Admin\\Kontrak::viewSimakVerifikasiDokumen/$1');
 	$routes->get('kontrak/simak/(:num)', 'Admin\\Kontrak::detailSimak/$1');
 	$routes->get('master/kop-surat', 'Admin\\KopSurat::index');
