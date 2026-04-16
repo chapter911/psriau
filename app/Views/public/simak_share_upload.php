@@ -238,13 +238,15 @@
                                         </td>
                                         <td class="cell-center">
                                             <?php if (is_array($latestDokumen)): ?>
-                                                <div><?= esc((string) ($latestDokumen['file_original_name'] ?? '-')); ?></div>
-                                                <div class="doc-meta text-center">
-                                                    Upload: <?= esc((string) ($latestDokumen['created_at'] ?? '-')); ?>
-                                                    · <?= esc((string) ($latestDokumen['created_by'] ?? '-')); ?>
+                                                <?php $uploadDate = date('d-m-Y', strtotime((string) ($latestDokumen['created_at'] ?? ''))); ?>
+                                                <div>
+                                                    <a href="<?= site_url('simak/share/' . (string) ($token ?? '') . '/download-dokumen/' . (int) ($latestDokumen['id'] ?? 0)); ?>" class="btn btn-success btn-sm">
+                                                        <i class="fas fa-download"></i> Lihat Dokumen
+                                                    </a>
                                                 </div>
+                                                <small class="text-muted" style="display: block; margin-top: 4px;">Di Upload Tanggal<br/><?= esc($uploadDate); ?></small>
                                             <?php else: ?>
-                                                <span class="text-muted">Belum ada file</span>
+                                                <span class="text-muted">-</span>
                                             <?php endif; ?>
                                         </td>
                                         <td class="cell-center">

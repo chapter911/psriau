@@ -21,6 +21,7 @@ $routes->get('kegiatan-lapangan/share/(:segment)/download-zip', 'Admin\\Dokument
 $routes->get('kegiatan-lapangan/share/(:segment)/download-photo/(:num)', 'Admin\\Dokumentasi::sharedDownloadPhoto/$1/$2');
 $routes->get('simak/share/(:segment)', 'Admin\\Kontrak::sharedSimak/$1');
 $routes->post('simak/share/(:segment)/upload', 'Admin\\Kontrak::sharedUploadSimakDokumen/$1');
+$routes->get('simak/share/(:segment)/download-dokumen/(:num)', 'Admin\\Kontrak::sharedDownloadDokumen/$1/$2');
 
 $routes->get('masuk', 'Auth::loginForm');
 $routes->post('masuk', 'Auth::login');

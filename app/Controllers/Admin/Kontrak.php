@@ -1892,6 +1892,45 @@ class Kontrak extends BaseController
         return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Dokumen berhasil diupload. Status kelengkapan dokumen diperbarui menjadi Ada.');
     }
 
+    public function sharedDownloadDokumen(string $token, int $dokumenId)
+    {
+        $shared = $this->resolveSharedSimak($token);
+        if ($shared === null) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tautan share SIMAK tidak valid atau sudah kedaluwarsa.');
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tabel dokumen verifikasi SIMAK belum tersedia.');
+        }
+
+        $dokumen = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->select('*')
+            ->where('id', $dokumenId)
+            ->where('simak_id', (int) ($shared['item']['id'] ?? 0))
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($dokumen)) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Dokumen tidak ditemukan.');
+        }
+
+        $relativePath = (string) ($dokumen['file_relative_path'] ?? '');
+        $originalName = (string) ($dokumen['file_original_name'] ?? 'dokumen');
+
+        if ($relativePath === '') {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Path dokumen tidak valid.');
+        }
+
+        $filePath = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+
+        if (! is_file($filePath)) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('File dokumen tidak ditemukan di server.');
+        }
+
+        return $this->response->download($filePath, null)->setFileName($originalName);
+    }
+
     private function sanitizeRichText($value): string
     {
         if (! function_exists('normalize_syarat_umum_html')) {
