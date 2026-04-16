@@ -119,7 +119,7 @@
                         <select class="form-control form-control-sm" id="filter_simak_status">
                             <option value="">Semua</option>
                             <option value="lengkap">Lengkap</option>
-                            <option value="belum_lengkap">Belum Lengkap</option>
+                            <option value="belum_lengkap">Belum Sesuai</option>
                             <option value="belum_ada">Belum ada</option>
                         </select>
                     </div>
@@ -179,7 +179,7 @@
                                 <td>
                                     <div class="small">
                                         <div><strong>Lengkap:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_lengkap_persen'] ?? 0), 2, ',', '.')); ?>%</div>
-                                        <div><strong>Belum Lengkap:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_lengkap_persen'] ?? 0), 2, ',', '.')); ?>%</div>
+                                        <div><strong>Belum Sesuai:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_lengkap_persen'] ?? 0), 2, ',', '.')); ?>%</div>
                                         <div><strong>Belum ada:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_ada_persen'] ?? 0), 2, ',', '.')); ?>%</div>
                                     </div>
                                 </td>
