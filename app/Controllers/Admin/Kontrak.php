@@ -877,7 +877,8 @@ class Kontrak extends BaseController
             $summary = $kelengkapanBySimakId[$simakId] ?? [];
             $row['kelengkapan_dokumen_administrasi_persen'] = (float) ($summary['lengkap_persen'] ?? 0);
             $row['kelengkapan_dokumen_lengkap_persen'] = (float) ($summary['lengkap_persen'] ?? 0);
-            $row['kelengkapan_dokumen_belum_lengkap_persen'] = (float) ($summary['belum_lengkap_persen'] ?? 0);
+            $row['kelengkapan_dokumen_belum_sesuai_persen'] = (float) ($summary['belum_sesuai_persen'] ?? 0);
+            $row['kelengkapan_dokumen_belum_verifikasi_persen'] = (float) ($summary['belum_verifikasi_persen'] ?? 0);
             $row['kelengkapan_dokumen_belum_ada_persen'] = (float) ($summary['belum_ada_persen'] ?? 0);
             $row['share_public_url'] = (string) ($shareUrlBySimakId[$simakId] ?? '');
         }
@@ -1614,13 +1615,24 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
         }
 
+        $existingVerifikasi = $db->table('trn_kontrak_simak_verifikasi')
+            ->select('kelengkapan_dokumen')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->get()
+            ->getRowArray();
+
         $allowedKelengkapan = ['ada', 'tidak'];
         $allowedVerifikasi = ['sesuai', 'tidak_sesuai'];
 
-        $kel = strtolower(trim((string) $this->request->getPost('kelengkapan_dokumen')));
+        $kelRaw = strtolower(trim((string) $this->request->getPost('kelengkapan_dokumen')));
         $ver = strtolower(trim((string) $this->request->getPost('verifikasi_ki')));
         $ket = trim((string) $this->request->getPost('keterangan'));
         $pic = trim((string) $this->request->getPost('pic'));
+
+        $kel = in_array($kelRaw, $allowedKelengkapan, true)
+            ? $kelRaw
+            : strtolower(trim((string) ($existingVerifikasi['kelengkapan_dokumen'] ?? '')));
 
         if (! in_array($kel, $allowedKelengkapan, true)) {
             $kel = null;
@@ -1802,6 +1814,39 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
         }
 
+        $today = date('Y-m-d');
+        $now = date('Y-m-d H:i:s');
+        $uploaderName = trim((string) $this->request->getPost('uploader_name'));
+        $actor = $uploaderName !== '' ? ('kontraktor: ' . $uploaderName) : 'kontraktor';
+
+        $existingVerifikasi = $db->table('trn_kontrak_simak_verifikasi')
+            ->select('verifikasi_ki, keterangan, pic')
+            ->where('simak_id', $simakId)
+            ->where('row_no', $rowNo)
+            ->get()
+            ->getRowArray();
+
+        $existingVerifikasiStatus = is_array($existingVerifikasi) ? strtolower(trim((string) ($existingVerifikasi['verifikasi_ki'] ?? ''))) : '';
+        if (! in_array($existingVerifikasiStatus, ['sesuai', 'tidak_sesuai'], true)) {
+            $existingVerifikasiStatus = null;
+        }
+
+        $existingDokumen = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->select('id')
+            ->where('simak_id', $simakId)
+            ->where('row_no', $rowNo)
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
+        if ($existingVerifikasiStatus === 'sesuai' && is_array($existingDokumen)) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Dokumen sudah ada dan status verifikasi sudah sesuai. Upload tidak diperlukan.');
+        }
+
+        // Every contractor upload resets verification status to "menunggu verifikasi".
+        $verifikasi = null;
+
         $file = $this->request->getFile('dokumen_file');
         if (! $file || ! $file->isValid() || $file->hasMoved()) {
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'File upload tidak valid.');
@@ -1823,24 +1868,7 @@ class Kontrak extends BaseController
         $file->move($absDir, $storedName, true);
         $relativePath = $subDir . '/' . $storedName;
 
-        $today = date('Y-m-d');
-        $now = date('Y-m-d H:i:s');
-        $uploaderName = trim((string) $this->request->getPost('uploader_name'));
-        $actor = $uploaderName !== '' ? ('kontraktor: ' . $uploaderName) : 'kontraktor';
-
-        $existingVerifikasi = $db->table('trn_kontrak_simak_verifikasi')
-            ->select('verifikasi_ki, keterangan, pic')
-            ->where('simak_id', $simakId)
-            ->where('row_no', $rowNo)
-            ->get()
-            ->getRowArray();
-
-        $verifikasi = is_array($existingVerifikasi) ? strtolower(trim((string) ($existingVerifikasi['verifikasi_ki'] ?? ''))) : '';
-        if (! in_array($verifikasi, ['sesuai', 'tidak_sesuai'], true)) {
-            $verifikasi = null;
-        }
-
-        $keterangan = is_array($existingVerifikasi) ? trim((string) ($existingVerifikasi['keterangan'] ?? '')) : '';
+        $keterangan = 'Menunggu Verifikasi';
         $pic = is_array($existingVerifikasi) ? trim((string) ($existingVerifikasi['pic'] ?? '')) : '';
 
         $verifikasiRow = [
@@ -1889,7 +1917,7 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal menyimpan upload dokumen.');
         }
 
-        return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Dokumen berhasil diupload. Status kelengkapan dokumen diperbarui menjadi Ada.');
+        return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Dokumen berhasil diupload. Status kelengkapan dokumen diperbarui menjadi Ada dan Verifikasi Dit. KI menjadi Menunggu Verifikasi.');
     }
 
     public function sharedDownloadDokumen(string $token, int $dokumenId)
@@ -2320,8 +2348,10 @@ class Kontrak extends BaseController
 
             if ($kelengkapan === 'ada' && $verifikasi === 'sesuai') {
                 $statusBySimak[$simakId][$rowNo] = 'lengkap';
+            } elseif ($kelengkapan === 'ada' && $verifikasi === 'tidak_sesuai') {
+                $statusBySimak[$simakId][$rowNo] = 'belum_sesuai';
             } elseif ($kelengkapan === 'ada') {
-                $statusBySimak[$simakId][$rowNo] = 'belum_lengkap';
+                $statusBySimak[$simakId][$rowNo] = 'belum_verifikasi';
             } else {
                 $statusBySimak[$simakId][$rowNo] = 'belum_ada';
             }
@@ -2329,15 +2359,18 @@ class Kontrak extends BaseController
 
         foreach ($simakIds as $simakId) {
             $lengkapCount = 0;
-            $belumLengkapCount = 0;
+            $belumSesuaiCount = 0;
+            $belumVerifikasiCount = 0;
             $belumAdaCount = 0;
 
             foreach ($leafRows as $rowNo) {
                 $status = $statusBySimak[$simakId][$rowNo] ?? 'belum_ada';
                 if ($status === 'lengkap') {
                     $lengkapCount++;
-                } elseif ($status === 'belum_lengkap') {
-                    $belumLengkapCount++;
+                } elseif ($status === 'belum_sesuai') {
+                    $belumSesuaiCount++;
+                } elseif ($status === 'belum_verifikasi') {
+                    $belumVerifikasiCount++;
                 } else {
                     $belumAdaCount++;
                 }
@@ -2345,7 +2378,8 @@ class Kontrak extends BaseController
 
             $result[$simakId] = [
                 'lengkap_persen' => round(($lengkapCount / $totalLeafRows) * 100, 2),
-                'belum_lengkap_persen' => round(($belumLengkapCount / $totalLeafRows) * 100, 2),
+                'belum_sesuai_persen' => round(($belumSesuaiCount / $totalLeafRows) * 100, 2),
+                'belum_verifikasi_persen' => round(($belumVerifikasiCount / $totalLeafRows) * 100, 2),
                 'belum_ada_persen' => round(($belumAdaCount / $totalLeafRows) * 100, 2),
             ];
         }

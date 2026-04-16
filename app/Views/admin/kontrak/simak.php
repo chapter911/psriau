@@ -119,7 +119,8 @@
                         <select class="form-control form-control-sm" id="filter_simak_status">
                             <option value="">Semua</option>
                             <option value="lengkap">Lengkap</option>
-                            <option value="belum_lengkap">Belum Sesuai</option>
+                            <option value="belum_sesuai">Belum Sesuai</option>
+                            <option value="belum_verifikasi">Menunggu Verifikasi</option>
                             <option value="belum_ada">Belum ada</option>
                         </select>
                     </div>
@@ -145,25 +146,31 @@
                         <th class="text-right">Nilai Add On (Rp)</th>
                         <th class="text-right">Total Kontrak (Rp)</th>
                         <th class="text-center">Kelengkapan Dokumen Administrasi (%)</th>
-                        <th class="text-center">Action</th>
                         <th class="text-center">Share</th>
+                        <th class="text-center">Verifikasi</th>
+                        <th class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php $i = 1; foreach (($data ?? []) as $item): ?>
                         <?php
                             $statusLengkap = (float) ($item['kelengkapan_dokumen_lengkap_persen'] ?? 0);
-                            $statusBelumLengkap = (float) ($item['kelengkapan_dokumen_belum_lengkap_persen'] ?? 0);
+                            $statusBelumSesuai = (float) ($item['kelengkapan_dokumen_belum_sesuai_persen'] ?? 0);
+                            $statusBelumVerifikasi = (float) ($item['kelengkapan_dokumen_belum_verifikasi_persen'] ?? 0);
                             $statusBelumAda = (float) ($item['kelengkapan_dokumen_belum_ada_persen'] ?? 0);
-                            $statusKelengkapan = 'belum_lengkap';
+                            $statusKelengkapan = 'belum_ada';
 
                             if ($statusLengkap >= 100) {
                                 $statusKelengkapan = 'lengkap';
+                            } elseif ($statusBelumSesuai > 0) {
+                                $statusKelengkapan = 'belum_sesuai';
+                            } elseif ($statusBelumVerifikasi > 0) {
+                                $statusKelengkapan = 'belum_verifikasi';
                             } elseif ($statusBelumAda >= 100) {
                                 $statusKelengkapan = 'belum_ada';
                             }
                         ?>
-                        <tr data-kelengkapan-status="<?= esc($statusKelengkapan); ?>" data-kelengkapan-lengkap="<?= esc((string) $statusLengkap); ?>" data-kelengkapan-belum-lengkap="<?= esc((string) $statusBelumLengkap); ?>" data-kelengkapan-belum-ada="<?= esc((string) $statusBelumAda); ?>">
+                        <tr data-kelengkapan-status="<?= esc($statusKelengkapan); ?>" data-kelengkapan-lengkap="<?= esc((string) $statusLengkap); ?>" data-kelengkapan-belum-sesuai="<?= esc((string) $statusBelumSesuai); ?>" data-kelengkapan-belum-verifikasi="<?= esc((string) $statusBelumVerifikasi); ?>" data-kelengkapan-belum-ada="<?= esc((string) $statusBelumAda); ?>">
                             <td class="text-center"><?= esc((string) $i++); ?></td>
                             <td><?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?></td>
                             <td><?= esc((string) ($item['nama_paket'] ?? '-')); ?></td>
@@ -179,29 +186,11 @@
                                 <td>
                                     <div class="small">
                                         <div><strong>Lengkap:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_lengkap_persen'] ?? 0), 2, ',', '.')); ?>%</div>
-                                        <div><strong>Belum Sesuai:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_lengkap_persen'] ?? 0), 2, ',', '.')); ?>%</div>
+                                        <div><strong>Belum Sesuai:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_sesuai_persen'] ?? 0), 2, ',', '.')); ?>%</div>
+                                        <div><strong>Menunggu Verifikasi:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_verifikasi_persen'] ?? 0), 2, ',', '.')); ?>%</div>
                                         <div><strong>Belum ada:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_ada_persen'] ?? 0), 2, ',', '.')); ?>%</div>
                                     </div>
                                 </td>
-                            <td class="text-center">
-                                <?php if (($can_edit ?? false) === true): ?>
-                                    <button
-                                        type="button"
-                                        class="btn btn-warning btn-sm js-open-edit-simak"
-                                        data-id="<?= esc((string) ($item['id'] ?? 0)); ?>"
-                                        data-satker="<?= esc((string) ($item['satker'] ?? 'Perencanaan Prasarana Strategis')); ?>"
-                                        data-ppk-nip="<?= esc((string) ($item['ppk_nip'] ?? '')); ?>"
-                                        data-nama-paket="<?= esc((string) ($item['nama_paket'] ?? '')); ?>"
-                                        data-tahun-anggaran="<?= esc((string) ($item['tahun_anggaran'] ?? '')); ?>"
-                                        data-penyedia="<?= esc((string) ($item['penyedia'] ?? '')); ?>"
-                                        data-nomor-kontrak="<?= esc((string) ($item['nomor_kontrak'] ?? '')); ?>"
-                                        data-nilai-kontrak="<?= esc((string) ($item['nilai_kontrak'] ?? 0)); ?>"
-                                        data-tahapan-pekerjaan="<?= esc((string) ($item['tahapan_pekerjaan'] ?? '')); ?>"
-                                        data-tanggal-pemeriksaan="<?= esc((string) ($item['tanggal_pemeriksaan'] ?? '')); ?>"
-                                    >EDIT</button>
-                                <?php endif; ?>
-                                <a href="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0)); ?>" class="btn btn-success btn-sm">DETAIL</a>
-                            </td>
                             <td class="text-center">
                                 <?php if (($can_share ?? false) === true): ?>
                                     <button
@@ -219,6 +208,27 @@
                                     </button>
                                 <?php else: ?>
                                     <span class="text-muted">-</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-center">
+                                <a href="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0)); ?>" class="btn btn-success btn-sm">VERIFIKASI</a>
+                            </td>
+                            <td class="text-center">
+                                <?php if (($can_edit ?? false) === true): ?>
+                                    <button
+                                        type="button"
+                                        class="btn btn-warning btn-sm js-open-edit-simak"
+                                        data-id="<?= esc((string) ($item['id'] ?? 0)); ?>"
+                                        data-satker="<?= esc((string) ($item['satker'] ?? 'Perencanaan Prasarana Strategis')); ?>"
+                                        data-ppk-nip="<?= esc((string) ($item['ppk_nip'] ?? '')); ?>"
+                                        data-nama-paket="<?= esc((string) ($item['nama_paket'] ?? '')); ?>"
+                                        data-tahun-anggaran="<?= esc((string) ($item['tahun_anggaran'] ?? '')); ?>"
+                                        data-penyedia="<?= esc((string) ($item['penyedia'] ?? '')); ?>"
+                                        data-nomor-kontrak="<?= esc((string) ($item['nomor_kontrak'] ?? '')); ?>"
+                                        data-nilai-kontrak="<?= esc((string) ($item['nilai_kontrak'] ?? 0)); ?>"
+                                        data-tahapan-pekerjaan="<?= esc((string) ($item['tahapan_pekerjaan'] ?? '')); ?>"
+                                        data-tanggal-pemeriksaan="<?= esc((string) ($item['tanggal_pemeriksaan'] ?? '')); ?>"
+                                    >EDIT</button>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -814,7 +824,8 @@
         nomorKontrak: '',
         namaPaket: '',
         statusLengkap: '',
-        statusBelumLengkap: '',
+        statusBelumSesuai: '',
+        statusBelumVerifikasi: '',
         statusBelumAda: '',
     };
 
@@ -950,7 +961,8 @@
             var nomorKontrak = String(this.getAttribute('data-nomor-kontrak') || '-').trim();
             var namaPaket = String(this.getAttribute('data-nama-paket') || '-').trim();
             var statusLengkap = row ? String(row.getAttribute('data-kelengkapan-lengkap') || '0').trim() : '0';
-            var statusBelumLengkap = row ? String(row.getAttribute('data-kelengkapan-belum-lengkap') || '0').trim() : '0';
+            var statusBelumSesuai = row ? String(row.getAttribute('data-kelengkapan-belum-sesuai') || '0').trim() : '0';
+            var statusBelumVerifikasi = row ? String(row.getAttribute('data-kelengkapan-belum-verifikasi') || '0').trim() : '0';
             var statusBelumAda = row ? String(row.getAttribute('data-kelengkapan-belum-ada') || '0').trim() : '0';
 
             selectedShareConfig.shareUrl = shareUrl;
@@ -960,7 +972,8 @@
             selectedShareConfig.nomorKontrak = nomorKontrak;
             selectedShareConfig.namaPaket = namaPaket;
             selectedShareConfig.statusLengkap = statusLengkap;
-            selectedShareConfig.statusBelumLengkap = statusBelumLengkap;
+            selectedShareConfig.statusBelumSesuai = statusBelumSesuai;
+            selectedShareConfig.statusBelumVerifikasi = statusBelumVerifikasi;
             selectedShareConfig.statusBelumAda = statusBelumAda;
 
             if (shareNomorKontrakEl) {
@@ -1094,7 +1107,7 @@
 
             var nomorKontrak = selectedShareConfig.nomorKontrak || '-';
             var namaPaket = selectedShareConfig.namaPaket || '-';
-            var messageTemplate = "Mohon untuk melengkapi Kelengkapan Dokumen Administrasi.\n\nNomor Kontrak : " + nomorKontrak + "\nNama Paket : " + namaPaket + "\n\nSesuai : " + formatPercent(selectedShareConfig.statusLengkap) + "\nBelum Sesuai : " + formatPercent(selectedShareConfig.statusBelumLengkap) + "\nBelum Ada : " + formatPercent(selectedShareConfig.statusBelumAda) + "\n\nLink Dokumen :\n" + url;
+            var messageTemplate = "Mohon untuk melengkapi Kelengkapan Dokumen Administrasi.\n\nNomor Kontrak : " + nomorKontrak + "\nNama Paket : " + namaPaket + "\n\nLengkap : " + formatPercent(selectedShareConfig.statusLengkap) + "\nBelum Sesuai : " + formatPercent(selectedShareConfig.statusBelumSesuai) + "\nMenunggu Verifikasi : " + formatPercent(selectedShareConfig.statusBelumVerifikasi) + "\nBelum Ada : " + formatPercent(selectedShareConfig.statusBelumAda) + "\n\nLink Dokumen :\n" + url;
 
             var onSuccess = function () {
                 if (typeof Swal !== 'undefined') {

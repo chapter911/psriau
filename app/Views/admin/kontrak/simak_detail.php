@@ -225,7 +225,7 @@
                                                         data-verifikasi="<?= esc($verifikasi); ?>"
                                                         data-keterangan="<?= esc($keterangan); ?>"
                                                         data-pic="<?= esc($pic); ?>"
-                                                    >Update</button>
+                                                    >Verifikasi</button>
                                                 </td>
                                             <?php else: ?>
                                                 <td colspan="7"></td>
@@ -246,12 +246,12 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Upload Dokumen Verifikasi</h5>
+                <h5 class="modal-title">Hasil Verifikasi</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form method="post" action="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0) . '/verifikasi/upload'); ?>" enctype="multipart/form-data">
+            <form method="post" action="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0) . '/verifikasi/upload'); ?>" enctype="multipart/form-data" id="form-upload-verifikasi" novalidate>
                 <?= csrf_field(); ?>
                 <input type="hidden" name="row_no" id="upload_row_no" value="">
                 <div class="modal-body">
@@ -261,43 +261,33 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="upload_kelengkapan">Kelengkapan Dokumen</label>
-                            <select class="form-control" id="upload_kelengkapan" name="kelengkapan_dokumen">
-                                <option value="">-- Pilih --</option>
-                                <option value="ada">Ada</option>
-                                <option value="tidak">Tidak</option>
-                            </select>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label for="upload_verifikasi">Verifikasi Dit. KI</label>
-                            <select class="form-control" id="upload_verifikasi" name="verifikasi_ki">
+                        <div class="form-group col-md-12">
+                            <label for="upload_verifikasi">Verifikasi Dit. KI <span class="text-danger">*</span></label>
+                            <select class="form-control select2-modal" id="upload_verifikasi" name="verifikasi_ki" required>
                                 <option value="">-- Pilih --</option>
                                 <option value="sesuai">Sesuai</option>
                                 <option value="tidak_sesuai">Tidak Sesuai</option>
                             </select>
+                            <div class="invalid-feedback d-block" id="verifikasi_error" style="display: none; color: #dc3545;">Verifikasi Dit. KI wajib dipilih</div>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="upload_keterangan">Keterangan</label>
+                        <label for="upload_keterangan">Keterangan <span class="text-danger" id="keterangan_required_indicator" style="display: none;">*</span></label>
                         <textarea class="form-control" id="upload_keterangan" name="keterangan" rows="3" maxlength="500"></textarea>
+                        <div class="invalid-feedback d-block" id="keterangan_error" style="display: none; color: #dc3545;">Keterangan wajib diisi</div>
                     </div>
 
                     <div class="form-group">
                         <label for="upload_pic">PIC</label>
-                        <textarea class="form-control" id="upload_pic" name="pic" rows="2" maxlength="255"></textarea>
+                        <input type="text" class="form-control" id="upload_pic" name="pic" readonly>
                     </div>
 
-                    <div class="form-group mb-0">
-                        <label for="dokumen_file">File Dokumen</label>
-                        <input type="file" class="form-control-file" id="dokumen_file" name="dokumen_file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">
-                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX. Kosongkan jika hanya update isian tanpa upload file baru.</small>
-                    </div>
+
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan Update</button>
+                    <button type="submit" class="btn btn-primary">Verifikasi</button>
                 </div>
             </form>
         </div>
@@ -357,13 +347,18 @@
     var rowNoInput = document.getElementById('upload_row_no');
     var rowLabelEl = document.getElementById('upload_row_label');
     var rowUraianEl = document.getElementById('upload_row_uraian');
-    var kelengkapanEl = document.getElementById('upload_kelengkapan');
     var verifikasiEl = document.getElementById('upload_verifikasi');
     var keteranganEl = document.getElementById('upload_keterangan');
     var picEl = document.getElementById('upload_pic');
+    var formEl = document.getElementById('form-upload-verifikasi');
     var historyRowLabelEl = document.getElementById('history_row_label');
     var historyRowUraianEl = document.getElementById('history_row_uraian');
     var historyTbodyEl = document.getElementById('history_dokumen_tbody');
+    var keteranganRequiredIndicator = document.getElementById('keterangan_required_indicator');
+    var keteranganErrorEl = document.getElementById('keterangan_error');
+    var verifikasiErrorEl = document.getElementById('verifikasi_error');
+
+    var currentUsername = '<?= esc((string) session()->get('username')); ?>';
 
     var formatFileSize = function (bytes) {
         var size = Number(bytes || 0);
@@ -411,6 +406,40 @@
         historyTbodyEl.innerHTML = html;
     };
 
+    var updateVerifikasiLogic = function () {
+        if (!verifikasiEl || !keteranganEl) return;
+        
+        var selectedValue = verifikasiEl.value;
+        
+        // Always clear errors first
+        if (keteranganErrorEl) {
+            keteranganErrorEl.style.display = 'none';
+        }
+        if (verifikasiErrorEl) {
+            verifikasiErrorEl.style.display = 'none';
+        }
+        
+        if (selectedValue === 'sesuai') {
+            keteranganEl.value = 'Verifikasi Sesuai';
+            keteranganEl.removeAttribute('required');
+            if (keteranganRequiredIndicator) {
+                keteranganRequiredIndicator.style.display = 'none';
+            }
+        } else if (selectedValue === 'tidak_sesuai') {
+            keteranganEl.value = '';
+            keteranganEl.setAttribute('required', 'required');
+            if (keteranganRequiredIndicator) {
+                keteranganRequiredIndicator.style.display = 'inline';
+            }
+        } else {
+            keteranganEl.value = '';
+            keteranganEl.removeAttribute('required');
+            if (keteranganRequiredIndicator) {
+                keteranganRequiredIndicator.style.display = 'none';
+            }
+        }
+    };
+
     buttons.forEach(function (btn) {
         btn.addEventListener('click', function () {
             if (rowNoInput) {
@@ -422,24 +451,227 @@
             if (rowUraianEl) {
                 rowUraianEl.textContent = this.getAttribute('data-uraian') || '-';
             }
-            if (kelengkapanEl) {
-                kelengkapanEl.value = this.getAttribute('data-kelengkapan') || '';
-            }
             if (verifikasiEl) {
                 verifikasiEl.value = this.getAttribute('data-verifikasi') || '';
+                if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                    try {
+                        window.jQuery(verifikasiEl).select2('close');
+                        window.jQuery(verifikasiEl).trigger('change');
+                    } catch (e) {}
+                }
             }
             if (keteranganEl) {
                 keteranganEl.value = this.getAttribute('data-keterangan') || '';
             }
             if (picEl) {
-                picEl.value = this.getAttribute('data-pic') || '';
+                picEl.value = currentUsername;
             }
+
+            updateVerifikasiLogic();
 
             if (window.jQuery && window.jQuery.fn && typeof window.jQuery.fn.modal === 'function') {
                 window.jQuery('#modal-upload-verifikasi').modal('show');
             }
         });
     });
+
+    if (verifikasiEl) {
+        verifikasiEl.addEventListener('change', function () {
+            updateVerifikasiLogic();
+            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                try {
+                    window.jQuery(this).select2('close');
+                } catch (e) {}
+            }
+        });
+        
+        // Handle select2 change event if select2 is initialized
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+            try {
+                window.jQuery(verifikasiEl).on('select2:select', function () {
+                    updateVerifikasiLogic();
+                    window.jQuery(this).select2('close');
+                });
+            } catch (e) {}
+        }
+    }
+
+    if (formEl) {
+        var isForcedSubmit = false;
+
+        var showLoadingAndSubmit = function () {
+            isForcedSubmit = true;
+
+            if (window.Swal) {
+                window.Swal.fire({
+                    title: 'Menyimpan...',
+                    text: 'Mohon tunggu, data sedang disimpan',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: function () {
+                        window.Swal.showLoading();
+                    }
+                });
+            }
+
+            setTimeout(function () {
+                formEl.submit();
+            }, 50);
+        };
+
+        formEl.addEventListener('submit', function (e) {
+            var verifikasiValue = verifikasiEl ? verifikasiEl.value : '';
+            var keteranganValue = keteranganEl ? keteranganEl.value.trim() : '';
+
+            if (isForcedSubmit) {
+                return;
+            }
+
+            if (!verifikasiValue) {
+                if (verifikasiErrorEl) {
+                    verifikasiErrorEl.style.display = 'none';
+                }
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (window.Swal) {
+                    window.Swal.fire({
+                        title: 'Peringatan',
+                        text: 'Wajib pilih verifikasi.',
+                        icon: 'warning',
+                        confirmButtonText: 'OK'
+                    }).then(function () {
+                        if (verifikasiEl) {
+                            verifikasiEl.focus();
+                        }
+                    });
+                } else {
+                    alert('Wajib pilih verifikasi.');
+                    if (verifikasiEl) {
+                        verifikasiEl.focus();
+                    }
+                }
+
+                return;
+            } else {
+                if (verifikasiErrorEl) {
+                    verifikasiErrorEl.style.display = 'none';
+                }
+            }
+
+            if (verifikasiValue === 'tidak_sesuai' && !keteranganValue) {
+                if (keteranganErrorEl) {
+                    keteranganErrorEl.style.display = 'none';
+                }
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (window.Swal) {
+                    window.Swal.fire({
+                        title: 'Peringatan',
+                        text: 'Wajib isi keterangan.',
+                        icon: 'warning',
+                        confirmButtonText: 'OK'
+                    }).then(function () {
+                        if (keteranganEl) {
+                            keteranganEl.focus();
+                        }
+                    });
+                } else {
+                    alert('Wajib isi keterangan.');
+                    if (keteranganEl) {
+                        keteranganEl.focus();
+                    }
+                }
+
+                return;
+            } else {
+                if (keteranganErrorEl) {
+                    keteranganErrorEl.style.display = 'none';
+                }
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (verifikasiValue === 'sesuai') {
+                if (window.Swal) {
+                    window.Swal.fire({
+                        title: 'Konfirmasi Verifikasi',
+                        text: 'Pastikan data sudah benar. Lanjutkan verifikasi sesuai?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Lanjutkan',
+                        cancelButtonText: 'Batal',
+                    }).then(function (result) {
+                        if (result.isConfirmed) {
+                            showLoadingAndSubmit();
+                        }
+                    });
+                } else {
+                    var okSesuai = window.confirm('Pastikan data sudah benar. Lanjutkan verifikasi sesuai?');
+                    if (okSesuai) {
+                        showLoadingAndSubmit();
+                    }
+                }
+                return;
+            }
+
+            if (verifikasiValue === 'tidak_sesuai') {
+                if (window.Swal) {
+                    window.Swal.fire({
+                        title: 'Konfirmasi Verifikasi',
+                        text: 'Lanjutkan simpan verifikasi tidak sesuai?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Lanjutkan',
+                        cancelButtonText: 'Batal',
+                    }).then(function (result) {
+                        if (result.isConfirmed) {
+                            showLoadingAndSubmit();
+                        }
+                    });
+                } else {
+                    var okTidakSesuai = window.confirm('Lanjutkan simpan verifikasi tidak sesuai?');
+                    if (okTidakSesuai) {
+                        showLoadingAndSubmit();
+                    }
+                }
+                return;
+            }
+        });
+    }
+
+    // Close select2 when modal is hidden and shown
+    if (window.jQuery && window.jQuery.fn && typeof window.jQuery.fn.modal === 'function') {
+        try {
+            var modalEl = window.jQuery('#modal-upload-verifikasi');
+            
+            modalEl.on('show.bs.modal', function () {
+                // Reset form when modal is shown
+                if (formEl) {
+                    isForcedSubmit = false;
+                    if (keteranganErrorEl) {
+                        keteranganErrorEl.style.display = 'none';
+                    }
+                    if (verifikasiErrorEl) {
+                        verifikasiErrorEl.style.display = 'none';
+                    }
+                }
+            });
+            
+            modalEl.on('hide.bs.modal', function () {
+                if (verifikasiEl && window.jQuery.fn.select2) {
+                    try {
+                        window.jQuery(verifikasiEl).select2('close');
+                    } catch (e) {}
+                }
+            });
+        } catch (e) {}
+    }
 
     historyButtons.forEach(function (btn) {
         btn.addEventListener('click', function () {

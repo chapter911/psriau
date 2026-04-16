@@ -40,6 +40,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= esc((string) ($title ?? 'Upload Dokumen SIMAK')); ?></title>
+    <?php if (! empty($globalSetting['logo_url'] ?? '')): ?>
+        <link rel="icon" type="image/png" href="<?= esc($globalSetting['logo_url']); ?>">
+        <link rel="apple-touch-icon" href="<?= esc($globalSetting['logo_url']); ?>">
+    <?php endif; ?>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <style>
         body {
@@ -132,15 +136,60 @@
             max-height: 72vh;
             overflow: auto;
         }
+
+        .share-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .share-brand-logo {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            border-radius: 8px;
+            background: #fff;
+            border: 1px solid #d8dee4;
+            padding: 5px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+        }
+
+        .share-brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .share-brand-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2a37;
+            margin: 0;
+        }
+
+        .share-brand-sub {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
 <div class="share-wrapper">
+    <div class="share-brand">
+        <?php if (! empty($globalSetting['logo_url'] ?? '')): ?>
+            <img src="<?= esc($globalSetting['logo_url']); ?>" alt="Logo" class="share-brand-logo">
+        <?php endif; ?>
+        <div class="share-brand-text">
+            <p class="share-brand-name"><?= esc((string) ($globalSetting['official_name'] ?? 'Satker PPS Kementerian PU')); ?></p>
+            <p class="share-brand-sub">Upload Dokumen SIMAK</p>
+        </div>
+    </div>
+
     <div class="share-card p-3 p-md-4 mb-3">
-        <h4 class="mb-1">Upload Dokumen SIMAK</h4>
+        <h5 class="mb-1"><?= esc((string) ($item['nama_paket'] ?? '-')); ?></h5>
         <div class="text-muted mb-0">
-            <?= esc((string) ($item['nama_paket'] ?? '-')); ?>
-            · Nomor Kontrak: <?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?>
+            Nomor Kontrak: <?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?>
             · Tahun Anggaran: <?= esc((string) ($item['tahun_anggaran'] ?? '-')); ?>
         </div>
     </div>
@@ -210,6 +259,7 @@
                                     $isBelumSesuai = $verifikasi === 'tidak_sesuai';
                                     $dokumenRows = $dokumenByRow[$rowNo] ?? [];
                                     $latestDokumen = $dokumenRows[0] ?? null;
+                                    $isLockedUpload = $verifikasi === 'sesuai' && is_array($latestDokumen);
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
                                     <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? $displayNo . '.' : '-'); ?></td>
@@ -250,15 +300,20 @@
                                             <?php endif; ?>
                                         </td>
                                         <td class="cell-center">
-                                            <button
-                                                type="button"
-                                                class="btn btn-primary btn-sm js-open-upload-modal"
-                                                data-toggle="modal"
-                                                data-target="#modal-upload-share-simak"
-                                                data-row-no="<?= esc((string) $rowNo); ?>"
-                                                data-row-label="<?= esc($displayNo !== '' ? $displayNo . '.' : '-'); ?>"
-                                                data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
-                                            >Upload</button>
+                                            <?php if ($isLockedUpload): ?>
+                                                <span class="badge badge-success">Sudah Sesuai</span>
+                                                <small class="d-block text-muted mt-1">Upload tidak diperlukan</small>
+                                            <?php else: ?>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-primary btn-sm js-open-upload-modal"
+                                                    data-toggle="modal"
+                                                    data-target="#modal-upload-share-simak"
+                                                    data-row-no="<?= esc((string) $rowNo); ?>"
+                                                    data-row-label="<?= esc($displayNo !== '' ? $displayNo . '.' : '-'); ?>"
+                                                    data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
+                                                >Upload</button>
+                                            <?php endif; ?>
                                         </td>
                                     <?php else: ?>
                                         <td colspan="5" class="text-muted cell-center">Baris grup (tidak perlu upload)</td>
