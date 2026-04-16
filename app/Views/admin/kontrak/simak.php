@@ -213,6 +213,7 @@
                                         data-share-deactivate-url="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0) . '/share/deactivate'); ?>"
                                         data-share-public-url="<?= esc(trim((string) ($item['share_public_url'] ?? ''))); ?>"
                                         data-nomor-kontrak="<?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?>"
+                                        data-nama-paket="<?= esc((string) ($item['nama_paket'] ?? '-')); ?>"
                                     >
                                         <i class="fas fa-share-alt mr-1"></i>
                                     </button>
@@ -811,6 +812,7 @@
         currentShareUrl: '',
         isActive: false,
         nomorKontrak: '',
+        namaPaket: '',
     };
 
     var escapeHtml = function (value) {
@@ -932,12 +934,14 @@
             var deactivateUrl = String(this.getAttribute('data-share-deactivate-url') || '').trim();
             var currentShareUrl = String(this.getAttribute('data-share-public-url') || '').trim();
             var nomorKontrak = String(this.getAttribute('data-nomor-kontrak') || '-').trim();
+            var namaPaket = String(this.getAttribute('data-nama-paket') || '-').trim();
 
             selectedShareConfig.shareUrl = shareUrl;
             selectedShareConfig.deactivateUrl = deactivateUrl;
             selectedShareConfig.currentShareUrl = currentShareUrl;
             selectedShareConfig.isActive = currentShareUrl !== '';
             selectedShareConfig.nomorKontrak = nomorKontrak;
+            selectedShareConfig.namaPaket = namaPaket;
 
             if (shareNomorKontrakEl) {
                 shareNomorKontrakEl.textContent = nomorKontrak !== '' ? nomorKontrak : '-';
@@ -1068,12 +1072,16 @@
                 return;
             }
 
+            var nomorKontrak = selectedShareConfig.nomorKontrak || '-';
+            var namaPaket = selectedShareConfig.namaPaket || '-';
+            var messageTemplate = "Mohon untuk melengkapi Kelengkapan Dokumen Administrasi.\n\nNomor Kontrak : " + nomorKontrak + "\nNama Paket : " + namaPaket + "\n\nSesuai :\nBelum Sesuai :\nBelum Ada :\n\nLink Dokumen :\n" + url;
+
             var onSuccess = function () {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'success',
                         title: 'Tersalin',
-                        text: 'Link share berhasil disalin.',
+                        text: 'Pesan dan link share berhasil disalin.',
                         timer: 1200,
                         showConfirmButton: false,
                     });
@@ -1081,18 +1089,18 @@
             };
 
             if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-                navigator.clipboard.writeText(url).then(onSuccess);
+                navigator.clipboard.writeText(messageTemplate).then(onSuccess);
                 return;
             }
 
-            if (shareCurrentLinkInput) {
-                shareCurrentLinkInput.value = url;
-                shareCurrentLinkInput.select();
-                shareCurrentLinkInput.setSelectionRange(0, 99999);
-                document.execCommand('copy');
-                shareCurrentLinkInput.value = url;
-                onSuccess();
-            }
+            var tempInput = document.createElement('textarea');
+            tempInput.value = messageTemplate;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            onSuccess();
         });
     }
 
