@@ -1950,7 +1950,11 @@ class Kontrak extends BaseController
 
         $db = db_connect();
         if (! $db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tabel dokumen verifikasi SIMAK belum tersedia.');
+            return $this->renderSharedDokumenNotFound(
+                $token,
+                'Data dokumen verifikasi belum tersedia. Silakan hubungi admin.',
+                is_array($shared['item'] ?? null) ? $shared['item'] : null
+            );
         }
 
         $dokumen = $db->table('trn_kontrak_simak_verifikasi_dokumen')
@@ -1961,23 +1965,47 @@ class Kontrak extends BaseController
             ->getRowArray();
 
         if (! is_array($dokumen)) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Dokumen tidak ditemukan.');
+            return $this->renderSharedDokumenNotFound(
+                $token,
+                'Dokumen yang Anda cari tidak ditemukan atau sudah tidak tersedia.',
+                is_array($shared['item'] ?? null) ? $shared['item'] : null
+            );
         }
 
         $relativePath = (string) ($dokumen['file_relative_path'] ?? '');
         $originalName = (string) ($dokumen['file_original_name'] ?? 'dokumen');
 
         if ($relativePath === '') {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Path dokumen tidak valid.');
+            return $this->renderSharedDokumenNotFound(
+                $token,
+                'Lokasi file dokumen tidak valid. Silakan coba unggah ulang dokumen.',
+                is_array($shared['item'] ?? null) ? $shared['item'] : null
+            );
         }
 
         $filePath = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
 
         if (! is_file($filePath)) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('File dokumen tidak ditemukan di server.');
+            return $this->renderSharedDokumenNotFound(
+                $token,
+                'File dokumen tidak ditemukan di server. Kemungkinan file sudah dipindahkan atau dihapus.',
+                is_array($shared['item'] ?? null) ? $shared['item'] : null
+            );
         }
 
         return $this->response->download($filePath, null)->setFileName($originalName);
+    }
+
+    private function renderSharedDokumenNotFound(string $token, string $message, ?array $item = null)
+    {
+        return $this->response
+            ->setStatusCode(404)
+            ->setBody(view('public/simak_share_dokumen_not_found', [
+                'title' => 'Dokumen Tidak Ditemukan',
+                'token' => $token,
+                'message' => $message,
+                'item' => $item ?? [],
+            ]));
     }
 
     private function sanitizeRichText($value): string

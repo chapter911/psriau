@@ -1,6 +1,20 @@
 <?= $this->extend('layouts/admin'); ?>
 <?php helper('custom'); ?>
 
+<?php
+    $leafRowsCount = 0;
+    foreach (($templateItems ?? []) as $row) {
+        if ((bool) ($row['is_leaf'] ?? false) === true) {
+            $leafRowsCount++;
+        }
+    }
+
+    $lengkapCount = $leafRowsCount > 0 ? (int) round(((float) ($kelengkapanPercentage['lengkap_persen'] ?? 0) / 100) * $leafRowsCount) : 0;
+    $belumSesuaiCount = $leafRowsCount > 0 ? (int) round(((float) ($kelengkapanPercentage['belum_sesuai_persen'] ?? 0) / 100) * $leafRowsCount) : 0;
+    $menungguVerifikasiCount = $leafRowsCount > 0 ? (int) round(((float) ($kelengkapanPercentage['belum_verifikasi_persen'] ?? 0) / 100) * $leafRowsCount) : 0;
+    $belumAdaCount = $leafRowsCount > 0 ? (int) round(((float) ($kelengkapanPercentage['belum_ada_persen'] ?? 0) / 100) * $leafRowsCount) : 0;
+?>
+
 <?= $this->section('content'); ?>
 <style>
     .simak-verifikasi-table th,
@@ -69,6 +83,13 @@
         font-weight: 700;
         color: #1f2937;
     }
+
+    .kelengkapan-count {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        font-weight: 500;
+        margin-top: 4px;
+    }
 </style>
 <?php if (session()->getFlashdata('success')): ?>
     <div class="alert alert-success"><?= esc((string) session()->getFlashdata('success')); ?></div>
@@ -87,18 +108,22 @@
     <div class="kelengkapan-card lengkap">
         <div class="kelengkapan-label">Lengkap</div>
         <div class="kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['lengkap_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+        <div class="kelengkapan-count"><?= $lengkapCount; ?> dari <?= $leafRowsCount; ?></div>
     </div>
     <div class="kelengkapan-card belum-sesuai">
         <div class="kelengkapan-label">Belum Sesuai</div>
         <div class="kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_sesuai_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+        <div class="kelengkapan-count"><?= $belumSesuaiCount; ?> dari <?= $leafRowsCount; ?></div>
     </div>
     <div class="kelengkapan-card menunggu-verifikasi">
         <div class="kelengkapan-label">Menunggu Verifikasi</div>
         <div class="kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_verifikasi_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+        <div class="kelengkapan-count"><?= $menungguVerifikasiCount; ?> dari <?= $leafRowsCount; ?></div>
     </div>
     <div class="kelengkapan-card belum-ada">
         <div class="kelengkapan-label">Belum Ada</div>
         <div class="kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_ada_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+        <div class="kelengkapan-count"><?= $belumAdaCount; ?> dari <?= $leafRowsCount; ?></div>
     </div>
 </div>
 
@@ -281,17 +306,21 @@
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <button
-                                                        type="button"
-                                                        class="btn btn-warning btn-sm js-open-upload-modal"
-                                                        data-row-no="<?= esc((string) $rowNo); ?>"
-                                                        data-row-label="<?= esc($noText); ?>"
-                                                        data-uraian="<?= esc($uraian); ?>"
-                                                        data-kelengkapan="<?= esc($kelengkapan); ?>"
-                                                        data-verifikasi="<?= esc($verifikasi); ?>"
-                                                        data-keterangan="<?= esc($keterangan); ?>"
-                                                        data-pic="<?= esc($pic); ?>"
-                                                    >Verifikasi</button>
+                                                    <?php if (is_array($latestDokumen)): ?>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-warning btn-sm js-open-upload-modal"
+                                                            data-row-no="<?= esc((string) $rowNo); ?>"
+                                                            data-row-label="<?= esc($noText); ?>"
+                                                            data-uraian="<?= esc($uraian); ?>"
+                                                            data-kelengkapan="<?= esc($kelengkapan); ?>"
+                                                            data-verifikasi="<?= esc($verifikasi); ?>"
+                                                            data-keterangan="<?= esc($keterangan); ?>"
+                                                            data-pic="<?= esc($pic); ?>"
+                                                        >Verifikasi</button>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">-</span>
+                                                    <?php endif; ?>
                                                 </td>
                                             <?php else: ?>
                                                 <td colspan="7"></td>

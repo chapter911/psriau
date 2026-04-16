@@ -1,6 +1,18 @@
 <?php
     helper('custom');
 
+    $leafRowsCount = 0;
+    foreach (($templateItems ?? []) as $row) {
+        if ((bool) ($row['is_leaf'] ?? false) === true) {
+            $leafRowsCount++;
+        }
+    }
+
+    $lengkapCount = $leafRowsCount > 0 ? (int) round(((float) ($kelengkapanPercentage['lengkap_persen'] ?? 0) / 100) * $leafRowsCount) : 0;
+    $belumSesuaiCount = $leafRowsCount > 0 ? (int) round(((float) ($kelengkapanPercentage['belum_sesuai_persen'] ?? 0) / 100) * $leafRowsCount) : 0;
+    $menungguVerifikasiCount = $leafRowsCount > 0 ? (int) round(((float) ($kelengkapanPercentage['belum_verifikasi_persen'] ?? 0) / 100) * $leafRowsCount) : 0;
+    $belumAdaCount = $leafRowsCount > 0 ? (int) round(((float) ($kelengkapanPercentage['belum_ada_persen'] ?? 0) / 100) * $leafRowsCount) : 0;
+
     $sections = [];
     $currentSectionKey = '';
 
@@ -218,6 +230,11 @@
             font-weight: 700;
             color: #1f2937;
         }
+            .share-kelengkapan-count {
+                font-size: 0.75rem;
+                color: #9ca3af;
+                font-weight: 500;
+            }
     </style>
 </head>
 <body>
@@ -236,18 +253,22 @@
         <div class="share-kelengkapan-card lengkap">
             <div class="share-kelengkapan-label">Lengkap</div>
             <div class="share-kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['lengkap_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+            <div class="share-kelengkapan-count"><?= $lengkapCount; ?> dari <?= $leafRowsCount; ?></div>
         </div>
         <div class="share-kelengkapan-card belum-sesuai">
             <div class="share-kelengkapan-label">Belum Sesuai</div>
             <div class="share-kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_sesuai_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+            <div class="share-kelengkapan-count"><?= $belumSesuaiCount; ?> dari <?= $leafRowsCount; ?></div>
         </div>
         <div class="share-kelengkapan-card menunggu-verifikasi">
             <div class="share-kelengkapan-label">Menunggu Verifikasi</div>
             <div class="share-kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_verifikasi_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+            <div class="share-kelengkapan-count"><?= $menungguVerifikasiCount; ?> dari <?= $leafRowsCount; ?></div>
         </div>
         <div class="share-kelengkapan-card belum-ada">
             <div class="share-kelengkapan-label">Belum Ada</div>
             <div class="share-kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_ada_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+            <div class="share-kelengkapan-count"><?= $belumAdaCount; ?> dari <?= $leafRowsCount; ?></div>
         </div>
     </div>
 
