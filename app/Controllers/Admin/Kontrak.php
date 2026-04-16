@@ -1463,6 +1463,15 @@ class Kontrak extends BaseController
             }
         }
 
+        // Calculate document completion percentages
+        $kelengkapanPercentages = $this->getSimakAdministrasiKelengkapanBySimakId([$id]);
+        $kelengkapanPercentage = $kelengkapanPercentages[$id] ?? [
+            'lengkap_persen' => 0.0,
+            'belum_sesuai_persen' => 0.0,
+            'belum_verifikasi_persen' => 0.0,
+            'belum_ada_persen' => 0.0,
+        ];
+
         return view('admin/kontrak/simak_detail', [
             'title' => 'Detail SIMAK',
             'item' => $item,
@@ -1472,6 +1481,7 @@ class Kontrak extends BaseController
             'templateItems' => $templateItems,
             'verifikasiByRow' => $verifikasiByRow,
             'dokumenByRow' => $dokumenByRow,
+            'kelengkapanPercentage' => $kelengkapanPercentage,
         ]);
     }
 
@@ -1776,6 +1786,16 @@ class Kontrak extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tautan share SIMAK tidak valid.');
         }
 
+        // Calculate document completion percentages
+        $simakId = (int) ($shared['item']['id'] ?? 0);
+        $kelengkapanPercentages = $this->getSimakAdministrasiKelengkapanBySimakId([$simakId]);
+        $kelengkapanPercentage = $kelengkapanPercentages[$simakId] ?? [
+            'lengkap_persen' => 0.0,
+            'belum_sesuai_persen' => 0.0,
+            'belum_verifikasi_persen' => 0.0,
+            'belum_ada_persen' => 0.0,
+        ];
+
         return view('public/simak_share_upload', [
             'title' => 'Upload Dokumen SIMAK',
             'token' => $token,
@@ -1783,6 +1803,7 @@ class Kontrak extends BaseController
             'templateItems' => $shared['templateItems'],
             'verifikasiByRow' => $shared['verifikasiByRow'],
             'dokumenByRow' => $shared['dokumenByRow'],
+            'kelengkapanPercentage' => $kelengkapanPercentage,
         ]);
     }
 

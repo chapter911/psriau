@@ -172,6 +172,52 @@
             color: #6b7280;
             margin: 0;
         }
+
+        .share-kelengkapan-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .share-kelengkapan-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 14px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .share-kelengkapan-card.lengkap {
+            border-left: 4px solid #198754;
+        }
+
+        .share-kelengkapan-card.belum-sesuai {
+            border-left: 4px solid #ffc107;
+        }
+
+        .share-kelengkapan-card.menunggu-verifikasi {
+            border-left: 4px solid #0dcaf0;
+        }
+
+        .share-kelengkapan-card.belum-ada {
+            border-left: 4px solid #dc3545;
+        }
+
+        .share-kelengkapan-label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .share-kelengkapan-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
     </style>
 </head>
 <body>
@@ -183,6 +229,25 @@
         <div class="share-brand-text">
             <p class="share-brand-name"><?= esc((string) ($globalSetting['official_name'] ?? 'Satker PPS Kementerian PU')); ?></p>
             <p class="share-brand-sub">Upload Dokumen SIMAK</p>
+        </div>
+    </div>
+
+    <div class="share-kelengkapan-summary">
+        <div class="share-kelengkapan-card lengkap">
+            <div class="share-kelengkapan-label">Lengkap</div>
+            <div class="share-kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['lengkap_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+        </div>
+        <div class="share-kelengkapan-card belum-sesuai">
+            <div class="share-kelengkapan-label">Belum Sesuai</div>
+            <div class="share-kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_sesuai_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+        </div>
+        <div class="share-kelengkapan-card menunggu-verifikasi">
+            <div class="share-kelengkapan-label">Menunggu Verifikasi</div>
+            <div class="share-kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_verifikasi_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+        </div>
+        <div class="share-kelengkapan-card belum-ada">
+            <div class="share-kelengkapan-label">Belum Ada</div>
+            <div class="share-kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_ada_persen'] ?? 0), 2, ',', '.'); ?>%</div>
         </div>
     </div>
 
@@ -232,7 +297,7 @@
                                 <tr>
                                     <th style="width: 90px;">No</th>
                                     <th>Uraian</th>
-                                    <th style="width: 140px;">Status</th>
+                                    <th style="width: 140px;">Status Dokumen</th>
                                     <th style="width: 160px;">Verifikasi Dit. KI</th>
                                     <th style="width: 260px;">Keterangan</th>
                                     <th style="width: 250px;">Dokumen Terakhir</th>

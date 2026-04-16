@@ -23,6 +23,52 @@
     .simak-status-red-soft {
         background-color: #f8d7da;
     }
+
+    .kelengkapan-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .kelengkapan-card {
+        background: #fff;
+        border-radius: 8px;
+        padding: 16px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .kelengkapan-card.lengkap {
+        border-left: 4px solid #198754;
+    }
+
+    .kelengkapan-card.belum-sesuai {
+        border-left: 4px solid #ffc107;
+    }
+
+    .kelengkapan-card.menunggu-verifikasi {
+        border-left: 4px solid #0dcaf0;
+    }
+
+    .kelengkapan-card.belum-ada {
+        border-left: 4px solid #dc3545;
+    }
+
+    .kelengkapan-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 600;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .kelengkapan-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
 </style>
 <?php if (session()->getFlashdata('success')): ?>
     <div class="alert alert-success"><?= esc((string) session()->getFlashdata('success')); ?></div>
@@ -35,6 +81,26 @@
 <?php if (! empty($error ?? '')): ?>
     <div class="alert alert-danger"><?= esc((string) $error); ?></div>
 <?php endif; ?>
+
+<!-- Kelengkapan Dokumen Administrasi Summary -->
+<div class="kelengkapan-summary">
+    <div class="kelengkapan-card lengkap">
+        <div class="kelengkapan-label">Lengkap</div>
+        <div class="kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['lengkap_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+    </div>
+    <div class="kelengkapan-card belum-sesuai">
+        <div class="kelengkapan-label">Belum Sesuai</div>
+        <div class="kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_sesuai_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+    </div>
+    <div class="kelengkapan-card menunggu-verifikasi">
+        <div class="kelengkapan-label">Menunggu Verifikasi</div>
+        <div class="kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_verifikasi_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+    </div>
+    <div class="kelengkapan-card belum-ada">
+        <div class="kelengkapan-label">Belum Ada</div>
+        <div class="kelengkapan-value"><?= number_format((float) ($kelengkapanPercentage['belum_ada_persen'] ?? 0), 2, ',', '.'); ?>%</div>
+    </div>
+</div>
 
 <?php if (! empty($templateItems ?? [])): ?>
 <?php
