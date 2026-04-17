@@ -744,8 +744,12 @@
     }
 
     openButtons.forEach(function (button) {
-        button.addEventListener('click', function () {
-            if (!googleCredentialEl || !googleCredentialEl.value) {
+        button.addEventListener('click', function (event) {
+            if (!googleAccessTokenEl || !googleAccessTokenEl.value) {
+                if (event && typeof event.preventDefault === 'function') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
                 if (window.Swal) {
                     window.Swal.fire({
                         icon: 'warning',
