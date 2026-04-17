@@ -2086,6 +2086,10 @@ class Kontrak extends BaseController
 
     private function getGoogleClientId(): string
     {
+        if (defined('ENVIRONMENT') && ENVIRONMENT !== 'production') {
+            return '';
+        }
+
         $raw = trim((string) getenv('GOOGLE_CLIENT_ID'));
         return trim($raw, " \t\n\r\0\x0B'\"");
     }
