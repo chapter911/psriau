@@ -541,17 +541,23 @@
                     </div>
 
                     <div class="form-group mb-3">
+                        <label for="upload_method">Metode Upload</label>
+                        <select id="upload_method" name="upload_method" class="form-control">
+                            <option value="file">Upload File</option>
+                            <option value="drive">Link Google Drive</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3" id="uploadFileGroup">
                         <label for="dokumen_file_modal">File Dokumen</label>
                         <input type="file" id="dokumen_file_modal" name="dokumen_file" class="form-control-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip">
                         <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP. Maksimal 10MB.</small>
                     </div>
 
-                    <div class="text-center text-muted small mb-2">ATAU</div>
-
-                    <div class="form-group mb-0">
+                    <div class="form-group mb-0 d-none" id="uploadDriveGroup">
                         <label for="google_drive_link">Link Google Drive (alternatif)</label>
                         <input type="url" id="google_drive_link" name="google_drive_link" class="form-control" placeholder="https://drive.google.com/... atau https://docs.google.com/...">
-                        <small class="text-muted">Isi jika ukuran file terlalu besar. Gunakan salah satu saja: upload file atau link Google Drive.</small>
+                        <small class="text-muted">Gunakan link dari drive.google.com atau docs.google.com.</small>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -577,6 +583,9 @@
     var rowNoEl = document.getElementById('upload_row_no_modal');
     var rowLabelEl = document.getElementById('upload_row_label_modal');
     var rowUraianEl = document.getElementById('upload_row_uraian_modal');
+    var uploadMethodEl = document.getElementById('upload_method');
+    var uploadFileGroupEl = document.getElementById('uploadFileGroup');
+    var uploadDriveGroupEl = document.getElementById('uploadDriveGroup');
     var dokumenFileEl = document.getElementById('dokumen_file_modal');
     var googleDriveLinkEl = document.getElementById('google_drive_link');
     var googleAccessTokenEl = document.getElementById('google_access_token');
@@ -627,6 +636,29 @@
             dokumenFileEl.value = '';
         }
         if (googleDriveLinkEl) {
+            googleDriveLinkEl.value = '';
+        }
+        if (uploadMethodEl) {
+            uploadMethodEl.value = 'file';
+        }
+        syncUploadMethodUI();
+    }
+
+    function syncUploadMethodUI() {
+        var method = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
+        var useDrive = method === 'drive';
+
+        if (uploadFileGroupEl) {
+            uploadFileGroupEl.classList.toggle('d-none', useDrive);
+        }
+        if (uploadDriveGroupEl) {
+            uploadDriveGroupEl.classList.toggle('d-none', !useDrive);
+        }
+
+        if (useDrive && dokumenFileEl) {
+            dokumenFileEl.value = '';
+        }
+        if (!useDrive && googleDriveLinkEl) {
             googleDriveLinkEl.value = '';
         }
     }
@@ -878,6 +910,11 @@
     }
 
     if (uploadForm) {
+        if (uploadMethodEl) {
+            uploadMethodEl.addEventListener('change', syncUploadMethodUI);
+            syncUploadMethodUI();
+        }
+
         uploadForm.addEventListener('submit', function (event) {
             if (!googleAccessTokenEl || !googleAccessTokenEl.value) {
                 event.preventDefault();
@@ -891,35 +928,36 @@
                 return;
             }
 
+            var selectedMethod = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
             var hasFile = !!(dokumenFileEl && dokumenFileEl.files && dokumenFileEl.files.length > 0);
             var driveLink = String(googleDriveLinkEl && googleDriveLinkEl.value ? googleDriveLinkEl.value : '').trim();
             var hasDriveLink = driveLink !== '';
 
-            if (!hasFile && !hasDriveLink) {
+            if (selectedMethod === 'drive' && !hasDriveLink) {
                 event.preventDefault();
                 if (window.Swal) {
                     window.Swal.fire({
                         icon: 'warning',
                         title: 'Dokumen belum diisi',
-                        text: 'Pilih salah satu: upload file atau isi link Google Drive.',
+                        text: 'Silakan isi link Google Drive.',
                     });
                 }
                 return;
             }
 
-            if (hasFile && hasDriveLink) {
+            if (selectedMethod !== 'drive' && !hasFile) {
                 event.preventDefault();
                 if (window.Swal) {
                     window.Swal.fire({
                         icon: 'warning',
-                        title: 'Pilih salah satu sumber',
-                        text: 'Gunakan salah satu saja: upload file atau link Google Drive.',
+                        title: 'Dokumen belum diisi',
+                        text: 'Silakan pilih file dokumen terlebih dahulu.',
                     });
                 }
                 return;
             }
 
-            if (hasFile && dokumenFileEl && dokumenFileEl.files[0] && dokumenFileEl.files[0].size > maxUploadBytes) {
+            if (selectedMethod !== 'drive' && hasFile && dokumenFileEl && dokumenFileEl.files[0] && dokumenFileEl.files[0].size > maxUploadBytes) {
                 event.preventDefault();
                 if (window.Swal) {
                     window.Swal.fire({
@@ -931,7 +969,7 @@
                 return;
             }
 
-            if (hasDriveLink && !isAllowedGoogleDriveUrl(driveLink)) {
+            if (selectedMethod === 'drive' && !isAllowedGoogleDriveUrl(driveLink)) {
                 event.preventDefault();
                 if (window.Swal) {
                     window.Swal.fire({
