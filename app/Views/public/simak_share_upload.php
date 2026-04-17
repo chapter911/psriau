@@ -361,7 +361,10 @@
                 <p class="text-muted mb-0">Login dibuka sebagai popup dan identitas Google akan dipakai untuk mencatat siapa yang mengupload dokumen.</p>
             </div>
             <div class="google-auth-actions">
-                <div id="googleSignInButton"></div>
+                <button type="button" class="google-login-btn" id="googlePopupLoginBtn">
+                    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.626 32.91 29.304 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.153 7.962 3.037l5.657-5.657C34.007 6.053 29.311 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.652-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.153 7.962 3.037l5.657-5.657C34.007 6.053 29.311 4 24 4c-7.159 0-13.315 4.034-16.694 9.691z"/><path fill="#4CAF50" d="M24 44c5.237 0 9.834-1.99 13.364-5.237l-6.16-5.194C29.151 35.091 26.715 36 24 36c-5.282 0-9.593-3.073-11.288-7.283l-6.52 5.025C9.534 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.017 2.877-2.92 5.247-5.099 6.569.002-.001.004-.002.006-.003l6.16 5.194C35.96 38.713 40 34 40 24c0-1.341-.138-2.652-.389-3.917z"/></svg>
+                    <span>Login dengan Google</span>
+                </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="googleSignOutButton">Logout Google</button>
             </div>
         </div>
@@ -564,7 +567,7 @@
     var uploaderNameEl = document.getElementById('uploader_name');
     var uploaderEmailEl = document.getElementById('uploader_email');
     var uploaderSubEl = document.getElementById('uploader_sub');
-    var googleSignInButton = document.getElementById('googleSignInButton');
+    var googlePopupLoginBtn = document.getElementById('googlePopupLoginBtn');
     var googleSignOutButton = document.getElementById('googleSignOutButton');
     var googleAuthUser = document.getElementById('googleAuthUser');
     var googleAuthHint = document.getElementById('googleAuthHint');
@@ -699,36 +702,31 @@
     }
 
     function initGoogleSignIn() {
-        if (!googleClientId || !window.google || !window.google.accounts || !window.google.accounts.id) {
-            if (googleSignInButton) {
-                googleSignInButton.innerHTML = '<div class="text-danger small">Google Sign-In belum dikonfigurasi. Set GOOGLE_CLIENT_ID untuk mengaktifkan login.</div>';
+        if (!googlePopupLoginBtn || !googleClientId || !window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+            if (googlePopupLoginBtn && !googleClientId) {
+                googlePopupLoginBtn.disabled = true;
+                googlePopupLoginBtn.classList.add('disabled');
+                googlePopupLoginBtn.title = 'GOOGLE_CLIENT_ID belum dikonfigurasi';
             }
             return;
-        }
-
-        if (googleSignInButton) {
-            googleSignInButton.innerHTML = '' +
-                '<button type="button" class="google-login-btn" id="googlePopupLoginBtn">' +
-                    '<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.626 32.91 29.304 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.153 7.962 3.037l5.657-5.657C34.007 6.053 29.311 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.652-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.153 7.962 3.037l5.657-5.657C34.007 6.053 29.311 4 24 4c-7.159 0-13.315 4.034-16.694 9.691z"/><path fill="#4CAF50" d="M24 44c5.237 0 9.834-1.99 13.364-5.237l-6.16-5.194C29.151 35.091 26.715 36 24 36c-5.282 0-9.593-3.073-11.288-7.283l-6.52 5.025C9.534 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.017 2.877-2.92 5.247-5.099 6.569.002-.001.004-.002.006-.003l6.16 5.194C35.96 38.713 40 34 40 24c0-1.341-.138-2.652-.389-3.917z"/></svg>' +
-                    '<span>Login dengan Google</span>' +
-                '</button>';
-
-            var popupLoginBtn = document.getElementById('googlePopupLoginBtn');
-            if (popupLoginBtn) {
-                popupLoginBtn.addEventListener('click', function () {
-                    if (!googleTokenClient) {
-                        return;
-                    }
-
-                    googleTokenClient.requestAccessToken({ prompt: '' });
-                });
-            }
         }
 
         googleTokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: googleClientId,
             scope: 'openid email profile',
             callback: handleGoogleTokenResponse,
+        });
+
+        googlePopupLoginBtn.disabled = false;
+        googlePopupLoginBtn.classList.remove('disabled');
+        googlePopupLoginBtn.title = '';
+
+        googlePopupLoginBtn.addEventListener('click', function () {
+            if (!googleTokenClient) {
+                return;
+            }
+
+            googleTokenClient.requestAccessToken({ prompt: 'consent' });
         });
 
         if (googleClientId) {
