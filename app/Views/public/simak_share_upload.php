@@ -235,6 +235,54 @@
                 color: #9ca3af;
                 font-weight: 500;
             }
+
+            .google-auth-card {
+                background: #fff;
+                border: 1px solid #dbe4ef;
+                border-radius: 12px;
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+
+            .google-auth-status {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 10px;
+            }
+
+            .google-auth-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 7px 12px;
+                border-radius: 999px;
+                background: #eef6ff;
+                color: #1d4ed8;
+                font-size: 0.88rem;
+                font-weight: 600;
+            }
+
+            .google-auth-pill strong {
+                color: #0f172a;
+            }
+
+            .google-auth-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .upload-lock-overlay {
+                border: 1px dashed #f59e0b;
+                background: #fffaf0;
+                color: #92400e;
+                border-radius: 10px;
+                padding: 12px 14px;
+                margin-bottom: 12px;
+            }
     </style>
 </head>
 <body>
@@ -277,6 +325,23 @@
         <div class="text-muted mb-0">
             Nomor Kontrak: <?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?>
             · Tahun Anggaran: <?= esc((string) ($item['tahun_anggaran'] ?? '-')); ?>
+        </div>
+    </div>
+
+    <div class="google-auth-card">
+        <div class="d-flex align-items-start justify-content-between flex-wrap" style="gap: 12px;">
+            <div>
+                <h5 class="mb-1">Login Google terlebih dahulu</h5>
+                <p class="text-muted mb-0">Identitas Google akan dipakai untuk mencatat siapa yang mengupload dokumen.</p>
+            </div>
+            <div class="google-auth-actions">
+                <div id="googleSignInButton"></div>
+                <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="googleSignOutButton">Logout Google</button>
+            </div>
+        </div>
+        <div class="google-auth-status">
+            <span class="google-auth-pill d-none" id="googleAuthUser">Belum login</span>
+            <span class="text-muted small" id="googleAuthHint">Silakan login dengan akun Google sebelum membuka form upload.</span>
         </div>
     </div>
 
@@ -427,7 +492,14 @@
             <form id="form-upload-share-simak" action="<?= site_url('simak/share/' . (string) ($token ?? '') . '/upload'); ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
                 <input type="hidden" name="row_no" id="upload_row_no_modal" value="">
+                <input type="hidden" name="google_credential" id="google_credential" value="">
+                <input type="hidden" name="uploader_name" id="uploader_name" value="">
+                <input type="hidden" name="uploader_email" id="uploader_email" value="">
+                <input type="hidden" name="uploader_sub" id="uploader_sub" value="">
                 <div class="modal-body">
+                    <div class="upload-lock-overlay" id="uploadGoogleLock">
+                        Login Google terlebih dahulu untuk mengaktifkan upload.
+                    </div>
                     <div class="alert alert-light border py-2">
                         <div><strong>No:</strong> <span id="upload_row_label_modal">-</span></div>
                         <div><strong>Uraian:</strong> <span id="upload_row_uraian_modal">-</span></div>
@@ -448,6 +520,7 @@
     </div>
 </div>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -455,14 +528,146 @@
 (function () {
     'use strict';
 
+    var googleClientId = <?= json_encode((string) ($googleClientId ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var openButtons = document.querySelectorAll('.js-open-upload-modal');
     var uploadForm = document.getElementById('form-upload-share-simak');
     var rowNoEl = document.getElementById('upload_row_no_modal');
     var rowLabelEl = document.getElementById('upload_row_label_modal');
     var rowUraianEl = document.getElementById('upload_row_uraian_modal');
+    var googleCredentialEl = document.getElementById('google_credential');
+    var uploaderNameEl = document.getElementById('uploader_name');
+    var uploaderEmailEl = document.getElementById('uploader_email');
+    var uploaderSubEl = document.getElementById('uploader_sub');
+    var googleSignInButton = document.getElementById('googleSignInButton');
+    var googleSignOutButton = document.getElementById('googleSignOutButton');
+    var googleAuthUser = document.getElementById('googleAuthUser');
+    var googleAuthHint = document.getElementById('googleAuthHint');
+    var uploadGoogleLock = document.getElementById('uploadGoogleLock');
+    var uploadSubmitButton = uploadForm ? uploadForm.querySelector('button[type="submit"]') : null;
+    var googleProfile = null;
+
+    function updateUploadLockState() {
+        var signedIn = !!(googleProfile && googleCredentialEl && googleCredentialEl.value);
+
+        openButtons.forEach(function (button) {
+            button.disabled = !signedIn;
+        });
+
+        if (uploadSubmitButton) {
+            uploadSubmitButton.disabled = !signedIn;
+        }
+
+        if (uploadGoogleLock) {
+            uploadGoogleLock.classList.toggle('d-none', signedIn);
+        }
+
+        if (googleAuthUser) {
+            googleAuthUser.classList.toggle('d-none', !signedIn);
+            if (signedIn) {
+                googleAuthUser.textContent = (googleProfile.name || 'Google User') + ' · ' + (googleProfile.email || '-');
+            }
+        }
+
+        if (googleSignOutButton) {
+            googleSignOutButton.classList.toggle('d-none', !signedIn);
+        }
+
+        if (googleAuthHint) {
+            googleAuthHint.textContent = signedIn
+                ? 'Anda sudah login dengan Google dan siap mengupload dokumen.'
+                : 'Silakan login dengan akun Google sebelum membuka form upload.';
+        }
+    }
+
+    function clearGoogleProfile() {
+        googleProfile = null;
+        if (googleCredentialEl) googleCredentialEl.value = '';
+        if (uploaderNameEl) uploaderNameEl.value = '';
+        if (uploaderEmailEl) uploaderEmailEl.value = '';
+        if (uploaderSubEl) uploaderSubEl.value = '';
+        updateUploadLockState();
+    }
+
+    function decodeJwtPayload(token) {
+        try {
+            var part = String(token || '').split('.')[1] || '';
+            var padded = part.replace(/-/g, '+').replace(/_/g, '/');
+            while (padded.length % 4) {
+                padded += '=';
+            }
+            return JSON.parse(atob(padded));
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function handleGoogleCredential(response) {
+        var credential = String(response && response.credential ? response.credential : '').trim();
+        if (!credential) {
+            clearGoogleProfile();
+            return;
+        }
+
+        var payload = decodeJwtPayload(credential);
+        if (!payload) {
+            if (window.Swal) {
+                window.Swal.fire({ icon: 'error', title: 'Login Google gagal', text: 'Credential Google tidak valid.' });
+            }
+            clearGoogleProfile();
+            return;
+        }
+
+        googleProfile = {
+            name: String(payload.name || payload.given_name || 'Google User'),
+            email: String(payload.email || ''),
+            sub: String(payload.sub || ''),
+        };
+
+        if (googleCredentialEl) googleCredentialEl.value = credential;
+        if (uploaderNameEl) uploaderNameEl.value = googleProfile.name;
+        if (uploaderEmailEl) uploaderEmailEl.value = googleProfile.email;
+        if (uploaderSubEl) uploaderSubEl.value = googleProfile.sub;
+
+        updateUploadLockState();
+    }
+
+    function initGoogleSignIn() {
+        if (!googleClientId || !window.google || !window.google.accounts || !window.google.accounts.id) {
+            if (googleSignInButton) {
+                googleSignInButton.innerHTML = '<div class="text-danger small">Google Sign-In belum dikonfigurasi.</div>';
+            }
+            return;
+        }
+
+        window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: handleGoogleCredential,
+        });
+
+        if (googleSignInButton) {
+            window.google.accounts.id.renderButton(googleSignInButton, {
+                theme: 'outline',
+                size: 'large',
+                text: 'signin_with',
+                shape: 'pill',
+                width: 260,
+            });
+        }
+    }
 
     openButtons.forEach(function (button) {
         button.addEventListener('click', function () {
+            if (!googleCredentialEl || !googleCredentialEl.value) {
+                if (window.Swal) {
+                    window.Swal.fire({
+                        icon: 'warning',
+                        title: 'Login Google diperlukan',
+                        text: 'Silakan login dengan Google terlebih dahulu untuk mengunggah dokumen.',
+                    });
+                }
+                return;
+            }
+
             if (rowNoEl) {
                 rowNoEl.value = String(this.getAttribute('data-row-no') || '').trim();
             }
@@ -475,8 +680,29 @@
         });
     });
 
+    if (googleSignOutButton) {
+        googleSignOutButton.addEventListener('click', function () {
+            clearGoogleProfile();
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+                window.google.accounts.id.prompt();
+            }
+        });
+    }
+
     if (uploadForm) {
-        uploadForm.addEventListener('submit', function () {
+        uploadForm.addEventListener('submit', function (event) {
+            if (!googleCredentialEl || !googleCredentialEl.value) {
+                event.preventDefault();
+                if (window.Swal) {
+                    window.Swal.fire({
+                        icon: 'warning',
+                        title: 'Login Google diperlukan',
+                        text: 'Anda harus login dengan Google sebelum upload dokumen.',
+                    });
+                }
+                return;
+            }
+
             if (window.Swal && typeof window.Swal.fire === 'function') {
                 window.Swal.fire({
                     title: 'Mengunggah dokumen...',
@@ -489,6 +715,15 @@
                 });
             }
         });
+
+        updateUploadLockState();
+        if (googleClientId) {
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+                initGoogleSignIn();
+            } else {
+                window.addEventListener('load', initGoogleSignIn, { once: true });
+            }
+        }
     }
 })();
 </script>

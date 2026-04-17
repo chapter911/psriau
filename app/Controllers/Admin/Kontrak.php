@@ -1804,6 +1804,7 @@ class Kontrak extends BaseController
             'verifikasiByRow' => $shared['verifikasiByRow'],
             'dokumenByRow' => $shared['dokumenByRow'],
             'kelengkapanPercentage' => $kelengkapanPercentage,
+            'googleClientId' => $this->getGoogleClientId(),
         ]);
     }
 
@@ -1837,8 +1838,19 @@ class Kontrak extends BaseController
 
         $today = date('Y-m-d');
         $now = date('Y-m-d H:i:s');
-        $uploaderName = trim((string) $this->request->getPost('uploader_name'));
-        $actor = $uploaderName !== '' ? ('kontraktor: ' . $uploaderName) : 'kontraktor';
+        $googleCredential = trim((string) $this->request->getPost('google_credential'));
+        $googleIdentity = $this->verifyGoogleIdToken($googleCredential);
+        if (! is_array($googleIdentity)) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Login Google diperlukan sebelum upload dokumen.');
+        }
+
+        $googleName = trim((string) ($googleIdentity['name'] ?? 'Google User'));
+        $googleEmail = trim((string) ($googleIdentity['email'] ?? ''));
+        $actorLabel = $googleName !== '' ? $googleName : 'Google User';
+        if ($googleEmail !== '') {
+            $actorLabel .= ' <' . $googleEmail . '>';
+        }
+        $actor = 'google: ' . $actorLabel;
 
         $existingVerifikasi = $db->table('trn_kontrak_simak_verifikasi')
             ->select('verifikasi_ki, keterangan, pic')
@@ -1994,6 +2006,88 @@ class Kontrak extends BaseController
         }
 
         return $this->response->download($filePath, null)->setFileName($originalName);
+    }
+
+    private function verifyGoogleIdToken(string $idToken): ?array
+    {
+        $idToken = trim($idToken);
+        if ($idToken === '') {
+            return null;
+        }
+
+        $clientId = $this->getGoogleClientId();
+        if ($clientId === '') {
+            return null;
+        }
+
+        $tokenInfo = $this->fetchGoogleTokenInfo($idToken);
+        if (! is_array($tokenInfo)) {
+            return null;
+        }
+
+        $audience = trim((string) ($tokenInfo['aud'] ?? ''));
+        $emailVerified = strtolower(trim((string) ($tokenInfo['email_verified'] ?? 'false')));
+        if ($audience !== $clientId || ! in_array($emailVerified, ['true', '1'], true)) {
+            return null;
+        }
+
+        $email = trim((string) ($tokenInfo['email'] ?? ''));
+        if ($email === '') {
+            return null;
+        }
+
+        return [
+            'sub' => trim((string) ($tokenInfo['sub'] ?? '')),
+            'name' => trim((string) ($tokenInfo['name'] ?? '')),
+            'email' => $email,
+            'picture' => trim((string) ($tokenInfo['picture'] ?? '')),
+        ];
+    }
+
+    private function fetchGoogleTokenInfo(string $idToken): ?array
+    {
+        $url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . rawurlencode($idToken);
+
+        try {
+            $client = \Config\Services::curlrequest([
+                'timeout' => 8,
+                'connect_timeout' => 8,
+                'http_errors' => false,
+            ]);
+
+            $response = $client->get($url);
+            if ($response->getStatusCode() !== 200) {
+                return null;
+            }
+
+            $decoded = json_decode((string) $response->getBody(), true);
+            return is_array($decoded) ? $decoded : null;
+        } catch (\Throwable $e) {
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'GET',
+                    'timeout' => 8,
+                ],
+                'ssl' => [
+                    'verify_peer' => true,
+                    'verify_peer_name' => true,
+                ],
+            ]);
+
+            $body = @file_get_contents($url, false, $context);
+            if ($body === false) {
+                return null;
+            }
+
+            $decoded = json_decode($body, true);
+            return is_array($decoded) ? $decoded : null;
+        }
+    }
+
+    private function getGoogleClientId(): string
+    {
+        $raw = trim((string) getenv('GOOGLE_CLIENT_ID'));
+        return trim($raw, " \t\n\r\0\x0B'\"");
     }
 
     private function renderSharedDokumenNotFound(string $token, string $message, ?array $item = null)
