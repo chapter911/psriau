@@ -144,6 +144,7 @@ class ContentSecurityPolicy extends BaseConfig
         'self',
         'https://accounts.google.com',
         'https://oauth2.googleapis.com',
+        'https://www.googleapis.com',
     ];
 
     /**

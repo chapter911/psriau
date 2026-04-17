@@ -1838,8 +1838,8 @@ class Kontrak extends BaseController
 
         $today = date('Y-m-d');
         $now = date('Y-m-d H:i:s');
-        $googleCredential = trim((string) $this->request->getPost('google_credential'));
-        $googleIdentity = $this->verifyGoogleIdToken($googleCredential);
+        $googleCredential = trim((string) $this->request->getPost('google_access_token'));
+        $googleIdentity = $this->verifyGoogleAccessToken($googleCredential);
         if (! is_array($googleIdentity)) {
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Login Google diperlukan sebelum upload dokumen.');
         }
@@ -2008,10 +2008,10 @@ class Kontrak extends BaseController
         return $this->response->download($filePath, null)->setFileName($originalName);
     }
 
-    private function verifyGoogleIdToken(string $idToken): ?array
+    private function verifyGoogleAccessToken(string $accessToken): ?array
     {
-        $idToken = trim($idToken);
-        if ($idToken === '') {
+        $accessToken = trim($accessToken);
+        if ($accessToken === '') {
             return null;
         }
 
@@ -2020,33 +2020,38 @@ class Kontrak extends BaseController
             return null;
         }
 
-        $tokenInfo = $this->fetchGoogleTokenInfo($idToken);
+        $tokenInfo = $this->fetchGoogleAccessTokenInfo($accessToken);
         if (! is_array($tokenInfo)) {
             return null;
         }
 
-        $audience = trim((string) ($tokenInfo['aud'] ?? ''));
-        $emailVerified = strtolower(trim((string) ($tokenInfo['email_verified'] ?? 'false')));
-        if ($audience !== $clientId || ! in_array($emailVerified, ['true', '1'], true)) {
+        $audience = trim((string) ($tokenInfo['audience'] ?? $tokenInfo['aud'] ?? $tokenInfo['issued_to'] ?? ''));
+        if ($audience !== '' && $audience !== $clientId) {
             return null;
         }
 
-        $email = trim((string) ($tokenInfo['email'] ?? ''));
-        if ($email === '') {
+        $profile = $this->fetchGoogleUserInfo($accessToken);
+        if (! is_array($profile)) {
+            return null;
+        }
+
+        $email = trim((string) ($profile['email'] ?? $tokenInfo['email'] ?? ''));
+        $emailVerified = strtolower(trim((string) ($profile['verified_email'] ?? $tokenInfo['verified_email'] ?? $tokenInfo['email_verified'] ?? 'false')));
+        if ($email === '' || ! in_array($emailVerified, ['true', '1'], true)) {
             return null;
         }
 
         return [
-            'sub' => trim((string) ($tokenInfo['sub'] ?? '')),
-            'name' => trim((string) ($tokenInfo['name'] ?? '')),
+            'sub' => trim((string) ($profile['sub'] ?? $tokenInfo['sub'] ?? '')),
+            'name' => trim((string) ($profile['name'] ?? $tokenInfo['name'] ?? '')),
             'email' => $email,
-            'picture' => trim((string) ($tokenInfo['picture'] ?? '')),
+            'picture' => trim((string) ($profile['picture'] ?? $tokenInfo['picture'] ?? '')),
         ];
     }
 
-    private function fetchGoogleTokenInfo(string $idToken): ?array
+    private function fetchGoogleAccessTokenInfo(string $accessToken): ?array
     {
-        $url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . rawurlencode($idToken);
+        $url = 'https://oauth2.googleapis.com/tokeninfo?access_token=' . rawurlencode($accessToken);
 
         try {
             $client = \Config\Services::curlrequest([
@@ -2081,6 +2086,35 @@ class Kontrak extends BaseController
 
             $decoded = json_decode($body, true);
             return is_array($decoded) ? $decoded : null;
+        }
+    }
+
+    private function fetchGoogleUserInfo(string $accessToken): ?array
+    {
+        $url = 'https://www.googleapis.com/oauth2/v3/userinfo';
+
+        try {
+            $client = \Config\Services::curlrequest([
+                'timeout' => 8,
+                'connect_timeout' => 8,
+                'http_errors' => false,
+            ]);
+
+            $response = $client->get($url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $accessToken,
+                    'Accept' => 'application/json',
+                ],
+            ]);
+
+            if ($response->getStatusCode() !== 200) {
+                return null;
+            }
+
+            $decoded = json_decode((string) $response->getBody(), true);
+            return is_array($decoded) ? $decoded : null;
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 

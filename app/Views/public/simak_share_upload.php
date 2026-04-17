@@ -275,6 +275,32 @@
                 align-items: center;
             }
 
+            .google-login-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                border: 1px solid #d1d5db;
+                background: #fff;
+                color: #1f2937;
+                border-radius: 999px;
+                padding: 10px 16px;
+                font-weight: 700;
+                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+                transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            }
+
+            .google-login-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+                border-color: #94a3b8;
+            }
+
+            .google-login-btn svg {
+                width: 18px;
+                height: 18px;
+                display: block;
+            }
+
             .upload-lock-overlay {
                 border: 1px dashed #f59e0b;
                 background: #fffaf0;
@@ -332,7 +358,7 @@
         <div class="d-flex align-items-start justify-content-between flex-wrap" style="gap: 12px;">
             <div>
                 <h5 class="mb-1">Login Google terlebih dahulu</h5>
-                <p class="text-muted mb-0">Identitas Google akan dipakai untuk mencatat siapa yang mengupload dokumen.</p>
+                <p class="text-muted mb-0">Login dibuka sebagai popup dan identitas Google akan dipakai untuk mencatat siapa yang mengupload dokumen.</p>
             </div>
             <div class="google-auth-actions">
                 <div id="googleSignInButton"></div>
@@ -492,7 +518,7 @@
             <form id="form-upload-share-simak" action="<?= site_url('simak/share/' . (string) ($token ?? '') . '/upload'); ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
                 <input type="hidden" name="row_no" id="upload_row_no_modal" value="">
-                <input type="hidden" name="google_credential" id="google_credential" value="">
+                <input type="hidden" name="google_access_token" id="google_access_token" value="">
                 <input type="hidden" name="uploader_name" id="uploader_name" value="">
                 <input type="hidden" name="uploader_email" id="uploader_email" value="">
                 <input type="hidden" name="uploader_sub" id="uploader_sub" value="">
@@ -534,7 +560,7 @@
     var rowNoEl = document.getElementById('upload_row_no_modal');
     var rowLabelEl = document.getElementById('upload_row_label_modal');
     var rowUraianEl = document.getElementById('upload_row_uraian_modal');
-    var googleCredentialEl = document.getElementById('google_credential');
+    var googleAccessTokenEl = document.getElementById('google_access_token');
     var uploaderNameEl = document.getElementById('uploader_name');
     var uploaderEmailEl = document.getElementById('uploader_email');
     var uploaderSubEl = document.getElementById('uploader_sub');
@@ -545,9 +571,32 @@
     var uploadGoogleLock = document.getElementById('uploadGoogleLock');
     var uploadSubmitButton = uploadForm ? uploadForm.querySelector('button[type="submit"]') : null;
     var googleProfile = null;
+    var googleTokenClient = null;
+    var googleStorageKey = 'simak_share_google_credential_' + (window.location.pathname || 'share');
+
+    function saveGoogleCredential(credential) {
+        try {
+            if (!credential) {
+                window.localStorage.removeItem(googleStorageKey);
+                return;
+            }
+
+            window.localStorage.setItem(googleStorageKey, credential);
+        } catch (error) {
+            // Ignore storage errors.
+        }
+    }
+
+    function loadGoogleCredential() {
+        try {
+            return window.localStorage.getItem(googleStorageKey) || '';
+        } catch (error) {
+            return '';
+        }
+    }
 
     function updateUploadLockState() {
-        var signedIn = !!(googleProfile && googleCredentialEl && googleCredentialEl.value);
+        var signedIn = !!(googleProfile && googleAccessTokenEl && googleAccessTokenEl.value);
 
         openButtons.forEach(function (button) {
             button.disabled = !signedIn;
@@ -581,54 +630,72 @@
 
     function clearGoogleProfile() {
         googleProfile = null;
-        if (googleCredentialEl) googleCredentialEl.value = '';
+        if (googleAccessTokenEl) googleAccessTokenEl.value = '';
         if (uploaderNameEl) uploaderNameEl.value = '';
         if (uploaderEmailEl) uploaderEmailEl.value = '';
         if (uploaderSubEl) uploaderSubEl.value = '';
+        saveGoogleCredential('');
         updateUploadLockState();
     }
 
-    function decodeJwtPayload(token) {
-        try {
-            var part = String(token || '').split('.')[1] || '';
-            var padded = part.replace(/-/g, '+').replace(/_/g, '/');
-            while (padded.length % 4) {
-                padded += '=';
-            }
-            return JSON.parse(atob(padded));
-        } catch (error) {
-            return null;
-        }
-    }
+    function applyGoogleProfile(profile, accessToken, persist) {
+        profile = profile || {};
+        accessToken = String(accessToken || '').trim();
 
-    function handleGoogleCredential(response) {
-        var credential = String(response && response.credential ? response.credential : '').trim();
-        if (!credential) {
-            clearGoogleProfile();
-            return;
-        }
-
-        var payload = decodeJwtPayload(credential);
-        if (!payload) {
-            if (window.Swal) {
-                window.Swal.fire({ icon: 'error', title: 'Login Google gagal', text: 'Credential Google tidak valid.' });
-            }
+        if (!accessToken || !profile.email) {
             clearGoogleProfile();
             return;
         }
 
         googleProfile = {
-            name: String(payload.name || payload.given_name || 'Google User'),
-            email: String(payload.email || ''),
-            sub: String(payload.sub || ''),
+            name: String(profile.name || profile.given_name || 'Google User'),
+            email: String(profile.email || ''),
+            sub: String(profile.sub || profile.id || ''),
         };
 
-        if (googleCredentialEl) googleCredentialEl.value = credential;
+        if (googleAccessTokenEl) googleAccessTokenEl.value = accessToken;
         if (uploaderNameEl) uploaderNameEl.value = googleProfile.name;
         if (uploaderEmailEl) uploaderEmailEl.value = googleProfile.email;
         if (uploaderSubEl) uploaderSubEl.value = googleProfile.sub;
 
+        if (persist !== false) {
+            saveGoogleCredential(accessToken);
+        }
+
         updateUploadLockState();
+    }
+
+    function loadGoogleUserInfo(accessToken) {
+        return fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: {
+                Authorization: 'Bearer ' + accessToken,
+            },
+        }).then(function (response) {
+            if (!response.ok) {
+                throw new Error('Gagal mengambil profil Google.');
+            }
+
+            return response.json();
+        });
+    }
+
+    function handleGoogleTokenResponse(response) {
+        var accessToken = String(response && response.access_token ? response.access_token : '').trim();
+        if (!accessToken) {
+            clearGoogleProfile();
+            return;
+        }
+
+        loadGoogleUserInfo(accessToken)
+            .then(function (profile) {
+                applyGoogleProfile(profile, accessToken, true);
+            })
+            .catch(function (error) {
+                if (window.Swal) {
+                    window.Swal.fire({ icon: 'error', title: 'Login Google gagal', text: error.message || 'Credential Google tidak valid.' });
+                }
+                clearGoogleProfile();
+            });
     }
 
     function initGoogleSignIn() {
@@ -639,19 +706,43 @@
             return;
         }
 
-        window.google.accounts.id.initialize({
+        if (googleSignInButton) {
+            googleSignInButton.innerHTML = '' +
+                '<button type="button" class="google-login-btn" id="googlePopupLoginBtn">' +
+                    '<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.626 32.91 29.304 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.153 7.962 3.037l5.657-5.657C34.007 6.053 29.311 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.652-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.153 7.962 3.037l5.657-5.657C34.007 6.053 29.311 4 24 4c-7.159 0-13.315 4.034-16.694 9.691z"/><path fill="#4CAF50" d="M24 44c5.237 0 9.834-1.99 13.364-5.237l-6.16-5.194C29.151 35.091 26.715 36 24 36c-5.282 0-9.593-3.073-11.288-7.283l-6.52 5.025C9.534 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.017 2.877-2.92 5.247-5.099 6.569.002-.001.004-.002.006-.003l6.16 5.194C35.96 38.713 40 34 40 24c0-1.341-.138-2.652-.389-3.917z"/></svg>' +
+                    '<span>Login dengan Google</span>' +
+                '</button>';
+
+            var popupLoginBtn = document.getElementById('googlePopupLoginBtn');
+            if (popupLoginBtn) {
+                popupLoginBtn.addEventListener('click', function () {
+                    if (!googleTokenClient) {
+                        return;
+                    }
+
+                    googleTokenClient.requestAccessToken({ prompt: '' });
+                });
+            }
+        }
+
+        googleTokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: googleClientId,
-            callback: handleGoogleCredential,
+            scope: 'openid email profile',
+            callback: handleGoogleTokenResponse,
         });
 
-        if (googleSignInButton) {
-            window.google.accounts.id.renderButton(googleSignInButton, {
-                theme: 'outline',
-                size: 'large',
-                text: 'signin_with',
-                shape: 'pill',
-                width: 260,
-            });
+        if (googleClientId) {
+            var storedCredential = loadGoogleCredential();
+            if (storedCredential) {
+                loadGoogleUserInfo(storedCredential)
+                    .then(function (profile) {
+                        applyGoogleProfile(profile, storedCredential, false);
+                    })
+                    .catch(function () {
+                        clearGoogleProfile();
+                    });
+            }
+        }
         }
     }
 
@@ -691,7 +782,7 @@
 
     if (uploadForm) {
         uploadForm.addEventListener('submit', function (event) {
-            if (!googleCredentialEl || !googleCredentialEl.value) {
+            if (!googleAccessTokenEl || !googleAccessTokenEl.value) {
                 event.preventDefault();
                 if (window.Swal) {
                     window.Swal.fire({
