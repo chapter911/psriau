@@ -291,7 +291,7 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <?php if ($dokumenCount > 1): ?>
+                                                    <?php if ($dokumenCount >= 1): ?>
                                                         <button
                                                             type="button"
                                                             class="btn btn-secondary btn-sm js-open-history-modal"
@@ -299,8 +299,6 @@
                                                             data-row-label="<?= esc($noText); ?>"
                                                             data-uraian="<?= esc($uraian); ?>"
                                                         >History (<?= esc((string) $dokumenCount); ?>)</button>
-                                                    <?php elseif ($dokumenCount === 1): ?>
-                                                        <span class="text-muted">1 file</span>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
