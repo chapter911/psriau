@@ -741,7 +741,6 @@
                     });
             }
         }
-        }
     }
 
     openButtons.forEach(function (button) {
