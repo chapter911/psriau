@@ -192,6 +192,7 @@
 
         const modal = window.jQuery ? window.jQuery('#modalUpdatePassword') : null;
         const modalElement = document.getElementById('modalUpdatePassword');
+        const shouldOpenPasswordModal = <?= session()->getFlashdata('open_password_modal') ? 'true' : 'false'; ?>;
         const errorBox = document.getElementById('navbarPasswordError');
         const successBox = document.getElementById('navbarPasswordSuccess');
         const submitButton = document.getElementById('navbarPasswordSubmitBtn');
@@ -225,6 +226,10 @@
                 blurActiveElement(modalElement);
             });
             modal.on('hidden.bs.modal', resetFormState);
+
+            if (shouldOpenPasswordModal) {
+                modal.modal('show');
+            }
         }
 
         form.addEventListener('submit', async (event) => {

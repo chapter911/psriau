@@ -20,7 +20,7 @@
                 <thead>
                     <tr>
                         <th style="width: 60px;">#</th>
-                        <th>Username</th>
+                        <th>Username / NIP</th>
                         <th>Nama Lengkap</th>
                         <th style="width: 140px;">Status</th>
                         <th style="width: 140px;">Role</th>
@@ -66,10 +66,22 @@
             <div class="modal-body">
                 <input type="hidden" id="userId">
                 <div class="form-group">
+                    <label for="sourceType">Sumber User</label>
+                    <select class="form-control no-select2" id="sourceType">
+                        <option value="manual">Input Manual</option>
+                        <option value="pegawai">Pilih dari Pegawai (mst_pegawai)</option>
+                    </select>
+                    <small class="text-muted d-block">Untuk sumber pegawai, username otomatis menggunakan NIP.</small>
+                </div>
+                <div class="form-group">
                     <label for="username">Username</label>
                     <input type="text" class="form-control" id="username" required>
+                    <select class="form-control d-none no-select2" id="usernamePegawai">
+                        <option value="">Pilih NIP pegawai</option>
+                    </select>
                     <small class="text-muted d-block" id="usernameHint">Username tidak dapat diubah setelah user dibuat.</small>
                     <small class="text-danger d-none" data-error="username"></small>
+                    <small class="text-danger d-none" data-error="pegawai_id"></small>
                 </div>
                 <div class="form-group">
                     <label for="fullName">Nama Lengkap</label>
@@ -78,7 +90,8 @@
                 </div>
                 <div class="form-group">
                     <label for="role">Role</label>
-                    <select class="form-control" id="role" required>
+                    <select class="form-control no-select2" id="role" required>
+                        <option value="">Pilih Role</option>
                         <option value="editor">Editor</option>
                         <option value="admin">Admin</option>
                         <option value="super_administrator">Super Administrator</option>
@@ -96,6 +109,7 @@
                     <label for="password">Password <span class="text-muted" id="passwordHint">(wajib diisi)</span></label>
                     <input type="password" class="form-control" id="password" autocomplete="new-password">
                     <small class="text-danger d-none" data-error="password"></small>
+                    <small class="text-muted d-block" id="passwordAutoHint"></small>
                 </div>
             </div>
             <div class="modal-footer">
@@ -108,6 +122,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const pegawaiOptions = <?= json_encode($pegawai_options ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     const canEdit = <?= empty($can_edit ?? false) ? 'false' : 'true' ?>;
     const csrfInput = document.getElementById('csrf_token');
     const userTableBody = document.getElementById('userTableBody');
@@ -117,13 +132,105 @@ document.addEventListener('DOMContentLoaded', function () {
     const userModalTitle = document.getElementById('userModalTitle');
     const userSubmitBtn = document.getElementById('userSubmitBtn');
     const userId = document.getElementById('userId');
+    const sourceType = document.getElementById('sourceType');
     const username = document.getElementById('username');
+    const usernamePegawai = document.getElementById('usernamePegawai');
     const fullName = document.getElementById('fullName');
     const role = document.getElementById('role');
     const isActive = document.getElementById('isActive');
     const password = document.getElementById('password');
     const passwordHint = document.getElementById('passwordHint');
+    const passwordAutoHint = document.getElementById('passwordAutoHint');
     const usernameHint = document.getElementById('usernameHint');
+    let userDataTable = null;
+
+    function populatePegawaiOptions() {
+        if (!usernamePegawai) {
+            return;
+        }
+
+        usernamePegawai.innerHTML = '<option value="">Pilih NIP pegawai</option>';
+        (pegawaiOptions || []).forEach(function (item) {
+            const option = document.createElement('option');
+            option.value = String(item.id || '');
+            option.textContent = String(item.nip || '-') + ' - ' + String(item.nama || '-');
+            option.dataset.nip = String(item.nip || '');
+            option.dataset.nama = String(item.nama || '');
+            usernamePegawai.appendChild(option);
+        });
+    }
+
+    function updateSourceState() {
+        const isCreate = !userId.value;
+        const usingPegawai = isCreate && sourceType && sourceType.value === 'pegawai';
+
+        if (sourceType) {
+            sourceType.disabled = !isCreate;
+        }
+
+        if (usingPegawai) {
+            username.classList.add('d-none');
+            if (usernamePegawai) {
+                usernamePegawai.classList.remove('d-none');
+            }
+            fullName.readOnly = true;
+            password.value = '';
+            password.required = false;
+            password.disabled = true;
+            if (passwordHint) {
+                passwordHint.textContent = '(otomatis)';
+            }
+            if (passwordAutoHint) {
+                passwordAutoHint.textContent = 'Password default akan otomatis menggunakan NIP pegawai.';
+            }
+            if (usernameHint) {
+                usernameHint.textContent = 'Username otomatis diisi dari NIP pegawai.';
+            }
+        } else {
+            username.classList.remove('d-none');
+            if (usernamePegawai) {
+                usernamePegawai.classList.add('d-none');
+            }
+            username.readOnly = !isCreate;
+            fullName.readOnly = false;
+            password.disabled = false;
+            if (isCreate) {
+                password.required = true;
+                if (passwordHint) {
+                    passwordHint.textContent = '(wajib diisi)';
+                }
+            } else {
+                password.required = false;
+                if (passwordHint) {
+                    passwordHint.textContent = '(opsional, isi jika ingin ganti)';
+                }
+            }
+            if (passwordAutoHint) {
+                passwordAutoHint.textContent = '';
+            }
+            if (usernameHint) {
+                usernameHint.textContent = isCreate
+                    ? 'Username digunakan untuk login dan tidak bisa diubah setelah dibuat.'
+                    : 'Username dikunci dan tidak dapat diubah.';
+            }
+        }
+    }
+
+    function applySelectedPegawai() {
+        if (!usernamePegawai) {
+            return;
+        }
+
+        const selected = usernamePegawai.options[usernamePegawai.selectedIndex];
+        if (!selected || !selected.value) {
+            username.value = '';
+            fullName.value = '';
+            return;
+        }
+
+        username.value = String(selected.dataset.nip || '').trim();
+        fullName.value = String(selected.dataset.nama || '').trim();
+    }
 
     function getModalController(el) {
         if (!el) {
@@ -207,14 +314,51 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderRows(rows) {
+        const safeRows = Array.isArray(rows) ? rows : [];
+
+        if (userDataTable) {
+            const tableRows = safeRows.map(function (row, index) {
+                const statusBadge = (parseInt(row.is_active || '1', 10) === 1)
+                    ? '<span class="badge badge-success">Aktif</span>'
+                    : '<span class="badge badge-secondary">Non Aktif</span>';
+
+                return [
+                    index + 1,
+                    escapeHtml(String(row.username || '-')),
+                    escapeHtml(String(row.full_name || '-')),
+                    statusBadge,
+                    '<span class="badge badge-secondary">' + escapeHtml(String(row.role || '-')) + '</span>',
+                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" ' + (canEdit ? '' : 'disabled') + '><i class="fas fa-pen"></i></button>',
+                ];
+            });
+
+            userDataTable.clear();
+            userDataTable.rows.add(tableRows).draw();
+
+            window.jQuery('#userTable tbody tr').each(function (index) {
+                const row = safeRows[index];
+                if (!row) {
+                    return;
+                }
+
+                this.setAttribute('data-id', String(row.id || ''));
+                this.dataset.username = String(row.username || '');
+                this.dataset.fullName = String(row.full_name || '');
+                this.dataset.role = String(row.role || 'editor');
+                this.dataset.isActive = String(parseInt(row.is_active || '1', 10) === 1 ? '1' : '0');
+            });
+
+            return;
+        }
+
         userTableBody.innerHTML = '';
 
-        if (!rows || rows.length === 0) {
+        if (safeRows.length === 0) {
             userTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Belum ada data user.</td></tr>';
             return;
         }
 
-        rows.forEach(function (row, index) {
+        safeRows.forEach(function (row, index) {
             const tr = document.createElement('tr');
             tr.setAttribute('data-id', String(row.id));
             const statusBadge = (parseInt(row.is_active || '1', 10) === 1)
@@ -235,6 +379,37 @@ document.addEventListener('DOMContentLoaded', function () {
             tr.dataset.role = String(row.role || 'editor');
             tr.dataset.isActive = String(parseInt(row.is_active || '1', 10) === 1 ? '1' : '0');
             userTableBody.appendChild(tr);
+        });
+    }
+
+    function initUserDataTable() {
+        if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.DataTable) {
+            return;
+        }
+
+        userDataTable = window.jQuery('#userTable').DataTable({
+            responsive: false,
+            autoWidth: false,
+            scrollX: true,
+            scrollCollapse: true,
+            order: [[2, 'asc']],
+            language: {
+                search: 'Cari:',
+                lengthMenu: 'Tampilkan _MENU_ data',
+                info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+                infoEmpty: 'Tidak ada data',
+                zeroRecords: 'Data tidak ditemukan',
+                emptyTable: 'Belum ada data user.',
+                paginate: {
+                    first: 'Awal',
+                    last: 'Akhir',
+                    next: 'Berikutnya',
+                    previous: 'Sebelumnya'
+                }
+            },
+            columnDefs: [
+                { targets: [3, 4, 5], orderable: false },
+            ]
         });
     }
 
@@ -266,17 +441,24 @@ document.addEventListener('DOMContentLoaded', function () {
         userModalTitle.textContent = 'Tambah User';
         userSubmitBtn.textContent = 'Simpan';
         userId.value = '';
-        username.value = '';
-        username.readOnly = false;
-        if (usernameHint) {
-            usernameHint.textContent = 'Username digunakan untuk login dan tidak bisa diubah setelah dibuat.';
+        if (sourceType) {
+            sourceType.value = 'manual';
         }
+        if (usernamePegawai) {
+            usernamePegawai.value = '';
+        }
+        username.value = '';
         fullName.value = '';
         role.value = 'editor';
         isActive.checked = true;
         password.value = '';
         password.required = true;
+        password.disabled = false;
         passwordHint.textContent = '(wajib diisi)';
+        if (passwordAutoHint) {
+            passwordAutoHint.textContent = '';
+        }
+        updateSourceState();
         userModal.show();
     }
 
@@ -285,17 +467,24 @@ document.addEventListener('DOMContentLoaded', function () {
         userModalTitle.textContent = 'Ubah User';
         userSubmitBtn.textContent = 'Perbarui';
         userId.value = row.getAttribute('data-id') || '';
-        username.value = row.dataset.username || '';
-        username.readOnly = true;
-        if (usernameHint) {
-            usernameHint.textContent = 'Username dikunci dan tidak dapat diubah.';
+        if (sourceType) {
+            sourceType.value = 'manual';
         }
+        if (usernamePegawai) {
+            usernamePegawai.value = '';
+        }
+        username.value = row.dataset.username || '';
         fullName.value = row.dataset.fullName || '';
         role.value = row.dataset.role || 'editor';
         isActive.checked = String(row.dataset.isActive || '1') === '1';
         password.value = '';
         password.required = false;
+        password.disabled = false;
         passwordHint.textContent = '(opsional, isi jika ingin ganti)';
+        if (passwordAutoHint) {
+            passwordAutoHint.textContent = '';
+        }
+        updateSourceState();
         userModal.show();
     }
 
@@ -326,6 +515,24 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnOpenCreate && canEdit) {
         btnOpenCreate.addEventListener('click', function () {
             openCreateModal();
+        });
+    }
+
+    if (sourceType) {
+        sourceType.addEventListener('change', function () {
+            updateSourceState();
+            if (sourceType.value === 'manual') {
+                username.value = '';
+                fullName.value = '';
+            } else {
+                applySelectedPegawai();
+            }
+        });
+    }
+
+    if (usernamePegawai) {
+        usernamePegawai.addEventListener('change', function () {
+            applySelectedPegawai();
         });
     }
 
@@ -365,7 +572,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 : '<?= site_url('admin/utility/user/tambah') ?>';
 
             if (!currentId) {
-                payload.username = username.value.trim();
+                const selectedSource = sourceType ? sourceType.value : 'manual';
+                payload.source_type = selectedSource;
+                if (selectedSource === 'pegawai') {
+                    payload.pegawai_id = usernamePegawai ? usernamePegawai.value : '';
+                    payload.username = username.value.trim();
+                } else {
+                    payload.pegawai_id = '';
+                    payload.username = username.value.trim();
+                }
             }
 
             request(url, payload)
@@ -391,6 +606,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    populatePegawaiOptions();
+    updateSourceState();
+    initUserDataTable();
     fetchUsers();
 });
 </script>

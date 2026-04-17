@@ -9,7 +9,7 @@ class Password extends BaseController
 {
     public function index()
     {
-        return view('admin/settings/password');
+        return redirect()->to('/admin')->with('open_password_modal', 1);
     }
 
     public function update()

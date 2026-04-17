@@ -324,7 +324,7 @@
     <div class="login-form-wrapper">
         <div class="login-form-header">
             <h2>Masuk ke Sistem</h2>
-            <p>Gunakan akun internal yang telah terdaftar</p>
+            <p>Gunakan akun yang telah terdaftar (username / nip)</p>
         </div>
 
         <?php if (session()->getFlashdata('message')): ?>
@@ -337,8 +337,8 @@
         <form action="<?= site_url('/masuk'); ?>" method="post">
             <?= csrf_field(); ?>
             <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Masukkan username Anda" value="<?= old('username'); ?>" required>
+                <label for="username">Username / NIP</label>
+                <input type="text" id="username" name="username" placeholder="Masukkan username / nip" value="<?= old('username'); ?>" required>
             </div>
 
             <div class="form-group">

@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\LoginHistoryModel;
+use App\Models\MstPegawaiModel;
 use App\Models\UserModel;
 
 class Auth extends BaseController
@@ -50,6 +51,15 @@ class Auth extends BaseController
             'fullName'   => $user['full_name'],
             'role'       => $user['role'] ?? 'editor',
         ]);
+
+        $rawPassword = (string) $this->request->getPost('password');
+        if ($this->shouldShowPasswordChangeWarning($user, $rawPassword)) {
+            session()->setFlashdata('password_warning', [
+                'title' => 'Segera Ganti Password',
+                'text' => 'Anda masih menggunakan password default/lemah. Silakan segera ganti password untuk keamanan akun.',
+                'changePasswordUrl' => site_url('/admin/password'),
+            ]);
+        }
 
         $this->logLoginAttempt(true, null, $context, $user);
 
@@ -115,6 +125,49 @@ class Auth extends BaseController
             ]);
         } catch (\Throwable $e) {
             // Logging must not break authentication flow.
+        }
+    }
+
+    private function shouldShowPasswordChangeWarning(array $user, string $rawPassword): bool
+    {
+        $username = trim((string) ($user['username'] ?? ''));
+        if ($username === '' || $rawPassword === '') {
+            return false;
+        }
+
+        if (hash_equals(strtolower($username), strtolower($rawPassword))) {
+            return true;
+        }
+
+        $nip = $this->resolveUserNip($user, $username);
+        if ($nip !== null && $nip !== '' && hash_equals(strtolower($nip), strtolower($rawPassword))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function resolveUserNip(array $user, string $username): ?string
+    {
+        try {
+            $db = db_connect();
+            if (! $db->tableExists('mst_pegawai')) {
+                return null;
+            }
+
+            $pegawaiModel = new MstPegawaiModel();
+            $pegawai = $pegawaiModel
+                ->select('nip, nama')
+                ->groupStart()
+                    ->where('LOWER(nip)', strtolower($username))
+                    ->orWhere('LOWER(nama)', strtolower((string) ($user['full_name'] ?? '')))
+                ->groupEnd()
+                ->orderBy('id', 'ASC')
+                ->first();
+
+            return trim((string) ($pegawai['nip'] ?? '')) ?: null;
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 }

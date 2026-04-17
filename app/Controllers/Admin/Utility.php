@@ -6,6 +6,7 @@ use App\Controllers\BaseController;
 use App\Models\MenuLv1Model;
 use App\Models\MenuLv2Model;
 use App\Models\MenuLv3Model;
+use App\Models\MstPegawaiModel;
 use App\Models\UserModel;
 
 class Utility extends BaseController
@@ -14,6 +15,7 @@ class Utility extends BaseController
     {
         return view('admin/utility/user', [
             'can_edit' => $this->canManageUsers(),
+            'pegawai_options' => $this->getPegawaiOptionsForUser(),
         ]);
     }
 
@@ -200,12 +202,23 @@ class Utility extends BaseController
             ]);
         }
 
+        $sourceType = strtolower(trim((string) $this->request->getPost('source_type')));
+        if (! in_array($sourceType, ['manual', 'pegawai'], true)) {
+            $sourceType = 'manual';
+        }
+
         $rules = [
-            'username' => 'required|min_length[3]|max_length[100]|alpha_numeric_punct',
-            'full_name' => 'required|min_length[3]|max_length[150]',
             'role' => 'required|in_list[admin,editor,super administrator,super_administrator,super-admin,superadmin]',
-            'password' => 'required|min_length[6]|max_length[72]',
         ];
+
+        if ($sourceType === 'pegawai') {
+            $rules['pegawai_id'] = 'required|integer';
+            $rules['password'] = 'permit_empty|max_length[72]';
+        } else {
+            $rules['username'] = 'required|min_length[3]|max_length[100]|alpha_numeric_punct';
+            $rules['full_name'] = 'required|min_length[3]|max_length[150]';
+            $rules['password'] = 'required|min_length[6]|max_length[72]';
+        }
 
         if (! $this->validate($rules)) {
             return $this->response->setStatusCode(422)->setJSON([
@@ -220,6 +233,41 @@ class Utility extends BaseController
         $fullName = trim((string) $this->request->getPost('full_name'));
         $role = trim((string) $this->request->getPost('role'));
         $password = (string) $this->request->getPost('password');
+
+        if ($sourceType === 'pegawai') {
+            $db = db_connect();
+            if (! $db->tableExists('mst_pegawai')) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'status' => 'error',
+                    'errors' => ['pegawai_id' => 'Data pegawai belum tersedia. Jalankan migrasi terlebih dahulu.'],
+                    'csrfHash' => csrf_hash(),
+                ]);
+            }
+
+            $pegawaiId = (int) $this->request->getPost('pegawai_id');
+            $pegawai = (new MstPegawaiModel())->find($pegawaiId);
+            if (! is_array($pegawai)) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'status' => 'error',
+                    'errors' => ['pegawai_id' => 'Pegawai tidak ditemukan.'],
+                    'csrfHash' => csrf_hash(),
+                ]);
+            }
+
+            $nip = trim((string) ($pegawai['nip'] ?? ''));
+            $nama = trim((string) ($pegawai['nama'] ?? ''));
+            if ($nip === '' || $nama === '') {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'status' => 'error',
+                    'errors' => ['pegawai_id' => 'Data NIP atau nama pegawai belum lengkap.'],
+                    'csrfHash' => csrf_hash(),
+                ]);
+            }
+
+            $username = strtolower($nip);
+            $fullName = $nama;
+            $password = $nip;
+        }
 
         if ($model->where('username', $username)->countAllResults() > 0) {
             return $this->response->setStatusCode(422)->setJSON([
@@ -382,6 +430,55 @@ class Utility extends BaseController
         $role = strtolower(trim((string) session('role')));
 
         return in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+    }
+
+    private function getPegawaiOptionsForUser(): array
+    {
+        try {
+            $db = db_connect();
+            if (! $db->tableExists('mst_pegawai')) {
+                return [];
+            }
+
+            $pegawaiRows = $db->table('mst_pegawai')
+                ->select('id, nip, nama')
+                ->where('is_active', 1)
+                ->where('nip IS NOT NULL', null, false)
+                ->where('nip !=', '')
+                ->where('nama IS NOT NULL', null, false)
+                ->where('nama !=', '')
+                ->orderBy('nama', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            if ($pegawaiRows === []) {
+                return [];
+            }
+
+            $takenUsernames = array_map(
+                static fn (array $row): string => strtolower(trim((string) ($row['username'] ?? ''))),
+                (new UserModel())->select('username')->findAll()
+            );
+            $takenMap = array_fill_keys(array_filter($takenUsernames, static fn (string $value): bool => $value !== ''), true);
+
+            $options = [];
+            foreach ($pegawaiRows as $pegawai) {
+                $nip = strtolower(trim((string) ($pegawai['nip'] ?? '')));
+                if ($nip === '' || isset($takenMap[$nip])) {
+                    continue;
+                }
+
+                $options[] = [
+                    'id' => (int) ($pegawai['id'] ?? 0),
+                    'nip' => (string) ($pegawai['nip'] ?? ''),
+                    'nama' => (string) ($pegawai['nama'] ?? ''),
+                ];
+            }
+
+            return $options;
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     private function getMenuAccessRoles(): array

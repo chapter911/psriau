@@ -9,6 +9,44 @@
 <script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
 <script>
     (() => {
+        const passwordWarning = <?= json_encode(session()->getFlashdata('password_warning'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+        if (!passwordWarning || typeof passwordWarning !== 'object') {
+            return;
+        }
+
+        const title = String(passwordWarning.title || 'Segera Ganti Password');
+        const text = String(passwordWarning.text || 'Silakan segera ganti password Anda untuk keamanan akun.');
+        const changePasswordUrl = String(passwordWarning.changePasswordUrl || '<?= site_url('/admin/password'); ?>');
+
+        const fallback = () => {
+            if (window.confirm(title + '\n\n' + text + '\n\nBuka halaman ganti password sekarang?')) {
+                window.location.href = changePasswordUrl;
+            }
+        };
+
+        if (typeof Swal === 'undefined') {
+            fallback();
+            return;
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title,
+            text,
+            confirmButtonText: 'Ganti Password Sekarang',
+            showCancelButton: true,
+            cancelButtonText: 'Nanti',
+            reverseButtons: true,
+            focusConfirm: true,
+            allowOutsideClick: false,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = changePasswordUrl;
+            }
+        });
+    })();
+
+    (() => {
         const preloaderShownAt = typeof window.__appPreloaderStart === 'number'
             ? window.__appPreloaderStart
             : (typeof performance !== 'undefined' ? performance.now() : Date.now());
