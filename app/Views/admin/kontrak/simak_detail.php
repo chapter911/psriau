@@ -223,6 +223,10 @@
                                             $dokumenRows = $dokumenByRow[$rowNo] ?? [];
                                             $dokumenCount = count($dokumenRows);
                                             $latestDokumen = $dokumenRows[0] ?? null;
+                                            $latestPath = is_array($latestDokumen) ? trim((string) ($latestDokumen['file_relative_path'] ?? '')) : '';
+                                            $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
+                                            $isDriveLink = in_array($latestHost, ['drive.google.com', 'docs.google.com'], true);
+                                            $dokumenActionLabel = $isDriveLink ? 'Buka Link' : 'Lihat Dokumen';
                                             $indentPadding = max(0, $indentLevel) * 18;
                                             $isGroup = in_array($rowType, ['section_header', 'subsection_header'], true) || $hasChildren;
                                             $fontWeight = $isGroup ? 'font-weight: 700;' : ($indentLevel > 1 ? 'font-weight: 500;' : 'font-weight: 600;');
@@ -282,9 +286,9 @@
                                                                 target="_blank"
                                                                 rel="noopener"
                                                                 class="btn btn-info btn-sm"
-                                                                title="Lihat dokumen terbaru: <?= esc((string) ($latestDokumen['file_original_name'] ?? 'Dokumen')); ?>"
-                                                                aria-label="Lihat dokumen terbaru <?= esc((string) ($latestDokumen['file_original_name'] ?? 'Dokumen')); ?>"
-                                                            ><i class="fas fa-eye"></i></a>
+                                                                title="<?= esc($dokumenActionLabel); ?> terbaru: <?= esc((string) ($latestDokumen['file_original_name'] ?? 'Dokumen')); ?>"
+                                                                aria-label="<?= esc($dokumenActionLabel); ?> terbaru <?= esc((string) ($latestDokumen['file_original_name'] ?? 'Dokumen')); ?>"
+                                                            ><i class="fas <?= $isDriveLink ? 'fa-external-link-alt' : 'fa-eye'; ?>"></i> <?= esc($dokumenActionLabel); ?></a>
                                                         <?php else: ?>
                                                             <span class="text-muted">-</span>
                                                         <?php endif; ?>
@@ -453,6 +457,21 @@
 
     var currentUsername = '<?= esc((string) session()->get('username')); ?>';
 
+    var isDriveLinkPath = function (path) {
+        var value = String(path || '').trim();
+        if (!value) {
+            return false;
+        }
+
+        try {
+            var parsed = new URL(value, window.location.origin);
+            var host = String(parsed.hostname || '').toLowerCase();
+            return host === 'drive.google.com' || host === 'docs.google.com';
+        } catch (error) {
+            return false;
+        }
+    };
+
     var formatFileSize = function (bytes) {
         var size = Number(bytes || 0);
         if (!Number.isFinite(size) || size <= 0) {
@@ -486,13 +505,17 @@
             var size = formatFileSize(doc && doc.file_size ? doc.file_size : 0);
             var docId = doc && doc.id ? String(doc.id) : '0';
             var label = index === 0 ? 'Terbaru' : 'Riwayat ' + (index + 1);
+            var path = doc && doc.file_relative_path ? String(doc.file_relative_path) : '';
+            var isDrive = isDriveLinkPath(path);
+            var actionLabel = isDrive ? 'Buka Link' : 'Lihat Dokumen';
+            var actionIcon = isDrive ? 'fa-external-link-alt' : 'fa-eye';
 
             return '<tr>' +
                 '<td><div class="font-weight-bold">' + fileName + '</div><small class="text-muted">' + label + '</small></td>' +
                 '<td>' + createdAt + '</td>' +
                 '<td>' + createdBy + '</td>' +
                 '<td>' + size + '</td>' +
-                '<td class="text-center"><a href="<?= site_url('admin/kontrak/simak/verifikasi-dokumen/'); ?>' + docId + '" target="_blank" rel="noopener" class="btn btn-info btn-sm"><i class="fas fa-eye"></i></a></td>' +
+                '<td class="text-center"><a href="<?= site_url('admin/kontrak/simak/verifikasi-dokumen/'); ?>' + docId + '" target="_blank" rel="noopener" class="btn btn-info btn-sm"><i class="fas ' + actionIcon + '"></i> ' + actionLabel + '</a></td>' +
             '</tr>';
         }).join('');
 

@@ -469,9 +469,15 @@
                                         <td class="cell-center">
                                             <?php if (is_array($latestDokumen)): ?>
                                                 <?php $uploadDate = date('d-m-Y', strtotime((string) ($latestDokumen['created_at'] ?? ''))); ?>
+                                                <?php
+                                                    $latestPath = trim((string) ($latestDokumen['file_relative_path'] ?? ''));
+                                                    $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
+                                                    $isDriveLink = in_array($latestHost, ['drive.google.com', 'docs.google.com'], true);
+                                                    $dokumenActionLabel = $isDriveLink ? 'Buka Link' : 'Lihat Dokumen';
+                                                ?>
                                                 <div>
                                                     <a href="<?= site_url('simak/share/' . (string) ($token ?? '') . '/download-dokumen/' . (int) ($latestDokumen['id'] ?? 0)); ?>" class="btn btn-success btn-sm">
-                                                        <i class="fas fa-download"></i> Lihat Dokumen
+                                                        <i class="fas <?= $isDriveLink ? 'fa-external-link-alt' : 'fa-download'; ?>"></i> <?= esc($dokumenActionLabel); ?>
                                                     </a>
                                                 </div>
                                                 <small class="text-muted" style="display: block; margin-top: 4px;">Di Upload Tanggal<br/><?= esc($uploadDate); ?></small>
@@ -534,10 +540,18 @@
                         <div><strong>Uraian:</strong> <span id="upload_row_uraian_modal">-</span></div>
                     </div>
 
-                    <div class="form-group mb-0">
+                    <div class="form-group mb-3">
                         <label for="dokumen_file_modal">File Dokumen</label>
-                        <input type="file" id="dokumen_file_modal" name="dokumen_file" class="form-control-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" required>
-                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX.</small>
+                        <input type="file" id="dokumen_file_modal" name="dokumen_file" class="form-control-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip">
+                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP. Maksimal 10MB.</small>
+                    </div>
+
+                    <div class="text-center text-muted small mb-2">ATAU</div>
+
+                    <div class="form-group mb-0">
+                        <label for="google_drive_link">Link Google Drive (alternatif)</label>
+                        <input type="url" id="google_drive_link" name="google_drive_link" class="form-control" placeholder="https://drive.google.com/... atau https://docs.google.com/...">
+                        <small class="text-muted">Isi jika ukuran file terlalu besar. Gunakan salah satu saja: upload file atau link Google Drive.</small>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -563,6 +577,8 @@
     var rowNoEl = document.getElementById('upload_row_no_modal');
     var rowLabelEl = document.getElementById('upload_row_label_modal');
     var rowUraianEl = document.getElementById('upload_row_uraian_modal');
+    var dokumenFileEl = document.getElementById('dokumen_file_modal');
+    var googleDriveLinkEl = document.getElementById('google_drive_link');
     var googleAccessTokenEl = document.getElementById('google_access_token');
     var uploaderNameEl = document.getElementById('uploader_name');
     var uploaderEmailEl = document.getElementById('uploader_email');
@@ -578,6 +594,22 @@
     var googleTokenClient = null;
     var googleStorageKey = 'simak_share_google_credential_' + (window.location.pathname || 'share');
     var pendingUploadContext = null;
+    var maxUploadBytes = 10 * 1024 * 1024;
+
+    function isAllowedGoogleDriveUrl(url) {
+        var value = String(url || '').trim();
+        if (!value) {
+            return false;
+        }
+
+        try {
+            var parsed = new URL(value);
+            var host = String(parsed.hostname || '').toLowerCase();
+            return host === 'drive.google.com' || host === 'docs.google.com';
+        } catch (error) {
+            return false;
+        }
+    }
 
     function setUploadContext(context) {
         context = context || {};
@@ -590,6 +622,12 @@
         }
         if (rowUraianEl) {
             rowUraianEl.textContent = String(context.rowUraian || '-').trim() || '-';
+        }
+        if (dokumenFileEl) {
+            dokumenFileEl.value = '';
+        }
+        if (googleDriveLinkEl) {
+            googleDriveLinkEl.value = '';
         }
     }
 
@@ -848,6 +886,58 @@
                         icon: 'warning',
                         title: 'Login Google diperlukan',
                         text: 'Anda harus login dengan Google sebelum upload dokumen.',
+                    });
+                }
+                return;
+            }
+
+            var hasFile = !!(dokumenFileEl && dokumenFileEl.files && dokumenFileEl.files.length > 0);
+            var driveLink = String(googleDriveLinkEl && googleDriveLinkEl.value ? googleDriveLinkEl.value : '').trim();
+            var hasDriveLink = driveLink !== '';
+
+            if (!hasFile && !hasDriveLink) {
+                event.preventDefault();
+                if (window.Swal) {
+                    window.Swal.fire({
+                        icon: 'warning',
+                        title: 'Dokumen belum diisi',
+                        text: 'Pilih salah satu: upload file atau isi link Google Drive.',
+                    });
+                }
+                return;
+            }
+
+            if (hasFile && hasDriveLink) {
+                event.preventDefault();
+                if (window.Swal) {
+                    window.Swal.fire({
+                        icon: 'warning',
+                        title: 'Pilih salah satu sumber',
+                        text: 'Gunakan salah satu saja: upload file atau link Google Drive.',
+                    });
+                }
+                return;
+            }
+
+            if (hasFile && dokumenFileEl && dokumenFileEl.files[0] && dokumenFileEl.files[0].size > maxUploadBytes) {
+                event.preventDefault();
+                if (window.Swal) {
+                    window.Swal.fire({
+                        icon: 'warning',
+                        title: 'Ukuran file melebihi batas',
+                        text: 'Ukuran file maksimal 10MB.',
+                    });
+                }
+                return;
+            }
+
+            if (hasDriveLink && !isAllowedGoogleDriveUrl(driveLink)) {
+                event.preventDefault();
+                if (window.Swal) {
+                    window.Swal.fire({
+                        icon: 'warning',
+                        title: 'Link tidak valid',
+                        text: 'Gunakan link dari drive.google.com atau docs.google.com.',
                     });
                 }
                 return;

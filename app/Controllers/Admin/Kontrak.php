@@ -1428,7 +1428,7 @@ class Kontrak extends BaseController
         $dokumenByRow = [];
         if ($db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
             $dokumenBuilder = $db->table('trn_kontrak_simak_verifikasi_dokumen')
-                ->select('id, row_no, file_original_name, file_mime, file_size, created_at, created_by, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
+                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
                 ->where('simak_id', $id)
                 ->orderBy('row_no', 'ASC')
                 ->orderBy('id', 'DESC');
@@ -1759,7 +1759,12 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Dokumen verifikasi tidak ditemukan.');
         }
 
-        $relativePath = ltrim((string) ($row['file_relative_path'] ?? ''), '/');
+        $relativePath = trim((string) ($row['file_relative_path'] ?? ''));
+        if ($this->isAllowedGoogleDriveUrl($relativePath)) {
+            return redirect()->to($relativePath);
+        }
+
+        $relativePath = ltrim($relativePath, '/');
         $absPath = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
         if ($relativePath === '' || ! is_file($absPath)) {
             return redirect()->to(site_url('admin/kontrak/simak/' . (int) ($row['simak_id'] ?? 0)))->with('error', 'File dokumen tidak ditemukan di server.');
@@ -1881,25 +1886,65 @@ class Kontrak extends BaseController
         $verifikasi = null;
 
         $file = $this->request->getFile('dokumen_file');
-        if (! $file || ! $file->isValid() || $file->hasMoved()) {
-            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'File upload tidak valid.');
+        $googleDriveLink = trim((string) $this->request->getPost('google_drive_link'));
+        $hasFile = $file !== null && $file->getError() !== UPLOAD_ERR_NO_FILE;
+        $hasDriveLink = $googleDriveLink !== '';
+
+        if (! $hasFile && ! $hasDriveLink) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Pilih salah satu: upload file atau isi link Google Drive.');
         }
 
-        $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
-        $ext = strtolower((string) $file->getClientExtension());
-        if (! in_array($ext, $allowedExt, true)) {
-            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
+        if ($hasFile && $hasDriveLink) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gunakan salah satu saja: upload file atau link Google Drive.');
         }
 
-        $subDir = 'uploads/simak_verifikasi/' . $simakId . '/' . $rowNo;
-        $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
-        if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
-            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal membuat direktori upload dokumen.');
-        }
+        $storedName = '';
+        $relativePath = '';
+        $originalName = '';
+        $mimeType = '';
+        $fileSize = 0;
+        $sourceLabel = 'dokumen';
 
-        $storedName = $file->getRandomName();
-        $file->move($absDir, $storedName, true);
-        $relativePath = $subDir . '/' . $storedName;
+        if ($hasDriveLink) {
+            if (! $this->isAllowedGoogleDriveUrl($googleDriveLink)) {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Link tidak valid. Gunakan link dari drive.google.com atau docs.google.com.');
+            }
+
+            $relativePath = $googleDriveLink;
+            $originalName = 'Google Drive Link';
+            $mimeType = 'text/uri-list';
+            $sourceLabel = 'link Google Drive';
+        } else {
+            if (! $file || ! $file->isValid() || $file->hasMoved()) {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'File upload tidak valid.');
+            }
+
+            $maxFileSize = 10 * 1024 * 1024;
+            $uploadedSize = (int) ($file->getSizeByUnit('b') ?? 0);
+            if ($uploadedSize <= 0 || $uploadedSize > $maxFileSize) {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Ukuran file maksimal 10MB.');
+            }
+
+            $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'zip'];
+            $ext = strtolower((string) $file->getClientExtension());
+            if (! in_array($ext, $allowedExt, true)) {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP.');
+            }
+
+            $subDir = 'uploads/simak_verifikasi/' . $simakId . '/' . $rowNo;
+            $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
+            if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal membuat direktori upload dokumen.');
+            }
+
+            $storedName = $file->getRandomName();
+            $file->move($absDir, $storedName, true);
+
+            $relativePath = $subDir . '/' . $storedName;
+            $originalName = (string) $file->getClientName();
+            $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
+            $fileSize = $uploadedSize;
+        }
 
         $keterangan = 'Menunggu Verifikasi';
         $pic = is_array($existingVerifikasi) ? trim((string) ($existingVerifikasi['pic'] ?? '')) : '';
@@ -1930,11 +1975,11 @@ class Kontrak extends BaseController
             'verifikasi_ki' => $verifikasi,
             'keterangan' => $keterangan,
             'pic' => $pic,
-            'file_original_name' => (string) $file->getClientName(),
+            'file_original_name' => $originalName,
             'file_stored_name' => $storedName,
             'file_relative_path' => $relativePath,
-            'file_mime' => (string) ($file->getClientMimeType() ?: ''),
-            'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+            'file_mime' => $mimeType,
+            'file_size' => $fileSize,
             'created_by' => $actor,
             'created_date' => $today,
             'created_at' => $now,
@@ -1950,7 +1995,7 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal menyimpan upload dokumen.');
         }
 
-        return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Dokumen berhasil diupload. Status kelengkapan dokumen diperbarui menjadi Ada dan Verifikasi Dit. KI menjadi Menunggu Verifikasi.');
+        return redirect()->to(site_url('simak/share/' . $token))->with('success', ucfirst($sourceLabel) . ' berhasil dikirim. Status kelengkapan dokumen diperbarui menjadi Ada dan Verifikasi Dit. KI menjadi Menunggu Verifikasi.');
     }
 
     public function sharedDownloadDokumen(string $token, int $dokumenId)
@@ -1984,8 +2029,12 @@ class Kontrak extends BaseController
             );
         }
 
-        $relativePath = (string) ($dokumen['file_relative_path'] ?? '');
+        $relativePath = trim((string) ($dokumen['file_relative_path'] ?? ''));
         $originalName = (string) ($dokumen['file_original_name'] ?? 'dokumen');
+
+        if ($this->isAllowedGoogleDriveUrl($relativePath)) {
+            return redirect()->to($relativePath);
+        }
 
         if ($relativePath === '') {
             return $this->renderSharedDokumenNotFound(
@@ -2006,6 +2055,27 @@ class Kontrak extends BaseController
         }
 
         return $this->response->download($filePath, null)->setFileName($originalName);
+    }
+
+    private function isAllowedGoogleDriveUrl(string $url): bool
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return false;
+        }
+
+        $parts = parse_url($url);
+        if (! is_array($parts)) {
+            return false;
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (! in_array($scheme, ['http', 'https'], true)) {
+            return false;
+        }
+
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        return in_array($host, ['drive.google.com', 'docs.google.com'], true);
     }
 
     private function verifyGoogleAccessToken(string $accessToken): ?array
@@ -2295,7 +2365,7 @@ class Kontrak extends BaseController
         $dokumenByRow = [];
         if ($db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
             $dokumenBuilder = $db->table('trn_kontrak_simak_verifikasi_dokumen')
-                ->select('id, row_no, file_original_name, file_mime, file_size, created_at, created_by')
+                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by')
                 ->where('simak_id', $shareSimakId)
                 ->orderBy('row_no', 'ASC')
                 ->orderBy('id', 'DESC');
