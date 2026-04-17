@@ -634,7 +634,7 @@
     function initGoogleSignIn() {
         if (!googleClientId || !window.google || !window.google.accounts || !window.google.accounts.id) {
             if (googleSignInButton) {
-                googleSignInButton.innerHTML = '<div class="text-danger small">Google Sign-In belum dikonfigurasi.</div>';
+                googleSignInButton.innerHTML = '<div class="text-danger small">Google Sign-In belum dikonfigurasi. Set GOOGLE_CLIENT_ID untuk mengaktifkan login.</div>';
             }
             return;
         }
