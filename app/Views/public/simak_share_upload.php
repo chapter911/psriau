@@ -572,10 +572,54 @@
     var googleAuthUser = document.getElementById('googleAuthUser');
     var googleAuthHint = document.getElementById('googleAuthHint');
     var uploadGoogleLock = document.getElementById('uploadGoogleLock');
+    var uploadModalEl = document.getElementById('modal-upload-share-simak');
     var uploadSubmitButton = uploadForm ? uploadForm.querySelector('button[type="submit"]') : null;
     var googleProfile = null;
     var googleTokenClient = null;
     var googleStorageKey = 'simak_share_google_credential_' + (window.location.pathname || 'share');
+    var pendingUploadContext = null;
+
+    function setUploadContext(context) {
+        context = context || {};
+
+        if (rowNoEl) {
+            rowNoEl.value = String(context.rowNo || '').trim();
+        }
+        if (rowLabelEl) {
+            rowLabelEl.textContent = String(context.rowLabel || '-').trim() || '-';
+        }
+        if (rowUraianEl) {
+            rowUraianEl.textContent = String(context.rowUraian || '-').trim() || '-';
+        }
+    }
+
+    function getUploadContextFromButton(button) {
+        return {
+            rowNo: String(button && button.getAttribute('data-row-no') || '').trim(),
+            rowLabel: String(button && button.getAttribute('data-row-label') || '-').trim(),
+            rowUraian: String(button && button.getAttribute('data-uraian') || '-').trim(),
+        };
+    }
+
+    function openUploadModal() {
+        if (!uploadModalEl) {
+            return;
+        }
+
+        if (window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+            window.jQuery(uploadModalEl).modal('show');
+        }
+    }
+
+    function flushPendingUploadContext() {
+        if (!pendingUploadContext || !googleAccessTokenEl || !googleAccessTokenEl.value) {
+            return;
+        }
+
+        setUploadContext(pendingUploadContext);
+        pendingUploadContext = null;
+        openUploadModal();
+    }
 
     function saveGoogleCredential(credential) {
         try {
@@ -666,6 +710,19 @@
         }
 
         updateUploadLockState();
+        flushPendingUploadContext();
+
+        if (window.Swal && persist !== false) {
+            window.Swal.fire({
+                toast: true,
+                icon: 'success',
+                title: 'Login Google berhasil',
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true,
+            });
+        }
     }
 
     function loadGoogleUserInfo(accessToken) {
@@ -745,30 +802,31 @@
 
     openButtons.forEach(function (button) {
         button.addEventListener('click', function (event) {
+            var context = getUploadContextFromButton(this);
+
             if (!googleAccessTokenEl || !googleAccessTokenEl.value) {
+                pendingUploadContext = context;
+
                 if (event && typeof event.preventDefault === 'function') {
                     event.preventDefault();
                     event.stopPropagation();
                 }
+
+                if (googleTokenClient) {
+                    googleTokenClient.requestAccessToken({ prompt: 'consent' });
+                }
+
                 if (window.Swal) {
                     window.Swal.fire({
                         icon: 'warning',
                         title: 'Login Google diperlukan',
-                        text: 'Silakan login dengan Google terlebih dahulu untuk mengunggah dokumen.',
+                        text: 'Silakan pilih akun Google. Setelah login berhasil, form upload akan terbuka otomatis.',
                     });
                 }
                 return;
             }
 
-            if (rowNoEl) {
-                rowNoEl.value = String(this.getAttribute('data-row-no') || '').trim();
-            }
-            if (rowLabelEl) {
-                rowLabelEl.textContent = String(this.getAttribute('data-row-label') || '-').trim();
-            }
-            if (rowUraianEl) {
-                rowUraianEl.textContent = String(this.getAttribute('data-uraian') || '-').trim();
-            }
+            setUploadContext(context);
         });
     });
 
