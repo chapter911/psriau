@@ -92,9 +92,9 @@
                     <label for="role">Role</label>
                     <select class="form-control no-select2" id="role" required>
                         <option value="">Pilih Role</option>
-                        <option value="editor">Editor</option>
-                        <option value="admin">Admin</option>
-                        <option value="super_administrator">Super Administrator</option>
+                        <?php foreach (($role_options ?? []) as $roleOption): ?>
+                            <option value="<?= esc((string) ($roleOption['value'] ?? '')); ?>"><?= esc((string) ($roleOption['label'] ?? '')); ?></option>
+                        <?php endforeach; ?>
                     </select>
                     <small class="text-danger d-none" data-error="role"></small>
                 </div>
@@ -123,6 +123,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const pegawaiOptions = <?= json_encode($pegawai_options ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    const roleOptions = <?= json_encode($role_options ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     const canEdit = <?= empty($can_edit ?? false) ? 'false' : 'true' ?>;
     const csrfInput = document.getElementById('csrf_token');
     const userTableBody = document.getElementById('userTableBody');
@@ -142,7 +143,53 @@ document.addEventListener('DOMContentLoaded', function () {
     const passwordHint = document.getElementById('passwordHint');
     const passwordAutoHint = document.getElementById('passwordAutoHint');
     const usernameHint = document.getElementById('usernameHint');
+    const roleLockedHint = document.createElement('small');
+    roleLockedHint.className = 'text-muted d-none d-block mt-1';
+    roleLockedHint.textContent = 'Role Super Administrator tidak dapat diubah oleh akun Anda.';
+    role.parentNode.insertBefore(roleLockedHint, role.nextSibling);
     let userDataTable = null;
+
+    function normalizeRoleValue(value) {
+        return String(value || '').toLowerCase().trim().replace(/[\s-]+/g, '_');
+    }
+
+    function renderRoleOptions(selectedRole, includeLockedRole) {
+        const selected = normalizeRoleValue(selectedRole);
+        const available = Array.isArray(roleOptions) ? roleOptions : [];
+        const allowedValues = available.map(function (item) {
+            return normalizeRoleValue(item.value);
+        });
+
+        role.innerHTML = '<option value="">Pilih Role</option>';
+
+        available.forEach(function (item) {
+            const option = document.createElement('option');
+            option.value = String(item.value || '');
+            option.textContent = String(item.label || item.value || '');
+            role.appendChild(option);
+        });
+
+        const isLocked = includeLockedRole && selected !== '' && allowedValues.indexOf(selected) === -1;
+        if (isLocked) {
+            const hiddenOption = document.createElement('option');
+            hiddenOption.value = String(selectedRole || '');
+            hiddenOption.textContent = String(selectedRole || '');
+            hiddenOption.hidden = true;
+            hiddenOption.selected = true;
+            role.appendChild(hiddenOption);
+            role.disabled = true;
+            roleLockedHint.classList.remove('d-none');
+            roleLockedHint.textContent = 'Role Super Administrator tidak dapat diubah oleh akun Anda.';
+            return;
+        }
+
+        role.disabled = false;
+        roleLockedHint.classList.add('d-none');
+
+        if (selected !== '') {
+            role.value = selected;
+        }
+    }
 
     function populatePegawaiOptions() {
         if (!usernamePegawai) {
@@ -449,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         username.value = '';
         fullName.value = '';
-        role.value = 'editor';
+        renderRoleOptions('editor', false);
         isActive.checked = true;
         password.value = '';
         password.required = true;
@@ -475,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         username.value = row.dataset.username || '';
         fullName.value = row.dataset.fullName || '';
-        role.value = row.dataset.role || 'editor';
+        renderRoleOptions(row.dataset.role || 'editor', true);
         isActive.checked = String(row.dataset.isActive || '1') === '1';
         password.value = '';
         password.required = false;

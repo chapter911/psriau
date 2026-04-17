@@ -16,6 +16,7 @@ class Utility extends BaseController
         return view('admin/utility/user', [
             'can_edit' => $this->canManageUsers(),
             'pegawai_options' => $this->getPegawaiOptionsForUser(),
+            'role_options' => $this->getAssignableUserRoleOptions(),
         ]);
     }
 
@@ -207,8 +208,11 @@ class Utility extends BaseController
             $sourceType = 'manual';
         }
 
+        $roleValues = array_map(static fn (array $role): string => (string) ($role['value'] ?? ''), $this->getAssignableUserRoleOptions());
+        $roleValues = array_values(array_filter(array_map('trim', $roleValues), static fn (string $value): bool => $value !== ''));
+
         $rules = [
-            'role' => 'required|in_list[admin,editor,super administrator,super_administrator,super-admin,superadmin]',
+            'role' => 'required|in_list[' . implode(',', $roleValues) . ']',
         ];
 
         if ($sourceType === 'pegawai') {
@@ -310,11 +314,23 @@ class Utility extends BaseController
             ]);
         }
 
+        $allowedRoleOptions = $this->getAssignableUserRoleOptions();
+        $allowedRoleValues = array_map(static fn (array $role): string => (string) ($role['value'] ?? ''), $allowedRoleOptions);
+        $allowedRoleValues = array_values(array_filter(array_map('trim', $allowedRoleValues), static fn (string $value): bool => $value !== ''));
+
+        $existingRole = trim((string) ($existing['role'] ?? ''));
+        $existingRoleAllowed = in_array($this->normalizeRoleKey($existingRole), array_map([$this, 'normalizeRoleKey'], $allowedRoleValues), true);
+
         $rules = [
             'full_name' => 'required|min_length[3]|max_length[150]',
-            'role' => 'required|in_list[admin,editor,super administrator,super_administrator,super-admin,superadmin]',
             'password' => 'permit_empty|min_length[6]|max_length[72]',
         ];
+
+        if ($existingRoleAllowed) {
+            $rules['role'] = 'required|in_list[' . implode(',', $allowedRoleValues) . ']';
+        } else {
+            $rules['role'] = 'permit_empty|in_list[' . implode(',', $allowedRoleValues) . ']';
+        }
 
         if (! $this->validate($rules)) {
             return $this->response->setStatusCode(422)->setJSON([
@@ -337,6 +353,10 @@ class Utility extends BaseController
         $fullName = trim((string) $this->request->getPost('full_name'));
         $role = trim((string) $this->request->getPost('role'));
         $password = (string) $this->request->getPost('password');
+
+        if (! $existingRoleAllowed) {
+            $role = $existingRole;
+        }
 
         $data = [
             'full_name' => $fullName,
@@ -430,6 +450,30 @@ class Utility extends BaseController
         $role = strtolower(trim((string) session('role')));
 
         return in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+    }
+
+    private function getAssignableUserRoleOptions(): array
+    {
+        $options = [
+            ['value' => 'editor', 'label' => 'Editor'],
+            ['value' => 'admin', 'label' => 'Admin'],
+        ];
+
+        if ($this->isSuperAdministratorSession()) {
+            $options[] = ['value' => 'super_administrator', 'label' => 'Super Administrator'];
+        }
+
+        return $options;
+    }
+
+    private function isSuperAdministratorSession(): bool
+    {
+        return $this->isSuperAdministratorRoleKey((string) session('role'));
+    }
+
+    private function normalizeRoleKey(string $roleKey): string
+    {
+        return strtolower(trim(str_replace(['-', ' '], '_', $roleKey)));
     }
 
     private function getPegawaiOptionsForUser(): array
@@ -611,9 +655,9 @@ class Utility extends BaseController
 
     private function isSuperAdministratorRoleKey(string $roleKey): bool
     {
-        $normalized = strtolower(trim($roleKey));
+        $normalized = $this->normalizeRoleKey($roleKey);
 
-        return in_array($normalized, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        return in_array($normalized, ['super_administrator', 'superadmin'], true);
     }
 
     private function grantFullMenuAccessForRole(int $roleId): void
