@@ -1078,6 +1078,21 @@ class Kontrak extends BaseController
             $tahunAnggaran = trim((string) ($rowData['tahun_anggaran'] ?? ''));
             $nomorKontrak = trim((string) ($rowData['nomor_kontrak'] ?? ''));
             $nilaiKontrak = $this->parseMoneyToFloat($rowData['nilai_kontrak'] ?? 0);
+            $nilaiKontrakJasa = $this->parseMoneyToFloat($rowData['nilai_kontrak_jasa_konsultansi'] ?? 0);
+            if ($nilaiKontrakJasa <= 0) {
+                $nilaiKontrakJasa = $nilaiKontrak;
+            }
+            $penyediaKonstruksi = trim((string) ($rowData['penyedia'] ?? ''));
+            $penyediaJasa = trim((string) ($rowData['penyedia_jasa_konsultansi'] ?? ''));
+            if ($penyediaJasa === '') {
+                $penyediaJasa = $penyediaKonstruksi;
+            }
+            $tahapanPekerjaan = trim((string) ($rowData['tahapan_pekerjaan'] ?? ''));
+            $tanggalPemeriksaan = $this->normalizeDateValue((string) ($rowData['tanggal_pemeriksaan'] ?? ''));
+            $jenisJasa = $this->normalizeSimakJenisPekerjaanJasa((string) ($rowData['jenis_pekerjaan_jasa_konsultansi'] ?? ''));
+            $masaPelaksanaan = $this->normalizeSimakMasaPelaksanaan((string) ($rowData['masa_pelaksanaan'] ?? ''));
+            $paguAnggaran = $this->parseMoneyToBigInt($rowData['pagu_anggaran'] ?? 0);
+            $metodePemilihan = $this->normalizeSimakMetodePemilihan((string) ($rowData['metode_pemilihan'] ?? ''));
 
             if ($ppkNip === '' || $namaPaket === '' || $tahunAnggaran === '' || $nomorKontrak === '') {
                 $skipped++;
@@ -1088,6 +1103,18 @@ class Kontrak extends BaseController
             if (! preg_match('/^\d{4}\s*-\s*\d{4}$/', $tahunAnggaran)) {
                 $skipped++;
                 $appendReport($importReport, $excelRow, 'Format tahun anggaran tidak valid. Gunakan format YYYY - YYYY.');
+                continue;
+            }
+
+            if ($jenisJasa === null || $masaPelaksanaan === null || $paguAnggaran <= 0 || $metodePemilihan === null) {
+                $skipped++;
+                $appendReport($importReport, $excelRow, 'Field Jasa Konsultansi belum lengkap.');
+                continue;
+            }
+
+            if ($nilaiKontrak <= 0 || $nilaiKontrakJasa <= 0 || $penyediaKonstruksi === '' || $penyediaJasa === '' || $tahapanPekerjaan === '' || $tanggalPemeriksaan === '') {
+                $skipped++;
+                $appendReport($importReport, $excelRow, 'Field wajib tambahan belum lengkap (penyedia, penyedia_jasa_konsultansi, nilai_kontrak, nilai_kontrak_jasa_konsultansi, tahapan_pekerjaan, tanggal_pemeriksaan).');
                 continue;
             }
 
@@ -1106,11 +1133,17 @@ class Kontrak extends BaseController
                 'ppk_nip' => $ppkNip,
                 'nama_paket' => $namaPaket,
                 'tahun_anggaran' => $tahunAnggaran,
-                'penyedia' => trim((string) ($rowData['penyedia'] ?? '')),
+                'penyedia' => $penyediaKonstruksi,
+                'penyedia_jasa_konsultansi' => $penyediaJasa,
                 'nomor_kontrak' => $nomorKontrak,
                 'nilai_kontrak' => $nilaiKontrak,
-                'tahapan_pekerjaan' => trim((string) ($rowData['tahapan_pekerjaan'] ?? '')),
-                'tanggal_pemeriksaan' => $this->normalizeDateValue((string) ($rowData['tanggal_pemeriksaan'] ?? '')),
+                'nilai_kontrak_jasa_konsultansi' => $nilaiKontrakJasa,
+                'jenis_pekerjaan_jasa_konsultansi' => $jenisJasa,
+                'masa_pelaksanaan' => $masaPelaksanaan,
+                'pagu_anggaran' => $paguAnggaran,
+                'metode_pemilihan' => $metodePemilihan,
+                'tahapan_pekerjaan' => $tahapanPekerjaan,
+                'tanggal_pemeriksaan' => $tanggalPemeriksaan,
             ];
 
             $existingBuilder = $db->table('trn_kontrak_simak')->select('id')->where('nomor_kontrak', $nomorKontrak);
@@ -1157,7 +1190,7 @@ class Kontrak extends BaseController
 
         if ($inserted === 0 && $updated === 0) {
             $redirect = redirect()->to(site_url('admin/kontrak/simak'))
-                ->with('error', 'Tidak ada data yang diproses. Pastikan kolom minimal: ppk_nip, nama_paket, tahun_anggaran, nomor_kontrak, nilai_kontrak dan NIP tersedia di master pegawai.');
+                ->with('error', 'Tidak ada data yang diproses. Pastikan kolom minimal: ppk_nip, nama_paket, tahun_anggaran, nomor_kontrak, nilai_kontrak, nilai_kontrak_jasa_konsultansi dan NIP tersedia di master pegawai.');
 
             if ($importReport !== []) {
                 $redirect = $redirect->with('import_simak_report', $importReport);
@@ -1187,8 +1220,14 @@ class Kontrak extends BaseController
             'nama_paket',
             'tahun_anggaran',
             'penyedia',
+            'penyedia_jasa_konsultansi',
             'nomor_kontrak',
             'nilai_kontrak',
+            'nilai_kontrak_jasa_konsultansi',
+            'jenis_pekerjaan_jasa_konsultansi',
+            'masa_pelaksanaan',
+            'pagu_anggaran',
+            'metode_pemilihan',
             'tahapan_pekerjaan',
             'tanggal_pemeriksaan',
         ];
@@ -1202,15 +1241,21 @@ class Kontrak extends BaseController
             '199012212018021001',
             'Nama Paket Contoh',
             '2026 - 2027',
-            'Penyedia Contoh',
+            'Penyedia Konstruksi Contoh',
+            'Penyedia Jasa Contoh',
             'SIMAK/001/2026',
             1000000000,
+            450000000,
+            'perencanaan',
+            'syc',
+            250000000,
+            'seleksi',
             'Tahapan Contoh',
             '2026-04-15',
         ], null, 'A2');
 
-        $sheet->getStyle('A1:I1')->getFont()->setBold(true);
-        foreach (range('A', 'I') as $column) {
+        $sheet->getStyle('A1:O1')->getFont()->setBold(true);
+        foreach (range('A', 'O') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
@@ -1243,8 +1288,20 @@ class Kontrak extends BaseController
         $namaPaket = trim((string) $this->request->getPost('nama_paket'));
         $tahunAnggaran = trim((string) $this->request->getPost('tahun_anggaran'));
         $penyedia = trim((string) $this->request->getPost('penyedia'));
+        $penyediaJasa = trim((string) $this->request->getPost('penyedia_jasa_konsultansi'));
+        if ($penyediaJasa === '') {
+            $penyediaJasa = $penyedia;
+        }
         $nomorKontrak = trim((string) $this->request->getPost('nomor_kontrak'));
         $nilaiKontrak = $this->parseMoneyToFloat($this->request->getPost('nilai_kontrak'));
+        $nilaiKontrakJasa = $this->parseMoneyToFloat($this->request->getPost('nilai_kontrak_jasa_konsultansi'));
+        if ($nilaiKontrakJasa <= 0) {
+            $nilaiKontrakJasa = $nilaiKontrak;
+        }
+        $jenisJasa = $this->normalizeSimakJenisPekerjaanJasa((string) $this->request->getPost('jenis_pekerjaan_jasa_konsultansi'));
+        $masaPelaksanaan = $this->normalizeSimakMasaPelaksanaan((string) $this->request->getPost('masa_pelaksanaan'));
+        $paguAnggaran = $this->parseMoneyToBigInt($this->request->getPost('pagu_anggaran'));
+        $metodePemilihan = $this->normalizeSimakMetodePemilihan((string) $this->request->getPost('metode_pemilihan'));
         $tahapanPekerjaan = trim((string) $this->request->getPost('tahapan_pekerjaan'));
         $tanggalPemeriksaan = $this->normalizeDateValue((string) $this->request->getPost('tanggal_pemeriksaan'));
 
@@ -1258,6 +1315,14 @@ class Kontrak extends BaseController
 
         if (! preg_match('/^\d{4}\s*-\s*\d{4}$/', $tahunAnggaran)) {
             return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Format tahun anggaran harus seperti 2024 - 2025.');
+        }
+
+        if ($jenisJasa === null || $masaPelaksanaan === null || $paguAnggaran <= 0 || $metodePemilihan === null) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Field Jasa Konsultansi belum lengkap.');
+        }
+
+        if ($nilaiKontrak <= 0 || $nilaiKontrakJasa <= 0 || $penyedia === '' || $penyediaJasa === '' || $tahapanPekerjaan === '' || $tanggalPemeriksaan === '') {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Seluruh input wajib terisi (termasuk penyedia, penyedia jasa, nilai kontrak konstruksi, nilai kontrak jasa konsultansi, tahapan pekerjaan, dan tanggal pemeriksaan).');
         }
 
         if ($db->tableExists('mst_pegawai')) {
@@ -1283,8 +1348,14 @@ class Kontrak extends BaseController
             'nama_paket' => $namaPaket,
             'tahun_anggaran' => $tahunAnggaran,
             'penyedia' => $penyedia,
+            'penyedia_jasa_konsultansi' => $penyediaJasa,
             'nomor_kontrak' => $nomorKontrak,
             'nilai_kontrak' => $nilaiKontrak,
+            'nilai_kontrak_jasa_konsultansi' => $nilaiKontrakJasa,
+            'jenis_pekerjaan_jasa_konsultansi' => $jenisJasa,
+            'masa_pelaksanaan' => $masaPelaksanaan,
+            'pagu_anggaran' => $paguAnggaran,
+            'metode_pemilihan' => $metodePemilihan,
             'tahapan_pekerjaan' => $tahapanPekerjaan,
             'tanggal_pemeriksaan' => $tanggalPemeriksaan,
             'created_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
@@ -1324,8 +1395,20 @@ class Kontrak extends BaseController
         $namaPaket = trim((string) $this->request->getPost('nama_paket'));
         $tahunAnggaran = trim((string) $this->request->getPost('tahun_anggaran'));
         $penyedia = trim((string) $this->request->getPost('penyedia'));
+        $penyediaJasa = trim((string) $this->request->getPost('penyedia_jasa_konsultansi'));
+        if ($penyediaJasa === '') {
+            $penyediaJasa = $penyedia;
+        }
         $nomorKontrak = trim((string) $this->request->getPost('nomor_kontrak'));
         $nilaiKontrak = $this->parseMoneyToFloat($this->request->getPost('nilai_kontrak'));
+        $nilaiKontrakJasa = $this->parseMoneyToFloat($this->request->getPost('nilai_kontrak_jasa_konsultansi'));
+        if ($nilaiKontrakJasa <= 0) {
+            $nilaiKontrakJasa = $nilaiKontrak;
+        }
+        $jenisJasa = $this->normalizeSimakJenisPekerjaanJasa((string) $this->request->getPost('jenis_pekerjaan_jasa_konsultansi'));
+        $masaPelaksanaan = $this->normalizeSimakMasaPelaksanaan((string) $this->request->getPost('masa_pelaksanaan'));
+        $paguAnggaran = $this->parseMoneyToBigInt($this->request->getPost('pagu_anggaran'));
+        $metodePemilihan = $this->normalizeSimakMetodePemilihan((string) $this->request->getPost('metode_pemilihan'));
         $tahapanPekerjaan = trim((string) $this->request->getPost('tahapan_pekerjaan'));
         $tanggalPemeriksaan = $this->normalizeDateValue((string) $this->request->getPost('tanggal_pemeriksaan'));
 
@@ -1339,6 +1422,14 @@ class Kontrak extends BaseController
 
         if (! preg_match('/^\d{4}\s*-\s*\d{4}$/', $tahunAnggaran)) {
             return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Format tahun anggaran harus seperti 2024 - 2025.');
+        }
+
+        if ($jenisJasa === null || $masaPelaksanaan === null || $paguAnggaran <= 0 || $metodePemilihan === null) {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Field Jasa Konsultansi belum lengkap.');
+        }
+
+        if ($nilaiKontrak <= 0 || $nilaiKontrakJasa <= 0 || $penyedia === '' || $penyediaJasa === '' || $tahapanPekerjaan === '' || $tanggalPemeriksaan === '') {
+            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Seluruh input wajib terisi (termasuk penyedia, penyedia jasa, nilai kontrak konstruksi, nilai kontrak jasa konsultansi, tahapan pekerjaan, dan tanggal pemeriksaan).');
         }
 
         if ($db->tableExists('mst_pegawai')) {
@@ -1367,8 +1458,14 @@ class Kontrak extends BaseController
             'nama_paket' => $namaPaket,
             'tahun_anggaran' => $tahunAnggaran,
             'penyedia' => $penyedia,
+            'penyedia_jasa_konsultansi' => $penyediaJasa,
             'nomor_kontrak' => $nomorKontrak,
             'nilai_kontrak' => $nilaiKontrak,
+            'nilai_kontrak_jasa_konsultansi' => $nilaiKontrakJasa,
+            'jenis_pekerjaan_jasa_konsultansi' => $jenisJasa,
+            'masa_pelaksanaan' => $masaPelaksanaan,
+            'pagu_anggaran' => $paguAnggaran,
+            'metode_pemilihan' => $metodePemilihan,
             'tahapan_pekerjaan' => $tahapanPekerjaan,
             'tanggal_pemeriksaan' => $tanggalPemeriksaan,
             'updated_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
@@ -1447,11 +1544,11 @@ class Kontrak extends BaseController
             }
         }
 
-        $addOns = [];
+        $addOnsByCategory = [];
         $nilaiAddOn = 0.0;
         if ($db->tableExists('trn_kontrak_simak_add_on')) {
             $addOnBuilder = $db->table('trn_kontrak_simak_add_on')
-                ->select('id, urutan, nilai_add_on, tanggal_add_on')
+                ->select('id, urutan, kategori_add_on, nilai_add_on, tanggal_add_on')
                 ->where('simak_id', $id)
                 ->orderBy('urutan', 'ASC')
                 ->orderBy('id', 'ASC');
@@ -1460,6 +1557,17 @@ class Kontrak extends BaseController
 
             foreach ($addOns as $row) {
                 $nilaiAddOn += (float) ($row['nilai_add_on'] ?? 0);
+                $kategori = $this->normalizeSimakAddOnCategory((string) ($row['kategori_add_on'] ?? 'konstruksi_fisik'));
+                if (! isset($addOnsByCategory[$kategori])) {
+                    $addOnsByCategory[$kategori] = [];
+                }
+
+                $addOnsByCategory[$kategori][] = [
+                    'urutan' => (int) ($row['urutan'] ?? 0),
+                    'kategori_add_on' => $kategori,
+                    'nilai_add_on' => (float) ($row['nilai_add_on'] ?? 0),
+                    'tanggal_add_on' => (string) ($row['tanggal_add_on'] ?? ''),
+                ];
             }
         }
 
@@ -1475,7 +1583,7 @@ class Kontrak extends BaseController
         return view('admin/kontrak/simak_detail', [
             'title' => 'Detail SIMAK',
             'item' => $item,
-            'addOns' => $addOns,
+            'addOnsByCategory' => $addOnsByCategory,
             'nilaiAddOn' => $nilaiAddOn,
             'totalKontrak' => ((float) ($item['nilai_kontrak'] ?? 0)) + $nilaiAddOn,
             'templateItems' => $templateItems,
@@ -2424,6 +2532,77 @@ class Kontrak extends BaseController
         return date('Y-m-d', $timestamp);
     }
 
+    private function normalizeSimakJenisPekerjaanJasa(string $value): ?string
+    {
+        $value = strtolower(trim($value));
+        if ($value === '') {
+            return null;
+        }
+
+        $aliases = [
+            'manajemen konstruksi' => 'manajemen_konstruksi',
+        ];
+
+        if (isset($aliases[$value])) {
+            $value = $aliases[$value];
+        }
+
+        $allowed = ['perencanaan', 'perancangan', 'pengawasan', 'manajemen_konstruksi', 'lainnya'];
+        return in_array($value, $allowed, true) ? $value : null;
+    }
+
+    private function normalizeSimakMasaPelaksanaan(string $value): ?string
+    {
+        $value = strtolower(trim($value));
+        if ($value === '') {
+            return null;
+        }
+
+        $allowed = ['syc', 'myc'];
+        return in_array($value, $allowed, true) ? $value : null;
+    }
+
+    private function normalizeSimakMetodePemilihan(string $value): ?string
+    {
+        $value = strtolower(trim($value));
+        if ($value === '') {
+            return null;
+        }
+
+        $aliases = [
+            'pengadaan langsung' => 'pengadaan_langsung',
+            'penunjukan langsung' => 'penunjukan_langsung',
+        ];
+
+        if (isset($aliases[$value])) {
+            $value = $aliases[$value];
+        }
+
+        $allowed = ['pengadaan_langsung', 'penunjukan_langsung', 'seleksi'];
+        return in_array($value, $allowed, true) ? $value : null;
+    }
+
+    private function normalizeSimakAddOnCategory(string $value): string
+    {
+        $value = strtolower(trim($value));
+        if ($value === 'jasa_konsultansi') {
+            return 'jasa_konsultansi';
+        }
+
+        return 'konstruksi_fisik';
+    }
+
+    private function parseMoneyToBigInt($value): int
+    {
+        $normalized = preg_replace('/[^0-9]/', '', (string) $value) ?? '';
+        $normalized = ltrim($normalized, '0');
+        if ($normalized === '') {
+            return 0;
+        }
+
+        return (int) $normalized;
+    }
+
     private function parseMoneyToFloat($value): float
     {
         if (is_float($value) || is_int($value)) {
@@ -2466,22 +2645,26 @@ class Kontrak extends BaseController
         $values = is_array($rawValues) ? $rawValues : [];
         $rawDates = $this->request->getPost('add_on_dates');
         $dates = is_array($rawDates) ? $rawDates : [];
+        $rawCategories = $this->request->getPost('add_on_categories');
+        $categories = is_array($rawCategories) ? $rawCategories : [];
 
         $db->table('trn_kontrak_simak_add_on')->where('simak_id', $simakId)->delete();
 
         $rows = [];
         $urutan = 1;
-        foreach ($values as $value) {
+        foreach ($values as $index => $value) {
             $nominal = $this->parseMoneyToFloat($value);
             if ($nominal <= 0) {
                 continue;
             }
 
-            $tanggalAddOn = $this->normalizeDateValue((string) ($dates[$urutan - 1] ?? ''));
+            $tanggalAddOn = $this->normalizeDateValue((string) ($dates[$index] ?? ''));
+            $kategoriAddOn = $this->normalizeSimakAddOnCategory((string) ($categories[$index] ?? 'konstruksi_fisik'));
 
             $rows[] = [
                 'simak_id' => $simakId,
                 'urutan' => $urutan++,
+                'kategori_add_on' => $kategoriAddOn,
                 'nilai_add_on' => $nominal,
                 'tanggal_add_on' => $tanggalAddOn,
                 'created_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
@@ -2503,8 +2686,9 @@ class Kontrak extends BaseController
         }
 
         $builder = $db->table('trn_kontrak_simak_add_on')
-            ->select('simak_id, urutan, nilai_add_on, tanggal_add_on')
+            ->select('simak_id, urutan, kategori_add_on, nilai_add_on, tanggal_add_on')
             ->orderBy('simak_id', 'ASC')
+            ->orderBy('kategori_add_on', 'ASC')
             ->orderBy('urutan', 'ASC')
             ->orderBy('id', 'ASC');
         $this->applyNotDeletedWhere($builder, 'trn_kontrak_simak_add_on');
@@ -2513,12 +2697,18 @@ class Kontrak extends BaseController
         $grouped = [];
         foreach ($rows as $row) {
             $simakId = (int) ($row['simak_id'] ?? 0);
+            $kategori = $this->normalizeSimakAddOnCategory((string) ($row['kategori_add_on'] ?? 'konstruksi_fisik'));
             if (! isset($grouped[$simakId])) {
                 $grouped[$simakId] = [];
             }
 
-            $grouped[$simakId][] = [
+            if (! isset($grouped[$simakId][$kategori])) {
+                $grouped[$simakId][$kategori] = [];
+            }
+
+            $grouped[$simakId][$kategori][] = [
                 'urutan' => (int) ($row['urutan'] ?? 0),
+                'kategori_add_on' => $kategori,
                 'nilai_add_on' => (float) ($row['nilai_add_on'] ?? 0),
                 'tanggal_add_on' => (string) ($row['tanggal_add_on'] ?? ''),
             ];
