@@ -173,13 +173,8 @@ class AddSimakMenuUnderKontrak extends Migration
             return;
         }
 
-        $fields = $this->menuAksesFields();
-        $hasRoleId = in_array('role_id', $fields, true);
-        $hasGroupId = in_array('group_id', $fields, true);
-        $roleColumn = $hasRoleId ? 'role_id' : ($hasGroupId ? 'group_id' : '');
-        if ($roleColumn === '') {
-            return;
-        }
+        // Determine which column to use (role_id or group_id)
+        $roleColumn = $this->db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
 
         $groupRows = $this->db->table('menu_akses')
             ->select($roleColumn)
@@ -197,51 +192,17 @@ class AddSimakMenuUnderKontrak extends Migration
                 continue;
             }
 
-            $existingBuilder = $this->db->table('menu_akses')->where('menu_id', $menuId);
-            $existingBuilder->groupStart()->where($roleColumn, $groupId);
-            if ($roleColumn === 'role_id' && $hasGroupId) {
-                $existingBuilder->orWhere('group_id', $groupId);
-            }
-            if ($roleColumn === 'group_id' && $hasRoleId) {
-                $existingBuilder->orWhere('role_id', $groupId);
-            }
-            $existingBuilder->groupEnd();
-
-            $existing = (int) $existingBuilder->countAllResults();
+            $existing = $this->db->table('menu_akses')
+                ->where('menu_id', $menuId)
+                ->where($roleColumn, $groupId)
+                ->countAllResults();
 
             if ($existing === 0) {
-                $insertData = [
+                $this->db->table('menu_akses')->insert([
                     'menu_id' => $menuId,
                     $roleColumn => $groupId,
-                ];
-
-                if ($hasRoleId) {
-                    $insertData['role_id'] = $groupId;
-                }
-                if ($hasGroupId) {
-                    $insertData['group_id'] = $groupId;
-                }
-
-                $this->db->table('menu_akses')->insert($insertData);
+                ]);
             }
         }
-    }
-
-    private function menuAksesFields(): array
-    {
-        if (! $this->db->tableExists('menu_akses')) {
-            return [];
-        }
-
-        $fields = [];
-        $result = $this->db->query('SHOW COLUMNS FROM menu_akses')->getResultArray();
-        foreach ($result as $row) {
-            $name = strtolower((string) ($row['Field'] ?? ''));
-            if ($name !== '') {
-                $fields[] = $name;
-            }
-        }
-
-        return $fields;
     }
 }

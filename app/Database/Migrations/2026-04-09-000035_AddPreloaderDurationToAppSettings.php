@@ -8,10 +8,6 @@ class AddPreloaderDurationToAppSettings extends Migration
 {
     public function up()
     {
-        if (! $this->db->tableExists('app_settings') || $this->db->fieldExists('preloader_duration_ms', 'app_settings')) {
-            return;
-        }
-
         $this->forge->addColumn('app_settings', [
             'preloader_duration_ms' => [
                 'type'       => 'INT',

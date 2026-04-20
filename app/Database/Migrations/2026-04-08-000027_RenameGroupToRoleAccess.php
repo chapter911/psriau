@@ -12,36 +12,15 @@ class RenameGroupToRoleAccess extends Migration
             return;
         }
 
-        $fields = $this->menuAksesFields();
-        $hasRoleId = in_array('role_id', $fields, true);
-        $hasGroupId = in_array('group_id', $fields, true);
-
-        // Keep both columns available to support historical migrations that still reference one of them.
-        if ($hasRoleId && ! $hasGroupId) {
-            $this->forge->addColumn('menu_akses', [
+        if ($this->db->fieldExists('group_id', 'menu_akses') && ! $this->db->fieldExists('role_id', 'menu_akses')) {
+            $this->forge->modifyColumn('menu_akses', [
                 'group_id' => [
+                    'name' => 'role_id',
                     'type' => 'INT',
                     'constraint' => 11,
                     'unsigned' => true,
-                    'null' => true,
-                    'after' => 'role_id',
                 ],
             ]);
-            $this->db->query('UPDATE menu_akses SET group_id = role_id WHERE group_id IS NULL');
-            $hasGroupId = true;
-        }
-
-        if ($hasGroupId && ! $hasRoleId) {
-            $this->forge->addColumn('menu_akses', [
-                'role_id' => [
-                    'type' => 'INT',
-                    'constraint' => 11,
-                    'unsigned' => true,
-                    'null' => true,
-                    'after' => 'group_id',
-                ],
-            ]);
-            $this->db->query('UPDATE menu_akses SET role_id = group_id WHERE role_id IS NULL');
         }
 
         if (! $this->db->tableExists('access_roles')) {
@@ -121,23 +100,5 @@ class RenameGroupToRoleAccess extends Migration
         if ($this->db->tableExists('access_roles')) {
             $this->forge->dropTable('access_roles', true);
         }
-    }
-
-    private function menuAksesFields(): array
-    {
-        if (! $this->db->tableExists('menu_akses')) {
-            return [];
-        }
-
-        $fields = [];
-        $result = $this->db->query('SHOW COLUMNS FROM menu_akses')->getResultArray();
-        foreach ($result as $row) {
-            $name = strtolower((string) ($row['Field'] ?? ''));
-            if ($name !== '') {
-                $fields[] = $name;
-            }
-        }
-
-        return $fields;
     }
 }

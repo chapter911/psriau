@@ -161,13 +161,7 @@ class MoveMapMenuToTopLevel extends Migration
             return;
         }
 
-        $fields = $this->menuAksesFields();
-        $hasRoleId = in_array('role_id', $fields, true);
-        $hasGroupId = in_array('group_id', $fields, true);
-        $roleColumn = $hasRoleId ? 'role_id' : ($hasGroupId ? 'group_id' : '');
-        if ($roleColumn === '') {
-            return;
-        }
+        $roleColumn = $this->db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
 
         $roleRows = $this->db->table('menu_akses')
             ->select($roleColumn)
@@ -185,17 +179,10 @@ class MoveMapMenuToTopLevel extends Migration
                 continue;
             }
 
-            $existsBuilder = $this->db->table('menu_akses')->where('menu_id', $menuId);
-            $existsBuilder->groupStart()->where($roleColumn, $roleId);
-            if ($roleColumn === 'role_id' && $hasGroupId) {
-                $existsBuilder->orWhere('group_id', $roleId);
-            }
-            if ($roleColumn === 'group_id' && $hasRoleId) {
-                $existsBuilder->orWhere('role_id', $roleId);
-            }
-            $existsBuilder->groupEnd();
-
-            $exists = (int) $existsBuilder->countAllResults();
+            $exists = $this->db->table('menu_akses')
+                ->where($roleColumn, $roleId)
+                ->where('menu_id', $menuId)
+                ->countAllResults();
 
             if ($exists > 0) {
                 continue;
@@ -204,7 +191,7 @@ class MoveMapMenuToTopLevel extends Migration
             $isPrivileged = $roleId === 1 || $this->isSuperAdministratorRole($roleId, $roleColumn);
             $value = $isPrivileged ? 1 : 0;
 
-            $insertData = [
+            $this->db->table('menu_akses')->insert([
                 $roleColumn => $roleId,
                 'menu_id' => $menuId,
                 'FiturAdd' => $value,
@@ -213,35 +200,8 @@ class MoveMapMenuToTopLevel extends Migration
                 'FiturExport' => $value,
                 'FiturImport' => $value,
                 'FiturApproval' => $value,
-            ];
-
-            if ($hasRoleId) {
-                $insertData['role_id'] = $roleId;
-            }
-            if ($hasGroupId) {
-                $insertData['group_id'] = $roleId;
-            }
-
-            $this->db->table('menu_akses')->insert($insertData);
+            ]);
         }
-    }
-
-    private function menuAksesFields(): array
-    {
-        if (! $this->db->tableExists('menu_akses')) {
-            return [];
-        }
-
-        $fields = [];
-        $result = $this->db->query('SHOW COLUMNS FROM menu_akses')->getResultArray();
-        foreach ($result as $row) {
-            $name = strtolower((string) ($row['Field'] ?? ''));
-            if ($name !== '') {
-                $fields[] = $name;
-            }
-        }
-
-        return $fields;
     }
 
     private function isSuperAdministratorRole(int $roleId, string $roleColumn): bool

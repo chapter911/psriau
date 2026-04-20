@@ -473,14 +473,7 @@ class AddMasterWilayahSekolah extends Migration
             return;
         }
 
-        $roleColumn = $this->resolveMenuAksesRoleColumn();
-        if ($roleColumn === null) {
-            return;
-        }
-
-        $fields = $this->menuAksesFields();
-        $hasRoleId = in_array('role_id', $fields, true);
-        $hasGroupId = in_array('group_id', $fields, true);
+        $roleColumn = $this->db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
 
         $roleRows = $this->db->table('menu_akses')
             ->select($roleColumn)
@@ -498,17 +491,10 @@ class AddMasterWilayahSekolah extends Migration
                 continue;
             }
 
-            $existsBuilder = $this->db->table('menu_akses')->where('menu_id', $menuId);
-            $existsBuilder->groupStart()->where($roleColumn, $roleId);
-            if ($roleColumn === 'role_id' && $hasGroupId) {
-                $existsBuilder->orWhere('group_id', $roleId);
-            }
-            if ($roleColumn === 'group_id' && $hasRoleId) {
-                $existsBuilder->orWhere('role_id', $roleId);
-            }
-            $existsBuilder->groupEnd();
-
-            $exists = (int) $existsBuilder->countAllResults();
+            $exists = $this->db->table('menu_akses')
+                ->where($roleColumn, $roleId)
+                ->where('menu_id', $menuId)
+                ->countAllResults();
 
             if ($exists > 0) {
                 continue;
@@ -516,7 +502,7 @@ class AddMasterWilayahSekolah extends Migration
 
             $isAdminRole = $roleId === 1;
 
-            $insertData = [
+            $this->db->table('menu_akses')->insert([
                 $roleColumn => $roleId,
                 'menu_id' => $menuId,
                 'FiturAdd' => $isAdminRole ? 1 : 0,
@@ -525,49 +511,7 @@ class AddMasterWilayahSekolah extends Migration
                 'FiturExport' => $isAdminRole ? 1 : 0,
                 'FiturImport' => $isAdminRole ? 1 : 0,
                 'FiturApproval' => 0,
-            ];
-
-            if ($hasRoleId) {
-                $insertData['role_id'] = $roleId;
-            }
-            if ($hasGroupId) {
-                $insertData['group_id'] = $roleId;
-            }
-
-            $this->db->table('menu_akses')->insert($insertData);
+            ]);
         }
-    }
-
-    private function resolveMenuAksesRoleColumn(): ?string
-    {
-        $fields = $this->menuAksesFields();
-
-        if (in_array('role_id', $fields, true)) {
-            return 'role_id';
-        }
-
-        if (in_array('group_id', $fields, true)) {
-            return 'group_id';
-        }
-
-        return null;
-    }
-
-    private function menuAksesFields(): array
-    {
-        if (! $this->db->tableExists('menu_akses')) {
-            return [];
-        }
-
-        $fields = [];
-        $result = $this->db->query('SHOW COLUMNS FROM menu_akses')->getResultArray();
-        foreach ($result as $row) {
-            $name = strtolower((string) ($row['Field'] ?? ''));
-            if ($name !== '') {
-                $fields[] = $name;
-            }
-        }
-
-        return $fields;
     }
 }

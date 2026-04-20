@@ -240,157 +240,36 @@ class AddKegiatanLapanganModule extends Migration
             return;
         }
 
-        $fields = $this->menuAksesFields();
-        $hasRoleId = in_array('role_id', $fields, true);
-        $hasGroupId = in_array('group_id', $fields, true);
-        $roleColumn = $hasRoleId ? 'role_id' : ($hasGroupId ? 'group_id' : '');
-        if ($roleColumn === '') {
-            return;
-        }
+        // Determine which column to use (role_id or group_id)
+        $roleColumn = $this->db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
 
-        $roleRows = $this->db->table('menu_akses')->select($roleColumn)->distinct()->get()->getResultArray();
-
-        if ($roleRows === []) {
-            $roleRows = [[$roleColumn => 1]];
-        }
-
-        foreach ($roleRows as $roleRow) {
-            $roleId = (int) ($roleRow[$roleColumn] ?? 0);
-            if ($roleId <= 0) {
-                continue;
-            }
-
-            $existsBuilder = $this->db->table('menu_akses')->where('menu_id', $menuId);
-            $existsBuilder->groupStart()->where($roleColumn, $roleId);
-            if ($roleColumn === 'role_id' && $hasGroupId) {
-                $existsBuilder->orWhere('group_id', $roleId);
-            }
-            if ($roleColumn === 'group_id' && $hasRoleId) {
-                $existsBuilder->orWhere('role_id', $roleId);
-            }
-            $existsBuilder->groupEnd();
-
-            $exists = (int) $existsBuilder->countAllResults();
-
-            if ($exists > 0) {
-                continue;
-            }
-
-            $isPrivileged = $roleId === 1 || $this->isSuperAdministratorRole($roleId);
-            $value = $isPrivileged ? 1 : 0;
-
-            $insertData = [
-                $roleColumn => $roleId,
-                'menu_id' => $menuId,
-                'FiturAdd' => $value,
-                'FiturEdit' => $value,
-                'FiturDelete' => $value,
-                'FiturExport' => $value,
-                'FiturImport' => $value,
-                'FiturApproval' => $value,
-            ];
-
-            if ($hasRoleId) {
-                $insertData['role_id'] = $roleId;
-            }
-            if ($hasGroupId) {
-                $insertData['group_id'] = $roleId;
-            }
-
-            $this->db->table('menu_akses')->insert($insertData);
-        }
-    }
-
-    private function menuAksesFields(): array
-    {
-        if (! $this->db->tableExists('menu_akses')) {
-            return [];
-        }
-
-        $fields = [];
-        $result = $this->db->query('SHOW COLUMNS FROM menu_akses')->getResultArray();
-        foreach ($result as $row) {
-            $name = strtolower((string) ($row['Field'] ?? ''));
-            if ($name !== '') {
-                $fields[] = $name;
-            }
-        }
-
-        return $fields;
-    }
-
-    private function nextLv1Ordering(): int
-    {
-        $row = $this->db->table('menu_lv1')->selectMax('ordering', 'max_ordering')->get()->getRowArray();
-
-        return ((int) ($row['max_ordering'] ?? 0)) + 1;
-    }
-
-    private function nextLv2Ordering(string $header): int
-    {
-        $row = $this->db->table('menu_lv2')
-            ->selectMax('ordering', 'max_ordering')
-            ->where('header', $header)
-            ->get()
-            ->getRowArray();
-
-        return ((int) ($row['max_ordering'] ?? 0)) + 1;
-    }
-
-    private function isSuperAdministratorRole(int $roleId): bool
-    {
-        if (! $this->db->tableExists('access_roles')) {
-            return false;
-        }
-
-        $row = $this->db->table('access_roles')
-            ->select('role_key')
-            ->where('id', $roleId)
-            ->get()
-            ->getRowArray();
-
-        $roleKey = strtolower(trim((string) ($row['role_key'] ?? '')));
-
-        return in_array($roleKey, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
-    }
-
-    private function generateLv1Id(): string
-    {
-        $rows = $this->db->table('menu_lv1')->select('id')->get()->getResultArray();
-        $maxSequence = 0;
-
-        foreach ($rows as $row) {
-            if (preg_match('/^(\d+)$/', (string) ($row['id'] ?? ''), $matches)) {
-                $maxSequence = max($maxSequence, (int) $matches[1]);
-            }
-        }
-
-        return str_pad((string) ($maxSequence + 1), 2, '0', STR_PAD_LEFT);
-    }
-
-    private function generateLv2Id(string $header): string
-    {
-        $rows = $this->db->table('menu_lv2')
-            ->select('id')
-            ->where('header', $header)
+        $groupRows = $this->db->table('menu_akses')
+            ->select($roleColumn)
+            ->distinct()
             ->get()
             ->getResultArray();
 
-        $maxSequence = 0;
-        $prefix = $header . '-';
+        if ($groupRows === []) {
+            $groupRows = [[$roleColumn => 1]];
+        }
 
-        foreach ($rows as $row) {
-            $candidateId = (string) ($row['id'] ?? '');
-            if (strpos($candidateId, $prefix) !== 0) {
+        foreach ($groupRows as $row) {
+            $groupId = (int) ($row[$roleColumn] ?? 0);
+            if ($groupId <= 0) {
                 continue;
             }
 
-            $suffix = substr($candidateId, strlen($prefix));
-            if (preg_match('/^(\d+)$/', $suffix, $matches)) {
-                $maxSequence = max($maxSequence, (int) $matches[1]);
+            $existing = $this->db->table('menu_akses')
+                ->where('menu_id', $menuId)
+                ->where($roleColumn, $groupId)
+                ->countAllResults();
+
+            if ($existing === 0) {
+                $this->db->table('menu_akses')->insert([
+                    'menu_id' => $menuId,
+                    $roleColumn => $groupId,
+                ]);
             }
         }
-
-        return $header . '-' . str_pad((string) ($maxSequence + 1), 2, '0', STR_PAD_LEFT);
     }
 }
