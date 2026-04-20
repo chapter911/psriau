@@ -802,27 +802,13 @@ class BaselineCurrentSchema extends Migration
 
     public function up()
     {
-        if ($this->createStatements === []) {
-            return;
-        }
-
-        $this->db->query('SET FOREIGN_KEY_CHECKS = 0');
-        foreach ($this->createStatements as $statement) {
-            $this->db->query($statement);
-        }
-        $this->db->query('SET FOREIGN_KEY_CHECKS = 1');
+        // Baseline migration for an already-existing database schema.
+        // Intentionally no-op to avoid re-creating tables during migrate.
     }
 
     public function down()
     {
-        if ($this->tableNames === []) {
-            return;
-        }
-
-        $this->db->query('SET FOREIGN_KEY_CHECKS = 0');
-        foreach ($this->tableNames as $tableName) {
-            $this->db->query('DROP TABLE IF EXISTS `' . $tableName . '`');
-        }
-        $this->db->query('SET FOREIGN_KEY_CHECKS = 1');
+        // Baseline migration for an already-existing database schema.
+        // Intentionally no-op.
     }
 }
