@@ -217,7 +217,14 @@ class AddAuditHistoriesAndMenu extends Migration
 
     private function ensureMenuAccessRow(string $menuId): void
     {
-        $roleColumn = $this->db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        $roleColumn = $this->resolveMenuAccessRoleColumn();
+        if ($roleColumn === null) {
+            return;
+        }
+
+        $fields = $this->menuAksesFields();
+        $hasRoleId = in_array('role_id', $fields, true);
+        $hasGroupId = in_array('group_id', $fields, true);
 
         $roleIds = [];
         if ($this->db->tableExists('access_roles')) {
@@ -235,12 +242,22 @@ class AddAuditHistoriesAndMenu extends Migration
         }
 
         foreach ($roleIds as $roleId) {
-            $exists = (int) $this->db->table('menu_akses')->where($roleColumn, $roleId)->where('menu_id', $menuId)->countAllResults();
+            $existsBuilder = $this->db->table('menu_akses')->where('menu_id', $menuId);
+            $existsBuilder->groupStart()->where($roleColumn, $roleId);
+            if ($roleColumn === 'role_id' && $hasGroupId) {
+                $existsBuilder->orWhere('group_id', $roleId);
+            }
+            if ($roleColumn === 'group_id' && $hasRoleId) {
+                $existsBuilder->orWhere('role_id', $roleId);
+            }
+            $existsBuilder->groupEnd();
+
+            $exists = (int) $existsBuilder->countAllResults();
             if ($exists > 0) {
                 continue;
             }
 
-            $this->db->table('menu_akses')->insert([
+            $insertData = [
                 $roleColumn => $roleId,
                 'menu_id' => $menuId,
                 'FiturAdd' => 0,
@@ -249,8 +266,50 @@ class AddAuditHistoriesAndMenu extends Migration
                 'FiturExport' => 0,
                 'FiturImport' => 0,
                 'FiturApproval' => 0,
-            ]);
+            ];
+
+            if ($hasRoleId) {
+                $insertData['role_id'] = $roleId;
+            }
+            if ($hasGroupId) {
+                $insertData['group_id'] = $roleId;
+            }
+
+            $this->db->table('menu_akses')->insert($insertData);
         }
+    }
+
+    private function resolveMenuAccessRoleColumn(): ?string
+    {
+        $fields = $this->menuAksesFields();
+
+        if (in_array('role_id', $fields, true)) {
+            return 'role_id';
+        }
+
+        if (in_array('group_id', $fields, true)) {
+            return 'group_id';
+        }
+
+        return null;
+    }
+
+    private function menuAksesFields(): array
+    {
+        if (! $this->db->tableExists('menu_akses')) {
+            return [];
+        }
+
+        $fields = [];
+        $result = $this->db->query('SHOW COLUMNS FROM menu_akses')->getResultArray();
+        foreach ($result as $row) {
+            $name = strtolower((string) ($row['Field'] ?? ''));
+            if ($name !== '') {
+                $fields[] = $name;
+            }
+        }
+
+        return $fields;
     }
 
     private function nextLv1Id(): ?string
