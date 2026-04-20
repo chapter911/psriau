@@ -213,7 +213,11 @@
                                             $rowType = (string) ($row['row_type'] ?? 'detail');
                                             $hasChildren = (bool) ($row['has_children'] ?? false);
                                             $isLeaf = (bool) ($row['is_leaf'] ?? false);
-                                            $isInputRow = $isLeaf && ! in_array($rowType, ['section_header', 'subsection_header'], true);
+                                            $isPromotedSubsectionInput = $isLeaf
+                                                && $rowType === 'subsection_header'
+                                                && preg_match('/^\d+$/', $displayNo) === 1;
+                                            $isInputRow = $isLeaf
+                                                && (! in_array($rowType, ['section_header', 'subsection_header'], true) || $isPromotedSubsectionInput);
                                             $existing = $verifikasiByRow[$rowNo] ?? [];
                                             $kelengkapan = (string) ($existing['kelengkapan_dokumen'] ?? '');
                                             $verifikasi = (string) ($existing['verifikasi_ki'] ?? '');
@@ -228,7 +232,8 @@
                                             $isDriveLink = in_array($latestHost, ['drive.google.com', 'docs.google.com'], true);
                                             $dokumenActionLabel = $isDriveLink ? 'Buka Link' : 'Lihat Dokumen';
                                             $indentPadding = max(0, $indentLevel) * 18;
-                                            $isGroup = in_array($rowType, ['section_header', 'subsection_header'], true) || $hasChildren;
+                                            $isGroup = ($hasChildren || in_array($rowType, ['section_header', 'subsection_header'], true))
+                                                && ! $isPromotedSubsectionInput;
                                             $fontWeight = $isGroup ? 'font-weight: 700;' : ($indentLevel > 1 ? 'font-weight: 500;' : 'font-weight: 600;');
                                             $bgStyle = $isGroup ? 'background-color: #f2f4f7;' : '';
                                             $noText = $displayNo !== '' ? $displayNo . '.' : '';
