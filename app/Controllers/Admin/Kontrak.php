@@ -835,7 +835,7 @@ class Kontrak extends BaseController
 
         $db = db_connect();
         if (! $db->tableExists('trn_kontrak_simak')) {
-            return view('admin/kontrak/simak', [
+            return view('admin/kontrak/simak_konstruksi', [
                 'title' => 'SIMAK Kontrak',
                 'data' => [],
                 'addOnsBySimakId' => [],
@@ -884,7 +884,7 @@ class Kontrak extends BaseController
         }
         unset($row);
 
-        return view('admin/kontrak/simak', [
+        return view('admin/kontrak/simak_konstruksi', [
             'title' => 'SIMAK Kontrak',
             'data' => $rows,
             'addOnsBySimakId' => $this->getSimakAddOnsBySimakId(),
@@ -895,15 +895,120 @@ class Kontrak extends BaseController
         ]);
     }
 
+    public function simakKonstruksi()
+    {
+        return $this->simakByType('konstruksi');
+    }
+
+    public function simakKonsultasi()
+    {
+        return $this->simakByType('konsultasi');
+    }
+
+    private function simakByType(string $type)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $db = db_connect();
+        
+        // Determine table and view based on type
+        $tableMain = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi' : 'trn_kontrak_simak';
+        $tableAddOn = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_add_on' : 'trn_kontrak_simak_add_on';
+        $tableShare = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_share' : 'trn_kontrak_simak_share';
+        $view = ($type === 'konsultasi') ? 'admin/kontrak/simak_konsultasi' : 'admin/kontrak/simak_konstruksi';
+        
+        if (! $db->tableExists($tableMain)) {
+            return view($view, [
+                'title' => 'SIMAK Kontrak - ' . ucfirst($type),
+                'data' => [],
+                'addOnsBySimakId' => [],
+                'pegawaiOptions' => $this->getSimakPegawaiOptions(),
+                'can_edit' => $this->canViewKontrak(),
+                'can_import' => $this->canManageKontrak(),
+                'error' => 'Tabel SIMAK belum tersedia. Jalankan migration.',
+            ]);
+        }
+
+        $builder = $db->table($tableMain . ' s')
+            ->select('s.*, COALESCE(soa.nilai_add_on, 0) AS nilai_add_on, (s.nilai_kontrak + COALESCE(soa.nilai_add_on, 0)) AS total_kontrak')
+            ->orderBy('s.id', 'DESC');
+
+        if ($db->tableExists($tableAddOn)) {
+            $summaryBuilder = $db->table($tableAddOn)
+                ->select('simak_id, SUM(nilai_add_on) AS nilai_add_on')
+                ->groupBy('simak_id');
+            $this->applyNotDeletedWhere($summaryBuilder, $tableAddOn);
+
+            $builder->join('(' . $summaryBuilder->getCompiledSelect() . ') soa', 'soa.simak_id = s.id', 'left', false);
+        }
+
+        $this->applyNotDeletedWhere($builder, $tableMain, 's.deleted_at');
+
+        $rows = $builder->get()->getResultArray();
+
+        $simakIds = array_values(array_filter(array_map(static function (array $row): int {
+            return (int) ($row['id'] ?? 0);
+        }, $rows), static function (int $id): bool {
+            return $id > 0;
+        }));
+
+        $kelengkapanBySimakId = $this->getSimakAdministrasiKelengkapanBySimakId($simakIds, $type);
+        $shareUrlBySimakId = $this->getSimakSharePublicUrlBySimakId($simakIds, $type);
+
+        foreach ($rows as &$row) {
+            $simakId = (int) ($row['id'] ?? 0);
+            $summary = $kelengkapanBySimakId[$simakId] ?? [];
+            $row['kelengkapan_dokumen_administrasi_persen'] = (float) ($summary['lengkap_persen'] ?? 0);
+            $row['kelengkapan_dokumen_lengkap_persen'] = (float) ($summary['lengkap_persen'] ?? 0);
+            $row['kelengkapan_dokumen_belum_sesuai_persen'] = (float) ($summary['belum_sesuai_persen'] ?? 0);
+            $row['kelengkapan_dokumen_belum_verifikasi_persen'] = (float) ($summary['belum_verifikasi_persen'] ?? 0);
+            $row['kelengkapan_dokumen_belum_ada_persen'] = (float) ($summary['belum_ada_persen'] ?? 0);
+            $row['share_public_url'] = (string) ($shareUrlBySimakId[$simakId] ?? '');
+        }
+        unset($row);
+
+        $titleMap = [
+            'konstruksi' => 'SIMAK Kontrak - Konstruksi',
+            'konsultasi' => 'SIMAK Kontrak - Konsultasi',
+        ];
+
+        return view($view, [
+            'title' => $titleMap[$type] ?? 'SIMAK Kontrak',
+            'data' => $rows,
+            'addOnsBySimakId' => $this->getSimakAddOnsBySimakId($type),
+            'pegawaiOptions' => $this->getSimakPegawaiOptions(),
+            'can_edit' => $this->canViewKontrak(),
+            'can_import' => $this->canManageKontrak(),
+            'can_share' => $this->canManageKontrak(),
+        ]);
+    }
+
     public function createSimakShare(int $id)
     {
+        $isAjax = $this->request->isAJAX()
+            || stripos((string) $this->request->getHeaderLine('Accept'), 'application/json') !== false;
+
+        $respondError = function (string $message, int $statusCode = 400) use ($isAjax) {
+            if ($isAjax) {
+                return $this->response->setStatusCode($statusCode)->setJSON([
+                    'success' => false,
+                    'message' => $message,
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
+
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', $message);
+        };
+
         if (! $this->canManageKontrak()) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Anda tidak memiliki akses untuk membuat link share SIMAK.');
+            return $respondError('Anda tidak memiliki akses untuk membuat link share SIMAK.', 403);
         }
 
         $db = db_connect();
         if (! $db->tableExists('trn_kontrak_simak') || ! $db->tableExists('trn_kontrak_simak_share')) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Tabel share SIMAK belum tersedia. Jalankan migration terbaru.');
+            return $respondError('Tabel share SIMAK belum tersedia. Jalankan migration terbaru.', 500);
         }
         $shareHasExpiresCol = $this->tableHasColumn('trn_kontrak_simak_share', 'expires_at');
 
@@ -911,17 +1016,21 @@ class Kontrak extends BaseController
         $this->applyNotDeletedWhere($simakBuilder, 'trn_kontrak_simak');
         $simak = $simakBuilder->get()->getRowArray();
         if (! is_array($simak)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Data SIMAK tidak ditemukan.');
+            return $respondError('Data SIMAK tidak ditemukan.', 404);
         }
 
-        $duration = strtolower(trim((string) $this->request->getPost('share_duration')));
+        $durationInput = $this->request->getPost('share_duration');
+        if ($durationInput === null || trim((string) $durationInput) === '') {
+            $durationInput = $this->request->getPost('duration');
+        }
+        $duration = strtolower(trim((string) $durationInput));
         $durationMap = [
             '1week' => '+1 week',
             '30days' => '+30 days',
         ];
 
         if (! array_key_exists($duration, $durationMap)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Durasi link share tidak valid. Pilih 1 minggu atau 30 hari.');
+            return $respondError('Durasi link share tidak valid. Pilih 1 minggu atau 30 hari.', 422);
         }
 
         $expiresAtDate = date('Y-m-d', strtotime($durationMap[$duration]));
@@ -929,7 +1038,7 @@ class Kontrak extends BaseController
 
         $token = $this->generateSimakShareToken();
         if ($token === null) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Gagal membuat token share SIMAK. Silakan coba lagi.');
+            return $respondError('Gagal membuat token share SIMAK. Silakan coba lagi.', 500);
         }
 
         $now = date('Y-m-d H:i:s');
@@ -970,12 +1079,23 @@ class Kontrak extends BaseController
         }
 
         if (! $ok) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Gagal menyimpan link share SIMAK.');
+            return $respondError('Gagal menyimpan link share SIMAK.', 500);
         }
 
         $shareUrl = site_url('simak/share/' . $token);
         $successMessage = 'Link share SIMAK berhasil dibuat. Berlaku sampai ' . $expiresAtDate . '.';
-        $redirect = redirect()->to(site_url('admin/kontrak/simak'))
+
+        if ($isAjax) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => $successMessage,
+                'share_url' => $shareUrl,
+                'is_update' => is_array($existing) && trim((string) ($existing['share_token'] ?? '')) !== '',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $redirect = redirect()->to(site_url('admin/kontrak/simak/konstruksi'))
             ->with('success', $successMessage)
             ->with('simak_share_link', $shareUrl);
 
@@ -986,40 +1106,103 @@ class Kontrak extends BaseController
         return $redirect;
     }
 
+    public function deactivateSimakShare(int $id)
+    {
+        $isAjax = $this->request->isAJAX()
+            || stripos((string) $this->request->getHeaderLine('Accept'), 'application/json') !== false;
+
+        $respondError = function (string $message, int $statusCode = 400) use ($isAjax) {
+            if ($isAjax) {
+                return $this->response->setStatusCode($statusCode)->setJSON([
+                    'success' => false,
+                    'message' => $message,
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
+
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', $message);
+        };
+
+        if (! $this->canManageKontrak()) {
+            return $respondError('Anda tidak memiliki akses untuk menonaktifkan link share SIMAK.', 403);
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_share')) {
+            return $respondError('Tabel share SIMAK belum tersedia. Jalankan migration terbaru.', 500);
+        }
+
+        $share = $db->table('trn_kontrak_simak_share')
+            ->select('id, is_active')
+            ->where('simak_id', $id)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($share)) {
+            return $respondError('Link share SIMAK tidak ditemukan.', 404);
+        }
+
+        $payload = [
+            'is_active' => 0,
+            'updated_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
+            'updated_date' => date('Y-m-d'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $ok = $db->table('trn_kontrak_simak_share')
+            ->where('id', (int) ($share['id'] ?? 0))
+            ->update($payload);
+
+        if (! $ok) {
+            return $respondError('Gagal menonaktifkan link share SIMAK.', 500);
+        }
+
+        $message = 'Link share SIMAK berhasil dinonaktifkan.';
+        if ($isAjax) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => $message,
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('success', $message);
+    }
+
     public function importSimak()
     {
         if (! $this->canManageKontrak()) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Anda tidak memiliki akses untuk import data SIMAK.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Anda tidak memiliki akses untuk import data SIMAK.');
         }
 
         if (! $this->isKontrakTableReady()) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Tabel SIMAK belum tersedia. Jalankan migration.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Tabel SIMAK belum tersedia. Jalankan migration.');
         }
 
         $file = $this->request->getFile('file_excel');
         if (! $file || ! $file->isValid()) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'File import tidak valid.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'File import tidak valid.');
         }
 
         $ext = strtolower((string) $file->getExtension());
         if (! in_array($ext, ['xls', 'xlsx'], true)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Format file harus .xls atau .xlsx.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Format file harus .xls atau .xlsx.');
         }
 
         try {
             $spreadsheet = IOFactory::load($file->getTempName());
         } catch (\Throwable $e) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'File Excel gagal dibaca. Pastikan format file valid (.xls/.xlsx).');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'File Excel gagal dibaca. Pastikan format file valid (.xls/.xlsx).');
         }
 
         $rows = $spreadsheet->getActiveSheet()->toArray('', true, true, true);
         if ($rows === []) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'File Excel kosong.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'File Excel kosong.');
         }
 
         $headerRow = array_shift($rows);
         if (! is_array($headerRow) || $headerRow === []) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Header Excel tidak ditemukan.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Header Excel tidak ditemukan.');
         }
 
         $normalizeHeader = static function ($value): string {
@@ -1038,12 +1221,12 @@ class Kontrak extends BaseController
         }
 
         if ($headers === []) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Header Excel tidak dikenali.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Header Excel tidak dikenali.');
         }
 
         $db = db_connect();
         if (! $db->tableExists('mst_pegawai')) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Master pegawai tidak tersedia. Import SIMAK membutuhkan referensi nama PPK dari NIP.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Master pegawai tidak tersedia. Import SIMAK membutuhkan referensi nama PPK dari NIP.');
         }
 
         $inserted = 0;
@@ -1090,9 +1273,24 @@ class Kontrak extends BaseController
             $tahapanPekerjaan = trim((string) ($rowData['tahapan_pekerjaan'] ?? ''));
             $tanggalPemeriksaan = $this->normalizeDateValue((string) ($rowData['tanggal_pemeriksaan'] ?? ''));
             $jenisJasa = $this->normalizeSimakJenisPekerjaanJasa((string) ($rowData['jenis_pekerjaan_jasa_konsultansi'] ?? ''));
+            if ($jenisJasa === null) {
+                $jenisJasa = 'perencanaan';
+            }
+
             $masaPelaksanaan = $this->normalizeSimakMasaPelaksanaan((string) ($rowData['masa_pelaksanaan'] ?? ''));
+            if ($masaPelaksanaan === null) {
+                $masaPelaksanaan = 'syc';
+            }
+
             $paguAnggaran = $this->parseMoneyToBigInt($rowData['pagu_anggaran'] ?? 0);
+            if ($paguAnggaran <= 0) {
+                $paguAnggaran = $this->parseMoneyToBigInt($nilaiKontrak);
+            }
+
             $metodePemilihan = $this->normalizeSimakMetodePemilihan((string) ($rowData['metode_pemilihan'] ?? ''));
+            if ($metodePemilihan === null) {
+                $metodePemilihan = 'seleksi';
+            }
 
             if ($ppkNip === '' || $namaPaket === '' || $tahunAnggaran === '' || $nomorKontrak === '') {
                 $skipped++;
@@ -1103,12 +1301,6 @@ class Kontrak extends BaseController
             if (! preg_match('/^\d{4}\s*-\s*\d{4}$/', $tahunAnggaran)) {
                 $skipped++;
                 $appendReport($importReport, $excelRow, 'Format tahun anggaran tidak valid. Gunakan format YYYY - YYYY.');
-                continue;
-            }
-
-            if ($jenisJasa === null || $masaPelaksanaan === null || $paguAnggaran <= 0 || $metodePemilihan === null) {
-                $skipped++;
-                $appendReport($importReport, $excelRow, 'Field Jasa Konsultansi belum lengkap.');
                 continue;
             }
 
@@ -1189,8 +1381,8 @@ class Kontrak extends BaseController
         }
 
         if ($inserted === 0 && $updated === 0) {
-            $redirect = redirect()->to(site_url('admin/kontrak/simak'))
-                ->with('error', 'Tidak ada data yang diproses. Pastikan kolom minimal: ppk_nip, nama_paket, tahun_anggaran, nomor_kontrak, nilai_kontrak, nilai_kontrak_jasa_konsultansi dan NIP tersedia di master pegawai.');
+            $redirect = redirect()->to(site_url('admin/kontrak/simak/konstruksi'))
+                ->with('error', 'Tidak ada data yang diproses. Pastikan kolom minimal: ppk_nip, nama_paket, tahun_anggaran, nomor_kontrak, nilai_kontrak dan NIP tersedia di master pegawai.');
 
             if ($importReport !== []) {
                 $redirect = $redirect->with('import_simak_report', $importReport);
@@ -1200,7 +1392,7 @@ class Kontrak extends BaseController
         }
 
         $message = 'Import SIMAK selesai. Insert: ' . $inserted . ', Update: ' . $updated . ', Dilewati: ' . $skipped . '.';
-        $redirect = redirect()->to(site_url('admin/kontrak/simak'))->with('success', $message);
+        $redirect = redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('success', $message);
         if ($importReport !== []) {
             $redirect = $redirect->with('import_simak_report', $importReport);
         }
@@ -1211,7 +1403,7 @@ class Kontrak extends BaseController
     public function exportSimakTemplate()
     {
         if (! $this->canManageKontrak()) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Anda tidak memiliki akses untuk mengunduh template SIMAK.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Anda tidak memiliki akses untuk mengunduh template SIMAK.');
         }
 
         $headers = [
@@ -1220,14 +1412,8 @@ class Kontrak extends BaseController
             'nama_paket',
             'tahun_anggaran',
             'penyedia',
-            'penyedia_jasa_konsultansi',
             'nomor_kontrak',
             'nilai_kontrak',
-            'nilai_kontrak_jasa_konsultansi',
-            'jenis_pekerjaan_jasa_konsultansi',
-            'masa_pelaksanaan',
-            'pagu_anggaran',
-            'metode_pemilihan',
             'tahapan_pekerjaan',
             'tanggal_pemeriksaan',
         ];
@@ -1242,20 +1428,14 @@ class Kontrak extends BaseController
             'Nama Paket Contoh',
             '2026 - 2027',
             'Penyedia Konstruksi Contoh',
-            'Penyedia Jasa Contoh',
             'SIMAK/001/2026',
             1000000000,
-            450000000,
-            'perencanaan',
-            'syc',
-            250000000,
-            'seleksi',
             'Tahapan Contoh',
             '2026-04-15',
         ], null, 'A2');
 
-        $sheet->getStyle('A1:O1')->getFont()->setBold(true);
-        foreach (range('A', 'O') as $column) {
+        $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+        foreach (range('A', 'I') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
@@ -1274,12 +1454,12 @@ class Kontrak extends BaseController
     public function createSimak()
     {
         if (! $this->canViewKontrak()) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Anda tidak memiliki akses untuk menambah data SIMAK.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Anda tidak memiliki akses untuk menambah data SIMAK.');
         }
 
         $db = db_connect();
         if (! $db->tableExists('trn_kontrak_simak')) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Tabel SIMAK belum tersedia. Jalankan migration.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Tabel SIMAK belum tersedia. Jalankan migration.');
         }
 
         $satker = trim((string) $this->request->getPost('satker'));
@@ -1305,30 +1485,44 @@ class Kontrak extends BaseController
         $tahapanPekerjaan = trim((string) $this->request->getPost('tahapan_pekerjaan'));
         $tanggalPemeriksaan = $this->normalizeDateValue((string) $this->request->getPost('tanggal_pemeriksaan'));
 
+        // Pada menu konstruksi, field konsultansi belum ditampilkan di form.
+        // Gunakan default aman agar proses simpan tidak terblokir.
+        if ($jenisJasa === null) {
+            $jenisJasa = 'perencanaan';
+        }
+
+        if ($masaPelaksanaan === null) {
+            $masaPelaksanaan = 'syc';
+        }
+
+        if ($paguAnggaran <= 0) {
+            $paguAnggaran = (int) round($nilaiKontrak > 0 ? $nilaiKontrak : 0);
+        }
+
+        if ($metodePemilihan === null) {
+            $metodePemilihan = 'seleksi';
+        }
+
         if ($satker === '') {
             $satker = 'Perencanaan Prasarana Strategis';
         }
 
         if ($ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $tahunAnggaran === '' || $nomorKontrak === '') {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Field wajib belum lengkap.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Field wajib belum lengkap.');
         }
 
         if (! preg_match('/^\d{4}\s*-\s*\d{4}$/', $tahunAnggaran)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Format tahun anggaran harus seperti 2024 - 2025.');
-        }
-
-        if ($jenisJasa === null || $masaPelaksanaan === null || $paguAnggaran <= 0 || $metodePemilihan === null) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Field Jasa Konsultansi belum lengkap.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Format tahun anggaran harus seperti 2024 - 2025.');
         }
 
         if ($nilaiKontrak <= 0 || $nilaiKontrakJasa <= 0 || $penyedia === '' || $penyediaJasa === '' || $tahapanPekerjaan === '' || $tanggalPemeriksaan === '') {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Seluruh input wajib terisi (termasuk penyedia, penyedia jasa, nilai kontrak konstruksi, nilai kontrak jasa konsultansi, tahapan pekerjaan, dan tanggal pemeriksaan).');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Seluruh input wajib terisi (termasuk penyedia, penyedia jasa, nilai kontrak konstruksi, nilai kontrak jasa konsultansi, tahapan pekerjaan, dan tanggal pemeriksaan).');
         }
 
         if ($db->tableExists('mst_pegawai')) {
             $pegawai = $db->table('mst_pegawai')->select('nip, nama')->where('nip', $ppkNip)->get()->getRowArray();
             if (! is_array($pegawai)) {
-                return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'NIP PPK tidak ditemukan pada master pegawai.');
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'NIP PPK tidak ditemukan pada master pegawai.');
             }
 
             $ppkNama = trim((string) ($pegawai['nama'] ?? $ppkNama));
@@ -1338,7 +1532,7 @@ class Kontrak extends BaseController
         $this->applyNotDeletedWhere($duplicateBuilder, 'trn_kontrak_simak');
         $duplicate = $duplicateBuilder->get()->getRowArray();
         if (is_array($duplicate)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Nomor kontrak sudah digunakan.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Nomor kontrak sudah digunakan.');
         }
 
         $payload = [
@@ -1365,28 +1559,28 @@ class Kontrak extends BaseController
 
         $ok = $db->table('trn_kontrak_simak')->insert($payload);
         if (! $ok) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Gagal menyimpan data SIMAK.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Gagal menyimpan data SIMAK.');
         }
 
-        return redirect()->to(site_url('admin/kontrak/simak'))->with('success', 'Data SIMAK berhasil disimpan.');
+        return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('success', 'Data SIMAK berhasil disimpan.');
     }
 
     public function updateSimak(int $id)
     {
         if (! $this->canViewKontrak()) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Anda tidak memiliki akses untuk mengubah data SIMAK.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Anda tidak memiliki akses untuk mengubah data SIMAK.');
         }
 
         $db = db_connect();
         if (! $db->tableExists('trn_kontrak_simak')) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Tabel SIMAK belum tersedia. Jalankan migration.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Tabel SIMAK belum tersedia. Jalankan migration.');
         }
 
         $existingBuilder = $db->table('trn_kontrak_simak')->select('id')->where('id', $id);
         $this->applyNotDeletedWhere($existingBuilder, 'trn_kontrak_simak');
         $existing = $existingBuilder->get()->getRowArray();
         if (! is_array($existing)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Data SIMAK tidak ditemukan.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Data SIMAK tidak ditemukan.');
         }
 
         $satker = trim((string) $this->request->getPost('satker'));
@@ -1412,30 +1606,44 @@ class Kontrak extends BaseController
         $tahapanPekerjaan = trim((string) $this->request->getPost('tahapan_pekerjaan'));
         $tanggalPemeriksaan = $this->normalizeDateValue((string) $this->request->getPost('tanggal_pemeriksaan'));
 
+        // Pada menu konstruksi, field konsultansi belum ditampilkan di form.
+        // Gunakan default aman agar proses simpan tidak terblokir.
+        if ($jenisJasa === null) {
+            $jenisJasa = 'perencanaan';
+        }
+
+        if ($masaPelaksanaan === null) {
+            $masaPelaksanaan = 'syc';
+        }
+
+        if ($paguAnggaran <= 0) {
+            $paguAnggaran = (int) round($nilaiKontrak > 0 ? $nilaiKontrak : 0);
+        }
+
+        if ($metodePemilihan === null) {
+            $metodePemilihan = 'seleksi';
+        }
+
         if ($satker === '') {
             $satker = 'Perencanaan Prasarana Strategis';
         }
 
         if ($ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $tahunAnggaran === '' || $nomorKontrak === '') {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Field wajib belum lengkap.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Field wajib belum lengkap.');
         }
 
         if (! preg_match('/^\d{4}\s*-\s*\d{4}$/', $tahunAnggaran)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Format tahun anggaran harus seperti 2024 - 2025.');
-        }
-
-        if ($jenisJasa === null || $masaPelaksanaan === null || $paguAnggaran <= 0 || $metodePemilihan === null) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Field Jasa Konsultansi belum lengkap.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Format tahun anggaran harus seperti 2024 - 2025.');
         }
 
         if ($nilaiKontrak <= 0 || $nilaiKontrakJasa <= 0 || $penyedia === '' || $penyediaJasa === '' || $tahapanPekerjaan === '' || $tanggalPemeriksaan === '') {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Seluruh input wajib terisi (termasuk penyedia, penyedia jasa, nilai kontrak konstruksi, nilai kontrak jasa konsultansi, tahapan pekerjaan, dan tanggal pemeriksaan).');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Seluruh input wajib terisi (termasuk penyedia, penyedia jasa, nilai kontrak konstruksi, nilai kontrak jasa konsultansi, tahapan pekerjaan, dan tanggal pemeriksaan).');
         }
 
         if ($db->tableExists('mst_pegawai')) {
             $pegawai = $db->table('mst_pegawai')->select('nip, nama')->where('nip', $ppkNip)->get()->getRowArray();
             if (! is_array($pegawai)) {
-                return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'NIP PPK tidak ditemukan pada master pegawai.');
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'NIP PPK tidak ditemukan pada master pegawai.');
             }
 
             $ppkNama = trim((string) ($pegawai['nama'] ?? $ppkNama));
@@ -1448,7 +1656,7 @@ class Kontrak extends BaseController
         $this->applyNotDeletedWhere($duplicateBuilder, 'trn_kontrak_simak');
         $duplicate = $duplicateBuilder->get()->getRowArray();
         if (is_array($duplicate)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Nomor kontrak sudah digunakan pada data lain.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Nomor kontrak sudah digunakan pada data lain.');
         }
 
         $payload = [
@@ -1483,10 +1691,10 @@ class Kontrak extends BaseController
         $db->transComplete();
 
         if (! $ok || ! $db->transStatus()) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Gagal mengubah data SIMAK.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Gagal mengubah data SIMAK.');
         }
 
-        return redirect()->to(site_url('admin/kontrak/simak'))->with('success', 'Data SIMAK berhasil diubah.');
+        return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('success', 'Data SIMAK berhasil diubah.');
     }
 
     public function detailSimak(int $id)
@@ -1497,7 +1705,7 @@ class Kontrak extends BaseController
 
         $db = db_connect();
         if (! $db->tableExists('trn_kontrak_simak')) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Tabel SIMAK belum tersedia. Jalankan migration.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Tabel SIMAK belum tersedia. Jalankan migration.');
         }
 
         $builder = $db->table('trn_kontrak_simak')->select('*')->where('id', $id);
@@ -1505,7 +1713,7 @@ class Kontrak extends BaseController
         $item = $builder->get()->getRowArray();
 
         if (! is_array($item)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Data SIMAK tidak ditemukan.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Data SIMAK tidak ditemukan.');
         }
 
         $templateItems = $this->getSimakPelaksanaanFisikTemplateItems();
@@ -1580,7 +1788,7 @@ class Kontrak extends BaseController
             'belum_ada_persen' => 0.0,
         ];
 
-        return view('admin/kontrak/simak_detail', [
+        return view('admin/kontrak/simak_konstruksi_detail', [
             'title' => 'Detail SIMAK',
             'item' => $item,
             'addOnsByCategory' => $addOnsByCategory,
@@ -1596,24 +1804,24 @@ class Kontrak extends BaseController
     public function saveSimakVerifikasi(int $id)
     {
         if (! $this->canViewKontrak()) {
-            return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Anda tidak memiliki akses untuk menyimpan verifikasi SIMAK.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Anda tidak memiliki akses untuk menyimpan verifikasi SIMAK.');
         }
 
         $db = db_connect();
         if (! $db->tableExists('trn_kontrak_simak') || ! $db->tableExists('trn_kontrak_simak_verifikasi')) {
-            return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Tabel verifikasi SIMAK belum tersedia. Jalankan migration terbaru.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tabel verifikasi SIMAK belum tersedia. Jalankan migration terbaru.');
         }
 
         $existingBuilder = $db->table('trn_kontrak_simak')->select('id')->where('id', $id);
         $this->applyNotDeletedWhere($existingBuilder, 'trn_kontrak_simak');
         $existing = $existingBuilder->get()->getRowArray();
         if (! is_array($existing)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Data SIMAK tidak ditemukan.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Data SIMAK tidak ditemukan.');
         }
 
-        $templateItems = $this->getSimakPelaksanaanFisikTemplateItems();
+        $templateItems = $this->getSimakTemplateItems('konstruksi');
         if ($templateItems === []) {
-            return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Template verifikasi SIMAK tidak ditemukan.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Template verifikasi SIMAK tidak ditemukan.');
         }
 
         $kelengkapan = $this->request->getPost('kelengkapan_dokumen');
@@ -1691,38 +1899,38 @@ class Kontrak extends BaseController
 
         $db->transComplete();
         if (! $db->transStatus()) {
-            return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Gagal menyimpan verifikasi SIMAK.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal menyimpan verifikasi SIMAK.');
         }
 
-        return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('success', 'Verifikasi SIMAK berhasil disimpan.');
+        return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('success', 'Verifikasi SIMAK berhasil disimpan.');
     }
 
     public function uploadSimakVerifikasiDokumen(int $id)
     {
         if (! $this->canViewKontrak()) {
-            return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Anda tidak memiliki akses untuk upload dokumen verifikasi SIMAK.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Anda tidak memiliki akses untuk upload dokumen verifikasi SIMAK.');
         }
 
         $db = db_connect();
         if (! $db->tableExists('trn_kontrak_simak')
             || ! $db->tableExists('trn_kontrak_simak_verifikasi')
             || ! $db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
-            return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Tabel dokumen verifikasi SIMAK belum tersedia. Jalankan migration terbaru.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tabel dokumen verifikasi SIMAK belum tersedia. Jalankan migration terbaru.');
         }
 
         $existingBuilder = $db->table('trn_kontrak_simak')->select('id')->where('id', $id);
         $this->applyNotDeletedWhere($existingBuilder, 'trn_kontrak_simak');
         $existing = $existingBuilder->get()->getRowArray();
         if (! is_array($existing)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Data SIMAK tidak ditemukan.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Data SIMAK tidak ditemukan.');
         }
 
         $rowNo = (int) ($this->request->getPost('row_no') ?? 0);
         if ($rowNo <= 0) {
-            return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Baris verifikasi tidak valid.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Baris verifikasi tidak valid.');
         }
 
-        $templateItems = $this->getSimakPelaksanaanFisikTemplateItems();
+        $templateItems = $this->getSimakTemplateItems('konstruksi');
         $templateByRow = [];
         foreach ($templateItems as $templateItem) {
             $templateByRow[(int) ($templateItem['row_no'] ?? 0)] = $templateItem;
@@ -1730,7 +1938,7 @@ class Kontrak extends BaseController
 
         $targetTemplate = $templateByRow[$rowNo] ?? null;
         if (! is_array($targetTemplate) || (($targetTemplate['is_leaf'] ?? false) !== true)) {
-            return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
         }
 
         $existingVerifikasi = $db->table('trn_kontrak_simak_verifikasi')
@@ -1764,7 +1972,7 @@ class Kontrak extends BaseController
         $hasUpload = $file && $file->isValid() && ! $file->hasMoved();
 
         if (! $hasUpload && $kel === null && $ver === null && $ket === '' && $pic === '') {
-            return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Tidak ada perubahan yang disimpan. Isi data atau upload file terlebih dahulu.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tidak ada perubahan yang disimpan. Isi data atau upload file terlebih dahulu.');
         }
 
         $relativePath = '';
@@ -1773,13 +1981,13 @@ class Kontrak extends BaseController
             $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
             $ext = strtolower((string) $file->getClientExtension());
             if (! in_array($ext, $allowedExt, true)) {
-                return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
             }
 
             $subDir = 'uploads/simak_verifikasi/' . $id . '/' . $rowNo;
             $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
             if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
-                return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Gagal membuat direktori upload dokumen.');
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal membuat direktori upload dokumen.');
             }
 
             $storedName = $file->getRandomName();
@@ -1836,14 +2044,14 @@ class Kontrak extends BaseController
         $db->transComplete();
 
         if (! $db->transStatus()) {
-            return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('error', 'Gagal menyimpan upload dokumen verifikasi SIMAK.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal menyimpan upload dokumen verifikasi SIMAK.');
         }
 
         $message = $hasUpload
             ? 'Update verifikasi tersimpan dan dokumen berhasil diupload. Riwayat dokumen tercatat.'
             : 'Update verifikasi berhasil disimpan.';
 
-        return redirect()->to(site_url('admin/kontrak/simak/' . $id))->with('success', $message);
+        return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('success', $message);
     }
 
     public function viewSimakVerifikasiDokumen(int $dokumenId)
@@ -1854,7 +2062,7 @@ class Kontrak extends BaseController
 
         $db = db_connect();
         if (! $db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Tabel dokumen verifikasi SIMAK belum tersedia.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Tabel dokumen verifikasi SIMAK belum tersedia.');
         }
 
         $builder = $db->table('trn_kontrak_simak_verifikasi_dokumen')
@@ -1864,7 +2072,7 @@ class Kontrak extends BaseController
         $row = $builder->get()->getRowArray();
 
         if (! is_array($row)) {
-            return redirect()->to(site_url('admin/kontrak/simak'))->with('error', 'Dokumen verifikasi tidak ditemukan.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Dokumen verifikasi tidak ditemukan.');
         }
 
         $relativePath = trim((string) ($row['file_relative_path'] ?? ''));
@@ -1875,7 +2083,7 @@ class Kontrak extends BaseController
         $relativePath = ltrim($relativePath, '/');
         $absPath = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
         if ($relativePath === '' || ! is_file($absPath)) {
-            return redirect()->to(site_url('admin/kontrak/simak/' . (int) ($row['simak_id'] ?? 0)))->with('error', 'File dokumen tidak ditemukan di server.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . (int) ($row['simak_id'] ?? 0)))->with('error', 'File dokumen tidak ditemukan di server.');
         }
 
         $mime = trim((string) ($row['file_mime'] ?? ''));
@@ -1892,16 +2100,21 @@ class Kontrak extends BaseController
             ->setBody($content === false ? '' : $content);
     }
 
-    public function sharedSimak(string $token): string
+    public function sharedSimak(string $token)
     {
         $shared = $this->resolveSharedSimak($token);
         if ($shared === null) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tautan share SIMAK tidak valid.');
+            return $this->renderSharedInvalidLink(
+                'Tautan share SIMAK tidak valid.',
+                $token,
+                null
+            );
         }
 
         // Calculate document completion percentages
         $simakId = (int) ($shared['item']['id'] ?? 0);
-        $kelengkapanPercentages = $this->getSimakAdministrasiKelengkapanBySimakId([$simakId]);
+        $sharedType = (string) ($shared['type'] ?? 'konstruksi');
+        $kelengkapanPercentages = $this->getSimakAdministrasiKelengkapanBySimakId([$simakId], $sharedType);
         $kelengkapanPercentage = $kelengkapanPercentages[$simakId] ?? [
             'lengkap_persen' => 0.0,
             'belum_sesuai_persen' => 0.0,
@@ -1925,11 +2138,18 @@ class Kontrak extends BaseController
     {
         $shared = $this->resolveSharedSimak($token);
         if ($shared === null) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tautan share SIMAK tidak valid.');
+            return $this->renderSharedInvalidLink(
+                'Tautan share SIMAK tidak valid.',
+                $token,
+                null
+            );
         }
 
         $db = db_connect();
-        if (! $db->tableExists('trn_kontrak_simak_verifikasi') || ! $db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
+        $tableVerifikasi = (string) ($shared['table_verifikasi'] ?? 'trn_kontrak_simak_verifikasi');
+        $tableDokumen = (string) ($shared['table_dokumen'] ?? 'trn_kontrak_simak_verifikasi_dokumen');
+
+        if (! $db->tableExists($tableVerifikasi) || ! $db->tableExists($tableDokumen)) {
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Tabel dokumen verifikasi SIMAK belum tersedia. Jalankan migration terbaru.');
         }
 
@@ -1965,7 +2185,7 @@ class Kontrak extends BaseController
         }
         $actor = 'google: ' . $actorLabel;
 
-        $existingVerifikasi = $db->table('trn_kontrak_simak_verifikasi')
+        $existingVerifikasi = $db->table($tableVerifikasi)
             ->select('verifikasi_ki, keterangan, pic')
             ->where('simak_id', $simakId)
             ->where('row_no', $rowNo)
@@ -1977,7 +2197,7 @@ class Kontrak extends BaseController
             $existingVerifikasiStatus = null;
         }
 
-        $existingDokumen = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+        $existingDokumen = $db->table($tableDokumen)
             ->select('id')
             ->where('simak_id', $simakId)
             ->where('row_no', $rowNo)
@@ -2094,9 +2314,9 @@ class Kontrak extends BaseController
         ];
 
         $db->transStart();
-        $db->table('trn_kontrak_simak_verifikasi')->where('simak_id', $simakId)->where('row_no', $rowNo)->delete();
-        $db->table('trn_kontrak_simak_verifikasi')->insert($verifikasiRow);
-        $db->table('trn_kontrak_simak_verifikasi_dokumen')->insert($dokumenRow);
+        $db->table($tableVerifikasi)->where('simak_id', $simakId)->where('row_no', $rowNo)->delete();
+        $db->table($tableVerifikasi)->insert($verifikasiRow);
+        $db->table($tableDokumen)->insert($dokumenRow);
         $db->transComplete();
 
         if (! $db->transStatus()) {
@@ -2110,11 +2330,16 @@ class Kontrak extends BaseController
     {
         $shared = $this->resolveSharedSimak($token);
         if ($shared === null) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Tautan share SIMAK tidak valid atau sudah kedaluwarsa.');
+            return $this->renderSharedInvalidLink(
+                'Tautan share SIMAK tidak valid atau sudah kedaluwarsa.',
+                $token,
+                null
+            );
         }
 
         $db = db_connect();
-        if (! $db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
+        $tableDokumen = (string) ($shared['table_dokumen'] ?? 'trn_kontrak_simak_verifikasi_dokumen');
+        if (! $db->tableExists($tableDokumen)) {
             return $this->renderSharedDokumenNotFound(
                 $token,
                 'Data dokumen verifikasi belum tersedia. Silakan hubungi admin.',
@@ -2122,7 +2347,7 @@ class Kontrak extends BaseController
             );
         }
 
-        $dokumen = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+        $dokumen = $db->table($tableDokumen)
             ->select('*')
             ->where('id', $dokumenId)
             ->where('simak_id', (int) ($shared['item']['id'] ?? 0))
@@ -2314,6 +2539,18 @@ class Kontrak extends BaseController
             ]));
     }
 
+    private function renderSharedInvalidLink(string $message, string $token = '', ?array $item = null)
+    {
+        return $this->response
+            ->setStatusCode(404)
+            ->setBody(view('public/simak_share_invalid_link', [
+                'title' => 'Tautan Share Tidak Valid',
+                'message' => $message,
+                'token' => $token,
+                'item' => $item ?? [],
+            ]));
+    }
+
     private function sanitizeRichText($value): string
     {
         if (! function_exists('normalize_syarat_umum_html')) {
@@ -2331,7 +2568,7 @@ class Kontrak extends BaseController
         return is_array($row) ? $row : null;
     }
 
-    private function getSimakSharePublicUrlBySimakId(array $simakIds): array
+    private function getSimakSharePublicUrlBySimakId(array $simakIds, string $type = 'konstruksi'): array
     {
         $simakIds = array_values(array_unique(array_filter(array_map('intval', $simakIds), static function (int $id): bool {
             return $id > 0;
@@ -2342,17 +2579,18 @@ class Kontrak extends BaseController
         }
 
         $db = db_connect();
-        if (! $db->tableExists('trn_kontrak_simak_share')) {
+        $tableShare = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_share' : 'trn_kontrak_simak_share';
+        if (! $db->tableExists($tableShare)) {
             return [];
         }
-        $shareHasExpiresCol = $this->tableHasColumn('trn_kontrak_simak_share', 'expires_at');
+        $shareHasExpiresCol = $this->tableHasColumn($tableShare, 'expires_at');
 
         $select = 'simak_id, share_token';
         if ($shareHasExpiresCol) {
             $select .= ', expires_at';
         }
 
-        $rows = $db->table('trn_kontrak_simak_share')
+        $rows = $db->table($tableShare)
             ->select($select)
             ->whereIn('simak_id', $simakIds)
             ->where('is_active', 1)
@@ -2413,93 +2651,123 @@ class Kontrak extends BaseController
         }
 
         $db = db_connect();
-        if (! $db->tableExists('trn_kontrak_simak_share') || ! $db->tableExists('trn_kontrak_simak')) {
-            return null;
-        }
-        $shareHasExpiresCol = $this->tableHasColumn('trn_kontrak_simak_share', 'expires_at');
-
-        $shareSelect = 'id, simak_id, share_token, is_active';
-        if ($shareHasExpiresCol) {
-            $shareSelect .= ', expires_at';
-        }
-
-        $share = $db->table('trn_kontrak_simak_share')
-            ->select($shareSelect)
-            ->where('share_token', $token)
-            ->where('is_active', 1)
-            ->get()
-            ->getRowArray();
-
-        if (! is_array($share)) {
-            return null;
-        }
-
-        $expiresAt = trim((string) ($share['expires_at'] ?? ''));
-        if ($shareHasExpiresCol && ! $this->isSimakShareActiveByDate($expiresAt)) {
-            return null;
-        }
-
-        $shareSimakId = (int) ($share['simak_id'] ?? 0);
-        if ($shareSimakId <= 0) {
-            return null;
-        }
-
-        $simakBuilder = $db->table('trn_kontrak_simak')->select('*')->where('id', $shareSimakId);
-        $this->applyNotDeletedWhere($simakBuilder, 'trn_kontrak_simak');
-        $item = $simakBuilder->get()->getRowArray();
-        if (! is_array($item)) {
-            return null;
-        }
-
-        $templateItems = $this->getSimakPelaksanaanFisikTemplateItems();
-        if ($templateItems === []) {
-            return null;
-        }
-
-        $verifikasiByRow = [];
-        if ($db->tableExists('trn_kontrak_simak_verifikasi')) {
-            $verifikasiRows = $db->table('trn_kontrak_simak_verifikasi')
-                ->select('row_no, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
-                ->where('simak_id', $shareSimakId)
-                ->orderBy('row_no', 'ASC')
-                ->get()
-                ->getResultArray();
-
-            foreach ($verifikasiRows as $row) {
-                $verifikasiByRow[(int) ($row['row_no'] ?? 0)] = $row;
-            }
-        }
-
-        $dokumenByRow = [];
-        if ($db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
-            $dokumenBuilder = $db->table('trn_kontrak_simak_verifikasi_dokumen')
-                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by')
-                ->where('simak_id', $shareSimakId)
-                ->orderBy('row_no', 'ASC')
-                ->orderBy('id', 'DESC');
-            $this->applyNotDeletedWhere($dokumenBuilder, 'trn_kontrak_simak_verifikasi_dokumen');
-            $dokumenRows = $dokumenBuilder->get()->getResultArray();
-
-            foreach ($dokumenRows as $doc) {
-                $rowNo = (int) ($doc['row_no'] ?? 0);
-                if ($rowNo <= 0) {
-                    continue;
-                }
-
-                if (! isset($dokumenByRow[$rowNo])) {
-                    $dokumenByRow[$rowNo] = [];
-                }
-                $dokumenByRow[$rowNo][] = $doc;
-            }
-        }
-
-        return [
-            'share' => $share,
-            'item' => $item,
-            'templateItems' => $templateItems,
-            'verifikasiByRow' => $verifikasiByRow,
-            'dokumenByRow' => $dokumenByRow,
+        $configs = [
+            [
+                'type' => 'konstruksi',
+                'table_share' => 'trn_kontrak_simak_share',
+                'table_simak' => 'trn_kontrak_simak',
+                'table_verifikasi' => 'trn_kontrak_simak_verifikasi',
+                'table_dokumen' => 'trn_kontrak_simak_verifikasi_dokumen',
+            ],
+            [
+                'type' => 'konsultasi',
+                'table_share' => 'trn_kontrak_simak_konsultasi_share',
+                'table_simak' => 'trn_kontrak_simak_konsultasi',
+                'table_verifikasi' => 'trn_kontrak_simak_konsultasi_verifikasi',
+                'table_dokumen' => 'trn_kontrak_simak_konsultasi_verifikasi_dokumen',
+            ],
         ];
+
+        foreach ($configs as $config) {
+            $tableShare = (string) ($config['table_share'] ?? '');
+            $tableSimak = (string) ($config['table_simak'] ?? '');
+            $tableVerifikasi = (string) ($config['table_verifikasi'] ?? '');
+            $tableDokumen = (string) ($config['table_dokumen'] ?? '');
+
+            if (! $db->tableExists($tableShare) || ! $db->tableExists($tableSimak)) {
+                continue;
+            }
+
+            $shareHasExpiresCol = $this->tableHasColumn($tableShare, 'expires_at');
+
+            $shareSelect = 'id, simak_id, share_token, is_active';
+            if ($shareHasExpiresCol) {
+                $shareSelect .= ', expires_at';
+            }
+
+            $shareBuilder = $db->table($tableShare)
+                ->select($shareSelect)
+                ->where('share_token', $token)
+                ->where('is_active', 1);
+            $this->applyNotDeletedWhere($shareBuilder, $tableShare);
+
+            $share = $shareBuilder->get()->getRowArray();
+            if (! is_array($share)) {
+                continue;
+            }
+
+            $expiresAt = trim((string) ($share['expires_at'] ?? ''));
+            if ($shareHasExpiresCol && ! $this->isSimakShareActiveByDate($expiresAt)) {
+                continue;
+            }
+
+            $shareSimakId = (int) ($share['simak_id'] ?? 0);
+            if ($shareSimakId <= 0) {
+                continue;
+            }
+
+            $simakBuilder = $db->table($tableSimak)->select('*')->where('id', $shareSimakId);
+            $this->applyNotDeletedWhere($simakBuilder, $tableSimak);
+            $item = $simakBuilder->get()->getRowArray();
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $templateItems = $this->getSimakTemplateItems((string) ($config['type'] ?? 'konstruksi'));
+            if ($templateItems === []) {
+                return null;
+            }
+
+            $verifikasiByRow = [];
+            if ($db->tableExists($tableVerifikasi)) {
+                $verifikasiRows = $db->table($tableVerifikasi)
+                    ->select('row_no, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
+                    ->where('simak_id', $shareSimakId)
+                    ->orderBy('row_no', 'ASC')
+                    ->get()
+                    ->getResultArray();
+
+                foreach ($verifikasiRows as $row) {
+                    $verifikasiByRow[(int) ($row['row_no'] ?? 0)] = $row;
+                }
+            }
+
+            $dokumenByRow = [];
+            if ($db->tableExists($tableDokumen)) {
+                $dokumenBuilder = $db->table($tableDokumen)
+                    ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by')
+                    ->where('simak_id', $shareSimakId)
+                    ->orderBy('row_no', 'ASC')
+                    ->orderBy('id', 'DESC');
+                $this->applyNotDeletedWhere($dokumenBuilder, $tableDokumen);
+                $dokumenRows = $dokumenBuilder->get()->getResultArray();
+
+                foreach ($dokumenRows as $doc) {
+                    $rowNo = (int) ($doc['row_no'] ?? 0);
+                    if ($rowNo <= 0) {
+                        continue;
+                    }
+
+                    if (! isset($dokumenByRow[$rowNo])) {
+                        $dokumenByRow[$rowNo] = [];
+                    }
+                    $dokumenByRow[$rowNo][] = $doc;
+                }
+            }
+
+            return [
+                'type' => (string) ($config['type'] ?? 'konstruksi'),
+                'table_verifikasi' => $tableVerifikasi,
+                'table_dokumen' => $tableDokumen,
+                'share' => $share,
+                'item' => $item,
+                'templateItems' => $templateItems,
+                'verifikasiByRow' => $verifikasiByRow,
+                'dokumenByRow' => $dokumenByRow,
+            ];
+        }
+
+        return null;
     }
 
     private function isSimakShareActiveByDate(string $expiresAt): bool
@@ -2678,26 +2946,49 @@ class Kontrak extends BaseController
         }
     }
 
-    private function getSimakAddOnsBySimakId(): array
+    private function getSimakAddOnsBySimakId(string $type = 'konstruksi'): array
     {
         $db = db_connect();
-        if (! $db->tableExists('trn_kontrak_simak_add_on')) {
+        $tableAddOn = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_add_on' : 'trn_kontrak_simak_add_on';
+        if (! $db->tableExists($tableAddOn)) {
             return [];
         }
 
-        $builder = $db->table('trn_kontrak_simak_add_on')
-            ->select('simak_id, urutan, kategori_add_on, nilai_add_on, tanggal_add_on')
+        $hasKategori = $this->tableHasColumn($tableAddOn, 'kategori');
+        $hasKategoriAddOn = $this->tableHasColumn($tableAddOn, 'kategori_add_on');
+        $hasItemAddOn = $this->tableHasColumn($tableAddOn, 'item_add_on');
+        $hasUrutan = $this->tableHasColumn($tableAddOn, 'urutan');
+
+        $selectParts = ['simak_id', 'nilai_add_on', 'tanggal_add_on', 'id'];
+        if ($hasKategori) {
+            $selectParts[] = 'kategori AS kategori_group';
+        } elseif ($hasKategoriAddOn) {
+            $selectParts[] = 'kategori_add_on AS kategori_group';
+        }
+
+        if ($hasItemAddOn) {
+            $selectParts[] = 'item_add_on AS item_label';
+        }
+
+        if ($hasUrutan) {
+            $selectParts[] = 'urutan AS urutan_no';
+        }
+
+        $categoryOrderColumn = $hasKategori ? 'kategori' : ($hasKategoriAddOn ? 'kategori_add_on' : 'id');
+
+        $builder = $db->table($tableAddOn)
+            ->select(implode(', ', $selectParts))
             ->orderBy('simak_id', 'ASC')
-            ->orderBy('kategori_add_on', 'ASC')
-            ->orderBy('urutan', 'ASC')
+            ->orderBy($categoryOrderColumn, 'ASC')
             ->orderBy('id', 'ASC');
-        $this->applyNotDeletedWhere($builder, 'trn_kontrak_simak_add_on');
+        $this->applyNotDeletedWhere($builder, $tableAddOn);
 
         $rows = $builder->get()->getResultArray();
         $grouped = [];
         foreach ($rows as $row) {
             $simakId = (int) ($row['simak_id'] ?? 0);
-            $kategori = $this->normalizeSimakAddOnCategory((string) ($row['kategori_add_on'] ?? 'konstruksi_fisik'));
+            $defaultCategory = ($type === 'konsultasi') ? 'jasa_konsultansi' : 'konstruksi_fisik';
+            $kategori = $this->normalizeSimakAddOnCategory((string) ($row['kategori_group'] ?? $defaultCategory));
             if (! isset($grouped[$simakId])) {
                 $grouped[$simakId] = [];
             }
@@ -2706,9 +2997,18 @@ class Kontrak extends BaseController
                 $grouped[$simakId][$kategori] = [];
             }
 
+            $itemLabel = trim((string) ($row['item_label'] ?? ''));
+            if ($itemLabel === '') {
+                $urutan = (int) ($row['urutan_no'] ?? 0);
+                if ($urutan <= 0) {
+                    $urutan = count($grouped[$simakId][$kategori]) + 1;
+                }
+                $itemLabel = 'Add On ' . $urutan;
+            }
+
             $grouped[$simakId][$kategori][] = [
-                'urutan' => (int) ($row['urutan'] ?? 0),
-                'kategori_add_on' => $kategori,
+                'kategori' => $kategori,
+                'item_add_on' => $itemLabel,
                 'nilai_add_on' => (float) ($row['nilai_add_on'] ?? 0),
                 'tanggal_add_on' => (string) ($row['tanggal_add_on'] ?? ''),
             ];
@@ -2717,7 +3017,7 @@ class Kontrak extends BaseController
         return $grouped;
     }
 
-    private function getSimakAdministrasiKelengkapanBySimakId(array $simakIds): array
+    private function getSimakAdministrasiKelengkapanBySimakId(array $simakIds, string $type = 'konstruksi'): array
     {
         $simakIds = array_values(array_unique(array_filter(array_map('intval', $simakIds), static function (int $id): bool {
             return $id > 0;
@@ -2736,7 +3036,7 @@ class Kontrak extends BaseController
             ];
         }
 
-        $templateItems = $this->getSimakPelaksanaanFisikTemplateItems();
+        $templateItems = $this->getSimakTemplateItems($type);
         $leafRows = [];
         foreach ($templateItems as $item) {
             if (($item['is_leaf'] ?? false) !== true) {
@@ -2756,15 +3056,16 @@ class Kontrak extends BaseController
         }
 
         $db = db_connect();
-        if (! $db->tableExists('trn_kontrak_simak_verifikasi')) {
+        $tableVerifikasi = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_verifikasi' : 'trn_kontrak_simak_verifikasi';
+        if (! $db->tableExists($tableVerifikasi)) {
             return $result;
         }
 
-        $builder = $db->table('trn_kontrak_simak_verifikasi')
+        $builder = $db->table($tableVerifikasi)
             ->select('simak_id, row_no, kelengkapan_dokumen, verifikasi_ki')
             ->whereIn('simak_id', $simakIds)
             ->whereIn('row_no', $leafRows);
-        $this->applyNotDeletedWhere($builder, 'trn_kontrak_simak_verifikasi');
+        $this->applyNotDeletedWhere($builder, $tableVerifikasi);
 
         $rows = $builder->get()->getResultArray();
 
@@ -2903,6 +3204,13 @@ class Kontrak extends BaseController
                     $rowType = 'detail_text';
                 }
 
+                // Divider rows in section D should not become upload targets and
+                // must not consume the leaf state of the item above (e.g. H/J).
+                if ($rowType === 'detail_text' && preg_match('/^untuk\s+jasa\s+konsultansi/i', $uraian)) {
+                    $rowType = 'separator';
+                    $rowPriority = 1;
+                }
+
                 $items[] = [
                     'row_no' => $row,
                     'display_no' => $displayNo,
@@ -2941,6 +3249,229 @@ class Kontrak extends BaseController
 
                 $items[$index]['has_children'] = $hasChildren;
                 $items[$index]['is_leaf'] = ! $hasChildren && ! $currentIsHeader;
+
+                if (($items[$index]['row_type'] ?? '') === 'separator') {
+                    $items[$index]['has_children'] = false;
+                    $items[$index]['is_leaf'] = false;
+                }
+            }
+
+            return $items;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    private function getSimakTemplateItems(string $type = 'konstruksi'): array
+    {
+        return $type === 'konsultasi'
+            ? $this->getSimakKonsultasiTemplateItems()
+            : $this->getSimakPelaksanaanFisikTemplateItems();
+    }
+
+    private function getSimakKonsultasiTemplateItems(): array
+    {
+        $filePath = WRITEPATH . 'templates/contoh_simak.xlsx';
+        if (! is_file($filePath)) {
+            return [];
+        }
+
+        if (! class_exists('\\PhpOffice\\PhpSpreadsheet\\IOFactory')) {
+            return [];
+        }
+
+        try {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($filePath);
+            $sheet = $spreadsheet->getSheetByName('Daftar SIMAK JK (>100juta)');
+            if ($sheet === null) {
+                return [];
+            }
+
+            $items = [];
+            $currentSectionKey = '';
+            $currentSectionTitle = '';
+            $currentSubsectionKey = '';
+            $lastSubsectionLetter = [];
+            $sectionCounter = 0;
+            $seenSectionNo = [];
+            $highestRow = (int) $sheet->getHighestRow();
+            $lastRelevantRow = 24;
+
+            for ($scanRow = 24; $scanRow <= $highestRow; $scanRow++) {
+                $scanColC = trim((string) $sheet->getCell('C' . $scanRow)->getFormattedValue());
+                $scanColD = trim((string) $sheet->getCell('D' . $scanRow)->getFormattedValue());
+                if ($scanColC !== '' || $scanColD !== '') {
+                    $lastRelevantRow = $scanRow;
+                }
+            }
+
+            for ($row = 24; $row <= $lastRelevantRow; $row++) {
+                $colB = trim((string) $sheet->getCell('B' . $row)->getFormattedValue());
+                $colC = trim((string) $sheet->getCell('C' . $row)->getFormattedValue());
+                $colD = trim((string) $sheet->getCell('D' . $row)->getFormattedValue());
+                $colE = trim((string) $sheet->getCell('E' . $row)->getFormattedValue());
+                $colF = trim((string) $sheet->getCell('F' . $row)->getFormattedValue());
+                $colG = trim((string) $sheet->getCell('G' . $row)->getFormattedValue());
+                $colH = trim((string) $sheet->getCell('H' . $row)->getFormattedValue());
+                $colI = trim((string) $sheet->getCell('I' . $row)->getFormattedValue());
+
+                $upperColC = strtoupper($colC);
+                $upperColD = strtoupper($colD);
+
+                // Stop parsing once the worksheet reaches recap/sign-off area.
+                if ($upperColC === 'REKAPITULASI DOKUMEN'
+                    || $upperColD === 'NILAI'
+                    || str_starts_with($upperColD, 'DIVERIFIKASI PADA TANGGAL')
+                    || str_starts_with($upperColD, 'PPK / TIM PPK')) {
+                    break;
+                }
+
+                // Skip the grid header row.
+                if ($row === 24 && strtolower($colB) === 'no.' && strtolower($colC) === 'tahapan') {
+                    continue;
+                }
+
+                if ($colC === '' && $colD === '') {
+                    continue;
+                }
+
+                $displayNo = '';
+                $indentLevel = 0;
+                $rowType = 'detail';
+                $rowPriority = 4;
+                $uraian = $colD;
+                $isSectionHeader = false;
+
+                if ($colD === '' && preg_match('/^([A-Z])(?:[\.|\)])?$/', $colB, $sectionMatches) && $colC !== '') {
+                    $isSectionHeader = true;
+                    $displayNo = (string) ($sectionMatches[1] ?? $colB);
+                    $sectionCounter++;
+                    if ($displayNo === '' || isset($seenSectionNo[$displayNo])) {
+                        $normalizedNo = chr(ord('A') + max(0, $sectionCounter - 1));
+                        if (preg_match('/^[A-Z]$/', $normalizedNo)) {
+                            $displayNo = $normalizedNo;
+                        }
+                    }
+                    $seenSectionNo[$displayNo] = true;
+                    $uraian = $colC;
+                    $indentLevel = 0;
+                    $rowPriority = 0;
+                    $currentSectionKey = $displayNo . '_' . $row;
+                    $currentSectionTitle = $uraian;
+                    $currentSubsectionKey = '';
+                    $rowType = 'section_header';
+                } elseif ($colD === '' && $colB !== '' && $colC !== '') {
+                    $displayNo = $colB;
+                    $uraian = $colC;
+                    $indentLevel = 1;
+                    $rowPriority = 1;
+                    $rowType = 'subsection_header';
+                    $currentSubsectionKey = $currentSectionKey . '|sub_' . $row;
+                } elseif ($colD === '' && $colB === '' && $colC !== '') {
+                    $displayNo = '';
+                    $uraian = $colC;
+                    $indentLevel = 2;
+                    $rowPriority = 4;
+                    $rowType = 'detail_text';
+                } elseif ($colC !== '' && preg_match('/^[a-zA-Z]$/', $colC) && $colD !== '') {
+                    $displayNo = $colC;
+                    $uraian = $colD;
+                    $indentLevel = 1;
+                    $rowPriority = 2;
+                    $rowType = 'subsection_item';
+
+                    // Some refreshed templates may contain duplicated letter labels
+                    // within one subsection (e.g. a, b, b). Normalize to sequence.
+                    if ($currentSubsectionKey !== '') {
+                        $normalizedLetter = strtolower($displayNo);
+                        $lastLetter = $lastSubsectionLetter[$currentSubsectionKey] ?? '';
+                        if ($lastLetter !== '' && $normalizedLetter <= $lastLetter) {
+                            $nextCode = ord($lastLetter) + 1;
+                            if ($nextCode >= ord('a') && $nextCode <= ord('z')) {
+                                $normalizedLetter = chr($nextCode);
+                            }
+                        }
+                        $displayNo = $normalizedLetter;
+                        $lastSubsectionLetter[$currentSubsectionKey] = $normalizedLetter;
+                    }
+                } elseif ($colD !== '' && preg_match('/^([0-9]+|[a-zA-Z])([\.|\)]|\s)+\s*(.+)$/u', $colD, $matches)) {
+                    $displayNo = $matches[1];
+                    $uraian = $matches[3];
+                    $indentLevel = 2;
+                    $rowPriority = 3;
+                    $rowType = 'detail_numbered';
+                } elseif ($colD !== '') {
+                    $displayNo = '';
+                    $uraian = $colD;
+                    $indentLevel = 2;
+                    $rowPriority = 4;
+                    $rowType = 'detail_text';
+                }
+
+                // Divider rows in section D should not become upload targets and
+                // must not consume the leaf state of the item above (e.g. H/J).
+                if ($rowType === 'detail_text' && preg_match('/^untuk\s+jasa\s+konsultansi/i', $uraian)) {
+                    $rowType = 'separator';
+                    $rowPriority = 1;
+                }
+
+                if ($rowType === 'detail_text' && preg_match('/^kondisi\s+khusus$/i', $uraian)) {
+                    $rowType = 'separator';
+                    $rowPriority = 1;
+                }
+
+                if ($rowType === 'separator' && $currentSubsectionKey !== '') {
+                    unset($lastSubsectionLetter[$currentSubsectionKey]);
+                }
+
+                $items[] = [
+                    'row_no' => $row,
+                    'display_no' => $displayNo,
+                    'uraian' => $uraian,
+                    'bentuk_dokumen' => $colE,
+                    'referensi' => $colF,
+                    'kriteria_administrasi' => $colG,
+                    'kriteria_substansi' => $colH,
+                    'sumber_dokumen_hasil_integrasi' => $colI,
+                    'is_header' => $isSectionHeader,
+                    'indent_level' => $indentLevel,
+                    'row_type' => $rowType,
+                    'row_priority' => $rowPriority,
+                    'section_key' => $currentSectionKey,
+                    'section_title' => $currentSectionTitle,
+                ];
+            }
+
+            $totalItems = count($items);
+            for ($index = 0; $index < $totalItems; $index++) {
+                $current = $items[$index];
+                $activeSectionKey = (string) ($current['section_key'] ?? '');
+                $currentIsHeader = (bool) ($current['is_header'] ?? false);
+                $currentPriority = (int) ($current['row_priority'] ?? 4);
+
+                $hasChildren = false;
+                for ($nextIndex = $index + 1; $nextIndex < $totalItems; $nextIndex++) {
+                    $next = $items[$nextIndex];
+                    if ((string) ($next['section_key'] ?? '') !== $activeSectionKey) {
+                        break;
+                    }
+
+                    $nextPriority = (int) ($next['row_priority'] ?? 4);
+                    if ($nextPriority <= $currentPriority) {
+                        break;
+                    }
+
+                    $hasChildren = true;
+                    break;
+                }
+
+                $items[$index]['has_children'] = $hasChildren;
+                $items[$index]['is_leaf'] = ! $hasChildren && ! $currentIsHeader;
+
+                if (($items[$index]['row_type'] ?? '') === 'separator') {
+                    $items[$index]['has_children'] = false;
+                    $items[$index]['is_leaf'] = false;
+                }
             }
 
             return $items;
@@ -3134,5 +3665,1020 @@ class Kontrak extends BaseController
         }
 
         return false;
+    }
+
+    // ============================================================================
+    // SIMAK Jasa Konsultansi Methods
+    // ============================================================================
+
+    public function createSimakKonsultasi()
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Anda tidak memiliki akses untuk menambah data SIMAK Konsultasi.');
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_konsultasi')) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Tabel SIMAK Konsultasi belum tersedia. Jalankan migration.');
+        }
+
+        $satker = trim((string) $this->request->getPost('satker'));
+        $ppkNip = trim((string) $this->request->getPost('ppk_nip'));
+        $ppkNama = trim((string) $this->request->getPost('ppk_nama'));
+        $namaPaket = trim((string) $this->request->getPost('nama_paket'));
+        $tahunAnggaran = trim((string) $this->request->getPost('tahun_anggaran'));
+        $jenisPekerjaan = trim((string) $this->request->getPost('jenis_pekerjaan_jasa_konsultansi'));
+        $masaPelaksanaan = trim((string) $this->request->getPost('masa_pelaksanaan'));
+        $paguAnggaran = $this->parseMoneyToBigInt($this->request->getPost('pagu_anggaran'));
+        $penyedia = trim((string) $this->request->getPost('penyedia'));
+        $nomorKontrak = trim((string) $this->request->getPost('nomor_kontrak'));
+        $nilaiKontrak = $this->parseMoneyToFloat($this->request->getPost('nilai_kontrak'));
+        $metodePemilihan = trim((string) $this->request->getPost('metode_pemilihan'));
+        $tahapanPekerjaan = trim((string) $this->request->getPost('tahapan_pekerjaan'));
+        $tanggalPemeriksaan = $this->normalizeDateValue((string) $this->request->getPost('tanggal_pemeriksaan'));
+
+        // Validate required fields
+        if ($satker === '' || $ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $tahunAnggaran === '' || 
+            $jenisPekerjaan === '' || $masaPelaksanaan === '' || $paguAnggaran <= 0 || $penyedia === '' ||
+            $nomorKontrak === '' || $nilaiKontrak <= 0 || $metodePemilihan === '' || 
+            $tahapanPekerjaan === '' || $tanggalPemeriksaan === '') {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Seluruh input wajib terisi.');
+        }
+
+        if (! preg_match('/^\d{4}\s*-\s*\d{4}$/', $tahunAnggaran)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Format tahun anggaran harus seperti 2024 - 2025.');
+        }
+
+        if ($db->tableExists('mst_pegawai')) {
+            $pegawai = $db->table('mst_pegawai')->select('nip, nama')->where('nip', $ppkNip)->get()->getRowArray();
+            if (! is_array($pegawai)) {
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'NIP PPK tidak ditemukan pada master pegawai.');
+            }
+            $ppkNama = trim((string) ($pegawai['nama'] ?? $ppkNama));
+        }
+
+        // Check for duplicate nomor_kontrak
+        $duplicateBuilder = $db->table('trn_kontrak_simak_konsultasi')->select('id')->where('nomor_kontrak', $nomorKontrak);
+        $this->applyNotDeletedWhere($duplicateBuilder, 'trn_kontrak_simak_konsultasi');
+        $duplicate = $duplicateBuilder->get()->getRowArray();
+        if (is_array($duplicate)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Nomor kontrak sudah digunakan.');
+        }
+
+        $payload = [
+            'satker' => $satker,
+            'ppk_nama' => $ppkNama,
+            'ppk_nip' => $ppkNip,
+            'nama_paket' => $namaPaket,
+            'tahun_anggaran' => $tahunAnggaran,
+            'jenis_pekerjaan_jasa_konsultansi' => $jenisPekerjaan,
+            'masa_pelaksanaan' => $masaPelaksanaan,
+            'pagu_anggaran' => $paguAnggaran,
+            'penyedia' => $penyedia,
+            'nomor_kontrak' => $nomorKontrak,
+            'nilai_kontrak' => $nilaiKontrak,
+            'metode_pemilihan' => $metodePemilihan,
+            'tahapan_pekerjaan' => $tahapanPekerjaan,
+            'tanggal_pemeriksaan' => $tanggalPemeriksaan,
+            'created_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
+            'created_date' => date('Y-m-d'),
+            'created_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $ok = $db->table('trn_kontrak_simak_konsultasi')->insert($payload);
+        if (! $ok) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Gagal menyimpan SIMAK Konsultasi.');
+        }
+
+        $simakId = (int) $db->insertID();
+        return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('message', 'SIMAK Konsultasi berhasil ditambahkan.');
+    }
+
+    public function updateSimakKonsultasi(int $id)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Anda tidak memiliki akses untuk mengubah data SIMAK Konsultasi.');
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_konsultasi')) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Tabel SIMAK Konsultasi belum tersedia.');
+        }
+
+        $builder = $db->table('trn_kontrak_simak_konsultasi')->select('id')->where('id', $id);
+        $this->applyNotDeletedWhere($builder, 'trn_kontrak_simak_konsultasi');
+        $existing = $builder->get()->getRowArray();
+        if (! is_array($existing)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'SIMAK Konsultasi tidak ditemukan.');
+        }
+
+        $ppkNip = trim((string) $this->request->getPost('ppk_nip'));
+        $ppkNama = trim((string) $this->request->getPost('ppk_nama'));
+        $namaPaket = trim((string) $this->request->getPost('nama_paket'));
+        $jenisPekerjaan = trim((string) $this->request->getPost('jenis_pekerjaan_jasa_konsultansi'));
+        $masaPelaksanaan = trim((string) $this->request->getPost('masa_pelaksanaan'));
+        $paguAnggaran = $this->parseMoneyToBigInt($this->request->getPost('pagu_anggaran'));
+        $penyedia = trim((string) $this->request->getPost('penyedia'));
+        $nilaiKontrak = $this->parseMoneyToFloat($this->request->getPost('nilai_kontrak'));
+        $metodePemilihan = trim((string) $this->request->getPost('metode_pemilihan'));
+        $tahapanPekerjaan = trim((string) $this->request->getPost('tahapan_pekerjaan'));
+        $tanggalPemeriksaan = $this->normalizeDateValue((string) $this->request->getPost('tanggal_pemeriksaan'));
+
+        if ($ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $jenisPekerjaan === '' || 
+            $masaPelaksanaan === '' || $paguAnggaran <= 0 || $penyedia === '' || $nilaiKontrak <= 0 || 
+            $metodePemilihan === '' || $tahapanPekerjaan === '' || $tanggalPemeriksaan === '') {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Seluruh input wajib terisi.');
+        }
+
+        $payload = [
+            'ppk_nama' => $ppkNama,
+            'ppk_nip' => $ppkNip,
+            'nama_paket' => $namaPaket,
+            'jenis_pekerjaan_jasa_konsultansi' => $jenisPekerjaan,
+            'masa_pelaksanaan' => $masaPelaksanaan,
+            'pagu_anggaran' => $paguAnggaran,
+            'penyedia' => $penyedia,
+            'nilai_kontrak' => $nilaiKontrak,
+            'metode_pemilihan' => $metodePemilihan,
+            'tahapan_pekerjaan' => $tahapanPekerjaan,
+            'tanggal_pemeriksaan' => $tanggalPemeriksaan,
+            'updated_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
+            'updated_date' => date('Y-m-d'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $db->transStart();
+        $ok = $db->table('trn_kontrak_simak_konsultasi')->where('id', $id)->update($payload);
+        if ($ok && $db->tableExists('trn_kontrak_simak_konsultasi_add_on')) {
+            $this->syncSimakKonsultasiAddOns($id);
+        }
+        $db->transComplete();
+
+        if (! $ok || ! $db->transStatus()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Gagal mengubah SIMAK Konsultasi.');
+        }
+
+        return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('message', 'SIMAK Konsultasi berhasil diubah.');
+    }
+
+    private function syncSimakKonsultasiAddOns(int $id): void
+    {
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_konsultasi_add_on')) {
+            return;
+        }
+
+        $rawValues = $this->request->getPost('add_on_values');
+        $values = is_array($rawValues) ? $rawValues : [];
+        $rawDates = $this->request->getPost('add_on_dates');
+        $dates = is_array($rawDates) ? $rawDates : [];
+
+        $db->table('trn_kontrak_simak_konsultasi_add_on')->where('simak_id', $id)->delete();
+
+        if ($values === []) {
+            return;
+        }
+
+        $username = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+        $rows = [];
+        $urutan = 1;
+
+        foreach ($values as $index => $value) {
+            $nilaiAddOn = $this->parseMoneyToFloat($value);
+            if ($nilaiAddOn <= 0) {
+                continue;
+            }
+
+            $rows[] = [
+                'simak_id' => $id,
+                'kategori' => 'jasa_konsultansi',
+                'item_add_on' => 'Add On ' . $urutan,
+                'nilai_add_on' => $nilaiAddOn,
+                'tanggal_add_on' => $this->normalizeDateValue((string) ($dates[$index] ?? '')),
+                'created_by' => $username,
+                'created_date' => date('Y-m-d'),
+                'created_at' => date('Y-m-d H:i:s'),
+            ];
+
+            $urutan++;
+        }
+
+        if ($rows !== []) {
+            $db->table('trn_kontrak_simak_konsultasi_add_on')->insertBatch($rows);
+        }
+    }
+
+    public function detailSimakKonsultasi(int $id)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_konsultasi')) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Tabel SIMAK Konsultasi belum tersedia. Jalankan migration.');
+        }
+
+        $builder = $db->table('trn_kontrak_simak_konsultasi')->select('*')->where('id', $id);
+        $this->applyNotDeletedWhere($builder, 'trn_kontrak_simak_konsultasi');
+        $item = $builder->get()->getRowArray();
+        if (! is_array($item)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Data SIMAK Konsultasi tidak ditemukan.');
+        }
+
+        $templateItems = $this->getSimakTemplateItems('konsultasi');
+        $verifikasiByRow = [];
+        if ($db->tableExists('trn_kontrak_simak_konsultasi_verifikasi')) {
+            $verifikasiBuilder = $db->table('trn_kontrak_simak_konsultasi_verifikasi')
+                ->select('row_no, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
+                ->where('simak_id', $id)
+                ->orderBy('row_no', 'ASC');
+            $this->applyNotDeletedWhere($verifikasiBuilder, 'trn_kontrak_simak_konsultasi_verifikasi');
+            $rows = $verifikasiBuilder->get()->getResultArray();
+            foreach ($rows as $row) {
+                $verifikasiByRow[(int) ($row['row_no'] ?? 0)] = $row;
+            }
+        }
+
+        $dokumenByRow = [];
+        if ($db->tableExists('trn_kontrak_simak_konsultasi_verifikasi_dokumen')) {
+            $dokumenBuilder = $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')
+                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
+                ->where('simak_id', $id)
+                ->orderBy('row_no', 'ASC')
+                ->orderBy('id', 'DESC');
+            $this->applyNotDeletedWhere($dokumenBuilder, 'trn_kontrak_simak_konsultasi_verifikasi_dokumen');
+            $dokumenRows = $dokumenBuilder->get()->getResultArray();
+            foreach ($dokumenRows as $doc) {
+                $rowNo = (int) ($doc['row_no'] ?? 0);
+                if ($rowNo <= 0) {
+                    continue;
+                }
+
+                if (! isset($dokumenByRow[$rowNo])) {
+                    $dokumenByRow[$rowNo] = [];
+                }
+                $dokumenByRow[$rowNo][] = $doc;
+            }
+        }
+
+        $addOnsByCategory = [];
+        $nilaiAddOn = 0.0;
+        if ($db->tableExists('trn_kontrak_simak_konsultasi_add_on')) {
+            $addOnBuilder = $db->table('trn_kontrak_simak_konsultasi_add_on')
+                ->select('id, item_add_on, kategori, nilai_add_on, tanggal_add_on')
+                ->where('simak_id', $id)
+                ->orderBy('id', 'ASC');
+            $this->applyNotDeletedWhere($addOnBuilder, 'trn_kontrak_simak_konsultasi_add_on');
+            $addOns = $addOnBuilder->get()->getResultArray();
+
+            foreach ($addOns as $row) {
+                $nilaiAddOn += (float) ($row['nilai_add_on'] ?? 0);
+                $kategori = $this->normalizeSimakAddOnCategory((string) ($row['kategori'] ?? 'jasa_konsultansi'));
+                if (! isset($addOnsByCategory[$kategori])) {
+                    $addOnsByCategory[$kategori] = [];
+                }
+
+                $addOnsByCategory[$kategori][] = [
+                    'item_add_on' => (string) ($row['item_add_on'] ?? ''),
+                    'kategori_add_on' => $kategori,
+                    'nilai_add_on' => (float) ($row['nilai_add_on'] ?? 0),
+                    'tanggal_add_on' => (string) ($row['tanggal_add_on'] ?? ''),
+                ];
+            }
+        }
+
+        $kelengkapanPercentages = $this->getSimakAdministrasiKelengkapanBySimakId([$id], 'konsultasi');
+        $kelengkapanPercentage = $kelengkapanPercentages[$id] ?? [
+            'lengkap_persen' => 0.0,
+            'belum_sesuai_persen' => 0.0,
+            'belum_verifikasi_persen' => 0.0,
+            'belum_ada_persen' => 0.0,
+        ];
+
+        return view('admin/kontrak/simak_konsultasi_detail', [
+            'title' => 'Detail SIMAK Konsultasi',
+            'item' => $item,
+            'addOnsByCategory' => $addOnsByCategory,
+            'nilaiAddOn' => $nilaiAddOn,
+            'totalKontrak' => ((float) ($item['nilai_kontrak'] ?? 0)) + $nilaiAddOn,
+            'templateItems' => $templateItems,
+            'verifikasiByRow' => $verifikasiByRow,
+            'dokumenByRow' => $dokumenByRow,
+            'kelengkapanPercentage' => $kelengkapanPercentage,
+        ]);
+    }
+
+    public function createSimakKonsultasiShare(int $id)
+    {
+        $isAjax = $this->request->isAJAX()
+            || stripos((string) $this->request->getHeaderLine('Accept'), 'application/json') !== false;
+
+        $respondError = function (string $message, int $statusCode = 400) use ($isAjax) {
+            if ($isAjax) {
+                return $this->response->setStatusCode($statusCode)->setJSON([
+                    'success' => false,
+                    'message' => $message,
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
+
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', $message);
+        };
+
+        if (! $this->canManageKontrak()) {
+            return $respondError('Anda tidak memiliki akses untuk membuat link share SIMAK Konsultasi.', 403);
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_konsultasi') || ! $db->tableExists('trn_kontrak_simak_konsultasi_share')) {
+            return $respondError('Tabel share SIMAK Konsultasi belum tersedia. Jalankan migration terbaru.', 500);
+        }
+        $shareHasExpiresCol = $this->tableHasColumn('trn_kontrak_simak_konsultasi_share', 'expires_at');
+
+        $simakBuilder = $db->table('trn_kontrak_simak_konsultasi')->select('id')->where('id', $id);
+        $this->applyNotDeletedWhere($simakBuilder, 'trn_kontrak_simak_konsultasi');
+        $simak = $simakBuilder->get()->getRowArray();
+        if (! is_array($simak)) {
+            return $respondError('Data SIMAK Konsultasi tidak ditemukan.', 404);
+        }
+
+        $durationInput = $this->request->getPost('share_duration');
+        if ($durationInput === null || trim((string) $durationInput) === '') {
+            $durationInput = $this->request->getPost('duration');
+        }
+        $duration = strtolower(trim((string) $durationInput));
+        $durationMap = [
+            '1week' => '+1 week',
+            '30days' => '+30 days',
+        ];
+
+        if (! array_key_exists($duration, $durationMap)) {
+            return $respondError('Durasi link share tidak valid. Pilih 1 minggu atau 30 hari.', 422);
+        }
+
+        $expiresAtDate = date('Y-m-d', strtotime($durationMap[$duration]));
+        $expiresAt = $expiresAtDate . ' 23:59:59';
+
+        $token = $this->generateSimakShareToken();
+        if ($token === null) {
+            return $respondError('Gagal membuat token share SIMAK Konsultasi. Silakan coba lagi.', 500);
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $today = date('Y-m-d');
+        $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+
+        $existingSelect = 'id, share_token';
+        if ($shareHasExpiresCol) {
+            $existingSelect .= ', expires_at';
+        }
+
+        $existing = $db->table('trn_kontrak_simak_konsultasi_share')
+            ->select($existingSelect)
+            ->where('simak_id', $id)
+            ->get()
+            ->getRowArray();
+
+        $payload = [
+            'simak_id' => $id,
+            'share_token' => $token,
+            'is_active' => 1,
+            'updated_by' => $actor,
+            'updated_date' => $today,
+            'updated_at' => $now,
+        ];
+
+        if ($shareHasExpiresCol) {
+            $payload['expires_at'] = $expiresAt;
+        }
+
+        if (is_array($existing)) {
+            $ok = $db->table('trn_kontrak_simak_konsultasi_share')->where('id', (int) ($existing['id'] ?? 0))->update($payload);
+        } else {
+            $payload['created_by'] = $actor;
+            $payload['created_date'] = $today;
+            $payload['created_at'] = $now;
+            $ok = $db->table('trn_kontrak_simak_konsultasi_share')->insert($payload);
+        }
+
+        if (! $ok) {
+            return $respondError('Gagal menyimpan link share SIMAK Konsultasi.', 500);
+        }
+
+        $shareUrl = site_url('simak/share/' . $token);
+        $successMessage = 'Link share SIMAK Konsultasi berhasil dibuat. Berlaku sampai ' . $expiresAtDate . '.';
+
+        if ($isAjax) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => $successMessage,
+                'share_url' => $shareUrl,
+                'is_update' => is_array($existing) && trim((string) ($existing['share_token'] ?? '')) !== '',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $redirect = redirect()->to(site_url('admin/kontrak/simak/konsultasi'))
+            ->with('success', $successMessage)
+            ->with('simak_share_link', $shareUrl);
+
+        if (is_array($existing) && trim((string) ($existing['share_token'] ?? '')) !== '') {
+            $redirect = $redirect->with('simak_share_notice', 'Sebaiknya bagikan link yang sudah ada agar pihak kontraktor tidak bingung. Buat link baru hanya jika memang diperlukan karena link lama akan tidak berlaku.');
+        }
+
+        return $redirect;
+    }
+
+    public function deactivateSimakKonsultasiShare(int $id)
+    {
+        $isAjax = $this->request->isAJAX()
+            || stripos((string) $this->request->getHeaderLine('Accept'), 'application/json') !== false;
+
+        $respondError = function (string $message, int $statusCode = 400) use ($isAjax) {
+            if ($isAjax) {
+                return $this->response->setStatusCode($statusCode)->setJSON([
+                    'success' => false,
+                    'message' => $message,
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
+
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', $message);
+        };
+
+        if (! $this->canManageKontrak()) {
+            return $respondError('Anda tidak memiliki akses untuk menonaktifkan link share SIMAK Konsultasi.', 403);
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_konsultasi_share')) {
+            return $respondError('Tabel share SIMAK Konsultasi belum tersedia. Jalankan migration terbaru.', 500);
+        }
+
+        $share = $db->table('trn_kontrak_simak_konsultasi_share')
+            ->select('id, is_active')
+            ->where('simak_id', $id)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($share)) {
+            return $respondError('Link share SIMAK Konsultasi tidak ditemukan.', 404);
+        }
+
+        $payload = [
+            'is_active' => 0,
+            'updated_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
+            'updated_date' => date('Y-m-d'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $ok = $db->table('trn_kontrak_simak_konsultasi_share')
+            ->where('id', (int) ($share['id'] ?? 0))
+            ->update($payload);
+
+        if (! $ok) {
+            return $respondError('Gagal menonaktifkan link share SIMAK Konsultasi.', 500);
+        }
+
+        $message = 'Link share SIMAK Konsultasi berhasil dinonaktifkan.';
+        if ($isAjax) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => $message,
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('success', $message);
+    }
+
+    public function importSimakKonsultasi()
+    {
+        if (! $this->canManageKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Anda tidak memiliki akses untuk import.');
+        }
+
+        $file = $this->request->getFile('file_import') ?: $this->request->getFile('file_excel');
+        if (! $file || ! $file->isValid()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'File tidak valid.');
+        }
+
+        // Store file temporarily
+        $tempPath = $file->getTempName();
+        $db = db_connect();
+
+        try {
+            if (! class_exists('\\PhpOffice\\PhpSpreadsheet\\IOFactory')) {
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'PhpSpreadsheet tidak tersedia.');
+            }
+
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($tempPath);
+            $sheet = $spreadsheet->getSheetByName('Daftar SIMAK JK (>100juta)');
+            if ($sheet === null) {
+                $sheet = $spreadsheet->getActiveSheet();
+            }
+
+            $highestRow = (int) $sheet->getHighestRow();
+            $headerRow = $sheet->rangeToArray('A1:O1', null, true, false)[0] ?? [];
+
+            $normalizeHeader = static function ($value): string {
+                $header = strtolower(trim((string) $value));
+                $header = str_replace(['-', '/', ' '], '_', $header);
+                $header = preg_replace('/[^a-z0-9_]/', '', $header) ?? $header;
+                return $header;
+            };
+
+            $headers = [];
+            foreach ($headerRow as $column => $name) {
+                $normalized = $normalizeHeader($name);
+                if ($normalized !== '') {
+                    $headers[$column] = $normalized;
+                }
+            }
+
+            $useFlatTemplate = isset($headers[0], $headers[1], $headers[2], $headers[3], $headers[4], $headers[5], $headers[6], $headers[7], $headers[8], $headers[9], $headers[10], $headers[11], $headers[12], $headers[13]);
+            $importRows = $useFlatTemplate
+                ? $sheet->rangeToArray('A2:O' . $highestRow, null, true, false)
+                : $sheet->rangeToArray('B24:P139', null, true, false);
+
+            $imported = 0;
+            $errors = [];
+
+            foreach ($importRows as $idx => $row) {
+                $excelRow = $useFlatTemplate ? ($idx + 2) : (24 + $idx);
+                if (! is_array($row)) {
+                    $errors[] = 'Baris ' . $excelRow . ': Format baris tidak valid.';
+                    continue;
+                }
+
+                $rowData = [];
+                if ($useFlatTemplate) {
+                    foreach ($headers as $column => $headerName) {
+                        $rowData[$headerName] = trim((string) ($row[$column] ?? ''));
+                    }
+                } else {
+                    $rowData = [
+                        'satker' => trim((string) ($row[0] ?? '')),
+                        'ppk_nip' => trim((string) ($row[1] ?? '')),
+                        'ppk_nama' => trim((string) ($row[2] ?? '')),
+                        'jenis_pekerjaan_jasa_konsultansi' => trim((string) ($row[3] ?? '')),
+                        'nama_paket' => trim((string) ($row[4] ?? '')),
+                        'masa_pelaksanaan' => trim((string) ($row[5] ?? '')),
+                        'tahun_anggaran' => trim((string) ($row[6] ?? '')),
+                        'pagu_anggaran' => trim((string) ($row[7] ?? '')),
+                        'penyedia' => trim((string) ($row[8] ?? '')),
+                        'nomor_kontrak' => trim((string) ($row[9] ?? '')),
+                        'nilai_kontrak' => trim((string) ($row[10] ?? '')),
+                        'metode_pemilihan' => trim((string) ($row[11] ?? '')),
+                        'tahapan_pekerjaan' => trim((string) ($row[12] ?? '')),
+                        'tanggal_pemeriksaan' => trim((string) ($row[13] ?? '')),
+                    ];
+                }
+
+                $satker = trim((string) $rowData['satker']);
+                if ($satker === '') {
+                    continue;
+                }
+
+                $ppkNip = trim((string) $rowData['ppk_nip']);
+                $ppkNama = trim((string) $rowData['ppk_nama']);
+                $jenisPekerjaan = $this->normalizeSimakJenisPekerjaanJasa((string) $rowData['jenis_pekerjaan_jasa_konsultansi']);
+                $namaPaket = trim((string) $rowData['nama_paket']);
+                $masaPelaksanaan = $this->normalizeSimakMasaPelaksanaan((string) $rowData['masa_pelaksanaan']);
+                $tahunAnggaran = trim((string) $rowData['tahun_anggaran']);
+                $paguAnggaran = $this->parseMoneyToBigInt($rowData['pagu_anggaran']);
+                $penyedia = trim((string) $rowData['penyedia']);
+                $nomorKontrak = trim((string) $rowData['nomor_kontrak']);
+                $nilaiKontrak = $this->parseMoneyToFloat($rowData['nilai_kontrak']);
+                $metodePemilihan = $this->normalizeSimakMetodePemilihan((string) $rowData['metode_pemilihan']);
+                $tahapanPekerjaan = trim((string) $rowData['tahapan_pekerjaan']);
+                $tanggalPemeriksaan = trim((string) $rowData['tanggal_pemeriksaan']);
+
+                if ($nomorKontrak === '' || $nilaiKontrak <= 0) {
+                    $errors[] = 'Baris ' . $excelRow . ': Data tidak lengkap';
+                    continue;
+                }
+
+                if ($jenisPekerjaan === null || $masaPelaksanaan === null || $metodePemilihan === null) {
+                    $errors[] = 'Baris ' . $excelRow . ': Nilai dropdown tidak valid';
+                    continue;
+                }
+
+                if ($paguAnggaran <= 0) {
+                    $errors[] = 'Baris ' . $excelRow . ': Pagu anggaran tidak valid';
+                    continue;
+                }
+
+                // Check for duplicate
+                $duplicateBuilder = $db->table('trn_kontrak_simak_konsultasi')->select('id')->where('nomor_kontrak', $nomorKontrak);
+                $this->applyNotDeletedWhere($duplicateBuilder, 'trn_kontrak_simak_konsultasi');
+                if ($duplicateBuilder->get()->getRowArray() !== null) {
+                    continue; // Skip duplicates
+                }
+
+                $payload = [
+                    'satker' => $satker,
+                    'ppk_nama' => $ppkNama,
+                    'ppk_nip' => $ppkNip,
+                    'nama_paket' => $namaPaket,
+                    'tahun_anggaran' => $tahunAnggaran,
+                    'jenis_pekerjaan_jasa_konsultansi' => $jenisPekerjaan,
+                    'masa_pelaksanaan' => $masaPelaksanaan,
+                    'pagu_anggaran' => $paguAnggaran,
+                    'penyedia' => $penyedia,
+                    'nomor_kontrak' => $nomorKontrak,
+                    'nilai_kontrak' => $nilaiKontrak,
+                    'metode_pemilihan' => $metodePemilihan,
+                    'tahapan_pekerjaan' => $tahapanPekerjaan,
+                    'tanggal_pemeriksaan' => $this->normalizeDateValue($tanggalPemeriksaan),
+                    'created_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
+                    'created_date' => date('Y-m-d'),
+                    'created_at' => date('Y-m-d H:i:s'),
+                ];
+
+                if ($db->table('trn_kontrak_simak_konsultasi')->insert($payload)) {
+                    $imported++;
+                }
+            }
+
+            $message = "Import selesai. $imported data berhasil diimpor.";
+            if (count($errors) > 0) {
+                $message .= " Ada " . count($errors) . " error.";
+            }
+
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('message', $message);
+        } catch (\Exception $e) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Error: ' . $e->getMessage());
+        }
+    }
+
+    public function exportSimakKonsultasiTemplate()
+    {
+        if (! $this->canManageKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Anda tidak memiliki akses untuk mengunduh template SIMAK.');
+        }
+
+        $headers = [
+            'satker',
+            'ppk_nip',
+            'ppk_nama',
+            'jenis_pekerjaan_jasa_konsultansi',
+            'nama_paket',
+            'masa_pelaksanaan',
+            'tahun_anggaran',
+            'pagu_anggaran',
+            'penyedia',
+            'nomor_kontrak',
+            'nilai_kontrak',
+            'metode_pemilihan',
+            'tahapan_pekerjaan',
+            'tanggal_pemeriksaan',
+            'keterangan',
+        ];
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Daftar SIMAK JK (>100juta)');
+        $sheet->fromArray($headers, null, 'A1');
+        $sheet->fromArray([
+            'Perencanaan Prasarana Strategis',
+            '199012212018021001',
+            'Nurhidayat Nugroho, S.Ars',
+            'Perencanaan',
+            'Paket Konsultansi Contoh',
+            'SYC',
+            '2026 - 2027',
+            250000000,
+            'PT Penyedia Contoh',
+            'SIMAK/JK/001/2026',
+            200000000,
+            'Seleksi',
+            'Tahapan Contoh',
+            '2026-04-18',
+            '',
+        ], null, 'A2');
+
+        $sheet->getStyle('A1:O1')->getFont()->setBold(true);
+        foreach (range('A', 'O') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $filename = 'template_import_simak_konsultasi_' . date('Ymd_His') . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        ob_start();
+        $writer->save('php://output');
+        $binary = ob_get_clean();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($binary === false ? '' : $binary);
+    }
+
+    public function saveSimakKonsultasiVerifikasi(int $id)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Anda tidak memiliki akses untuk menyimpan verifikasi SIMAK Konsultasi.');
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_konsultasi') || ! $db->tableExists('trn_kontrak_simak_konsultasi_verifikasi')) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tabel verifikasi SIMAK Konsultasi belum tersedia. Jalankan migration terbaru.');
+        }
+
+        $existingBuilder = $db->table('trn_kontrak_simak_konsultasi')->select('id')->where('id', $id);
+        $this->applyNotDeletedWhere($existingBuilder, 'trn_kontrak_simak_konsultasi');
+        $existing = $existingBuilder->get()->getRowArray();
+        if (! is_array($existing)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Data SIMAK Konsultasi tidak ditemukan.');
+        }
+
+        $templateItems = $this->getSimakTemplateItems('konsultasi');
+        if ($templateItems === []) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Template verifikasi SIMAK tidak ditemukan.');
+        }
+
+        $kelengkapan = $this->request->getPost('kelengkapan_dokumen');
+        $verifikasi = $this->request->getPost('verifikasi_ki');
+        $keterangan = $this->request->getPost('keterangan');
+        $pic = $this->request->getPost('pic');
+
+        $kelengkapan = is_array($kelengkapan) ? $kelengkapan : [];
+        $verifikasi = is_array($verifikasi) ? $verifikasi : [];
+        $keterangan = is_array($keterangan) ? $keterangan : [];
+        $pic = is_array($pic) ? $pic : [];
+
+        $allowedKelengkapan = ['ada', 'tidak'];
+        $allowedVerifikasi = ['sesuai', 'tidak_sesuai'];
+        $now = date('Y-m-d H:i:s');
+        $today = date('Y-m-d');
+        $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+
+        $rowsToSave = [];
+        foreach ($templateItems as $item) {
+            if (($item['is_leaf'] ?? false) !== true) {
+                continue;
+            }
+
+            $rowNo = (int) ($item['row_no'] ?? 0);
+            if ($rowNo <= 0) {
+                continue;
+            }
+
+            $kel = strtolower(trim((string) ($kelengkapan[$rowNo] ?? '')));
+            $ver = strtolower(trim((string) ($verifikasi[$rowNo] ?? '')));
+            $ket = trim((string) ($keterangan[$rowNo] ?? ''));
+            $picValue = trim((string) ($pic[$rowNo] ?? ''));
+
+            if (! in_array($kel, $allowedKelengkapan, true)) {
+                $kel = null;
+            }
+
+            if (! in_array($ver, $allowedVerifikasi, true)) {
+                $ver = null;
+            }
+
+            if ($kel === null && $ver === null && $ket === '' && $picValue === '') {
+                continue;
+            }
+
+            $rowsToSave[] = [
+                'simak_id' => $id,
+                'row_no' => $rowNo,
+                'kode' => (string) ($item['display_no'] ?? ''),
+                'uraian' => (string) ($item['uraian'] ?? ''),
+                'kelengkapan_dokumen' => $kel,
+                'verifikasi_ki' => $ver,
+                'keterangan' => $ket,
+                'pic' => $picValue,
+                'updated_by' => $actor,
+                'updated_date' => $today,
+                'updated_at' => $now,
+            ];
+        }
+
+        $db->transStart();
+        $db->table('trn_kontrak_simak_konsultasi_verifikasi')->where('simak_id', $id)->delete();
+
+        if ($rowsToSave !== []) {
+            foreach ($rowsToSave as &$row) {
+                $row['created_by'] = $actor;
+                $row['created_date'] = $today;
+                $row['created_at'] = $now;
+            }
+            unset($row);
+
+            $db->table('trn_kontrak_simak_konsultasi_verifikasi')->insertBatch($rowsToSave);
+        }
+
+        $db->transComplete();
+        if (! $db->transStatus()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Gagal menyimpan verifikasi SIMAK Konsultasi.');
+        }
+
+        return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('success', 'Verifikasi SIMAK Konsultasi berhasil disimpan.');
+    }
+
+    public function uploadSimakKonsultasiVerifikasiDokumen(int $id)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Anda tidak memiliki akses untuk upload dokumen verifikasi SIMAK Konsultasi.');
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_konsultasi')
+            || ! $db->tableExists('trn_kontrak_simak_konsultasi_verifikasi')
+            || ! $db->tableExists('trn_kontrak_simak_konsultasi_verifikasi_dokumen')) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tabel dokumen verifikasi SIMAK Konsultasi belum tersedia. Jalankan migration terbaru.');
+        }
+
+        $existingBuilder = $db->table('trn_kontrak_simak_konsultasi')->select('id')->where('id', $id);
+        $this->applyNotDeletedWhere($existingBuilder, 'trn_kontrak_simak_konsultasi');
+        $existing = $existingBuilder->get()->getRowArray();
+        if (! is_array($existing)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Data SIMAK Konsultasi tidak ditemukan.');
+        }
+
+        $rowNo = (int) ($this->request->getPost('row_no') ?? 0);
+        if ($rowNo <= 0) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Baris verifikasi tidak valid.');
+        }
+
+        $templateItems = $this->getSimakTemplateItems('konsultasi');
+        $templateByRow = [];
+        foreach ($templateItems as $templateItem) {
+            $templateByRow[(int) ($templateItem['row_no'] ?? 0)] = $templateItem;
+        }
+
+        $targetTemplate = $templateByRow[$rowNo] ?? null;
+        if (! is_array($targetTemplate) || (($targetTemplate['is_leaf'] ?? false) !== true)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
+        }
+
+        $existingVerifikasi = $db->table('trn_kontrak_simak_konsultasi_verifikasi')
+            ->select('kelengkapan_dokumen')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->get()
+            ->getRowArray();
+
+        $allowedKelengkapan = ['ada', 'tidak'];
+        $allowedVerifikasi = ['sesuai', 'tidak_sesuai'];
+
+        $kelRaw = strtolower(trim((string) $this->request->getPost('kelengkapan_dokumen')));
+        $ver = strtolower(trim((string) $this->request->getPost('verifikasi_ki')));
+        $ket = trim((string) $this->request->getPost('keterangan'));
+        $pic = trim((string) $this->request->getPost('pic'));
+
+        $kel = in_array($kelRaw, $allowedKelengkapan, true)
+            ? $kelRaw
+            : strtolower(trim((string) ($existingVerifikasi['kelengkapan_dokumen'] ?? '')));
+
+        if (! in_array($kel, $allowedKelengkapan, true)) {
+            $kel = null;
+        }
+
+        if (! in_array($ver, $allowedVerifikasi, true)) {
+            $ver = null;
+        }
+
+        $file = $this->request->getFile('dokumen_file');
+        $hasUpload = $file && $file->isValid() && ! $file->hasMoved();
+
+        if (! $hasUpload && $kel === null && $ver === null && $ket === '' && $pic === '') {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tidak ada perubahan yang disimpan. Isi data atau upload file terlebih dahulu.');
+        }
+
+        $relativePath = '';
+        $storedName = '';
+        if ($hasUpload) {
+            $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
+            $ext = strtolower((string) $file->getClientExtension());
+            if (! in_array($ext, $allowedExt, true)) {
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
+            }
+
+            $subDir = 'uploads/simak_konsultasi_verifikasi/' . $id . '/' . $rowNo;
+            $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
+            if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Gagal membuat direktori upload dokumen.');
+            }
+
+            $storedName = $file->getRandomName();
+            $file->move($absDir, $storedName, true);
+            $relativePath = $subDir . '/' . $storedName;
+        }
+
+        $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+        $today = date('Y-m-d');
+        $now = date('Y-m-d H:i:s');
+
+        $verifikasiRow = [
+            'simak_id' => $id,
+            'row_no' => $rowNo,
+            'kode' => (string) ($targetTemplate['display_no'] ?? ''),
+            'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
+            'kelengkapan_dokumen' => $kel,
+            'verifikasi_ki' => $ver,
+            'keterangan' => $ket,
+            'pic' => $pic,
+            'updated_by' => $actor,
+            'updated_date' => $today,
+            'updated_at' => $now,
+        ];
+
+        $db->transStart();
+        $db->table('trn_kontrak_simak_konsultasi_verifikasi')->where('simak_id', $id)->where('row_no', $rowNo)->delete();
+        $verifikasiRow['created_by'] = $actor;
+        $verifikasiRow['created_date'] = $today;
+        $verifikasiRow['created_at'] = $now;
+        $db->table('trn_kontrak_simak_konsultasi_verifikasi')->insert($verifikasiRow);
+
+        if ($hasUpload) {
+            $dokumenRow = [
+                'simak_id' => $id,
+                'row_no' => $rowNo,
+                'kode' => (string) ($targetTemplate['display_no'] ?? ''),
+                'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
+                'kelengkapan_dokumen' => $kel,
+                'verifikasi_ki' => $ver,
+                'keterangan' => $ket,
+                'pic' => $pic,
+                'file_original_name' => (string) $file->getClientName(),
+                'file_stored_name' => $storedName,
+                'file_relative_path' => $relativePath,
+                'file_mime' => (string) ($file->getClientMimeType() ?: ''),
+                'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+                'nama_file' => (string) $file->getClientName(),
+                'file_path' => $relativePath,
+                'status' => ($kel === 'ada' && $ver === 'sesuai') ? 'Lengkap' : (($kel === 'ada' && $ver === 'tidak_sesuai') ? 'Belum Sesuai' : (($kel === 'ada') ? 'Belum Verifikasi' : 'Belum Ada')),
+                'catatan' => $ket,
+                'created_by' => $actor,
+                'created_date' => $today,
+                'created_at' => $now,
+            ];
+            $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')->insert($dokumenRow);
+        }
+        $db->transComplete();
+
+        if (! $db->transStatus()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Gagal menyimpan upload dokumen verifikasi SIMAK Konsultasi.');
+        }
+
+        $message = $hasUpload
+            ? 'Update verifikasi tersimpan dan dokumen berhasil diupload. Riwayat dokumen tercatat.'
+            : 'Update verifikasi berhasil disimpan.';
+
+        return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('success', $message);
+    }
+
+    public function viewSimakKonsultasiVerifikasiDokumen(int $dokumenId)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_konsultasi_verifikasi_dokumen')) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Tabel dokumen verifikasi SIMAK Konsultasi belum tersedia.');
+        }
+
+        $builder = $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')
+            ->select('id, simak_id, file_original_name, file_relative_path, file_mime, nama_file, file_path')
+            ->where('id', $dokumenId);
+        $this->applyNotDeletedWhere($builder, 'trn_kontrak_simak_konsultasi_verifikasi_dokumen');
+        $row = $builder->get()->getRowArray();
+
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Dokumen verifikasi tidak ditemukan.');
+        }
+
+        $relativePath = trim((string) ($row['file_relative_path'] ?? ''));
+        if ($relativePath === '') {
+            $relativePath = trim((string) ($row['file_path'] ?? ''));
+        }
+        if ($this->isAllowedGoogleDriveUrl($relativePath)) {
+            return redirect()->to($relativePath);
+        }
+
+        $relativePath = ltrim($relativePath, '/');
+        $absPath = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+        if ($relativePath === '' || ! is_file($absPath)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . (int) ($row['simak_id'] ?? 0)))->with('error', 'File dokumen tidak ditemukan di server.');
+        }
+
+        $mime = trim((string) ($row['file_mime'] ?? ''));
+        if ($mime === '') {
+            $mime = mime_content_type($absPath) ?: 'application/octet-stream';
+        }
+
+        $fileName = (string) ($row['file_original_name'] ?? $row['nama_file'] ?? basename($absPath));
+        $content = file_get_contents($absPath);
+
+        return $this->response
+            ->setHeader('Content-Type', $mime)
+            ->setHeader('Content-Disposition', 'inline; filename="' . addslashes($fileName) . '"')
+            ->setBody($content === false ? '' : $content);
     }
 }

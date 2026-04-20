@@ -75,17 +75,31 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('kontrak/syarat-umum/jabatan', 'Admin\\Kontrak::getJabaranSyaratUmum');
 	$routes->post('kontrak/syarat-umum/get', 'Admin\\Kontrak::getSyaratUmumByPaketId');
 	$routes->post('kontrak/syarat-umum/save', 'Admin\\Kontrak::saveSyaratUmumByJabatan');
-	$routes->get('kontrak/simak', 'Admin\\Kontrak::simak');
-	$routes->post('kontrak/simak/import', 'Admin\\Kontrak::importSimak');
-	$routes->get('kontrak/simak/template', 'Admin\\Kontrak::exportSimakTemplate');
-	$routes->post('kontrak/simak/tambah', 'Admin\\Kontrak::createSimak');
-	$routes->post('kontrak/simak/(:num)/ubah', 'Admin\\Kontrak::updateSimak/$1');
-	$routes->post('kontrak/simak/(:num)/verifikasi', 'Admin\\Kontrak::saveSimakVerifikasi/$1');
-	$routes->post('kontrak/simak/(:num)/verifikasi/upload', 'Admin\\Kontrak::uploadSimakVerifikasiDokumen/$1');
-	$routes->post('kontrak/simak/(:num)/share', 'Admin\\Kontrak::createSimakShare/$1');
-	$routes->post('kontrak/simak/(:num)/share/deactivate', 'Admin\\Kontrak::deactivateSimakShare/$1');
-	$routes->get('kontrak/simak/verifikasi-dokumen/(:num)', 'Admin\\Kontrak::viewSimakVerifikasiDokumen/$1');
-	$routes->get('kontrak/simak/(:num)', 'Admin\\Kontrak::detailSimak/$1');
+	$routes->get('kontrak/simak/konstruksi', 'Admin\\Kontrak::simakKonstruksi');
+	$routes->get('kontrak/simak/konsultasi', 'Admin\\Kontrak::simakKonsultasi');
+	$routes->post('kontrak/simak/konstruksi/import', 'Admin\\Kontrak::importSimak');
+	$routes->get('kontrak/simak/konstruksi/template', 'Admin\\Kontrak::exportSimakTemplate');
+	$routes->post('kontrak/simak/konstruksi/tambah', 'Admin\\Kontrak::createSimak');
+	$routes->post('kontrak/simak/konstruksi/(:num)/ubah', 'Admin\\Kontrak::updateSimak/$1');
+	$routes->post('kontrak/simak/konstruksi/(:num)/verifikasi', 'Admin\\Kontrak::saveSimakVerifikasi/$1');
+	$routes->post('kontrak/simak/konstruksi/(:num)/verifikasi/upload', 'Admin\\Kontrak::uploadSimakVerifikasiDokumen/$1');
+	$routes->post('kontrak/simak/konstruksi/(:num)/share', 'Admin\\Kontrak::createSimakShare/$1');
+	$routes->post('kontrak/simak/konstruksi/(:num)/share/deactivate', 'Admin\\Kontrak::deactivateSimakShare/$1');
+	$routes->get('kontrak/simak/konstruksi/verifikasi-dokumen/(:num)', 'Admin\\Kontrak::viewSimakVerifikasiDokumen/$1');
+	$routes->get('kontrak/simak/konstruksi/(:num)', 'Admin\\Kontrak::detailSimak/$1');
+	
+	// SIMAK Jasa Konsultansi Routes
+	$routes->post('kontrak/simak/konsultasi/import', 'Admin\\Kontrak::importSimakKonsultasi');
+	$routes->get('kontrak/simak/konsultasi/template', 'Admin\\Kontrak::exportSimakKonsultasiTemplate');
+	$routes->post('kontrak/simak/konsultasi/tambah', 'Admin\\Kontrak::createSimakKonsultasi');
+	$routes->post('kontrak/simak/konsultasi/(:num)/ubah', 'Admin\\Kontrak::updateSimakKonsultasi/$1');
+	$routes->post('kontrak/simak/konsultasi/(:num)/verifikasi', 'Admin\\Kontrak::saveSimakKonsultasiVerifikasi/$1');
+	$routes->post('kontrak/simak/konsultasi/(:num)/verifikasi/upload', 'Admin\\Kontrak::uploadSimakKonsultasiVerifikasiDokumen/$1');
+	$routes->post('kontrak/simak/konsultasi/(:num)/share', 'Admin\\Kontrak::createSimakKonsultasiShare/$1');
+	$routes->post('kontrak/simak/konsultasi/(:num)/share/deactivate', 'Admin\\Kontrak::deactivateSimakKonsultasiShare/$1');
+	$routes->get('kontrak/simak/konsultasi/verifikasi-dokumen/(:num)', 'Admin\\Kontrak::viewSimakKonsultasiVerifikasiDokumen/$1');
+	$routes->get('kontrak/simak/konsultasi/(:num)', 'Admin\\Kontrak::detailSimakKonsultasi/$1');
+	
 	$routes->get('master/kop-surat', 'Admin\\KopSurat::index');
 	$routes->match(['get', 'post'], 'master/kop-surat/tambah', 'Admin\\KopSurat::create');
 	$routes->match(['get', 'post'], 'master/kop-surat/(:num)/ubah', 'Admin\\KopSurat::edit/$1');

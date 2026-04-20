@@ -34,10 +34,111 @@
     .simak-filter-card .card-body {
         padding-bottom: 0.5rem;
     }
+
+    /* Fix Select2 styling and sizing */
+    .select2-container--default .select2-selection--single {
+        height: auto !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 0.25rem !important;
+        background-color: #fff !important;
+        padding: 0 !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        padding: 0.375rem 0.75rem !important;
+        line-height: 1.5 !important;
+        color: #495057 !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: auto !important;
+        padding: 0.375rem 0.75rem !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        margin-top: 0.2em !important;
+    }
+
+    /* Focus state */
+    .select2-container--default.select2-container--focus .select2-selection--single {
+        border-color: #80bdff !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+    }
+
+    /* Disabled state */
+    .select2-container--default.select2-container--disabled .select2-selection--single {
+        background-color: #e9ecef !important;
+        opacity: 1 !important;
+    }
+
+    /* Dropdown styling */
+    .select2-dropdown {
+        border-color: #ced4da !important;
+    }
+
+    .select2-dropdown.select2-dropdown--above {
+        border-bottom: 1px solid #ced4da !important;
+    }
+
+    .select2-dropdown.select2-dropdown--below {
+        border-top: 1px solid #ced4da !important;
+    }
+
+    /* Search box in dropdown */
+    .select2-search--dropdown .select2-search__field {
+        border: 1px solid #ced4da !important;
+        border-radius: 0.25rem !important;
+        padding: 0.375rem 0.75rem !important;
+    }
+
+    /* Options */
+    .select2-results__option {
+        padding: 0.375rem 0.75rem !important;
+    }
+
+    .select2-results__option--highlighted {
+        background-color: #007bff !important;
+    }
+
+    /* Modal adjustments for Select2 */
+    .modal .select2-container--open {
+        z-index: 1060 !important;
+    }
+
+    .modal .select2-dropdown {
+        z-index: 1060 !important;
+    }
+
+    /* Select2 container width */
+    .select2-container {
+        width: 100% !important;
+        display: block !important;
+    }
+
+    .select2-container.w-100 {
+        width: 100% !important;
+    }
+
+    /* Form group with select2 */
+    .form-group .select2-container {
+        width: 100% !important;
+    }
+
+    /* Ensure proper display in form rows */
+    .form-row .form-group .select2-container {
+        width: 100% !important;
+    }
+
+    .col-md-6 .select2-container,
+    .col-md-12 .select2-container {
+        width: 100% !important;
+    }
+
+
 </style>
 <div class="card">
     <div class="card-header">
-        <h2 class="card-title">SIMAK Kontrak</h2>
+        <h2 class="card-title">SIMAK Kontrak - Jasa Konsultansi</h2>
         <?php if (($can_edit ?? false) === true): ?>
             <div class="float-right">
                 <?php if (($can_import ?? false) === true): ?>
@@ -87,7 +188,7 @@
 
         <div class="card card-outline card-secondary simak-filter-card mb-3">
             <div class="card-header py-2">
-                <h3 class="card-title mb-0">Filter SIMAK</h3>
+                <h3 class="card-title mb-0">Filter SIMAK Konsultansi</h3>
             </div>
             <div class="card-body">
                 <div class="form-row">
@@ -141,6 +242,7 @@
                         <th>Nama Paket</th>
                         <th>Tahun Anggaran</th>
                         <th>PPK</th>
+                        <th>Jenis Pekerjaan</th>
                         <th>Tanggal Pemeriksaan</th>
                         <th class="text-right">Nilai Kontrak (Rp)</th>
                         <th class="text-right">Nilai Add On (Rp)</th>
@@ -179,6 +281,7 @@
                                 <div class="font-weight-bold"><?= esc((string) ($item['ppk_nama'] ?? '-')); ?></div>
                                 <small class="text-muted">NIP: <?= esc((string) ($item['ppk_nip'] ?? '-')); ?></small>
                             </td>
+                            <td><?= esc((string) ($item['jenis_pekerjaan_jasa_konsultansi'] ?? '-')); ?></td>
                             <td><?= esc((string) ($item['tanggal_pemeriksaan'] ?? '-')); ?></td>
                             <td class="text-right"><?= esc(angka_ribuan_id($item['nilai_kontrak'] ?? 0)); ?></td>
                             <td class="text-right"><?= esc(angka_ribuan_id($item['nilai_add_on'] ?? 0)); ?></td>
@@ -198,8 +301,8 @@
                                         class="btn btn-primary btn-sm js-open-share-modal"
                                         data-toggle="modal"
                                         data-target="#shareDurationModal"
-                                        data-share-url="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0) . '/share'); ?>"
-                                        data-share-deactivate-url="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0) . '/share/deactivate'); ?>"
+                                        data-share-url="<?= site_url('admin/kontrak/simak/konsultasi/' . (int) ($item['id'] ?? 0) . '/share'); ?>"
+                                        data-share-deactivate-url="<?= site_url('admin/kontrak/simak/konsultasi/' . (int) ($item['id'] ?? 0) . '/share/deactivate'); ?>"
                                         data-share-public-url="<?= esc(trim((string) ($item['share_public_url'] ?? ''))); ?>"
                                         data-nomor-kontrak="<?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?>"
                                         data-nama-paket="<?= esc((string) ($item['nama_paket'] ?? '-')); ?>"
@@ -211,7 +314,7 @@
                                 <?php endif; ?>
                             </td>
                             <td class="text-center">
-                                <a href="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0)); ?>" class="btn btn-success btn-sm">VERIFIKASI</a>
+                                <a href="<?= site_url('admin/kontrak/simak/konsultasi/' . (int) ($item['id'] ?? 0)); ?>" class="btn btn-success btn-sm">VERIFIKASI</a>
                             </td>
                             <td class="text-center">
                                 <?php if (($can_edit ?? false) === true): ?>
@@ -228,6 +331,10 @@
                                         data-nilai-kontrak="<?= esc((string) ($item['nilai_kontrak'] ?? 0)); ?>"
                                         data-tahapan-pekerjaan="<?= esc((string) ($item['tahapan_pekerjaan'] ?? '')); ?>"
                                         data-tanggal-pemeriksaan="<?= esc((string) ($item['tanggal_pemeriksaan'] ?? '')); ?>"
+                                        data-jenis-pekerjaan="<?= esc((string) ($item['jenis_pekerjaan_jasa_konsultansi'] ?? '')); ?>"
+                                        data-masa-pelaksanaan="<?= esc((string) ($item['masa_pelaksanaan'] ?? '')); ?>"
+                                        data-pagu-anggaran="<?= esc((string) ($item['pagu_anggaran'] ?? 0)); ?>"
+                                        data-metode-pemilihan="<?= esc((string) ($item['metode_pemilihan'] ?? '')); ?>"
                                     >EDIT</button>
                                 <?php endif; ?>
                             </td>
@@ -260,6 +367,7 @@
                     <div class="input-group input-group-sm">
                         <input type="text" class="form-control" id="shareCurrentLinkInput" readonly>
                         <div class="input-group-append">
+                            <button type="button" class="btn btn-outline-success" id="btnOpenCurrentShareLink">Buka Tautan</button>
                             <button type="button" class="btn btn-outline-primary" id="btnCopyCurrentShareLink">Salin</button>
                         </div>
                     </div>
@@ -302,12 +410,12 @@
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Input Data SIMAK</h5>
+                <h5 class="modal-title">Input Data SIMAK Konsultansi</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="form-tambah-simak" action="<?= site_url('admin/kontrak/simak/tambah'); ?>" method="post">
+            <form id="form-tambah-simak" action="<?= site_url('admin/kontrak/simak/konsultasi/tambah'); ?>" method="post">
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <div class="alert alert-info py-2">
@@ -343,7 +451,29 @@
                         <input type="text" class="form-control" id="ppk_nip" readonly>
                     </div>
 
-                    <h6 class="mb-3">Data Pekerjaan Konstruksi</h6>
+                    <h6 class="mb-3">Data Jasa Konsultansi</h6>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="jenis_pekerjaan">Jenis Pekerjaan Jasa Konsultansi</label>
+                            <select class="form-control" id="jenis_pekerjaan" name="jenis_pekerjaan_jasa_konsultansi" required>
+                                <option value="">-- Pilih Jenis Pekerjaan --</option>
+                                <option value="Perencanaan">Perencanaan</option>
+                                <option value="Perancangan">Perancangan</option>
+                                <option value="Pengawasan">Pengawasan</option>
+                                <option value="Manajemen Konstruksi">Manajemen Konstruksi</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="masa_pelaksanaan">Masa Pelaksanaan</label>
+                            <select class="form-control" id="masa_pelaksanaan" name="masa_pelaksanaan" required>
+                                <option value="">-- Pilih Masa Pelaksanaan --</option>
+                                <option value="SYC">SYC (Single Year Contract)</option>
+                                <option value="MYC">MYC (Multi Year Contract)</option>
+                            </select>
+                        </div>
+                    </div>
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
@@ -365,28 +495,45 @@
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="penyedia">Penyedia</label>
-                            <input type="text" class="form-control" id="penyedia" name="penyedia" maxlength="255">
+                            <label for="pagu_anggaran">Pagu Anggaran (Rp)</label>
+                            <input type="text" class="form-control" id="pagu_anggaran" name="pagu_anggaran" inputmode="numeric" autocomplete="off" required>
                         </div>
                         <div class="form-group col-md-6">
-                            <label for="nomor_kontrak">Nomor Kontrak</label>
-                            <input type="text" class="form-control" id="nomor_kontrak" name="nomor_kontrak" maxlength="120" required>
+                            <label for="penyedia">Penyedia</label>
+                            <input type="text" class="form-control" id="penyedia" name="penyedia" maxlength="255">
                         </div>
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group col-md-4">
+                        <div class="form-group col-md-6">
+                            <label for="nomor_kontrak">Nomor Kontrak</label>
+                            <input type="text" class="form-control" id="nomor_kontrak" name="nomor_kontrak" maxlength="120" required>
+                        </div>
+                        <div class="form-group col-md-6">
                             <label for="nilai_kontrak">Nilai Kontrak (Rp)</label>
                             <input type="text" class="form-control" id="nilai_kontrak" name="nilai_kontrak" inputmode="numeric" autocomplete="off" required>
                         </div>
-                        <div class="form-group col-md-4">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="metode_pemilihan">Metode Pemilihan</label>
+                            <select class="form-control" id="metode_pemilihan" name="metode_pemilihan" required>
+                                <option value="">-- Pilih Metode Pemilihan --</option>
+                                <option value="Pengadaan Langsung">Pengadaan Langsung</option>
+                                <option value="Penunjukan Langsung">Penunjukan Langsung</option>
+                                <option value="Seleksi">Seleksi</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
                             <label for="tahapan_pekerjaan">Tahapan Pekerjaan</label>
                             <input type="text" class="form-control" id="tahapan_pekerjaan" name="tahapan_pekerjaan" maxlength="255">
                         </div>
-                        <div class="form-group col-md-4">
-                            <label for="tanggal_pemeriksaan">Tanggal Pemeriksaan</label>
-                            <input type="date" class="form-control" id="tanggal_pemeriksaan" name="tanggal_pemeriksaan">
-                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tanggal_pemeriksaan">Tanggal Pemeriksaan</label>
+                        <input type="date" class="form-control" id="tanggal_pemeriksaan" name="tanggal_pemeriksaan">
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -402,12 +549,12 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Import Excel SIMAK</h5>
+                <h5 class="modal-title">Import Excel SIMAK Konsultansi</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="<?= site_url('admin/kontrak/simak/import'); ?>" method="post" enctype="multipart/form-data">
+            <form action="<?= site_url('admin/kontrak/simak/konsultasi/import'); ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <div class="alert alert-info">
@@ -415,14 +562,14 @@
                     </div>
 
                     <div class="mb-3">
-                        <a href="<?= site_url('admin/kontrak/simak/template'); ?>" class="btn btn-success btn-sm" target="_blank">
+                        <a href="<?= site_url('admin/kontrak/simak/konsultasi/template'); ?>" class="btn btn-success btn-sm" target="_blank">
                             <i class="fas fa-download mr-1"></i> Download Template (XLSX)
                         </a>
                     </div>
 
                     <div class="form-group">
                         <label for="file_excel_simak">File Excel</label>
-                        <input type="file" class="form-control-file" id="file_excel_simak" name="file_excel" accept=".xls,.xlsx" required>
+                        <input type="file" class="form-control-file" id="file_excel_simak" name="file_import" accept=".xls,.xlsx" required>
                         <small class="text-muted">Format file: .xls atau .xlsx</small>
                     </div>
                 </div>
@@ -439,7 +586,7 @@
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Data SIMAK</h5>
+                <h5 class="modal-title">Edit Data SIMAK Konsultansi</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -486,7 +633,29 @@
                                 <input type="text" class="form-control" id="ppk_nip_edit" readonly>
                             </div>
 
-                            <h6 class="mb-3">Data Pekerjaan Konstruksi</h6>
+                            <h6 class="mb-3">Data Jasa Konsultansi</h6>
+
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="jenis_pekerjaan_edit">Jenis Pekerjaan Jasa Konsultansi</label>
+                                    <select class="form-control" id="jenis_pekerjaan_edit" name="jenis_pekerjaan_jasa_konsultansi" required>
+                                        <option value="">-- Pilih Jenis Pekerjaan --</option>
+                                        <option value="Perencanaan">Perencanaan</option>
+                                        <option value="Perancangan">Perancangan</option>
+                                        <option value="Pengawasan">Pengawasan</option>
+                                        <option value="Manajemen Konstruksi">Manajemen Konstruksi</option>
+                                        <option value="Lainnya">Lainnya</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="masa_pelaksanaan_edit">Masa Pelaksanaan</label>
+                                    <select class="form-control" id="masa_pelaksanaan_edit" name="masa_pelaksanaan" required>
+                                        <option value="">-- Pilih Masa Pelaksanaan --</option>
+                                        <option value="SYC">SYC (Single Year Contract)</option>
+                                        <option value="MYC">MYC (Multi Year Contract)</option>
+                                    </select>
+                                </div>
+                            </div>
 
                             <div class="form-row">
                                 <div class="form-group col-md-6">
@@ -508,28 +677,45 @@
 
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label for="penyedia_edit">Penyedia</label>
-                                    <input type="text" class="form-control" id="penyedia_edit" name="penyedia" maxlength="255">
+                                    <label for="pagu_anggaran_edit">Pagu Anggaran (Rp)</label>
+                                    <input type="text" class="form-control" id="pagu_anggaran_edit" name="pagu_anggaran" inputmode="numeric" autocomplete="off" required>
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="nomor_kontrak_edit">Nomor Kontrak</label>
-                                    <input type="text" class="form-control" id="nomor_kontrak_edit" name="nomor_kontrak" maxlength="120" required>
+                                    <label for="penyedia_edit">Penyedia</label>
+                                    <input type="text" class="form-control" id="penyedia_edit" name="penyedia" maxlength="255">
                                 </div>
                             </div>
 
                             <div class="form-row">
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-6">
+                                    <label for="nomor_kontrak_edit">Nomor Kontrak</label>
+                                    <input type="text" class="form-control" id="nomor_kontrak_edit" name="nomor_kontrak" maxlength="120" required>
+                                </div>
+                                <div class="form-group col-md-6">
                                     <label for="nilai_kontrak_edit">Nilai Kontrak (Rp)</label>
                                     <input type="text" class="form-control" id="nilai_kontrak_edit" name="nilai_kontrak" inputmode="numeric" autocomplete="off" required>
                                 </div>
-                                <div class="form-group col-md-4">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="metode_pemilihan_edit">Metode Pemilihan</label>
+                                    <select class="form-control" id="metode_pemilihan_edit" name="metode_pemilihan" required>
+                                        <option value="">-- Pilih Metode Pemilihan --</option>
+                                        <option value="Pengadaan Langsung">Pengadaan Langsung</option>
+                                        <option value="Penunjukan Langsung">Penunjukan Langsung</option>
+                                        <option value="Seleksi">Seleksi</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6">
                                     <label for="tahapan_pekerjaan_edit">Tahapan Pekerjaan</label>
                                     <input type="text" class="form-control" id="tahapan_pekerjaan_edit" name="tahapan_pekerjaan" maxlength="255">
                                 </div>
-                                <div class="form-group col-md-4">
-                                    <label for="tanggal_pemeriksaan_edit">Tanggal Pemeriksaan</label>
-                                    <input type="date" class="form-control" id="tanggal_pemeriksaan_edit" name="tanggal_pemeriksaan">
-                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="tanggal_pemeriksaan_edit">Tanggal Pemeriksaan</label>
+                                <input type="date" class="form-control" id="tanggal_pemeriksaan_edit" name="tanggal_pemeriksaan">
                             </div>
                         </div>
 
@@ -570,6 +756,25 @@
         }
 
         return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    };
+
+    var normalizeCurrencySourceValue = function (value) {
+        var raw = String(value || '').trim();
+        if (raw === '') {
+            return '';
+        }
+
+        if (/^\d+[.,]\d+$/.test(raw)) {
+            var parts = raw.split(/[.,]/);
+            var integerPart = parts[0] || '0';
+            var fractionPart = parts[1] || '';
+
+            if (fractionPart.length <= 2) {
+                return integerPart;
+            }
+        }
+
+        return raw.replace(/[^0-9]/g, '');
     };
 
     var parseCurrency = function (value) {
@@ -643,6 +848,21 @@
         }
     };
 
+    var refreshSimakTable = function () {
+        if (!simakTableInstance) {
+            return;
+        }
+
+        if (simakTableInstance.ajax && typeof simakTableInstance.ajax.reload === 'function') {
+            simakTableInstance.ajax.reload(null, false);
+            return;
+        }
+
+        if (typeof simakTableInstance.draw === 'function') {
+            simakTableInstance.draw(false);
+        }
+    };
+
     var renderAddOnRows = function (items) {
         var container = document.getElementById('add-on-container');
         if (!container) {
@@ -682,7 +902,7 @@
             input.name = 'add_on_values[]';
             input.setAttribute('inputmode', 'numeric');
             input.setAttribute('autocomplete', 'off');
-            input.value = formatCurrency(item && item.value ? item.value : '');
+            input.value = formatCurrency(normalizeCurrencySourceValue(item && item.value ? item.value : ''));
             colValue.appendChild(input);
 
             var colAction = document.createElement('div');
@@ -779,7 +999,9 @@
     };
 
     bindCurrencyInput('nilai_kontrak');
+    bindCurrencyInput('pagu_anggaran');
     bindCurrencyInput('nilai_kontrak_edit');
+    bindCurrencyInput('pagu_anggaran_edit');
 
     var addForm = setupSimakForm({
         pegawaiSelectorId: 'pegawai_nip_selector',
@@ -802,6 +1024,7 @@
     var shareDurationSection = document.getElementById('shareDurationSection');
     var shareCurrentLinkSection = document.getElementById('shareCurrentLinkSection');
     var shareCurrentLinkInput = document.getElementById('shareCurrentLinkInput');
+    var btnOpenCurrentShareLink = document.getElementById('btnOpenCurrentShareLink');
     var btnCopyCurrentShareLink = document.getElementById('btnCopyCurrentShareLink');
     var btnGenerateShareLink = document.getElementById('btnGenerateShareLink');
     var btnDeactivateShareLink = document.getElementById('btnDeactivateShareLink');
@@ -990,6 +1213,10 @@
                 }
             }
 
+            if (btnOpenCurrentShareLink) {
+                btnOpenCurrentShareLink.disabled = currentShareUrl === '';
+            }
+
             if (btnDeactivateShareLink) {
                 if (currentShareUrl !== '') {
                     btnDeactivateShareLink.classList.remove('d-none');
@@ -1078,7 +1305,7 @@
                     }
                 });
 
-                simakTableInstance.ajax.reload(null, false);
+                refreshSimakTable();
             }).fail(function (xhr) {
                 var message = xhr && xhr.responseJSON && xhr.responseJSON.message
                     ? xhr.responseJSON.message
@@ -1137,6 +1364,17 @@
         });
     }
 
+    if (btnOpenCurrentShareLink) {
+        btnOpenCurrentShareLink.addEventListener('click', function () {
+            var url = shareCurrentLinkInput ? String(shareCurrentLinkInput.value || '').trim() : '';
+            if (!url) {
+                return;
+            }
+
+            window.open(url, '_blank', 'noopener');
+        });
+    }
+
     if (btnDeactivateShareLink) {
         btnDeactivateShareLink.addEventListener('click', function () {
             if (!selectedShareConfig.deactivateUrl || !selectedShareConfig.isActive) {
@@ -1168,7 +1406,7 @@
                         });
                     }
 
-                    simakTableInstance.ajax.reload(null, false);
+                    refreshSimakTable();
                 }).fail(function (xhr) {
                     var message = xhr && xhr.responseJSON && xhr.responseJSON.message
                         ? xhr.responseJSON.message
@@ -1241,15 +1479,42 @@
             var nilaiKontrakEdit = document.getElementById('nilai_kontrak_edit');
             var tahapanPekerjaanEdit = document.getElementById('tahapan_pekerjaan_edit');
             var tanggalPemeriksaanEdit = document.getElementById('tanggal_pemeriksaan_edit');
+            var jenisPekerjaanEdit = document.getElementById('jenis_pekerjaan_edit');
+            var masaPelaksanaanEdit = document.getElementById('masa_pelaksanaan_edit');
+            var paguAnggaranEdit = document.getElementById('pagu_anggaran_edit');
+            var metodePemilihanEdit = document.getElementById('metode_pemilihan_edit');
 
             if (formEdit) {
-                formEdit.action = '<?= site_url('admin/kontrak/simak'); ?>/' + id + '/ubah';
+                formEdit.action = '<?= site_url('admin/kontrak/simak/konsultasi'); ?>/' + id + '/ubah';
             }
 
-            var addOnRows = addOnsBySimakId[id] || [];
+            var rawAddOnRows = addOnsBySimakId[id];
+            var addOnRows = [];
+
+            if (typeof rawAddOnRows === 'string') {
+                try {
+                    rawAddOnRows = JSON.parse(rawAddOnRows);
+                } catch (e) {
+                    rawAddOnRows = [];
+                }
+            }
+
+            if (Array.isArray(rawAddOnRows)) {
+                addOnRows = rawAddOnRows;
+            } else if (rawAddOnRows && typeof rawAddOnRows === 'object') {
+                Object.keys(rawAddOnRows).forEach(function (key) {
+                    var categoryRows = rawAddOnRows[key];
+                    if (Array.isArray(categoryRows)) {
+                        addOnRows = addOnRows.concat(categoryRows);
+                    } else if (categoryRows && typeof categoryRows === 'object') {
+                        addOnRows.push(categoryRows);
+                    }
+                });
+            }
+
             var addOnItems = addOnRows.map(function (row) {
                 return {
-                    value: row && row.nilai_add_on ? String(row.nilai_add_on) : '',
+                    value: row && row.nilai_add_on ? normalizeCurrencySourceValue(row.nilai_add_on) : '',
                     date: row && row.tanggal_add_on ? String(row.tanggal_add_on) : '',
                 };
             });
@@ -1290,13 +1555,25 @@
                 nomorKontrakEdit.value = this.getAttribute('data-nomor-kontrak') || '';
             }
             if (nilaiKontrakEdit) {
-                nilaiKontrakEdit.value = formatCurrency(this.getAttribute('data-nilai-kontrak') || '0');
+                nilaiKontrakEdit.value = formatCurrency(normalizeCurrencySourceValue(this.getAttribute('data-nilai-kontrak') || '0'));
             }
             if (tahapanPekerjaanEdit) {
                 tahapanPekerjaanEdit.value = this.getAttribute('data-tahapan-pekerjaan') || '';
             }
             if (tanggalPemeriksaanEdit) {
                 tanggalPemeriksaanEdit.value = this.getAttribute('data-tanggal-pemeriksaan') || '';
+            }
+            if (jenisPekerjaanEdit) {
+                jenisPekerjaanEdit.value = this.getAttribute('data-jenis-pekerjaan') || '';
+            }
+            if (masaPelaksanaanEdit) {
+                masaPelaksanaanEdit.value = this.getAttribute('data-masa-pelaksanaan') || '';
+            }
+            if (paguAnggaranEdit) {
+                paguAnggaranEdit.value = formatCurrency(normalizeCurrencySourceValue(this.getAttribute('data-pagu-anggaran') || '0'));
+            }
+            if (metodePemilihanEdit) {
+                metodePemilihanEdit.value = this.getAttribute('data-metode-pemilihan') || '';
             }
 
             editForm.syncPpk();
@@ -1316,13 +1593,63 @@
     }
 
     if (window.jQuery && window.jQuery.fn && typeof window.jQuery.fn.modal === 'function') {
+        var initializeSelect2ForModal = function (modalSelector) {
+            var modal$ = window.jQuery(modalSelector);
+            if (!modal$) return;
+            
+            // Initialize Select2 for semua select elements dalam modal
+            var selectSelectors = [
+                '#jenis_pekerjaan',
+                '#masa_pelaksanaan', 
+                '#metode_pemilihan',
+                '#jenis_pekerjaan_edit',
+                '#masa_pelaksanaan_edit',
+                '#metode_pemilihan_edit'
+            ];
+            
+            selectSelectors.forEach(function(selector) {
+                var element = modal$.find(selector);
+                if (element.length > 0) {
+                    try {
+                        // Destroy existing Select2 jika sudah ada
+                        if (element.hasClass('select2-hidden-accessible')) {
+                            element.select2('destroy');
+                        }
+                        
+                        // Initialize Select2 dengan styling yang proper
+                        element.select2({
+                            dropdownParent: modal$,
+                            width: 'resolve',
+                            allowClear: false,
+                            placeholder: '-- Pilih --',
+                            minimumResultsForSearch: -1,
+                            templateResult: function(data) {
+                                return data.text;
+                            },
+                            templateSelection: function(data) {
+                                return data.text;
+                            }
+                        });
+                        
+                        // Ensure proper width after initialization
+                        element.next('.select2-container').addClass('w-100');
+                        
+                    } catch (e) {
+                        console.warn('Select2 initialization failed for ' + selector + ':', e);
+                    }
+                }
+            });
+        };
+        
         window.jQuery('#modal-tambah-simak').on('shown.bs.modal', function () {
+            initializeSelect2ForModal('#modal-tambah-simak');
             if (addForm && typeof addForm.syncPpk === 'function') {
                 addForm.syncPpk();
             }
         });
 
         window.jQuery('#modal-edit-simak').on('shown.bs.modal', function () {
+            initializeSelect2ForModal('#modal-edit-simak');
             if (editForm && typeof editForm.syncPpk === 'function') {
                 editForm.syncPpk();
             }
@@ -1333,8 +1660,12 @@
     if (formTambah) {
         formTambah.addEventListener('submit', function () {
             var nilaiKontrakInput = document.getElementById('nilai_kontrak');
+            var paguAnggaranInput = document.getElementById('pagu_anggaran');
             if (nilaiKontrakInput) {
                 nilaiKontrakInput.value = parseCurrency(nilaiKontrakInput.value);
+            }
+            if (paguAnggaranInput) {
+                paguAnggaranInput.value = parseCurrency(paguAnggaranInput.value);
             }
         });
     }
@@ -1342,8 +1673,12 @@
     if (formEdit) {
         formEdit.addEventListener('submit', function () {
             var nilaiKontrakEdit = document.getElementById('nilai_kontrak_edit');
+            var paguAnggaranEdit = document.getElementById('pagu_anggaran_edit');
             if (nilaiKontrakEdit) {
                 nilaiKontrakEdit.value = parseCurrency(nilaiKontrakEdit.value);
+            }
+            if (paguAnggaranEdit) {
+                paguAnggaranEdit.value = parseCurrency(paguAnggaranEdit.value);
             }
 
             var addOnInputs = document.querySelectorAll('#add-on-container .js-add-on-value');

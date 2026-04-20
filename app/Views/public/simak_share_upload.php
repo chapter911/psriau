@@ -429,9 +429,11 @@
                                     $hasChildren = (bool) ($row['has_children'] ?? false);
                                     $indentLevel = (int) ($row['indent_level'] ?? 0);
                                     $indentPadding = max(0, $indentLevel) * 16;
-                                    $isGroup = in_array($rowType, ['section_header', 'subsection_header'], true) || $hasChildren;
+                                    $isGroup = $hasChildren
+                                        || $rowType === 'section_header'
+                                        || ($rowType === 'subsection_header' && ! $isLeaf);
                                     $rowClass = $isGroup ? 'row-group' : 'row-leaf';
-                                    $isInputRow = $isLeaf && ! in_array($rowType, ['section_header', 'subsection_header'], true);
+                                    $isInputRow = $isLeaf;
                                     $existing = $verifikasiByRow[$rowNo] ?? [];
                                     $kelengkapan = strtolower(trim((string) ($existing['kelengkapan_dokumen'] ?? '')));
                                     $verifikasi = strtolower(trim((string) ($existing['verifikasi_ki'] ?? '')));

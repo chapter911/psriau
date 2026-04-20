@@ -282,7 +282,7 @@
                                                     <div class="d-flex align-items-center" style="gap: 6px; flex-wrap: wrap;">
                                                         <?php if (is_array($latestDokumen)): ?>
                                                             <a
-                                                                href="<?= site_url('admin/kontrak/simak/verifikasi-dokumen/' . (int) ($latestDokumen['id'] ?? 0)); ?>"
+                                                                href="<?= site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/' . (int) ($latestDokumen['id'] ?? 0)); ?>"
                                                                 target="_blank"
                                                                 rel="noopener"
                                                                 class="btn btn-info btn-sm"
@@ -348,7 +348,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form method="post" action="<?= site_url('admin/kontrak/simak/' . (int) ($item['id'] ?? 0) . '/verifikasi/upload'); ?>" enctype="multipart/form-data" id="form-upload-verifikasi" novalidate>
+            <form method="post" action="<?= site_url('admin/kontrak/simak/konstruksi/' . (int) ($item['id'] ?? 0) . '/verifikasi/upload'); ?>" enctype="multipart/form-data" id="form-upload-verifikasi" novalidate>
                 <?= csrf_field(); ?>
                 <input type="hidden" name="row_no" id="upload_row_no" value="">
                 <div class="modal-body">
@@ -515,7 +515,7 @@
                 '<td>' + createdAt + '</td>' +
                 '<td>' + createdBy + '</td>' +
                 '<td>' + size + '</td>' +
-                '<td class="text-center"><a href="<?= site_url('admin/kontrak/simak/verifikasi-dokumen/'); ?>' + docId + '" target="_blank" rel="noopener" class="btn btn-info btn-sm"><i class="fas ' + actionIcon + '"></i> ' + actionLabel + '</a></td>' +
+                '<td class="text-center"><a href="<?= site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/'); ?>' + docId + '" target="_blank" rel="noopener" class="btn btn-info btn-sm"><i class="fas ' + actionIcon + '"></i> ' + actionLabel + '</a></td>' +
             '</tr>';
         }).join('');
 
