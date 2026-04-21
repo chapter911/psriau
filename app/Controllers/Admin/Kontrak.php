@@ -3127,6 +3127,11 @@ class Kontrak extends BaseController
 
     private function getSimakPelaksanaanFisikTemplateItems(): array
     {
+        $masterItems = $this->getSimakKonstruksiTemplateFromMaster();
+        if ($masterItems !== []) {
+            return $masterItems;
+        }
+
         $filePath = WRITEPATH . 'templates/contoh_simak.xlsx';
         if (! is_file($filePath)) {
             return [];
@@ -3262,6 +3267,117 @@ class Kontrak extends BaseController
         }
     }
 
+    private function getSimakKonstruksiTemplateFromMaster(): array
+    {
+        $db = db_connect();
+        if (! $db->tableExists('mst_simak_konstruksi_item')) {
+            return [];
+        }
+
+        $rows = $db->table('mst_simak_konstruksi_item')
+            ->select('id, parent_id, row_no, display_no, uraian, row_kind, has_question, ordering')
+            ->where('is_active', 1)
+            ->orderBy('ordering', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        if ($rows === []) {
+            return [];
+        }
+
+        $nodes = [];
+        foreach ($rows as $row) {
+            $node = $row;
+            $node['children'] = [];
+            $nodes[(int) $row['id']] = $node;
+        }
+
+        $roots = [];
+        foreach ($nodes as $id => $node) {
+            $parentId = (int) ($node['parent_id'] ?? 0);
+            if ($parentId > 0 && isset($nodes[$parentId])) {
+                $nodes[$parentId]['children'][] = &$nodes[$id];
+            } else {
+                $roots[] = &$nodes[$id];
+            }
+        }
+
+        $sortTree = static function (array &$items) use (&$sortTree): void {
+            usort($items, static function (array $a, array $b): int {
+                $orderingCmp = ((int) ($a['ordering'] ?? 0)) <=> ((int) ($b['ordering'] ?? 0));
+                if ($orderingCmp !== 0) {
+                    return $orderingCmp;
+                }
+
+                return ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));
+            });
+
+            foreach ($items as &$item) {
+                if (! empty($item['children'])) {
+                    $sortTree($item['children']);
+                }
+            }
+            unset($item);
+        };
+
+        $sortTree($roots);
+
+        $flattened = [];
+        $walk = static function (array $items, int $depth, string $sectionKey, string $sectionTitle) use (&$walk, &$flattened): void {
+            foreach ($items as $item) {
+                $rowKind = (string) ($item['row_kind'] ?? 'question');
+                $currentSectionKey = $sectionKey;
+                $currentSectionTitle = $sectionTitle;
+
+                if ($rowKind === 'section') {
+                    $currentSectionKey = (string) ($item['id'] ?? '');
+                    $currentSectionTitle = trim((string) ($item['uraian'] ?? ''));
+                }
+
+                $children = is_array($item['children'] ?? null) ? $item['children'] : [];
+                $hasChildren = $children !== [];
+                $hasQuestion = (int) ($item['has_question'] ?? 0) === 1;
+
+                $rowType = match ($rowKind) {
+                    'section' => 'section_header',
+                    'group' => 'subsection_header',
+                    'separator' => 'separator',
+                    default => 'detail_text',
+                };
+
+                $rowPriority = match ($rowKind) {
+                    'section' => 0,
+                    'group' => 1,
+                    'separator' => 1,
+                    default => 4,
+                };
+
+                $flattened[] = [
+                    'row_no' => (int) ($item['row_no'] ?? 0),
+                    'display_no' => trim((string) ($item['display_no'] ?? '')),
+                    'uraian' => trim((string) ($item['uraian'] ?? '')),
+                    'is_header' => $rowKind === 'section',
+                    'indent_level' => $depth,
+                    'row_type' => $rowType,
+                    'row_priority' => $rowPriority,
+                    'section_key' => $currentSectionKey,
+                    'section_title' => $currentSectionTitle,
+                    'has_children' => $hasChildren,
+                    'is_leaf' => $hasQuestion && ! $hasChildren,
+                ];
+
+                if ($children !== []) {
+                    $walk($children, $depth + 1, $currentSectionKey, $currentSectionTitle);
+                }
+            }
+        };
+
+        $walk($roots, 0, '', '');
+
+        return $flattened;
+    }
+
     private function getSimakTemplateItems(string $type = 'konstruksi'): array
     {
         return $type === 'konsultasi'
@@ -3271,6 +3387,11 @@ class Kontrak extends BaseController
 
     private function getSimakKonsultasiTemplateItems(): array
     {
+        $masterItems = $this->getSimakKonsultasiTemplateFromMaster();
+        if ($masterItems !== []) {
+            return $masterItems;
+        }
+
         $filePath = WRITEPATH . 'templates/contoh_simak.xlsx';
         if (! is_file($filePath)) {
             return [];
@@ -3478,6 +3599,122 @@ class Kontrak extends BaseController
         } catch (\Throwable $e) {
             return [];
         }
+    }
+
+    private function getSimakKonsultasiTemplateFromMaster(): array
+    {
+        $db = db_connect();
+        if (! $db->tableExists('mst_simak_konsultasi_item')) {
+            return [];
+        }
+
+        $rows = $db->table('mst_simak_konsultasi_item')
+            ->select('id, parent_id, row_no, display_no, uraian, bentuk_dokumen, referensi, kriteria_administrasi, kriteria_substansi, sumber_dokumen_hasil_integrasi, row_kind, has_question, ordering')
+            ->where('is_active', 1)
+            ->orderBy('ordering', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        if ($rows === []) {
+            return [];
+        }
+
+        $nodes = [];
+        foreach ($rows as $row) {
+            $node = $row;
+            $node['children'] = [];
+            $nodes[(int) $row['id']] = $node;
+        }
+
+        $roots = [];
+        foreach ($nodes as $id => $node) {
+            $parentId = (int) ($node['parent_id'] ?? 0);
+            if ($parentId > 0 && isset($nodes[$parentId])) {
+                $nodes[$parentId]['children'][] = &$nodes[$id];
+            } else {
+                $roots[] = &$nodes[$id];
+            }
+        }
+
+        $sortTree = static function (array &$items) use (&$sortTree): void {
+            usort($items, static function (array $a, array $b): int {
+                $orderingCmp = ((int) ($a['ordering'] ?? 0)) <=> ((int) ($b['ordering'] ?? 0));
+                if ($orderingCmp !== 0) {
+                    return $orderingCmp;
+                }
+
+                return ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));
+            });
+
+            foreach ($items as &$item) {
+                if (! empty($item['children'])) {
+                    $sortTree($item['children']);
+                }
+            }
+            unset($item);
+        };
+
+        $sortTree($roots);
+
+        $flattened = [];
+        $walk = static function (array $items, int $depth, string $sectionKey, string $sectionTitle) use (&$walk, &$flattened): void {
+            foreach ($items as $item) {
+                $rowKind = (string) ($item['row_kind'] ?? 'question');
+                $currentSectionKey = $sectionKey;
+                $currentSectionTitle = $sectionTitle;
+
+                if ($rowKind === 'section') {
+                    $currentSectionKey = (string) ($item['id'] ?? '');
+                    $currentSectionTitle = trim((string) ($item['uraian'] ?? ''));
+                }
+
+                $children = is_array($item['children'] ?? null) ? $item['children'] : [];
+                $hasChildren = $children !== [];
+                $hasQuestion = (int) ($item['has_question'] ?? 0) === 1;
+
+                $rowType = match ($rowKind) {
+                    'section' => 'section_header',
+                    'group' => 'subsection_header',
+                    'separator' => 'separator',
+                    default => 'detail_text',
+                };
+
+                $rowPriority = match ($rowKind) {
+                    'section' => 0,
+                    'group' => 1,
+                    'separator' => 1,
+                    default => 4,
+                };
+
+                $flattened[] = [
+                    'row_no' => (int) ($item['row_no'] ?? 0),
+                    'display_no' => trim((string) ($item['display_no'] ?? '')),
+                    'uraian' => trim((string) ($item['uraian'] ?? '')),
+                    'bentuk_dokumen' => trim((string) ($item['bentuk_dokumen'] ?? '')),
+                    'referensi' => trim((string) ($item['referensi'] ?? '')),
+                    'kriteria_administrasi' => trim((string) ($item['kriteria_administrasi'] ?? '')),
+                    'kriteria_substansi' => trim((string) ($item['kriteria_substansi'] ?? '')),
+                    'sumber_dokumen_hasil_integrasi' => trim((string) ($item['sumber_dokumen_hasil_integrasi'] ?? '')),
+                    'is_header' => $rowKind === 'section',
+                    'indent_level' => $depth,
+                    'row_type' => $rowType,
+                    'row_priority' => $rowPriority,
+                    'section_key' => $currentSectionKey,
+                    'section_title' => $currentSectionTitle,
+                    'has_children' => $hasChildren,
+                    'is_leaf' => $hasQuestion && ! $hasChildren,
+                ];
+
+                if ($children !== []) {
+                    $walk($children, $depth + 1, $currentSectionKey, $currentSectionTitle);
+                }
+            }
+        };
+
+        $walk($roots, 0, '', '');
+
+        return $flattened;
     }
 
     private function getSimakPegawaiOptions(): array
