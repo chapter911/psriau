@@ -21,11 +21,19 @@
         border-radius: 8px;
         background: #fff;
     }
+
+    .simak-detail-panel {
+        position: sticky;
+        top: 72px;
+        align-self: start;
+    }
+
+    @media (max-width: 991.98px) {
         .simak-detail-panel {
-            position: sticky;
-            top: 72px;
-            align-self: start;
+            position: static;
+            top: auto;
         }
+    }
 
     .simak-panel-head {
         padding: 12px 14px;
@@ -34,6 +42,23 @@
         align-items: center;
         justify-content: space-between;
         gap: 10px;
+    }
+
+    .simak-panel-head .form-control-sm {
+        max-width: 180px;
+    }
+
+    .simak-panel-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+    }
+
+    .simak-panel-meta .badge {
+        font-size: 11px;
+        font-weight: 600;
     }
 
     .simak-panel-body {
@@ -59,6 +84,11 @@
         margin-bottom: 10px;
         background: #fff;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .simak-master-item.is-inactive {
+        opacity: 0.68;
+        background: #f8fafc;
     }
 
     .simak-master-item.is-selected {
@@ -95,6 +125,13 @@
         margin-top: 2px;
     }
 
+    .simak-status-badge {
+        display: inline-block;
+        margin-left: 6px;
+        font-size: 11px;
+        vertical-align: middle;
+    }
+
     .empty-tree {
         border: 1px dashed #d1d5db;
         border-radius: 8px;
@@ -107,17 +144,105 @@
         color: #6b7280;
         margin-bottom: 12px;
     }
+
+    .simak-notice-stack {
+        position: fixed;
+        top: 76px;
+        right: 20px;
+        z-index: 1090;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+        width: min(360px, calc(100vw - 40px));
+    }
+
+    .simak-toast {
+        pointer-events: auto;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 10px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.15);
+        overflow: hidden;
+        background: #fff;
+        animation: simak-toast-in 0.18s ease-out;
+    }
+
+    .simak-toast.is-hiding {
+        animation: simak-toast-out 0.18s ease-in forwards;
+    }
+
+    .simak-toast-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .simak-toast-body {
+        padding: 10px 12px 12px;
+        font-size: 13px;
+        line-height: 1.4;
+        color: #1f2937;
+    }
+
+    .simak-toast-success .simak-toast-header {
+        background: #ecfdf3;
+        color: #166534;
+    }
+
+    .simak-toast-danger .simak-toast-header {
+        background: #fef2f2;
+        color: #991b1b;
+    }
+
+    .simak-toast-warning .simak-toast-header {
+        background: #fffbeb;
+        color: #92400e;
+    }
+
+    .simak-toast-info .simak-toast-header {
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    @keyframes simak-toast-in {
+        from {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes simak-toast-out {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        to {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+    }
 </style>
 
 <div class="card">
     <div class="card-header d-flex align-items-center">
-        <h3 class="card-title mb-0\"><?= esc((string) ($pageTitle ?? 'Master SIMAK Konstruksi')); ?></h3>
+        <h3 class="card-title mb-0"><?= esc((string) ($pageTitle ?? 'Master SIMAK Konstruksi')); ?></h3>
         <?php if (! empty($can_edit)): ?>
             <button type="button" class="btn btn-success btn-sm ml-auto" id="btn-save-hierarchy">Simpan Hirarki</button>
         <?php endif; ?>
     </div>
     <div class="card-body">
         <p class="text-muted mb-3"><?= esc((string) ($pageSubtitle ?? 'Master pertanyaan, hirarki, dan section verifikasi SIMAK konstruksi.')); ?></p>
+        <div id="simak-notice-stack" class="simak-notice-stack" aria-live="polite" aria-atomic="true"></div>
 
         <?php
             $renderTree = static function (array $nodes) use (&$renderTree): void {
@@ -129,19 +254,21 @@
                     $title = trim($displayNo . ' ' . $uraian);
                     $rowKind = (string) ($node['row_kind'] ?? 'question');
                     $hasQuestion = (int) ($node['has_question'] ?? 0) === 1;
+                    $isActive = (int) ($node['is_active'] ?? 1) === 1;
                     $children = is_array($node['children'] ?? null) ? $node['children'] : [];
 
-                    echo '<li class="simak-master-item" data-id="' . $id . '"';
+                    echo '<li class="simak-master-item' . (! $isActive ? ' is-inactive' : '') . '" data-id="' . $id . '"';
                     echo ' data-parent_id="' . esc((string) ($node['parent_id'] ?? ''), 'attr') . '"';
                     echo ' data-display_no="' . esc((string) ($node['display_no'] ?? ''), 'attr') . '"';
                     echo ' data-uraian="' . esc((string) ($node['uraian'] ?? ''), 'attr') . '"';
                     echo ' data-row_kind="' . esc($rowKind, 'attr') . '"';
                     echo ' data-has_question="' . ($hasQuestion ? '1' : '0') . '"';
+                    echo ' data-is_active="' . ($isActive ? '1' : '0') . '"';
                     echo '>';
                     echo '<div class="simak-master-row">';
                     echo '<span class="drag-handle" title="Drag untuk ubah urutan/hirarki"><i class="fas fa-grip-lines"></i></span>';
                     echo '<div class="simak-master-meta">';
-                    echo '<div class="simak-master-title">' . esc($title !== '' ? $title : '-') . '</div>';
+                    echo '<div class="simak-master-title">' . esc($title !== '' ? $title : '-') . ' <span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span></div>';
                     echo '<div class="simak-master-sub">';
                     echo 'Jenis: <strong>' . esc($rowKind) . '</strong> | Pertanyaan: <strong>' . ($hasQuestion ? 'Ya' : 'Tidak') . '</strong> | Row No: <strong>' . esc((string) ($node['row_no'] ?? '')) . '</strong>';
                     echo '</div>';
@@ -161,11 +288,14 @@
         <div class="simak-split-layout">
             <div class="simak-tree-panel">
                 <div class="simak-panel-head">
-                    <strong>Hirarki Pertanyaan</strong>
-                .simak-detail-panel {
-                    position: static;
-                    top: auto;
-                    <small class="text-muted">Klik item untuk edit di panel kanan</small>
+                    <div>
+                        <strong>Hirarki Pertanyaan</strong>
+                        <div class="simak-panel-meta">
+                            <span class="badge badge-success" id="simak-count-active">Aktif: 0</span>
+                            <span class="badge badge-secondary" id="simak-count-inactive">Nonaktif: 0</span>
+                        </div>
+                    </div>
+                    <small class="text-muted d-none d-md-inline">Klik item untuk edit di panel kanan</small>
                 </div>
                 <div class="simak-panel-body">
                     <?php if (! empty($itemsTree ?? [])): ?>
@@ -234,17 +364,11 @@
                                 <button type="submit" class="btn btn-primary" id="btn-submit-form">Simpan</button>
                                 <button type="button" class="btn btn-outline-secondary" id="btn-reset-selection">Reset</button>
                             <?php endif; ?>
-                            <?php if (! empty($can_delete)): ?>
-                                <button type="button" class="btn btn-danger" id="btn-delete-selected" disabled>Hapus Item Terpilih</button>
+                            <?php if (! empty($can_edit)): ?>
+                                <button type="button" class="btn btn-outline-secondary" id="btn-toggle-status" disabled>Aktifkan/Nonaktifkan Item</button>
                             <?php endif; ?>
                         </div>
                     </form>
-
-                    <?php if (! empty($can_delete)): ?>
-                        <form method="post" id="form-delete-selected" action="" class="d-none">
-                            <?= csrf_field(); ?>
-                        </form>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -266,12 +390,69 @@
         var addRootButton = document.getElementById('btn-add-root');
         var addChildButton = document.getElementById('btn-add-child');
         var resetButton = document.getElementById('btn-reset-selection');
-        var deleteSelectedButton = document.getElementById('btn-delete-selected');
-        var deleteForm = document.getElementById('form-delete-selected');
+        var toggleStatusButton = null;
+        var countActiveBadge = document.getElementById('simak-count-active');
+        var countInactiveBadge = document.getElementById('simak-count-inactive');
+        var treePanelBody = document.querySelector('.simak-tree-panel .simak-panel-body');
+        var noticeStack = document.getElementById('simak-notice-stack');
         var csrfName = <?= json_encode(csrf_token(), JSON_UNESCAPED_UNICODE); ?>;
         var csrfValue = <?= json_encode(csrf_hash(), JSON_UNESCAPED_UNICODE); ?>;
         var addUrl = <?= json_encode(site_url('/admin/master/simak/konstruksi/tambah'), JSON_UNESCAPED_UNICODE); ?>;
         var baseUrl = <?= json_encode(site_url('/admin/master/simak/konstruksi'), JSON_UNESCAPED_UNICODE); ?>;
+
+        var showNotice = function (message, type) {
+            if (!message || !noticeStack) return;
+
+            var level = ['success', 'danger', 'warning', 'info'].indexOf(type) >= 0 ? type : 'info';
+            var titles = {
+                success: 'Berhasil',
+                danger: 'Gagal',
+                warning: 'Perhatian',
+                info: 'Info'
+            };
+            var note = document.createElement('div');
+            note.className = 'simak-toast simak-toast-' + level;
+            note.setAttribute('role', 'status');
+            note.setAttribute('aria-live', 'polite');
+            note.innerHTML = '' +
+                '<div class="simak-toast-header">' +
+                '  <span>' + titles[level] + '</span>' +
+                '  <button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+                '</div>' +
+                '<div class="simak-toast-body"></div>';
+            note.querySelector('.simak-toast-body').textContent = message;
+
+            noticeStack.prepend(note);
+
+            var closeButton = note.querySelector('button.close');
+            var removeToast = function () {
+                if (!note.parentNode) return;
+                note.classList.add('is-hiding');
+                window.setTimeout(function () {
+                    if (note.parentNode) {
+                        note.parentNode.removeChild(note);
+                    }
+                }, 180);
+            };
+
+            if (closeButton) {
+                closeButton.addEventListener('click', removeToast);
+            }
+
+            window.setTimeout(function () {
+                removeToast();
+            }, 3500);
+        };
+
+        var syncCsrfFromJson = function (json) {
+            if (!json || !json.csrf) return;
+            if (typeof json.csrf.name === 'string' && json.csrf.name !== '') {
+                csrfName = json.csrf.name;
+            }
+            if (typeof json.csrf.hash === 'string' && json.csrf.hash !== '') {
+                csrfValue = json.csrf.hash;
+            }
+        };
 
         if (rowKindSelect) {
             rowKindSelect.addEventListener('change', function () {
@@ -292,6 +473,19 @@
             });
         };
 
+        var updateToggleButton = function (isActive) {
+            if (!toggleStatusButton) return;
+
+            toggleStatusButton.disabled = false;
+            if (isActive) {
+                toggleStatusButton.textContent = 'Nonaktifkan Item';
+                toggleStatusButton.className = 'btn btn-warning btn-sm';
+            } else {
+                toggleStatusButton.textContent = 'Aktifkan Item';
+                toggleStatusButton.className = 'btn btn-success btn-sm';
+            }
+        };
+
         var setCreateMode = function (parentId, label) {
             if (!form) return;
             form.setAttribute('action', addUrl);
@@ -305,7 +499,11 @@
                 hasQuestionInput.checked = false;
                 hasQuestionInput.disabled = false;
             }
-            if (deleteSelectedButton) deleteSelectedButton.disabled = true;
+            if (toggleStatusButton) {
+                toggleStatusButton.disabled = true;
+                toggleStatusButton.textContent = 'Aktifkan/Nonaktifkan Item';
+                toggleStatusButton.className = 'btn btn-outline-secondary btn-sm';
+            }
         };
 
         var setEditModeFromItem = function (itemEl) {
@@ -325,7 +523,9 @@
                 hasQuestionInput.checked = (itemEl.getAttribute('data-has_question') || '0') === '1';
                 hasQuestionInput.disabled = rowKindSelect && rowKindSelect.value === 'question';
             }
-            if (deleteSelectedButton) deleteSelectedButton.disabled = false;
+            if (toggleStatusButton) {
+                updateToggleButton((itemEl.getAttribute('data-is_active') || '1') === '1');
+            }
         };
 
         if (addRootButton) {
@@ -339,7 +539,7 @@
             addChildButton.addEventListener('click', function () {
                 var selectedId = selectedIdInput ? selectedIdInput.value : '';
                 if (!selectedId) {
-                    alert('Pilih item parent di panel kiri terlebih dahulu.');
+                    showNotice('Pilih item parent di panel kiri terlebih dahulu.', 'warning');
                     return;
                 }
                 setCreateMode(selectedId, 'Tambah Child dari Item #' + selectedId);
@@ -353,29 +553,192 @@
             });
         }
 
-        if (root) {
+        toggleStatusButton = document.getElementById('btn-toggle-status');
+
+        var bindTreeItemClicks = function () {
+            if (!root) return;
             root.querySelectorAll('.simak-master-item .simak-master-meta').forEach(function (metaEl) {
                 metaEl.addEventListener('click', function () {
                     var itemEl = metaEl.closest('.simak-master-item');
                     setEditModeFromItem(itemEl);
                 });
             });
-        }
+        };
 
-        if (deleteSelectedButton && deleteForm) {
-            deleteSelectedButton.addEventListener('click', function () {
-                var selectedId = selectedIdInput ? selectedIdInput.value : '';
-                if (!selectedId) {
-                    return;
-                }
-                if (!window.confirm('Hapus item terpilih?')) {
-                    return;
-                }
+        var updateStatusSummary = function () {
+            var activeCount = 0;
+            var inactiveCount = 0;
 
-                deleteForm.setAttribute('action', baseUrl + '/' + encodeURIComponent(selectedId) + '/hapus');
-                deleteForm.submit();
+            if (!root) {
+                if (countActiveBadge) countActiveBadge.textContent = 'Aktif: 0';
+                if (countInactiveBadge) countInactiveBadge.textContent = 'Nonaktif: 0';
+                return;
+            }
+
+            root.querySelectorAll('.simak-master-item').forEach(function (itemEl) {
+                var isActive = (itemEl.getAttribute('data-is_active') || '1') === '1';
+                if (isActive) {
+                    activeCount++;
+                } else {
+                    inactiveCount++;
+                }
             });
-        }
+
+            if (countActiveBadge) countActiveBadge.textContent = 'Aktif: ' + activeCount;
+            if (countInactiveBadge) countInactiveBadge.textContent = 'Nonaktif: ' + inactiveCount;
+        };
+
+        bindTreeItemClicks();
+
+        var refreshPanels = function (selectedId, formLabel) {
+            return fetch(window.location.href, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Gagal menyegarkan data');
+                    }
+                    return response.text();
+                })
+                .then(function (html) {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(html, 'text/html');
+                    var freshTreePanelBody = doc.querySelector('.simak-tree-panel .simak-panel-body');
+                    var freshParentSelect = doc.getElementById('parent_id');
+
+                    if (treePanelBody && freshTreePanelBody) {
+                        treePanelBody.innerHTML = freshTreePanelBody.innerHTML;
+                    }
+
+                    if (parentSelect && freshParentSelect) {
+                        parentSelect.innerHTML = freshParentSelect.innerHTML;
+                    }
+
+                    root = document.getElementById('simak-master-root');
+                    bindTreeItemClicks();
+                    updateStatusSummary();
+
+                    if (root) {
+                        root.querySelectorAll('ul.simak-master-tree-list').forEach(initSortable);
+                    }
+
+                    if (selectedId) {
+                        var selectedEl = document.querySelector('.simak-master-item[data-id="' + selectedId + '"]');
+                        if (selectedEl) {
+                            setEditModeFromItem(selectedEl);
+                            return;
+                        }
+                    }
+
+                    setCreateMode('', formLabel || 'Tambah Item Master');
+                });
+        };
+
+        var toggleStatusAjax = function () {
+            if (!toggleStatusButton || !selectedIdInput || !selectedIdInput.value) {
+                return;
+            }
+
+            var selectedId = selectedIdInput.value;
+            var currentItem = document.querySelector('.simak-master-item[data-id="' + selectedId + '"]');
+            var isActive = currentItem ? (currentItem.getAttribute('data-is_active') || '1') === '1' : true;
+            var nextStatus = isActive ? 0 : 1;
+
+            toggleStatusButton.disabled = true;
+
+            var formData = new FormData();
+            formData.append('is_active', String(nextStatus));
+            formData.append(csrfName, csrfValue);
+
+            fetch(baseUrl + '/' + encodeURIComponent(selectedId) + '/status', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+                .then(function (response) {
+                    return response.json().then(function (json) {
+                        return { ok: response.ok, json: json };
+                    });
+                })
+                .then(function (result) {
+                    var json = result.json || {};
+                    syncCsrfFromJson(json);
+                    if (!result.ok || json.status !== 'ok') {
+                        showNotice(json.message || 'Gagal mengubah status item.', 'danger');
+                        return;
+                    }
+
+                    refreshPanels(selectedId, formModeLabel ? formModeLabel.textContent : 'Tambah Item Master').then(function () {
+                        showNotice(json.message || 'Status item berhasil diubah.', 'success');
+                    });
+                })
+                .catch(function () {
+                    showNotice('Gagal mengubah status item.', 'danger');
+                })
+                .finally(function () {
+                    if (toggleStatusButton) {
+                        toggleStatusButton.disabled = false;
+                    }
+                });
+        };
+
+        var submitMasterFormAjax = function () {
+            if (!form) return;
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                var submitButton = document.getElementById('btn-submit-form');
+                if (submitButton) submitButton.disabled = true;
+
+                var formData = new FormData(form);
+                formData.set(csrfName, csrfValue);
+
+                fetch(form.getAttribute('action'), {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(function (response) {
+                        return response.json().then(function (json) {
+                            return { ok: response.ok, json: json };
+                        });
+                    })
+                    .then(function (result) {
+                        var json = result.json || {};
+                        syncCsrfFromJson(json);
+                        if (!result.ok || json.status !== 'ok') {
+                            showNotice(json.message || 'Gagal menyimpan data master.', 'danger');
+                            return;
+                        }
+
+                        var id = json.id ? String(json.id) : '';
+                        return refreshPanels(id, 'Tambah Item Master').then(function () {
+                            showNotice(json.message || 'Berhasil menyimpan data master.', 'success');
+                        });
+                    })
+                    .catch(function () {
+                        showNotice('Gagal menyimpan data master.', 'danger');
+                    })
+                    .finally(function () {
+                        if (submitButton) submitButton.disabled = false;
+                    });
+            });
+        };
+
+        submitMasterFormAjax();
 
         var initSortable = function (listEl) {
             if (!listEl || typeof Sortable === 'undefined') return;
@@ -430,18 +793,29 @@
                 })
                     .then(function (response) { return response.json(); })
                     .then(function (json) {
+                        syncCsrfFromJson(json);
                         if (!json || json.status !== 'ok') {
-                            alert((json && json.message) ? json.message : 'Gagal menyimpan hirarki');
+                            showNotice((json && json.message) ? json.message : 'Gagal menyimpan hirarki', 'danger');
                             return;
                         }
-                        window.location.reload();
+                        refreshPanels(selectedIdInput ? selectedIdInput.value : '', formModeLabel ? formModeLabel.textContent : 'Tambah Item Master')
+                            .then(function () {
+                                showNotice(json.message || 'Hirarki berhasil disimpan.', 'success');
+                            });
                     })
                     .catch(function () {
-                        alert('Gagal menyimpan hirarki');
+                        showNotice('Gagal menyimpan hirarki', 'danger');
                     });
             });
         }
 
+        if (toggleStatusButton) {
+            toggleStatusButton.addEventListener('click', function () {
+                toggleStatusAjax();
+            });
+        }
+
+        updateStatusSummary();
         setCreateMode('', 'Tambah Item Master');
     })();
 </script>

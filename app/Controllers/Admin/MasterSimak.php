@@ -37,7 +37,6 @@ class MasterSimak extends BaseController
         }
 
         $rows = (new MasterSimakKonstruksiItemModel())
-            ->where('is_active', 1)
             ->orderBy('ordering', 'ASC')
             ->orderBy('id', 'ASC')
             ->findAll();
@@ -67,6 +66,13 @@ class MasterSimak extends BaseController
 
         $permissions = $this->resolveMenuPermissions(self::MENU_LINK_KONSTRUKSI);
         if (! $this->canManageMasterData() || ! (bool) ($permissions['add'] ?? false)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk menambah master SIMAK konstruksi.',
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Anda tidak memiliki akses untuk menambah master SIMAK konstruksi.');
         }
 
@@ -74,6 +80,14 @@ class MasterSimak extends BaseController
             'uraian' => 'required',
             'row_kind' => 'required|in_list[section,group,question,text,separator]',
         ])) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data master belum valid.',
+                    'errors' => $this->validator?->getErrors() ?? [],
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konstruksi')->withInput()->with('error', 'Data master belum valid.');
         }
 
@@ -103,6 +117,14 @@ class MasterSimak extends BaseController
             'is_active' => 1,
         ]);
 
+        if ($this->wantsJsonResponse()) {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'message' => 'Item master SIMAK konstruksi berhasil ditambahkan.',
+                'id' => (int) $model->getInsertID(),
+            ] + $this->csrfPayload());
+        }
+
         return redirect()->to('/admin/master/simak/konstruksi')->with('success', 'Item master SIMAK konstruksi berhasil ditambahkan.');
     }
 
@@ -115,6 +137,13 @@ class MasterSimak extends BaseController
 
         $permissions = $this->resolveMenuPermissions(self::MENU_LINK_KONSTRUKSI);
         if (! $this->canManageMasterData() || ! (bool) ($permissions['edit'] ?? false)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk mengubah master SIMAK konstruksi.',
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Anda tidak memiliki akses untuk mengubah master SIMAK konstruksi.');
         }
 
@@ -122,18 +151,40 @@ class MasterSimak extends BaseController
             'uraian' => 'required',
             'row_kind' => 'required|in_list[section,group,question,text,separator]',
         ])) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data master belum valid.',
+                    'errors' => $this->validator?->getErrors() ?? [],
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konstruksi')->withInput()->with('error', 'Data master belum valid.');
         }
 
         $model = new MasterSimakKonstruksiItemModel();
         $existing = $model->find($id);
         if (! is_array($existing)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Item master tidak ditemukan.',
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Item master tidak ditemukan.');
         }
 
         $parentId = (int) ($this->request->getPost('parent_id') ?? 0);
         $parentId = $parentId > 0 ? $parentId : null;
         if ($parentId === $id) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Parent tidak boleh sama dengan item saat ini.',
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Parent tidak boleh sama dengan item saat ini.');
         }
 
@@ -149,10 +200,18 @@ class MasterSimak extends BaseController
 
         $model->update($id, $payload);
 
+        if ($this->wantsJsonResponse()) {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'message' => 'Item master SIMAK konstruksi berhasil diubah.',
+                'id' => $id,
+            ] + $this->csrfPayload());
+        }
+
         return redirect()->to('/admin/master/simak/konstruksi')->with('success', 'Item master SIMAK konstruksi berhasil diubah.');
     }
 
-    public function konstruksiDelete(int $id)
+    public function konstruksiUpdateStatus(int $id)
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSTRUKSI);
         if ($forbidden instanceof RedirectResponse) {
@@ -160,24 +219,56 @@ class MasterSimak extends BaseController
         }
 
         $permissions = $this->resolveMenuPermissions(self::MENU_LINK_KONSTRUKSI);
-        if (! $this->canManageMasterData() || ! (bool) ($permissions['delete'] ?? false)) {
-            return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Anda tidak memiliki akses untuk menghapus master SIMAK konstruksi.');
+        if (! $this->canManageMasterData() || ! (bool) ($permissions['edit'] ?? false)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk mengubah status master SIMAK konstruksi.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Anda tidak memiliki akses untuk mengubah status master SIMAK konstruksi.');
+        }
+
+        $status = (int) ($this->request->getPost('is_active') ?? -1);
+        if (! in_array($status, [0, 1], true)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Status item tidak valid.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Status item tidak valid.');
         }
 
         $model = new MasterSimakKonstruksiItemModel();
         $existing = $model->find($id);
         if (! is_array($existing)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Item master tidak ditemukan.',
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Item master tidak ditemukan.');
         }
 
-        $hasChild = $model->where('parent_id', $id)->where('is_active', 1)->countAllResults() > 0;
-        if ($hasChild) {
-            return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Item memiliki child. Pindahkan atau hapus child terlebih dahulu.');
+        $model->update($id, ['is_active' => $status]);
+
+        $message = $status === 1 ? 'Item berhasil diaktifkan.' : 'Item berhasil dinonaktifkan.';
+
+        if ($this->wantsJsonResponse()) {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'message' => $message,
+                'id' => $id,
+                'is_active' => $status,
+            ] + $this->csrfPayload());
         }
 
-        $model->update($id, ['is_active' => 0]);
-
-        return redirect()->to('/admin/master/simak/konstruksi')->with('success', 'Item master SIMAK konstruksi berhasil dihapus.');
+        return redirect()->to('/admin/master/simak/konstruksi')->with('success', $message);
     }
 
     public function konstruksiSaveHierarchy()
@@ -233,13 +324,13 @@ class MasterSimak extends BaseController
             return $this->response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)->setJSON([
                 'status' => 'error',
                 'message' => 'Gagal menyimpan hirarki.',
-            ]);
+            ] + $this->csrfPayload());
         }
 
         return $this->response->setJSON([
             'status' => 'ok',
             'message' => 'Hirarki berhasil disimpan.',
-        ]);
+        ] + $this->csrfPayload());
     }
 
     public function konsultasi()
@@ -266,7 +357,6 @@ class MasterSimak extends BaseController
         }
 
         $rows = (new MasterSimakKonsultasiItemModel())
-            ->where('is_active', 1)
             ->orderBy('ordering', 'ASC')
             ->orderBy('id', 'ASC')
             ->findAll();
@@ -296,6 +386,13 @@ class MasterSimak extends BaseController
 
         $permissions = $this->resolveMenuPermissions(self::MENU_LINK_KONSULTASI);
         if (! $this->canManageMasterData() || ! (bool) ($permissions['add'] ?? false)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk menambah master SIMAK konsultasi.',
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Anda tidak memiliki akses untuk menambah master SIMAK konsultasi.');
         }
 
@@ -303,6 +400,14 @@ class MasterSimak extends BaseController
             'uraian' => 'required',
             'row_kind' => 'required|in_list[section,group,question,text,separator]',
         ])) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data master belum valid.',
+                    'errors' => $this->validator?->getErrors() ?? [],
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konsultasi')->withInput()->with('error', 'Data master belum valid.');
         }
 
@@ -337,6 +442,14 @@ class MasterSimak extends BaseController
             'is_active' => 1,
         ]);
 
+        if ($this->wantsJsonResponse()) {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'message' => 'Item master SIMAK konsultasi berhasil ditambahkan.',
+                'id' => (int) $model->getInsertID(),
+            ] + $this->csrfPayload());
+        }
+
         return redirect()->to('/admin/master/simak/konsultasi')->with('success', 'Item master SIMAK konsultasi berhasil ditambahkan.');
     }
 
@@ -349,6 +462,13 @@ class MasterSimak extends BaseController
 
         $permissions = $this->resolveMenuPermissions(self::MENU_LINK_KONSULTASI);
         if (! $this->canManageMasterData() || ! (bool) ($permissions['edit'] ?? false)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk mengubah master SIMAK konsultasi.',
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Anda tidak memiliki akses untuk mengubah master SIMAK konsultasi.');
         }
 
@@ -356,18 +476,40 @@ class MasterSimak extends BaseController
             'uraian' => 'required',
             'row_kind' => 'required|in_list[section,group,question,text,separator]',
         ])) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data master belum valid.',
+                    'errors' => $this->validator?->getErrors() ?? [],
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konsultasi')->withInput()->with('error', 'Data master belum valid.');
         }
 
         $model = new MasterSimakKonsultasiItemModel();
         $existing = $model->find($id);
         if (! is_array($existing)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Item master tidak ditemukan.',
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Item master tidak ditemukan.');
         }
 
         $parentId = (int) ($this->request->getPost('parent_id') ?? 0);
         $parentId = $parentId > 0 ? $parentId : null;
         if ($parentId === $id) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Parent tidak boleh sama dengan item saat ini.',
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Parent tidak boleh sama dengan item saat ini.');
         }
 
@@ -386,10 +528,18 @@ class MasterSimak extends BaseController
             'has_question' => $rowKind === 'question' ? 1 : ((int) ($this->request->getPost('has_question') ? 1 : 0)),
         ]);
 
+        if ($this->wantsJsonResponse()) {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'message' => 'Item master SIMAK konsultasi berhasil diubah.',
+                'id' => $id,
+            ] + $this->csrfPayload());
+        }
+
         return redirect()->to('/admin/master/simak/konsultasi')->with('success', 'Item master SIMAK konsultasi berhasil diubah.');
     }
 
-    public function konsultasiDelete(int $id)
+    public function konsultasiUpdateStatus(int $id)
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSULTASI);
         if ($forbidden instanceof RedirectResponse) {
@@ -397,24 +547,56 @@ class MasterSimak extends BaseController
         }
 
         $permissions = $this->resolveMenuPermissions(self::MENU_LINK_KONSULTASI);
-        if (! $this->canManageMasterData() || ! (bool) ($permissions['delete'] ?? false)) {
-            return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Anda tidak memiliki akses untuk menghapus master SIMAK konsultasi.');
+        if (! $this->canManageMasterData() || ! (bool) ($permissions['edit'] ?? false)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk mengubah status master SIMAK konsultasi.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Anda tidak memiliki akses untuk mengubah status master SIMAK konsultasi.');
+        }
+
+        $status = (int) ($this->request->getPost('is_active') ?? -1);
+        if (! in_array($status, [0, 1], true)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Status item tidak valid.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Status item tidak valid.');
         }
 
         $model = new MasterSimakKonsultasiItemModel();
         $existing = $model->find($id);
         if (! is_array($existing)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Item master tidak ditemukan.',
+                ] + $this->csrfPayload());
+            }
+
             return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Item master tidak ditemukan.');
         }
 
-        $hasChild = $model->where('parent_id', $id)->where('is_active', 1)->countAllResults() > 0;
-        if ($hasChild) {
-            return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Item memiliki child. Pindahkan atau hapus child terlebih dahulu.');
+        $model->update($id, ['is_active' => $status]);
+
+        $message = $status === 1 ? 'Item berhasil diaktifkan.' : 'Item berhasil dinonaktifkan.';
+
+        if ($this->wantsJsonResponse()) {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'message' => $message,
+                'id' => $id,
+                'is_active' => $status,
+            ] + $this->csrfPayload());
         }
 
-        $model->update($id, ['is_active' => 0]);
-
-        return redirect()->to('/admin/master/simak/konsultasi')->with('success', 'Item master SIMAK konsultasi berhasil dihapus.');
+        return redirect()->to('/admin/master/simak/konsultasi')->with('success', $message);
     }
 
     public function konsultasiSaveHierarchy()
@@ -424,7 +606,7 @@ class MasterSimak extends BaseController
             return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
                 'status' => 'error',
                 'message' => 'Akses ditolak.',
-            ]);
+            ] + $this->csrfPayload());
         }
 
         $permissions = $this->resolveMenuPermissions(self::MENU_LINK_KONSULTASI);
@@ -432,7 +614,7 @@ class MasterSimak extends BaseController
             return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
                 'status' => 'error',
                 'message' => 'Anda tidak memiliki akses untuk mengubah hirarki.',
-            ]);
+            ] + $this->csrfPayload());
         }
 
         $rawTree = $this->request->getPost('tree');
@@ -440,7 +622,7 @@ class MasterSimak extends BaseController
             return $this->response->setStatusCode(ResponseInterface::HTTP_BAD_REQUEST)->setJSON([
                 'status' => 'error',
                 'message' => 'Payload hirarki tidak valid.',
-            ]);
+            ] + $this->csrfPayload());
         }
 
         $tree = json_decode($rawTree, true);
@@ -448,7 +630,7 @@ class MasterSimak extends BaseController
             return $this->response->setStatusCode(ResponseInterface::HTTP_BAD_REQUEST)->setJSON([
                 'status' => 'error',
                 'message' => 'Format hirarki tidak valid.',
-            ]);
+            ] + $this->csrfPayload());
         }
 
         $flattened = [];
@@ -470,13 +652,13 @@ class MasterSimak extends BaseController
             return $this->response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)->setJSON([
                 'status' => 'error',
                 'message' => 'Gagal menyimpan hirarki.',
-            ]);
+            ] + $this->csrfPayload());
         }
 
         return $this->response->setJSON([
             'status' => 'ok',
             'message' => 'Hirarki berhasil disimpan.',
-        ]);
+        ] + $this->csrfPayload());
     }
 
     private function denyIfNoMenuAccess(string $menuLink): ?RedirectResponse
@@ -623,6 +805,27 @@ class MasterSimak extends BaseController
         return in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
     }
 
+    private function wantsJsonResponse(): bool
+    {
+        if ($this->request->isAJAX()) {
+            return true;
+        }
+
+        $accept = strtolower(trim($this->request->getHeaderLine('Accept')));
+
+        return str_contains($accept, 'application/json');
+    }
+
+    private function csrfPayload(): array
+    {
+        return [
+            'csrf' => [
+                'name' => csrf_token(),
+                'hash' => csrf_hash(),
+            ],
+        ];
+    }
+
     private function buildTree(array $rows): array
     {
         $map = [];
@@ -730,4 +933,5 @@ class MasterSimak extends BaseController
             }
         }
     }
+
 }
