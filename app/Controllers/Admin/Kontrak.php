@@ -1992,6 +1992,10 @@ class Kontrak extends BaseController
 
             $storedName = $file->getRandomName();
             $file->move($absDir, $storedName, true);
+            $storedPath = $absDir . DIRECTORY_SEPARATOR . $storedName;
+            if ($ext === 'pdf' && ((int) ($file->getSizeByUnit('b') ?? 0)) > (1024 * 1024)) {
+                $this->tryCompressPdfWithGhostscript($storedPath);
+            }
             $relativePath = $subDir . '/' . $storedName;
         }
 
@@ -2131,6 +2135,8 @@ class Kontrak extends BaseController
             'dokumenByRow' => $shared['dokumenByRow'],
             'kelengkapanPercentage' => $kelengkapanPercentage,
             'googleClientId' => $this->getGoogleClientId(),
+            'googleDriveUploadFolderId' => $this->getGoogleDriveUploadFolderId(),
+            'googleDriveUploadFolderUrl' => $this->getGoogleDriveUploadFolderUrl(),
         ]);
     }
 
@@ -2145,6 +2151,10 @@ class Kontrak extends BaseController
             );
         }
 
+        if ($this->isPostBodyTooLarge()) {
+            return redirect()->to(site_url('simak/share/' . $token . '?error=' . rawurlencode('Upload gagal karena ukuran request melebihi batas server (post_max_size/upload_max_filesize). Perbesar batas upload di server lalu coba lagi.')));
+        }
+
         $db = db_connect();
         $tableVerifikasi = (string) ($shared['table_verifikasi'] ?? 'trn_kontrak_simak_verifikasi');
         $tableDokumen = (string) ($shared['table_dokumen'] ?? 'trn_kontrak_simak_verifikasi_dokumen');
@@ -2156,7 +2166,7 @@ class Kontrak extends BaseController
         $simakId = (int) ($shared['item']['id'] ?? 0);
         $rowNo = (int) ($this->request->getPost('row_no') ?? 0);
         if ($simakId <= 0 || $rowNo <= 0) {
-            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Baris verifikasi tidak valid.');
+            return redirect()->to(site_url('simak/share/' . $token . '?error=' . rawurlencode('Baris verifikasi tidak valid.')));
         }
 
         $templateByRow = [];
@@ -2168,22 +2178,6 @@ class Kontrak extends BaseController
         if (! is_array($targetTemplate) || (($targetTemplate['is_leaf'] ?? false) !== true)) {
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
         }
-
-        $today = date('Y-m-d');
-        $now = date('Y-m-d H:i:s');
-        $googleCredential = trim((string) $this->request->getPost('google_access_token'));
-        $googleIdentity = $this->verifyGoogleAccessToken($googleCredential);
-        if (! is_array($googleIdentity)) {
-            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Login Google diperlukan sebelum upload dokumen.');
-        }
-
-        $googleName = trim((string) ($googleIdentity['name'] ?? 'Google User'));
-        $googleEmail = trim((string) ($googleIdentity['email'] ?? ''));
-        $actorLabel = $googleName !== '' ? $googleName : 'Google User';
-        if ($googleEmail !== '') {
-            $actorLabel .= ' <' . $googleEmail . '>';
-        }
-        $actor = 'google: ' . $actorLabel;
 
         $existingVerifikasi = $db->table($tableVerifikasi)
             ->select('verifikasi_ki, keterangan, pic')
@@ -2217,6 +2211,23 @@ class Kontrak extends BaseController
         $googleDriveLink = trim((string) $this->request->getPost('google_drive_link'));
         $hasFile = $file !== null && $file->getError() !== UPLOAD_ERR_NO_FILE;
         $hasDriveLink = $googleDriveLink !== '';
+
+        $today = date('Y-m-d');
+        $now = date('Y-m-d H:i:s');
+
+        $googleCredential = trim((string) $this->request->getPost('google_access_token'));
+        $googleIdentity = $this->verifyGoogleAccessToken($googleCredential);
+        if (! is_array($googleIdentity)) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Login Google diperlukan sebelum upload dokumen.');
+        }
+
+        $googleName = trim((string) ($googleIdentity['name'] ?? 'Google User'));
+        $googleEmail = trim((string) ($googleIdentity['email'] ?? ''));
+        $actorLabel = $googleName !== '' ? $googleName : 'Google User';
+        if ($googleEmail !== '') {
+            $actorLabel .= ' <' . $googleEmail . '>';
+        }
+        $actor = 'google: ' . $actorLabel;
 
         if (! $hasFile && ! $hasDriveLink) {
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Pilih salah satu: upload file atau isi link Google Drive.');
@@ -2268,10 +2279,20 @@ class Kontrak extends BaseController
             $storedName = $file->getRandomName();
             $file->move($absDir, $storedName, true);
 
+            $storedPath = $absDir . DIRECTORY_SEPARATOR . $storedName;
+            if ($ext === 'pdf' && $uploadedSize > (1024 * 1024)) {
+                $this->tryCompressPdfWithGhostscript($storedPath);
+            }
+
+            if (is_file($storedPath)) {
+                $fileSize = (int) (@filesize($storedPath) ?: $uploadedSize);
+            } else {
+                $fileSize = $uploadedSize;
+            }
+
             $relativePath = $subDir . '/' . $storedName;
             $originalName = (string) $file->getClientName();
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
-            $fileSize = $uploadedSize;
         }
 
         $keterangan = 'Menunggu Verifikasi';
@@ -2525,6 +2546,49 @@ class Kontrak extends BaseController
     {
         $raw = trim((string) getenv('GOOGLE_CLIENT_ID'));
         return trim($raw, " \t\n\r\0\x0B'\"");
+    }
+
+    private function getGoogleDriveUploadFolderUrl(): string
+    {
+        $raw = trim((string) getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_URL'));
+        return trim($raw, " \t\n\r\0\x0B'\"");
+    }
+
+    private function getGoogleDriveUploadFolderId(): string
+    {
+        $rawId = trim((string) getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID'));
+        $rawId = trim($rawId, " \t\n\r\0\x0B'\"");
+        if ($rawId !== '') {
+            return $rawId;
+        }
+
+        return $this->extractGoogleDriveFolderId($this->getGoogleDriveUploadFolderUrl());
+    }
+
+    private function extractGoogleDriveFolderId(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+
+        if (preg_match('#/folders/([a-zA-Z0-9_-]+)#', $url, $matches) === 1) {
+            return (string) ($matches[1] ?? '');
+        }
+
+        $parts = parse_url($url);
+        if (! is_array($parts)) {
+            return '';
+        }
+
+        $query = (string) ($parts['query'] ?? '');
+        if ($query === '') {
+            return '';
+        }
+
+        parse_str($query, $params);
+        $id = trim((string) ($params['id'] ?? ''));
+        return preg_match('/^[a-zA-Z0-9_-]+$/', $id) === 1 ? $id : '';
     }
 
     private function renderSharedDokumenNotFound(string $token, string $message, ?array $item = null)
@@ -3904,6 +3968,119 @@ class Kontrak extends BaseController
         return false;
     }
 
+    private function isPostBodyTooLarge(): bool
+    {
+        $postMax = $this->iniSizeToBytes((string) ini_get('post_max_size'));
+        $contentLength = (int) $this->request->getServer('CONTENT_LENGTH');
+
+        return $postMax > 0 && $contentLength > 0 && $contentLength > $postMax;
+    }
+
+    private function iniSizeToBytes(string $value): int
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return 0;
+        }
+
+        $unit = strtolower(substr($value, -1));
+        $number = (float) $value;
+
+        if ($number <= 0) {
+            return 0;
+        }
+
+        switch ($unit) {
+            case 'g':
+                return (int) round($number * 1024 * 1024 * 1024);
+            case 'm':
+                return (int) round($number * 1024 * 1024);
+            case 'k':
+                return (int) round($number * 1024);
+            default:
+                return (int) round($number);
+        }
+    }
+
+    private function hasShellCommand(string $command): bool
+    {
+        $output = [];
+        $exitCode = 1;
+        @exec('command -v ' . escapeshellarg($command) . ' >/dev/null 2>&1', $output, $exitCode);
+
+        return $exitCode === 0;
+    }
+
+    private function runShellCommand(string $command): array
+    {
+        $output = [];
+        $exitCode = 1;
+
+        @exec($command, $output, $exitCode);
+
+        return [$exitCode === 0, trim(implode(PHP_EOL, $output))];
+    }
+
+    private function tryCompressPdfWithGhostscript(string $absPath): bool
+    {
+        $absPath = trim($absPath);
+        if ($absPath === '' || ! is_file($absPath)) {
+            return false;
+        }
+
+        $binary = $this->hasShellCommand('gs') ? 'gs' : ($this->hasShellCommand('ghostscript') ? 'ghostscript' : '');
+        if ($binary === '') {
+            return false;
+        }
+
+        $sourceSize = (int) (@filesize($absPath) ?: 0);
+        if ($sourceSize <= 0) {
+            return false;
+        }
+
+        $tempPath = $absPath . '.gs.tmp.pdf';
+        if (is_file($tempPath)) {
+            @unlink($tempPath);
+        }
+
+        $command = implode(' ', [
+            escapeshellcmd($binary),
+            '-sDEVICE=pdfwrite',
+            '-dCompatibilityLevel=1.4',
+            '-dPDFSETTINGS=/screen',
+            '-dNOPAUSE',
+            '-dQUIET',
+            '-dBATCH',
+            '-dDetectDuplicateImages=true',
+            '-dCompressFonts=true',
+            '-dDownsampleColorImages=true',
+            '-dDownsampleGrayImages=true',
+            '-dDownsampleMonoImages=true',
+            '-sOutputFile=' . escapeshellarg($tempPath),
+            escapeshellarg($absPath),
+        ]);
+
+        [$ok] = $this->runShellCommand($command . ' 2>&1');
+        if (! $ok || ! is_file($tempPath)) {
+            @unlink($tempPath);
+            return false;
+        }
+
+        $optimizedSize = (int) (@filesize($tempPath) ?: 0);
+        if ($optimizedSize <= 0 || $optimizedSize >= $sourceSize) {
+            @unlink($tempPath);
+            return false;
+        }
+
+        @chmod($tempPath, 0644);
+        if (! @rename($tempPath, $absPath)) {
+            @unlink($tempPath);
+            return false;
+        }
+
+        return true;
+    }
+
     // ============================================================================
     // SIMAK Jasa Konsultansi Methods
     // ============================================================================
@@ -4804,6 +4981,12 @@ class Kontrak extends BaseController
 
             $storedName = $file->getRandomName();
             $file->move($absDir, $storedName, true);
+            $storedPath = $absDir . DIRECTORY_SEPARATOR . $storedName;
+            $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
+            if ($ext === 'pdf' && $fileSize > (1024 * 1024)) {
+                $this->tryCompressPdfWithGhostscript($storedPath);
+                $fileSize = (int) (@filesize($storedPath) ?: $fileSize);
+            }
             $relativePath = $subDir . '/' . $storedName;
         }
 
@@ -4846,7 +5029,7 @@ class Kontrak extends BaseController
                 'file_stored_name' => $storedName,
                 'file_relative_path' => $relativePath,
                 'file_mime' => (string) ($file->getClientMimeType() ?: ''),
-                'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+                'file_size' => $fileSize,
                 'nama_file' => (string) $file->getClientName(),
                 'file_path' => $relativePath,
                 'status' => ($kel === 'ada' && $ver === 'sesuai') ? 'Lengkap' : (($kel === 'ada' && $ver === 'tidak_sesuai') ? 'Belum Sesuai' : (($kel === 'ada') ? 'Belum Verifikasi' : 'Belum Ada')),

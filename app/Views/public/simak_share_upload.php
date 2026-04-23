@@ -378,8 +378,18 @@
         <div class="alert alert-success"><?= esc((string) session()->getFlashdata('success')); ?></div>
     <?php endif; ?>
 
+    <?php $querySuccess = trim((string) service('request')->getGet('success')); ?>
+    <?php if ($querySuccess !== ''): ?>
+        <div class="alert alert-success"><?= esc($querySuccess); ?></div>
+    <?php endif; ?>
+
     <?php if (session()->getFlashdata('error')): ?>
         <div class="alert alert-danger"><?= esc((string) session()->getFlashdata('error')); ?></div>
+    <?php endif; ?>
+
+    <?php $queryError = trim((string) service('request')->getGet('error')); ?>
+    <?php if ($queryError !== ''): ?>
+        <div class="alert alert-danger"><?= esc($queryError); ?></div>
     <?php endif; ?>
 
     <div class="alert alert-info">
@@ -553,7 +563,8 @@
                     <div class="form-group mb-3" id="uploadFileGroup">
                         <label for="dokumen_file_modal">File Dokumen</label>
                         <input type="file" id="dokumen_file_modal" name="dokumen_file" class="form-control-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip">
-                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP. Maksimal 10MB.</small>
+                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP. Maksimal 10MB. File akan diupload langsung ke folder Google Drive dari env. File gambar/PDF di atas 5MB akan dicoba dikompres otomatis (target sekitar 3MB) di browser sebelum upload.</small>
+                        <div id="upload_file_status" class="small mt-2 text-muted">Status file: belum dipilih.</div>
                     </div>
 
                     <div class="form-group mb-0 d-none" id="uploadDriveGroup">
@@ -580,6 +591,8 @@
     'use strict';
 
     var googleClientId = <?= json_encode((string) ($googleClientId ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    var googleDriveUploadFolderId = <?= json_encode((string) ($googleDriveUploadFolderId ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    var googleDriveUploadFolderUrl = <?= json_encode((string) ($googleDriveUploadFolderUrl ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var openButtons = document.querySelectorAll('.js-open-upload-modal');
     var uploadForm = document.getElementById('form-upload-share-simak');
     var rowNoEl = document.getElementById('upload_row_no_modal');
@@ -589,6 +602,7 @@
     var uploadFileGroupEl = document.getElementById('uploadFileGroup');
     var uploadDriveGroupEl = document.getElementById('uploadDriveGroup');
     var dokumenFileEl = document.getElementById('dokumen_file_modal');
+    var uploadFileStatusEl = document.getElementById('upload_file_status');
     var googleDriveLinkEl = document.getElementById('google_drive_link');
     var googleAccessTokenEl = document.getElementById('google_access_token');
     var uploaderNameEl = document.getElementById('uploader_name');
@@ -606,6 +620,387 @@
     var googleStorageKey = 'simak_share_google_credential_' + (window.location.pathname || 'share');
     var pendingUploadContext = null;
     var maxUploadBytes = 10 * 1024 * 1024;
+    var autoCompressThresholdBytes = 5 * 1024 * 1024;
+    var compressTargetBytes = 3 * 1024 * 1024;
+    var aggressiveImageTargetBytes = 1200 * 1024;
+    var isSubmitting = false;
+
+    function getFileExtension(fileName) {
+        var name = String(fileName || '').trim();
+        var dotIndex = name.lastIndexOf('.');
+        if (dotIndex < 0) {
+            return '';
+        }
+
+        return name.substring(dotIndex + 1).toLowerCase();
+    }
+
+    function canAutoCompress(ext) {
+        return ['jpg', 'jpeg', 'png', 'pdf'].indexOf(ext) !== -1;
+    }
+
+    function setFileStatus(message, tone) {
+        if (!uploadFileStatusEl) {
+            return;
+        }
+
+        var classByTone = {
+            neutral: 'text-muted',
+            info: 'text-info',
+            success: 'text-success',
+            warning: 'text-warning',
+            danger: 'text-danger',
+        };
+
+        uploadFileStatusEl.textContent = String(message || 'Status file: belum dipilih.');
+        uploadFileStatusEl.className = 'small mt-2 ' + (classByTone[tone] || classByTone.neutral);
+    }
+
+    function refreshFileStatus() {
+        var selectedMethod = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
+        if (selectedMethod === 'drive') {
+            setFileStatus('Mode Link Google Drive aktif.', 'info');
+            return;
+        }
+
+        var currentFile = dokumenFileEl && dokumenFileEl.files && dokumenFileEl.files[0] ? dokumenFileEl.files[0] : null;
+        if (!currentFile) {
+            setFileStatus('Status file: belum dipilih.', 'neutral');
+            return;
+        }
+
+        var extension = getFileExtension(currentFile.name);
+        var summary = 'File: ' + currentFile.name + ' (' + formatBytes(currentFile.size) + ')';
+
+        if (currentFile.size > maxUploadBytes) {
+            setFileStatus(summary + ' • melebihi 10MB.', 'danger');
+            return;
+        }
+
+        if (extension === 'pdf') {
+            setFileStatus(summary + ' • PDF akan dicoba dioptimasi di browser sebelum upload Google Drive.', 'info');
+            return;
+        }
+
+        setFileStatus(summary + ' • siap upload.', 'success');
+    }
+
+    function formatBytes(bytes) {
+        var value = Number(bytes || 0);
+        if (value <= 0) {
+            return '0 KB';
+        }
+
+        if (value < 1024 * 1024) {
+            return Math.max(1, Math.round(value / 1024)) + ' KB';
+        }
+
+        return (value / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function formatCompressionSaving(originalBytes, finalBytes) {
+        var original = Number(originalBytes || 0);
+        var finalValue = Number(finalBytes || 0);
+        if (original <= 0 || finalValue < 0 || finalValue >= original) {
+            return '0%';
+        }
+
+        var percent = ((original - finalValue) / original) * 100;
+        return percent.toFixed(1) + '%';
+    }
+
+    function formatEtaSeconds(totalSeconds) {
+        var value = Math.max(0, Math.round(Number(totalSeconds) || 0));
+        var minutes = Math.floor(value / 60);
+        var seconds = value % 60;
+        if (minutes <= 0) {
+            return seconds + ' detik';
+        }
+
+        return minutes + ' menit ' + seconds + ' detik';
+    }
+
+    function replaceExtension(fileName, nextExt) {
+        var name = String(fileName || '').trim();
+        var ext = String(nextExt || '').replace(/^\./, '').toLowerCase();
+        if (!name) {
+            return 'file.' + (ext || 'bin');
+        }
+
+        var dotIndex = name.lastIndexOf('.');
+        if (dotIndex < 0) {
+            return name + '.' + (ext || 'bin');
+        }
+
+        return name.substring(0, dotIndex) + '.' + (ext || 'bin');
+    }
+
+    function switchToDriveMode() {
+        if (!uploadMethodEl) {
+            return;
+        }
+
+        uploadMethodEl.value = 'drive';
+        syncUploadMethodUI();
+        refreshFileStatus();
+        if (googleDriveLinkEl && typeof googleDriveLinkEl.focus === 'function') {
+            googleDriveLinkEl.focus();
+        }
+    }
+
+    function showCompressionProgress(stage, detail) {
+        if (!window.Swal || typeof window.Swal.update !== 'function') {
+            return;
+        }
+
+        var safeStage = String(stage || 'Sedang memproses...');
+        var safeDetail = String(detail || 'Mohon tunggu sebentar.');
+        var percent = arguments.length > 2 ? Number(arguments[2]) : null;
+        var hasPercent = Number.isFinite(percent);
+        var safePercent = hasPercent ? Math.max(0, Math.min(100, Math.round(percent))) : 0;
+        var progressHtml = hasPercent
+            ? '<div class="progress mt-2" style="height: 12px;"><div class="progress-bar" role="progressbar" style="width: ' + safePercent + '%;" aria-valuenow="' + safePercent + '" aria-valuemin="0" aria-valuemax="100">' + safePercent + '%</div></div>'
+            : '';
+        window.Swal.update({
+            title: 'Mengompres file...',
+            html: '<div class="text-left"><div class="font-weight-semibold">' + safeStage + '</div><div class="small text-muted mt-1">' + safeDetail + '</div>' + progressHtml + '</div>',
+        });
+    }
+
+    async function compressImageFile(file) {
+        if (!window.imageCompression || typeof window.imageCompression !== 'function') {
+            return file;
+        }
+
+        var originalExt = getFileExtension(file.name);
+        var originalType = String(file.type || '').toLowerCase();
+        var isPng = originalExt === 'png' || originalType === 'image/png';
+        var forceJpeg = isPng && file.size > (8 * 1024 * 1024);
+        var preferredType = forceJpeg ? 'image/jpeg' : (file.type || undefined);
+        var targetBytes = file.size > maxUploadBytes ? aggressiveImageTargetBytes : compressTargetBytes;
+
+        var passes = [
+            { maxSizeMB: Math.max(0.6, (targetBytes * 1.7) / (1024 * 1024)), maxWidthOrHeight: 2200, initialQuality: 0.76 },
+            { maxSizeMB: Math.max(0.5, (targetBytes * 1.25) / (1024 * 1024)), maxWidthOrHeight: 1700, initialQuality: 0.62 },
+            { maxSizeMB: Math.max(0.4, (targetBytes * 1.0) / (1024 * 1024)), maxWidthOrHeight: 1400, initialQuality: 0.50 },
+            { maxSizeMB: Math.max(0.35, (targetBytes * 0.8) / (1024 * 1024)), maxWidthOrHeight: 1100, initialQuality: 0.40 },
+        ];
+
+        var current = file;
+        var currentName = forceJpeg ? replaceExtension(file.name, 'jpg') : file.name;
+        var processStartedAt = Date.now();
+        for (let passIndex = 0; passIndex < passes.length; passIndex += 1) {
+            var pass = passes[passIndex];
+
+            try {
+                var compressed = await window.imageCompression(current, {
+                    maxSizeMB: pass.maxSizeMB,
+                    maxWidthOrHeight: pass.maxWidthOrHeight,
+                    useWebWorker: true,
+                    initialQuality: pass.initialQuality,
+                    fileType: preferredType,
+                    onProgress: function (percent) {
+                        var safePercent = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+                        var overallPercent = ((passIndex + (safePercent / 100)) / passes.length) * 100;
+                        var elapsedSeconds = (Date.now() - processStartedAt) / 1000;
+                        var etaSeconds = overallPercent > 0 ? (elapsedSeconds * (100 - overallPercent)) / overallPercent : 0;
+                        var detailText = 'Proses kompresi gambar sedang berjalan.';
+                        if (overallPercent > 2 && Number.isFinite(etaSeconds)) {
+                            detailText += ' Estimasi sisa: ' + formatEtaSeconds(etaSeconds) + '.';
+                        }
+
+                        showCompressionProgress(
+                            'Kompresi gambar tahap ' + (passIndex + 1) + '/' + passes.length,
+                            detailText,
+                            overallPercent
+                        );
+                    },
+                });
+
+                if (compressed && compressed.size && compressed.size < current.size) {
+                    current = new File([compressed], currentName, {
+                        type: compressed.type || current.type || 'application/octet-stream',
+                        lastModified: Date.now(),
+                    });
+                }
+
+                if (current.size <= targetBytes) {
+                    break;
+                }
+            } catch (error) {
+                break;
+            }
+        }
+
+        return current.size < file.size ? current : file;
+    }
+
+    async function optimizePdfFile(file) {
+        if (!window.PDFLib || !window.PDFLib.PDFDocument) {
+            return file;
+        }
+
+        try {
+            showCompressionProgress('Mengoptimasi PDF', 'Menganalisis struktur dokumen...', 15);
+            var arrayBuffer = await file.arrayBuffer();
+            var sourceDoc = await window.PDFLib.PDFDocument.load(arrayBuffer, { updateMetadata: false });
+
+            showCompressionProgress('Mengoptimasi PDF', 'Membangun ulang halaman PDF...', 45);
+            var rebuiltDoc = await window.PDFLib.PDFDocument.create();
+
+            try {
+                if (sourceDoc.getForm) {
+                    var form = sourceDoc.getForm();
+                    if (form) {
+                        form.flatten();
+                    }
+                }
+            } catch (formError) {
+                // Abaikan jika PDF tidak memiliki form atau flatten gagal.
+            }
+
+            var pageIndices = sourceDoc.getPageIndices();
+            var copiedPages = await rebuiltDoc.copyPages(sourceDoc, pageIndices);
+            copiedPages.forEach(function (page) {
+                rebuiltDoc.addPage(page);
+            });
+
+            showCompressionProgress('Mengoptimasi PDF', 'Menyimpan ulang PDF dengan struktur yang lebih efisien...', 80);
+            var optimizedBytes = await rebuiltDoc.save({
+                useObjectStreams: true,
+                addDefaultPage: false,
+                updateFieldAppearances: false,
+            });
+            showCompressionProgress('Mengoptimasi PDF', 'Finalisasi hasil kompresi PDF...', 100);
+
+            if (!optimizedBytes || optimizedBytes.length >= file.size) {
+                return file;
+            }
+
+            return new File([optimizedBytes], file.name, {
+                type: 'application/pdf',
+                lastModified: Date.now(),
+            });
+        } catch (error) {
+            return file;
+        }
+    }
+
+    async function maybeCompressUploadFile(file) {
+        if (!file || !file.size || file.size <= autoCompressThresholdBytes) {
+            return { file: file, compressed: false, skipped: true, ext: '' };
+        }
+
+        var ext = getFileExtension(file.name);
+        if (!canAutoCompress(ext)) {
+            return { file: file, compressed: false, skipped: true, ext: ext };
+        }
+
+        var resultFile = file;
+        if (ext === 'pdf') {
+            resultFile = await optimizePdfFile(file);
+        } else {
+            resultFile = await compressImageFile(file);
+        }
+
+        var compressed = !!(resultFile && resultFile.size && resultFile.size < file.size);
+        return {
+            file: resultFile || file,
+            compressed: compressed,
+            skipped: false,
+            ext: ext,
+        };
+    }
+
+    function replaceSelectedFile(file) {
+        if (!dokumenFileEl || !file || typeof DataTransfer === 'undefined') {
+            return false;
+        }
+
+        var dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        dokumenFileEl.files = dataTransfer.files;
+        return true;
+    }
+
+    function extractDriveFolderIdFromUrl(url) {
+        var value = String(url || '').trim();
+        if (!value) {
+            return '';
+        }
+
+        var folderMatch = value.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+        if (folderMatch && folderMatch[1]) {
+            return String(folderMatch[1]).trim();
+        }
+
+        try {
+            var parsed = new URL(value);
+            var queryId = String(parsed.searchParams.get('id') || '').trim();
+            if (/^[a-zA-Z0-9_-]+$/.test(queryId)) {
+                return queryId;
+            }
+        } catch (error) {
+            return '';
+        }
+
+        return '';
+    }
+
+    function resolveDriveUploadFolderId() {
+        var directId = String(googleDriveUploadFolderId || '').trim();
+        if (directId) {
+            return directId;
+        }
+
+        return extractDriveFolderIdFromUrl(googleDriveUploadFolderUrl);
+    }
+
+    async function uploadFileDirectToGoogleDrive(file, accessToken, folderId) {
+        var metadata = {
+            name: String(file && file.name ? file.name : 'dokumen'),
+            parents: [String(folderId || '').trim()],
+        };
+
+        var formData = new FormData();
+        formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        formData.append('file', file);
+
+        var endpoint = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink,webContentLink';
+        var response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                Authorization: 'Bearer ' + accessToken,
+            },
+            body: formData,
+        });
+
+        var payload = null;
+        try {
+            payload = await response.json();
+        } catch (error) {
+            payload = null;
+        }
+
+        if (!response.ok) {
+            var rawMessage = payload && payload.error && payload.error.message ? String(payload.error.message) : 'Upload ke Google Drive gagal.';
+            throw new Error(rawMessage);
+        }
+
+        var fileId = payload && payload.id ? String(payload.id).trim() : '';
+        var webViewLink = payload && payload.webViewLink ? String(payload.webViewLink).trim() : '';
+        var finalLink = webViewLink || (fileId ? ('https://drive.google.com/file/d/' + fileId + '/view') : '');
+
+        if (!finalLink) {
+            throw new Error('Google Drive tidak mengembalikan link file.');
+        }
+
+        return {
+            id: fileId,
+            link: finalLink,
+            name: payload && payload.name ? String(payload.name) : '',
+        };
+    }
 
     function isAllowedGoogleDriveUrl(url) {
         var value = String(url || '').trim();
@@ -644,6 +1039,7 @@
             uploadMethodEl.value = 'file';
         }
         syncUploadMethodUI();
+        refreshFileStatus();
     }
 
     function syncUploadMethodUI() {
@@ -663,6 +1059,8 @@
         if (!useDrive && googleDriveLinkEl) {
             googleDriveLinkEl.value = '';
         }
+
+        refreshFileStatus();
     }
 
     function getUploadContextFromButton(button) {
@@ -842,7 +1240,7 @@
 
         googleTokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: googleClientId,
-            scope: 'openid email profile',
+            scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
             callback: handleGoogleTokenResponse,
         });
 
@@ -917,7 +1315,17 @@
             syncUploadMethodUI();
         }
 
-        uploadForm.addEventListener('submit', function (event) {
+        if (dokumenFileEl) {
+            dokumenFileEl.addEventListener('change', refreshFileStatus);
+        }
+
+        uploadForm.addEventListener('submit', async function (event) {
+            if (isSubmitting) {
+                return;
+            }
+
+            var selectedMethod = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
+
             if (!googleAccessTokenEl || !googleAccessTokenEl.value) {
                 event.preventDefault();
                 if (window.Swal) {
@@ -929,11 +1337,22 @@
                 }
                 return;
             }
-
-            var selectedMethod = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
             var hasFile = !!(dokumenFileEl && dokumenFileEl.files && dokumenFileEl.files.length > 0);
             var driveLink = String(googleDriveLinkEl && googleDriveLinkEl.value ? googleDriveLinkEl.value : '').trim();
             var hasDriveLink = driveLink !== '';
+            var rowNoValue = parseInt(String(rowNoEl && rowNoEl.value ? rowNoEl.value : '0').trim(), 10) || 0;
+
+            if (rowNoValue <= 0) {
+                event.preventDefault();
+                if (window.Swal) {
+                    window.Swal.fire({
+                        icon: 'warning',
+                        title: 'Baris belum dipilih',
+                        text: 'Silakan tutup dialog, lalu klik tombol Upload pada baris dokumen yang ingin dikirim.',
+                    });
+                }
+                return;
+            }
 
             if (selectedMethod === 'drive' && !hasDriveLink) {
                 event.preventDefault();
@@ -959,16 +1378,163 @@
                 return;
             }
 
-            if (selectedMethod !== 'drive' && hasFile && dokumenFileEl && dokumenFileEl.files[0] && dokumenFileEl.files[0].size > maxUploadBytes) {
+            if (selectedMethod !== 'drive' && hasFile && dokumenFileEl && dokumenFileEl.files[0]) {
                 event.preventDefault();
-                if (window.Swal) {
+                var sourceFile = dokumenFileEl.files[0];
+                var sourceExt = getFileExtension(sourceFile.name);
+                var shouldCompress = sourceFile.size > autoCompressThresholdBytes && canAutoCompress(sourceExt);
+                var finalFile = sourceFile;
+
+                if (shouldCompress) {
+                    setFileStatus('Sedang kompresi di browser...', 'info');
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        window.Swal.fire({
+                            title: 'Mengompres file...',
+                                                        html: '<div class="text-left"><div class="font-weight-semibold">Menyiapkan kompresi...</div><div class="small text-muted mt-1">File lebih dari 5MB, sistem sedang mencoba mengecilkan ukuran sebelum upload.</div><div class="progress mt-2" style="height: 12px;"><div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div></div></div>',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: function () {
+                                window.Swal.showLoading();
+                            }
+                        });
+                    }
+
+                    var compressionResult = await maybeCompressUploadFile(sourceFile);
+                    finalFile = compressionResult.file || sourceFile;
+
+                    if (compressionResult.compressed) {
+                        replaceSelectedFile(finalFile);
+                        setFileStatus('Kompresi selesai: ' + formatBytes(sourceFile.size) + ' → ' + formatBytes(finalFile.size), 'success');
+                    }
+
+                    if (finalFile.size > maxUploadBytes) {
+                        if (window.Swal) {
+                            var oversizeResult = await window.Swal.fire({
+                                icon: 'warning',
+                                title: 'Ukuran file melebihi batas',
+                                html: '<div class="text-left">Setelah kompresi, ukuran file masih di atas 10MB.<br><span class="small text-muted">Ukuran saat ini: ' + formatBytes(finalFile.size) + '</span></div>',
+                                showCancelButton: true,
+                                confirmButtonText: 'Gunakan Link Google Drive',
+                                cancelButtonText: 'Tutup',
+                            });
+
+                            if (oversizeResult && oversizeResult.isConfirmed) {
+                                switchToDriveMode();
+                            }
+                        }
+                        setFileStatus('Hasil kompres masih >10MB. Gunakan Link Google Drive.', 'warning');
+                        return;
+                    }
+
+                    if (window.Swal) {
+                        if (compressionResult.compressed) {
+                            var savingPercent = formatCompressionSaving(sourceFile.size, finalFile.size);
+                            var savingPercentValue = sourceFile.size > 0 ? ((sourceFile.size - finalFile.size) / sourceFile.size) * 100 : 0;
+                            var isPdfFile = sourceExt === 'pdf';
+                            var pdfHintHtml = '';
+                            if (isPdfFile && savingPercentValue < 10) {
+                                pdfHintHtml = '<br><span class="small text-warning">Catatan: PDF sering sulit dikompres signifikan di browser. Jika file masih besar, lebih efektif pakai Link Google Drive.</span>';
+                            }
+                            await window.Swal.fire({
+                                icon: 'success',
+                                title: 'Kompresi berhasil',
+                                html: '<div class="text-left">Ukuran file: ' + formatBytes(sourceFile.size) + ' → ' + formatBytes(finalFile.size) + '<br><span class="small text-muted">Hemat ukuran: ' + savingPercent + '</span>' + pdfHintHtml + '</div>',
+                                timer: 1800,
+                                showConfirmButton: false,
+                            });
+                        } else {
+                            setFileStatus('Kompresi tidak mengubah ukuran file.', 'warning');
+                            await window.Swal.fire({
+                                icon: 'info',
+                                title: 'Kompresi tidak mengubah ukuran',
+                                text: 'File tetap diupload dengan ukuran asli: ' + formatBytes(sourceFile.size),
+                                timer: 1700,
+                                showConfirmButton: false,
+                            });
+                        }
+                    }
+                }
+
+                if (!shouldCompress && sourceFile.size > maxUploadBytes) {
+                    setFileStatus('Ukuran file >10MB dan tidak bisa dikompres otomatis.', 'danger');
+                    if (window.Swal) {
+                        var noCompressOversizeResult = await window.Swal.fire({
+                            icon: 'warning',
+                            title: 'Ukuran file melebihi batas',
+                            html: '<div class="text-left">File ini tidak bisa dikompres otomatis dan ukurannya di atas 10MB.<br><span class="small text-muted">Gunakan link Google Drive atau kecilkan file terlebih dahulu.</span></div>',
+                            showCancelButton: true,
+                            confirmButtonText: 'Gunakan Link Google Drive',
+                            cancelButtonText: 'Tutup',
+                        });
+                        if (noCompressOversizeResult && noCompressOversizeResult.isConfirmed) {
+                            switchToDriveMode();
+                        }
+                    }
+                    return;
+                }
+
+                var uploadFolderId = resolveDriveUploadFolderId();
+                if (!uploadFolderId) {
+                    if (window.Swal) {
+                        await window.Swal.fire({
+                            icon: 'error',
+                            title: 'Folder Google Drive belum dikonfigurasi',
+                            text: 'Isi GOOGLE_DRIVE_UPLOAD_FOLDER_URL atau GOOGLE_DRIVE_UPLOAD_FOLDER_ID di env.',
+                        });
+                    }
+                    setFileStatus('Folder Google Drive belum dikonfigurasi.', 'danger');
+                    return;
+                }
+
+                if (window.Swal && typeof window.Swal.fire === 'function') {
                     window.Swal.fire({
-                        icon: 'warning',
-                        title: 'Ukuran file melebihi batas',
-                        text: 'Ukuran file maksimal 10MB.',
+                        title: 'Mengunggah ke Google Drive...',
+                        text: 'Mohon tunggu sebentar',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: function () {
+                            window.Swal.showLoading();
+                        }
                     });
                 }
-                return;
+
+                try {
+                    var uploadResult = await uploadFileDirectToGoogleDrive(finalFile, googleAccessTokenEl.value, uploadFolderId);
+                    if (googleDriveLinkEl) {
+                        googleDriveLinkEl.value = uploadResult.link;
+                    }
+                    if (uploadMethodEl) {
+                        uploadMethodEl.value = 'drive';
+                        syncUploadMethodUI();
+                    }
+                    if (dokumenFileEl) {
+                        dokumenFileEl.value = '';
+                    }
+
+                    setFileStatus('Upload ke Google Drive berhasil. Link siap dikirim.', 'success');
+                    if (window.Swal) {
+                        await window.Swal.fire({
+                            icon: 'success',
+                            title: 'Upload ke Google Drive berhasil',
+                            timer: 1400,
+                            showConfirmButton: false,
+                        });
+                    }
+
+                    isSubmitting = true;
+                    uploadForm.submit();
+                    return;
+                } catch (driveUploadError) {
+                    if (window.Swal) {
+                        await window.Swal.fire({
+                            icon: 'error',
+                            title: 'Upload Google Drive gagal',
+                            text: driveUploadError && driveUploadError.message ? driveUploadError.message : 'Terjadi kesalahan saat upload ke Google Drive.',
+                        });
+                    }
+                    setFileStatus('Upload ke Google Drive gagal.', 'danger');
+                    return;
+                }
             }
 
             if (selectedMethod === 'drive' && !isAllowedGoogleDriveUrl(driveLink)) {
@@ -994,9 +1560,12 @@
                     }
                 });
             }
+
+            isSubmitting = true;
         });
 
         updateUploadLockState();
+        refreshFileStatus();
         if (googleClientId) {
             if (window.google && window.google.accounts && window.google.accounts.id) {
                 initGoogleSignIn();
