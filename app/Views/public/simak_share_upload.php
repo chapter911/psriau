@@ -57,28 +57,202 @@
         <link rel="apple-touch-icon" href="<?= esc($globalSetting['logo_url']); ?>">
     <?php endif; ?>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
     <style>
         body {
-            background: linear-gradient(180deg, #eef3f8 0%, #f8fbff 100%);
-            color: #1f2a37;
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 34%),
+                radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 30%),
+                linear-gradient(180deg, #eaf2fb 0%, #f7fbff 55%, #ffffff 100%);
+            color: #1f2937;
+            min-height: 100vh;
         }
 
         .share-wrapper {
-            max-width: 1200px;
-            margin: 24px auto;
-            padding: 0 12px;
+            max-width: 1520px;
+            margin: 28px auto 40px;
+            padding: 0 18px;
+        }
+
+        .share-hero {
+            position: relative;
+            overflow: hidden;
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 18px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 52%, #0ea5e9 100%);
+            color: #fff;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+        }
+
+        .share-hero::before,
+        .share-hero::after {
+            content: '';
+            position: absolute;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            pointer-events: none;
+        }
+
+        .share-hero::before {
+            width: 180px;
+            height: 180px;
+            top: -60px;
+            right: -20px;
+        }
+
+        .share-hero::after {
+            width: 120px;
+            height: 120px;
+            bottom: -40px;
+            left: 18%;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .share-hero-inner {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.9fr);
+            gap: 18px;
+            align-items: center;
+        }
+
+        .share-hero-title {
+            font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin: 0 0 10px;
+            letter-spacing: -0.03em;
+        }
+
+        .share-hero-subtitle {
+            max-width: 58ch;
+            margin: 0;
+            color: rgba(255, 255, 255, 0.84);
+            font-size: 0.98rem;
+        }
+
+        .share-meta-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .share-meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            font-size: 0.88rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+        }
+
+        .share-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .share-brand-logo {
+            width: 62px;
+            height: 62px;
+            object-fit: contain;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.14);
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
         }
 
         .share-card {
             background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
-            border: 1px solid #e5eaf1;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+        }
+
+        .share-surface {
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.10);
+        }
+
+        .share-intro-card {
+            margin-bottom: 18px;
+            padding: 18px 20px;
+        }
+
+        .share-intro-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 6px 12px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .share-intro-title {
+            margin: 12px 0 6px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .share-intro-text {
+            margin: 0;
+            color: #475569;
+            line-height: 1.7;
         }
 
         .table th,
         .table td {
             vertical-align: middle;
+        }
+
+        .share-tabs-wrap {
+            margin-top: 8px;
+        }
+
+        .nav-tabs {
+            border-bottom: 0;
+            gap: 8px;
+        }
+
+        .nav-tabs .nav-link {
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #334155;
+            font-weight: 700;
+            padding: 10px 16px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .share-table-shell {
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
         }
 
         .table-share-simak thead th {
@@ -87,8 +261,12 @@
             position: sticky;
             top: 0;
             z-index: 5;
-            background-color: #343a40;
-            border-color: #454d55;
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.08);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .table-share-simak .cell-center {
@@ -96,7 +274,7 @@
         }
 
         .table-share-simak .row-group {
-            background-color: #f2f4f7;
+            background: linear-gradient(180deg, #f8fafc 0%, #edf4fb 100%);
         }
 
         .table-share-simak .cell-hierarchy-no,
@@ -113,113 +291,95 @@
             font-weight: 500;
         }
 
-        .doc-meta {
-            font-size: 12px;
-            color: #6b7280;
+        .table-share-simak tbody tr {
+            transition: background-color 0.15s ease, transform 0.15s ease;
         }
 
-        .badge-kel-ada {
-            background: #198754;
-            color: #fff;
+        .table-share-simak tbody tr:hover {
+            background: #f8fbff;
         }
 
-        .badge-kel-tidak {
-            background: #dc3545;
-            color: #fff;
+        .table-share-simak tbody td {
+            border-color: #e5edf6;
         }
 
-        .cell-belum-sesuai {
-            background-color: #fff3cd;
+        .table-share-simak .badge {
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.74rem;
+            letter-spacing: 0.02em;
         }
 
-        .share-upload-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+        .badge-kel-ada,
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
         }
 
-        .share-upload-row .share-upload-item {
-            margin: 0;
+        .badge-kel-tidak,
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
         }
 
-        .table-share-wrap {
-            max-height: 72vh;
-            overflow: auto;
+        .share-kelengkapan-card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.96));
+            border-radius: 18px;
+            padding: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+            position: relative;
+            overflow: hidden;
         }
 
-        .share-brand {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .share-brand-logo {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
-            border-radius: 8px;
-            background: #fff;
-            border: 1px solid #d8dee4;
-            padding: 5px;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-        }
-
-        .share-brand-text {
-            display: flex;
-            flex-direction: column;
+        .share-kelengkapan-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.3), transparent 30%);
+            pointer-events: none;
         }
 
         .share-brand-name {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #1f2a37;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #fff;
             margin: 0;
         }
 
         .share-brand-sub {
             font-size: 0.85rem;
-            color: #6b7280;
+            color: rgba(255, 255, 255, 0.78);
             margin: 0;
         }
 
         .share-kelengkapan-summary {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .share-kelengkapan-card {
-            background: #fff;
-            border-radius: 8px;
-            padding: 14px;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
         }
 
         .share-kelengkapan-card.lengkap {
-            border-left: 4px solid #198754;
+            border-top: 4px solid #16a34a;
         }
 
         .share-kelengkapan-card.belum-sesuai {
-            border-left: 4px solid #ffc107;
+            border-top: 4px solid #f59e0b;
         }
 
         .share-kelengkapan-card.menunggu-verifikasi {
-            border-left: 4px solid #0dcaf0;
+            border-top: 4px solid #06b6d4;
         }
 
         .share-kelengkapan-card.belum-ada {
-            border-left: 4px solid #dc3545;
+            border-top: 4px solid #ef4444;
         }
 
         .share-kelengkapan-label {
             font-size: 0.8rem;
-            color: #6b7280;
-            font-weight: 600;
+            color: #64748b;
+            font-weight: 800;
             margin-bottom: 6px;
             text-transform: uppercase;
             letter-spacing: 0.4px;
@@ -227,99 +387,180 @@
 
         .share-kelengkapan-value {
             font-size: 1.5rem;
-            font-weight: 700;
-            color: #1f2937;
+            font-weight: 900;
+            color: #0f172a;
         }
-            .share-kelengkapan-count {
-                font-size: 0.75rem;
-                color: #9ca3af;
-                font-weight: 500;
+
+        .share-kelengkapan-count {
+            font-size: 0.76rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .google-auth-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid #dbe4ef;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        }
+
+        .google-auth-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .google-auth-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: #eef6ff;
+            color: #1d4ed8;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .google-auth-pill strong {
+            color: #0f172a;
+        }
+
+        .google-auth-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .google-login-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #d1d5db;
+            background: #fff;
+            color: #1f2937;
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        .google-login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+            border-color: #94a3b8;
+        }
+
+        .google-login-btn svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+
+        .upload-lock-overlay {
+            border: 1px dashed #f59e0b;
+            background: #fffaf0;
+            color: #92400e;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+        }
+
+        .alert {
+            border-radius: 14px;
+            border-width: 1px;
+        }
+
+        .tab-content.bg-white {
+            background: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .table-share-wrap {
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .table-share-simak tbody tr.row-leaf:nth-child(even) {
+            background-color: #fbfdff;
+        }
+
+        .table-share-simak tbody tr.row-group td {
+            background: #f1f5f9;
+        }
+
+        .btn {
+            border-radius: 10px;
+        }
+
+        .modal-content {
+            border: 0;
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+        }
+
+        .modal-header,
+        .modal-footer {
+            border-color: rgba(148, 163, 184, 0.15);
+        }
+
+        @media (max-width: 991.98px) {
+            .share-hero-inner {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .share-wrapper {
+                padding: 0 10px;
             }
 
-            .google-auth-card {
-                background: #fff;
-                border: 1px solid #dbe4ef;
-                border-radius: 12px;
-                padding: 16px;
-                margin-bottom: 16px;
+            .share-hero {
+                padding: 18px;
+                border-radius: 20px;
             }
 
-            .google-auth-status {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                flex-wrap: wrap;
-                margin-top: 10px;
+            .share-card,
+            .google-auth-card,
+            .share-intro-card {
+                border-radius: 16px;
             }
-
-            .google-auth-pill {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                padding: 7px 12px;
-                border-radius: 999px;
-                background: #eef6ff;
-                color: #1d4ed8;
-                font-size: 0.88rem;
-                font-weight: 600;
-            }
-
-            .google-auth-pill strong {
-                color: #0f172a;
-            }
-
-            .google-auth-actions {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                align-items: center;
-            }
-
-            .google-login-btn {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                border: 1px solid #d1d5db;
-                background: #fff;
-                color: #1f2937;
-                border-radius: 999px;
-                padding: 10px 16px;
-                font-weight: 700;
-                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-                transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-            }
-
-            .google-login-btn:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
-                border-color: #94a3b8;
-            }
-
-            .google-login-btn svg {
-                width: 18px;
-                height: 18px;
-                display: block;
-            }
-
-            .upload-lock-overlay {
-                border: 1px dashed #f59e0b;
-                background: #fffaf0;
-                color: #92400e;
-                border-radius: 10px;
-                padding: 12px 14px;
-                margin-bottom: 12px;
-            }
+        }
     </style>
 </head>
 <body>
 <div class="share-wrapper">
-    <div class="share-brand">
-        <?php if (! empty($globalSetting['logo_url'] ?? '')): ?>
-            <img src="<?= esc($globalSetting['logo_url']); ?>" alt="Logo" class="share-brand-logo">
-        <?php endif; ?>
-        <div class="share-brand-text">
-            <p class="share-brand-name"><?= esc((string) ($globalSetting['official_name'] ?? 'Satker PPS Kementerian PU')); ?></p>
-            <p class="share-brand-sub">Upload Dokumen SIMAK</p>
+    <div class="share-hero">
+        <div class="share-hero-inner">
+            <div>
+                <div class="share-brand">
+                    <?php if (! empty($globalSetting['logo_url'] ?? '')): ?>
+                        <img src="<?= esc($globalSetting['logo_url']); ?>" alt="Logo" class="share-brand-logo">
+                    <?php endif; ?>
+                    <div class="share-brand-text">
+                        <p class="share-brand-name"><?= esc((string) ($globalSetting['official_name'] ?? 'Satker PPS Kementerian PU')); ?></p>
+                        <p class="share-brand-sub">Upload Dokumen SIMAK</p>
+                    </div>
+                </div>
+                <h1 class="share-hero-title">Portal upload dokumen yang cepat, jelas, dan aman.</h1>
+                <p class="share-hero-subtitle">Gunakan halaman ini untuk mengunggah dokumen verifikasi SIMAK. Dokumen yang bisa dilihat langsung akan tampil sebagai preview, sementara file besar diarahkan ke Google Drive agar proses tetap stabil.</p>
+                <div class="share-meta-list">
+                    <span class="share-meta-item"><i class="fas fa-lock"></i> Akses publik via tautan</span>
+                    <span class="share-meta-item"><i class="fas fa-file-alt"></i> Preview dokumen otomatis</span>
+                    <span class="share-meta-item"><i class="fas fa-cloud-upload-alt"></i> File besar pakai Google Drive</span>
+                </div>
+            </div>
+            <div class="share-card share-surface share-intro-card">
+                <span class="share-intro-label">Ringkas</span>
+                <div class="share-intro-title"><?= esc((string) ($item['nama_paket'] ?? '-')); ?></div>
+                <p class="share-intro-text mb-2">Nomor kontrak: <?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?></p>
+                <p class="share-intro-text">Tahun anggaran: <?= esc((string) ($item['tahun_anggaran'] ?? '-')); ?></p>
+            </div>
         </div>
     </div>
 
@@ -346,19 +587,11 @@
         </div>
     </div>
 
-    <div class="share-card p-3 p-md-4 mb-3">
-        <h5 class="mb-1"><?= esc((string) ($item['nama_paket'] ?? '-')); ?></h5>
-        <div class="text-muted mb-0">
-            Nomor Kontrak: <?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?>
-            · Tahun Anggaran: <?= esc((string) ($item['tahun_anggaran'] ?? '-')); ?>
-        </div>
-    </div>
-
     <div class="google-auth-card">
         <div class="d-flex align-items-start justify-content-between flex-wrap" style="gap: 12px;">
             <div>
                 <h5 class="mb-1">Login Google terlebih dahulu</h5>
-                <p class="text-muted mb-0">Login dibuka sebagai popup dan identitas Google akan dipakai untuk mencatat siapa yang mengupload dokumen.</p>
+                <p class="text-muted mb-0">Login dibuka sebagai popup dan identitas Google akan dipakai untuk mencatat siapa yang mengupload dokumen.<?php if (! empty($ciEnvironment) && strtolower((string) $ciEnvironment) === 'development'): ?><br><span class="badge badge-warning mt-2" style="display: inline-block;">DEVELOPMENT MODE - Login dilewati</span><?php endif; ?></p>
             </div>
             <div class="google-auth-actions">
                 <button type="button" class="google-login-btn" id="googlePopupLoginBtn">
@@ -413,9 +646,10 @@
             <?php $tabIndex++; endforeach; ?>
         </ul>
 
-        <div class="tab-content bg-white border border-top-0 p-3">
+        <div class="tab-content bg-white border border-top-0 p-3 share-tabs-wrap">
             <?php $tabIndex = 0; foreach ($sections as $sectionKey => $section): ?>
                 <div class="tab-pane fade <?= $tabIndex === 0 ? 'show active' : ''; ?>" id="share-panel-<?= esc($sectionKey); ?>" role="tabpanel">
+                    <div class="share-table-shell">
                     <div class="table-responsive table-share-wrap">
                         <table class="table table-bordered table-sm mb-0 table-share-simak">
                             <thead class="thead-dark">
@@ -485,12 +719,32 @@
                                                     $latestPath = trim((string) ($latestDokumen['file_relative_path'] ?? ''));
                                                     $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
                                                     $isDriveLink = in_array($latestHost, ['drive.google.com', 'docs.google.com'], true);
-                                                    $dokumenActionLabel = $isDriveLink ? 'Buka Link' : 'Lihat Dokumen';
+                                                        $latestMime = strtolower(trim((string) ($latestDokumen['file_mime'] ?? '')));
+                                                        $latestName = (string) ($latestDokumen['file_original_name'] ?? 'dokumen');
+                                                        $latestExt = strtolower((string) pathinfo($latestName, PATHINFO_EXTENSION));
+                                                        $isPreviewableDokumen = ! $isDriveLink && (
+                                                            ($latestMime !== '' && (str_starts_with($latestMime, 'image/') || $latestMime === 'application/pdf'))
+                                                            || in_array($latestExt, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'pdf'], true)
+                                                        );
+                                                        $dokumenActionLabel = $isDriveLink ? 'Buka Link' : ($isPreviewableDokumen ? 'Lihat Dokumen' : 'Download Dokumen');
                                                 ?>
                                                 <div>
-                                                    <a href="<?= site_url('simak/share/' . (string) ($token ?? '') . '/download-dokumen/' . (int) ($latestDokumen['id'] ?? 0)); ?>" class="btn btn-success btn-sm">
-                                                        <i class="fas <?= $isDriveLink ? 'fa-external-link-alt' : 'fa-download'; ?>"></i> <?= esc($dokumenActionLabel); ?>
-                                                    </a>
+                                                        <?php if ($isDriveLink): ?>
+                                                            <a href="<?= esc($latestPath); ?>" class="btn btn-success btn-sm" target="_blank" rel="noopener noreferrer">
+                                                                <i class="fas fa-external-link-alt"></i> <?= esc($dokumenActionLabel); ?>
+                                                            </a>
+                                                        <?php else: ?>
+                                                            <a
+                                                                href="<?= site_url('simak/share/' . (string) ($token ?? '') . '/download-dokumen/' . (int) ($latestDokumen['id'] ?? 0)); ?>"
+                                                                class="btn btn-success btn-sm js-open-dokumen"
+                                                                data-dokumen-url="<?= site_url('simak/share/' . (string) ($token ?? '') . '/download-dokumen/' . (int) ($latestDokumen['id'] ?? 0)); ?>"
+                                                                data-dokumen-name="<?= esc($latestName); ?>"
+                                                                data-dokumen-mime="<?= esc($latestMime); ?>"
+                                                                data-dokumen-previewable="<?= $isPreviewableDokumen ? '1' : '0'; ?>"
+                                                            >
+                                                                <i class="fas <?= $isPreviewableDokumen ? 'fa-eye' : 'fa-download'; ?>"></i> <?= esc($dokumenActionLabel); ?>
+                                                            </a>
+                                                        <?php endif; ?>
                                                 </div>
                                                 <small class="text-muted" style="display: block; margin-top: 4px;">Di Upload Tanggal<br/><?= esc($uploadDate); ?></small>
                                             <?php else: ?>
@@ -521,6 +775,7 @@
                             </tbody>
                         </table>
                     </div>
+                    </div>
                 </div>
             <?php $tabIndex++; endforeach; ?>
         </div>
@@ -545,7 +800,7 @@
                 <input type="hidden" name="uploader_sub" id="uploader_sub" value="">
                 <div class="modal-body">
                     <div class="upload-lock-overlay" id="uploadGoogleLock">
-                        Login Google terlebih dahulu untuk mengaktifkan upload.
+                        Login Google terlebih dahulu untuk mengaktifkan upload file lokal atau link Google Drive.
                     </div>
                     <div class="alert alert-light border py-2">
                         <div><strong>No:</strong> <span id="upload_row_label_modal">-</span></div>
@@ -563,18 +818,18 @@
                     <div class="form-group mb-3" id="uploadFileGroup">
                         <label for="dokumen_file_modal">File Dokumen</label>
                         <input type="file" id="dokumen_file_modal" name="dokumen_file" class="form-control-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip">
-                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP. Maksimal 10MB. File akan diupload langsung ke folder Google Drive dari env. File gambar/PDF di atas 5MB akan dicoba dikompres otomatis (target sekitar 3MB) di browser sebelum upload.</small>
+                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP. Maksimal 5MB. Untuk file di atas 5MB, gunakan link Google Drive.</small>
                         <div id="upload_file_status" class="small mt-2 text-muted">Status file: belum dipilih.</div>
                     </div>
 
-                    <div class="form-group mb-0 d-none" id="uploadDriveGroup">
-                        <label for="google_drive_link">Link Google Drive (alternatif)</label>
-                        <input type="url" id="google_drive_link" name="google_drive_link" class="form-control" placeholder="https://drive.google.com/... atau https://docs.google.com/...">
-                        <small class="text-muted">Gunakan link dari drive.google.com atau docs.google.com.</small>
+                    <div class="form-group mb-3 d-none" id="uploadDriveGroup">
+                        <label for="google_drive_link_modal">Link Google Drive</label>
+                        <input type="url" id="google_drive_link_modal" name="google_drive_link" class="form-control" placeholder="https://drive.google.com/...">
+                        <small class="text-muted">Gunakan link file dari Google Drive atau Google Docs.</small>
                     </div>
                 </div>
-                <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">Upload</button>
                 </div>
             </form>
@@ -582,257 +837,93 @@
     </div>
 </div>
 
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<div class="modal fade" id="dokumenPreviewModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-0" id="dokumenPreviewTitle">Preview Dokumen</h5>
+                    <small class="text-muted" id="dokumenPreviewMeta">-</small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body bg-light">
+                <div id="dokumenPreviewBody" class="text-center"></div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <small class="text-muted">Gunakan tombol Download jika Anda ingin menyimpan file ke perangkat.</small>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                    <a href="#" class="btn btn-primary" id="dokumenPreviewDownloadBtn" target="_blank" rel="noopener noreferrer">Download</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 (function () {
-    'use strict';
 
     var googleClientId = <?= json_encode((string) ($googleClientId ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var googleDriveUploadFolderId = <?= json_encode((string) ($googleDriveUploadFolderId ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var googleDriveUploadFolderUrl = <?= json_encode((string) ($googleDriveUploadFolderUrl ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
-    var openButtons = document.querySelectorAll('.js-open-upload-modal');
-    var uploadForm = document.getElementById('form-upload-share-simak');
-    var rowNoEl = document.getElementById('upload_row_no_modal');
-    var rowLabelEl = document.getElementById('upload_row_label_modal');
-    var rowUraianEl = document.getElementById('upload_row_uraian_modal');
-    var uploadMethodEl = document.getElementById('upload_method');
-    var uploadFileGroupEl = document.getElementById('uploadFileGroup');
-    var uploadDriveGroupEl = document.getElementById('uploadDriveGroup');
-    var dokumenFileEl = document.getElementById('dokumen_file_modal');
-    var uploadFileStatusEl = document.getElementById('upload_file_status');
-    var googleDriveLinkEl = document.getElementById('google_drive_link');
-    var googleAccessTokenEl = document.getElementById('google_access_token');
-    var uploaderNameEl = document.getElementById('uploader_name');
-    var uploaderEmailEl = document.getElementById('uploader_email');
-    var uploaderSubEl = document.getElementById('uploader_sub');
-    var googlePopupLoginBtn = document.getElementById('googlePopupLoginBtn');
-    var googleSignOutButton = document.getElementById('googleSignOutButton');
-    var googleAuthUser = document.getElementById('googleAuthUser');
-    var googleAuthHint = document.getElementById('googleAuthHint');
-    var uploadGoogleLock = document.getElementById('uploadGoogleLock');
-    var uploadModalEl = document.getElementById('modal-upload-share-simak');
-    var uploadSubmitButton = uploadForm ? uploadForm.querySelector('button[type="submit"]') : null;
+    var ciEnvironment = <?= json_encode((string) ($ciEnvironment ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    var isDevMode = String(ciEnvironment || '').toLowerCase() === 'development';
     var googleProfile = null;
+    var googleStorageKey = 'simak-share-google-credential';
     var googleTokenClient = null;
-    var googleStorageKey = 'simak_share_google_credential_' + (window.location.pathname || 'share');
     var pendingUploadContext = null;
-    var maxUploadBytes = 10 * 1024 * 1024;
-    var autoCompressThresholdBytes = 5 * 1024 * 1024;
-    var compressTargetBytes = 3 * 1024 * 1024;
-    var aggressiveImageTargetBytes = 1200 * 1024;
     var isSubmitting = false;
+    var autoCompressThresholdBytes = 5 * 1024 * 1024;
+    var maxUploadBytes = 100 * 1024 * 1024;
+
+    function formatBytes(bytes) {
+        var size = Number(bytes || 0);
+        if (!Number.isFinite(size) || size <= 0) {
+            return '0 B';
+        }
+
+        var units = ['B', 'KB', 'MB', 'GB'];
+        var unitIndex = 0;
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size = size / 1024;
+            unitIndex++;
+        }
+
+        var precision = unitIndex === 0 ? 0 : 1;
+        return size.toFixed(precision) + ' ' + units[unitIndex];
+    }
 
     function getFileExtension(fileName) {
-        var name = String(fileName || '').trim();
-        var dotIndex = name.lastIndexOf('.');
-        if (dotIndex < 0) {
+        var value = String(fileName || '').trim().toLowerCase();
+        if (!value || value.indexOf('.') === -1) {
             return '';
         }
 
-        return name.substring(dotIndex + 1).toLowerCase();
+        return value.split('.').pop();
     }
 
     function canAutoCompress(ext) {
-        return ['jpg', 'jpeg', 'png', 'pdf'].indexOf(ext) !== -1;
+        return ['jpg', 'jpeg', 'png', 'pdf'].indexOf(String(ext || '').toLowerCase()) !== -1;
     }
 
-    function setFileStatus(message, tone) {
+    function showCompressionProgress(title, detail, percent) {
         if (!uploadFileStatusEl) {
             return;
         }
 
-        var classByTone = {
-            neutral: 'text-muted',
-            info: 'text-info',
-            success: 'text-success',
-            warning: 'text-warning',
-            danger: 'text-danger',
-        };
-
-        uploadFileStatusEl.textContent = String(message || 'Status file: belum dipilih.');
-        uploadFileStatusEl.className = 'small mt-2 ' + (classByTone[tone] || classByTone.neutral);
-    }
-
-    function refreshFileStatus() {
-        var selectedMethod = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
-        if (selectedMethod === 'drive') {
-            setFileStatus('Mode Link Google Drive aktif.', 'info');
-            return;
+        var message = String(title || '').trim();
+        if (detail) {
+            message += ' - ' + String(detail || '').trim();
         }
 
-        var currentFile = dokumenFileEl && dokumenFileEl.files && dokumenFileEl.files[0] ? dokumenFileEl.files[0] : null;
-        if (!currentFile) {
-            setFileStatus('Status file: belum dipilih.', 'neutral');
-            return;
+        if (Number.isFinite(Number(percent))) {
+            message += ' (' + Math.max(0, Math.min(100, Math.round(Number(percent)))) + '%)';
         }
 
-        var extension = getFileExtension(currentFile.name);
-        var summary = 'File: ' + currentFile.name + ' (' + formatBytes(currentFile.size) + ')';
-
-        if (currentFile.size > maxUploadBytes) {
-            setFileStatus(summary + ' • melebihi 10MB.', 'danger');
-            return;
-        }
-
-        if (extension === 'pdf') {
-            setFileStatus(summary + ' • PDF akan dicoba dioptimasi di browser sebelum upload Google Drive.', 'info');
-            return;
-        }
-
-        setFileStatus(summary + ' • siap upload.', 'success');
-    }
-
-    function formatBytes(bytes) {
-        var value = Number(bytes || 0);
-        if (value <= 0) {
-            return '0 KB';
-        }
-
-        if (value < 1024 * 1024) {
-            return Math.max(1, Math.round(value / 1024)) + ' KB';
-        }
-
-        return (value / (1024 * 1024)).toFixed(2) + ' MB';
-    }
-
-    function formatCompressionSaving(originalBytes, finalBytes) {
-        var original = Number(originalBytes || 0);
-        var finalValue = Number(finalBytes || 0);
-        if (original <= 0 || finalValue < 0 || finalValue >= original) {
-            return '0%';
-        }
-
-        var percent = ((original - finalValue) / original) * 100;
-        return percent.toFixed(1) + '%';
-    }
-
-    function formatEtaSeconds(totalSeconds) {
-        var value = Math.max(0, Math.round(Number(totalSeconds) || 0));
-        var minutes = Math.floor(value / 60);
-        var seconds = value % 60;
-        if (minutes <= 0) {
-            return seconds + ' detik';
-        }
-
-        return minutes + ' menit ' + seconds + ' detik';
-    }
-
-    function replaceExtension(fileName, nextExt) {
-        var name = String(fileName || '').trim();
-        var ext = String(nextExt || '').replace(/^\./, '').toLowerCase();
-        if (!name) {
-            return 'file.' + (ext || 'bin');
-        }
-
-        var dotIndex = name.lastIndexOf('.');
-        if (dotIndex < 0) {
-            return name + '.' + (ext || 'bin');
-        }
-
-        return name.substring(0, dotIndex) + '.' + (ext || 'bin');
-    }
-
-    function switchToDriveMode() {
-        if (!uploadMethodEl) {
-            return;
-        }
-
-        uploadMethodEl.value = 'drive';
-        syncUploadMethodUI();
-        refreshFileStatus();
-        if (googleDriveLinkEl && typeof googleDriveLinkEl.focus === 'function') {
-            googleDriveLinkEl.focus();
-        }
-    }
-
-    function showCompressionProgress(stage, detail) {
-        if (!window.Swal || typeof window.Swal.update !== 'function') {
-            return;
-        }
-
-        var safeStage = String(stage || 'Sedang memproses...');
-        var safeDetail = String(detail || 'Mohon tunggu sebentar.');
-        var percent = arguments.length > 2 ? Number(arguments[2]) : null;
-        var hasPercent = Number.isFinite(percent);
-        var safePercent = hasPercent ? Math.max(0, Math.min(100, Math.round(percent))) : 0;
-        var progressHtml = hasPercent
-            ? '<div class="progress mt-2" style="height: 12px;"><div class="progress-bar" role="progressbar" style="width: ' + safePercent + '%;" aria-valuenow="' + safePercent + '" aria-valuemin="0" aria-valuemax="100">' + safePercent + '%</div></div>'
-            : '';
-        window.Swal.update({
-            title: 'Mengompres file...',
-            html: '<div class="text-left"><div class="font-weight-semibold">' + safeStage + '</div><div class="small text-muted mt-1">' + safeDetail + '</div>' + progressHtml + '</div>',
-        });
-    }
-
-    async function compressImageFile(file) {
-        if (!window.imageCompression || typeof window.imageCompression !== 'function') {
-            return file;
-        }
-
-        var originalExt = getFileExtension(file.name);
-        var originalType = String(file.type || '').toLowerCase();
-        var isPng = originalExt === 'png' || originalType === 'image/png';
-        var forceJpeg = isPng && file.size > (8 * 1024 * 1024);
-        var preferredType = forceJpeg ? 'image/jpeg' : (file.type || undefined);
-        var targetBytes = file.size > maxUploadBytes ? aggressiveImageTargetBytes : compressTargetBytes;
-
-        var passes = [
-            { maxSizeMB: Math.max(0.6, (targetBytes * 1.7) / (1024 * 1024)), maxWidthOrHeight: 2200, initialQuality: 0.76 },
-            { maxSizeMB: Math.max(0.5, (targetBytes * 1.25) / (1024 * 1024)), maxWidthOrHeight: 1700, initialQuality: 0.62 },
-            { maxSizeMB: Math.max(0.4, (targetBytes * 1.0) / (1024 * 1024)), maxWidthOrHeight: 1400, initialQuality: 0.50 },
-            { maxSizeMB: Math.max(0.35, (targetBytes * 0.8) / (1024 * 1024)), maxWidthOrHeight: 1100, initialQuality: 0.40 },
-        ];
-
-        var current = file;
-        var currentName = forceJpeg ? replaceExtension(file.name, 'jpg') : file.name;
-        var processStartedAt = Date.now();
-        for (let passIndex = 0; passIndex < passes.length; passIndex += 1) {
-            var pass = passes[passIndex];
-
-            try {
-                var compressed = await window.imageCompression(current, {
-                    maxSizeMB: pass.maxSizeMB,
-                    maxWidthOrHeight: pass.maxWidthOrHeight,
-                    useWebWorker: true,
-                    initialQuality: pass.initialQuality,
-                    fileType: preferredType,
-                    onProgress: function (percent) {
-                        var safePercent = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
-                        var overallPercent = ((passIndex + (safePercent / 100)) / passes.length) * 100;
-                        var elapsedSeconds = (Date.now() - processStartedAt) / 1000;
-                        var etaSeconds = overallPercent > 0 ? (elapsedSeconds * (100 - overallPercent)) / overallPercent : 0;
-                        var detailText = 'Proses kompresi gambar sedang berjalan.';
-                        if (overallPercent > 2 && Number.isFinite(etaSeconds)) {
-                            detailText += ' Estimasi sisa: ' + formatEtaSeconds(etaSeconds) + '.';
-                        }
-
-                        showCompressionProgress(
-                            'Kompresi gambar tahap ' + (passIndex + 1) + '/' + passes.length,
-                            detailText,
-                            overallPercent
-                        );
-                    },
-                });
-
-                if (compressed && compressed.size && compressed.size < current.size) {
-                    current = new File([compressed], currentName, {
-                        type: compressed.type || current.type || 'application/octet-stream',
-                        lastModified: Date.now(),
-                    });
-                }
-
-                if (current.size <= targetBytes) {
-                    break;
-                }
-            } catch (error) {
-                break;
-            }
-        }
-
-        return current.size < file.size ? current : file;
+        setFileStatus(message, 'info');
     }
 
     async function optimizePdfFile(file) {
@@ -957,6 +1048,16 @@
     }
 
     async function uploadFileDirectToGoogleDrive(file, accessToken, folderId) {
+        if (isDevMode) {
+            var devFileName = String(file && file.name ? file.name : 'dokumen-' + Date.now());
+            var devLink = 'https://drive.google.com/file/d/dev-mode-dummy-' + Date.now() + '/view';
+            return {
+                id: 'dev-mode-dummy-' + Date.now(),
+                link: devLink,
+                name: devFileName,
+            };
+        }
+
         var metadata = {
             name: String(file && file.name ? file.name : 'dokumen'),
             parents: [String(folderId || '').trim()],
@@ -1047,7 +1148,7 @@
         var useDrive = method === 'drive';
 
         if (uploadFileGroupEl) {
-            uploadFileGroupEl.classList.toggle('d-none', useDrive);
+            uploadFileGroupEl.classList.toggle('d-none', useDrive ? true : false);
         }
         if (uploadDriveGroupEl) {
             uploadDriveGroupEl.classList.toggle('d-none', !useDrive);
@@ -1058,6 +1159,21 @@
         }
         if (!useDrive && googleDriveLinkEl) {
             googleDriveLinkEl.value = '';
+        }
+
+        refreshFileStatus();
+    }
+
+    function handleDokumenFileChange() {
+        if (!dokumenFileEl || !dokumenFileEl.files || !dokumenFileEl.files.length) {
+            refreshFileStatus();
+            return;
+        }
+
+        var selectedFile = dokumenFileEl.files[0];
+        if (enforceGoogleDriveOnlyForLargeFile(selectedFile)) {
+            refreshFileStatus();
+            return;
         }
 
         refreshFileStatus();
@@ -1113,10 +1229,11 @@
     }
 
     function updateUploadLockState() {
-        var signedIn = !!(googleProfile && googleAccessTokenEl && googleAccessTokenEl.value);
+        var googleSignedIn = !!(googleProfile && googleAccessTokenEl && googleAccessTokenEl.value);
+        var signedIn = googleSignedIn || isDevMode;
 
         openButtons.forEach(function (button) {
-            button.disabled = !signedIn;
+            button.disabled = false;
         });
 
         if (uploadSubmitButton) {
@@ -1128,21 +1245,22 @@
         }
 
         if (googleAuthUser) {
-            googleAuthUser.classList.toggle('d-none', !signedIn);
-            if (signedIn) {
+            googleAuthUser.classList.toggle('d-none', !googleSignedIn);
+            if (googleSignedIn) {
                 googleAuthUser.textContent = (googleProfile.name || 'Google User') + ' · ' + (googleProfile.email || '-');
             }
         }
 
         if (googleSignOutButton) {
-            googleSignOutButton.classList.toggle('d-none', !signedIn);
+            googleSignOutButton.classList.toggle('d-none', !googleSignedIn);
         }
 
         if (googleAuthHint) {
-            googleAuthHint.textContent = signedIn
-                ? 'Anda sudah login dengan Google dan siap mengupload dokumen.'
-                : 'Silakan login dengan akun Google sebelum membuka form upload.';
+            googleAuthHint.textContent = googleSignedIn
+                ? 'Anda sudah login dengan Google dan siap mengupload dokumen lokal atau memakai link Google Drive.'
+                : 'Login Google dipakai untuk upload file lokal dan link Google Drive.';
         }
+
     }
 
     function clearGoogleProfile() {
@@ -1228,7 +1346,118 @@
             });
     }
 
+    function requestGoogleAccessTokenWithPrompt(promptMode) {
+        return new Promise(function (resolve, reject) {
+            if (!googleTokenClient) {
+                reject(new Error('Google login client belum siap.'));
+                return;
+            }
+
+            var settled = false;
+            googleTokenClient.callback = function (response) {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+
+                var responseError = String(response && response.error ? response.error : '').trim();
+                if (responseError !== '') {
+                    googleTokenClient.callback = handleGoogleTokenResponse;
+                    reject(new Error(String(response && response.error_description ? response.error_description : responseError)));
+                    return;
+                }
+
+                var accessToken = String(response && response.access_token ? response.access_token : '').trim();
+                if (!accessToken) {
+                    googleTokenClient.callback = handleGoogleTokenResponse;
+                    reject(new Error('Google tidak mengembalikan access token.'));
+                    return;
+                }
+
+                loadGoogleUserInfo(accessToken)
+                    .then(function (profile) {
+                        applyGoogleProfile(profile, accessToken, true);
+                        googleTokenClient.callback = handleGoogleTokenResponse;
+                        resolve(accessToken);
+                    })
+                    .catch(function (error) {
+                        clearGoogleProfile();
+                        googleTokenClient.callback = handleGoogleTokenResponse;
+                        reject(error instanceof Error ? error : new Error('Gagal memuat profil Google.'));
+                    });
+            };
+
+            googleTokenClient.requestAccessToken({ prompt: promptMode || '' });
+        });
+    }
+
+    async function ensureGoogleDriveAccessToken() {
+        if (isDevMode) {
+            var currentDevToken = String(googleAccessTokenEl && googleAccessTokenEl.value ? googleAccessTokenEl.value : '').trim();
+            if (currentDevToken !== '') {
+                return currentDevToken;
+            }
+            applyDevModeDummyProfile();
+            return String(googleAccessTokenEl && googleAccessTokenEl.value ? googleAccessTokenEl.value : 'dev-mode-dummy-token');
+        }
+
+        var currentToken = String(googleAccessTokenEl && googleAccessTokenEl.value ? googleAccessTokenEl.value : '').trim();
+        if (!currentToken) {
+            return await requestGoogleAccessTokenWithPrompt('consent');
+        }
+
+        try {
+            return await requestGoogleAccessTokenWithPrompt('');
+        } catch (silentError) {
+            return await requestGoogleAccessTokenWithPrompt('consent');
+        }
+    }
+
+    function applyDevModeDummyProfile() {
+        if (!isDevMode) {
+            return false;
+        }
+
+        var dummyProfile = {
+            name: 'Development User',
+            email: 'dev@localhost',
+            sub: 'dev-mode-dummy-sub',
+        };
+
+        var dummyToken = 'dev-mode-dummy-token-' + Date.now();
+
+        googleProfile = dummyProfile;
+        if (googleAccessTokenEl) googleAccessTokenEl.value = dummyToken;
+        if (uploaderNameEl) uploaderNameEl.value = dummyProfile.name;
+        if (uploaderEmailEl) uploaderEmailEl.value = dummyProfile.email;
+        if (uploaderSubEl) uploaderSubEl.value = dummyProfile.sub;
+
+        saveGoogleCredential(dummyToken);
+        updateUploadLockState();
+        flushPendingUploadContext();
+
+        if (window.Swal) {
+            window.Swal.fire({
+                toast: true,
+                icon: 'info',
+                title: 'Mode Development',
+                text: 'Google login dilewati untuk testing.',
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true,
+            });
+        }
+
+        return true;
+    }
+
     function initGoogleSignIn() {
+        if (isDevMode) {
+            applyDevModeDummyProfile();
+            return;
+        }
+
         if (!googlePopupLoginBtn || !googleClientId || !window.google || !window.google.accounts || !window.google.accounts.oauth2) {
             if (googlePopupLoginBtn && !googleClientId) {
                 googlePopupLoginBtn.disabled = true;
@@ -1253,7 +1482,15 @@
                 return;
             }
 
-            googleTokenClient.requestAccessToken({ prompt: 'consent' });
+            requestGoogleAccessTokenWithPrompt('consent').catch(function (error) {
+                if (window.Swal) {
+                    window.Swal.fire({
+                        icon: 'error',
+                        title: 'Login Google gagal',
+                        text: error && error.message ? error.message : 'Autorisasi Google gagal.',
+                    });
+                }
+            });
         });
 
         if (googleClientId) {
@@ -1270,35 +1507,228 @@
         }
     }
 
+    // Ensure DOM elements are referenced before usage (fix: openButtons undefined)
+    var openButtons = document.querySelectorAll('.js-open-upload-modal');
+    var uploadModalEl = document.getElementById('modal-upload-share-simak');
+    var uploadForm = document.getElementById('form-upload-share-simak');
+    var rowNoEl = document.getElementById('upload_row_no_modal');
+    var rowLabelEl = document.getElementById('upload_row_label_modal');
+    var rowUraianEl = document.getElementById('upload_row_uraian_modal');
+    var dokumenFileEl = document.getElementById('dokumen_file_modal');
+    var uploadMethodEl = document.getElementById('upload_method');
+    var uploadFileGroupEl = document.getElementById('uploadFileGroup');
+    var uploadDriveGroupEl = document.getElementById('uploadDriveGroup');
+    var googleDriveLinkEl = document.getElementById('google_drive_link_modal');
+    var googleAccessTokenEl = document.getElementById('google_access_token');
+    var uploaderNameEl = document.getElementById('uploader_name');
+    var uploaderEmailEl = document.getElementById('uploader_email');
+    var uploaderSubEl = document.getElementById('uploader_sub');
+    var uploadFileStatusEl = document.getElementById('upload_file_status');
+    var uploadSubmitButton = document.querySelector('#form-upload-share-simak [type="submit"]');
+    var uploadGoogleLock = document.getElementById('uploadGoogleLock');
+    var googlePopupLoginBtn = document.getElementById('googlePopupLoginBtn');
+    var googleSignOutButton = document.getElementById('googleSignOutButton');
+    var googleAuthUser = document.getElementById('googleAuthUser');
+    var googleAuthHint = document.getElementById('googleAuthHint');
+    var dokumenPreviewModalEl = document.getElementById('dokumenPreviewModal');
+    var dokumenPreviewTitleEl = document.getElementById('dokumenPreviewTitle');
+    var dokumenPreviewMetaEl = document.getElementById('dokumenPreviewMeta');
+    var dokumenPreviewBodyEl = document.getElementById('dokumenPreviewBody');
+    var dokumenPreviewDownloadBtn = document.getElementById('dokumenPreviewDownloadBtn');
+    var currentDokumenPreviewUrl = '';
+
+    function buildDownloadUrl(url, forceDownload) {
+        var value = String(url || '').trim();
+        if (!value) {
+            return '';
+        }
+
+        if (!forceDownload) {
+            return value;
+        }
+
+        return value + (value.indexOf('?') === -1 ? '?' : '&') + 'download=1';
+    }
+
+    function clearDokumenPreview() {
+        currentDokumenPreviewUrl = '';
+
+        if (dokumenPreviewBodyEl) {
+            dokumenPreviewBodyEl.innerHTML = '';
+        }
+
+        if (dokumenPreviewMetaEl) {
+            dokumenPreviewMetaEl.textContent = '-';
+        }
+
+        if (dokumenPreviewDownloadBtn) {
+            dokumenPreviewDownloadBtn.href = '#';
+        }
+    }
+
+    function showGoogleDriveOnlyNotice(fileName, fileSize) {
+        var title = 'Gunakan link Google Drive';
+        var text = 'File ' + String(fileName || 'dokumen') + ' berukuran ' + formatBytes(fileSize || 0) + '. Untuk file di atas 5MB, gunakan link Google Drive saja. Modal sudah direset.';
+
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            window.Swal.fire({
+                icon: 'warning',
+                title: title,
+                text: text,
+            });
+        }
+    }
+
+    function enforceGoogleDriveOnlyForLargeFile(file) {
+        if (!file || !file.size || file.size <= autoCompressThresholdBytes) {
+            return false;
+        }
+
+        if (uploadMethodEl) {
+            uploadMethodEl.value = 'drive';
+        }
+
+        if (dokumenFileEl) {
+            dokumenFileEl.value = '';
+        }
+
+        if (googleDriveLinkEl) {
+            googleDriveLinkEl.value = '';
+        }
+
+        syncUploadMethodUI();
+        showGoogleDriveOnlyNotice(file.name, file.size);
+
+        if (googleDriveLinkEl) {
+            googleDriveLinkEl.focus();
+        }
+
+        return true;
+    }
+
+    function setFileStatus(message, tone) {
+        if (!uploadFileStatusEl) {
+            return;
+        }
+
+        var statusText = String(message || '').trim();
+        uploadFileStatusEl.textContent = statusText || 'Status file: belum dipilih.';
+        uploadFileStatusEl.className = 'small mt-2 text-muted';
+
+        if (tone === 'success') {
+            uploadFileStatusEl.classList.remove('text-muted');
+            uploadFileStatusEl.classList.add('text-success');
+        } else if (tone === 'warning') {
+            uploadFileStatusEl.classList.remove('text-muted');
+            uploadFileStatusEl.classList.add('text-warning');
+        } else if (tone === 'info') {
+            uploadFileStatusEl.classList.remove('text-muted');
+            uploadFileStatusEl.classList.add('text-info');
+        }
+    }
+
+    function refreshFileStatus() {
+        if (!dokumenFileEl || !dokumenFileEl.files || !dokumenFileEl.files.length) {
+            setFileStatus('Status file: belum dipilih.');
+            return;
+        }
+
+        var selectedFile = dokumenFileEl.files[0];
+        var fileName = String(selectedFile && selectedFile.name ? selectedFile.name : 'dokumen');
+        var fileSize = selectedFile && selectedFile.size ? selectedFile.size : 0;
+
+        if (fileSize > autoCompressThresholdBytes) {
+            setFileStatus(fileName + ' (' + formatBytes(fileSize) + ') - gunakan link Google Drive.', 'warning');
+            return;
+        }
+
+        setFileStatus(fileName + ' (' + formatBytes(fileSize) + ')', 'info');
+    }
+
+    function openDokumenPreview(url, title, mimeType) {
+        if (!dokumenPreviewModalEl || !dokumenPreviewBodyEl) {
+            return;
+        }
+
+        var finalUrl = buildDownloadUrl(url, false);
+        currentDokumenPreviewUrl = finalUrl;
+
+        var normalizedMime = String(mimeType || '').toLowerCase();
+        var isPdf = normalizedMime === 'application/pdf' || finalUrl.toLowerCase().indexOf('.pdf') !== -1;
+        var isImage = normalizedMime.indexOf('image/') === 0 || /\.(png|jpe?g|gif|webp|bmp)$/i.test(finalUrl);
+
+        if (dokumenPreviewTitleEl) {
+            dokumenPreviewTitleEl.textContent = String(title || 'Preview Dokumen');
+        }
+
+        if (dokumenPreviewMetaEl) {
+            dokumenPreviewMetaEl.textContent = String(mimeType || 'Dokumen');
+        }
+
+        if (dokumenPreviewDownloadBtn) {
+            dokumenPreviewDownloadBtn.href = buildDownloadUrl(url, true);
+        }
+
+        if (isImage) {
+            dokumenPreviewBodyEl.innerHTML = '<img src="' + finalUrl.replace(/"/g, '&quot;') + '" alt="Preview dokumen" class="img-fluid rounded" style="max-height:75vh; object-fit:contain;">';
+        } else if (isPdf) {
+            dokumenPreviewBodyEl.innerHTML = '<iframe src="' + finalUrl.replace(/"/g, '&quot;') + '" title="Preview dokumen" style="width:100%; height:75vh; border:0; background:#fff;"></iframe>';
+        } else {
+            dokumenPreviewBodyEl.innerHTML = '<div class="alert alert-warning mb-0">File ini tidak memiliki preview bawaan. Gunakan tombol Download.</div>';
+        }
+
+        if (window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+            window.jQuery(dokumenPreviewModalEl).modal('show');
+        }
+    }
+
+    function isPreviewableDokumen(mimeType, fileName) {
+        var normalizedMime = String(mimeType || '').toLowerCase();
+        var normalizedName = String(fileName || '').toLowerCase();
+
+        if (normalizedMime.indexOf('image/') === 0 || normalizedMime === 'application/pdf') {
+            return true;
+        }
+
+        return /\.(png|jpe?g|gif|webp|bmp|pdf)$/i.test(normalizedName);
+    }
+
     openButtons.forEach(function (button) {
         button.addEventListener('click', function (event) {
-            var context = getUploadContextFromButton(this);
+            setUploadContext(getUploadContextFromButton(this));
+        });
+    });
 
-            if (!googleAccessTokenEl || !googleAccessTokenEl.value) {
-                pendingUploadContext = context;
+    document.querySelectorAll('.js-open-dokumen').forEach(function (button) {
+        button.addEventListener('click', function (event) {
+            var url = String(this.getAttribute('data-dokumen-url') || this.getAttribute('href') || '').trim();
+            var title = String(this.getAttribute('data-dokumen-name') || 'Preview Dokumen').trim();
+            var mimeType = String(this.getAttribute('data-dokumen-mime') || '').trim();
+            var previewableAttr = String(this.getAttribute('data-dokumen-previewable') || '0').trim();
+            var previewable = previewableAttr === '1' || isPreviewableDokumen(mimeType, title);
 
-                if (event && typeof event.preventDefault === 'function') {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-
-                if (googleTokenClient) {
-                    googleTokenClient.requestAccessToken({ prompt: 'consent' });
-                }
-
-                if (window.Swal) {
-                    window.Swal.fire({
-                        icon: 'warning',
-                        title: 'Login Google diperlukan',
-                        text: 'Silakan pilih akun Google. Setelah login berhasil, form upload akan terbuka otomatis.',
-                    });
-                }
+            if (!url) {
                 return;
             }
 
-            setUploadContext(context);
+            event.preventDefault();
+
+            if (previewable) {
+                openDokumenPreview(url, title, mimeType);
+                return;
+            }
+
+            var downloadUrl = buildDownloadUrl(url, true);
+            var shouldDownload = window.confirm('File ini tidak dapat dipreview. Apakah Anda ingin mendownload file ini?');
+            if (shouldDownload && downloadUrl) {
+                window.location.href = downloadUrl;
+            }
         });
     });
+
+    if (dokumenPreviewModalEl) {
+        dokumenPreviewModalEl.addEventListener('hidden.bs.modal', clearDokumenPreview);
+    }
 
     if (googleSignOutButton) {
         googleSignOutButton.addEventListener('click', function () {
@@ -1316,7 +1746,7 @@
         }
 
         if (dokumenFileEl) {
-            dokumenFileEl.addEventListener('change', refreshFileStatus);
+            dokumenFileEl.addEventListener('change', handleDokumenFileChange);
         }
 
         uploadForm.addEventListener('submit', async function (event) {
@@ -1325,18 +1755,25 @@
             }
 
             var selectedMethod = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
+            var hasGoogleToken = !!(googleAccessTokenEl && googleAccessTokenEl.value);
 
-            if (!googleAccessTokenEl || !googleAccessTokenEl.value) {
-                event.preventDefault();
-                if (window.Swal) {
-                    window.Swal.fire({
-                        icon: 'warning',
-                        title: 'Login Google diperlukan',
-                        text: 'Anda harus login dengan Google sebelum upload dokumen.',
-                    });
+            if (!hasGoogleToken) {
+                if (isDevMode) {
+                    applyDevModeDummyProfile();
+                    hasGoogleToken = true;
+                } else {
+                    event.preventDefault();
+                    if (window.Swal) {
+                        window.Swal.fire({
+                            icon: 'warning',
+                            title: 'Login Google diperlukan',
+                            text: 'Anda harus login dengan Google sebelum upload dokumen.',
+                        });
+                    }
+                    return;
                 }
-                return;
             }
+
             var hasFile = !!(dokumenFileEl && dokumenFileEl.files && dokumenFileEl.files.length > 0);
             var driveLink = String(googleDriveLinkEl && googleDriveLinkEl.value ? googleDriveLinkEl.value : '').trim();
             var hasDriveLink = driveLink !== '';
@@ -1366,15 +1803,9 @@
                 return;
             }
 
-            if (selectedMethod !== 'drive' && !hasFile) {
+            if (selectedMethod !== 'drive' && hasFile && dokumenFileEl && dokumenFileEl.files[0] && dokumenFileEl.files[0].size > autoCompressThresholdBytes) {
                 event.preventDefault();
-                if (window.Swal) {
-                    window.Swal.fire({
-                        icon: 'warning',
-                        title: 'Dokumen belum diisi',
-                        text: 'Silakan pilih file dokumen terlebih dahulu.',
-                    });
-                }
+                enforceGoogleDriveOnlyForLargeFile(dokumenFileEl.files[0]);
                 return;
             }
 
@@ -1390,7 +1821,7 @@
                     if (window.Swal && typeof window.Swal.fire === 'function') {
                         window.Swal.fire({
                             title: 'Mengompres file...',
-                                                        html: '<div class="text-left"><div class="font-weight-semibold">Menyiapkan kompresi...</div><div class="small text-muted mt-1">File lebih dari 5MB, sistem sedang mencoba mengecilkan ukuran sebelum upload.</div><div class="progress mt-2" style="height: 12px;"><div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div></div></div>',
+                            html: '<div class="text-left"><div class="font-weight-semibold">Menyiapkan kompresi...</div><div class="small text-muted mt-1">File lebih dari 5MB, sistem sedang mencoba mengecilkan ukuran sebelum upload.</div><div class="progress mt-2" style="height: 12px;"><div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div></div></div>',
                             allowOutsideClick: false,
                             allowEscapeKey: false,
                             didOpen: function () {
@@ -1408,22 +1839,7 @@
                     }
 
                     if (finalFile.size > maxUploadBytes) {
-                        if (window.Swal) {
-                            var oversizeResult = await window.Swal.fire({
-                                icon: 'warning',
-                                title: 'Ukuran file melebihi batas',
-                                html: '<div class="text-left">Setelah kompresi, ukuran file masih di atas 10MB.<br><span class="small text-muted">Ukuran saat ini: ' + formatBytes(finalFile.size) + '</span></div>',
-                                showCancelButton: true,
-                                confirmButtonText: 'Gunakan Link Google Drive',
-                                cancelButtonText: 'Tutup',
-                            });
-
-                            if (oversizeResult && oversizeResult.isConfirmed) {
-                                switchToDriveMode();
-                            }
-                        }
-                        setFileStatus('Hasil kompres masih >10MB. Gunakan Link Google Drive.', 'warning');
-                        return;
+                        setFileStatus('File besar: ' + formatBytes(finalFile.size) + ' - akan diupload ke server.', 'info');
                     }
 
                     if (window.Swal) {
@@ -1433,7 +1849,7 @@
                             var isPdfFile = sourceExt === 'pdf';
                             var pdfHintHtml = '';
                             if (isPdfFile && savingPercentValue < 10) {
-                                pdfHintHtml = '<br><span class="small text-warning">Catatan: PDF sering sulit dikompres signifikan di browser. Jika file masih besar, lebih efektif pakai Link Google Drive.</span>';
+                                pdfHintHtml = '<br><span class="small text-warning">Catatan: PDF sering sulit dikompres signifikan di browser.</span>';
                             }
                             await window.Swal.fire({
                                 icon: 'success',
@@ -1456,39 +1872,12 @@
                 }
 
                 if (!shouldCompress && sourceFile.size > maxUploadBytes) {
-                    setFileStatus('Ukuran file >10MB dan tidak bisa dikompres otomatis.', 'danger');
-                    if (window.Swal) {
-                        var noCompressOversizeResult = await window.Swal.fire({
-                            icon: 'warning',
-                            title: 'Ukuran file melebihi batas',
-                            html: '<div class="text-left">File ini tidak bisa dikompres otomatis dan ukurannya di atas 10MB.<br><span class="small text-muted">Gunakan link Google Drive atau kecilkan file terlebih dahulu.</span></div>',
-                            showCancelButton: true,
-                            confirmButtonText: 'Gunakan Link Google Drive',
-                            cancelButtonText: 'Tutup',
-                        });
-                        if (noCompressOversizeResult && noCompressOversizeResult.isConfirmed) {
-                            switchToDriveMode();
-                        }
-                    }
-                    return;
-                }
-
-                var uploadFolderId = resolveDriveUploadFolderId();
-                if (!uploadFolderId) {
-                    if (window.Swal) {
-                        await window.Swal.fire({
-                            icon: 'error',
-                            title: 'Folder Google Drive belum dikonfigurasi',
-                            text: 'Isi GOOGLE_DRIVE_UPLOAD_FOLDER_URL atau GOOGLE_DRIVE_UPLOAD_FOLDER_ID di env.',
-                        });
-                    }
-                    setFileStatus('Folder Google Drive belum dikonfigurasi.', 'danger');
-                    return;
+                    setFileStatus('Ukuran file >100MB.', 'warning');
                 }
 
                 if (window.Swal && typeof window.Swal.fire === 'function') {
                     window.Swal.fire({
-                        title: 'Mengunggah ke Google Drive...',
+                        title: 'Mengunggah dokumen...',
                         text: 'Mohon tunggu sebentar',
                         allowOutsideClick: false,
                         allowEscapeKey: false,
@@ -1498,43 +1887,9 @@
                     });
                 }
 
-                try {
-                    var uploadResult = await uploadFileDirectToGoogleDrive(finalFile, googleAccessTokenEl.value, uploadFolderId);
-                    if (googleDriveLinkEl) {
-                        googleDriveLinkEl.value = uploadResult.link;
-                    }
-                    if (uploadMethodEl) {
-                        uploadMethodEl.value = 'drive';
-                        syncUploadMethodUI();
-                    }
-                    if (dokumenFileEl) {
-                        dokumenFileEl.value = '';
-                    }
-
-                    setFileStatus('Upload ke Google Drive berhasil. Link siap dikirim.', 'success');
-                    if (window.Swal) {
-                        await window.Swal.fire({
-                            icon: 'success',
-                            title: 'Upload ke Google Drive berhasil',
-                            timer: 1400,
-                            showConfirmButton: false,
-                        });
-                    }
-
-                    isSubmitting = true;
-                    uploadForm.submit();
-                    return;
-                } catch (driveUploadError) {
-                    if (window.Swal) {
-                        await window.Swal.fire({
-                            icon: 'error',
-                            title: 'Upload Google Drive gagal',
-                            text: driveUploadError && driveUploadError.message ? driveUploadError.message : 'Terjadi kesalahan saat upload ke Google Drive.',
-                        });
-                    }
-                    setFileStatus('Upload ke Google Drive gagal.', 'danger');
-                    return;
-                }
+                isSubmitting = true;
+                uploadForm.submit();
+                return;
             }
 
             if (selectedMethod === 'drive' && !isAllowedGoogleDriveUrl(driveLink)) {
