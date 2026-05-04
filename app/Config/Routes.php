@@ -23,6 +23,9 @@ $routes->get('simak/share/(:segment)', 'Admin\\Kontrak::sharedSimak/$1');
 $routes->post('simak/share/(:segment)/upload', 'Admin\\Kontrak::sharedUploadSimakDokumen/$1');
 $routes->get('simak/share/(:segment)/download-dokumen/(:num)', 'Admin\\Kontrak::sharedDownloadDokumen/$1/$2');
 
+$routes->get('privacy-policy', 'Legal::privacy');
+$routes->get('terms-of-service', 'Legal::terms');
+
 $routes->get('masuk', 'Auth::loginForm');
 $routes->post('masuk', 'Auth::login');
 $routes->get('keluar', 'Auth::logout');
