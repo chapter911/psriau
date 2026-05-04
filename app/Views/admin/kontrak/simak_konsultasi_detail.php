@@ -348,7 +348,8 @@
                                                             data-verifikasi="<?= esc($verifikasi); ?>"
                                                             data-keterangan="<?= esc($keterangan); ?>"
                                                             data-pic="<?= esc($pic); ?>"
-                                                        >Verifikasi</button>
+                                                            data-created-by="<?= esc((string) ($latestDokumen['created_by'] ?? '')); ?>"
+                                                            >Verifikasi</button>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
@@ -407,6 +408,12 @@
                     <div class="form-group">
                         <label for="upload_pic">PIC</label>
                         <input type="text" class="form-control" id="upload_pic" name="pic" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notification_email">Email Penerima Notifikasi</label>
+                        <input type="email" class="form-control" id="notification_email" name="notification_email" placeholder="contoh@email.com">
+                        <small class="text-muted">Jika diisi, notifikasi verifikasi akan dikirim ke email ini</small>
                     </div>
 
 
@@ -612,6 +619,26 @@
             }
             if (picEl) {
                 picEl.value = currentUsername;
+            }
+
+            // Auto-fill notification email from uploader info if available
+            var createdBy = this.getAttribute('data-created-by') || '';
+            var extractedEmail = '';
+            if (createdBy) {
+                var angleMatch = createdBy.match(/<([^>]+)>/);
+                if (angleMatch && angleMatch[1]) {
+                    extractedEmail = angleMatch[1].trim();
+                } else {
+                    var emailMatch = createdBy.match(/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i);
+                    if (emailMatch && emailMatch[1]) {
+                        extractedEmail = emailMatch[1].trim();
+                    }
+                }
+            }
+
+            var notificationEmailInput = document.getElementById('notification_email');
+            if (notificationEmailInput) {
+                notificationEmailInput.value = extractedEmail;
             }
 
             updateVerifikasiLogic();
