@@ -873,6 +873,7 @@
     var isDevMode = String(ciEnvironment || '').toLowerCase() === 'development';
     var googleProfile = null;
     var googleStorageKey = 'simak-share-google-credential';
+    var googleIdentityScriptPromise = null;
     var googleTokenClient = null;
     var pendingUploadContext = null;
     var isSubmitting = false;
@@ -1452,59 +1453,106 @@
         return true;
     }
 
+    function ensureGoogleIdentityScript() {
+        if (window.google && window.google.accounts && window.google.accounts.oauth2 && window.google.accounts.id) {
+            return Promise.resolve();
+        }
+
+        if (googleIdentityScriptPromise) {
+            return googleIdentityScriptPromise;
+        }
+
+        googleIdentityScriptPromise = new Promise(function (resolve, reject) {
+            var script = document.querySelector('script[data-google-gis-sdk="true"]');
+            if (!script) {
+                script = document.createElement('script');
+                script.src = 'https://accounts.google.com/gsi/client';
+                script.async = true;
+                script.defer = true;
+                script.referrerPolicy = 'strict-origin-when-cross-origin';
+                script.dataset.googleGisSdk = 'true';
+                document.head.appendChild(script);
+            }
+
+            script.addEventListener('load', function () {
+                resolve();
+            }, { once: true });
+
+            script.addEventListener('error', function () {
+                reject(new Error('Gagal memuat Google Identity Services.'));
+            }, { once: true });
+
+            if (window.google && window.google.accounts && window.google.accounts.oauth2 && window.google.accounts.id) {
+                resolve();
+            }
+        });
+
+        return googleIdentityScriptPromise;
+    }
+
     function initGoogleSignIn() {
         if (isDevMode) {
             applyDevModeDummyProfile();
             return;
         }
 
-        if (!googlePopupLoginBtn || !googleClientId || !window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-            if (googlePopupLoginBtn && !googleClientId) {
-                googlePopupLoginBtn.disabled = true;
-                googlePopupLoginBtn.classList.add('disabled');
-                googlePopupLoginBtn.title = 'GOOGLE_CLIENT_ID belum dikonfigurasi';
-            }
-            return;
-        }
+        ensureGoogleIdentityScript()
+            .then(function () {
+                if (!googlePopupLoginBtn || !googleClientId || !window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+                    if (googlePopupLoginBtn && !googleClientId) {
+                        googlePopupLoginBtn.disabled = true;
+                        googlePopupLoginBtn.classList.add('disabled');
+                        googlePopupLoginBtn.title = 'GOOGLE_CLIENT_ID belum dikonfigurasi';
+                    }
+                    return;
+                }
 
-        googleTokenClient = window.google.accounts.oauth2.initTokenClient({
-            client_id: googleClientId,
-            scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
-            callback: handleGoogleTokenResponse,
-        });
+                googleTokenClient = window.google.accounts.oauth2.initTokenClient({
+                    client_id: googleClientId,
+                    scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
+                    callback: handleGoogleTokenResponse,
+                });
 
-        googlePopupLoginBtn.disabled = false;
-        googlePopupLoginBtn.classList.remove('disabled');
-        googlePopupLoginBtn.title = '';
+                googlePopupLoginBtn.disabled = false;
+                googlePopupLoginBtn.classList.remove('disabled');
+                googlePopupLoginBtn.title = '';
 
-        googlePopupLoginBtn.addEventListener('click', function () {
-            if (!googleTokenClient) {
-                return;
-            }
+                googlePopupLoginBtn.addEventListener('click', function () {
+                    if (!googleTokenClient) {
+                        return;
+                    }
 
-            requestGoogleAccessTokenWithPrompt('consent').catch(function (error) {
-                if (window.Swal) {
-                    window.Swal.fire({
-                        icon: 'error',
-                        title: 'Login Google gagal',
-                        text: error && error.message ? error.message : 'Autorisasi Google gagal.',
+                    requestGoogleAccessTokenWithPrompt('consent').catch(function (error) {
+                        if (window.Swal) {
+                            window.Swal.fire({
+                                icon: 'error',
+                                title: 'Login Google gagal',
+                                text: error && error.message ? error.message : 'Autorisasi Google gagal.',
+                            });
+                        }
                     });
+                });
+
+                if (googleClientId) {
+                    var storedCredential = loadGoogleCredential();
+                    if (storedCredential) {
+                        loadGoogleUserInfo(storedCredential)
+                            .then(function (profile) {
+                                applyGoogleProfile(profile, storedCredential, false);
+                            })
+                            .catch(function () {
+                                clearGoogleProfile();
+                            });
+                    }
+                }
+            })
+            .catch(function () {
+                if (googlePopupLoginBtn) {
+                    googlePopupLoginBtn.disabled = true;
+                    googlePopupLoginBtn.classList.add('disabled');
+                    googlePopupLoginBtn.title = 'SDK Google gagal dimuat';
                 }
             });
-        });
-
-        if (googleClientId) {
-            var storedCredential = loadGoogleCredential();
-            if (storedCredential) {
-                loadGoogleUserInfo(storedCredential)
-                    .then(function (profile) {
-                        applyGoogleProfile(profile, storedCredential, false);
-                    })
-                    .catch(function () {
-                        clearGoogleProfile();
-                    });
-            }
-        }
     }
 
     // Ensure DOM elements are referenced before usage (fix: openButtons undefined)
