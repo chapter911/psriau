@@ -1953,9 +1953,56 @@ class Kontrak extends BaseController
                             $fromEmail = 'no-reply@' . preg_replace('/[^a-z0-9.\-]/i', '', $host);
                         }
 
-                        $subject = 'Notifikasi: Verifikasi SIMAK telah dilakukan';
-                        $link = site_url('admin/kontrak/simak/konstruksi/' . $id);
-                        $message = "Verifikasi dokumen SIMAK (ID: {$id}) telah disimpan oleh {$actor}.\n\nLihat detail: " . $link . "\n\nJika Anda menerima email ini, maka verifikasi sudah selesai.";
+                        // Prefer public share link if available
+                        $shareUrl = site_url('admin/kontrak/simak/konstruksi/' . $id);
+                        if ($db->tableExists('trn_kontrak_simak_share')) {
+                            $shareRow = $db->table('trn_kontrak_simak_share')
+                                ->select('share_token')
+                                ->where('simak_id', $id)
+                                ->where('is_active', 1)
+                                ->orderBy('id', 'DESC')
+                                ->get()
+                                ->getRowArray();
+                            if (is_array($shareRow) && ! empty($shareRow['share_token'])) {
+                                $shareUrl = site_url('simak/share/' . $shareRow['share_token']);
+                            }
+                        }
+
+                        // Build list of poin (kode or uraian) instead of row numbers
+                        $points = [];
+                        $rowNos = array_map('intval', array_column($docs ?? [], 'row_no'));
+                        if ($rowNos !== []) {
+                            $verRows = $db->table('trn_kontrak_simak_verifikasi')
+                                ->select('row_no,kode,uraian,verifikasi_ki,keterangan')
+                                ->where('simak_id', $id)
+                                ->whereIn('row_no', $rowNos)
+                                ->get()
+                                ->getResultArray();
+                            $map = [];
+                            foreach ($verRows as $vr) {
+                                $label = trim((string) (($vr['kode'] ?? '') !== '' ? $vr['kode'] : ($vr['uraian'] ?? '')));
+                                $status = (string) ($vr['verifikasi_ki'] ?? '');
+                                $ketRow = trim((string) ($vr['keterangan'] ?? ''));
+                                $map[(int) ($vr['row_no'] ?? 0)] = [
+                                    'label' => $label,
+                                    'status' => $status,
+                                    'keterangan' => $ketRow,
+                                ];
+                            }
+                            foreach ($rowNos as $rn) {
+                                $m = $map[(int) $rn] ?? null;
+                                if (is_array($m) && ($m['label'] ?? '') !== '') {
+                                    $points[] = $m;
+                                }
+                            }
+                        }
+
+                        $subject = 'Notifikasi: Verifikasi SIMAK';
+                        $message = "Verifikasi SIMAK telah disimpan.";
+                        if ($points !== []) {
+                            $message .= "\n\nPoin yang diverifikasi:\n- " . implode("\n- ", $points);
+                        }
+                        $message .= "\n\nLihat: " . $shareUrl;
 
                         foreach ($emails as $to) {
                             try {
@@ -2175,9 +2222,29 @@ class Kontrak extends BaseController
                             $fromEmail = 'no-reply@' . preg_replace('/[^a-z0-9.\-]/i', '', $host);
                         }
 
-                        $subject = 'Notifikasi: Verifikasi dokumen SIMAK baris ' . $rowNo;
-                        $link = site_url('admin/kontrak/simak/konstruksi/' . $id);
-                        $message_email = "Dokumen SIMAK baris {$rowNo} telah diverifikasi oleh {$actor}.\n\nLihat detail: " . $link . "\n\nJika Anda menerima email ini, maka dokumen Anda sudah diproses.";
+                        // Prefer public share link if available
+                        $shareUrl = site_url('admin/kontrak/simak/konstruksi/' . $id);
+                        if ($db->tableExists('trn_kontrak_simak_share')) {
+                            $shareRow = $db->table('trn_kontrak_simak_share')
+                                ->select('share_token')
+                                ->where('simak_id', $id)
+                                ->where('is_active', 1)
+                                ->orderBy('id', 'DESC')
+                                ->get()
+                                ->getRowArray();
+                            if (is_array($shareRow) && ! empty($shareRow['share_token'])) {
+                                $shareUrl = site_url('simak/share/' . $shareRow['share_token']);
+                            }
+                        }
+
+                        $pointLabel = trim((string) (($targetTemplate['display_no'] ?? '') !== '' ? $targetTemplate['display_no'] : ($targetTemplate['uraian'] ?? '')));
+                        $subject = 'Notifikasi: Verifikasi dokumen SIMAK' . ($pointLabel !== '' ? ' - ' . $pointLabel : '');
+                        $statusLabel = ($ver === 'sesuai') ? 'Sesuai' : (($ver === 'tidak_sesuai') ? 'Tidak Sesuai' : '-');
+                        $message_email = 'Verifikasi dokumen untuk poin: ' . ($pointLabel !== '' ? $pointLabel : $rowNo) . "\nStatus: " . $statusLabel;
+                        if ($ket !== '') {
+                            $message_email .= "\nKeterangan: " . $ket;
+                        }
+                        $message_email .= "\n\nLihat: " . $shareUrl;
 
                         foreach ($emails as $to) {
                             try {
