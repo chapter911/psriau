@@ -937,8 +937,9 @@
             // Use jQuery modal exactly like other modals in this file
             console.log('About to call modal show');
             try {
-                window.jQuery('#modal-history-dokumen').modal('show');
-                console.log('Modal show called successfully');
+                // Ensure modal is appended to <body> to avoid ancestor stacking/transform hiding it
+                window.jQuery('#modal-history-dokumen').appendTo('body').modal('show');
+                console.log('Modal show called successfully (appended to body)');
             } catch (error) {
                 console.error('Error showing modal:', error);
             }
