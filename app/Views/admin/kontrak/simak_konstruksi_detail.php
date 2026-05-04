@@ -201,6 +201,7 @@
                                         <th style="width: 170px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">PIC</th>
                                         <th style="width: 280px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Dokumen</th>
                                         <th style="width: 170px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">History Dokumen</th>
+                                        <th style="width: 130px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Upload Dokumen</th>
                                         <th style="width: 130px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Aksi</th>
                                     </tr>
                                 </thead>
@@ -313,32 +314,34 @@
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <div class="d-flex gap-2 flex-wrap">
-                                                        <?php if (is_array($latestDokumen)): ?>
-                                                            <button
-                                                                type="button"
-                                                                class="btn btn-warning btn-sm js-open-upload-modal"
-                                                                data-row-no="<?= esc((string) $rowNo); ?>"
-                                                                data-row-label="<?= esc($noText); ?>"
-                                                                data-uraian="<?= esc($uraian); ?>"
-                                                                data-kelengkapan="<?= esc($kelengkapan); ?>"
-                                                                data-verifikasi="<?= esc($verifikasi); ?>"
-                                                                data-keterangan="<?= esc($keterangan); ?>"
-                                                                data-pic="<?= esc($pic); ?>"
-                                                                data-created-by="<?= esc((string) ($latestDokumen['created_by'] ?? '')); ?>"
-                                                            >Verifikasi</button>
-                                                        <?php endif; ?>
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-success btn-sm js-open-admin-upload-modal"
+                                                        data-row-no="<?= esc((string) $rowNo); ?>"
+                                                        data-row-label="<?= esc($noText); ?>"
+                                                        data-uraian="<?= esc($uraian); ?>"
+                                                    >Upload</button>
+                                                </td>
+                                                <td>
+                                                    <?php if (is_array($latestDokumen)): ?>
                                                         <button
                                                             type="button"
-                                                            class="btn btn-success btn-sm js-open-admin-upload-modal"
+                                                            class="btn btn-warning btn-sm js-open-upload-modal"
                                                             data-row-no="<?= esc((string) $rowNo); ?>"
                                                             data-row-label="<?= esc($noText); ?>"
                                                             data-uraian="<?= esc($uraian); ?>"
-                                                        >Upload Dokumen</button>
-                                                    </div>
+                                                            data-kelengkapan="<?= esc($kelengkapan); ?>"
+                                                            data-verifikasi="<?= esc($verifikasi); ?>"
+                                                            data-keterangan="<?= esc($keterangan); ?>"
+                                                            data-pic="<?= esc($pic); ?>"
+                                                            data-created-by="<?= esc((string) ($latestDokumen['created_by'] ?? '')); ?>"
+                                                        >Verifikasi</button>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">-</span>
+                                                    <?php endif; ?>
                                                 </td>
                                             <?php else: ?>
-                                                <td colspan="7"></td>
+                                                <td colspan="8"></td>
                                             <?php endif; ?>
                                         </tr>
                                     <?php endforeach; ?>
@@ -872,7 +875,7 @@
 
     historyButtons.forEach(function (btn) {
         btn.addEventListener('click', function () {
-            var rowNo = this.getAttribute('data-row-no') || '';
+            var rowNo = parseInt(this.getAttribute('data-row-no') || '0', 10);
             var label = this.getAttribute('data-row-label') || '-';
             var uraian = this.getAttribute('data-uraian') || '-';
             var rows = dokumenHistoryByRow[rowNo] || [];
