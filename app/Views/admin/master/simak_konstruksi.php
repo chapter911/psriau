@@ -91,6 +91,10 @@
         background: #f8fafc;
     }
 
+    .simak-master-item.is-share-hidden {
+        border-style: dashed;
+    }
+
     .simak-master-item.is-selected {
         border-color: #2563eb;
         box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
@@ -255,20 +259,26 @@
                     $rowKind = (string) ($node['row_kind'] ?? 'question');
                     $hasQuestion = (int) ($node['has_question'] ?? 0) === 1;
                     $isActive = (int) ($node['is_active'] ?? 1) === 1;
+                    $isHiddenShare = (int) ($node['is_hidden_share'] ?? 0) === 1;
                     $children = is_array($node['children'] ?? null) ? $node['children'] : [];
 
-                    echo '<li class="simak-master-item' . (! $isActive ? ' is-inactive' : '') . '" data-id="' . $id . '"';
+                    echo '<li class="simak-master-item' . (! $isActive ? ' is-inactive' : '') . ($isHiddenShare ? ' is-share-hidden' : '') . '" data-id="' . $id . '"';
                     echo ' data-parent_id="' . esc((string) ($node['parent_id'] ?? ''), 'attr') . '"';
                     echo ' data-display_no="' . esc((string) ($node['display_no'] ?? ''), 'attr') . '"';
                     echo ' data-uraian="' . esc((string) ($node['uraian'] ?? ''), 'attr') . '"';
                     echo ' data-row_kind="' . esc($rowKind, 'attr') . '"';
                     echo ' data-has_question="' . ($hasQuestion ? '1' : '0') . '"';
                     echo ' data-is_active="' . ($isActive ? '1' : '0') . '"';
+                    echo ' data-is_hidden_share="' . ($isHiddenShare ? '1' : '0') . '"';
                     echo '>';
                     echo '<div class="simak-master-row">';
                     echo '<span class="drag-handle" title="Drag untuk ubah urutan/hirarki"><i class="fas fa-grip-lines"></i></span>';
                     echo '<div class="simak-master-meta">';
-                    echo '<div class="simak-master-title">' . esc($title !== '' ? $title : '-') . ' <span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span></div>';
+                    echo '<div class="simak-master-title">' . esc($title !== '' ? $title : '-') . ' <span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span>';
+                    if ($isHiddenShare) {
+                        echo ' <span class="badge badge-warning simak-status-badge">Share: Tersembunyi</span>';
+                    }
+                    echo '</div>';
                     echo '<div class="simak-master-sub">';
                     echo 'Jenis: <strong>' . esc($rowKind) . '</strong> | Pertanyaan: <strong>' . ($hasQuestion ? 'Ya' : 'Tidak') . '</strong> | Row No: <strong>' . esc((string) ($node['row_no'] ?? '')) . '</strong>';
                     echo '</div>';
@@ -366,6 +376,9 @@
                             <?php endif; ?>
                             <?php if (! empty($can_edit)): ?>
                                 <button type="button" class="btn btn-outline-secondary" id="btn-toggle-status" disabled>Aktifkan/Nonaktifkan Item</button>
+                                <?php if (! empty($shareVisibilityAvailable)): ?>
+                                    <button type="button" class="btn btn-outline-info btn-sm" id="btn-toggle-share-visibility" disabled>Sembunyikan dari Share</button>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </form>
@@ -391,6 +404,7 @@
         var addChildButton = document.getElementById('btn-add-child');
         var resetButton = document.getElementById('btn-reset-selection');
         var toggleStatusButton = null;
+        var toggleShareVisibilityButton = null;
         var countActiveBadge = document.getElementById('simak-count-active');
         var countInactiveBadge = document.getElementById('simak-count-inactive');
         var treePanelBody = document.querySelector('.simak-tree-panel .simak-panel-body');
@@ -486,6 +500,19 @@
             }
         };
 
+        var updateShareVisibilityButton = function (isHidden) {
+            if (!toggleShareVisibilityButton) return;
+
+            toggleShareVisibilityButton.disabled = false;
+            if (isHidden) {
+                toggleShareVisibilityButton.textContent = 'Tampilkan di Share';
+                toggleShareVisibilityButton.className = 'btn btn-outline-info btn-sm';
+            } else {
+                toggleShareVisibilityButton.textContent = 'Sembunyikan dari Share';
+                toggleShareVisibilityButton.className = 'btn btn-outline-warning btn-sm';
+            }
+        };
+
         var setCreateMode = function (parentId, label) {
             if (!form) return;
             form.setAttribute('action', addUrl);
@@ -503,6 +530,11 @@
                 toggleStatusButton.disabled = true;
                 toggleStatusButton.textContent = 'Aktifkan/Nonaktifkan Item';
                 toggleStatusButton.className = 'btn btn-outline-secondary btn-sm';
+            }
+            if (toggleShareVisibilityButton) {
+                toggleShareVisibilityButton.disabled = true;
+                toggleShareVisibilityButton.textContent = 'Sembunyikan dari Share';
+                toggleShareVisibilityButton.className = 'btn btn-outline-secondary btn-sm';
             }
         };
 
@@ -525,6 +557,9 @@
             }
             if (toggleStatusButton) {
                 updateToggleButton((itemEl.getAttribute('data-is_active') || '1') === '1');
+            }
+            if (toggleShareVisibilityButton) {
+                updateShareVisibilityButton((itemEl.getAttribute('data-is_hidden_share') || '0') === '1');
             }
         };
 
@@ -554,6 +589,7 @@
         }
 
         toggleStatusButton = document.getElementById('btn-toggle-status');
+        toggleShareVisibilityButton = document.getElementById('btn-toggle-share-visibility');
 
         var bindTreeItemClicks = function () {
             if (!root) return;
@@ -690,6 +726,58 @@
                 });
         };
 
+        var toggleShareVisibilityAjax = function () {
+            if (!toggleShareVisibilityButton || !selectedIdInput || !selectedIdInput.value) {
+                return;
+            }
+
+            var selectedId = selectedIdInput.value;
+            var currentItem = document.querySelector('.simak-master-item[data-id="' + selectedId + '"]');
+            var isHidden = currentItem ? (currentItem.getAttribute('data-is_hidden_share') || '0') === '1' : false;
+            var nextVisibility = isHidden ? 0 : 1;
+
+            toggleShareVisibilityButton.disabled = true;
+
+            var formData = new FormData();
+            formData.append('is_hidden_share', String(nextVisibility));
+            formData.append(csrfName, csrfValue);
+
+            fetch(baseUrl + '/' + encodeURIComponent(selectedId) + '/share-visibility', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+                .then(function (response) {
+                    return response.json().then(function (json) {
+                        return { ok: response.ok, json: json };
+                    });
+                })
+                .then(function (result) {
+                    var json = result.json || {};
+                    syncCsrfFromJson(json);
+                    if (!result.ok || json.status !== 'ok') {
+                        showNotice(json.message || 'Gagal mengubah visibilitas share item.', 'danger');
+                        return;
+                    }
+
+                    refreshPanels(selectedId, formModeLabel ? formModeLabel.textContent : 'Tambah Item Master').then(function () {
+                        showNotice(json.message || 'Visibilitas share item berhasil diubah.', 'success');
+                    });
+                })
+                .catch(function () {
+                    showNotice('Gagal mengubah visibilitas share item.', 'danger');
+                })
+                .finally(function () {
+                    if (toggleShareVisibilityButton) {
+                        toggleShareVisibilityButton.disabled = false;
+                    }
+                });
+        };
+
         var submitMasterFormAjax = function () {
             if (!form) return;
 
@@ -812,6 +900,12 @@
         if (toggleStatusButton) {
             toggleStatusButton.addEventListener('click', function () {
                 toggleStatusAjax();
+            });
+        }
+
+        if (toggleShareVisibilityButton) {
+            toggleShareVisibilityButton.addEventListener('click', function () {
+                toggleShareVisibilityAjax();
             });
         }
 

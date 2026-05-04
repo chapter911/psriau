@@ -33,8 +33,11 @@ class MasterSimak extends BaseController
                 'can_add' => false,
                 'can_edit' => false,
                 'can_delete' => false,
+                'shareVisibilityAvailable' => false,
             ]);
         }
+
+        $shareVisibilityAvailable = $db->fieldExists('is_hidden_share', 'mst_simak_konstruksi_item');
 
         $rows = (new MasterSimakKonstruksiItemModel())
             ->orderBy('ordering', 'ASC')
@@ -54,6 +57,7 @@ class MasterSimak extends BaseController
             'can_add' => $this->canManageMasterData() && (bool) ($menuPermissions['add'] ?? false),
             'can_edit' => $this->canManageMasterData() && (bool) ($menuPermissions['edit'] ?? false),
             'can_delete' => $this->canManageMasterData() && (bool) ($menuPermissions['delete'] ?? false),
+            'shareVisibilityAvailable' => $shareVisibilityAvailable,
         ]);
     }
 
@@ -116,6 +120,10 @@ class MasterSimak extends BaseController
             'ordering' => $nextOrdering,
             'is_active' => 1,
         ]);
+
+        if ($db->fieldExists('is_hidden_share', 'mst_simak_konstruksi_item')) {
+            $model->update((int) $model->getInsertID(), ['is_hidden_share' => 0]);
+        }
 
         if ($this->wantsJsonResponse()) {
             return $this->response->setJSON([
@@ -271,6 +279,81 @@ class MasterSimak extends BaseController
         return redirect()->to('/admin/master/simak/konstruksi')->with('success', $message);
     }
 
+    public function konstruksiUpdateShareVisibility(int $id)
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSTRUKSI);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $db = db_connect();
+        if (! $db->fieldExists('is_hidden_share', 'mst_simak_konstruksi_item')) {
+            $message = 'Fitur sembunyikan share belum tersedia. Jalankan migration terbaru.';
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_CONFLICT)->setJSON([
+                    'status' => 'error',
+                    'message' => $message,
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konstruksi')->with('error', $message);
+        }
+
+        $permissions = $this->resolveMenuPermissions(self::MENU_LINK_KONSTRUKSI);
+        if (! $this->canManageMasterData() || ! (bool) ($permissions['edit'] ?? false)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk mengubah visibilitas share master SIMAK konstruksi.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Anda tidak memiliki akses untuk mengubah visibilitas share master SIMAK konstruksi.');
+        }
+
+        $visibility = (int) ($this->request->getPost('is_hidden_share') ?? -1);
+        if (! in_array($visibility, [0, 1], true)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Status visibilitas share tidak valid.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Status visibilitas share tidak valid.');
+        }
+
+        $model = new MasterSimakKonstruksiItemModel();
+        $existing = $model->find($id);
+        if (! is_array($existing)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Item master tidak ditemukan.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Item master tidak ditemukan.');
+        }
+
+        $model->update($id, ['is_hidden_share' => $visibility]);
+
+        $message = $visibility === 1
+            ? 'Item berhasil disembunyikan dari share link.'
+            : 'Item berhasil ditampilkan di share link.';
+
+        if ($this->wantsJsonResponse()) {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'message' => $message,
+                'id' => $id,
+                'is_hidden_share' => $visibility,
+            ] + $this->csrfPayload());
+        }
+
+        return redirect()->to('/admin/master/simak/konstruksi')->with('success', $message);
+    }
+
     public function konstruksiSaveHierarchy()
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSTRUKSI);
@@ -353,8 +436,11 @@ class MasterSimak extends BaseController
                 'can_add' => false,
                 'can_edit' => false,
                 'can_delete' => false,
+                'shareVisibilityAvailable' => false,
             ]);
         }
+
+        $shareVisibilityAvailable = $db->fieldExists('is_hidden_share', 'mst_simak_konsultasi_item');
 
         $rows = (new MasterSimakKonsultasiItemModel())
             ->orderBy('ordering', 'ASC')
@@ -374,6 +460,7 @@ class MasterSimak extends BaseController
             'can_add' => $this->canManageMasterData() && (bool) ($menuPermissions['add'] ?? false),
             'can_edit' => $this->canManageMasterData() && (bool) ($menuPermissions['edit'] ?? false),
             'can_delete' => $this->canManageMasterData() && (bool) ($menuPermissions['delete'] ?? false),
+            'shareVisibilityAvailable' => $shareVisibilityAvailable,
         ]);
     }
 
@@ -441,6 +528,10 @@ class MasterSimak extends BaseController
             'ordering' => $nextOrdering,
             'is_active' => 1,
         ]);
+
+        if ($db->fieldExists('is_hidden_share', 'mst_simak_konsultasi_item')) {
+            $model->update((int) $model->getInsertID(), ['is_hidden_share' => 0]);
+        }
 
         if ($this->wantsJsonResponse()) {
             return $this->response->setJSON([
@@ -593,6 +684,81 @@ class MasterSimak extends BaseController
                 'message' => $message,
                 'id' => $id,
                 'is_active' => $status,
+            ] + $this->csrfPayload());
+        }
+
+        return redirect()->to('/admin/master/simak/konsultasi')->with('success', $message);
+    }
+
+    public function konsultasiUpdateShareVisibility(int $id)
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSULTASI);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $db = db_connect();
+        if (! $db->fieldExists('is_hidden_share', 'mst_simak_konsultasi_item')) {
+            $message = 'Fitur sembunyikan share belum tersedia. Jalankan migration terbaru.';
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_CONFLICT)->setJSON([
+                    'status' => 'error',
+                    'message' => $message,
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konsultasi')->with('error', $message);
+        }
+
+        $permissions = $this->resolveMenuPermissions(self::MENU_LINK_KONSULTASI);
+        if (! $this->canManageMasterData() || ! (bool) ($permissions['edit'] ?? false)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk mengubah visibilitas share master SIMAK konsultasi.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Anda tidak memiliki akses untuk mengubah visibilitas share master SIMAK konsultasi.');
+        }
+
+        $visibility = (int) ($this->request->getPost('is_hidden_share') ?? -1);
+        if (! in_array($visibility, [0, 1], true)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Status visibilitas share tidak valid.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Status visibilitas share tidak valid.');
+        }
+
+        $model = new MasterSimakKonsultasiItemModel();
+        $existing = $model->find($id);
+        if (! is_array($existing)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Item master tidak ditemukan.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Item master tidak ditemukan.');
+        }
+
+        $model->update($id, ['is_hidden_share' => $visibility]);
+
+        $message = $visibility === 1
+            ? 'Item berhasil disembunyikan dari share link.'
+            : 'Item berhasil ditampilkan di share link.';
+
+        if ($this->wantsJsonResponse()) {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'message' => $message,
+                'id' => $id,
+                'is_hidden_share' => $visibility,
             ] + $this->csrfPayload());
         }
 

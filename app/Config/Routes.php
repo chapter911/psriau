@@ -145,9 +145,11 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/simak/konstruksi/(:num)/status', 'Admin\\MasterSimak::konstruksiUpdateStatus/$1');
 	$routes->post('master/simak/konstruksi/simpan-hirarki', 'Admin\\MasterSimak::konstruksiSaveHierarchy');
 	$routes->post('master/simak/konsultasi/tambah', 'Admin\\MasterSimak::konsultasiCreate');
+	$routes->post('master/simak/konstruksi/(:num)/share-visibility', 'Admin\MasterSimak::konstruksiUpdateShareVisibility/$1');
 	$routes->post('master/simak/konsultasi/(:num)/ubah', 'Admin\\MasterSimak::konsultasiUpdate/$1');
 	$routes->post('master/simak/konsultasi/(:num)/status', 'Admin\\MasterSimak::konsultasiUpdateStatus/$1');
 	$routes->post('master/simak/konsultasi/simpan-hirarki', 'Admin\\MasterSimak::konsultasiSaveHierarchy');
+	$routes->post('master/simak/konsultasi/(:num)/share-visibility', 'Admin\MasterSimak::konsultasiUpdateShareVisibility/$1');
 	$routes->get('kontrak/ki/(:num)', 'Admin\\Kontrak::ki/$1');
 	$routes->post('kontrak/ki/(:num)/tambah', 'Admin\\Kontrak::createKi/$1');
 	$routes->post('kontrak/ki/(:num)/(:num)/ubah', 'Admin\\Kontrak::updateKi/$1/$2');

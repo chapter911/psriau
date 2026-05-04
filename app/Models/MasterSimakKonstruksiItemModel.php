@@ -18,6 +18,7 @@ class MasterSimakKonstruksiItemModel extends Model
         'has_question',
         'ordering',
         'is_active',
+        'is_hidden_share',
     ];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';

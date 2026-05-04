@@ -2351,7 +2351,7 @@ class Kontrak extends BaseController
         // Calculate document completion percentages
         $simakId = (int) ($shared['item']['id'] ?? 0);
         $sharedType = (string) ($shared['type'] ?? 'konstruksi');
-        $kelengkapanPercentages = $this->getSimakAdministrasiKelengkapanBySimakId([$simakId], $sharedType);
+        $kelengkapanPercentages = $this->getSimakAdministrasiKelengkapanBySimakId([$simakId], $sharedType, false);
         $kelengkapanPercentage = $kelengkapanPercentages[$simakId] ?? [
             'lengkap_persen' => 0.0,
             'belum_sesuai_persen' => 0.0,
@@ -3079,10 +3079,13 @@ class Kontrak extends BaseController
                 continue;
             }
 
-            $templateItems = $this->getSimakTemplateItems((string) ($config['type'] ?? 'konstruksi'));
-            if ($templateItems === []) {
+            $templateType = (string) ($config['type'] ?? 'konstruksi');
+            $allTemplateItems = $this->getSimakTemplateItems($templateType);
+            if ($allTemplateItems === []) {
                 return null;
             }
+
+            $templateItems = $this->getSimakTemplateItems($templateType, false);
 
             $verifikasiByRow = [];
             if ($db->tableExists($tableVerifikasi)) {
@@ -3383,7 +3386,7 @@ class Kontrak extends BaseController
         return $grouped;
     }
 
-    private function getSimakAdministrasiKelengkapanBySimakId(array $simakIds, string $type = 'konstruksi'): array
+    private function getSimakAdministrasiKelengkapanBySimakId(array $simakIds, string $type = 'konstruksi', bool $includeHiddenShare = true): array
     {
         $simakIds = array_values(array_unique(array_filter(array_map('intval', $simakIds), static function (int $id): bool {
             return $id > 0;
@@ -3402,7 +3405,7 @@ class Kontrak extends BaseController
             ];
         }
 
-        $templateItems = $this->getSimakTemplateItems($type);
+        $templateItems = $this->getSimakTemplateItems($type, $includeHiddenShare);
         $leafRows = [];
         foreach ($templateItems as $item) {
             if (($item['is_leaf'] ?? false) !== true) {
@@ -3491,11 +3494,18 @@ class Kontrak extends BaseController
         return $result;
     }
 
-    private function getSimakPelaksanaanFisikTemplateItems(): array
+    private function getSimakPelaksanaanFisikTemplateItems(bool $includeHiddenShare = true): array
     {
-        $masterItems = $this->getSimakKonstruksiTemplateFromMaster();
+        $masterItems = $this->getSimakKonstruksiTemplateFromMaster($includeHiddenShare);
         if ($masterItems !== []) {
             return $masterItems;
+        }
+
+        if (! $includeHiddenShare) {
+            $allMasterItems = $this->getSimakKonstruksiTemplateFromMaster(true);
+            if ($allMasterItems !== []) {
+                return [];
+            }
         }
 
         $filePath = WRITEPATH . 'templates/contoh_simak.xlsx';
@@ -3633,15 +3643,20 @@ class Kontrak extends BaseController
         }
     }
 
-    private function getSimakKonstruksiTemplateFromMaster(): array
+    private function getSimakKonstruksiTemplateFromMaster(bool $includeHiddenShare = true): array
     {
         $db = db_connect();
         if (! $db->tableExists('mst_simak_konstruksi_item')) {
             return [];
         }
 
+        $selectFields = ['id', 'parent_id', 'row_no', 'display_no', 'uraian', 'row_kind', 'has_question', 'ordering'];
+        if ($this->tableHasColumn('mst_simak_konstruksi_item', 'is_hidden_share')) {
+            $selectFields[] = 'is_hidden_share';
+        }
+
         $rows = $db->table('mst_simak_konstruksi_item')
-            ->select('id, parent_id, row_no, display_no, uraian, row_kind, has_question, ordering')
+            ->select(implode(', ', $selectFields))
             ->where('is_active', 1)
             ->orderBy('ordering', 'ASC')
             ->orderBy('id', 'ASC')
@@ -3690,8 +3705,12 @@ class Kontrak extends BaseController
         $sortTree($roots);
 
         $flattened = [];
-        $walk = static function (array $items, int $depth, string $sectionKey, string $sectionTitle) use (&$walk, &$flattened): void {
+        $walk = static function (array $items, int $depth, string $sectionKey, string $sectionTitle) use (&$walk, &$flattened, $includeHiddenShare): void {
             foreach ($items as $item) {
+                if (! $includeHiddenShare && (int) ($item['is_hidden_share'] ?? 0) === 1) {
+                    continue;
+                }
+
                 $rowKind = (string) ($item['row_kind'] ?? 'question');
                 $currentSectionKey = $sectionKey;
                 $currentSectionTitle = $sectionTitle;
@@ -3744,18 +3763,25 @@ class Kontrak extends BaseController
         return $flattened;
     }
 
-    private function getSimakTemplateItems(string $type = 'konstruksi'): array
+    private function getSimakTemplateItems(string $type = 'konstruksi', bool $includeHiddenShare = true): array
     {
         return $type === 'konsultasi'
-            ? $this->getSimakKonsultasiTemplateItems()
-            : $this->getSimakPelaksanaanFisikTemplateItems();
+            ? $this->getSimakKonsultasiTemplateItems($includeHiddenShare)
+            : $this->getSimakPelaksanaanFisikTemplateItems($includeHiddenShare);
     }
 
-    private function getSimakKonsultasiTemplateItems(): array
+    private function getSimakKonsultasiTemplateItems(bool $includeHiddenShare = true): array
     {
-        $masterItems = $this->getSimakKonsultasiTemplateFromMaster();
+        $masterItems = $this->getSimakKonsultasiTemplateFromMaster($includeHiddenShare);
         if ($masterItems !== []) {
             return $masterItems;
+        }
+
+        if (! $includeHiddenShare) {
+            $allMasterItems = $this->getSimakKonsultasiTemplateFromMaster(true);
+            if ($allMasterItems !== []) {
+                return [];
+            }
         }
 
         $filePath = WRITEPATH . 'templates/contoh_simak.xlsx';
@@ -3967,15 +3993,20 @@ class Kontrak extends BaseController
         }
     }
 
-    private function getSimakKonsultasiTemplateFromMaster(): array
+    private function getSimakKonsultasiTemplateFromMaster(bool $includeHiddenShare = true): array
     {
         $db = db_connect();
         if (! $db->tableExists('mst_simak_konsultasi_item')) {
             return [];
         }
 
+        $selectFields = ['id', 'parent_id', 'row_no', 'display_no', 'uraian', 'bentuk_dokumen', 'referensi', 'kriteria_administrasi', 'kriteria_substansi', 'sumber_dokumen_hasil_integrasi', 'row_kind', 'has_question', 'ordering'];
+        if ($this->tableHasColumn('mst_simak_konsultasi_item', 'is_hidden_share')) {
+            $selectFields[] = 'is_hidden_share';
+        }
+
         $rows = $db->table('mst_simak_konsultasi_item')
-            ->select('id, parent_id, row_no, display_no, uraian, bentuk_dokumen, referensi, kriteria_administrasi, kriteria_substansi, sumber_dokumen_hasil_integrasi, row_kind, has_question, ordering')
+            ->select(implode(', ', $selectFields))
             ->where('is_active', 1)
             ->orderBy('ordering', 'ASC')
             ->orderBy('id', 'ASC')
@@ -4024,8 +4055,12 @@ class Kontrak extends BaseController
         $sortTree($roots);
 
         $flattened = [];
-        $walk = static function (array $items, int $depth, string $sectionKey, string $sectionTitle) use (&$walk, &$flattened): void {
+        $walk = static function (array $items, int $depth, string $sectionKey, string $sectionTitle) use (&$walk, &$flattened, $includeHiddenShare): void {
             foreach ($items as $item) {
+                if (! $includeHiddenShare && (int) ($item['is_hidden_share'] ?? 0) === 1) {
+                    continue;
+                }
+
                 $rowKind = (string) ($item['row_kind'] ?? 'question');
                 $currentSectionKey = $sectionKey;
                 $currentSectionTitle = $sectionTitle;
