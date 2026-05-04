@@ -5174,6 +5174,140 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Gagal menyimpan verifikasi SIMAK Konsultasi.');
         }
 
+        // Notify uploader(s) via email (same behavior as konstruksi)
+        try {
+            $emails = [];
+
+            // Priority 1: manual notification email from POST
+            $notificationEmail = trim((string) ($this->request->getPost('notification_email') ?? ''));
+            if ($notificationEmail !== '') {
+                if (filter_var($notificationEmail, FILTER_VALIDATE_EMAIL) !== false) {
+                    $emails[] = $notificationEmail;
+                }
+            }
+
+            // Priority 2: extract from uploaded documents
+            if ($emails === [] && $db->tableExists('trn_kontrak_simak_konsultasi_verifikasi_dokumen')) {
+                $docs = $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')
+                    ->select('created_by, row_no, file_original_name')
+                    ->where('simak_id', $id)
+                    ->get()
+                    ->getResultArray();
+
+                foreach ($docs as $d) {
+                    $cb = trim((string) ($d['created_by'] ?? ''));
+                    if ($cb === '') {
+                        continue;
+                    }
+
+                    if (preg_match('/<([^>]+)>/', $cb, $m)) {
+                        $emails[] = trim($m[1]);
+                        continue;
+                    }
+
+                    if (preg_match('/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i', $cb, $m2)) {
+                        $emails[] = trim($m2[1]);
+                    }
+                }
+
+                $emails = array_values(array_unique(array_filter($emails)));
+            }
+
+            if ($emails !== [] && class_exists('\Config\Services')) {
+                $emailService = \Config\Services::email();
+                if ($emailService !== null) {
+                    $emailConfig = config('Email');
+                    if ($emailConfig !== null) {
+                        $fromEmail = trim((string) ($emailConfig->fromEmail ?? ''));
+                        $fromName = trim((string) ($emailConfig->fromName ?? 'SIMAK')) ?: 'SIMAK';
+                        if ($fromEmail === '') {
+                            $host = $_SERVER['HTTP_HOST'] ?? gethostname() ?: 'example.com';
+                            $fromEmail = 'no-reply@' . preg_replace('/[^a-z0-9.\-]/i', '', $host);
+                        }
+
+                        // Prefer public share link if available
+                        $shareUrl = site_url('admin/kontrak/simak/konsultasi/' . $id);
+                        if ($db->tableExists('trn_kontrak_simak_konsultasi_share')) {
+                            $shareRow = $db->table('trn_kontrak_simak_konsultasi_share')
+                                ->select('share_token')
+                                ->where('simak_id', $id)
+                                ->where('is_active', 1)
+                                ->orderBy('id', 'DESC')
+                                ->get()
+                                ->getRowArray();
+                            if (is_array($shareRow) && ! empty($shareRow['share_token'])) {
+                                $shareUrl = site_url('simak/share/' . $shareRow['share_token']);
+                            }
+                        }
+
+                        // Build list of poin (kode or uraian) instead of row numbers
+                        $points = [];
+                        $rowNos = array_map('intval', array_column($docs ?? [], 'row_no'));
+                        if ($rowNos !== []) {
+                            $verRows = $db->table('trn_kontrak_simak_konsultasi_verifikasi')
+                                ->select('row_no,kode,uraian,verifikasi_ki,keterangan')
+                                ->where('simak_id', $id)
+                                ->whereIn('row_no', $rowNos)
+                                ->get()
+                                ->getResultArray();
+                            $map = [];
+                            foreach ($verRows as $vr) {
+                                $label = trim((string) (($vr['kode'] ?? '') !== '' ? $vr['kode'] : ($vr['uraian'] ?? '')));
+                                $status = (string) ($vr['verifikasi_ki'] ?? '');
+                                $ketRow = trim((string) ($vr['keterangan'] ?? ''));
+                                $map[(int) ($vr['row_no'] ?? 0)] = [
+                                    'label' => $label,
+                                    'status' => $status,
+                                    'keterangan' => $ketRow,
+                                ];
+                            }
+                            foreach ($rowNos as $rn) {
+                                $m = $map[(int) $rn] ?? null;
+                                if (is_array($m) && ($m['label'] ?? '') !== '') {
+                                    $points[] = $m;
+                                }
+                            }
+                        }
+
+                        $subject = 'Notifikasi: Verifikasi SIMAK';
+                        $message = "Verifikasi SIMAK telah disimpan.";
+                        if ($points !== []) {
+                            $lines = [];
+                            foreach ($points as $p) {
+                                $statusLabel = ($p['status'] === 'sesuai') ? 'Sesuai' : (($p['status'] === 'tidak_sesuai') ? 'Tidak Sesuai' : '-');
+                                $line = ($p['label'] ?? '-') . ' — Status: ' . $statusLabel;
+                                if (($p['keterangan'] ?? '') !== '') {
+                                    $line .= "\nKeterangan: " . $p['keterangan'];
+                                }
+                                $lines[] = $line;
+                            }
+                            $message .= "\n\nPoin yang diverifikasi:\n- " . implode("\n- ", $lines);
+                        }
+                        $message .= "\n\nLihat: " . $shareUrl;
+
+                        foreach ($emails as $to) {
+                            try {
+                                if (filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
+                                    continue;
+                                }
+
+                                $emailService->clear(true);
+                                $emailService->setFrom($fromEmail, $fromName);
+                                $emailService->setTo($to);
+                                $emailService->setSubject($subject);
+                                $emailService->setMessage($message);
+                                $emailService->send();
+                            } catch (\Throwable $e) {
+                                log_message('error', 'Failed to send verification notification to ' . $to . ': ' . $e->getMessage());
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Failed to prepare/send verification notifications (konsultasi): ' . $e->getMessage());
+        }
+
         return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('success', 'Verifikasi SIMAK Konsultasi berhasil disimpan.');
     }
 
@@ -5332,6 +5466,95 @@ class Kontrak extends BaseController
         $message = $hasUpload
             ? 'Update verifikasi tersimpan dan dokumen berhasil diupload. Riwayat dokumen tercatat.'
             : 'Update verifikasi berhasil disimpan.';
+
+        // Send notification email (same behavior as konstruksi upload)
+        try {
+            $emails = [];
+
+            // Priority 1: Check for manual notification email from POST
+            $notificationEmail = trim((string) ($this->request->getPost('notification_email') ?? ''));
+            if ($notificationEmail !== '') {
+                if (filter_var($notificationEmail, FILTER_VALIDATE_EMAIL) !== false) {
+                    $emails[] = $notificationEmail;
+                }
+            }
+
+            // Priority 2: If upload, extract from created_by uploader
+            if ($emails === [] && $hasUpload) {
+                $createdBy = trim((string) ($actor ?? ''));
+                if ($createdBy !== '') {
+                    if (preg_match('/<([^>]+)>/', $createdBy, $m)) {
+                        $candidate = trim($m[1]);
+                        if (filter_var($candidate, FILTER_VALIDATE_EMAIL) !== false) {
+                            $emails[] = $candidate;
+                        }
+                    } elseif (preg_match('/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i', $createdBy, $m2)) {
+                        $candidate = trim($m2[1]);
+                        if (filter_var($candidate, FILTER_VALIDATE_EMAIL) !== false) {
+                            $emails[] = $candidate;
+                        }
+                    }
+                }
+            }
+
+            if ($emails !== [] && class_exists('\Config\Services')) {
+                $emailService = \Config\Services::email();
+                if ($emailService !== null) {
+                    $emailConfig = config('Email');
+                    if ($emailConfig !== null) {
+                        $fromEmail = trim((string) ($emailConfig->fromEmail ?? ''));
+                        $fromName = trim((string) ($emailConfig->fromName ?? 'SIMAK')) ?: 'SIMAK';
+                        if ($fromEmail === '') {
+                            $host = $_SERVER['HTTP_HOST'] ?? gethostname() ?: 'example.com';
+                            $fromEmail = 'no-reply@' . preg_replace('/[^a-z0-9.\-]/i', '', $host);
+                        }
+
+                        // Prefer public share link if available
+                        $shareUrl = site_url('admin/kontrak/simak/konsultasi/' . $id);
+                        if ($db->tableExists('trn_kontrak_simak_konsultasi_share')) {
+                            $shareRow = $db->table('trn_kontrak_simak_konsultasi_share')
+                                ->select('share_token')
+                                ->where('simak_id', $id)
+                                ->where('is_active', 1)
+                                ->orderBy('id', 'DESC')
+                                ->get()
+                                ->getRowArray();
+                            if (is_array($shareRow) && ! empty($shareRow['share_token'])) {
+                                $shareUrl = site_url('simak/share/' . $shareRow['share_token']);
+                            }
+                        }
+
+                        $pointLabel = trim((string) (($targetTemplate['display_no'] ?? '') !== '' ? $targetTemplate['display_no'] : ($targetTemplate['uraian'] ?? '')));
+                        $subject = 'Notifikasi: Verifikasi dokumen SIMAK' . ($pointLabel !== '' ? ' - ' . $pointLabel : '');
+                        $statusLabel = ($ver === 'sesuai') ? 'Sesuai' : (($ver === 'tidak_sesuai') ? 'Tidak Sesuai' : '-');
+                        $message_email = 'Verifikasi dokumen untuk poin: ' . ($pointLabel !== '' ? $pointLabel : $rowNo) . "\nStatus: " . $statusLabel;
+                        if ($ket !== '') {
+                            $message_email .= "\nKeterangan: " . $ket;
+                        }
+                        $message_email .= "\n\nLihat: " . $shareUrl;
+
+                        foreach ($emails as $to) {
+                            try {
+                                if (filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
+                                    continue;
+                                }
+
+                                $emailService->clear(true);
+                                $emailService->setFrom($fromEmail, $fromName);
+                                $emailService->setTo($to);
+                                $emailService->setSubject($subject);
+                                $emailService->setMessage($message_email);
+                                $emailService->send();
+                            } catch (\Throwable $e) {
+                                log_message('error', 'Failed to send verification notification to ' . $to . ': ' . $e->getMessage());
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Failed to prepare/send verification notification for document (konsultasi): ' . $e->getMessage());
+        }
 
         return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('success', $message);
     }
