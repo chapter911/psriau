@@ -514,7 +514,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="modal-history-close-btn">Tutup</button>
             </div>
         </div>
     </div>
@@ -923,6 +923,8 @@
             var uraian = this.getAttribute('data-uraian') || '-';
             var rows = dokumenHistoryByRow[rowNo] || [];
 
+            console.log('History button clicked:', { rowNo: rowNo, label: label, uraian: uraian, rowsCount: rows.length, dokumenHistoryByRow: dokumenHistoryByRow });
+
             if (historyRowLabelEl) {
                 historyRowLabelEl.textContent = label;
             }
@@ -932,11 +934,47 @@
 
             renderHistoryRows(rows);
 
-            if (window.jQuery && window.jQuery.fn && typeof window.jQuery.fn.modal === 'function') {
+            // Try jQuery first
+            if (window.jQuery && window.jQuery('#modal-history-dokumen').length > 0) {
+                console.log('Using jQuery to show modal');
                 window.jQuery('#modal-history-dokumen').modal('show');
+            } else {
+                // Fallback to vanilla JavaScript
+                console.log('jQuery not available, using vanilla JS');
+                var modalEl = document.getElementById('modal-history-dokumen');
+                if (modalEl) {
+                    modalEl.classList.add('show');
+                    modalEl.style.display = 'block';
+                    if (document.body) {
+                        document.body.classList.add('modal-open');
+                    }
+                    var backdrop = document.createElement('div');
+                    backdrop.className = 'modal-backdrop fade show';
+                    backdrop.id = 'modal-backdrop-history';
+                    document.body.appendChild(backdrop);
+                }
             }
         });
     });
+
+    // Handle modal close for vanilla JS
+    var historyCloseBtn = document.getElementById('modal-history-close-btn');
+    if (historyCloseBtn) {
+        historyCloseBtn.addEventListener('click', function () {
+            var modalEl = document.getElementById('modal-history-dokumen');
+            if (modalEl) {
+                modalEl.classList.remove('show');
+                modalEl.style.display = 'none';
+                if (document.body) {
+                    document.body.classList.remove('modal-open');
+                }
+                var backdrop = document.getElementById('modal-backdrop-history');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+            }
+        });
+    }
 
     // Admin Upload Dokumen
     var adminUploadButtons = document.querySelectorAll('.js-open-admin-upload-modal');
