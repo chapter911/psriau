@@ -142,11 +142,122 @@
         </div>
 
         <div class="card-footer d-flex align-items-center justify-content-between">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-floppy-disk mr-1"></i> Simpan Setting
-            </button>
+            <div class="d-flex align-items-center">
+                <button type="submit" class="btn btn-primary mr-2">
+                    <i class="fas fa-floppy-disk mr-1"></i> Simpan Setting
+                </button>
+                <button type="button" class="btn btn-outline-info" data-toggle="modal" data-target="#testEmailModal">
+                    <i class="fas fa-paper-plane mr-1"></i> Uji Coba Kirim Email
+                </button>
+            </div>
             <span class="text-muted small">Pastikan perubahan tampilan sesuai identitas aplikasi.</span>
         </div>
     </form>
 </div>
+
+<div class="modal fade" id="testEmailModal" tabindex="-1" role="dialog" aria-labelledby="testEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testEmailModalLabel">Uji Coba Kirim Email</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="testEmailForm" method="post" action="<?= site_url('/admin/pengaturan/application/test-email'); ?>">
+                <div class="modal-body">
+                    <?= csrf_field(); ?>
+
+                    <div class="alert d-none" id="testEmailResult" role="alert"></div>
+
+                    <div class="form-group">
+                        <label for="test_email_to">Email Tujuan</label>
+                        <input type="email" class="form-control" id="test_email_to" name="to_email" placeholder="contoh@domain.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="test_email_subject">Subject</label>
+                        <input type="text" class="form-control" id="test_email_subject" name="subject" value="Uji Coba Email - SATKER PPS Riau">
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="test_email_message">Isi Pesan</label>
+                        <textarea class="form-control" id="test_email_message" name="message" rows="4">Ini adalah email uji coba dari halaman Pengaturan Aplikasi.</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                    <button type="submit" class="btn btn-info" id="testEmailSubmitBtn">
+                        <i class="fas fa-paper-plane mr-1"></i> Kirim Uji Coba
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    (() => {
+        const form = document.getElementById('testEmailForm');
+        if (!form) {
+            return;
+        }
+
+        const submitBtn = document.getElementById('testEmailSubmitBtn');
+        const resultBox = document.getElementById('testEmailResult');
+
+        const showResult = (ok, message, detail = '') => {
+            if (!resultBox) {
+                return;
+            }
+
+            resultBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+            resultBox.classList.add(ok ? 'alert-success' : 'alert-danger');
+
+            const detailHtml = detail ? `<hr class="my-2"><pre class="mb-0" style="white-space:pre-wrap;max-height:220px;overflow:auto;">${detail.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>` : '';
+            resultBox.innerHTML = `<div>${message}</div>${detailHtml}`;
+        };
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (!submitBtn) {
+                return;
+            }
+
+            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Mengirim...';
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: new FormData(form),
+                });
+
+                const payload = await response.json();
+                const isOk = response.ok && payload && payload.status === 'ok';
+                const message = (payload && payload.message) ? payload.message : 'Terjadi kesalahan saat memproses permintaan.';
+                const detail = (payload && payload.error_detail) ? payload.error_detail : '';
+
+                showResult(isOk, message, detail);
+
+                if (payload && payload.csrf_hash) {
+                    const tokenField = form.querySelector('input[name="<?= csrf_token(); ?>"]');
+                    if (tokenField) {
+                        tokenField.value = payload.csrf_hash;
+                    }
+                }
+            } catch (error) {
+                showResult(false, 'Request gagal dijalankan.', error && error.message ? error.message : 'Unknown error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+    })();
+</script>
 <?= $this->endSection(); ?>

@@ -142,6 +142,8 @@
         <div>
             <h4>Layanan Publik</h4>
             <p>Informasi perencanaan, kegiatan, dan pembaruan resmi Instagram.</p>
+            <p><a href="<?= site_url('privacy-policy'); ?>">Application Privacy Policy</a></p>
+            <p><a href="<?= site_url('terms-of-service'); ?>">Application Terms of Service</a></p>
         </div>
         <div>
             <h4>Kontak</h4>

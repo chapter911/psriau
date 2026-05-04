@@ -282,6 +282,114 @@ class Setting extends BaseController
         return redirect()->to('/admin/pengaturan/application')->with('message', 'Warna sidebar berhasil direset ke default AdminLTE.');
     }
 
+    public function testEmail()
+    {
+        if (! $this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status' => 'error',
+                'message' => 'Permintaan tidak valid.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $to = trim((string) $this->request->getPost('to_email'));
+        $subject = trim((string) $this->request->getPost('subject'));
+        $message = trim((string) $this->request->getPost('message'));
+
+        if ($to === '' || filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'message' => 'Alamat email tujuan tidak valid.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        if ($subject === '') {
+            $subject = 'Uji Coba Email - SATKER PPS Riau';
+        }
+
+        if ($message === '') {
+            $message = 'Ini adalah email uji coba dari halaman Pengaturan Aplikasi.';
+        }
+
+        $email = \Config\Services::email();
+        $emailConfig = config('Email');
+        $fromEmail = trim((string) ($emailConfig->fromEmail ?? ''));
+        $fromName = trim((string) ($emailConfig->fromName ?? 'SATKER PPS Riau'));
+
+        if ($fromEmail === '') {
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => 'Konfigurasi EMAIL_FROM belum diatur.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        try {
+            $email->clear(true);
+            $email->setFrom($fromEmail, $fromName !== '' ? $fromName : 'SATKER PPS Riau');
+            $email->setTo($to);
+            $email->setSubject($subject);
+            $email->setMessage($message);
+
+            if (! $email->send()) {
+                $debugRaw = (string) $email->printDebugger(['headers', 'subject', 'body']);
+                $debug = $this->sanitizeMailerDebug(trim(strip_tags($debugRaw)));
+
+                return $this->response->setStatusCode(500)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Gagal mengirim email uji coba.',
+                    'error_detail' => $debug !== '' ? $debug : 'Tidak ada detail error dari mailer.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'message' => 'Email uji coba berhasil dikirim ke ' . $to . '.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => 'Terjadi error saat mengirim email uji coba.',
+                'error_detail' => $this->sanitizeMailerDebug((string) $e->getMessage()),
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+    }
+
+    private function sanitizeMailerDebug(string $text): string
+    {
+        $sanitized = trim($text);
+        if ($sanitized === '') {
+            return $sanitized;
+        }
+
+        // Hide SMTP password-like fields.
+        $sanitized = (string) preg_replace('/(SMTPPass|password|passwd|pwd)\s*[:=]\s*[^\s\r\n]+/i', '$1: [REDACTED]', $sanitized);
+
+        // Hide AUTH LOGIN / PLAIN payloads that may include base64 credentials.
+        $sanitized = (string) preg_replace('/(AUTH\s+(?:LOGIN|PLAIN)\s+)[A-Za-z0-9+\/=._-]+/i', '$1[REDACTED]', $sanitized);
+
+        // Mask email addresses but keep domain for diagnostics.
+        $sanitized = (string) preg_replace_callback(
+            '/([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,})/i',
+            static function (array $m): string {
+                $local = (string) ($m[1] ?? '');
+                $domain = (string) ($m[2] ?? '');
+                if ($local === '') {
+                    return '[REDACTED]@' . $domain;
+                }
+
+                return substr($local, 0, 1) . '***@' . $domain;
+            },
+            $sanitized
+        );
+
+        return $sanitized;
+    }
+
     public function menus()
     {
         $menuLv1 = (new MenuLv1Model())

@@ -1902,6 +1902,66 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal menyimpan verifikasi SIMAK.');
         }
 
+        // Notify uploader(s) via email if there are uploaded documents with Google identity
+        try {
+            $emails = [];
+            if ($db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
+                $docs = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+                    ->select('created_by, row_no, file_original_name')
+                    ->where('simak_id', $id)
+                    ->get()
+                    ->getResultArray();
+
+                foreach ($docs as $d) {
+                    $cb = trim((string) ($d['created_by'] ?? ''));
+                    if ($cb === '') {
+                        continue;
+                    }
+
+                    if (preg_match('/<([^>]+)>/', $cb, $m)) {
+                        $emails[] = trim($m[1]);
+                        continue;
+                    }
+
+                    if (preg_match('/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i', $cb, $m2)) {
+                        $emails[] = trim($m2[1]);
+                    }
+                }
+
+                $emails = array_values(array_unique(array_filter($emails)));
+            }
+
+            if ($emails !== []) {
+                $emailService = \Config\Services::email();
+                $emailConfig = config('Email');
+                $fromEmail = trim((string) ($emailConfig->fromEmail ?? ''));
+                $fromName = trim((string) ($emailConfig->fromName ?? 'SIMAK')) ?: 'SIMAK';
+                if ($fromEmail === '') {
+                    $host = $_SERVER['HTTP_HOST'] ?? gethostname() ?: 'example.com';
+                    $fromEmail = 'no-reply@' . preg_replace('/[^a-z0-9.\-]/i', '', $host);
+                }
+
+                $subject = 'Notifikasi: Verifikasi SIMAK telah dilakukan';
+                $link = site_url('admin/kontrak/simak/konstruksi/' . $id);
+                $message = "Verifikasi dokumen SIMAK (ID: {$id}) telah disimpan oleh {$actor}.\n\nLihat detail: " . $link . "\n\nJika Anda menerima email ini, maka verifikasi sudah selesai.";
+
+                foreach ($emails as $to) {
+                    try {
+                        $emailService->clear(true);
+                        $emailService->setFrom($fromEmail, $fromName);
+                        $emailService->setTo($to);
+                        $emailService->setSubject($subject);
+                        $emailService->setMessage($message);
+                        $emailService->send();
+                    } catch (\Throwable $e) {
+                        log_message('error', 'Failed to send verification notification to ' . $to . ': ' . $e->getMessage());
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Failed to prepare/send verification notifications: ' . $e->getMessage());
+        }
+
         return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('success', 'Verifikasi SIMAK berhasil disimpan.');
     }
 

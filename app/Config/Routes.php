@@ -46,6 +46,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'pengaturan-home', 'Admin\\HomeSetting::index');
 	$routes->match(['get', 'post'], 'pengaturan/application', 'Admin\\Setting::application');
 	$routes->post('pengaturan/application/reset-sidebar', 'Admin\\Setting::resetSidebarDefaults');
+	$routes->post('pengaturan/application/test-email', 'Admin\\Setting::testEmail');
 	$routes->post('pengaturan/application/git-pull', 'Admin\\Setting::gitPull');
 	$routes->post('pengaturan/application/merge-database', 'Admin\\Setting::mergeDatabase');
 	$routes->get('pengaturan/application/error-log-dates', 'Admin\\Setting::errorLogDates');
