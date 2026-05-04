@@ -313,22 +313,29 @@
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <?php if (is_array($latestDokumen)): ?>
+                                                    <div class="d-flex gap-2 flex-wrap">
+                                                        <?php if (is_array($latestDokumen)): ?>
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-warning btn-sm js-open-upload-modal"
+                                                                data-row-no="<?= esc((string) $rowNo); ?>"
+                                                                data-row-label="<?= esc($noText); ?>"
+                                                                data-uraian="<?= esc($uraian); ?>"
+                                                                data-kelengkapan="<?= esc($kelengkapan); ?>"
+                                                                data-verifikasi="<?= esc($verifikasi); ?>"
+                                                                data-keterangan="<?= esc($keterangan); ?>"
+                                                                data-pic="<?= esc($pic); ?>"
+                                                                data-created-by="<?= esc((string) ($latestDokumen['created_by'] ?? '')); ?>"
+                                                            >Verifikasi</button>
+                                                        <?php endif; ?>
                                                         <button
                                                             type="button"
-                                                            class="btn btn-warning btn-sm js-open-upload-modal"
+                                                            class="btn btn-success btn-sm js-open-admin-upload-modal"
                                                             data-row-no="<?= esc((string) $rowNo); ?>"
                                                             data-row-label="<?= esc($noText); ?>"
                                                             data-uraian="<?= esc($uraian); ?>"
-                                                            data-kelengkapan="<?= esc($kelengkapan); ?>"
-                                                            data-verifikasi="<?= esc($verifikasi); ?>"
-                                                            data-keterangan="<?= esc($keterangan); ?>"
-                                                            data-pic="<?= esc($pic); ?>"
-                                                                                                                    data-created-by="<?= esc((string) ($latestDokumen['created_by'] ?? '')); ?>"
-                                                        >Verifikasi</button>
-                                                    <?php else: ?>
-                                                        <span class="text-muted">-</span>
-                                                    <?php endif; ?>
+                                                        >Upload Dokumen</button>
+                                                    </div>
                                                 </td>
                                             <?php else: ?>
                                                 <td colspan="7"></td>
@@ -342,6 +349,49 @@
                     <?php $tabIndex++; ?>
                 <?php endforeach; ?>
             </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-admin-upload-dokumen" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Dokumen</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="<?= site_url('admin/kontrak/simak/konstruksi/' . (int) ($item['id'] ?? 0) . '/admin-upload-dokumen'); ?>" enctype="multipart/form-data" id="form-admin-upload-dokumen" novalidate>
+                <?= csrf_field(); ?>
+                <input type="hidden" name="row_no" id="admin_upload_row_no" value="">
+                <div class="modal-body">
+                    <div class="alert alert-light border">
+                        <div><strong>No:</strong> <span id="admin_upload_row_label">-</span></div>
+                        <div><strong>Uraian:</strong> <span id="admin_upload_row_uraian">-</span></div>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>Info:</strong> Dokumen yang diupload akan otomatis terverifikasi sebagai <strong>Lengkap</strong>.
+                    </div>
+                    <div class="form-group">
+                        <label for="admin_upload_file">File Dokumen <span class="text-danger">*</span></label>
+                        <input
+                            type="file"
+                            class="form-control"
+                            id="admin_upload_file"
+                            name="dokumen_file"
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                            required
+                        >
+                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX (Max 50MB)</small>
+                        <div class="invalid-feedback d-block" id="admin_upload_file_error" style="display: none; color: #dc3545;">File wajib dipilih</div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Upload dan Verifikasi</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -841,6 +891,45 @@
             }
         });
     });
+
+    // Admin Upload Dokumen
+    var adminUploadButtons = document.querySelectorAll('.js-open-admin-upload-modal');
+    var adminUploadRowNoInput = document.getElementById('admin_upload_row_no');
+    var adminUploadRowLabelEl = document.getElementById('admin_upload_row_label');
+    var adminUploadRowUraianEl = document.getElementById('admin_upload_row_uraian');
+    var adminUploadFileInput = document.getElementById('admin_upload_file');
+    var adminUploadForm = document.getElementById('form-admin-upload-dokumen');
+
+    adminUploadButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (adminUploadRowNoInput) {
+                adminUploadRowNoInput.value = this.getAttribute('data-row-no') || '';
+            }
+            if (adminUploadRowLabelEl) {
+                adminUploadRowLabelEl.textContent = this.getAttribute('data-row-label') || '-';
+            }
+            if (adminUploadRowUraianEl) {
+                adminUploadRowUraianEl.textContent = this.getAttribute('data-uraian') || '-';
+            }
+            if (adminUploadFileInput) {
+                adminUploadFileInput.value = '';
+            }
+            window.jQuery('#modal-admin-upload-dokumen').modal('show');
+        });
+    });
+
+    if (adminUploadForm) {
+        adminUploadForm.addEventListener('submit', function (e) {
+            if (adminUploadFileInput && (!adminUploadFileInput.value || adminUploadFileInput.value === '')) {
+                e.preventDefault();
+                var fileError = document.getElementById('admin_upload_file_error');
+                if (fileError) {
+                    fileError.style.display = 'block';
+                }
+                return false;
+            }
+        });
+    }
 })();
 </script>
 <?= $this->endSection(); ?>

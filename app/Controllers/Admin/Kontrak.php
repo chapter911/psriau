@@ -2291,6 +2291,120 @@ class Kontrak extends BaseController
         return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('success', $message);
     }
 
+    public function adminUploadSimakDokumen(int $id)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Anda tidak memiliki akses untuk upload dokumen SIMAK.');
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak')
+            || ! $db->tableExists('trn_kontrak_simak_verifikasi')
+            || ! $db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tabel dokumen SIMAK belum tersedia. Jalankan migration terbaru.');
+        }
+
+        $existingBuilder = $db->table('trn_kontrak_simak')->select('id')->where('id', $id);
+        $this->applyNotDeletedWhere($existingBuilder, 'trn_kontrak_simak');
+        $existing = $existingBuilder->get()->getRowArray();
+        if (! is_array($existing)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Data SIMAK tidak ditemukan.');
+        }
+
+        $rowNo = (int) ($this->request->getPost('row_no') ?? 0);
+        if ($rowNo <= 0) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Baris dokumen tidak valid.');
+        }
+
+        $templateItems = $this->getSimakTemplateItems('konstruksi');
+        $templateByRow = [];
+        foreach ($templateItems as $templateItem) {
+            $templateByRow[(int) ($templateItem['row_no'] ?? 0)] = $templateItem;
+        }
+
+        $targetTemplate = $templateByRow[$rowNo] ?? null;
+        if (! is_array($targetTemplate) || (($targetTemplate['is_leaf'] ?? false) !== true)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload hanya diizinkan pada baris terbawah.');
+        }
+
+        $file = $this->request->getFile('dokumen_file');
+        if (! $file || ! $file->isValid()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'File upload tidak valid.');
+        }
+
+        $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
+        $ext = strtolower((string) $file->getClientExtension());
+        if (! in_array($ext, $allowedExt, true)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
+        }
+
+        $subDir = 'uploads/simak_admin/' . $id . '/' . $rowNo;
+        $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
+        if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal membuat direktori upload dokumen.');
+        }
+
+        $storedName = $file->getRandomName();
+        $file->move($absDir, $storedName, true);
+        $storedPath = $absDir . DIRECTORY_SEPARATOR . $storedName;
+        if ($ext === 'pdf' && ((int) ($file->getSizeByUnit('b') ?? 0)) > (1024 * 1024)) {
+            $this->tryCompressPdfWithGhostscript($storedPath);
+        }
+        $relativePath = $subDir . '/' . $storedName;
+
+        $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+        $today = date('Y-m-d');
+        $now = date('Y-m-d H:i:s');
+
+        $verifikasiRow = [
+            'simak_id' => $id,
+            'row_no' => $rowNo,
+            'kode' => (string) ($targetTemplate['display_no'] ?? ''),
+            'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
+            'kelengkapan_dokumen' => 'ada',
+            'verifikasi_ki' => 'sesuai',
+            'keterangan' => 'Upload dokumen dari admin',
+            'pic' => $actor,
+            'updated_by' => $actor,
+            'updated_date' => $today,
+            'updated_at' => $now,
+        ];
+
+        $db->transStart();
+        $db->table('trn_kontrak_simak_verifikasi')->where('simak_id', $id)->where('row_no', $rowNo)->delete();
+        $verifikasiRow['created_by'] = $actor;
+        $verifikasiRow['created_date'] = $today;
+        $verifikasiRow['created_at'] = $now;
+        $db->table('trn_kontrak_simak_verifikasi')->insert($verifikasiRow);
+
+        $dokumenRow = [
+            'simak_id' => $id,
+            'row_no' => $rowNo,
+            'kode' => (string) ($targetTemplate['display_no'] ?? ''),
+            'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
+            'kelengkapan_dokumen' => 'ada',
+            'verifikasi_ki' => 'sesuai',
+            'keterangan' => 'Upload dokumen dari admin',
+            'pic' => $actor,
+            'file_original_name' => (string) $file->getClientName(),
+            'file_stored_name' => $storedName,
+            'file_relative_path' => $relativePath,
+            'file_mime' => (string) ($file->getClientMimeType() ?: ''),
+            'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+            'created_by' => $actor,
+            'created_date' => $today,
+            'created_at' => $now,
+        ];
+        $db->table('trn_kontrak_simak_verifikasi_dokumen')->insert($dokumenRow);
+        $db->transComplete();
+
+        if (! $db->transStatus()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal menyimpan upload dokumen.');
+        }
+
+        return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('success', 'Dokumen berhasil diupload dan otomatis terverifikasi sebagai Lengkap.');
+    }
+
     public function viewSimakVerifikasiDokumen(int $dokumenId)
     {
         if (! $this->canViewKontrak()) {
@@ -5621,6 +5735,120 @@ class Kontrak extends BaseController
         }
 
         return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('success', $message);
+    }
+
+    public function adminUploadSimakKonsultasiDokumen(int $id)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Anda tidak memiliki akses untuk upload dokumen SIMAK Konsultasi.');
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('trn_kontrak_simak_konsultasi')
+            || ! $db->tableExists('trn_kontrak_simak_konsultasi_verifikasi')
+            || ! $db->tableExists('trn_kontrak_simak_konsultasi_verifikasi_dokumen')) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tabel dokumen SIMAK Konsultasi belum tersedia. Jalankan migration terbaru.');
+        }
+
+        $existingBuilder = $db->table('trn_kontrak_simak_konsultasi')->select('id')->where('id', $id);
+        $this->applyNotDeletedWhere($existingBuilder, 'trn_kontrak_simak_konsultasi');
+        $existing = $existingBuilder->get()->getRowArray();
+        if (! is_array($existing)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Data SIMAK Konsultasi tidak ditemukan.');
+        }
+
+        $rowNo = (int) ($this->request->getPost('row_no') ?? 0);
+        if ($rowNo <= 0) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Baris dokumen tidak valid.');
+        }
+
+        $templateItems = $this->getSimakTemplateItems('konsultasi');
+        $templateByRow = [];
+        foreach ($templateItems as $templateItem) {
+            $templateByRow[(int) ($templateItem['row_no'] ?? 0)] = $templateItem;
+        }
+
+        $targetTemplate = $templateByRow[$rowNo] ?? null;
+        if (! is_array($targetTemplate) || (($targetTemplate['is_leaf'] ?? false) !== true)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Upload hanya diizinkan pada baris terbawah.');
+        }
+
+        $file = $this->request->getFile('dokumen_file');
+        if (! $file || ! $file->isValid()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'File upload tidak valid.');
+        }
+
+        $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
+        $ext = strtolower((string) $file->getClientExtension());
+        if (! in_array($ext, $allowedExt, true)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
+        }
+
+        $subDir = 'uploads/simak_admin_konsultasi/' . $id . '/' . $rowNo;
+        $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
+        if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Gagal membuat direktori upload dokumen.');
+        }
+
+        $storedName = $file->getRandomName();
+        $file->move($absDir, $storedName, true);
+        $storedPath = $absDir . DIRECTORY_SEPARATOR . $storedName;
+        if ($ext === 'pdf' && ((int) ($file->getSizeByUnit('b') ?? 0)) > (1024 * 1024)) {
+            $this->tryCompressPdfWithGhostscript($storedPath);
+        }
+        $relativePath = $subDir . '/' . $storedName;
+
+        $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+        $today = date('Y-m-d');
+        $now = date('Y-m-d H:i:s');
+
+        $verifikasiRow = [
+            'simak_id' => $id,
+            'row_no' => $rowNo,
+            'kode' => (string) ($targetTemplate['display_no'] ?? ''),
+            'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
+            'kelengkapan_dokumen' => 'ada',
+            'verifikasi_ki' => 'sesuai',
+            'keterangan' => 'Upload dokumen dari admin',
+            'pic' => $actor,
+            'updated_by' => $actor,
+            'updated_date' => $today,
+            'updated_at' => $now,
+        ];
+
+        $db->transStart();
+        $db->table('trn_kontrak_simak_konsultasi_verifikasi')->where('simak_id', $id)->where('row_no', $rowNo)->delete();
+        $verifikasiRow['created_by'] = $actor;
+        $verifikasiRow['created_date'] = $today;
+        $verifikasiRow['created_at'] = $now;
+        $db->table('trn_kontrak_simak_konsultasi_verifikasi')->insert($verifikasiRow);
+
+        $dokumenRow = [
+            'simak_id' => $id,
+            'row_no' => $rowNo,
+            'kode' => (string) ($targetTemplate['display_no'] ?? ''),
+            'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
+            'kelengkapan_dokumen' => 'ada',
+            'verifikasi_ki' => 'sesuai',
+            'keterangan' => 'Upload dokumen dari admin',
+            'pic' => $actor,
+            'file_original_name' => (string) $file->getClientName(),
+            'file_stored_name' => $storedName,
+            'file_relative_path' => $relativePath,
+            'file_mime' => (string) ($file->getClientMimeType() ?: ''),
+            'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+            'created_by' => $actor,
+            'created_date' => $today,
+            'created_at' => $now,
+        ];
+        $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')->insert($dokumenRow);
+        $db->transComplete();
+
+        if (! $db->transStatus()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Gagal menyimpan upload dokumen.');
+        }
+
+        return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('success', 'Dokumen berhasil diupload dan otomatis terverifikasi sebagai Lengkap.');
     }
 
     public function viewSimakKonsultasiVerifikasiDokumen(int $dokumenId)

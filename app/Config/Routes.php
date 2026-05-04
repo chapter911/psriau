@@ -87,6 +87,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('kontrak/simak/konstruksi/(:num)/ubah', 'Admin\\Kontrak::updateSimak/$1');
 	$routes->post('kontrak/simak/konstruksi/(:num)/verifikasi', 'Admin\\Kontrak::saveSimakVerifikasi/$1');
 	$routes->post('kontrak/simak/konstruksi/(:num)/verifikasi/upload', 'Admin\\Kontrak::uploadSimakVerifikasiDokumen/$1');
+	$routes->post('kontrak/simak/konstruksi/(:num)/admin-upload-dokumen', 'Admin\\Kontrak::adminUploadSimakDokumen/$1');
 	$routes->post('kontrak/simak/konstruksi/(:num)/share', 'Admin\\Kontrak::createSimakShare/$1');
 	$routes->post('kontrak/simak/konstruksi/(:num)/share/deactivate', 'Admin\\Kontrak::deactivateSimakShare/$1');
 	$routes->get('kontrak/simak/konstruksi/verifikasi-dokumen/(:num)', 'Admin\\Kontrak::viewSimakVerifikasiDokumen/$1');
@@ -99,6 +100,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('kontrak/simak/konsultasi/(:num)/ubah', 'Admin\\Kontrak::updateSimakKonsultasi/$1');
 	$routes->post('kontrak/simak/konsultasi/(:num)/verifikasi', 'Admin\\Kontrak::saveSimakKonsultasiVerifikasi/$1');
 	$routes->post('kontrak/simak/konsultasi/(:num)/verifikasi/upload', 'Admin\\Kontrak::uploadSimakKonsultasiVerifikasiDokumen/$1');
+	$routes->post('kontrak/simak/konsultasi/(:num)/admin-upload-dokumen', 'Admin\\Kontrak::adminUploadSimakKonsultasiDokumen/$1');
 	$routes->post('kontrak/simak/konsultasi/(:num)/share', 'Admin\\Kontrak::createSimakKonsultasiShare/$1');
 	$routes->post('kontrak/simak/konsultasi/(:num)/share/deactivate', 'Admin\\Kontrak::deactivateSimakKonsultasiShare/$1');
 	$routes->get('kontrak/simak/konsultasi/verifikasi-dokumen/(:num)', 'Admin\\Kontrak::viewSimakKonsultasiVerifikasiDokumen/$1');
