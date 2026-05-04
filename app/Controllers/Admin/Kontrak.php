@@ -1980,18 +1980,20 @@ class Kontrak extends BaseController
                                 ->getResultArray();
                             $map = [];
                             foreach ($verRows as $vr) {
-                                $label = trim((string) (($vr['kode'] ?? '') !== '' ? $vr['kode'] : ($vr['uraian'] ?? '')));
+                                $kode = trim((string) ($vr['kode'] ?? ''));
+                                $uraian = trim((string) ($vr['uraian'] ?? ''));
                                 $status = (string) ($vr['verifikasi_ki'] ?? '');
                                 $ketRow = trim((string) ($vr['keterangan'] ?? ''));
                                 $map[(int) ($vr['row_no'] ?? 0)] = [
-                                    'label' => $label,
+                                    'kode' => $kode,
+                                    'uraian' => $uraian,
                                     'status' => $status,
                                     'keterangan' => $ketRow,
                                 ];
                             }
                             foreach ($rowNos as $rn) {
                                 $m = $map[(int) $rn] ?? null;
-                                if (is_array($m) && ($m['label'] ?? '') !== '') {
+                                if (is_array($m) && (($m['kode'] ?? '') !== '' || ($m['uraian'] ?? '') !== '')) {
                                     $points[] = $m;
                                 }
                             }
@@ -2000,7 +2002,21 @@ class Kontrak extends BaseController
                         $subject = 'Notifikasi: Verifikasi SIMAK';
                         $message = "Verifikasi SIMAK telah disimpan.";
                         if ($points !== []) {
-                            $message .= "\n\nPoin yang diverifikasi:\n- " . implode("\n- ", $points);
+                            $lines = [];
+                            foreach ($points as $p) {
+                                $statusLabel = ($p['status'] === 'sesuai') ? 'Sesuai' : (($p['status'] === 'tidak_sesuai') ? 'Tidak Sesuai' : '-');
+                                $line = '';
+                                if (($p['kode'] ?? '') !== '') {
+                                    $line .= $p['kode'] . '. ';
+                                }
+                                $line .= ($p['uraian'] ?? '-');
+                                $line .= "\nStatus: " . $statusLabel;
+                                if (($p['keterangan'] ?? '') !== '') {
+                                    $line .= "\nKeterangan: " . $p['keterangan'];
+                                }
+                                $lines[] = $line;
+                            }
+                            $message .= "\n\nPoin yang diverifikasi:\n- " . implode("\n- ", $lines);
                         }
                         $message .= "\n\nLihat: " . $shareUrl;
 
@@ -2237,10 +2253,13 @@ class Kontrak extends BaseController
                             }
                         }
 
-                        $pointLabel = trim((string) (($targetTemplate['display_no'] ?? '') !== '' ? $targetTemplate['display_no'] : ($targetTemplate['uraian'] ?? '')));
+                        $pointKode = trim((string) ($targetTemplate['display_no'] ?? ''));
+                        $pointUraian = trim((string) ($targetTemplate['uraian'] ?? ''));
+                        $pointLabel = $pointKode !== '' ? $pointKode . '. ' : '';
+                        $pointLabel .= $pointUraian !== '' ? $pointUraian : ('Poin ' . $rowNo);
                         $subject = 'Notifikasi: Verifikasi dokumen SIMAK' . ($pointLabel !== '' ? ' - ' . $pointLabel : '');
                         $statusLabel = ($ver === 'sesuai') ? 'Sesuai' : (($ver === 'tidak_sesuai') ? 'Tidak Sesuai' : '-');
-                        $message_email = 'Verifikasi dokumen untuk poin: ' . ($pointLabel !== '' ? $pointLabel : $rowNo) . "\nStatus: " . $statusLabel;
+                        $message_email = 'Verifikasi dokumen untuk poin:' . "\n" . $pointLabel . "\nStatus: " . $statusLabel;
                         if ($ket !== '') {
                             $message_email .= "\nKeterangan: " . $ket;
                         }
@@ -5252,18 +5271,20 @@ class Kontrak extends BaseController
                                 ->getResultArray();
                             $map = [];
                             foreach ($verRows as $vr) {
-                                $label = trim((string) (($vr['kode'] ?? '') !== '' ? $vr['kode'] : ($vr['uraian'] ?? '')));
+                                $kode = trim((string) ($vr['kode'] ?? ''));
+                                $uraian = trim((string) ($vr['uraian'] ?? ''));
                                 $status = (string) ($vr['verifikasi_ki'] ?? '');
                                 $ketRow = trim((string) ($vr['keterangan'] ?? ''));
                                 $map[(int) ($vr['row_no'] ?? 0)] = [
-                                    'label' => $label,
+                                    'kode' => $kode,
+                                    'uraian' => $uraian,
                                     'status' => $status,
                                     'keterangan' => $ketRow,
                                 ];
                             }
                             foreach ($rowNos as $rn) {
                                 $m = $map[(int) $rn] ?? null;
-                                if (is_array($m) && ($m['label'] ?? '') !== '') {
+                                if (is_array($m) && (($m['kode'] ?? '') !== '' || ($m['uraian'] ?? '') !== '')) {
                                     $points[] = $m;
                                 }
                             }
@@ -5275,7 +5296,12 @@ class Kontrak extends BaseController
                             $lines = [];
                             foreach ($points as $p) {
                                 $statusLabel = ($p['status'] === 'sesuai') ? 'Sesuai' : (($p['status'] === 'tidak_sesuai') ? 'Tidak Sesuai' : '-');
-                                $line = ($p['label'] ?? '-') . ' — Status: ' . $statusLabel;
+                                $line = '';
+                                if (($p['kode'] ?? '') !== '') {
+                                    $line .= $p['kode'] . '. ';
+                                }
+                                $line .= ($p['uraian'] ?? '-');
+                                $line .= "\nStatus: " . $statusLabel;
                                 if (($p['keterangan'] ?? '') !== '') {
                                     $line .= "\nKeterangan: " . $p['keterangan'];
                                 }
@@ -5524,10 +5550,13 @@ class Kontrak extends BaseController
                             }
                         }
 
-                        $pointLabel = trim((string) (($targetTemplate['display_no'] ?? '') !== '' ? $targetTemplate['display_no'] : ($targetTemplate['uraian'] ?? '')));
+                        $pointKode = trim((string) ($targetTemplate['display_no'] ?? ''));
+                        $pointUraian = trim((string) ($targetTemplate['uraian'] ?? ''));
+                        $pointLabel = $pointKode !== '' ? $pointKode . '. ' : '';
+                        $pointLabel .= $pointUraian !== '' ? $pointUraian : ('Poin ' . $rowNo);
                         $subject = 'Notifikasi: Verifikasi dokumen SIMAK' . ($pointLabel !== '' ? ' - ' . $pointLabel : '');
                         $statusLabel = ($ver === 'sesuai') ? 'Sesuai' : (($ver === 'tidak_sesuai') ? 'Tidak Sesuai' : '-');
-                        $message_email = 'Verifikasi dokumen untuk poin: ' . ($pointLabel !== '' ? $pointLabel : $rowNo) . "\nStatus: " . $statusLabel;
+                        $message_email = 'Verifikasi dokumen untuk poin:\n' . $pointLabel . "\nStatus: " . $statusLabel;
                         if ($ket !== '') {
                             $message_email .= "\nKeterangan: " . $ket;
                         }
