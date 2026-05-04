@@ -324,6 +324,7 @@
                                                             data-verifikasi="<?= esc($verifikasi); ?>"
                                                             data-keterangan="<?= esc($keterangan); ?>"
                                                             data-pic="<?= esc($pic); ?>"
+                                                                                                                    data-created-by="<?= esc((string) ($latestDokumen['created_by'] ?? '')); ?>"
                                                         >Verifikasi</button>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
@@ -592,6 +593,28 @@
             }
 
             updateVerifikasiLogic();
+
+            // Auto-extract and fill notification email from created_by
+            var createdBy = this.getAttribute('data-created-by') || '';
+            var extractedEmail = '';
+            if (createdBy) {
+                // Try to extract email from format: google: name <email@example.com>
+                var angleMatch = createdBy.match(/<([^>]+)>/);
+                if (angleMatch && angleMatch[1]) {
+                    extractedEmail = angleMatch[1].trim();
+                } else {
+                    // Try to extract plain email
+                    var emailMatch = createdBy.match(/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i);
+                    if (emailMatch && emailMatch[1]) {
+                        extractedEmail = emailMatch[1].trim();
+                    }
+                }
+            }
+            
+            var notificationEmailInput = document.getElementById('notification_email');
+            if (notificationEmailInput) {
+                notificationEmailInput.value = extractedEmail;
+            }
 
             if (window.jQuery && window.jQuery.fn && typeof window.jQuery.fn.modal === 'function') {
                 window.jQuery('#modal-upload-verifikasi').modal('show');
