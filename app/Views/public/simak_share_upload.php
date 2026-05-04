@@ -483,7 +483,14 @@
 
         .table-share-wrap {
             border-radius: 18px;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+        }
+
+        .table-share-simak {
+            min-width: 1320px;
         }
 
         .table-share-simak tbody tr.row-leaf:nth-child(even) {
