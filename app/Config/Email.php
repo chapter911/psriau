@@ -127,28 +127,60 @@ class Email extends BaseConfig
     public function __construct()
     {
         parent::__construct();
+        $this->loadFromEnv();
+    }
 
-        $this->fromEmail = $this->envString('EMAIL_FROM', $this->fromEmail);
-        $this->fromName = $this->envString('EMAIL_FROM_NAME', $this->fromName);
-        $this->protocol = strtolower($this->envString('EMAIL_PROTOCOL', $this->protocol));
-        $this->SMTPHost = $this->envString('EMAIL_SMTP_HOST', $this->SMTPHost);
-        $this->SMTPUser = $this->envString('EMAIL_SMTP_USER', $this->SMTPUser);
-        $this->SMTPPass = $this->envString('EMAIL_SMTP_PASS', $this->SMTPPass);
-        $this->SMTPCrypto = strtolower($this->envString('EMAIL_SMTP_CRYPTO', $this->SMTPCrypto));
+    private function loadFromEnv(): void
+    {
+        try {
+            $this->fromEmail = $this->envString('EMAIL_FROM', $this->fromEmail);
+            $this->fromName = $this->envString('EMAIL_FROM_NAME', $this->fromName);
+            $protocol = $this->envString('EMAIL_PROTOCOL', $this->protocol);
+            if ($protocol !== '') {
+                $this->protocol = strtolower($protocol);
+            }
 
-        $smtpPort = $this->envString('EMAIL_SMTP_PORT', (string) $this->SMTPPort);
-        if ($smtpPort !== '' && ctype_digit($smtpPort)) {
-            $this->SMTPPort = (int) $smtpPort;
+            $host = $this->envString('EMAIL_SMTP_HOST', '');
+            if ($host !== '') {
+                $this->SMTPHost = $host;
+            }
+
+            $user = $this->envString('EMAIL_SMTP_USER', '');
+            if ($user !== '') {
+                $this->SMTPUser = $user;
+            }
+
+            $pass = $this->envString('EMAIL_SMTP_PASS', '');
+            if ($pass !== '') {
+                $this->SMTPPass = $pass;
+            }
+
+            $crypto = $this->envString('EMAIL_SMTP_CRYPTO', '');
+            if ($crypto !== '') {
+                $this->SMTPCrypto = strtolower($crypto);
+            }
+
+            $smtpPort = $this->envString('EMAIL_SMTP_PORT', '');
+            if ($smtpPort !== '' && ctype_digit($smtpPort)) {
+                $this->SMTPPort = (int) $smtpPort;
+            }
+        } catch (\Throwable $e) {
+            log_message('warning', 'Email config: Failed to load from env: ' . $e->getMessage());
         }
     }
 
     private function envString(string $key, string $default = ''): string
     {
-        $value = getenv($key);
+        if (! function_exists('getenv')) {
+            return $default;
+        }
+
+        $value = @getenv($key);
         if ($value === false) {
             return $default;
         }
 
-        return trim((string) $value, " \t\n\r\0\x0B\"'");
+        $str = trim((string) $value, " \t\n\r\0\x0B\"'");
+        return $str !== '' ? $str : $default;
     }
 }

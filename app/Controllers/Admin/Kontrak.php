@@ -1931,30 +1931,38 @@ class Kontrak extends BaseController
                 $emails = array_values(array_unique(array_filter($emails)));
             }
 
-            if ($emails !== []) {
+            if ($emails !== [] && class_exists('\Config\Services')) {
                 $emailService = \Config\Services::email();
-                $emailConfig = config('Email');
-                $fromEmail = trim((string) ($emailConfig->fromEmail ?? ''));
-                $fromName = trim((string) ($emailConfig->fromName ?? 'SIMAK')) ?: 'SIMAK';
-                if ($fromEmail === '') {
-                    $host = $_SERVER['HTTP_HOST'] ?? gethostname() ?: 'example.com';
-                    $fromEmail = 'no-reply@' . preg_replace('/[^a-z0-9.\-]/i', '', $host);
-                }
+                if ($emailService !== null) {
+                    $emailConfig = config('Email');
+                    if ($emailConfig !== null) {
+                        $fromEmail = trim((string) ($emailConfig->fromEmail ?? ''));
+                        $fromName = trim((string) ($emailConfig->fromName ?? 'SIMAK')) ?: 'SIMAK';
+                        if ($fromEmail === '') {
+                            $host = $_SERVER['HTTP_HOST'] ?? gethostname() ?: 'example.com';
+                            $fromEmail = 'no-reply@' . preg_replace('/[^a-z0-9.\-]/i', '', $host);
+                        }
 
-                $subject = 'Notifikasi: Verifikasi SIMAK telah dilakukan';
-                $link = site_url('admin/kontrak/simak/konstruksi/' . $id);
-                $message = "Verifikasi dokumen SIMAK (ID: {$id}) telah disimpan oleh {$actor}.\n\nLihat detail: " . $link . "\n\nJika Anda menerima email ini, maka verifikasi sudah selesai.";
+                        $subject = 'Notifikasi: Verifikasi SIMAK telah dilakukan';
+                        $link = site_url('admin/kontrak/simak/konstruksi/' . $id);
+                        $message = "Verifikasi dokumen SIMAK (ID: {$id}) telah disimpan oleh {$actor}.\n\nLihat detail: " . $link . "\n\nJika Anda menerima email ini, maka verifikasi sudah selesai.";
 
-                foreach ($emails as $to) {
-                    try {
-                        $emailService->clear(true);
-                        $emailService->setFrom($fromEmail, $fromName);
-                        $emailService->setTo($to);
-                        $emailService->setSubject($subject);
-                        $emailService->setMessage($message);
-                        $emailService->send();
-                    } catch (\Throwable $e) {
-                        log_message('error', 'Failed to send verification notification to ' . $to . ': ' . $e->getMessage());
+                        foreach ($emails as $to) {
+                            try {
+                                if (filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
+                                    continue;
+                                }
+
+                                $emailService->clear(true);
+                                $emailService->setFrom($fromEmail, $fromName);
+                                $emailService->setTo($to);
+                                $emailService->setSubject($subject);
+                                $emailService->setMessage($message);
+                                $emailService->send();
+                            } catch (\Throwable $e) {
+                                log_message('error', 'Failed to send verification notification to ' . $to . ': ' . $e->getMessage());
+                            }
+                        }
                     }
                 }
             }
