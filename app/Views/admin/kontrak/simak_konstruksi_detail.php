@@ -385,8 +385,11 @@
                         <input type="text" class="form-control" id="upload_pic" name="pic" readonly>
                     </div>
 
-
-                </div>
+                    <div class="form-group">
+                        <label for="notification_email">Email Penerima Notifikasi</label>
+                        <input type="email" class="form-control" id="notification_email" name="notification_email" placeholder="contoh@email.com">
+                        <small class="text-muted">Jika diisi, notifikasi verifikasi akan dikirim ke email ini</small>
+                    </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">Verifikasi</button>

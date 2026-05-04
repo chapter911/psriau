@@ -1902,10 +1902,20 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal menyimpan verifikasi SIMAK.');
         }
 
-        // Notify uploader(s) via email if there are uploaded documents with Google identity
+        // Notify uploader(s) via email
         try {
             $emails = [];
-            if ($db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
+
+            // Priority 1: Check for manual notification email from POST
+            $notificationEmail = trim((string) ($this->request->getPost('notification_email') ?? ''));
+            if ($notificationEmail !== '') {
+                if (filter_var($notificationEmail, FILTER_VALIDATE_EMAIL) !== false) {
+                    $emails[] = $notificationEmail;
+                }
+            }
+
+            // Priority 2: Extract from uploaded documents
+            if ($emails === [] && $db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
                 $docs = $db->table('trn_kontrak_simak_verifikasi_dokumen')
                     ->select('created_by, row_no, file_original_name')
                     ->where('simak_id', $id)
@@ -2122,6 +2132,75 @@ class Kontrak extends BaseController
         $message = $hasUpload
             ? 'Update verifikasi tersimpan dan dokumen berhasil diupload. Riwayat dokumen tercatat.'
             : 'Update verifikasi berhasil disimpan.';
+
+        // Send notification email
+        try {
+            $emails = [];
+
+            // Priority 1: Check for manual notification email from POST
+            $notificationEmail = trim((string) ($this->request->getPost('notification_email') ?? ''));
+            if ($notificationEmail !== '') {
+                if (filter_var($notificationEmail, FILTER_VALIDATE_EMAIL) !== false) {
+                    $emails[] = $notificationEmail;
+                }
+            }
+
+            // Priority 2: If upload, extract from created_by uploader
+            if ($emails === [] && $hasUpload) {
+                $createdBy = trim((string) ($actor ?? ''));
+                if ($createdBy !== '') {
+                    if (preg_match('/<([^>]+)>/', $createdBy, $m)) {
+                        $candidate = trim($m[1]);
+                        if (filter_var($candidate, FILTER_VALIDATE_EMAIL) !== false) {
+                            $emails[] = $candidate;
+                        }
+                    } elseif (preg_match('/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i', $createdBy, $m2)) {
+                        $candidate = trim($m2[1]);
+                        if (filter_var($candidate, FILTER_VALIDATE_EMAIL) !== false) {
+                            $emails[] = $candidate;
+                        }
+                    }
+                }
+            }
+
+            if ($emails !== [] && class_exists('\Config\Services')) {
+                $emailService = \Config\Services::email();
+                if ($emailService !== null) {
+                    $emailConfig = config('Email');
+                    if ($emailConfig !== null) {
+                        $fromEmail = trim((string) ($emailConfig->fromEmail ?? ''));
+                        $fromName = trim((string) ($emailConfig->fromName ?? 'SIMAK')) ?: 'SIMAK';
+                        if ($fromEmail === '') {
+                            $host = $_SERVER['HTTP_HOST'] ?? gethostname() ?: 'example.com';
+                            $fromEmail = 'no-reply@' . preg_replace('/[^a-z0-9.\-]/i', '', $host);
+                        }
+
+                        $subject = 'Notifikasi: Verifikasi dokumen SIMAK baris ' . $rowNo;
+                        $link = site_url('admin/kontrak/simak/konstruksi/' . $id);
+                        $message_email = "Dokumen SIMAK baris {$rowNo} telah diverifikasi oleh {$actor}.\n\nLihat detail: " . $link . "\n\nJika Anda menerima email ini, maka dokumen Anda sudah diproses.";
+
+                        foreach ($emails as $to) {
+                            try {
+                                if (filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
+                                    continue;
+                                }
+
+                                $emailService->clear(true);
+                                $emailService->setFrom($fromEmail, $fromName);
+                                $emailService->setTo($to);
+                                $emailService->setSubject($subject);
+                                $emailService->setMessage($message_email);
+                                $emailService->send();
+                            } catch (\Throwable $e) {
+                                log_message('error', 'Failed to send verification notification to ' . $to . ': ' . $e->getMessage());
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Failed to prepare/send verification notification for document: ' . $e->getMessage());
+        }
 
         return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('success', $message);
     }
