@@ -484,9 +484,9 @@
         .table-share-wrap {
             border-radius: 18px;
             overflow-x: auto;
-            overflow-y: hidden;
+            overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            touch-action: pan-x;
+            touch-action: auto;
         }
 
         .table-share-simak {
