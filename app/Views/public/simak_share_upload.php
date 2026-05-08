@@ -463,6 +463,36 @@
             display: block;
         }
 
+        .share-tutorial-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+        }
+
+        .share-tutorial-btn:hover {
+            color: #1e40af;
+            text-decoration: none;
+            transform: translateY(-1px);
+            background: #dbeafe;
+            border-color: #93c5fd;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.1);
+        }
+
+        .share-tutorial-btn svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+
         .upload-lock-overlay {
             border: 1px dashed #f59e0b;
             background: #fffaf0;
@@ -601,6 +631,15 @@
                 <p class="text-muted mb-0">Login dibuka sebagai popup dan identitas Google akan dipakai untuk mencatat siapa yang mengupload dokumen.<?php if (! empty($ciEnvironment) && strtolower((string) $ciEnvironment) === 'development'): ?><br><span class="badge badge-warning mt-2" style="display: inline-block;">DEVELOPMENT MODE - Login dilewati</span><?php endif; ?></p>
             </div>
             <div class="google-auth-actions">
+                <a
+                    class="share-tutorial-btn"
+                    href="https://www.youtube.com/watch?v=fHQhAJ-B3qE"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M10 8l6 4-6 4z"></path><path fill="currentColor" d="M21.8 8.6s-.2-1.4-.8-2.1c-.8-.9-1.7-.9-2.1-1-2.9-.2-7.3-.2-7.3-.2h-.1s-4.4 0-7.3.2c-.4 0-1.3.1-2.1 1-.6.7-.8 2.1-.8 2.1S1 10.2 1 11.8v1.4c0 1.6.2 3.2.2 3.2s.2 1.4.8 2.1c.8.9 1.9.9 2.4 1 1.8.2 7.6.2 7.6.2s4.4 0 7.3-.2c.4 0 1.3-.1 2.1-1 .6-.7.8-2.1.8-2.1s.2-1.6.2-3.2v-1.4c0-1.6-.2-3.2-.2-3.2z"></path></svg>
+                    <span>Lihat Tutorial Upload</span>
+                </a>
                 <button type="button" class="google-login-btn" id="googlePopupLoginBtn">
                     <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.626 32.91 29.304 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.153 7.962 3.037l5.657-5.657C34.007 6.053 29.311 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.652-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.153 7.962 3.037l5.657-5.657C34.007 6.053 29.311 4 24 4c-7.159 0-13.315 4.034-16.694 9.691z"/><path fill="#4CAF50" d="M24 44c5.237 0 9.834-1.99 13.364-5.237l-6.16-5.194C29.151 35.091 26.715 36 24 36c-5.282 0-9.593-3.073-11.288-7.283l-6.52 5.025C9.534 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.017 2.877-2.92 5.247-5.099 6.569.002-.001.004-.002.006-.003l6.16 5.194C35.96 38.713 40 34 40 24c0-1.341-.138-2.652-.389-3.917z"/></svg>
                     <span>Login dengan Google</span>
