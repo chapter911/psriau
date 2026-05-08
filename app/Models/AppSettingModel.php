@@ -18,6 +18,7 @@ class AppSettingModel extends Model
         'sidebar_active_text_color',
         'app_logo_url',
         'login_background_url',
+        'simak_upload_tutorial_url',
         'auto_logout_minutes',
         'preloader_duration_ms',
         'updated_at',

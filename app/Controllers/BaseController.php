@@ -69,6 +69,7 @@ abstract class BaseController extends Controller
             'sidebar_active_text_color' => '#FFFFFF',
             'app_logo_url'         => '',
             'login_background_url' => '',
+            'simak_upload_tutorial_url' => 'https://www.youtube.com/watch?v=fHQhAJ-B3qE',
             'auto_logout_minutes'  => 60,
             'preloader_duration_ms' => 500,
         ];

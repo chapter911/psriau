@@ -110,6 +110,19 @@
             </div>
 
             <div class="form-group">
+                <label for="simak_upload_tutorial_url">Link Tutorial Upload SIMAK (YouTube)</label>
+                <input
+                    type="url"
+                    id="simak_upload_tutorial_url"
+                    name="simak_upload_tutorial_url"
+                    class="form-control"
+                    value="<?= old('simak_upload_tutorial_url', $setting['simak_upload_tutorial_url'] ?? 'https://www.youtube.com/watch?v=fHQhAJ-B3qE'); ?>"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                >
+                <small class="text-muted">Dipakai pada halaman share SIMAK sebagai tombol tutorial upload. Kosongkan jika ingin menyembunyikan tombol.</small>
+            </div>
+
+            <div class="form-group">
                 <label for="auto_logout_minutes">Timer Logout Otomatis (menit)</label>
                 <input
                     type="number"
