@@ -61,6 +61,283 @@ class MasterSimak extends BaseController
         ]);
     }
 
+    public function konstruksiExport()
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSTRUKSI);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $model = new MasterSimakKonstruksiItemModel();
+        $items = $model->orderBy('ordering','ASC')->findAll();
+
+        $format = $this->request->getGet('format') ?? 'csv';
+
+        if ($format === 'xlsx') {
+            if (! class_exists('\PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
+                return redirect()->back()->with('error', 'PhpSpreadsheet belum terpasang. Jalankan composer require phpoffice/phpspreadsheet');
+            }
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $headers = ['id','parent_id','display_no','uraian','row_kind','has_question','ordering','is_active','is_hidden_share','external_id'];
+            $sheet->fromArray($headers, null, 'A1');
+            $row = 2;
+            foreach ($items as $it) {
+                $sheet->fromArray([
+                    $it['id'] ?? '',
+                    $it['parent_id'] ?? '',
+                    $it['display_no'] ?? '',
+                    $it['uraian'] ?? '',
+                    $it['row_kind'] ?? '',
+                    $it['has_question'] ?? '',
+                    $it['ordering'] ?? '',
+                    $it['is_active'] ?? '',
+                    $it['is_hidden_share'] ?? '',
+                    $it['external_id'] ?? '',
+                ], null, 'A' . $row);
+                $row++;
+            }
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $filename = 'master_simak_konstruksi_' . date('Ymd_His') . '.xlsx';
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            $writer->save('php://output');
+            exit;
+        }
+
+        $filename = 'master_simak_konstruksi_' . date('Ymd_His') . '.csv';
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        $out = fopen('php://output', 'w');
+        fputs($out, "\xEF\xBB\xBF");
+        fputcsv($out, ['id','parent_id','display_no','uraian','row_kind','has_question','ordering','is_active','is_hidden_share','external_id']);
+        foreach ($items as $it) {
+            fputcsv($out, [
+                $it['id'] ?? '',
+                $it['parent_id'] ?? '',
+                $it['display_no'] ?? '',
+                $it['uraian'] ?? '',
+                $it['row_kind'] ?? '',
+                $it['has_question'] ?? '',
+                $it['ordering'] ?? '',
+                $it['is_active'] ?? '',
+                $it['is_hidden_share'] ?? '',
+                $it['external_id'] ?? '',
+            ]);
+        }
+        fclose($out);
+        exit;
+    }
+
+    public function konstruksiImport()
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSTRUKSI);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $file = $this->request->getFile('import_file');
+        if (! $file || ! $file->isValid()) {
+            return redirect()->back()->with('error', 'File tidak valid');
+        }
+
+        $ext = strtolower($file->getClientExtension());
+        $rows = [];
+
+        if (in_array($ext, ['xls','xlsx'], true)) {
+            if (! class_exists('\PhpOffice\\PhpSpreadsheet\\IOFactory')) {
+                return redirect()->back()->with('error', 'PhpSpreadsheet belum terpasang. Jalankan composer require phpoffice/phpspreadsheet');
+            }
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($file->getTempName());
+            $spreadsheet = $reader->load($file->getTempName());
+            $sheet = $spreadsheet->getActiveSheet();
+            $data = $sheet->toArray(null, true, true, true);
+            $header = [];
+            foreach ($data as $i => $r) {
+                if ($i == 1) {
+                    $header = array_values($r);
+                    continue;
+                }
+                $rows[] = array_combine($header, array_values($r));
+            }
+        } else {
+            $stream = fopen($file->getTempName(), 'r');
+            $header = fgetcsv($stream);
+            while ($row = fgetcsv($stream)) {
+                $rows[] = array_combine($header, $row);
+            }
+            fclose($stream);
+        }
+
+        $model = new MasterSimakKonstruksiItemModel();
+
+        // detect duplicates inside file (external_id and id)
+        $seenExt = [];
+        $seenId = [];
+        $duplicates = ['external_id' => [], 'id' => []];
+        foreach ($rows as $idx => $r) {
+            $ext = trim((string) ($r['external_id'] ?? ''));
+            $rid = trim((string) ($r['id'] ?? ''));
+            if ($ext !== '') {
+                if (isset($seenExt[$ext])) {
+                    $duplicates['external_id'][$ext] = $duplicates['external_id'][$ext] ?? [];
+                    $duplicates['external_id'][$ext][] = $seenExt[$ext];
+                    $duplicates['external_id'][$ext][] = $idx + 1;
+                } else {
+                    $seenExt[$ext] = $idx + 1;
+                }
+            }
+            if ($rid !== '') {
+                if (isset($seenId[$rid])) {
+                    $duplicates['id'][$rid] = $duplicates['id'][$rid] ?? [];
+                    $duplicates['id'][$rid][] = $seenId[$rid];
+                    $duplicates['id'][$rid][] = $idx + 1;
+                } else {
+                    $seenId[$rid] = $idx + 1;
+                }
+            }
+        }
+
+        $preview = [];
+        $conflicts = [];
+        foreach ($rows as $i => $r) {
+            $match = null;
+            $ext = trim((string) ($r['external_id'] ?? ''));
+            if ($ext !== '') {
+                $match = $model->where('external_id', $ext)->first();
+            }
+            if (! $match && ! empty($r['id'])) {
+                $match = $model->find((int) $r['id']);
+            }
+
+            $diffs = [];
+            if ($match) {
+                $fieldsToCheck = ['uraian', 'row_kind', 'parent_id', 'has_question', 'ordering', 'is_active'];
+                foreach ($fieldsToCheck as $f) {
+                    $valNew = array_key_exists($f, $r) ? (string) $r[$f] : '';
+                    $valOld = array_key_exists($f, $match) ? (string) $match[$f] : '';
+                    if ($valNew !== '' && $valNew !== $valOld) {
+                        $diffs[$f] = ['old' => $valOld, 'new' => $valNew];
+                    }
+                }
+            }
+
+            if (! empty($diffs)) {
+                $conflicts[] = ['row_number' => $i + 1, 'id' => $match['id'] ?? null, 'external_id' => $ext, 'diffs' => $diffs];
+            }
+
+            $preview[] = ['row' => $r, 'existing' => $match ?: null, 'diffs' => $diffs];
+        }
+
+        // persist preview and validation results in session
+        session()->set('konstruksi_import_preview', $preview);
+        session()->set('konstruksi_import_conflicts', $conflicts);
+        session()->set('konstruksi_import_duplicates', $duplicates);
+
+        return view('admin/master/simak_konstruksi_import_preview', [
+            'preview' => $preview,
+            'conflicts' => $conflicts,
+            'duplicates' => $duplicates,
+        ]);
+    }
+
+    public function konstruksiImportApply()
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSTRUKSI);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $confirm = $this->request->getPost('confirm');
+        if (! $confirm) {
+            return redirect()->back()->with('error', 'Import tidak dikonfirmasi');
+        }
+
+        $preview = session()->get('konstruksi_import_preview');
+        $conflicts = session()->get('konstruksi_import_conflicts') ?? [];
+        $duplicates = session()->get('konstruksi_import_duplicates') ?? ['external_id' => [], 'id' => []];
+
+        if (! $preview) {
+            return redirect()->back()->with('error', 'Tidak ada data preview');
+        }
+
+        $force = (bool) $this->request->getPost('force');
+        if ((! empty($conflicts) || ! empty($duplicates['external_id']) || ! empty($duplicates['id'])) && ! $force) {
+            return redirect()->back()->with('error', 'Terdapat konflik atau duplikat di file. Centang "force" untuk memaksa apply.')->with('conflicts', $conflicts)->with('duplicates', $duplicates);
+        }
+
+        $model = new MasterSimakKonstruksiItemModel();
+        $db = db_connect();
+
+        // Create backup snapshot of existing rows that will be updated
+        try {
+            $idsToBackup = [];
+            foreach ($preview as $p) {
+                if (! empty($p['existing']) && isset($p['existing']['id'])) {
+                    $idsToBackup[] = (int) $p['existing']['id'];
+                }
+            }
+
+            $backupRows = [];
+            if (! empty($idsToBackup)) {
+                $backupRows = $model->whereIn('id', array_values(array_unique($idsToBackup)))->findAll();
+            }
+
+            $backupDir = WRITEPATH . 'import_backups/';
+            if (! is_dir($backupDir)) {
+                @mkdir($backupDir, 0755, true);
+            }
+
+            $username = (string) (session()->get('username') ?? session()->get('fullName') ?? 'system');
+            $backupMeta = [
+                'timestamp' => date('c'),
+                'user' => $username,
+                'count_preview' => count($preview),
+                'count_backup_rows' => count($backupRows),
+            ];
+
+            $backupPayload = [
+                'meta' => $backupMeta,
+                'rows' => $backupRows,
+            ];
+
+            $backupFile = $backupDir . 'master_simak_konstruksi_backup_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.json';
+            @file_put_contents($backupFile, json_encode($backupPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            session()->set('konstruksi_import_backup_file', $backupFile);
+        } catch (\Throwable $e) {
+            // don't block import if backup fails, but log to error log
+            log_message('error', 'Failed to create import backup: ' . $e->getMessage());
+        }
+
+        $db->transStart();
+        foreach ($preview as $p) {
+            $r = $p['row'];
+            $existing = $p['existing'];
+            $data = [
+                'parent_id' => $r['parent_id'] ?? null,
+                'display_no' => $r['display_no'] ?? null,
+                'uraian' => $r['uraian'] ?? null,
+                'row_kind' => $r['row_kind'] ?? null,
+                'has_question' => isset($r['has_question']) ? (int) $r['has_question'] : 0,
+                'ordering' => $r['ordering'] ?? null,
+                'is_active' => isset($r['is_active']) ? (int) $r['is_active'] : 1,
+                'is_hidden_share' => isset($r['is_hidden_share']) ? (int) $r['is_hidden_share'] : 0,
+                'external_id' => $r['external_id'] ?? null,
+            ];
+            if ($existing) {
+                $model->update((int) $existing['id'], $data);
+            } else {
+                $model->insert($data);
+            }
+        }
+        $db->transComplete();
+        session()->remove('konstruksi_import_preview');
+        session()->remove('konstruksi_import_conflicts');
+        session()->remove('konstruksi_import_duplicates');
+        return redirect()->to('/admin/master/simak/konstruksi')->with('success', 'Import selesai');
+    }
+    }
+
     public function konstruksiCreate()
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSTRUKSI);

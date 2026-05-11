@@ -241,7 +241,17 @@
     <div class="card-header d-flex align-items-center">
         <h3 class="card-title mb-0"><?= esc((string) ($pageTitle ?? 'Master SIMAK Konstruksi')); ?></h3>
         <?php if (! empty($can_edit)): ?>
-            <button type="button" class="btn btn-success btn-sm ml-auto" id="btn-save-hierarchy">Simpan Hirarki</button>
+            <div class="btn-group ml-auto" role="group">
+                <button type="button" class="btn btn-success btn-sm" id="btn-save-hierarchy">Simpan Hirarki</button>
+                <div class="btn-group" role="group">
+                    <button id="exportDropdown" type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Export</button>
+                    <div class="dropdown-menu" aria-labelledby="exportDropdown">
+                        <a class="dropdown-item" href="<?= site_url('/admin/master/simak/konstruksi/export?format=csv'); ?>">CSV</a>
+                        <a class="dropdown-item" href="<?= site_url('/admin/master/simak/konstruksi/export?format=xlsx'); ?>">XLSX</a>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="btn-open-import">Import</button>
+            </div>
         <?php endif; ?>
     </div>
     <div class="card-body">
@@ -384,6 +394,34 @@
                     </form>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="modal-import" tabindex="-1" role="dialog" aria-labelledby="modalImportLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalImportLabel">Import Master SIMAK Konstruksi</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="<?= site_url('/admin/master/simak/konstruksi/import'); ?>" enctype="multipart/form-data">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="import_file">Pilih file CSV atau XLSX</label>
+                        <input type="file" class="form-control-file" name="import_file" id="import_file" accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" required>
+                    </div>
+                    <p class="text-muted small">File harus memiliki header: id,parent_id,display_no,uraian,row_kind,has_question,ordering,is_active,is_hidden_share,external_id</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Preview</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -911,6 +949,24 @@
 
         updateStatusSummary();
         setCreateMode('', 'Tambah Item Master');
+
+        var importBtn = document.getElementById('btn-open-import');
+        if (importBtn) {
+            importBtn.addEventListener('click', function () {
+                var modalEl = document.getElementById('modal-import');
+                if (window.jQuery && typeof window.jQuery === 'function') {
+                    window.jQuery(modalEl).modal('show');
+                    return;
+                }
+                if (window.bootstrap && window.bootstrap.Modal) {
+                    var m = new window.bootstrap.Modal(modalEl);
+                    m.show();
+                    return;
+                }
+                // fallback: make modal visible
+                modalEl.style.display = 'block';
+            });
+        }
     })();
 </script>
 <?= $this->endSection(); ?>

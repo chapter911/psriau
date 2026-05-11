@@ -141,6 +141,9 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/kelurahan/tambah', 'Admin\\MasterWilayah::kelurahanCreate');
 	$routes->post('master/kelurahan/(:segment)/(:segment)/(:segment)/(:segment)/ubah', 'Admin\\MasterWilayah::kelurahanEdit/$1/$2/$3/$4');
 	$routes->get('master/simak/konstruksi', 'Admin\\MasterSimak::konstruksi');
+	$routes->get('master/simak/konstruksi/export', 'Admin\\MasterSimak::konstruksiExport');
+	$routes->post('master/simak/konstruksi/import', 'Admin\\MasterSimak::konstruksiImport');
+	$routes->post('master/simak/konstruksi/import/apply', 'Admin\\MasterSimak::konstruksiImportApply');
 	$routes->get('master/simak/konsultasi', 'Admin\\MasterSimak::konsultasi');
 	$routes->post('master/simak/konstruksi/tambah', 'Admin\\MasterSimak::konstruksiCreate');
 	$routes->post('master/simak/konstruksi/(:num)/ubah', 'Admin\\MasterSimak::konstruksiUpdate/$1');
