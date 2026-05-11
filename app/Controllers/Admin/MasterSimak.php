@@ -336,7 +336,6 @@ class MasterSimak extends BaseController
         session()->remove('konstruksi_import_duplicates');
         return redirect()->to('/admin/master/simak/konstruksi')->with('success', 'Import selesai');
     }
-    }
 
     public function konstruksiCreate()
     {
