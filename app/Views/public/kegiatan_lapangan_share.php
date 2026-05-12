@@ -3,7 +3,7 @@
 <?= $this->section('content'); ?>
 <section class="shared-gallery-page">
     <div class="container py-4">
-        <div class="d-flex flex-wrap align-items-center justify-content-between mb-3" style="gap:12px;">
+        <div class="d-flex flex-wrap align-items-start justify-content-between mb-4" style="gap:12px;">
             <div class="gallery-page-heading">
                 <h2 class="mb-1 gallery-page-title">Galeri Kegiatan Lapangan</h2>
                 <p class="mb-0 gallery-page-subtitle">
@@ -116,6 +116,10 @@
         opacity: 1;
     }
 
+    .gallery-toolbar {
+        padding-top: 2px;
+    }
+
     .gallery {
         display: grid;
         gap: 14px;
@@ -126,6 +130,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 10px 18px rgba(220, 88, 30, 0.16);
     }
 
     .gallery-toolbar-icon-btn {
@@ -326,6 +331,10 @@
     }
 
     @media (max-width: 767.98px) {
+        .gallery-toolbar {
+            padding-top: 0;
+        }
+
         .gallery-page-heading {
             padding: 12px 13px;
             border-radius: 14px;
