@@ -5,6 +5,7 @@
     <div class="container py-4">
         <div class="d-flex flex-wrap align-items-start justify-content-between mb-4" style="gap:12px;">
             <div class="gallery-page-heading">
+                <div class="gallery-page-kicker">Dokumentasi Resmi</div>
                 <h2 class="mb-1 gallery-page-title">Galeri Kegiatan Lapangan</h2>
                 <p class="mb-0 gallery-page-subtitle">
                     <?= esc((string) ($activity['title'] ?? '-')); ?>
@@ -15,6 +16,12 @@
                         · <?= esc((string) $activity['location']); ?>
                     <?php endif; ?>
                 </p>
+                <div class="gallery-page-stats">
+                    <span class="gallery-page-pill"><?= (int) count($photos); ?> foto</span>
+                    <?php if (! empty($expiresAt)): ?>
+                        <span class="gallery-page-pill gallery-page-pill--soft">Tautan aktif sampai <?= esc((string) $expiresAt); ?></span>
+                    <?php endif; ?>
+                </div>
             </div>
             <div class="d-flex flex-wrap ml-auto justify-content-end gallery-toolbar" style="gap:8px;">
                 <a class="btn btn-primary gallery-toolbar-btn" href="<?= site_url('/kegiatan-lapangan/share/' . $shareToken . '/download-zip'); ?>">
@@ -86,34 +93,108 @@
 
 <style>
     .shared-gallery-page {
-        background: linear-gradient(180deg, #f7fafc 0%, #eef3f8 100%);
+        background:
+            radial-gradient(circle at top left, rgba(244, 115, 50, 0.12), transparent 30%),
+            radial-gradient(circle at top right, rgba(15, 118, 110, 0.09), transparent 26%),
+            linear-gradient(180deg, #f7fafc 0%, #eef3f8 100%);
         min-height: 70vh;
     }
 
     .gallery-page-heading {
         max-width: 980px;
-        background: rgba(255, 255, 255, 0.84);
-        border: 1px solid rgba(147, 163, 184, 0.32);
-        border-radius: 16px;
-        padding: 14px 16px;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 250, 245, 0.9));
+        border: 1px solid rgba(214, 96, 34, 0.12);
+        border-radius: 20px;
+        padding: 16px 18px 14px;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
         backdrop-filter: blur(10px);
+    }
+
+    .gallery-page-heading::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #d95f23 0%, #f08a2b 55%, #f7b344 100%);
+    }
+
+    .gallery-page-heading::after {
+        content: '';
+        position: absolute;
+        top: -34px;
+        right: -34px;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(240, 138, 43, 0.16) 0%, rgba(240, 138, 43, 0) 72%);
+        pointer-events: none;
+    }
+
+    .gallery-page-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        color: #c2410c;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+
+    .gallery-page-kicker::before {
+        content: '';
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #f08a2b, #d95f23);
+        box-shadow: 0 0 0 4px rgba(217, 95, 35, 0.12);
     }
 
     .gallery-page-title {
         color: #0f172a;
-        font-size: clamp(1.5rem, 2vw, 1.9rem);
+        font-size: clamp(1.58rem, 2.2vw, 2.08rem);
         font-weight: 800;
         letter-spacing: -0.02em;
         text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
     }
 
     .gallery-page-subtitle {
-        color: #1e293b;
+        color: #273449;
         font-size: 1.03rem;
-        font-weight: 700;
+        font-weight: 650;
         line-height: 1.5;
         opacity: 1;
+    }
+
+    .gallery-page-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .gallery-page-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(217, 95, 35, 0.08);
+        border: 1px solid rgba(217, 95, 35, 0.12);
+        color: #9a3412;
+        font-size: 0.82rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .gallery-page-pill--soft {
+        background: rgba(15, 118, 110, 0.08);
+        border-color: rgba(15, 118, 110, 0.12);
+        color: #0f766e;
     }
 
     .gallery-toolbar {
@@ -131,6 +212,10 @@
         align-items: center;
         justify-content: center;
         box-shadow: 0 10px 18px rgba(220, 88, 30, 0.16);
+        border-radius: 999px;
+        padding-inline: 18px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
     }
 
     .gallery-toolbar-icon-btn {
@@ -144,10 +229,17 @@
 
     .gallery-item {
         background: #fff;
-        border: 1px solid #e3e8ef;
-        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 18px;
         overflow: hidden;
-        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+        transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    }
+
+    .gallery-item:hover {
+        transform: translateY(-4px);
+        border-color: rgba(217, 95, 35, 0.24);
+        box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
     }
 
     .gallery-photo-btn {
@@ -155,8 +247,9 @@
         border: 0;
         padding: 0;
         display: block;
-        background: #f8fafc;
+        background: linear-gradient(180deg, #f8fafc, #eef3f8);
         cursor: zoom-in;
+        overflow: hidden;
     }
 
     .gallery-photo-btn img {
@@ -164,6 +257,12 @@
         height: 220px;
         object-fit: cover;
         display: block;
+        transition: transform 0.28s ease, filter 0.28s ease;
+    }
+
+    .gallery-item:hover .gallery-photo-btn img {
+        transform: scale(1.03);
+        filter: saturate(1.06) contrast(1.03);
     }
 
     .gallery-meta {
@@ -171,15 +270,27 @@
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        padding: 12px;
+        padding: 13px 14px;
     }
 
     .gallery-name {
-        font-weight: 600;
-        color: #1f2937;
+        font-weight: 700;
+        color: #102033;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .gallery-meta .btn-outline-primary {
+        border-color: rgba(13, 110, 253, 0.18);
+        color: #0d6efd;
+        background: rgba(13, 110, 253, 0.04);
+        font-weight: 700;
+    }
+
+    .gallery-meta .btn-outline-primary:hover {
+        background: #0d6efd;
+        color: #fff;
     }
 
     .share-lightbox {
