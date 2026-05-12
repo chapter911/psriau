@@ -94,9 +94,9 @@
 <style>
     .shared-gallery-page {
         background:
-            radial-gradient(circle at top left, rgba(244, 115, 50, 0.12), transparent 30%),
-            radial-gradient(circle at top right, rgba(15, 118, 110, 0.09), transparent 26%),
-            linear-gradient(180deg, #f7fafc 0%, #eef3f8 100%);
+            radial-gradient(circle at top left, rgba(15, 23, 42, 0.04), transparent 28%),
+            radial-gradient(circle at top right, rgba(59, 130, 246, 0.06), transparent 24%),
+            linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
         min-height: 70vh;
     }
 
@@ -104,12 +104,15 @@
         max-width: 980px;
         position: relative;
         overflow: hidden;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 250, 245, 0.9));
-        border: 1px solid rgba(214, 96, 34, 0.12);
-        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 18px;
         padding: 16px 18px 14px;
-        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
-        backdrop-filter: blur(10px);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .gallery-page-heading + .gallery-toolbar {
+        align-self: center;
     }
 
     .gallery-page-heading::before {
@@ -118,7 +121,7 @@
         inset: 0 auto auto 0;
         width: 100%;
         height: 4px;
-        background: linear-gradient(90deg, #d95f23 0%, #f08a2b 55%, #f7b344 100%);
+        background: linear-gradient(90deg, #0f172a 0%, #334155 100%);
     }
 
     .gallery-page-heading::after {
@@ -129,7 +132,7 @@
         width: 120px;
         height: 120px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(240, 138, 43, 0.16) 0%, rgba(240, 138, 43, 0) 72%);
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0) 72%);
         pointer-events: none;
     }
 
@@ -138,7 +141,7 @@
         align-items: center;
         gap: 8px;
         margin-bottom: 8px;
-        color: #c2410c;
+        color: #475569;
         font-size: 0.72rem;
         font-weight: 800;
         letter-spacing: 0.16em;
@@ -150,22 +153,21 @@
         width: 9px;
         height: 9px;
         border-radius: 999px;
-        background: linear-gradient(180deg, #f08a2b, #d95f23);
-        box-shadow: 0 0 0 4px rgba(217, 95, 35, 0.12);
+        background: linear-gradient(180deg, #0f172a, #334155);
+        box-shadow: 0 0 0 4px rgba(51, 65, 85, 0.12);
     }
 
     .gallery-page-title {
         color: #0f172a;
-        font-size: clamp(1.58rem, 2.2vw, 2.08rem);
-        font-weight: 800;
+        font-size: clamp(1.56rem, 2.1vw, 1.98rem);
+        font-weight: 700;
         letter-spacing: -0.02em;
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
     }
 
     .gallery-page-subtitle {
-        color: #273449;
+        color: #334155;
         font-size: 1.03rem;
-        font-weight: 650;
+        font-weight: 600;
         line-height: 1.5;
         opacity: 1;
     }
@@ -183,18 +185,18 @@
         gap: 6px;
         padding: 8px 12px;
         border-radius: 999px;
-        background: rgba(217, 95, 35, 0.08);
-        border: 1px solid rgba(217, 95, 35, 0.12);
-        color: #9a3412;
+        background: #eff6ff;
+        border: 1px solid #dbeafe;
+        color: #1d4ed8;
         font-size: 0.82rem;
-        font-weight: 800;
+        font-weight: 700;
         line-height: 1;
     }
 
     .gallery-page-pill--soft {
-        background: rgba(15, 118, 110, 0.08);
-        border-color: rgba(15, 118, 110, 0.12);
-        color: #0f766e;
+        background: #f8fafc;
+        border-color: #e2e8f0;
+        color: #475569;
     }
 
     .gallery-toolbar {
@@ -211,11 +213,16 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 10px 18px rgba(220, 88, 30, 0.16);
+        box-shadow: 0 10px 18px rgba(30, 41, 59, 0.14);
         border-radius: 999px;
         padding-inline: 18px;
         font-weight: 700;
         letter-spacing: 0.01em;
+    }
+
+    .gallery-toolbar-btn:focus,
+    .gallery-toolbar-btn:focus-visible {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18), 0 10px 18px rgba(30, 41, 59, 0.14);
     }
 
     .gallery-toolbar-icon-btn {
@@ -232,14 +239,19 @@
         border: 1px solid rgba(148, 163, 184, 0.24);
         border-radius: 18px;
         overflow: hidden;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
         transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
     }
 
     .gallery-item:hover {
         transform: translateY(-4px);
-        border-color: rgba(217, 95, 35, 0.24);
+        border-color: rgba(59, 130, 246, 0.24);
         box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
+    }
+
+    .gallery-item:focus-within {
+        border-color: rgba(59, 130, 246, 0.38);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14), 0 16px 30px rgba(15, 23, 42, 0.1);
     }
 
     .gallery-photo-btn {
@@ -250,6 +262,16 @@
         background: linear-gradient(180deg, #f8fafc, #eef3f8);
         cursor: zoom-in;
         overflow: hidden;
+    }
+
+    .gallery-photo-btn:focus,
+    .gallery-photo-btn:focus-visible {
+        outline: none;
+    }
+
+    .gallery-photo-btn:focus-visible img {
+        filter: saturate(1.05) contrast(1.05);
+        box-shadow: inset 0 0 0 3px rgba(59, 130, 246, 0.32);
     }
 
     .gallery-photo-btn img {
@@ -271,6 +293,8 @@
         justify-content: space-between;
         gap: 10px;
         padding: 13px 14px;
+        border-top: 1px solid rgba(226, 232, 240, 0.9);
+        background: linear-gradient(180deg, #fff, #fbfdff);
     }
 
     .gallery-name {
@@ -282,15 +306,20 @@
     }
 
     .gallery-meta .btn-outline-primary {
-        border-color: rgba(13, 110, 253, 0.18);
+        border-color: rgba(59, 130, 246, 0.2);
         color: #0d6efd;
-        background: rgba(13, 110, 253, 0.04);
+        background: rgba(59, 130, 246, 0.03);
         font-weight: 700;
     }
 
     .gallery-meta .btn-outline-primary:hover {
         background: #0d6efd;
         color: #fff;
+    }
+
+    .gallery-meta .btn-outline-primary:focus,
+    .gallery-meta .btn-outline-primary:focus-visible {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
     }
 
     .share-lightbox {
