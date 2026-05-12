@@ -126,7 +126,7 @@
         border-radius: 24px;
         padding: 26px 26px 24px;
         margin-bottom: 18px;
-        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 52%, #0ea5e9 100%);
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 52%, #0ea5e9 100%);
         color: #fff;
         box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
     }
