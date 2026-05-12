@@ -4,9 +4,9 @@
 <section class="shared-gallery-page">
     <div class="container py-4">
         <div class="d-flex flex-wrap align-items-center justify-content-between mb-3" style="gap:12px;">
-            <div>
-                <h2 class="mb-1">Galeri Kegiatan Lapangan</h2>
-                <p class="text-muted mb-0">
+            <div class="gallery-page-heading">
+                <h2 class="mb-1 gallery-page-title">Galeri Kegiatan Lapangan</h2>
+                <p class="mb-0 gallery-page-subtitle">
                     <?= esc((string) ($activity['title'] ?? '-')); ?>
                     <?php if (! empty($activity['activity_date'])): ?>
                         · <?= esc((string) $activity['activity_date']); ?>
@@ -88,6 +88,32 @@
     .shared-gallery-page {
         background: linear-gradient(180deg, #f7fafc 0%, #eef3f8 100%);
         min-height: 70vh;
+    }
+
+    .gallery-page-heading {
+        max-width: 980px;
+        background: rgba(255, 255, 255, 0.84);
+        border: 1px solid rgba(147, 163, 184, 0.32);
+        border-radius: 16px;
+        padding: 14px 16px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        backdrop-filter: blur(10px);
+    }
+
+    .gallery-page-title {
+        color: #0f172a;
+        font-size: clamp(1.5rem, 2vw, 1.9rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+    }
+
+    .gallery-page-subtitle {
+        color: #1e293b;
+        font-size: 1.03rem;
+        font-weight: 700;
+        line-height: 1.5;
+        opacity: 1;
     }
 
     .gallery {
@@ -300,6 +326,20 @@
     }
 
     @media (max-width: 767.98px) {
+        .gallery-page-heading {
+            padding: 12px 13px;
+            border-radius: 14px;
+        }
+
+        .gallery-page-title {
+            font-size: 1.28rem;
+        }
+
+        .gallery-page-subtitle {
+            font-size: 0.94rem;
+            line-height: 1.45;
+        }
+
         .gallery-grid .gallery-photo-btn img {
             height: 200px;
         }
