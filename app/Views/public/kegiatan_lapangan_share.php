@@ -38,12 +38,6 @@
             </div>
         </div>
 
-        <div class="gallery-intro-card share-card share-surface">
-            <div class="gallery-intro-label"><i class="fas fa-info-circle"></i> Panduan Cepat</div>
-            <h2 class="gallery-intro-title">Foto ditata agar mudah ditelusuri dan diunduh.</h2>
-            <p class="gallery-intro-text mb-0">Gunakan tombol unduh pada tiap foto bila hanya membutuhkan satu file, atau ambil seluruh dokumentasi sekaligus lewat ZIP.</p>
-        </div>
-
         <div id="photoGallery" class="gallery gallery-grid">
             <?php foreach ($photos as $index => $photo): ?>
                 <?php
