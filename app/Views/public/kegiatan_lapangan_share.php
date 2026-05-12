@@ -651,7 +651,13 @@
         }
 
         .gallery-grid .gallery-photo-btn img {
-            height: 200px;
+            height: 160px;
+        }
+
+        /* Force two columns on small screens for a denser mobile grid */
+        .gallery-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
         }
 
         .lightbox-bar {
