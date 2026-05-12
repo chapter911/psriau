@@ -117,7 +117,12 @@
 
     .gallery-shell {
         max-width: 1520px;
-        margin: 28px auto 40px;
+        margin: 0 auto 40px;
+    }
+
+    /* Small inner top padding so hero doesn't touch the header when needed */
+    .shared-gallery-page > .container {
+        padding-top: 12px;
     }
 
     .gallery-hero {
