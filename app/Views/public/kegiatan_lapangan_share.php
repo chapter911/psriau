@@ -2,37 +2,52 @@
 
 <?= $this->section('content'); ?>
 <section class="shared-gallery-page">
-    <div class="container py-4">
-        <div class="d-flex flex-wrap align-items-start justify-content-between mb-4" style="gap:12px;">
-            <div class="gallery-page-heading">
-                <div class="gallery-page-kicker">Dokumentasi Resmi</div>
-                <h2 class="mb-1 gallery-page-title">Galeri Kegiatan Lapangan</h2>
-                <p class="mb-0 gallery-page-subtitle">
-                    <?= esc((string) ($activity['title'] ?? '-')); ?>
-                    <?php if (! empty($activity['activity_date'])): ?>
-                        · <?= esc((string) $activity['activity_date']); ?>
-                    <?php endif; ?>
-                    <?php if (! empty($activity['location'])): ?>
-                        · <?= esc((string) $activity['location']); ?>
-                    <?php endif; ?>
-                </p>
-                <div class="gallery-page-stats">
-                    <span class="gallery-page-pill"><?= (int) count($photos); ?> foto</span>
-                    <?php if (! empty($expiresAt)): ?>
-                        <span class="gallery-page-pill gallery-page-pill--soft">Tautan aktif sampai <?= esc((string) $expiresAt); ?></span>
-                    <?php endif; ?>
+    <div class="container gallery-shell py-4">
+        <div class="gallery-hero">
+            <div class="gallery-hero-inner">
+                <div class="gallery-hero-copy">
+                    <div class="gallery-hero-kicker">Dokumentasi Resmi</div>
+                    <h1 class="gallery-hero-title">Galeri Kegiatan Lapangan</h1>
+                    <p class="gallery-hero-subtitle">
+                        <?= esc((string) ($activity['title'] ?? '-')); ?>
+                        <?php if (! empty($activity['activity_date'])): ?>
+                            · <?= esc((string) $activity['activity_date']); ?>
+                        <?php endif; ?>
+                        <?php if (! empty($activity['location'])): ?>
+                            · <?= esc((string) $activity['location']); ?>
+                        <?php endif; ?>
+                    </p>
+                    <div class="gallery-meta-list">
+                        <span class="gallery-meta-item"><i class="fas fa-images"></i> <?= (int) count($photos); ?> foto</span>
+                        <span class="gallery-meta-item"><i class="fas fa-link"></i> Akses publik via tautan</span>
+                        <?php if (! empty($expiresAt)): ?>
+                            <span class="gallery-meta-item"><i class="fas fa-clock"></i> Aktif sampai <?= esc((string) $expiresAt); ?></span>
+                        <?php endif; ?>
+                    </div>
                 </div>
-            </div>
-            <div class="d-flex flex-wrap ml-auto justify-content-end gallery-toolbar" style="gap:8px;">
-                <a class="btn btn-primary gallery-toolbar-btn" href="<?= site_url('/kegiatan-lapangan/share/' . $shareToken . '/download-zip'); ?>">
-                    <i class="fas fa-file-archive mr-1"></i> Download Semua (ZIP)
-                </a>
+                <div class="gallery-hero-aside">
+                    <div class="gallery-hero-summary-card">
+                        <div class="gallery-hero-summary-label">Ringkasan</div>
+                        <div class="gallery-hero-summary-value"><?= (int) count($photos); ?> foto</div>
+                        <div class="gallery-hero-summary-text">Klik foto untuk memperbesar, atau unduh per item jika diperlukan.</div>
+                        <a class="btn btn-light gallery-toolbar-btn gallery-toolbar-btn--light" href="<?= site_url('/kegiatan-lapangan/share/' . $shareToken . '/download-zip'); ?>">
+                            <i class="fas fa-file-archive mr-1"></i> Download Semua (ZIP)
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 
+        <div class="gallery-intro-card share-card share-surface">
+            <div class="gallery-intro-label"><i class="fas fa-info-circle"></i> Panduan Cepat</div>
+            <h2 class="gallery-intro-title">Foto ditata agar mudah ditelusuri dan diunduh.</h2>
+            <p class="gallery-intro-text mb-0">Gunakan tombol unduh pada tiap foto bila hanya membutuhkan satu file, atau ambil seluruh dokumentasi sekaligus lewat ZIP.</p>
+        </div>
+
         <?php if (! empty($expiresAt)): ?>
-            <div class="alert alert-warning py-2 px-3">
-                Tautan ini berlaku sampai: <strong><?= esc((string) $expiresAt); ?></strong>
+            <div class="gallery-expiry-card share-card share-surface">
+                <div class="gallery-expiry-label">Masa Berlaku Tautan</div>
+                <div class="gallery-expiry-value"><?= esc((string) $expiresAt); ?></div>
             </div>
         <?php endif; ?>
 
@@ -94,109 +109,225 @@
 <style>
     .shared-gallery-page {
         background:
-            radial-gradient(circle at top left, rgba(15, 23, 42, 0.04), transparent 28%),
-            radial-gradient(circle at top right, rgba(59, 130, 246, 0.06), transparent 24%),
-            linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+            radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 34%),
+            radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 30%),
+            linear-gradient(180deg, #eaf2fb 0%, #f7fbff 56%, #ffffff 100%);
         min-height: 70vh;
     }
 
-    .gallery-page-heading {
-        max-width: 980px;
+    .gallery-shell {
+        max-width: 1520px;
+        margin: 28px auto 40px;
+    }
+
+    .gallery-hero {
         position: relative;
         overflow: hidden;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
-        border: 1px solid rgba(148, 163, 184, 0.22);
-        border-radius: 18px;
-        padding: 16px 18px 14px;
-        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+        border-radius: 24px;
+        padding: 26px 26px 24px;
+        margin-bottom: 18px;
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 52%, #0ea5e9 100%);
+        color: #fff;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
     }
 
-    .gallery-page-heading + .gallery-toolbar {
-        align-self: center;
-    }
-
-    .gallery-page-heading::before {
+    .gallery-hero::before,
+    .gallery-hero::after {
         content: '';
         position: absolute;
-        inset: 0 auto auto 0;
-        width: 100%;
-        height: 4px;
-        background: linear-gradient(90deg, #0f172a 0%, #334155 100%);
-    }
-
-    .gallery-page-heading::after {
-        content: '';
-        position: absolute;
-        top: -34px;
-        right: -34px;
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0) 72%);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
         pointer-events: none;
     }
 
-    .gallery-page-kicker {
+    .gallery-hero::before {
+        width: 180px;
+        height: 180px;
+        top: -60px;
+        right: -20px;
+    }
+
+    .gallery-hero::after {
+        width: 120px;
+        height: 120px;
+        bottom: -40px;
+        left: 18%;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .gallery-hero-inner {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.85fr);
+        gap: 22px;
+        align-items: center;
+    }
+
+    .gallery-hero-copy {
+        max-width: 64ch;
+    }
+
+    .gallery-hero-kicker {
         display: inline-flex;
         align-items: center;
         gap: 8px;
         margin-bottom: 8px;
-        color: #475569;
+        color: rgba(255, 255, 255, 0.84);
         font-size: 0.72rem;
         font-weight: 800;
         letter-spacing: 0.16em;
         text-transform: uppercase;
     }
 
-    .gallery-page-kicker::before {
+    .gallery-hero-kicker::before {
         content: '';
         width: 9px;
         height: 9px;
         border-radius: 999px;
-        background: linear-gradient(180deg, #0f172a, #334155);
-        box-shadow: 0 0 0 4px rgba(51, 65, 85, 0.12);
+        background: linear-gradient(180deg, #7dd3fc, #38bdf8);
+        box-shadow: 0 0 0 4px rgba(125, 211, 252, 0.14);
     }
 
-    .gallery-page-title {
-        color: #0f172a;
-        font-size: clamp(1.56rem, 2.1vw, 1.98rem);
-        font-weight: 700;
-        letter-spacing: -0.02em;
+    .gallery-hero-title {
+        margin: 0 0 12px;
+        color: #fff;
+        font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
     }
 
-    .gallery-page-subtitle {
-        color: #334155;
-        font-size: 1.03rem;
-        font-weight: 600;
-        line-height: 1.5;
-        opacity: 1;
+    .gallery-hero-subtitle {
+        max-width: 58ch;
+        margin: 0;
+        color: rgba(255, 255, 255, 0.84);
+        font-size: 0.98rem;
     }
 
-    .gallery-page-stats {
+    .gallery-meta-list {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 12px;
+        gap: 10px;
+        margin-top: 18px;
     }
 
-    .gallery-page-pill {
+    .gallery-meta-item {
         display: inline-flex;
         align-items: center;
         gap: 6px;
         padding: 8px 12px;
         border-radius: 999px;
-        background: #eff6ff;
-        border: 1px solid #dbeafe;
-        color: #1d4ed8;
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.12);
         font-size: 0.82rem;
         font-weight: 700;
         line-height: 1;
+        backdrop-filter: blur(8px);
     }
 
-    .gallery-page-pill--soft {
-        background: #f8fafc;
-        border-color: #e2e8f0;
+    .gallery-hero-aside {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .gallery-hero-summary-card {
+        position: relative;
+        width: 100%;
+        max-width: 340px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 20px;
+        padding: 18px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+        backdrop-filter: blur(10px);
+    }
+
+    .gallery-hero-summary-card::before {
+        content: '';
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        top: 12px;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.16);
+    }
+
+    .gallery-hero-summary-label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: rgba(255, 255, 255, 0.75);
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .gallery-hero-summary-value {
+        font-size: 2rem;
+        font-weight: 900;
+        line-height: 1;
+        color: #fff;
+        margin-bottom: 6px;
+    }
+
+    .gallery-hero-summary-text {
+        color: rgba(255, 255, 255, 0.82);
+        line-height: 1.6;
+        margin-bottom: 14px;
+    }
+
+    .gallery-intro-card {
+        margin-bottom: 18px;
+        padding: 18px 20px 17px;
+    }
+
+    .gallery-expiry-card {
+        margin-bottom: 18px;
+        padding: 14px 16px 13px;
+        border-top: 3px solid #334155;
+    }
+
+    .gallery-expiry-label {
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: #64748b;
+        font-weight: 800;
+        margin-bottom: 4px;
+    }
+
+    .gallery-expiry-value {
+        font-size: 0.98rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .gallery-intro-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 6px 12px;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .gallery-intro-title {
+        margin: 12px 0 6px;
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .gallery-intro-text {
+        margin: 0;
         color: #475569;
+        line-height: 1.7;
     }
 
     .gallery-toolbar {
@@ -205,7 +336,7 @@
 
     .gallery {
         display: grid;
-        gap: 14px;
+        gap: 16px;
     }
 
     .gallery-toolbar-btn {
@@ -213,11 +344,22 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 10px 18px rgba(30, 41, 59, 0.14);
+        box-shadow: 0 10px 18px rgba(15, 23, 42, 0.18);
         border-radius: 999px;
         padding-inline: 18px;
         font-weight: 700;
         letter-spacing: 0.01em;
+    }
+
+    .gallery-toolbar-btn--light {
+        background: rgba(255, 255, 255, 0.96);
+        color: #0f172a;
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .gallery-toolbar-btn--light:hover {
+        background: #fff;
+        color: #0f172a;
     }
 
     .gallery-toolbar-btn:focus,
@@ -237,7 +379,7 @@
     .gallery-item {
         background: #fff;
         border: 1px solid rgba(148, 163, 184, 0.24);
-        border-radius: 18px;
+        border-radius: 20px;
         overflow: hidden;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
         transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
@@ -470,23 +612,50 @@
         cursor: pointer;
     }
 
+    @media (max-width: 991.98px) {
+        .gallery-hero-inner {
+            grid-template-columns: 1fr;
+        }
+
+        .gallery-hero-aside {
+            justify-content: flex-start;
+        }
+
+        .gallery-hero-summary-card {
+            max-width: none;
+        }
+    }
+
     @media (max-width: 767.98px) {
-        .gallery-toolbar {
-            padding-top: 0;
+        .gallery-shell {
+            margin-top: 18px;
+            margin-bottom: 28px;
         }
 
-        .gallery-page-heading {
-            padding: 12px 13px;
-            border-radius: 14px;
+        .gallery-hero {
+            padding: 18px 18px 16px;
+            border-radius: 20px;
         }
 
-        .gallery-page-title {
-            font-size: 1.28rem;
+        .gallery-intro-card {
+            padding: 16px 16px 15px;
         }
 
-        .gallery-page-subtitle {
-            font-size: 0.94rem;
-            line-height: 1.45;
+        .gallery-hero-title {
+            font-size: 1.4rem;
+        }
+
+        .gallery-hero-subtitle {
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .gallery-hero-summary-card {
+            padding: 16px 16px 15px;
+        }
+
+        .gallery-hero-summary-value {
+            font-size: 1.7rem;
         }
 
         .gallery-grid .gallery-photo-btn img {
