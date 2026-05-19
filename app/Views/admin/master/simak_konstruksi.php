@@ -42,26 +42,53 @@
         align-items: center;
         justify-content: space-between;
         gap: 10px;
+
+            .simak-tree-table-head {
+                display: grid;
+                grid-template-columns: 34px 92px minmax(0, 1fr) 220px;
+                gap: 10px;
+                align-items: center;
+                padding: 10px 12px;
+                margin-bottom: 10px;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+                color: #334155;
+                font-size: 12px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .04em;
+            }
     }
 
     .simak-panel-head .form-control-sm {
         max-width: 180px;
     }
 
-    .simak-panel-meta {
+                transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
         display: flex;
         align-items: center;
         gap: 6px;
-        flex-wrap: wrap;
-        margin-top: 4px;
-    }
-
+                display: grid;
+                grid-template-columns: 34px 92px minmax(0, 1fr) 220px;
+                gap: 10px;
+                align-items: center;
+                padding: 10px 12px;
     .simak-panel-meta .badge {
         font-size: 11px;
         font-weight: 600;
     }
 
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
     .simak-panel-body {
+
+            .simak-master-no .badge {
+                min-width: 56px;
+                justify-content: center;
+                font-size: 11px;
+            }
         padding: 14px;
     }
 
@@ -74,6 +101,13 @@
 
     .simak-master-tree ul {
         margin-left: 24px;
+
+            .simak-master-flags {
+                display: flex;
+                justify-content: flex-end;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
         border-left: 1px dashed #d0d7de;
         padding-left: 12px;
     }
@@ -84,6 +118,12 @@
         margin-bottom: 10px;
         background: #fff;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
+                        <div class="simak-tree-table-head" aria-hidden="true">
+                            <div></div>
+                            <div>No</div>
+                            <div>Uraian</div>
+                            <div>Status</div>
+                        </div>
     }
 
     .simak-master-item.is-inactive {
@@ -97,7 +137,6 @@
 
     .simak-master-item.is-selected {
         border-color: #2563eb;
-        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
     }
 
     .simak-master-row {
@@ -107,17 +146,20 @@
         padding: 10px 12px;
     }
 
+                            echo '<div class="simak-master-no"><span class="badge badge-dark">' . esc($displayNo !== '' ? $displayNo : '-') . '</span></div>';
     .drag-handle {
-        cursor: grab;
-        color: #6b7280;
-    }
-
+                            echo '<div class="simak-master-title">' . esc($uraian !== '' ? $uraian : '-') . '</div>';
+                            echo '<div class="simak-master-sub">';
+                            echo 'Jenis: <strong>' . esc($rowKind) . '</strong> | Pertanyaan: <strong>' . ($hasQuestion ? 'Ya' : 'Tidak') . '</strong>';
     .simak-master-meta {
-        flex: 1;
-        min-width: 0;
+                            echo '</div>';
+                            echo '<div class="simak-master-flags">';
+                            echo '<span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span>';
+                            if ($isHiddenShare) {
+                                echo '<span class="badge badge-warning simak-status-badge">Share: Tersembunyi</span>';
+                            }
         cursor: pointer;
     }
-
     .simak-master-title {
         font-weight: 600;
         line-height: 1.3;
@@ -263,7 +305,7 @@
                 echo '<ul class="simak-master-tree-list">';
                 foreach ($nodes as $node) {
                     $id = (int) ($node['id'] ?? 0);
-                    $displayNo = trim((string) ($node['display_no'] ?? ''));
+                    $displayNo = trim((string) ($node['display_no_auto'] ?? $node['display_no'] ?? ''));
                     $uraian = trim((string) ($node['uraian'] ?? ''));
                     $title = trim($displayNo . ' ' . $uraian);
                     $rowKind = (string) ($node['row_kind'] ?? 'question');
@@ -274,7 +316,6 @@
 
                     echo '<li class="simak-master-item' . (! $isActive ? ' is-inactive' : '') . ($isHiddenShare ? ' is-share-hidden' : '') . '" data-id="' . $id . '"';
                     echo ' data-parent_id="' . esc((string) ($node['parent_id'] ?? ''), 'attr') . '"';
-                    echo ' data-display_no="' . esc((string) ($node['display_no'] ?? ''), 'attr') . '"';
                     echo ' data-uraian="' . esc((string) ($node['uraian'] ?? ''), 'attr') . '"';
                     echo ' data-row_kind="' . esc($rowKind, 'attr') . '"';
                     echo ' data-has_question="' . ($hasQuestion ? '1' : '0') . '"';
@@ -290,7 +331,7 @@
                     }
                     echo '</div>';
                     echo '<div class="simak-master-sub">';
-                    echo 'Jenis: <strong>' . esc($rowKind) . '</strong> | Pertanyaan: <strong>' . ($hasQuestion ? 'Ya' : 'Tidak') . '</strong> | Row No: <strong>' . esc((string) ($node['row_no'] ?? '')) . '</strong>';
+                    echo 'Jenis: <strong>' . esc($rowKind) . '</strong> | Pertanyaan: <strong>' . ($hasQuestion ? 'Ya' : 'Tidak') . '</strong>';
                     echo '</div>';
                     echo '</div>';
                     echo '</div>';
@@ -341,7 +382,7 @@
                     </div>
                 </div>
                 <div class="simak-panel-body">
-                    <div class="simak-form-hint">Pilih item di kiri untuk mode ubah. Untuk tambah baru, gunakan tombol Tambah Root atau Tambah Child.</div>
+                    <div class="simak-form-hint">Pilih item di kiri untuk mode ubah. Nomor tampil dibuat otomatis, sedangkan urutan diubah lewat drag and drop.</div>
 
                     <form method="post" id="form-master-simak" action="<?= site_url('/admin/master/simak/konstruksi/tambah'); ?>">
                         <?= csrf_field(); ?>
@@ -357,8 +398,8 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="display_no">Nomor Tampil</label>
-                            <input type="text" class="form-control" name="display_no" id="display_no" placeholder="Contoh: A, 1, a" <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
+                            <label>Nomor Tampil</label>
+                            <div class="form-control-plaintext text-muted">Otomatis mengikuti hirarki: A., 1., a., -</div>
                         </div>
                         <div class="form-group">
                             <label for="uraian">Uraian</label>
@@ -434,7 +475,6 @@
         var formModeLabel = document.getElementById('form-mode-label');
         var selectedIdInput = document.getElementById('selected_id');
         var parentSelect = document.getElementById('parent_id');
-        var displayNoInput = document.getElementById('display_no');
         var uraianInput = document.getElementById('uraian');
         var rowKindSelect = document.getElementById('row_kind');
         var hasQuestionInput = document.getElementById('has_question');
@@ -557,7 +597,6 @@
             if (formModeLabel) formModeLabel.textContent = label || 'Tambah Item Master';
             if (selectedIdInput) selectedIdInput.value = '';
             if (parentSelect) parentSelect.value = parentId || '';
-            if (displayNoInput) displayNoInput.value = '';
             if (uraianInput) uraianInput.value = '';
             if (rowKindSelect) rowKindSelect.value = 'section';
             if (hasQuestionInput) {
@@ -586,7 +625,6 @@
             if (formModeLabel) formModeLabel.textContent = 'Ubah Item #' + id;
             if (selectedIdInput) selectedIdInput.value = id;
             if (parentSelect) parentSelect.value = itemEl.getAttribute('data-parent_id') || '';
-            if (displayNoInput) displayNoInput.value = itemEl.getAttribute('data-display_no') || '';
             if (uraianInput) uraianInput.value = itemEl.getAttribute('data-uraian') || '';
             if (rowKindSelect) rowKindSelect.value = itemEl.getAttribute('data-row_kind') || 'question';
             if (hasQuestionInput) {

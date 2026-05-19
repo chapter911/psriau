@@ -44,7 +44,7 @@ class MasterSimak extends BaseController
             ->orderBy('id', 'ASC')
             ->findAll();
 
-        $itemsTree = $this->buildTree($rows);
+        $itemsTree = $this->annotateTreeDisplayNumbers($this->buildTree($rows));
         $itemsFlat = $this->flattenTree($itemsTree);
         $parentOptions = $this->buildParentOptions($itemsFlat);
 
@@ -69,7 +69,9 @@ class MasterSimak extends BaseController
         }
 
         $model = new MasterSimakKonstruksiItemModel();
-        $items = $model->orderBy('ordering','ASC')->findAll();
+        $items = $model->orderBy('ordering', 'ASC')->orderBy('id', 'ASC')->findAll();
+        $itemsTree = $this->annotateTreeDisplayNumbers($this->buildTree($items));
+        $items = $this->flattenTree($itemsTree);
 
         $format = $this->request->getGet('format') ?? 'csv';
 
@@ -331,6 +333,8 @@ class MasterSimak extends BaseController
             }
         }
         $db->transComplete();
+
+        $this->rebuildSimakKonstruksiDisplayNumbers();
         session()->remove('konstruksi_import_preview');
         session()->remove('konstruksi_import_conflicts');
         session()->remove('konstruksi_import_duplicates');
@@ -400,6 +404,8 @@ class MasterSimak extends BaseController
         if ($db->fieldExists('is_hidden_share', 'mst_simak_konstruksi_item')) {
             $model->update((int) $model->getInsertID(), ['is_hidden_share' => 0]);
         }
+
+        $this->rebuildSimakKonstruksiDisplayNumbers();
 
         if ($this->wantsJsonResponse()) {
             return $this->response->setJSON([
@@ -483,6 +489,8 @@ class MasterSimak extends BaseController
         ];
 
         $model->update($id, $payload);
+
+        $this->rebuildSimakKonstruksiDisplayNumbers();
 
         if ($this->wantsJsonResponse()) {
             return $this->response->setJSON([
@@ -678,6 +686,8 @@ class MasterSimak extends BaseController
                 ]);
         }
         $db->transComplete();
+
+        $this->rebuildSimakKonstruksiDisplayNumbers();
 
         if (! $db->transStatus()) {
             return $this->response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)->setJSON([
@@ -1331,6 +1341,77 @@ class MasterSimak extends BaseController
         return $result;
     }
 
+    private function annotateTreeDisplayNumbers(array $tree): array
+    {
+        $walker = function (array $nodes, int $depth) use (&$walker): array {
+            $annotated = [];
+
+            foreach ($nodes as $index => $node) {
+                $node['display_no_auto'] = $this->formatSimakDisplayNo($depth, $index + 1);
+                $children = is_array($node['children'] ?? null) ? $node['children'] : [];
+                $node['children'] = $children !== [] ? $walker($children, $depth + 1) : [];
+                $annotated[] = $node;
+            }
+
+            return $annotated;
+        };
+
+        return $walker($tree, 0);
+    }
+
+    private function formatSimakDisplayNo(int $depth, int $position): string
+    {
+        return match ($depth % 4) {
+            0 => $this->formatAlphaIndex($position, true) . '.',
+            1 => $position . '.',
+            2 => $this->formatAlphaIndex($position, false) . '.',
+            default => '-',
+        };
+    }
+
+    private function formatAlphaIndex(int $position, bool $uppercase = true): string
+    {
+        $position = max(1, $position);
+        $letters = '';
+
+        while ($position > 0) {
+            $position--;
+            $letters = chr(65 + ($position % 26)) . $letters;
+            $position = intdiv($position, 26);
+        }
+
+        return $uppercase ? $letters : strtolower($letters);
+    }
+
+    private function rebuildSimakKonstruksiDisplayNumbers(): void
+    {
+        $db = db_connect();
+        if (! $db->tableExists('mst_simak_konstruksi_item')) {
+            return;
+        }
+
+        $rows = $db->table('mst_simak_konstruksi_item')
+            ->orderBy('ordering', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        if ($rows === []) {
+            return;
+        }
+
+        $tree = $this->annotateTreeDisplayNumbers($this->buildTree($rows));
+        $flat = $this->flattenTree($tree);
+
+        $db->transStart();
+        foreach ($flat as $row) {
+            $db->table('mst_simak_konstruksi_item')
+                ->where('id', (int) ($row['id'] ?? 0))
+                ->update(['display_no' => (string) ($row['display_no_auto'] ?? '')]);
+        }
+        $db->transComplete();
+    }
+
     private function buildParentOptions(array $flatRows): array
     {
         $options = [];
@@ -1341,7 +1422,7 @@ class MasterSimak extends BaseController
             }
 
             $indent = str_repeat('-- ', (int) ($row['depth'] ?? 0));
-            $displayNo = trim((string) ($row['display_no'] ?? ''));
+            $displayNo = trim((string) ($row['display_no_auto'] ?? $row['display_no'] ?? ''));
             $uraian = trim((string) ($row['uraian'] ?? ''));
             $label = trim($displayNo . ' ' . $uraian);
             $options[] = [
