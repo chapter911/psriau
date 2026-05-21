@@ -58,9 +58,6 @@ Vagrantfile
 /writable/session/*
 !/writable/session/index.html
 
-/public/WRITEPATH . session/*
-!/public/WRITEPATH . session/.gitkeep
-
 /writable/uploads/*
 !/writable/uploads/index.html
 
@@ -91,8 +88,13 @@ php_errors.log
 vendor/
 
 #-------------------------
-# IDE / Development Files
+# Sensitive Folder Protection (.htaccess)
 #-------------------------
+# These .htaccess files are for local development only
+# In production, they prevent access to protected folders
+app/.htaccess
+tests/.htaccess
+writable/.htaccess
 
 # Modules Testing
 _modules/*
