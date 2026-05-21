@@ -1,0 +1,18 @@
+# CodeIgniter Public Folder Redirect
+# This .htaccess redirects all requests to the public/ folder
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Redirect /index.php requests
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Alternative: Block access to sensitive folders
+<IfModule authz_core_module>
+    <DirectoryMatch "^/app|^/vendor|^/writable|^/tests">
+        Require all denied
+    </DirectoryMatch>
+</IfModule>
