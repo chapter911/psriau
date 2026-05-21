@@ -3766,7 +3766,11 @@ class Kontrak extends BaseController
             return [];
         }
 
-        $selectFields = ['id', 'parent_id', 'row_no', 'display_no', 'uraian', 'row_kind', 'has_question', 'ordering'];
+        $selectFields = ['id', 'parent_id', 'row_no', 'uraian', 'row_kind', 'has_question', 'ordering'];
+        // Only select display_no if column exists
+        if ($this->tableHasColumn('mst_simak_konstruksi_item', 'display_no')) {
+            $selectFields[] = 'display_no';
+        }
         if ($this->tableHasColumn('mst_simak_konstruksi_item', 'is_hidden_share')) {
             $selectFields[] = 'is_hidden_share';
         }
@@ -4084,7 +4088,11 @@ class Kontrak extends BaseController
             return [];
         }
 
-        $selectFields = ['id', 'parent_id', 'row_no', 'display_no', 'uraian', 'bentuk_dokumen', 'referensi', 'kriteria_administrasi', 'kriteria_substansi', 'sumber_dokumen_hasil_integrasi', 'row_kind', 'has_question', 'ordering'];
+        $selectFields = ['id', 'parent_id', 'row_no', 'uraian', 'bentuk_dokumen', 'referensi', 'kriteria_administrasi', 'kriteria_substansi', 'sumber_dokumen_hasil_integrasi', 'row_kind', 'has_question', 'ordering'];
+        // Only select display_no if column exists
+        if ($this->tableHasColumn('mst_simak_konsultasi_item', 'display_no')) {
+            array_splice($selectFields, 3, 0, ['display_no']);
+        }
         if ($this->tableHasColumn('mst_simak_konsultasi_item', 'is_hidden_share')) {
             $selectFields[] = 'is_hidden_share';
         }
