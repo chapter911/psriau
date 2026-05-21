@@ -1,9 +1,20 @@
 # CodeIgniter 4 - Hostinger LiteSpeed Configuration
-# Note: Rewrite rules not used as LiteSpeed doesn't support them
-# Instead using root index.php wrapper
+# Using root index.php wrapper for routing
 
 # Disable directory browsing
 Options -Indexes
+
+# Rewrite engine for routing
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Don't rewrite existing files or directories
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Route all non-file/non-directory requests through index.php
+    RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+</IfModule>
 
 # Block direct access to sensitive folders
 <FilesMatch "\.(php|phtml|php3|php4|php5|php6|php7|php8|pht|phar)$">
@@ -21,3 +32,25 @@ Options -Indexes
         Require all granted
     </IfModule>
 </Files>
+
+# Block access to protected directories
+<Directory "app">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Directory>
+<Directory "vendor">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Directory>
+<Directory "writable">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Directory>
+<Directory "tests">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Directory>
