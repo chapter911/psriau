@@ -1,34 +1,23 @@
-# CodeIgniter 4 - Redirect all requests to public folder
-# This .htaccess goes in the document root (/public_html on Hostinger)
+# CodeIgniter 4 - Hostinger LiteSpeed Configuration
+# Note: Rewrite rules not used as LiteSpeed doesn't support them
+# Instead using root index.php wrapper
 
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteBase /
-    
-    # Don't rewrite if already in public folder
-    RewriteCond %{REQUEST_URI} !^/public/
-    # Don't rewrite if file exists
-    RewriteCond %{REQUEST_FILENAME} !-f
-    # Don't rewrite if directory exists
-    RewriteCond %{REQUEST_FILENAME} !-d
-    
-    # Rewrite all requests to public folder
-    RewriteRule ^(.*)$ public/$1 [L]
-</IfModule>
+# Disable directory browsing
+Options -Indexes
 
-# Block direct access to sensitive folders via <Files>
-<Files "*.php">
+# Block direct access to sensitive folders
+<FilesMatch "\.(php|phtml|php3|php4|php5|php6|php7|php8|pht|phar)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
     <IfModule !mod_authz_core.c>
         Deny from all
     </IfModule>
-</Files>
+</FilesMatch>
 
-# Allow access to public folder
-<IfModule mod_authz_core.c>
-    <Directory "public">
+# Allow index.php in root
+<Files "index.php">
+    <IfModule mod_authz_core.c>
         Require all granted
-    </Directory>
-</IfModule>
+    </IfModule>
+</Files>
