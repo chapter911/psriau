@@ -139,10 +139,10 @@
                 continue;
             }
 
-                    $sectionNo = trim((string) ($row['display_no'] ?? ''));
-                    if ($sectionNo !== '' && $sectionNo !== '-') {
-                        $sectionNo = preg_replace('/\.+$/', '.', $sectionNo);
-                    }
+            $sectionNo = trim((string) ($row['display_no'] ?? ''));
+            if ($sectionNo !== '' && $sectionNo !== '-') {
+                $sectionNo = preg_replace('/\.+$/', '.', $sectionNo);
+            }
 
             $sections[$sectionKey] = [
                 'label' => $sectionNo . ' ' . trim((string) ($row['section_title'] ?? $row['uraian'] ?? '')),

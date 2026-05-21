@@ -143,8 +143,13 @@
                 continue;
             }
 
+            $sectionNo = trim((string) ($row['display_no'] ?? ''));
+            if ($sectionNo !== '' && $sectionNo !== '-') {
+                $sectionNo = preg_replace('/\.+$/', '.', $sectionNo);
+            }
+
             $sections[$sectionKey] = [
-                'label' => trim((string) ($row['display_no'] ?? '')) . '. ' . trim((string) ($row['section_title'] ?? $row['uraian'] ?? '')),
+                'label' => $sectionNo . ' ' . trim((string) ($row['section_title'] ?? $row['uraian'] ?? '')),
                 'rows' => [],
             ];
             $currentSectionKey = $sectionKey;
@@ -224,6 +229,9 @@
                                         <?php
                                             $rowNo = (int) ($row['row_no'] ?? 0);
                                             $displayNo = trim((string) ($row['display_no'] ?? ''));
+                                            if ($displayNo !== '' && $displayNo !== '-') {
+                                                $displayNo = preg_replace('/\.+$/', '.', $displayNo);
+                                            }
                                             $indentLevel = (int) ($row['indent_level'] ?? 0);
                                             $rowType = (string) ($row['row_type'] ?? 'detail');
                                             $hasChildren = (bool) ($row['has_children'] ?? false);
@@ -256,7 +264,7 @@
                                                 && ! $isPromotedSubsectionInput;
                                             $fontWeight = $isGroup ? 'font-weight: 700;' : ($indentLevel > 1 ? 'font-weight: 500;' : 'font-weight: 600;');
                                             $bgStyle = $isGroup ? 'background-color: #f2f4f7;' : '';
-                                            $noText = $displayNo !== '' ? $displayNo . '.' : '';
+                                            $noText = $displayNo;
                                             $statusCellClass = '';
 
                                             if ($isInputRow) {

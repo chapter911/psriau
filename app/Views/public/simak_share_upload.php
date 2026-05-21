@@ -24,8 +24,13 @@
                 continue;
             }
 
+            $sectionNo = trim((string) ($row['display_no'] ?? ''));
+            if ($sectionNo !== '' && $sectionNo !== '-') {
+                $sectionNo = preg_replace('/\.+$/', '.', $sectionNo);
+            }
+
             $sections[$sectionKey] = [
-                'label' => trim((string) ($row['display_no'] ?? '')) . '. ' . trim((string) ($row['section_title'] ?? $row['uraian'] ?? '')),
+                'label' => $sectionNo . ' ' . trim((string) ($row['section_title'] ?? $row['uraian'] ?? '')),
                 'rows' => [],
             ];
             $currentSectionKey = $sectionKey;
@@ -737,7 +742,7 @@
                                     $isLockedUpload = $verifikasi === 'sesuai' && is_array($latestDokumen);
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
-                                    <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? $displayNo . '.' : '-'); ?></td>
+                                    <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?></td>
                                     <td class="cell-hierarchy-uraian" style="padding-left: <?= (int) ($indentPadding + 6); ?>px;"><?= esc((string) ($row['uraian'] ?? '-')); ?></td>
                                     <?php if ($isInputRow): ?>
                                         <td class="cell-center">
@@ -811,7 +816,7 @@
                                                     data-toggle="modal"
                                                     data-target="#modal-upload-share-simak"
                                                     data-row-no="<?= esc((string) $rowNo); ?>"
-                                                    data-row-label="<?= esc($displayNo !== '' ? $displayNo . '.' : '-'); ?>"
+                                                    data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
                                                     data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
                                                 >Upload</button>
                                             <?php endif; ?>
