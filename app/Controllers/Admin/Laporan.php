@@ -315,6 +315,18 @@ class Laporan extends BaseController
         return redirect()->to(site_url('admin/laporan/mingguan'))->with('success', 'Laporan mingguan berhasil ditambahkan.');
     }
 
+    public function perjalananDinas()
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        return view('admin/laporan/perjalanan_dinas', [
+            'title' => 'Laporan Perjalanan Dinas',
+            'can_edit' => $this->canManageLaporan(),
+        ]);
+    }
+
     private function getMingguanHistoryMap(array $reports): array
     {
         if ($reports === []) {
