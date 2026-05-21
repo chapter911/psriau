@@ -319,7 +319,7 @@ if (! function_exists('kop_surat_img_tag')) {
 
         if ($src === '') {
             // Fallback terakhir bila file lokal tidak ditemukan.
-            $src = base_url($url);
+            $src = media_url($url);
         }
 
         $attributes = [
@@ -343,6 +343,21 @@ if (! function_exists('kop_surat_img_tag')) {
         $html .= '>';
 
         return $html;
+    }
+}
+
+if (! function_exists('media_url')) {
+    /**
+     * Build a URL for files stored under public/ so they can be streamed by the app.
+     */
+    function media_url(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '' || preg_match('#^(https?:)?//#i', $path) || str_starts_with($path, 'data:')) {
+            return $path;
+        }
+
+        return site_url('media') . '?path=' . rawurlencode(ltrim($path, '/'));
     }
 }
 

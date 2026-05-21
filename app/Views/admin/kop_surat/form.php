@@ -24,7 +24,7 @@
                 <label for="image_file">File Gambar Kop Surat</label>
                 <input type="file" id="image_file" name="image_file" class="form-control" accept="image/*" <?= empty($item) ? 'required' : ''; ?>>
                 <?php if (! empty($item['image_url'] ?? '')): ?>
-                    <img src="<?= esc(base_url($item['image_url'])); ?>" alt="Preview kop surat" class="setting-preview">
+                    <img src="<?= esc(media_url((string) $item['image_url'])); ?>" alt="Preview kop surat" class="setting-preview">
                 <?php endif; ?>
             </div>
 

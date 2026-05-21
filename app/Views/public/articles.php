@@ -10,7 +10,7 @@
                 <article class="card">
                     <?php $articleImage = $article['image_url'] ?: ($globalSetting['default_article_image'] ?? ''); ?>
                     <?php if (! $isInstagramPost && ! empty($articleImage)): ?>
-                        <img src="<?= esc($articleImage); ?>" alt="<?= esc($article['title']); ?>">
+                        <img src="<?= esc(media_url((string) $articleImage)); ?>" alt="<?= esc($article['title']); ?>">
                     <?php endif; ?>
                     <div class="card-body">
                         <h3><?= esc($article['title']); ?></h3>

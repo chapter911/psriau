@@ -1,12 +1,12 @@
-<script src="<?= base_url('assets/adminlte/plugins/jquery/jquery.min.js'); ?>"></script>
-<script src="<?= base_url('assets/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js'); ?>"></script>
-<script src="<?= base_url('assets/adminlte/plugins/datatables/jquery.dataTables.min.js'); ?>"></script>
-<script src="<?= base_url('assets/adminlte/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js'); ?>"></script>
-<script src="<?= base_url('assets/adminlte/plugins/datatables-responsive/js/dataTables.responsive.min.js'); ?>"></script>
-<script src="<?= base_url('assets/adminlte/plugins/datatables-responsive/js/responsive.bootstrap4.min.js'); ?>"></script>
-<script src="<?= base_url('assets/adminlte/plugins/select2/js/select2.full.min.js'); ?>"></script>
-<script src="<?= base_url('assets/adminlte/dist/js/adminlte.min.js'); ?>"></script>
-<script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/jquery/jquery.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/datatables/jquery.dataTables.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/datatables-responsive/js/dataTables.responsive.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/datatables-responsive/js/responsive.bootstrap4.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/select2/js/select2.full.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/dist/js/adminlte.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js')); ?>"></script>
 <script>
     (() => {
         const passwordWarning = <?= json_encode(session()->getFlashdata('password_warning'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;

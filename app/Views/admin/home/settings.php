@@ -140,7 +140,7 @@
                     <td><?= esc($slide['title']); ?></td>
                     <td>
                         <?php if (! empty($slide['image_url'])): ?>
-                            <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#imageViewModal" onclick="showImage('<?= esc($slide['image_url']); ?>', '<?= esc($slide['title']); ?>')" title="Lihat Gambar">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#imageViewModal" onclick="showImage('<?= esc(media_url((string) $slide['image_url'])); ?>', '<?= esc($slide['title']); ?>')" title="Lihat Gambar">
                                 <i class="fas fa-image"></i>
                             </button>
                         <?php else: ?>
@@ -205,7 +205,7 @@
                             <input type="file" name="slide_image" class="form-control" accept="image/*">
                         </div>
                         <?php if (! empty($slide['image_url'])): ?>
-                            <img src="<?= esc($slide['image_url']); ?>" alt="Preview slide" class="setting-preview">
+                            <img src="<?= esc(media_url((string) $slide['image_url'])); ?>" alt="Preview slide" class="setting-preview">
                         <?php endif; ?>
                         <div class="form-group mt-2">
                             <label>Urutan</label>

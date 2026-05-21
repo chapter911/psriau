@@ -49,7 +49,7 @@
                     <?php
                         $isActive = (int) ($item['is_active'] ?? 1) === 1;
                         $fotoPath = trim((string) ($item['foto'] ?? ''));
-                        $fotoUrl = $fotoPath !== '' ? base_url($fotoPath) : '';
+                        $fotoUrl = $fotoPath !== '' ? media_url($fotoPath) : '';
                     ?>
                     <tr>
                         <td><?= esc((string) $i++); ?></td>

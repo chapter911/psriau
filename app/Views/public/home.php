@@ -4,7 +4,7 @@
 <section id="beranda" class="hero">
     <?php if (! empty($slides)): ?>
         <?php foreach ($slides as $index => $slide): ?>
-            <div class="hero-slide <?= $index === 0 ? 'active' : ''; ?>" style="background-image: url('<?= esc($slide['image_url']); ?>')"></div>
+            <div class="hero-slide <?= $index === 0 ? 'active' : ''; ?>" style="background-image: url('<?= esc(media_url((string) $slide['image_url'])); ?>')"></div>
         <?php endforeach; ?>
     <?php else: ?>
         <div class="hero-slide active" style="background-image: linear-gradient(130deg, #1f6c71, #c4471f)"></div>
@@ -75,7 +75,7 @@
                 <article class="card">
                     <?php $eventImage = $event['image_url'] ?: ($setting['default_event_image'] ?? ($globalSetting['default_event_image'] ?? '')); ?>
                     <?php if (! empty($eventImage)): ?>
-                        <img src="<?= esc($eventImage); ?>" alt="<?= esc($event['title']); ?>">
+                        <img src="<?= esc(media_url((string) $eventImage)); ?>" alt="<?= esc($event['title']); ?>">
                     <?php endif; ?>
                     <div class="card-body">
                         <h3><?= esc($event['title']); ?></h3>

@@ -27,7 +27,7 @@
                 <label for="image_file">Gambar Acara</label>
                 <input type="file" id="image_file" name="image_file" class="form-control" accept="image/*">
                 <?php if (! empty($event['image_url'] ?? '')): ?>
-                    <img src="<?= esc($event['image_url']); ?>" alt="Preview gambar acara" class="setting-preview">
+                    <img src="<?= esc(media_url((string) $event['image_url'])); ?>" alt="Preview gambar acara" class="setting-preview">
                 <?php endif; ?>
             </div>
 

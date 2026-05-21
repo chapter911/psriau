@@ -18,15 +18,15 @@
     ?>
     <title><?= esc($docTitle); ?></title>
     <?php if (! empty($globalSetting['logo_url'] ?? '')): ?>
-        <link rel="icon" type="image/png" href="<?= esc($globalSetting['logo_url']); ?>">
-        <link rel="apple-touch-icon" href="<?= esc($globalSetting['logo_url']); ?>">
+        <link rel="icon" type="image/png" href="<?= esc(media_url((string) $globalSetting['logo_url'])); ?>">
+        <link rel="apple-touch-icon" href="<?= esc(media_url((string) $globalSetting['logo_url'])); ?>">
     <?php endif; ?>
     <script>
         window.__appPreloaderStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
     </script>
-    <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/select2/css/select2.min.css'); ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css'); ?>">
-    <link rel="stylesheet" href="<?= base_url('assets/css/site.css'); ?>">
+    <link rel="stylesheet" href="<?= esc(media_url('assets/adminlte/plugins/select2/css/select2.min.css')); ?>">
+    <link rel="stylesheet" href="<?= esc(media_url('assets/adminlte/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css')); ?>">
+    <link rel="stylesheet" href="<?= esc(media_url('assets/css/site.css')); ?>">
 </head>
 <body data-preloader-duration="<?= (int) ($appSetting['preloader_duration_ms'] ?? 500); ?>">
 <?php
@@ -41,7 +41,7 @@
 <div class="app-preloader" id="appPreloader" aria-hidden="true">
     <div class="app-preloader-brand">
         <?php if ($preloaderLogo !== ''): ?>
-            <img src="<?= esc($preloaderLogo); ?>" alt="Logo <?= esc($preloaderName); ?>" class="app-preloader-logo">
+            <img src="<?= esc(media_url($preloaderLogo)); ?>" alt="Logo <?= esc($preloaderName); ?>" class="app-preloader-logo">
         <?php else: ?>
             <span class="app-preloader-fallback"><?= esc(strtoupper(substr($preloaderName, 0, 2))); ?></span>
         <?php endif; ?>
@@ -60,7 +60,7 @@
         <?php $appLogo = $globalSetting['logo_url'] ?? ''; ?>
         <a href="<?= site_url('/#beranda'); ?>" class="brand brand-with-logo">
             <?php if (! empty($appLogo)): ?>
-                <img src="<?= esc($appLogo); ?>" alt="Logo <?= esc($globalSetting['official_name'] ?? 'Satker PPS Kementerian PU'); ?>" class="brand-logo">
+                <img src="<?= esc(media_url((string) $appLogo)); ?>" alt="Logo <?= esc($globalSetting['official_name'] ?? 'Satker PPS Kementerian PU'); ?>" class="brand-logo">
             <?php else: ?>
                 <span class="brand-mark">SP</span>
             <?php endif; ?>
@@ -156,9 +156,9 @@
         </div>
     </div>
 </footer>
-<script src="<?= base_url('assets/adminlte/plugins/jquery/jquery.min.js'); ?>"></script>
-<script src="<?= base_url('assets/adminlte/plugins/select2/js/select2.full.min.js'); ?>"></script>
-<script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/jquery/jquery.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/select2/js/select2.full.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js')); ?>"></script>
 <script>
     (() => {
         if (typeof $ === 'undefined' || ! $.fn || ! $.fn.select2) {

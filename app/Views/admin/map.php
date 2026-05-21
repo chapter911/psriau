@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
-<link rel="stylesheet" href="<?= base_url('assets/leaflet/leaflet.css'); ?>">
+<link rel="stylesheet" href="<?= esc(media_url('assets/leaflet/leaflet.css')); ?>">
 <style>
     .map-page-card {
         border: 1px solid #e8edf4;
@@ -247,7 +247,7 @@
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>
-<script src="<?= base_url('assets/leaflet/leaflet.js'); ?>"></script>
+<script src="<?= esc(media_url('assets/leaflet/leaflet.js')); ?>"></script>
 <script>
 (() => {
     if (typeof L === 'undefined') {
@@ -342,8 +342,8 @@
 
     const loadRiauBoundary = async () => {
         const candidates = [
-            '<?= base_url('geojson/provinsi_riau.json'); ?>',
-            '<?= base_url('geojson/kabupaten.json'); ?>'
+            '<?= esc(media_url('geojson/provinsi_riau.json')); ?>',
+            '<?= esc(media_url('geojson/kabupaten.json')); ?>'
         ];
 
         for (const url of candidates) {
@@ -419,7 +419,7 @@
             iconSize: [28, 42],
             iconAnchor: [14, 42],
             popupAnchor: [0, -36],
-            shadowUrl: '<?= base_url('assets/leaflet/images/marker-shadow.png'); ?>',
+            shadowUrl: '<?= esc(media_url('assets/leaflet/images/marker-shadow.png')); ?>',
             shadowSize: [41, 41],
             shadowAnchor: [12, 41],
         });

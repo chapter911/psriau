@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
-<link rel="stylesheet" href="<?= base_url('assets/leaflet/leaflet.css'); ?>">
+<link rel="stylesheet" href="<?= esc(media_url('assets/leaflet/leaflet.css')); ?>">
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Daftar Sekolah</h3>
@@ -248,7 +248,7 @@
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>
-<script src="<?= base_url('assets/leaflet/leaflet.js'); ?>"></script>
+<script src="<?= esc(media_url('assets/leaflet/leaflet.js')); ?>"></script>
 <script>
     (function () {
         const modalEdit = document.getElementById('modal-ubah-sekolah');

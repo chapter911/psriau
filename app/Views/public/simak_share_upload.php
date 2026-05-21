@@ -59,13 +59,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= esc((string) ($title ?? 'Upload Dokumen SIMAK')); ?></title>
     <?php if (! empty($globalSetting['logo_url'] ?? '')): ?>
-        <link rel="icon" type="image/png" href="<?= esc($globalSetting['logo_url']); ?>">
-        <link rel="apple-touch-icon" href="<?= esc($globalSetting['logo_url']); ?>">
+        <link rel="icon" type="image/png" href="<?= esc(media_url((string) $globalSetting['logo_url'])); ?>">
+        <link rel="apple-touch-icon" href="<?= esc(media_url((string) $globalSetting['logo_url'])); ?>">
     <?php endif; ?>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?= base_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js'); ?>"></script>
+    <script src="<?= esc(media_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js')); ?>"></script>
     <style>
         body {
             background:

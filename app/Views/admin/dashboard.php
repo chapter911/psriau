@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
-<link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/chart.js/Chart.min.css'); ?>">
+<link rel="stylesheet" href="<?= esc(media_url('assets/adminlte/plugins/chart.js/Chart.min.css')); ?>">
 <style>
     .admin-dashboard {
         display: grid;
@@ -478,7 +478,7 @@
 
 </div>
 
-<script src="<?= base_url('assets/adminlte/plugins/chart.js/Chart.min.js'); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/chart.js/Chart.min.js')); ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     <?php if (!empty($damageClassification)): ?>

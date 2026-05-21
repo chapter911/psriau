@@ -9,7 +9,7 @@
                 <article class="card">
                     <?php $eventImage = $event['image_url'] ?: ($globalSetting['default_event_image'] ?? ''); ?>
                     <?php if (! empty($eventImage)): ?>
-                        <img src="<?= esc($eventImage); ?>" alt="<?= esc($event['title']); ?>">
+                        <img src="<?= esc(media_url((string) $eventImage)); ?>" alt="<?= esc($event['title']); ?>">
                     <?php endif; ?>
                     <div class="card-body">
                         <h3><?= esc($event['title']); ?></h3>

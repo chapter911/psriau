@@ -9,7 +9,7 @@
         <p class="meta"><?= esc($article['category']); ?> | <?= esc($article['published_at'] ?? '-'); ?></p>
         <?php $articleImage = $article['image_url'] ?: ($globalSetting['default_article_image'] ?? ''); ?>
         <?php if (! $isInstagramPost && ! empty($articleImage)): ?>
-            <img src="<?= esc($articleImage); ?>" alt="<?= esc($article['title']); ?>" style="width:100%;max-height:400px;object-fit:cover;border-radius:14px;margin-bottom:1rem;">
+            <img src="<?= esc(media_url((string) $articleImage)); ?>" alt="<?= esc($article['title']); ?>" style="width:100%;max-height:400px;object-fit:cover;border-radius:14px;margin-bottom:1rem;">
         <?php endif; ?>
         <div class="content-wrap">
             <?php if ($isInstagramPost): ?>

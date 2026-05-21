@@ -6,17 +6,17 @@
     <?php $appName = trim((string) ($appSetting['app_name'] ?? 'PLN EPM-Digi')); ?>
     <title><?= esc('Masuk Admin | ' . $appName); ?></title>
     <?php if (! empty($globalSetting['logo_url'] ?? '')): ?>
-        <link rel="icon" type="image/png" href="<?= esc($globalSetting['logo_url']); ?>">
-        <link rel="apple-touch-icon" href="<?= esc($globalSetting['logo_url']); ?>">
+        <link rel="icon" type="image/png" href="<?= esc(media_url((string) $globalSetting['logo_url'])); ?>">
+        <link rel="apple-touch-icon" href="<?= esc(media_url((string) $globalSetting['logo_url'])); ?>">
     <?php endif; ?>
-    <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/fontawesome-free/css/all.min.css'); ?>">
+    <link rel="stylesheet" href="<?= esc(media_url('assets/adminlte/plugins/fontawesome-free/css/all.min.css')); ?>">
     <style>
         @font-face {
             font-family: "Barlow";
             font-style: normal;
             font-weight: 400;
             font-display: swap;
-            src: url("<?= base_url('assets/fonts/Barlow-Regular.ttf'); ?>") format("truetype");
+            src: url("<?= esc(media_url('assets/fonts/Barlow-Regular.ttf')); ?>") format("truetype");
         }
 
         @font-face {
@@ -24,7 +24,7 @@
             font-style: normal;
             font-weight: 500;
             font-display: swap;
-            src: url("<?= base_url('assets/fonts/Barlow-Medium.ttf'); ?>") format("truetype");
+            src: url("<?= esc(media_url('assets/fonts/Barlow-Medium.ttf')); ?>") format("truetype");
         }
 
         @font-face {
@@ -32,7 +32,7 @@
             font-style: normal;
             font-weight: 700;
             font-display: swap;
-            src: url("<?= base_url('assets/fonts/Barlow-Bold.ttf'); ?>") format("truetype");
+            src: url("<?= esc(media_url('assets/fonts/Barlow-Bold.ttf')); ?>") format("truetype");
         }
 
         @font-face {
@@ -40,7 +40,7 @@
             font-style: normal;
             font-weight: 800;
             font-display: swap;
-            src: url("<?= base_url('assets/fonts/Barlow-ExtraBold.ttf'); ?>") format("truetype");
+            src: url("<?= esc(media_url('assets/fonts/Barlow-ExtraBold.ttf')); ?>") format("truetype");
         }
 
         @font-face {
@@ -48,7 +48,7 @@
             font-style: normal;
             font-weight: 100 900;
             font-display: swap;
-            src: url("<?= base_url('assets/fonts/Fraunces-Variable.ttf'); ?>") format("truetype");
+            src: url("<?= esc(media_url('assets/fonts/Fraunces-Variable.ttf')); ?>") format("truetype");
         }
 
         :root {

@@ -212,14 +212,14 @@
     </div>
 </div>
 
-<script src="<?= base_url('assets/adminlte/plugins/sortablejs/Sortable.min.js'); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/sortablejs/Sortable.min.js')); ?>"></script>
 <style>
     @font-face {
         font-family: 'Space Grotesk';
         font-style: normal;
         font-weight: 300 700;
         font-display: swap;
-        src: url("<?= base_url('assets/fonts/SpaceGrotesk-Variable.ttf'); ?>") format('truetype');
+        src: url("<?= esc(media_url('assets/fonts/SpaceGrotesk-Variable.ttf')); ?>") format('truetype');
     }
 
     .menu-setting {

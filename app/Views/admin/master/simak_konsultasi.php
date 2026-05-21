@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
-<script src="<?= base_url('assets/adminlte/plugins/sortablejs/Sortable.min.js'); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/sortablejs/Sortable.min.js')); ?>"></script>
 <style>
     .simak-split-layout {
         display: grid;
