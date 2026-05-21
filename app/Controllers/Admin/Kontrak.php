@@ -3,12 +3,14 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Traits\SimakNumberingTrait;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class Kontrak extends BaseController
 {
+    use SimakNumberingTrait;
     public function paket()
     {
         if (! $this->canViewKontrak()) {
@@ -3781,42 +3783,9 @@ class Kontrak extends BaseController
             return [];
         }
 
-        $nodes = [];
-        foreach ($rows as $row) {
-            $node = $row;
-            $node['children'] = [];
-            $nodes[(int) $row['id']] = $node;
-        }
-
-        $roots = [];
-        foreach ($nodes as $id => $node) {
-            $parentId = (int) ($node['parent_id'] ?? 0);
-            if ($parentId > 0 && isset($nodes[$parentId])) {
-                $nodes[$parentId]['children'][] = &$nodes[$id];
-            } else {
-                $roots[] = &$nodes[$id];
-            }
-        }
-
-        $sortTree = static function (array &$items) use (&$sortTree): void {
-            usort($items, static function (array $a, array $b): int {
-                $orderingCmp = ((int) ($a['ordering'] ?? 0)) <=> ((int) ($b['ordering'] ?? 0));
-                if ($orderingCmp !== 0) {
-                    return $orderingCmp;
-                }
-
-                return ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));
-            });
-
-            foreach ($items as &$item) {
-                if (! empty($item['children'])) {
-                    $sortTree($item['children']);
-                }
-            }
-            unset($item);
-        };
-
-        $sortTree($roots);
+        // Use trait methods to build and annotate tree with automatic numbering
+        $tree = $this->annotateTreeDisplayNumbers($this->buildTree($rows));
+        $flatTree = $this->flattenTree($tree);
 
         $flattened = [];
         $walk = static function (array $items, int $depth, string $sectionKey, string $sectionTitle) use (&$walk, &$flattened, $includeHiddenShare): void {
@@ -3852,9 +3821,10 @@ class Kontrak extends BaseController
                     default => 4,
                 };
 
+                // Use auto-generated display_no_auto instead of database display_no
                 $flattened[] = [
                     'row_no' => (int) ($item['row_no'] ?? 0),
-                    'display_no' => trim((string) ($item['display_no'] ?? '')),
+                    'display_no' => trim((string) ($item['display_no_auto'] ?? $item['display_no'] ?? '')),
                     'uraian' => trim((string) ($item['uraian'] ?? '')),
                     'is_header' => $rowKind === 'section',
                     'indent_level' => $depth,
@@ -3872,7 +3842,7 @@ class Kontrak extends BaseController
             }
         };
 
-        $walk($roots, 0, '', '');
+        $walk($tree, 0, '', '');
 
         return $flattened;
     }
