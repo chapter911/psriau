@@ -1,56 +1,69 @@
 # CodeIgniter 4 - Hostinger LiteSpeed Configuration
+
 # Using root index.php wrapper for routing
 
 # Disable directory browsing
+
 Options -Indexes
 
 # Rewrite engine for routing
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    
+
+    # If the project root is the web root, serve files that physically exist under public/.
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -d
+    RewriteRule ^(.*)$ public/$1 [L]
+
     # Don't rewrite existing files or directories
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    
+
     # Route all non-file/non-directory requests through index.php
     RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+
 </IfModule>
 
 # Block direct access to sensitive folders
+
 <FilesMatch "\.(php|phtml|php3|php4|php5|php6|php7|php8|pht|phar)$">
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Deny from all
-    </IfModule>
+<IfModule mod_authz_core.c>
+Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+Deny from all
+</IfModule>
 </FilesMatch>
 
 # Allow index.php in root
+
 <Files "index.php">
-    <IfModule mod_authz_core.c>
-        Require all granted
-    </IfModule>
+<IfModule mod_authz_core.c>
+Require all granted
+</IfModule>
 </Files>
 
 # Block access to protected directories
+
 <Directory "app">
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
+<IfModule mod_authz_core.c>
+Require all denied
+</IfModule>
 </Directory>
 <Directory "vendor">
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
+<IfModule mod_authz_core.c>
+Require all denied
+</IfModule>
 </Directory>
 <Directory "writable">
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
+<IfModule mod_authz_core.c>
+Require all denied
+</IfModule>
 </Directory>
 <Directory "tests">
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
+<IfModule mod_authz_core.c>
+Require all denied
+</IfModule>
 </Directory>
