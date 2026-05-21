@@ -1,9 +1,9 @@
 # CodeIgniter 4 - Redirect all requests to public folder
 # This .htaccess goes in the document root (/public_html on Hostinger)
-# It handles the fact that the actual web root is /public_html/public
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /
     
     # Don't rewrite if already in public folder
     RewriteCond %{REQUEST_URI} !^/public/
@@ -13,14 +13,22 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     
     # Rewrite all requests to public folder
-    RewriteRule ^(.*)$ /public/$1 [L]
+    RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
 
-# Block direct access to sensitive folders
+# Block direct access to sensitive folders via <Files>
+<Files "*.php">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</Files>
+
+# Allow access to public folder
 <IfModule mod_authz_core.c>
-    <DirectoryMatch "^(?!.*public).*$">
-        <FilesMatch "\.(php|phtml|php3|php4|php5|php6|php7|php8|pht|phar)$">
-            Deny from all
-        </FilesMatch>
-    </DirectoryMatch>
+    <Directory "public">
+        Require all granted
+    </Directory>
 </IfModule>
