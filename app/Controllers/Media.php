@@ -13,6 +13,38 @@ class Media extends BaseController
             return $this->response->setStatusCode(404);
         }
 
+        return $this->serveRelativePath($relativePath);
+    }
+
+    public function assets(string $path = ''): ResponseInterface
+    {
+        if ($path === '') {
+            return $this->response->setStatusCode(404);
+        }
+
+        return $this->serveRelativePath('assets/' . $path);
+    }
+
+    public function uploads(string $path = ''): ResponseInterface
+    {
+        if ($path === '') {
+            return $this->response->setStatusCode(404);
+        }
+
+        return $this->serveRelativePath('uploads/' . $path);
+    }
+
+    public function geojson(string $path = ''): ResponseInterface
+    {
+        if ($path === '') {
+            return $this->response->setStatusCode(404);
+        }
+
+        return $this->serveRelativePath('geojson/' . $path);
+    }
+
+    private function serveRelativePath(string $relativePath): ResponseInterface
+    {
         $relativePath = ltrim(rawurldecode($relativePath), '/');
         $rootPath = realpath(FCPATH);
         $filePath = realpath(FCPATH . $relativePath);

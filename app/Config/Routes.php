@@ -26,6 +26,9 @@ $routes->get('simak/share/(:segment)/download-dokumen/(:num)', 'Admin\\Kontrak::
 $routes->get('privacy-policy', 'Legal::privacy');
 $routes->get('terms-of-service', 'Legal::terms');
 $routes->get('media', 'Media::index');
+$routes->get('assets/(:any)', 'Media::assets/$1');
+$routes->get('uploads/(:any)', 'Media::uploads/$1');
+$routes->get('geojson/(:any)', 'Media::geojson/$1');
 
 $routes->get('masuk', 'Auth::loginForm');
 $routes->post('masuk', 'Auth::login');
