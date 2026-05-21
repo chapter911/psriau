@@ -3753,10 +3753,114 @@ class Kontrak extends BaseController
                 }
             }
 
-            return $items;
+            // Build hierarchical tree structure based on row_priority
+            $tree = $this->buildTreeFromPriorities($items);
+            
+            // Annotate with automatic display numbers following the format: A., 1., a., -
+            $annotatedTree = $this->annotateTreeDisplayNumbers($tree);
+            
+            // Flatten tree while preserving hierarchy information for display
+            $flattened = $this->flattenTreeToItems($annotatedTree);
+
+            return $flattened;
         } catch (\Throwable $e) {
             return [];
         }
+    }
+
+    private function buildTreeFromPriorities(array $items): array
+    {
+        // Build tree structure based on row_priority, treating items as having parent-child relationships
+        // Items with higher priority (greater number) are children of items with lower priority
+        
+        // First, assign a unique id if not present
+        $map = [];
+        foreach ($items as $index => $item) {
+            $item['id'] = $index;
+            $item['parent_id'] = -1;
+            $item['children'] = [];
+            $map[$index] = $item;
+        }
+
+         // Build parent-child relationships based on priority and section
+         $totalItems = count($items);
+        foreach ($map as $index => &$item) {
+            $currentPriority = (int) ($item['row_priority'] ?? 4);
+            $currentSection = (string) ($item['section_key'] ?? '');
+
+            // Find parent: the last item before this one with lower priority in same section
+            for ($searchIdx = $index - 1; $searchIdx >= 0; $searchIdx--) {
+                $candidate = $map[$searchIdx] ?? null;
+                if ($candidate === null) {
+                    continue;
+                }
+
+                $candidateSection = (string) ($candidate['section_key'] ?? '');
+                if ($candidateSection !== $currentSection) {
+                    // Different section, stop searching
+                    break;
+                }
+
+                $candidatePriority = (int) ($candidate['row_priority'] ?? 4);
+                if ($candidatePriority < $currentPriority) {
+                    // Found parent
+                    $item['parent_id'] = $searchIdx;
+                    break;
+                }
+            }
+        }
+        unset($item);
+
+        // Now build root array and create tree structure
+        $roots = [];
+        foreach ($map as $id => &$item) {
+            if ((int) ($item['parent_id'] ?? -1) < 0 || ! isset($map[$item['parent_id']])) {
+                $roots[] = &$map[$id];
+            } else {
+                $parentId = (int) $item['parent_id'];
+                $map[$parentId]['children'][] = &$map[$id];
+            }
+        }
+        unset($item);
+
+        return $roots;
+    }
+
+    private function flattenTreeToItems(array $tree): array
+    {
+        $flattened = [];
+        
+        $walker = function (array $nodes, int $depth = 0) use (&$walker, &$flattened): void {
+            foreach ($nodes as $node) {
+                // Get the auto-generated display number
+                $displayNo = trim((string) ($node['display_no_auto'] ?? $node['display_no'] ?? ''));
+                
+                // Create item for output
+                $outputItem = [
+                    'row_no' => (int) ($node['row_no'] ?? 0),
+                    'display_no' => $displayNo,
+                    'uraian' => trim((string) ($node['uraian'] ?? '')),
+                    'is_header' => (bool) ($node['is_header'] ?? false),
+                    'indent_level' => $depth,
+                    'row_type' => (string) ($node['row_type'] ?? 'detail'),
+                    'row_priority' => (int) ($node['row_priority'] ?? 4),
+                    'section_key' => (string) ($node['section_key'] ?? ''),
+                    'section_title' => (string) ($node['section_title'] ?? ''),
+                    'has_children' => ! empty($node['children']),
+                    'is_leaf' => (bool) ($node['is_leaf'] ?? false),
+                ];
+                
+                $flattened[] = $outputItem;
+                
+                // Recursively process children
+                if (! empty($node['children'])) {
+                    $walker($node['children'], $depth + 1);
+                }
+            }
+        };
+        
+        $walker($tree);
+        return $flattened;
     }
 
     private function getSimakKonstruksiTemplateFromMaster(bool $includeHiddenShare = true): array
@@ -4075,10 +4179,61 @@ class Kontrak extends BaseController
                 }
             }
 
-            return $items;
+            // Build hierarchical tree structure based on row_priority
+            $tree = $this->buildTreeFromPriorities($items);
+            
+            // Annotate with automatic display numbers following the format: A., 1., a., -
+            $annotatedTree = $this->annotateTreeDisplayNumbers($tree);
+            
+            // Flatten tree while preserving hierarchy information for display
+            $flattened = $this->flattenTreeToItemsKonsultasi($annotatedTree);
+
+            return $flattened;
         } catch (\Throwable $e) {
             return [];
         }
+    }
+
+    private function flattenTreeToItemsKonsultasi(array $tree): array
+    {
+        $flattened = [];
+        
+        $walker = function (array $nodes, int $depth = 0) use (&$walker, &$flattened): void {
+            foreach ($nodes as $node) {
+                // Get the auto-generated display number
+                $displayNo = trim((string) ($node['display_no_auto'] ?? $node['display_no'] ?? ''));
+                
+                // Create item for output
+                $outputItem = [
+                    'row_no' => (int) ($node['row_no'] ?? 0),
+                    'display_no' => $displayNo,
+                    'uraian' => trim((string) ($node['uraian'] ?? '')),
+                    'bentuk_dokumen' => trim((string) ($node['bentuk_dokumen'] ?? '')),
+                    'referensi' => trim((string) ($node['referensi'] ?? '')),
+                    'kriteria_administrasi' => trim((string) ($node['kriteria_administrasi'] ?? '')),
+                    'kriteria_substansi' => trim((string) ($node['kriteria_substansi'] ?? '')),
+                    'sumber_dokumen_hasil_integrasi' => trim((string) ($node['sumber_dokumen_hasil_integrasi'] ?? '')),
+                    'is_header' => (bool) ($node['is_header'] ?? false),
+                    'indent_level' => $depth,
+                    'row_type' => (string) ($node['row_type'] ?? 'detail'),
+                    'row_priority' => (int) ($node['row_priority'] ?? 4),
+                    'section_key' => (string) ($node['section_key'] ?? ''),
+                    'section_title' => (string) ($node['section_title'] ?? ''),
+                    'has_children' => ! empty($node['children']),
+                    'is_leaf' => (bool) ($node['is_leaf'] ?? false),
+                ];
+                
+                $flattened[] = $outputItem;
+                
+                // Recursively process children
+                if (! empty($node['children'])) {
+                    $walker($node['children'], $depth + 1);
+                }
+            }
+        };
+        
+        $walker($tree);
+        return $flattened;
     }
 
     private function getSimakKonsultasiTemplateFromMaster(bool $includeHiddenShare = true): array
