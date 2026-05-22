@@ -6,6 +6,12 @@
 
 Options -Indexes
 
+# Serve missing routes through the front controller even when rewrite rules
+
+# are not fully honored by the hosting stack.
+
+FallbackResource /index.php
+
 # Rewrite engine for routing
 
 <IfModule mod_rewrite.c>

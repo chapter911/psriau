@@ -1,5 +1,7 @@
 <?php
 
+http_response_code(200);
+
 $publicPath = __DIR__ . '/public';
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $requestPath = rawurldecode($requestPath);

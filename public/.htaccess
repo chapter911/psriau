@@ -1,6 +1,9 @@
 # Disable directory browsing
 Options -Indexes
 
+# Fallback to the front controller for non-file routes.
+FallbackResource index.php
+
 # ----------------------------------------------------------------------
 # Rewrite engine
 # ----------------------------------------------------------------------

@@ -1,5 +1,7 @@
 <?php
 
+http_response_code(200);
+
 use CodeIgniter\Boot;
 use Config\Paths;
 
