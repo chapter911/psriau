@@ -1103,13 +1103,13 @@ class Laporan extends BaseController
         return site_url('admin/laporan/harian');
     }
 
-    private function canViewLaporan(): bool
+    protected function canViewLaporan(): bool
     {
         $role = strtolower((string) session()->get('role'));
         return in_array($role, ['admin', 'editor', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
     }
 
-    private function canManageLaporan(): bool
+    protected function canManageLaporan(): bool
     {
         $role = strtolower((string) session()->get('role'));
         return in_array($role, ['admin', 'editor', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
