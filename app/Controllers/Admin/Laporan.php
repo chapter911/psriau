@@ -6,6 +6,7 @@ use App\Controllers\BaseController;
 use App\Models\LaporanHarianReportModel;
 use App\Models\LaporanHarianTitleModel;
 use App\Models\LaporanMingguanReportModel;
+use App\Models\MstPegawaiModel;
 use CodeIgniter\HTTP\RedirectResponse;
 
 class Laporan extends BaseController
@@ -325,6 +326,269 @@ class Laporan extends BaseController
             'title' => 'Laporan Perjalanan Dinas',
             'can_edit' => $this->canManageLaporan(),
         ]);
+    }
+
+    public function perjalananDinasBuat()
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $pegawaiRows = $this->loadPegawaiOptions();
+        $defaultApprover = $this->resolveDefaultApprover($pegawaiRows);
+        $creatorPegawai = $this->resolveCurrentPegawai((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name')), $pegawaiRows);
+
+        if (strtolower((string) $this->request->getMethod()) !== 'post') {
+            return view('admin/laporan/perjalanan_dinas_buat', [
+                'title' => 'Buat Laporan Perjalanan Dinas',
+                'pegawai_options' => $pegawaiRows,
+                'default_approver_id' => $defaultApprover['id'] ?? null,
+                'default_approver_label' => $defaultApprover['label'] ?? '',
+                'creator_name' => trim((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
+                'creator_pegawai' => $creatorPegawai,
+                'current_input' => [],
+                'form_error' => null,
+            ]);
+        }
+
+        $currentInput = [
+            'nomor_surat_tugas' => trim((string) $this->request->getPost('nomor_surat_tugas')),
+            'periode_mulai' => trim((string) $this->request->getPost('periode_mulai')),
+            'periode_selesai' => trim((string) $this->request->getPost('periode_selesai')),
+            'kota_tujuan' => trim((string) $this->request->getPost('kota_tujuan')),
+            'tujuan' => trim((string) $this->request->getPost('tujuan')),
+            'sasaran' => trim((string) $this->request->getPost('sasaran')),
+            'laporan_hasil' => trim((string) $this->request->getPost('laporan_hasil')),
+            'diketahui_oleh_id' => (int) $this->request->getPost('diketahui_oleh_id'),
+            'pelaksana_id' => array_values(array_filter(array_map('intval', (array) $this->request->getPost('pelaksana_id')), static fn (int $id): bool => $id > 0)),
+        ];
+
+        $errors = [];
+        foreach (['nomor_surat_tugas', 'periode_mulai', 'periode_selesai', 'kota_tujuan', 'tujuan', 'sasaran', 'laporan_hasil'] as $requiredField) {
+            if ($currentInput[$requiredField] === '') {
+                $errors[] = ucfirst(str_replace('_', ' ', $requiredField)) . ' wajib diisi.';
+            }
+        }
+
+        if ($currentInput['periode_mulai'] !== '' && $currentInput['periode_selesai'] !== '' && strtotime($currentInput['periode_mulai']) !== false && strtotime($currentInput['periode_selesai']) !== false && strtotime($currentInput['periode_mulai']) > strtotime($currentInput['periode_selesai'])) {
+            $errors[] = 'Periode mulai tidak boleh lebih besar dari periode selesai.';
+        }
+
+        if ($currentInput['pelaksana_id'] === []) {
+            $errors[] = 'Minimal 1 pelaksana wajib dipilih.';
+        }
+
+        $allowedPegawaiIds = array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $pegawaiRows);
+        $currentInput['pelaksana_id'] = array_values(array_unique(array_values(array_filter($currentInput['pelaksana_id'], static fn (int $id): bool => in_array($id, $allowedPegawaiIds, true)))));
+
+        if ($currentInput['pelaksana_id'] === []) {
+            $errors[] = 'Pelaksana yang dipilih tidak valid.';
+        }
+
+        if (! in_array($currentInput['diketahui_oleh_id'], $allowedPegawaiIds, true)) {
+            $currentInput['diketahui_oleh_id'] = (int) ($defaultApprover['id'] ?? 0);
+        }
+
+        if ($currentInput['diketahui_oleh_id'] <= 0) {
+            $errors[] = 'Data diketahui oleh wajib dipilih.';
+        }
+
+        $photoUploads = $this->request->getFileMultiple('foto_dokumentasi') ?? [];
+        if (! is_array($photoUploads)) {
+            $photoUploads = [];
+        }
+        $photos = [];
+        foreach ($photoUploads as $photoUpload) {
+            if ($photoUpload === null || ! $photoUpload->isValid()) {
+                continue;
+            }
+
+            $mimeType = (string) $photoUpload->getMimeType();
+            if ($mimeType === '' || strpos($mimeType, 'image/') !== 0) {
+                $errors[] = 'Foto dokumentasi harus berupa gambar.';
+                break;
+            }
+
+            $binary = @file_get_contents($photoUpload->getTempName());
+            if ($binary === false) {
+                continue;
+            }
+
+            $photos[] = [
+                'name' => $photoUpload->getClientName(),
+                'mime' => $mimeType,
+                'data_uri' => 'data:' . $mimeType . ';base64,' . base64_encode($binary),
+            ];
+        }
+
+        if ($errors !== []) {
+            return view('admin/laporan/perjalanan_dinas_buat', [
+                'title' => 'Buat Laporan Perjalanan Dinas',
+                'pegawai_options' => $pegawaiRows,
+                'default_approver_id' => $defaultApprover['id'] ?? null,
+                'default_approver_label' => $defaultApprover['label'] ?? '',
+                'creator_name' => trim((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
+                'creator_pegawai' => $creatorPegawai,
+                'current_input' => $currentInput,
+                'form_error' => implode(' ', $errors),
+            ]);
+        }
+
+        $data = [
+            'nomor_surat_tugas' => $currentInput['nomor_surat_tugas'],
+            'periode_mulai' => $currentInput['periode_mulai'],
+            'periode_selesai' => $currentInput['periode_selesai'],
+            'kota_tujuan' => $currentInput['kota_tujuan'],
+            'tujuan' => $currentInput['tujuan'],
+            'sasaran' => $currentInput['sasaran'],
+            'laporan_hasil' => $currentInput['laporan_hasil'],
+            'pelaksana' => $this->buildPegawaiRowsByIds($pegawaiRows, $currentInput['pelaksana_id']),
+            'foto_dokumentasi' => $photos,
+            'creator_name' => trim((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
+            'creator_pegawai' => $creatorPegawai,
+            'diketahui_oleh' => $this->findPegawaiById($pegawaiRows, $currentInput['diketahui_oleh_id']) ?? [
+                'nama' => (string) ($defaultApprover['label'] ?? '-'),
+                'nip' => '',
+                'jabatan' => '',
+            ],
+        ];
+
+        $html = view('admin/laporan/perjalanan_dinas_pdf', [
+            'data' => $data,
+        ]);
+
+        $dompdfOptions = new \Dompdf\Options();
+        $dompdfOptions->set('isRemoteEnabled', true);
+        $dompdfOptions->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($dompdfOptions);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="laporan_perjalanan_dinas.pdf"')
+            ->setBody($dompdf->output());
+    }
+
+    private function loadPegawaiOptions(): array
+    {
+        if (! db_connect()->tableExists('mst_pegawai')) {
+            return [];
+        }
+
+        $rows = (new MstPegawaiModel())
+            ->select('mst_pegawai.id, mst_pegawai.nip, mst_pegawai.nama, mst_pegawai.jabatan_utama_id, ju.jabatan AS jabatan_label, mst_pegawai.is_active')
+            ->join('mst_jabatan ju', 'ju.id = mst_pegawai.jabatan_utama_id', 'left')
+            ->where('mst_pegawai.is_active', 1)
+            ->orderBy('mst_pegawai.nama', 'ASC')
+            ->orderBy('mst_pegawai.nip', 'ASC')
+            ->findAll();
+
+        return array_map(static function (array $row): array {
+            $display = trim((string) ($row['nama'] ?? 'Pegawai'));
+            $nip = trim((string) ($row['nip'] ?? ''));
+            $jabatan = trim((string) ($row['jabatan_label'] ?? ''));
+
+            if ($nip !== '') {
+                $display .= ' | NIP ' . $nip;
+            }
+            if ($jabatan !== '') {
+                $display .= ' | ' . $jabatan;
+            }
+
+            $row['display_label'] = $display;
+            return $row;
+        }, $rows);
+    }
+
+    private function resolveCurrentPegawai(string $sessionValue, array $pegawaiRows): ?array
+    {
+        $needle = strtolower(trim($sessionValue));
+        if ($needle === '') {
+            return null;
+        }
+
+        foreach ($pegawaiRows as $row) {
+            $nama = strtolower(trim((string) ($row['nama'] ?? '')));
+            $nip = strtolower(trim((string) ($row['nip'] ?? '')));
+            if ($nama === $needle || $nip === $needle) {
+                return [
+                    'id' => (int) ($row['id'] ?? 0),
+                    'nama' => (string) ($row['nama'] ?? ''),
+                    'nip' => (string) ($row['nip'] ?? ''),
+                    'jabatan' => (string) ($row['jabatan_label'] ?? ''),
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveDefaultApprover(array $pegawaiRows): array
+    {
+        $targetNip = '198002142014121002';
+
+        foreach ($pegawaiRows as $row) {
+            if (trim((string) ($row['nip'] ?? '')) === $targetNip) {
+                return [
+                    'id' => (int) ($row['id'] ?? 0),
+                    'label' => (string) ($row['display_label'] ?? $row['nama'] ?? $targetNip),
+                ];
+            }
+        }
+
+        $fallback = $pegawaiRows[0] ?? null;
+        if (is_array($fallback)) {
+            return [
+                'id' => (int) ($fallback['id'] ?? 0),
+                'label' => (string) ($fallback['display_label'] ?? $fallback['nama'] ?? ''),
+            ];
+        }
+
+        return ['id' => null, 'label' => ''];
+    }
+
+    private function buildPegawaiRowsByIds(array $pegawaiRows, array $ids): array
+    {
+        $rowsById = [];
+        foreach ($pegawaiRows as $row) {
+            $rowsById[(int) ($row['id'] ?? 0)] = $row;
+        }
+
+        $rows = [];
+        foreach ($ids as $id) {
+            if (! isset($rowsById[(int) $id])) {
+                continue;
+            }
+
+            $row = $rowsById[(int) $id];
+            $rows[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'nama' => (string) ($row['nama'] ?? ''),
+                'nip' => (string) ($row['nip'] ?? ''),
+                'jabatan' => (string) ($row['jabatan_label'] ?? ''),
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function findPegawaiById(array $pegawaiRows, int $id): ?array
+    {
+        foreach ($pegawaiRows as $row) {
+            if ((int) ($row['id'] ?? 0) === $id) {
+                return [
+                    'id' => (int) ($row['id'] ?? 0),
+                    'nama' => (string) ($row['nama'] ?? ''),
+                    'nip' => (string) ($row['nip'] ?? ''),
+                    'jabatan' => (string) ($row['jabatan_label'] ?? ''),
+                ];
+            }
+        }
+
+        return null;
     }
 
     private function getMingguanHistoryMap(array $reports): array

@@ -172,6 +172,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('laporan/mingguan', 'Admin\\Laporan::mingguan');
 	$routes->post('laporan/mingguan/tambah', 'Admin\\Laporan::createMingguan');
 	$routes->get('laporan/perjalanan-dinas', 'Admin\\Laporan::perjalananDinas');
+	$routes->match(['get', 'post'], 'laporan/perjalanan-dinas/buat', 'Admin\\Laporan::perjalananDinasBuat');
 	$routes->get('kontrak/export/(:any)/(:num)', 'Admin\\Kontrak::exportDocument/$1/$2');
 	$routes->post('slide/tambah', 'Admin\\HomeSetting::createSlide');
 	$routes->post('slide/(:num)/ubah', 'Admin\\HomeSetting::updateSlide/$1');
