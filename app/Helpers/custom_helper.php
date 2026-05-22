@@ -348,7 +348,7 @@ if (! function_exists('kop_surat_img_tag')) {
 
 if (! function_exists('media_url')) {
     /**
-     * Build a URL for files stored under public/ so they can be streamed by the app.
+     * Build a URL for files stored under public/.
      */
     function media_url(string $path): string
     {
@@ -357,7 +357,7 @@ if (! function_exists('media_url')) {
             return $path;
         }
 
-        return site_url('media') . '?path=' . rawurlencode(ltrim($path, '/'));
+        return base_url(ltrim($path, '/'));
     }
 }
 
