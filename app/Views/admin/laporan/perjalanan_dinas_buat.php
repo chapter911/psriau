@@ -20,7 +20,7 @@
     <div class="card-header d-flex align-items-center">
         <h3 class="card-title mb-0">Buat Laporan Perjalanan Dinas</h3>
         <div class="card-tools ml-auto">
-            <a href="<?= site_url('/admin/laporan/perjalanan-dinas'); ?>" class="btn btn-secondary btn-sm">Kembali</a>
+            <a href="<?= site_url('admin/laporan/perjalanan-dinas'); ?>" class="btn btn-secondary btn-sm">Kembali</a>
         </div>
     </div>
     <div class="card-body">
@@ -28,7 +28,7 @@
             <div class="alert alert-danger"><?= esc($form_error); ?></div>
         <?php endif; ?>
 
-        <form action="<?= site_url('/admin/laporan/perjalanan-dinas/buat'); ?>" method="post" enctype="multipart/form-data">
+        <form action="<?= site_url('admin/laporan/perjalanan-dinas/buat'); ?>" method="post" enctype="multipart/form-data">
             <?= csrf_field(); ?>
 
             <div class="form-row">

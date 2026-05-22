@@ -5,7 +5,7 @@
     <div class="card-header d-flex align-items-center">
         <h3 class="card-title mb-0">Laporan Perjalanan Dinas</h3>
         <div class="card-tools ml-auto">
-            <a href="<?= site_url('/admin/laporan/perjalanan-dinas/buat'); ?>" class="btn btn-primary btn-sm">Buat Laporan</a>
+            <a href="<?= site_url('admin/laporan/perjalanan-dinas/buat'); ?>" class="btn btn-primary btn-sm">Buat Laporan</a>
         </div>
     </div>
     <div class="card-body">
