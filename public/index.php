@@ -1,6 +1,6 @@
 <?php
 
-http_response_code(200);
+// Removed temporary response hack: rely on host and application routing
 
 use CodeIgniter\Boot;
 use Config\Paths;
