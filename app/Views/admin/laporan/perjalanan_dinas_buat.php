@@ -144,7 +144,7 @@
                         <div class="form-row">
                             <div class="form-group col-lg-8 col-md-7">
                                 <label>Nama Pelaksana (Bisa pilih lebih dari satu)</label>
-                                <select id="pelaksanaSelect" name="pelaksana_id[]" class="form-control" multiple required size="6">
+                                <select id="pelaksanaSelect" name="pelaksana_id[]" class="form-control" multiple required>
                                     <?php foreach ($pegawaiOptions as $pegawai): ?>
                                         <?php $pegawaiId = (int) ($pegawai['id'] ?? 0); ?>
                                         <option value="<?= esc((string) $pegawaiId, 'attr'); ?>" <?= in_array($pegawaiId, $selectedPelaksana, true) ? 'selected' : ''; ?>>

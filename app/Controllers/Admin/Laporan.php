@@ -464,23 +464,16 @@ class Laporan extends BaseController
             return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('success', 'Draft laporan berhasil disimpan.');
         }
 
-        $html = view('admin/laporan/perjalanan_dinas_pdf', [
-            'data' => $data,
-        ]);
+        if ($saveMode === 'final') {
+            // Persist final submission; currently we store as session entry for later processing.
+            // In future, replace with DB persistence.
+            $sess = session();
+            $sess->set('laporan_perjalanan_dinas_final', $data);
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('success', 'Laporan berhasil disimpan.');
+        }
 
-        $dompdfOptions = new \Dompdf\Options();
-        $dompdfOptions->set('isRemoteEnabled', true);
-        $dompdfOptions->set('isHtml5ParserEnabled', true);
-
-        $dompdf = new \Dompdf\Dompdf($dompdfOptions);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        return $this->response
-            ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', 'inline; filename="laporan_perjalanan_dinas.pdf"')
-            ->setBody($dompdf->output());
+        // Fallback: if save mode not recognized, redirect back with notice.
+        return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('error', 'Aksi simpan tidak valid.');
     }
 
     private function loadPegawaiOptions(): array
