@@ -59,6 +59,13 @@
             overflow-wrap: anywhere;
             word-break: break-word;
         }
+        .laporan-section {
+            margin-top: 8px;
+        }
+        .laporan-section-title {
+            font-size: 11pt;
+            margin-bottom: 4px;
+        }
         .page-break { page-break-before: always; }
 
         .signature-sheet {
@@ -215,21 +222,19 @@
             <td class="colon-col">:</td>
             <td class="value-col"><?= nl2br(esc((string) ($data['sasaran'] ?? '-'))); ?></td>
         </tr>
-        <tr>
-            <td class="label-col">Laporan Hasil Perjalanan Dinas</td>
-            <td class="colon-col">:</td>
-            <td class="value-col">
-                <div class="laporan-html">
-                    <?php $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? '')); ?>
-                    <?php if ($laporanHasilRaw === ''): ?>
-                        -
-                    <?php else: ?>
-                        <?= $laporanHasilRaw; ?>
-                    <?php endif; ?>
-                </div>
-            </td>
-        </tr>
     </table>
+
+    <div class="laporan-section">
+        <div class="laporan-section-title bold">Laporan Hasil Perjalanan Dinas</div>
+        <div class="laporan-html">
+            <?php $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? '')); ?>
+            <?php if ($laporanHasilRaw === ''): ?>
+                -
+            <?php else: ?>
+                <?= $laporanHasilRaw; ?>
+            <?php endif; ?>
+        </div>
+    </div>
 
     <div class="page-break"></div>
 
