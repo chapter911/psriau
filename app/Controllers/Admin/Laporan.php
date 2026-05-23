@@ -7,6 +7,7 @@ use App\Models\LaporanHarianReportModel;
 use App\Models\LaporanHarianTitleModel;
 use App\Models\LaporanMingguanReportModel;
 use App\Models\MstPegawaiModel;
+use App\Models\LaporanPerjalananDinasModel;
 use CodeIgniter\HTTP\RedirectResponse;
 
 class Laporan extends BaseController
@@ -465,10 +466,35 @@ class Laporan extends BaseController
         }
 
         if ($saveMode === 'final') {
-            // Persist final submission; currently we store as session entry for later processing.
-            // In future, replace with DB persistence.
-            $sess = session();
-            $sess->set('laporan_perjalanan_dinas_final', $data);
+            // Persist final submission to DB
+            if (! db_connect()->tableExists('laporan_perjalanan_dinas')) {
+                return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('error', 'Tabel penyimpanan laporan belum tersedia.');
+            }
+
+            $model = new LaporanPerjalananDinasModel();
+
+            $row = [
+                'nomor_surat_tugas' => $data['nomor_surat_tugas'],
+                'periode_mulai' => $data['periode_mulai'] !== '' ? $data['periode_mulai'] : null,
+                'periode_selesai' => $data['periode_selesai'] !== '' ? $data['periode_selesai'] : null,
+                'kota_tujuan' => $data['kota_tujuan'],
+                'tujuan' => $data['tujuan'],
+                'sasaran' => $data['sasaran'],
+                'laporan_hasil' => $data['laporan_hasil'],
+                'pelaksana_json' => json_encode($data['pelaksana'], JSON_UNESCAPED_UNICODE),
+                'foto_dokumentasi_json' => json_encode($data['foto_dokumentasi'], JSON_UNESCAPED_UNICODE),
+                'creator_name' => $data['creator_name'],
+                'creator_pegawai_json' => json_encode($data['creator_pegawai'], JSON_UNESCAPED_UNICODE),
+                'diketahui_oleh_json' => json_encode($data['diketahui_oleh'], JSON_UNESCAPED_UNICODE),
+                'is_final' => 1,
+                'created_at' => date('Y-m-d H:i:s'),
+            ];
+
+            $insertId = $model->insert($row);
+            if ($insertId === false) {
+                return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('error', 'Gagal menyimpan laporan. Silakan coba lagi.');
+            }
+
             return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('success', 'Laporan berhasil disimpan.');
         }
 
