@@ -33,6 +33,13 @@
         .table { width: 100%; border-collapse: collapse; }
         .table td, .table th { padding: 4px 6px; vertical-align: top; }
         .bordered td, .bordered th { border: 1px solid #000; }
+        .main-sheet { table-layout: fixed; }
+        .main-sheet tr,
+        .main-sheet td,
+        .main-sheet th {
+            page-break-inside: auto;
+            break-inside: auto;
+        }
         .title { font-size: 12.8pt; }
         .main-sheet td { border: 1px solid #000; }
         .main-sheet .label-col { width: 41%; }
@@ -46,6 +53,12 @@
         .laporan-html p { margin: 0 0 4px 0; }
         .laporan-html ol, .laporan-html ul { margin: 0 0 4px 20px; }
         .laporan-html li { margin: 0 0 3px 0; }
+        .laporan-html {
+            page-break-inside: auto;
+            break-inside: auto;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
         .page-break { page-break-before: always; }
 
         .signature-sheet {
