@@ -10,6 +10,16 @@
     $selectedPelaksana = array_map('intval', (array) ($input['pelaksana_id'] ?? []));
     $selectedKabupaten = trim((string) ($input['kota_tujuan'] ?? ''));
     $selectedKabupatenExists = false;
+    $formatPegawaiLabel = static function (array $pegawai): string {
+        $nama = trim((string) ($pegawai['nama'] ?? $pegawai['display_name'] ?? $pegawai['display_label'] ?? 'Pegawai'));
+        $nip = trim((string) ($pegawai['nip'] ?? ''));
+
+        if ($nama === '') {
+            $nama = 'Pegawai';
+        }
+
+        return $nip !== '' ? ($nama . ' | NIP ' . $nip) : $nama;
+    };
 ?>
 
 <style>
@@ -138,7 +148,7 @@
                                     <?php foreach ($pegawaiOptions as $pegawai): ?>
                                         <?php $pegawaiId = (int) ($pegawai['id'] ?? 0); ?>
                                         <option value="<?= esc((string) $pegawaiId, 'attr'); ?>" <?= in_array($pegawaiId, $selectedPelaksana, true) ? 'selected' : ''; ?>>
-                                            <?= esc((string) ($pegawai['display_label'] ?? 'Pegawai')); ?>
+                                            <?= esc($formatPegawaiLabel((array) $pegawai)); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -165,15 +175,18 @@
                     <div class="card-body">
                         <div class="trip-section-title mb-2">Informasi Dasar Perjalanan</div>
                         <div class="form-row">
-                            <div class="form-group col-md-6">
+                            <div class="form-group col-12">
                                 <label>Nomor Surat Tugas</label>
                                 <input type="text" name="nomor_surat_tugas" class="form-control" value="<?= esc((string) ($input['nomor_surat_tugas'] ?? '')); ?>" required>
                             </div>
-                            <div class="form-group col-md-3">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
                                 <label>Periode Mulai</label>
                                 <input type="date" id="periodeMulai" name="periode_mulai" class="form-control" value="<?= esc((string) ($input['periode_mulai'] ?? '')); ?>" required>
                             </div>
-                            <div class="form-group col-md-3">
+                            <div class="form-group col-md-6">
                                 <label>Periode Selesai</label>
                                 <input type="date" id="periodeSelesai" name="periode_selesai" class="form-control" value="<?= esc((string) ($input['periode_selesai'] ?? '')); ?>" required>
                             </div>
