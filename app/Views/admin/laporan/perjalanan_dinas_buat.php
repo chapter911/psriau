@@ -10,6 +10,9 @@
     $selectedPelaksana = array_map('intval', (array) ($input['pelaksana_id'] ?? []));
     $selectedKabupaten = trim((string) ($input['kota_tujuan'] ?? ''));
     $selectedKabupatenExists = false;
+    $formAction = (string) ($form_action ?? site_url('admin/laporan/perjalanan-dinas/buat'));
+    $isEdit = (bool) ($is_edit ?? false);
+    $submitLabelPrimary = (string) ($submit_label_primary ?? 'Simpan Final');
     $formatPegawaiLabel = static function (array $pegawai): string {
         $nama = trim((string) ($pegawai['nama'] ?? $pegawai['display_name'] ?? $pegawai['display_label'] ?? 'Pegawai'));
         $nip = trim((string) ($pegawai['nip'] ?? ''));
@@ -135,7 +138,7 @@
                 <div class="alert alert-danger"><?= esc($form_error); ?></div>
             <?php endif; ?>
 
-            <form id="perjalananDinasForm" action="<?= site_url('admin/laporan/perjalanan-dinas/buat'); ?>" method="post" enctype="multipart/form-data">
+            <form id="perjalananDinasForm" action="<?= esc($formAction, 'attr'); ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
 
                 <div class="card border shadow-none mb-3">
@@ -270,10 +273,18 @@
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center">
-                    <div class="text-muted">Pilih simpan: <strong>Draft</strong> menyimpan sementara, <strong>Final</strong> akan menghasilkan PDF.</div>
+                    <div class="text-muted">
+                        <?php if ($isEdit): ?>
+                            Simpan perubahan data laporan perjalanan dinas.
+                        <?php else: ?>
+                            Pilih simpan: <strong>Draft</strong> menyimpan sementara, <strong>Final</strong> menyimpan data final.
+                        <?php endif; ?>
+                    </div>
                     <div>
-                        <button type="submit" name="save_mode" value="draft" class="btn btn-secondary">Simpan Draft</button>
-                        <button type="submit" name="save_mode" value="final" class="btn btn-primary">Simpan Final</button>
+                        <?php if (! $isEdit): ?>
+                            <button type="submit" name="save_mode" value="draft" class="btn btn-secondary">Simpan Draft</button>
+                        <?php endif; ?>
+                        <button type="submit" name="save_mode" value="final" class="btn btn-primary"><?= esc($submitLabelPrimary); ?></button>
                     </div>
                 </div>
             </form>

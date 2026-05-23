@@ -323,10 +323,265 @@ class Laporan extends BaseController
             return redirect()->to(site_url('/admin'));
         }
 
+        $reports = [];
+        if (db_connect()->tableExists('laporan_perjalanan_dinas')) {
+            $rows = (new LaporanPerjalananDinasModel())
+                ->orderBy('id', 'DESC')
+                ->findAll();
+
+            $reports = array_map(function (array $row): array {
+                $pelaksanaRows = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true);
+                if (! is_array($pelaksanaRows)) {
+                    $pelaksanaRows = [];
+                }
+
+                $pelaksanaNames = array_values(array_filter(array_map(static function ($item): string {
+                    if (! is_array($item)) {
+                        return '';
+                    }
+                    return trim((string) ($item['nama'] ?? ''));
+                }, $pelaksanaRows), static fn (string $name): bool => $name !== ''));
+
+                $periodeMulai = trim((string) ($row['periode_mulai'] ?? ''));
+                $periodeSelesai = trim((string) ($row['periode_selesai'] ?? ''));
+                $periodeLabel = trim($periodeMulai . ' s.d ' . $periodeSelesai);
+                if ($periodeMulai === '' && $periodeSelesai === '') {
+                    $periodeLabel = '-';
+                }
+
+                return [
+                    'id' => (int) ($row['id'] ?? 0),
+                    'tujuan' => (string) ($row['tujuan'] ?? ''),
+                    'kota_tujuan' => (string) ($row['kota_tujuan'] ?? ''),
+                    'periode' => $periodeLabel,
+                    'pelaksana_names' => $pelaksanaNames,
+                    'is_final' => (int) ($row['is_final'] ?? 0),
+                ];
+            }, $rows);
+        }
+
         return view('admin/laporan/perjalanan_dinas', [
             'title' => 'Laporan Perjalanan Dinas',
             'can_edit' => $this->canManageLaporan(),
+            'reports' => $reports,
         ]);
+    }
+
+    public function perjalananDinasDokumen(int $id)
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        if (! db_connect()->tableExists('laporan_perjalanan_dinas')) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Tabel laporan perjalanan dinas belum tersedia.');
+        }
+
+        $row = (new LaporanPerjalananDinasModel())->find($id);
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+        }
+
+        $data = [
+            'nomor_surat_tugas' => (string) ($row['nomor_surat_tugas'] ?? ''),
+            'periode_mulai' => (string) ($row['periode_mulai'] ?? ''),
+            'periode_selesai' => (string) ($row['periode_selesai'] ?? ''),
+            'kota_tujuan' => (string) ($row['kota_tujuan'] ?? ''),
+            'tujuan' => (string) ($row['tujuan'] ?? ''),
+            'sasaran' => (string) ($row['sasaran'] ?? ''),
+            'laporan_hasil' => (string) ($row['laporan_hasil'] ?? ''),
+            'pelaksana' => $this->decodeJsonArray((string) ($row['pelaksana_json'] ?? '[]')),
+            'foto_dokumentasi' => $this->decodeJsonArray((string) ($row['foto_dokumentasi_json'] ?? '[]')),
+            'creator_name' => (string) ($row['creator_name'] ?? ''),
+            'creator_pegawai' => $this->decodeJsonObject((string) ($row['creator_pegawai_json'] ?? '{}')),
+            'diketahui_oleh' => $this->decodeJsonObject((string) ($row['diketahui_oleh_json'] ?? '{}')),
+        ];
+
+        $html = view('admin/laporan/perjalanan_dinas_pdf', [
+            'data' => $data,
+        ]);
+
+        $dompdfOptions = new \Dompdf\Options();
+        $dompdfOptions->set('isRemoteEnabled', true);
+        $dompdfOptions->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($dompdfOptions);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="laporan_perjalanan_dinas_' . $id . '.pdf"')
+            ->setBody($dompdf->output());
+    }
+
+    public function perjalananDinasEdit(int $id)
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        if (! $this->canManageLaporan()) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Anda tidak memiliki akses untuk mengubah laporan perjalanan dinas.');
+        }
+
+        if (! db_connect()->tableExists('laporan_perjalanan_dinas')) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Tabel laporan perjalanan dinas belum tersedia.');
+        }
+
+        $model = new LaporanPerjalananDinasModel();
+        $existing = $model->find($id);
+        if (! is_array($existing)) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+        }
+
+        $pegawaiRows = $this->loadPegawaiOptions();
+        $defaultApprover = $this->resolveDefaultApprover($pegawaiRows);
+        $creatorPegawai = $this->resolveCurrentPegawai((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name')), $pegawaiRows);
+
+        $storedPelaksana = $this->decodeJsonArray((string) ($existing['pelaksana_json'] ?? '[]'));
+        $storedDiketahui = $this->decodeJsonObject((string) ($existing['diketahui_oleh_json'] ?? '{}'));
+
+        $currentInput = [
+            'nomor_surat_tugas' => trim((string) ($existing['nomor_surat_tugas'] ?? '')),
+            'periode_mulai' => trim((string) ($existing['periode_mulai'] ?? '')),
+            'periode_selesai' => trim((string) ($existing['periode_selesai'] ?? '')),
+            'kota_tujuan' => trim((string) ($existing['kota_tujuan'] ?? '')),
+            'tujuan' => trim((string) ($existing['tujuan'] ?? '')),
+            'sasaran' => trim((string) ($existing['sasaran'] ?? '')),
+            'laporan_hasil' => trim((string) ($existing['laporan_hasil'] ?? '')),
+            'diketahui_oleh_id' => $this->resolvePegawaiIdByProfile($pegawaiRows, $storedDiketahui) ?? (int) ($defaultApprover['id'] ?? 0),
+            'pelaksana_id' => $this->resolvePegawaiIdsByProfiles($pegawaiRows, $storedPelaksana),
+        ];
+
+        if (strtolower((string) $this->request->getMethod()) !== 'post') {
+            return view('admin/laporan/perjalanan_dinas_buat', [
+                'title' => 'Ubah Laporan Perjalanan Dinas',
+                'pegawai_options' => $pegawaiRows,
+                'kabupaten_options' => $this->loadKabupatenOptions(),
+                'default_approver_id' => $defaultApprover['id'] ?? null,
+                'default_approver_label' => $defaultApprover['label'] ?? '',
+                'creator_name' => trim((string) ($existing['creator_name'] ?? session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
+                'creator_pegawai' => $creatorPegawai,
+                'current_input' => $currentInput,
+                'form_error' => null,
+                'form_action' => site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'),
+                'is_edit' => true,
+                'submit_label_primary' => 'Simpan Perubahan',
+            ]);
+        }
+
+        $currentInput = [
+            'nomor_surat_tugas' => trim((string) $this->request->getPost('nomor_surat_tugas')),
+            'periode_mulai' => trim((string) $this->request->getPost('periode_mulai')),
+            'periode_selesai' => trim((string) $this->request->getPost('periode_selesai')),
+            'kota_tujuan' => trim((string) $this->request->getPost('kota_tujuan')),
+            'tujuan' => trim((string) $this->request->getPost('tujuan')),
+            'sasaran' => trim((string) $this->request->getPost('sasaran')),
+            'laporan_hasil' => trim((string) $this->request->getPost('laporan_hasil')),
+            'diketahui_oleh_id' => (int) $this->request->getPost('diketahui_oleh_id'),
+            'pelaksana_id' => array_values(array_filter(array_map('intval', (array) $this->request->getPost('pelaksana_id')), static fn (int $itemId): bool => $itemId > 0)),
+        ];
+
+        $errors = [];
+        foreach (['nomor_surat_tugas', 'periode_mulai', 'periode_selesai', 'kota_tujuan', 'tujuan', 'sasaran', 'laporan_hasil'] as $requiredField) {
+            if ($currentInput[$requiredField] === '') {
+                $errors[] = ucfirst(str_replace('_', ' ', $requiredField)) . ' wajib diisi.';
+            }
+        }
+
+        if ($currentInput['periode_mulai'] !== '' && $currentInput['periode_selesai'] !== '' && strtotime($currentInput['periode_mulai']) !== false && strtotime($currentInput['periode_selesai']) !== false && strtotime($currentInput['periode_mulai']) > strtotime($currentInput['periode_selesai'])) {
+            $errors[] = 'Periode mulai tidak boleh lebih besar dari periode selesai.';
+        }
+
+        $allowedPegawaiIds = array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $pegawaiRows);
+        $currentInput['pelaksana_id'] = array_values(array_unique(array_values(array_filter($currentInput['pelaksana_id'], static fn (int $itemId): bool => in_array($itemId, $allowedPegawaiIds, true)))));
+
+        if ($currentInput['pelaksana_id'] === []) {
+            $errors[] = 'Minimal 1 pelaksana wajib dipilih.';
+        }
+
+        if (! in_array($currentInput['diketahui_oleh_id'], $allowedPegawaiIds, true)) {
+            $currentInput['diketahui_oleh_id'] = (int) ($defaultApprover['id'] ?? 0);
+        }
+
+        if ($currentInput['diketahui_oleh_id'] <= 0) {
+            $errors[] = 'Data diketahui oleh wajib dipilih.';
+        }
+
+        $existingPhotos = $this->decodeJsonArray((string) ($existing['foto_dokumentasi_json'] ?? '[]'));
+        $photoUploads = $this->request->getFileMultiple('foto_dokumentasi') ?? [];
+        if (! is_array($photoUploads)) {
+            $photoUploads = [];
+        }
+
+        $newPhotos = [];
+        foreach ($photoUploads as $photoUpload) {
+            if ($photoUpload === null || ! $photoUpload->isValid()) {
+                continue;
+            }
+
+            $mimeType = (string) $photoUpload->getMimeType();
+            if ($mimeType === '' || strpos($mimeType, 'image/') !== 0) {
+                $errors[] = 'Foto dokumentasi harus berupa gambar.';
+                break;
+            }
+
+            $binary = @file_get_contents($photoUpload->getTempName());
+            if ($binary === false) {
+                continue;
+            }
+
+            $newPhotos[] = [
+                'name' => $photoUpload->getClientName(),
+                'mime' => $mimeType,
+                'data_uri' => 'data:' . $mimeType . ';base64,' . base64_encode($binary),
+            ];
+        }
+
+        $photos = $newPhotos !== [] ? $newPhotos : $existingPhotos;
+
+        if ($errors !== []) {
+            return view('admin/laporan/perjalanan_dinas_buat', [
+                'title' => 'Ubah Laporan Perjalanan Dinas',
+                'pegawai_options' => $pegawaiRows,
+                'kabupaten_options' => $this->loadKabupatenOptions(),
+                'default_approver_id' => $defaultApprover['id'] ?? null,
+                'default_approver_label' => $defaultApprover['label'] ?? '',
+                'creator_name' => trim((string) ($existing['creator_name'] ?? session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
+                'creator_pegawai' => $creatorPegawai,
+                'current_input' => $currentInput,
+                'form_error' => implode(' ', $errors),
+                'form_action' => site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'),
+                'is_edit' => true,
+                'submit_label_primary' => 'Simpan Perubahan',
+            ]);
+        }
+
+        $payload = [
+            'nomor_surat_tugas' => $currentInput['nomor_surat_tugas'],
+            'periode_mulai' => $currentInput['periode_mulai'] !== '' ? $currentInput['periode_mulai'] : null,
+            'periode_selesai' => $currentInput['periode_selesai'] !== '' ? $currentInput['periode_selesai'] : null,
+            'kota_tujuan' => $currentInput['kota_tujuan'],
+            'tujuan' => $currentInput['tujuan'],
+            'sasaran' => $currentInput['sasaran'],
+            'laporan_hasil' => $currentInput['laporan_hasil'],
+            'pelaksana_json' => json_encode($this->buildPegawaiRowsByIds($pegawaiRows, $currentInput['pelaksana_id']), JSON_UNESCAPED_UNICODE),
+            'foto_dokumentasi_json' => json_encode($photos, JSON_UNESCAPED_UNICODE),
+            'creator_name' => trim((string) ($existing['creator_name'] ?? session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
+            'creator_pegawai_json' => json_encode($creatorPegawai, JSON_UNESCAPED_UNICODE),
+            'diketahui_oleh_json' => json_encode($this->findPegawaiById($pegawaiRows, $currentInput['diketahui_oleh_id']) ?? [], JSON_UNESCAPED_UNICODE),
+            'is_final' => strtolower(trim((string) $this->request->getPost('save_mode'))) === 'draft' ? 0 : 1,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $ok = $model->update($id, $payload);
+        if (! $ok) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'))->with('error', 'Gagal memperbarui laporan.');
+        }
+
+        return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('success', 'Laporan berhasil diperbarui.');
     }
 
     public function perjalananDinasBuat()
@@ -531,6 +786,56 @@ class Laporan extends BaseController
             $row['display_label'] = $display;
             return $row;
         }, $rows);
+    }
+
+    private function decodeJsonArray(string $json): array
+    {
+        $decoded = json_decode($json, true);
+        return is_array($decoded) ? array_values($decoded) : [];
+    }
+
+    private function decodeJsonObject(string $json): array
+    {
+        $decoded = json_decode($json, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function resolvePegawaiIdByProfile(array $pegawaiRows, array $profile): ?int
+    {
+        $profileNip = trim((string) ($profile['nip'] ?? ''));
+        $profileNama = strtolower(trim((string) ($profile['nama'] ?? '')));
+
+        foreach ($pegawaiRows as $row) {
+            $rowNip = trim((string) ($row['nip'] ?? ''));
+            $rowNama = strtolower(trim((string) ($row['nama'] ?? '')));
+
+            if ($profileNip !== '' && $rowNip !== '' && $profileNip === $rowNip) {
+                return (int) ($row['id'] ?? 0);
+            }
+
+            if ($profileNama !== '' && $rowNama !== '' && $profileNama === $rowNama) {
+                return (int) ($row['id'] ?? 0);
+            }
+        }
+
+        return null;
+    }
+
+    private function resolvePegawaiIdsByProfiles(array $pegawaiRows, array $profiles): array
+    {
+        $ids = [];
+        foreach ($profiles as $profile) {
+            if (! is_array($profile)) {
+                continue;
+            }
+
+            $id = $this->resolvePegawaiIdByProfile($pegawaiRows, $profile);
+            if ($id !== null && $id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 
     private function loadKabupatenOptions(): array
@@ -1086,12 +1391,6 @@ class Laporan extends BaseController
         if (is_file($filePath)) {
             @unlink($filePath);
         }
-    }
-
-    private function decodeJsonArray(string $json): array
-    {
-        $decoded = json_decode($json, true);
-        return is_array($decoded) ? $decoded : [];
     }
 
     private function normalizeDateValue(string $date): ?string

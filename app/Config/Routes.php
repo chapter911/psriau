@@ -173,6 +173,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('laporan/mingguan/tambah', 'Admin\\Laporan::createMingguan');
 	$routes->get('laporan/perjalanan-dinas', 'Admin\\Laporan::perjalananDinas');
 	$routes->match(['get', 'post'], 'laporan/perjalanan-dinas/buat', 'Admin\\Laporan::perjalananDinasBuat');
+	$routes->get('laporan/perjalanan-dinas/(:num)/dokumen', 'Admin\\Laporan::perjalananDinasDokumen/$1');
+	$routes->match(['get', 'post'], 'laporan/perjalanan-dinas/(:num)/ubah', 'Admin\\Laporan::perjalananDinasEdit/$1');
 	$routes->get('kontrak/export/(:any)/(:num)', 'Admin\\Kontrak::exportDocument/$1/$2');
 	$routes->post('slide/tambah', 'Admin\\HomeSetting::createSlide');
 	$routes->post('slide/(:num)/ubah', 'Admin\\HomeSetting::updateSlide/$1');
