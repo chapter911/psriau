@@ -179,7 +179,9 @@
                         <div class="form-row">
                             <div class="form-group col-md-12">
                                 <label>Kota/Kab. Tujuan Perjalanan Dinas</label>
-                                <input type="text" name="kota_tujuan" class="form-control" value="<?= esc((string) ($input['kota_tujuan'] ?? '')); ?>" required>
+                                <select id="kotaTujuanSelect" name="kota_tujuan" class="form-control" required>
+                                    <option value="<?= esc((string) ($input['kota_tujuan'] ?? '')); ?>" selected><?= esc((string) ($input['kota_tujuan'] ?? '')); ?></option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -201,7 +203,7 @@
 
                         <div class="form-group mb-0">
                             <label>Laporan Hasil Perjalanan Dinas</label>
-                            <textarea name="laporan_hasil" class="form-control" rows="6" required><?= esc((string) ($input['laporan_hasil'] ?? '')); ?></textarea>
+                            <textarea id="laporanHasil" name="laporan_hasil" class="form-control summernote" rows="6" required><?= esc((string) ($input['laporan_hasil'] ?? '')); ?></textarea>
                         </div>
                     </div>
                 </div>
@@ -239,8 +241,11 @@
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center">
-                    <div class="text-muted">Hasil akan dibuka sebagai PDF.</div>
-                    <button type="submit" class="btn btn-primary">Buat PDF</button>
+                    <div class="text-muted">Pilih simpan: <strong>Draft</strong> menyimpan sementara, <strong>Final</strong> akan menghasilkan PDF.</div>
+                    <div>
+                        <button type="submit" name="save_mode" value="draft" class="btn btn-secondary">Simpan Draft</button>
+                        <button type="submit" name="save_mode" value="final" class="btn btn-primary">Simpan Final</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -406,6 +411,65 @@
     }
 
     updateCounter();
+})();
+</script>
+<script>
+// Initialize Summernote and Select2 if available, and ensure summernote content is submitted
+(function () {
+    var form = document.getElementById('perjalananDinasForm');
+
+    if (window.jQuery && typeof $.fn.select2 === 'function') {
+        try {
+            $('#kotaTujuanSelect').select2({
+                placeholder: 'Pilih Kota / Kabupaten',
+                ajax: {
+                    url: '<?= site_url('admin/master/kabupaten'); ?>',
+                    dataType: 'json',
+                    delay: 250,
+                    processResults: function (data) {
+                        var results = [];
+                        if (Array.isArray(data)) {
+                            data.forEach(function (item) {
+                                var label = item.name || item.nama || item.label || item.text || item.nama_kabupaten || item.nama_kab || item.kabupaten || item.nama_kabupaten_full || item.kab;
+                                label = (label === undefined || label === null) ? (item.id || item.value || '') : label;
+                                if (label == null) label = '';
+                                // We use label as the value so server receives readable text
+                                results.push({ id: String(label), text: String(label) });
+                            });
+                        }
+                        return { results: results };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 1,
+                width: '100%'
+            });
+        } catch (e) {
+            console.warn('Select2 init failed', e);
+        }
+    }
+
+    if (window.jQuery && typeof $.fn.summernote === 'function') {
+        try {
+            $('#laporanHasil').summernote({ height: 260 });
+        } catch (e) {
+            console.warn('Summernote init failed', e);
+        }
+    }
+
+    if (form) {
+        form.addEventListener('submit', function (ev) {
+            try {
+                if (window.jQuery && typeof $.fn.summernote === 'function') {
+                    var code = $('#laporanHasil').summernote('code');
+                    var ta = form.querySelector('textarea[name="laporan_hasil"]');
+                    if (ta) ta.value = code;
+                }
+            } catch (e) {
+                // ignore
+            }
+        });
+    }
 })();
 </script>
 <?= $this->endSection(); ?>

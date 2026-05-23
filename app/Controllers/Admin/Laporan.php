@@ -453,6 +453,15 @@ class Laporan extends BaseController
             ],
         ];
 
+        $saveMode = strtolower(trim((string) $this->request->getPost('save_mode')));
+        if ($saveMode === 'draft') {
+            // Persist a lightweight draft in session so user can resume later.
+            // For production, consider persisting to DB instead.
+            $sess = session();
+            $sess->set('laporan_perjalanan_dinas_draft', $data);
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('success', 'Draft laporan berhasil disimpan.');
+        }
+
         $html = view('admin/laporan/perjalanan_dinas_pdf', [
             'data' => $data,
         ]);
