@@ -342,6 +342,7 @@ class Laporan extends BaseController
             return view('admin/laporan/perjalanan_dinas_buat', [
                 'title' => 'Buat Laporan Perjalanan Dinas',
                 'pegawai_options' => $pegawaiRows,
+                'kabupaten_options' => $this->loadKabupatenOptions(),
                 'default_approver_id' => $defaultApprover['id'] ?? null,
                 'default_approver_label' => $defaultApprover['label'] ?? '',
                 'creator_name' => trim((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
@@ -425,6 +426,7 @@ class Laporan extends BaseController
             return view('admin/laporan/perjalanan_dinas_buat', [
                 'title' => 'Buat Laporan Perjalanan Dinas',
                 'pegawai_options' => $pegawaiRows,
+                'kabupaten_options' => $this->loadKabupatenOptions(),
                 'default_approver_id' => $defaultApprover['id'] ?? null,
                 'default_approver_label' => $defaultApprover['label'] ?? '',
                 'creator_name' => trim((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
@@ -510,6 +512,47 @@ class Laporan extends BaseController
             $row['display_label'] = $display;
             return $row;
         }, $rows);
+    }
+
+    private function loadKabupatenOptions(): array
+    {
+        $db = db_connect();
+
+        if ($db->tableExists('mst_kabupaten')) {
+            $rows = $db->table('mst_kabupaten')
+                ->select('nama_kabupaten')
+                ->where('nama_kabupaten IS NOT NULL', null, false)
+                ->where('nama_kabupaten !=', '')
+                ->groupBy('nama_kabupaten')
+                ->orderBy('nama_kabupaten', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            $options = array_values(array_filter(array_map(static function (array $row): string {
+                return trim((string) ($row['nama_kabupaten'] ?? ''));
+            }, $rows), static fn (string $value): bool => $value !== ''));
+
+            if ($options !== []) {
+                return $options;
+            }
+        }
+
+        if (! $db->tableExists('mst_sekolah')) {
+            return [];
+        }
+
+        $rows = $db->table('mst_sekolah')
+            ->select('kabupaten')
+            ->where('kabupaten IS NOT NULL', null, false)
+            ->where('kabupaten !=', '')
+            ->groupBy('kabupaten')
+            ->orderBy('kabupaten', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        return array_values(array_filter(array_map(static function (array $row): string {
+            return trim((string) ($row['kabupaten'] ?? ''));
+        }, $rows), static fn (string $value): bool => $value !== ''));
     }
 
     private function resolveCurrentPegawai(string $sessionValue, array $pegawaiRows): ?array

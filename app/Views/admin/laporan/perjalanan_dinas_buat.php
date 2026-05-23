@@ -4,9 +4,12 @@
 <?php
     $input = $current_input ?? [];
     $pegawaiOptions = $pegawai_options ?? [];
+    $kabupatenOptions = $kabupaten_options ?? [];
     $creatorName = (string) ($creator_name ?? 'system');
     $defaultApproverId = (int) ($default_approver_id ?? 0);
     $selectedPelaksana = array_map('intval', (array) ($input['pelaksana_id'] ?? []));
+    $selectedKabupaten = trim((string) ($input['kota_tujuan'] ?? ''));
+    $selectedKabupatenExists = false;
 ?>
 
 <style>
@@ -180,7 +183,20 @@
                             <div class="form-group col-md-12">
                                 <label>Kota/Kab. Tujuan Perjalanan Dinas</label>
                                 <select id="kotaTujuanSelect" name="kota_tujuan" class="form-control" required>
-                                    <option value="<?= esc((string) ($input['kota_tujuan'] ?? '')); ?>" selected><?= esc((string) ($input['kota_tujuan'] ?? '')); ?></option>
+                                    <option value="">Pilih Kota / Kabupaten</option>
+                                    <?php foreach ($kabupatenOptions as $kabupaten): ?>
+                                        <?php
+                                            $kabupaten = trim((string) $kabupaten);
+                                            $isSelected = $selectedKabupaten !== '' && strcasecmp($selectedKabupaten, $kabupaten) === 0;
+                                            if ($isSelected) {
+                                                $selectedKabupatenExists = true;
+                                            }
+                                        ?>
+                                        <option value="<?= esc($kabupaten, 'attr'); ?>" <?= $isSelected ? 'selected' : ''; ?>><?= esc($kabupaten); ?></option>
+                                    <?php endforeach; ?>
+                                    <?php if ($selectedKabupaten !== '' && ! $selectedKabupatenExists): ?>
+                                        <option value="<?= esc($selectedKabupaten, 'attr'); ?>" selected><?= esc($selectedKabupaten); ?></option>
+                                    <?php endif; ?>
                                 </select>
                             </div>
                         </div>
@@ -251,11 +267,9 @@
         </div>
     </div>
 </div>
-        (!-- CDN includes for jQuery, Select2, and Summernote (loaded here for compatibility on shared hosting) -->
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet">
+    <!-- CDN includes for jQuery and Summernote (loaded here for compatibility on shared hosting) -->
         <link href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-lite.min.css" rel="stylesheet">
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-lite.min.js"></script>
 
         <script>
@@ -420,40 +434,9 @@
 })();
 </script>
 <script>
-// Initialize Summernote and Select2 if available, and ensure summernote content is submitted
+// Initialize Summernote and ensure summernote content is submitted
 (function () {
     var form = document.getElementById('perjalananDinasForm');
-
-    if (window.jQuery && typeof $.fn.select2 === 'function') {
-        try {
-            $('#kotaTujuanSelect').select2({
-                placeholder: 'Pilih Kota / Kabupaten',
-                ajax: {
-                    url: '<?= site_url('admin/master/kabupaten'); ?>',
-                    dataType: 'json',
-                    delay: 250,
-                    processResults: function (data) {
-                        var results = [];
-                        if (Array.isArray(data)) {
-                            data.forEach(function (item) {
-                                var label = item.name || item.nama || item.label || item.text || item.nama_kabupaten || item.nama_kab || item.kabupaten || item.nama_kabupaten_full || item.kab;
-                                label = (label === undefined || label === null) ? (item.id || item.value || '') : label;
-                                if (label == null) label = '';
-                                // We use label as the value so server receives readable text
-                                results.push({ id: String(label), text: String(label) });
-                            });
-                        }
-                        return { results: results };
-                    },
-                    cache: true
-                },
-                minimumInputLength: 1,
-                width: '100%'
-            });
-        } catch (e) {
-            console.warn('Select2 init failed', e);
-        }
-    }
 
     if (window.jQuery && typeof $.fn.summernote === 'function') {
         try {
