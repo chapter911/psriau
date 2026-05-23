@@ -14,7 +14,7 @@
 
 <style>
     .trip-form-wrap {
-        max-width: 1080px;
+        max-width: 1440px;
         margin: 0 auto;
     }
 
@@ -132,7 +132,19 @@
                     <div class="card-body">
                         <div class="trip-section-title mb-2">Penanggung Jawab dan Pelaksana</div>
                         <div class="form-row">
-                            <div class="form-group col-md-6">
+                            <div class="form-group col-lg-8 col-md-7">
+                                <label>Nama Pelaksana (Bisa pilih lebih dari satu)</label>
+                                <select id="pelaksanaSelect" name="pelaksana_id[]" class="form-control" multiple required size="6">
+                                    <?php foreach ($pegawaiOptions as $pegawai): ?>
+                                        <?php $pegawaiId = (int) ($pegawai['id'] ?? 0); ?>
+                                        <option value="<?= esc((string) $pegawaiId, 'attr'); ?>" <?= in_array($pegawaiId, $selectedPelaksana, true) ? 'selected' : ''; ?>>
+                                            <?= esc((string) ($pegawai['display_label'] ?? 'Pegawai')); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted">Gunakan Ctrl/Cmd + klik untuk memilih lebih dari satu nama.</small>
+                            </div>
+                            <div class="form-group col-lg-4 col-md-5">
                                 <label>Diketahui Oleh</label>
                                 <select name="diketahui_oleh_id" class="form-control" required>
                                     <option value="">-- Pilih Pegawai --</option>
@@ -144,18 +156,6 @@
                                     <?php endforeach; ?>
                                 </select>
                                 <small class="text-muted">Default NIP 198002142014121002.</small>
-                            </div>
-                            <div class="form-group col-md-6">
-                                <label>Nama Pelaksana (Bisa pilih lebih dari satu)</label>
-                                <select id="pelaksanaSelect" name="pelaksana_id[]" class="form-control" multiple required size="6">
-                                    <?php foreach ($pegawaiOptions as $pegawai): ?>
-                                        <?php $pegawaiId = (int) ($pegawai['id'] ?? 0); ?>
-                                        <option value="<?= esc((string) $pegawaiId, 'attr'); ?>" <?= in_array($pegawaiId, $selectedPelaksana, true) ? 'selected' : ''; ?>>
-                                            <?= esc((string) ($pegawai['display_label'] ?? 'Pegawai')); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <small class="text-muted">Gunakan Ctrl/Cmd + klik untuk memilih lebih dari satu nama.</small>
                             </div>
                         </div>
                     </div>
