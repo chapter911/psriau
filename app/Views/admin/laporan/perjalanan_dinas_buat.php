@@ -142,7 +142,7 @@
                     <div class="card-body">
                         <div class="trip-section-title mb-2">Penanggung Jawab dan Pelaksana</div>
                         <div class="form-row">
-                            <div class="form-group col-lg-8 col-md-12">
+                            <div class="form-group col-lg-12 col-md-12">
                                 <label>Nama Pelaksana (Bisa pilih lebih dari satu)</label>
                                 <select id="pelaksanaSelect" name="pelaksana_id[]" class="form-control" multiple required>
                                     <?php foreach ($pegawaiOptions as $pegawai): ?>
@@ -154,7 +154,7 @@
                                 </select>
                                 <small class="text-muted">Gunakan Ctrl/Cmd + klik untuk memilih lebih dari satu nama.</small>
                             </div>
-                            <div class="form-group col-lg-4 col-md-12">
+                            <div class="form-group col-lg-12 col-md-12">
                                 <label>Diketahui Oleh</label>
                                 <select name="diketahui_oleh_id" class="form-control" required>
                                     <option value="">-- Pilih Pegawai --</option>
