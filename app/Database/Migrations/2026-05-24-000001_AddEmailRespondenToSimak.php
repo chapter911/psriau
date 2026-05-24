@@ -42,9 +42,18 @@ class AddEmailRespondenToSimak extends Migration
 
             $toAdd = [];
             foreach ($desiredFields as $fname => $spec) {
-                if (! in_array($fname, $existing, true)) {
-                    $toAdd[$fname] = $spec;
+                if (in_array($fname, $existing, true)) {
+                    continue;
                 }
+
+                // If the spec references an 'after' column that doesn't exist in this table,
+                // remove the 'after' attribute to avoid MySQL "Unknown column" errors.
+                $specToUse = $spec;
+                if (isset($specToUse['after']) && ! in_array($specToUse['after'], $existing, true)) {
+                    unset($specToUse['after']);
+                }
+
+                $toAdd[$fname] = $specToUse;
             }
 
             if ($toAdd !== []) {
