@@ -117,19 +117,72 @@
             <td class="colon-col">:</td>
             <td class="value-col"><?= nl2br(esc((string) ($data['sasaran'] ?? '-'))); ?></td>
         </tr>
-        <tr>
-            <td class="report-cell" colspan="3">
-                <div class="report-title bold">Laporan Hasil Perjalanan Dinas</div>
-                <div class="report-content laporan-html">
-                    <?php $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? '')); ?>
-                    <?php if ($laporanHasilRaw === ''): ?>
-                        -
-                    <?php else: ?>
-                        <?= $laporanHasilRaw; ?>
-                    <?php endif; ?>
-                </div>
-            </td>
-        </tr>
+        <?php
+            $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? ''));
+
+            function split_html_into_blocks($html)
+            {
+                $html = trim((string) $html);
+                if ($html === '') {
+                    return [];
+                }
+
+                if (class_exists('DOMDocument')) {
+                    libxml_use_internal_errors(true);
+                    $doc = new DOMDocument();
+                    // wrap to ensure a single container
+                    $wrapped = '<?xml encoding="utf-8" ?><div>' . $html . '</div>';
+                    $doc->loadHTML($wrapped);
+                    libxml_clear_errors();
+                    $container = $doc->getElementsByTagName('div')->item(0);
+                    $chunks = [];
+                    if ($container) {
+                        foreach ($container->childNodes as $child) {
+                            $outer = $doc->saveHTML($child);
+                            $outer = trim((string) $outer);
+                            if ($outer !== '') {
+                                $chunks[] = $outer;
+                            }
+                        }
+                    }
+                    if (!empty($chunks)) {
+                        return $chunks;
+                    }
+                }
+
+                // Fallback: split by closing paragraphs or line breaks
+                $parts = preg_split('/<\/?p>|<br\s*\/?\s*>/i', $html);
+                $out = [];
+                foreach ($parts as $p) {
+                    $p = trim($p);
+                    if ($p !== '') {
+                        $out[] = '<p>' . $p . '</p>';
+                    }
+                }
+                return $out;
+            }
+
+            $chunks = split_html_into_blocks($laporanHasilRaw);
+            if (empty($chunks)) :
+        ?>
+            <tr>
+                <td class="report-cell" colspan="3">
+                    <div class="report-title bold">Laporan Hasil Perjalanan Dinas</div>
+                    <div class="report-content">-</div>
+                </td>
+            </tr>
+        <?php else: ?>
+            <tr>
+                <td class="report-cell" colspan="3"><div class="report-title bold">Laporan Hasil Perjalanan Dinas</div></td>
+            </tr>
+            <?php foreach ($chunks as $chunk): ?>
+                <tr>
+                    <td class="report-cell" colspan="3">
+                        <div class="report-content laporan-html"><?= $chunk; ?></div>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </table>
 
     <div class="page-break"></div>
