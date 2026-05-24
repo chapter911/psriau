@@ -37,6 +37,11 @@
         .report-cell { padding: 0; }
         .report-title { padding: 4px 6px 0 6px; font-size: 11pt; }
         .report-content { padding: 2px 6px 4px 6px; }
+        /* Fake table wrapper to allow Dompdf to break naturally across pages */
+        .report-wrapper { border: 1px solid #000; border-top: 0; margin-top: -1px; }
+        .report-row { border-top: 1px solid #000; padding: 6px; }
+        .report-title-row { font-weight: 700; background: transparent; }
+        .report-row .report-content { padding: 0; }
         .pelaksana-item { margin-bottom: 5px; }
         .pelaksana-item:last-child { margin-bottom: 0; }
         .pelaksana-no { display: inline-block; width: 18px; }
@@ -165,25 +170,18 @@
             $chunks = split_html_into_blocks($laporanHasilRaw);
             if (empty($chunks)) :
         ?>
-            <tr>
-                <td class="report-cell" colspan="3">
-                    <div class="report-title bold">Laporan Hasil Perjalanan Dinas</div>
-                    <div class="report-content">-</div>
-                </td>
-            </tr>
+            <div class="report-wrapper">
+                <div class="report-row report-title-row">Laporan Hasil Perjalanan Dinas</div>
+                <div class="report-row"><div class="report-content">-</div></div>
+            </div>
         <?php else: ?>
-            <tr>
-                <td class="report-cell" colspan="3"><div class="report-title bold">Laporan Hasil Perjalanan Dinas</div></td>
-            </tr>
-            <?php foreach ($chunks as $chunk): ?>
-                <tr>
-                    <td class="report-cell" colspan="3">
-                        <div class="report-content laporan-html"><?= $chunk; ?></div>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
+            <div class="report-wrapper">
+                <div class="report-row report-title-row">Laporan Hasil Perjalanan Dinas</div>
+                <?php foreach ($chunks as $chunk): ?>
+                    <div class="report-row"><div class="report-content laporan-html"><?= $chunk; ?></div></div>
+                <?php endforeach; ?>
+            </div>
         <?php endif; ?>
-    </table>
 
     <div class="page-break"></div>
 
