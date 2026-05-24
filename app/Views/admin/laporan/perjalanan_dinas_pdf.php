@@ -28,11 +28,15 @@
         .table td, .table th { padding: 4px 6px; vertical-align: top; }
         .bordered td, .bordered th { border: 1px solid #000; }
         .title { font-size: 12.8pt; }
-        .main-sheet { table-layout: fixed; }
-        .main-sheet td { border: 1px solid #000; }
+        .main-sheet { table-layout: fixed; page-break-inside: auto; }
+        .main-sheet tr { page-break-inside: auto; page-break-after: auto; }
+        .main-sheet td { border: 1px solid #000; page-break-inside: auto; }
         .main-sheet .label-col { width: 41%; }
         .main-sheet .colon-col { width: 3%; text-align: center; }
         .main-sheet .value-col { width: 56%; }
+        .report-cell { padding: 0; }
+        .report-title { padding: 4px 6px 0 6px; font-size: 11pt; }
+        .report-content { padding: 2px 6px 4px 6px; }
         .pelaksana-item { margin-bottom: 5px; }
         .pelaksana-item:last-child { margin-bottom: 0; }
         .pelaksana-no { display: inline-block; width: 18px; }
@@ -113,19 +117,20 @@
             <td class="colon-col">:</td>
             <td class="value-col"><?= nl2br(esc((string) ($data['sasaran'] ?? '-'))); ?></td>
         </tr>
+        <tr>
+            <td class="report-cell" colspan="3">
+                <div class="report-title bold">Laporan Hasil Perjalanan Dinas</div>
+                <div class="report-content laporan-html">
+                    <?php $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? '')); ?>
+                    <?php if ($laporanHasilRaw === ''): ?>
+                        -
+                    <?php else: ?>
+                        <?= $laporanHasilRaw; ?>
+                    <?php endif; ?>
+                </div>
+            </td>
+        </tr>
     </table>
-
-    <div class="laporan-section">
-        <div class="laporan-section-title bold">Laporan Hasil Perjalanan Dinas</div>
-        <div class="laporan-html">
-            <?php $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? '')); ?>
-            <?php if ($laporanHasilRaw === ''): ?>
-                -
-            <?php else: ?>
-                <?= $laporanHasilRaw; ?>
-            <?php endif; ?>
-        </div>
-    </div>
 
     <div class="page-break"></div>
 
