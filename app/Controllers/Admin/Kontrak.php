@@ -2498,7 +2498,85 @@ class Kontrak extends BaseController
             'googleDriveUploadFolderId' => $this->getGoogleDriveUploadFolderId(),
             'googleDriveUploadFolderUrl' => $this->getGoogleDriveUploadFolderUrl(),
             'ciEnvironment' => trim((string) getenv('CI_ENVIRONMENT')),
+            'otpState' => $this->getSharedSimakOtpState($token),
+            'otpVerified' => $this->isSharedSimakOtpGranted($token),
+            'otpRecipientEmails' => $this->getSharedSimakRecipientEmails($shared),
         ]);
+    }
+
+    public function sharedRequestOtp(string $token)
+    {
+        $shared = $this->resolveSharedSimak($token);
+        if ($shared === null) {
+            return $this->renderSharedInvalidLink(
+                'Tautan share SIMAK tidak valid.',
+                $token,
+                null
+            );
+        }
+
+        $recipientEmails = $this->getSharedSimakRecipientEmails($shared);
+        if ($recipientEmails === []) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Belum ada email responden yang tersimpan. Kode OTP tidak dapat dikirim.');
+        }
+
+        $otpCode = (string) random_int(100000, 999999);
+        $otpState = [
+            'status' => 'pending',
+            'code_hash' => password_hash($otpCode, PASSWORD_DEFAULT),
+            'sent_at' => time(),
+            'expires_at' => time() + (5 * 60),
+            'recipient_emails' => $recipientEmails,
+        ];
+
+        $sent = $this->sendSharedSimakOtpCode($shared, $otpCode, $recipientEmails);
+        if (! ($sent['success'] ?? false)) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', (string) ($sent['message'] ?? 'Gagal mengirim kode OTP.'));
+        }
+
+        $this->setSharedSimakOtpState($token, $otpState);
+
+        return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Kode verifikasi berhasil dikirim ke email responden yang tersimpan. Kode berlaku selama 5 menit.');
+    }
+
+    public function sharedVerifyOtp(string $token)
+    {
+        $shared = $this->resolveSharedSimak($token);
+        if ($shared === null) {
+            return $this->renderSharedInvalidLink(
+                'Tautan share SIMAK tidak valid.',
+                $token,
+                null
+            );
+        }
+
+        $otpState = $this->getSharedSimakOtpState($token);
+        if (! is_array($otpState) || ($otpState['status'] ?? '') !== 'pending') {
+            $this->clearSharedSimakOtpState($token);
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Kode OTP belum dikirim atau sudah kedaluwarsa. Silakan kirim kode verifikasi terlebih dahulu.');
+        }
+
+        $expiresAt = (int) ($otpState['expires_at'] ?? 0);
+        if ($expiresAt <= time()) {
+            $this->clearSharedSimakOtpState($token);
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Kode OTP sudah kedaluwarsa. Silakan kirim ulang kode verifikasi.');
+        }
+
+        $otpInput = preg_replace('/\D+/', '', (string) $this->request->getPost('otp_code')) ?? '';
+        if (strlen($otpInput) !== 6) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Kode OTP harus terdiri dari 6 digit angka.');
+        }
+
+        $codeHash = (string) ($otpState['code_hash'] ?? '');
+        if ($codeHash === '' || ! password_verify($otpInput, $codeHash)) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Kode OTP tidak valid.');
+        }
+
+        $otpState['status'] = 'verified';
+        unset($otpState['code_hash']);
+        $this->setSharedSimakOtpState($token, $otpState);
+
+        return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Kode OTP berhasil diverifikasi. Akses halaman dibuka selama 5 menit sejak kode dikirim.');
     }
 
     public function sharedUploadSimakDokumen(string $token)
@@ -2514,6 +2592,10 @@ class Kontrak extends BaseController
 
         if ($this->isPostBodyTooLarge()) {
             return redirect()->to(site_url('simak/share/' . $token . '?error=' . rawurlencode('Upload gagal karena ukuran request melebihi batas server (post_max_size/upload_max_filesize). Perbesar batas upload di server lalu coba lagi.')));
+        }
+
+        if (! $this->isSharedSimakOtpGranted($token)) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Kode OTP verifikasi belum valid. Silakan kirim dan masukkan kode terlebih dahulu.');
         }
 
         $db = db_connect();
@@ -2578,33 +2660,9 @@ class Kontrak extends BaseController
         $hasFile = $file !== null && $file->getError() !== UPLOAD_ERR_NO_FILE;
         $hasDriveLink = $googleDriveLink !== '';
 
-        if ($hasFile && $file && $file->isValid() && ! $file->hasMoved()) {
-            $uploadedSize = (int) ($file->getSizeByUnit('b') ?? 0);
-            if ($uploadedSize > (5 * 1024 * 1024)) {
-                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'File lebih dari 5MB. Gunakan link Google Drive saja.');
-            }
-        }
-
         $today = date('Y-m-d');
         $now = date('Y-m-d H:i:s');
-
-        $googleCredential = trim((string) $this->request->getPost('google_access_token'));
-
-        $googleIdentity = null;
-        $actor = 'pengguna';
-
-        $googleIdentity = $this->verifyGoogleAccessToken($googleCredential);
-        if (! is_array($googleIdentity)) {
-            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Login Google diperlukan sebelum upload dokumen.');
-        }
-
-        $googleName = trim((string) ($googleIdentity['name'] ?? 'Google User'));
-        $googleEmail = trim((string) ($googleIdentity['email'] ?? ''));
-        $actorLabel = $googleName !== '' ? $googleName : 'Google User';
-        if ($googleEmail !== '') {
-            $actorLabel .= ' <' . $googleEmail . '>';
-        }
-        $actor = 'google: ' . $actorLabel;
+        $actor = 'responden';
 
         if ($uploadMethod === 'drive') {
             if (! $hasDriveLink) {
@@ -2742,6 +2800,10 @@ class Kontrak extends BaseController
             );
         }
 
+        if (! $this->isSharedSimakOtpGranted($token)) {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Kode OTP verifikasi belum valid. Silakan verifikasi kode terlebih dahulu.');
+        }
+
         $db = db_connect();
         $tableDokumen = (string) ($shared['table_dokumen'] ?? 'trn_kontrak_simak_verifikasi_dokumen');
         if (! $db->tableExists($tableDokumen)) {
@@ -2810,6 +2872,159 @@ class Kontrak extends BaseController
             ->setHeader('Content-Type', $mimeType)
             ->setHeader('Content-Disposition', 'inline; filename="' . addslashes($originalName) . '"')
             ->setBody($content === false ? '' : $content);
+    }
+
+    private function getSharedSimakOtpSessionKey(string $token): string
+    {
+        return 'shared_simak_otp_' . sha1(trim($token));
+    }
+
+    private function getSharedSimakOtpState(string $token): ?array
+    {
+        $state = session()->get($this->getSharedSimakOtpSessionKey($token));
+        if (! is_array($state)) {
+            return null;
+        }
+
+        $expiresAt = (int) ($state['expires_at'] ?? 0);
+        if ($expiresAt > 0 && $expiresAt <= time()) {
+            $this->clearSharedSimakOtpState($token);
+            return null;
+        }
+
+        return $state;
+    }
+
+    private function setSharedSimakOtpState(string $token, array $state): void
+    {
+        session()->set($this->getSharedSimakOtpSessionKey($token), $state);
+    }
+
+    private function clearSharedSimakOtpState(string $token): void
+    {
+        session()->remove($this->getSharedSimakOtpSessionKey($token));
+    }
+
+    private function isSharedSimakOtpGranted(string $token): bool
+    {
+        $state = $this->getSharedSimakOtpState($token);
+        return is_array($state)
+            && ($state['status'] ?? '') === 'verified'
+            && (int) ($state['expires_at'] ?? 0) > time();
+    }
+
+    private function getSharedSimakRecipientEmails(array $shared): array
+    {
+        $item = is_array($shared['item'] ?? null) ? $shared['item'] : [];
+        $emails = [
+            trim((string) ($item['email_responden_1'] ?? ($item['email_responden'] ?? ''))),
+            trim((string) ($item['email_responden_2'] ?? '')),
+        ];
+
+        return array_values(array_unique(array_filter($emails, static function (string $email): bool {
+            return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+        })));
+    }
+
+    private function sendSharedSimakOtpCode(array $shared, string $otpCode, array $recipientEmails): array
+    {
+        $recipientEmails = array_values(array_unique(array_filter($recipientEmails, static function (string $email): bool {
+            return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+        })));
+
+        if ($recipientEmails === []) {
+            return [
+                'success' => false,
+                'message' => 'Belum ada email responden yang valid untuk dikirimi kode OTP.',
+            ];
+        }
+
+        if (! class_exists('\Config\Services')) {
+            return [
+                'success' => false,
+                'message' => 'Layanan email belum tersedia di server.',
+            ];
+        }
+
+        $emailService = \Config\Services::email();
+        $emailConfig = config('Email');
+        if ($emailService === null || $emailConfig === null) {
+            return [
+                'success' => false,
+                'message' => 'Konfigurasi email belum tersedia.',
+            ];
+        }
+
+        $fromEmail = trim((string) ($emailConfig->fromEmail ?? ''));
+        $fromName = trim((string) ($emailConfig->fromName ?? 'SIMAK')) ?: 'SIMAK';
+        if ($fromEmail === '') {
+            $host = $_SERVER['HTTP_HOST'] ?? (gethostname() ?: 'example.com');
+            $fromEmail = 'no-reply@' . preg_replace('/[^a-z0-9.\-]/i', '', $host);
+        }
+
+        $item = is_array($shared['item'] ?? null) ? $shared['item'] : [];
+        $packageName = trim((string) ($item['nama_paket'] ?? 'SIMAK'));
+        $contractNumber = trim((string) ($item['nomor_kontrak'] ?? ''));
+        $recipientListText = implode(', ', $recipientEmails);
+        $expiryText = date('d-m-Y H:i', time() + (5 * 60));
+
+        $subject = 'Kode OTP Verifikasi SIMAK';
+        $message = "Halo,\n\n";
+        $message .= "Kode OTP untuk membuka halaman SIMAK berikut telah dibuat.\n\n";
+        if ($packageName !== '') {
+            $message .= "Paket: " . $packageName . "\n";
+        }
+        if ($contractNumber !== '') {
+            $message .= "Nomor Kontrak: " . $contractNumber . "\n";
+        }
+        $message .= "Kode OTP: " . $otpCode . "\n";
+        $message .= "Berlaku sampai: " . $expiryText . "\n";
+        $message .= "\nKode ini hanya berlaku selama 5 menit sejak email dikirim.\n";
+        $message .= "Jika Anda tidak meminta kode ini, abaikan pesan ini.\n";
+        $message .= "\nTujuan pengiriman: " . $recipientListText;
+
+        $sentCount = 0;
+        $failedEmails = [];
+
+        foreach ($recipientEmails as $recipientEmail) {
+            try {
+                $emailService->clear(true);
+                $emailService->setFrom($fromEmail, $fromName);
+                $emailService->setTo($recipientEmail);
+                $emailService->setSubject($subject);
+                $emailService->setMessage($message);
+                $emailService->setMailType('text');
+                $success = $emailService->send(false);
+
+                if ($success) {
+                    $sentCount++;
+                } else {
+                    $failedEmails[] = $recipientEmail;
+                }
+            } catch (\Throwable $e) {
+                $failedEmails[] = $recipientEmail;
+                log_message('error', 'Failed to send SIMAK OTP to ' . $recipientEmail . ': ' . $e->getMessage());
+            }
+        }
+
+        if ($sentCount <= 0) {
+            return [
+                'success' => false,
+                'message' => 'Kode OTP gagal dikirim ke seluruh email responden.',
+            ];
+        }
+
+        if ($failedEmails !== []) {
+            return [
+                'success' => true,
+                'message' => 'Kode OTP berhasil dikirim, tetapi ada beberapa email yang gagal menerima pesan: ' . implode(', ', $failedEmails),
+            ];
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Kode OTP berhasil dikirim.',
+        ];
     }
 
     private function isAllowedGoogleDriveUrl(string $url): bool

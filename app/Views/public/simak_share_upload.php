@@ -224,6 +224,57 @@
             line-height: 1.7;
         }
 
+        body.otp-locked .share-wrapper {
+            filter: blur(4px);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .otp-gate-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(8px);
+        }
+
+        .otp-gate-card {
+            width: min(760px, 100%);
+            padding: 24px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 30px 90px rgba(15, 23, 42, 0.32);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+        }
+
+        .otp-gate-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .otp-gate-actions form {
+            margin: 0;
+        }
+
+        .otp-code-input {
+            letter-spacing: 0.42em;
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        @media (max-width: 767.98px) {
+            .otp-gate-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .table th,
         .table td {
             vertical-align: middle;
@@ -576,7 +627,35 @@
         }
     </style>
 </head>
-<body>
+<body class="<?= $otpVerified ? 'otp-unlocked' : 'otp-locked'; ?>">
+<?php if (! $otpVerified): ?>
+    <div class="otp-gate-overlay" aria-live="polite">
+        <div class="otp-gate-card">
+            <span class="share-intro-label">Verifikasi OTP</span>
+            <h2 class="share-intro-title">Halaman ini membutuhkan kode OTP verifikasi</h2>
+            <p class="share-intro-text">Klik tombol kirim kode verifikasi untuk mengirim 6 digit kode ke email responden yang tersimpan. Setelah kode diterima, masukkan kode tersebut untuk membuka akses halaman ini. Kode hanya berlaku selama 5 menit.</p>
+
+            <div class="otp-gate-actions">
+                <form action="<?= esc(site_url('simak/share/' . (string) ($token ?? '') . '/otp/request')); ?>" method="post">
+                    <?= csrf_field(); ?>
+                    <button type="submit" class="btn btn-primary btn-block">Kirim Kode Verifikasi</button>
+                </form>
+                <form action="<?= esc(site_url('simak/share/' . (string) ($token ?? '') . '/otp/verify')); ?>" method="post">
+                    <?= csrf_field(); ?>
+                    <div class="form-group mb-2">
+                        <label for="otp_code" class="sr-only">Kode OTP</label>
+                        <input type="text" id="otp_code" name="otp_code" class="form-control otp-code-input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="______" autocomplete="one-time-code" required>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary btn-block">Buka Akses</button>
+                </form>
+            </div>
+
+            <div class="alert alert-info mt-3 mb-0">
+                Jika email responden belum tersimpan, sistem akan menampilkan pemberitahuan dan kode tidak akan dikirim.
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
 <div class="share-wrapper">
     <div class="share-hero">
         <div class="share-hero-inner">
@@ -630,35 +709,10 @@
         </div>
     </div>
 
-    <div class="google-auth-card">
-        <div class="d-flex align-items-start justify-content-between flex-wrap" style="gap: 12px;">
-            <div>
-                <h5 class="mb-1">Login Google terlebih dahulu</h5>
-                <p class="text-muted mb-0">Login dibuka sebagai popup dan identitas Google akan dipakai untuk mencatat siapa yang mengupload dokumen.<?php if (! empty($ciEnvironment) && strtolower((string) $ciEnvironment) === 'development'): ?><br><span class="badge badge-warning mt-2" style="display: inline-block;">DEVELOPMENT MODE - Login dilewati</span><?php endif; ?></p>
-            </div>
-            <div class="google-auth-actions">
-                <?php if ($simakTutorialUrl !== ''): ?>
-                    <a
-                        class="share-tutorial-btn"
-                        href="<?= esc($simakTutorialUrl); ?>"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M10 8l6 4-6 4z"></path><path fill="currentColor" d="M21.8 8.6s-.2-1.4-.8-2.1c-.8-.9-1.7-.9-2.1-1-2.9-.2-7.3-.2-7.3-.2h-.1s-4.4 0-7.3.2c-.4 0-1.3.1-2.1 1-.6.7-.8 2.1-.8 2.1S1 10.2 1 11.8v1.4c0 1.6.2 3.2.2 3.2s.2 1.4.8 2.1c.8.9 1.9.9 2.4 1 1.8.2 7.6.2 7.6.2s4.4 0 7.3-.2c.4 0 1.3-.1 2.1-1 .6-.7.8-2.1.8-2.1s.2-1.6.2-3.2v-1.4c0-1.6-.2-3.2-.2-3.2z"></path></svg>
-                        <span>Lihat Tutorial Upload</span>
-                    </a>
-                <?php endif; ?>
-                <button type="button" class="google-login-btn" id="googlePopupLoginBtn">
-                    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.626 32.91 29.304 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.153 7.962 3.037l5.657-5.657C34.007 6.053 29.311 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.652-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.153 7.962 3.037l5.657-5.657C34.007 6.053 29.311 4 24 4c-7.159 0-13.315 4.034-16.694 9.691z"/><path fill="#4CAF50" d="M24 44c5.237 0 9.834-1.99 13.364-5.237l-6.16-5.194C29.151 35.091 26.715 36 24 36c-5.282 0-9.593-3.073-11.288-7.283l-6.52 5.025C9.534 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.017 2.877-2.92 5.247-5.099 6.569.002-.001.004-.002.006-.003l6.16 5.194C35.96 38.713 40 34 40 24c0-1.341-.138-2.652-.389-3.917z"/></svg>
-                    <span>Login dengan Google</span>
-                </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="googleSignOutButton">Logout Google</button>
-            </div>
-        </div>
-        <div class="google-auth-status">
-            <span class="google-auth-pill d-none" id="googleAuthUser">Belum login</span>
-            <span class="text-muted small" id="googleAuthHint">Silakan login dengan akun Google sebelum membuka form upload.</span>
-        </div>
+    <div class="share-card share-surface share-intro-card">
+        <span class="share-intro-label">OTP</span>
+        <div class="share-intro-title"><?= $otpVerified ? 'Akses halaman sudah dibuka' : 'Verifikasi masih diperlukan'; ?></div>
+        <p class="share-intro-text mb-0"><?php if ($otpVerified): ?>Kode OTP sudah diverifikasi. Anda dapat melanjutkan melihat dan mengunggah dokumen selama masa aktif kode belum habis.<?php else: ?>Gunakan panel verifikasi di atas untuk mengirim kode ke email responden yang tersimpan, lalu masukkan 6 digit kode tersebut untuk membuka akses halaman.<?php endif; ?></p>
     </div>
 
     <?php if (session()->getFlashdata('success')): ?>
@@ -848,13 +902,9 @@
             <form id="form-upload-share-simak" action="<?= site_url('simak/share/' . (string) ($token ?? '') . '/upload'); ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
                 <input type="hidden" name="row_no" id="upload_row_no_modal" value="">
-                <input type="hidden" name="google_access_token" id="google_access_token" value="">
-                <input type="hidden" name="uploader_name" id="uploader_name" value="">
-                <input type="hidden" name="uploader_email" id="uploader_email" value="">
-                <input type="hidden" name="uploader_sub" id="uploader_sub" value="">
                 <div class="modal-body">
                     <div class="upload-lock-overlay" id="uploadGoogleLock">
-                        Login Google terlebih dahulu untuk mengaktifkan upload file lokal atau link Google Drive.
+                        Verifikasi OTP terlebih dahulu untuk mengaktifkan upload file lokal atau link Google Drive.
                     </div>
                     <div class="alert alert-light border py-2">
                         <div><strong>No:</strong> <span id="upload_row_label_modal">-</span></div>
@@ -924,6 +974,7 @@
     var googleDriveUploadFolderId = <?= json_encode((string) ($googleDriveUploadFolderId ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var googleDriveUploadFolderUrl = <?= json_encode((string) ($googleDriveUploadFolderUrl ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var ciEnvironment = <?= json_encode((string) ($ciEnvironment ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    var otpVerified = <?= json_encode((bool) ($otpVerified ?? false), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var isDevMode = String(ciEnvironment || '').toLowerCase() === 'development';
     var googleProfile = null;
     var googleStorageKey = 'simak-share-google-credential';
@@ -1253,7 +1304,7 @@
     }
 
     function flushPendingUploadContext() {
-        if (!pendingUploadContext || !googleAccessTokenEl || !googleAccessTokenEl.value) {
+        if (!pendingUploadContext || (!otpVerified && !isDevMode)) {
             return;
         }
 
@@ -1284,8 +1335,8 @@
     }
 
     function updateUploadLockState() {
-        var googleSignedIn = !!(googleProfile && googleAccessTokenEl && googleAccessTokenEl.value);
-        var signedIn = googleSignedIn || isDevMode;
+        var googleSignedIn = false;
+        var signedIn = otpVerified || isDevMode;
 
         openButtons.forEach(function (button) {
             button.disabled = false;
@@ -1311,9 +1362,9 @@
         }
 
         if (googleAuthHint) {
-            googleAuthHint.textContent = googleSignedIn
-                ? 'Anda sudah login dengan Google dan siap mengupload dokumen lokal atau memakai link Google Drive.'
-                : 'Login Google dipakai untuk upload file lokal dan link Google Drive.';
+            googleAuthHint.textContent = signedIn
+                ? 'Kode OTP sudah diverifikasi. Anda dapat mengupload dokumen lokal atau memakai link Google Drive.'
+                : 'Verifikasi OTP dipakai untuk membuka upload file lokal dan link Google Drive.';
         }
 
     }
@@ -1359,7 +1410,7 @@
             window.Swal.fire({
                 toast: true,
                 icon: 'success',
-                title: 'Login Google berhasil',
+                title: 'Verifikasi OTP berhasil',
                 position: 'top-end',
                 showConfirmButton: false,
                 timer: 2000,
@@ -1395,7 +1446,7 @@
             })
             .catch(function (error) {
                 if (window.Swal) {
-                    window.Swal.fire({ icon: 'error', title: 'Login Google gagal', text: error.message || 'Credential Google tidak valid.' });
+                    window.Swal.fire({ icon: 'error', title: 'Verifikasi OTP gagal', text: error.message || 'Kode OTP tidak valid.' });
                 }
                 clearGoogleProfile();
             });
@@ -1580,7 +1631,7 @@
                         if (window.Swal) {
                             window.Swal.fire({
                                 icon: 'error',
-                                title: 'Login Google gagal',
+                                title: 'Verifikasi OTP gagal',
                                 text: error && error.message ? error.message : 'Autorisasi Google gagal.',
                             });
                         }
@@ -1857,23 +1908,16 @@
             }
 
             var selectedMethod = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
-            var hasGoogleToken = !!(googleAccessTokenEl && googleAccessTokenEl.value);
-
-            if (!hasGoogleToken) {
-                if (isDevMode) {
-                    applyDevModeDummyProfile();
-                    hasGoogleToken = true;
-                } else {
-                    event.preventDefault();
-                    if (window.Swal) {
-                        window.Swal.fire({
-                            icon: 'warning',
-                            title: 'Login Google diperlukan',
-                            text: 'Anda harus login dengan Google sebelum upload dokumen.',
-                        });
-                    }
-                    return;
+            if (!otpVerified && !isDevMode) {
+                event.preventDefault();
+                if (window.Swal) {
+                    window.Swal.fire({
+                        icon: 'warning',
+                        title: 'Kode OTP belum diverifikasi',
+                        text: 'Silakan kirim dan masukkan kode OTP terlebih dahulu.',
+                    });
                 }
+                return;
             }
 
             var hasFile = !!(dokumenFileEl && dokumenFileEl.files && dokumenFileEl.files.length > 0);
@@ -2023,13 +2067,6 @@
 
         updateUploadLockState();
         refreshFileStatus();
-        if (googleClientId) {
-            if (window.google && window.google.accounts && window.google.accounts.id) {
-                initGoogleSignIn();
-            } else {
-                window.addEventListener('load', initGoogleSignIn, { once: true });
-            }
-        }
     }
 })();
 </script>

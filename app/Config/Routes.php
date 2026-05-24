@@ -20,6 +20,8 @@ $routes->get('kegiatan-lapangan/share/(:segment)', 'Admin\\Dokumentasi::sharedGa
 $routes->get('kegiatan-lapangan/share/(:segment)/download-zip', 'Admin\\Dokumentasi::sharedDownloadZip/$1');
 $routes->get('kegiatan-lapangan/share/(:segment)/download-photo/(:num)', 'Admin\\Dokumentasi::sharedDownloadPhoto/$1/$2');
 $routes->get('simak/share/(:segment)', 'Admin\\Kontrak::sharedSimak/$1');
+$routes->post('simak/share/(:segment)/otp/request', 'Admin\\Kontrak::sharedRequestOtp/$1');
+$routes->post('simak/share/(:segment)/otp/verify', 'Admin\\Kontrak::sharedVerifyOtp/$1');
 $routes->post('simak/share/(:segment)/upload', 'Admin\\Kontrak::sharedUploadSimakDokumen/$1');
 $routes->get('simak/share/(:segment)/download-dokumen/(:num)', 'Admin\\Kontrak::sharedDownloadDokumen/$1/$2');
 
