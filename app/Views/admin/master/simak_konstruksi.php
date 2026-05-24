@@ -42,53 +42,78 @@
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-
-            .simak-tree-table-head {
-                display: grid;
-                grid-template-columns: 34px 92px minmax(0, 1fr) 220px;
-                gap: 10px;
-                align-items: center;
-                padding: 10px 12px;
-                margin-bottom: 10px;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-                color: #334155;
-                font-size: 12px;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: .04em;
-            }
     }
 
     .simak-panel-head .form-control-sm {
         max-width: 180px;
     }
 
-                transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    .simak-panel-meta {
         display: flex;
         align-items: center;
         gap: 6px;
-                display: grid;
-                grid-template-columns: 34px 92px minmax(0, 1fr) 220px;
-                gap: 10px;
-                align-items: center;
-                padding: 10px 12px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+    }
+
     .simak-panel-meta .badge {
         font-size: 11px;
         font-weight: 600;
     }
 
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-    .simak-panel-body {
+    .simak-tree-table-head {
+        display: grid;
+        grid-template-columns: 34px 92px minmax(0, 1fr) 220px;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+        color: #334155;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
 
-            .simak-master-no .badge {
-                min-width: 56px;
-                justify-content: center;
-                font-size: 11px;
-            }
+    .simak-master-no .badge {
+        min-width: 56px;
+        justify-content: center;
+        font-size: 11px;
+    }
+
+    .simak-master-flags {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .simak-master-item {
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    }
+
+    .simak-master-row {
+        display: grid;
+        grid-template-columns: 34px 92px minmax(0, 1fr) 220px;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+    }
+
+    .drag-handle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .simak-master-meta {
+        cursor: pointer;
+    }
+
+    .simak-panel-body {
         padding: 14px;
     }
 
@@ -101,13 +126,6 @@
 
     .simak-master-tree ul {
         margin-left: 24px;
-
-            .simak-master-flags {
-                display: flex;
-                justify-content: flex-end;
-                flex-wrap: wrap;
-                gap: 6px;
-            }
         border-left: 1px dashed #d0d7de;
         padding-left: 12px;
     }
@@ -118,12 +136,6 @@
         margin-bottom: 10px;
         background: #fff;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
-                        <div class="simak-tree-table-head" aria-hidden="true">
-                            <div></div>
-                            <div>No</div>
-                            <div>Uraian</div>
-                            <div>Status</div>
-                        </div>
     }
 
     .simak-master-item.is-inactive {
@@ -137,29 +149,9 @@
 
     .simak-master-item.is-selected {
         border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
     }
 
-    .simak-master-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-    }
-
-                            echo '<div class="simak-master-no"><span class="badge badge-dark">' . esc($displayNo !== '' ? $displayNo : '-') . '</span></div>';
-    .drag-handle {
-                            echo '<div class="simak-master-title">' . esc($uraian !== '' ? $uraian : '-') . '</div>';
-                            echo '<div class="simak-master-sub">';
-                            echo 'Jenis: <strong>' . esc($rowKind) . '</strong> | Pertanyaan: <strong>' . ($hasQuestion ? 'Ya' : 'Tidak') . '</strong>';
-    .simak-master-meta {
-                            echo '</div>';
-                            echo '<div class="simak-master-flags">';
-                            echo '<span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span>';
-                            if ($isHiddenShare) {
-                                echo '<span class="badge badge-warning simak-status-badge">Share: Tersembunyi</span>';
-                            }
-        cursor: pointer;
-    }
     .simak-master-title {
         font-weight: 600;
         line-height: 1.3;
@@ -375,7 +367,7 @@
 
             <div class="simak-detail-panel">
                 <div class="simak-panel-head">
-                    <strong id="form-mode-label">Tambah Item Baru</strong>
+                    <strong id="form-mode-label">Tambah Item Master</strong>
                     <div>
                         <?php if (! empty($can_add)): ?>
                             <button type="button" class="btn btn-primary btn-sm" id="btn-add-root">Tambah Item Utama</button>
