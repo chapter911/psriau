@@ -405,10 +405,6 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Nomor Otomatis</label>
-                            <div class="form-control-plaintext text-muted">Nomor akan mengikuti urutan susunan: A., 1., a., -</div>
-                        </div>
-                        <div class="form-group">
                             <label for="uraian">Uraian</label>
                             <textarea class="form-control" name="uraian" id="uraian" rows="3" required <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>></textarea>
                         </div>
