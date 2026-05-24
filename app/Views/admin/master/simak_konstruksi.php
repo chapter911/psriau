@@ -284,7 +284,7 @@
         <h3 class="card-title mb-0"><?= esc((string) ($pageTitle ?? 'Master SIMAK Konstruksi')); ?></h3>
         <?php if (! empty($can_edit)): ?>
             <div class="btn-group ml-auto" role="group">
-                <button type="button" class="btn btn-success btn-sm" id="btn-save-hierarchy">Simpan Hirarki</button>
+                <button type="button" class="btn btn-success btn-sm" id="btn-save-hierarchy">Simpan Susunan</button>
                 <div class="btn-group" role="group">
                     <button id="exportDropdown" type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Export</button>
                     <div class="dropdown-menu" aria-labelledby="exportDropdown">
@@ -297,7 +297,7 @@
         <?php endif; ?>
     </div>
     <div class="card-body">
-        <p class="text-muted mb-3"><?= esc((string) ($pageSubtitle ?? 'Master pertanyaan, hirarki, dan section verifikasi SIMAK konstruksi.')); ?></p>
+        <p class="text-muted mb-3"><?= esc((string) ($pageSubtitle ?? 'Daftar item, susunan, dan pengaturan verifikasi SIMAK konstruksi.')); ?></p>
         <div id="simak-notice-stack" class="simak-notice-stack" aria-live="polite" aria-atomic="true"></div>
 
         <?php
@@ -325,7 +325,7 @@
                     echo ' data-is_hidden_share="' . ($isHiddenShare ? '1' : '0') . '"';
                     echo '>';
                     echo '<div class="simak-master-row">';
-                    echo '<span class="drag-handle" title="Drag untuk ubah urutan/hirarki"><i class="fas fa-grip-lines"></i></span>';
+                    echo '<span class="drag-handle" title="Seret untuk mengubah urutan/susunan"><i class="fas fa-grip-lines"></i></span>';
                     echo '<div class="simak-master-meta">';
                     echo '<div class="simak-master-title">' . esc($title !== '' ? $title : '-') . ' <span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span>';
                     if ($isHiddenShare) {
@@ -352,7 +352,7 @@
             <div class="simak-tree-panel">
                 <div class="simak-panel-head">
                     <div>
-                        <strong>Hirarki Pertanyaan</strong>
+                        <strong>Susunan Pertanyaan</strong>
                         <div class="simak-panel-meta">
                             <span class="badge badge-success" id="simak-count-active">Aktif: 0</span>
                             <span class="badge badge-secondary" id="simak-count-inactive">Nonaktif: 0</span>
@@ -367,7 +367,7 @@
                         </ul>
                     <?php else: ?>
                         <div class="empty-tree">
-                            Master SIMAK konstruksi belum memiliki item. Gunakan tombol "Tambah Root" di panel kanan.
+                            Master SIMAK konstruksi belum memiliki item. Gunakan tombol "Tambah Item Utama" di panel kanan.
                         </div>
                     <?php endif; ?>
                 </div>
@@ -375,56 +375,56 @@
 
             <div class="simak-detail-panel">
                 <div class="simak-panel-head">
-                    <strong id="form-mode-label">Tambah Item Master</strong>
+                    <strong id="form-mode-label">Tambah Item Baru</strong>
                     <div>
                         <?php if (! empty($can_add)): ?>
-                            <button type="button" class="btn btn-primary btn-sm" id="btn-add-root">Tambah Root</button>
-                            <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-child">Tambah Child</button>
+                            <button type="button" class="btn btn-primary btn-sm" id="btn-add-root">Tambah Item Utama</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-child">Tambah Subitem</button>
                         <?php endif; ?>
                     </div>
                 </div>
                 <div class="simak-panel-body">
-                    <div class="simak-form-hint">Pilih item di kiri untuk mode ubah. Nomor tampil dibuat otomatis, sedangkan urutan diubah lewat drag and drop.</div>
+                    <div class="simak-form-hint">Pilih item di kiri untuk mengubah. Nomor tampil dibuat otomatis, sedangkan urutan diubah lewat tarik dan lepas.</div>
 
                     <form method="post" id="form-master-simak" action="<?= site_url('/admin/master/simak/konstruksi/tambah'); ?>">
                         <?= csrf_field(); ?>
                         <input type="hidden" id="selected_id" value="">
 
                         <div class="form-group">
-                            <label for="parent_id">Parent</label>
+                            <label for="parent_id">Item Induk</label>
                             <select class="form-control" name="parent_id" id="parent_id" <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
-                                <option value="">(Root)</option>
+                                <option value="">(Tanpa Induk)</option>
                                 <?php foreach (($parentOptions ?? []) as $opt): ?>
                                     <option value="<?= (int) ($opt['id'] ?? 0); ?>"><?= esc((string) ($opt['label'] ?? '')); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Nomor Tampil</label>
-                            <div class="form-control-plaintext text-muted">Otomatis mengikuti hirarki: A., 1., a., -</div>
+                            <label>Nomor Otomatis</label>
+                            <div class="form-control-plaintext text-muted">Nomor akan mengikuti urutan susunan: A., 1., a., -</div>
                         </div>
                         <div class="form-group">
                             <label for="uraian">Uraian</label>
                             <textarea class="form-control" name="uraian" id="uraian" rows="3" required <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>></textarea>
                         </div>
                         <div class="form-group">
-                            <label for="row_kind">Jenis Baris</label>
+                            <label for="row_kind">Jenis Item</label>
                             <select class="form-control" name="row_kind" id="row_kind" required <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
-                                <option value="section">Section</option>
-                                <option value="group">Group/Sub Section</option>
+                                <option value="section">Bagian</option>
+                                <option value="group">Subbagian</option>
                                 <option value="question">Pertanyaan</option>
-                                <option value="text">Teks Tanpa Pertanyaan</option>
-                                <option value="separator">Separator</option>
+                                <option value="text">Teks</option>
+                                <option value="separator">Pemisah</option>
                             </select>
                         </div>
                         <div class="custom-control custom-checkbox mb-3">
                             <input type="checkbox" class="custom-control-input" id="has_question" name="has_question" value="1" <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
-                            <label class="custom-control-label" for="has_question">Item ini memiliki pertanyaan</label>
+                            <label class="custom-control-label" for="has_question">Item ini punya pertanyaan</label>
                         </div>
 
                         <div class="custom-control custom-checkbox mb-3">
                             <input type="checkbox" class="custom-control-input" id="has_draft" name="has_draft" value="1" <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
-                            <label class="custom-control-label" for="has_draft">Item ini memiliki draft</label>
+                            <label class="custom-control-label" for="has_draft">Item ini punya draft</label>
                         </div>
 
                         <div class="d-flex flex-wrap" style="gap:8px;">
@@ -602,7 +602,7 @@
         var setCreateMode = function (parentId, label) {
             if (!form) return;
             form.setAttribute('action', addUrl);
-            if (formModeLabel) formModeLabel.textContent = label || 'Tambah Item Master';
+            if (formModeLabel) formModeLabel.textContent = label || 'Tambah Item Baru';
             if (selectedIdInput) selectedIdInput.value = '';
             if (parentSelect) parentSelect.value = parentId || '';
             if (uraianInput) uraianInput.value = '';
@@ -656,7 +656,7 @@
         if (addRootButton) {
             addRootButton.addEventListener('click', function () {
                 clearSelection();
-                setCreateMode('', 'Tambah Item Root');
+                setCreateMode('', 'Tambah Item Utama');
             });
         }
 
@@ -664,17 +664,17 @@
             addChildButton.addEventListener('click', function () {
                 var selectedId = selectedIdInput ? selectedIdInput.value : '';
                 if (!selectedId) {
-                    showNotice('Pilih item parent di panel kiri terlebih dahulu.', 'warning');
+                    showNotice('Pilih item induk di panel kiri terlebih dahulu.', 'warning');
                     return;
                 }
-                setCreateMode(selectedId, 'Tambah Child dari Item #' + selectedId);
+                setCreateMode(selectedId, 'Tambah Subitem dari Item #' + selectedId);
             });
         }
 
         if (resetButton) {
             resetButton.addEventListener('click', function () {
                 clearSelection();
-                setCreateMode('', 'Tambah Item Master');
+                setCreateMode('', 'Tambah Item Baru');
             });
         }
 
@@ -760,7 +760,7 @@
                         }
                     }
 
-                    setCreateMode('', formLabel || 'Tambah Item Master');
+                    setCreateMode('', formLabel || 'Tambah Item Baru');
                 });
         };
 
@@ -802,7 +802,7 @@
                         return;
                     }
 
-                    refreshPanels(selectedId, formModeLabel ? formModeLabel.textContent : 'Tambah Item Master').then(function () {
+                    refreshPanels(selectedId, formModeLabel ? formModeLabel.textContent : 'Tambah Item Baru').then(function () {
                         showNotice(json.message || 'Status item berhasil diubah.', 'success');
                     });
                 })
@@ -854,7 +854,7 @@
                         return;
                     }
 
-                    refreshPanels(selectedId, formModeLabel ? formModeLabel.textContent : 'Tambah Item Master').then(function () {
+                    refreshPanels(selectedId, formModeLabel ? formModeLabel.textContent : 'Tambah Item Baru').then(function () {
                         showNotice(json.message || 'Visibilitas share item berhasil diubah.', 'success');
                     });
                 })
@@ -903,7 +903,7 @@
                         }
 
                         var id = json.id ? String(json.id) : '';
-                        return refreshPanels(id, 'Tambah Item Master').then(function () {
+                        return refreshPanels(id, 'Tambah Item Baru').then(function () {
                             showNotice(json.message || 'Berhasil menyimpan data master.', 'success');
                         });
                     })
@@ -973,16 +973,16 @@
                     .then(function (json) {
                         syncCsrfFromJson(json);
                         if (!json || json.status !== 'ok') {
-                            showNotice((json && json.message) ? json.message : 'Gagal menyimpan hirarki', 'danger');
+                            showNotice((json && json.message) ? json.message : 'Gagal menyimpan susunan', 'danger');
                             return;
                         }
-                        refreshPanels(selectedIdInput ? selectedIdInput.value : '', formModeLabel ? formModeLabel.textContent : 'Tambah Item Master')
+                        refreshPanels(selectedIdInput ? selectedIdInput.value : '', formModeLabel ? formModeLabel.textContent : 'Tambah Item Baru')
                             .then(function () {
-                                showNotice(json.message || 'Hirarki berhasil disimpan.', 'success');
+                                showNotice(json.message || 'Susunan berhasil disimpan.', 'success');
                             });
                     })
                     .catch(function () {
-                        showNotice('Gagal menyimpan hirarki', 'danger');
+                        showNotice('Gagal menyimpan susunan', 'danger');
                     });
             });
         }
@@ -1000,7 +1000,7 @@
         }
 
         updateStatusSummary();
-        setCreateMode('', 'Tambah Item Master');
+        setCreateMode('', 'Tambah Item Baru');
 
         var importBtn = document.getElementById('btn-open-import');
         if (importBtn) {
