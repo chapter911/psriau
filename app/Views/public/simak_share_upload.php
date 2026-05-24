@@ -635,6 +635,24 @@
             <h2 class="share-intro-title">Halaman ini membutuhkan kode OTP verifikasi</h2>
             <p class="share-intro-text">Klik tombol kirim kode verifikasi untuk mengirim 6 digit kode ke email responden yang tersimpan. Setelah kode diterima, masukkan kode tersebut untuk membuka akses halaman ini. Kode hanya berlaku selama 5 menit.</p>
 
+            <?php if (session()->getFlashdata('success')): ?>
+                <div class="alert alert-success"><?= esc((string) session()->getFlashdata('success')); ?></div>
+            <?php endif; ?>
+
+            <?php $querySuccess = trim((string) service('request')->getGet('success')); ?>
+            <?php if ($querySuccess !== ''): ?>
+                <div class="alert alert-success"><?= esc($querySuccess); ?></div>
+            <?php endif; ?>
+
+            <?php if (session()->getFlashdata('error')): ?>
+                <div class="alert alert-danger"><?= esc((string) session()->getFlashdata('error')); ?></div>
+            <?php endif; ?>
+
+            <?php $queryError = trim((string) service('request')->getGet('error')); ?>
+            <?php if ($queryError !== ''): ?>
+                <div class="alert alert-danger"><?= esc($queryError); ?></div>
+            <?php endif; ?>
+
             <div class="otp-gate-actions">
                 <form action="<?= esc(site_url('simak/share/' . (string) ($token ?? '') . '/otp/request')); ?>" method="post">
                     <?= csrf_field(); ?>
@@ -655,7 +673,7 @@
             </div>
         </div>
     </div>
-<?php endif; ?>
+<?php else: ?>
 <div class="share-wrapper">
     <div class="share-hero">
         <div class="share-hero-inner">
@@ -714,24 +732,6 @@
         <div class="share-intro-title"><?= $otpVerified ? 'Akses halaman sudah dibuka' : 'Verifikasi masih diperlukan'; ?></div>
         <p class="share-intro-text mb-0"><?php if ($otpVerified): ?>Kode OTP sudah diverifikasi. Anda dapat melanjutkan melihat dan mengunggah dokumen selama masa aktif kode belum habis.<?php else: ?>Gunakan panel verifikasi di atas untuk mengirim kode ke email responden yang tersimpan, lalu masukkan 6 digit kode tersebut untuk membuka akses halaman.<?php endif; ?></p>
     </div>
-
-    <?php if (session()->getFlashdata('success')): ?>
-        <div class="alert alert-success"><?= esc((string) session()->getFlashdata('success')); ?></div>
-    <?php endif; ?>
-
-    <?php $querySuccess = trim((string) service('request')->getGet('success')); ?>
-    <?php if ($querySuccess !== ''): ?>
-        <div class="alert alert-success"><?= esc($querySuccess); ?></div>
-    <?php endif; ?>
-
-    <?php if (session()->getFlashdata('error')): ?>
-        <div class="alert alert-danger"><?= esc((string) session()->getFlashdata('error')); ?></div>
-    <?php endif; ?>
-
-    <?php $queryError = trim((string) service('request')->getGet('error')); ?>
-    <?php if ($queryError !== ''): ?>
-        <div class="alert alert-danger"><?= esc($queryError); ?></div>
-    <?php endif; ?>
 
     <div class="alert alert-info">
         Halaman ini hanya untuk upload dokumen oleh kontraktor. Setelah file berhasil diupload, status kelengkapan dokumen otomatis berubah menjadi <strong>Ada</strong>.
@@ -889,6 +889,7 @@
         </div>
     <?php endif; ?>
 </div>
+<?php endif; ?>
 
 <div class="modal fade" id="modal-upload-share-simak" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
