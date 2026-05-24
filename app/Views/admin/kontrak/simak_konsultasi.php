@@ -1553,7 +1553,7 @@
             if (nilaiKontrakEdit) {
                 nilaiKontrakEdit.value = formatCurrency(normalizeCurrencySourceValue(this.getAttribute('data-nilai-kontrak') || '0'));
             }
-            if (emailRespondenEdit) {
+            if (emailResponden1Edit) {
                 emailResponden1Edit.value = this.getAttribute('data-email-responden_1') || '';
                 emailResponden2Edit.value = this.getAttribute('data-email-responden_2') || '';
             }
