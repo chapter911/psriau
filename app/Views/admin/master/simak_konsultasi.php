@@ -57,6 +57,21 @@
         font-weight: 600;
     }
 
+    .simak-master-no .badge {
+        min-width: 56px;
+        justify-content: center;
+        font-size: 11px;
+    }
+
+    .simak-master-flags {
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding-top: 1px;
+    }
+
     .simak-panel-body {
         padding: 14px;
     }
@@ -97,9 +112,10 @@
     }
 
     .simak-master-row {
-        display: flex;
-        align-items: center;
+        display: grid;
+        grid-template-columns: 34px 92px minmax(0, 1fr) auto;
         gap: 10px;
+        align-items: start;
         padding: 10px 12px;
     }
 
@@ -109,7 +125,7 @@
     }
 
     .simak-master-meta {
-        flex: 1;
+        min-width: 0;
         min-width: 0;
         cursor: pointer;
     }
@@ -288,16 +304,19 @@
                     echo '>';
                     echo '<div class="simak-master-row">';
                     echo '<span class="drag-handle" title="Drag untuk ubah urutan/hirarki"><i class="fas fa-grip-lines"></i></span>';
+                        echo '<div class="simak-master-no"><span class="badge badge-dark">' . esc($displayNo !== '' ? $displayNo : '-') . '</span></div>';
                     echo '<div class="simak-master-meta">';
-                    echo '<div class="simak-master-title">' . esc($title !== '' ? $title : '-') . ' <span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span>';
-                    if ($isHiddenShare) {
-                        echo ' <span class="badge badge-warning simak-status-badge">Share: Tersembunyi</span>';
-                    }
-                    echo '</div>';
+                        echo '<div class="simak-master-title">' . esc($title !== '' ? $title : '-') . '</div>';
                     echo '<div class="simak-master-sub">';
                     echo 'Jenis: <strong>' . esc($rowKind) . '</strong> | Pertanyaan: <strong>' . ($hasQuestion ? 'Ya' : 'Tidak') . '</strong> | Row No: <strong>' . esc((string) ($node['row_no'] ?? '')) . '</strong>';
                     echo '</div>';
                     echo '</div>';
+                        echo '<div class="simak-master-flags">';
+                        echo '<span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span>';
+                        if ($isHiddenShare) {
+                            echo ' <span class="badge badge-warning simak-status-badge">Share: Tersembunyi</span>';
+                        }
+                        echo '</div>';
                     echo '</div>';
 
                     if ($children !== []) {
