@@ -13,7 +13,7 @@ class AddEmailRespondenToSimak extends Migration
             return;
         }
 
-        $fields = [
+        $desiredFields = [
             'email_responden_1' => [
                 'type' => 'VARCHAR',
                 'constraint' => 255,
@@ -31,11 +31,33 @@ class AddEmailRespondenToSimak extends Migration
         ];
 
         $forge = \Config\Database::forge();
-        $forge->addColumn('trn_kontrak_simak', $fields);
 
-        // Add columns to trn_kontrak_simak_konsultasi if exists
+        // Helper to add only missing fields to a table
+        $addMissingFieldsToTable = function (string $tableName) use ($desiredFields, $forge) {
+            try {
+                $existing = array_column($this->db->getFieldData($tableName), 'name');
+            } catch (\Exception $e) {
+                $existing = [];
+            }
+
+            $toAdd = [];
+            foreach ($desiredFields as $fname => $spec) {
+                if (! in_array($fname, $existing, true)) {
+                    $toAdd[$fname] = $spec;
+                }
+            }
+
+            if ($toAdd !== []) {
+                $forge->addColumn($tableName, $toAdd);
+            }
+        };
+
+        // Add to main table
+        $addMissingFieldsToTable('trn_kontrak_simak');
+
+        // Add to konsultasi table if exists
         if ($this->db->tableExists('trn_kontrak_simak_konsultasi')) {
-            $forge->addColumn('trn_kontrak_simak_konsultasi', $fields);
+            $addMissingFieldsToTable('trn_kontrak_simak_konsultasi');
         }
 
         // If legacy single column exists, copy its values into email_responden_1
