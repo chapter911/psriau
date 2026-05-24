@@ -277,7 +277,7 @@
                 echo '<ul class="simak-master-tree-list">';
                 foreach ($nodes as $node) {
                     $id = (int) ($node['id'] ?? 0);
-                    $displayNo = trim((string) ($node['display_no'] ?? ''));
+                    $displayNo = trim((string) ($node['display_no_auto'] ?? $node['display_no'] ?? ''));
                     $uraian = trim((string) ($node['uraian'] ?? ''));
                     $title = trim($displayNo . ' ' . $uraian);
                     $rowKind = (string) ($node['row_kind'] ?? 'question');
@@ -290,6 +290,7 @@
                     echo '<li class="simak-master-item' . (! $isActive ? ' is-inactive' : '') . ($isHiddenShare ? ' is-share-hidden' : '') . '" data-id="' . $id . '"';
                     echo ' data-parent_id="' . esc((string) ($node['parent_id'] ?? ''), 'attr') . '"';
                     echo ' data-display_no="' . esc((string) ($node['display_no'] ?? ''), 'attr') . '"';
+                    echo ' data-display_no_auto="' . esc((string) ($node['display_no_auto'] ?? ''), 'attr') . '"';
                     echo ' data-uraian="' . esc((string) ($node['uraian'] ?? ''), 'attr') . '"';
                     echo ' data-bentuk_dokumen="' . esc((string) ($node['bentuk_dokumen'] ?? ''), 'attr') . '"';
                     echo ' data-referensi="' . esc((string) ($node['referensi'] ?? ''), 'attr') . '"';
@@ -304,19 +305,19 @@
                     echo '>';
                     echo '<div class="simak-master-row">';
                     echo '<span class="drag-handle" title="Drag untuk ubah urutan/hirarki"><i class="fas fa-grip-lines"></i></span>';
-                        echo '<div class="simak-master-no"><span class="badge badge-dark">' . esc($displayNo !== '' ? $displayNo : '-') . '</span></div>';
+                    echo '<div class="simak-master-no"><span class="badge badge-dark">' . esc($displayNo !== '' ? $displayNo : '-') . '</span></div>';
                     echo '<div class="simak-master-meta">';
-                        echo '<div class="simak-master-title">' . esc($title !== '' ? $title : '-') . '</div>';
+                    echo '<div class="simak-master-title">' . esc($title !== '' ? $title : '-') . '</div>';
                     echo '<div class="simak-master-sub">';
                     echo 'Jenis: <strong>' . esc($rowKind) . '</strong> | Pertanyaan: <strong>' . ($hasQuestion ? 'Ya' : 'Tidak') . '</strong> | Row No: <strong>' . esc((string) ($node['row_no'] ?? '')) . '</strong>';
                     echo '</div>';
                     echo '</div>';
-                        echo '<div class="simak-master-flags">';
-                        echo '<span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span>';
-                        if ($isHiddenShare) {
-                            echo ' <span class="badge badge-warning simak-status-badge">Share: Tersembunyi</span>';
-                        }
-                        echo '</div>';
+                    echo '<div class="simak-master-flags">';
+                    echo '<span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span>';
+                    if ($isHiddenShare) {
+                        echo ' <span class="badge badge-warning simak-status-badge">Share: Tersembunyi</span>';
+                    }
+                    echo '</div>';
                     echo '</div>';
 
                     if ($children !== []) {

@@ -739,7 +739,7 @@ class MasterSimak extends BaseController
             ->orderBy('id', 'ASC')
             ->findAll();
 
-        $itemsTree = $this->buildTree($rows);
+        $itemsTree = $this->annotateTreeDisplayNumbers($this->buildTree($rows));
         $itemsFlat = $this->flattenTree($itemsTree);
         $parentOptions = $this->buildParentOptions($itemsFlat);
 
