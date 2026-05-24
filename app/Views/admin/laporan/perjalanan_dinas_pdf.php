@@ -180,7 +180,7 @@
             object-fit: cover;
             display: block;
         }
-        </tr>
+    </style>
 
     <div class="laporan-section">
         <div class="laporan-section-title bold">Laporan Hasil Perjalanan Dinas</div>
