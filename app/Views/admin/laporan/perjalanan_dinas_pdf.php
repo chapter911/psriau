@@ -59,13 +59,20 @@
             overflow-wrap: anywhere;
             word-break: break-word;
         }
-        .laporan-row {
-            padding: 6px 8px;
+        .laporan-section {
+            margin-top: 0;
         }
-        .laporan-row-title {
-            display: block;
+        .laporan-section-title {
+            border: 1px solid #000;
+            border-bottom: 0;
+            padding: 4px 6px;
             font-size: 11pt;
-            margin-bottom: 4px;
+        }
+        .laporan-section-body {
+            border: 1px solid #000;
+            padding: 6px 8px;
+            page-break-inside: auto;
+            break-inside: auto;
         }
         .page-break { page-break-before: always; }
 
@@ -173,20 +180,21 @@
             object-fit: cover;
             display: block;
         }
-    </style>
-</head>
-<body>
-    <div class="text-center mb-2">
-        <?= kop_surat_img_tag('', 'width: 100%; max-height: 110px; object-fit: contain;', 'Kop Surat'); ?>
-    </div>
-    <div class="text-center bold title mb-2">LAPORAN PELAKSANAAN PERJALANAN DINAS</div>
-
-    <table class="table bordered main-sheet">
-        <tr>
-            <td class="label-col">Nomor Surat Tugas</td>
-            <td class="colon-col">:</td>
-            <td class="value-col"><?= esc((string) ($data['nomor_surat_tugas'] ?? '-')); ?></td>
         </tr>
+
+    <div class="laporan-section">
+        <div class="laporan-section-title bold">Laporan Hasil Perjalanan Dinas</div>
+        <div class="laporan-section-body">
+            <div class="laporan-html">
+                <?php $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? '')); ?>
+                <?php if ($laporanHasilRaw === ''): ?>
+                    -
+                <?php else: ?>
+                    <?= $laporanHasilRaw; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
         <tr>
             <td class="label-col">Periode Perjalanan Dinas</td>
             <td class="colon-col">:</td>
@@ -225,7 +233,7 @@
         </tr>
         <tr>
             <td class="laporan-row" colspan="3">
-                <span class="laporan-row-title bold">Laporan Hasil Perjalanan Dinas</span>
+                <span class="laporan-row-title">Laporan Hasil Perjalanan Dinas</span>
                 <div class="laporan-html">
                     <?php $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? '')); ?>
                     <?php if ($laporanHasilRaw === ''): ?>
