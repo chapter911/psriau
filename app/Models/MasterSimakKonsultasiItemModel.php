@@ -21,6 +21,7 @@ class MasterSimakKonsultasiItemModel extends Model
         'sumber_dokumen_hasil_integrasi',
         'row_kind',
         'has_question',
+        'has_draft',
         'ordering',
         'is_active',
         'is_hidden_share',

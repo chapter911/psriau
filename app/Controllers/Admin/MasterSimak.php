@@ -83,7 +83,7 @@ class MasterSimak extends BaseController
             }
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
-            $headers = ['id','parent_id','display_no','uraian','row_kind','has_question','ordering','is_active','is_hidden_share','external_id'];
+            $headers = ['id','parent_id','display_no','uraian','row_kind','has_question','has_draft','ordering','is_active','is_hidden_share','external_id'];
             $sheet->fromArray($headers, null, 'A1');
             $row = 2;
             foreach ($items as $it) {
@@ -94,6 +94,7 @@ class MasterSimak extends BaseController
                     $it['uraian'] ?? '',
                     $it['row_kind'] ?? '',
                     $it['has_question'] ?? '',
+                    $it['has_draft'] ?? '',
                     $it['ordering'] ?? '',
                     $it['is_active'] ?? '',
                     $it['is_hidden_share'] ?? '',
@@ -114,7 +115,7 @@ class MasterSimak extends BaseController
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         $out = fopen('php://output', 'w');
         fputs($out, "\xEF\xBB\xBF");
-        fputcsv($out, ['id','parent_id','display_no','uraian','row_kind','has_question','ordering','is_active','is_hidden_share','external_id']);
+        fputcsv($out, ['id','parent_id','display_no','uraian','row_kind','has_question','has_draft','ordering','is_active','is_hidden_share','external_id']);
         foreach ($items as $it) {
             fputcsv($out, [
                 $it['id'] ?? '',
@@ -216,7 +217,7 @@ class MasterSimak extends BaseController
 
             $diffs = [];
             if ($match) {
-                $fieldsToCheck = ['uraian', 'row_kind', 'parent_id', 'has_question', 'ordering', 'is_active'];
+                $fieldsToCheck = ['uraian', 'row_kind', 'parent_id', 'has_question', 'has_draft', 'ordering', 'is_active'];
                 foreach ($fieldsToCheck as $f) {
                     $valNew = array_key_exists($f, $r) ? (string) $r[$f] : '';
                     $valOld = array_key_exists($f, $match) ? (string) $match[$f] : '';
@@ -323,6 +324,7 @@ class MasterSimak extends BaseController
                 'uraian' => $r['uraian'] ?? null,
                 'row_kind' => $r['row_kind'] ?? null,
                 'has_question' => isset($r['has_question']) ? (int) $r['has_question'] : 0,
+                'has_draft' => isset($r['has_draft']) ? (int) $r['has_draft'] : 0,
                 'ordering' => $r['ordering'] ?? null,
                 'is_active' => isset($r['is_active']) ? (int) $r['is_active'] : 1,
                 'is_hidden_share' => isset($r['is_hidden_share']) ? (int) $r['is_hidden_share'] : 0,
@@ -399,6 +401,7 @@ class MasterSimak extends BaseController
             'uraian' => trim((string) $this->request->getPost('uraian')),
             'row_kind' => $rowKind,
             'has_question' => $rowKind === 'question' ? 1 : ((int) ($this->request->getPost('has_question') ? 1 : 0)),
+            'has_draft' => (int) ($this->request->getPost('has_draft') ? 1 : 0),
             'ordering' => $nextOrdering,
             'is_active' => 1,
         ]);
@@ -488,6 +491,7 @@ class MasterSimak extends BaseController
             'uraian' => trim((string) $this->request->getPost('uraian')),
             'row_kind' => $rowKind,
             'has_question' => $rowKind === 'question' ? 1 : ((int) ($this->request->getPost('has_question') ? 1 : 0)),
+            'has_draft' => (int) ($this->request->getPost('has_draft') ? 1 : 0),
         ];
 
         $model->update($id, $payload);
@@ -813,6 +817,7 @@ class MasterSimak extends BaseController
             'sumber_dokumen_hasil_integrasi' => trim((string) $this->request->getPost('sumber_dokumen_hasil_integrasi')),
             'row_kind' => $rowKind,
             'has_question' => $rowKind === 'question' ? 1 : ((int) ($this->request->getPost('has_question') ? 1 : 0)),
+            'has_draft' => (int) ($this->request->getPost('has_draft') ? 1 : 0),
             'ordering' => $nextOrdering,
             'is_active' => 1,
         ]);
@@ -905,6 +910,7 @@ class MasterSimak extends BaseController
             'sumber_dokumen_hasil_integrasi' => trim((string) $this->request->getPost('sumber_dokumen_hasil_integrasi')),
             'row_kind' => $rowKind,
             'has_question' => $rowKind === 'question' ? 1 : ((int) ($this->request->getPost('has_question') ? 1 : 0)),
+            'has_draft' => (int) ($this->request->getPost('has_draft') ? 1 : 0),
         ]);
 
         if ($this->wantsJsonResponse()) {

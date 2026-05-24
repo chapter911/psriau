@@ -1746,7 +1746,7 @@ class Kontrak extends BaseController
         $dokumenByRow = [];
         if ($db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
             $dokumenBuilder = $db->table('trn_kontrak_simak_verifikasi_dokumen')
-                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
+                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, tipe_dokumen, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
                 ->where('simak_id', $id)
                 ->orderBy('row_no', 'ASC')
                 ->orderBy('id', 'DESC');
@@ -2131,6 +2131,10 @@ class Kontrak extends BaseController
 
         $relativePath = '';
         $storedName = '';
+        $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
+        if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
+            $tipeDokumen = 'final';
+        }
         if ($hasUpload) {
             $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
             $ext = strtolower((string) $file->getClientExtension());
@@ -2193,6 +2197,7 @@ class Kontrak extends BaseController
                 'file_relative_path' => $relativePath,
                 'file_mime' => (string) ($file->getClientMimeType() ?: ''),
                 'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+                'tipe_dokumen' => $tipeDokumen,
                 'created_by' => $actor,
                 'created_date' => $today,
                 'created_at' => $now,
@@ -2364,6 +2369,10 @@ class Kontrak extends BaseController
             $this->tryCompressPdfWithGhostscript($storedPath);
         }
         $relativePath = $subDir . '/' . $storedName;
+        $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
+        if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
+            $tipeDokumen = 'final';
+        }
 
         $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
         $today = date('Y-m-d');
@@ -2404,6 +2413,7 @@ class Kontrak extends BaseController
             'file_relative_path' => $relativePath,
             'file_mime' => (string) ($file->getClientMimeType() ?: ''),
             'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+            'tipe_dokumen' => $tipeDokumen,
             'created_by' => $actor,
             'created_date' => $today,
             'created_at' => $now,
@@ -2643,16 +2653,17 @@ class Kontrak extends BaseController
             ->get()
             ->getRowArray();
 
-        if ($existingVerifikasiStatus === 'sesuai' && is_array($existingDokumen)) {
-            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Dokumen sudah ada dan status verifikasi sudah sesuai. Upload tidak diperlukan.');
-        }
-
         // Every contractor upload resets verification status to "menunggu verifikasi".
         $verifikasi = null;
 
         $uploadMethod = strtolower(trim((string) $this->request->getPost('upload_method')));
         if (! in_array($uploadMethod, ['file', 'drive'], true)) {
             $uploadMethod = 'file';
+        }
+
+        $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
+        if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
+            $tipeDokumen = 'final';
         }
 
         $file = $this->request->getFile('dokumen_file');
@@ -2771,6 +2782,7 @@ class Kontrak extends BaseController
             'file_relative_path' => $relativePath,
             'file_mime' => $mimeType,
             'file_size' => $fileSize,
+            'tipe_dokumen' => $tipeDokumen,
             'created_by' => $actor,
             'created_date' => $today,
             'created_at' => $now,
@@ -2786,7 +2798,7 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal menyimpan upload dokumen.');
         }
 
-        return redirect()->to(site_url('simak/share/' . $token))->with('success', ucfirst($sourceLabel) . ' berhasil dikirim. Status kelengkapan dokumen diperbarui menjadi Ada dan Verifikasi Dit. KI menjadi Menunggu Verifikasi.');
+        return redirect()->to(site_url('simak/share/' . $token))->with('success', ucfirst($sourceLabel) . ' ' . $tipeDokumen . ' berhasil dikirim. Status kelengkapan dokumen diperbarui menjadi Ada dan Verifikasi Dit. KI menjadi Menunggu Verifikasi.');
     }
 
     public function sharedDownloadDokumen(string $token, int $dokumenId)
@@ -3446,7 +3458,7 @@ class Kontrak extends BaseController
             $dokumenByRow = [];
             if ($db->tableExists($tableDokumen)) {
                 $dokumenBuilder = $db->table($tableDokumen)
-                    ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by')
+                    ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, tipe_dokumen')
                     ->where('simak_id', $shareSimakId)
                     ->orderBy('row_no', 'ASC')
                     ->orderBy('id', 'DESC');
@@ -4074,6 +4086,7 @@ class Kontrak extends BaseController
                     'section_title' => (string) ($node['section_title'] ?? ''),
                     'has_children' => ! empty($node['children']),
                     'is_leaf' => (bool) ($node['is_leaf'] ?? false),
+                    'has_draft' => (bool) ($node['has_draft'] ?? false),
                 ];
                 
                 $flattened[] = $outputItem;
@@ -4096,7 +4109,7 @@ class Kontrak extends BaseController
             return [];
         }
 
-        $selectFields = ['id', 'parent_id', 'row_no', 'uraian', 'row_kind', 'has_question', 'ordering'];
+        $selectFields = ['id', 'parent_id', 'row_no', 'uraian', 'row_kind', 'has_question', 'has_draft', 'ordering'];
         // Only select display_no if column exists
         if ($this->tableHasColumn('mst_simak_konstruksi_item', 'display_no')) {
             $selectFields[] = 'display_no';
@@ -4447,6 +4460,7 @@ class Kontrak extends BaseController
                     'section_title' => (string) ($node['section_title'] ?? ''),
                     'has_children' => ! empty($node['children']),
                     'is_leaf' => (bool) ($node['is_leaf'] ?? false),
+                    'has_draft' => (bool) ($node['has_draft'] ?? false),
                 ];
                 
                 $flattened[] = $outputItem;
@@ -4469,7 +4483,7 @@ class Kontrak extends BaseController
             return [];
         }
 
-        $selectFields = ['id', 'parent_id', 'row_no', 'uraian', 'bentuk_dokumen', 'referensi', 'kriteria_administrasi', 'kriteria_substansi', 'sumber_dokumen_hasil_integrasi', 'row_kind', 'has_question', 'ordering'];
+        $selectFields = ['id', 'parent_id', 'row_no', 'uraian', 'bentuk_dokumen', 'referensi', 'kriteria_administrasi', 'kriteria_substansi', 'sumber_dokumen_hasil_integrasi', 'row_kind', 'has_question', 'has_draft', 'ordering'];
         // Only select display_no if column exists
         if ($this->tableHasColumn('mst_simak_konsultasi_item', 'display_no')) {
             array_splice($selectFields, 3, 0, ['display_no']);
@@ -5134,7 +5148,7 @@ class Kontrak extends BaseController
         $dokumenByRow = [];
         if ($db->tableExists('trn_kontrak_simak_konsultasi_verifikasi_dokumen')) {
             $dokumenBuilder = $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')
-                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
+                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, tipe_dokumen, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
                 ->where('simak_id', $id)
                 ->orderBy('row_no', 'ASC')
                 ->orderBy('id', 'DESC');
@@ -5948,6 +5962,11 @@ class Kontrak extends BaseController
             $relativePath = $subDir . '/' . $storedName;
         }
 
+        $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
+        if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
+            $tipeDokumen = 'final';
+        }
+
         $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
         $today = date('Y-m-d');
         $now = date('Y-m-d H:i:s');
@@ -5992,6 +6011,7 @@ class Kontrak extends BaseController
                 'file_path' => $relativePath,
                 'status' => ($kel === 'ada' && $ver === 'sesuai') ? 'Lengkap' : (($kel === 'ada' && $ver === 'tidak_sesuai') ? 'Belum Sesuai' : (($kel === 'ada') ? 'Belum Verifikasi' : 'Belum Ada')),
                 'catatan' => $ket,
+                'tipe_dokumen' => $tipeDokumen,
                 'created_by' => $actor,
                 'created_date' => $today,
                 'created_at' => $now,
@@ -6163,6 +6183,10 @@ class Kontrak extends BaseController
             $this->tryCompressPdfWithGhostscript($storedPath);
         }
         $relativePath = $subDir . '/' . $storedName;
+        $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
+        if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
+            $tipeDokumen = 'final';
+        }
 
         $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
         $today = date('Y-m-d');
@@ -6203,6 +6227,7 @@ class Kontrak extends BaseController
             'file_relative_path' => $relativePath,
             'file_mime' => (string) ($file->getClientMimeType() ?: ''),
             'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+            'tipe_dokumen' => $tipeDokumen,
             'created_by' => $actor,
             'created_date' => $today,
             'created_at' => $now,

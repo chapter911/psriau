@@ -16,6 +16,7 @@ class MasterSimakKonstruksiItemModel extends Model
         'uraian',
         'row_kind',
         'has_question',
+        'has_draft',
         'ordering',
         'is_active',
         'is_hidden_share',

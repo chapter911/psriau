@@ -266,6 +266,7 @@
                     $title = trim($displayNo . ' ' . $uraian);
                     $rowKind = (string) ($node['row_kind'] ?? 'question');
                     $hasQuestion = (int) ($node['has_question'] ?? 0) === 1;
+                    $hasDraft = (int) ($node['has_draft'] ?? 0) === 1;
                     $isActive = (int) ($node['is_active'] ?? 1) === 1;
                     $isHiddenShare = (int) ($node['is_hidden_share'] ?? 0) === 1;
                     $children = is_array($node['children'] ?? null) ? $node['children'] : [];
@@ -281,6 +282,7 @@
                     echo ' data-sumber_dokumen_hasil_integrasi="' . esc((string) ($node['sumber_dokumen_hasil_integrasi'] ?? ''), 'attr') . '"';
                     echo ' data-row_kind="' . esc($rowKind, 'attr') . '"';
                     echo ' data-has_question="' . ($hasQuestion ? '1' : '0') . '"';
+                    echo ' data-has_draft="' . ($hasDraft ? '1' : '0') . '"';
                     echo ' data-is_active="' . ($isActive ? '1' : '0') . '"';
                     echo ' data-is_hidden_share="' . ($isHiddenShare ? '1' : '0') . '"';
                     echo '>';
@@ -382,6 +384,11 @@
                             <label class="custom-control-label" for="has_question">Item ini memiliki pertanyaan</label>
                         </div>
 
+                        <div class="custom-control custom-checkbox mb-3">
+                            <input type="checkbox" class="custom-control-input" id="has_draft" name="has_draft" value="1" <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
+                            <label class="custom-control-label" for="has_draft">Item ini memiliki draft</label>
+                        </div>
+
                         <div class="simak-optional-fields-toggle">
                             <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-toggle-optional-fields" aria-expanded="false" aria-controls="optional-fields-wrapper">Tampilkan Field Opsional</button>
                         </div>
@@ -440,6 +447,7 @@
         var uraianInput = document.getElementById('uraian');
         var rowKindSelect = document.getElementById('row_kind');
         var hasQuestionInput = document.getElementById('has_question');
+        var hasDraftInput = document.getElementById('has_draft');
         var bentukDokumenInput = document.getElementById('bentuk_dokumen');
         var referensiInput = document.getElementById('referensi');
         var kriteriaAdministrasiInput = document.getElementById('kriteria_administrasi');
@@ -595,6 +603,9 @@
                 hasQuestionInput.checked = false;
                 hasQuestionInput.disabled = false;
             }
+            if (hasDraftInput) {
+                hasDraftInput.checked = false;
+            }
             if (bentukDokumenInput) bentukDokumenInput.value = '';
             if (referensiInput) referensiInput.value = '';
             if (kriteriaAdministrasiInput) kriteriaAdministrasiInput.value = '';
@@ -629,6 +640,9 @@
             if (hasQuestionInput) {
                 hasQuestionInput.checked = (itemEl.getAttribute('data-has_question') || '0') === '1';
                 hasQuestionInput.disabled = rowKindSelect && rowKindSelect.value === 'question';
+            }
+            if (hasDraftInput) {
+                hasDraftInput.checked = (itemEl.getAttribute('data-has_draft') || '0') === '1';
             }
             if (bentukDokumenInput) bentukDokumenInput.value = itemEl.getAttribute('data-bentuk_dokumen') || '';
             if (referensiInput) referensiInput.value = itemEl.getAttribute('data-referensi') || '';

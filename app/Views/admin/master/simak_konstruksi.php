@@ -310,6 +310,7 @@
                     $title = trim($displayNo . ' ' . $uraian);
                     $rowKind = (string) ($node['row_kind'] ?? 'question');
                     $hasQuestion = (int) ($node['has_question'] ?? 0) === 1;
+                    $hasDraft = (int) ($node['has_draft'] ?? 0) === 1;
                     $isActive = (int) ($node['is_active'] ?? 1) === 1;
                     $isHiddenShare = (int) ($node['is_hidden_share'] ?? 0) === 1;
                     $children = is_array($node['children'] ?? null) ? $node['children'] : [];
@@ -319,6 +320,7 @@
                     echo ' data-uraian="' . esc((string) ($node['uraian'] ?? ''), 'attr') . '"';
                     echo ' data-row_kind="' . esc($rowKind, 'attr') . '"';
                     echo ' data-has_question="' . ($hasQuestion ? '1' : '0') . '"';
+                    echo ' data-has_draft="' . ($hasDraft ? '1' : '0') . '"';
                     echo ' data-is_active="' . ($isActive ? '1' : '0') . '"';
                     echo ' data-is_hidden_share="' . ($isHiddenShare ? '1' : '0') . '"';
                     echo '>';
@@ -420,6 +422,11 @@
                             <label class="custom-control-label" for="has_question">Item ini memiliki pertanyaan</label>
                         </div>
 
+                        <div class="custom-control custom-checkbox mb-3">
+                            <input type="checkbox" class="custom-control-input" id="has_draft" name="has_draft" value="1" <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
+                            <label class="custom-control-label" for="has_draft">Item ini memiliki draft</label>
+                        </div>
+
                         <div class="d-flex flex-wrap" style="gap:8px;">
                             <?php if (! empty($can_add) || ! empty($can_edit)): ?>
                                 <button type="submit" class="btn btn-primary" id="btn-submit-form">Simpan</button>
@@ -478,6 +485,7 @@
         var uraianInput = document.getElementById('uraian');
         var rowKindSelect = document.getElementById('row_kind');
         var hasQuestionInput = document.getElementById('has_question');
+        var hasDraftInput = document.getElementById('has_draft');
         var addRootButton = document.getElementById('btn-add-root');
         var addChildButton = document.getElementById('btn-add-child');
         var resetButton = document.getElementById('btn-reset-selection');
@@ -603,6 +611,9 @@
                 hasQuestionInput.checked = false;
                 hasQuestionInput.disabled = false;
             }
+            if (hasDraftInput) {
+                hasDraftInput.checked = false;
+            }
             if (toggleStatusButton) {
                 toggleStatusButton.disabled = true;
                 toggleStatusButton.textContent = 'Aktifkan/Nonaktifkan Item';
@@ -630,6 +641,9 @@
             if (hasQuestionInput) {
                 hasQuestionInput.checked = (itemEl.getAttribute('data-has_question') || '0') === '1';
                 hasQuestionInput.disabled = rowKindSelect && rowKindSelect.value === 'question';
+            }
+            if (hasDraftInput) {
+                hasDraftInput.checked = (itemEl.getAttribute('data-has_draft') || '0') === '1';
             }
             if (toggleStatusButton) {
                 updateToggleButton((itemEl.getAttribute('data-is_active') || '1') === '1');

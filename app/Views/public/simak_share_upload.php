@@ -767,7 +767,8 @@
                                     <th style="width: 140px;">Status Dokumen</th>
                                     <th style="width: 160px;">Verifikasi Dit. KI</th>
                                     <th style="width: 260px;">Keterangan</th>
-                                    <th style="width: 250px;">Dokumen Terakhir</th>
+                                    <th style="width: 250px;">Dokumen Draft</th>
+                                    <th style="width: 250px;">Dokumen Final</th>
                                     <th style="width: 380px;">Upload</th>
                                 </tr>
                             </thead>
@@ -779,6 +780,7 @@
                                     $rowType = (string) ($row['row_type'] ?? 'detail');
                                     $isLeaf = (bool) ($row['is_leaf'] ?? false);
                                     $hasChildren = (bool) ($row['has_children'] ?? false);
+                                    $hasDraft = (bool) ($row['has_draft'] ?? false);
                                     $indentLevel = (int) ($row['indent_level'] ?? 0);
                                     $indentPadding = max(0, $indentLevel) * 16;
                                     $isGroup = $hasChildren
@@ -792,8 +794,23 @@
                                     $keterangan = trim((string) ($existing['keterangan'] ?? ''));
                                     $isBelumSesuai = $verifikasi === 'tidak_sesuai';
                                     $dokumenRows = $dokumenByRow[$rowNo] ?? [];
-                                    $latestDokumen = $dokumenRows[0] ?? null;
-                                    $isLockedUpload = $verifikasi === 'sesuai' && is_array($latestDokumen);
+                                    $draftDokumen = null;
+                                    $finalDokumen = null;
+                                    foreach ($dokumenRows as $docRow) {
+                                        $docType = strtolower(trim((string) ($docRow['tipe_dokumen'] ?? 'final')));
+                                        if ($docType === 'draft' && $draftDokumen === null) {
+                                            $draftDokumen = $docRow;
+                                        } elseif ($docType !== 'draft' && $finalDokumen === null) {
+                                            $finalDokumen = $docRow;
+                                        }
+
+                                        if ($draftDokumen !== null && $finalDokumen !== null) {
+                                            break;
+                                        }
+                                    }
+                                    if ($finalDokumen === null && $draftDokumen !== null) {
+                                        $finalDokumen = $draftDokumen;
+                                    }
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
                                     <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?></td>
@@ -821,49 +838,83 @@
                                             <?= $keterangan !== '' ? esc($keterangan) : '<span class="text-muted">-</span>'; ?>
                                         </td>
                                         <td class="cell-center">
-                                            <?php if (is_array($latestDokumen)): ?>
-                                                <?php $uploadDate = date('d-m-Y', strtotime((string) ($latestDokumen['created_at'] ?? ''))); ?>
+                                            <?php if (is_array($draftDokumen)): ?>
                                                 <?php
-                                                    $latestPath = trim((string) ($latestDokumen['file_relative_path'] ?? ''));
-                                                    $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
-                                                    $isDriveLink = in_array($latestHost, ['drive.google.com', 'docs.google.com'], true);
-                                                        $latestMime = strtolower(trim((string) ($latestDokumen['file_mime'] ?? '')));
-                                                        $latestName = (string) ($latestDokumen['file_original_name'] ?? 'dokumen');
-                                                        $latestExt = strtolower((string) pathinfo($latestName, PATHINFO_EXTENSION));
-                                                        $isPreviewableDokumen = ! $isDriveLink && (
-                                                            ($latestMime !== '' && (str_starts_with($latestMime, 'image/') || $latestMime === 'application/pdf'))
-                                                            || in_array($latestExt, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'pdf'], true)
-                                                        );
-                                                        $dokumenActionLabel = $isDriveLink ? 'Buka Link' : ($isPreviewableDokumen ? 'Lihat Dokumen' : 'Download Dokumen');
+                                                    $draftPath = trim((string) ($draftDokumen['file_relative_path'] ?? ''));
+                                                    $draftHost = strtolower((string) parse_url($draftPath, PHP_URL_HOST));
+                                                    $draftIsDriveLink = in_array($draftHost, ['drive.google.com', 'docs.google.com'], true);
+                                                    $draftMime = strtolower(trim((string) ($draftDokumen['file_mime'] ?? '')));
+                                                    $draftName = (string) ($draftDokumen['file_original_name'] ?? 'dokumen');
+                                                    $draftExt = strtolower((string) pathinfo($draftName, PATHINFO_EXTENSION));
+                                                    $draftPreviewable = ! $draftIsDriveLink && (
+                                                        ($draftMime !== '' && (str_starts_with($draftMime, 'image/') || $draftMime === 'application/pdf'))
+                                                        || in_array($draftExt, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'pdf'], true)
+                                                    );
+                                                    $draftActionLabel = $draftIsDriveLink ? 'Buka Link' : ($draftPreviewable ? 'Lihat Dokumen' : 'Download Dokumen');
                                                 ?>
-                                                <div>
-                                                        <?php if ($isDriveLink): ?>
-                                                            <a href="<?= esc($latestPath); ?>" class="btn btn-success btn-sm" target="_blank" rel="noopener noreferrer">
-                                                                <i class="fas fa-external-link-alt"></i> <?= esc($dokumenActionLabel); ?>
-                                                            </a>
-                                                        <?php else: ?>
-                                                            <a
-                                                                href="<?= site_url('simak/share/' . (string) ($token ?? '') . '/download-dokumen/' . (int) ($latestDokumen['id'] ?? 0)); ?>"
-                                                                class="btn btn-success btn-sm js-open-dokumen"
-                                                                data-dokumen-url="<?= site_url('simak/share/' . (string) ($token ?? '') . '/download-dokumen/' . (int) ($latestDokumen['id'] ?? 0)); ?>"
-                                                                data-dokumen-name="<?= esc($latestName); ?>"
-                                                                data-dokumen-mime="<?= esc($latestMime); ?>"
-                                                                data-dokumen-previewable="<?= $isPreviewableDokumen ? '1' : '0'; ?>"
-                                                            >
-                                                                <i class="fas <?= $isPreviewableDokumen ? 'fa-eye' : 'fa-download'; ?>"></i> <?= esc($dokumenActionLabel); ?>
-                                                            </a>
-                                                        <?php endif; ?>
+                                                    <div>
+                                                    <?php if ($draftIsDriveLink): ?>
+                                                        <a href="<?= esc($draftPath); ?>" class="btn btn-outline-secondary btn-sm" target="_blank" rel="noopener noreferrer">
+                                                            <i class="fas fa-external-link-alt"></i> <?= esc($draftActionLabel); ?>
+                                                        </a>
+                                                    <?php else: ?>
+                                                        <a
+                                                            href="<?= site_url('simak/share/' . (string) ($token ?? '') . '/download-dokumen/' . (int) ($draftDokumen['id'] ?? 0)); ?>"
+                                                            class="btn btn-outline-secondary btn-sm js-open-dokumen"
+                                                            data-dokumen-url="<?= site_url('simak/share/' . (string) ($token ?? '') . '/download-dokumen/' . (int) ($draftDokumen['id'] ?? 0)); ?>"
+                                                            data-dokumen-name="<?= esc($draftName); ?>"
+                                                            data-dokumen-mime="<?= esc($draftMime); ?>"
+                                                            data-dokumen-previewable="<?= $draftPreviewable ? '1' : '0'; ?>"
+                                                        >
+                                                            <i class="fas <?= $draftPreviewable ? 'fa-eye' : 'fa-download'; ?>"></i> <?= esc($draftActionLabel); ?>
+                                                        </a>
+                                                    <?php endif; ?>
                                                 </div>
-                                                <small class="text-muted" style="display: block; margin-top: 4px;">Di Upload Tanggal<br/><?= esc($uploadDate); ?></small>
+                                                <small class="text-muted" style="display: block; margin-top: 4px;">Upload Tanggal<br/><?= esc(date('d-m-Y', strtotime((string) ($draftDokumen['created_at'] ?? '')))); ?></small>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
                                             <?php endif; ?>
                                         </td>
                                         <td class="cell-center">
-                                            <?php if ($isLockedUpload): ?>
-                                                <span class="badge badge-success">Sudah Sesuai</span>
-                                                <small class="d-block text-muted mt-1">Upload tidak diperlukan</small>
+                                            <?php if (is_array($finalDokumen)): ?>
+                                                <?php
+                                                    $finalPath = trim((string) ($finalDokumen['file_relative_path'] ?? ''));
+                                                    $finalHost = strtolower((string) parse_url($finalPath, PHP_URL_HOST));
+                                                    $finalIsDriveLink = in_array($finalHost, ['drive.google.com', 'docs.google.com'], true);
+                                                    $finalMime = strtolower(trim((string) ($finalDokumen['file_mime'] ?? '')));
+                                                    $finalName = (string) ($finalDokumen['file_original_name'] ?? 'dokumen');
+                                                    $finalExt = strtolower((string) pathinfo($finalName, PATHINFO_EXTENSION));
+                                                    $finalPreviewable = ! $finalIsDriveLink && (
+                                                        ($finalMime !== '' && (str_starts_with($finalMime, 'image/') || $finalMime === 'application/pdf'))
+                                                        || in_array($finalExt, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'pdf'], true)
+                                                    );
+                                                    $finalActionLabel = $finalIsDriveLink ? 'Buka Link' : ($finalPreviewable ? 'Lihat Dokumen' : 'Download Dokumen');
+                                                ?>
+                                                <div>
+                                                    <?php if ($finalIsDriveLink): ?>
+                                                        <a href="<?= esc($finalPath); ?>" class="btn btn-success btn-sm" target="_blank" rel="noopener noreferrer">
+                                                            <i class="fas fa-external-link-alt"></i> <?= esc($finalActionLabel); ?>
+                                                        </a>
+                                                    <?php else: ?>
+                                                        <a
+                                                            href="<?= site_url('simak/share/' . (string) ($token ?? '') . '/download-dokumen/' . (int) ($finalDokumen['id'] ?? 0)); ?>"
+                                                            class="btn btn-success btn-sm js-open-dokumen"
+                                                            data-dokumen-url="<?= site_url('simak/share/' . (string) ($token ?? '') . '/download-dokumen/' . (int) ($finalDokumen['id'] ?? 0)); ?>"
+                                                            data-dokumen-name="<?= esc($finalName); ?>"
+                                                            data-dokumen-mime="<?= esc($finalMime); ?>"
+                                                            data-dokumen-previewable="<?= $finalPreviewable ? '1' : '0'; ?>"
+                                                        >
+                                                            <i class="fas <?= $finalPreviewable ? 'fa-eye' : 'fa-download'; ?>"></i> <?= esc($finalActionLabel); ?>
+                                                        </a>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <small class="text-muted" style="display: block; margin-top: 4px;">Upload Tanggal<br/><?= esc(date('d-m-Y', strtotime((string) ($finalDokumen['created_at'] ?? '')))); ?></small>
                                             <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="cell-center">
+                                            <?php if ($hasDraft): ?>
                                                 <button
                                                     type="button"
                                                     class="btn btn-primary btn-sm js-open-upload-modal"
@@ -872,11 +923,33 @@
                                                     data-row-no="<?= esc((string) $rowNo); ?>"
                                                     data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
                                                     data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
-                                                >Upload</button>
+                                                    data-tipe-dokumen="draft"
+                                                >Upload Draft</button>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-success btn-sm js-open-upload-modal ml-1"
+                                                    data-toggle="modal"
+                                                    data-target="#modal-upload-share-simak"
+                                                    data-row-no="<?= esc((string) $rowNo); ?>"
+                                                    data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
+                                                    data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
+                                                    data-tipe-dokumen="final"
+                                                >Upload Final</button>
+                                            <?php else: ?>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-success btn-sm js-open-upload-modal"
+                                                    data-toggle="modal"
+                                                    data-target="#modal-upload-share-simak"
+                                                    data-row-no="<?= esc((string) $rowNo); ?>"
+                                                    data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
+                                                    data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
+                                                    data-tipe-dokumen="final"
+                                                >Upload Final</button>
                                             <?php endif; ?>
                                         </td>
                                     <?php else: ?>
-                                        <td colspan="5" class="text-muted cell-center">Baris grup (tidak perlu upload)</td>
+                                        <td colspan="6" class="text-muted cell-center">Baris grup (tidak perlu upload)</td>
                                     <?php endif; ?>
                                 </tr>
                             <?php endforeach; ?>
@@ -903,6 +976,7 @@
             <form id="form-upload-share-simak" action="<?= site_url('simak/share/' . (string) ($token ?? '') . '/upload'); ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
                 <input type="hidden" name="row_no" id="upload_row_no_modal" value="">
+                <input type="hidden" name="tipe_dokumen" id="upload_tipe_dokumen_modal" value="final">
                 <div class="modal-body">
                     <div class="upload-lock-overlay" id="uploadGoogleLock">
                         Verifikasi OTP terlebih dahulu untuk mengaktifkan upload file lokal atau link Google Drive.
@@ -910,6 +984,7 @@
                     <div class="alert alert-light border py-2">
                         <div><strong>No:</strong> <span id="upload_row_label_modal">-</span></div>
                         <div><strong>Uraian:</strong> <span id="upload_row_uraian_modal">-</span></div>
+                        <div><strong>Tipe:</strong> <span id="upload_tipe_dokumen_label_modal">Final</span></div>
                     </div>
 
                     <div class="form-group mb-3">
@@ -1237,6 +1312,13 @@
         if (rowUraianEl) {
             rowUraianEl.textContent = String(context.rowUraian || '-').trim() || '-';
         }
+        if (uploadTypeEl) {
+            var selectedType = String(context.tipeDokumen || 'final').trim().toLowerCase();
+            uploadTypeEl.value = selectedType === 'draft' ? 'draft' : 'final';
+            if (uploadTypeLabelEl) {
+                uploadTypeLabelEl.textContent = uploadTypeEl.value === 'draft' ? 'Draft' : 'Final';
+            }
+        }
         if (dokumenFileEl) {
             dokumenFileEl.value = '';
         }
@@ -1291,6 +1373,7 @@
             rowNo: String(button && button.getAttribute('data-row-no') || '').trim(),
             rowLabel: String(button && button.getAttribute('data-row-label') || '-').trim(),
             rowUraian: String(button && button.getAttribute('data-uraian') || '-').trim(),
+            tipeDokumen: String(button && button.getAttribute('data-tipe-dokumen') || 'final').trim(),
         };
     }
 
@@ -1668,6 +1751,8 @@
     var rowNoEl = document.getElementById('upload_row_no_modal');
     var rowLabelEl = document.getElementById('upload_row_label_modal');
     var rowUraianEl = document.getElementById('upload_row_uraian_modal');
+    var uploadTypeEl = document.getElementById('upload_tipe_dokumen_modal');
+    var uploadTypeLabelEl = document.getElementById('upload_tipe_dokumen_label_modal');
     var dokumenFileEl = document.getElementById('dokumen_file_modal');
     var uploadMethodEl = document.getElementById('upload_method');
     var uploadFileGroupEl = document.getElementById('uploadFileGroup');

@@ -218,7 +218,8 @@
                                         <th style="width: 170px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Verifikasi Dit. KI</th>
                                         <th style="width: 280px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Keterangan</th>
                                         <th style="width: 170px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">PIC</th>
-                                        <th style="width: 280px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Dokumen</th>
+                                        <th style="width: 280px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Dokumen Draft</th>
+                                        <th style="width: 280px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Dokumen Final</th>
                                         <th style="width: 170px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">History Dokumen</th>
                                         <th style="width: 130px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Upload Dokumen</th>
                                         <th style="width: 130px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Aksi</th>
@@ -241,6 +242,7 @@
                                                 && preg_match('/^\d+$/', $displayNo) === 1;
                                             $isInputRow = $isLeaf
                                                 && (! in_array($rowType, ['section_header', 'subsection_header'], true) || $isPromotedSubsectionInput);
+                                            $hasDraft = (bool) ($row['has_draft'] ?? false);
                                             $existing = $verifikasiByRow[$rowNo] ?? [];
                                             $kelengkapan = (string) ($existing['kelengkapan_dokumen'] ?? '');
                                             $verifikasi = (string) ($existing['verifikasi_ki'] ?? '');
@@ -254,7 +256,24 @@
                                             $sumberDokumenIntegrasi = trim((string) ($row['sumber_dokumen_hasil_integrasi'] ?? ''));
                                             $dokumenRows = $dokumenByRow[$rowNo] ?? [];
                                             $dokumenCount = count($dokumenRows);
-                                            $latestDokumen = $dokumenRows[0] ?? null;
+                                            $draftDokumen = null;
+                                            $finalDokumen = null;
+                                            foreach ($dokumenRows as $docRow) {
+                                                $docType = strtolower(trim((string) ($docRow['tipe_dokumen'] ?? 'final')));
+                                                if ($docType === 'draft' && $draftDokumen === null) {
+                                                    $draftDokumen = $docRow;
+                                                } elseif ($docType !== 'draft' && $finalDokumen === null) {
+                                                    $finalDokumen = $docRow;
+                                                }
+
+                                                if ($draftDokumen !== null && $finalDokumen !== null) {
+                                                    break;
+                                                }
+                                            }
+                                            if ($finalDokumen === null && $draftDokumen !== null) {
+                                                $finalDokumen = $draftDokumen;
+                                            }
+                                            $latestDokumen = $finalDokumen ?? $draftDokumen;
                                             $latestPath = is_array($latestDokumen) ? trim((string) ($latestDokumen['file_relative_path'] ?? '')) : '';
                                             $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
                                             $isDriveLink = in_array($latestHost, ['drive.google.com', 'docs.google.com'], true);
@@ -317,20 +336,32 @@
                                                     <?= $pic !== '' ? esc($pic) : '<span class="text-muted">-</span>'; ?>
                                                 </td>
                                                 <td>
-                                                    <div class="d-flex align-items-center" style="gap: 6px; flex-wrap: wrap;">
-                                                        <?php if (is_array($latestDokumen)): ?>
-                                                            <a
-                                                                href="<?= site_url('admin/kontrak/simak/konsultasi/verifikasi-dokumen/' . (int) ($latestDokumen['id'] ?? 0)); ?>"
-                                                                target="_blank"
-                                                                rel="noopener"
-                                                                class="btn btn-info btn-sm"
-                                                                title="<?= esc($dokumenActionLabel); ?> terbaru: <?= esc((string) ($latestDokumen['file_original_name'] ?? 'Dokumen')); ?>"
-                                                                aria-label="<?= esc($dokumenActionLabel); ?> terbaru <?= esc((string) ($latestDokumen['file_original_name'] ?? 'Dokumen')); ?>"
-                                                            ><i class="fas <?= $isDriveLink ? 'fa-external-link-alt' : 'fa-eye'; ?>"></i> <?= esc($dokumenActionLabel); ?></a>
-                                                        <?php else: ?>
-                                                            <span class="text-muted">-</span>
-                                                        <?php endif; ?>
-                                                    </div>
+                                                    <?php if (is_array($draftDokumen)): ?>
+                                                        <a
+                                                            href="<?= site_url('admin/kontrak/simak/konsultasi/verifikasi-dokumen/' . (int) ($draftDokumen['id'] ?? 0)); ?>"
+                                                            target="_blank"
+                                                            rel="noopener"
+                                                            class="btn btn-outline-secondary btn-sm"
+                                                            title="Lihat dokumen draft: <?= esc((string) ($draftDokumen['file_original_name'] ?? 'Dokumen')); ?>"
+                                                        ><i class="fas fa-eye"></i> Lihat Draft</a>
+                                                        <small class="d-block text-muted mt-1"><?= esc((string) ($draftDokumen['file_original_name'] ?? '-')); ?></small>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">-</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <?php if (is_array($finalDokumen)): ?>
+                                                        <a
+                                                            href="<?= site_url('admin/kontrak/simak/konsultasi/verifikasi-dokumen/' . (int) ($finalDokumen['id'] ?? 0)); ?>"
+                                                            target="_blank"
+                                                            rel="noopener"
+                                                            class="btn btn-info btn-sm"
+                                                            title="Lihat dokumen final: <?= esc((string) ($finalDokumen['file_original_name'] ?? 'Dokumen')); ?>"
+                                                        ><i class="fas fa-eye"></i> Lihat Final</a>
+                                                        <small class="d-block text-muted mt-1"><?= esc((string) ($finalDokumen['file_original_name'] ?? '-')); ?></small>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">-</span>
+                                                    <?php endif; ?>
                                                 </td>
                                                 <td>
                                                     <?php if ($dokumenCount >= 1): ?>
@@ -352,7 +383,18 @@
                                                         data-row-no="<?= esc((string) $rowNo); ?>"
                                                         data-row-label="<?= esc($noText); ?>"
                                                         data-uraian="<?= esc($uraian); ?>"
-                                                    >Upload</button>
+                                                        data-tipe-dokumen="final"
+                                                    >Upload Final</button>
+                                                    <?php if ($hasDraft): ?>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-outline-secondary btn-sm js-open-admin-upload-modal ml-1"
+                                                            data-row-no="<?= esc((string) $rowNo); ?>"
+                                                            data-row-label="<?= esc($noText); ?>"
+                                                            data-uraian="<?= esc($uraian); ?>"
+                                                            data-tipe-dokumen="draft"
+                                                        >Upload Draft</button>
+                                                    <?php endif; ?>
                                                 </td>
                                                 <td>
                                                     <?php if (is_array($latestDokumen)): ?>
@@ -373,7 +415,7 @@
                                                     <?php endif; ?>
                                                 </td>
                                             <?php else: ?>
-                                                <td colspan="8"></td>
+                                                <td colspan="9"></td>
                                             <?php endif; ?>
                                         </tr>
                                     <?php endforeach; ?>
@@ -399,10 +441,12 @@
             <form method="post" action="<?= site_url('admin/kontrak/simak/konsultasi/' . (int) ($item['id'] ?? 0) . '/admin-upload-dokumen'); ?>" enctype="multipart/form-data" id="form-admin-upload-dokumen" novalidate>
                 <?= csrf_field(); ?>
                 <input type="hidden" name="row_no" id="admin_upload_row_no" value="">
+                <input type="hidden" name="tipe_dokumen" id="admin_upload_tipe_dokumen" value="final">
                 <div class="modal-body">
                     <div class="alert alert-light border">
                         <div><strong>No:</strong> <span id="admin_upload_row_label">-</span></div>
                         <div><strong>Uraian:</strong> <span id="admin_upload_row_uraian">-</span></div>
+                        <div><strong>Tipe:</strong> <span id="admin_upload_tipe_label">Final</span></div>
                     </div>
                     <div class="alert alert-info">
                         <strong>Info:</strong> Dokumen yang diupload akan otomatis terverifikasi sebagai <strong>Lengkap</strong>.
@@ -959,6 +1003,8 @@
     var adminUploadRowNoInput = document.getElementById('admin_upload_row_no');
     var adminUploadRowLabelEl = document.getElementById('admin_upload_row_label');
     var adminUploadRowUraianEl = document.getElementById('admin_upload_row_uraian');
+    var adminUploadTypeInput = document.getElementById('admin_upload_tipe_dokumen');
+    var adminUploadTypeLabelEl = document.getElementById('admin_upload_tipe_label');
     var adminUploadFileInput = document.getElementById('admin_upload_file');
     var adminUploadForm = document.getElementById('form-admin-upload-dokumen');
 
@@ -972,6 +1018,13 @@
             }
             if (adminUploadRowUraianEl) {
                 adminUploadRowUraianEl.textContent = this.getAttribute('data-uraian') || '-';
+            }
+            if (adminUploadTypeInput) {
+                var uploadType = String(this.getAttribute('data-tipe-dokumen') || 'final').toLowerCase();
+                adminUploadTypeInput.value = uploadType === 'draft' ? 'draft' : 'final';
+                if (adminUploadTypeLabelEl) {
+                    adminUploadTypeLabelEl.textContent = adminUploadTypeInput.value === 'draft' ? 'Draft' : 'Final';
+                }
             }
             if (adminUploadFileInput) {
                 adminUploadFileInput.value = '';

@@ -42,6 +42,7 @@
                             <th>uraian</th>
                             <th>row_kind</th>
                             <th>has_question</th>
+                               <th>has_draft</th>
                             <th>ordering</th>
                             <th>is_active</th>
                         </tr>
@@ -61,6 +62,7 @@
                             <td><?= esc($row['uraian'] ?? ($existing['uraian'] ?? '')); ?></td>
                             <td><?= esc($row['row_kind'] ?? ($existing['row_kind'] ?? '')); ?></td>
                             <td><?= esc($row['has_question'] ?? ($existing['has_question'] ?? '')); ?></td>
+                               <td><?= esc($row['has_draft'] ?? ($existing['has_draft'] ?? '')); ?></td>
                             <td><?= esc($row['ordering'] ?? ($existing['ordering'] ?? '')); ?></td>
                             <td><?= esc($row['is_active'] ?? ($existing['is_active'] ?? '')); ?></td>
                         </tr>
