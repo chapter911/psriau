@@ -8,27 +8,66 @@ class AddEmailRespondenToSimak extends Migration
 {
     public function up()
     {
-        // Add column to trn_kontrak_simak
+        // Add columns to trn_kontrak_simak
         if (! $this->db->tableExists('trn_kontrak_simak')) {
             return;
         }
 
         $fields = [
-            'email_responden' => [
+            'email_responden_1' => [
                 'type' => 'VARCHAR',
                 'constraint' => 255,
                 'null' => true,
                 'default' => null,
                 'after' => 'nilai_kontrak_jasa_konsultansi',
             ],
+            'email_responden_2' => [
+                'type' => 'VARCHAR',
+                'constraint' => 255,
+                'null' => true,
+                'default' => null,
+                'after' => 'email_responden_1',
+            ],
         ];
 
         $forge = \Config\Database::forge();
         $forge->addColumn('trn_kontrak_simak', $fields);
 
-        // Add column to trn_kontrak_simak_konsultasi if exists
+        // Add columns to trn_kontrak_simak_konsultasi if exists
         if ($this->db->tableExists('trn_kontrak_simak_konsultasi')) {
             $forge->addColumn('trn_kontrak_simak_konsultasi', $fields);
+        }
+
+        // If legacy single column exists, copy its values into email_responden_1
+        try {
+            $fieldsData = $this->db->getFieldData('trn_kontrak_simak');
+            $hasOld = false;
+            foreach ($fieldsData as $f) {
+                if ($f->name === 'email_responden') {
+                    $hasOld = true;
+                    break;
+                }
+            }
+
+            if ($hasOld) {
+                $this->db->query("UPDATE trn_kontrak_simak SET email_responden_1 = email_responden WHERE (email_responden_1 IS NULL OR email_responden_1 = '') AND (email_responden IS NOT NULL AND email_responden != '')");
+            }
+
+            if ($this->db->tableExists('trn_kontrak_simak_konsultasi')) {
+                $fieldsData2 = $this->db->getFieldData('trn_kontrak_simak_konsultasi');
+                $hasOld2 = false;
+                foreach ($fieldsData2 as $f) {
+                    if ($f->name === 'email_responden') {
+                        $hasOld2 = true;
+                        break;
+                    }
+                }
+                if ($hasOld2) {
+                    $this->db->query("UPDATE trn_kontrak_simak_konsultasi SET email_responden_1 = email_responden WHERE (email_responden_1 IS NULL OR email_responden_1 = '') AND (email_responden IS NOT NULL AND email_responden != '')");
+                }
+            }
+        } catch (\Exception $e) {
+            // ignore copy errors
         }
     }
 
@@ -36,10 +75,20 @@ class AddEmailRespondenToSimak extends Migration
     {
         $forge = \Config\Database::forge();
         if ($this->db->tableExists('trn_kontrak_simak')) {
-            $forge->dropColumn('trn_kontrak_simak', 'email_responden');
+            if (in_array('email_responden_1', array_column($this->db->getFieldData('trn_kontrak_simak'), 'name'))) {
+                $forge->dropColumn('trn_kontrak_simak', 'email_responden_1');
+            }
+            if (in_array('email_responden_2', array_column($this->db->getFieldData('trn_kontrak_simak'), 'name'))) {
+                $forge->dropColumn('trn_kontrak_simak', 'email_responden_2');
+            }
         }
         if ($this->db->tableExists('trn_kontrak_simak_konsultasi')) {
-            $forge->dropColumn('trn_kontrak_simak_konsultasi', 'email_responden');
+            if (in_array('email_responden_1', array_column($this->db->getFieldData('trn_kontrak_simak_konsultasi'), 'name'))) {
+                $forge->dropColumn('trn_kontrak_simak_konsultasi', 'email_responden_1');
+            }
+            if (in_array('email_responden_2', array_column($this->db->getFieldData('trn_kontrak_simak_konsultasi'), 'name'))) {
+                $forge->dropColumn('trn_kontrak_simak_konsultasi', 'email_responden_2');
+            }
         }
     }
 }

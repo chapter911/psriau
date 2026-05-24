@@ -1274,7 +1274,8 @@ class Kontrak extends BaseController
             }
             $tahapanPekerjaan = trim((string) ($rowData['tahapan_pekerjaan'] ?? ''));
             $tanggalPemeriksaan = $this->normalizeDateValue((string) ($rowData['tanggal_pemeriksaan'] ?? ''));
-            $emailResponden = trim((string) ($rowData['email_responden'] ?? ''));
+            $emailResponden1 = trim((string) ($rowData['email_responden_1'] ?? $rowData['email_responden'] ?? ''));
+            $emailResponden2 = trim((string) ($rowData['email_responden_2'] ?? ''));
             $jenisJasa = $this->normalizeSimakJenisPekerjaanJasa((string) ($rowData['jenis_pekerjaan_jasa_konsultansi'] ?? ''));
             if ($jenisJasa === null) {
                 $jenisJasa = 'perencanaan';
@@ -1322,7 +1323,7 @@ class Kontrak extends BaseController
 
             $ppkNama = trim((string) $pegawai['nama']);
 
-            $payload = [
+                $payload = [
                 'satker' => trim((string) ($rowData['satker'] ?? '')) ?: 'Perencanaan Prasarana Strategis',
                 'ppk_nama' => $ppkNama,
                 'ppk_nip' => $ppkNip,
@@ -1337,7 +1338,8 @@ class Kontrak extends BaseController
                 'masa_pelaksanaan' => $masaPelaksanaan,
                 'pagu_anggaran' => $paguAnggaran,
                 'metode_pemilihan' => $metodePemilihan,
-                'email_responden' => $emailResponden,
+                    'email_responden_1' => $emailResponden1,
+                    'email_responden_2' => $emailResponden2,
             ];
 
             $existingBuilder = $db->table('trn_kontrak_simak')->select('id')->where('nomor_kontrak', $nomorKontrak);
@@ -1416,7 +1418,8 @@ class Kontrak extends BaseController
             'penyedia',
             'nomor_kontrak',
             'nilai_kontrak',
-            'email_responden',
+            'email_responden_1',
+            'email_responden_2',
         ];
 
         $spreadsheet = new Spreadsheet();
@@ -1431,11 +1434,12 @@ class Kontrak extends BaseController
             'Penyedia Konstruksi Contoh',
             'SIMAK/001/2026',
             1000000000,
-            'responden@example.com',
+            'responden1@example.com',
+            'responden2@example.com',
         ], null, 'A2');
 
         $sheet->getStyle('A1:I1')->getFont()->setBold(true);
-        foreach (range('A', 'H') as $column) {
+        foreach (range('A', 'I') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
@@ -1482,7 +1486,8 @@ class Kontrak extends BaseController
         $masaPelaksanaan = $this->normalizeSimakMasaPelaksanaan((string) $this->request->getPost('masa_pelaksanaan'));
         $paguAnggaran = $this->parseMoneyToBigInt($this->request->getPost('pagu_anggaran'));
         $metodePemilihan = $this->normalizeSimakMetodePemilihan((string) $this->request->getPost('metode_pemilihan'));
-        $emailResponden = trim((string) $this->request->getPost('email_responden'));
+        $emailResponden1 = trim((string) $this->request->getPost('email_responden_1'));
+        $emailResponden2 = trim((string) $this->request->getPost('email_responden_2'));
 
         // Pada menu konstruksi, field konsultansi belum ditampilkan di form.
         // Gunakan default aman agar proses simpan tidak terblokir.
@@ -1518,6 +1523,11 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Seluruh input wajib terisi (termasuk penyedia, penyedia jasa, nilai kontrak konstruksi, dan nilai kontrak jasa konsultansi).');
         }
 
+        // require at least email_responden_1
+        if ($emailResponden1 === '') {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Email responden 1 wajib diisi.');
+        }
+
         if ($db->tableExists('mst_pegawai')) {
             $pegawai = $db->table('mst_pegawai')->select('nip, nama')->where('nip', $ppkNip)->get()->getRowArray();
             if (! is_array($pegawai)) {
@@ -1549,7 +1559,8 @@ class Kontrak extends BaseController
             'masa_pelaksanaan' => $masaPelaksanaan,
             'pagu_anggaran' => $paguAnggaran,
             'metode_pemilihan' => $metodePemilihan,
-            'email_responden' => $emailResponden,
+            'email_responden_1' => $emailResponden1,
+            'email_responden_2' => $emailResponden2,
             'created_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
             'created_date' => date('Y-m-d'),
             'created_at' => date('Y-m-d H:i:s'),
@@ -1601,7 +1612,8 @@ class Kontrak extends BaseController
         $masaPelaksanaan = $this->normalizeSimakMasaPelaksanaan((string) $this->request->getPost('masa_pelaksanaan'));
         $paguAnggaran = $this->parseMoneyToBigInt($this->request->getPost('pagu_anggaran'));
         $metodePemilihan = $this->normalizeSimakMetodePemilihan((string) $this->request->getPost('metode_pemilihan'));
-        $emailResponden = trim((string) $this->request->getPost('email_responden'));
+        $emailResponden1 = trim((string) $this->request->getPost('email_responden_1'));
+        $emailResponden2 = trim((string) $this->request->getPost('email_responden_2'));
 
         // Pada menu konstruksi, field konsultansi belum ditampilkan di form.
         // Gunakan default aman agar proses simpan tidak terblokir.
@@ -1635,6 +1647,10 @@ class Kontrak extends BaseController
 
         if ($nilaiKontrak <= 0 || $nilaiKontrakJasa <= 0 || $penyedia === '' || $penyediaJasa === '') {
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Seluruh input wajib terisi (termasuk penyedia, penyedia jasa, nilai kontrak konstruksi, dan nilai kontrak jasa konsultansi).');
+        }
+
+        if ($emailResponden1 === '') {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Email responden 1 wajib diisi.');
         }
 
         if ($db->tableExists('mst_pegawai')) {
@@ -1671,7 +1687,8 @@ class Kontrak extends BaseController
             'masa_pelaksanaan' => $masaPelaksanaan,
             'pagu_anggaran' => $paguAnggaran,
             'metode_pemilihan' => $metodePemilihan,
-            'email_responden' => $emailResponden,
+            'email_responden_1' => $emailResponden1,
+            'email_responden_2' => $emailResponden2,
             'updated_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
             'updated_date' => date('Y-m-d'),
             'updated_at' => date('Y-m-d H:i:s'),
@@ -4686,7 +4703,8 @@ class Kontrak extends BaseController
         $nomorKontrak = trim((string) $this->request->getPost('nomor_kontrak'));
         $nilaiKontrak = $this->parseMoneyToFloat($this->request->getPost('nilai_kontrak'));
         $metodePemilihan = trim((string) $this->request->getPost('metode_pemilihan'));
-        $emailResponden = trim((string) $this->request->getPost('email_responden'));
+        $emailResponden1 = trim((string) $this->request->getPost('email_responden_1'));
+        $emailResponden2 = trim((string) $this->request->getPost('email_responden_2'));
 
         // Validate required fields
         if ($satker === '' || $ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $tahunAnggaran === '' || 
@@ -4715,6 +4733,10 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Nomor kontrak sudah digunakan.');
         }
 
+        if ($emailResponden1 === '') {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Email responden 1 wajib diisi.');
+        }
+
         $payload = [
             'satker' => $satker,
             'ppk_nama' => $ppkNama,
@@ -4728,7 +4750,8 @@ class Kontrak extends BaseController
             'nomor_kontrak' => $nomorKontrak,
             'nilai_kontrak' => $nilaiKontrak,
             'metode_pemilihan' => $metodePemilihan,
-            'email_responden' => $emailResponden,
+            'email_responden_1' => $emailResponden1,
+            'email_responden_2' => $emailResponden2,
             'created_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
             'created_date' => date('Y-m-d'),
             'created_at' => date('Y-m-d H:i:s'),
@@ -4770,12 +4793,17 @@ class Kontrak extends BaseController
         $penyedia = trim((string) $this->request->getPost('penyedia'));
         $nilaiKontrak = $this->parseMoneyToFloat($this->request->getPost('nilai_kontrak'));
         $metodePemilihan = trim((string) $this->request->getPost('metode_pemilihan'));
-        $emailResponden = trim((string) $this->request->getPost('email_responden'));
+        $emailResponden1 = trim((string) $this->request->getPost('email_responden_1'));
+        $emailResponden2 = trim((string) $this->request->getPost('email_responden_2'));
 
         if ($ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $jenisPekerjaan === '' || 
             $masaPelaksanaan === '' || $paguAnggaran <= 0 || $penyedia === '' || $nilaiKontrak <= 0 || 
             $metodePemilihan === '') {
             return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Seluruh input wajib terisi.');
+        }
+
+        if ($emailResponden1 === '') {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Email responden 1 wajib diisi.');
         }
 
         $payload = [
@@ -4788,7 +4816,8 @@ class Kontrak extends BaseController
             'penyedia' => $penyedia,
             'nilai_kontrak' => $nilaiKontrak,
             'metode_pemilihan' => $metodePemilihan,
-            'email_responden' => $emailResponden,
+            'email_responden_1' => $emailResponden1,
+            'email_responden_2' => $emailResponden2,
             'updated_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
             'updated_date' => date('Y-m-d'),
             'updated_at' => date('Y-m-d H:i:s'),
@@ -5218,7 +5247,8 @@ class Kontrak extends BaseController
                         'nomor_kontrak' => trim((string) ($row[9] ?? '')),
                         'nilai_kontrak' => trim((string) ($row[10] ?? '')),
                         'metode_pemilihan' => trim((string) ($row[11] ?? '')),
-                        'email_responden' => trim((string) ($row[12] ?? '')),
+                        'email_responden_1' => trim((string) ($row[12] ?? '')),
+                        'email_responden_2' => trim((string) ($row[13] ?? '')),
                     ];
                 }
 
@@ -5238,7 +5268,8 @@ class Kontrak extends BaseController
                 $nomorKontrak = trim((string) $rowData['nomor_kontrak']);
                 $nilaiKontrak = $this->parseMoneyToFloat($rowData['nilai_kontrak']);
                 $metodePemilihan = $this->normalizeSimakMetodePemilihan((string) $rowData['metode_pemilihan']);
-                $emailResponden = trim((string) ($rowData['email_responden'] ?? ''));
+                $emailResponden1 = trim((string) ($rowData['email_responden_1'] ?? $rowData['email_responden'] ?? ''));
+                $emailResponden2 = trim((string) ($rowData['email_responden_2'] ?? ''));
 
                 if ($nomorKontrak === '' || $nilaiKontrak <= 0) {
                     $errors[] = 'Baris ' . $excelRow . ': Data tidak lengkap';
@@ -5275,7 +5306,8 @@ class Kontrak extends BaseController
                     'nomor_kontrak' => $nomorKontrak,
                     'nilai_kontrak' => $nilaiKontrak,
                     'metode_pemilihan' => $metodePemilihan,
-                    'email_responden' => $emailResponden,
+                    'email_responden_1' => $emailResponden1,
+                    'email_responden_2' => $emailResponden2,
                     'created_by' => (string) (session()->get('username') ?: session()->get('name') ?: 'system'),
                     'created_date' => date('Y-m-d'),
                     'created_at' => date('Y-m-d H:i:s'),
@@ -5316,8 +5348,8 @@ class Kontrak extends BaseController
             'nomor_kontrak',
             'nilai_kontrak',
             'metode_pemilihan',
-            'tahapan_pekerjaan',
-            'tanggal_pemeriksaan',
+            'email_responden_1',
+            'email_responden_2',
             'keterangan',
         ];
 
@@ -5338,8 +5370,8 @@ class Kontrak extends BaseController
             'SIMAK/JK/001/2026',
             200000000,
             'Seleksi',
-            'Tahapan Contoh',
-            '2026-04-18',
+            'responden1@example.com',
+            'responden2@example.com',
             '',
         ], null, 'A2');
 

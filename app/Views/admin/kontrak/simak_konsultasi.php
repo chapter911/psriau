@@ -328,7 +328,8 @@
                                         data-penyedia="<?= esc((string) ($item['penyedia'] ?? '')); ?>"
                                         data-nomor-kontrak="<?= esc((string) ($item['nomor_kontrak'] ?? '')); ?>"
                                         data-nilai-kontrak="<?= esc((string) ($item['nilai_kontrak'] ?? 0)); ?>"
-                                        data-email-responden="<?= esc((string) ($item['email_responden'] ?? '')); ?>"
+                                        data-email-responden_1="<?= esc((string) ($item['email_responden_1'] ?? ($item['email_responden'] ?? ''))); ?>"
+                                        data-email-responden_2="<?= esc((string) ($item['email_responden_2'] ?? '')); ?>"
                                         data-jenis-pekerjaan="<?= esc((string) ($item['jenis_pekerjaan_jasa_konsultansi'] ?? '')); ?>"
                                         data-masa-pelaksanaan="<?= esc((string) ($item['masa_pelaksanaan'] ?? '')); ?>"
                                         data-pagu-anggaran="<?= esc((string) ($item['pagu_anggaran'] ?? 0)); ?>"
@@ -523,8 +524,12 @@
                             </select>
                         </div>
                         <div class="form-group col-md-6">
-                            <label for="email_responden">Email Responden</label>
-                            <input type="email" class="form-control" id="email_responden" name="email_responden" maxlength="255">
+                            <label for="email_responden_1">Email Responden 1</label>
+                            <input type="email" class="form-control" id="email_responden_1" name="email_responden_1" maxlength="255" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="email_responden_2">Email Responden 2</label>
+                            <input type="email" class="form-control" id="email_responden_2" name="email_responden_2" maxlength="255">
                         </div>
                     </div>
                 </div>
@@ -700,8 +705,12 @@
                                     </select>
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="email_responden_edit">Email Responden</label>
-                                    <input type="email" class="form-control" id="email_responden_edit" name="email_responden" maxlength="255">
+                                    <label for="email_responden_1_edit">Email Responden 1</label>
+                                    <input type="email" class="form-control" id="email_responden_1_edit" name="email_responden_1" maxlength="255" required>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="email_responden_2_edit">Email Responden 2</label>
+                                    <input type="email" class="form-control" id="email_responden_2_edit" name="email_responden_2" maxlength="255">
                                 </div>
                             </div>
                         </div>
@@ -1464,7 +1473,8 @@
             var penyediaEdit = document.getElementById('penyedia_edit');
             var nomorKontrakEdit = document.getElementById('nomor_kontrak_edit');
             var nilaiKontrakEdit = document.getElementById('nilai_kontrak_edit');
-            var emailRespondenEdit = document.getElementById('email_responden_edit');
+            var emailResponden1Edit = document.getElementById('email_responden_1_edit');
+            var emailResponden2Edit = document.getElementById('email_responden_2_edit');
             var jenisPekerjaanEdit = document.getElementById('jenis_pekerjaan_edit');
             var masaPelaksanaanEdit = document.getElementById('masa_pelaksanaan_edit');
             var paguAnggaranEdit = document.getElementById('pagu_anggaran_edit');
@@ -1544,7 +1554,8 @@
                 nilaiKontrakEdit.value = formatCurrency(normalizeCurrencySourceValue(this.getAttribute('data-nilai-kontrak') || '0'));
             }
             if (emailRespondenEdit) {
-                emailRespondenEdit.value = this.getAttribute('data-email-responden') || '';
+                emailResponden1Edit.value = this.getAttribute('data-email-responden_1') || '';
+                emailResponden2Edit.value = this.getAttribute('data-email-responden_2') || '';
             }
             if (jenisPekerjaanEdit) {
                 jenisPekerjaanEdit.value = this.getAttribute('data-jenis-pekerjaan') || '';
