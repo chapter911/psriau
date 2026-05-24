@@ -222,7 +222,7 @@
             <td class="value-col"><?= nl2br(esc((string) ($data['sasaran'] ?? '-'))); ?></td>
         </tr>
         <tr>
-            <td class="label-col laporan-row-title" rowspan="3">Laporan Hasil Perjalanan Dinas</td>
+            <td class="label-col laporan-row-title" colspan="3">Laporan Hasil Perjalanan Dinas</td>
         </tr>
         <tr>
             <td class="laporan-row-content" colspan="3">
