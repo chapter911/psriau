@@ -243,7 +243,6 @@
                         <th>Tahun Anggaran</th>
                         <th>PPK</th>
                         <th>Jenis Pekerjaan</th>
-                        <th>Tanggal Pemeriksaan</th>
                         <th class="text-right">Nilai Kontrak (Rp)</th>
                         <th class="text-right">Nilai Add On (Rp)</th>
                         <th class="text-right">Total Kontrak (Rp)</th>
@@ -282,7 +281,7 @@
                                 <small class="text-muted">NIP: <?= esc((string) ($item['ppk_nip'] ?? '-')); ?></small>
                             </td>
                             <td><?= esc((string) ($item['jenis_pekerjaan_jasa_konsultansi'] ?? '-')); ?></td>
-                            <td><?= esc((string) ($item['tanggal_pemeriksaan'] ?? '-')); ?></td>
+                            
                             <td class="text-right"><?= esc(angka_ribuan_id($item['nilai_kontrak'] ?? 0)); ?></td>
                             <td class="text-right"><?= esc(angka_ribuan_id($item['nilai_add_on'] ?? 0)); ?></td>
                             <td class="text-right font-weight-bold"><?= esc(angka_ribuan_id($item['total_kontrak'] ?? 0)); ?></td>
@@ -329,8 +328,7 @@
                                         data-penyedia="<?= esc((string) ($item['penyedia'] ?? '')); ?>"
                                         data-nomor-kontrak="<?= esc((string) ($item['nomor_kontrak'] ?? '')); ?>"
                                         data-nilai-kontrak="<?= esc((string) ($item['nilai_kontrak'] ?? 0)); ?>"
-                                        data-tahapan-pekerjaan="<?= esc((string) ($item['tahapan_pekerjaan'] ?? '')); ?>"
-                                        data-tanggal-pemeriksaan="<?= esc((string) ($item['tanggal_pemeriksaan'] ?? '')); ?>"
+                                        data-email-responden="<?= esc((string) ($item['email_responden'] ?? '')); ?>"
                                         data-jenis-pekerjaan="<?= esc((string) ($item['jenis_pekerjaan_jasa_konsultansi'] ?? '')); ?>"
                                         data-masa-pelaksanaan="<?= esc((string) ($item['masa_pelaksanaan'] ?? '')); ?>"
                                         data-pagu-anggaran="<?= esc((string) ($item['pagu_anggaran'] ?? 0)); ?>"
@@ -427,7 +425,6 @@
                         <input type="text" class="form-control" id="satker" name="satker" value="Perencanaan Prasarana Strategis" readonly>
                     </div>
 
-                    <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="pegawai_nip_selector">PPK (ambil dari master pegawai)</label>
                             <select class="form-control" id="pegawai_nip_selector" name="ppk_nip" required>
@@ -526,14 +523,9 @@
                             </select>
                         </div>
                         <div class="form-group col-md-6">
-                            <label for="tahapan_pekerjaan">Tahapan Pekerjaan</label>
-                            <input type="text" class="form-control" id="tahapan_pekerjaan" name="tahapan_pekerjaan" maxlength="255">
+                            <label for="email_responden">Email Responden</label>
+                            <input type="email" class="form-control" id="email_responden" name="email_responden" maxlength="255">
                         </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tanggal_pemeriksaan">Tanggal Pemeriksaan</label>
-                        <input type="date" class="form-control" id="tanggal_pemeriksaan" name="tanggal_pemeriksaan">
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -708,14 +700,9 @@
                                     </select>
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="tahapan_pekerjaan_edit">Tahapan Pekerjaan</label>
-                                    <input type="text" class="form-control" id="tahapan_pekerjaan_edit" name="tahapan_pekerjaan" maxlength="255">
+                                    <label for="email_responden_edit">Email Responden</label>
+                                    <input type="email" class="form-control" id="email_responden_edit" name="email_responden" maxlength="255">
                                 </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="tanggal_pemeriksaan_edit">Tanggal Pemeriksaan</label>
-                                <input type="date" class="form-control" id="tanggal_pemeriksaan_edit" name="tanggal_pemeriksaan">
                             </div>
                         </div>
 
@@ -1477,8 +1464,7 @@
             var penyediaEdit = document.getElementById('penyedia_edit');
             var nomorKontrakEdit = document.getElementById('nomor_kontrak_edit');
             var nilaiKontrakEdit = document.getElementById('nilai_kontrak_edit');
-            var tahapanPekerjaanEdit = document.getElementById('tahapan_pekerjaan_edit');
-            var tanggalPemeriksaanEdit = document.getElementById('tanggal_pemeriksaan_edit');
+            var emailRespondenEdit = document.getElementById('email_responden_edit');
             var jenisPekerjaanEdit = document.getElementById('jenis_pekerjaan_edit');
             var masaPelaksanaanEdit = document.getElementById('masa_pelaksanaan_edit');
             var paguAnggaranEdit = document.getElementById('pagu_anggaran_edit');
@@ -1557,11 +1543,8 @@
             if (nilaiKontrakEdit) {
                 nilaiKontrakEdit.value = formatCurrency(normalizeCurrencySourceValue(this.getAttribute('data-nilai-kontrak') || '0'));
             }
-            if (tahapanPekerjaanEdit) {
-                tahapanPekerjaanEdit.value = this.getAttribute('data-tahapan-pekerjaan') || '';
-            }
-            if (tanggalPemeriksaanEdit) {
-                tanggalPemeriksaanEdit.value = this.getAttribute('data-tanggal-pemeriksaan') || '';
+            if (emailRespondenEdit) {
+                emailRespondenEdit.value = this.getAttribute('data-email-responden') || '';
             }
             if (jenisPekerjaanEdit) {
                 jenisPekerjaanEdit.value = this.getAttribute('data-jenis-pekerjaan') || '';
