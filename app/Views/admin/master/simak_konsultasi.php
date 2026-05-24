@@ -382,10 +382,6 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="display_no">Nomor Tampil</label>
-                            <input type="text" class="form-control" name="display_no" id="display_no" placeholder="Contoh: A, 1, a" <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
-                        </div>
-                        <div class="form-group">
                             <label for="uraian">Uraian</label>
                             <textarea class="form-control" name="uraian" id="uraian" rows="3" required <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>></textarea>
                         </div>
@@ -463,7 +459,6 @@
         var formModeLabel = document.getElementById('form-mode-label');
         var selectedIdInput = document.getElementById('selected_id');
         var parentSelect = document.getElementById('parent_id');
-        var displayNoInput = document.getElementById('display_no');
         var uraianInput = document.getElementById('uraian');
         var rowKindSelect = document.getElementById('row_kind');
         var hasQuestionInput = document.getElementById('has_question');
@@ -616,7 +611,6 @@
             if (formModeLabel) formModeLabel.textContent = label || 'Tambah Item Master';
             if (selectedIdInput) selectedIdInput.value = '';
             if (parentSelect) parentSelect.value = parentId || '';
-            if (displayNoInput) displayNoInput.value = '';
             if (uraianInput) uraianInput.value = '';
             if (rowKindSelect) rowKindSelect.value = 'section';
             if (hasQuestionInput) {
@@ -654,7 +648,6 @@
             if (formModeLabel) formModeLabel.textContent = 'Ubah Item #' + id;
             if (selectedIdInput) selectedIdInput.value = id;
             if (parentSelect) parentSelect.value = itemEl.getAttribute('data-parent_id') || '';
-            if (displayNoInput) displayNoInput.value = itemEl.getAttribute('data-display_no') || '';
             if (uraianInput) uraianInput.value = itemEl.getAttribute('data-uraian') || '';
             if (rowKindSelect) rowKindSelect.value = itemEl.getAttribute('data-row_kind') || 'question';
             if (hasQuestionInput) {

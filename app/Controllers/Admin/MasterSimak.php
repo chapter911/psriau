@@ -826,6 +826,8 @@ class MasterSimak extends BaseController
             $model->update((int) $model->getInsertID(), ['is_hidden_share' => 0]);
         }
 
+        $this->rebuildSimakKonsultasiDisplayNumbers();
+
         if ($this->wantsJsonResponse()) {
             return $this->response->setJSON([
                 'status' => 'ok',
@@ -912,6 +914,8 @@ class MasterSimak extends BaseController
             'has_question' => $rowKind === 'question' ? 1 : ((int) ($this->request->getPost('has_question') ? 1 : 0)),
             'has_draft' => (int) ($this->request->getPost('has_draft') ? 1 : 0),
         ]);
+
+        $this->rebuildSimakKonsultasiDisplayNumbers();
 
         if ($this->wantsJsonResponse()) {
             return $this->response->setJSON([
@@ -1114,6 +1118,8 @@ class MasterSimak extends BaseController
                 'message' => 'Gagal menyimpan hirarki.',
             ] + $this->csrfPayload());
         }
+
+        $this->rebuildSimakKonsultasiDisplayNumbers();
 
         return $this->response->setJSON([
             'status' => 'ok',
@@ -1333,8 +1339,36 @@ class MasterSimak extends BaseController
                 'label' => trim($indent . $label),
             ];
         }
-
         return $options;
+    }
+
+    private function rebuildSimakKonsultasiDisplayNumbers(): void
+    {
+        $db = db_connect();
+        if (! $db->tableExists('mst_simak_konsultasi_item')) {
+            return;
+        }
+
+        $rows = $db->table('mst_simak_konsultasi_item')
+            ->orderBy('ordering', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        if ($rows === []) {
+            return;
+        }
+
+        $tree = $this->annotateTreeDisplayNumbers($this->buildTree($rows));
+        $flat = $this->flattenTree($tree);
+
+        $db->transStart();
+        foreach ($flat as $row) {
+            $db->table('mst_simak_konsultasi_item')
+                ->where('id', (int) ($row['id'] ?? 0))
+                ->update(['display_no' => (string) ($row['display_no_auto'] ?? '')]);
+        }
+        $db->transComplete();
     }
 
     private function flattenHierarchyPayload(array $nodes, ?int $parentId, array &$out): void
