@@ -59,11 +59,13 @@
             overflow-wrap: anywhere;
             word-break: break-word;
         }
-        .laporan-row-title {
-            font-size: 11pt;
-        }
-        .laporan-row-content {
+        .laporan-row {
             padding: 6px 8px;
+        }
+        .laporan-row-title {
+            display: block;
+            font-size: 11pt;
+            margin-bottom: 4px;
         }
         .page-break { page-break-before: always; }
 
@@ -222,10 +224,8 @@
             <td class="value-col"><?= nl2br(esc((string) ($data['sasaran'] ?? '-'))); ?></td>
         </tr>
         <tr>
-            <td class="label-col laporan-row-title" colspan="3">Laporan Hasil Perjalanan Dinas</td>
-        </tr>
-        <tr>
-            <td class="laporan-row-content" colspan="3">
+            <td class="laporan-row" colspan="3">
+                <span class="laporan-row-title bold">Laporan Hasil Perjalanan Dinas</span>
                 <div class="laporan-html">
                     <?php $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? '')); ?>
                     <?php if ($laporanHasilRaw === ''): ?>
