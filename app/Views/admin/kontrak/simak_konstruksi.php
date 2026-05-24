@@ -519,7 +519,7 @@
                             </div>
 
                             <div class="form-row">
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-6">
                                     <label for="nilai_kontrak_edit">Nilai Kontrak (Rp)</label>
                                     <input type="text" class="form-control" id="nilai_kontrak_edit" name="nilai_kontrak" inputmode="numeric" autocomplete="off" required>
                                 </div>
