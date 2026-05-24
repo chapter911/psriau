@@ -168,20 +168,30 @@
             }
 
             $chunks = split_html_into_blocks($laporanHasilRaw);
-            if (empty($chunks)) :
-        ?>
+            // Determine chunks and render rows. We'll render a fixed number of visible rows
+            // so the output looks like the printed form: text fills rows, remaining rows stay empty.
+            $chunks = array_values($chunks);
+            $minRows = 16; // minimal visible rows on the form
+            $maxRows = 36; // a cap to avoid huge output
+            $usedRows = count($chunks);
+            $totalRows = max($minRows, min($maxRows, $usedRows + 6));
+
+            ?>
             <div class="report-wrapper">
                 <div class="report-row report-title-row">Laporan Hasil Perjalanan Dinas</div>
-                <div class="report-row"><div class="report-content">-</div></div>
+                <?php
+                    // Render available content chunks first
+                    foreach ($chunks as $chunk) {
+                        echo '<div class="report-row"><div class="report-content laporan-html">' . $chunk . '</div></div>';
+                    }
+
+                    // Append empty rows until totalRows achieved
+                    $remaining = $totalRows - $usedRows;
+                    for ($i = 0; $i < $remaining; $i++) {
+                        echo '<div class="report-row"><div class="report-content">&nbsp;</div></div>';
+                    }
+                ?>
             </div>
-        <?php else: ?>
-            <div class="report-wrapper">
-                <div class="report-row report-title-row">Laporan Hasil Perjalanan Dinas</div>
-                <?php foreach ($chunks as $chunk): ?>
-                    <div class="report-row"><div class="report-content laporan-html"><?= $chunk; ?></div></div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
 
     <div class="page-break"></div>
 
