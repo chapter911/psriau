@@ -2080,6 +2080,44 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
         }
 
+        $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
+        if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tipe dokumen tidak valid.');
+        }
+
+        $selectedDoc = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->select('id, verifikasi_ki')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', $tipeDokumen)
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($selectedDoc)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Dokumen ' . $tipeDokumen . ' belum tersedia.');
+        }
+
+        $latestDraftDoc = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->select('id, verifikasi_ki')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'draft')
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+        $latestFinalDoc = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->select('id, verifikasi_ki')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'final')
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
         $existingVerifikasi = $db->table('trn_kontrak_simak_verifikasi')
             ->select('kelengkapan_dokumen')
             ->where('simak_id', $id)
@@ -2120,36 +2158,20 @@ class Kontrak extends BaseController
 
         $relativePath = '';
         $storedName = '';
-        $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
-        if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
-            $tipeDokumen = 'final';
-        }
-
-        $existingDraftDoc = $db->table('trn_kontrak_simak_verifikasi_dokumen')
-            ->select('id')
-            ->where('simak_id', $id)
-            ->where('row_no', $rowNo)
-            ->where('tipe_dokumen', 'draft')
-            ->limit(1)
-            ->get()
-            ->getRowArray();
-        $existingFinalDoc = $db->table('trn_kontrak_simak_verifikasi_dokumen')
-            ->select('id')
-            ->where('simak_id', $id)
-            ->where('row_no', $rowNo)
-            ->where('tipe_dokumen', 'final')
-            ->limit(1)
-            ->get()
-            ->getRowArray();
-        $willHaveDraft = (is_array($existingDraftDoc) && ! empty($existingDraftDoc)) || $tipeDokumen === 'draft';
-        $willHaveFinal = (is_array($existingFinalDoc) && ! empty($existingFinalDoc)) || $tipeDokumen === 'final';
-        $isDocumentComplete = $willHaveDraft && $willHaveFinal;
-
-        if ($ver === 'sesuai' && ! $isDocumentComplete) {
-            $ver = 'belum_verifikasi';
-        }
-        if ($tipeDokumen === 'draft' && ! $isDocumentComplete) {
-            $ver = 'belum_verifikasi';
+        $summaryVerifikasi = 'belum_verifikasi';
+        if ($tipeDokumen === 'final') {
+            if ($ver === 'sesuai') {
+                $summaryVerifikasi = 'sesuai';
+            } elseif ($ver === 'tidak_sesuai') {
+                $summaryVerifikasi = 'belum_sesuai';
+            }
+        } else {
+            $finalCurrentStatus = strtolower(trim((string) ($latestFinalDoc['verifikasi_ki'] ?? '')));
+            if ($finalCurrentStatus === 'sesuai') {
+                $summaryVerifikasi = 'sesuai';
+            } elseif ($finalCurrentStatus === 'tidak_sesuai') {
+                $summaryVerifikasi = 'belum_sesuai';
+            }
         }
         if ($hasUpload) {
             $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
@@ -2183,7 +2205,7 @@ class Kontrak extends BaseController
             'kode' => (string) ($targetTemplate['display_no'] ?? ''),
             'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
             'kelengkapan_dokumen' => $kel,
-            'verifikasi_ki' => $ver,
+            'verifikasi_ki' => $summaryVerifikasi,
             'keterangan' => $ket,
             'pic' => $pic,
             'updated_by' => $actor,
@@ -2192,6 +2214,18 @@ class Kontrak extends BaseController
         ];
 
         $db->transStart();
+
+        $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->where('id', (int) ($selectedDoc['id'] ?? 0))
+            ->update([
+                'verifikasi_ki' => $ver,
+                'keterangan' => $ket,
+                'pic' => $pic,
+                'updated_by' => $actor,
+                'updated_date' => $today,
+                'updated_at' => $now,
+            ]);
+
         $db->table('trn_kontrak_simak_verifikasi')->where('simak_id', $id)->where('row_no', $rowNo)->delete();
         $verifikasiRow['created_by'] = $actor;
         $verifikasiRow['created_date'] = $today;
@@ -2704,18 +2738,6 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
         }
 
-        $existingVerifikasi = $db->table($tableVerifikasi)
-            ->select('verifikasi_ki, keterangan, pic')
-            ->where('simak_id', $simakId)
-            ->where('row_no', $rowNo)
-            ->get()
-            ->getRowArray();
-
-        $existingVerifikasiStatus = is_array($existingVerifikasi) ? strtolower(trim((string) ($existingVerifikasi['verifikasi_ki'] ?? ''))) : '';
-        if (! in_array($existingVerifikasiStatus, ['sesuai', 'tidak_sesuai'], true)) {
-            $existingVerifikasiStatus = null;
-        }
-
         $existingDokumen = $db->table($tableDokumen)
             ->select('id')
             ->where('simak_id', $simakId)
@@ -2747,30 +2769,19 @@ class Kontrak extends BaseController
         // Enforce: if this template row requires a draft first, disallow final upload
         // when no draft exists yet.
         if ($tipeDokumen === 'final' && ! empty($targetTemplate) && ! empty($targetTemplate['has_draft'])) {
-            $draftExists = $db->table($tableDokumen)
-                ->select('id')
-                ->where('simak_id', $simakId)
-                ->where('row_no', $rowNo)
-                ->where('tipe_dokumen', 'draft')
-                ->limit(1)
-                ->get()
-                ->getRowArray();
-
-            if (! is_array($draftExists) || empty($draftExists)) {
-                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah Draft diunggah. Silakan unggah Draft terlebih dahulu.');
-            }
-
-            $draftVerification = $db->table($tableVerifikasi)
+            $draftDocument = $db->table($tableDokumen)
                 ->select('verifikasi_ki')
                 ->where('simak_id', $simakId)
                 ->where('row_no', $rowNo)
+                ->where('tipe_dokumen', 'draft')
+                ->orderBy('id', 'DESC')
                 ->limit(1)
                 ->get()
                 ->getRowArray();
 
-            $draftVerificationStatus = strtolower(trim((string) ($draftVerification['verifikasi_ki'] ?? '')));
+            $draftVerificationStatus = strtolower(trim((string) ($draftDocument['verifikasi_ki'] ?? '')));
             if ($draftVerificationStatus !== 'sesuai') {
-                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah Draft diunggah dan diverifikasi Sesuai.');
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah Draft diverifikasi Sesuai.');
             }
         }
 
@@ -6036,6 +6047,44 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
         }
 
+        $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
+        if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tipe dokumen tidak valid.');
+        }
+
+        $selectedDoc = $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')
+            ->select('id, verifikasi_ki')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', $tipeDokumen)
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($selectedDoc)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Dokumen ' . $tipeDokumen . ' belum tersedia.');
+        }
+
+        $latestDraftDoc = $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')
+            ->select('id, verifikasi_ki')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'draft')
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+        $latestFinalDoc = $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')
+            ->select('id, verifikasi_ki')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'final')
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
         $existingVerifikasi = $db->table('trn_kontrak_simak_konsultasi_verifikasi')
             ->select('kelengkapan_dokumen')
             ->where('simak_id', $id)
@@ -6072,6 +6121,21 @@ class Kontrak extends BaseController
 
         $relativePath = '';
         $storedName = '';
+        $summaryVerifikasi = 'belum_verifikasi';
+        if ($tipeDokumen === 'final') {
+            if ($ver === 'sesuai') {
+                $summaryVerifikasi = 'sesuai';
+            } elseif ($ver === 'tidak_sesuai') {
+                $summaryVerifikasi = 'belum_sesuai';
+            }
+        } else {
+            $finalCurrentStatus = strtolower(trim((string) ($latestFinalDoc['verifikasi_ki'] ?? '')));
+            if ($finalCurrentStatus === 'sesuai') {
+                $summaryVerifikasi = 'sesuai';
+            } elseif ($finalCurrentStatus === 'tidak_sesuai') {
+                $summaryVerifikasi = 'belum_sesuai';
+            }
+        }
         if ($hasUpload) {
             $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
             $ext = strtolower((string) $file->getClientExtension());
@@ -6096,11 +6160,6 @@ class Kontrak extends BaseController
             $relativePath = $subDir . '/' . $storedName;
         }
 
-        $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
-        if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
-            $tipeDokumen = 'final';
-        }
-
         $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
         $today = date('Y-m-d');
         $now = date('Y-m-d H:i:s');
@@ -6111,7 +6170,7 @@ class Kontrak extends BaseController
             'kode' => (string) ($targetTemplate['display_no'] ?? ''),
             'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
             'kelengkapan_dokumen' => $kel,
-            'verifikasi_ki' => $ver,
+            'verifikasi_ki' => $summaryVerifikasi,
             'keterangan' => $ket,
             'pic' => $pic,
             'updated_by' => $actor,
@@ -6120,6 +6179,18 @@ class Kontrak extends BaseController
         ];
 
         $db->transStart();
+
+        $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')
+            ->where('id', (int) ($selectedDoc['id'] ?? 0))
+            ->update([
+                'verifikasi_ki' => $ver,
+                'keterangan' => $ket,
+                'pic' => $pic,
+                'updated_by' => $actor,
+                'updated_date' => $today,
+                'updated_at' => $now,
+            ]);
+
         $db->table('trn_kontrak_simak_konsultasi_verifikasi')->where('simak_id', $id)->where('row_no', $rowNo)->delete();
         $verifikasiRow['created_by'] = $actor;
         $verifikasiRow['created_date'] = $today;

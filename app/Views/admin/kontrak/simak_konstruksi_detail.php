@@ -399,20 +399,37 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <?php if (is_array($latestDokumen) || $kelengkapan !== '' || $verifikasi !== '' || $keterangan !== '' || $pic !== ''): ?>
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-warning btn-sm js-open-upload-modal"
-                                                            data-row-no="<?= esc((string) $rowNo); ?>"
-                                                            data-row-label="<?= esc($noText); ?>"
-                                                            data-uraian="<?= esc($uraian); ?>"
-                                                            data-kelengkapan="<?= esc($kelengkapan); ?>"
-                                                            data-verifikasi="<?= esc($verifikasi); ?>"
-                                                            data-keterangan="<?= esc($keterangan); ?>"
-                                                            data-pic="<?= esc($pic); ?>"
-                                                            data-created-by="<?= esc((string) ($latestDokumen['created_by'] ?? '')); ?>"
-                                                        >Verifikasi</button>
-                                                    <?php else: ?>
+                                                    <div class="simak-upload-actions">
+                                                        <?php if (is_array($draftDokumen)): ?>
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-outline-secondary btn-sm js-open-upload-modal"
+                                                                data-row-no="<?= esc((string) $rowNo); ?>"
+                                                                data-row-label="<?= esc($noText); ?>"
+                                                                data-uraian="<?= esc($uraian); ?>"
+                                                                data-tipe-dokumen="draft"
+                                                                data-kelengkapan="<?= esc((string) ($draftDokumen['kelengkapan_dokumen'] ?? '')); ?>"
+                                                                data-verifikasi="<?= esc($draftVerifikasi); ?>"
+                                                                data-keterangan="<?= esc((string) ($draftDokumen['keterangan'] ?? '')); ?>"
+                                                                data-pic="<?= esc((string) ($draftDokumen['pic'] ?? '')); ?>"
+                                                            >Verif Draft</button>
+                                                        <?php endif; ?>
+                                                        <?php if (is_array($finalDokumen)): ?>
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-warning btn-sm js-open-upload-modal"
+                                                                data-row-no="<?= esc((string) $rowNo); ?>"
+                                                                data-row-label="<?= esc($noText); ?>"
+                                                                data-uraian="<?= esc($uraian); ?>"
+                                                                data-tipe-dokumen="final"
+                                                                data-kelengkapan="<?= esc((string) ($finalDokumen['kelengkapan_dokumen'] ?? '')); ?>"
+                                                                data-verifikasi="<?= esc($finalVerifikasi); ?>"
+                                                                data-keterangan="<?= esc((string) ($finalDokumen['keterangan'] ?? '')); ?>"
+                                                                data-pic="<?= esc((string) ($finalDokumen['pic'] ?? '')); ?>"
+                                                            >Verif Final</button>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <?php if (! is_array($draftDokumen) && ! is_array($finalDokumen)): ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
                                                 </td>
@@ -498,10 +515,12 @@
             <form method="post" action="<?= site_url('admin/kontrak/simak/konstruksi/' . (int) ($item['id'] ?? 0) . '/verifikasi/upload'); ?>" enctype="multipart/form-data" id="form-upload-verifikasi" novalidate>
                 <?= csrf_field(); ?>
                 <input type="hidden" name="row_no" id="upload_row_no" value="">
+                <input type="hidden" name="tipe_dokumen" id="upload_tipe_dokumen" value="final">
                 <div class="modal-body">
                     <div class="alert alert-light border">
                         <div><strong>No:</strong> <span id="upload_row_label">-</span></div>
                         <div><strong>Uraian:</strong> <span id="upload_row_uraian">-</span></div>
+                        <div><strong>Tipe:</strong> <span id="upload_tipe_label">Final</span></div>
                     </div>
 
                     <div class="form-row">
@@ -589,6 +608,8 @@
     var rowNoInput = document.getElementById('upload_row_no');
     var rowLabelEl = document.getElementById('upload_row_label');
     var rowUraianEl = document.getElementById('upload_row_uraian');
+    var tipeDokumenInput = document.getElementById('upload_tipe_dokumen');
+    var tipeDokumenLabelEl = document.getElementById('upload_tipe_label');
     var kelengkapanEl = document.getElementById('upload_kelengkapan_dokumen');
     var verifikasiEl = document.getElementById('upload_verifikasi');
     var keteranganEl = document.getElementById('upload_keterangan');
@@ -722,6 +743,13 @@
             }
             if (rowUraianEl) {
                 rowUraianEl.textContent = this.getAttribute('data-uraian') || '-';
+            }
+            if (tipeDokumenInput) {
+                var tipeDokumen = String(this.getAttribute('data-tipe-dokumen') || 'final').toLowerCase();
+                tipeDokumenInput.value = tipeDokumen === 'draft' ? 'draft' : 'final';
+                if (tipeDokumenLabelEl) {
+                    tipeDokumenLabelEl.textContent = tipeDokumenInput.value === 'draft' ? 'Draft' : 'Final';
+                }
             }
             if (kelengkapanEl) {
                 kelengkapanEl.value = this.getAttribute('data-kelengkapan') || 'ada';
