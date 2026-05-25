@@ -1965,7 +1965,7 @@
     function refreshFileStatus() {
         var method = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
         if (method === 'none') {
-            setFileStatus('Status file: tidak diperlukan untuk metode Dokumen Belum Ada.', 'info');
+            setFileStatus('Status file: tidak diperlukan untuk metode Dokumen Memang Tidak Ada.', 'info');
             return;
         }
 
