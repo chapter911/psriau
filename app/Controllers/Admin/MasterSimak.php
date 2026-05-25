@@ -380,6 +380,7 @@ class MasterSimak extends BaseController
         }
 
         $model = new MasterSimakKonstruksiItemModel();
+        $db = db_connect();
         $parentId = (int) ($this->request->getPost('parent_id') ?? 0);
         $parentId = $parentId > 0 ? $parentId : null;
         $rowKind = trim((string) $this->request->getPost('row_kind'));
@@ -465,6 +466,7 @@ class MasterSimak extends BaseController
         }
 
         $model = new MasterSimakKonstruksiItemModel();
+        $db = db_connect();
         $existing = $model->find($id);
         if (! is_array($existing)) {
             if ($this->wantsJsonResponse()) {
@@ -803,6 +805,7 @@ class MasterSimak extends BaseController
         }
 
         $model = new MasterSimakKonsultasiItemModel();
+        $db = db_connect();
         $parentId = (int) ($this->request->getPost('parent_id') ?? 0);
         $parentId = $parentId > 0 ? $parentId : null;
         $rowKind = trim((string) $this->request->getPost('row_kind'));
@@ -893,6 +896,7 @@ class MasterSimak extends BaseController
         }
 
         $model = new MasterSimakKonsultasiItemModel();
+        $db = db_connect();
         $existing = $model->find($id);
         if (! is_array($existing)) {
             if ($this->wantsJsonResponse()) {
