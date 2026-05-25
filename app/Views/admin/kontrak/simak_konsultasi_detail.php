@@ -30,6 +30,21 @@
         justify-content: center;
     }
 
+    .simak-upload-actions {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        max-width: 150px;
+        margin: 0 auto;
+    }
+
+    .simak-upload-actions .btn {
+        width: auto;
+        white-space: normal;
+    }
+
     .simak-status-yellow {
         background-color: #fff3cd;
     }
@@ -377,24 +392,26 @@
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <button
-                                                        type="button"
-                                                        class="btn btn-success btn-sm js-open-admin-upload-modal"
-                                                        data-row-no="<?= esc((string) $rowNo); ?>"
-                                                        data-row-label="<?= esc($noText); ?>"
-                                                        data-uraian="<?= esc($uraian); ?>"
-                                                        data-tipe-dokumen="final"
-                                                    >Upload Final</button>
-                                                    <?php if ($hasDraft): ?>
+                                                    <div class="simak-upload-actions">
                                                         <button
                                                             type="button"
-                                                            class="btn btn-outline-secondary btn-sm js-open-admin-upload-modal ml-1"
+                                                            class="btn btn-success btn-sm js-open-admin-upload-modal"
                                                             data-row-no="<?= esc((string) $rowNo); ?>"
                                                             data-row-label="<?= esc($noText); ?>"
                                                             data-uraian="<?= esc($uraian); ?>"
-                                                            data-tipe-dokumen="draft"
-                                                        >Upload Draft</button>
-                                                    <?php endif; ?>
+                                                            data-tipe-dokumen="final"
+                                                        >Final</button>
+                                                        <?php if ($hasDraft): ?>
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-outline-secondary btn-sm js-open-admin-upload-modal"
+                                                                data-row-no="<?= esc((string) $rowNo); ?>"
+                                                                data-row-label="<?= esc($noText); ?>"
+                                                                data-uraian="<?= esc($uraian); ?>"
+                                                                data-tipe-dokumen="draft"
+                                                            >Draft</button>
+                                                        <?php endif; ?>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <?php if (is_array($latestDokumen)): ?>
