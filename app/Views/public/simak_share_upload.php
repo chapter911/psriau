@@ -759,13 +759,14 @@
                 <div class="tab-pane fade <?= $tabIndex === 0 ? 'show active' : ''; ?>" id="share-panel-<?= esc($sectionKey); ?>" role="tabpanel">
                     <div class="share-table-shell">
                     <div class="table-responsive table-share-wrap">
-                        <table class="table table-bordered table-sm mb-0 table-share-simak">
+                                <table class="table table-bordered table-sm mb-0 table-share-simak" style="min-width: 1580px;">
                             <thead class="thead-dark">
                                 <tr>
                                     <th style="width: 90px;">No</th>
                                     <th>Uraian</th>
                                     <th style="width: 140px;">Status Dokumen</th>
-                                    <th style="width: 160px;">Verifikasi Dit. KI</th>
+                                    <th style="width: 160px;">Verifikasi Draft</th>
+                                    <th style="width: 160px;">Verifikasi Final</th>
                                     <th style="width: 260px;">Keterangan</th>
                                     <th style="width: 250px;">Dokumen Draft</th>
                                     <th style="width: 250px;">Dokumen Final</th>
@@ -792,8 +793,6 @@
                                     $kelengkapan = strtolower(trim((string) ($existing['kelengkapan_dokumen'] ?? '')));
                                     $verifikasi = strtolower(trim((string) ($existing['verifikasi_ki'] ?? '')));
                                     $keterangan = trim((string) ($existing['keterangan'] ?? ''));
-                                    $isBelumSesuai = $verifikasi === 'tidak_sesuai';
-                                    $isDraftVerified = $verifikasi === 'sesuai';
                                     $dokumenRows = $dokumenByRow[$rowNo] ?? [];
                                     $draftDokumen = null;
                                     $finalDokumen = null;
@@ -813,6 +812,10 @@
                                     // Final column should only show an actual final document
                                     // where tipe_dokumen === 'final'. Keep $finalDokumen
                                     // as null when only a draft exists.
+                                    $draftVerifikasi = is_array($draftDokumen) ? strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? ''))) : '';
+                                    $finalVerifikasi = is_array($finalDokumen) ? strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? ''))) : '';
+                                    $isBelumSesuai = $finalVerifikasi === 'tidak_sesuai';
+                                    $isDraftVerified = $draftVerifikasi === 'sesuai';
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
                                     <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?></td>
@@ -827,10 +830,19 @@
                                                 <span class="text-muted">Belum ada</span>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="cell-center <?= $isBelumSesuai ? 'cell-belum-sesuai' : ''; ?>">
-                                            <?php if ($verifikasi === 'sesuai'): ?>
+                                        <td class="cell-center">
+                                            <?php if ($draftVerifikasi === 'sesuai'): ?>
                                                 <span class="badge badge-success">Sesuai</span>
-                                            <?php elseif ($verifikasi === 'tidak_sesuai'): ?>
+                                            <?php elseif ($draftVerifikasi === 'tidak_sesuai'): ?>
+                                                <span class="badge badge-warning">Belum Sesuai</span>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="cell-center <?= $isBelumSesuai ? 'cell-belum-sesuai' : ''; ?>">
+                                            <?php if ($finalVerifikasi === 'sesuai'): ?>
+                                                <span class="badge badge-success">Sesuai</span>
+                                            <?php elseif ($finalVerifikasi === 'tidak_sesuai'): ?>
                                                 <span class="badge badge-warning">Belum Sesuai</span>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
@@ -955,7 +967,7 @@
                                             <?php endif; ?>
                                         </td>
                                     <?php else: ?>
-                                        <td colspan="6" class="text-muted cell-center">Baris grup (tidak perlu upload)</td>
+                                        <td colspan="7" class="text-muted cell-center">Baris grup (tidak perlu upload)</td>
                                     <?php endif; ?>
                                 </tr>
                             <?php endforeach; ?>
