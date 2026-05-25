@@ -406,18 +406,7 @@
                                                             data-created-by="<?= esc((string) ($latestDokumen['created_by'] ?? '')); ?>"
                                                         >Verifikasi</button>
                                                     <?php else: ?>
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-danger btn-sm js-open-upload-modal"
-                                                            data-row-no="<?= esc((string) $rowNo); ?>"
-                                                            data-row-label="<?= esc($noText); ?>"
-                                                            data-uraian="<?= esc($uraian); ?>"
-                                                            data-kelengkapan="tidak"
-                                                            data-verifikasi=""
-                                                            data-keterangan=""
-                                                            data-pic="<?= esc($pic); ?>"
-                                                            data-created-by=""
-                                                        >Dokumen Memang Tidak Ada</button>
+                                                        <span class="text-muted">-</span>
                                                     <?php endif; ?>
                                                 </td>
                                             <?php else: ?>
