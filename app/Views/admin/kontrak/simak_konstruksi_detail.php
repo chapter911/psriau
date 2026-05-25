@@ -315,7 +315,7 @@
                                                 </td>
                                                 <td class="<?= esc($statusCellClass); ?>">
                                                     <?php if ($kelengkapan === 'tidak' && $verifikasi === 'sesuai'): ?>
-                                                        <span class="badge badge-success">Selesai</span>
+                                                        <span class="badge badge-success">Lengkap</span>
                                                     <?php elseif ($verifikasi === 'sesuai'): ?>
                                                         <span class="badge badge-success">Sesuai</span>
                                                     <?php elseif ($verifikasi === 'tidak_sesuai'): ?>
@@ -392,7 +392,7 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <?php if (is_array($latestDokumen)): ?>
+                                                    <?php if (is_array($latestDokumen) || $kelengkapan !== '' || $verifikasi !== '' || $keterangan !== '' || $pic !== ''): ?>
                                                         <button
                                                             type="button"
                                                             class="btn btn-warning btn-sm js-open-upload-modal"
