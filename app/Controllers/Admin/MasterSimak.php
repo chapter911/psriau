@@ -394,17 +394,24 @@ class MasterSimak extends BaseController
         }
         $nextOrdering = (int) (($orderingBuilder->first()['max_ordering'] ?? 0) + 1);
 
-        $model->insert([
+        $hasDisplayNoColumn = $db->fieldExists('display_no', 'mst_simak_konstruksi_item');
+
+        $payload = [
             'parent_id' => $parentId,
             'row_no' => $nextRowNo,
-            'display_no' => trim((string) $this->request->getPost('display_no')),
             'uraian' => trim((string) $this->request->getPost('uraian')),
             'row_kind' => $rowKind,
             'has_question' => $rowKind === 'question' ? 1 : ((int) ($this->request->getPost('has_question') ? 1 : 0)),
             'has_draft' => (int) ($this->request->getPost('has_draft') ? 1 : 0),
             'ordering' => $nextOrdering,
             'is_active' => 1,
-        ]);
+        ];
+
+        if ($hasDisplayNoColumn) {
+            $payload['display_no'] = '';
+        }
+
+        $model->insert($payload);
 
         if ($db->fieldExists('is_hidden_share', 'mst_simak_konstruksi_item')) {
             $model->update((int) $model->getInsertID(), ['is_hidden_share' => 0]);
@@ -485,14 +492,19 @@ class MasterSimak extends BaseController
 
         $rowKind = trim((string) $this->request->getPost('row_kind'));
 
+        $hasDisplayNoColumn = $db->fieldExists('display_no', 'mst_simak_konstruksi_item');
+
         $payload = [
             'parent_id' => $parentId,
-            'display_no' => trim((string) $this->request->getPost('display_no')),
             'uraian' => trim((string) $this->request->getPost('uraian')),
             'row_kind' => $rowKind,
             'has_question' => $rowKind === 'question' ? 1 : ((int) ($this->request->getPost('has_question') ? 1 : 0)),
             'has_draft' => (int) ($this->request->getPost('has_draft') ? 1 : 0),
         ];
+
+        if ($hasDisplayNoColumn) {
+            $payload['display_no'] = (string) ($existing['display_no'] ?? '');
+        }
 
         $model->update($id, $payload);
 
@@ -805,10 +817,11 @@ class MasterSimak extends BaseController
         }
         $nextOrdering = (int) (($orderingBuilder->first()['max_ordering'] ?? 0) + 1);
 
-        $model->insert([
+        $hasDisplayNoColumn = $db->fieldExists('display_no', 'mst_simak_konsultasi_item');
+
+        $payload = [
             'parent_id' => $parentId,
             'row_no' => $nextRowNo,
-            'display_no' => trim((string) $this->request->getPost('display_no')),
             'uraian' => trim((string) $this->request->getPost('uraian')),
             'bentuk_dokumen' => trim((string) $this->request->getPost('bentuk_dokumen')),
             'referensi' => trim((string) $this->request->getPost('referensi')),
@@ -820,7 +833,13 @@ class MasterSimak extends BaseController
             'has_draft' => (int) ($this->request->getPost('has_draft') ? 1 : 0),
             'ordering' => $nextOrdering,
             'is_active' => 1,
-        ]);
+        ];
+
+        if ($hasDisplayNoColumn) {
+            $payload['display_no'] = '';
+        }
+
+        $model->insert($payload);
 
         if ($db->fieldExists('is_hidden_share', 'mst_simak_konsultasi_item')) {
             $model->update((int) $model->getInsertID(), ['is_hidden_share' => 0]);
@@ -901,9 +920,10 @@ class MasterSimak extends BaseController
 
         $rowKind = trim((string) $this->request->getPost('row_kind'));
 
-        $model->update($id, [
+        $hasDisplayNoColumn = $db->fieldExists('display_no', 'mst_simak_konsultasi_item');
+
+        $payload = [
             'parent_id' => $parentId,
-            'display_no' => trim((string) $this->request->getPost('display_no')),
             'uraian' => trim((string) $this->request->getPost('uraian')),
             'bentuk_dokumen' => trim((string) $this->request->getPost('bentuk_dokumen')),
             'referensi' => trim((string) $this->request->getPost('referensi')),
@@ -913,7 +933,13 @@ class MasterSimak extends BaseController
             'row_kind' => $rowKind,
             'has_question' => $rowKind === 'question' ? 1 : ((int) ($this->request->getPost('has_question') ? 1 : 0)),
             'has_draft' => (int) ($this->request->getPost('has_draft') ? 1 : 0),
-        ]);
+        ];
+
+        if ($hasDisplayNoColumn) {
+            $payload['display_no'] = (string) ($existing['display_no'] ?? '');
+        }
+
+        $model->update($id, $payload);
 
         $this->rebuildSimakKonsultasiDisplayNumbers();
 
@@ -1312,13 +1338,15 @@ class MasterSimak extends BaseController
         $tree = $this->annotateTreeDisplayNumbers($this->buildTree($rows));
         $flat = $this->flattenTree($tree);
 
-        $db->transStart();
-        foreach ($flat as $row) {
-            $db->table('mst_simak_konstruksi_item')
-                ->where('id', (int) ($row['id'] ?? 0))
-                ->update(['display_no' => (string) ($row['display_no_auto'] ?? '')]);
+        if ($db->fieldExists('display_no', 'mst_simak_konstruksi_item')) {
+            $db->transStart();
+            foreach ($flat as $row) {
+                $db->table('mst_simak_konstruksi_item')
+                    ->where('id', (int) ($row['id'] ?? 0))
+                    ->update(['display_no' => (string) ($row['display_no_auto'] ?? '')]);
+            }
+            $db->transComplete();
         }
-        $db->transComplete();
     }
 
     private function buildParentOptions(array $flatRows): array
@@ -1362,13 +1390,15 @@ class MasterSimak extends BaseController
         $tree = $this->annotateTreeDisplayNumbers($this->buildTree($rows));
         $flat = $this->flattenTree($tree);
 
-        $db->transStart();
-        foreach ($flat as $row) {
-            $db->table('mst_simak_konsultasi_item')
-                ->where('id', (int) ($row['id'] ?? 0))
-                ->update(['display_no' => (string) ($row['display_no_auto'] ?? '')]);
+        if ($db->fieldExists('display_no', 'mst_simak_konsultasi_item')) {
+            $db->transStart();
+            foreach ($flat as $row) {
+                $db->table('mst_simak_konsultasi_item')
+                    ->where('id', (int) ($row['id'] ?? 0))
+                    ->update(['display_no' => (string) ($row['display_no_auto'] ?? '')]);
+            }
+            $db->transComplete();
         }
-        $db->transComplete();
     }
 
     private function flattenHierarchyPayload(array $nodes, ?int $parentId, array &$out): void
