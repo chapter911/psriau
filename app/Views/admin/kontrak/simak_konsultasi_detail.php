@@ -359,7 +359,6 @@
                                                             class="btn btn-outline-secondary btn-sm"
                                                             title="Lihat dokumen draft: <?= esc((string) ($draftDokumen['file_original_name'] ?? 'Dokumen')); ?>"
                                                         ><i class="fas fa-eye"></i> Lihat Draft</a>
-                                                        <small class="d-block text-muted mt-1"><?= esc((string) ($draftDokumen['file_original_name'] ?? '-')); ?></small>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
@@ -373,7 +372,6 @@
                                                             class="btn btn-info btn-sm"
                                                             title="Lihat dokumen final: <?= esc((string) ($finalDokumen['file_original_name'] ?? 'Dokumen')); ?>"
                                                         ><i class="fas fa-eye"></i> Lihat Final</a>
-                                                        <small class="d-block text-muted mt-1"><?= esc((string) ($finalDokumen['file_original_name'] ?? '-')); ?></small>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
