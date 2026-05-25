@@ -2126,6 +2126,14 @@ class Kontrak extends BaseController
             $ver = null;
         }
 
+        if ($kel === 'tidak') {
+            $ver = null;
+
+            if ($ket === '') {
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Keterangan wajib diisi jika dokumen memang tidak ada.');
+            }
+        }
+
         $file = $this->request->getFile('dokumen_file');
         $hasUpload = $file && $file->isValid() && ! $file->hasMoved();
 

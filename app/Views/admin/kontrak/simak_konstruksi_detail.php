@@ -387,7 +387,18 @@
                                                             data-created-by="<?= esc((string) ($latestDokumen['created_by'] ?? '')); ?>"
                                                         >Verifikasi</button>
                                                     <?php else: ?>
-                                                        <span class="text-muted">-</span>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-danger btn-sm js-open-upload-modal"
+                                                            data-row-no="<?= esc((string) $rowNo); ?>"
+                                                            data-row-label="<?= esc($noText); ?>"
+                                                            data-uraian="<?= esc($uraian); ?>"
+                                                            data-kelengkapan="tidak"
+                                                            data-verifikasi=""
+                                                            data-keterangan=""
+                                                            data-pic="<?= esc($pic); ?>"
+                                                            data-created-by=""
+                                                        >Dokumen Tidak Ada</button>
                                                     <?php endif; ?>
                                                 </td>
                                             <?php else: ?>
@@ -426,6 +437,16 @@
                     </div>
                     <div class="alert alert-info">
                         <strong>Info:</strong> Dokumen yang diupload akan otomatis terverifikasi sebagai <strong>Lengkap</strong>.
+                    </div>
+                    <div class="form-group">
+                        <label for="upload_kelengkapan_dokumen">Kelengkapan Dokumen <span class="text-danger">*</span></label>
+                        <select class="form-control select2-modal" id="upload_kelengkapan_dokumen" name="kelengkapan_dokumen" required>
+                            <option value="">-- Pilih --</option>
+                            <option value="ada">Dokumen Ada</option>
+                            <option value="tidak">Dokumen Tidak Ada</option>
+                        </select>
+                        <small class="text-muted">Jika memilih Dokumen Tidak Ada, keterangan wajib diisi.</small>
+                        <div class="invalid-feedback d-block" id="kelengkapan_error" style="display: none; color: #dc3545;">Kelengkapan dokumen wajib dipilih</div>
                     </div>
                     <div class="form-group">
                         <label for="admin_upload_file">File Dokumen <span class="text-danger">*</span></label>
@@ -558,6 +579,7 @@
     var rowNoInput = document.getElementById('upload_row_no');
     var rowLabelEl = document.getElementById('upload_row_label');
     var rowUraianEl = document.getElementById('upload_row_uraian');
+    var kelengkapanEl = document.getElementById('upload_kelengkapan_dokumen');
     var verifikasiEl = document.getElementById('upload_verifikasi');
     var keteranganEl = document.getElementById('upload_keterangan');
     var picEl = document.getElementById('upload_pic');
@@ -568,6 +590,7 @@
     var keteranganRequiredIndicator = document.getElementById('keterangan_required_indicator');
     var keteranganErrorEl = document.getElementById('keterangan_error');
     var verifikasiErrorEl = document.getElementById('verifikasi_error');
+    var kelengkapanErrorEl = document.getElementById('kelengkapan_error');
 
     var currentUsername = '<?= esc((string) session()->get('username')); ?>';
 
@@ -638,9 +661,11 @@
 
     var updateVerifikasiLogic = function () {
         if (!verifikasiEl || !keteranganEl) return;
-        
+
+        var selectedKelengkapan = kelengkapanEl ? kelengkapanEl.value : '';
         var selectedValue = verifikasiEl.value;
-        
+        var requiresKeterangan = selectedKelengkapan === 'tidak' || selectedValue === 'tidak_sesuai';
+
         // Always clear errors first
         if (keteranganErrorEl) {
             keteranganErrorEl.style.display = 'none';
@@ -648,8 +673,25 @@
         if (verifikasiErrorEl) {
             verifikasiErrorEl.style.display = 'none';
         }
-        
-        if (selectedValue === 'sesuai') {
+        if (kelengkapanErrorEl) {
+            kelengkapanErrorEl.style.display = 'none';
+        }
+
+        if (selectedKelengkapan === 'tidak') {
+            keteranganEl.value = keteranganEl.value || '';
+            keteranganEl.setAttribute('required', 'required');
+            if (keteranganRequiredIndicator) {
+                keteranganRequiredIndicator.style.display = 'inline';
+            }
+            if (verifikasiEl.value !== '') {
+                verifikasiEl.value = '';
+                if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                    try {
+                        window.jQuery(verifikasiEl).trigger('change');
+                    } catch (e) {}
+                }
+            }
+        } else if (selectedValue === 'sesuai') {
             keteranganEl.value = 'Verifikasi Sesuai';
             keteranganEl.removeAttribute('required');
             if (keteranganRequiredIndicator) {
@@ -680,6 +722,14 @@
             }
             if (rowUraianEl) {
                 rowUraianEl.textContent = this.getAttribute('data-uraian') || '-';
+            }
+            if (kelengkapanEl) {
+                kelengkapanEl.value = this.getAttribute('data-kelengkapan') || 'ada';
+                if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                    try {
+                        window.jQuery(kelengkapanEl).trigger('change');
+                    } catch (e) {}
+                }
             }
             if (verifikasiEl) {
                 verifikasiEl.value = this.getAttribute('data-verifikasi') || '';
@@ -748,6 +798,17 @@
         }
     }
 
+    if (kelengkapanEl) {
+        kelengkapanEl.addEventListener('change', function () {
+            updateVerifikasiLogic();
+            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                try {
+                    window.jQuery(this).select2('close');
+                } catch (e) {}
+            }
+        });
+    }
+
     if (formEl) {
         var isForcedSubmit = false;
 
@@ -773,6 +834,7 @@
         };
 
         formEl.addEventListener('submit', function (e) {
+            var kelengkapanValue = kelengkapanEl ? kelengkapanEl.value : '';
             var verifikasiValue = verifikasiEl ? verifikasiEl.value : '';
             var keteranganValue = keteranganEl ? keteranganEl.value.trim() : '';
 
@@ -780,7 +842,38 @@
                 return;
             }
 
-            if (!verifikasiValue) {
+            if (!kelengkapanValue) {
+                if (kelengkapanErrorEl) {
+                    kelengkapanErrorEl.style.display = 'none';
+                }
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (window.Swal) {
+                    window.Swal.fire({
+                        title: 'Peringatan',
+                        text: 'Wajib pilih kelengkapan dokumen.',
+                        icon: 'warning',
+                        confirmButtonText: 'OK'
+                    }).then(function () {
+                        if (kelengkapanEl) {
+                            kelengkapanEl.focus();
+                        }
+                    });
+                } else {
+                    alert('Wajib pilih kelengkapan dokumen.');
+                    if (kelengkapanEl) {
+                        kelengkapanEl.focus();
+                    }
+                }
+
+                return;
+            } else if (kelengkapanErrorEl) {
+                kelengkapanErrorEl.style.display = 'none';
+            }
+
+            if (kelengkapanValue === 'ada' && !verifikasiValue) {
                 if (verifikasiErrorEl) {
                     verifikasiErrorEl.style.display = 'none';
                 }
@@ -813,7 +906,7 @@
                 }
             }
 
-            if (verifikasiValue === 'tidak_sesuai' && !keteranganValue) {
+            if ((kelengkapanValue === 'tidak' || verifikasiValue === 'tidak_sesuai') && !keteranganValue) {
                 if (keteranganErrorEl) {
                     keteranganErrorEl.style.display = 'none';
                 }
@@ -848,6 +941,26 @@
 
             e.preventDefault();
             e.stopPropagation();
+
+            if (kelengkapanValue === 'tidak') {
+                if (window.Swal) {
+                    window.Swal.fire({
+                        title: 'Konfirmasi Status Dokumen',
+                        text: 'Simpan status bahwa dokumen memang tidak ada?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Simpan',
+                        cancelButtonText: 'Batal'
+                    }).then(function (result) {
+                        if (result.isConfirmed) {
+                            showLoadingAndSubmit();
+                        }
+                    });
+                } else if (confirm('Simpan status bahwa dokumen memang tidak ada?')) {
+                    showLoadingAndSubmit();
+                }
+                return;
+            }
 
             if (verifikasiValue === 'sesuai') {
                 if (window.Swal) {
