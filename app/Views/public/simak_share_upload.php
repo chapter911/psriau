@@ -997,7 +997,7 @@
                         <select id="upload_method" name="upload_method" class="form-control">
                             <option value="file">Upload File</option>
                             <option value="drive">Link Google Drive</option>
-                            <option value="none">Dokumen Belum Ada</option>
+                            <option value="none">Dokumen Memang Tidak Ada</option>
                         </select>
                     </div>
 
@@ -1015,9 +1015,9 @@
                     </div>
 
                     <div class="form-group mb-3 d-none" id="uploadNoDocumentGroup">
-                        <label for="keterangan_tidak_ada_modal">Keterangan Dokumen Belum Ada</label>
-                        <textarea id="keterangan_tidak_ada_modal" name="keterangan" class="form-control" rows="3" maxlength="500" placeholder="Contoh: Dokumen masih proses legalisasi/notaris, estimasi tersedia pekan depan."></textarea>
-                        <small class="text-muted">Wajib diisi jika memilih metode Dokumen Belum Ada.</small>
+                        <label for="keterangan_tidak_ada_modal">Keterangan Dokumen Memang Tidak Ada</label>
+                        <textarea id="keterangan_tidak_ada_modal" name="keterangan" class="form-control" rows="3" maxlength="500" placeholder="Contoh: Dokumen memang tidak tersedia karena ..."></textarea>
+                        <small class="text-muted">Wajib diisi jika memilih metode Dokumen Memang Tidak Ada.</small>
                     </div>
                 </div>
                 <div class="modal-footer">

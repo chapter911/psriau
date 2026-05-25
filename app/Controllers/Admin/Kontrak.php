@@ -2126,12 +2126,8 @@ class Kontrak extends BaseController
             $ver = null;
         }
 
-        if ($kel === 'tidak') {
-            $ver = null;
-
-            if ($ket === '') {
-                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Keterangan wajib diisi jika dokumen memang tidak ada.');
-            }
+        if ($kel === 'tidak' && $ket === '') {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Keterangan wajib diisi jika dokumen memang tidak ada.');
         }
 
         $file = $this->request->getFile('dokumen_file');
@@ -2765,7 +2761,7 @@ class Kontrak extends BaseController
         $sourceLabel = 'dokumen';
 
         if ($uploadMethod === 'none') {
-            $sourceLabel = 'keterangan dokumen belum ada';
+            $sourceLabel = 'keterangan dokumen memang tidak ada';
         } elseif ($hasDriveLink) {
             if (! $this->isAllowedGoogleDriveUrl($googleDriveLink)) {
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Link tidak valid. Gunakan link dari drive.google.com atau docs.google.com.');
@@ -2874,7 +2870,7 @@ class Kontrak extends BaseController
         }
 
         if ($uploadMethod === 'none') {
-            return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Keterangan dokumen belum ada berhasil disimpan. Status kelengkapan dokumen diperbarui menjadi Tidak Ada.');
+            return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Keterangan dokumen memang tidak ada berhasil disimpan. Status kelengkapan dokumen diperbarui menjadi Tidak Ada.');
         }
 
         return redirect()->to(site_url('simak/share/' . $token))->with('success', ucfirst($sourceLabel) . ' ' . $tipeDokumen . ' berhasil dikirim. Status kelengkapan dokumen diperbarui menjadi Ada dan Verifikasi Dit. KI menjadi Menunggu Verifikasi.');
@@ -6101,7 +6097,7 @@ class Kontrak extends BaseController
                 'file_size' => $fileSize,
                 'nama_file' => (string) $file->getClientName(),
                 'file_path' => $relativePath,
-                'status' => ($kel === 'ada' && $ver === 'sesuai') ? 'Lengkap' : (($kel === 'ada' && $ver === 'tidak_sesuai') ? 'Belum Sesuai' : (($kel === 'ada') ? 'Belum Verifikasi' : 'Belum Ada')),
+                'status' => ($kel === 'ada' && $ver === 'sesuai') ? 'Lengkap' : (($kel === 'ada' && $ver === 'tidak_sesuai') ? 'Belum Sesuai' : (($kel === 'ada') ? 'Belum Verifikasi' : (($ver === 'sesuai') ? 'Selesai' : 'Tidak Ada'))),
                 'catatan' => $ket,
                 'tipe_dokumen' => $tipeDokumen,
                 'created_by' => $actor,

@@ -270,6 +270,8 @@
                                             if ($isInputRow) {
                                                 if ($kelengkapan === 'ada' && $verifikasi === 'tidak_sesuai') {
                                                     $statusCellClass = 'simak-status-yellow';
+                                                } elseif ($kelengkapan === 'tidak' && $verifikasi === 'sesuai') {
+                                                    $statusCellClass = 'simak-status-green';
                                                 } elseif ($kelengkapan !== 'ada') {
                                                     $statusCellClass = 'simak-status-red-soft';
                                                 }
@@ -291,13 +293,15 @@
                                                     <?php if ($kelengkapan === 'ada'): ?>
                                                         <span class="badge badge-success">Ada</span>
                                                     <?php elseif ($kelengkapan === 'tidak'): ?>
-                                                        <span class="badge badge-danger">Tidak</span>
+                                                        <span class="badge badge-danger">Tidak Ada</span>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
                                                 </td>
                                                 <td class="<?= esc($statusCellClass); ?>">
-                                                    <?php if ($verifikasi === 'sesuai'): ?>
+                                                    <?php if ($kelengkapan === 'tidak' && $verifikasi === 'sesuai'): ?>
+                                                        <span class="badge badge-success">Selesai</span>
+                                                    <?php elseif ($verifikasi === 'sesuai'): ?>
                                                         <span class="badge badge-success">Sesuai</span>
                                                     <?php elseif ($verifikasi === 'tidak_sesuai'): ?>
                                                         <span class="badge badge-warning">Tidak Sesuai</span>
@@ -398,7 +402,7 @@
                                                             data-keterangan=""
                                                             data-pic="<?= esc($pic); ?>"
                                                             data-created-by=""
-                                                        >Dokumen Tidak Ada</button>
+                                                        >Dokumen Memang Tidak Ada</button>
                                                     <?php endif; ?>
                                                 </td>
                                             <?php else: ?>
@@ -445,7 +449,7 @@
                             <option value="ada">Dokumen Ada</option>
                             <option value="tidak">Dokumen Tidak Ada</option>
                         </select>
-                        <small class="text-muted">Jika memilih Dokumen Tidak Ada, keterangan wajib diisi.</small>
+                        <small class="text-muted">Jika memilih Dokumen Memang Tidak Ada, keterangan wajib diisi.</small>
                         <div class="invalid-feedback d-block" id="kelengkapan_error" style="display: none; color: #dc3545;">Kelengkapan dokumen wajib dipilih</div>
                     </div>
                     <div class="form-group">
@@ -664,7 +668,6 @@
 
         var selectedKelengkapan = kelengkapanEl ? kelengkapanEl.value : '';
         var selectedValue = verifikasiEl.value;
-        var requiresKeterangan = selectedKelengkapan === 'tidak' || selectedValue === 'tidak_sesuai';
 
         // Always clear errors first
         if (keteranganErrorEl) {
@@ -678,18 +681,9 @@
         }
 
         if (selectedKelengkapan === 'tidak') {
-            keteranganEl.value = keteranganEl.value || '';
             keteranganEl.setAttribute('required', 'required');
             if (keteranganRequiredIndicator) {
                 keteranganRequiredIndicator.style.display = 'inline';
-            }
-            if (verifikasiEl.value !== '') {
-                verifikasiEl.value = '';
-                if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
-                    try {
-                        window.jQuery(verifikasiEl).trigger('change');
-                    } catch (e) {}
-                }
             }
         } else if (selectedValue === 'sesuai') {
             keteranganEl.value = 'Verifikasi Sesuai';
@@ -873,7 +867,7 @@
                 kelengkapanErrorEl.style.display = 'none';
             }
 
-            if (kelengkapanValue === 'ada' && !verifikasiValue) {
+            if (!verifikasiValue) {
                 if (verifikasiErrorEl) {
                     verifikasiErrorEl.style.display = 'none';
                 }
@@ -946,7 +940,7 @@
                 if (window.Swal) {
                     window.Swal.fire({
                         title: 'Konfirmasi Status Dokumen',
-                        text: 'Simpan status bahwa dokumen memang tidak ada?',
+                        text: 'Simpan status bahwa dokumen memang tidak ada tanpa upload file?',
                         icon: 'question',
                         showCancelButton: true,
                         confirmButtonText: 'Ya, Simpan',
