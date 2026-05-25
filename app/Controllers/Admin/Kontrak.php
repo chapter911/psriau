@@ -2478,6 +2478,12 @@ class Kontrak extends BaseController
             ->setBody($content === false ? '' : $content);
     }
 
+    public function adminDeleteSimakDokumen(int $dokumenId)
+    {
+        // removed temporary adminDeleteSimakDokumen method
+        return redirect()->to(site_url('/admin'))->with('error', 'Endpoint penghapusan sementara telah dihapus.');
+    }
+
     public function sharedSimak(string $token)
     {
         $shared = $this->resolveSharedSimak($token);
