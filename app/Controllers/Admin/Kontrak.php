@@ -4611,6 +4611,8 @@ class Kontrak extends BaseController
 
         $sortTree($roots);
 
+        $annotatedTree = $this->annotateTreeDisplayNumbers($roots);
+
         $flattened = [];
         $walk = static function (array $items, int $depth, string $sectionKey, string $sectionTitle) use (&$walk, &$flattened, $includeHiddenShare): void {
             foreach ($items as $item) {
@@ -4672,7 +4674,7 @@ class Kontrak extends BaseController
             }
         };
 
-        $walk($roots, 0, '', '');
+        $walk($annotatedTree, 0, '', '');
 
         return $flattened;
     }
