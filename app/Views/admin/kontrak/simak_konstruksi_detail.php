@@ -520,11 +520,6 @@
                         <input type="text" class="form-control" id="upload_pic" name="pic" readonly>
                     </div>
 
-                    <div class="form-group">
-                        <label for="notification_email">Email Penerima Notifikasi</label>
-                        <input type="email" class="form-control" id="notification_email" name="notification_email" placeholder="contoh@email.com">
-                        <small class="text-muted">Jika diisi, notifikasi verifikasi akan dikirim ke email ini</small>
-                    </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">Verifikasi</button>
@@ -746,28 +741,6 @@
             }
 
             updateVerifikasiLogic();
-
-            // Auto-extract and fill notification email from created_by
-            var createdBy = this.getAttribute('data-created-by') || '';
-            var extractedEmail = '';
-            if (createdBy) {
-                // Try to extract email from format: google: name <email@example.com>
-                var angleMatch = createdBy.match(/<([^>]+)>/);
-                if (angleMatch && angleMatch[1]) {
-                    extractedEmail = angleMatch[1].trim();
-                } else {
-                    // Try to extract plain email
-                    var emailMatch = createdBy.match(/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i);
-                    if (emailMatch && emailMatch[1]) {
-                        extractedEmail = emailMatch[1].trim();
-                    }
-                }
-            }
-            
-            var notificationEmailInput = document.getElementById('notification_email');
-            if (notificationEmailInput) {
-                notificationEmailInput.value = extractedEmail;
-            }
 
             if (window.jQuery && window.jQuery.fn && typeof window.jQuery.fn.modal === 'function') {
                 window.jQuery('#modal-upload-verifikasi').modal('show');

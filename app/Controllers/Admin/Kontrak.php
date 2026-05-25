@@ -1921,42 +1921,23 @@ class Kontrak extends BaseController
 
         // Notify uploader(s) via email
         try {
+            $sharedItem = is_array($shared['item'] ?? null) ? $shared['item'] : [];
             $emails = [];
 
-            // Priority 1: Check for manual notification email from POST
-            $notificationEmail = trim((string) ($this->request->getPost('notification_email') ?? ''));
-            if ($notificationEmail !== '') {
-                if (filter_var($notificationEmail, FILTER_VALIDATE_EMAIL) !== false) {
-                    $emails[] = $notificationEmail;
+            $emailResponden1 = trim((string) ($sharedItem['email_responden_1'] ?? $sharedItem['email_responden'] ?? ''));
+            $emailResponden2 = trim((string) ($sharedItem['email_responden_2'] ?? ''));
+
+            foreach ([$emailResponden1, $emailResponden2] as $candidate) {
+                if ($candidate === '') {
+                    continue;
+                }
+
+                if (filter_var($candidate, FILTER_VALIDATE_EMAIL) !== false) {
+                    $emails[] = $candidate;
                 }
             }
 
-            // Priority 2: Extract from uploaded documents
-            if ($emails === [] && $db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
-                $docs = $db->table('trn_kontrak_simak_verifikasi_dokumen')
-                    ->select('created_by, row_no, file_original_name')
-                    ->where('simak_id', $id)
-                    ->get()
-                    ->getResultArray();
-
-                foreach ($docs as $d) {
-                    $cb = trim((string) ($d['created_by'] ?? ''));
-                    if ($cb === '') {
-                        continue;
-                    }
-
-                    if (preg_match('/<([^>]+)>/', $cb, $m)) {
-                        $emails[] = trim($m[1]);
-                        continue;
-                    }
-
-                    if (preg_match('/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i', $cb, $m2)) {
-                        $emails[] = trim($m2[1]);
-                    }
-                }
-
-                $emails = array_values(array_unique(array_filter($emails)));
-            }
+            $emails = array_values(array_unique($emails));
 
             if ($emails !== [] && class_exists('\Config\Services')) {
                 $emailService = \Config\Services::email();
