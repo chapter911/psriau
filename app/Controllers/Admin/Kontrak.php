@@ -4144,6 +4144,7 @@ class Kontrak extends BaseController
                 $outputItem = [
                     'row_no' => (int) ($node['row_no'] ?? 0),
                     'display_no' => $displayNo,
+                    'display_no_auto' => trim((string) ($node['display_no_auto'] ?? '')),
                     'uraian' => trim((string) ($node['uraian'] ?? '')),
                     'is_header' => (bool) ($node['is_header'] ?? false),
                     'indent_level' => $depth,
@@ -4514,6 +4515,7 @@ class Kontrak extends BaseController
                 $outputItem = [
                     'row_no' => (int) ($node['row_no'] ?? 0),
                     'display_no' => $displayNo,
+                    'display_no_auto' => trim((string) ($node['display_no_auto'] ?? '')),
                     'uraian' => trim((string) ($node['uraian'] ?? '')),
                     'bentuk_dokumen' => trim((string) ($node['bentuk_dokumen'] ?? '')),
                     'referensi' => trim((string) ($node['referensi'] ?? '')),
