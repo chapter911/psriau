@@ -992,6 +992,7 @@
                         <select id="upload_method" name="upload_method" class="form-control">
                             <option value="file">Upload File</option>
                             <option value="drive">Link Google Drive</option>
+                            <option value="none">Dokumen Belum Ada</option>
                         </select>
                     </div>
 
@@ -1006,6 +1007,12 @@
                         <label for="google_drive_link_modal">Link Google Drive</label>
                         <input type="url" id="google_drive_link_modal" name="google_drive_link" class="form-control" placeholder="https://drive.google.com/...">
                         <small class="text-muted">Gunakan link file dari Google Drive atau Google Docs.</small>
+                    </div>
+
+                    <div class="form-group mb-3 d-none" id="uploadNoDocumentGroup">
+                        <label for="keterangan_tidak_ada_modal">Keterangan Dokumen Belum Ada</label>
+                        <textarea id="keterangan_tidak_ada_modal" name="keterangan" class="form-control" rows="3" maxlength="500" placeholder="Contoh: Dokumen masih proses legalisasi/notaris, estimasi tersedia pekan depan."></textarea>
+                        <small class="text-muted">Wajib diisi jika memilih metode Dokumen Belum Ada.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1325,6 +1332,9 @@
         if (googleDriveLinkEl) {
             googleDriveLinkEl.value = '';
         }
+        if (keteranganTidakAdaEl) {
+            keteranganTidakAdaEl.value = '';
+        }
         if (uploadMethodEl) {
             uploadMethodEl.value = 'file';
         }
@@ -1335,19 +1345,26 @@
     function syncUploadMethodUI() {
         var method = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
         var useDrive = method === 'drive';
+        var useNoDocument = method === 'none';
 
         if (uploadFileGroupEl) {
-            uploadFileGroupEl.classList.toggle('d-none', useDrive ? true : false);
+            uploadFileGroupEl.classList.toggle('d-none', useDrive || useNoDocument);
         }
         if (uploadDriveGroupEl) {
-            uploadDriveGroupEl.classList.toggle('d-none', !useDrive);
+            uploadDriveGroupEl.classList.toggle('d-none', !useDrive || useNoDocument);
+        }
+        if (uploadNoDocumentGroupEl) {
+            uploadNoDocumentGroupEl.classList.toggle('d-none', !useNoDocument);
         }
 
-        if (useDrive && dokumenFileEl) {
+        if ((useDrive || useNoDocument) && dokumenFileEl) {
             dokumenFileEl.value = '';
         }
-        if (!useDrive && googleDriveLinkEl) {
+        if ((!useDrive || useNoDocument) && googleDriveLinkEl) {
             googleDriveLinkEl.value = '';
+        }
+        if (!useNoDocument && keteranganTidakAdaEl) {
+            keteranganTidakAdaEl.value = '';
         }
 
         refreshFileStatus();
@@ -1757,6 +1774,8 @@
     var uploadMethodEl = document.getElementById('upload_method');
     var uploadFileGroupEl = document.getElementById('uploadFileGroup');
     var uploadDriveGroupEl = document.getElementById('uploadDriveGroup');
+    var uploadNoDocumentGroupEl = document.getElementById('uploadNoDocumentGroup');
+    var keteranganTidakAdaEl = document.getElementById('keterangan_tidak_ada_modal');
     var googleDriveLinkEl = document.getElementById('google_drive_link_modal');
     var googleAccessTokenEl = document.getElementById('google_access_token');
     var uploaderNameEl = document.getElementById('uploader_name');
@@ -1867,6 +1886,12 @@
     }
 
     function refreshFileStatus() {
+        var method = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
+        if (method === 'none') {
+            setFileStatus('Status file: tidak diperlukan untuk metode Dokumen Belum Ada.', 'info');
+            return;
+        }
+
         if (!dokumenFileEl || !dokumenFileEl.files || !dokumenFileEl.files.length) {
             setFileStatus('Status file: belum dipilih.');
             return;
@@ -2035,6 +2060,24 @@
                 return;
             }
 
+            if (selectedMethod === 'none') {
+                var keteranganTidakAda = String(keteranganTidakAdaEl && keteranganTidakAdaEl.value ? keteranganTidakAdaEl.value : '').trim();
+                if (!keteranganTidakAda) {
+                    event.preventDefault();
+                    if (window.Swal) {
+                        window.Swal.fire({
+                            icon: 'warning',
+                            title: 'Keterangan wajib diisi',
+                            text: 'Mohon jelaskan kenapa dokumen belum tersedia.',
+                        });
+                    }
+                    if (keteranganTidakAdaEl) {
+                        keteranganTidakAdaEl.focus();
+                    }
+                    return;
+                }
+            }
+
             if (selectedMethod !== 'drive' && hasFile && dokumenFileEl && dokumenFileEl.files[0] && dokumenFileEl.files[0].size > autoCompressThresholdBytes) {
                 event.preventDefault();
                 enforceGoogleDriveOnlyForLargeFile(dokumenFileEl.files[0]);
@@ -2138,7 +2181,7 @@
 
             if (window.Swal && typeof window.Swal.fire === 'function') {
                 window.Swal.fire({
-                    title: 'Mengunggah dokumen...',
+                    title: selectedMethod === 'none' ? 'Menyimpan keterangan...' : 'Mengunggah dokumen...',
                     text: 'Mohon tunggu sebentar',
                     allowOutsideClick: false,
                     allowEscapeKey: false,

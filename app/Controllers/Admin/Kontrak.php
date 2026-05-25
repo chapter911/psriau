@@ -2657,7 +2657,7 @@ class Kontrak extends BaseController
         $verifikasi = null;
 
         $uploadMethod = strtolower(trim((string) $this->request->getPost('upload_method')));
-        if (! in_array($uploadMethod, ['file', 'drive'], true)) {
+        if (! in_array($uploadMethod, ['file', 'drive', 'none'], true)) {
             $uploadMethod = 'file';
         }
 
@@ -2668,6 +2668,7 @@ class Kontrak extends BaseController
 
         $file = $this->request->getFile('dokumen_file');
         $googleDriveLink = trim((string) $this->request->getPost('google_drive_link'));
+        $keteranganTidakAda = trim((string) $this->request->getPost('keterangan'));
         $hasFile = $file !== null && $file->getError() !== UPLOAD_ERR_NO_FILE;
         $hasDriveLink = $googleDriveLink !== '';
 
@@ -2675,7 +2676,11 @@ class Kontrak extends BaseController
         $now = date('Y-m-d H:i:s');
         $actor = 'responden';
 
-        if ($uploadMethod === 'drive') {
+        if ($uploadMethod === 'none') {
+            if ($keteranganTidakAda === '') {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Mohon isi keterangan kenapa dokumen belum tersedia.');
+            }
+        } elseif ($uploadMethod === 'drive') {
             if (! $hasDriveLink) {
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Pilih salah satu: upload file atau isi link Google Drive.');
             }
@@ -2694,7 +2699,9 @@ class Kontrak extends BaseController
         $fileSize = 0;
         $sourceLabel = 'dokumen';
 
-        if ($hasDriveLink) {
+        if ($uploadMethod === 'none') {
+            $sourceLabel = 'keterangan dokumen belum ada';
+        } elseif ($hasDriveLink) {
             if (! $this->isAllowedGoogleDriveUrl($googleDriveLink)) {
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Link tidak valid. Gunakan link dari drive.google.com atau docs.google.com.');
             }
@@ -2748,7 +2755,8 @@ class Kontrak extends BaseController
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
         }
 
-        $keterangan = 'Menunggu Verifikasi';
+        $kelengkapanDokumen = $uploadMethod === 'none' ? 'tidak' : 'ada';
+        $keterangan = $uploadMethod === 'none' ? $keteranganTidakAda : 'Menunggu Verifikasi';
         $pic = is_array($existingVerifikasi) ? trim((string) ($existingVerifikasi['pic'] ?? '')) : '';
 
         $verifikasiRow = [
@@ -2756,7 +2764,7 @@ class Kontrak extends BaseController
             'row_no' => $rowNo,
             'kode' => (string) ($targetTemplate['display_no'] ?? ''),
             'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
-            'kelengkapan_dokumen' => 'ada',
+            'kelengkapan_dokumen' => $kelengkapanDokumen,
             'verifikasi_ki' => $verifikasi,
             'keterangan' => $keterangan,
             'pic' => $pic,
@@ -2773,7 +2781,7 @@ class Kontrak extends BaseController
             'row_no' => $rowNo,
             'kode' => (string) ($targetTemplate['display_no'] ?? ''),
             'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
-            'kelengkapan_dokumen' => 'ada',
+            'kelengkapan_dokumen' => $kelengkapanDokumen,
             'verifikasi_ki' => $verifikasi,
             'keterangan' => $keterangan,
             'pic' => $pic,
@@ -2791,11 +2799,17 @@ class Kontrak extends BaseController
         $db->transStart();
         $db->table($tableVerifikasi)->where('simak_id', $simakId)->where('row_no', $rowNo)->delete();
         $db->table($tableVerifikasi)->insert($verifikasiRow);
-        $db->table($tableDokumen)->insert($dokumenRow);
+        if ($uploadMethod !== 'none') {
+            $db->table($tableDokumen)->insert($dokumenRow);
+        }
         $db->transComplete();
 
         if (! $db->transStatus()) {
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal menyimpan upload dokumen.');
+        }
+
+        if ($uploadMethod === 'none') {
+            return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Keterangan dokumen belum ada berhasil disimpan. Status kelengkapan dokumen diperbarui menjadi Tidak Ada.');
         }
 
         return redirect()->to(site_url('simak/share/' . $token))->with('success', ucfirst($sourceLabel) . ' ' . $tipeDokumen . ' berhasil dikirim. Status kelengkapan dokumen diperbarui menjadi Ada dan Verifikasi Dit. KI menjadi Menunggu Verifikasi.');
