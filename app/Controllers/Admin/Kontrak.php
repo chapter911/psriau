@@ -11,6 +11,10 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class Kontrak extends BaseController
 {
     use SimakNumberingTrait;
+
+    private const SHARED_SIMAK_OTP_CODE_TTL_SECONDS = 300;
+    private const SHARED_SIMAK_OTP_SESSION_TTL_SECONDS = 1200;
+
     public function paket()
     {
         if (! $this->canViewKontrak()) {
@@ -2535,7 +2539,7 @@ class Kontrak extends BaseController
             'status' => 'pending',
             'code_hash' => password_hash($otpCode, PASSWORD_DEFAULT),
             'sent_at' => time(),
-            'expires_at' => time() + (5 * 60),
+            'expires_at' => time() + self::SHARED_SIMAK_OTP_CODE_TTL_SECONDS,
             'recipient_emails' => $recipientEmails,
         ];
 
@@ -2546,7 +2550,7 @@ class Kontrak extends BaseController
 
         $this->setSharedSimakOtpState($token, $otpState);
 
-        return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Kode verifikasi berhasil dikirim ke email responden yang tersimpan. Kode berlaku selama 5 menit.');
+        return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Kode verifikasi berhasil dikirim ke email responden yang tersimpan. Kode OTP berlaku selama 5 menit.');
     }
 
     public function sharedVerifyOtp(string $token)
@@ -2583,10 +2587,40 @@ class Kontrak extends BaseController
         }
 
         $otpState['status'] = 'verified';
+        $otpState['verified_at'] = time();
+        $otpState['last_activity_at'] = time();
+        $otpState['expires_at'] = time() + self::SHARED_SIMAK_OTP_SESSION_TTL_SECONDS;
         unset($otpState['code_hash']);
         $this->setSharedSimakOtpState($token, $otpState);
 
-        return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Kode OTP berhasil diverifikasi. Akses halaman dibuka selama 5 menit sejak kode dikirim.');
+        return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Kode OTP berhasil diverifikasi. Akses halaman aktif selama 20 menit dan akan diperpanjang selama ada aktivitas.');
+    }
+
+    public function sharedTouchOtp(string $token)
+    {
+        $shared = $this->resolveSharedSimak($token);
+        if ($shared === null) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status' => 'error',
+                'message' => 'Tautan share SIMAK tidak valid.',
+            ]);
+        }
+
+        if (! $this->isSharedSimakOtpGranted($token, true)) {
+            return $this->response->setStatusCode(401)->setJSON([
+                'status' => 'expired',
+                'message' => 'Sesi OTP tidak aktif. Silakan verifikasi ulang OTP.',
+            ]);
+        }
+
+        $state = $this->getSharedSimakOtpState($token);
+        $expiresAt = (int) ($state['expires_at'] ?? 0);
+
+        return $this->response->setJSON([
+            'status' => 'ok',
+            'expires_at' => $expiresAt,
+            'expires_in' => max(0, $expiresAt - time()),
+        ]);
     }
 
     public function sharedUploadSimakDokumen(string $token)
@@ -2931,12 +2965,23 @@ class Kontrak extends BaseController
         session()->remove($this->getSharedSimakOtpSessionKey($token));
     }
 
-    private function isSharedSimakOtpGranted(string $token): bool
+    private function isSharedSimakOtpGranted(string $token, bool $touchActivity = true): bool
     {
         $state = $this->getSharedSimakOtpState($token);
-        return is_array($state)
-            && ($state['status'] ?? '') === 'verified'
-            && (int) ($state['expires_at'] ?? 0) > time();
+        if (! is_array($state)
+            || ($state['status'] ?? '') !== 'verified'
+            || (int) ($state['expires_at'] ?? 0) <= time()) {
+            return false;
+        }
+
+        if ($touchActivity) {
+            $now = time();
+            $state['last_activity_at'] = $now;
+            $state['expires_at'] = $now + self::SHARED_SIMAK_OTP_SESSION_TTL_SECONDS;
+            $this->setSharedSimakOtpState($token, $state);
+        }
+
+        return true;
     }
 
     private function getSharedSimakRecipientEmails(array $shared): array

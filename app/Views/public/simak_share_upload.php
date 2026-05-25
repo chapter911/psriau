@@ -730,7 +730,7 @@
     <div class="share-card share-surface share-intro-card">
         <span class="share-intro-label">OTP</span>
         <div class="share-intro-title"><?= $otpVerified ? 'Akses halaman sudah dibuka' : 'Verifikasi masih diperlukan'; ?></div>
-        <p class="share-intro-text mb-0"><?php if ($otpVerified): ?>Kode OTP sudah diverifikasi. Anda dapat melanjutkan melihat dan mengunggah dokumen selama masa aktif kode belum habis.<?php else: ?>Gunakan panel verifikasi di atas untuk mengirim kode ke email responden yang tersimpan, lalu masukkan 6 digit kode tersebut untuk membuka akses halaman.<?php endif; ?></p>
+        <p class="share-intro-text mb-0"><?php if ($otpVerified): ?>Kode OTP sudah diverifikasi. Akses akan tetap aktif selama ada interaksi. Jika tidak ada aktivitas selama 20 menit, Anda akan diminta OTP ulang.<?php else: ?>Gunakan panel verifikasi di atas untuk mengirim kode ke email responden yang tersimpan, lalu masukkan 6 digit kode tersebut untuk membuka akses halaman.<?php endif; ?></p>
     </div>
 
     <div class="alert alert-info">
@@ -1056,6 +1056,7 @@
     var googleClientId = <?= json_encode((string) ($googleClientId ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var googleDriveUploadFolderId = <?= json_encode((string) ($googleDriveUploadFolderId ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var googleDriveUploadFolderUrl = <?= json_encode((string) ($googleDriveUploadFolderUrl ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    var otpTouchUrl = <?= json_encode(site_url('simak/share/' . (string) ($token ?? '') . '/otp/touch'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var ciEnvironment = <?= json_encode((string) ($ciEnvironment ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var otpVerified = <?= json_encode((bool) ($otpVerified ?? false), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var isDevMode = String(ciEnvironment || '').toLowerCase() === 'development';
@@ -1065,8 +1066,79 @@
     var googleTokenClient = null;
     var pendingUploadContext = null;
     var isSubmitting = false;
+    var otpTouchInFlight = false;
+    var otpLastTouchAt = 0;
+    var otpTouchThrottleMs = 60 * 1000;
     var autoCompressThresholdBytes = 5 * 1024 * 1024;
     var maxUploadBytes = 100 * 1024 * 1024;
+
+    function sendOtpTouch(force) {
+        if (!otpVerified || isDevMode || !otpTouchUrl) {
+            return;
+        }
+
+        var now = Date.now();
+        if (!force && (now - otpLastTouchAt) < otpTouchThrottleMs) {
+            return;
+        }
+
+        if (otpTouchInFlight) {
+            return;
+        }
+
+        otpTouchInFlight = true;
+        fetch(String(otpTouchUrl), {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json'
+            }
+        }).then(function (response) {
+            otpTouchInFlight = false;
+            if (!response.ok) {
+                if (response.status === 401) {
+                    otpVerified = false;
+                    updateUploadLockState();
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        window.Swal.fire({
+                            icon: 'warning',
+                            title: 'Sesi OTP berakhir',
+                            text: 'Tidak ada aktivitas selama 20 menit. Silakan verifikasi OTP ulang.',
+                        }).then(function () {
+                            window.location.reload();
+                        });
+                    } else {
+                        window.location.reload();
+                    }
+                }
+                return;
+            }
+            otpLastTouchAt = Date.now();
+        }).catch(function () {
+            otpTouchInFlight = false;
+        });
+    }
+
+    function bindOtpActivityTouch() {
+        if (!otpVerified || isDevMode) {
+            return;
+        }
+
+        var activityEvents = ['click', 'keydown', 'scroll', 'mousemove', 'touchstart'];
+        activityEvents.forEach(function (eventName) {
+            window.addEventListener(eventName, function () {
+                sendOtpTouch(false);
+            }, { passive: true });
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') {
+                sendOtpTouch(true);
+            }
+        });
+
+        sendOtpTouch(true);
+    }
 
     function formatBytes(bytes) {
         var size = Number(bytes || 0);
@@ -2196,6 +2268,7 @@
 
         updateUploadLockState();
         refreshFileStatus();
+        bindOtpActivityTouch();
     }
 })();
 </script>
