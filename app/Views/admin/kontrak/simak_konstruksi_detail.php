@@ -210,13 +210,14 @@
                 <?php $tabIndex = 0; foreach ($sections as $sectionKey => $section): ?>
                     <div class="tab-pane fade <?= $tabIndex === 0 ? 'show active' : ''; ?>" id="simak-panel-<?= esc($sectionKey); ?>" role="tabpanel" aria-labelledby="simak-tab-<?= esc($sectionKey); ?>">
                         <div class="table-responsive" style="max-height: 75vh; overflow-y: auto;">
-                            <table class="table table-bordered table-sm simak-verifikasi-table" style="min-width: 1280px;">
+                            <table class="table table-bordered table-sm simak-verifikasi-table" style="min-width: 1450px;">
                                 <thead class="text-center">
                                     <tr>
                                         <th style="width: 70px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">No</th>
                                         <th style="width: 520px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Uraian</th>
                                         <th style="width: 170px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Kelengkapan Dokumen</th>
-                                        <th style="width: 170px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Verifikasi Dit. KI</th>
+                                        <th style="width: 170px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Verifikasi Draft</th>
+                                        <th style="width: 170px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Verifikasi Final</th>
                                         <th style="width: 270px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Keterangan</th>
                                         <th style="width: 170px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">PIC</th>
                                         <th style="width: 280px; position: sticky; top: 0; z-index: 6; background: #2F3A45; color: #fff;">Dokumen Draft</th>
@@ -267,6 +268,8 @@
                                                 }
                                             }
                                             $latestDokumen = $finalDokumen ?? $draftDokumen;
+                                            $draftVerifikasi = is_array($draftDokumen) ? strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? ''))) : '';
+                                            $finalVerifikasi = is_array($finalDokumen) ? strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? ''))) : '';
                                             $latestPath = is_array($latestDokumen) ? trim((string) ($latestDokumen['file_relative_path'] ?? '')) : '';
                                             $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
                                             $isDriveLink = in_array($latestHost, ['drive.google.com', 'docs.google.com'], true);
@@ -310,12 +313,19 @@
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
                                                 </td>
-                                                <td class="<?= esc($statusCellClass); ?>">
-                                                    <?php if ($kelengkapan === 'tidak' && $verifikasi === 'sesuai'): ?>
+                                                <td>
+                                                    <?php if ($draftVerifikasi === 'sesuai'): ?>
                                                         <span class="badge badge-success">Sesuai</span>
-                                                    <?php elseif ($verifikasi === 'sesuai'): ?>
+                                                    <?php elseif ($draftVerifikasi === 'tidak_sesuai'): ?>
+                                                        <span class="badge badge-warning">Tidak Sesuai</span>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">-</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <?php if ($finalVerifikasi === 'sesuai'): ?>
                                                         <span class="badge badge-success">Sesuai</span>
-                                                    <?php elseif ($verifikasi === 'tidak_sesuai'): ?>
+                                                    <?php elseif ($finalVerifikasi === 'tidak_sesuai'): ?>
                                                         <span class="badge badge-warning">Tidak Sesuai</span>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
@@ -407,7 +417,7 @@
                                                     <?php endif; ?>
                                                 </td>
                                             <?php else: ?>
-                                                <td colspan="9"></td>
+                                                <td colspan="10"></td>
                                             <?php endif; ?>
                                         </tr>
                                     <?php endforeach; ?>
