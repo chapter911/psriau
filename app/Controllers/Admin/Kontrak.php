@@ -3614,7 +3614,7 @@ class Kontrak extends BaseController
             $dokumenByRow = [];
             if ($db->tableExists($tableDokumen)) {
                 $dokumenBuilder = $db->table($tableDokumen)
-                    ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, tipe_dokumen')
+                    ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, tipe_dokumen, verifikasi_ki')
                     ->where('simak_id', $shareSimakId)
                     ->orderBy('row_no', 'ASC')
                     ->orderBy('id', 'DESC');
