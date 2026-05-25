@@ -266,9 +266,6 @@
                                                     break;
                                                 }
                                             }
-                                            if ($finalDokumen === null && $draftDokumen !== null) {
-                                                $finalDokumen = $draftDokumen;
-                                            }
                                             $latestDokumen = $finalDokumen ?? $draftDokumen;
                                             $latestPath = is_array($latestDokumen) ? trim((string) ($latestDokumen['file_relative_path'] ?? '')) : '';
                                             $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
