@@ -244,7 +244,7 @@
                                     <?php foreach (($section['rows'] ?? []) as $row): ?>
                                         <?php
                                             $rowNo = (int) ($row['row_no'] ?? 0);
-                                            $displayNo = trim((string) ($row['display_no'] ?? ''));
+                                            $displayNo = trim((string) ($row['display_no_auto'] ?? $row['display_no'] ?? ''));
                                             if ($displayNo !== '' && $displayNo !== '-') {
                                                 $displayNo = preg_replace('/\.+$/', '.', $displayNo);
                                             }
