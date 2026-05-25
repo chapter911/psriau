@@ -26,12 +26,29 @@
         position: sticky;
         top: 72px;
         align-self: start;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 88px);
+        overflow: hidden;
+    }
+
+    .simak-detail-panel .simak-panel-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
     }
 
     @media (max-width: 991.98px) {
         .simak-detail-panel {
             position: static;
             top: auto;
+            display: block;
+            max-height: none;
+            overflow: visible;
+        }
+
+        .simak-detail-panel .simak-panel-body {
+            overflow-y: visible;
         }
     }
 
