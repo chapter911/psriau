@@ -2094,10 +2094,7 @@ class Kontrak extends BaseController
             ->limit(1)
             ->get()
             ->getRowArray();
-
-        if (! is_array($selectedDoc)) {
-            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Dokumen ' . $tipeDokumen . ' belum tersedia.');
-        }
+        $selectedDocId = is_array($selectedDoc) ? (int) ($selectedDoc['id'] ?? 0) : 0;
 
         $latestDraftDoc = $db->table('trn_kontrak_simak_verifikasi_dokumen')
             ->select('id, verifikasi_ki')
@@ -2145,12 +2142,16 @@ class Kontrak extends BaseController
             $ver = null;
         }
 
+        $file = $this->request->getFile('dokumen_file');
+        $hasUpload = $file && $file->isValid() && ! $file->hasMoved();
+
         if ($kel === 'tidak' && $ket === '') {
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Keterangan wajib diisi jika dokumen memang tidak ada.');
         }
 
-        $file = $this->request->getFile('dokumen_file');
-        $hasUpload = $file && $file->isValid() && ! $file->hasMoved();
+        if ($kel === 'ada' && ! $hasUpload && $selectedDocId <= 0) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Pilih file dokumen terlebih dahulu.');
+        }
 
         if (! $hasUpload && $kel === null && $ver === null && $ket === '' && $pic === '') {
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tidak ada perubahan yang disimpan. Isi data atau upload file terlebih dahulu.');
@@ -2159,6 +2160,7 @@ class Kontrak extends BaseController
         $relativePath = '';
         $storedName = '';
         $summaryVerifikasi = 'belum_verifikasi';
+        $isDocumentComplete = false;
         if ($tipeDokumen === 'final') {
             if ($ver === 'sesuai') {
                 $summaryVerifikasi = 'sesuai';
@@ -2173,6 +2175,7 @@ class Kontrak extends BaseController
                 $summaryVerifikasi = 'belum_sesuai';
             }
         }
+        $isDocumentComplete = $ver === 'sesuai' && ($kel === 'tidak' || $hasUpload || $selectedDocId > 0);
         if ($hasUpload) {
             $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
             $ext = strtolower((string) $file->getClientExtension());
@@ -2215,16 +2218,18 @@ class Kontrak extends BaseController
 
         $db->transStart();
 
-        $db->table('trn_kontrak_simak_verifikasi_dokumen')
-            ->where('id', (int) ($selectedDoc['id'] ?? 0))
-            ->update([
-                'verifikasi_ki' => $ver,
-                'keterangan' => $ket,
-                'pic' => $pic,
-                'updated_by' => $actor,
-                'updated_date' => $today,
-                'updated_at' => $now,
-            ]);
+        if ($selectedDocId > 0) {
+            $db->table('trn_kontrak_simak_verifikasi_dokumen')
+                ->where('id', $selectedDocId)
+                ->update([
+                    'verifikasi_ki' => $ver,
+                    'keterangan' => $ket,
+                    'pic' => $pic,
+                    'updated_by' => $actor,
+                    'updated_date' => $today,
+                    'updated_at' => $now,
+                ]);
+        }
 
         $db->table('trn_kontrak_simak_verifikasi')->where('simak_id', $id)->where('row_no', $rowNo)->delete();
         $verifikasiRow['created_by'] = $actor;
