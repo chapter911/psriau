@@ -3874,7 +3874,7 @@ class Kontrak extends BaseController
                 $statusBySimak[$simakId] = [];
             }
 
-            if ($kelengkapan === 'ada' && $verifikasi === 'sesuai') {
+            if (($kelengkapan === 'ada' || $kelengkapan === 'tidak') && $verifikasi === 'sesuai') {
                 $statusBySimak[$simakId][$rowNo] = 'lengkap';
             } elseif ($kelengkapan === 'ada' && $verifikasi === 'tidak_sesuai') {
                 $statusBySimak[$simakId][$rowNo] = 'belum_sesuai';

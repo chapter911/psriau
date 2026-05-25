@@ -315,7 +315,7 @@
                                                 </td>
                                                 <td class="<?= esc($statusCellClass); ?>">
                                                     <?php if ($kelengkapan === 'tidak' && $verifikasi === 'sesuai'): ?>
-                                                        <span class="badge badge-success">Lengkap</span>
+                                                        <span class="badge badge-success">Sesuai</span>
                                                     <?php elseif ($verifikasi === 'sesuai'): ?>
                                                         <span class="badge badge-success">Sesuai</span>
                                                     <?php elseif ($verifikasi === 'tidak_sesuai'): ?>
