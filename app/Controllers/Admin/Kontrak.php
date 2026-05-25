@@ -2747,6 +2747,15 @@ class Kontrak extends BaseController
             ->get()
             ->getRowArray();
 
+        $existingVerifikasi = $db->table($tableVerifikasi)
+            ->select('pic')
+            ->where('simak_id', $simakId)
+            ->where('row_no', $rowNo)
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
         $draftDocument = $db->table($tableDokumen)
             ->select('id, verifikasi_ki')
             ->where('simak_id', $simakId)
