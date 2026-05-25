@@ -336,8 +336,12 @@
                                                             href="<?= site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/' . (int) ($draftDokumen['id'] ?? 0)); ?>"
                                                             target="_blank"
                                                             rel="noopener"
-                                                            class="btn btn-outline-secondary btn-sm"
+                                                            class="btn btn-outline-secondary btn-sm js-open-dokumen"
                                                             title="Lihat dokumen draft: <?= esc((string) ($draftDokumen['file_original_name'] ?? 'Dokumen')); ?>"
+                                                            data-dokumen-url="<?= esc(site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/' . (int) ($draftDokumen['id'] ?? 0))); ?>"
+                                                            data-dokumen-name="<?= esc((string) ($draftDokumen['file_original_name'] ?? 'Dokumen')); ?>"
+                                                            data-dokumen-mime="<?= esc((string) ($draftDokumen['file_mime'] ?? '')); ?>"
+                                                            data-dokumen-previewable="<?= in_array(strtolower((string) ($draftDokumen['file_mime'] ?? '')), ['application/pdf'], true) || str_starts_with(strtolower((string) ($draftDokumen['file_mime'] ?? '')), 'image/') || preg_match('/\.(png|jpe?g|gif|webp|bmp|pdf)$/i', (string) ($draftDokumen['file_original_name'] ?? '')) ? '1' : '0'; ?>"
                                                         ><i class="fas fa-eye"></i> Lihat Draft</a>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
@@ -349,8 +353,12 @@
                                                             href="<?= site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/' . (int) ($finalDokumen['id'] ?? 0)); ?>"
                                                             target="_blank"
                                                             rel="noopener"
-                                                            class="btn btn-info btn-sm"
+                                                            class="btn btn-info btn-sm js-open-dokumen"
                                                             title="Lihat dokumen final: <?= esc((string) ($finalDokumen['file_original_name'] ?? 'Dokumen')); ?>"
+                                                            data-dokumen-url="<?= esc(site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/' . (int) ($finalDokumen['id'] ?? 0))); ?>"
+                                                            data-dokumen-name="<?= esc((string) ($finalDokumen['file_original_name'] ?? 'Dokumen')); ?>"
+                                                            data-dokumen-mime="<?= esc((string) ($finalDokumen['file_mime'] ?? '')); ?>"
+                                                            data-dokumen-previewable="<?= in_array(strtolower((string) ($finalDokumen['file_mime'] ?? '')), ['application/pdf'], true) || str_starts_with(strtolower((string) ($finalDokumen['file_mime'] ?? '')), 'image/') || preg_match('/\.(png|jpe?g|gif|webp|bmp|pdf)$/i', (string) ($finalDokumen['file_original_name'] ?? '')) ? '1' : '0'; ?>"
                                                         ><i class="fas fa-eye"></i> Lihat Final</a>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
@@ -568,6 +576,32 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="dokumenPreviewModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-0" id="dokumenPreviewTitle">Preview Dokumen</h5>
+                    <small class="text-muted" id="dokumenPreviewMeta">-</small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body bg-light">
+                <div id="dokumenPreviewBody" class="text-center"></div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <small class="text-muted">Gunakan tombol Download jika Anda ingin menyimpan file ke perangkat.</small>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                    <a href="#" class="btn btn-primary" id="dokumenPreviewDownloadBtn" target="_blank" rel="noopener noreferrer">Download</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <?php endif; ?>
 <?= $this->endSection(); ?>
 
@@ -590,6 +624,12 @@
     var historyRowLabelEl = document.getElementById('history_row_label');
     var historyRowUraianEl = document.getElementById('history_row_uraian');
     var historyTbodyEl = document.getElementById('history_dokumen_tbody');
+    var dokumenPreviewModalEl = document.getElementById('dokumenPreviewModal');
+    var dokumenPreviewTitleEl = document.getElementById('dokumenPreviewTitle');
+    var dokumenPreviewMetaEl = document.getElementById('dokumenPreviewMeta');
+    var dokumenPreviewBodyEl = document.getElementById('dokumenPreviewBody');
+    var dokumenPreviewDownloadBtn = document.getElementById('dokumenPreviewDownloadBtn');
+    var currentDokumenPreviewUrl = '';
     var keteranganRequiredIndicator = document.getElementById('keterangan_required_indicator');
     var keteranganErrorEl = document.getElementById('keterangan_error');
     var verifikasiErrorEl = document.getElementById('verifikasi_error');
@@ -627,6 +667,114 @@
 
         return size.toFixed(index === 0 ? 0 : 2) + ' ' + units[index];
     };
+
+    function buildDownloadUrl(url, forceDownload) {
+        var value = String(url || '').trim();
+        if (!value) {
+            return '';
+        }
+
+        if (!forceDownload) {
+            return value;
+        }
+
+        return value + (value.indexOf('?') === -1 ? '?' : '&') + 'download=1';
+    }
+
+    function clearDokumenPreview() {
+        currentDokumenPreviewUrl = '';
+
+        if (dokumenPreviewBodyEl) {
+            dokumenPreviewBodyEl.innerHTML = '';
+        }
+
+        if (dokumenPreviewMetaEl) {
+            dokumenPreviewMetaEl.textContent = '-';
+        }
+
+        if (dokumenPreviewDownloadBtn) {
+            dokumenPreviewDownloadBtn.href = '#';
+        }
+    }
+
+    function openDokumenPreview(url, title, mimeType) {
+        if (!dokumenPreviewModalEl || !dokumenPreviewBodyEl) {
+            return;
+        }
+
+        var finalUrl = buildDownloadUrl(url, false);
+        currentDokumenPreviewUrl = finalUrl;
+
+        var normalizedMime = String(mimeType || '').toLowerCase();
+        var isPdf = normalizedMime === 'application/pdf' || finalUrl.toLowerCase().indexOf('.pdf') !== -1;
+        var isImage = normalizedMime.indexOf('image/') === 0 || /\.(png|jpe?g|gif|webp|bmp)$/i.test(finalUrl);
+
+        if (dokumenPreviewTitleEl) {
+            dokumenPreviewTitleEl.textContent = String(title || 'Preview Dokumen');
+        }
+
+        if (dokumenPreviewMetaEl) {
+            dokumenPreviewMetaEl.textContent = String(mimeType || 'Dokumen');
+        }
+
+        if (dokumenPreviewDownloadBtn) {
+            dokumenPreviewDownloadBtn.href = buildDownloadUrl(url, true);
+        }
+
+        if (isImage) {
+            dokumenPreviewBodyEl.innerHTML = '<img src="' + finalUrl.replace(/"/g, '&quot;') + '" alt="Preview dokumen" class="img-fluid rounded" style="max-height:75vh; object-fit:contain;">';
+        } else if (isPdf) {
+            dokumenPreviewBodyEl.innerHTML = '<iframe src="' + finalUrl.replace(/"/g, '&quot;') + '" title="Preview dokumen" style="width:100%; height:75vh; border:0; background:#fff;"></iframe>';
+        } else {
+            dokumenPreviewBodyEl.innerHTML = '<div class="alert alert-warning mb-0">File ini tidak memiliki preview bawaan. Gunakan tombol Download.</div>';
+        }
+
+        if (window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+            window.jQuery(dokumenPreviewModalEl).modal('show');
+        }
+    }
+
+    function isPreviewableDokumen(mimeType, fileName) {
+        var normalizedMime = String(mimeType || '').toLowerCase();
+        var normalizedName = String(fileName || '').toLowerCase();
+
+        if (normalizedMime.indexOf('image/') === 0 || normalizedMime === 'application/pdf') {
+            return true;
+        }
+
+        return /\.(png|jpe?g|gif|webp|bmp|pdf)$/i.test(normalizedName);
+    }
+
+    document.querySelectorAll('.js-open-dokumen').forEach(function (button) {
+        button.addEventListener('click', function (event) {
+            var url = String(this.getAttribute('data-dokumen-url') || this.getAttribute('href') || '').trim();
+            var title = String(this.getAttribute('data-dokumen-name') || 'Preview Dokumen').trim();
+            var mimeType = String(this.getAttribute('data-dokumen-mime') || '').trim();
+            var previewableAttr = String(this.getAttribute('data-dokumen-previewable') || '0').trim();
+            var previewable = previewableAttr === '1' || isPreviewableDokumen(mimeType, title);
+
+            if (!url) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (previewable) {
+                openDokumenPreview(url, title, mimeType);
+                return;
+            }
+
+            var downloadUrl = buildDownloadUrl(url, true);
+            var shouldDownload = window.confirm('File ini tidak dapat dipreview. Apakah Anda ingin mendownload file ini?');
+            if (shouldDownload && downloadUrl) {
+                window.location.href = downloadUrl;
+            }
+        });
+    });
+
+    if (dokumenPreviewModalEl) {
+        dokumenPreviewModalEl.addEventListener('hidden.bs.modal', clearDokumenPreview);
+    }
 
     var renderHistoryRows = function (rows) {
         if (!historyTbodyEl) {
