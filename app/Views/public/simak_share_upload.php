@@ -808,9 +808,10 @@
                                             break;
                                         }
                                     }
-                                    if ($finalDokumen === null && $draftDokumen !== null) {
-                                        $finalDokumen = $draftDokumen;
-                                    }
+                                    // Do NOT surface the draft file in the Final column.
+                                    // Final column should only show an actual final document
+                                    // where tipe_dokumen === 'final'. Keep $finalDokumen
+                                    // as null when only a draft exists.
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
                                     <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?></td>
