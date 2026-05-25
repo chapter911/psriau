@@ -793,6 +793,7 @@
                                     $verifikasi = strtolower(trim((string) ($existing['verifikasi_ki'] ?? '')));
                                     $keterangan = trim((string) ($existing['keterangan'] ?? ''));
                                     $isBelumSesuai = $verifikasi === 'tidak_sesuai';
+                                    $isDraftVerified = $verifikasi === 'sesuai';
                                     $dokumenRows = $dokumenByRow[$rowNo] ?? [];
                                     $draftDokumen = null;
                                     $finalDokumen = null;
@@ -926,7 +927,7 @@
                                                     data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
                                                     data-tipe-dokumen="draft"
                                                 >Upload Draft</button>
-                                                <?php if (is_array($draftDokumen)): ?>
+                                                <?php if (is_array($draftDokumen) && $isDraftVerified): ?>
                                                     <button
                                                         type="button"
                                                         class="btn btn-success btn-sm js-open-upload-modal ml-1"
@@ -938,7 +939,7 @@
                                                         data-tipe-dokumen="final"
                                                     >Upload Final</button>
                                                 <?php else: ?>
-                                                    <button type="button" class="btn btn-success btn-sm ml-1" disabled title="Unggah Final setelah Draft tersedia">Upload Final</button>
+                                                    <button type="button" class="btn btn-success btn-sm ml-1" disabled title="Unggah Final setelah Draft tersedia dan diverifikasi Sesuai">Upload Final</button>
                                                 <?php endif; ?>
                                             <?php else: ?>
                                                 <button

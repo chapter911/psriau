@@ -2712,6 +2712,19 @@ class Kontrak extends BaseController
             if (! is_array($draftExists) || empty($draftExists)) {
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah Draft diunggah. Silakan unggah Draft terlebih dahulu.');
             }
+
+            $draftVerification = $db->table($tableVerifikasi)
+                ->select('verifikasi_ki')
+                ->where('simak_id', $simakId)
+                ->where('row_no', $rowNo)
+                ->limit(1)
+                ->get()
+                ->getRowArray();
+
+            $draftVerificationStatus = strtolower(trim((string) ($draftVerification['verifikasi_ki'] ?? '')));
+            if ($draftVerificationStatus !== 'sesuai') {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah Draft diunggah dan diverifikasi Sesuai.');
+            }
         }
 
         $today = date('Y-m-d');
