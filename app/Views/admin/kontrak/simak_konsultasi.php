@@ -743,6 +743,16 @@
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>
+<style>
+    #modal-tambah-simak .modal-content {
+        max-height: calc(100vh - 2rem);
+    }
+
+    #modal-tambah-simak .modal-body {
+        overflow-y: auto;
+        max-height: calc(100vh - 220px);
+    }
+</style>
 <script>
 (function () {
     'use strict';
