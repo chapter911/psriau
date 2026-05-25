@@ -298,13 +298,7 @@
                                                 && ! $isPromotedSubsectionInput;
                                             $fontWeight = $isGroup ? 'font-weight: 700;' : ($indentLevel > 1 ? 'font-weight: 500;' : 'font-weight: 600;');
                                             $bgStyle = $isGroup ? 'background-color: #f2f4f7;' : '';
-                                            $noText = trim((string) ($row['display_no_auto'] ?? $displayNo));
-                                            if ($noText === '' || $noText === '-') {
-                                                $noText = $displayNo;
-                                            }
-                                            if ($noText === '' || $noText === '-') {
-                                                $noText = (string) $rowNo;
-                                            }
+                                            $noText = $displayNo;
                                             $statusCellClass = '';
 
                                             if ($isInputRow) {

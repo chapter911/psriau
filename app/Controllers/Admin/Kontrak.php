@@ -4647,7 +4647,8 @@ class Kontrak extends BaseController
 
                 $flattened[] = [
                     'row_no' => (int) ($item['row_no'] ?? 0),
-                    'display_no' => trim((string) ($item['display_no'] ?? '')),
+                    'display_no' => trim((string) ($item['display_no_auto'] ?? $item['display_no'] ?? '')),
+                    'display_no_auto' => trim((string) ($item['display_no_auto'] ?? '')),
                     'uraian' => trim((string) ($item['uraian'] ?? '')),
                     'bentuk_dokumen' => trim((string) ($item['bentuk_dokumen'] ?? '')),
                     'referensi' => trim((string) ($item['referensi'] ?? '')),
