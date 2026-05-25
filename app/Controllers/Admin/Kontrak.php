@@ -2739,13 +2739,32 @@ class Kontrak extends BaseController
         }
 
         $existingDokumen = $db->table($tableDokumen)
-            ->select('id')
+            ->select('id, tipe_dokumen, verifikasi_ki')
             ->where('simak_id', $simakId)
             ->where('row_no', $rowNo)
             ->orderBy('id', 'DESC')
             ->limit(1)
             ->get()
             ->getRowArray();
+
+        $draftDocument = $db->table($tableDokumen)
+            ->select('id, verifikasi_ki')
+            ->where('simak_id', $simakId)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'draft')
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+        if (! is_array($draftDocument) && is_array($existingDokumen) && (string) ($targetTemplate['has_draft'] ?? '') !== '' ) {
+            $existingCount = (int) $db->table($tableDokumen)
+                ->where('simak_id', $simakId)
+                ->where('row_no', $rowNo)
+                ->countAllResults();
+            if ($existingCount === 1) {
+                $draftDocument = $existingDokumen;
+            }
+        }
 
         // Every contractor upload resets verification status to "menunggu verifikasi".
         $verifikasi = null;
@@ -2769,16 +2788,6 @@ class Kontrak extends BaseController
         // Enforce: if this template row requires a draft first, disallow final upload
         // when no draft exists yet.
         if ($tipeDokumen === 'final' && ! empty($targetTemplate) && ! empty($targetTemplate['has_draft'])) {
-            $draftDocument = $db->table($tableDokumen)
-                ->select('verifikasi_ki')
-                ->where('simak_id', $simakId)
-                ->where('row_no', $rowNo)
-                ->where('tipe_dokumen', 'draft')
-                ->orderBy('id', 'DESC')
-                ->limit(1)
-                ->get()
-                ->getRowArray();
-
             $draftVerificationStatus = strtolower(trim((string) ($draftDocument['verifikasi_ki'] ?? '')));
             if ($draftVerificationStatus !== 'sesuai') {
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah Draft diverifikasi Sesuai.');

@@ -808,6 +808,9 @@
                                             break;
                                         }
                                     }
+                                    if ($draftDokumen === null && $hasDraft && count($dokumenRows) === 1) {
+                                        $draftDokumen = $dokumenRows[0];
+                                    }
                                     // Do NOT surface the draft file in the Final column.
                                     // Final column should only show an actual final document
                                     // where tipe_dokumen === 'final'. Keep $finalDokumen
