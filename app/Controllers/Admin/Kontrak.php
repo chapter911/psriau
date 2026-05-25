@@ -2124,6 +2124,33 @@ class Kontrak extends BaseController
         if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
             $tipeDokumen = 'final';
         }
+
+        $existingDraftDoc = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->select('id')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'draft')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+        $existingFinalDoc = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->select('id')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'final')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+        $willHaveDraft = (is_array($existingDraftDoc) && ! empty($existingDraftDoc)) || $tipeDokumen === 'draft';
+        $willHaveFinal = (is_array($existingFinalDoc) && ! empty($existingFinalDoc)) || $tipeDokumen === 'final';
+        $isDocumentComplete = $willHaveDraft && $willHaveFinal;
+
+        if ($ver === 'sesuai' && ! $isDocumentComplete) {
+            $ver = 'belum_verifikasi';
+        }
+        if ($tipeDokumen === 'draft' && ! $isDocumentComplete) {
+            $ver = 'belum_verifikasi';
+        }
         if ($hasUpload) {
             $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
             $ext = strtolower((string) $file->getClientExtension());
@@ -2178,7 +2205,7 @@ class Kontrak extends BaseController
                 'kode' => (string) ($targetTemplate['display_no'] ?? ''),
                 'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
                 'kelengkapan_dokumen' => $kel,
-                'verifikasi_ki' => $ver,
+                'verifikasi_ki' => $isDocumentComplete ? $ver : 'belum_verifikasi',
                 'keterangan' => $ket,
                 'pic' => $pic,
                 'file_original_name' => (string) $file->getClientName(),
@@ -2363,6 +2390,26 @@ class Kontrak extends BaseController
             $tipeDokumen = 'final';
         }
 
+        $existingDraftDoc = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->select('id')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'draft')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+        $existingFinalDoc = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->select('id')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'final')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+        $willHaveDraft = (is_array($existingDraftDoc) && ! empty($existingDraftDoc)) || $tipeDokumen === 'draft';
+        $willHaveFinal = (is_array($existingFinalDoc) && ! empty($existingFinalDoc)) || $tipeDokumen === 'final';
+        $isDocumentComplete = $willHaveDraft && $willHaveFinal;
+
         $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
         $today = date('Y-m-d');
         $now = date('Y-m-d H:i:s');
@@ -2373,7 +2420,7 @@ class Kontrak extends BaseController
             'kode' => (string) ($targetTemplate['display_no'] ?? ''),
             'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
             'kelengkapan_dokumen' => 'ada',
-            'verifikasi_ki' => 'sesuai',
+            'verifikasi_ki' => $isDocumentComplete ? 'sesuai' : 'belum_verifikasi',
             'keterangan' => 'Upload dokumen dari admin',
             'pic' => $actor,
             'updated_by' => $actor,
@@ -2394,7 +2441,7 @@ class Kontrak extends BaseController
             'kode' => (string) ($targetTemplate['display_no'] ?? ''),
             'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
             'kelengkapan_dokumen' => 'ada',
-            'verifikasi_ki' => 'sesuai',
+            'verifikasi_ki' => $isDocumentComplete ? 'sesuai' : 'belum_verifikasi',
             'keterangan' => 'Upload dokumen dari admin',
             'pic' => $actor,
             'file_original_name' => (string) $file->getClientName(),
@@ -6275,6 +6322,26 @@ class Kontrak extends BaseController
             $tipeDokumen = 'final';
         }
 
+        $existingDraftDoc = $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')
+            ->select('id')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'draft')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+        $existingFinalDoc = $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')
+            ->select('id')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'final')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+        $willHaveDraft = (is_array($existingDraftDoc) && ! empty($existingDraftDoc)) || $tipeDokumen === 'draft';
+        $willHaveFinal = (is_array($existingFinalDoc) && ! empty($existingFinalDoc)) || $tipeDokumen === 'final';
+        $isDocumentComplete = $willHaveDraft && $willHaveFinal;
+
         $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
         $today = date('Y-m-d');
         $now = date('Y-m-d H:i:s');
@@ -6285,7 +6352,7 @@ class Kontrak extends BaseController
             'kode' => (string) ($targetTemplate['display_no'] ?? ''),
             'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
             'kelengkapan_dokumen' => 'ada',
-            'verifikasi_ki' => 'sesuai',
+            'verifikasi_ki' => $isDocumentComplete ? 'sesuai' : 'belum_verifikasi',
             'keterangan' => 'Upload dokumen dari admin',
             'pic' => $actor,
             'updated_by' => $actor,
