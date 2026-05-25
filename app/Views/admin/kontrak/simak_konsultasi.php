@@ -406,7 +406,7 @@
     $simakDefaultPpkNip = '199012212018021001';
 ?>
 <div class="modal fade" id="modal-tambah-simak" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Input Data SIMAK Konsultansi</h5>
@@ -426,6 +426,7 @@
                         <input type="text" class="form-control" id="satker" name="satker" value="Perencanaan Prasarana Strategis" readonly>
                     </div>
 
+                    <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="pegawai_nip_selector">PPK (ambil dari master pegawai)</label>
                             <select class="form-control" id="pegawai_nip_selector" name="ppk_nip" required>
@@ -527,7 +528,10 @@
                             <label for="email_responden_1">Email Responden 1</label>
                             <input type="email" class="form-control" id="email_responden_1" name="email_responden_1" maxlength="255" required>
                         </div>
-                        <div class="form-group col-md-6">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-12">
                             <label for="email_responden_2">Email Responden 2</label>
                             <input type="email" class="form-control" id="email_responden_2" name="email_responden_2" maxlength="255">
                         </div>
