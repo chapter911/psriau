@@ -2706,6 +2706,23 @@ class Kontrak extends BaseController
         $hasFile = $file !== null && $file->getError() !== UPLOAD_ERR_NO_FILE;
         $hasDriveLink = $googleDriveLink !== '';
 
+        // Enforce: if this template row requires a draft first, disallow final upload
+        // when no draft exists yet.
+        if ($tipeDokumen === 'final' && ! empty($targetTemplate) && ! empty($targetTemplate['has_draft'])) {
+            $draftExists = $db->table($tableDokumen)
+                ->select('id')
+                ->where('simak_id', $simakId)
+                ->where('row_no', $rowNo)
+                ->where('tipe_dokumen', 'draft')
+                ->limit(1)
+                ->get()
+                ->getRowArray();
+
+            if (! is_array($draftExists) || empty($draftExists)) {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah Draft diunggah. Silakan unggah Draft terlebih dahulu.');
+            }
+        }
+
         $today = date('Y-m-d');
         $now = date('Y-m-d H:i:s');
         $actor = 'responden';

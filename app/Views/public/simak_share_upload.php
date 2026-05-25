@@ -926,16 +926,20 @@
                                                     data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
                                                     data-tipe-dokumen="draft"
                                                 >Upload Draft</button>
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-success btn-sm js-open-upload-modal ml-1"
-                                                    data-toggle="modal"
-                                                    data-target="#modal-upload-share-simak"
-                                                    data-row-no="<?= esc((string) $rowNo); ?>"
-                                                    data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
-                                                    data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
-                                                    data-tipe-dokumen="final"
-                                                >Upload Final</button>
+                                                <?php if (is_array($draftDokumen)): ?>
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-success btn-sm js-open-upload-modal ml-1"
+                                                        data-toggle="modal"
+                                                        data-target="#modal-upload-share-simak"
+                                                        data-row-no="<?= esc((string) $rowNo); ?>"
+                                                        data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
+                                                        data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
+                                                        data-tipe-dokumen="final"
+                                                    >Upload Final</button>
+                                                <?php else: ?>
+                                                    <button type="button" class="btn btn-success btn-sm ml-1" disabled title="Unggah Final setelah Draft tersedia">Upload Final</button>
+                                                <?php endif; ?>
                                             <?php else: ?>
                                                 <button
                                                     type="button"
