@@ -32,15 +32,16 @@
 
     .simak-upload-actions {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
-        gap: 6px;
+        justify-content: center;
+        gap: 8px;
         max-width: 150px;
         margin: 0 auto;
     }
 
     .simak-upload-actions .btn {
-        width: 100%;
+        width: auto;
         white-space: normal;
     }
 
@@ -377,7 +378,7 @@
                                                             data-row-label="<?= esc($noText); ?>"
                                                             data-uraian="<?= esc($uraian); ?>"
                                                             data-tipe-dokumen="final"
-                                                        >Upload Final</button>
+                                                        >Final</button>
                                                         <?php if ($hasDraft): ?>
                                                             <button
                                                                 type="button"
@@ -386,7 +387,7 @@
                                                                 data-row-label="<?= esc($noText); ?>"
                                                                 data-uraian="<?= esc($uraian); ?>"
                                                                 data-tipe-dokumen="draft"
-                                                            >Upload Draft</button>
+                                                            >Draft</button>
                                                         <?php endif; ?>
                                                     </div>
                                                 </td>
