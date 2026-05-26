@@ -294,18 +294,23 @@
                                             $bgStyle = $isGroup ? 'background-color: #f2f4f7;' : '';
                                             $noText = $displayNo;
                                             $statusCellClass = '';
+                                            $isPendingVerification = $verifikasi === 'belum_verifikasi'
+                                                || $draftVerifikasi === 'belum_verifikasi'
+                                                || $finalVerifikasi === 'belum_verifikasi';
 
                                             if ($isInputRow) {
                                                 if ($kelengkapan === 'ada' && $verifikasi === 'tidak_sesuai') {
                                                     $statusCellClass = 'simak-status-yellow';
                                                 } elseif ($kelengkapan === 'tidak' && $verifikasi === 'sesuai') {
                                                     $statusCellClass = 'simak-status-green';
+                                                } elseif ($isPendingVerification) {
+                                                    $statusCellClass = 'simak-status-yellow';
                                                 } elseif ($kelengkapan !== 'ada') {
                                                     $statusCellClass = 'simak-status-red-soft';
                                                 }
                                             }
                                         ?>
-                                        <tr style="<?= esc($bgStyle); ?>">
+                                        <tr style="<?= esc($bgStyle . ($isPendingVerification ? ' background-color: #fff3cd;' : '')); ?>">
                                             <td>
                                                 <div style="padding-left: <?= (int) $indentPadding; ?>px; white-space: nowrap; <?= esc($fontWeight); ?>">
                                                     <?= esc($noText); ?>
@@ -329,6 +334,8 @@
                                                 <td>
                                                     <?php if ($draftVerifikasi === 'sesuai'): ?>
                                                         <span class="badge badge-success">Sesuai</span>
+                                                    <?php elseif ($draftVerifikasi === 'belum_verifikasi'): ?>
+                                                        <span class="badge badge-warning">Menunggu Verifikasi</span>
                                                     <?php elseif ($draftVerifikasi === 'tidak_sesuai'): ?>
                                                         <span class="badge badge-warning">Tidak Sesuai</span>
                                                     <?php else: ?>
@@ -338,6 +345,8 @@
                                                 <td>
                                                     <?php if ($finalVerifikasi === 'sesuai'): ?>
                                                         <span class="badge badge-success">Sesuai</span>
+                                                    <?php elseif ($finalVerifikasi === 'belum_verifikasi'): ?>
+                                                        <span class="badge badge-warning">Menunggu Verifikasi</span>
                                                     <?php elseif ($finalVerifikasi === 'tidak_sesuai'): ?>
                                                         <span class="badge badge-warning">Tidak Sesuai</span>
                                                     <?php else: ?>
