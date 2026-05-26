@@ -822,6 +822,11 @@
                                     $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                     $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
                                     $draftNoFileVerified = $kelengkapan === 'tidak' && $verifikasi === 'sesuai';
+                                    // Untuk item final-only (has_draft=0), check jika ada placeholder "Tidak Ada"
+                                    $finalNoFilePlaceholder = $hasDraft === false
+                                        && is_array($finalDokumen)
+                                        && trim((string) ($finalDokumen['file_relative_path'] ?? '')) === ''
+                                        && trim((string) ($finalDokumen['file_stored_name'] ?? '')) === '';
 
                                     // Logic upload button visibility:
                                     // - has_draft=1: Upload Draft only if draft not verified; Upload Final only if draft verified
@@ -940,8 +945,10 @@
                                                     <?php endif; ?>
                                                 </div>
                                                 <small class="text-muted" style="display: block; margin-top: 4px;">Upload Tanggal<br/><?= esc(date('d-m-Y', strtotime((string) ($finalDokumen['created_at'] ?? '')))); ?></small>
-                                            <?php elseif (is_array($finalDokumen)): ?>
+                                            <?php elseif ($finalNoFilePlaceholder): ?>
                                                 <span class="badge badge-danger">Tidak Ada</span>
+                                            <?php elseif (is_array($finalDokumen)): ?>
+                                                <span class="badge badge-warning">Belum Ada</span>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
                                             <?php endif; ?>
