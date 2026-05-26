@@ -306,9 +306,14 @@
                                             $bgStyle = $isGroup ? 'background-color: #f2f4f7;' : '';
                                             $noText = $displayNo;
                                             $statusCellClass = '';
+                                            // Check jika menunggu verifikasi (record ada tapi verifikasi belum sesuai/null)
+                                            $hasPendingDraft = $hasDraft && ($draftDokumen !== null || $kelengkapan === 'tidak') && $draftVerifikasi !== 'sesuai' && $draftVerifikasi !== 'tidak_sesuai';
+                                            $hasPendingFinal = ($finalDokumen !== null || $finalNoFilePlaceholder) && $finalVerifikasi !== 'sesuai' && $finalVerifikasi !== 'tidak_sesuai' && $finalVerifikasi !== '';
                                             $isPendingVerification = $verifikasi === 'belum_verifikasi'
                                                 || $draftVerifikasi === 'belum_verifikasi'
-                                                || $finalVerifikasi === 'belum_verifikasi';
+                                                || $finalVerifikasi === 'belum_verifikasi'
+                                                || $hasPendingDraft
+                                                || $hasPendingFinal;
 
                                             if ($isInputRow) {
                                                 if ($kelengkapan === 'ada' && $verifikasi === 'tidak_sesuai') {
@@ -344,12 +349,16 @@
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <?php if ($draftVerifikasi === 'sesuai'): ?>
-                                                        <span class="badge badge-success">Sesuai</span>
-                                                    <?php elseif ($draftVerifikasi === 'belum_verifikasi'): ?>
-                                                        <span class="badge badge-warning">Menunggu Verifikasi</span>
-                                                    <?php elseif ($draftVerifikasi === 'tidak_sesuai'): ?>
-                                                        <span class="badge badge-warning">Tidak Sesuai</span>
+                                                    <?php if ($hasDraft): ?>
+                                                        <?php if ($draftVerifikasi === 'sesuai'): ?>
+                                                            <span class="badge badge-success">Sesuai</span>
+                                                        <?php elseif ($draftVerifikasi === 'belum_verifikasi' || ($draftDokumen !== null && $draftVerifikasi === '')): ?>
+                                                            <span class="badge badge-warning">Menunggu Verifikasi</span>
+                                                        <?php elseif ($draftVerifikasi === 'tidak_sesuai'): ?>
+                                                            <span class="badge badge-warning">Tidak Sesuai</span>
+                                                        <?php else: ?>
+                                                            <span class="text-muted">-</span>
+                                                        <?php endif; ?>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
@@ -357,10 +366,12 @@
                                                 <td>
                                                     <?php if ($finalVerifikasi === 'sesuai'): ?>
                                                         <span class="badge badge-success">Sesuai</span>
-                                                    <?php elseif ($finalVerifikasi === 'belum_verifikasi'): ?>
+                                                    <?php elseif ($finalVerifikasi === 'belum_verifikasi' || ($finalDokumen !== null && $finalVerifikasi === '')): ?>
                                                         <span class="badge badge-warning">Menunggu Verifikasi</span>
                                                     <?php elseif ($finalVerifikasi === 'tidak_sesuai'): ?>
                                                         <span class="badge badge-warning">Tidak Sesuai</span>
+                                                    <?php elseif ($finalNoFilePlaceholder): ?>
+                                                        <span class="badge badge-warning">Menunggu Verifikasi</span>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>

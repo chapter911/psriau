@@ -851,10 +851,16 @@
                                             <?php endif; ?>
                                         </td>
                                         <td class="cell-center">
-                                            <?php if ($draftVerifikasi === 'sesuai'): ?>
-                                                <span class="badge badge-success">Sesuai</span>
-                                            <?php elseif ($draftVerifikasi === 'tidak_sesuai'): ?>
-                                                <span class="badge badge-warning">Belum Sesuai</span>
+                                            <?php if ($hasDraft): ?>
+                                                <?php if ($draftVerifikasi === 'sesuai'): ?>
+                                                    <span class="badge badge-success">Sesuai</span>
+                                                <?php elseif ($draftVerifikasi === 'tidak_sesuai'): ?>
+                                                    <span class="badge badge-warning">Belum Sesuai</span>
+                                                <?php elseif ($draftVerifikasi === 'belum_verifikasi' || ($draftDokumen !== null && $draftVerifikasi === '')): ?>
+                                                    <span class="badge badge-warning">Menunggu</span>
+                                                <?php else: ?>
+                                                    <span class="text-muted">-</span>
+                                                <?php endif; ?>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
                                             <?php endif; ?>
@@ -864,6 +870,10 @@
                                                 <span class="badge badge-success">Sesuai</span>
                                             <?php elseif ($finalVerifikasi === 'tidak_sesuai'): ?>
                                                 <span class="badge badge-warning">Belum Sesuai</span>
+                                            <?php elseif ($finalVerifikasi === 'belum_verifikasi' || ($finalDokumen !== null && $finalVerifikasi === '')): ?>
+                                                <span class="badge badge-warning">Menunggu</span>
+                                            <?php elseif ($finalNoFilePlaceholder): ?>
+                                                <span class="badge badge-warning">Menunggu</span>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
                                             <?php endif; ?>

@@ -4142,9 +4142,11 @@ class Kontrak extends BaseController
                 $statusBySimak[$simakId][$rowNo] = 'lengkap';
             } elseif ($kelengkapan === 'ada' && $verifikasi === 'tidak_sesuai') {
                 $statusBySimak[$simakId][$rowNo] = 'belum_sesuai';
-            } elseif ($kelengkapan === 'ada') {
+            } elseif ($kelengkapan === 'ada' || $kelengkapan === 'tidak') {
+                // Ada record tapi verifikasi belum 'sesuai' atau 'tidak_sesuai' → menunggu verifikasi
                 $statusBySimak[$simakId][$rowNo] = 'belum_verifikasi';
             } else {
+                // Tidak ada record sama sekali
                 $statusBySimak[$simakId][$rowNo] = 'belum_ada';
             }
         }
