@@ -270,6 +270,16 @@
                                             $latestDokumen = $finalDokumen ?? $draftDokumen;
                                             $draftVerifikasi = is_array($draftDokumen) ? strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? ''))) : '';
                                             $finalVerifikasi = is_array($finalDokumen) ? strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? ''))) : '';
+                                            $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
+                                            $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
+                                            $draftActionKelengkapan = strtolower(trim((string) ($draftDokumen['kelengkapan_dokumen'] ?? ($kelengkapan !== '' ? $kelengkapan : 'tidak'))));
+                                            $draftActionVerifikasi = strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? $verifikasi)));
+                                            $draftActionKeterangan = (string) ($draftDokumen['keterangan'] ?? $keterangan);
+                                            $draftActionPic = (string) ($draftDokumen['pic'] ?? $pic);
+                                            $finalActionKelengkapan = strtolower(trim((string) ($finalDokumen['kelengkapan_dokumen'] ?? ($kelengkapan !== '' ? $kelengkapan : 'tidak'))));
+                                            $finalActionVerifikasi = strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? $verifikasi)));
+                                            $finalActionKeterangan = (string) ($finalDokumen['keterangan'] ?? $keterangan);
+                                            $finalActionPic = (string) ($finalDokumen['pic'] ?? $pic);
                                             $canUploadFinal = $verifikasi === 'sesuai';
                                             $latestPath = is_array($latestDokumen) ? trim((string) ($latestDokumen['file_relative_path'] ?? '')) : '';
                                             $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
@@ -339,7 +349,7 @@
                                                     <?= $pic !== '' ? esc($pic) : '<span class="text-muted">-</span>'; ?>
                                                 </td>
                                                 <td>
-                                                    <?php if (is_array($draftDokumen)): ?>
+                                                    <?php if ($draftHasFile): ?>
                                                         <a
                                                             href="<?= site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/' . (int) ($draftDokumen['id'] ?? 0)); ?>"
                                                             target="_blank"
@@ -347,12 +357,14 @@
                                                             class="btn btn-outline-secondary btn-sm"
                                                             title="Lihat dokumen draft: <?= esc((string) ($draftDokumen['file_original_name'] ?? 'Dokumen')); ?>"
                                                         ><i class="fas fa-eye"></i> Lihat Draft</a>
+                                                    <?php elseif (is_array($draftDokumen)): ?>
+                                                        <span class="badge badge-danger">Tidak Ada</span>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <?php if (is_array($finalDokumen)): ?>
+                                                    <?php if ($finalHasFile): ?>
                                                         <a
                                                             href="<?= site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/' . (int) ($finalDokumen['id'] ?? 0)); ?>"
                                                             target="_blank"
@@ -360,6 +372,8 @@
                                                             class="btn btn-info btn-sm"
                                                             title="Lihat dokumen final: <?= esc((string) ($finalDokumen['file_original_name'] ?? 'Dokumen')); ?>"
                                                         ><i class="fas fa-eye"></i> Lihat Final</a>
+                                                    <?php elseif (is_array($finalDokumen)): ?>
+                                                        <span class="badge badge-danger">Tidak Ada</span>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
@@ -403,36 +417,32 @@
                                                 </td>
                                                 <td>
                                                     <div class="simak-upload-actions">
-                                                        <?php if (is_array($draftDokumen)): ?>
-                                                            <button
-                                                                type="button"
-                                                                class="btn btn-outline-secondary btn-sm js-open-upload-modal"
-                                                                data-row-no="<?= esc((string) $rowNo); ?>"
-                                                                data-row-label="<?= esc($noText); ?>"
-                                                                data-uraian="<?= esc($uraian); ?>"
-                                                                data-tipe-dokumen="draft"
-                                                                data-kelengkapan="<?= esc((string) ($draftDokumen['kelengkapan_dokumen'] ?? '')); ?>"
-                                                                data-verifikasi="<?= esc($draftVerifikasi); ?>"
-                                                                data-keterangan="<?= esc((string) ($draftDokumen['keterangan'] ?? '')); ?>"
-                                                                data-pic="<?= esc((string) ($draftDokumen['pic'] ?? '')); ?>"
-                                                            >Verif Draft</button>
-                                                        <?php endif; ?>
-                                                        <?php if (is_array($finalDokumen)): ?>
-                                                            <button
-                                                                type="button"
-                                                                class="btn btn-warning btn-sm js-open-upload-modal"
-                                                                data-row-no="<?= esc((string) $rowNo); ?>"
-                                                                data-row-label="<?= esc($noText); ?>"
-                                                                data-uraian="<?= esc($uraian); ?>"
-                                                                data-tipe-dokumen="final"
-                                                                data-kelengkapan="<?= esc((string) ($finalDokumen['kelengkapan_dokumen'] ?? '')); ?>"
-                                                                data-verifikasi="<?= esc($finalVerifikasi); ?>"
-                                                                data-keterangan="<?= esc((string) ($finalDokumen['keterangan'] ?? '')); ?>"
-                                                                data-pic="<?= esc((string) ($finalDokumen['pic'] ?? '')); ?>"
-                                                            >Verif Final</button>
-                                                        <?php endif; ?>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-outline-secondary btn-sm js-open-upload-modal"
+                                                            data-row-no="<?= esc((string) $rowNo); ?>"
+                                                            data-row-label="<?= esc($noText); ?>"
+                                                            data-uraian="<?= esc($uraian); ?>"
+                                                            data-tipe-dokumen="draft"
+                                                            data-kelengkapan="<?= esc($draftActionKelengkapan); ?>"
+                                                            data-verifikasi="<?= esc($draftActionVerifikasi); ?>"
+                                                            data-keterangan="<?= esc($draftActionKeterangan); ?>"
+                                                            data-pic="<?= esc($draftActionPic); ?>"
+                                                        >Verif Draft</button>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-warning btn-sm js-open-upload-modal"
+                                                            data-row-no="<?= esc((string) $rowNo); ?>"
+                                                            data-row-label="<?= esc($noText); ?>"
+                                                            data-uraian="<?= esc($uraian); ?>"
+                                                            data-tipe-dokumen="final"
+                                                            data-kelengkapan="<?= esc($finalActionKelengkapan); ?>"
+                                                            data-verifikasi="<?= esc($finalActionVerifikasi); ?>"
+                                                            data-keterangan="<?= esc($finalActionKeterangan); ?>"
+                                                            data-pic="<?= esc($finalActionPic); ?>"
+                                                        >Verif Final</button>
                                                     </div>
-                                                    <?php if (! is_array($draftDokumen) && ! is_array($finalDokumen)): ?>
+                                                    <?php if (! $draftHasFile && ! $finalHasFile && ! is_array($draftDokumen) && ! is_array($finalDokumen)): ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
                                                 </td>
@@ -680,13 +690,14 @@
             var isDrive = isDriveLinkPath(path);
             var actionLabel = isDrive ? 'Buka Link' : 'Lihat Dokumen';
             var actionIcon = isDrive ? 'fa-external-link-alt' : 'fa-eye';
+            var hasFile = path.trim() !== '';
 
             return '<tr>' +
                 '<td><div class="font-weight-bold">' + fileName + '</div><small class="text-muted">' + label + '</small></td>' +
                 '<td>' + createdAt + '</td>' +
                 '<td>' + createdBy + '</td>' +
                 '<td>' + size + '</td>' +
-                '<td class="text-center"><a href="<?= site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/'); ?>' + docId + '" target="_blank" rel="noopener" class="btn btn-info btn-sm"><i class="fas ' + actionIcon + '"></i> ' + actionLabel + '</a></td>' +
+                '<td class="text-center">' + (hasFile ? '<a href="<?= site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/'); ?>' + docId + '" target="_blank" rel="noopener" class="btn btn-info btn-sm"><i class="fas ' + actionIcon + '"></i> ' + actionLabel + '</a>' : '<span class="badge badge-danger">Tidak Ada</span>') + '</td>' +
             '</tr>';
         }).join('');
 

@@ -2231,6 +2231,29 @@ class Kontrak extends BaseController
                 ]);
         }
 
+        if (! $hasUpload && $kel === 'tidak' && $selectedDocId <= 0) {
+            $placeholderName = $tipeDokumen === 'draft' ? 'Dokumen Draft Tidak Ada' : 'Dokumen Final Tidak Ada';
+            $db->table('trn_kontrak_simak_verifikasi_dokumen')->insert([
+                'simak_id' => $id,
+                'row_no' => $rowNo,
+                'kode' => (string) ($targetTemplate['display_no'] ?? ''),
+                'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
+                'kelengkapan_dokumen' => $kel,
+                'verifikasi_ki' => $ver,
+                'keterangan' => $ket,
+                'pic' => $pic,
+                'file_original_name' => $placeholderName,
+                'file_stored_name' => '',
+                'file_relative_path' => '',
+                'file_mime' => '',
+                'file_size' => 0,
+                'tipe_dokumen' => $tipeDokumen,
+                'created_by' => $actor,
+                'created_date' => $today,
+                'created_at' => $now,
+            ]);
+        }
+
         $db->table('trn_kontrak_simak_verifikasi')->where('simak_id', $id)->where('row_no', $rowNo)->delete();
         $verifikasiRow['created_by'] = $actor;
         $verifikasiRow['created_date'] = $today;

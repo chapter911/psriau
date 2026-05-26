@@ -819,7 +819,11 @@
                                     $finalVerifikasi = is_array($finalDokumen) ? strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? ''))) : '';
                                     $isBelumSesuai = $finalVerifikasi === 'tidak_sesuai';
                                     $isDraftVerified = $draftVerifikasi === 'sesuai';
-                                    $canUploadFinal = $verifikasi === 'sesuai';
+                                    $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
+                                    $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
+                                    $canUploadFinal = $hasDraft
+                                        ? ($draftVerifikasi === 'sesuai' && $finalVerifikasi !== 'sesuai')
+                                        : ($finalVerifikasi !== 'sesuai');
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
                                     <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?></td>
@@ -856,7 +860,7 @@
                                             <?= $keterangan !== '' ? esc($keterangan) : '<span class="text-muted">-</span>'; ?>
                                         </td>
                                         <td class="cell-center">
-                                            <?php if (is_array($draftDokumen)): ?>
+                                            <?php if ($draftHasFile): ?>
                                                 <?php
                                                     $draftPath = trim((string) ($draftDokumen['file_relative_path'] ?? ''));
                                                     $draftHost = strtolower((string) parse_url($draftPath, PHP_URL_HOST));
@@ -870,7 +874,7 @@
                                                     );
                                                     $draftActionLabel = $draftIsDriveLink ? 'Buka Link' : ($draftPreviewable ? 'Lihat Dokumen' : 'Download Dokumen');
                                                 ?>
-                                                    <div>
+                                                <div>
                                                     <?php if ($draftIsDriveLink): ?>
                                                         <a href="<?= esc($draftPath); ?>" class="btn btn-outline-secondary btn-sm" target="_blank" rel="noopener noreferrer">
                                                             <i class="fas fa-external-link-alt"></i> <?= esc($draftActionLabel); ?>
@@ -889,12 +893,14 @@
                                                     <?php endif; ?>
                                                 </div>
                                                 <small class="text-muted" style="display: block; margin-top: 4px;">Upload Tanggal<br/><?= esc(date('d-m-Y', strtotime((string) ($draftDokumen['created_at'] ?? '')))); ?></small>
+                                            <?php elseif (is_array($draftDokumen)): ?>
+                                                <span class="badge badge-danger">Tidak Ada</span>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
                                             <?php endif; ?>
                                         </td>
                                         <td class="cell-center">
-                                            <?php if (is_array($finalDokumen)): ?>
+                                            <?php if ($finalHasFile): ?>
                                                 <?php
                                                     $finalPath = trim((string) ($finalDokumen['file_relative_path'] ?? ''));
                                                     $finalHost = strtolower((string) parse_url($finalPath, PHP_URL_HOST));
@@ -927,6 +933,8 @@
                                                     <?php endif; ?>
                                                 </div>
                                                 <small class="text-muted" style="display: block; margin-top: 4px;">Upload Tanggal<br/><?= esc(date('d-m-Y', strtotime((string) ($finalDokumen['created_at'] ?? '')))); ?></small>
+                                            <?php elseif (is_array($finalDokumen)): ?>
+                                                <span class="badge badge-danger">Tidak Ada</span>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
                                             <?php endif; ?>
@@ -945,19 +953,17 @@
                                                         data-tipe-dokumen="draft"
                                                     >Upload Draft</button>
                                                 <?php endif; ?>
-                                                <?php if ($canUploadFinal && is_array($draftDokumen) && $isDraftVerified): ?>
-                                                    <?php if ($finalVerifikasi !== 'sesuai'): ?>
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-success btn-sm js-open-upload-modal ml-1"
-                                                            data-toggle="modal"
-                                                            data-target="#modal-upload-share-simak"
-                                                            data-row-no="<?= esc((string) $rowNo); ?>"
-                                                            data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
-                                                            data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
-                                                            data-tipe-dokumen="final"
-                                                        >Upload Final</button>
-                                                    <?php endif; ?>
+                                                <?php if ($canUploadFinal && $isDraftVerified): ?>
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-success btn-sm js-open-upload-modal ml-1"
+                                                        data-toggle="modal"
+                                                        data-target="#modal-upload-share-simak"
+                                                        data-row-no="<?= esc((string) $rowNo); ?>"
+                                                        data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
+                                                        data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
+                                                        data-tipe-dokumen="final"
+                                                    >Upload Final</button>
                                                 <?php endif; ?>
                                             <?php else: ?>
                                                 <?php if ($canUploadFinal && $finalVerifikasi !== 'sesuai'): ?>
