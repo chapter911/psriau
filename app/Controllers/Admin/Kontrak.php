@@ -2901,14 +2901,10 @@ class Kontrak extends BaseController
             }
         }
 
-        // Final upload is allowed when:
-        // - the row itself is already verified, or
-        // - the draft/no-file placeholder for that row has been verified as 'sesuai', or
-        // - the template row does not expect a draft (i.e. only-final items).
-        // This matches the public share workflow and supports "only final" items.
-        $templateHasDraftFlag = (string) ($targetTemplate['has_draft'] ?? '');
-        $isOnlyFinalTemplate = $templateHasDraftFlag === '';
-        $canUploadFinal = $rowVerifikasiStatus === 'sesuai' || $draftCurrentStatus === 'sesuai' || $isOnlyFinalTemplate;
+        // Final upload is allowed when the row itself is already verified,
+        // or when the draft/no-file placeholder for that row has been verified
+        // as sesuai. This matches the public share workflow.
+        $canUploadFinal = $rowVerifikasiStatus === 'sesuai' || $draftCurrentStatus === 'sesuai';
         if ($tipeDokumen === 'final' && ! $canUploadFinal) {
             log_message('error', 'sharedUploadSimakDokumen - blocked final upload; row/draft not verified: ' . json_encode($debugInfo));
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah draft atau baris berstatus Sesuai.');
