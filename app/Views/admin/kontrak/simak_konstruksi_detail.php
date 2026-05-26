@@ -270,10 +270,12 @@
                                             $latestDokumen = $finalDokumen ?? $draftDokumen;
                                             $draftVerifikasi = is_array($draftDokumen) ? strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? ''))) : '';
                                             $finalVerifikasi = is_array($finalDokumen) ? strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? ''))) : '';
+                                            $draftApproved = $draftVerifikasi === 'sesuai';
+                                            $finalApproved = $finalVerifikasi === 'sesuai';
                                             $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                             $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
-                                            $canVerifyDraft = is_array($draftDokumen) || $kelengkapan === 'tidak';
-                                            $canVerifyFinal = is_array($finalDokumen);
+                                            $canVerifyDraft = ($draftDokumen !== null || $kelengkapan === 'tidak') && ! $draftApproved && ! $finalApproved;
+                                            $canVerifyFinal = $finalDokumen !== null && ! $finalApproved;
                                             $draftActionKelengkapan = strtolower(trim((string) ($draftDokumen['kelengkapan_dokumen'] ?? ($kelengkapan !== '' ? $kelengkapan : 'tidak'))));
                                             $draftActionVerifikasi = strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? $verifikasi)));
                                             $draftActionKeterangan = (string) ($draftDokumen['keterangan'] ?? $keterangan);
@@ -282,7 +284,8 @@
                                             $finalActionVerifikasi = strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? $verifikasi)));
                                             $finalActionKeterangan = (string) ($finalDokumen['keterangan'] ?? $keterangan);
                                             $finalActionPic = (string) ($finalDokumen['pic'] ?? $pic);
-                                            $canUploadFinal = $verifikasi === 'sesuai';
+                                            $canUploadFinal = $verifikasi === 'sesuai' && ! $finalApproved;
+                                            $canUploadDraft = $hasDraft && ! $draftApproved && ! $finalApproved;
                                             $latestPath = is_array($latestDokumen) ? trim((string) ($latestDokumen['file_relative_path'] ?? '')) : '';
                                             $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
                                             $isDriveLink = in_array($latestHost, ['drive.google.com', 'docs.google.com'], true);
@@ -414,7 +417,7 @@
                                                                 data-tipe-dokumen="final"
                                                             >Final</button>
                                                         <?php endif; ?>
-                                                        <?php if ($hasDraft): ?>
+                                                        <?php if ($canUploadDraft): ?>
                                                             <button
                                                                 type="button"
                                                                 class="btn btn-outline-secondary btn-sm js-open-admin-upload-modal"

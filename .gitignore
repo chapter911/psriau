@@ -132,3 +132,4 @@ _modules/*
 /phpunit*.xml
 /example/
 /writable/reports/
+.tmp
