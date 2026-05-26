@@ -821,7 +821,7 @@
                                     $isDraftVerified = $draftVerifikasi === 'sesuai';
                                     $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                     $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
-                                    $draftNoFileVerified = $kelengkapan === 'tidak' && $verifikasi === 'sesuai';
+                                    $draftNoFileVerified = $hasDraft && $kelengkapan === 'tidak' && $verifikasi === 'sesuai';
                                     // Untuk item final-only (has_draft=0), check jika ada placeholder "Tidak Ada"
                                     $finalNoFilePlaceholder = $hasDraft === false
                                         && is_array($finalDokumen)

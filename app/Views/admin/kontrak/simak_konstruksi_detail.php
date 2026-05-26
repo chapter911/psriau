@@ -274,13 +274,21 @@
                                             $finalApproved = $finalVerifikasi === 'sesuai';
                                             $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                             $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
-                                            $canVerifyDraft = ($draftDokumen !== null || $kelengkapan === 'tidak') && ! $draftApproved && ! $finalApproved;
-                                            $canVerifyFinal = $finalDokumen !== null && ! $finalApproved;
+                                            // Check untuk placeholder "Tidak Ada" tanpa file
+                                            $finalNoFilePlaceholder = $hasDraft === false
+                                                && is_array($finalDokumen)
+                                                && trim((string) ($finalDokumen['file_relative_path'] ?? '')) === ''
+                                                && trim((string) ($finalDokumen['file_stored_name'] ?? '')) === '';
+                                            // canVerifyDraft hanya untuk items dengan has_draft=1
+                                            $canVerifyDraft = $hasDraft && ($draftDokumen !== null || $kelengkapan === 'tidak') && ! $draftApproved && ! $finalApproved;
+                                            // canVerifyFinal untuk items dengan atau tanpa draft
+                                            $canVerifyFinal = ($finalDokumen !== null || $finalNoFilePlaceholder) && ! $finalApproved;
                                             $draftActionKelengkapan = strtolower(trim((string) ($draftDokumen['kelengkapan_dokumen'] ?? ($kelengkapan !== '' ? $kelengkapan : 'tidak'))));
                                             $draftActionVerifikasi = strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? $verifikasi)));
                                             $draftActionKeterangan = (string) ($draftDokumen['keterangan'] ?? $keterangan);
                                             $draftActionPic = (string) ($draftDokumen['pic'] ?? $pic);
-                                            $finalActionKelengkapan = strtolower(trim((string) ($finalDokumen['kelengkapan_dokumen'] ?? ($kelengkapan !== '' ? $kelengkapan : 'tidak'))));
+                                            // Untuk final-only items, gunakan kelengkapan dari placeholder
+                                            $finalActionKelengkapan = strtolower(trim((string) ($finalDokumen['kelengkapan_dokumen'] ?? ($finalNoFilePlaceholder ? 'tidak' : ($kelengkapan !== '' ? $kelengkapan : 'tidak')))));
                                             $finalActionVerifikasi = strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? $verifikasi)));
                                             $finalActionKeterangan = (string) ($finalDokumen['keterangan'] ?? $keterangan);
                                             $finalActionPic = (string) ($finalDokumen['pic'] ?? $pic);
