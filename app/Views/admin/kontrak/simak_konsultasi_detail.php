@@ -146,6 +146,24 @@
     </div>
 </div>
 
+<!-- Filter Toolbar -->
+<div class="mb-3 p-3 bg-white rounded border">
+    <div class="d-flex align-items-center flex-wrap gap-2">
+        <label class="mb-0 font-weight-bold mr-2">Filter:</label>
+        <select class="form-control form-control-sm" id="filter-status" style="width: 200px;">
+            <option value="all">Semua</option>
+            <option value="menunggu">Menunggu Verifikasi</option>
+            <option value="sesuai">Sesuai</option>
+            <option value="tidak_sesuai">Tidak Sesuai</option>
+            <option value="belum_ada">Belum Ada</option>
+        </select>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-reset-filter">
+            <i class="fas fa-sync-alt"></i> Reset
+        </button>
+        <span class="text-muted ml-auto small" id="filter-info">Menampilkan semua item</span>
+    </div>
+</div>
+
 <?php if (! empty($templateItems ?? [])): ?>
 <?php
     $sections = [];
@@ -300,16 +318,61 @@
                                             $bgStyle = $isGroup ? 'background-color: #f2f4f7;' : '';
                                             $noText = $displayNo;
                                             $statusCellClass = '';
+                                            $draftApproved = $draftVerifikasi === 'sesuai';
+                                            $finalApproved = $finalVerifikasi === 'sesuai';
+                                            $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
+                                            $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
+                                            // Check untuk placeholder "Tidak Ada" tanpa file
+                                            $finalNoFilePlaceholder = $hasDraft === false
+                                                && is_array($finalDokumen)
+                                                && trim((string) ($finalDokumen['file_relative_path'] ?? '')) === ''
+                                                && trim((string) ($finalDokumen['file_stored_name'] ?? '')) === '';
+                                            // canVerifyDraft hanya untuk items dengan has_draft=1
+                                            $canVerifyDraft = $hasDraft && ($draftDokumen !== null || $kelengkapan === 'tidak') && ! $draftApproved && ! $finalApproved;
+                                            // canVerifyFinal untuk items dengan atau tanpa draft
+                                            $canVerifyFinal = ($finalDokumen !== null || $finalNoFilePlaceholder) && ! $finalApproved;
+                                            $draftActionKelengkapan = strtolower(trim((string) ($draftDokumen['kelengkapan_dokumen'] ?? ($kelengkapan !== '' ? $kelengkapan : 'tidak'))));
+                                            $draftActionVerifikasi = strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? $verifikasi)));
+                                            $draftActionKeterangan = (string) ($draftDokumen['keterangan'] ?? $keterangan);
+                                            $draftActionPic = (string) ($draftDokumen['pic'] ?? $pic);
+                                            // Untuk final-only items, gunakan kelengkapan dari placeholder
+                                            $finalActionKelengkapan = strtolower(trim((string) ($finalDokumen['kelengkapan_dokumen'] ?? ($finalNoFilePlaceholder ? 'tidak' : ($kelengkapan !== '' ? $kelengkapan : 'tidak')))));
+                                            $finalActionVerifikasi = strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? $verifikasi)));
+                                            $finalActionKeterangan = (string) ($finalDokumen['keterangan'] ?? $keterangan);
+                                            $finalActionPic = (string) ($finalDokumen['pic'] ?? $pic);
+                                            // canUploadFinal: untuk items dengan draft, perlu verifikasi='sesuai'; untuk final-only, tampilkan jika ada placeholder
+                                            $canUploadFinal = ($hasDraft && $verifikasi === 'sesuai') || $finalNoFilePlaceholder;
+                                            $canUploadDraft = $hasDraft && ! $draftApproved && ! $finalApproved;
+                                            // Check jika menunggu verifikasi (record ada tapi verifikasi belum sesuai/null)
+                                            $hasPendingDraft = $hasDraft && ($draftDokumen !== null || $kelengkapan === 'tidak') && $draftVerifikasi !== 'sesuai' && $draftVerifikasi !== 'tidak_sesuai';
+                                            $hasPendingFinal = ($finalDokumen !== null || $finalNoFilePlaceholder) && $finalVerifikasi !== 'sesuai' && $finalVerifikasi !== 'tidak_sesuai';
+                                            $isPendingVerification = $verifikasi === 'belum_verifikasi'
+                                                || $draftVerifikasi === 'belum_verifikasi'
+                                                || $finalVerifikasi === 'belum_verifikasi'
+                                                || $hasPendingDraft
+                                                || $hasPendingFinal;
 
                                             if ($isInputRow) {
                                                 if ($kelengkapan === 'ada' && $verifikasi === 'tidak_sesuai') {
                                                     $statusCellClass = 'simak-status-yellow';
-                                                } elseif ($kelengkapan !== 'ada') {
+                                                    $rowDataStatus = 'tidak_sesuai';
+                                                } elseif ($kelengkapan === 'tidak' && $verifikasi === 'sesuai') {
+                                                    $statusCellClass = 'simak-status-green';
+                                                    $rowDataStatus = 'sesuai';
+                                                } elseif ($isPendingVerification) {
+                                                    $statusCellClass = 'simak-status-yellow';
+                                                    $rowDataStatus = 'menunggu';
+                                                } elseif ($kelengkapan === 'tidak') {
                                                     $statusCellClass = 'simak-status-red-soft';
+                                                    $rowDataStatus = 'belum_ada';
+                                                } else {
+                                                    $rowDataStatus = 'all';
                                                 }
+                                            } else {
+                                                $rowDataStatus = 'all';
                                             }
-                                        ?>
-                                        <tr style="<?= esc($bgStyle); ?>">
+                                            ?>
+                                        <tr data-status="<?= esc($rowDataStatus); ?>" style="<?= esc($bgStyle . ($isPendingVerification && $isInputRow ? ' background-color: #fff3cd;' : '')); ?>">
                                             <td>
                                                 <div style="padding-left: <?= (int) $indentPadding; ?>px; white-space: nowrap; <?= esc($fontWeight); ?>">
                                                     <?= esc($noText); ?>
@@ -336,10 +399,16 @@
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <?php if ($draftVerifikasi === 'sesuai'): ?>
-                                                        <span class="badge badge-success">Sesuai</span>
-                                                    <?php elseif ($draftVerifikasi === 'tidak_sesuai'): ?>
-                                                        <span class="badge badge-warning">Tidak Sesuai</span>
+                                                    <?php if ($hasDraft): ?>
+                                                        <?php if ($draftVerifikasi === 'sesuai'): ?>
+                                                            <span class="badge badge-success">Sesuai</span>
+                                                        <?php elseif ($draftVerifikasi === 'belum_verifikasi' || ($draftDokumen !== null && $draftVerifikasi === '')): ?>
+                                                            <span class="badge badge-warning">Menunggu Verifikasi</span>
+                                                        <?php elseif ($draftVerifikasi === 'tidak_sesuai'): ?>
+                                                            <span class="badge badge-warning">Tidak Sesuai</span>
+                                                        <?php else: ?>
+                                                            <span class="text-muted">-</span>
+                                                        <?php endif; ?>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
@@ -347,8 +416,12 @@
                                                 <td>
                                                     <?php if ($finalVerifikasi === 'sesuai'): ?>
                                                         <span class="badge badge-success">Sesuai</span>
+                                                    <?php elseif ($finalVerifikasi === 'belum_verifikasi' || ($finalDokumen !== null && $finalVerifikasi === '')): ?>
+                                                        <span class="badge badge-warning">Menunggu Verifikasi</span>
                                                     <?php elseif ($finalVerifikasi === 'tidak_sesuai'): ?>
                                                         <span class="badge badge-warning">Tidak Sesuai</span>
+                                                    <?php elseif ($finalNoFilePlaceholder): ?>
+                                                        <span class="badge badge-warning">Menunggu Verifikasi</span>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
@@ -400,15 +473,17 @@
                                                 </td>
                                                 <td>
                                                     <div class="simak-upload-actions">
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-success btn-sm js-open-admin-upload-modal"
-                                                            data-row-no="<?= esc((string) $rowNo); ?>"
-                                                            data-row-label="<?= esc($noText); ?>"
-                                                            data-uraian="<?= esc($uraian); ?>"
-                                                            data-tipe-dokumen="final"
-                                                        >Final</button>
-                                                        <?php if ($hasDraft): ?>
+                                                        <?php if ($canUploadFinal): ?>
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-success btn-sm js-open-admin-upload-modal"
+                                                                data-row-no="<?= esc((string) $rowNo); ?>"
+                                                                data-row-label="<?= esc($noText); ?>"
+                                                                data-uraian="<?= esc($uraian); ?>"
+                                                                data-tipe-dokumen="final"
+                                                            >Final</button>
+                                                        <?php endif; ?>
+                                                        <?php if ($canUploadDraft): ?>
                                                             <button
                                                                 type="button"
                                                                 class="btn btn-outline-secondary btn-sm js-open-admin-upload-modal"
@@ -422,7 +497,7 @@
                                                 </td>
                                                 <td>
                                                     <div class="simak-upload-actions">
-                                                        <?php if (is_array($draftDokumen)): ?>
+                                                        <?php if ($canVerifyDraft): ?>
                                                             <button
                                                                 type="button"
                                                                 class="btn btn-outline-secondary btn-sm js-open-upload-modal"
@@ -430,13 +505,13 @@
                                                                 data-row-label="<?= esc($noText); ?>"
                                                                 data-uraian="<?= esc($uraian); ?>"
                                                                 data-tipe-dokumen="draft"
-                                                                data-kelengkapan="<?= esc((string) ($draftDokumen['kelengkapan_dokumen'] ?? '')); ?>"
-                                                                data-verifikasi="<?= esc($draftVerifikasi); ?>"
-                                                                data-keterangan="<?= esc((string) ($draftDokumen['keterangan'] ?? '')); ?>"
-                                                                data-pic="<?= esc((string) ($draftDokumen['pic'] ?? '')); ?>"
+                                                                data-kelengkapan="<?= esc($draftActionKelengkapan); ?>"
+                                                                data-verifikasi="<?= esc($draftActionVerifikasi); ?>"
+                                                                data-keterangan="<?= esc($draftActionKeterangan); ?>"
+                                                                data-pic="<?= esc($draftActionPic); ?>"
                                                             >Verif Draft</button>
                                                         <?php endif; ?>
-                                                        <?php if (is_array($finalDokumen)): ?>
+                                                        <?php if ($canVerifyFinal): ?>
                                                             <button
                                                                 type="button"
                                                                 class="btn btn-warning btn-sm js-open-upload-modal"
@@ -444,14 +519,14 @@
                                                                 data-row-label="<?= esc($noText); ?>"
                                                                 data-uraian="<?= esc($uraian); ?>"
                                                                 data-tipe-dokumen="final"
-                                                                data-kelengkapan="<?= esc((string) ($finalDokumen['kelengkapan_dokumen'] ?? '')); ?>"
-                                                                data-verifikasi="<?= esc($finalVerifikasi); ?>"
-                                                                data-keterangan="<?= esc((string) ($finalDokumen['keterangan'] ?? '')); ?>"
-                                                                data-pic="<?= esc((string) ($finalDokumen['pic'] ?? '')); ?>"
+                                                                data-kelengkapan="<?= esc($finalActionKelengkapan); ?>"
+                                                                data-verifikasi="<?= esc($finalActionVerifikasi); ?>"
+                                                                data-keterangan="<?= esc($finalActionKeterangan); ?>"
+                                                                data-pic="<?= esc($finalActionPic); ?>"
                                                             >Verif Final</button>
                                                         <?php endif; ?>
                                                     </div>
-                                                    <?php if (! is_array($draftDokumen) && ! is_array($finalDokumen)): ?>
+                                                    <?php if (! $canVerifyDraft && ! $canVerifyFinal): ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
                                                 </td>
@@ -1068,6 +1143,105 @@
                 }
                 return false;
             }
+        });
+    }
+
+    // Filter functionality
+    var filterSelect = document.getElementById('filter-status');
+    var filterInfo = document.getElementById('filter-info');
+    var resetBtn = document.getElementById('btn-reset-filter');
+
+    function getRowStatus(row) {
+        var status = row.getAttribute('data-status');
+        if (status) return status;
+
+        var statusCell = row.querySelector('td:nth-child(9)');
+        if (!statusCell) return 'all';
+
+        var text = statusCell.textContent.trim();
+        if (text.includes('Tidak') && !text.includes('Sesuai')) return 'belum_ada';
+
+        var draftCell = row.querySelector('td:nth-child(10)');
+        var finalCell = row.querySelector('td:nth-child(11)');
+
+        var hasSesuai = false;
+        var hasMenunggu = false;
+        var hasTidakSesuai = false;
+
+        if (draftCell) {
+            var draftText = draftCell.textContent;
+            if (draftText.includes('Sesuai')) hasSesuai = true;
+            if (draftText.includes('Menunggu')) hasMenunggu = true;
+            if (draftText.includes('Tidak Sesuai')) hasTidakSesuai = true;
+        }
+        if (finalCell) {
+            var finalText = finalCell.textContent;
+            if (finalText.includes('Sesuai')) hasSesuai = true;
+            if (finalText.includes('Menunggu')) hasMenunggu = true;
+            if (finalText.includes('Tidak Sesuai')) hasTidakSesuai = true;
+        }
+
+        if (hasSesuai) return 'sesuai';
+        if (hasTidakSesuai) return 'tidak_sesuai';
+        if (hasMenunggu) return 'menunggu';
+
+        return 'all';
+    }
+
+    function applyFilter(filterValue) {
+        var visibleCount = 0;
+        var totalCount = 0;
+        var tables = document.querySelectorAll('.simak-verifikasi-table');
+
+        tables.forEach(function(table) {
+            var tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            tbody.querySelectorAll('tr').forEach(function(row) {
+                if (row.querySelector('td[colspan]')) {
+                    row.style.display = '';
+                    return;
+                }
+
+                totalCount++;
+                var status = getRowStatus(row);
+
+                if (filterValue === 'all' || status === filterValue) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        if (filterInfo) {
+            if (filterValue === 'all') {
+                filterInfo.textContent = 'Menampilkan semua item';
+            } else {
+                var filterLabels = {
+                    'menunggu': 'Menunggu Verifikasi',
+                    'sesuai': 'Sesuai',
+                    'tidak_sesuai': 'Tidak Sesuai',
+                    'belum_ada': 'Belum Ada'
+                };
+                filterInfo.textContent = 'Menampilkan ' + visibleCount + ' dari ' + totalCount + ' item (' + (filterLabels[filterValue] || filterValue) + ')';
+            }
+        }
+    }
+
+    if (filterSelect) {
+        filterSelect.addEventListener('change', function() {
+            applyFilter(this.value);
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            if (filterSelect) {
+                filterSelect.value = 'all';
+            }
+            applyFilter('all');
         });
     }
 })();
