@@ -821,9 +821,8 @@
                                     $isDraftVerified = $draftVerifikasi === 'sesuai';
                                     $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                     $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
-                                    $canUploadFinal = is_array($draftDokumen)
-                                        && $draftVerifikasi === 'sesuai'
-                                        && $finalVerifikasi !== 'sesuai';
+                                    $canUploadDraft = is_array($draftDokumen) && $draftVerifikasi !== 'sesuai';
+                                    $canUploadFinal = is_array($draftDokumen) && $draftVerifikasi === 'sesuai' && $finalVerifikasi !== 'sesuai';
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
                                     <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?></td>
@@ -940,7 +939,7 @@
                                             <?php endif; ?>
                                         </td>
                                         <td class="cell-center">
-                                            <?php if ($hasDraft): ?>
+                                            <?php if ($canUploadDraft): ?>
                                                 <?php if ($draftVerifikasi !== 'sesuai'): ?>
                                                     <button
                                                         type="button"
@@ -953,7 +952,8 @@
                                                         data-tipe-dokumen="draft"
                                                     >Upload Draft</button>
                                                 <?php endif; ?>
-                                                <?php if ($canUploadFinal && $isDraftVerified): ?>
+                                            <?php endif; ?>
+                                            <?php if ($canUploadFinal && $isDraftVerified): ?>
                                                     <button
                                                         type="button"
                                                         class="btn btn-success btn-sm js-open-upload-modal ml-1"
@@ -964,7 +964,6 @@
                                                         data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
                                                         data-tipe-dokumen="final"
                                                     >Upload Final</button>
-                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </td>
                                     <?php else: ?>
