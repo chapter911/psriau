@@ -821,8 +821,9 @@
                                     $isDraftVerified = $draftVerifikasi === 'sesuai';
                                     $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                     $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
+                                    $draftNoFileVerified = $kelengkapan === 'tidak' && $verifikasi === 'sesuai';
                                     $canUploadFinal = $hasDraft
-                                        ? ($draftVerifikasi === 'sesuai' && $finalVerifikasi !== 'sesuai')
+                                        ? (($draftVerifikasi === 'sesuai' || $draftNoFileVerified) && $finalVerifikasi !== 'sesuai')
                                         : ($finalVerifikasi !== 'sesuai');
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
@@ -893,7 +894,7 @@
                                                     <?php endif; ?>
                                                 </div>
                                                 <small class="text-muted" style="display: block; margin-top: 4px;">Upload Tanggal<br/><?= esc(date('d-m-Y', strtotime((string) ($draftDokumen['created_at'] ?? '')))); ?></small>
-                                            <?php elseif (is_array($draftDokumen)): ?>
+                                            <?php elseif (is_array($draftDokumen) || $draftNoFileVerified): ?>
                                                 <span class="badge badge-danger">Tidak Ada</span>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
