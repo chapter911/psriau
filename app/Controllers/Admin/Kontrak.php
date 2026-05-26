@@ -2849,6 +2849,14 @@ class Kontrak extends BaseController
         $hasDriveLink = $googleDriveLink !== '';
         $rowVerifikasiStatus = strtolower(trim((string) ($existingVerifikasi['verifikasi_ki'] ?? '')));
 
+        // Trust the actual payload first so a stale UI selection does not push
+        // a real file submission into the no-document branch.
+        if ($hasFile && $uploadMethod !== 'drive') {
+            $uploadMethod = 'file';
+        } elseif ($hasDriveLink && $uploadMethod !== 'none') {
+            $uploadMethod = 'drive';
+        }
+
         if ($tipeDokumen === 'draft') {
             $draftCurrentStatus = strtolower(trim((string) ($draftDocument['verifikasi_ki'] ?? '')));
             if ($draftCurrentStatus === 'sesuai') {

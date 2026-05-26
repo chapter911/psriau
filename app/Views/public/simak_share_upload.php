@@ -2083,6 +2083,7 @@
 
     openButtons.forEach(function (button) {
         button.addEventListener('click', function (event) {
+            resetUploadModalState();
             setUploadContext(getUploadContextFromButton(this));
         });
     });
