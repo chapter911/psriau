@@ -821,8 +821,9 @@
                                     $isDraftVerified = $draftVerifikasi === 'sesuai';
                                     $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                     $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
-                                    $canUploadDraft = is_array($draftDokumen) && $draftVerifikasi !== 'sesuai';
-                                    $canUploadFinal = is_array($draftDokumen) && $draftVerifikasi === 'sesuai' && $finalVerifikasi !== 'sesuai';
+                                    $canUploadFinal = $hasDraft
+                                        ? ($draftVerifikasi === 'sesuai' && $finalVerifikasi !== 'sesuai')
+                                        : ($finalVerifikasi !== 'sesuai');
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
                                     <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?></td>
@@ -939,7 +940,7 @@
                                             <?php endif; ?>
                                         </td>
                                         <td class="cell-center">
-                                            <?php if ($canUploadDraft): ?>
+                                            <?php if ($hasDraft): ?>
                                                 <?php if ($draftVerifikasi !== 'sesuai'): ?>
                                                     <button
                                                         type="button"
@@ -952,8 +953,7 @@
                                                         data-tipe-dokumen="draft"
                                                     >Upload Draft</button>
                                                 <?php endif; ?>
-                                            <?php endif; ?>
-                                            <?php if ($canUploadFinal && $isDraftVerified): ?>
+                                                <?php if ($canUploadFinal && $isDraftVerified): ?>
                                                     <button
                                                         type="button"
                                                         class="btn btn-success btn-sm js-open-upload-modal ml-1"
@@ -964,6 +964,20 @@
                                                         data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
                                                         data-tipe-dokumen="final"
                                                     >Upload Final</button>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <?php if ($canUploadFinal && $finalVerifikasi !== 'sesuai'): ?>
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-success btn-sm js-open-upload-modal"
+                                                        data-toggle="modal"
+                                                        data-target="#modal-upload-share-simak"
+                                                        data-row-no="<?= esc((string) $rowNo); ?>"
+                                                        data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
+                                                        data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
+                                                        data-tipe-dokumen="final"
+                                                    >Upload Final</button>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </td>
                                     <?php else: ?>
