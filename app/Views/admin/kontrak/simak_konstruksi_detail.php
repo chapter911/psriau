@@ -271,6 +271,7 @@
                                             $draftVerifikasi = is_array($draftDokumen) ? strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? ''))) : '';
                                             $finalVerifikasi = is_array($finalDokumen) ? strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? ''))) : '';
                                             $canUploadFinal = $verifikasi === 'sesuai';
+                                            $canStartNoDocumentVerification = ! is_array($draftDokumen) && ! is_array($finalDokumen);
                                             $latestPath = is_array($latestDokumen) ? trim((string) ($latestDokumen['file_relative_path'] ?? '')) : '';
                                             $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
                                             $isDriveLink = in_array($latestHost, ['drive.google.com', 'docs.google.com'], true);
@@ -429,6 +430,19 @@
                                                                 data-verifikasi="<?= esc($finalVerifikasi); ?>"
                                                                 data-keterangan="<?= esc((string) ($finalDokumen['keterangan'] ?? '')); ?>"
                                                                 data-pic="<?= esc((string) ($finalDokumen['pic'] ?? '')); ?>"
+                                                            >Verif Final</button>
+                                                        <?php elseif ($canStartNoDocumentVerification): ?>
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-primary btn-sm js-open-upload-modal"
+                                                                data-row-no="<?= esc((string) $rowNo); ?>"
+                                                                data-row-label="<?= esc($noText); ?>"
+                                                                data-uraian="<?= esc($uraian); ?>"
+                                                                data-tipe-dokumen="final"
+                                                                data-kelengkapan="tidak"
+                                                                data-verifikasi="sesuai"
+                                                                data-keterangan=""
+                                                                data-pic="<?= esc($pic); ?>"
                                                             >Verif Final</button>
                                                         <?php endif; ?>
                                                     </div>
