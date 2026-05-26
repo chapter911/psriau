@@ -819,7 +819,7 @@
                                     $finalVerifikasi = is_array($finalDokumen) ? strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? ''))) : '';
                                     $isBelumSesuai = $finalVerifikasi === 'tidak_sesuai';
                                     $isDraftVerified = $draftVerifikasi === 'sesuai';
-                                    $canUploadFinal = ! $hasDraft || $isDraftVerified;
+                                    $canUploadFinal = $verifikasi === 'sesuai';
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
                                     <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?></td>

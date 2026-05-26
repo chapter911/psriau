@@ -2400,6 +2400,15 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload hanya diizinkan pada baris terbawah.');
         }
 
+        $existingVerifikasi = $db->table('trn_kontrak_simak_verifikasi')
+            ->select('verifikasi_ki')
+            ->where('simak_id', $id)
+            ->where('row_no', $rowNo)
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
         $file = $this->request->getFile('dokumen_file');
         if (! $file || ! $file->isValid()) {
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'File upload tidak valid.');
@@ -2427,6 +2436,13 @@ class Kontrak extends BaseController
         $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
         if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
             $tipeDokumen = 'final';
+        }
+
+        if ($tipeDokumen === 'final') {
+            $rowVerificationStatus = strtolower(trim((string) ($existingVerifikasi['verifikasi_ki'] ?? '')));
+            if ($rowVerificationStatus !== 'sesuai') {
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload Final hanya tersedia setelah baris diverifikasi Sesuai.');
+            }
         }
 
         $existingDraftDoc = $db->table('trn_kontrak_simak_verifikasi_dokumen')
@@ -2753,7 +2769,7 @@ class Kontrak extends BaseController
             ->getRowArray();
 
         $existingVerifikasi = $db->table($tableVerifikasi)
-            ->select('pic')
+            ->select('kelengkapan_dokumen, verifikasi_ki, pic')
             ->where('simak_id', $simakId)
             ->where('row_no', $rowNo)
             ->orderBy('id', 'DESC')
@@ -2808,6 +2824,7 @@ class Kontrak extends BaseController
         $keteranganTidakAda = trim((string) $this->request->getPost('keterangan'));
         $hasFile = $file !== null && $file->getError() !== UPLOAD_ERR_NO_FILE;
         $hasDriveLink = $googleDriveLink !== '';
+        $rowVerifikasiStatus = strtolower(trim((string) ($existingVerifikasi['verifikasi_ki'] ?? '')));
 
         if ($tipeDokumen === 'draft') {
             $draftCurrentStatus = strtolower(trim((string) ($draftDocument['verifikasi_ki'] ?? '')));
@@ -2816,13 +2833,10 @@ class Kontrak extends BaseController
             }
         }
 
-        // Enforce: if this template row requires a draft first, disallow final upload
-        // when no draft exists yet.
-        if ($tipeDokumen === 'final' && ! empty($targetTemplate) && ! empty($targetTemplate['has_draft'])) {
-            $draftVerificationStatus = strtolower(trim((string) ($draftDocument['verifikasi_ki'] ?? '')));
-            if ($draftVerificationStatus !== 'sesuai') {
-                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah Draft diverifikasi Sesuai.');
-            }
+        // Enforce: final upload is only allowed after the row has been marked
+        // verified as sesuai from the admin verification flow.
+        if ($tipeDokumen === 'final' && $rowVerifikasiStatus !== 'sesuai') {
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah verifikasi baris berstatus Sesuai.');
         }
 
         if ($tipeDokumen === 'final') {

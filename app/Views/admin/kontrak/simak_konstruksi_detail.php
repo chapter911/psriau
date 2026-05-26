@@ -270,6 +270,7 @@
                                             $latestDokumen = $finalDokumen ?? $draftDokumen;
                                             $draftVerifikasi = is_array($draftDokumen) ? strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? ''))) : '';
                                             $finalVerifikasi = is_array($finalDokumen) ? strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? ''))) : '';
+                                            $canUploadFinal = $verifikasi === 'sesuai';
                                             $latestPath = is_array($latestDokumen) ? trim((string) ($latestDokumen['file_relative_path'] ?? '')) : '';
                                             $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
                                             $isDriveLink = in_array($latestHost, ['drive.google.com', 'docs.google.com'], true);
@@ -378,14 +379,16 @@
                                                 </td>
                                                 <td>
                                                     <div class="simak-upload-actions">
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-success btn-sm js-open-admin-upload-modal"
-                                                            data-row-no="<?= esc((string) $rowNo); ?>"
-                                                            data-row-label="<?= esc($noText); ?>"
-                                                            data-uraian="<?= esc($uraian); ?>"
-                                                            data-tipe-dokumen="final"
-                                                        >Final</button>
+                                                        <?php if ($canUploadFinal): ?>
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-success btn-sm js-open-admin-upload-modal"
+                                                                data-row-no="<?= esc((string) $rowNo); ?>"
+                                                                data-row-label="<?= esc($noText); ?>"
+                                                                data-uraian="<?= esc($uraian); ?>"
+                                                                data-tipe-dokumen="final"
+                                                            >Final</button>
+                                                        <?php endif; ?>
                                                         <?php if ($hasDraft): ?>
                                                             <button
                                                                 type="button"
