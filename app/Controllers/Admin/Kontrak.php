@@ -2767,6 +2767,24 @@ class Kontrak extends BaseController
             );
         }
 
+        try {
+            $traceFile = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'simak_upload_post.log';
+            $trace = [
+                'time' => date('c'),
+                'remote_addr' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+                'method' => $_SERVER['REQUEST_METHOD'] ?? 'GET',
+                'uri' => $_SERVER['REQUEST_URI'] ?? '',
+                'token' => $token,
+                'content_type' => $_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? ''),
+                'content_length' => $_SERVER['CONTENT_LENGTH'] ?? null,
+                'post_keys' => is_array($this->request->getPost()) ? array_keys($this->request->getPost()) : [],
+                'files' => is_array($_FILES) ? array_keys($_FILES) : [],
+            ];
+            @file_put_contents($traceFile, json_encode($trace, JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND | LOCK_EX);
+        } catch (\Throwable $_e) {
+            // Logging must never block the upload flow.
+        }
+
         if ($this->isPostBodyTooLarge()) {
             return redirect()->to(site_url('simak/share/' . $token . '?error=' . rawurlencode('Upload gagal karena ukuran request melebihi batas server (post_max_size/upload_max_filesize). Perbesar batas upload di server lalu coba lagi.')));
         }
