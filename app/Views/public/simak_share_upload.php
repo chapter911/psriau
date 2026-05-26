@@ -821,9 +821,9 @@
                                     $isDraftVerified = $draftVerifikasi === 'sesuai';
                                     $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                     $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
-                                    $canUploadFinal = $hasDraft
-                                        ? ($draftVerifikasi === 'sesuai' && $finalVerifikasi !== 'sesuai')
-                                        : ($finalVerifikasi !== 'sesuai');
+                                    $canUploadFinal = is_array($draftDokumen)
+                                        && $draftVerifikasi === 'sesuai'
+                                        && $finalVerifikasi !== 'sesuai';
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
                                     <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?></td>
@@ -957,19 +957,6 @@
                                                     <button
                                                         type="button"
                                                         class="btn btn-success btn-sm js-open-upload-modal ml-1"
-                                                        data-toggle="modal"
-                                                        data-target="#modal-upload-share-simak"
-                                                        data-row-no="<?= esc((string) $rowNo); ?>"
-                                                        data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
-                                                        data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
-                                                        data-tipe-dokumen="final"
-                                                    >Upload Final</button>
-                                                <?php endif; ?>
-                                            <?php else: ?>
-                                                <?php if ($canUploadFinal && $finalVerifikasi !== 'sesuai'): ?>
-                                                    <button
-                                                        type="button"
-                                                        class="btn btn-success btn-sm js-open-upload-modal"
                                                         data-toggle="modal"
                                                         data-target="#modal-upload-share-simak"
                                                         data-row-no="<?= esc((string) $rowNo); ?>"
