@@ -822,9 +822,15 @@
                                     $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                     $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
                                     $draftNoFileVerified = $kelengkapan === 'tidak' && $verifikasi === 'sesuai';
+
+                                    // Logic upload button visibility:
+                                    // - has_draft=1: Upload Draft only if draft not verified; Upload Final only if draft verified
+                                    // - has_draft=0: Upload Final if row not yet verified (sesuai means ready to upload or already done)
+                                    //   Controller allows final upload when rowVerifikasiStatus != 'sesuai' (means not yet verified)
+                                    $rowVerifikasi = strtolower(trim((string) ($existing['verifikasi_ki'] ?? '')));
                                     $canUploadFinal = $hasDraft
                                         ? (($draftVerifikasi === 'sesuai' || $draftNoFileVerified) && $finalVerifikasi !== 'sesuai')
-                                        : ($finalVerifikasi !== 'sesuai');
+                                        : ($rowVerifikasi !== 'sesuai');
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
                                     <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?></td>
@@ -967,7 +973,7 @@
                                                     >Upload Final</button>
                                                 <?php endif; ?>
                                             <?php else: ?>
-                                                <?php if ($canUploadFinal && ($finalVerifikasi !== 'sesuai' || (is_array($finalDokumen) && ! $finalHasFile))): ?>
+                                                <?php if ($canUploadFinal): ?>
                                                     <button
                                                         type="button"
                                                         class="btn btn-success btn-sm js-open-upload-modal"
