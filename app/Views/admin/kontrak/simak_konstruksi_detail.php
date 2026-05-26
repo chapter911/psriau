@@ -292,7 +292,8 @@
                                             $finalActionVerifikasi = strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? $verifikasi)));
                                             $finalActionKeterangan = (string) ($finalDokumen['keterangan'] ?? $keterangan);
                                             $finalActionPic = (string) ($finalDokumen['pic'] ?? $pic);
-                                            $canUploadFinal = $verifikasi === 'sesuai' && ! $finalApproved;
+                                            // canUploadFinal: untuk items dengan draft, perlu verifikasi='sesuai'; untuk final-only, tampilkan jika ada placeholder
+                                            $canUploadFinal = ($hasDraft && $verifikasi === 'sesuai') || $finalNoFilePlaceholder;
                                             $canUploadDraft = $hasDraft && ! $draftApproved && ! $finalApproved;
                                             $latestPath = is_array($latestDokumen) ? trim((string) ($latestDokumen['file_relative_path'] ?? '')) : '';
                                             $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));

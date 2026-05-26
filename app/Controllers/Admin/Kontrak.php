@@ -3067,8 +3067,31 @@ class Kontrak extends BaseController
         $db->transStart();
         $deleteOk = $db->table($tableVerifikasi)->where('simak_id', $simakId)->where('row_no', $rowNo)->delete();
         $insertVerifikasiOk = $db->table($tableVerifikasi)->insert($verifikasiRow);
+
+        // Insert placeholder document untuk "Tidak Ada" agar bisa diverifikasi oleh admin
         $insertDokumenOk = true;
-        if ($uploadMethod !== 'none') {
+        if ($uploadMethod === 'none') {
+            $dokumenRow = [
+                'simak_id' => $simakId,
+                'row_no' => $rowNo,
+                'kode' => (string) ($targetTemplate['display_no'] ?? ''),
+                'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
+                'kelengkapan_dokumen' => $kelengkapanDokumen,
+                'verifikasi_ki' => null, // NULL agar bisa diverifikasi
+                'keterangan' => $keterangan,
+                'pic' => $pic,
+                'file_original_name' => $tipeDokumen === 'draft' ? 'Dokumen Draft Tidak Ada' : 'Dokumen Final Tidak Ada',
+                'file_stored_name' => '',
+                'file_relative_path' => '',
+                'file_mime' => '',
+                'file_size' => 0,
+                'tipe_dokumen' => $tipeDokumen,
+                'created_by' => $actor,
+                'created_date' => $today,
+                'created_at' => $now,
+            ];
+            $insertDokumenOk = $db->table($tableDokumen)->insert($dokumenRow);
+        } else {
             $insertDokumenOk = $db->table($tableDokumen)->insert($dokumenRow);
         }
         $db->transComplete();
