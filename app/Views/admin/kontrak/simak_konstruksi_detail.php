@@ -308,7 +308,7 @@
                                             $statusCellClass = '';
                                             // Check jika menunggu verifikasi (record ada tapi verifikasi belum sesuai/null)
                                             $hasPendingDraft = $hasDraft && ($draftDokumen !== null || $kelengkapan === 'tidak') && $draftVerifikasi !== 'sesuai' && $draftVerifikasi !== 'tidak_sesuai';
-                                            $hasPendingFinal = ($finalDokumen !== null || $finalNoFilePlaceholder) && $finalVerifikasi !== 'sesuai' && $finalVerifikasi !== 'tidak_sesuai' && $finalVerifikasi !== '';
+                                            $hasPendingFinal = ($finalDokumen !== null || $finalNoFilePlaceholder) && $finalVerifikasi !== 'sesuai' && $finalVerifikasi !== 'tidak_sesuai';
                                             $isPendingVerification = $verifikasi === 'belum_verifikasi'
                                                 || $draftVerifikasi === 'belum_verifikasi'
                                                 || $finalVerifikasi === 'belum_verifikasi'
@@ -327,7 +327,7 @@
                                                 }
                                             }
                                         ?>
-                                        <tr style="<?= esc($bgStyle . ($isPendingVerification ? ' background-color: #fff3cd;' : '')); ?>">
+                                        <tr style="<?= esc($bgStyle . ($isPendingVerification && $isInputRow ? ' background-color: #fff3cd;' : '')); ?>">
                                             <td>
                                                 <div style="padding-left: <?= (int) $indentPadding; ?>px; white-space: nowrap; <?= esc($fontWeight); ?>">
                                                     <?= esc($noText); ?>
