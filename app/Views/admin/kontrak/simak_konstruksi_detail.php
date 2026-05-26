@@ -142,24 +142,6 @@
     </div>
 </div>
 
-<!-- Filter Toolbar -->
-<div class="mb-3 p-3 bg-white rounded border">
-    <div class="d-flex align-items-center flex-wrap gap-2">
-        <label class="mb-0 font-weight-bold mr-2">Filter:</label>
-        <select class="form-control form-control-sm" id="filter-status" style="width: 200px;">
-            <option value="all">Semua</option>
-            <option value="menunggu">Menunggu Verifikasi</option>
-            <option value="sesuai">Sesuai</option>
-            <option value="tidak_sesuai">Tidak Sesuai</option>
-            <option value="belum_ada">Belum Ada</option>
-        </select>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-reset-filter">
-            <i class="fas fa-sync-alt"></i> Reset
-        </button>
-        <span class="text-muted ml-auto small" id="filter-info">Menampilkan semua item</span>
-    </div>
-</div>
-
 <?php if (! empty($templateItems ?? [])): ?>
 <?php
     $sections = [];
@@ -1189,108 +1171,6 @@
                 }
                 return false;
             }
-        });
-    }
-
-    // Filter functionality
-    var filterSelect = document.getElementById('filter-status');
-    var filterInfo = document.getElementById('filter-info');
-    var resetBtn = document.getElementById('btn-reset-filter');
-
-    function getRowStatus(row) {
-        var status = row.getAttribute('data-status');
-        if (status) return status;
-
-        // Fallback: check cell contents
-        var statusCell = row.querySelector('td:nth-child(3)');
-        if (!statusCell) return 'all';
-
-        var text = statusCell.textContent.trim();
-        if (text.includes('Tidak Ada') || text.includes('Belum ada')) return 'belum_ada';
-
-        var draftCell = row.querySelector('td:nth-child(4)');
-        var finalCell = row.querySelector('td:nth-child(5)');
-
-        var hasSesuai = false;
-        var hasMenunggu = false;
-        var hasTidakSesuai = false;
-
-        if (draftCell) {
-            var draftText = draftCell.textContent;
-            if (draftText.includes('Sesuai')) hasSesuai = true;
-            if (draftText.includes('Menunggu')) hasMenunggu = true;
-            if (draftText.includes('Tidak Sesuai')) hasTidakSesuai = true;
-        }
-        if (finalCell) {
-            var finalText = finalCell.textContent;
-            if (finalText.includes('Sesuai')) hasSesuai = true;
-            if (finalText.includes('Menunggu')) hasMenunggu = true;
-            if (finalText.includes('Tidak Sesuai')) hasTidakSesuai = true;
-        }
-
-        if (hasSesuai) return 'sesuai';
-        if (hasTidakSesuai) return 'tidak_sesuai';
-        if (hasMenunggu) return 'menunggu';
-
-        return 'all';
-    }
-
-    function applyFilter(filterValue) {
-        var visibleCount = 0;
-        var totalCount = 0;
-        var tables = document.querySelectorAll('.simak-verifikasi-table');
-
-        tables.forEach(function(table) {
-            var tbody = table.querySelector('tbody');
-            if (!tbody) return;
-
-            tbody.querySelectorAll('tr').forEach(function(row) {
-                // Skip section header rows (colspan)
-                if (row.querySelector('td[colspan]')) {
-                    row.style.display = '';
-                    return;
-                }
-
-                totalCount++;
-                var status = getRowStatus(row);
-
-                if (filterValue === 'all' || status === filterValue) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-
-        // Update filter info
-        if (filterInfo) {
-            if (filterValue === 'all') {
-                filterInfo.textContent = 'Menampilkan semua item';
-            } else {
-                var filterLabels = {
-                    'menunggu': 'Menunggu Verifikasi',
-                    'sesuai': 'Sesuai',
-                    'tidak_sesuai': 'Tidak Sesuai',
-                    'belum_ada': 'Belum Ada'
-                };
-                filterInfo.textContent = 'Menampilkan ' + visibleCount + ' dari ' + totalCount + ' item (' + (filterLabels[filterValue] || filterValue) + ')';
-            }
-        }
-    }
-
-    if (filterSelect) {
-        filterSelect.addEventListener('change', function() {
-            applyFilter(this.value);
-        });
-    }
-
-    if (resetBtn) {
-        resetBtn.addEventListener('click', function() {
-            if (filterSelect) {
-                filterSelect.value = 'all';
-            }
-            applyFilter('all');
         });
     }
 })();
