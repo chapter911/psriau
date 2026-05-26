@@ -819,6 +819,7 @@
                                     $finalVerifikasi = is_array($finalDokumen) ? strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? ''))) : '';
                                     $isBelumSesuai = $finalVerifikasi === 'tidak_sesuai';
                                     $isDraftVerified = $draftVerifikasi === 'sesuai';
+                                    $canUploadFinal = ! $hasDraft || $isDraftVerified;
                                 ?>
                                 <tr class="<?= esc($rowClass); ?>">
                                     <td class="cell-hierarchy-no" style="padding-left: <?= (int) $indentPadding; ?>px;"><?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?></td>
@@ -932,20 +933,37 @@
                                         </td>
                                         <td class="cell-center">
                                             <?php if ($hasDraft): ?>
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-primary btn-sm js-open-upload-modal"
-                                                    data-toggle="modal"
-                                                    data-target="#modal-upload-share-simak"
-                                                    data-row-no="<?= esc((string) $rowNo); ?>"
-                                                    data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
-                                                    data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
-                                                    data-tipe-dokumen="draft"
-                                                >Upload Draft</button>
-                                                <?php if (is_array($draftDokumen) && $isDraftVerified): ?>
+                                                <?php if ($draftVerifikasi !== 'sesuai'): ?>
                                                     <button
                                                         type="button"
-                                                        class="btn btn-success btn-sm js-open-upload-modal ml-1"
+                                                        class="btn btn-primary btn-sm js-open-upload-modal"
+                                                        data-toggle="modal"
+                                                        data-target="#modal-upload-share-simak"
+                                                        data-row-no="<?= esc((string) $rowNo); ?>"
+                                                        data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
+                                                        data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
+                                                        data-tipe-dokumen="draft"
+                                                    >Upload Draft</button>
+                                                <?php endif; ?>
+                                                <?php if ($canUploadFinal && is_array($draftDokumen) && $isDraftVerified): ?>
+                                                    <?php if ($finalVerifikasi !== 'sesuai'): ?>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-success btn-sm js-open-upload-modal ml-1"
+                                                            data-toggle="modal"
+                                                            data-target="#modal-upload-share-simak"
+                                                            data-row-no="<?= esc((string) $rowNo); ?>"
+                                                            data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
+                                                            data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
+                                                            data-tipe-dokumen="final"
+                                                        >Upload Final</button>
+                                                    <?php endif; ?>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <?php if ($canUploadFinal && $finalVerifikasi !== 'sesuai'): ?>
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-success btn-sm js-open-upload-modal"
                                                         data-toggle="modal"
                                                         data-target="#modal-upload-share-simak"
                                                         data-row-no="<?= esc((string) $rowNo); ?>"
@@ -953,20 +971,7 @@
                                                         data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
                                                         data-tipe-dokumen="final"
                                                     >Upload Final</button>
-                                                <?php else: ?>
-                                                    <button type="button" class="btn btn-success btn-sm ml-1" disabled title="Unggah Final setelah Draft tersedia dan diverifikasi Sesuai">Upload Final</button>
                                                 <?php endif; ?>
-                                            <?php else: ?>
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-success btn-sm js-open-upload-modal"
-                                                    data-toggle="modal"
-                                                    data-target="#modal-upload-share-simak"
-                                                    data-row-no="<?= esc((string) $rowNo); ?>"
-                                                    data-row-label="<?= esc($displayNo !== '' ? preg_replace('/\.+$/', '.', $displayNo) : '-'); ?>"
-                                                    data-uraian="<?= esc((string) ($row['uraian'] ?? '-')); ?>"
-                                                    data-tipe-dokumen="final"
-                                                >Upload Final</button>
                                             <?php endif; ?>
                                         </td>
                                     <?php else: ?>

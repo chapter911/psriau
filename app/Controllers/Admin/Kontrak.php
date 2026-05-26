@@ -2780,6 +2780,16 @@ class Kontrak extends BaseController
             }
         }
 
+        $finalDocument = $db->table($tableDokumen)
+            ->select('id, verifikasi_ki')
+            ->where('simak_id', $simakId)
+            ->where('row_no', $rowNo)
+            ->where('tipe_dokumen', 'final')
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
         // Every contractor upload resets verification status to "menunggu verifikasi".
         $verifikasi = null;
 
@@ -2799,12 +2809,26 @@ class Kontrak extends BaseController
         $hasFile = $file !== null && $file->getError() !== UPLOAD_ERR_NO_FILE;
         $hasDriveLink = $googleDriveLink !== '';
 
+        if ($tipeDokumen === 'draft') {
+            $draftCurrentStatus = strtolower(trim((string) ($draftDocument['verifikasi_ki'] ?? '')));
+            if ($draftCurrentStatus === 'sesuai') {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Draft tidak lagi tersedia karena draft sudah diverifikasi Sesuai.');
+            }
+        }
+
         // Enforce: if this template row requires a draft first, disallow final upload
         // when no draft exists yet.
         if ($tipeDokumen === 'final' && ! empty($targetTemplate) && ! empty($targetTemplate['has_draft'])) {
             $draftVerificationStatus = strtolower(trim((string) ($draftDocument['verifikasi_ki'] ?? '')));
             if ($draftVerificationStatus !== 'sesuai') {
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah Draft diverifikasi Sesuai.');
+            }
+        }
+
+        if ($tipeDokumen === 'final') {
+            $finalCurrentStatus = strtolower(trim((string) ($finalDocument['verifikasi_ki'] ?? '')));
+            if ($finalCurrentStatus === 'sesuai') {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final tidak lagi tersedia karena final sudah diverifikasi Sesuai.');
             }
         }
 
