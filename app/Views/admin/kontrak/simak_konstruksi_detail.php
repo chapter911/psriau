@@ -347,16 +347,6 @@
                                                             class="btn btn-outline-secondary btn-sm"
                                                             title="Lihat dokumen draft: <?= esc((string) ($draftDokumen['file_original_name'] ?? 'Dokumen')); ?>"
                                                         ><i class="fas fa-eye"></i> Lihat Draft</a>
-                                                    <?php elseif ($verifikasi !== 'sesuai'): ?>
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-outline-secondary btn-sm js-open-upload-modal"
-                                                            data-row-no="<?= esc((string) $rowNo); ?>"
-                                                            data-row-label="<?= esc($noText); ?>"
-                                                            data-uraian="<?= esc($uraian); ?>"
-                                                            data-tipe-dokumen="draft"
-                                                            data-kelengkapan="tidak"
-                                                        >Verif Draft</button>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
@@ -370,16 +360,6 @@
                                                             class="btn btn-info btn-sm"
                                                             title="Lihat dokumen final: <?= esc((string) ($finalDokumen['file_original_name'] ?? 'Dokumen')); ?>"
                                                         ><i class="fas fa-eye"></i> Lihat Final</a>
-                                                    <?php elseif ($verifikasi !== 'sesuai'): ?>
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-warning btn-sm js-open-upload-modal"
-                                                            data-row-no="<?= esc((string) $rowNo); ?>"
-                                                            data-row-label="<?= esc($noText); ?>"
-                                                            data-uraian="<?= esc($uraian); ?>"
-                                                            data-tipe-dokumen="final"
-                                                            data-kelengkapan="tidak"
-                                                        >Verif Final</button>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
