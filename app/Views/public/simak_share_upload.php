@@ -954,7 +954,7 @@
                                                         data-tipe-dokumen="draft"
                                                     >Upload Draft</button>
                                                 <?php endif; ?>
-                                                <?php if ($canUploadFinal && $isDraftVerified): ?>
+                                                <?php if ($canUploadFinal && ($isDraftVerified || $draftNoFileVerified)): ?>
                                                     <button
                                                         type="button"
                                                         class="btn btn-success btn-sm js-open-upload-modal ml-1"
