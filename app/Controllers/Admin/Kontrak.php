@@ -2605,6 +2605,23 @@ class Kontrak extends BaseController
             );
         }
 
+        // Raw request trace: write a minimal record to a dedicated debug file
+        // This bypasses CI logger configuration to ensure we capture hits.
+        try {
+            $traceFile = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'simak_upload_raw.log';
+            $trace = [
+                'time' => date('c'),
+                'remote_addr' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+                'method' => $_SERVER['REQUEST_METHOD'] ?? 'GET',
+                'token' => $token,
+                'post_keys' => is_array($this->request->getPost()) ? array_keys($this->request->getPost()) : [],
+                'files' => is_array($_FILES) ? array_keys($_FILES) : [],
+            ];
+            @file_put_contents($traceFile, json_encode($trace, JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND | LOCK_EX);
+        } catch (\Throwable $_e) {
+            // swallow - logging must not break upload flow
+        }
+
         // Calculate document completion percentages
         $simakId = (int) ($shared['item']['id'] ?? 0);
         $sharedType = (string) ($shared['type'] ?? 'konstruksi');
