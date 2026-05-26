@@ -2899,6 +2899,7 @@ class Kontrak extends BaseController
         $hasFile = $file !== null && $file->getError() !== UPLOAD_ERR_NO_FILE;
         $hasDriveLink = $googleDriveLink !== '';
         $rowVerifikasiStatus = strtolower(trim((string) ($existingVerifikasi['verifikasi_ki'] ?? '')));
+        $draftCurrentStatus = strtolower(trim((string) ($draftDocument['verifikasi_ki'] ?? '')));
 
         // Trust the actual payload first so a stale UI selection does not push
         // a real file submission into the no-document branch.
@@ -2931,7 +2932,6 @@ class Kontrak extends BaseController
         }
 
         if ($tipeDokumen === 'draft') {
-            $draftCurrentStatus = strtolower(trim((string) ($draftDocument['verifikasi_ki'] ?? '')));
             if ($draftCurrentStatus === 'sesuai') {
                 $appendTrace([
                     'time' => date('c'),
@@ -2945,9 +2945,11 @@ class Kontrak extends BaseController
             }
         }
 
-        // Enforce: final upload is only allowed after the row has been marked
-        // verified as sesuai from the admin verification flow.
-        if ($tipeDokumen === 'final' && $rowVerifikasiStatus !== 'sesuai') {
+        // Final upload is allowed when the row itself is already verified,
+        // or when the draft/no-file placeholder for that row has been verified
+        // as sesuai. This matches the public share workflow.
+        $canUploadFinal = $rowVerifikasiStatus === 'sesuai' || $draftCurrentStatus === 'sesuai';
+        if ($tipeDokumen === 'final' && ! $canUploadFinal) {
             $appendTrace([
                 'time' => date('c'),
                 'branch' => 'reject_final_not_verified',
@@ -2955,8 +2957,8 @@ class Kontrak extends BaseController
                 'row_no' => $rowNo,
                 'debug' => $debugInfo,
             ]);
-            log_message('error', 'sharedUploadSimakDokumen - blocked final upload; row not verified: ' . json_encode($debugInfo));
-            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah verifikasi baris berstatus Sesuai.');
+            log_message('error', 'sharedUploadSimakDokumen - blocked final upload; row/draft not verified: ' . json_encode($debugInfo));
+            return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah draft atau baris berstatus Sesuai.');
         }
 
         if ($tipeDokumen === 'final') {
