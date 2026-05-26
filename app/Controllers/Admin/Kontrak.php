@@ -2854,6 +2854,23 @@ class Kontrak extends BaseController
             $uploadMethod = 'drive';
         }
 
+        // Debug info for logging on failure paths
+        $debugInfo = [
+            'token' => $token,
+            'simak_id' => $simakId,
+            'row_no' => $rowNo,
+            'tipe_dokumen' => $tipeDokumen,
+            'upload_method_posted' => (string) $this->request->getPost('upload_method'),
+            'resolved_upload_method' => $uploadMethod,
+            'hasFile' => $hasFile ? 1 : 0,
+            'hasDriveLink' => $hasDriveLink ? 1 : 0,
+            'googleDriveLink' => $googleDriveLink,
+            'rowVerifikasiStatus' => $rowVerifikasiStatus,
+            'draft_verifikasi' => is_array($draftDocument) ? ($draftDocument['verifikasi_ki'] ?? null) : null,
+            'final_verifikasi' => is_array($finalDocument) ? ($finalDocument['verifikasi_ki'] ?? null) : null,
+            'existingDokumen' => is_array($existingDokumen) ? $existingDokumen : null,
+        ];
+
         $verifikasi = null;
         if ($tipeDokumen === 'final' && $rowVerifikasiStatus === 'sesuai') {
             $verifikasi = 'sesuai';
@@ -2862,6 +2879,7 @@ class Kontrak extends BaseController
         if ($tipeDokumen === 'draft') {
             $draftCurrentStatus = strtolower(trim((string) ($draftDocument['verifikasi_ki'] ?? '')));
             if ($draftCurrentStatus === 'sesuai') {
+                log_message('error', 'sharedUploadSimakDokumen - blocked draft upload; draft already sesuai: ' . json_encode($debugInfo));
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Draft tidak lagi tersedia karena draft sudah diverifikasi Sesuai.');
             }
         }
@@ -2869,6 +2887,7 @@ class Kontrak extends BaseController
         // Enforce: final upload is only allowed after the row has been marked
         // verified as sesuai from the admin verification flow.
         if ($tipeDokumen === 'final' && $rowVerifikasiStatus !== 'sesuai') {
+            log_message('error', 'sharedUploadSimakDokumen - blocked final upload; row not verified: ' . json_encode($debugInfo));
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final hanya diperbolehkan setelah verifikasi baris berstatus Sesuai.');
         }
 
@@ -2878,6 +2897,7 @@ class Kontrak extends BaseController
                 && trim((string) ($finalDocument['file_relative_path'] ?? '')) === ''
                 && trim((string) ($finalDocument['file_stored_name'] ?? '')) === '';
             if ($finalCurrentStatus === 'sesuai' && ! $finalIsNoFilePlaceholder) {
+                log_message('error', 'sharedUploadSimakDokumen - blocked final upload; final already verified with real file: ' . json_encode($debugInfo));
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final tidak lagi tersedia karena final sudah diverifikasi Sesuai.');
             }
         }
@@ -2888,17 +2908,21 @@ class Kontrak extends BaseController
 
         if ($uploadMethod === 'none') {
             if ($keteranganTidakAda === '') {
+                log_message('error', 'sharedUploadSimakDokumen - missing keterangan for none: ' . json_encode($debugInfo));
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Mohon isi keterangan kenapa dokumen belum tersedia.');
             }
         } elseif ($uploadMethod === 'drive') {
             if (! $hasDriveLink) {
+                log_message('error', 'sharedUploadSimakDokumen - drive selected but no link: ' . json_encode($debugInfo));
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Pilih salah satu: upload file atau isi link Google Drive.');
             }
 
             if ($hasFile && $hasDriveLink) {
+                log_message('error', 'sharedUploadSimakDokumen - both file and drive provided: ' . json_encode($debugInfo));
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gunakan salah satu saja: upload file atau link Google Drive.');
             }
         } elseif (! $hasFile) {
+            log_message('error', 'sharedUploadSimakDokumen - no file selected: ' . json_encode($debugInfo));
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Pilih file dokumen terlebih dahulu.');
         }
 
@@ -2913,6 +2937,7 @@ class Kontrak extends BaseController
             $sourceLabel = 'keterangan dokumen memang tidak ada';
         } elseif ($hasDriveLink) {
             if (! $this->isAllowedGoogleDriveUrl($googleDriveLink)) {
+                log_message('error', 'sharedUploadSimakDokumen - invalid drive link: ' . json_encode($debugInfo));
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Link tidak valid. Gunakan link dari drive.google.com atau docs.google.com.');
             }
 
@@ -2922,18 +2947,21 @@ class Kontrak extends BaseController
             $sourceLabel = 'link Google Drive';
         } else {
             if (! $file || ! $file->isValid() || $file->hasMoved()) {
+                log_message('error', 'sharedUploadSimakDokumen - invalid uploaded file object: ' . json_encode($debugInfo));
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'File upload tidak valid.');
             }
 
             $maxFileSize = 100 * 1024 * 1024; // 100MB max
             $uploadedSize = (int) ($file->getSizeByUnit('b') ?? 0);
             if ($uploadedSize <= 0 || $uploadedSize > $maxFileSize) {
+                log_message('error', 'sharedUploadSimakDokumen - invalid file size: ' . json_encode($debugInfo));
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Ukuran file maksimal 100MB.');
             }
 
             $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'zip'];
             $ext = strtolower((string) $file->getClientExtension());
             if (! in_array($ext, $allowedExt, true)) {
+                log_message('error', 'sharedUploadSimakDokumen - unsupported extension: ' . json_encode($debugInfo));
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP.');
             }
 
@@ -2943,6 +2971,7 @@ class Kontrak extends BaseController
 
             $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
             if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
+                log_message('error', 'sharedUploadSimakDokumen - failed to create upload dir: ' . json_encode($debugInfo));
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal membuat direktori upload dokumen.');
             }
 
