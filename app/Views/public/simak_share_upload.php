@@ -967,7 +967,7 @@
                                                     >Upload Final</button>
                                                 <?php endif; ?>
                                             <?php else: ?>
-                                                <?php if ($canUploadFinal && $finalVerifikasi !== 'sesuai'): ?>
+                                                <?php if ($canUploadFinal && ($finalVerifikasi !== 'sesuai' || (is_array($finalDokumen) && ! $finalHasFile))): ?>
                                                     <button
                                                         type="button"
                                                         class="btn btn-success btn-sm js-open-upload-modal"

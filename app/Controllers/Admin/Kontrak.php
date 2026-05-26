@@ -2874,7 +2874,10 @@ class Kontrak extends BaseController
 
         if ($tipeDokumen === 'final') {
             $finalCurrentStatus = strtolower(trim((string) ($finalDocument['verifikasi_ki'] ?? '')));
-            if ($finalCurrentStatus === 'sesuai') {
+            $finalIsNoFilePlaceholder = is_array($finalDocument)
+                && trim((string) ($finalDocument['file_relative_path'] ?? '')) === ''
+                && trim((string) ($finalDocument['file_stored_name'] ?? '')) === '';
+            if ($finalCurrentStatus === 'sesuai' && ! $finalIsNoFilePlaceholder) {
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload Final tidak lagi tersedia karena final sudah diverifikasi Sesuai.');
             }
         }
