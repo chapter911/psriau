@@ -272,6 +272,8 @@
                                             $finalVerifikasi = is_array($finalDokumen) ? strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? ''))) : '';
                                             $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                             $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
+                                            $canVerifyDraft = is_array($draftDokumen) || $kelengkapan === 'tidak';
+                                            $canVerifyFinal = is_array($finalDokumen);
                                             $draftActionKelengkapan = strtolower(trim((string) ($draftDokumen['kelengkapan_dokumen'] ?? ($kelengkapan !== '' ? $kelengkapan : 'tidak'))));
                                             $draftActionVerifikasi = strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? $verifikasi)));
                                             $draftActionKeterangan = (string) ($draftDokumen['keterangan'] ?? $keterangan);
@@ -417,32 +419,36 @@
                                                 </td>
                                                 <td>
                                                     <div class="simak-upload-actions">
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-outline-secondary btn-sm js-open-upload-modal"
-                                                            data-row-no="<?= esc((string) $rowNo); ?>"
-                                                            data-row-label="<?= esc($noText); ?>"
-                                                            data-uraian="<?= esc($uraian); ?>"
-                                                            data-tipe-dokumen="draft"
-                                                            data-kelengkapan="<?= esc($draftActionKelengkapan); ?>"
-                                                            data-verifikasi="<?= esc($draftActionVerifikasi); ?>"
-                                                            data-keterangan="<?= esc($draftActionKeterangan); ?>"
-                                                            data-pic="<?= esc($draftActionPic); ?>"
-                                                        >Verif Draft</button>
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-warning btn-sm js-open-upload-modal"
-                                                            data-row-no="<?= esc((string) $rowNo); ?>"
-                                                            data-row-label="<?= esc($noText); ?>"
-                                                            data-uraian="<?= esc($uraian); ?>"
-                                                            data-tipe-dokumen="final"
-                                                            data-kelengkapan="<?= esc($finalActionKelengkapan); ?>"
-                                                            data-verifikasi="<?= esc($finalActionVerifikasi); ?>"
-                                                            data-keterangan="<?= esc($finalActionKeterangan); ?>"
-                                                            data-pic="<?= esc($finalActionPic); ?>"
-                                                        >Verif Final</button>
+                                                        <?php if ($canVerifyDraft): ?>
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-outline-secondary btn-sm js-open-upload-modal"
+                                                                data-row-no="<?= esc((string) $rowNo); ?>"
+                                                                data-row-label="<?= esc($noText); ?>"
+                                                                data-uraian="<?= esc($uraian); ?>"
+                                                                data-tipe-dokumen="draft"
+                                                                data-kelengkapan="<?= esc($draftActionKelengkapan); ?>"
+                                                                data-verifikasi="<?= esc($draftActionVerifikasi); ?>"
+                                                                data-keterangan="<?= esc($draftActionKeterangan); ?>"
+                                                                data-pic="<?= esc($draftActionPic); ?>"
+                                                            >Verif Draft</button>
+                                                        <?php endif; ?>
+                                                        <?php if ($canVerifyFinal): ?>
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-warning btn-sm js-open-upload-modal"
+                                                                data-row-no="<?= esc((string) $rowNo); ?>"
+                                                                data-row-label="<?= esc($noText); ?>"
+                                                                data-uraian="<?= esc($uraian); ?>"
+                                                                data-tipe-dokumen="final"
+                                                                data-kelengkapan="<?= esc($finalActionKelengkapan); ?>"
+                                                                data-verifikasi="<?= esc($finalActionVerifikasi); ?>"
+                                                                data-keterangan="<?= esc($finalActionKeterangan); ?>"
+                                                                data-pic="<?= esc($finalActionPic); ?>"
+                                                            >Verif Final</button>
+                                                        <?php endif; ?>
                                                     </div>
-                                                    <?php if (! $draftHasFile && ! $finalHasFile && ! is_array($draftDokumen) && ! is_array($finalDokumen)): ?>
+                                                    <?php if (! $canVerifyDraft && ! $canVerifyFinal): ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
                                                 </td>
