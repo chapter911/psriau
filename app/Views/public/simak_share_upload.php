@@ -1447,6 +1447,23 @@
         refreshFileStatus();
     }
 
+    function resetUploadModalState() {
+        if (uploadMethodEl) {
+            uploadMethodEl.value = 'file';
+        }
+        if (dokumenFileEl) {
+            dokumenFileEl.value = '';
+        }
+        if (googleDriveLinkEl) {
+            googleDriveLinkEl.value = '';
+        }
+        if (keteranganTidakAdaEl) {
+            keteranganTidakAdaEl.value = '';
+        }
+        syncUploadMethodUI();
+        refreshFileStatus();
+    }
+
     function syncUploadMethodUI() {
         var method = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
         var useDrive = method === 'drive';
@@ -1503,6 +1520,8 @@
         if (!uploadModalEl) {
             return;
         }
+
+        resetUploadModalState();
 
         if (window.jQuery && typeof window.jQuery.fn.modal === 'function') {
             window.jQuery(uploadModalEl).modal('show');
@@ -2112,6 +2131,10 @@
         if (uploadMethodEl) {
             uploadMethodEl.addEventListener('change', syncUploadMethodUI);
             syncUploadMethodUI();
+        }
+
+        if (uploadModalEl) {
+            uploadModalEl.addEventListener('hidden.bs.modal', resetUploadModalState);
         }
 
         if (dokumenFileEl) {
