@@ -2829,9 +2829,6 @@ class Kontrak extends BaseController
             ->get()
             ->getRowArray();
 
-        // Every contractor upload resets verification status to "menunggu verifikasi".
-        $verifikasi = null;
-
         $uploadMethod = strtolower(trim((string) $this->request->getPost('upload_method')));
         if (! in_array($uploadMethod, ['file', 'drive', 'none'], true)) {
             $uploadMethod = 'file';
@@ -2855,6 +2852,11 @@ class Kontrak extends BaseController
             $uploadMethod = 'file';
         } elseif ($hasDriveLink && $uploadMethod !== 'none') {
             $uploadMethod = 'drive';
+        }
+
+        $verifikasi = null;
+        if ($tipeDokumen === 'final' && $rowVerifikasiStatus === 'sesuai') {
+            $verifikasi = 'sesuai';
         }
 
         if ($tipeDokumen === 'draft') {
