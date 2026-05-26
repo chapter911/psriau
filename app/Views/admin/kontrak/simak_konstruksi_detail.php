@@ -350,8 +350,7 @@
                                             } else {
                                                 $rowDataStatus = 'all';
                                             }
-                                        }
-                                        ?>
+                                            ?>
                                         <tr data-status="<?= esc($rowDataStatus); ?>" style="<?= esc($bgStyle . ($isPendingVerification && $isInputRow ? ' background-color: #fff3cd;' : '')); ?>">
                                             <td>
                                                 <div style="padding-left: <?= (int) $indentPadding; ?>px; white-space: nowrap; <?= esc($fontWeight); ?>">
