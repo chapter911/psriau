@@ -3071,16 +3071,31 @@ class Kontrak extends BaseController
         ];
 
         $db->transStart();
-        $db->table($tableVerifikasi)->where('simak_id', $simakId)->where('row_no', $rowNo)->delete();
-        $db->table($tableVerifikasi)->insert($verifikasiRow);
+        $deleteOk = $db->table($tableVerifikasi)->where('simak_id', $simakId)->where('row_no', $rowNo)->delete();
+        $insertVerifikasiOk = $db->table($tableVerifikasi)->insert($verifikasiRow);
+        $insertDokumenOk = true;
         if ($uploadMethod !== 'none') {
-            $db->table($tableDokumen)->insert($dokumenRow);
+            $insertDokumenOk = $db->table($tableDokumen)->insert($dokumenRow);
         }
         $db->transComplete();
 
         if (! $db->transStatus()) {
+            log_message('error', 'sharedUploadSimakDokumen - transaction failed: ' . json_encode([
+                'debug' => $debugInfo,
+                'deleteOk' => $deleteOk,
+                'insertVerifikasiOk' => $insertVerifikasiOk,
+                'insertDokumenOk' => $insertDokumenOk,
+                'dbError' => $db->error(),
+            ], JSON_UNESCAPED_SLASHES));
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal menyimpan upload dokumen.');
         }
+
+        log_message('info', 'sharedUploadSimakDokumen - transaction success: ' . json_encode([
+            'debug' => $debugInfo,
+            'deleteOk' => $deleteOk,
+            'insertVerifikasiOk' => $insertVerifikasiOk,
+            'insertDokumenOk' => $insertDokumenOk,
+        ], JSON_UNESCAPED_SLASHES));
 
         if ($uploadMethod === 'none') {
             return redirect()->to(site_url('simak/share/' . $token))->with('success', 'Keterangan dokumen memang tidak ada berhasil disimpan. Status kelengkapan dokumen diperbarui menjadi Tidak Ada.');
