@@ -142,22 +142,6 @@
     </div>
 </div>
 
-<!-- Filter Toolbar -->
-<div class="mb-3 d-flex justify-content-between align-items-center">
-    <div class="d-flex align-items-center gap-2">
-        <label class="mb-0 font-weight-bold">Filter:</label>
-        <select class="form-control form-control-sm" id="filter-status" style="width: 200px;">
-            <option value="all">Semua</option>
-            <option value="menunggu">Menunggu Verifikasi</option>
-            <option value="sesuai">Sesuai</option>
-            <option value="tidak_sesuai">Tidak Sesuai</option>
-            <option value="belum_ada">Belum Ada</option>
-        </select>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-reset-filter">Reset</button>
-    </div>
-    <div class="text-muted small" id="filter-info">Menampilkan semua item</div>
-</div>
-
 <?php if (! empty($templateItems ?? [])): ?>
 <?php
     $sections = [];
@@ -334,24 +318,16 @@
                                             if ($isInputRow) {
                                                 if ($kelengkapan === 'ada' && $verifikasi === 'tidak_sesuai') {
                                                     $statusCellClass = 'simak-status-yellow';
-                                                    $rowDataStatus = 'tidak_sesuai';
                                                 } elseif ($kelengkapan === 'tidak' && $verifikasi === 'sesuai') {
                                                     $statusCellClass = 'simak-status-green';
-                                                    $rowDataStatus = 'sesuai';
                                                 } elseif ($isPendingVerification) {
                                                     $statusCellClass = 'simak-status-yellow';
-                                                    $rowDataStatus = 'menunggu';
-                                                } elseif ($kelengkapan === 'tidak') {
+                                                } elseif ($kelengkapan !== 'ada') {
                                                     $statusCellClass = 'simak-status-red-soft';
-                                                    $rowDataStatus = 'belum_ada';
-                                                } else {
-                                                    $rowDataStatus = 'all';
                                                 }
-                                            } else {
-                                                $rowDataStatus = 'all';
                                             }
-                                            ?>
-                                        <tr data-status="<?= esc($rowDataStatus); ?>" style="<?= esc($bgStyle . ($isPendingVerification && $isInputRow ? ' background-color: #fff3cd;' : '')); ?>">
+                                        ?>
+                                        <tr style="<?= esc($bgStyle . ($isPendingVerification && $isInputRow ? ' background-color: #fff3cd;' : '')); ?>">
                                             <td>
                                                 <div style="padding-left: <?= (int) $indentPadding; ?>px; white-space: nowrap; <?= esc($fontWeight); ?>">
                                                     <?= esc($noText); ?>
@@ -1197,123 +1173,6 @@
             }
         });
     }
-
-    // Filter functionality
-    var filterSelect = document.getElementById('filter-status');
-    var filterInfo = document.getElementById('filter-info');
-    var resetBtn = document.getElementById('btn-reset-filter');
-    var sectionTabs = document.querySelectorAll('[data-toggle="tab"]');
-    var allTableRows = [];
-
-    // Collect all rows by section
-    function initFilterRows() {
-        allTableRows = [];
-        document.querySelectorAll('.simak-verifikasi-table tbody tr').forEach(function(row) {
-            allTableRows.push(row);
-        });
-    }
-
-    function getRowStatus(row) {
-        // Check data attributes first
-        var dataStatus = row.getAttribute('data-status');
-        if (dataStatus) return dataStatus;
-
-        // Fallback: check cell contents
-        var kelengkapanCell = row.querySelector('td:nth-child(3)');
-        var draftCell = row.querySelector('td:nth-child(4)');
-        var finalCell = row.querySelector('td:nth-child(5)');
-        var verifikasiCell = row.querySelector('td:nth-child(3)'); // Status cell
-
-        var kelengkapan = kelengkapanCell ? kelengkapanCell.textContent.trim() : '';
-        var hasDraft = row.querySelector('[data-tipe-dokumen="draft"]') !== null;
-
-        // Check verification status
-        var draftBadge = draftCell ? draftCell.querySelector('.badge') : null;
-        var finalBadge = finalCell ? finalCell.querySelector('.badge') : null;
-
-        var hasSesuai = (draftBadge && draftBadge.textContent.includes('Sesuai')) ||
-                       (finalBadge && finalBadge.textContent.includes('Sesuai'));
-        var hasMenunggu = (draftBadge && draftBadge.textContent.includes('Menunggu')) ||
-                         (finalBadge && finalBadge.textContent.includes('Menunggu'));
-        var hasTidakSesuai = (draftBadge && draftBadge.textContent.includes('Tidak Sesuai')) ||
-                            (finalBadge && finalBadge.textContent.includes('Tidak Sesuai'));
-        var hasTidakAda = kelengkapan.includes('Tidak');
-
-        if (hasTidakAda && !hasSesuai && !hasMenunggu) {
-            return 'belum_ada';
-        }
-        if (hasSesuai) return 'sesuai';
-        if (hasTidakSesuai) return 'tidak_sesuai';
-        if (hasMenunggu) return 'menunggu';
-
-        return 'all';
-    }
-
-    function applyFilter(filterValue) {
-        var visibleCount = 0;
-        var totalCount = 0;
-
-        document.querySelectorAll('.simak-verifikasi-table tbody tr').forEach(function(row) {
-            // Skip section header rows
-            if (row.querySelector('td[colspan]')) {
-                row.style.display = '';
-                return;
-            }
-
-            totalCount++;
-            var status = getRowStatus(row);
-
-            if (filterValue === 'all' || status === filterValue) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-
-        // Update filter info
-        if (filterInfo) {
-            if (filterValue === 'all') {
-                filterInfo.textContent = 'Menampilkan semua item';
-            } else {
-                var filterLabels = {
-                    'menunggu': 'Menunggu Verifikasi',
-                    'sesuai': 'Sesuai',
-                    'tidak_sesuai': 'Tidak Sesuai',
-                    'belum_ada': 'Belum Ada'
-                };
-                filterInfo.textContent = 'Menampilkan ' + visibleCount + ' dari ' + totalCount + ' item (' + (filterLabels[filterValue] || filterValue) + ')';
-            }
-        }
-    }
-
-    if (filterSelect) {
-        filterSelect.addEventListener('change', function() {
-            applyFilter(this.value);
-        });
-    }
-
-    if (resetBtn) {
-        resetBtn.addEventListener('click', function() {
-            if (filterSelect) {
-                filterSelect.value = 'all';
-            }
-            applyFilter('all');
-        });
-    }
-
-    // Initialize filter
-    initFilterRows();
-
-    // Re-initialize filter when tab changes
-    sectionTabs.forEach(function(tab) {
-        tab.addEventListener('shown.bs.tab', function() {
-            initFilterRows();
-            if (filterSelect) {
-                applyFilter(filterSelect.value);
-            }
-        });
-    });
 })();
 </script>
 <?= $this->endSection(); ?>
