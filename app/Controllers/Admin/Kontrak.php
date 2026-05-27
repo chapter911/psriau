@@ -1438,7 +1438,7 @@ class Kontrak extends BaseController
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
-        $sheet->getColumnDimension('B')->setWidth(22);
+        $sheet->getColumnDimension('B')->setWidth(16);
         $sheet->getColumnDimension('F')->setWidth(28);
         $sheet->getColumnDimension('G')->setWidth(22);
 
@@ -1584,7 +1584,7 @@ class Kontrak extends BaseController
                 <thead>
                     <tr>
                         <th style="width: 70px;">No</th>
-                        <th style="width: 240px;">Uraian</th>
+                        <th style="width: 180px;">Uraian</th>
                         <th style="width: 120px;">Kelengkapan</th>
                         <th style="width: 130px;">Verifikasi Draft</th>
                         <th style="width: 130px;">Verifikasi Final</th>
