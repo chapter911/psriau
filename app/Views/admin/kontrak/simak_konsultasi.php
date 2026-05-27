@@ -85,52 +85,6 @@
     }
 
     /* Search box in dropdown */
-    .select2-search--dropdown .select2-search__field {
-        border: 1px solid #ced4da !important;
-        border-radius: 0.25rem !important;
-        padding: 0.375rem 0.75rem !important;
-    }
-
-    /* Options */
-    .select2-results__option {
-        padding: 0.375rem 0.75rem !important;
-    }
-
-    .select2-results__option--highlighted {
-        background-color: #007bff !important;
-    }
-
-    /* Modal adjustments for Select2 */
-    .modal .select2-container--open {
-        z-index: 1060 !important;
-    }
-
-    .modal .select2-dropdown {
-        z-index: 1060 !important;
-    }
-
-    /* Select2 container width */
-    .select2-container {
-        width: 100% !important;
-        display: block !important;
-    }
-
-    .select2-container.w-100 {
-        width: 100% !important;
-    }
-
-    /* Form group with select2 */
-    .form-group .select2-container {
-        width: 100% !important;
-    }
-
-    /* Ensure proper display in form rows */
-    .form-row .form-group .select2-container {
-        width: 100% !important;
-    }
-
-    .col-md-6 .select2-container,
-    .col-md-12 .select2-container {
         width: 100% !important;
     }
 

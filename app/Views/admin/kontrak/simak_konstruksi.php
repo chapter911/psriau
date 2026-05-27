@@ -85,52 +85,6 @@
             <div class="alert alert-danger"><?= esc((string) $error); ?></div>
         <?php endif; ?>
 
-        <div class="card card-outline card-secondary simak-filter-card mb-3">
-            <div class="card-header py-2">
-                <h3 class="card-title mb-0">Filter SIMAK</h3>
-            </div>
-            <div class="card-body">
-                <div class="form-row">
-                    <div class="form-group col-md-3">
-                        <label for="filter_simak_nomor_kontrak">Nomor Kontrak</label>
-                        <input type="text" class="form-control form-control-sm" id="filter_simak_nomor_kontrak" placeholder="Cari nomor kontrak">
-                    </div>
-                    <div class="form-group col-md-3">
-                        <label for="filter_simak_nama_paket">Nama Paket</label>
-                        <input type="text" class="form-control form-control-sm" id="filter_simak_nama_paket" placeholder="Cari nama paket">
-                    </div>
-                    <div class="form-group col-md-2">
-                        <label for="filter_simak_tahun_anggaran">Tahun Anggaran</label>
-                        <select class="form-control form-control-sm" id="filter_simak_tahun_anggaran">
-                            <option value="">Semua</option>
-                            <?php foreach (array_values(array_unique(array_filter(array_map(static function ($row) {
-                                return (string) ($row['tahun_anggaran'] ?? '');
-                            }, $data ?? [])))) as $tahunAnggaran): ?>
-                                <option value="<?= esc($tahunAnggaran); ?>"><?= esc($tahunAnggaran); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group col-md-2">
-                        <label for="filter_simak_ppk">PPK</label>
-                        <input type="text" class="form-control form-control-sm" id="filter_simak_ppk" placeholder="Cari nama / NIP">
-                    </div>
-                    <div class="form-group col-md-2">
-                        <label for="filter_simak_status">Status Kelengkapan</label>
-                        <select class="form-control form-control-sm" id="filter_simak_status">
-                            <option value="">Semua</option>
-                            <option value="lengkap">Lengkap</option>
-                            <option value="belum_sesuai">Belum Sesuai</option>
-                            <option value="belum_verifikasi">Menunggu Verifikasi</option>
-                            <option value="belum_ada">Belum ada</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">Filter bekerja langsung pada tabel di bawah.</small>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-reset-filter-simak">Reset Filter</button>
-                </div>
-            </div>
-        </div>
 
         <div class="table-responsive">
             <table class="table table-bordered table-striped w-100 nowrap js-datatable simak-list-table">
