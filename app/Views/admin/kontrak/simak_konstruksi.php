@@ -170,7 +170,17 @@
                                 $statusKelengkapan = 'belum_ada';
                             }
                         ?>
-                        <tr data-kelengkapan-status="<?= esc($statusKelengkapan); ?>" data-kelengkapan-lengkap="<?= esc((string) $statusLengkap); ?>" data-kelengkapan-belum-sesuai="<?= esc((string) $statusBelumSesuai); ?>" data-kelengkapan-belum-verifikasi="<?= esc((string) $statusBelumVerifikasi); ?>" data-kelengkapan-belum-ada="<?= esc((string) $statusBelumAda); ?>">
+                        <tr
+                            data-nomor-kontrak="<?= esc((string) ($item['nomor_kontrak'] ?? '')); ?>"
+                            data-nama-paket="<?= esc((string) ($item['nama_paket'] ?? '')); ?>"
+                            data-tahun-anggaran="<?= esc((string) ($item['tahun_anggaran'] ?? '')); ?>"
+                            data-ppk="<?= esc((string) ($item['ppk_nama'] ?? '')); ?> <?= esc((string) ($item['ppk_nip'] ?? '')); ?>"
+                            data-kelengkapan-status="<?= esc($statusKelengkapan); ?>"
+                            data-kelengkapan-lengkap="<?= esc((string) $statusLengkap); ?>"
+                            data-kelengkapan-belum-sesuai="<?= esc((string) $statusBelumSesuai); ?>"
+                            data-kelengkapan-belum-verifikasi="<?= esc((string) $statusBelumVerifikasi); ?>"
+                            data-kelengkapan-belum-ada="<?= esc((string) $statusBelumAda); ?>"
+                        >
                             <td class="text-center"><?= esc((string) $i++); ?></td>
                             <td><?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?></td>
                             <td><?= esc((string) ($item['nama_paket'] ?? '-')); ?></td>
