@@ -1355,19 +1355,17 @@ class Kontrak extends BaseController
         $sheet->mergeCells('A5:I5');
         $sheet->mergeCells('A6:I6');
         $sheet->mergeCells('A7:I7');
-        $sheet->mergeCells('A8:I8');
         $sheet->setCellValue('A1', 'SIMAK Detail Export');
         $sheet->setCellValue('A2', 'Jenis SIMAK: ' . ucfirst($type));
         $sheet->setCellValue('A3', 'Nomor Kontrak: ' . ($simak['nomor_kontrak'] ?? '-'));
         $sheet->setCellValue('A4', 'Nama Paket: ' . ($simak['nama_paket'] ?? '-'));
         $sheet->setCellValue('A5', 'PPK: ' . ($simak['ppk_nama'] ?? '-'));
         $sheet->setCellValue('A6', 'Penyedia: ' . ($simak['penyedia'] ?? '-'));
-        $sheet->setCellValue('A7', 'Nilai Kontrak: ' . angka_ribuan_id($simak['nilai_kontrak'] ?? 0) . ' | Add On: ' . angka_ribuan_id($simak['nilai_add_on'] ?? 0) . ' | Total: ' . angka_ribuan_id($simak['total_kontrak'] ?? 0));
-        $sheet->setCellValue('A8', 'Sumber Data: Verifikasi utama, dokumen, dan share tersembunyi | Export Date: ' . date('d/m/Y H:i:s'));
+        $sheet->setCellValue('A7', 'Nilai Kontrak: ' . angka_ribuan_id($simak['nilai_kontrak'] ?? 0) . ' | Add On: ' . angka_ribuan_id($simak['nilai_add_on'] ?? 0) . ' | Total: ' . angka_ribuan_id($simak['total_kontrak'] ?? 0) . ' | Export Date: ' . date('d/m/Y H:i:s'));
         $sheet->getStyle('A1:I1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB('FFFFFF');
         $sheet->getStyle('A1:I1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('1F4E78');
-        $sheet->getStyle('A2:I8')->getFont()->setBold(true);
-        $sheet->getStyle('A1:I8')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A2:I7')->getFont()->setBold(true);
+        $sheet->getStyle('A1:I7')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
 
         // Table headers
         $headers = ['No', 'Uraian', 'Kelengkapan', 'Verifikasi Draft', 'Verifikasi Final', 'Keterangan', 'PIC', 'File Draft', 'File Final'];
@@ -1440,7 +1438,7 @@ class Kontrak extends BaseController
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
-        $sheet->getColumnDimension('B')->setWidth(28);
+        $sheet->getColumnDimension('B')->setWidth(22);
         $sheet->getColumnDimension('F')->setWidth(28);
         $sheet->getColumnDimension('G')->setWidth(22);
 
@@ -1579,7 +1577,6 @@ class Kontrak extends BaseController
             <div class="meta-card"><div class="meta-label">Total Kontrak</div><div class="meta-value">Rp ' . angka_ribuan_id($simak['total_kontrak'] ?? 0) . '</div></div>
             <div class="meta-card"><div class="meta-label">Kelengkapan</div><div class="meta-value">Lengkap ' . number_format((float) ($kelengkapanSummary['lengkap_persen'] ?? 0), 2, ',', '.') . '%, Belum Sesuai ' . number_format((float) ($kelengkapanSummary['belum_sesuai_persen'] ?? 0), 2, ',', '.') . '%, Menunggu Verifikasi ' . number_format((float) ($kelengkapanSummary['belum_verifikasi_persen'] ?? 0), 2, ',', '.') . '%, Belum Ada ' . number_format((float) ($kelengkapanSummary['belum_ada_persen'] ?? 0), 2, ',', '.') . '%</div></div>
             <div class="meta-card"><div class="meta-label">Total Items</div><div class="meta-value">' . count($templateItems) . ' poin</div></div>
-            <div class="meta-card"><div class="meta-label">Sumber Data</div><div class="meta-value">Verifikasi utama, dokumen, dan share tersembunyi</div></div>
             <div class="meta-card"><div class="meta-label">Tanggal Export</div><div class="meta-value">' . date('d/m/Y H:i:s') . '</div></div>
         </div>
         <div class="table-wrap">
