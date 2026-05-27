@@ -1601,6 +1601,10 @@ class Kontrak extends BaseController
             $rowNo = (int) ($item['row_no'] ?? 0);
             $dokumens = $dokumenByRow[$rowNo] ?? [];
             $existing = $verifikasiByRow[$rowNo] ?? [];
+            $displayNo = trim((string) ($item['display_no_auto'] ?? $item['display_no'] ?? ''));
+            if ($displayNo === '') {
+                $displayNo = (string) ($rowNo > 0 ? $rowNo : '');
+            }
 
             $draftDoc = null;
             $finalDoc = null;
