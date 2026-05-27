@@ -1175,6 +1175,53 @@
         });
     }
 
+    function saveScrollPosition() {
+        try {
+            sessionStorage.setItem('simak-share-scroll-y', String(window.scrollY || 0));
+            sessionStorage.setItem('simak-share-scroll-x', String(window.scrollX || 0));
+        } catch (e) { /* ignore */ }
+    }
+
+    function restoreScrollPosition() {
+        try {
+            var savedY = parseInt(String(sessionStorage.getItem('simak-share-scroll-y') || '0').trim(), 10) || 0;
+            var savedX = parseInt(String(sessionStorage.getItem('simak-share-scroll-x') || '0').trim(), 10) || 0;
+            if (savedY > 0 || savedX > 0) {
+                window.scrollTo(savedX, savedY);
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    function saveActiveTab(tabId) {
+        try {
+            sessionStorage.setItem('simak-share-active-tab', String(tabId || ''));
+        } catch (e) { /* ignore */ }
+    }
+
+    function restoreActiveTab() {
+        try {
+            var savedTab = String(sessionStorage.getItem('simak-share-active-tab') || '').trim();
+            if (savedTab && document.getElementById(savedTab)) {
+                if (window.jQuery && typeof window.jQuery.fn.tab === 'function') {
+                    window.jQuery('#shareTabs a[href="#' + savedTab.replace(/"/g, '\\"') + '"]').tab('show');
+                } else {
+                    var tabLink = document.querySelector('#shareTabs a[href="#' + CSS.escape(savedTab.replace('#share-panel-', '')) + '"]');
+                    if (tabLink) {
+                        tabLink.click();
+                    }
+                }
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    function clearPositionStorage() {
+        try {
+            sessionStorage.removeItem('simak-share-scroll-y');
+            sessionStorage.removeItem('simak-share-scroll-x');
+            sessionStorage.removeItem('simak-share-active-tab');
+        } catch (e) { /* ignore */ }
+    }
+
     function bindOtpActivityTouch() {
         if (!otpVerified || isDevMode) {
             return;
@@ -2315,6 +2362,16 @@
                 }
 
                 isSubmitting = true;
+                // Close modal before submit
+                if (uploadModalEl && window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+                    window.jQuery(uploadModalEl).modal('hide');
+                }
+                // Save scroll and tab position before redirect
+                saveScrollPosition();
+                var activeTab = document.querySelector('#shareTabs a.active');
+                if (activeTab) {
+                    saveActiveTab(activeTab.getAttribute('href') || '');
+                }
                 uploadForm.submit();
                 return;
             }
@@ -2344,12 +2401,96 @@
             }
 
             isSubmitting = true;
+            // Close modal before submit
+            if (uploadModalEl && window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+                window.jQuery(uploadModalEl).modal('hide');
+            }
+            // Save scroll and tab position before redirect
+            saveScrollPosition();
+            var activeTab = document.querySelector('#shareTabs a.active');
+            if (activeTab) {
+                saveActiveTab(activeTab.getAttribute('href') || '');
+            }
         });
 
         updateUploadLockState();
         refreshFileStatus();
         bindOtpActivityTouch();
     }
+
+    // Restore scroll and tab position on page load
+    if (otpVerified) {
+        restoreScrollPosition();
+        restoreActiveTab();
+    }
+
+    // Tab click handler - save active tab to sessionStorage
+    document.querySelectorAll('#shareTabs a[data-toggle="tab"]').forEach(function (tabLink) {
+        tabLink.addEventListener('shown.bs.tab', function (event) {
+            var targetPanel = event.target.getAttribute('href') || '';
+            saveActiveTab(targetPanel);
+        });
+        // Save current active tab on click
+        if (tabLink.classList.contains('active')) {
+            var href = tabLink.getAttribute('href') || '';
+            saveActiveTab(href);
+        }
+    });
+
+    // OTP request form handler with SweetAlert loading
+    var otpRequestForm = document.querySelector('form[action*="/otp/request"]');
+    if (otpRequestForm) {
+        otpRequestForm.addEventListener('submit', function (event) {
+            var btn = this.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+            // Save scroll position before redirect
+            saveScrollPosition();
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                window.Swal.fire({
+                    title: 'Mengirim kode OTP...',
+                    text: 'Mohon tunggu sebentar',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: function () {
+                        window.Swal.showLoading();
+                    }
+                });
+            }
+        });
+    }
+
+    // OTP verify form handler with SweetAlert loading
+    var otpVerifyForm = document.querySelector('form[action*="/otp/verify"]');
+    if (otpVerifyForm) {
+        otpVerifyForm.addEventListener('submit', function (event) {
+            var codeInput = document.getElementById('otp_code');
+            var code = codeInput ? codeInput.value.trim() : '';
+            if (code.length !== 6) {
+                // Let form validation handle it
+                return;
+            }
+            var btn = this.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+            // Save scroll position before redirect
+            saveScrollPosition();
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                window.Swal.fire({
+                    title: 'Memverifikasi kode OTP...',
+                    text: 'Mohon tunggu sebentar',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: function () {
+                        window.Swal.showLoading();
+                    }
+                });
+            }
+        });
+    }
+
+    // Clear position storage on page unload
+    window.addEventListener('beforeunload', function () {
+        clearPositionStorage();
+    });
 })();
 </script>
 </body>
