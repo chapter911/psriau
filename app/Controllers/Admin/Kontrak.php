@@ -1311,6 +1311,9 @@ class Kontrak extends BaseController
             return redirect()->back()->with('error', 'Data SIMAK tidak ditemukan.');
         }
 
+        $kelengkapanPercentages = $this->getSimakAdministrasiKelengkapanBySimakId([$id], $type);
+        $kelengkapanSummary = $kelengkapanPercentages[$id] ?? [];
+
         // Get template items (include hidden share items)
         $templateItems = $this->getSimakTemplateItems($type, true);
 
@@ -1352,28 +1355,30 @@ class Kontrak extends BaseController
         $sheet->mergeCells('A5:I5');
         $sheet->mergeCells('A6:I6');
         $sheet->mergeCells('A7:I7');
+        $sheet->mergeCells('A8:I8');
         $sheet->setCellValue('A1', 'SIMAK Detail Export');
         $sheet->setCellValue('A2', 'Jenis SIMAK: ' . ucfirst($type));
         $sheet->setCellValue('A3', 'Nomor Kontrak: ' . ($simak['nomor_kontrak'] ?? '-'));
         $sheet->setCellValue('A4', 'Nama Paket: ' . ($simak['nama_paket'] ?? '-'));
         $sheet->setCellValue('A5', 'PPK: ' . ($simak['ppk_nama'] ?? '-'));
-        $sheet->setCellValue('A6', 'Sumber Data: Verifikasi utama, dokumen, dan share tersembunyi');
-        $sheet->setCellValue('A7', 'Export Date: ' . date('d/m/Y H:i:s'));
+        $sheet->setCellValue('A6', 'Penyedia: ' . ($simak['penyedia'] ?? '-'));
+        $sheet->setCellValue('A7', 'Nilai Kontrak: ' . angka_ribuan_id($simak['nilai_kontrak'] ?? 0) . ' | Add On: ' . angka_ribuan_id($simak['nilai_add_on'] ?? 0) . ' | Total: ' . angka_ribuan_id($simak['total_kontrak'] ?? 0));
+        $sheet->setCellValue('A8', 'Sumber Data: Verifikasi utama, dokumen, dan share tersembunyi | Export Date: ' . date('d/m/Y H:i:s'));
         $sheet->getStyle('A1:I1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB('FFFFFF');
         $sheet->getStyle('A1:I1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('1F4E78');
-        $sheet->getStyle('A2:I7')->getFont()->setBold(true);
-        $sheet->getStyle('A1:I7')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A2:I8')->getFont()->setBold(true);
+        $sheet->getStyle('A1:I8')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
 
         // Table headers
         $headers = ['No', 'Uraian', 'Kelengkapan', 'Verifikasi Draft', 'Verifikasi Final', 'Keterangan', 'PIC', 'File Draft', 'File Final'];
-        $sheet->fromArray($headers, null, 'A9');
-        $sheet->getStyle('A9:I9')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
-        $sheet->getStyle('A9:I9')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('0F766E');
-        $sheet->freezePane('A10');
-        $sheet->setAutoFilter('A9:I9');
+        $sheet->fromArray($headers, null, 'A10');
+        $sheet->getStyle('A10:I10')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A10:I10')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('0F766E');
+        $sheet->freezePane('A11');
+        $sheet->setAutoFilter('A10:I10');
 
         // Data rows
-        $rowNum = 10;
+        $rowNum = 11;
         foreach ($templateItems as $item) {
             $rowNo = (int) ($item['row_no'] ?? 0);
             $dokumens = $dokumenByRow[$rowNo] ?? [];
@@ -1435,18 +1440,18 @@ class Kontrak extends BaseController
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
-        $sheet->getColumnDimension('B')->setWidth(38);
+        $sheet->getColumnDimension('B')->setWidth(28);
         $sheet->getColumnDimension('F')->setWidth(28);
         $sheet->getColumnDimension('G')->setWidth(22);
 
-        $sheet->getStyle('A9:I' . ($rowNum - 1))->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheet->getStyle('A9:I' . ($rowNum - 1))->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP);
-        $sheet->getStyle('B10:F' . ($rowNum - 1))->getAlignment()->setWrapText(true);
-        $sheet->getStyle('A10:A' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('C10:E' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('H10:I' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        for ($currentRow = 10; $currentRow < $rowNum; $currentRow++) {
-            if (($currentRow - 10) % 2 === 0) {
+        $sheet->getStyle('A10:I' . ($rowNum - 1))->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheet->getStyle('A10:I' . ($rowNum - 1))->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP);
+        $sheet->getStyle('B11:F' . ($rowNum - 1))->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A11:A' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('C11:E' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('H11:I' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        for ($currentRow = 11; $currentRow < $rowNum; $currentRow++) {
+            if (($currentRow - 11) % 2 === 0) {
                 $sheet->getStyle('A' . $currentRow . ':I' . $currentRow)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('F8FAFC');
             }
         }
@@ -1486,6 +1491,9 @@ class Kontrak extends BaseController
         if (! is_array($simak)) {
             return redirect()->back()->with('error', 'Data SIMAK tidak ditemukan.');
         }
+
+        $kelengkapanPercentages = $this->getSimakAdministrasiKelengkapanBySimakId([$id], $type);
+        $kelengkapanSummary = $kelengkapanPercentages[$id] ?? [];
 
         // Get template items, including hidden share rows
         $templateItems = $this->getSimakTemplateItems($type, true);
@@ -1564,7 +1572,12 @@ class Kontrak extends BaseController
             <div class="meta-card"><div class="meta-label">Jenis SIMAK</div><div class="meta-value">' . ucfirst($type) . '</div></div>
             <div class="meta-card"><div class="meta-label">Nomor Kontrak</div><div class="meta-value">' . htmlspecialchars($simak['nomor_kontrak'] ?? '-') . '</div></div>
             <div class="meta-card"><div class="meta-label">Nama Paket</div><div class="meta-value">' . htmlspecialchars($simak['nama_paket'] ?? '-') . '</div></div>
+            <div class="meta-card"><div class="meta-label">Penyedia</div><div class="meta-value">' . htmlspecialchars($simak['penyedia'] ?? '-') . '</div></div>
             <div class="meta-card"><div class="meta-label">PPK</div><div class="meta-value">' . htmlspecialchars($simak['ppk_nama'] ?? '-') . ' (NIP: ' . htmlspecialchars($simak['ppk_nip'] ?? '-') . ')</div></div>
+            <div class="meta-card"><div class="meta-label">Nilai Kontrak</div><div class="meta-value">Rp ' . angka_ribuan_id($simak['nilai_kontrak'] ?? 0) . '</div></div>
+            <div class="meta-card"><div class="meta-label">Nilai Add On</div><div class="meta-value">Rp ' . angka_ribuan_id($simak['nilai_add_on'] ?? 0) . '</div></div>
+            <div class="meta-card"><div class="meta-label">Total Kontrak</div><div class="meta-value">Rp ' . angka_ribuan_id($simak['total_kontrak'] ?? 0) . '</div></div>
+            <div class="meta-card"><div class="meta-label">Kelengkapan</div><div class="meta-value">Lengkap ' . number_format((float) ($kelengkapanSummary['lengkap_persen'] ?? 0), 2, ',', '.') . '%, Belum Sesuai ' . number_format((float) ($kelengkapanSummary['belum_sesuai_persen'] ?? 0), 2, ',', '.') . '%, Menunggu Verifikasi ' . number_format((float) ($kelengkapanSummary['belum_verifikasi_persen'] ?? 0), 2, ',', '.') . '%, Belum Ada ' . number_format((float) ($kelengkapanSummary['belum_ada_persen'] ?? 0), 2, ',', '.') . '%</div></div>
             <div class="meta-card"><div class="meta-label">Total Items</div><div class="meta-value">' . count($templateItems) . ' poin</div></div>
             <div class="meta-card"><div class="meta-label">Sumber Data</div><div class="meta-value">Verifikasi utama, dokumen, dan share tersembunyi</div></div>
             <div class="meta-card"><div class="meta-label">Tanggal Export</div><div class="meta-value">' . date('d/m/Y H:i:s') . '</div></div>
