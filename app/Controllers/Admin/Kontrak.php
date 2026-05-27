@@ -1295,6 +1295,7 @@ class Kontrak extends BaseController
 
         $db = db_connect();
         $tableMain = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi' : 'trn_kontrak_simak';
+        $tableVerif = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_verifikasi' : 'trn_kontrak_simak_verifikasi';
         $tableVerifDok = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_verifikasi_dokumen' : 'trn_kontrak_simak_verifikasi_dokumen';
 
         if (! $db->tableExists($tableMain)) {
@@ -1310,10 +1311,21 @@ class Kontrak extends BaseController
             return redirect()->back()->with('error', 'Data SIMAK tidak ditemukan.');
         }
 
-        // Get template items (uraian)
-        $templateItems = $type === 'konsultasi'
-            ? $this->getSimakKonsultasiTemplateFromMaster(false)
-            : $this->getSimakKonstruksiTemplateFromMaster(false);
+        // Get template items (include hidden share items)
+        $templateItems = $this->getSimakTemplateItems($type, true);
+
+        $verifikasiByRow = [];
+        if ($db->tableExists($tableVerif)) {
+            $verifikasiBuilder = $db->table($tableVerif)
+                ->select('row_no, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
+                ->where('simak_id', $id)
+                ->orderBy('row_no', 'ASC');
+            $this->applyNotDeletedWhere($verifikasiBuilder, $tableVerif);
+            $verifikasiRows = $verifikasiBuilder->get()->getResultArray();
+            foreach ($verifikasiRows as $verifikasiRow) {
+                $verifikasiByRow[(int) ($verifikasiRow['row_no'] ?? 0)] = $verifikasiRow;
+            }
+        }
 
         // Get verification documents
         $dokumenBuilder = $db->table($tableVerifDok);
@@ -1349,12 +1361,12 @@ class Kontrak extends BaseController
         $sheet->getStyle('A2:G5')->getFont()->setBold(true);
 
         // Table headers
-        $headers = ['No', 'Uraian', 'Kelengkapan', 'Verifikasi KI', 'Keterangan', 'File Draft', 'File Final'];
+        $headers = ['No', 'Uraian', 'Kelengkapan', 'Verifikasi Draft', 'Verifikasi Final', 'Keterangan', 'PIC', 'File Draft', 'File Final'];
         $sheet->fromArray($headers, null, 'A7');
-        $sheet->getStyle('A7:G7')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
-        $sheet->getStyle('A7:G7')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('0F766E');
+        $sheet->getStyle('A7:I7')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A7:I7')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('0F766E');
         $sheet->freezePane('A8');
-        $sheet->setAutoFilter('A7:G7');
+        $sheet->setAutoFilter('A7:I7');
 
         // Data rows
         $rowNum = 8;
@@ -1362,6 +1374,7 @@ class Kontrak extends BaseController
         foreach ($templateItems as $item) {
             $rowNo = (int) ($item['row_no'] ?? 0);
             $dokumens = $dokumenByRow[$rowNo] ?? [];
+            $existing = $verifikasiByRow[$rowNo] ?? [];
 
             // Find draft and final documents
             $draftDoc = null;
@@ -1375,43 +1388,59 @@ class Kontrak extends BaseController
                 }
             }
 
+            $kelengkapan = trim((string) ($existing['kelengkapan_dokumen'] ?? ''));
+            if ($kelengkapan === '') {
+                $kelengkapan = trim((string) ($draftDoc['kelengkapan_dokumen'] ?? ($finalDoc['kelengkapan_dokumen'] ?? ($item['kelengkapan_dokumen'] ?? ''))));
+            }
+
+            $verifikasiDraft = trim((string) ($draftDoc['verifikasi_ki'] ?? ($existing['verifikasi_ki'] ?? '')));
+            $verifikasiFinal = trim((string) ($finalDoc['verifikasi_ki'] ?? ($existing['verifikasi_ki'] ?? '')));
+            $keterangan = trim((string) ($existing['keterangan'] ?? ($draftDoc['keterangan'] ?? ($finalDoc['keterangan'] ?? ''))));
+            $pic = trim((string) ($existing['pic'] ?? ($draftDoc['pic'] ?? ($finalDoc['pic'] ?? ''))));
+
             $sheet->setCellValue('A' . $rowNum, $no++);
             $sheet->setCellValue('B' . $rowNum, $item['uraian'] ?? '');
-            $sheet->setCellValue('C' . $rowNum, $item['kelengkapan_dokumen'] ?? '-');
-            $sheet->setCellValue('D' . $rowNum, $item['verifikasi_ki'] ?? '-');
-            $sheet->setCellValue('E' . $rowNum, $item['keterangan'] ?? '');
+            $sheet->setCellValue('C' . $rowNum, $kelengkapan !== '' ? $kelengkapan : '-');
+            $sheet->setCellValue('D' . $rowNum, $verifikasiDraft !== '' ? $verifikasiDraft : '-');
+            $sheet->setCellValue('E' . $rowNum, $verifikasiFinal !== '' ? $verifikasiFinal : '-');
+            $sheet->setCellValue('F' . $rowNum, $keterangan !== '' ? $keterangan : '-');
+            $sheet->setCellValue('G' . $rowNum, $pic !== '' ? $pic : '-');
             $draftUrl = $this->buildSimakDocumentFileUrl($draftDoc);
             $finalUrl = $this->buildSimakDocumentFileUrl($finalDoc);
 
-            $sheet->setCellValue('F' . $rowNum, $draftUrl !== '' ? 'Klik Disini' : '-');
+            $sheet->setCellValue('H' . $rowNum, $draftUrl !== '' ? 'Klik Disini' : '-');
             if ($draftUrl !== '') {
-                $sheet->getCell('F' . $rowNum)->getHyperlink()->setUrl($draftUrl);
-                $sheet->getStyle('F' . $rowNum)->getFont()->setUnderline(true)->getColor()->setRGB('0563C1');
+                $sheet->getCell('H' . $rowNum)->getHyperlink()->setUrl($draftUrl);
+                $sheet->getStyle('H' . $rowNum)->getFont()->setUnderline(true)->getColor()->setRGB('0563C1');
             }
 
-            $sheet->setCellValue('G' . $rowNum, $finalUrl !== '' ? 'Klik Disini' : '-');
+            $sheet->setCellValue('I' . $rowNum, $finalUrl !== '' ? 'Klik Disini' : '-');
             if ($finalUrl !== '') {
-                $sheet->getCell('G' . $rowNum)->getHyperlink()->setUrl($finalUrl);
-                $sheet->getStyle('G' . $rowNum)->getFont()->setUnderline(true)->getColor()->setRGB('0563C1');
+                $sheet->getCell('I' . $rowNum)->getHyperlink()->setUrl($finalUrl);
+                $sheet->getStyle('I' . $rowNum)->getFont()->setUnderline(true)->getColor()->setRGB('0563C1');
             }
 
             $rowNum++;
         }
 
         // Auto size columns
-        foreach (range('A', 'G') as $column) {
+        foreach (range('A', 'I') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
-        $sheet->getStyle('A7:G' . ($rowNum - 1))->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheet->getStyle('A7:G' . ($rowNum - 1))->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP);
-        $sheet->getStyle('B8:E' . ($rowNum - 1))->getAlignment()->setWrapText(true);
+        $sheet->getColumnDimension('B')->setWidth(38);
+        $sheet->getColumnDimension('F')->setWidth(28);
+        $sheet->getColumnDimension('G')->setWidth(22);
+
+        $sheet->getStyle('A7:I' . ($rowNum - 1))->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheet->getStyle('A7:I' . ($rowNum - 1))->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP);
+        $sheet->getStyle('B8:F' . ($rowNum - 1))->getAlignment()->setWrapText(true);
         $sheet->getStyle('A8:A' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('C8:D' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('F8:G' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('C8:E' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('H8:I' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
         for ($currentRow = 8; $currentRow < $rowNum; $currentRow++) {
             if (($currentRow - 8) % 2 === 0) {
-                $sheet->getStyle('A' . $currentRow . ':G' . $currentRow)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('F8FAFC');
+                $sheet->getStyle('A' . $currentRow . ':I' . $currentRow)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('F8FAFC');
             }
         }
 
@@ -1435,6 +1464,7 @@ class Kontrak extends BaseController
 
         $db = db_connect();
         $tableMain = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi' : 'trn_kontrak_simak';
+        $tableVerif = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_verifikasi' : 'trn_kontrak_simak_verifikasi';
         $tableVerifDok = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_verifikasi_dokumen' : 'trn_kontrak_simak_verifikasi_dokumen';
 
         if (! $db->tableExists($tableMain)) {
@@ -1450,10 +1480,21 @@ class Kontrak extends BaseController
             return redirect()->back()->with('error', 'Data SIMAK tidak ditemukan.');
         }
 
-        // Get template items
-        $templateItems = $type === 'konsultasi'
-            ? $this->getSimakKonsultasiTemplateFromMaster(false)
-            : $this->getSimakKonstruksiTemplateFromMaster(false);
+        // Get template items, including hidden share rows
+        $templateItems = $this->getSimakTemplateItems($type, true);
+
+        $verifikasiByRow = [];
+        if ($db->tableExists($tableVerif)) {
+            $verifikasiBuilder = $db->table($tableVerif)
+                ->select('row_no, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
+                ->where('simak_id', $id)
+                ->orderBy('row_no', 'ASC');
+            $this->applyNotDeletedWhere($verifikasiBuilder, $tableVerif);
+            $verifikasiRows = $verifikasiBuilder->get()->getResultArray();
+            foreach ($verifikasiRows as $verifikasiRow) {
+                $verifikasiByRow[(int) ($verifikasiRow['row_no'] ?? 0)] = $verifikasiRow;
+            }
+        }
 
         // Get verification documents
         $dokumenBuilder = $db->table($tableVerifDok);
@@ -1488,9 +1529,9 @@ class Kontrak extends BaseController
         .meta-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; font-weight: 700; }
         .meta-value { font-size: 14px; font-weight: 700; color: var(--text); word-break: break-word; }
         .table-wrap { background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06); }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
         thead th { background: linear-gradient(135deg, var(--accent) 0%, #24528f 100%); color: #fff; padding: 12px 10px; text-align: left; position: sticky; top: 0; z-index: 1; }
-        td { border-top: 1px solid var(--line); padding: 10px; vertical-align: top; }
+        td { border-top: 1px solid var(--line); padding: 10px; vertical-align: top; word-break: break-word; }
         tbody tr:nth-child(even) { background-color: #f8fbff; }
         tbody tr:hover { background-color: #eef6ff; }
         .text-right { text-align: right; }
@@ -1500,8 +1541,8 @@ class Kontrak extends BaseController
         .badge-warning { background-color: #fef3c7; color: #92400e; }
         .badge-danger { background-color: #fee2e2; color: #991b1b; }
         .badge-info { background-color: #dbeafe; color: #1d4ed8; }
-        a.file-link { color: #0f766e; text-decoration: none; font-weight: 700; }
-        a.file-link:hover { text-decoration: underline; }
+        .file-link { color: #0f766e; text-decoration: none; font-weight: 700; }
+        .file-link:hover { text-decoration: underline; }
         .footer { margin-top: 20px; text-align: center; color: var(--muted); font-size: 11px; }
         @media print { body { background: #fff; } .page { padding: 0; } .hero, .meta-card, .table-wrap { box-shadow: none; } }
     </style>
@@ -1523,13 +1564,15 @@ class Kontrak extends BaseController
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 60px;">No</th>
-                        <th>Uraian</th>
+                        <th style="width: 54px;">No</th>
+                        <th style="width: 300px;">Uraian</th>
                         <th style="width: 120px;">Kelengkapan</th>
-                        <th style="width: 130px;">Verifikasi</th>
-                        <th>Keterangan</th>
-                        <th style="width: 140px;">File Draft</th>
-                        <th style="width: 140px;">File Final</th>
+                        <th style="width: 130px;">Verifikasi Draft</th>
+                        <th style="width: 130px;">Verifikasi Final</th>
+                        <th style="width: 220px;">Keterangan</th>
+                        <th style="width: 140px;">PIC</th>
+                        <th style="width: 120px;">File Draft</th>
+                        <th style="width: 120px;">File Final</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -1538,26 +1581,41 @@ class Kontrak extends BaseController
         foreach ($templateItems as $item) {
             $rowNo = (int) ($item['row_no'] ?? 0);
             $dokumens = $dokumenByRow[$rowNo] ?? [];
-            $verifikasiKi = $item['verifikasi_ki'] ?? '-';
-            $kelengkapan = $item['kelengkapan_dokumen'] ?? '-';
+            $existing = $verifikasiByRow[$rowNo] ?? [];
 
-            // Badge class
-            $badgeClass = 'badge-info';
-            if ($verifikasiKi === 'sesuai') {
-                $badgeClass = 'badge-success';
-            } elseif ($verifikasiKi === 'belum_sesuai') {
-                $badgeClass = 'badge-warning';
-            } elseif ($verifikasiKi === 'belum_verifikasi' || $kelengkapan === 'Belum Ada') {
-                $badgeClass = 'badge-danger';
+            $draftDoc = null;
+            $finalDoc = null;
+            foreach ($dokumens as $docRow) {
+                $docType = strtolower(trim((string) ($docRow['tipe_dokumen'] ?? 'final')));
+                if ($docType === 'draft' && $draftDoc === null) {
+                    $draftDoc = $docRow;
+                } elseif ($docType !== 'draft' && $finalDoc === null) {
+                    $finalDoc = $docRow;
+                }
+
+                if ($draftDoc !== null && $finalDoc !== null) {
+                    break;
+                }
             }
+
+            $kelengkapan = trim((string) ($existing['kelengkapan_dokumen'] ?? ''));
+            if ($kelengkapan === '') {
+                $kelengkapan = trim((string) ($draftDoc['kelengkapan_dokumen'] ?? ($finalDoc['kelengkapan_dokumen'] ?? ($item['kelengkapan_dokumen'] ?? ''))));
+            }
+            $verifikasiDraft = trim((string) ($draftDoc['verifikasi_ki'] ?? ($existing['verifikasi_ki'] ?? '')));
+            $verifikasiFinal = trim((string) ($finalDoc['verifikasi_ki'] ?? ($existing['verifikasi_ki'] ?? '')));
+            $keterangan = trim((string) ($existing['keterangan'] ?? ($draftDoc['keterangan'] ?? ($finalDoc['keterangan'] ?? ''))));
+            $pic = trim((string) ($existing['pic'] ?? ($draftDoc['pic'] ?? ($finalDoc['pic'] ?? ''))));
 
             $html .= '
             <tr>
                 <td class="text-center">' . $no++ . '</td>
                 <td>' . htmlspecialchars($item['uraian'] ?? '-') . '</td>
-                <td class="text-center">' . htmlspecialchars($kelengkapan) . '</td>
-                <td class="text-center"><span class="badge ' . $badgeClass . '">' . htmlspecialchars($verifikasiKi) . '</span></td>
-                <td>' . htmlspecialchars($item['keterangan'] ?? '-') . '</td>
+                <td class="text-center">' . htmlspecialchars($kelengkapan !== '' ? $kelengkapan : '-') . '</td>
+                <td class="text-center"><span class="badge ' . ($verifikasiDraft === 'sesuai' ? 'badge-success' : ($verifikasiDraft === 'tidak_sesuai' ? 'badge-warning' : 'badge-info')) . '">' . htmlspecialchars($verifikasiDraft !== '' ? $verifikasiDraft : '-') . '</span></td>
+                <td class="text-center"><span class="badge ' . ($verifikasiFinal === 'sesuai' ? 'badge-success' : ($verifikasiFinal === 'tidak_sesuai' ? 'badge-warning' : 'badge-info')) . '">' . htmlspecialchars($verifikasiFinal !== '' ? $verifikasiFinal : '-') . '</span></td>
+                <td>' . htmlspecialchars($keterangan !== '' ? $keterangan : '-') . '</td>
+                <td class="text-center">' . htmlspecialchars($pic !== '' ? $pic : '-') . '</td>
                 <td class="text-center">' . $this->renderSimakDocumentLinkHtml($draftDoc) . '</td>
                 <td class="text-center">' . $this->renderSimakDocumentLinkHtml($finalDoc) . '</td>
             </tr>';
