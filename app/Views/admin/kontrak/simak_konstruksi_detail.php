@@ -142,6 +142,48 @@
     </div>
 </div>
 
+<div class="mb-3 p-3 bg-white rounded border simak-filter-bar">
+    <div class="row align-items-end">
+        <div class="col-lg-4 col-md-6 mb-2">
+            <label class="mb-1 font-weight-bold">Uraian</label>
+            <input type="text" class="form-control form-control-sm" id="filter-uraian" placeholder="Cari uraian...">
+        </div>
+        <div class="col-lg-2 col-md-6 mb-2">
+            <label class="mb-1 font-weight-bold">Kelengkapan Dokumen</label>
+            <select class="form-control form-control-sm" id="filter-kelengkapan">
+                <option value="all">Semua</option>
+                <option value="ada">Ada</option>
+                <option value="tidak">Tidak Ada</option>
+                <option value="belum_verifikasi">Menunggu Verifikasi</option>
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-6 mb-2">
+            <label class="mb-1 font-weight-bold">Verifikasi Draft</label>
+            <select class="form-control form-control-sm" id="filter-verifikasi-draft">
+                <option value="all">Semua</option>
+                <option value="sesuai">Sesuai</option>
+                <option value="tidak_sesuai">Tidak Sesuai</option>
+                <option value="belum_verifikasi">Menunggu Verifikasi</option>
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-6 mb-2">
+            <label class="mb-1 font-weight-bold">Verifikasi Final</label>
+            <select class="form-control form-control-sm" id="filter-verifikasi-final">
+                <option value="all">Semua</option>
+                <option value="sesuai">Sesuai</option>
+                <option value="tidak_sesuai">Tidak Sesuai</option>
+                <option value="belum_verifikasi">Menunggu Verifikasi</option>
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-6 mb-2 d-flex align-items-end justify-content-between">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-reset-filter">
+                <i class="fas fa-sync-alt"></i> Reset
+            </button>
+            <span class="text-muted small text-right ml-2" id="filter-info">Menampilkan semua item</span>
+        </div>
+    </div>
+</div>
+
 <?php if (! empty($templateItems ?? [])): ?>
 <?php
     $sections = [];
@@ -344,7 +386,14 @@
                                                 }
                                             }
                                         ?>
-                                        <tr style="<?= esc($bgStyle . ($isPendingVerification && $isInputRow ? ' background-color: #fff3cd;' : '')); ?>">
+                                        <tr
+                                            data-row-kind="<?= esc($rowType); ?>"
+                                            data-uraian="<?= esc($uraian); ?>"
+                                            data-kelengkapan="<?= esc($kelengkapan); ?>"
+                                            data-verifikasi-draft="<?= esc($draftVerifikasi); ?>"
+                                            data-verifikasi-final="<?= esc($finalVerifikasi); ?>"
+                                            style="<?= esc($bgStyle . ($isPendingVerification && $isInputRow ? ' background-color: #fff3cd;' : '')); ?>"
+                                        >
                                             <td>
                                                 <div style="padding-left: <?= (int) $indentPadding; ?>px; white-space: nowrap; <?= esc($fontWeight); ?>">
                                                     <?= esc($noText); ?>
@@ -1190,6 +1239,116 @@
             }
         });
     }
+
+    var filterUraian = document.getElementById('filter-uraian');
+    var filterKelengkapan = document.getElementById('filter-kelengkapan');
+    var filterVerifikasiDraft = document.getElementById('filter-verifikasi-draft');
+    var filterVerifikasiFinal = document.getElementById('filter-verifikasi-final');
+    var filterInfo = document.getElementById('filter-info');
+    var resetBtn = document.getElementById('btn-reset-filter');
+
+    function normalizeFilterValue(value) {
+        return String(value || '').trim().toLowerCase();
+    }
+
+    function normalizeKelengkapan(value) {
+        var normalized = normalizeFilterValue(value);
+        if (normalized === 'ada' || normalized === 'tidak' || normalized === 'belum_verifikasi') {
+            return normalized;
+        }
+        return '';
+    }
+
+    function normalizeVerifikasi(value) {
+        var normalized = normalizeFilterValue(value);
+        if (normalized === 'sesuai' || normalized === 'tidak_sesuai' || normalized === 'belum_verifikasi') {
+            return normalized;
+        }
+        return '';
+    }
+
+    function rowMatchesFilters(row) {
+        var uraian = normalizeFilterValue(row.getAttribute('data-uraian'));
+        var kelengkapan = normalizeKelengkapan(row.getAttribute('data-kelengkapan'));
+        var verifikasiDraft = normalizeVerifikasi(row.getAttribute('data-verifikasi-draft'));
+        var verifikasiFinal = normalizeVerifikasi(row.getAttribute('data-verifikasi-final'));
+
+        var uraianQuery = normalizeFilterValue(filterUraian && filterUraian.value);
+        var kelengkapanFilter = normalizeFilterValue(filterKelengkapan && filterKelengkapan.value);
+        var draftFilter = normalizeFilterValue(filterVerifikasiDraft && filterVerifikasiDraft.value);
+        var finalFilter = normalizeFilterValue(filterVerifikasiFinal && filterVerifikasiFinal.value);
+
+        if (uraianQuery !== '' && uraian.indexOf(uraianQuery) === -1) {
+            return false;
+        }
+
+        if (kelengkapanFilter !== 'all' && kelengkapan !== kelengkapanFilter) {
+            return false;
+        }
+
+        if (draftFilter !== 'all' && verifikasiDraft !== draftFilter) {
+            return false;
+        }
+
+        if (finalFilter !== 'all' && verifikasiFinal !== finalFilter) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function applySimakFilters() {
+        var visibleCount = 0;
+        var totalCount = 0;
+        var tables = document.querySelectorAll('.simak-verifikasi-table');
+
+        tables.forEach(function (table) {
+            var tbody = table.querySelector('tbody');
+            if (!tbody) {
+                return;
+            }
+
+            tbody.querySelectorAll('tr').forEach(function (row) {
+                if (row.querySelector('td[colspan]')) {
+                    row.style.display = '';
+                    return;
+                }
+
+                totalCount++;
+                if (rowMatchesFilters(row)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        if (filterInfo) {
+            filterInfo.textContent = visibleCount === totalCount
+                ? 'Menampilkan semua item'
+                : 'Menampilkan ' + visibleCount + ' dari ' + totalCount + ' item';
+        }
+    }
+
+    [filterUraian, filterKelengkapan, filterVerifikasiDraft, filterVerifikasiFinal].forEach(function (el) {
+        if (el) {
+            el.addEventListener('input', applySimakFilters);
+            el.addEventListener('change', applySimakFilters);
+        }
+    });
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            if (filterUraian) filterUraian.value = '';
+            if (filterKelengkapan) filterKelengkapan.value = 'all';
+            if (filterVerifikasiDraft) filterVerifikasiDraft.value = 'all';
+            if (filterVerifikasiFinal) filterVerifikasiFinal.value = 'all';
+            applySimakFilters();
+        });
+    }
+
+    applySimakFilters();
 })();
 </script>
 <?= $this->endSection(); ?>
