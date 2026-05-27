@@ -991,6 +991,282 @@ class Kontrak extends BaseController
         ]);
     }
 
+    public function exportSimakKonstruksiExcel()
+    {
+        return $this->exportSimakExcel('konstruksi');
+    }
+
+    public function exportSimakKonsultasiExcel()
+    {
+        return $this->exportSimakExcel('konsultasi');
+    }
+
+    public function exportSimakKonstruksiHtml()
+    {
+        return $this->exportSimakHtml('konstruksi');
+    }
+
+    public function exportSimakKonsultasiHtml()
+    {
+        return $this->exportSimakHtml('konsultasi');
+    }
+
+    private function exportSimakExcel(string $type)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $db = db_connect();
+        $tableMain = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi' : 'trn_kontrak_simak';
+        $tableAddOn = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_add_on' : 'trn_kontrak_simak_add_on';
+
+        if (! $db->tableExists($tableMain)) {
+            return redirect()->back()->with('error', 'Tabel SIMAK belum tersedia.');
+        }
+
+        $builder = $db->table($tableMain . ' s')
+            ->select('s.*, COALESCE(soa.nilai_add_on, 0) AS nilai_add_on, (s.nilai_kontrak + COALESCE(soa.nilai_add_on, 0)) AS total_kontrak')
+            ->orderBy('s.id', 'DESC');
+
+        if ($db->tableExists($tableAddOn)) {
+            $summaryBuilder = $db->table($tableAddOn)
+                ->select('simak_id, SUM(nilai_add_on) AS nilai_add_on')
+                ->groupBy('simak_id');
+            $this->applyNotDeletedWhere($summaryBuilder, $tableAddOn);
+            $builder->join('(' . $summaryBuilder->getCompiledSelect() . ') soa', 'soa.simak_id = s.id', 'left', false);
+        }
+
+        $this->applyNotDeletedWhere($builder, $tableMain, 's.deleted_at');
+        $rows = $builder->get()->getResultArray();
+
+        // Get kelengkapan data
+        $simakIds = array_values(array_filter(array_map(static function (array $row): int {
+            return (int) ($row['id'] ?? 0);
+        }, $rows), static function (int $id): bool {
+            return $id > 0;
+        }));
+
+        $kelengkapanBySimakId = $this->getSimakAdministrasiKelengkapanBySimakId($simakIds, $type);
+
+        // Build spreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('SIMAK ' . ucfirst($type));
+
+        // Headers
+        $headers = [
+            'No',
+            'Nomor Kontrak',
+            'Nama Paket',
+            'Tahun Anggaran',
+            'PPK Nama',
+            'PPK NIP',
+            'Penyedia',
+            'Nilai Kontrak (Rp)',
+            'Nilai Add On (Rp)',
+            'Total Kontrak (Rp)',
+            'Lengkap (%)',
+            'Belum Sesuai (%)',
+            'Belum Verifikasi (%)',
+            'Belum Ada (%)',
+            'Email Responden 1',
+            'Email Responden 2',
+            'Share Link',
+        ];
+
+        $sheet->fromArray($headers, null, 'A1');
+        $sheet->getStyle('A1:Q1')->getFont()->setBold(true);
+
+        // Data rows
+        $rowNum = 2;
+        foreach ($rows as $item) {
+            $simakId = (int) ($item['id'] ?? 0);
+            $summary = $kelengkapanBySimakId[$simakId] ?? [];
+
+            $shareUrl = site_url('simak/share/' . ($item['share_token'] ?? ''));
+
+            $sheet->setCellValue('A' . $rowNum, $rowNum - 1);
+            $sheet->setCellValue('B' . $rowNum, $item['nomor_kontrak'] ?? '');
+            $sheet->setCellValue('C' . $rowNum, $item['nama_paket'] ?? '');
+            $sheet->setCellValue('D' . $rowNum, $item['tahun_anggaran'] ?? '');
+            $sheet->setCellValue('E' . $rowNum, $item['ppk_nama'] ?? '');
+            $sheet->setCellValue('F' . $rowNum, $item['ppk_nip'] ?? '');
+            $sheet->setCellValue('G' . $rowNum, $item['penyedia'] ?? '');
+            $sheet->setCellValue('H' . $rowNum, (float) ($item['nilai_kontrak'] ?? 0));
+            $sheet->setCellValue('I' . $rowNum, (float) ($item['nilai_add_on'] ?? 0));
+            $sheet->setCellValue('J' . $rowNum, (float) ($item['total_kontrak'] ?? 0));
+            $sheet->setCellValue('K' . $rowNum, (float) ($summary['lengkap_persen'] ?? 0));
+            $sheet->setCellValue('L' . $rowNum, (float) ($summary['belum_sesuai_persen'] ?? 0));
+            $sheet->setCellValue('M' . $rowNum, (float) ($summary['belum_verifikasi_persen'] ?? 0));
+            $sheet->setCellValue('N' . $rowNum, (float) ($summary['belum_ada_persen'] ?? 0));
+            $sheet->setCellValue('O' . $rowNum, $item['email_responden_1'] ?? '');
+            $sheet->setCellValue('P' . $rowNum, $item['email_responden_2'] ?? '');
+            $sheet->setCellValue('Q' . $rowNum, $shareUrl);
+
+            $rowNum++;
+        }
+
+        // Auto size columns
+        foreach (range('A', 'Q') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        // Number format for currency
+        $sheet->getStyle('H2:J' . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
+        $sheet->getStyle('K2:N' . $rowNum)->getNumberFormat()->setFormatCode('0.00%');
+
+        $filename = 'simak_' . $type . '_export_' . date('Y-m-d_His') . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        ob_start();
+        $writer->save('php://output');
+        $binary = ob_get_clean();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($binary === false ? '' : $binary);
+    }
+
+    private function exportSimakHtml(string $type)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $db = db_connect();
+        $tableMain = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi' : 'trn_kontrak_simak';
+        $tableAddOn = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_add_on' : 'trn_kontrak_simak_add_on';
+
+        if (! $db->tableExists($tableMain)) {
+            return redirect()->back()->with('error', 'Tabel SIMAK belum tersedia.');
+        }
+
+        $builder = $db->table($tableMain . ' s')
+            ->select('s.*, COALESCE(soa.nilai_add_on, 0) AS nilai_add_on, (s.nilai_kontrak + COALESCE(soa.nilai_add_on, 0)) AS total_kontrak')
+            ->orderBy('s.id', 'DESC');
+
+        if ($db->tableExists($tableAddOn)) {
+            $summaryBuilder = $db->table($tableAddOn)
+                ->select('simak_id, SUM(nilai_add_on) AS nilai_add_on')
+                ->groupBy('simak_id');
+            $this->applyNotDeletedWhere($summaryBuilder, $tableAddOn);
+            $builder->join('(' . $summaryBuilder->getCompiledSelect() . ') soa', 'soa.simak_id = s.id', 'left', false);
+        }
+
+        $this->applyNotDeletedWhere($builder, $tableMain, 's.deleted_at');
+        $rows = $builder->get()->getResultArray();
+
+        // Get kelengkapan data
+        $simakIds = array_values(array_filter(array_map(static function (array $row): int {
+            return (int) ($row['id'] ?? 0);
+        }, $rows), static function (int $id): bool {
+            return $id > 0;
+        }));
+
+        $kelengkapanBySimakId = $this->getSimakAdministrasiKelengkapanBySimakId($simakIds, $type);
+
+        // Build HTML
+        $html = '<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMAK ' . ucfirst($type) . ' - Export ' . date('d/m/Y') . '</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        .header-info { margin-bottom: 20px; color: #666; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f5f5f5; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; }
+        .badge-success { background-color: #28a745; color: white; }
+        .badge-warning { background-color: #ffc107; color: #333; }
+        .badge-danger { background-color: #dc3545; color: white; }
+        .footer { margin-top: 30px; text-align: center; color: #999; font-size: 11px; }
+        @media print { body { margin: 0; } }
+    </style>
+</head>
+<body>
+    <h1>SIMAK ' . ucfirst($type) . '</h1>
+    <div class="header-info">
+        <p>Tanggal Export: ' . date('d/m/Y H:i:s') . ' | Total Data: ' . count($rows) . ' item</p>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Nomor Kontrak</th>
+                <th>Nama Paket</th>
+                <th>Tahun</th>
+                <th>PPK</th>
+                <th>Penyedia</th>
+                <th class="text-right">Nilai Kontrak</th>
+                <th class="text-right">Add On</th>
+                <th class="text-right">Total</th>
+                <th class="text-center">Lengkap</th>
+                <th class="text-center">Belum Sesuai</th>
+                <th class="text-center">Status</th>
+            </tr>
+        </thead>
+        <tbody>';
+
+        $no = 1;
+        foreach ($rows as $item) {
+            $simakId = (int) ($item['id'] ?? 0);
+            $summary = $kelengkapanBySimakId[$simakId] ?? [];
+
+            $lengkap = (float) ($summary['lengkap_persen'] ?? 0);
+            $belumSesuai = (float) ($summary['belum_sesuai_persen'] ?? 0);
+
+            // Determine status badge
+            if ($lengkap >= 100) {
+                $statusBadge = '<span class="badge badge-success">Lengkap</span>';
+            } elseif ($belumSesuai > 0) {
+                $statusBadge = '<span class="badge badge-warning">Belum Sesuai</span>';
+            } else {
+                $statusBadge = '<span class="badge badge-danger">Belum</span>';
+            }
+
+            $html .= '
+            <tr>
+                <td class="text-center">' . $no++ . '</td>
+                <td>' . htmlspecialchars($item['nomor_kontrak'] ?? '-') . '</td>
+                <td>' . htmlspecialchars($item['nama_paket'] ?? '-') . '</td>
+                <td>' . htmlspecialchars($item['tahun_anggaran'] ?? '-') . '</td>
+                <td>' . htmlspecialchars($item['ppk_nama'] ?? '-') . '</td>
+                <td>' . htmlspecialchars($item['penyedia'] ?? '-') . '</td>
+                <td class="text-right">' . number_format((float) ($item['nilai_kontrak'] ?? 0), 0, ',', '.') . '</td>
+                <td class="text-right">' . number_format((float) ($item['nilai_add_on'] ?? 0), 0, ',', '.') . '</td>
+                <td class="text-right"><strong>' . number_format((float) ($item['total_kontrak'] ?? 0), 0, ',', '.') . '</strong></td>
+                <td class="text-center">' . number_format($lengkap, 2, ',', '.') . '%</td>
+                <td class="text-center">' . number_format($belumSesuai, 2, ',', '.') . '%</td>
+                <td class="text-center">' . $statusBadge . '</td>
+            </tr>';
+        }
+
+        $html .= '
+        </tbody>
+    </table>
+    <div class="footer">
+        Generated by SIMAK System | Export Date: ' . date('d/m/Y H:i:s') . '
+    </div>
+</body>
+</html>';
+
+        $filename = 'simak_' . $type . '_export_' . date('Y-m-d_His') . '.html';
+
+        return $this->response
+            ->setHeader('Content-Type', 'text/html; charset=UTF-8')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($html);
+    }
+
     public function createSimakShare(int $id)
     {
         $isAjax = $this->request->isAJAX()

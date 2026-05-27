@@ -46,6 +46,21 @@
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-simak">Input Data SIMAK</button>
             </div>
         <?php endif; ?>
+        <div class="float-right mr-2">
+            <div class="btn-group">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-download mr-1"></i> Export
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="<?= site_url('admin/kontrak/simak/konstruksi/export/excel'); ?>">
+                        <i class="fas fa-file-excel mr-2 text-success"></i> Export Excel
+                    </a>
+                    <a class="dropdown-item" href="<?= site_url('admin/kontrak/simak/konstruksi/export/html'); ?>">
+                        <i class="fas fa-file-code mr-2 text-info"></i> Export HTML
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="card-body">
         <?php if (session()->getFlashdata('success')): ?>

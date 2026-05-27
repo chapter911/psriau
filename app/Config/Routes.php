@@ -84,7 +84,11 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('kontrak/syarat-umum/get', 'Admin\\Kontrak::getSyaratUmumByPaketId');
 	$routes->post('kontrak/syarat-umum/save', 'Admin\\Kontrak::saveSyaratUmumByJabatan');
 	$routes->get('kontrak/simak/konstruksi', 'Admin\\Kontrak::simakKonstruksi');
+	$routes->get('kontrak/simak/konstruksi/export/html', 'Admin\\Kontrak::exportSimakKonstruksiHtml');
+	$routes->get('kontrak/simak/konstruksi/export/excel', 'Admin\\Kontrak::exportSimakKonstruksiExcel');
 	$routes->get('kontrak/simak/konsultasi', 'Admin\\Kontrak::simakKonsultasi');
+	$routes->get('kontrak/simak/konsultasi/export/html', 'Admin\\Kontrak::exportSimakKonsultasiHtml');
+	$routes->get('kontrak/simak/konsultasi/export/excel', 'Admin\\Kontrak::exportSimakKonsultasiExcel');
 	$routes->post('kontrak/simak/konstruksi/import', 'Admin\\Kontrak::importSimak');
 	$routes->get('kontrak/simak/konstruksi/template', 'Admin\\Kontrak::exportSimakTemplate');
 	$routes->post('kontrak/simak/konstruksi/tambah', 'Admin\\Kontrak::createSimak');
