@@ -105,6 +105,52 @@
         font-weight: 500;
         margin-top: 4px;
     }
+
+    .simak-filter-bar {
+        background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+        padding: 14px 16px;
+    }
+
+    .simak-filter-bar label {
+        color: #374151;
+        font-size: 0.78rem;
+        letter-spacing: 0.02em;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+    }
+
+    .simak-filter-bar .form-control {
+        border-radius: 10px;
+        border-color: #d1d5db;
+        box-shadow: none;
+        min-height: 36px;
+    }
+
+    .simak-filter-bar .btn {
+        border-radius: 10px;
+        min-height: 36px;
+        white-space: nowrap;
+    }
+
+    .simak-filter-bar #filter-info {
+        line-height: 1.35;
+        max-width: 180px;
+    }
+
+    @media (max-width: 767.98px) {
+        .simak-filter-bar {
+            padding: 12px;
+        }
+
+        .simak-filter-bar #filter-info {
+            max-width: none;
+            text-align: left !important;
+            margin-left: 0 !important;
+        }
+    }
 </style>
 <?php if (session()->getFlashdata('success')): ?>
     <div class="alert alert-success"><?= esc((string) session()->getFlashdata('success')); ?></div>
