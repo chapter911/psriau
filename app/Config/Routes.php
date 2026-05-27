@@ -102,6 +102,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('kontrak/simak/konstruksi/(:num)', 'Admin\\Kontrak::detailSimak/$1');
 	$routes->get('kontrak/simak/konstruksi/(:num)/export/excel', 'Admin\\Kontrak::exportSimakKonstruksiDetailExcel/$1');
 	$routes->get('kontrak/simak/konstruksi/(:num)/export/html', 'Admin\\Kontrak::exportSimakKonstruksiDetailHtml/$1');
+	$routes->get('kontrak/simak/konstruksi/(:num)/export/zip', 'Admin\\Kontrak::downloadSimakKonstruksiZip/$1');
 
 	// SIMAK Jasa Konsultansi Routes
 	$routes->post('kontrak/simak/konsultasi/import', 'Admin\\Kontrak::importSimakKonsultasi');
@@ -117,6 +118,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('kontrak/simak/konsultasi/(:num)', 'Admin\\Kontrak::detailSimakKonsultasi/$1');
 	$routes->get('kontrak/simak/konsultasi/(:num)/export/excel', 'Admin\\Kontrak::exportSimakKonsultasiDetailExcel/$1');
 	$routes->get('kontrak/simak/konsultasi/(:num)/export/html', 'Admin\\Kontrak::exportSimakKonsultasiDetailHtml/$1');
+	$routes->get('kontrak/simak/konsultasi/(:num)/export/zip', 'Admin\\Kontrak::downloadSimakKonsultasiZip/$1');
 	
 	$routes->get('master/kop-surat', 'Admin\\KopSurat::index');
 	$routes->match(['get', 'post'], 'master/kop-surat/tambah', 'Admin\\KopSurat::create');

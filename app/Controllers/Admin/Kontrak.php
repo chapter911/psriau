@@ -1287,6 +1287,177 @@ class Kontrak extends BaseController
         return $this->exportSimakDetailHtml($id, 'konsultasi');
     }
 
+    public function downloadSimakKonstruksiZip(int $id)
+    {
+        return $this->downloadSimakZip($id, 'konstruksi');
+    }
+
+    public function downloadSimakKonsultasiZip(int $id)
+    {
+        return $this->downloadSimakZip($id, 'konsultasi');
+    }
+
+    private function downloadSimakZip(int $id, string $type)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $db = db_connect();
+        $tableMain = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi' : 'trn_kontrak_simak';
+        $tableVerifDok = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_verifikasi_dokumen' : 'trn_kontrak_simak_verifikasi_dokumen';
+
+        if (! $db->tableExists($tableMain) || ! $db->tableExists($tableVerifDok)) {
+            return redirect()->back()->with('error', 'Tabel SIMAK atau tabel dokumen verifikasi belum tersedia.');
+        }
+
+        $builder = $db->table($tableMain . ' s');
+        $this->applyNotDeletedWhere($builder, $tableMain);
+        $simak = $builder->where('s.id', $id)->get()->getRowArray();
+        if (! is_array($simak)) {
+            return redirect()->back()->with('error', 'Data SIMAK tidak ditemukan.');
+        }
+
+        // collect documents
+        $dokumenRows = $db->table($tableVerifDok)
+            ->select('id, row_no, file_original_name, file_relative_path, file_mime, tipe_dokumen')
+            ->where('simak_id', $id)
+            ->orderBy('row_no', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->get()->getResultArray();
+
+        if ($dokumenRows === []) {
+            return redirect()->back()->with('error', 'Tidak ada dokumen yang dapat diunduh.');
+        }
+
+        if (! class_exists('ZipArchive')) {
+            return redirect()->back()->with('error', 'Ekstensi ZIP tidak tersedia di server.');
+        }
+
+        $downloadDir = WRITEPATH . 'downloads';
+        if (! is_dir($downloadDir) && ! @mkdir($downloadDir, 0775, true) && ! is_dir($downloadDir)) {
+            return redirect()->back()->with('error', 'Folder sementara unduhan tidak dapat dibuat.');
+        }
+
+        try {
+            $randomSuffix = bin2hex(random_bytes(4));
+        } catch (\Throwable $e) {
+            $randomSuffix = (string) mt_rand(1000, 9999);
+        }
+
+        $zipTempPath = $downloadDir . DIRECTORY_SEPARATOR . 'simak_' . $type . '_' . $id . '_' . date('YmdHis') . '_' . $randomSuffix . '.zip';
+
+        $zip = new \ZipArchive();
+        $openResult = $zip->open($zipTempPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        if ($openResult !== true) {
+            return redirect()->back()->with('error', 'Gagal membuat file ZIP.');
+        }
+
+        // helper to sanitize names for file system
+        $sanitize = function (string $input) {
+            $tmp = trim($input);
+            // replace slashes and invalid chars with dashes
+            $tmp = preg_replace('/[\\\\\/\:\*\?\"\<\>\|]+/', '-', $tmp);
+            // remove control chars
+            $tmp = preg_replace('/[\x00-\x1F\x7F]/u', '', $tmp);
+            // collapse multiple non-alnum to single dash
+            $tmp = preg_replace('/[^A-Za-z0-9\-_. ]+/', '-', $tmp);
+            $tmp = preg_replace('/\s+/', ' ', $tmp);
+            $tmp = trim($tmp);
+            $tmp = trim($tmp, '.- _');
+            if ($tmp === '') {
+                return 'file';
+            }
+            // limit length
+            return mb_substr($tmp, 0, 120);
+        };
+
+        // Prepare template mapping: row_no -> section_title (tahapan) and display_no/uraian
+        $templateItems = $this->getSimakTemplateItems($type, true);
+        $rowToSection = [];
+        $rowToDisplay = [];
+        $rowToUraian = [];
+        foreach ($templateItems as $ti) {
+            $rno = (int) ($ti['row_no'] ?? 0);
+            $rowToDisplay[$rno] = trim((string) ($ti['display_no_auto'] ?? $ti['display_no'] ?? ''));
+            $rowToUraian[$rno] = trim((string) ($ti['uraian'] ?? ''));
+            $rowToSection[$rno] = trim((string) ($ti['section_title'] ?? '')); // section_title holds tahapan when available
+        }
+
+        $usedNames = [];
+        $added = 0;
+
+        foreach ($dokumenRows as $doc) {
+            $relative = trim((string) ($doc['file_relative_path'] ?? ''));
+            $original = trim((string) ($doc['file_original_name'] ?? 'dokumen'));
+            $rowNo = (int) ($doc['row_no'] ?? 0);
+
+            $displayNo = $rowToDisplay[$rowNo] ?? (string) $rowNo;
+            $uraian = $rowToUraian[$rowNo] ?? '';
+            $sectionTitle = $rowToSection[$rowNo] ?? '';
+
+            $sectionFolder = $sectionTitle !== '' ? $sanitize($sectionTitle) : $sanitize('Tahapan Lain');
+            $itemFolder = $sanitize($displayNo !== '' ? $displayNo : (string) $rowNo) . ' - ' . $sanitize($uraian !== '' ? $uraian : 'uraian');
+            $folderPath = $sectionFolder . '/' . $itemFolder;
+
+            $fileBase = $sanitize($original);
+            $ext = '';
+
+            // handle google drive links by adding a text file containing the link
+            if ($this->isAllowedGoogleDriveUrl($relative)) {
+                $linkContent = $relative . "\n";
+                $entryName = $folderPath . '/' . $fileBase . '.url.txt';
+                $counter = 1;
+                $uniqueEntry = $entryName;
+                while (isset($usedNames[$uniqueEntry])) {
+                    $uniqueEntry = $folderPath . '/' . $fileBase . '_' . $counter . '.url.txt';
+                    $counter++;
+                }
+                $usedNames[$uniqueEntry] = true;
+                $zip->addFromString($uniqueEntry, $linkContent);
+                $added++;
+                continue;
+            }
+
+            if ($relative === '') {
+                continue;
+            }
+
+            $absPath = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, ltrim($relative, '/'));
+            if (! is_file($absPath)) {
+                continue;
+            }
+
+            $ext = pathinfo($absPath, PATHINFO_EXTENSION);
+            $ext = $ext !== '' ? '.' . $ext : '';
+
+            $entryName = $folderPath . '/' . $fileBase . $ext;
+            $counter = 1;
+            $uniqueEntry = $entryName;
+            while (isset($usedNames[$uniqueEntry])) {
+                $uniqueEntry = $folderPath . '/' . $fileBase . '_' . $counter . $ext;
+                $counter++;
+            }
+            $usedNames[$uniqueEntry] = true;
+
+            if ($zip->addFile($absPath, $uniqueEntry)) {
+                $added++;
+            }
+        }
+
+        $zip->close();
+
+        if ($added === 0) {
+            @unlink($zipTempPath);
+            return redirect()->back()->with('error', 'Tidak ada file valid yang dapat dimasukkan ke ZIP.');
+        }
+
+        $safeTitle = $sanitize($simak['nomor_kontrak'] ?? ($simak['nama_paket'] ?? 'simak'));
+        $downloadName = 'simak-' . $type . '-' . $safeTitle . '-' . date('Ymd') . '.zip';
+
+        return $this->response->download($zipTempPath, null)->setFileName($downloadName);
+    }
+
     private function exportSimakDetailExcel(int $id, string $type)
     {
         if (! $this->canViewKontrak()) {

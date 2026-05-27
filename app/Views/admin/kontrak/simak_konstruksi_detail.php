@@ -325,6 +325,10 @@
                 <a class="dropdown-item" href="<?= site_url('admin/kontrak/simak/konstruksi/' . $simakId . '/export/html'); ?>">
                     <i class="fas fa-file-code mr-2 text-info"></i> Export HTML
                 </a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="<?= site_url('admin/kontrak/simak/konstruksi/' . $simakId . '/export/zip'); ?>">
+                    <i class="fas fa-file-archive mr-2 text-secondary"></i> Download Semua (ZIP)
+                </a>
             </div>
         </div>
         </div>
