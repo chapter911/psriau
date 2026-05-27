@@ -1333,18 +1333,28 @@ class Kontrak extends BaseController
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('SIMAK ' . ucfirst($type));
 
-        // Header info
+        $sheet->mergeCells('A1:G1');
+        $sheet->mergeCells('A2:G2');
+        $sheet->mergeCells('A3:G3');
+        $sheet->mergeCells('A4:G4');
+        $sheet->mergeCells('A5:G5');
         $sheet->setCellValue('A1', 'SIMAK Detail Export');
         $sheet->setCellValue('A2', 'Nomor Kontrak: ' . ($simak['nomor_kontrak'] ?? '-'));
         $sheet->setCellValue('A3', 'Nama Paket: ' . ($simak['nama_paket'] ?? '-'));
         $sheet->setCellValue('A4', 'PPK: ' . ($simak['ppk_nama'] ?? '-'));
         $sheet->setCellValue('A5', 'Export Date: ' . date('d/m/Y H:i:s'));
-        $sheet->getStyle('A1:A5')->getFont()->setBold(true);
+        $sheet->getStyle('A1:G1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A1:G1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('1F4E78');
+        $sheet->getStyle('A1:G5')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A2:G5')->getFont()->setBold(true);
 
         // Table headers
-        $headers = ['No', 'Uraian', 'Kelengkapan', 'Verifikasi KI', 'Keterangan', 'File Draft', 'File Final', 'File Path'];
+        $headers = ['No', 'Uraian', 'Kelengkapan', 'Verifikasi KI', 'Keterangan', 'File Draft', 'File Final'];
         $sheet->fromArray($headers, null, 'A7');
-        $sheet->getStyle('A7:H7')->getFont()->setBold(true);
+        $sheet->getStyle('A7:G7')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A7:G7')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('0F766E');
+        $sheet->freezePane('A8');
+        $sheet->setAutoFilter('A7:G7');
 
         // Data rows
         $rowNum = 8;
@@ -1370,16 +1380,39 @@ class Kontrak extends BaseController
             $sheet->setCellValue('C' . $rowNum, $item['kelengkapan_dokumen'] ?? '-');
             $sheet->setCellValue('D' . $rowNum, $item['verifikasi_ki'] ?? '-');
             $sheet->setCellValue('E' . $rowNum, $item['keterangan'] ?? '');
-            $sheet->setCellValue('F' . $rowNum, $draftDoc['file_original_name'] ?? '-');
-            $sheet->setCellValue('G' . $rowNum, $finalDoc['file_original_name'] ?? '-');
-            $sheet->setCellValue('H' . $rowNum, $finalDoc['file_relative_path'] ?? ($draftDoc['file_relative_path'] ?? '-'));
+            $draftUrl = $this->buildSimakDocumentFileUrl($draftDoc);
+            $finalUrl = $this->buildSimakDocumentFileUrl($finalDoc);
+
+            $sheet->setCellValue('F' . $rowNum, $draftUrl !== '' ? 'Klik Disini' : '-');
+            if ($draftUrl !== '') {
+                $sheet->getCell('F' . $rowNum)->getHyperlink()->setUrl($draftUrl);
+                $sheet->getStyle('F' . $rowNum)->getFont()->setUnderline(true)->getColor()->setRGB('0563C1');
+            }
+
+            $sheet->setCellValue('G' . $rowNum, $finalUrl !== '' ? 'Klik Disini' : '-');
+            if ($finalUrl !== '') {
+                $sheet->getCell('G' . $rowNum)->getHyperlink()->setUrl($finalUrl);
+                $sheet->getStyle('G' . $rowNum)->getFont()->setUnderline(true)->getColor()->setRGB('0563C1');
+            }
 
             $rowNum++;
         }
 
         // Auto size columns
-        foreach (range('A', 'H') as $column) {
+        foreach (range('A', 'G') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $sheet->getStyle('A7:G' . ($rowNum - 1))->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheet->getStyle('A7:G' . ($rowNum - 1))->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP);
+        $sheet->getStyle('B8:E' . ($rowNum - 1))->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A8:A' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('C8:D' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('F8:G' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        for ($currentRow = 8; $currentRow < $rowNum; $currentRow++) {
+            if (($currentRow - 8) % 2 === 0) {
+                $sheet->getStyle('A' . $currentRow . ':G' . $currentRow)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('F8FAFC');
+            }
         }
 
         $filename = 'simak_' . $type . '_detail_' . $id . '_' . date('Y-m-d_His') . '.xlsx';
@@ -1443,45 +1476,63 @@ class Kontrak extends BaseController
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIMAK ' . ucfirst($type) . ' Detail - ' . htmlspecialchars($simak['nomor_kontrak'] ?? '-') . '</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
-        .header-info { margin-bottom: 20px; color: #666; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #007bff; color: white; position: sticky; top: 0; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
+        :root { --bg: #f3f7fb; --card: #ffffff; --line: #dbe4ee; --text: #183153; --muted: #617187; --accent: #1f4e78; --accent-2: #0f766e; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: linear-gradient(180deg, #eef4fa 0%, var(--bg) 100%); color: var(--text); }
+        .page { max-width: 1400px; margin: 0 auto; padding: 28px 22px 40px; }
+        .hero { background: linear-gradient(135deg, var(--accent) 0%, #224b8f 45%, var(--accent-2) 100%); color: #fff; border-radius: 18px; padding: 22px 24px; box-shadow: 0 18px 40px rgba(24, 49, 83, 0.18); }
+        .hero h1 { margin: 0 0 8px; font-size: 26px; }
+        .hero p { margin: 0; opacity: 0.92; }
+        .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 18px 0 24px; }
+        .meta-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04); }
+        .meta-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; font-weight: 700; }
+        .meta-value { font-size: 14px; font-weight: 700; color: var(--text); word-break: break-word; }
+        .table-wrap { background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06); }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        thead th { background: linear-gradient(135deg, var(--accent) 0%, #24528f 100%); color: #fff; padding: 12px 10px; text-align: left; position: sticky; top: 0; z-index: 1; }
+        td { border-top: 1px solid var(--line); padding: 10px; vertical-align: top; }
+        tbody tr:nth-child(even) { background-color: #f8fbff; }
+        tbody tr:hover { background-color: #eef6ff; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-        .badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; display: inline-block; }
-        .badge-success { background-color: #28a745; color: white; }
-        .badge-warning { background-color: #ffc107; color: #333; }
-        .badge-danger { background-color: #dc3545; color: white; }
-        .badge-info { background-color: #17a2b8; color: white; }
-        .footer { margin-top: 30px; text-align: center; color: #999; font-size: 11px; }
-        @media print { body { margin: 0; } }
+        .badge { padding: 4px 10px; border-radius: 999px; font-size: 10px; display: inline-block; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+        .badge-success { background-color: #e8f5e9; color: #166534; }
+        .badge-warning { background-color: #fef3c7; color: #92400e; }
+        .badge-danger { background-color: #fee2e2; color: #991b1b; }
+        .badge-info { background-color: #dbeafe; color: #1d4ed8; }
+        a.file-link { color: #0f766e; text-decoration: none; font-weight: 700; }
+        a.file-link:hover { text-decoration: underline; }
+        .footer { margin-top: 20px; text-align: center; color: var(--muted); font-size: 11px; }
+        @media print { body { background: #fff; } .page { padding: 0; } .hero, .meta-card, .table-wrap { box-shadow: none; } }
     </style>
 </head>
 <body>
-    <h1>SIMAK ' . ucfirst($type) . ' - Detail Verifikasi</h1>
-    <div class="header-info">
-        <p><strong>Nomor Kontrak:</strong> ' . htmlspecialchars($simak['nomor_kontrak'] ?? '-') . '</p>
-        <p><strong>Nama Paket:</strong> ' . htmlspecialchars($simak['nama_paket'] ?? '-') . '</p>
-        <p><strong>PPK:</strong> ' . htmlspecialchars($simak['ppk_nama'] ?? '-') . ' (NIP: ' . htmlspecialchars($simak['ppk_nip'] ?? '-') . ')</p>
-        <p><strong>Tanggal Export:</strong> ' . date('d/m/Y H:i:s') . '</p>
-        <p><strong>Total Items:</strong> ' . count($templateItems) . ' poin</p>
-    </div>
-    <table>
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Uraian</th>
-                <th>Kelengkapan</th>
-                <th>Verifikasi</th>
-                <th>Keterangan</th>
-                <th>File</th>
-            </tr>
-        </thead>
-        <tbody>';
+    <div class="page">
+        <div class="hero">
+            <h1>SIMAK ' . ucfirst($type) . ' - Detail Verifikasi</h1>
+            <p>Ringkasan data, status verifikasi, dan lampiran dokumen dalam format yang lebih mudah dibaca.</p>
+        </div>
+        <div class="meta">
+            <div class="meta-card"><div class="meta-label">Nomor Kontrak</div><div class="meta-value">' . htmlspecialchars($simak['nomor_kontrak'] ?? '-') . '</div></div>
+            <div class="meta-card"><div class="meta-label">Nama Paket</div><div class="meta-value">' . htmlspecialchars($simak['nama_paket'] ?? '-') . '</div></div>
+            <div class="meta-card"><div class="meta-label">PPK</div><div class="meta-value">' . htmlspecialchars($simak['ppk_nama'] ?? '-') . ' (NIP: ' . htmlspecialchars($simak['ppk_nip'] ?? '-') . ')</div></div>
+            <div class="meta-card"><div class="meta-label">Tanggal Export</div><div class="meta-value">' . date('d/m/Y H:i:s') . '</div></div>
+            <div class="meta-card"><div class="meta-label">Total Items</div><div class="meta-value">' . count($templateItems) . ' poin</div></div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">No</th>
+                        <th>Uraian</th>
+                        <th style="width: 120px;">Kelengkapan</th>
+                        <th style="width: 130px;">Verifikasi</th>
+                        <th>Keterangan</th>
+                        <th style="width: 140px;">File Draft</th>
+                        <th style="width: 140px;">File Final</th>
+                    </tr>
+                </thead>
+                <tbody>';
 
         $no = 1;
         foreach ($templateItems as $item) {
@@ -1500,15 +1551,6 @@ class Kontrak extends BaseController
                 $badgeClass = 'badge-danger';
             }
 
-            // File names
-            $fileNames = [];
-            foreach ($dokumens as $doc) {
-                if (! empty($doc['file_original_name'])) {
-                    $fileNames[] = htmlspecialchars($doc['file_original_name']);
-                }
-            }
-            $fileDisplay = ! empty($fileNames) ? implode(', ', $fileNames) : '-';
-
             $html .= '
             <tr>
                 <td class="text-center">' . $no++ . '</td>
@@ -1516,15 +1558,18 @@ class Kontrak extends BaseController
                 <td class="text-center">' . htmlspecialchars($kelengkapan) . '</td>
                 <td class="text-center"><span class="badge ' . $badgeClass . '">' . htmlspecialchars($verifikasiKi) . '</span></td>
                 <td>' . htmlspecialchars($item['keterangan'] ?? '-') . '</td>
-                <td>' . $fileDisplay . '</td>
+                <td class="text-center">' . $this->renderSimakDocumentLinkHtml($draftDoc) . '</td>
+                <td class="text-center">' . $this->renderSimakDocumentLinkHtml($finalDoc) . '</td>
             </tr>';
         }
 
         $html .= '
-        </tbody>
-    </table>
-    <div class="footer">
-        Generated by SIMAK System | Export Date: ' . date('d/m/Y H:i:s') . '
+                </tbody>
+            </table>
+        </div>
+        <div class="footer">
+            Generated by SIMAK System | Export Date: ' . date('d/m/Y H:i:s') . '
+        </div>
     </div>
 </body>
 </html>';
@@ -1535,6 +1580,37 @@ class Kontrak extends BaseController
             ->setHeader('Content-Type', 'text/html; charset=UTF-8')
             ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->setBody($html);
+    }
+
+    private function buildSimakDocumentFileUrl(?array $doc): string
+    {
+        if (! is_array($doc)) {
+            return '';
+        }
+
+        $relativePath = trim((string) ($doc['file_relative_path'] ?? ''));
+        if ($relativePath === '') {
+            return '';
+        }
+
+        if (function_exists('media_url')) {
+            return media_url($relativePath);
+        }
+
+        return base_url(ltrim($relativePath, '/'));
+    }
+
+    private function renderSimakDocumentLinkHtml(?array $doc): string
+    {
+        $url = $this->buildSimakDocumentFileUrl($doc);
+        if ($url === '') {
+            return '-';
+        }
+
+        $label = 'Klik Disini';
+        $title = trim((string) ($doc['file_original_name'] ?? $label));
+
+        return '<a class="file-link" href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer" title="' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '">' . $label . '</a>';
     }
 
     public function createSimakShare(int $id)
