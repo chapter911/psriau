@@ -208,8 +208,8 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h2 class="card-title mb-0">Kelengkapan Dokumen dan Verifikasi Dit. KI</h2>
         <?php
-            $simakId = (int) ($simakItem['id'] ?? 0);
-            $nomorKontrak = esc((string) ($simakItem['nomor_kontrak'] ?? '-'));
+            $simakId = (int) ($item['id'] ?? 0);
+            $nomorKontrak = esc((string) ($item['nomor_kontrak'] ?? '-'));
         ?>
         <div class="btn-group">
             <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
