@@ -144,6 +144,36 @@
         max-width: 180px;
     }
 
+    .simak-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        margin-left: auto;
+    }
+
+    .simak-header-actions .btn-group,
+    .simak-header-actions .btn {
+        margin: 0;
+    }
+
+    .simak-export-dropdown .dropdown-toggle {
+        border-radius: 10px;
+    }
+
+    .simak-export-dropdown .dropdown-menu {
+        min-width: 200px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+        border-radius: 12px;
+    }
+
+    .simak-export-dropdown .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
     @media (max-width: 767.98px) {
         .simak-filter-bar {
             padding: 12px;
@@ -153,6 +183,12 @@
             max-width: none;
             text-align: left !important;
             margin-left: 0 !important;
+        }
+
+        .simak-header-actions {
+            width: 100%;
+            justify-content: flex-start;
+            margin-left: 0;
         }
     }
 </style>
@@ -275,13 +311,14 @@
     }
 ?>
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header d-flex flex-wrap align-items-center">
         <h2 class="card-title mb-0">Kelengkapan Dokumen dan Verifikasi Dit. KI</h2>
         <?php
             $simakId = (int) ($item['id'] ?? 0);
             $nomorKontrak = esc((string) ($item['nomor_kontrak'] ?? '-'));
         ?>
-        <div class="btn-group">
+        <div class="simak-header-actions">
+        <div class="btn-group simak-export-dropdown">
             <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <i class="fas fa-download mr-1"></i> Export
             </button>
@@ -294,7 +331,6 @@
                 </a>
             </div>
         </div>
-        <div class="ml-auto">
             <button type="button" class="btn btn-outline-secondary btn-sm js-toggle-simak-columns" data-state="collapsed">
                 Tampilkan Kolom Detail
             </button>
