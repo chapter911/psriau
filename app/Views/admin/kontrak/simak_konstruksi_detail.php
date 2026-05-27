@@ -185,6 +185,23 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h2 class="card-title mb-0">Kelengkapan Dokumen dan Verifikasi Dit. KI</h2>
+        <?php
+            $simakId = (int) ($simakItem['id'] ?? 0);
+            $nomorKontrak = esc((string) ($simakItem['nomor_kontrak'] ?? '-'));
+        ?>
+        <div class="btn-group">
+            <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-download mr-1"></i> Export
+            </button>
+            <div class="dropdown-menu dropdown-menu-right">
+                <a class="dropdown-item" href="<?= site_url('admin/kontrak/simak/konstruksi/' . $simakId . '/export/excel'); ?>">
+                    <i class="fas fa-file-excel mr-2 text-success"></i> Export Excel
+                </a>
+                <a class="dropdown-item" href="<?= site_url('admin/kontrak/simak/konstruksi/' . $simakId . '/export/html'); ?>">
+                    <i class="fas fa-file-code mr-2 text-info"></i> Export HTML
+                </a>
+            </div>
+        </div>
     </div>
     <div class="card-body">
             <ul class="nav nav-tabs" id="simakSectionTabs" role="tablist">

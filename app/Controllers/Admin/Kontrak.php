@@ -1267,6 +1267,276 @@ class Kontrak extends BaseController
             ->setBody($html);
     }
 
+    public function exportSimakKonstruksiDetailExcel(int $id)
+    {
+        return $this->exportSimakDetailExcel($id, 'konstruksi');
+    }
+
+    public function exportSimakKonsultasiDetailExcel(int $id)
+    {
+        return $this->exportSimakDetailExcel($id, 'konsultasi');
+    }
+
+    public function exportSimakKonstruksiDetailHtml(int $id)
+    {
+        return $this->exportSimakDetailHtml($id, 'konstruksi');
+    }
+
+    public function exportSimakKonsultasiDetailHtml(int $id)
+    {
+        return $this->exportSimakDetailHtml($id, 'konsultasi');
+    }
+
+    private function exportSimakDetailExcel(int $id, string $type)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $db = db_connect();
+        $tableMain = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi' : 'trn_kontrak_simak';
+        $tableVerifDok = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_verifikasi_dokumen' : 'trn_kontrak_simak_verifikasi_dokumen';
+
+        if (! $db->tableExists($tableMain)) {
+            return redirect()->back()->with('error', 'Tabel SIMAK belum tersedia.');
+        }
+
+        // Get main item
+        $builder = $db->table($tableMain . ' s');
+        $this->applyNotDeletedWhere($builder, $tableMain);
+        $simak = $builder->where('s.id', $id)->get()->getRowArray();
+
+        if (! is_array($simak)) {
+            return redirect()->back()->with('error', 'Data SIMAK tidak ditemukan.');
+        }
+
+        // Get template items (uraian)
+        $templateItems = $type === 'konsultasi'
+            ? $this->getSimakKonsultasiTemplateFromMaster(false)
+            : $this->getSimakKonstruksiTemplateFromMaster(false);
+
+        // Get verification documents
+        $dokumenBuilder = $db->table($tableVerifDok);
+        $this->applyNotDeletedWhere($dokumenBuilder, $tableVerifDok);
+        $dokumenRows = $dokumenBuilder->where('simak_id', $id)->get()->getResultArray();
+        $dokumenByRow = [];
+        foreach ($dokumenRows as $doc) {
+            $rowNo = (int) ($doc['row_no'] ?? 0);
+            if (! isset($dokumenByRow[$rowNo])) {
+                $dokumenByRow[$rowNo] = [];
+            }
+            $dokumenByRow[$rowNo][] = $doc;
+        }
+
+        // Build spreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('SIMAK ' . ucfirst($type));
+
+        // Header info
+        $sheet->setCellValue('A1', 'SIMAK Detail Export');
+        $sheet->setCellValue('A2', 'Nomor Kontrak: ' . ($simak['nomor_kontrak'] ?? '-'));
+        $sheet->setCellValue('A3', 'Nama Paket: ' . ($simak['nama_paket'] ?? '-'));
+        $sheet->setCellValue('A4', 'PPK: ' . ($simak['ppk_nama'] ?? '-'));
+        $sheet->setCellValue('A5', 'Export Date: ' . date('d/m/Y H:i:s'));
+        $sheet->getStyle('A1:A5')->getFont()->setBold(true);
+
+        // Table headers
+        $headers = ['No', 'Uraian', 'Kelengkapan', 'Verifikasi KI', 'Keterangan', 'File Draft', 'File Final', 'File Path'];
+        $sheet->fromArray($headers, null, 'A7');
+        $sheet->getStyle('A7:H7')->getFont()->setBold(true);
+
+        // Data rows
+        $rowNum = 8;
+        $no = 1;
+        foreach ($templateItems as $item) {
+            $rowNo = (int) ($item['row_no'] ?? 0);
+            $dokumens = $dokumenByRow[$rowNo] ?? [];
+
+            // Find draft and final documents
+            $draftDoc = null;
+            $finalDoc = null;
+            foreach ($dokumens as $doc) {
+                $tipe = strtolower((string) ($doc['tipe_dokumen'] ?? ''));
+                if ($tipe === 'draft' || $tipe === 'draft_upload') {
+                    $draftDoc = $doc;
+                } elseif ($tipe === 'final' || $tipe === 'final_upload') {
+                    $finalDoc = $doc;
+                }
+            }
+
+            $sheet->setCellValue('A' . $rowNum, $no++);
+            $sheet->setCellValue('B' . $rowNum, $item['uraian'] ?? '');
+            $sheet->setCellValue('C' . $rowNum, $item['kelengkapan_dokumen'] ?? '-');
+            $sheet->setCellValue('D' . $rowNum, $item['verifikasi_ki'] ?? '-');
+            $sheet->setCellValue('E' . $rowNum, $item['keterangan'] ?? '');
+            $sheet->setCellValue('F' . $rowNum, $draftDoc['file_original_name'] ?? '-');
+            $sheet->setCellValue('G' . $rowNum, $finalDoc['file_original_name'] ?? '-');
+            $sheet->setCellValue('H' . $rowNum, $finalDoc['file_relative_path'] ?? ($draftDoc['file_relative_path'] ?? '-'));
+
+            $rowNum++;
+        }
+
+        // Auto size columns
+        foreach (range('A', 'H') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $filename = 'simak_' . $type . '_detail_' . $id . '_' . date('Y-m-d_His') . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        ob_start();
+        $writer->save('php://output');
+        $binary = ob_get_clean();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($binary === false ? '' : $binary);
+    }
+
+    private function exportSimakDetailHtml(int $id, string $type)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $db = db_connect();
+        $tableMain = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi' : 'trn_kontrak_simak';
+        $tableVerifDok = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_verifikasi_dokumen' : 'trn_kontrak_simak_verifikasi_dokumen';
+
+        if (! $db->tableExists($tableMain)) {
+            return redirect()->back()->with('error', 'Tabel SIMAK belum tersedia.');
+        }
+
+        // Get main item
+        $builder = $db->table($tableMain . ' s');
+        $this->applyNotDeletedWhere($builder, $tableMain);
+        $simak = $builder->where('s.id', $id)->get()->getRowArray();
+
+        if (! is_array($simak)) {
+            return redirect()->back()->with('error', 'Data SIMAK tidak ditemukan.');
+        }
+
+        // Get template items
+        $templateItems = $type === 'konsultasi'
+            ? $this->getSimakKonsultasiTemplateFromMaster(false)
+            : $this->getSimakKonstruksiTemplateFromMaster(false);
+
+        // Get verification documents
+        $dokumenBuilder = $db->table($tableVerifDok);
+        $this->applyNotDeletedWhere($dokumenBuilder, $tableVerifDok);
+        $dokumenRows = $dokumenBuilder->where('simak_id', $id)->get()->getResultArray();
+        $dokumenByRow = [];
+        foreach ($dokumenRows as $doc) {
+            $rowNo = (int) ($doc['row_no'] ?? 0);
+            if (! isset($dokumenByRow[$rowNo])) {
+                $dokumenByRow[$rowNo] = [];
+            }
+            $dokumenByRow[$rowNo][] = $doc;
+        }
+
+        // Build HTML
+        $html = '<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMAK ' . ucfirst($type) . ' Detail - ' . htmlspecialchars($simak['nomor_kontrak'] ?? '-') . '</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        .header-info { margin-bottom: 20px; color: #666; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #007bff; color: white; position: sticky; top: 0; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; display: inline-block; }
+        .badge-success { background-color: #28a745; color: white; }
+        .badge-warning { background-color: #ffc107; color: #333; }
+        .badge-danger { background-color: #dc3545; color: white; }
+        .badge-info { background-color: #17a2b8; color: white; }
+        .footer { margin-top: 30px; text-align: center; color: #999; font-size: 11px; }
+        @media print { body { margin: 0; } }
+    </style>
+</head>
+<body>
+    <h1>SIMAK ' . ucfirst($type) . ' - Detail Verifikasi</h1>
+    <div class="header-info">
+        <p><strong>Nomor Kontrak:</strong> ' . htmlspecialchars($simak['nomor_kontrak'] ?? '-') . '</p>
+        <p><strong>Nama Paket:</strong> ' . htmlspecialchars($simak['nama_paket'] ?? '-') . '</p>
+        <p><strong>PPK:</strong> ' . htmlspecialchars($simak['ppk_nama'] ?? '-') . ' (NIP: ' . htmlspecialchars($simak['ppk_nip'] ?? '-') . ')</p>
+        <p><strong>Tanggal Export:</strong> ' . date('d/m/Y H:i:s') . '</p>
+        <p><strong>Total Items:</strong> ' . count($templateItems) . ' poin</p>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Uraian</th>
+                <th>Kelengkapan</th>
+                <th>Verifikasi</th>
+                <th>Keterangan</th>
+                <th>File</th>
+            </tr>
+        </thead>
+        <tbody>';
+
+        $no = 1;
+        foreach ($templateItems as $item) {
+            $rowNo = (int) ($item['row_no'] ?? 0);
+            $dokumens = $dokumenByRow[$rowNo] ?? [];
+            $verifikasiKi = $item['verifikasi_ki'] ?? '-';
+            $kelengkapan = $item['kelengkapan_dokumen'] ?? '-';
+
+            // Badge class
+            $badgeClass = 'badge-info';
+            if ($verifikasiKi === 'sesuai') {
+                $badgeClass = 'badge-success';
+            } elseif ($verifikasiKi === 'belum_sesuai') {
+                $badgeClass = 'badge-warning';
+            } elseif ($verifikasiKi === 'belum_verifikasi' || $kelengkapan === 'Belum Ada') {
+                $badgeClass = 'badge-danger';
+            }
+
+            // File names
+            $fileNames = [];
+            foreach ($dokumens as $doc) {
+                if (! empty($doc['file_original_name'])) {
+                    $fileNames[] = htmlspecialchars($doc['file_original_name']);
+                }
+            }
+            $fileDisplay = ! empty($fileNames) ? implode(', ', $fileNames) : '-';
+
+            $html .= '
+            <tr>
+                <td class="text-center">' . $no++ . '</td>
+                <td>' . htmlspecialchars($item['uraian'] ?? '-') . '</td>
+                <td class="text-center">' . htmlspecialchars($kelengkapan) . '</td>
+                <td class="text-center"><span class="badge ' . $badgeClass . '">' . htmlspecialchars($verifikasiKi) . '</span></td>
+                <td>' . htmlspecialchars($item['keterangan'] ?? '-') . '</td>
+                <td>' . $fileDisplay . '</td>
+            </tr>';
+        }
+
+        $html .= '
+        </tbody>
+    </table>
+    <div class="footer">
+        Generated by SIMAK System | Export Date: ' . date('d/m/Y H:i:s') . '
+    </div>
+</body>
+</html>';
+
+        $filename = 'simak_' . $type . '_detail_' . $id . '_' . date('Y-m-d_His') . '.html';
+
+        return $this->response
+            ->setHeader('Content-Type', 'text/html; charset=UTF-8')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($html);
+    }
+
     public function createSimakShare(int $id)
     {
         $isAjax = $this->request->isAJAX()
