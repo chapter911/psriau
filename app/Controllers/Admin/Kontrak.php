@@ -1345,36 +1345,43 @@ class Kontrak extends BaseController
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('SIMAK ' . ucfirst($type));
 
-        $sheet->mergeCells('A1:G1');
-        $sheet->mergeCells('A2:G2');
-        $sheet->mergeCells('A3:G3');
-        $sheet->mergeCells('A4:G4');
-        $sheet->mergeCells('A5:G5');
+        $sheet->mergeCells('A1:I1');
+        $sheet->mergeCells('A2:I2');
+        $sheet->mergeCells('A3:I3');
+        $sheet->mergeCells('A4:I4');
+        $sheet->mergeCells('A5:I5');
+        $sheet->mergeCells('A6:I6');
+        $sheet->mergeCells('A7:I7');
         $sheet->setCellValue('A1', 'SIMAK Detail Export');
-        $sheet->setCellValue('A2', 'Nomor Kontrak: ' . ($simak['nomor_kontrak'] ?? '-'));
-        $sheet->setCellValue('A3', 'Nama Paket: ' . ($simak['nama_paket'] ?? '-'));
-        $sheet->setCellValue('A4', 'PPK: ' . ($simak['ppk_nama'] ?? '-'));
-        $sheet->setCellValue('A5', 'Export Date: ' . date('d/m/Y H:i:s'));
-        $sheet->getStyle('A1:G1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB('FFFFFF');
-        $sheet->getStyle('A1:G1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('1F4E78');
-        $sheet->getStyle('A1:G5')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A2:G5')->getFont()->setBold(true);
+        $sheet->setCellValue('A2', 'Jenis SIMAK: ' . ucfirst($type));
+        $sheet->setCellValue('A3', 'Nomor Kontrak: ' . ($simak['nomor_kontrak'] ?? '-'));
+        $sheet->setCellValue('A4', 'Nama Paket: ' . ($simak['nama_paket'] ?? '-'));
+        $sheet->setCellValue('A5', 'PPK: ' . ($simak['ppk_nama'] ?? '-'));
+        $sheet->setCellValue('A6', 'Sumber Data: Verifikasi utama, dokumen, dan share tersembunyi');
+        $sheet->setCellValue('A7', 'Export Date: ' . date('d/m/Y H:i:s'));
+        $sheet->getStyle('A1:I1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A1:I1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('1F4E78');
+        $sheet->getStyle('A2:I7')->getFont()->setBold(true);
+        $sheet->getStyle('A1:I7')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
 
         // Table headers
         $headers = ['No', 'Uraian', 'Kelengkapan', 'Verifikasi Draft', 'Verifikasi Final', 'Keterangan', 'PIC', 'File Draft', 'File Final'];
-        $sheet->fromArray($headers, null, 'A7');
-        $sheet->getStyle('A7:I7')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
-        $sheet->getStyle('A7:I7')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('0F766E');
-        $sheet->freezePane('A8');
-        $sheet->setAutoFilter('A7:I7');
+        $sheet->fromArray($headers, null, 'A9');
+        $sheet->getStyle('A9:I9')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A9:I9')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('0F766E');
+        $sheet->freezePane('A10');
+        $sheet->setAutoFilter('A9:I9');
 
         // Data rows
-        $rowNum = 8;
-        $no = 1;
+        $rowNum = 10;
         foreach ($templateItems as $item) {
             $rowNo = (int) ($item['row_no'] ?? 0);
             $dokumens = $dokumenByRow[$rowNo] ?? [];
             $existing = $verifikasiByRow[$rowNo] ?? [];
+            $displayNo = trim((string) ($item['display_no_auto'] ?? $item['display_no'] ?? ''));
+            if ($displayNo === '') {
+                $displayNo = (string) ($rowNo > 0 ? $rowNo : '');
+            }
 
             // Find draft and final documents
             $draftDoc = null;
@@ -1398,7 +1405,7 @@ class Kontrak extends BaseController
             $keterangan = trim((string) ($existing['keterangan'] ?? ($draftDoc['keterangan'] ?? ($finalDoc['keterangan'] ?? ''))));
             $pic = trim((string) ($existing['pic'] ?? ($draftDoc['pic'] ?? ($finalDoc['pic'] ?? ''))));
 
-            $sheet->setCellValue('A' . $rowNum, $no++);
+            $sheet->setCellValue('A' . $rowNum, $displayNo);
             $sheet->setCellValue('B' . $rowNum, $item['uraian'] ?? '');
             $sheet->setCellValue('C' . $rowNum, $kelengkapan !== '' ? $kelengkapan : '-');
             $sheet->setCellValue('D' . $rowNum, $verifikasiDraft !== '' ? $verifikasiDraft : '-');
@@ -1432,14 +1439,14 @@ class Kontrak extends BaseController
         $sheet->getColumnDimension('F')->setWidth(28);
         $sheet->getColumnDimension('G')->setWidth(22);
 
-        $sheet->getStyle('A7:I' . ($rowNum - 1))->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheet->getStyle('A7:I' . ($rowNum - 1))->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP);
-        $sheet->getStyle('B8:F' . ($rowNum - 1))->getAlignment()->setWrapText(true);
-        $sheet->getStyle('A8:A' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('C8:E' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('H8:I' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        for ($currentRow = 8; $currentRow < $rowNum; $currentRow++) {
-            if (($currentRow - 8) % 2 === 0) {
+        $sheet->getStyle('A9:I' . ($rowNum - 1))->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheet->getStyle('A9:I' . ($rowNum - 1))->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP);
+        $sheet->getStyle('B10:F' . ($rowNum - 1))->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A10:A' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('C10:E' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('H10:I' . ($rowNum - 1))->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        for ($currentRow = 10; $currentRow < $rowNum; $currentRow++) {
+            if (($currentRow - 10) % 2 === 0) {
                 $sheet->getStyle('A' . $currentRow . ':I' . $currentRow)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('F8FAFC');
             }
         }
@@ -1554,22 +1561,24 @@ class Kontrak extends BaseController
             <p>Ringkasan data, status verifikasi, dan lampiran dokumen dalam format yang lebih mudah dibaca.</p>
         </div>
         <div class="meta">
+            <div class="meta-card"><div class="meta-label">Jenis SIMAK</div><div class="meta-value">' . ucfirst($type) . '</div></div>
             <div class="meta-card"><div class="meta-label">Nomor Kontrak</div><div class="meta-value">' . htmlspecialchars($simak['nomor_kontrak'] ?? '-') . '</div></div>
             <div class="meta-card"><div class="meta-label">Nama Paket</div><div class="meta-value">' . htmlspecialchars($simak['nama_paket'] ?? '-') . '</div></div>
             <div class="meta-card"><div class="meta-label">PPK</div><div class="meta-value">' . htmlspecialchars($simak['ppk_nama'] ?? '-') . ' (NIP: ' . htmlspecialchars($simak['ppk_nip'] ?? '-') . ')</div></div>
-            <div class="meta-card"><div class="meta-label">Tanggal Export</div><div class="meta-value">' . date('d/m/Y H:i:s') . '</div></div>
             <div class="meta-card"><div class="meta-label">Total Items</div><div class="meta-value">' . count($templateItems) . ' poin</div></div>
+            <div class="meta-card"><div class="meta-label">Sumber Data</div><div class="meta-value">Verifikasi utama, dokumen, dan share tersembunyi</div></div>
+            <div class="meta-card"><div class="meta-label">Tanggal Export</div><div class="meta-value">' . date('d/m/Y H:i:s') . '</div></div>
         </div>
         <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 54px;">No</th>
-                        <th style="width: 300px;">Uraian</th>
+                        <th style="width: 70px;">No</th>
+                        <th style="width: 240px;">Uraian</th>
                         <th style="width: 120px;">Kelengkapan</th>
                         <th style="width: 130px;">Verifikasi Draft</th>
                         <th style="width: 130px;">Verifikasi Final</th>
-                        <th style="width: 220px;">Keterangan</th>
+                        <th style="width: 240px;">Keterangan</th>
                         <th style="width: 140px;">PIC</th>
                         <th style="width: 120px;">File Draft</th>
                         <th style="width: 120px;">File Final</th>
@@ -1609,7 +1618,7 @@ class Kontrak extends BaseController
 
             $html .= '
             <tr>
-                <td class="text-center">' . $no++ . '</td>
+                <td class="text-center">' . htmlspecialchars($displayNo !== '' ? $displayNo : '-') . '</td>
                 <td>' . htmlspecialchars($item['uraian'] ?? '-') . '</td>
                 <td class="text-center">' . htmlspecialchars($kelengkapan !== '' ? $kelengkapan : '-') . '</td>
                 <td class="text-center"><span class="badge ' . ($verifikasiDraft === 'sesuai' ? 'badge-success' : ($verifikasiDraft === 'tidak_sesuai' ? 'badge-warning' : 'badge-info')) . '">' . htmlspecialchars($verifikasiDraft !== '' ? $verifikasiDraft : '-') . '</span></td>
