@@ -30,6 +30,67 @@ if ($pelaksanaSignerLeft === [] && is_array($creatorPegawai)) {
 // 3 executor → 3 kolom tanda tangan
 // <3 executor → 2 kolom (kiri + kanan kosong), Diketahui di bawah
 $isThreeExe = !empty($pelaksanaSignerExtra) && !empty(trim((string) ($pelaksanaSignerExtra['nama'] ?? '')));
+
+$resolvePhotoSrc = static function ($photo): string {
+    $candidates = [];
+
+    if (is_array($photo)) {
+        foreach (['data_uri', 'src', 'url', 'path', 'file_path'] as $key) {
+            $value = trim((string) ($photo[$key] ?? ''));
+            if ($value !== '') {
+                $candidates[] = $value;
+            }
+        }
+    } elseif (is_string($photo)) {
+        $value = trim($photo);
+        if ($value !== '') {
+            $candidates[] = $value;
+        }
+    }
+
+    foreach ($candidates as $candidate) {
+        if (preg_match('#^(data:|https?://|//)#i', $candidate)) {
+            return $candidate;
+        }
+
+        $pathCandidates = [$candidate];
+        $trimmedCandidate = ltrim($candidate, '/\\');
+        $pathCandidates[] = $trimmedCandidate;
+
+        foreach (['FCPATH', 'WRITEPATH', 'ROOTPATH'] as $rootConstant) {
+            if (defined($rootConstant)) {
+                $pathCandidates[] = rtrim(constant($rootConstant), '/\\') . DIRECTORY_SEPARATOR . $trimmedCandidate;
+            }
+        }
+
+        foreach (array_values(array_unique($pathCandidates)) as $pathCandidate) {
+            if (! is_file($pathCandidate)) {
+                continue;
+            }
+
+            $binary = @file_get_contents($pathCandidate);
+            if ($binary === false) {
+                continue;
+            }
+
+            $mimeType = function_exists('mime_content_type') ? (string) @mime_content_type($pathCandidate) : '';
+            if ($mimeType === '' && function_exists('finfo_open')) {
+                $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+                if ($finfo !== false) {
+                    $mimeType = (string) @finfo_file($finfo, $pathCandidate);
+                    @finfo_close($finfo);
+                }
+            }
+            if ($mimeType === '') {
+                $mimeType = 'image/jpeg';
+            }
+
+            return 'data:' . $mimeType . ';base64,' . base64_encode($binary);
+        }
+    }
+
+    return '';
+};
 ?>
 <!DOCTYPE html>
 <html>
@@ -86,17 +147,22 @@ body {
 .pelaksana-key { display: inline-block; width: 52px; flex-shrink: 0; }
 
 /* ── LAPORAN HASIL: 1 KOTAK BESAR (NO ROW DIVIDERS) ── */
-.lh-wrapper {
+.lh-box {
+    width: 100%;
+    border-collapse: collapse;
     border: 1px solid #000;
-    border-top: none;
     margin-top: -1px;
+    page-break-inside: auto;
+}
+.lh-box td {
+    padding: 5px 6px;
+    vertical-align: top;
 }
 .lh-title {
-    border-top: 1px solid #000;
-    padding: 5px 6px;
     font-weight: bold;
+    margin-bottom: 5px;
 }
-.lh-full { padding: 5px 6px; }
+.lh-full { padding: 0; }
 .lh-full p { margin: 0 0 4px 0; }
 .lh-full ol, .lh-full ul { margin: 0 0 4px 0; padding-left: 20px; }
 .lh-full li { margin: 0 0 3px 0; }
@@ -112,6 +178,11 @@ body {
 /* 3-kolom: executor 1 | executor 2 | executor 3 */
 .ttd-grid-3 { width: 100%; border-collapse: collapse; margin-top: 8px; }
 .ttd-grid-3 td { width: 33.33%; vertical-align: top; text-align: center; padding: 0 6px; }
+
+.ttd-grid-3 .ttd-known-cell {
+    padding-top: 28px;
+    text-align: left;
+}
 
 /* 2-kolom: executor 1 | executor 2 (extra spacer) */
 .ttd-grid-2 { width: 100%; border-collapse: collapse; margin-top: 8px; }
@@ -206,14 +277,18 @@ body {
 
 <!-- Laporan Hasil Perjalanan Dinas — 1 KOTAK BESAR -->
 <?php $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? '')); ?>
-<div class="lh-wrapper">
-    <div class="lh-title">Laporan Hasil Perjalanan Dinas</div>
-    <?php if ($laporanHasilRaw !== ''): ?>
-        <div class="lh-full"><?= $laporanHasilRaw; ?></div>
-    <?php else: ?>
-        <div class="lh-full">&nbsp;</div>
-    <?php endif; ?>
-</div>
+<table class="lh-box">
+    <tr>
+        <td>
+            <div class="lh-title">Laporan Hasil Perjalanan Dinas</div>
+            <?php if ($laporanHasilRaw !== ''): ?>
+                <div class="lh-full"><?= $laporanHasilRaw; ?></div>
+            <?php else: ?>
+                <div class="lh-full">&nbsp;</div>
+            <?php endif; ?>
+        </td>
+    </tr>
+</table>
 
 <!-- ═══════════════════ HALAMAN 2: TANDA TANGAN ═══════════════════ -->
 <div class="page-break"></div>
@@ -239,6 +314,16 @@ body {
                 <div class="ttd-jabatan"><?= nl2br(esc((string) ($pelaksanaSignerExtra['jabatan'] ?? '-'))); ?></div>
                 <div class="ttd-nama"><?= esc((string) ($pelaksanaSignerExtra['nama'] ?? '-')); ?></div>
                 <div class="ttd-nip">NIP. <?= esc((string) ($pelaksanaSignerExtra['nip'] ?? '-')); ?></div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3" class="ttd-known-cell">
+                <div class="known-judul">Diketahui Oleh :</div>
+                <div style="max-width: 320px;">
+                    <div class="known-jabatan"><?= nl2br(esc((string) ($diketahuiOleh['jabatan'] ?? '-'))); ?></div>
+                    <div class="known-nama"><?= esc((string) ($diketahuiOleh['nama'] ?? '-')); ?></div>
+                    <div class="known-nip">NIP. <?= esc((string) ($diketahuiOleh['nip'] ?? '-')); ?></div>
+                </div>
             </td>
         </tr>
     </table>
@@ -281,7 +366,12 @@ body {
             <tr>
                 <?php foreach ($photoRow as $photo): ?>
                     <td>
-                        <img src="<?= esc((string) ($photo['data_uri'] ?? '')); ?>" alt="Dokumentasi">
+                        <?php $photoSrc = $resolvePhotoSrc($photo); ?>
+                        <?php if ($photoSrc !== ''): ?>
+                            <img src="<?= esc($photoSrc); ?>" alt="Dokumentasi">
+                        <?php else: ?>
+                            <div style="height: 230px;"></div>
+                        <?php endif; ?>
                     </td>
                 <?php endforeach; ?>
                 <?php if (count($photoRow) === 1): ?>
