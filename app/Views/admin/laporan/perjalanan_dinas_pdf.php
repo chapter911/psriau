@@ -80,9 +80,11 @@ $resolvePhotoSrc = static function ($photo): string {
     .pelaksana-no { display:inline-block; width:18px; }
     .pelaksana-key { display:inline-block; width:60px; flex-shrink:0; }
 
-    .report-wrapper { border:1px solid #000; margin-top:8px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-    .report-row { padding:8px; min-height:22px; page-break-inside: avoid; -webkit-box-decoration-break: clone; box-decoration-break: clone; border-top: 1px solid #000; }
-    .report-row:first-child { border-top: none; }
+     /* Report box: keep left/right borders and top on each fragment, rows get bottom separators
+       Remove margin-top so the report visually connects to previous content */
+     .report-wrapper { border-left:1px solid #000; border-right:1px solid #000; border-top:1px solid #000; margin-top:0; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+     .report-row { padding:8px; min-height:22px; page-break-inside: avoid; -webkit-box-decoration-break: clone; box-decoration-break: clone; border-bottom:1px solid #000; }
+     .report-row:first-child { border-top: none; }
     .report-title { padding:8px; font-weight:700; }
 
     .page-break { page-break-before: always; }
