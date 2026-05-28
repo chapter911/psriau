@@ -163,9 +163,6 @@ $resolvePhotoSrc = static function ($photo): string {
     <?php foreach ($blocks as $b): ?>
       <div class="report-row"><?= $b; ?></div>
     <?php endforeach; ?>
-    <?php for ($i = 0; $i < ($total - $used); $i++): ?>
-      <div class="report-row">&nbsp;</div>
-    <?php endfor; ?>
   </div>
 
   <div class="page-break"></div>
