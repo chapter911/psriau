@@ -442,6 +442,7 @@ class Laporan extends BaseController
 
         $storedPelaksana = $this->decodeJsonArray((string) ($existing['pelaksana_json'] ?? '[]'));
         $storedDiketahui = $this->decodeJsonObject((string) ($existing['diketahui_oleh_json'] ?? '{}'));
+        $existingPhotos = $this->decodeJsonArray((string) ($existing['foto_dokumentasi_json'] ?? '[]'));
 
         $currentInput = [
             'nomor_surat_tugas' => trim((string) ($existing['nomor_surat_tugas'] ?? '')),

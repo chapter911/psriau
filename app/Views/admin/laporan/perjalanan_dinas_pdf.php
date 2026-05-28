@@ -205,6 +205,7 @@ body {
 </table>
 
 <!-- Laporan Hasil Perjalanan Dinas — 1 KOTAK BESAR -->
+<?php $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? '')); ?>
 <div class="lh-wrapper">
     <div class="lh-title">Laporan Hasil Perjalanan Dinas</div>
     <?php if ($laporanHasilRaw !== ''): ?>
