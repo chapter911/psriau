@@ -8,6 +8,7 @@
  * - Halaman 3: Lampiran Dokumentasi Foto
  */
 helper('custom');
+helper('pdf_helper');
 
 $data = $data ?? [];
 $periodeMulai = tanggal_indonesia((string) ($data['periode_mulai'] ?? ''));
@@ -151,24 +152,26 @@ body {
     width: 100%;
     border-collapse: collapse;
     border: 1px solid #000;
-    margin-top: -1px;
+    margin-top: 0;
     page-break-inside: auto;
 }
 .lh-box td {
-    padding: 3px 5px;
+    padding: 2px 5px;
     vertical-align: top;
 }
 .lh-title {
     font-weight: bold;
-    margin-bottom: 0;
-    line-height: 1.2;
+    margin-bottom: 2px;
+    line-height: 1.15;
 }
-.lh-full { padding: 0; margin-top: 2px; }
+.lh-full { padding: 0; margin-top: 0; }
 .lh-full > :first-child { margin-top: 0; }
 .lh-full > :last-child { margin-bottom: 0; }
-.lh-full p { margin: 0 0 4px 0; }
-.lh-full ol, .lh-full ul { margin: 0 0 4px 0; padding-left: 20px; }
-.lh-full li { margin: 0 0 3px 0; }
+.lh-full p { margin: 0; }
+.lh-full ol, .lh-full ul { margin: 0; padding-left: 20px; }
+.lh-full li { margin: 0; }
+.lh-block { margin: 0 0 2px 0; }
+.lh-block:last-child { margin-bottom: 0; }
 .lh-full { overflow-wrap: anywhere; word-break: break-word; }
 
 /* ── PAGE BREAK ── */
@@ -281,15 +284,21 @@ body {
 <!-- Laporan Hasil Perjalanan Dinas — 1 KOTAK BESAR -->
 <?php
     $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? ''));
-    $laporanHasilRaw = preg_replace('/^(?:\s*<p>(?:<br\s*\/?|&nbsp;)<\/p>)+/i', '', $laporanHasilRaw) ?? $laporanHasilRaw;
-    $laporanHasilRaw = preg_replace('/(?:\s*<p>(?:<br\s*\/?|&nbsp;)<\/p>)+\s*$/i', '', $laporanHasilRaw) ?? $laporanHasilRaw;
+    $laporanHasilRaw = preg_replace('#<[^>]*style=["\'][^"\']*page-break-(?:before|after|inside)\s*:\s*[^"\']+["\'][^>]*>#i', '<div>', $laporanHasilRaw) ?? $laporanHasilRaw;
+    $laporanHasilRaw = preg_replace('#<[^>]*style=["\'][^"\']*page-break-(?:before|after|inside)\s*:\s*[^"\']+["\'][^>]*\/?>#i', '', $laporanHasilRaw) ?? $laporanHasilRaw;
+    $laporanHasilRaw = preg_replace('#<div[^>]*class=["\'][^"\']*page-break[^"\']*["\'][^>]*>\s*</div>#i', '', $laporanHasilRaw) ?? $laporanHasilRaw;
+    $laporanHasilBlocks = pdf_split_blocks($laporanHasilRaw);
 ?>
 <table class="lh-box">
     <tr>
         <td>
             <div class="lh-title">Laporan Hasil Perjalanan Dinas</div>
-            <?php if ($laporanHasilRaw !== ''): ?>
-                <div class="lh-full"><?= $laporanHasilRaw; ?></div>
+            <?php if ($laporanHasilBlocks !== []): ?>
+                <div class="lh-full">
+                    <?php foreach ($laporanHasilBlocks as $laporanBlock): ?>
+                        <div class="lh-block"><?= $laporanBlock; ?></div>
+                    <?php endforeach; ?>
+                </div>
             <?php else: ?>
                 <div class="lh-full">&nbsp;</div>
             <?php endif; ?>
