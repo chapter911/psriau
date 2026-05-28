@@ -86,6 +86,12 @@ $resolvePhotoSrc = static function ($photo): string {
     /* reduce top padding so first visible row on a new page sits close to the top border */
     .report-row { padding:4px 8px; min-height:18px; page-break-inside: avoid; -webkit-box-decoration-break: clone; box-decoration-break: clone; border-bottom:1px solid #000; }
     .report-row:first-child { border-top: none; padding-top:2px; }
+    /* Reset margins for common block elements inside report rows so content sits close to borders */
+    .report-row p, .report-row h1, .report-row h2, .report-row h3, .report-row h4, .report-row ul, .report-row ol {
+      margin: 0 0 6px 0;
+      padding: 0;
+    }
+    .report-row p:first-child, .report-row ul:first-child, .report-row ol:first-child { margin-top: 0; }
     .report-title { padding:8px; font-weight:700; }
 
     .page-break { page-break-before: always; }
