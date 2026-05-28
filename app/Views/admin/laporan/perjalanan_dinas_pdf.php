@@ -3,7 +3,7 @@
  * Template PDF Perjalanan Dinas - Mirip contoh_perjadin.docx
  *
  * Struktur:
- * - Halaman 1: Kop Surat + Form Header + Laporan Hasil (bagian 1)
+ * - Halaman 1: Kop Surat + Form Header + Laporan Hasil (1 kotak besar)
  * - Halaman 2: Tanda Tangan
  * - Halaman 3: Lampiran Dokumentasi Foto
  */
@@ -20,20 +20,23 @@ $diketahuiOleh = $data['diketahui_oleh'] ?? [];
 
 $pelaksanaSignerLeft  = $pelaksana[0] ?? [];
 $pelaksanaSignerRight = $pelaksana[1] ?? [];
+$pelaksanaSignerExtra = $pelaksana[2] ?? [];
 
 if ($pelaksanaSignerLeft === [] && is_array($creatorPegawai)) {
     $pelaksanaSignerLeft = $creatorPegawai;
 }
+
+// Tentukan layout tanda tangan:
+// 3 executor → 3 kolom tanda tangan
+// <3 executor → 2 kolom (kiri + kanan kosong), Diketahui di bawah
+$isThreeExe = !empty($pelaksanaSignerExtra) && !empty(trim((string) ($pelaksanaSignerExtra['nama'] ?? '')));
 ?>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <style>
-@page {
-    size: A4;
-    margin: 1.3cm 1.5cm 1.5cm 1.5cm;
-}
+@page { size: A4; margin: 1.3cm 1.5cm 1.5cm 1.5cm; }
 
 body {
     font-family: "Times New Roman", Times, serif;
@@ -47,13 +50,6 @@ body {
 /* ── UTILITY ── */
 .text-center { text-align: center; }
 .bold { font-weight: bold; }
-.mt-1 { margin-top: 6px; }
-.mb-2 { margin-bottom: 10px; }
-.mb-1 { margin-bottom: 6px; }
-.pt-1 { padding-top: 6px; }
-.pb-1 { padding-bottom: 6px; }
-.pt-05 { padding-top: 3px; }
-.pb-05 { padding-bottom: 3px; }
 
 /* ── KOP SURAT ── */
 .kop-surat { width: 100%; }
@@ -89,26 +85,22 @@ body {
 .pelaksana-line { display: flex; }
 .pelaksana-key { display: inline-block; width: 52px; flex-shrink: 0; }
 
-/* ── LAPORAN HASIL WRAPPER ── */
-.laporan-wrapper {
+/* ── LAPORAN HASIL: 1 KOTAK BESAR (NO ROW DIVIDERS) ── */
+.lh-wrapper {
     border: 1px solid #000;
     border-top: none;
-    margin-top: -1px; /* collapse top border with table */
+    margin-top: -1px;
 }
-.laporan-title-row {
+.lh-title {
     border-top: 1px solid #000;
     padding: 5px 6px;
     font-weight: bold;
 }
-.laporan-row {
-    border-top: 1px solid #000;
-    padding: 5px 6px;
-    min-height: 24px;
-}
-.laporan-html p { margin: 0 0 3px 0; }
-.laporan-html ol, .laporan-html ul { margin: 0 0 3px 0; padding-left: 20px; }
-.laporan-html li { margin: 0 0 2px 0; }
-.laporan-html { overflow-wrap: anywhere; word-break: break-word; }
+.lh-full { padding: 5px 6px; }
+.lh-full p { margin: 0 0 4px 0; }
+.lh-full ol, .lh-full ul { margin: 0 0 4px 0; padding-left: 20px; }
+.lh-full li { margin: 0 0 3px 0; }
+.lh-full { overflow-wrap: anywhere; word-break: break-word; }
 
 /* ── PAGE BREAK ── */
 .page-break { page-break-before: always; }
@@ -117,62 +109,36 @@ body {
 .tgl-cetak { text-align: center; font-size: 14pt; margin-bottom: 18px; }
 .judul-ttd { text-align: center; font-size: 17pt; font-weight: bold; margin-bottom: 16px; }
 
-.ttd-grid {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 8px;
-}
-.ttd-grid td {
-    width: 50%;
-    vertical-align: top;
-    text-align: center;
-    padding: 0 10px;
-}
-.ttd-jabatan {
-    font-size: 11pt;
-    font-weight: bold;
-    min-height: 60px;
-    margin-bottom: 30px;
-    line-height: 1.3;
-}
-.ttd-nama {
-    font-size: 12pt;
-    font-weight: bold;
-    text-decoration: underline;
-    margin-bottom: 3px;
-    line-height: 1.3;
-}
+/* 3-kolom: executor 1 | executor 2 | executor 3 */
+.ttd-grid-3 { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.ttd-grid-3 td { width: 33.33%; vertical-align: top; text-align: center; padding: 0 6px; }
+
+/* 2-kolom: executor 1 | executor 2 (extra spacer) */
+.ttd-grid-2 { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.ttd-grid-2 td { width: 50%; vertical-align: top; text-align: center; padding: 0 10px; }
+.ttd-grid-2 .ttd-placeholder { padding: 0; }
+
+/* 2-kolom outer (untuk ketahui + placeholder) */
+.ttd-known-wrap { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.ttd-known-wrap td { width: 50%; vertical-align: top; text-align: center; padding: 0 10px; }
+.ttd-known-wrap .known-cell { width: 50%; }
+
+/* Signature signer blocks */
+.ttd-jabatan { font-size: 11pt; font-weight: bold; min-height: 55px; margin-bottom: 28px; line-height: 1.3; }
+.ttd-nama { font-size: 12pt; font-weight: bold; text-decoration: underline; margin-bottom: 3px; }
 .ttd-nip { font-size: 11pt; }
 
-.ttd-known { text-align: center; margin-top: 28px; }
-.known-judul { font-size: 17pt; font-weight: bold; margin-bottom: 28px; }
-.known-jabatan { font-size: 11pt; font-weight: bold; min-height: 55px; margin-bottom: 30px; line-height: 1.3; }
+/* Diketahui block */
+.known-judul { font-size: 17pt; font-weight: bold; margin-bottom: 26px; }
+.known-jabatan { font-size: 11pt; font-weight: bold; min-height: 50px; margin-bottom: 26px; line-height: 1.3; }
 .known-nama { font-size: 12pt; font-weight: bold; text-decoration: underline; margin-bottom: 3px; }
 .known-nip { font-size: 11pt; }
 
 /* ── LAMPIRAN FOTO ── */
-.lampiran-title {
-    text-align: center;
-    font-size: 13pt;
-    font-weight: bold;
-    margin-bottom: 10px;
-}
-.foto-grid {
-    width: 100%;
-    border-collapse: collapse;
-}
-.foto-grid td {
-    width: 50%;
-    border: 1px solid #000;
-    padding: 6px;
-    vertical-align: top;
-}
-.foto-grid img {
-    width: 100%;
-    height: 230px;
-    object-fit: cover;
-    display: block;
-}
+.lampiran-title { text-align: center; font-size: 13pt; font-weight: bold; margin-bottom: 10px; }
+.foto-grid { width: 100%; border-collapse: collapse; }
+.foto-grid td { width: 50%; border: 1px solid #000; padding: 6px; vertical-align: top; }
+.foto-grid img { width: 100%; height: 230px; object-fit: cover; display: block; }
 </style>
 </head>
 <body>
@@ -238,88 +204,70 @@ body {
     </tr>
 </table>
 
-<!-- Laporan Hasil Perjalanan Dinas -->
-<?php
-$laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? ''));
-
-function split_laporan_blocks($html) {
-    $html = trim((string) $html);
-    if ($html === '') return [];
-
-    if (class_exists('DOMDocument')) {
-        libxml_use_internal_errors(true);
-        $doc = new DOMDocument();
-        $wrapped = '<?xml encoding="utf-8" ?><div>' . $html . '</div>';
-        $doc->loadHTML($wrapped);
-        libxml_clear_errors();
-        $container = $doc->getElementsByTagName('div')->item(0);
-        if (!$container) return [];
-
-        $chunks = [];
-        foreach ($container->childNodes as $child) {
-            $outer = trim((string) $doc->saveHTML($child));
-            if ($outer !== '') $chunks[] = $outer;
-        }
-        if (!empty($chunks)) return $chunks;
-    }
-
-    // Fallback: split by <p> or <br>
-    $parts = preg_split('/<\/?p>|<br\s*\/?\s*>/i', $html);
-    $out = [];
-    foreach ($parts as $p) {
-        $p = trim($p);
-        if ($p !== '') $out[] = '<p>' . $p . '</p>';
-    }
-    return $out;
-}
-
-$chunks = split_laporan_blocks($laporanHasilRaw);
-$chunks = array_values($chunks);
-$minRows = 16;
-$maxRows = 36;
-$usedRows = count($chunks);
-$totalRows = max($minRows, min($maxRows, $usedRows + 6));
-?>
-<div class="laporan-wrapper">
-    <div class="laporan-title-row">Laporan Hasil Perjalanan Dinas</div>
-    <?php foreach ($chunks as $chunk): ?>
-        <div class="laporan-row">
-            <div class="laporan-html"><?= $chunk; ?></div>
-        </div>
-    <?php endforeach; ?>
-    <?php for ($i = 0; $i < ($totalRows - $usedRows); $i++): ?>
-        <div class="laporan-row">&nbsp;</div>
-    <?php endfor; ?>
+<!-- Laporan Hasil Perjalanan Dinas — 1 KOTAK BESAR -->
+<div class="lh-wrapper">
+    <div class="lh-title">Laporan Hasil Perjalanan Dinas</div>
+    <?php if ($laporanHasilRaw !== ''): ?>
+        <div class="lh-full"><?= $laporanHasilRaw; ?></div>
+    <?php else: ?>
+        <div class="lh-full">&nbsp;</div>
+    <?php endif; ?>
 </div>
 
 <!-- ═══════════════════ HALAMAN 2: TANDA TANGAN ═══════════════════ -->
 <div class="page-break"></div>
 
-<!-- Tanda Tangan -->
 <div class="tgl-cetak">Pekanbaru, <?= esc($renderedDate); ?></div>
 <div class="judul-ttd">Dibuat Oleh :</div>
 
-<table class="ttd-grid">
-    <tr>
-        <td>
-            <div class="ttd-jabatan"><?= nl2br(esc((string) ($pelaksanaSignerLeft['jabatan'] ?? '-'))); ?></div>
-            <div class="ttd-nama"><?= esc((string) ($pelaksanaSignerLeft['nama'] ?? '-')); ?></div>
-            <div class="ttd-nip">NIP. <?= esc((string) ($pelaksanaSignerLeft['nip'] ?? '-')); ?></div>
-        </td>
-        <td>
-            <div class="ttd-jabatan"><?= nl2br(esc((string) ($pelaksanaSignerRight['jabatan'] ?? '-'))); ?></div>
-            <div class="ttd-nama"><?= esc((string) ($pelaksanaSignerRight['nama'] ?? '-')); ?></div>
-            <div class="ttd-nip">NIP. <?= esc((string) ($pelaksanaSignerRight['nip'] ?? '-')); ?></div>
-        </td>
-    </tr>
-</table>
+<?php if ($isThreeExe): ?>
+    <!-- 3 executor → 3 kolom simetris -->
+    <table class="ttd-grid-3">
+        <tr>
+            <td>
+                <div class="ttd-jabatan"><?= nl2br(esc((string) ($pelaksanaSignerLeft['jabatan'] ?? '-'))); ?></div>
+                <div class="ttd-nama"><?= esc((string) ($pelaksanaSignerLeft['nama'] ?? '-')); ?></div>
+                <div class="ttd-nip">NIP. <?= esc((string) ($pelaksanaSignerLeft['nip'] ?? '-')); ?></div>
+            </td>
+            <td>
+                <div class="ttd-jabatan"><?= nl2br(esc((string) ($pelaksanaSignerRight['jabatan'] ?? '-'))); ?></div>
+                <div class="ttd-nama"><?= esc((string) ($pelaksanaSignerRight['nama'] ?? '-')); ?></div>
+                <div class="ttd-nip">NIP. <?= esc((string) ($pelaksanaSignerRight['nip'] ?? '-')); ?></div>
+            </td>
+            <td>
+                <div class="ttd-jabatan"><?= nl2br(esc((string) ($pelaksanaSignerExtra['jabatan'] ?? '-'))); ?></div>
+                <div class="ttd-nama"><?= esc((string) ($pelaksanaSignerExtra['nama'] ?? '-')); ?></div>
+                <div class="ttd-nip">NIP. <?= esc((string) ($pelaksanaSignerExtra['nip'] ?? '-')); ?></div>
+            </td>
+        </tr>
+    </table>
+<?php else: ?>
+    <!-- ≤2 executor → executor 1 | executor 2, Diketahui di bawah kiri -->
+    <table class="ttd-known-wrap">
+        <tr>
+            <td>
+                <div class="ttd-jabatan"><?= nl2br(esc((string) ($pelaksanaSignerLeft['jabatan'] ?? '-'))); ?></div>
+                <div class="ttd-nama"><?= esc((string) ($pelaksanaSignerLeft['nama'] ?? '-')); ?></div>
+                <div class="ttd-nip">NIP. <?= esc((string) ($pelaksanaSignerLeft['nip'] ?? '-')); ?></div>
+            </td>
+            <td class="ttd-placeholder">
+                <div class="ttd-jabatan"><?= nl2br(esc((string) ($pelaksanaSignerRight['jabatan'] ?? '-'))); ?></div>
+                <div class="ttd-nama"><?= esc((string) ($pelaksanaSignerRight['nama'] ?? '-')); ?></div>
+                <div class="ttd-nip">NIP. <?= esc((string) ($pelaksanaSignerRight['nip'] ?? '-')); ?></div>
+            </td>
+        </tr>
+    </table>
 
-<div class="ttd-known">
-    <div class="known-judul">Diketahui Oleh :</div>
-    <div class="known-jabatan"><?= nl2br(esc((string) ($diketahuiOleh['jabatan'] ?? '-'))); ?></div>
-    <div class="known-nama"><?= esc((string) ($diketahuiOleh['nama'] ?? '-')); ?></div>
-    <div class="known-nip">NIP. <?= esc((string) ($diketahuiOleh['nip'] ?? '-')); ?></div>
-</div>
+    <!-- Diketahui Oleh di bawah kiri -->
+    <div style="margin-top: 28px;">
+        <div class="known-judul">Diketahui Oleh :</div>
+        <div style="text-align: left; max-width: 300px;">
+            <div class="known-jabatan"><?= nl2br(esc((string) ($diketahuiOleh['jabatan'] ?? '-'))); ?></div>
+            <div class="known-nama"><?= esc((string) ($diketahuiOleh['nama'] ?? '-')); ?></div>
+            <div class="known-nip">NIP. <?= esc((string) ($diketahuiOleh['nip'] ?? '-')); ?></div>
+        </div>
+    </div>
+<?php endif; ?>
 
 <!-- ═══════════════════ HALAMAN 3: LAMPIRAN FOTO ═══════════════════ -->
 <div class="page-break"></div>

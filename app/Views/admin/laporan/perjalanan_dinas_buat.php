@@ -13,6 +13,7 @@
     $formAction = (string) ($form_action ?? site_url('admin/laporan/perjalanan-dinas/buat'));
     $isEdit = (bool) ($is_edit ?? false);
     $submitLabelPrimary = (string) ($submit_label_primary ?? 'Simpan Final');
+    $existingFotoDokumentasi = $existing_foto_dokumentasi ?? [];
     $formatPegawaiLabel = static function (array $pegawai): string {
         $nama = trim((string) ($pegawai['nama'] ?? $pegawai['display_name'] ?? $pegawai['display_label'] ?? 'Pegawai'));
         $nip = trim((string) ($pegawai['nip'] ?? ''));
@@ -68,9 +69,15 @@
         background: #fff;
     }
 
-    #selectedPhotoPreview {
-        gap: 10px;
-    }
+    #selectedPhotoPreview { gap: 10px; }
+
+    /* Existing photos (from DB) */
+    .existing-photo-section { margin-top: 14px; }
+    .existing-photo-title { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+    #existingPhotoList { display: flex; flex-wrap: wrap; gap: 8px; }
+    .existing-photo-item { position: relative; }
+    .existing-photo-item img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid #dbe3ee; }
+    .existing-photo-item .btn-remove-existing { position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; line-height: 20px; text-align: center; padding: 0; }
 
     .selected-photo-card {
         width: 126px;
@@ -259,6 +266,23 @@
                                 Drop foto di sini untuk upload cepat.
                             </div>
                             <div class="mt-3 d-flex flex-wrap" id="selectedPhotoPreview"></div>
+
+                        <?php if (!empty($existingFotoDokumentasi) && $isEdit): ?>
+                            <div class="existing-photo-section">
+                                <div class="existing-photo-title">Foto dokumentasi tersimpan (<?= count($existingFotoDokumentasi); ?> foto)</div>
+                                <div id="existingPhotoList">
+                                    <?php foreach ($existingFotoDokumentasi as $fIdx => $foto): ?>
+                                        <?php $dataUri = (string) ($foto['data_uri'] ?? ''); ?>
+                                        <?php if ($dataUri !== ''): ?>
+                                            <div class="existing-photo-item" data-existing-index="<?= (int) $fIdx; ?>">
+                                                <img src="<?= esc($dataUri); ?>" alt="Dokumentasi <?= (int) $fIdx + 1; ?>">
+                                                <button type="button" class="btn-remove-existing" title="Hapus foto ini">&times;</button>
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                         </div>
                         <small class="text-muted d-block mt-2">Format gambar umum didukung, bisa pilih banyak foto sekaligus.</small>
                     </div>
@@ -287,6 +311,7 @@
                         <button type="submit" name="save_mode" value="final" class="btn btn-primary"><?= esc($submitLabelPrimary); ?></button>
                     </div>
                 </div>
+                <input type="hidden" name="removed_foto_indices" id="removedFotoIndices" value="">
             </form>
         </div>
     </div>
@@ -306,6 +331,29 @@
     var previewContainer = document.getElementById('selectedPhotoPreview');
     var counter = document.getElementById('photoCounter');
     var selectedItems = [];
+    var removedExistingIndices = [];
+    var existingList = document.getElementById('existingPhotoList');
+
+    // Hapus foto existing saat diklik
+    if (existingList) {
+        existingList.addEventListener('click', function (e) {
+            var btn = e.target.closest('.btn-remove-existing');
+            if (!btn) return;
+            var item = btn.closest('.existing-photo-item');
+            if (!item) return;
+            var idx = parseInt(item.getAttribute('data-existing-index'), 10);
+            if (!removedExistingIndices.includes(idx)) {
+                removedExistingIndices.push(idx);
+            }
+            item.remove();
+            updateRemovedIndices();
+        });
+    }
+
+    function updateRemovedIndices() {
+        var field = document.getElementById('removedFotoIndices');
+        if (field) field.value = JSON.stringify(removedExistingIndices);
+    }
 
     function syncPeriodeRules() {
         if (!periodeMulai || !periodeSelesai) {

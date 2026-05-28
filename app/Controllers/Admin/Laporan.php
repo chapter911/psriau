@@ -469,10 +469,12 @@ class Laporan extends BaseController
                 'form_action' => site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'),
                 'is_edit' => true,
                 'submit_label_primary' => 'Simpan Perubahan',
+                'existing_foto_dokumentasi' => $existingPhotos,
             ]);
         }
 
         $currentInput = [
+            'foto_dokumentasi' => [],
             'nomor_surat_tugas' => trim((string) $this->request->getPost('nomor_surat_tugas')),
             'periode_mulai' => trim((string) $this->request->getPost('periode_mulai')),
             'periode_selesai' => trim((string) $this->request->getPost('periode_selesai')),
@@ -540,6 +542,19 @@ class Laporan extends BaseController
             ];
         }
 
+        // Filter foto existing yang dihapus oleh user
+        $removedIndices = [];
+        $removedRaw = trim((string) $this->request->getPost('removed_foto_indices'));
+        if ($removedRaw !== '') {
+            $decoded = json_decode($removedRaw, true);
+            if (is_array($decoded)) {
+                $removedIndices = array_values($decoded);
+            }
+        }
+        if ($removedIndices !== []) {
+            $existingPhotos = array_values(array_filter($existingPhotos, static fn ($key): bool => !in_array($key, $removedIndices, true), ARRAY_FILTER_USE_KEY));
+        }
+
         $photos = $newPhotos !== [] ? $newPhotos : $existingPhotos;
 
         if ($errors !== []) {
@@ -556,6 +571,7 @@ class Laporan extends BaseController
                 'form_action' => site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'),
                 'is_edit' => true,
                 'submit_label_primary' => 'Simpan Perubahan',
+                'existing_foto_dokumentasi' => $existingPhotos,
             ]);
         }
 
