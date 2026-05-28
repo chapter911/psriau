@@ -403,6 +403,9 @@
         fileInput.files = dataTransfer.files;
     }
 
+    // Expose for use before form submit so files are attached to input
+    window.syncPhotoFileInput = syncFileInput;
+
     function renderPreview() {
         if (!previewContainer) {
             return;
@@ -520,6 +523,8 @@
 
     if (form) {
         form.addEventListener('submit', function (ev) {
+            // Ensure file input contains the selected items before submit
+            try { if (window.syncPhotoFileInput) window.syncPhotoFileInput(); } catch (e) {}
             try {
                 if (window.jQuery && typeof $.fn.summernote === 'function') {
                     var code = $('#laporanHasil').summernote('code');
