@@ -166,7 +166,7 @@ $resolvePhotoSrc = static function ($photo): string {
   ?>
 
   <div class="report-wrapper">
-    <div class="report-row report-title">Laporan Hasil Perjalanan Dinas</div>
+    <div class="report-title">Laporan Hasil Perjalanan Dinas</div>
     <?php foreach ($blocks as $b): ?>
       <div class="report-row"><?= $b; ?></div>
     <?php endforeach; ?>
