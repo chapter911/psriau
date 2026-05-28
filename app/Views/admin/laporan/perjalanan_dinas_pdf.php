@@ -80,7 +80,6 @@ $resolvePhotoSrc = static function ($photo): string {
     .pelaksana-no { display:inline-block; width:18px; }
     .pelaksana-key { display:inline-block; width:60px; flex-shrink:0; }
 
-    .report-wrapper { border:1px solid #000; }
     .report-row { border-top:1px solid #000; padding:8px; min-height:22px; }
     .report-title { padding:8px; font-weight:700; }
 
