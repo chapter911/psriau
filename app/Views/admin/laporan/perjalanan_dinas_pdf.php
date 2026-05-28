@@ -155,14 +155,17 @@ body {
     page-break-inside: auto;
 }
 .lh-box td {
-    padding: 5px 6px;
+    padding: 3px 5px;
     vertical-align: top;
 }
 .lh-title {
     font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 0;
+    line-height: 1.2;
 }
-.lh-full { padding: 0; }
+.lh-full { padding: 0; margin-top: 2px; }
+.lh-full > :first-child { margin-top: 0; }
+.lh-full > :last-child { margin-bottom: 0; }
 .lh-full p { margin: 0 0 4px 0; }
 .lh-full ol, .lh-full ul { margin: 0 0 4px 0; padding-left: 20px; }
 .lh-full li { margin: 0 0 3px 0; }
@@ -276,7 +279,11 @@ body {
 </table>
 
 <!-- Laporan Hasil Perjalanan Dinas — 1 KOTAK BESAR -->
-<?php $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? '')); ?>
+<?php
+    $laporanHasilRaw = trim((string) ($data['laporan_hasil'] ?? ''));
+    $laporanHasilRaw = preg_replace('/^(?:\s*<p>(?:<br\s*\/?|&nbsp;)<\/p>)+/i', '', $laporanHasilRaw) ?? $laporanHasilRaw;
+    $laporanHasilRaw = preg_replace('/(?:\s*<p>(?:<br\s*\/?|&nbsp;)<\/p>)+\s*$/i', '', $laporanHasilRaw) ?? $laporanHasilRaw;
+?>
 <table class="lh-box">
     <tr>
         <td>
