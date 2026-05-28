@@ -93,6 +93,8 @@ $resolvePhotoSrc = static function ($photo): string {
     }
     .report-row p:first-child, .report-row ul:first-child, .report-row ol:first-child { margin-top: 0; }
     .report-title { padding:8px; font-weight:700; }
+    /* Keep title and first paragraph together */
+    .report-intro { page-break-inside: avoid; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 
     .page-break { page-break-before: always; }
 
@@ -166,7 +168,16 @@ $resolvePhotoSrc = static function ($photo): string {
   ?>
 
   <div class="report-wrapper">
-    <div class="report-title">Laporan Hasil Perjalanan Dinas</div>
+    <?php if (!empty($blocks)): ?>
+      <?php $firstBlock = array_shift($blocks); ?>
+      <div class="report-intro">
+        <div class="report-row report-title">Laporan Hasil Perjalanan Dinas</div>
+        <div class="report-row"><?= $firstBlock; ?></div>
+      </div>
+    <?php else: ?>
+      <div class="report-row report-title">Laporan Hasil Perjalanan Dinas</div>
+    <?php endif; ?>
+
     <?php foreach ($blocks as $b): ?>
       <div class="report-row"><?= $b; ?></div>
     <?php endforeach; ?>
