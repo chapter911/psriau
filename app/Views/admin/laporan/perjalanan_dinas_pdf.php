@@ -74,7 +74,7 @@ $resolvePhotoSrc = static function ($photo): string {
     .center { text-align:center; }
     .bold { font-weight:700; }
 
-    .main-table { width:100%; border-collapse: collapse; border:1px solid #000; }
+    .main-table { width:100%; border-collapse: collapse; }
     .main-table td { border:1px solid #000; padding:6px; vertical-align: top; }
     .label { width:40%; }
     .colon { width:3%; text-align:center; }
