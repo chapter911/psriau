@@ -65,7 +65,12 @@ $resolvePhotoSrc = static function ($photo): string {
   <meta charset="utf-8">
   <style>
     @page { size: A4; margin: 1.3cm 1.5cm 1.5cm 1.5cm; }
-    body { font-family: "Times New Roman", Times, serif; font-size: 11pt; color: #000; }
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 11pt;
+      color: #000;
+      border: 1px solid #000;
+    }
     .center { text-align:center; }
     .bold { font-weight:700; }
 
@@ -80,13 +85,14 @@ $resolvePhotoSrc = static function ($photo): string {
     .pelaksana-no { display:inline-block; width:18px; }
     .pelaksana-key { display:inline-block; width:60px; flex-shrink:0; }
 
-     /* KOTAK BESAR: tanpa border, border halaman делать через fixed-element */
+     /* KOTAK BESAR: tanpa border internal */
     .report-wrapper {
       margin-top: 4px;
     }
     .report-title {
       padding: 6px 8px 4px;
       font-weight: 700;
+      border: 1px solid #000;
     }
     .report-content {
       padding: 6px 8px;
@@ -106,19 +112,7 @@ $resolvePhotoSrc = static function ($photo): string {
 
     .page-break { page-break-before: always; }
 
-    /* BORDER HALAMAN: fixed-element muncul di setiap halaman */
-    .page-border {
-      position: fixed;
-      top: 0cm;
-      left: 0cm;
-      right: 0cm;
-      bottom: 0cm;
-      background: #fff;
-      box-shadow: 0 0 0 1px #000 inset;
-      z-index: -1;
-      pointer-events: none;
-    }
-
+    
     .ttd-grid-3 { width:100%; border-collapse:collapse; margin-top:12px; }
     .ttd-grid-3 td { width:33.33%; text-align:center; vertical-align:top; padding:0 6px; }
     .known-judul { font-size:14pt; font-weight:700; margin-bottom:12px; }
@@ -129,8 +123,6 @@ $resolvePhotoSrc = static function ($photo): string {
   </style>
 </head>
 <body>
-
-  <div class="page-border"></div>
   <div class="center">
     <?= kop_surat_img_tag('', 'width:100%; max-height:120px; object-fit:contain;', 'Kop Surat'); ?>
     <h2 class="bold">LAPORAN PELAKSANAAN PERJALANAN DINAS</h2>
