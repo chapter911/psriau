@@ -1070,7 +1070,7 @@
                                             <?php endif; ?>
                                         </td>
                                     <?php else: ?>
-                                        <td colspan="7" class="text-muted cell-center">Baris grup (tidak perlu upload)</td>
+                                        <td colspan="8" class="text-muted cell-center">Baris grup (tidak perlu upload)</td>
                                     <?php endif; ?>
                                 </tr>
                             <?php endforeach; ?>
