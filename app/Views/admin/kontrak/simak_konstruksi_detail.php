@@ -425,10 +425,10 @@
                                                 && is_array($finalDokumen)
                                                 && trim((string) ($finalDokumen['file_relative_path'] ?? '')) === ''
                                                 && trim((string) ($finalDokumen['file_stored_name'] ?? '')) === '';
-                                            // canVerifyDraft hanya untuk items dengan has_draft=1
-                                            $canVerifyDraft = $hasDraft && ($draftDokumen !== null || $kelengkapan === 'tidak') && ! $draftApproved && ! $finalApproved;
-                                            // canVerifyFinal untuk items dengan atau tanpa draft
-                                            $canVerifyFinal = ($finalDokumen !== null || $finalNoFilePlaceholder) && ! $finalApproved;
+                                            // canVerifyDraft: hanya jika draft ada file & belum verifikasi
+                                            $canVerifyDraft = $hasDraft && $draftHasFile && $draftVerifikasi !== 'sesuai' && $draftVerifikasi !== 'tidak_sesuai';
+                                            // canVerifyFinal: hanya jika final ada file & belum verifikasi
+                                            $canVerifyFinal = $finalHasFile && $finalVerifikasi !== 'sesuai' && $finalVerifikasi !== 'tidak_sesuai';
                                             $draftActionKelengkapan = strtolower(trim((string) ($draftDokumen['kelengkapan_dokumen'] ?? ($kelengkapan !== '' ? $kelengkapan : 'tidak'))));
                                             $draftActionVerifikasi = strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? $verifikasi)));
                                             $draftActionKeterangan = (string) ($draftDokumen['keterangan'] ?? $keterangan);

@@ -3360,11 +3360,19 @@ class Kontrak extends BaseController
             ->getRowArray();
         $willHaveDraft = (is_array($existingDraftDoc) && ! empty($existingDraftDoc)) || $tipeDokumen === 'draft';
         $willHaveFinal = (is_array($existingFinalDoc) && ! empty($existingFinalDoc)) || $tipeDokumen === 'final';
-        $isDocumentComplete = $willHaveDraft && $willHaveFinal;
 
         $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
         $today = date('Y-m-d');
         $now = date('Y-m-d H:i:s');
+
+        // Admin upload: langsung set sesuai kebutuhan
+        // - Draft → belum_verifikasi (perlu verifikasi manual oleh KI)
+        // - Final → sesuai (admin sudah review, langsung lengkap)
+        if ($tipeDokumen === 'draft') {
+            $verifikasiKi = $willHaveFinal ? 'sesuai' : 'belum_verifikasi';
+        } else {
+            $verifikasiKi = 'sesuai';
+        }
 
         $verifikasiRow = [
             'simak_id' => $id,
@@ -3372,7 +3380,7 @@ class Kontrak extends BaseController
             'kode' => (string) ($targetTemplate['display_no'] ?? ''),
             'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
             'kelengkapan_dokumen' => 'ada',
-            'verifikasi_ki' => $isDocumentComplete ? 'sesuai' : 'belum_verifikasi',
+            'verifikasi_ki' => $verifikasiKi,
             'keterangan' => 'Upload dokumen dari admin',
             'pic' => $actor,
             'updated_by' => $actor,
@@ -3393,7 +3401,7 @@ class Kontrak extends BaseController
             'kode' => (string) ($targetTemplate['display_no'] ?? ''),
             'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
             'kelengkapan_dokumen' => 'ada',
-            'verifikasi_ki' => $isDocumentComplete ? 'sesuai' : 'belum_verifikasi',
+            'verifikasi_ki' => $verifikasiKi,
             'keterangan' => 'Upload dokumen dari admin',
             'pic' => $actor,
             'file_original_name' => (string) $file->getClientName(),
@@ -3413,7 +3421,10 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal menyimpan upload dokumen.');
         }
 
-        return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('success', 'Dokumen berhasil diupload dan otomatis terverifikasi sebagai Lengkap.');
+        $msg = $tipeDokumen === 'draft'
+            ? 'Dokumen Draft berhasil diupload.'
+            : 'Dokumen Final berhasil diupload dan otomatis terverifikasi Sesuai.';
+        return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('success', $msg);
     }
 
     public function viewSimakVerifikasiDokumen(int $dokumenId)
