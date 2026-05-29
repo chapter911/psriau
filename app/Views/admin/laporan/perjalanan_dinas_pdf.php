@@ -80,27 +80,19 @@ $resolvePhotoSrc = static function ($photo): string {
     .pelaksana-no { display:inline-block; width:18px; }
     .pelaksana-key { display:inline-block; width:60px; flex-shrink:0; }
 
-     /* KOTAK BESAR: setiap "halaman" kotak punya border penuh */
+     /* KOTAK BESAR: border 4 sisi per baris, pecah halaman tetap utuh */
     .report-wrapper {
-      border: 1px solid #000;
       margin-top: 4px;
     }
     .report-title {
       padding: 6px 8px 4px;
       font-weight: 700;
-      border-bottom: 1px solid #000;
+      border: 1px solid #000;
     }
     .report-content {
       padding: 6px 8px;
-      border-top: 1px solid #000;
-    }
-    /* hapus border atas di baris pertama (setelah judul), border bawah di baris terakhir */
-    .report-title + .report-content {
-      border-top: none;
-      padding-top: 8px;
-    }
-    .report-content:last-child {
-      border-bottom: none;
+      border: 1px solid #000;
+      border-top: none; /* tidak duplikat garis dg judul */
     }
     /* reduce block margins inside content rows */
     .report-content p, .report-content h1, .report-content h2, .report-content h3, .report-content h4,
