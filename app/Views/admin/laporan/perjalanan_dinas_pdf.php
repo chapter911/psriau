@@ -80,7 +80,7 @@ $resolvePhotoSrc = static function ($photo): string {
     .pelaksana-no { display:inline-block; width:18px; }
     .pelaksana-key { display:inline-block; width:60px; flex-shrink:0; }
 
-     /* KOTAK BESAR: single continuous border, no individual row lines */
+     /* KOTAK BESAR: setiap "halaman" kotak punya border penuh */
     .report-wrapper {
       border: 1px solid #000;
       margin-top: 4px;
@@ -92,6 +92,15 @@ $resolvePhotoSrc = static function ($photo): string {
     }
     .report-content {
       padding: 6px 8px;
+      border-top: 1px solid #000;
+    }
+    /* hapus border atas di baris pertama (setelah judul), border bawah di baris terakhir */
+    .report-title + .report-content {
+      border-top: none;
+      padding-top: 8px;
+    }
+    .report-content:last-child {
+      border-bottom: none;
     }
     /* reduce block margins inside content rows */
     .report-content p, .report-content h1, .report-content h2, .report-content h3, .report-content h4,
@@ -99,12 +108,6 @@ $resolvePhotoSrc = static function ($photo): string {
     .report-content p:last-child, .report-content ul:last-child, .report-content ol:last-child { margin-bottom: 0; }
 
     .page-break { page-break-before: always; }
-
-    /* Halaman lanjut: top border agar kotak tetap utuh jika terpotong */
-    .report-title-cont {
-      border-top: 1px solid #000;
-      margin-top: -1px;
-    }
 
     .ttd-grid-3 { width:100%; border-collapse:collapse; margin-top:12px; }
     .ttd-grid-3 td { width:33.33%; text-align:center; vertical-align:top; padding:0 6px; }
