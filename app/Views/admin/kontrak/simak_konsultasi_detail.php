@@ -454,10 +454,10 @@
                                                 && is_array($finalDokumen)
                                                 && trim((string) ($finalDokumen['file_relative_path'] ?? '')) === ''
                                                 && trim((string) ($finalDokumen['file_stored_name'] ?? '')) === '';
-                                            // canVerifyDraft hanya untuk items dengan has_draft=1
-                                            $canVerifyDraft = $hasDraft && ($draftDokumen !== null || $kelengkapan === 'tidak') && ! $draftApproved && ! $finalApproved;
-                                            // canVerifyFinal untuk items dengan atau tanpa draft
-                                            $canVerifyFinal = ($finalDokumen !== null || $finalNoFilePlaceholder) && ! $finalApproved;
+                                            // canVerifyDraft: hanya jika draft ada file & belum verifikasi
+                                            $canVerifyDraft = $hasDraft && $draftHasFile && $draftVerifikasi !== 'sesuai' && $draftVerifikasi !== 'tidak_sesuai';
+                                            // canVerifyFinal: hanya jika final ada file & belum verifikasi
+                                            $canVerifyFinal = $finalHasFile && $finalVerifikasi !== 'sesuai' && $finalVerifikasi !== 'tidak_sesuai';
                                             $draftActionKelengkapan = strtolower(trim((string) ($draftDokumen['kelengkapan_dokumen'] ?? ($kelengkapan !== '' ? $kelengkapan : 'tidak'))));
                                             $draftActionVerifikasi = strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? $verifikasi)));
                                             $draftActionKeterangan = (string) ($draftDokumen['keterangan'] ?? $keterangan);
@@ -468,8 +468,8 @@
                                             $finalActionKeterangan = (string) ($finalDokumen['keterangan'] ?? $keterangan);
                                             $finalActionPic = (string) ($finalDokumen['pic'] ?? $pic);
                                             // canUploadFinal: untuk items dengan draft, perlu verifikasi='sesuai'; untuk final-only, tampilkan jika ada placeholder
-                                            $canUploadFinal = ($hasDraft && $verifikasi === 'sesuai') || $finalNoFilePlaceholder;
-                                            $canUploadDraft = $hasDraft && ! $draftApproved && ! $finalApproved;
+                                            $canUploadFinal = ($hasDraft ? $verifikasi === 'sesuai' : ($draftApproved || ! $hasDraft)) && ! $finalApproved;
+                                            $canUploadDraft = $hasDraft && ! $draftApproved && ! $finalApproved && ! $draftHasFile;
                                             // Check jika menunggu verifikasi (record ada tapi verifikasi belum sesuai/null)
                                             $hasPendingDraft = $hasDraft && ($draftDokumen !== null || $kelengkapan === 'tidak') && $draftVerifikasi !== 'sesuai' && $draftVerifikasi !== 'tidak_sesuai';
                                             $hasPendingFinal = ($finalDokumen !== null || $finalNoFilePlaceholder) && $finalVerifikasi !== 'sesuai' && $finalVerifikasi !== 'tidak_sesuai';
@@ -528,8 +528,10 @@
                                                     $resolvedStatus = 'belum_sesuai';
                                                 } elseif ($rowVerifikasi === 'belum_verifikasi') {
                                                     $resolvedStatus = 'belum_verifikasi';
+                                                } elseif ($rowKelengkapan !== '' || $rowVerifikasi !== '') {
+                                                    $resolvedStatus = 'belum_ada';
                                                 } else {
-                                                    $resolvedStatus = 'lengkap';
+                                                    $resolvedStatus = 'belum_ada';
                                                 }
                                             }
 
@@ -739,7 +741,7 @@
                                                     <?php endif; ?>
                                                 </td>
                                             <?php else: ?>
-                                                <td colspan="10"></td>
+                                                <td colspan="16"></td>
                                             <?php endif; ?>
                                         </tr>
                                     <?php endforeach; ?>
