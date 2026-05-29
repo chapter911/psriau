@@ -66,10 +66,10 @@ $resolvePhotoSrc = static function ($photo): string {
   <style>
     @page { size: A4; margin: 1.3cm 1.5cm 1.5cm 1.5cm; }
     body {
-      font-family: "Times New Roman", Times, serif;
-      font-size: 11pt;
-      color: #000;
-      border: 1px solid #000;
+        font-family: "Times New Roman", Times, serif;
+        font-size: 11pt;
+        color: #000;
+        border: 1px solid #000;
     }
     .center { text-align:center; }
     .bold { font-weight:700; }
@@ -92,13 +92,12 @@ $resolvePhotoSrc = static function ($photo): string {
     .report-title {
       padding: 6px 8px 4px;
       font-weight: 700;
-      border: 1px solid #000;
     }
     .report-content {
       padding: 6px 8px;
     }
     .report-title + .report-content {
-      padding-top: 8px;
+        padding-top: 8px;
     }
     /* reduce block margins inside content */
     .report-content p, .report-content h1, .report-content h2,
