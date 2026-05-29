@@ -80,51 +80,43 @@ $resolvePhotoSrc = static function ($photo): string {
     .pelaksana-no { display:inline-block; width:18px; }
     .pelaksana-key { display:inline-block; width:60px; flex-shrink:0; }
 
-     /* KOTAK BESAR: table border-collapse, border luar only */
+     /* KOTAK BESAR: tanpa border, border halaman делать через fixed-element */
     .report-wrapper {
-      display: table;
-      table-layout: fixed;
-      width: 100%;
       margin-top: 4px;
-      border-collapse: collapse;
-      border: 1px solid #000;
     }
     .report-title {
-      display: table-row;
-    }
-    .report-title > div {
-      display: table-cell;
       padding: 6px 8px 4px;
       font-weight: 700;
-      border: 1px solid #000;
-      -webkit-box-decoration-break: clone;
-      box-decoration-break: clone;
     }
     .report-content {
-      display: table-row;
-    }
-    .report-content > div {
-      display: table-cell;
       padding: 6px 8px;
-      border: 1px solid #000;
-      -webkit-box-decoration-break: clone;
-      box-decoration-break: clone;
     }
-    .report-title + .report-content > div {
+    .report-title + .report-content {
       padding-top: 8px;
     }
     /* reduce block margins inside content */
-    .report-content > div p,
-    .report-content > div h1, .report-content > div h2,
-    .report-content > div h3, .report-content > div h4,
-    .report-content > div ul, .report-content > div ol {
+    .report-content p, .report-content h1, .report-content h2,
+    .report-content h3, .report-content h4,
+    .report-content ul, .report-content ol {
       margin: 0 0 5px 0; padding: 0;
     }
-    .report-content > div p:last-child,
-    .report-content > div ul:last-child,
-    .report-content > div ol:last-child { margin-bottom: 0; }
+    .report-content p:last-child,
+    .report-content ul:last-child,
+    .report-content ol:last-child { margin-bottom: 0; }
 
     .page-break { page-break-before: always; }
+
+    /* BORDER HALAMAN: fixed-element muncul di setiap halaman */
+    .page-border {
+      position: fixed;
+      top: 0cm;
+      left: 0cm;
+      right: 0cm;
+      bottom: 0cm;
+      border: 1px solid #000;
+      z-index: -10;
+      pointer-events: none;
+    }
 
     .ttd-grid-3 { width:100%; border-collapse:collapse; margin-top:12px; }
     .ttd-grid-3 td { width:33.33%; text-align:center; vertical-align:top; padding:0 6px; }
@@ -137,6 +129,7 @@ $resolvePhotoSrc = static function ($photo): string {
 </head>
 <body>
 
+  <div class="page-border"></div>
   <div class="center">
     <?= kop_surat_img_tag('', 'width:100%; max-height:120px; object-fit:contain;', 'Kop Surat'); ?>
     <h2 class="bold">LAPORAN PELAKSANAAN PERJALANAN DINAS</h2>
@@ -195,13 +188,13 @@ $resolvePhotoSrc = static function ($photo): string {
   ?>
 
   <div class="report-wrapper">
-    <div class="report-title"><div>Laporan Hasil Perjalanan Dinas</div></div>
+    <div class="report-title">Laporan Hasil Perjalanan Dinas</div>
     <?php if (!empty($blocks)): ?>
       <?php foreach ($blocks as $b): ?>
-        <div class="report-content"><div><?= $b; ?></div></div>
+        <div class="report-content"><?= $b; ?></div>
       <?php endforeach; ?>
     <?php else: ?>
-      <div class="report-content"><div>&nbsp;</div></div>
+      <div class="report-content">&nbsp;</div>
     <?php endif; ?>
   </div>
 
