@@ -439,8 +439,8 @@
                                             $finalActionKeterangan = (string) ($finalDokumen['keterangan'] ?? $keterangan);
                                             $finalActionPic = (string) ($finalDokumen['pic'] ?? $pic);
                                             // canUploadFinal: untuk items dengan draft, perlu verifikasi='sesuai'; untuk final-only, tampilkan jika ada placeholder
-                                            $canUploadFinal = ($hasDraft && $verifikasi === 'sesuai') || $finalNoFilePlaceholder;
-                                            $canUploadDraft = $hasDraft && ! $draftApproved && ! $finalApproved;
+                                            $canUploadFinal = ($hasDraft ? $verifikasi === 'sesuai' : ($draftApproved || ! $hasDraft)) && ! $finalApproved;
+                                            $canUploadDraft = $hasDraft && ! $draftApproved && ! $finalApproved && ! $draftHasFile;
                                             $latestPath = is_array($latestDokumen) ? trim((string) ($latestDokumen['file_relative_path'] ?? '')) : '';
                                             $latestHost = strtolower((string) parse_url($latestPath, PHP_URL_HOST));
                                             $isDriveLink = in_array($latestHost, ['drive.google.com', 'docs.google.com'], true);
