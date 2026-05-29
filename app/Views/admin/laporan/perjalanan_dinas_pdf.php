@@ -97,7 +97,8 @@ $resolvePhotoSrc = static function ($photo): string {
       padding: 6px 8px 4px;
       font-weight: 700;
       border: 1px solid #000;
-      border-top: none;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
     }
     .report-content {
       display: table-row;
@@ -106,7 +107,8 @@ $resolvePhotoSrc = static function ($photo): string {
       display: table-cell;
       padding: 6px 8px;
       border: 1px solid #000;
-      border-top: none;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
     }
     .report-title + .report-content > div {
       padding-top: 8px;
@@ -198,6 +200,8 @@ $resolvePhotoSrc = static function ($photo): string {
       <?php foreach ($blocks as $b): ?>
         <div class="report-content"><div><?= $b; ?></div></div>
       <?php endforeach; ?>
+    <?php else: ?>
+      <div class="report-content"><div>&nbsp;</div></div>
     <?php endif; ?>
   </div>
 
