@@ -113,8 +113,9 @@ $resolvePhotoSrc = static function ($photo): string {
       left: 0cm;
       right: 0cm;
       bottom: 0cm;
-      border: 1px solid #000;
-      z-index: -10;
+      background: #fff;
+      box-shadow: 0 0 0 1px #000 inset;
+      z-index: -1;
       pointer-events: none;
     }
 
