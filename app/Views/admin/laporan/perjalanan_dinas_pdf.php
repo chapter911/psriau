@@ -69,7 +69,8 @@ $resolvePhotoSrc = static function ($photo): string {
         font-family: "Times New Roman", Times, serif;
         font-size: 11pt;
         color: #000;
-        border: 1px solid #000;
+        outline: 1px solid #000;
+        outline-offset: -1.3cm;
     }
     .center { text-align:center; }
     .bold { font-weight:700; }
