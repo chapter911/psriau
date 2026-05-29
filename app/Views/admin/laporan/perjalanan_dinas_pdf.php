@@ -65,12 +65,13 @@ $resolvePhotoSrc = static function ($photo): string {
   <meta charset="utf-8">
   <style>
     @page { size: A4; margin: 1.3cm 1.5cm 1.5cm 1.5cm; }
+    html {
+        border: 1px solid #000;
+    }
     body {
         font-family: "Times New Roman", Times, serif;
         font-size: 11pt;
         color: #000;
-        outline: 1px solid #000;
-        outline-offset: -1.3cm;
     }
     .center { text-align:center; }
     .bold { font-weight:700; }
