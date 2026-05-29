@@ -80,23 +80,31 @@ $resolvePhotoSrc = static function ($photo): string {
     .pelaksana-no { display:inline-block; width:18px; }
     .pelaksana-key { display:inline-block; width:60px; flex-shrink:0; }
 
-     /* Report box: keep left/right borders and top on each fragment, rows get bottom separators
-       Remove margin-top so the report visually connects to previous content */
-     .report-wrapper { border-left:1px solid #000; border-right:1px solid #000; border-top:1px solid #000; margin-top:0; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-    /* reduce top padding so first visible row on a new page sits close to the top border */
-    .report-row { padding:4px 8px; min-height:18px; page-break-inside: avoid; -webkit-box-decoration-break: clone; box-decoration-break: clone; border-bottom:1px solid #000; }
-    .report-row:first-child { border-top: none; padding-top:2px; }
-    /* Reset margins for common block elements inside report rows so content sits close to borders */
-    .report-row p, .report-row h1, .report-row h2, .report-row h3, .report-row h4, .report-row ul, .report-row ol {
-      margin: 0 0 6px 0;
-      padding: 0;
+     /* KOTAK BESAR: single continuous border, no individual row lines */
+    .report-wrapper {
+      border: 1px solid #000;
+      margin-top: 4px;
     }
-    .report-row p:first-child, .report-row ul:first-child, .report-row ol:first-child { margin-top: 0; }
-    .report-title { padding:8px; font-weight:700; }
-    /* Keep title and first paragraph together */
-    .report-intro { page-break-inside: avoid; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+    .report-title {
+      padding: 6px 8px 4px;
+      font-weight: 700;
+      border-bottom: 1px solid #000;
+    }
+    .report-content {
+      padding: 6px 8px;
+    }
+    /* reduce block margins inside content rows */
+    .report-content p, .report-content h1, .report-content h2, .report-content h3, .report-content h4,
+    .report-content ul, .report-content ol { margin: 0 0 5px 0; padding: 0; }
+    .report-content p:last-child, .report-content ul:last-child, .report-content ol:last-child { margin-bottom: 0; }
 
     .page-break { page-break-before: always; }
+
+    /* Halaman lanjut: top border agar kotak tetap utuh jika terpotong */
+    .report-title-cont {
+      border-top: 1px solid #000;
+      margin-top: -1px;
+    }
 
     .ttd-grid-3 { width:100%; border-collapse:collapse; margin-top:12px; }
     .ttd-grid-3 td { width:33.33%; text-align:center; vertical-align:top; padding:0 6px; }
@@ -164,23 +172,15 @@ $resolvePhotoSrc = static function ($photo): string {
     $laporan = preg_replace('#<(?:meta|link|style)[^>]*>#i', '', $laporan);
     $laporan = preg_replace('#(<[^>]+)style=["\"][^"\"]*page-break-[^;:\\"]*:[^;"\"]*;?[^"\"]*["\"]#i', '$1', $laporan);
     $blocks = pdf_split_blocks($laporan);
-    $minRows = 8; $maxRows = 40; $used = count($blocks); $total = max($minRows, min($maxRows, $used + 4));
   ?>
 
   <div class="report-wrapper">
+    <div class="report-title">Laporan Hasil Perjalanan Dinas</div>
     <?php if (!empty($blocks)): ?>
-      <?php $firstBlock = array_shift($blocks); ?>
-      <div class="report-intro">
-        <div class="report-row report-title">Laporan Hasil Perjalanan Dinas</div>
-        <div class="report-row"><?= $firstBlock; ?></div>
-      </div>
-    <?php else: ?>
-      <div class="report-row report-title">Laporan Hasil Perjalanan Dinas</div>
+      <?php foreach ($blocks as $b): ?>
+        <div class="report-content"><?= $b; ?></div>
+      <?php endforeach; ?>
     <?php endif; ?>
-
-    <?php foreach ($blocks as $b): ?>
-      <div class="report-row"><?= $b; ?></div>
-    <?php endforeach; ?>
   </div>
 
   <div class="page-break"></div>
