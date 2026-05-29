@@ -510,8 +510,10 @@
                                                     $resolvedStatus = 'belum_sesuai';
                                                 } elseif ($rowVerifikasi === 'belum_verifikasi') {
                                                     $resolvedStatus = 'belum_verifikasi';
+                                                } elseif ($rowKelengkapan !== '' || $rowVerifikasi !== '') {
+                                                    $resolvedStatus = 'belum_ada';
                                                 } else {
-                                                    $resolvedStatus = 'lengkap';
+                                                    $resolvedStatus = 'belum_ada';
                                                 }
                                             }
 
