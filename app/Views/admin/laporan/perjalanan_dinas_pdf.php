@@ -80,24 +80,47 @@ $resolvePhotoSrc = static function ($photo): string {
     .pelaksana-no { display:inline-block; width:18px; }
     .pelaksana-key { display:inline-block; width:60px; flex-shrink:0; }
 
-     /* KOTAK BESAR: border 4 sisi per baris, pecah halaman tetap utuh */
+     /* KOTAK BESAR: table border-collapse, border luar only */
     .report-wrapper {
+      display: table;
+      table-layout: fixed;
+      width: 100%;
       margin-top: 4px;
+      border-collapse: collapse;
+      border: 1px solid #000;
     }
     .report-title {
+      display: table-row;
+    }
+    .report-title > div {
+      display: table-cell;
       padding: 6px 8px 4px;
       font-weight: 700;
       border: 1px solid #000;
+      border-top: none;
     }
     .report-content {
+      display: table-row;
+    }
+    .report-content > div {
+      display: table-cell;
       padding: 6px 8px;
       border: 1px solid #000;
-      border-top: none; /* tidak duplikat garis dg judul */
+      border-top: none;
     }
-    /* reduce block margins inside content rows */
-    .report-content p, .report-content h1, .report-content h2, .report-content h3, .report-content h4,
-    .report-content ul, .report-content ol { margin: 0 0 5px 0; padding: 0; }
-    .report-content p:last-child, .report-content ul:last-child, .report-content ol:last-child { margin-bottom: 0; }
+    .report-title + .report-content > div {
+      padding-top: 8px;
+    }
+    /* reduce block margins inside content */
+    .report-content > div p,
+    .report-content > div h1, .report-content > div h2,
+    .report-content > div h3, .report-content > div h4,
+    .report-content > div ul, .report-content > div ol {
+      margin: 0 0 5px 0; padding: 0;
+    }
+    .report-content > div p:last-child,
+    .report-content > div ul:last-child,
+    .report-content > div ol:last-child { margin-bottom: 0; }
 
     .page-break { page-break-before: always; }
 
@@ -170,10 +193,10 @@ $resolvePhotoSrc = static function ($photo): string {
   ?>
 
   <div class="report-wrapper">
-    <div class="report-title">Laporan Hasil Perjalanan Dinas</div>
+    <div class="report-title"><div>Laporan Hasil Perjalanan Dinas</div></div>
     <?php if (!empty($blocks)): ?>
       <?php foreach ($blocks as $b): ?>
-        <div class="report-content"><?= $b; ?></div>
+        <div class="report-content"><div><?= $b; ?></div></div>
       <?php endforeach; ?>
     <?php endif; ?>
   </div>
