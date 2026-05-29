@@ -164,30 +164,23 @@ $resolvePhotoSrc = static function ($photo): string {
     $laporan = preg_replace('#<(?:meta|link|style)[^>]*>#i', '', $laporan);
     $laporan = preg_replace('#(<[^>]+)style=["\"][^"\"]*page-break-[^;:\\"]*:[^;"\"]*;?[^"\"]*["\"]#i', '$1', $laporan);
     $blocks = pdf_split_blocks($laporan);
-    $minRows = 8; $maxRows = 40;
+    $minRows = 8; $maxRows = 40; $used = count($blocks); $total = max($minRows, min($maxRows, $used + 4));
   ?>
 
   <div class="report-wrapper">
     <?php if (!empty($blocks)): ?>
       <?php $firstBlock = array_shift($blocks); ?>
-      <?php $used = 1 + count($blocks); $total = max($minRows, min($maxRows, $used + 4)); ?>
       <div class="report-intro">
         <div class="report-row report-title">Laporan Hasil Perjalanan Dinas</div>
         <div class="report-row"><?= $firstBlock; ?></div>
       </div>
-      <?php foreach ($blocks as $b): ?>
-        <div class="report-row"><?= $b; ?></div>
-      <?php endforeach; ?>
-      <?php for ($i = 0; $i < ($total - $used); $i++): ?>
-        <div class="report-row">&nbsp;</div>
-      <?php endfor; ?>
     <?php else: ?>
-      <?php $used = 0; $total = max($minRows, min($maxRows, $used + 4)); ?>
       <div class="report-row report-title">Laporan Hasil Perjalanan Dinas</div>
-      <?php for ($i = 0; $i < ($total - $used); $i++): ?>
-        <div class="report-row">&nbsp;</div>
-      <?php endfor; ?>
     <?php endif; ?>
+
+    <?php foreach ($blocks as $b): ?>
+      <div class="report-row"><?= $b; ?></div>
+    <?php endforeach; ?>
   </div>
 
   <div class="page-break"></div>
