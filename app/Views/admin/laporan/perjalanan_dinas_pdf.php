@@ -323,17 +323,20 @@ $resolvePhotoSrc = static function ($photo): string {
         <tr>
             <td>
                 <div style="min-height:70px"></div>
-                <div class="bold"><?= esc((string) ($pelaksanaSignerLeft['nama'] ?? '-')); ?></div>
+                <div class="bold"><?= esc($getJabatan($pelaksanaSignerLeft['jabatan'] ?? '')); ?></div>
+                <div class="bold" style="text-decoration:underline;"><?= esc((string) ($pelaksanaSignerLeft['nama'] ?? '-')); ?></div>
                 <div>NIP. <?= esc((string) ($pelaksanaSignerLeft['nip'] ?? '-')); ?></div>
             </td>
             <td>
                 <div style="min-height:70px"></div>
-                <div class="bold"><?= esc((string) ($pelaksanaSignerRight['nama'] ?? '-')); ?></div>
+                <div class="bold"><?= esc($getJabatan($pelaksanaSignerRight['jabatan'] ?? '')); ?></div>
+                <div class="bold" style="text-decoration:underline;"><?= esc((string) ($pelaksanaSignerRight['nama'] ?? '-')); ?></div>
                 <div>NIP. <?= esc((string) ($pelaksanaSignerRight['nip'] ?? '-')); ?></div>
             </td>
             <td>
                 <div style="min-height:70px"></div>
-                <div class="bold"><?= esc((string) ($pelaksanaSignerExtra['nama'] ?? '-')); ?></div>
+                <div class="bold"><?= esc($getJabatan($pelaksanaSignerExtra['jabatan'] ?? '')); ?></div>
+                <div class="bold" style="text-decoration:underline;"><?= esc((string) ($pelaksanaSignerExtra['nama'] ?? '-')); ?></div>
                 <div>NIP. <?= esc((string) ($pelaksanaSignerExtra['nip'] ?? '-')); ?></div>
             </td>
         </tr>
@@ -355,8 +358,8 @@ $resolvePhotoSrc = static function ($photo): string {
             <?php $person = $diketahuiList[$idx]; ?>
             <div style="display:inline-block; width:<?= $colWidth ?>%; text-align:center; vertical-align:top;">
                 <div style="min-height:70px"></div>
-                <div class="bold"><?= esc((string) ($person['nama'] ?? '-')); ?></div>
-                <div><?= esc($getJabatan($person['jabatan'] ?? '')); ?></div>
+                <div class="bold"><?= esc($getJabatan($person['jabatan'] ?? '')); ?></div>
+                <div class="bold" style="text-decoration:underline;"><?= esc((string) ($person['nama'] ?? '-')); ?></div>
                 <div>NIP. <?= esc((string) ($person['nip'] ?? '-')); ?></div>
             </div>
             <?php $idx++; endfor; ?>
