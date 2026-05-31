@@ -316,7 +316,7 @@ $resolvePhotoSrc = static function ($photo): string {
 
     <div class="page-break"></div>
 
-    <div style="text-align:center; margin-top:8px;">Pekanbaru, <?= esc($renderedDate); ?></div>
+    <div style="text-align:center; margin-top:8px;">Pekanbaru, <?= esc($renderedDate); ?><br/>Dibuat Oleh :</div>
 
     <?php if ($isThreeExe): ?>
     <table class="ttd-grid-3">
