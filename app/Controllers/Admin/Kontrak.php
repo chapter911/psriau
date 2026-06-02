@@ -4996,43 +4996,58 @@ class Kontrak extends BaseController
 
         $db = db_connect();
         $tableVerifikasi = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_verifikasi' : 'trn_kontrak_simak_verifikasi';
+        $tableDokumen = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_verifikasi_dokumen' : 'trn_kontrak_simak_verifikasi_dokumen';
         if (! $db->tableExists($tableVerifikasi)) {
             return $result;
         }
 
+        $verifikasiBySimak = [];
         $builder = $db->table($tableVerifikasi)
             ->select('simak_id, row_no, kelengkapan_dokumen, verifikasi_ki')
             ->whereIn('simak_id', $simakIds)
             ->whereIn('row_no', $leafRows);
         $this->applyNotDeletedWhere($builder, $tableVerifikasi);
 
-        $rows = $builder->get()->getResultArray();
-
-        $statusBySimak = [];
-        foreach ($rows as $row) {
+        foreach ($builder->get()->getResultArray() as $row) {
             $simakId = (int) ($row['simak_id'] ?? 0);
             $rowNo = (int) ($row['row_no'] ?? 0);
-            $kelengkapan = strtolower(trim((string) ($row['kelengkapan_dokumen'] ?? '')));
-            $verifikasi = strtolower(trim((string) ($row['verifikasi_ki'] ?? '')));
-
             if ($simakId <= 0 || $rowNo <= 0) {
                 continue;
             }
 
-            if (! isset($statusBySimak[$simakId])) {
-                $statusBySimak[$simakId] = [];
+            if (! isset($verifikasiBySimak[$simakId])) {
+                $verifikasiBySimak[$simakId] = [];
             }
 
-            if ($verifikasi === 'sesuai') {
-                $statusBySimak[$simakId][$rowNo] = 'lengkap';
-            } elseif ($verifikasi === 'tidak_sesuai') {
-                $statusBySimak[$simakId][$rowNo] = 'belum_sesuai';
-            } elseif ($kelengkapan === 'ada' || $kelengkapan === 'tidak') {
-                // Ada record tapi verifikasi belum 'sesuai' atau 'tidak_sesuai' → menunggu verifikasi
-                $statusBySimak[$simakId][$rowNo] = 'belum_verifikasi';
-            } else {
-                // Tidak ada record sama sekali
-                $statusBySimak[$simakId][$rowNo] = 'belum_ada';
+            $verifikasiBySimak[$simakId][$rowNo] = $row;
+        }
+
+        $dokumenBySimak = [];
+        if ($db->tableExists($tableDokumen)) {
+            $builder = $db->table($tableDokumen)
+                ->select('simak_id, row_no, tipe_dokumen, file_relative_path, file_stored_name, verifikasi_ki')
+                ->whereIn('simak_id', $simakIds)
+                ->whereIn('row_no', $leafRows)
+                ->orderBy('row_no', 'ASC')
+                ->orderBy('id', 'DESC');
+            $this->applyNotDeletedWhere($builder, $tableDokumen);
+
+            foreach ($builder->get()->getResultArray() as $doc) {
+                $simakId = (int) ($doc['simak_id'] ?? 0);
+                $rowNo = (int) ($doc['row_no'] ?? 0);
+                if ($simakId <= 0 || $rowNo <= 0) {
+                    continue;
+                }
+
+                if (! isset($dokumenBySimak[$simakId])) {
+                    $dokumenBySimak[$simakId] = [];
+                }
+
+                if (! isset($dokumenBySimak[$simakId][$rowNo])) {
+                    $dokumenBySimak[$simakId][$rowNo] = [];
+                }
+
+                $dokumenBySimak[$simakId][$rowNo][] = $doc;
             }
         }
 
@@ -5043,7 +5058,19 @@ class Kontrak extends BaseController
             $belumAdaCount = 0;
 
             foreach ($leafRows as $rowNo) {
-                $status = $statusBySimak[$simakId][$rowNo] ?? 'belum_ada';
+                $templateItem = null;
+                foreach ($templateItems as $item) {
+                    if ((int) ($item['row_no'] ?? 0) === $rowNo) {
+                        $templateItem = $item;
+                        break;
+                    }
+                }
+
+                $status = $this->resolveSimakRowStatus(
+                    is_array($templateItem) ? $templateItem : [],
+                    $verifikasiBySimak[$simakId][$rowNo] ?? null,
+                    $dokumenBySimak[$simakId][$rowNo] ?? []
+                );
                 if ($status === 'lengkap') {
                     $lengkapCount++;
                 } elseif ($status === 'belum_sesuai') {
@@ -5064,6 +5091,122 @@ class Kontrak extends BaseController
         }
 
         return $result;
+    }
+
+    private function resolveSimakRowStatus(array $templateItem, ?array $verifikasiRow, array $dokumenRows): string
+    {
+        $hasDraft = (bool) ($templateItem['has_draft'] ?? false);
+        $rowKelengkapan = strtolower(trim((string) ($verifikasiRow['kelengkapan_dokumen'] ?? '')));
+        $rowVerifikasi = strtolower(trim((string) ($verifikasiRow['verifikasi_ki'] ?? '')));
+
+        $draftDokumen = null;
+        $finalDokumen = null;
+        foreach ($dokumenRows as $docRow) {
+            $docType = strtolower(trim((string) ($docRow['tipe_dokumen'] ?? 'final')));
+            if ($docType === 'draft' && $draftDokumen === null) {
+                $draftDokumen = $docRow;
+            } elseif ($docType !== 'draft' && $finalDokumen === null) {
+                $finalDokumen = $docRow;
+            }
+
+            if ($draftDokumen !== null && $finalDokumen !== null) {
+                break;
+            }
+        }
+
+        $draftVerifikasi = is_array($draftDokumen) ? strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? ''))) : '';
+        $finalVerifikasi = is_array($finalDokumen) ? strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? ''))) : '';
+        $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
+        $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
+        $draftNoFilePlaceholder = $hasDraft
+            && is_array($draftDokumen)
+            && trim((string) ($draftDokumen['file_relative_path'] ?? '')) === ''
+            && trim((string) ($draftDokumen['file_stored_name'] ?? '')) === '';
+        $finalNoFilePlaceholder = is_array($finalDokumen)
+            && trim((string) ($finalDokumen['file_relative_path'] ?? '')) === ''
+            && trim((string) ($finalDokumen['file_stored_name'] ?? '')) === '';
+
+        if ($hasDraft) {
+            if ($draftVerifikasi === 'tidak_sesuai') {
+                return 'belum_sesuai';
+            }
+
+            if ($draftVerifikasi === 'sesuai') {
+                if ($finalVerifikasi === 'sesuai') {
+                    return 'lengkap';
+                }
+
+                if ($finalVerifikasi === 'tidak_sesuai') {
+                    return 'belum_sesuai';
+                }
+
+                if ($finalHasFile || is_array($finalDokumen) || $finalNoFilePlaceholder) {
+                    return 'belum_verifikasi';
+                }
+
+                return 'belum_ada';
+            }
+
+            if ($draftVerifikasi === 'belum_verifikasi' || ($draftDokumen !== null && $draftVerifikasi === '')) {
+                return 'belum_verifikasi';
+            }
+
+            if ($rowVerifikasi === 'tidak_sesuai') {
+                return 'belum_sesuai';
+            }
+
+            if ($rowVerifikasi === 'sesuai') {
+                return 'belum_ada';
+            }
+
+            if ($rowVerifikasi === 'belum_verifikasi') {
+                return 'belum_verifikasi';
+            }
+
+            if ($finalVerifikasi === 'sesuai') {
+                return 'lengkap';
+            }
+
+            if ($finalVerifikasi === 'tidak_sesuai') {
+                return 'belum_sesuai';
+            }
+
+            if ($draftHasFile || $draftNoFilePlaceholder || $draftDokumen !== null) {
+                return 'belum_verifikasi';
+            }
+
+            return 'belum_ada';
+        }
+
+        if ($finalVerifikasi === 'sesuai') {
+            return 'lengkap';
+        }
+
+        if ($finalVerifikasi === 'tidak_sesuai') {
+            return 'belum_sesuai';
+        }
+
+        if ($finalNoFilePlaceholder || $finalVerifikasi === 'belum_verifikasi' || ($finalDokumen !== null && $finalVerifikasi === '')) {
+            return 'belum_verifikasi';
+        }
+
+        if ($rowKelengkapan === 'tidak' && $rowVerifikasi === 'sesuai') {
+            return 'lengkap';
+        }
+
+        if ($rowVerifikasi === 'tidak_sesuai') {
+            return 'belum_sesuai';
+        }
+
+        if ($rowVerifikasi === 'belum_verifikasi') {
+            return 'belum_verifikasi';
+        }
+
+        if ($rowKelengkapan !== '' || $rowVerifikasi !== '') {
+            return 'belum_ada';
+        }
+
+        return 'belum_ada';
     }
 
     private function getSimakPelaksanaanFisikTemplateItems(bool $includeHiddenShare = true): array
