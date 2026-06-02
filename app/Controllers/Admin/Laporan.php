@@ -367,6 +367,17 @@ class Laporan extends BaseController
         ]);
     }
 
+    private function writeSmokeLog(string $label, $payload): void
+    {
+        $logDir = WRITEPATH . 'logs';
+        if (! is_dir($logDir)) {
+            @mkdir($logDir, 0755, true);
+        }
+        $file = $logDir . DIRECTORY_SEPARATOR . 'smoke_test.log';
+        $entry = date('Y-m-d H:i:s') . ' | ' . $label . ' | ' . json_encode($payload, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+        @file_put_contents($file, $entry, FILE_APPEND | LOCK_EX);
+    }
+
     public function perjalananDinasDokumen(int $id)
     {
         if (! $this->canViewLaporan()) {
@@ -457,6 +468,11 @@ class Laporan extends BaseController
         ];
 
         if (strtolower((string) $this->request->getMethod()) !== 'post') {
+            $this->writeSmokeLog('perjalananDinasEdit.GET', [
+                'id' => $id,
+                'existing' => $existing,
+            ]);
+
             return view('admin/laporan/perjalanan_dinas_buat', [
                 'title' => 'Ubah Laporan Perjalanan Dinas',
                 'pegawai_options' => $pegawaiRows,
@@ -543,6 +559,13 @@ class Laporan extends BaseController
             ];
         }
 
+        $this->writeSmokeLog('perjalananDinasEdit.POST.uploads', [
+            'id' => $id,
+            'existingPhotosCount' => count($existingPhotos),
+            'newPhotosCount' => count($newPhotos),
+            'removedIndices' => $removedIndices,
+        ]);
+
         // Filter foto existing yang dihapus oleh user
         $removedIndices = [];
         $removedRaw = trim((string) $this->request->getPost('removed_foto_indices'));
@@ -598,6 +621,11 @@ class Laporan extends BaseController
             return redirect()->to(site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'))->with('error', 'Gagal memperbarui laporan.');
         }
 
+        $this->writeSmokeLog('perjalananDinasEdit.POST.saved', [
+            'id' => $id,
+            'payload' => $payload,
+        ]);
+
         return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('success', 'Laporan berhasil diperbarui.');
     }
 
@@ -616,6 +644,9 @@ class Laporan extends BaseController
         }
 
         if (strtolower((string) $this->request->getMethod()) !== 'post') {
+            $this->writeSmokeLog('perjalananDinasBuat.GET', [
+                'draft' => $draftData,
+            ]);
             return view('admin/laporan/perjalanan_dinas_buat', [
                 'title' => 'Buat Laporan Perjalanan Dinas',
                 'pegawai_options' => $pegawaiRows,
@@ -724,6 +755,13 @@ class Laporan extends BaseController
         }
 
         if ($errors !== []) {
+            $this->writeSmokeLog('perjalananDinasBuat.POST.validation_error', [
+                'post_input' => $currentInput,
+                'draftPhotos' => $draftPhotos,
+                'uploadedPhotosCount' => count($photos),
+                'errors' => $errors,
+            ]);
+
             return view('admin/laporan/perjalanan_dinas_buat', [
                 'title' => 'Buat Laporan Perjalanan Dinas',
                 'pegawai_options' => $pegawaiRows,
@@ -763,6 +801,9 @@ class Laporan extends BaseController
             // For production, consider persisting to DB instead.
             $sess = session();
             $sess->set('laporan_perjalanan_dinas_draft', $data);
+            $this->writeSmokeLog('perjalananDinasBuat.POST.save_draft', [
+                'data' => $data,
+            ]);
             return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('success', 'Draft laporan berhasil disimpan.');
         }
 
@@ -795,6 +836,11 @@ class Laporan extends BaseController
             if ($insertId === false) {
                 return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('error', 'Gagal menyimpan laporan. Silakan coba lagi.');
             }
+
+            $this->writeSmokeLog('perjalananDinasBuat.POST.save_final', [
+                'row' => $row,
+                'insert_id' => $insertId,
+            ]);
 
             session()->remove('laporan_perjalanan_dinas_draft');
 
