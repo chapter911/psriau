@@ -14,6 +14,19 @@
     $isEdit = (bool) ($is_edit ?? false);
     $submitLabelPrimary = (string) ($submit_label_primary ?? 'Simpan Final');
     $existingFotoDokumentasi = $existing_foto_dokumentasi ?? [];
+    $resolvePhotoSrc = static function ($photo): string {
+        if (is_array($photo)) {
+            foreach (['data_uri', 'src', 'url', 'path', 'file_path'] as $key) {
+                $value = trim((string) ($photo[$key] ?? ''));
+                if ($value !== '') return $value;
+            }
+        } elseif (is_string($photo)) {
+            $value = trim($photo);
+            if ($value !== '') return $value;
+        }
+
+        return '';
+    };
     $formatPegawaiLabel = static function (array $pegawai): string {
         $nama = trim((string) ($pegawai['nama'] ?? $pegawai['display_name'] ?? $pegawai['display_label'] ?? 'Pegawai'));
         $nip = trim((string) ($pegawai['nip'] ?? ''));
@@ -272,7 +285,7 @@
                                 <div class="existing-photo-title">Foto dokumentasi tersimpan (<?= count($existingFotoDokumentasi); ?> foto)</div>
                                 <div id="existingPhotoList">
                                     <?php foreach ($existingFotoDokumentasi as $fIdx => $foto): ?>
-                                        <?php $dataUri = (string) ($foto['data_uri'] ?? ''); ?>
+                                        <?php $dataUri = $resolvePhotoSrc($foto); ?>
                                         <?php if ($dataUri !== ''): ?>
                                             <div class="existing-photo-item" data-existing-index="<?= (int) $fIdx; ?>">
                                                 <img src="<?= esc($dataUri); ?>" alt="Dokumentasi <?= (int) $fIdx + 1; ?>">
