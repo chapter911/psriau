@@ -5014,9 +5014,6 @@ class Kontrak extends BaseController
             $rowNo = (int) ($row['row_no'] ?? 0);
             $kelengkapan = strtolower(trim((string) ($row['kelengkapan_dokumen'] ?? '')));
             $verifikasi = strtolower(trim((string) ($row['verifikasi_ki'] ?? '')));
-            if ($verifikasi === 'tidak_sesuai') {
-                $verifikasi = 'belum_sesuai';
-            }
 
             if ($simakId <= 0 || $rowNo <= 0) {
                 continue;
@@ -5028,14 +5025,11 @@ class Kontrak extends BaseController
 
             if (($kelengkapan === 'ada' || $kelengkapan === 'tidak') && $verifikasi === 'sesuai') {
                 $statusBySimak[$simakId][$rowNo] = 'lengkap';
+            } elseif ($kelengkapan === 'ada' && $verifikasi === 'tidak_sesuai') {
+                $statusBySimak[$simakId][$rowNo] = 'belum_sesuai';
             } elseif ($kelengkapan === 'ada' || $kelengkapan === 'tidak') {
-                if ($verifikasi === 'belum_sesuai') {
-                    $statusBySimak[$simakId][$rowNo] = 'belum_sesuai';
-                } elseif ($verifikasi === 'belum_verifikasi' || $verifikasi === '') {
-                    $statusBySimak[$simakId][$rowNo] = 'belum_verifikasi';
-                } else {
-                    $statusBySimak[$simakId][$rowNo] = 'belum_verifikasi';
-                }
+                // Ada record tapi verifikasi belum 'sesuai' atau 'tidak_sesuai' → menunggu verifikasi
+                $statusBySimak[$simakId][$rowNo] = 'belum_verifikasi';
             } else {
                 // Tidak ada record sama sekali
                 $statusBySimak[$simakId][$rowNo] = 'belum_ada';
