@@ -447,6 +447,8 @@
                                             $statusCellClass = '';
                                             $draftApproved = $draftVerifikasi === 'sesuai';
                                             $finalApproved = $finalVerifikasi === 'sesuai';
+                                            $draftDocExists = is_array($draftDokumen);
+                                            $finalDocExists = is_array($finalDokumen);
                                             $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                             $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
                                             // Check untuk placeholder "Tidak Ada" tanpa file
@@ -454,10 +456,10 @@
                                                 && is_array($finalDokumen)
                                                 && trim((string) ($finalDokumen['file_relative_path'] ?? '')) === ''
                                                 && trim((string) ($finalDokumen['file_stored_name'] ?? '')) === '';
-                                            // canVerifyDraft: hanya jika draft ada file & belum verifikasi
-                                            $canVerifyDraft = $hasDraft && $draftHasFile && $draftVerifikasi !== 'sesuai' && $draftVerifikasi !== 'tidak_sesuai';
-                                            // canVerifyFinal: hanya jika final ada file & belum verifikasi
-                                            $canVerifyFinal = $finalHasFile && $finalVerifikasi !== 'sesuai' && $finalVerifikasi !== 'tidak_sesuai';
+                                            // canVerifyDraft: placeholder tanpa file tetap bisa diverifikasi selama record draft ada
+                                            $canVerifyDraft = $draftDocExists && $draftVerifikasi !== 'sesuai' && $draftVerifikasi !== 'tidak_sesuai';
+                                            // canVerifyFinal: placeholder tanpa file tetap bisa diverifikasi selama record final ada
+                                            $canVerifyFinal = $finalDocExists && $finalVerifikasi !== 'sesuai' && $finalVerifikasi !== 'tidak_sesuai';
                                             $draftActionKelengkapan = strtolower(trim((string) ($draftDokumen['kelengkapan_dokumen'] ?? ($kelengkapan !== '' ? $kelengkapan : 'tidak'))));
                                             $draftActionVerifikasi = strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? $verifikasi)));
                                             $draftActionKeterangan = (string) ($draftDokumen['keterangan'] ?? $keterangan);
