@@ -267,7 +267,7 @@
                             </div>
                             <div class="mt-3 d-flex flex-wrap" id="selectedPhotoPreview"></div>
 
-                        <?php if (!empty($existingFotoDokumentasi) && $isEdit): ?>
+                        <?php if (!empty($existingFotoDokumentasi)): ?>
                             <div class="existing-photo-section">
                                 <div class="existing-photo-title">Foto dokumentasi tersimpan (<?= count($existingFotoDokumentasi); ?> foto)</div>
                                 <div id="existingPhotoList">

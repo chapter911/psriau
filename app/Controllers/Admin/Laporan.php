@@ -610,6 +610,10 @@ class Laporan extends BaseController
         $pegawaiRows = $this->loadPegawaiOptions();
         $defaultApprover = $this->resolveDefaultApprover($pegawaiRows);
         $creatorPegawai = $this->resolveCurrentPegawai((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name')), $pegawaiRows);
+        $draftData = session()->get('laporan_perjalanan_dinas_draft');
+        if (! is_array($draftData)) {
+            $draftData = [];
+        }
 
         if (strtolower((string) $this->request->getMethod()) !== 'post') {
             return view('admin/laporan/perjalanan_dinas_buat', [
@@ -618,10 +622,21 @@ class Laporan extends BaseController
                 'kabupaten_options' => $this->loadKabupatenOptions(),
                 'default_approver_id' => $defaultApprover['id'] ?? null,
                 'default_approver_label' => $defaultApprover['label'] ?? '',
-                'creator_name' => trim((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
-                'creator_pegawai' => $creatorPegawai,
-                'current_input' => [],
+                'creator_name' => trim((string) ($draftData['creator_name'] ?? session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
+                'creator_pegawai' => $draftData['creator_pegawai'] ?? $creatorPegawai,
+                'current_input' => [
+                    'nomor_surat_tugas' => (string) ($draftData['nomor_surat_tugas'] ?? ''),
+                    'periode_mulai' => (string) ($draftData['periode_mulai'] ?? ''),
+                    'periode_selesai' => (string) ($draftData['periode_selesai'] ?? ''),
+                    'kota_tujuan' => (string) ($draftData['kota_tujuan'] ?? ''),
+                    'tujuan' => (string) ($draftData['tujuan'] ?? ''),
+                    'sasaran' => (string) ($draftData['sasaran'] ?? ''),
+                    'laporan_hasil' => (string) ($draftData['laporan_hasil'] ?? ''),
+                    'diketahui_oleh_id' => (int) ($draftData['diketahui_oleh']['id'] ?? 0),
+                    'pelaksana_id' => array_values(array_filter(array_map(static fn ($item): int => (int) ($item['id'] ?? 0), (array) ($draftData['pelaksana'] ?? [])), static fn (int $itemId): bool => $itemId > 0)),
+                ],
                 'form_error' => null,
+                'existing_foto_dokumentasi' => $draftData['foto_dokumentasi'] ?? [],
             ]);
         }
 
@@ -766,6 +781,8 @@ class Laporan extends BaseController
             if ($insertId === false) {
                 return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('error', 'Gagal menyimpan laporan. Silakan coba lagi.');
             }
+
+            session()->remove('laporan_perjalanan_dinas_draft');
 
             return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('success', 'Laporan berhasil disimpan.');
         }
