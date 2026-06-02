@@ -821,10 +821,13 @@
                                     $isDraftVerified = $draftVerifikasi === 'sesuai';
                                     $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                     $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
+                                    $draftNoFilePlaceholder = $hasDraft
+                                        && is_array($draftDokumen)
+                                        && trim((string) ($draftDokumen['file_relative_path'] ?? '')) === ''
+                                        && trim((string) ($draftDokumen['file_stored_name'] ?? '')) === '';
                                     $draftNoFileVerified = $hasDraft && $kelengkapan === 'tidak' && $verifikasi === 'sesuai';
                                     // Untuk item final-only (has_draft=0), check jika ada placeholder "Tidak Ada"
-                                    $finalNoFilePlaceholder = $hasDraft === false
-                                        && is_array($finalDokumen)
+                                    $finalNoFilePlaceholder = is_array($finalDokumen)
                                         && trim((string) ($finalDokumen['file_relative_path'] ?? '')) === ''
                                         && trim((string) ($finalDokumen['file_stored_name'] ?? '')) === '';
 
@@ -862,14 +865,12 @@
                                             } else {
                                                 $resolvedStatus = 'belum_ada';
                                             }
-                                        } else {
-                                            if ($finalNoFilePlaceholder) {
-                                                $resolvedStatus = 'lengkap';
-                                            } elseif ($finalVerifikasi === 'sesuai') {
+                                            } else {
+                                                if ($finalVerifikasi === 'sesuai') {
                                                 $resolvedStatus = 'lengkap';
                                             } elseif ($finalVerifikasi === 'tidak_sesuai') {
                                                 $resolvedStatus = 'belum_sesuai';
-                                            } elseif ($finalVerifikasi === 'belum_verifikasi' || ($finalDokumen !== null && $finalVerifikasi === '')) {
+                                                } elseif ($finalNoFilePlaceholder || $finalVerifikasi === 'belum_verifikasi' || ($finalDokumen !== null && $finalVerifikasi === '')) {
                                                 $resolvedStatus = 'belum_verifikasi';
                                             } elseif ($rowKelengkapan === 'tidak' && $rowVerifikasi === 'sesuai') {
                                                 $resolvedStatus = 'lengkap';

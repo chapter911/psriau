@@ -449,15 +449,18 @@
                                             $finalApproved = $finalVerifikasi === 'sesuai';
                                             $draftHasFile = is_array($draftDokumen) && trim((string) ($draftDokumen['file_relative_path'] ?? '')) !== '';
                                             $finalHasFile = is_array($finalDokumen) && trim((string) ($finalDokumen['file_relative_path'] ?? '')) !== '';
+                                            $draftNoFilePlaceholder = $hasDraft
+                                                && is_array($draftDokumen)
+                                                && trim((string) ($draftDokumen['file_relative_path'] ?? '')) === ''
+                                                && trim((string) ($draftDokumen['file_stored_name'] ?? '')) === '';
                                             // Check untuk placeholder "Tidak Ada" tanpa file
-                                            $finalNoFilePlaceholder = $hasDraft === false
-                                                && is_array($finalDokumen)
+                                            $finalNoFilePlaceholder = is_array($finalDokumen)
                                                 && trim((string) ($finalDokumen['file_relative_path'] ?? '')) === ''
                                                 && trim((string) ($finalDokumen['file_stored_name'] ?? '')) === '';
-                                            // canVerifyDraft: hanya jika draft ada file & belum verifikasi
-                                            $canVerifyDraft = $hasDraft && $draftHasFile && $draftVerifikasi !== 'sesuai' && $draftVerifikasi !== 'tidak_sesuai';
-                                            // canVerifyFinal: hanya jika final ada file & belum verifikasi
-                                            $canVerifyFinal = $finalHasFile && $finalVerifikasi !== 'sesuai' && $finalVerifikasi !== 'tidak_sesuai';
+                                            // canVerifyDraft: file fisik atau placeholder "Tidak Ada" tetap bisa diverifikasi
+                                            $canVerifyDraft = $hasDraft && ($draftHasFile || $draftNoFilePlaceholder) && $draftVerifikasi !== 'sesuai' && $draftVerifikasi !== 'tidak_sesuai';
+                                            // canVerifyFinal: file fisik atau placeholder "Tidak Ada" tetap bisa diverifikasi
+                                            $canVerifyFinal = ($finalHasFile || $finalNoFilePlaceholder) && $finalVerifikasi !== 'sesuai' && $finalVerifikasi !== 'tidak_sesuai';
                                             $draftActionKelengkapan = strtolower(trim((string) ($draftDokumen['kelengkapan_dokumen'] ?? ($kelengkapan !== '' ? $kelengkapan : 'tidak'))));
                                             $draftActionVerifikasi = strtolower(trim((string) ($draftDokumen['verifikasi_ki'] ?? $verifikasi)));
                                             $draftActionKeterangan = (string) ($draftDokumen['keterangan'] ?? $keterangan);
@@ -514,13 +517,11 @@
                                                     $resolvedStatus = 'belum_ada';
                                                 }
                                             } else {
-                                                if ($finalNoFilePlaceholder) {
-                                                    $resolvedStatus = 'lengkap';
-                                                } elseif ($finalVerifikasi === 'sesuai') {
+                                                if ($finalVerifikasi === 'sesuai') {
                                                     $resolvedStatus = 'lengkap';
                                                 } elseif ($finalVerifikasi === 'tidak_sesuai') {
                                                     $resolvedStatus = 'belum_sesuai';
-                                                } elseif ($finalVerifikasi === 'belum_verifikasi' || ($finalDokumen !== null && $finalVerifikasi === '')) {
+                                                } elseif ($finalNoFilePlaceholder || $finalVerifikasi === 'belum_verifikasi' || ($finalDokumen !== null && $finalVerifikasi === '')) {
                                                     $resolvedStatus = 'belum_verifikasi';
                                                 } elseif ($rowKelengkapan === 'tidak' && $rowVerifikasi === 'sesuai') {
                                                     $resolvedStatus = 'lengkap';
