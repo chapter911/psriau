@@ -556,7 +556,7 @@ class Laporan extends BaseController
             $existingPhotos = array_values(array_filter($existingPhotos, static fn ($key): bool => !in_array($key, $removedIndices, true), ARRAY_FILTER_USE_KEY));
         }
 
-        $photos = $newPhotos !== [] ? $newPhotos : $existingPhotos;
+        $photos = array_values(array_merge($existingPhotos, $newPhotos));
 
         if ($errors !== []) {
             return view('admin/laporan/perjalanan_dinas_buat', [
@@ -572,7 +572,7 @@ class Laporan extends BaseController
                 'form_action' => site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'),
                 'is_edit' => true,
                 'submit_label_primary' => 'Simpan Perubahan',
-                'existing_foto_dokumentasi' => $existingPhotos,
+                'existing_foto_dokumentasi' => $photos,
             ]);
         }
 
@@ -682,6 +682,19 @@ class Laporan extends BaseController
             $errors[] = 'Data diketahui oleh wajib dipilih.';
         }
 
+        $draftPhotos = array_values(array_filter((array) ($draftData['foto_dokumentasi'] ?? []), 'is_array'));
+        $removedIndices = [];
+        $removedRaw = trim((string) $this->request->getPost('removed_foto_indices'));
+        if ($removedRaw !== '') {
+            $decoded = json_decode($removedRaw, true);
+            if (is_array($decoded)) {
+                $removedIndices = array_values($decoded);
+            }
+        }
+        if ($removedIndices !== []) {
+            $draftPhotos = array_values(array_filter($draftPhotos, static fn ($key): bool => ! in_array($key, $removedIndices, true), ARRAY_FILTER_USE_KEY));
+        }
+
         $photoUploads = $this->request->getFileMultiple('foto_dokumentasi') ?? [];
         if (! is_array($photoUploads)) {
             $photoUploads = [];
@@ -721,6 +734,7 @@ class Laporan extends BaseController
                 'creator_pegawai' => $creatorPegawai,
                 'current_input' => $currentInput,
                 'form_error' => implode(' ', $errors),
+                'existing_foto_dokumentasi' => array_values(array_merge($draftPhotos, $photos)),
             ]);
         }
 
@@ -733,7 +747,7 @@ class Laporan extends BaseController
             'sasaran' => $currentInput['sasaran'],
             'laporan_hasil' => $currentInput['laporan_hasil'],
             'pelaksana' => $this->buildPegawaiRowsByIds($pegawaiRows, $currentInput['pelaksana_id']),
-            'foto_dokumentasi' => $photos,
+            'foto_dokumentasi' => array_values(array_merge($draftPhotos, $photos)),
             'creator_name' => trim((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
             'creator_pegawai' => $creatorPegawai,
             'diketahui_oleh' => $this->findPegawaiById($pegawaiRows, $currentInput['diketahui_oleh_id']) ?? [
