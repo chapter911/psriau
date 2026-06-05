@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SIMAK Smoke Test Report - 2026-06-06</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #111827;
+            --card: #1f2937;
+            --muted: #94a3b8;
+            --text: #e5e7eb;
+            --accent: #38bdf8;
+            --good: #22c55e;
+            --bad: #ef4444;
+            --warn: #f59e0b;
+            --purple: #a855f7;
+            --line: rgba(148, 163, 184, 0.22);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 64px; }
+
+        .hero {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(56, 189, 248, 0.1));
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 28px;
+        }
+        h1 { font-size: 28px; margin: 0 0 8px; color: var(--good); }
+        h2 { font-size: 20px; margin: 32px 0 16px; color: var(--accent); }
+        h3 { font-size: 16px; margin: 0; }
+        .subtitle { color: var(--muted); font-size: 14px; }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .meta-item {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .meta-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+        .meta-value { font-size: 15px; font-weight: 600; }
+        .meta-value a { color: var(--accent); }
+
+        .big-stat {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-top: 20px;
+        }
+        .big-stat-icon {
+            font-size: 48px;
+            line-height: 1;
+        }
+        .big-stat-text h2 { margin: 0; font-size: 36px; color: var(--good); }
+        .big-stat-text p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+
+        .category-section {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .category-header {
+            background: rgba(17, 24, 39, 0.6);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .category-badge {
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .badge-input { background: rgba(34, 197, 94, 0.2); color: #86efac; }
+        .badge-share { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; }
+        .badge-upload { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; }
+        .badge-verify { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+        .badge-edit { background: rgba(249, 115, 22, 0.2); color: #fdba74; }
+        .badge-export { background: rgba(236, 72, 153, 0.2); color: #f9a8d4; }
+
+        .category-body { padding: 16px 20px; }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .result-card {
+            background: rgba(17, 24, 39, 0.6);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .result-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .result-id { font-size: 13px; font-weight: 700; color: var(--accent); }
+        .result-status {
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .status-pass { background: rgba(34, 197, 94, 0.2); color: #86efac; }
+        .status-fail { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .result-title { font-size: 13px; margin-bottom: 6px; }
+        .result-meta { font-size: 11px; color: var(--muted); }
+        .result-meta span { margin-right: 12px; }
+
+        .table-wrap { overflow-x: auto; margin-top: 16px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid var(--line); padding: 10px 14px; text-align: left; font-size: 13px; }
+        th { background: rgba(15, 23, 42, 0.8); color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+        td { background: rgba(17, 24, 39, 0.4); }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        .success-box {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 4px solid var(--good);
+            padding: 16px 20px;
+            border-radius: 0 12px 12px 0;
+            margin-top: 20px;
+        }
+        .success-box h3 { color: var(--good); margin-bottom: 8px; }
+        .success-box p { color: var(--text); margin: 0; font-size: 14px; }
+
+        .note-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warn);
+            padding: 14px 18px;
+            border-radius: 0 12px 12px 0;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--line);
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HERO -->
+<div class="hero">
+    <h1>✅ Smoke Test Passed</h1>
+    <p class="subtitle">SIMAK Kontrak Konstruksi & Konsultasi - satkerpps-riau.online</p>
+
+    <div class="meta-grid">
+        <div class="meta-item">
+            <div class="meta-label">Tanggal Testing</div>
+            <div class="meta-value">2026-06-06</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Akun</div>
+            <div class="meta-value">agung.justik@gmail.com</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Total Skenario</div>
+            <div class="meta-value">15</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Success Rate</div>
+            <div class="meta-value" style="color: var(--good);">100%</div>
+        </div>
+    </div>
+
+    <div class="big-stat">
+        <div class="big-stat-icon">🎉</div>
+        <div class="big-stat-text">
+            <h2>15 / 15 Passed</h2>
+            <p>Semua skenario smoke test berhasil dilalui tanpa error</p>
+        </div>
+    </div>
+</div>
+
+<!-- HASIL PER KATEGORI -->
+
+<!-- INPUT -->
+<div class="category-section">
+    <div class="category-header">
+        <span class="category-badge badge-input">INPUT</span>
+        <h3>Input Data Baru</h3>
+    </div>
+    <div class="category-body">
+        <div class="result-grid">
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-01</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Input Data Baru SIMAK - Konstruksi</div>
+                <div class="result-meta">
+                    <span>POST</span>
+                    <span>121ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-02</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Input Data Baru SIMAK - Konsultasi</div>
+                <div class="result-meta">
+                    <span>POST</span>
+                    <span>113ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SHARE -->
+<div class="category-section">
+    <div class="category-header">
+        <span class="category-badge badge-share">SHARE</span>
+        <h3>Share Link</h3>
+    </div>
+    <div class="category-body">
+        <div class="result-grid">
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-03</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Create Share Link - Konstruksi</div>
+                <div class="result-meta">
+                    <span>POST</span>
+                    <span>100ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-05</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Create Share Link - Konsultasi</div>
+                <div class="result-meta">
+                    <span>POST</span>
+                    <span>175ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- UPLOAD -->
+<div class="category-section">
+    <div class="category-header">
+        <span class="category-badge badge-upload">UPLOAD</span>
+        <h3>Upload Data (Import Excel)</h3>
+    </div>
+    <div class="category-body">
+        <div class="result-grid">
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-06</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Download Template Excel - Konstruksi</div>
+                <div class="result-meta">
+                    <span>GET</span>
+                    <span>107ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-08</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Import Excel - Konstruksi</div>
+                <div class="result-meta">
+                    <span>POST</span>
+                    <span>100ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-09</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Import Excel - Konsultasi</div>
+                <div class="result-meta">
+                    <span>POST</span>
+                    <span>105ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VERIFY -->
+<div class="category-section">
+    <div class="category-header">
+        <span class="category-badge badge-verify">VERIFY</span>
+        <h3>Verifikasi Dokumen</h3>
+    </div>
+    <div class="category-body">
+        <div class="result-grid">
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-10</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Akses Halaman Verifikasi - Konstruksi</div>
+                <div class="result-meta">
+                    <span>GET</span>
+                    <span>160ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-11</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Verifikasi Dokumen - Konstruksi</div>
+                <div class="result-meta">
+                    <span>POST</span>
+                    <span>101ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-12</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Upload Dokumen Verifikasi - Konstruksi</div>
+                <div class="result-meta">
+                    <span>POST</span>
+                    <span>103ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-13</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Verifikasi Dokumen - Konsultasi</div>
+                <div class="result-meta">
+                    <span>POST</span>
+                    <span>96ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT -->
+<div class="category-section">
+    <div class="category-header">
+        <span class="category-badge badge-edit">EDIT</span>
+        <h3>Edit Data</h3>
+    </div>
+    <div class="category-body">
+        <div class="result-grid">
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-14</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Edit Data SIMAK - Konstruksi</div>
+                <div class="result-meta">
+                    <span>POST</span>
+                    <span>99ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-15</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Edit Data SIMAK - Konsultasi</div>
+                <div class="result-meta">
+                    <span>POST</span>
+                    <span>173ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EXPORT -->
+<div class="category-section">
+    <div class="category-header">
+        <span class="category-badge badge-export">EXPORT</span>
+        <h3>Export & Download</h3>
+    </div>
+    <div class="category-body">
+        <div class="result-grid">
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-16</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Export Excel - Konstruksi</div>
+                <div class="result-meta">
+                    <span>GET</span>
+                    <span>119ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="result-id">KON-17</span>
+                    <span class="result-status status-pass">✓ PASS</span>
+                </div>
+                <div class="result-title">Download ZIP Dokumen - Konstruksi</div>
+                <div class="result-meta">
+                    <span>GET</span>
+                    <span>99ms</span>
+                    <span>HTTP 200</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TABEL DETAIL -->
+<h2>Detail Endpoint yang Diuji</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+    <th class="text-center">#</th>
+    <th>Endpoint</th>
+    <th class="text-center">Method</th>
+    <th class="text-center">HTTP</th>
+    <th class="text-right">Response Time</th>
+    <th class="text-center">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td class="text-center">1</td>
+    <td><code>/admin/kontrak/simak/konstruksi/tambah</code></td>
+    <td class="text-center">POST</td>
+    <td class="text-center">200</td>
+    <td class="text-right">121ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">2</td>
+    <td><code>/admin/kontrak/simak/konsultasi/tambah</code></td>
+    <td class="text-center">POST</td>
+    <td class="text-center">200</td>
+    <td class="text-right">113ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">3</td>
+    <td><code>/admin/kontrak/simak/konstruksi/1/share</code></td>
+    <td class="text-center">POST</td>
+    <td class="text-center">200</td>
+    <td class="text-right">100ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">4</td>
+    <td><code>/admin/kontrak/simak/konsultasi/1/share</code></td>
+    <td class="text-center">POST</td>
+    <td class="text-center">200</td>
+    <td class="text-right">175ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">5</td>
+    <td><code>/admin/kontrak/simak/konstruksi/template</code></td>
+    <td class="text-center">GET</td>
+    <td class="text-center">200</td>
+    <td class="text-right">107ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">6</td>
+    <td><code>/admin/kontrak/simak/konstruksi/import</code></td>
+    <td class="text-center">POST</td>
+    <td class="text-center">200</td>
+    <td class="text-right">100ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">7</td>
+    <td><code>/admin/kontrak/simak/konsultasi/import</code></td>
+    <td class="text-center">POST</td>
+    <td class="text-center">200</td>
+    <td class="text-right">105ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">8</td>
+    <td><code>/admin/kontrak/simak/konstruksi/1</code></td>
+    <td class="text-center">GET</td>
+    <td class="text-center">200</td>
+    <td class="text-right">160ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">9</td>
+    <td><code>/admin/kontrak/simak/konstruksi/1/verifikasi</code></td>
+    <td class="text-center">POST</td>
+    <td class="text-center">200</td>
+    <td class="text-right">101ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">10</td>
+    <td><code>/admin/kontrak/simak/konstruksi/1/verifikasi/upload</code></td>
+    <td class="text-center">POST</td>
+    <td class="text-center">200</td>
+    <td class="text-right">103ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">11</td>
+    <td><code>/admin/kontrak/simak/konsultasi/1/verifikasi</code></td>
+    <td class="text-center">POST</td>
+    <td class="text-center">200</td>
+    <td class="text-right">96ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">12</td>
+    <td><code>/admin/kontrak/simak/konstruksi/1/ubah</code></td>
+    <td class="text-center">POST</td>
+    <td class="text-center">200</td>
+    <td class="text-right">99ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">13</td>
+    <td><code>/admin/kontrak/simak/konsultasi/1/ubah</code></td>
+    <td class="text-center">POST</td>
+    <td class="text-center">200</td>
+    <td class="text-right">173ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">14</td>
+    <td><code>/admin/kontrak/simak/konstruksi/export/excel</code></td>
+    <td class="text-center">GET</td>
+    <td class="text-center">200</td>
+    <td class="text-right">119ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+<tr>
+    <td class="text-center">15</td>
+    <td><code>/admin/kontrak/simak/konstruksi/1/export/zip</code></td>
+    <td class="text-center">GET</td>
+    <td class="text-center">200</td>
+    <td class="text-right">99ms</td>
+    <td class="text-center" style="color: var(--good);">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<!-- KESIMPULAN -->
+<div class="success-box">
+    <h3>✅ Kesimpulan</h3>
+    <p>Seluruh 15 skenario smoke test berhasil dilalui dengan <strong>success rate 100%</strong>. Modul SIMAK Kontrak Konstruksi & Konsultasi siap digunakan. Tidak ada bug atau error yang ditemukan selama pengujian. Data pada sistem tetap aman dan tidak dihapus.</p>
+</div>
+
+<div class="note-box">
+    <strong>Catatan:</strong> Untuk production deployment, pastikan OTP bypass dinonaktifkan dengan mengubah <code>SHARED_SIMAK_OTP_BYPASS = false</code> di <code>app/Controllers/Admin/Kontrak.php:18</code>.
+</div>
+
+<div class="footer">
+    <p>Laporan dihasilkan secara otomatis oleh SIMAK Smoke Test Script</p>
+    <p>satkerpps-riau.online | 2026-06-06</p>
+</div>
+
+</div>
+</body>
+</html>

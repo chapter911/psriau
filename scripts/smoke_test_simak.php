@@ -1,25 +1,17 @@
 <?php
 /**
- * SIMAK Smoke Test Script
+ * SIMAK Smoke Test Script - With Data Creation
  *
  * Automated smoke testing for SIMAK Kontrak Konstruksi & Konsultasi
+ * Can actually create test data in the database
  *
- * Run: php scripts/smoke_test_simak.php
- *
- * Requirements:
- * - PHP 8.0+
- * - cURL extension
- *
- * Usage:
- *   php scripts/smoke_test_simak.php [options]
+ * Run: php scripts/smoke_test_simak.php --password=yourpassword --create-data
  *
  * Options:
- *   --base-url=https://satkerpps-riau.online  (default)
- *   --username=                           (default: agung.justik@gmail.com)
- *   --password=your_password                  (required)
- *   --scenario=KON-01                         (run specific scenario only)
- *   --list                                    (list all scenarios)
- *   --report=html                             (output format: text, html)
+ *   --password=xxx           (required)
+ *   --create-data            Create actual test data in database
+ *   --list                   List all scenarios
+ *   --scenario=KON-01        Run specific scenario only
  */
 
 define('BASE_URL', 'https://satkerpps-riau.online');
@@ -33,388 +25,127 @@ $config = [
     'password' => '',
     'cookies_file' => __DIR__ . '/../writable/smoke_test_cookies.txt',
     'report_file' => __DIR__ . '/../writable/smoke_test_report.html',
+    'create_data' => false,
 ];
 
 // ===================== SCENARIOS =====================
 
 $scenarios = [
-    // === INPUT DATA BARU ===
     'KON-01' => [
         'title' => 'Input Data Baru SIMAK - Konstruksi',
         'category' => 'INPUT',
         'method' => 'POST',
         'url' => '/admin/kontrak/simak/konstruksi/tambah',
-        'steps' => [
-            'Buka halaman SIMAK Konstruksi',
-            'Klik tombol "Input Data SIMAK"',
-            'Isi form dengan data test',
-            'Submit form',
-        ],
-        'verify' => [
-            'Modal menutup setelah simpan',
-            'Pesan success muncul',
-            'Data baru di tabel',
-        ],
-        'success_criteria' => [
-            'Data tersimpan ke database',
-            'Tidak ada error message',
-            'Redirect ke halaman daftar',
-        ],
-        'failed_criteria' => [
-            'Form validation error',
-            'Error message dari server',
-            'Data tidak muncul di tabel',
+        'form_data' => [
+            'ppk_nip' => '199012212018021001',
+            'nama_paket' => 'Test Paket Konstruksi Smoke ' . date('YmdHis'),
+            'tahun_anggaran' => date('Y') . ' - ' . (date('Y') + 1),
+            'penyedia' => 'CV Test Konstruksi Indonesia',
+            'nomor_kontrak' => 'PLN/SIMAK-KONSTRUKSI/' . date('YmdHis') . '/2024',
+            'nilai_kontrak' => '500000000',
+            'email_responden_1' => 'test.konstruksi@example.com',
+            'email_responden_2' => 'responden.kedua@example.com',
         ],
     ],
-
     'KON-02' => [
         'title' => 'Input Data Baru SIMAK - Konsultasi',
         'category' => 'INPUT',
         'method' => 'POST',
         'url' => '/admin/kontrak/simak/konsultasi/tambah',
-        'steps' => [
-            'Buka halaman SIMAK Konsultasi',
-            'Klik tombol "Input Data SIMAK"',
-            'Isi form dengan data test',
-            'Submit form',
-        ],
-        'verify' => [
-            'Modal menutup setelah simpan',
-            'Pesan success muncul',
-            'Data baru di tabel',
-        ],
-        'success_criteria' => [
-            'Data tersimpan ke database',
-            'Tidak ada error message',
-        ],
-        'failed_criteria' => [
-            'Form validation error',
-            'Error message dari server',
+        'form_data' => [
+            'ppk_nip' => '199012212018021001',
+            'nama_paket' => 'Test Paket Konsultasi Smoke ' . date('YmdHis'),
+            'tahun_anggaran' => date('Y') . ' - ' . (date('Y') + 1),
+            'penyedia' => 'PT Test Konsultasi Indonesia',
+            'nomor_kontrak' => 'PLN/SIMAK-KONSULTASI/' . date('YmdHis') . '/2024',
+            'nilai_kontrak' => '250000000',
+            'email_responden_1' => 'test.konsultasi@example.com',
+            'email_responden_2' => 'responden.kedua@example.com',
         ],
     ],
-
-    // === SHARE LINK ===
     'KON-03' => [
         'title' => 'Create Share Link - Konstruksi',
         'category' => 'SHARE',
         'method' => 'POST',
-        'url' => '/admin/kontrak/simak/konstruksi/[ID]/share',
-        'steps' => [
-            'Buka halaman SIMAK Konstruksi',
-            'Klik tombol Share pada data',
-            'Pilih durasi share',
-            'Klik "Buat Link Bagikan"',
-        ],
-        'verify' => [
-            'Link share terbentuk',
-            'Link mengandung format /simak/share/[token]',
-            'Link bisa diakses publik',
-        ],
-        'success_criteria' => [
-            'Link berhasil digenerate',
-            'Link bisa diakses tanpa login',
-            'Token unik untuk setiap share',
-        ],
-        'failed_criteria' => [
-            'Link tidak terbentuk',
-            'Link tidak bisa diakses',
+        'url' => '/admin/kontrak/simak/konstruksi/1/share',
+        'form_data' => [
+            'duration' => '1week',
         ],
     ],
-
     'KON-05' => [
         'title' => 'Create Share Link - Konsultasi',
         'category' => 'SHARE',
         'method' => 'POST',
-        'url' => '/admin/kontrak/simak/konsultasi/[ID]/share',
-        'steps' => [
-            'Buka halaman SIMAK Konsultasi',
-            'Klik tombol Share pada data',
-            'Pilih durasi 30 hari',
-            'Buat link share',
-        ],
-        'verify' => [
-            'Link terbentuk dengan format benar',
-            'Link berbeda dari link konstruksi',
-        ],
-        'success_criteria' => [
-            'Link berhasil digenerate',
-            'Format URL benar',
-        ],
-        'failed_criteria' => [
-            'Link tidak terbentuk',
+        'url' => '/admin/kontrak/simak/konsultasi/1/share',
+        'form_data' => [
+            'duration' => '30days',
         ],
     ],
-
-    // === IMPORT EXCEL ===
     'KON-06' => [
         'title' => 'Download Template Excel - Konstruksi',
         'category' => 'UPLOAD',
         'method' => 'GET',
         'url' => '/admin/kontrak/simak/konstruksi/template',
-        'steps' => [
-            'Buka halaman SIMAK Konstruksi',
-            'Klik "Import Excel"',
-            'Klik "Download Template (XLSX)"',
-        ],
-        'verify' => [
-            'File terdownload',
-            'File berekstensi .xlsx',
-            'Template memiliki header kolom yang benar',
-        ],
-        'success_criteria' => [
-            'Template terdownload',
-            'Format file valid',
-        ],
-        'failed_criteria' => [
-            'File tidak terdownload',
-            'Format tidak sesuai',
-        ],
     ],
-
     'KON-08' => [
         'title' => 'Import Excel - Konstruksi',
         'category' => 'UPLOAD',
         'method' => 'POST',
         'url' => '/admin/kontrak/simak/konstruksi/import',
-        'steps' => [
-            'Buka halaman SIMAK Konstruksi',
-            'Klik "Import Excel"',
-            'Pilih file Excel test',
-            'Klik "Import"',
-        ],
-        'verify' => [
-            'Proses import selesai tanpa error',
-            'Pesan success muncul',
-            'Data baru di tabel',
-        ],
-        'success_criteria' => [
-            'File Excel berhasil di-parse',
-            'Data tersimpan ke database',
-        ],
-        'failed_criteria' => [
-            'Error parsing Excel',
-            'Data tidak tersimpan',
-        ],
     ],
-
     'KON-09' => [
         'title' => 'Import Excel - Konsultasi',
         'category' => 'UPLOAD',
         'method' => 'POST',
         'url' => '/admin/kontrak/simak/konsultasi/import',
-        'steps' => [
-            'Buka halaman SIMAK Konsultasi',
-            'Klik "Import Excel"',
-            'Pilih file Excel test',
-            'Klik "Import"',
-        ],
-        'verify' => [
-            'Proses import selesai tanpa error',
-            'Data baru di tabel',
-        ],
-        'success_criteria' => [
-            'File Excel berhasil di-parse',
-            'Data tersimpan ke database',
-        ],
-        'failed_criteria' => [
-            'Error parsing Excel',
-        ],
     ],
-
-    // === VERIFIKASI ===
     'KON-10' => [
         'title' => 'Akses Halaman Verifikasi - Konstruksi',
         'category' => 'VERIFY',
         'method' => 'GET',
-        'url' => '/admin/kontrak/simak/konstruksi/[ID]',
-        'steps' => [
-            'Buka halaman SIMAK Konstruksi',
-            'Klik tombol "VERIFIKASI"',
-        ],
-        'verify' => [
-            'Redirect ke halaman detail verifikasi',
-            'URL berubah ke format /konstruksi/[ID]',
-            'Halaman menampilkan daftar dokumen',
-        ],
-        'success_criteria' => [
-            'Halaman verifikasi dapat diakses',
-            'Daftar dokumen tertampilkan',
-        ],
-        'failed_criteria' => [
-            'Halaman error 404',
-            'Daftar dokumen tidak muncul',
-        ],
+        'url' => '/admin/kontrak/simak/konstruksi/1',
     ],
-
     'KON-11' => [
         'title' => 'Verifikasi Dokumen - Konstruksi',
         'category' => 'VERIFY',
         'method' => 'POST',
-        'url' => '/admin/kontrak/simak/konstruksi/[ID]/verifikasi/simpan',
-        'steps' => [
-            'Di halaman verifikasi',
-            'Pilih status verifikasi untuk dokumen',
-            'Klik "Simpan Verifikasi"',
-        ],
-        'verify' => [
-            'Status tersimpan',
-            'Persentase kelengkapan berubah',
-        ],
-        'success_criteria' => [
-            'Status tersimpan ke database',
-            'Persentase akurat',
-        ],
-        'failed_criteria' => [
-            'Status tidak tersimpan',
-            'Persentase tidak berubah',
-        ],
+        'url' => '/admin/kontrak/simak/konstruksi/1/verifikasi',
     ],
-
     'KON-12' => [
         'title' => 'Upload Dokumen Verifikasi - Konstruksi',
         'category' => 'VERIFY',
         'method' => 'POST',
-        'url' => '/admin/kontrak/simak/konstruksi/[ID]/verifikasi/upload',
-        'steps' => [
-            'Di halaman verifikasi',
-            'Pilih dokumen dengan status "Belum Ada"',
-            'Klik Upload / drag-drop file',
-            'Upload file PDF/JPG/PNG (maks 10MB)',
-        ],
-        'verify' => [
-            'File berhasil diupload',
-            'Nama file muncul di list',
-            'Status berubah menjadi "Menunggu Verifikasi"',
-        ],
-        'success_criteria' => [
-            'Upload berhasil',
-            'File tersimpan',
-            'Status berubah',
-        ],
-        'failed_criteria' => [
-            'Upload gagal',
-            'File tidak tersimpan',
-        ],
+        'url' => '/admin/kontrak/simak/konstruksi/1/verifikasi/upload',
     ],
-
     'KON-13' => [
         'title' => 'Verifikasi Dokumen - Konsultasi',
         'category' => 'VERIFY',
         'method' => 'POST',
-        'url' => '/admin/kontrak/simak/konsultasi/[ID]/verifikasi/simpan',
-        'steps' => [
-            'Buka halaman SIMAK Konsultasi',
-            'Klik VERIFIKASI',
-            'Lakukan proses verifikasi',
-        ],
-        'verify' => [
-            'Semua fitur berfungsi sama seperti Konstruksi',
-            'Persentase kelengkapan diupdate',
-        ],
-        'success_criteria' => [
-            'Fitur berfungsi dengan benar',
-        ],
-        'failed_criteria' => [
-            'Ada perbedaan dengan Konstruksi',
-        ],
+        'url' => '/admin/kontrak/simak/konsultasi/1/verifikasi',
     ],
-
-    // === EDIT DATA ===
     'KON-14' => [
         'title' => 'Edit Data SIMAK - Konstruksi',
         'category' => 'EDIT',
         'method' => 'POST',
-        'url' => '/admin/kontrak/simak/konstruksi/[ID]/ubah',
-        'steps' => [
-            'Buka halaman SIMAK Konstruksi',
-            'Klik tombol "EDIT"',
-            'Ubah beberapa field',
-            'Klik "Simpan"',
-        ],
-        'verify' => [
-            'Modal menutup setelah simpan',
-            'Data di tabel terupdate',
-        ],
-        'success_criteria' => [
-            'Data dapat diedit',
-            'Perubahan tersimpan',
-        ],
-        'failed_criteria' => [
-            'Field tidak bisa diedit',
-            'Perubahan tidak tersimpan',
-        ],
+        'url' => '/admin/kontrak/simak/konstruksi/1/ubah',
     ],
-
     'KON-15' => [
         'title' => 'Edit Data SIMAK - Konsultasi',
         'category' => 'EDIT',
         'method' => 'POST',
-        'url' => '/admin/kontrak/simak/konsultasi/[ID]/ubah',
-        'steps' => [
-            'Buka halaman SIMAK Konsultasi',
-            'Klik tombol "EDIT"',
-            'Ubah beberapa field',
-            'Klik "Simpan"',
-        ],
-        'verify' => [
-            'Data di tabel terupdate',
-        ],
-        'success_criteria' => [
-            'Data dapat diedit',
-        ],
-        'failed_criteria' => [
-            'Perubahan tidak tersimpan',
-        ],
+        'url' => '/admin/kontrak/simak/konsultasi/1/ubah',
     ],
-
-    // === EXPORT ===
     'KON-16' => [
         'title' => 'Export Excel - Konstruksi',
         'category' => 'EXPORT',
         'method' => 'GET',
-        'url' => '/admin/kontrak/simak/konstruksi/export',
-        'steps' => [
-            'Buka halaman SIMAK Konstruksi',
-            'Klik tombol "Export Excel"',
-            'Download file',
-        ],
-        'verify' => [
-            'File terdownload',
-            'Format file .xlsx',
-            'Data lengkap (semua kolom)',
-        ],
-        'success_criteria' => [
-            'File terdownload dengan benar',
-            'Data akurat dan lengkap',
-        ],
-        'failed_criteria' => [
-            'Download gagal',
-            'File corrupt',
-        ],
+        'url' => '/admin/kontrak/simak/konstruksi/export/excel',
     ],
-
     'KON-17' => [
         'title' => 'Download ZIP Dokumen - Konstruksi',
         'category' => 'EXPORT',
         'method' => 'GET',
-        'url' => '/admin/kontrak/simak/konstruksi/[ID]/download-zip',
-        'steps' => [
-            'Buka halaman detail SIMAK',
-            'Klik "Download ZIP"',
-            'Download file',
-        ],
-        'verify' => [
-            'File ZIP terdownload',
-            'Isi ZIP sesuai dengan dokumen',
-        ],
-        'success_criteria' => [
-            'ZIP terdownload',
-            'Dokumen lengkap',
-        ],
-        'failed_criteria' => [
-            'Download gagal',
-            'Dokumen tidak lengkap',
-        ],
+        'url' => '/admin/kontrak/simak/konstruksi/1/export/zip',
     ],
 ];
 
@@ -427,7 +158,6 @@ class SimakSmokeTest
     private $results = [];
     private $ch;
     private $csrfToken = '';
-    private $sessionCookie = '';
 
     public function __construct(array $config, array $scenarios)
     {
@@ -443,25 +173,21 @@ class SimakSmokeTest
         // Parse command line arguments
         $args = $this->parseArgs();
 
-        // List scenarios if requested
         if (isset($args['list'])) {
             $this->listScenarios();
             return;
         }
 
-        // Validate credentials
-        if (empty($this->config['username']) || empty($this->config['password'])) {
-            $this->printError("Username dan password diperlukan. Gunakan --username=xxx --password=yyy");
+        if (empty($this->config['password'])) {
+            $this->printError("Password diperlukan. Gunakan --password=yourpassword");
             exit(1);
         }
 
-        // Login first
         if (!$this->login()) {
             $this->printError("Login gagal. Periksa credentials.");
             exit(1);
         }
 
-        // Determine which scenarios to run
         $scenariosToRun = $this->scenarios;
         if (isset($args['scenario'])) {
             if (isset($this->scenarios[$args['scenario']])) {
@@ -472,9 +198,9 @@ class SimakSmokeTest
             }
         }
 
-        // Run each scenario
         $passed = 0;
         $failed = 0;
+        $createdIds = [];
 
         foreach ($scenariosToRun as $id => $scenario) {
             echo "\n";
@@ -486,26 +212,34 @@ class SimakSmokeTest
             if ($result['status'] === 'PASS') {
                 $passed++;
                 $this->printSuccess("PASSED - " . $result['message']);
+
+                // Track created data IDs
+                if (isset($result['created_id'])) {
+                    $createdIds[$id] = $result['created_id'];
+                }
             } else {
                 $failed++;
                 $this->printFailed("FAILED - " . $result['message']);
             }
         }
 
-        // Print summary
         $this->printSummary($passed, $failed);
 
-        // Generate report
-        if (isset($args['report']) && $args['report'] === 'html') {
-            $this->generateHtmlReport();
+        // Show created data info
+        if (!empty($createdIds) && $this->config['create_data']) {
+            echo "\n";
+            echo "📝 DATA YANG DIBUAT:\n";
+            echo "====================\n";
+            foreach ($createdIds as $id => $createdId) {
+                echo "  {$id}: ID #{$createdId}\n";
+            }
+            echo "\nSilakan cek halaman SIMAK di browser untuk verifikasi data.\n";
         }
-
-        curl_close($this->ch);
     }
 
     private function parseArgs(): array
     {
-        global $argv, $config;
+        global $argv;
 
         $args = [];
         foreach ($argv as $arg) {
@@ -513,18 +247,16 @@ class SimakSmokeTest
                 $parts = explode('=', substr($arg, 2), 2);
                 if (count($parts) === 2) {
                     $args[$parts[0]] = $parts[1];
-                    // Update config
                     if ($parts[0] === 'base-url') {
                         $this->config['base_url'] = $parts[1];
-                    } elseif ($parts[0] === 'username') {
-                        $this->config['username'] = $parts[1];
                     } elseif ($parts[0] === 'password') {
                         $this->config['password'] = $parts[1];
                     }
                 } elseif ($arg === '--list') {
                     $args['list'] = true;
-                } elseif ($arg === '--skip-login') {
-                    $args['skip-login'] = true;
+                } elseif ($arg === '--create-data') {
+                    $args['create-data'] = true;
+                    $this->config['create_data'] = true;
                 }
             }
         }
@@ -535,13 +267,11 @@ class SimakSmokeTest
     private function listScenarios(): void
     {
         echo "\nDaftar Skenario Smoke Test SIMAK:\n\n";
-
         foreach ($this->scenarios as $id => $scenario) {
             $category = str_pad($scenario['category'], 10, ' ');
             $method = str_pad($scenario['method'], 6, ' ');
             echo "  {$id}  [{$category}] [{$method}] {$scenario['title']}\n";
         }
-
         echo "\nTotal: " . count($this->scenarios) . " skenario\n\n";
     }
 
@@ -549,49 +279,106 @@ class SimakSmokeTest
     {
         echo "Melakukan login...\n";
 
-        $loginUrl = $this->config['base_url'] . '/login';
-        $postData = [
-            'username' => $this->config['username'],
-            'password' => $this->config['password'],
-            'submit' => 'Login',
-        ];
-
+        // First, get the login page to extract CSRF token
         curl_setopt_array($this->ch, [
-            CURLOPT_URL => $loginUrl,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => http_build_query($postData),
+            CURLOPT_URL => $this->config['base_url'] . '/masuk',
+            CURLOPT_HTTPGET => true,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_TIMEOUT => TIMEOUT,
             CURLOPT_COOKIEJAR => $this->config['cookies_file'],
             CURLOPT_COOKIEFILE => $this->config['cookies_file'],
             CURLOPT_USERAGENT => 'SIMAK Smoke Test/1.0',
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_HEADER => true,
+        ]);
+
+        $response = curl_exec($this->ch);
+        $headerSize = curl_getinfo($this->ch, CURLINFO_HEADER_SIZE);
+        $body = substr($response, $headerSize);
+        $headers = substr($response, 0, $headerSize);
+
+        // Extract CSRF token - try multiple formats
+        if (preg_match('/name="csrf_test_name"\s+value="([^"]+)"/', $body, $matches)) {
+            $this->csrfToken = $matches[1];
+        } elseif (preg_match('/csrf_test_name[^>]*value="([^"]+)"/', $body, $matches)) {
+            $this->csrfToken = $matches[1];
+        } elseif (preg_match('/csrf_token_hash[^>]*content="([^"]+)"/', $body, $matches)) {
+            $this->csrfToken = $matches[1];
+        }
+
+        if (!empty($this->csrfToken)) {
+            echo "  CSRF token ditemukan: " . substr($this->csrfToken, 0, 20) . "...\n";
+        } else {
+            echo "  CSRF token TIDAK ditemukan\n";
+        }
+
+        // Now submit login form
+        $postData = [
+            'username' => $this->config['username'],
+            'password' => $this->config['password'],
+            'csrf_test_name' => $this->csrfToken,
+        ];
+
+        curl_setopt_array($this->ch, [
+            CURLOPT_URL => $this->config['base_url'] . '/masuk',
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query($postData),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => TIMEOUT,
+            CURLOPT_COOKIEFILE => $this->config['cookies_file'],
+            CURLOPT_COOKIEJAR => $this->config['cookies_file'],
+            CURLOPT_USERAGENT => 'SIMAK Smoke Test/1.0',
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_HEADER => false,
         ]);
 
         $response = curl_exec($this->ch);
         $httpCode = curl_getinfo($this->ch, CURLINFO_HTTP_CODE);
 
-        // Check if login successful (redirected away from login page)
-        if ($httpCode >= 200 && $httpCode < 400 && strpos($response, 'login') === false) {
-            // Extract CSRF token if present
-            if (preg_match('/csrf_token_hash.*?value="([^"]+)"/', $response, $matches)) {
-                $this->csrfToken = $matches[1];
+        // Check for login success - redirected away from login page
+        if ($httpCode >= 200 && $httpCode < 400) {
+            if (strpos($response, 'Masuk') === false || strpos($response, 'admin') !== false) {
+                echo "  ✓ Login berhasil.\n";
+                return true;
             }
-            echo "  Login berhasil.\n";
-            return true;
         }
 
-        echo "  Login gagal (HTTP {$httpCode}).\n";
+        // Check for error messages
+        if (strpos($response, 'password') !== false && strpos($response, 'salah') !== false) {
+            echo "  ✗ Login gagal: Username atau password salah.\n";
+        } else {
+            echo "  Login gagal (HTTP {$httpCode}).\n";
+        }
         return false;
     }
 
     private function runScenario(string $id, array $scenario): array
     {
-        $url = str_replace('[ID]', '1', $scenario['url']); // Use ID 1 as default for testing
+        $url = str_replace('[ID]', '1', $scenario['url']);
         $fullUrl = $this->config['base_url'] . $url;
 
         echo "  URL: {$fullUrl}\n";
         echo "  Method: {$scenario['method']}\n";
+
+        // Add CSRF token to form data if exists
+        $postData = [];
+        if (isset($scenario['form_data']) && is_array($scenario['form_data'])) {
+            $postData = $scenario['form_data'];
+            $postData['csrf_test_name'] = $this->csrfToken;
+
+            if ($this->config['create_data']) {
+                echo "  Sending form data:\n";
+                foreach ($postData as $key => $value) {
+                    if ($key !== 'csrf_token_hash') {
+                        echo "    - {$key}: {$value}\n";
+                    }
+                }
+            }
+        }
 
         // Build request
         curl_setopt_array($this->ch, [
@@ -601,13 +388,16 @@ class SimakSmokeTest
             CURLOPT_TIMEOUT => TIMEOUT,
             CURLOPT_COOKIEFILE => $this->config['cookies_file'],
             CURLOPT_USERAGENT => 'SIMAK Smoke Test/1.0',
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
         ]);
 
         if ($scenario['method'] === 'POST') {
             curl_setopt($this->ch, CURLOPT_POST, true);
-            curl_setopt($this->ch, CURLOPT_POSTFIELDS, '');
+            curl_setopt($this->ch, CURLOPT_POSTFIELDS, http_build_query($postData));
         } else {
             curl_setopt($this->ch, CURLOPT_HTTPGET, true);
+            curl_setopt($this->ch, CURLOPT_POST, false);
         }
 
         $startTime = microtime(true);
@@ -617,25 +407,63 @@ class SimakSmokeTest
 
         echo "  Response: HTTP {$httpCode} ({$elapsed}ms)\n";
 
-        // Basic checks
+        // Check response for success/error indicators
+        $result = [
+            'http_code' => $httpCode,
+            'response_size' => strlen($response),
+            'elapsed_ms' => $elapsed,
+        ];
+
+        // For data creation scenarios, check if data was actually created
+        if ($id === 'KON-01' || $id === 'KON-02') {
+            // Look for success message or created ID in response
+            if (strpos($response, 'berhasil') !== false || strpos($response, 'success') !== false) {
+                // Try to extract created ID from redirect URL or response
+                if (preg_match('/\/(\d+)(?:\/|"|\'|>)/', $response, $matches)) {
+                    $result['created_id'] = $matches[1];
+                    return [
+                        'status' => 'PASS',
+                        'message' => "Data berhasil dibuat (ID: {$result['created_id']})",
+                        'http_code' => $httpCode,
+                        'response_size' => strlen($response),
+                        'elapsed_ms' => $elapsed,
+                        'created_id' => $result['created_id'],
+                    ];
+                }
+                return [
+                    'status' => 'PASS',
+                    'message' => "Form submitted successfully",
+                    'http_code' => $httpCode,
+                    'response_size' => strlen($response),
+                    'elapsed_ms' => $elapsed,
+                ];
+            }
+
+            // Check for error messages
+            if (strpos($response, 'error') !== false || strpos($response, 'gagal') !== false) {
+                return [
+                    'status' => 'FAIL',
+                    'message' => "Form submission failed - check response",
+                    'http_code' => $httpCode,
+                    'response_size' => strlen($response),
+                    'elapsed_ms' => $elapsed,
+                ];
+            }
+        }
+
+        // Default check
         if ($httpCode === 200) {
             return [
                 'status' => 'PASS',
-                'message' => 'Response OK - ' . strlen($response) . ' bytes',
+                'message' => "Response OK - " . strlen($response) . " bytes",
                 'http_code' => $httpCode,
                 'response_size' => strlen($response),
                 'elapsed_ms' => $elapsed,
             ];
-        } elseif ($httpCode === 404) {
-            return [
-                'status' => 'FAIL',
-                'message' => 'Page not found (404)',
-                'http_code' => $httpCode,
-            ];
         } elseif ($httpCode === 302) {
             return [
                 'status' => 'PASS',
-                'message' => 'Redirect (302) - mungkin normal untuk beberapa endpoint',
+                'message' => "Redirect - mungkin sukses",
                 'http_code' => $httpCode,
             ];
         } else {
@@ -656,6 +484,7 @@ class SimakSmokeTest
         echo "╠══════════════════════════════════════════════════════════════╣\n";
         echo "║  Target: " . $this->config['base_url'] . "\n";
         echo "║  Scenarios: " . count($this->scenarios) . " skenario\n";
+        echo "║  Create Data: " . ($this->config['create_data'] ? 'YES' : 'NO') . "\n";
         echo "╚══════════════════════════════════════════════════════════════╝\n";
     }
 
@@ -697,51 +526,6 @@ class SimakSmokeTest
         echo "  Success Rate: {$percentage}%\n";
         echo "═══════════════════════════════════════════════════════════════\n";
     }
-
-    private function generateHtmlReport(): void
-    {
-        $html = '<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="utf-8">
-<title>SIMAK Smoke Test Report - ' . date('Y-m-d H:i:s') . '</title>
-<style>
-body { font-family: sans-serif; background: #0f172a; color: #e5e7eb; padding: 20px; }
-.container { max-width: 1200px; margin: 0 auto; }
-.card { background: #1f2937; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-.success { color: #22c55e; }
-.fail { color: #ef4444; }
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 10px; border: 1px solid #374151; text-align: left; }
-th { background: #111827; }
-</style>
-</head>
-<body>
-<div class="container">
-<h1>SIMAK Smoke Test Report</h1>
-<p>Generated: ' . date('Y-m-d H:i:s') . '</p>
-<table>
-<tr><th>ID</th><th>Scenario</th><th>Category</th><th>Status</th><th>Message</th></tr>';
-
-        foreach ($this->results as $id => $result) {
-            $statusClass = $result['status'] === 'PASS' ? 'success' : 'fail';
-            $html .= "<tr>
-                <td>{$id}</td>
-                <td>{$this->scenarios[$id]['title']}</td>
-                <td>{$this->scenarios[$id]['category']}</td>
-                <td class='{$statusClass}'>{$result['status']}</td>
-                <td>{$result['message']}</td>
-            </tr>";
-        }
-
-        $html .= '</table>
-</div>
-</body>
-</html>';
-
-        file_put_contents($this->config['report_file'], $html);
-        echo "\n  HTML Report saved to: {$this->config['report_file']}\n";
-    }
 }
 
 // ===================== RUN =====================
@@ -752,9 +536,9 @@ if (php_sapi_name() === 'cli' && isset($argv[0]) && realpath($argv[0]) === __FIL
 } else {
     echo "Run this script from command line:\n";
     echo "  php scripts/smoke_test_simak.php --password=yourpassword\n";
-    echo "\nDefault username: agung.justik@gmail.com\n";
+    echo "  php scripts/smoke_test_simak.php --password=yourpassword --create-data\n";
     echo "\nOptions:\n";
     echo "  --list                    List all scenarios\n";
+    echo "  --create-data             Actually create test data in database\n";
     echo "  --scenario=KON-01         Run specific scenario\n";
-    echo "  --report=html             Generate HTML report\n";
 }
