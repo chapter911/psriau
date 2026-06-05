@@ -375,7 +375,13 @@ class Laporan extends BaseController
         }
         $file = $logDir . DIRECTORY_SEPARATOR . 'smoke_test.log';
         $entry = date('Y-m-d H:i:s') . ' | ' . $label . ' | ' . json_encode($payload, JSON_UNESCAPED_UNICODE) . PHP_EOL;
-        @file_put_contents($file, $entry, FILE_APPEND | LOCK_EX);
+
+        // Write to file
+        $result1 = @file_put_contents($file, $entry, FILE_APPEND | LOCK_EX);
+
+        // Also write to PHP error log for backup
+        $logLine = 'SMOKE_LOG [' . $label . ']: ' . json_encode($payload, JSON_UNESCAPED_UNICODE);
+        error_log($logLine);
     }
 
     public function perjalananDinasDokumen(int $id)
@@ -531,6 +537,33 @@ class Laporan extends BaseController
 
         $existingPhotos = $this->decodeJsonArray((string) ($existing['foto_dokumentasi_json'] ?? '[]'));
         $photoUploads = $this->request->getFileMultiple('foto_dokumentasi') ?? [];
+
+        // Debug: Check raw $_FILES for foto_dokumentasi
+        $rawFilesDebug = [];
+        if (isset($_FILES['foto_dokumentasi'])) {
+            $rawFilesDebug = [
+                'name' => $_FILES['foto_dokumentasi']['name'] ?? null,
+                'type' => $_FILES['foto_dokumentasi']['type'] ?? null,
+                'size' => $_FILES['foto_dokumentasi']['size'] ?? null,
+                'error' => $_FILES['foto_dokumentasi']['error'] ?? null,
+                'tmp_name' => is_array($_FILES['foto_dokumentasi']['tmp_name'] ?? null) ? '(array)' : ($_FILES['foto_dokumentasi']['tmp_name'] ?? null),
+            ];
+        }
+        if (isset($_FILES['foto_dokumentasi'])) {
+            $rawFilesDebug2 = [];
+            if (is_array($_FILES['foto_dokumentasi']['name'] ?? null)) {
+                foreach ($_FILES['foto_dokumentasi']['name'] as $k => $n) {
+                    $rawFilesDebug2[] = [
+                        'name' => $n,
+                        'size' => $_FILES['foto_dokumentasi']['size'][$k] ?? 0,
+                        'error' => $_FILES['foto_dokumentasi']['error'][$k] ?? 0,
+                    ];
+                }
+            }
+            $rawFilesDebug['nested'] = $rawFilesDebug2;
+        }
+
+        $this->writeSmokeLog('perjalananDinasEdit.POST.raw_files', $rawFilesDebug);
 
         // If getFileMultiple returns empty or null, try alternative approaches
         if (! is_array($photoUploads) || $photoUploads === []) {
@@ -798,6 +831,33 @@ class Laporan extends BaseController
         }
 
         $photoUploads = $this->request->getFileMultiple('foto_dokumentasi') ?? [];
+
+        // Debug: Check raw $_FILES for foto_dokumentasi
+        $rawFilesDebug = [];
+        if (isset($_FILES['foto_dokumentasi'])) {
+            $rawFilesDebug = [
+                'name' => $_FILES['foto_dokumentasi']['name'] ?? null,
+                'type' => $_FILES['foto_dokumentasi']['type'] ?? null,
+                'size' => $_FILES['foto_dokumentasi']['size'] ?? null,
+                'error' => $_FILES['foto_dokumentasi']['error'] ?? null,
+                'tmp_name' => is_array($_FILES['foto_dokumentasi']['tmp_name'] ?? null) ? '(array)' : ($_FILES['foto_dokumentasi']['tmp_name'] ?? null),
+            ];
+        }
+        if (isset($_FILES['foto_dokumentasi'])) {
+            $rawFilesDebug2 = [];
+            if (is_array($_FILES['foto_dokumentasi']['name'] ?? null)) {
+                foreach ($_FILES['foto_dokumentasi']['name'] as $k => $n) {
+                    $rawFilesDebug2[] = [
+                        'name' => $n,
+                        'size' => $_FILES['foto_dokumentasi']['size'][$k] ?? 0,
+                        'error' => $_FILES['foto_dokumentasi']['error'][$k] ?? 0,
+                    ];
+                }
+            }
+            $rawFilesDebug['nested'] = $rawFilesDebug2;
+        }
+
+        $this->writeSmokeLog('perjalananDinasBuat.POST.raw_files', $rawFilesDebug);
 
         // If getFileMultiple returns empty or null, try alternative approaches (matching uploadDailyPhotos pattern)
         if (! is_array($photoUploads) || $photoUploads === []) {

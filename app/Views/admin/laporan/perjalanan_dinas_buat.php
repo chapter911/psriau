@@ -536,8 +536,31 @@
 
     if (form) {
         form.addEventListener('submit', function (ev) {
+            console.log('Form submitting...');
+            console.log('syncPhotoFileInput exists:', typeof window.syncPhotoFileInput);
+
             // Ensure file input contains the selected items before submit
-            try { if (window.syncPhotoFileInput) window.syncPhotoFileInput(); } catch (e) {}
+            try {
+                if (window.syncPhotoFileInput) {
+                    window.syncPhotoFileInput();
+                    console.log('syncPhotoFileInput called');
+                    console.log('fileInput.files.length:', fileInput ? fileInput.files.length : 'N/A');
+                } else {
+                    console.warn('syncPhotoFileInput not found!');
+                    // Try direct sync
+                    if (typeof DataTransfer !== 'undefined' && fileInput) {
+                        var dt = new DataTransfer();
+                        selectedItems.forEach(function(item) {
+                            dt.items.add(item.file);
+                        });
+                        fileInput.files = dt.files;
+                        console.log('Direct sync, files:', fileInput.files.length);
+                    }
+                }
+            } catch (e) {
+                console.error('syncPhotoFileInput error:', e);
+            }
+
             try {
                 if (window.jQuery && typeof $.fn.summernote === 'function') {
                     var code = $('#laporanHasil').summernote('code');
