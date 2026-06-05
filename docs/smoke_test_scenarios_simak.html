@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SIMAK Smoke Test Scenarios - 2026-06-06</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #111827;
+            --card: #1f2937;
+            --muted: #94a3b8;
+            --text: #e5e7eb;
+            --accent: #38bdf8;
+            --good: #22c55e;
+            --bad: #ef4444;
+            --warn: #f59e0b;
+            --purple: #a855f7;
+            --line: rgba(148, 163, 184, 0.22);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 20px 64px; }
+
+        .hero {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(168, 85, 247, 0.08));
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        h1 { font-size: 28px; margin: 0 0 8px; color: var(--accent); }
+        h2 { font-size: 18px; margin: 0 0 16px; color: var(--text); }
+        .subtitle { color: var(--muted); font-size: 14px; }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .meta-item {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px 14px;
+        }
+        .meta-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+        .meta-value { font-size: 14px; font-weight: 600; margin-top: 4px; }
+        .meta-value a { color: var(--accent); }
+
+        .scenario {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .scenario-header {
+            background: rgba(17, 24, 39, 0.6);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .scenario-id {
+            background: var(--accent);
+            color: #000;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            min-width: 70px;
+            text-align: center;
+        }
+        .scenario-id.consultasi { background: var(--purple); color: #fff; }
+
+        .scenario-title { flex: 1; }
+        .scenario-title h3 { margin: 0; font-size: 16px; }
+        .scenario-title .category { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+        .scenario-body { padding: 20px; }
+
+        .steps {
+            counter-reset: step;
+        }
+        .step {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 16px;
+        }
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 28px;
+            height: 28px;
+            background: var(--card);
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .step-content { font-size: 14px; }
+        .step-content strong { color: var(--accent); }
+        .step-content code {
+            background: rgba(56, 189, 248, 0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        .verify-list {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 16px;
+        }
+        .verify-list h4 {
+            margin: 0 0 10px;
+            font-size: 13px;
+            color: var(--warn);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .verify-list ul { margin: 0; padding-left: 20px; }
+        .verify-list li { margin-bottom: 6px; font-size: 13px; }
+
+        .criteria {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .criteria-box {
+            background: rgba(17, 24, 39, 0.6);
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .criteria-box h4 {
+            margin: 0 0 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .criteria-box.success h4 { color: var(--good); }
+        .criteria-box.failed h4 { color: var(--bad); }
+        .criteria-box ul { margin: 0; padding-left: 18px; font-size: 12px; }
+        .criteria-box li { margin-bottom: 4px; }
+
+        .table-wrap { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+        th, td {
+            border: 1px solid var(--line);
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 13px;
+        }
+        th {
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+        }
+        td { background: rgba(17, 24, 39, 0.4); }
+
+        .status-pass { color: var(--good); }
+        .status-fail { color: var(--bad); }
+        .status-pending { color: var(--muted); }
+
+        .note-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warn);
+            padding: 12px 16px;
+            border-radius: 0 10px 10px 0;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-input { background: rgba(34, 197, 94, 0.2); color: #86efac; }
+        .badge-share { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; }
+        .badge-upload { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; }
+        .badge-verify { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+        .badge-edit { background: rgba(249, 115, 22, 0.2); color: #fdba74; }
+
+        @media (max-width: 768px) {
+            .criteria { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HERO -->
+<div class="hero">
+    <h1>SIMAK Smoke Test Scenarios</h1>
+    <h2>Kontrak Konstruksi &amp; Konsultasi</h2>
+    <p class="subtitle">Dokumentasi skenario pengujian untuk fitur utama SIMAK pada aplikasi satkerpps-riau.online</p>
+
+    <div class="meta-grid">
+        <div class="meta-item">
+            <div class="meta-label">Tanggal</div>
+            <div class="meta-value">2026-06-06</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Akun Testing</div>
+            <div class="meta-value">agung.justik@gmail.com</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Target URL Konstruksi</div>
+            <div class="meta-value"><a href="https://satkerpps-riau.online/admin/kontrak/simak/konstruksi" target="_blank">/admin/kontrak/simak/konstruksi</a></div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Target URL Konsultasi</div>
+            <div class="meta-value"><a href="https://satkerpps-riau.online/admin/kontrak/simak/konsultasi" target="_blank">/admin/kontrak/simak/konsultasi</a></div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Total Skenario</div>
+            <div class="meta-value">16</div>
+        </div>
+    </div>
+</div>
+
+<!-- SUMMARY TABLE -->
+<h2 style="margin-top: 32px;">Ringkasan Skenario</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+    <th>ID</th>
+    <th>Skenario</th>
+    <th>Kategori</th>
+    <th>Halaman</th>
+    <th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td><strong>KON-01</strong></td>
+    <td>Input Data Baru SIMAK</td>
+    <td><span class="badge badge-input">INPUT</span></td>
+    <td>Konstruksi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-02</strong></td>
+    <td>Input Data Baru SIMAK</td>
+    <td><span class="badge badge-input">INPUT</span></td>
+    <td>Konsultasi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-03</strong></td>
+    <td>Create Share Link</td>
+    <td><span class="badge badge-share">SHARE</span></td>
+    <td>Konstruksi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-05</strong></td>
+    <td>Create Share Link</td>
+    <td><span class="badge badge-share">SHARE</span></td>
+    <td>Konsultasi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-06</strong></td>
+    <td>Download Template Excel</td>
+    <td><span class="badge badge-upload">UPLOAD</span></td>
+    <td>Konstruksi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-07</strong></td>
+    <td>Prepare Test Data Excel</td>
+    <td><span class="badge badge-upload">UPLOAD</span></td>
+    <td>Excel</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-08</strong></td>
+    <td>Import Excel</td>
+    <td><span class="badge badge-upload">UPLOAD</span></td>
+    <td>Konstruksi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-09</strong></td>
+    <td>Import Excel</td>
+    <td><span class="badge badge-upload">UPLOAD</span></td>
+    <td>Konsultasi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-10</strong></td>
+    <td>Akses Halaman Verifikasi</td>
+    <td><span class="badge badge-verify">VERIFY</span></td>
+    <td>Konstruksi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-11</strong></td>
+    <td>Verifikasi Dokumen</td>
+    <td><span class="badge badge-verify">VERIFY</span></td>
+    <td>Konstruksi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-12</strong></td>
+    <td>Upload Dokumen Verifikasi</td>
+    <td><span class="badge badge-upload">UPLOAD</span></td>
+    <td>Konstruksi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-13</strong></td>
+    <td>Verifikasi Dokumen</td>
+    <td><span class="badge badge-verify">VERIFY</span></td>
+    <td>Konsultasi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-14</strong></td>
+    <td>Edit Data SIMAK</td>
+    <td><span class="badge badge-edit">EDIT</span></td>
+    <td>Konstruksi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-15</strong></td>
+    <td>Edit Data SIMAK</td>
+    <td><span class="badge badge-edit">EDIT</span></td>
+    <td>Konsultasi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-16</strong></td>
+    <td>Export Excel</td>
+    <td><span class="badge badge-upload">UPLOAD</span></td>
+    <td>Konstruksi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+<tr>
+    <td><strong>KON-17</strong></td>
+    <td>Download ZIP Dokumen</td>
+    <td><span class="badge badge-upload">UPLOAD</span></td>
+    <td>Konstruksi</td>
+    <td class="status-pending">⬜ Pending</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<!-- ========== SCENARIO 1: INPUT DATA BARU ========== -->
+<div class="scenario" id="kon-01">
+    <div class="scenario-header">
+        <span class="scenario-id">KON-01</span>
+        <div class="scenario-title">
+            <h3>Input Data Baru SIMAK - Konstruksi</h3>
+            <div class="category"><span class="badge badge-input">INPUT</span> Input Data Baru</div>
+        </div>
+    </div>
+    <div class="scenario-body">
+        <div class="note-box">
+            <strong>Tujuan:</strong> Memastikan fitur input data SIMAK baru berfungsi dengan benar untuk kontrak konstruksi.
+        </div>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-content">
+                    Buka halaman <code>https://satkerpps-riau.online/admin/kontrak/simak/konstruksi</code>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik tombol <strong>"Input Data SIMAK"</strong> (warna biru) di pojok kanan atas
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Modal form akan muncul. Isi field-field berikut:
+                    <ul style="margin-top: 8px; padding-left: 20px;">
+                        <li><strong>PPK</strong>: Pilih dari dropdown (contoh: NIP 199012212018021001)</li>
+                        <li><strong>Nama Paket</strong>: <code>Test Paket Konstruksi Smoke [YYYYMMDDHHMMSS]</code></li>
+                        <li><strong>Tahun Anggaran</strong>: Pilih (default: tahun berjalan)</li>
+                        <li><strong>Penyedia</strong>: <code>CV Test Konstruksi Indonesia</code></li>
+                        <li><strong>Nomor Kontrak</strong>: <code>PLN/SIMAK-KONSTRUKSI/[NOMOR]/2024</code></li>
+                        <li><strong>Nilai Kontrak (Rp)</strong>: <code>500000000</code> (500 juta)</li>
+                        <li><strong>Email Responden 1</strong>: <code>test.konstruksi@example.com</code></li>
+                        <li><strong>Email Responden 2</strong>: <code>responden.kedua@example.com</code></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik tombol <strong>"Simpan"</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="verify-list">
+            <h4>Verifikasi Hasil</h4>
+            <ul>
+                <li>[ ] Modal menutup setelah simpan</li>
+                <li>[ ] Muncul pesan success (alert hijau)</li>
+                <li>[ ] Data baru muncul di tabel daftar SIMAK</li>
+                <li>[ ] Nomor kontrak sesuai dengan yang diinput</li>
+                <li>[ ] Nilai kontrak tertampilkan dengan formatRp (ribuan)</li>
+            </ul>
+        </div>
+
+        <div class="criteria">
+            <div class="criteria-box success">
+                <h4>Kriteria Success</h4>
+                <ul>
+                    <li>Data tersimpan ke database</li>
+                    <li>Tidak ada error message</li>
+                    <li>Redirect/refresh ke halaman daftar dengan data baru</li>
+                </ul>
+            </div>
+            <div class="criteria-box failed">
+                <h4>Kriteria Failed</h4>
+                <ul>
+                    <li>Form validation error (field wajib kosong)</li>
+                    <li>Error message dari server</li>
+                    <li>Data tidak muncul di tabel setelah refresh</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== SCENARIO 2: SHARE LINK ========== -->
+<div class="scenario" id="kon-03">
+    <div class="scenario-header">
+        <span class="scenario-id">KON-03</span>
+        <div class="scenario-title">
+            <h3>Create Share Link - Konstruksi</h3>
+            <div class="category"><span class="badge badge-share">SHARE</span> Share Link</div>
+        </div>
+    </div>
+    <div class="scenario-body">
+        <div class="note-box">
+            <strong>Tujuan:</strong> Memastikan fitur share link SIMAK berfungsi untuk membagikan dokumen ke pihak eksternal tanpa login.
+        </div>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-content">
+                    Buka halaman <code>/admin/kontrak/simak/konstruksi</code>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Cari data yang akan dishare (dari Scenario 1 atau data existing)
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik tombol <strong>Share</strong> (ikon share-alt / tombol biru) pada baris data tersebut
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Modal <strong>"Bagikan SIMAK"</strong> akan muncul
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Pilih durasi share:
+                    <ul style="margin-top: 8px; padding-left: 20px;">
+                        <li>[ ] <strong>1 minggu</strong> (default)</li>
+                        <li>[ ] <strong>30 hari</strong></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik tombol <strong>"Buat Link Bagikan"</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="verify-list">
+            <h4>Verifikasi Hasil</h4>
+            <ul>
+                <li>[ ] Link share terbentuk dan ditampilkan</li>
+                <li>[ ] Tombol <strong>"Buka Tautan"</strong> berfungsi (membuka di tab baru)</li>
+                <li>[ ] Tombol <strong>"Salin"</strong> berfungsi (copy ke clipboard)</li>
+                <li>[ ] Link mengandung format: <code>https://satkerpps-riau.online/simak/share/[token]</code></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ========== SCENARIO 3: IMPORT EXCEL ========== -->
+<div class="scenario" id="kon-06">
+    <div class="scenario-header">
+        <span class="scenario-id">KON-06</span>
+        <div class="scenario-title">
+            <h3>Import Excel - Konstruksi</h3>
+            <div class="category"><span class="badge badge-upload">UPLOAD</span> Import Data</div>
+        </div>
+    </div>
+    <div class="scenario-body">
+        <div class="note-box">
+            <strong>Tujuan:</strong> Memastikan fitur import data dari file Excel berfungsi dengan benar.
+        </div>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-content">
+                    Buka halaman <code>/admin/kontrak/simak/konstruksi</code>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik tombol <strong>"Import Excel"</strong> (warna hijau)
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Modal import akan muncul. Klik link <strong>"Download Template (XLSX)"</strong>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Verifikasi file terdownload dengan format .xlsx
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Buka file template Excel, isi data test pada baris pertama:
+                    <table style="margin-top: 10px; font-size: 12px;">
+                        <tr><th>ppk_nip</th><th>nama_paket</th><th>tahun_anggaran</th><th>nomor_kontrak</th><th>nilai_kontrak</th></tr>
+                        <tr><td>199012212018021001</td><td>Import Test Konstruksi 2024</td><td>2024 - 2025</td><td>PLN/SIMAK-IMPORT-KON/[001]/2024</td><td>750000000</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Simpan file dengan nama: <code>test_import_konstruksi_[YYYYMMDD].xlsx</code>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Kembali ke modal import, pilih file yang sudah disiapkan
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik tombol <strong>"Import"</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="verify-list">
+            <h4>Verifikasi Hasil</h4>
+            <ul>
+                <li>[ ] Proses import selesai tanpa error</li>
+                <li>[ ] Pesan success muncul</li>
+                <li>[ ] Data baru terlihat di tabel</li>
+                <li>[ ] Nomor kontrak sesuai dengan yang diinput di Excel</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ========== SCENARIO 4: VERIFIKASI ========== -->
+<div class="scenario" id="kon-10">
+    <div class="scenario-header">
+        <span class="scenario-id">KON-10</span>
+        <div class="scenario-title">
+            <h3>Verifikasi Dokumen - Konstruksi</h3>
+            <div class="category"><span class="badge badge-verify">VERIFY</span> Verifikasi Data</div>
+        </div>
+    </div>
+    <div class="scenario-body">
+        <div class="note-box">
+            <strong>Tujuan:</strong> Memastikan fitur verifikasi kelengkapan dokumen berfungsi untuk memastikan semua dokumen kontrak tersedia.
+        </div>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-content">
+                    Buka halaman <code>/admin/kontrak/simak/konstruksi</code>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik tombol <strong>"VERIFIKASI"</strong> (warna hijau) pada salah satu data
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Verifikasi URL berubah ke: <code>/admin/kontrak/simak/konstruksi/[ID]</code>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Halaman menampilkan daftar dokumen yang harus diverifikasi
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Pilih status verifikasi untuk salah satu dokumen:
+                    <ul style="margin-top: 8px; padding-left: 20px;">
+                        <li>[ ] <strong>Lengkap</strong> - dokumen sudah ada dan sesuai</li>
+                        <li>[ ] <strong>Belum Sesuai</strong> - ada tapi tidak sesuai</li>
+                        <li>[ ] <strong>Menunggu Verifikasi</strong> - belum dicek</li>
+                        <li>[ ] <strong>Belum Ada</strong> - dokumen belum diupload</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik tombol <strong>"Simpan Verifikasi"</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="verify-list">
+            <h4>Verifikasi Hasil</h4>
+            <ul>
+                <li>[ ] Status tersimpan ke database</li>
+                <li>[ ] Persentase kelengkapan berubah</li>
+                <li>[ ] Data terakhir diverifikasi tercatat</li>
+            </ul>
+        </div>
+
+        <div class="note-box" style="margin-top: 16px;">
+            <strong>Test Upload (KON-12):</strong> Cari dokumen dengan status "Belum Ada", klik tombol Upload, pilih file PDF/JPG/PNG (maks 10MB). Verifikasi file berhasil diupload dan status berubah.
+        </div>
+    </div>
+</div>
+
+<!-- ========== SCENARIO 5: EDIT ========== -->
+<div class="scenario" id="kon-14">
+    <div class="scenario-header">
+        <span class="scenario-id">KON-14</span>
+        <div class="scenario-title">
+            <h3>Edit Data SIMAK - Konstruksi</h3>
+            <div class="category"><span class="badge badge-edit">EDIT</span> Edit Data</div>
+        </div>
+    </div>
+    <div class="scenario-body">
+        <div class="note-box">
+            <strong>Tujuan:</strong> Memastikan fitur edit data SIMAK berfungsi untuk koreksi data yang sudah tersimpan.
+        </div>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-content">
+                    Buka halaman <code>/admin/kontrak/simak/konstruksi</code>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik tombol <strong>"EDIT"</strong> (warna kuning) pada salah satu data
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Modal edit akan muncul dengan data yang sudah terisi
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Ubah beberapa field:
+                    <ul style="margin-top: 8px; padding-left: 20px;">
+                        <li><strong>Nama Paket</strong>: Tambahkan suffix <code>[EDITED]</code></li>
+                        <li><strong>Nilai Kontrak</strong>: Ubah menjadi <code>600000000</code></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik tombol <strong>"Simpan"</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="verify-list">
+            <h4>Verifikasi Hasil</h4>
+            <ul>
+                <li>[ ] Modal menutup setelah simpan</li>
+                <li>[ ] Data di tabel terupdate</li>
+                <li>[ ] Nilai kontrak baru tercermin</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ========== SCENARIO 6: EXPORT ========== -->
+<div class="scenario" id="kon-16">
+    <div class="scenario-header">
+        <span class="scenario-id">KON-16</span>
+        <div class="scenario-title">
+            <h3>Export &amp; Download - Konstruksi</h3>
+            <div class="category"><span class="badge badge-upload">UPLOAD</span> Export Data</div>
+        </div>
+    </div>
+    <div class="scenario-body">
+        <div class="note-box">
+            <strong>Tujuan:</strong> Memastikan fitur export dan download dokumen berfungsi dengan baik.
+        </div>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-content">
+                    Buka halaman <code>/admin/kontrak/simak/konstruksi</code>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Cari tombol/link <strong>"Export Excel"</strong> (jika ada di header/footer halaman)
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik export dan tunggu file terdownload
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Verifikasi file berekstensi .xlsx dan data lengkap
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Buka halaman detail SIMAK (klik VERIFIKASI), cari tombol <strong>"Download ZIP"</strong> (jika ada)
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-content">
+                    Klik download dan verifikasi file ZIP terdownload
+                </div>
+            </div>
+        </div>
+
+        <div class="verify-list">
+            <h4>Verifikasi Hasil</h4>
+            <ul>
+                <li>[ ] File Excel terdownload dengan benar</li>
+                <li>[ ] Data akurat dan lengkap (semua kolom)</li>
+                <li>[ ] File ZIP terdownload</li>
+                <li>[ ] Isi ZIP sesuai dengan dokumen yang ada</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- REPORTING SECTION -->
+<div class="hero" style="margin-top: 32px;">
+    <h2 style="color: var(--accent);">Template Laporan Testing</h2>
+    <div class="note-box" style="margin-top: 16px;">
+        Setelah menyelesaikan semua skenario, isi laporan berikut:
+    </div>
+    <pre style="background: rgba(0,0,0,0.4); padding: 16px; border-radius: 10px; overflow-x: auto; font-size: 12px;">
+=== SIMAK Smoke Test Report ===
+
+Tanggal Testing: _______________
+Tester: _______________
+
+HASIL TESTING
+-------------
+PASSED:
+  - [list scenario ID yang berhasil]
+
+FAILED:
+  - [list scenario ID yang gagal]
+  - Screenshot error: [attach]
+
+NOTES:
+  - [catatan tambahan]
+  - Bug yang ditemukan: [deskripsi]
+  - Saran improvement: [rekomendasi]
+
+SCENARIO DETAIL
+---------------
+[Untuk setiap scenario, jelaskan:
+ - Hasil: PASS/FAIL
+ - Jika FAIL: error message, screenshot, langkah reproduksi
+ - Jika PASS: bukti (screenshot atau log)]
+    </pre>
+</div>
+
+</div>
+</body>
+</html>
