@@ -245,7 +245,8 @@ $resolvePhotoSrc = static function ($photo): string {
         width: 50%;
         border: 1px solid #000;
         padding: 6px;
-        vertical-align: top;
+        vertical-align: middle;
+        text-align: center;
     }
 
     .foto-grid img {
