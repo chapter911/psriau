@@ -496,6 +496,11 @@ class Laporan extends BaseController
             ]);
         }
 
+        if ($this->isPostBodyTooLarge()) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'))
+                ->with('error', 'Upload gagal: ukuran data melebihi batas server (post_max_size). Kurangi jumlah atau ukuran foto dan coba lagi.');
+        }
+
         $currentInput = [
             'foto_dokumentasi' => [],
             'nomor_surat_tugas' => trim((string) $this->request->getPost('nomor_surat_tugas')),
@@ -538,33 +543,6 @@ class Laporan extends BaseController
         $existingPhotos = $this->decodeJsonArray((string) ($existing['foto_dokumentasi_json'] ?? '[]'));
         $photoUploads = $this->request->getFileMultiple('foto_dokumentasi') ?? [];
 
-        // Debug: Check raw $_FILES for foto_dokumentasi
-        $rawFilesDebug = [];
-        if (isset($_FILES['foto_dokumentasi'])) {
-            $rawFilesDebug = [
-                'name' => $_FILES['foto_dokumentasi']['name'] ?? null,
-                'type' => $_FILES['foto_dokumentasi']['type'] ?? null,
-                'size' => $_FILES['foto_dokumentasi']['size'] ?? null,
-                'error' => $_FILES['foto_dokumentasi']['error'] ?? null,
-                'tmp_name' => is_array($_FILES['foto_dokumentasi']['tmp_name'] ?? null) ? '(array)' : ($_FILES['foto_dokumentasi']['tmp_name'] ?? null),
-            ];
-        }
-        if (isset($_FILES['foto_dokumentasi'])) {
-            $rawFilesDebug2 = [];
-            if (is_array($_FILES['foto_dokumentasi']['name'] ?? null)) {
-                foreach ($_FILES['foto_dokumentasi']['name'] as $k => $n) {
-                    $rawFilesDebug2[] = [
-                        'name' => $n,
-                        'size' => $_FILES['foto_dokumentasi']['size'][$k] ?? 0,
-                        'error' => $_FILES['foto_dokumentasi']['error'][$k] ?? 0,
-                    ];
-                }
-            }
-            $rawFilesDebug['nested'] = $rawFilesDebug2;
-        }
-
-        $this->writeSmokeLog('perjalananDinasEdit.POST.raw_files', $rawFilesDebug);
-
         // If getFileMultiple returns empty or null, try alternative approaches
         if (! is_array($photoUploads) || $photoUploads === []) {
             $files = $this->request->getFileMultiple('foto_dokumentasi[]');
@@ -588,18 +566,9 @@ class Laporan extends BaseController
             $flatFiles[] = $file;
         });
 
-        $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', [
-            'fileInputReceived' => is_array($photoUploads),
-            'fileInputCount' => count($photoUploads),
-            'flatFilesCount' => count($flatFiles),
-        ]);
-
         $newPhotos = [];
-        foreach ($flatFiles as $idx => $photoUpload) {
-            $uploadDebug = ['index' => $idx];
-
+        foreach ($flatFiles as $photoUpload) {
             if (! $photoUpload || ! is_object($photoUpload)) {
-                $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_valid_object']));
                 continue;
             }
 
@@ -609,47 +578,36 @@ class Laporan extends BaseController
             }
 
             if ($error !== UPLOAD_ERR_OK && $error !== 0) {
-                $uploadDebug['errorCode'] = $error;
-                $uploadDebug['errorMsg'] = $this->getUploadErrorMessage($error);
-                $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'upload_error']));
                 continue;
             }
 
             if (! $photoUpload->isValid()) {
-                $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_valid']));
                 continue;
             }
 
             $mimeType = (string) $photoUpload->getMimeType();
             if ($mimeType === '' || strpos($mimeType, 'image/') !== 0) {
-                $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_image', 'mime' => $mimeType]));
                 $errors[] = 'Foto dokumentasi harus berupa gambar.';
                 break;
             }
 
-            // getStream() available in CI4 v4.3+, falls back to getTempName()
+            // Try getTempName() first (works on all PHP/CI4 versions), then fallback to getStream()
             $binary = false;
             try {
-                if (is_callable([$photoUpload, 'getStream'])) {
+                $tempName = $photoUpload->getTempName();
+                if ($tempName !== '' && file_exists($tempName)) {
+                    $binary = @file_get_contents($tempName);
+                }
+                // Fallback to getStream() if temp file not available
+                if (($binary === false || $binary === '') && is_callable([$photoUpload, 'getStream'])) {
                     $stream = $photoUpload->getStream();
                     $binary = $stream->getContents();
-                    $uploadDebug['readMethod'] = 'getStream';
-                } else {
-                    $tempName = $photoUpload->getTempName();
-                    $uploadDebug['tempName'] = $tempName;
-                    $uploadDebug['tempFileExists'] = $tempName !== '' && file_exists($tempName);
-                    $binary = @file_get_contents($tempName);
-                    $uploadDebug['readMethod'] = 'getTempName';
                 }
             } catch (\Throwable $e) {
-                $uploadDebug['exception'] = $e->getMessage();
                 $binary = false;
             }
 
-            $uploadDebug['binaryLength'] = $binary !== false ? strlen($binary) : 0;
-
             if ($binary === false || $binary === '') {
-                $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'binary_empty']));
                 continue;
             }
 
@@ -659,8 +617,6 @@ class Laporan extends BaseController
                 'mime' => $mimeType,
                 'data_uri' => $dataUri,
             ];
-
-            $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['success' => true, 'dataUriLength' => strlen($dataUri)]));
         }
 
         // Filter foto existing yang dihapus oleh user
@@ -676,12 +632,7 @@ class Laporan extends BaseController
             $existingPhotos = array_values(array_filter($existingPhotos, static fn ($key): bool => !in_array($key, $removedIndices, true), ARRAY_FILTER_USE_KEY));
         }
 
-        $this->writeSmokeLog('perjalananDinasEdit.POST.uploads', [
-            'id' => $id,
-            'existingPhotosCount' => count($existingPhotos),
-            'newPhotosCount' => count($newPhotos),
-            'removedIndices' => $removedIndices,
-        ]);
+
 
         $photos = array_values(array_merge($existingPhotos, $newPhotos));
 
@@ -775,6 +726,11 @@ class Laporan extends BaseController
             ]);
         }
 
+        if ($this->isPostBodyTooLarge()) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))
+                ->with('error', 'Upload gagal: ukuran data melebihi batas server (post_max_size). Kurangi jumlah atau ukuran foto dan coba lagi.');
+        }
+
         $currentInput = [
             'nomor_surat_tugas' => trim((string) $this->request->getPost('nomor_surat_tugas')),
             'periode_mulai' => trim((string) $this->request->getPost('periode_mulai')),
@@ -832,34 +788,7 @@ class Laporan extends BaseController
 
         $photoUploads = $this->request->getFileMultiple('foto_dokumentasi') ?? [];
 
-        // Debug: Check raw $_FILES for foto_dokumentasi
-        $rawFilesDebug = [];
-        if (isset($_FILES['foto_dokumentasi'])) {
-            $rawFilesDebug = [
-                'name' => $_FILES['foto_dokumentasi']['name'] ?? null,
-                'type' => $_FILES['foto_dokumentasi']['type'] ?? null,
-                'size' => $_FILES['foto_dokumentasi']['size'] ?? null,
-                'error' => $_FILES['foto_dokumentasi']['error'] ?? null,
-                'tmp_name' => is_array($_FILES['foto_dokumentasi']['tmp_name'] ?? null) ? '(array)' : ($_FILES['foto_dokumentasi']['tmp_name'] ?? null),
-            ];
-        }
-        if (isset($_FILES['foto_dokumentasi'])) {
-            $rawFilesDebug2 = [];
-            if (is_array($_FILES['foto_dokumentasi']['name'] ?? null)) {
-                foreach ($_FILES['foto_dokumentasi']['name'] as $k => $n) {
-                    $rawFilesDebug2[] = [
-                        'name' => $n,
-                        'size' => $_FILES['foto_dokumentasi']['size'][$k] ?? 0,
-                        'error' => $_FILES['foto_dokumentasi']['error'][$k] ?? 0,
-                    ];
-                }
-            }
-            $rawFilesDebug['nested'] = $rawFilesDebug2;
-        }
-
-        $this->writeSmokeLog('perjalananDinasBuat.POST.raw_files', $rawFilesDebug);
-
-        // If getFileMultiple returns empty or null, try alternative approaches (matching uploadDailyPhotos pattern)
+        // If getFileMultiple returns empty or null, try alternative approaches
         if (! is_array($photoUploads) || $photoUploads === []) {
             $files = $this->request->getFileMultiple('foto_dokumentasi[]');
             if (! is_array($files) || $files === []) {
@@ -876,24 +805,15 @@ class Laporan extends BaseController
             }
         }
 
-        // Flatten file array (matching uploadDailyPhotos pattern)
+        // Flatten file array
         $flatFiles = [];
         array_walk_recursive($photoUploads, static function ($file) use (&$flatFiles): void {
             $flatFiles[] = $file;
         });
 
-        $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', [
-            'fileInputReceived' => is_array($photoUploads),
-            'fileInputCount' => count($photoUploads),
-            'flatFilesCount' => count($flatFiles),
-        ]);
-
         $photos = [];
-        foreach ($flatFiles as $idx => $photoUpload) {
-            $uploadDebug = ['index' => $idx];
-
+        foreach ($flatFiles as $photoUpload) {
             if (! $photoUpload || ! is_object($photoUpload)) {
-                $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_valid_object']));
                 continue;
             }
 
@@ -903,47 +823,36 @@ class Laporan extends BaseController
             }
 
             if ($error !== UPLOAD_ERR_OK && $error !== 0) {
-                $uploadDebug['errorCode'] = $error;
-                $uploadDebug['errorMsg'] = $this->getUploadErrorMessage($error);
-                $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'upload_error']));
                 continue;
             }
 
             if (! $photoUpload->isValid()) {
-                $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_valid']));
                 continue;
             }
 
             $mimeType = (string) $photoUpload->getMimeType();
             if ($mimeType === '' || strpos($mimeType, 'image/') !== 0) {
-                $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_image', 'mime' => $mimeType]));
                 $errors[] = 'Foto dokumentasi harus berupa gambar.';
                 break;
             }
 
-            // getStream() available in CI4 v4.3+, falls back to getTempName()
+            // Try getTempName() first (works on all PHP/CI4 versions), then fallback to getStream()
             $binary = false;
             try {
-                if (is_callable([$photoUpload, 'getStream'])) {
+                $tempName = $photoUpload->getTempName();
+                if ($tempName !== '' && file_exists($tempName)) {
+                    $binary = @file_get_contents($tempName);
+                }
+                // Fallback to getStream() if temp file not available
+                if (($binary === false || $binary === '') && is_callable([$photoUpload, 'getStream'])) {
                     $stream = $photoUpload->getStream();
                     $binary = $stream->getContents();
-                    $uploadDebug['readMethod'] = 'getStream';
-                } else {
-                    $tempName = $photoUpload->getTempName();
-                    $uploadDebug['tempName'] = $tempName;
-                    $uploadDebug['tempFileExists'] = $tempName !== '' && file_exists($tempName);
-                    $binary = @file_get_contents($tempName);
-                    $uploadDebug['readMethod'] = 'getTempName';
                 }
             } catch (\Throwable $e) {
-                $uploadDebug['exception'] = $e->getMessage();
                 $binary = false;
             }
 
-            $uploadDebug['binaryLength'] = $binary !== false ? strlen($binary) : 0;
-
             if ($binary === false || $binary === '') {
-                $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'binary_empty']));
                 continue;
             }
 
@@ -953,18 +862,9 @@ class Laporan extends BaseController
                 'mime' => $mimeType,
                 'data_uri' => $dataUri,
             ];
-
-            $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['success' => true, 'dataUriLength' => strlen($dataUri)]));
         }
 
         if ($errors !== []) {
-            $this->writeSmokeLog('perjalananDinasBuat.POST.validation_error', [
-                'post_input' => $currentInput,
-                'draftPhotos' => $draftPhotos,
-                'uploadedPhotosCount' => count($photos),
-                'errors' => $errors,
-            ]);
-
             return view('admin/laporan/perjalanan_dinas_buat', [
                 'title' => 'Buat Laporan Perjalanan Dinas',
                 'pegawai_options' => $pegawaiRows,
