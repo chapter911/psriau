@@ -93,7 +93,7 @@
     .existing-photo-title { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 8px; }
     #existingPhotoList { display: flex; flex-wrap: wrap; gap: 8px; }
     .existing-photo-item { position: relative; }
-    .existing-photo-item img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid #dbe3ee; }
+    .existing-photo-item img { width: 90px; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; border: 1px solid #dbe3ee; }
     .existing-photo-item .btn-remove-existing { position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; line-height: 20px; text-align: center; padding: 0; }
 
     .selected-photo-card {
@@ -107,7 +107,7 @@
     .selected-photo-card__preview {
         position: relative;
         width: 100%;
-        height: 126px;
+        aspect-ratio: 1/1;
         background: #f8fafc;
     }
 
