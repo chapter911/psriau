@@ -135,3 +135,10 @@ _modules/*
 .tmp
 simak_smoke_test_guide.html
 simak_smoke_test_report_2026-05-27.html
+
+#-------------------------
+# Upload Files (bukan kode, jangan dimasukkan ke git)
+#-------------------------
+# Foto perjalanan dinas: abaikan semua file kecuali index.html
+/public/uploads/laporan/perjalanan_dinas/*
+!/public/uploads/laporan/perjalanan_dinas/index.html

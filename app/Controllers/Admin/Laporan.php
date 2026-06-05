@@ -541,85 +541,8 @@ class Laporan extends BaseController
         }
 
         $existingPhotos = $this->decodeJsonArray((string) ($existing['foto_dokumentasi_json'] ?? '[]'));
-        $photoUploads = $this->request->getFileMultiple('foto_dokumentasi') ?? [];
 
-        // If getFileMultiple returns empty or null, try alternative approaches
-        if (! is_array($photoUploads) || $photoUploads === []) {
-            $files = $this->request->getFileMultiple('foto_dokumentasi[]');
-            if (! is_array($files) || $files === []) {
-                $singleFile = $this->request->getFile('foto_dokumentasi');
-                if (is_array($singleFile)) {
-                    $photoUploads = $singleFile;
-                } elseif ($singleFile !== null) {
-                    $photoUploads = [$singleFile];
-                } else {
-                    $photoUploads = [];
-                }
-            } else {
-                $photoUploads = $files;
-            }
-        }
-
-        // Flatten file array
-        $flatFiles = [];
-        array_walk_recursive($photoUploads, static function ($file) use (&$flatFiles): void {
-            $flatFiles[] = $file;
-        });
-
-        $newPhotos = [];
-        foreach ($flatFiles as $photoUpload) {
-            if (! $photoUpload || ! is_object($photoUpload)) {
-                continue;
-            }
-
-            $error = $photoUpload->getError();
-            if ($error === UPLOAD_ERR_NO_FILE || $error === 4) {
-                continue;
-            }
-
-            if ($error !== UPLOAD_ERR_OK && $error !== 0) {
-                continue;
-            }
-
-            if (! $photoUpload->isValid()) {
-                continue;
-            }
-
-            $mimeType = (string) $photoUpload->getMimeType();
-            if ($mimeType === '' || strpos($mimeType, 'image/') !== 0) {
-                $errors[] = 'Foto dokumentasi harus berupa gambar.';
-                break;
-            }
-
-            // Try getTempName() first (works on all PHP/CI4 versions), then fallback to getStream()
-            $binary = false;
-            try {
-                $tempName = $photoUpload->getTempName();
-                if ($tempName !== '' && file_exists($tempName)) {
-                    $binary = @file_get_contents($tempName);
-                }
-                // Fallback to getStream() if temp file not available
-                if (($binary === false || $binary === '') && is_callable([$photoUpload, 'getStream'])) {
-                    $stream = $photoUpload->getStream();
-                    $binary = $stream->getContents();
-                }
-            } catch (\Throwable $e) {
-                $binary = false;
-            }
-
-            if ($binary === false || $binary === '') {
-                continue;
-            }
-
-            $dataUri = 'data:' . $mimeType . ';base64,' . base64_encode($binary);
-            $newPhotos[] = [
-                'name' => $photoUpload->getClientName(),
-                'mime' => $mimeType,
-                'data_uri' => $dataUri,
-            ];
-        }
-
-        // Filter foto existing yang dihapus oleh user
+        // Filter foto existing yang dihapus oleh user, hapus juga file fisiknya
         $removedIndices = [];
         $removedRaw = trim((string) $this->request->getPost('removed_foto_indices'));
         if ($removedRaw !== '') {
@@ -629,10 +552,21 @@ class Laporan extends BaseController
             }
         }
         if ($removedIndices !== []) {
-            $existingPhotos = array_values(array_filter($existingPhotos, static fn ($key): bool => !in_array($key, $removedIndices, true), ARRAY_FILTER_USE_KEY));
+            foreach ($removedIndices as $removedIdx) {
+                $removedPhoto = $existingPhotos[$removedIdx] ?? null;
+                if ($removedPhoto !== null) {
+                    $this->deletePerjalananDinasPhotoFile($removedPhoto);
+                }
+            }
+            $existingPhotos = array_values(array_filter($existingPhotos, static fn ($key): bool => ! in_array($key, $removedIndices, true), ARRAY_FILTER_USE_KEY));
         }
 
-
+        // Upload foto baru ke file fisik
+        $uploadResult = $this->uploadPerjalananDinasPhotos('foto_dokumentasi');
+        if ($uploadResult['error'] !== null) {
+            $errors[] = $uploadResult['error'];
+        }
+        $newPhotos = $uploadResult['photos'];
 
         $photos = array_values(array_merge($existingPhotos, $newPhotos));
 
@@ -675,11 +609,6 @@ class Laporan extends BaseController
         if (! $ok) {
             return redirect()->to(site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'))->with('error', 'Gagal memperbarui laporan.');
         }
-
-        $this->writeSmokeLog('perjalananDinasEdit.POST.saved', [
-            'id' => $id,
-            'payload' => $payload,
-        ]);
 
         return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('success', 'Laporan berhasil diperbarui.');
     }
@@ -773,6 +702,7 @@ class Laporan extends BaseController
             $errors[] = 'Data diketahui oleh wajib dipilih.';
         }
 
+        // Draft foto (dari sesi sebelumnya) — filter yang dihapus user
         $draftPhotos = array_values(array_filter((array) ($draftData['foto_dokumentasi'] ?? []), 'is_array'));
         $removedIndices = [];
         $removedRaw = trim((string) $this->request->getPost('removed_foto_indices'));
@@ -783,86 +713,21 @@ class Laporan extends BaseController
             }
         }
         if ($removedIndices !== []) {
+            foreach ($removedIndices as $removedIdx) {
+                $removedPhoto = $draftPhotos[$removedIdx] ?? null;
+                if ($removedPhoto !== null) {
+                    $this->deletePerjalananDinasPhotoFile($removedPhoto);
+                }
+            }
             $draftPhotos = array_values(array_filter($draftPhotos, static fn ($key): bool => ! in_array($key, $removedIndices, true), ARRAY_FILTER_USE_KEY));
         }
 
-        $photoUploads = $this->request->getFileMultiple('foto_dokumentasi') ?? [];
-
-        // If getFileMultiple returns empty or null, try alternative approaches
-        if (! is_array($photoUploads) || $photoUploads === []) {
-            $files = $this->request->getFileMultiple('foto_dokumentasi[]');
-            if (! is_array($files) || $files === []) {
-                $singleFile = $this->request->getFile('foto_dokumentasi');
-                if (is_array($singleFile)) {
-                    $photoUploads = $singleFile;
-                } elseif ($singleFile !== null) {
-                    $photoUploads = [$singleFile];
-                } else {
-                    $photoUploads = [];
-                }
-            } else {
-                $photoUploads = $files;
-            }
+        // Upload foto baru ke file fisik
+        $uploadResult = $this->uploadPerjalananDinasPhotos('foto_dokumentasi');
+        if ($uploadResult['error'] !== null) {
+            $errors[] = $uploadResult['error'];
         }
-
-        // Flatten file array
-        $flatFiles = [];
-        array_walk_recursive($photoUploads, static function ($file) use (&$flatFiles): void {
-            $flatFiles[] = $file;
-        });
-
-        $photos = [];
-        foreach ($flatFiles as $photoUpload) {
-            if (! $photoUpload || ! is_object($photoUpload)) {
-                continue;
-            }
-
-            $error = $photoUpload->getError();
-            if ($error === UPLOAD_ERR_NO_FILE || $error === 4) {
-                continue;
-            }
-
-            if ($error !== UPLOAD_ERR_OK && $error !== 0) {
-                continue;
-            }
-
-            if (! $photoUpload->isValid()) {
-                continue;
-            }
-
-            $mimeType = (string) $photoUpload->getMimeType();
-            if ($mimeType === '' || strpos($mimeType, 'image/') !== 0) {
-                $errors[] = 'Foto dokumentasi harus berupa gambar.';
-                break;
-            }
-
-            // Try getTempName() first (works on all PHP/CI4 versions), then fallback to getStream()
-            $binary = false;
-            try {
-                $tempName = $photoUpload->getTempName();
-                if ($tempName !== '' && file_exists($tempName)) {
-                    $binary = @file_get_contents($tempName);
-                }
-                // Fallback to getStream() if temp file not available
-                if (($binary === false || $binary === '') && is_callable([$photoUpload, 'getStream'])) {
-                    $stream = $photoUpload->getStream();
-                    $binary = $stream->getContents();
-                }
-            } catch (\Throwable $e) {
-                $binary = false;
-            }
-
-            if ($binary === false || $binary === '') {
-                continue;
-            }
-
-            $dataUri = 'data:' . $mimeType . ';base64,' . base64_encode($binary);
-            $photos[] = [
-                'name' => $photoUpload->getClientName(),
-                'mime' => $mimeType,
-                'data_uri' => $dataUri,
-            ];
-        }
+        $photos = $uploadResult['photos'];
 
         if ($errors !== []) {
             return view('admin/laporan/perjalanan_dinas_buat', [
@@ -900,13 +765,8 @@ class Laporan extends BaseController
 
         $saveMode = strtolower(trim((string) $this->request->getPost('save_mode')));
         if ($saveMode === 'draft') {
-            // Persist a lightweight draft in session so user can resume later.
-            // For production, consider persisting to DB instead.
-            $sess = session();
-            $sess->set('laporan_perjalanan_dinas_draft', $data);
-            $this->writeSmokeLog('perjalananDinasBuat.POST.save_draft', [
-                'data' => $data,
-            ]);
+            // Simpan draft di sesi — foto sudah di-upload ke file fisik
+            session()->set('laporan_perjalanan_dinas_draft', $data);
             return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('success', 'Draft laporan berhasil disimpan.');
         }
 
@@ -937,13 +797,12 @@ class Laporan extends BaseController
 
             $insertId = $model->insert($row);
             if ($insertId === false) {
+                // Jika DB gagal, hapus file yang baru di-upload agar tidak orphan
+                foreach ($photos as $p) {
+                    $this->deletePerjalananDinasPhotoFile($p);
+                }
                 return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('error', 'Gagal menyimpan laporan. Silakan coba lagi.');
             }
-
-            $this->writeSmokeLog('perjalananDinasBuat.POST.save_final', [
-                'row' => $row,
-                'insert_id' => $insertId,
-            ]);
 
             session()->remove('laporan_perjalanan_dinas_draft');
 
@@ -1327,6 +1186,126 @@ class Laporan extends BaseController
         }
 
         return $sections;
+    }
+
+    private function uploadPerjalananDinasPhotos(string $fieldName): array
+    {
+        if ($this->isPostBodyTooLarge()) {
+            return [
+                'photos' => [],
+                'error' => 'Upload gagal karena batas server lebih kecil dari total foto yang diunggah. Perbesar post_max_size/upload_max_filesize di server, lalu coba lagi.',
+            ];
+        }
+
+        $files = $this->request->getFileMultiple($fieldName);
+        if (! is_array($files) || $files === []) {
+            $files = $this->request->getFileMultiple($fieldName . '[]');
+        }
+
+        if (! is_array($files) || $files === []) {
+            $singleFile = $this->request->getFile($fieldName);
+            if (is_array($singleFile)) {
+                $files = $singleFile;
+            } elseif ($singleFile !== null) {
+                $files = [$singleFile];
+            }
+        }
+
+        if (! is_array($files) || $files === []) {
+            return ['photos' => [], 'error' => null];
+        }
+
+        $flatFiles = [];
+        array_walk_recursive($files, static function ($file) use (&$flatFiles): void {
+            $flatFiles[] = $file;
+        });
+
+        $uploadDir = FCPATH . 'uploads/laporan/perjalanan_dinas';
+        if (! is_dir($uploadDir) && ! @mkdir($uploadDir, 0775, true) && ! is_dir($uploadDir)) {
+            return ['photos' => [], 'error' => 'Folder upload foto tidak dapat dibuat di server.'];
+        }
+
+        if (! is_writable($uploadDir)) {
+            return ['photos' => [], 'error' => 'Folder upload foto tidak dapat ditulis. Periksa permission folder uploads/laporan/perjalanan_dinas.'];
+        }
+
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
+        $result = [];
+
+        foreach ($flatFiles as $file) {
+            if (! $file || $file->getError() === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+
+            $error = (int) $file->getError();
+            if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) {
+                return ['photos' => [], 'error' => 'Ukuran foto terlalu besar. Maksimal 10MB per foto.'];
+            }
+
+            if ($error !== UPLOAD_ERR_OK || ! $file->isValid()) {
+                return ['photos' => [], 'error' => 'Upload foto gagal. Silakan pilih ulang foto dan coba lagi.'];
+            }
+
+            if ((int) $file->getSize() > self::DAILY_MAX_FILE_SIZE_BYTES) {
+                return ['photos' => [], 'error' => 'Ukuran foto terlalu besar. Maksimal 10MB per foto.'];
+            }
+
+            $clientExtension = strtolower((string) $file->getClientExtension());
+            $mimeType = strtolower((string) $file->getMimeType());
+            $isAllowedImage = in_array($clientExtension, $allowedExtensions, true) || str_starts_with($mimeType, 'image/');
+
+            if (! $isAllowedImage) {
+                return ['photos' => [], 'error' => 'Format foto tidak didukung. Gunakan JPG, JPEG, PNG, WEBP, atau HEIC.'];
+            }
+
+            $extension = in_array($clientExtension, $allowedExtensions, true) ? $clientExtension : 'jpg';
+
+            try {
+                $newName = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
+            } catch (\Throwable $e) {
+                return ['photos' => [], 'error' => 'Gagal menyiapkan nama file upload. Silakan coba lagi.'];
+            }
+
+            try {
+                $file->move($uploadDir, $newName);
+            } catch (\Throwable $e) {
+                return ['photos' => [], 'error' => 'Gagal menyimpan foto ke server. Periksa permission folder uploads/laporan/perjalanan_dinas.'];
+            }
+
+            if (! is_file($uploadDir . DIRECTORY_SEPARATOR . $newName)) {
+                return ['photos' => [], 'error' => 'Foto tidak tersimpan di server. Silakan coba lagi.'];
+            }
+
+            $result[] = [
+                'file_path' => '/uploads/laporan/perjalanan_dinas/' . $newName,
+                'name'      => $file->getClientName(),
+            ];
+        }
+
+        return ['photos' => $result, 'error' => null];
+    }
+
+    /**
+     * Hapus file fisik foto perjalanan dinas dari disk.
+     * Aman untuk dipanggil dengan data lama (format base64 / tidak ada file_path).
+     */
+    private function deletePerjalananDinasPhotoFile(array $photo): void
+    {
+        $filePath = trim((string) ($photo['file_path'] ?? ''));
+        if ($filePath === '') {
+            return;
+        }
+
+        // Pastikan path terbatas dalam folder upload perjalanan dinas
+        $safePath = ltrim($filePath, '/\\');
+        if (strpos($safePath, 'uploads/laporan/perjalanan_dinas/') !== 0) {
+            return;
+        }
+
+        $absPath = FCPATH . $safePath;
+        if (is_file($absPath)) {
+            @unlink($absPath);
+        }
     }
 
     private function uploadDailyPhotos(string $fieldName): array

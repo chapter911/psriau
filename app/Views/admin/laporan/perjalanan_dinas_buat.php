@@ -15,11 +15,15 @@
     $submitLabelPrimary = (string) ($submit_label_primary ?? 'Simpan Final');
     $existingFotoDokumentasi = $existing_foto_dokumentasi ?? [];
     $resolvePhotoSrc = static function ($photo): string {
+        // Format baru: file_path berupa URL relatif (/uploads/laporan/...)
         if (is_array($photo)) {
-            foreach (['data_uri', 'src', 'url', 'path', 'file_path'] as $key) {
+            foreach (['file_path', 'src', 'url', 'path'] as $key) {
                 $value = trim((string) ($photo[$key] ?? ''));
                 if ($value !== '') return $value;
             }
+            // Fallback ke data_uri untuk data lama (base64)
+            $dataUri = trim((string) ($photo['data_uri'] ?? ''));
+            if ($dataUri !== '') return $dataUri;
         } elseif (is_string($photo)) {
             $value = trim($photo);
             if ($value !== '') return $value;
