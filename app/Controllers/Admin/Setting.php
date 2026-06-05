@@ -85,7 +85,41 @@ class Setting extends BaseController
             return redirect()->to($redirectTarget)->with('error', 'Akses ditolak. Fitur ini hanya untuk super administrator di production.');
         }
 
-        [$success, $output] = $this->runShellCommand('cd ' . escapeshellarg(ROOTPATH) . ' && git pull --ff-only 2>&1');
+        $rootDir = ROOTPATH;
+
+        // 1. Dapatkan nama branch saat ini (default: main)
+        [$successBranch, $branchOutput] = $this->runShellCommand('cd ' . escapeshellarg($rootDir) . ' && git rev-parse --abbrev-ref HEAD 2>&1');
+        $branch = $successBranch ? trim($branchOutput) : 'main';
+        if ($branch === '') {
+            $branch = 'main';
+        }
+
+        // 2. Coba jalankan git pull --ff-only terlebih dahulu
+        [$success, $output] = $this->runShellCommand('cd ' . escapeshellarg($rootDir) . ' && git pull --ff-only 2>&1');
+
+        // 3. Jika gagal dan terdeteksi diverging/conflict/local changes, lakukan fallback fetch & reset --hard
+        if (! $success) {
+            $outputLower = strtolower($output);
+            $isDiverged = stripos($outputLower, 'diverging') !== false
+                || stripos($outputLower, 'fast-forward') !== false
+                || stripos($outputLower, 'rebase') !== false;
+            $hasLocalChanges = stripos($outputLower, 'local changes') !== false
+                || stripos($outputLower, 'overwrite') !== false
+                || stripos($outputLower, 'discard') !== false;
+
+            if ($isDiverged || $hasLocalChanges) {
+                // Jalankan fetch & reset --hard ke origin/branch
+                $resetCmd = 'cd ' . escapeshellarg($rootDir) . ' && git fetch origin ' . escapeshellarg($branch) . ' 2>&1 && git reset --hard origin/' . escapeshellarg($branch) . ' 2>&1';
+                [$resetSuccess, $resetOutput] = $this->runShellCommand($resetCmd);
+                if ($resetSuccess) {
+                    $success = true;
+                    $output = "Git pull standar gagal, tetapi otomatis disinkronkan menggunakan fallback reset.\n\nDetail output git pull sebelumnya:\n" . $output . "\n\nDetail output reset:\n" . $resetOutput;
+                } else {
+                    $output .= "\n\n[Fallback reset juga gagal]:\n" . $resetOutput;
+                }
+            }
+        }
+
         $message = $success ? 'Git pull selesai.' : 'Git pull gagal.';
 
         return redirect()->to($redirectTarget)
