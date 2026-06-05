@@ -97,7 +97,7 @@ class Setting extends BaseController
         // 2. Coba jalankan git pull --ff-only terlebih dahulu
         [$success, $output] = $this->runShellCommand('cd ' . escapeshellarg($rootDir) . ' && git pull --ff-only 2>&1');
 
-        // 3. Jika gagal dan terdeteksi diverging/conflict/local changes, lakukan fallback fetch & reset --hard
+        // 3. Jika gagal dan terdeteksi diverging/conflict/local changes/unfinished merge, lakukan fallback fetch & reset --hard
         if (! $success) {
             $outputLower = strtolower($output);
             $isDiverged = stripos($outputLower, 'diverging') !== false
@@ -106,8 +106,11 @@ class Setting extends BaseController
             $hasLocalChanges = stripos($outputLower, 'local changes') !== false
                 || stripos($outputLower, 'overwrite') !== false
                 || stripos($outputLower, 'discard') !== false;
+            $hasMergeIssues = stripos($outputLower, 'merge_head') !== false
+                || stripos($outputLower, 'concluded your merge') !== false
+                || stripos($outputLower, 'conflict') !== false;
 
-            if ($isDiverged || $hasLocalChanges) {
+            if ($isDiverged || $hasLocalChanges || $hasMergeIssues) {
                 // Jalankan fetch & reset --hard ke origin/branch
                 $resetCmd = 'cd ' . escapeshellarg($rootDir) . ' && git fetch origin ' . escapeshellarg($branch) . ' 2>&1 && git reset --hard origin/' . escapeshellarg($branch) . ' 2>&1';
                 [$resetSuccess, $resetOutput] = $this->runShellCommand($resetCmd);
