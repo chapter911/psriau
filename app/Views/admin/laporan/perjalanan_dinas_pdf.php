@@ -249,8 +249,8 @@ $resolvePhotoSrc = static function ($photo): string {
     }
 
     .foto-grid img {
-        width: 100%;
-        max-height: 230px;
+        max-width: 100%;
+        height: 230px;
         object-fit: contain;
         display: block;
     }
