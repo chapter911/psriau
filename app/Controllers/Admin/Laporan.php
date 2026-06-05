@@ -531,42 +531,103 @@ class Laporan extends BaseController
 
         $existingPhotos = $this->decodeJsonArray((string) ($existing['foto_dokumentasi_json'] ?? '[]'));
         $photoUploads = $this->request->getFileMultiple('foto_dokumentasi') ?? [];
-        if (! is_array($photoUploads)) {
-            $photoUploads = [];
+
+        // If getFileMultiple returns empty or null, try alternative approaches
+        if (! is_array($photoUploads) || $photoUploads === []) {
+            $files = $this->request->getFileMultiple('foto_dokumentasi[]');
+            if (! is_array($files) || $files === []) {
+                $singleFile = $this->request->getFile('foto_dokumentasi');
+                if (is_array($singleFile)) {
+                    $photoUploads = $singleFile;
+                } elseif ($singleFile !== null) {
+                    $photoUploads = [$singleFile];
+                } else {
+                    $photoUploads = [];
+                }
+            } else {
+                $photoUploads = $files;
+            }
         }
 
+        // Flatten file array
+        $flatFiles = [];
+        array_walk_recursive($photoUploads, static function ($file) use (&$flatFiles): void {
+            $flatFiles[] = $file;
+        });
+
+        $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', [
+            'fileInputReceived' => is_array($photoUploads),
+            'fileInputCount' => count($photoUploads),
+            'flatFilesCount' => count($flatFiles),
+        ]);
+
         $newPhotos = [];
-        foreach ($photoUploads as $photoUpload) {
-            if ($photoUpload === null || ! $photoUpload->isValid()) {
+        foreach ($flatFiles as $idx => $photoUpload) {
+            $uploadDebug = ['index' => $idx];
+
+            if (! $photoUpload || ! is_object($photoUpload)) {
+                $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_valid_object']));
+                continue;
+            }
+
+            $error = $photoUpload->getError();
+            if ($error === UPLOAD_ERR_NO_FILE || $error === 4) {
+                continue;
+            }
+
+            if ($error !== UPLOAD_ERR_OK && $error !== 0) {
+                $uploadDebug['errorCode'] = $error;
+                $uploadDebug['errorMsg'] = $this->getUploadErrorMessage($error);
+                $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'upload_error']));
+                continue;
+            }
+
+            if (! $photoUpload->isValid()) {
+                $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_valid']));
                 continue;
             }
 
             $mimeType = (string) $photoUpload->getMimeType();
             if ($mimeType === '' || strpos($mimeType, 'image/') !== 0) {
+                $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_image', 'mime' => $mimeType]));
                 $errors[] = 'Foto dokumentasi harus berupa gambar.';
                 break;
             }
 
             // getStream() available in CI4 v4.3+, falls back to getTempName()
+            $binary = false;
             try {
                 if (is_callable([$photoUpload, 'getStream'])) {
                     $stream = $photoUpload->getStream();
                     $binary = $stream->getContents();
+                    $uploadDebug['readMethod'] = 'getStream';
                 } else {
-                    $binary = @file_get_contents($photoUpload->getTempName());
+                    $tempName = $photoUpload->getTempName();
+                    $uploadDebug['tempName'] = $tempName;
+                    $uploadDebug['tempFileExists'] = $tempName !== '' && file_exists($tempName);
+                    $binary = @file_get_contents($tempName);
+                    $uploadDebug['readMethod'] = 'getTempName';
                 }
             } catch (\Throwable $e) {
+                $uploadDebug['exception'] = $e->getMessage();
                 $binary = false;
             }
+
+            $uploadDebug['binaryLength'] = $binary !== false ? strlen($binary) : 0;
+
             if ($binary === false || $binary === '') {
+                $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'binary_empty']));
                 continue;
             }
 
+            $dataUri = 'data:' . $mimeType . ';base64,' . base64_encode($binary);
             $newPhotos[] = [
                 'name' => $photoUpload->getClientName(),
                 'mime' => $mimeType,
-                'data_uri' => 'data:' . $mimeType . ';base64,' . base64_encode($binary),
+                'data_uri' => $dataUri,
             ];
+
+            $this->writeSmokeLog('perjalananDinasEdit.POST.upload_debug', array_merge($uploadDebug, ['success' => true, 'dataUriLength' => strlen($dataUri)]));
         }
 
         // Filter foto existing yang dihapus oleh user
@@ -737,41 +798,103 @@ class Laporan extends BaseController
         }
 
         $photoUploads = $this->request->getFileMultiple('foto_dokumentasi') ?? [];
-        if (! is_array($photoUploads)) {
-            $photoUploads = [];
+
+        // If getFileMultiple returns empty or null, try alternative approaches (matching uploadDailyPhotos pattern)
+        if (! is_array($photoUploads) || $photoUploads === []) {
+            $files = $this->request->getFileMultiple('foto_dokumentasi[]');
+            if (! is_array($files) || $files === []) {
+                $singleFile = $this->request->getFile('foto_dokumentasi');
+                if (is_array($singleFile)) {
+                    $photoUploads = $singleFile;
+                } elseif ($singleFile !== null) {
+                    $photoUploads = [$singleFile];
+                } else {
+                    $photoUploads = [];
+                }
+            } else {
+                $photoUploads = $files;
+            }
         }
+
+        // Flatten file array (matching uploadDailyPhotos pattern)
+        $flatFiles = [];
+        array_walk_recursive($photoUploads, static function ($file) use (&$flatFiles): void {
+            $flatFiles[] = $file;
+        });
+
+        $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', [
+            'fileInputReceived' => is_array($photoUploads),
+            'fileInputCount' => count($photoUploads),
+            'flatFilesCount' => count($flatFiles),
+        ]);
+
         $photos = [];
-        foreach ($photoUploads as $photoUpload) {
-            if ($photoUpload === null || ! $photoUpload->isValid()) {
+        foreach ($flatFiles as $idx => $photoUpload) {
+            $uploadDebug = ['index' => $idx];
+
+            if (! $photoUpload || ! is_object($photoUpload)) {
+                $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_valid_object']));
+                continue;
+            }
+
+            $error = $photoUpload->getError();
+            if ($error === UPLOAD_ERR_NO_FILE || $error === 4) {
+                continue;
+            }
+
+            if ($error !== UPLOAD_ERR_OK && $error !== 0) {
+                $uploadDebug['errorCode'] = $error;
+                $uploadDebug['errorMsg'] = $this->getUploadErrorMessage($error);
+                $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'upload_error']));
+                continue;
+            }
+
+            if (! $photoUpload->isValid()) {
+                $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_valid']));
                 continue;
             }
 
             $mimeType = (string) $photoUpload->getMimeType();
             if ($mimeType === '' || strpos($mimeType, 'image/') !== 0) {
+                $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'not_image', 'mime' => $mimeType]));
                 $errors[] = 'Foto dokumentasi harus berupa gambar.';
                 break;
             }
 
             // getStream() available in CI4 v4.3+, falls back to getTempName()
+            $binary = false;
             try {
                 if (is_callable([$photoUpload, 'getStream'])) {
                     $stream = $photoUpload->getStream();
                     $binary = $stream->getContents();
+                    $uploadDebug['readMethod'] = 'getStream';
                 } else {
-                    $binary = @file_get_contents($photoUpload->getTempName());
+                    $tempName = $photoUpload->getTempName();
+                    $uploadDebug['tempName'] = $tempName;
+                    $uploadDebug['tempFileExists'] = $tempName !== '' && file_exists($tempName);
+                    $binary = @file_get_contents($tempName);
+                    $uploadDebug['readMethod'] = 'getTempName';
                 }
             } catch (\Throwable $e) {
+                $uploadDebug['exception'] = $e->getMessage();
                 $binary = false;
             }
+
+            $uploadDebug['binaryLength'] = $binary !== false ? strlen($binary) : 0;
+
             if ($binary === false || $binary === '') {
+                $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['skipReason' => 'binary_empty']));
                 continue;
             }
 
+            $dataUri = 'data:' . $mimeType . ';base64,' . base64_encode($binary);
             $photos[] = [
                 'name' => $photoUpload->getClientName(),
                 'mime' => $mimeType,
-                'data_uri' => 'data:' . $mimeType . ';base64,' . base64_encode($binary),
+                'data_uri' => $dataUri,
             ];
+
+            $this->writeSmokeLog('perjalananDinasBuat.POST.upload_debug', array_merge($uploadDebug, ['success' => true, 'dataUriLength' => strlen($dataUri)]));
         }
 
         if ($errors !== []) {
@@ -1597,5 +1720,19 @@ class Laporan extends BaseController
     {
         $role = strtolower((string) session()->get('role'));
         return in_array($role, ['admin', 'editor', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+    }
+
+    private function getUploadErrorMessage(int $errorCode): string
+    {
+        return match ($errorCode) {
+            UPLOAD_ERR_INI_SIZE => 'Ukuran file melebihi batas upload_max_filesize server.',
+            UPLOAD_ERR_FORM_SIZE => 'Ukuran file melebihi batas MAX_FILE_SIZE pada form.',
+            UPLOAD_ERR_PARTIAL => 'File hanya terunggah sebagian. Silakan coba lagi.',
+            UPLOAD_ERR_NO_FILE => 'Tidak ada file yang diunggah.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Folder temporary upload tidak ditemukan.',
+            UPLOAD_ERR_CANT_WRITE => 'Gagal menulis file ke disk.',
+            UPLOAD_ERR_EXTENSION => 'Upload dihentikan oleh ekstensi PHP.',
+            default => 'Error upload tidak dikenal (code: ' . $errorCode . ').',
+        };
     }
 }
