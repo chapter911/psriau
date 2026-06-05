@@ -547,8 +547,18 @@ class Laporan extends BaseController
                 break;
             }
 
-            $binary = @file_get_contents($photoUpload->getTempName());
-            if ($binary === false) {
+            // getStream() available in CI4 v4.3+, falls back to getTempName()
+            try {
+                if (is_callable([$photoUpload, 'getStream'])) {
+                    $stream = $photoUpload->getStream();
+                    $binary = $stream->getContents();
+                } else {
+                    $binary = @file_get_contents($photoUpload->getTempName());
+                }
+            } catch (\Throwable $e) {
+                $binary = false;
+            }
+            if ($binary === false || $binary === '') {
                 continue;
             }
 
@@ -558,13 +568,6 @@ class Laporan extends BaseController
                 'data_uri' => 'data:' . $mimeType . ';base64,' . base64_encode($binary),
             ];
         }
-
-        $this->writeSmokeLog('perjalananDinasEdit.POST.uploads', [
-            'id' => $id,
-            'existingPhotosCount' => count($existingPhotos),
-            'newPhotosCount' => count($newPhotos),
-            'removedIndices' => $removedIndices,
-        ]);
 
         // Filter foto existing yang dihapus oleh user
         $removedIndices = [];
@@ -578,6 +581,13 @@ class Laporan extends BaseController
         if ($removedIndices !== []) {
             $existingPhotos = array_values(array_filter($existingPhotos, static fn ($key): bool => !in_array($key, $removedIndices, true), ARRAY_FILTER_USE_KEY));
         }
+
+        $this->writeSmokeLog('perjalananDinasEdit.POST.uploads', [
+            'id' => $id,
+            'existingPhotosCount' => count($existingPhotos),
+            'newPhotosCount' => count($newPhotos),
+            'removedIndices' => $removedIndices,
+        ]);
 
         $photos = array_values(array_merge($existingPhotos, $newPhotos));
 
@@ -742,8 +752,18 @@ class Laporan extends BaseController
                 break;
             }
 
-            $binary = @file_get_contents($photoUpload->getTempName());
-            if ($binary === false) {
+            // getStream() available in CI4 v4.3+, falls back to getTempName()
+            try {
+                if (is_callable([$photoUpload, 'getStream'])) {
+                    $stream = $photoUpload->getStream();
+                    $binary = $stream->getContents();
+                } else {
+                    $binary = @file_get_contents($photoUpload->getTempName());
+                }
+            } catch (\Throwable $e) {
+                $binary = false;
+            }
+            if ($binary === false || $binary === '') {
                 continue;
             }
 
