@@ -253,6 +253,7 @@ $resolvePhotoSrc = static function ($photo): string {
         height: 230px;
         object-fit: contain;
         display: block;
+        margin: 0 auto;
     }
     </style>
 </head>
