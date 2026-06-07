@@ -17,9 +17,11 @@
 
     .simak-tree-panel,
     .simak-detail-panel {
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
         background: #fff;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
     }
 
     .simak-detail-panel {
@@ -53,12 +55,19 @@
     }
 
     .simak-panel-head {
-        padding: 12px 14px;
-        border-bottom: 1px solid #eef2f7;
+        padding: 16px 20px;
+        border-bottom: 1px solid #f1f5f9;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 10px;
+        background: #f8fafc;
+    }
+
+    .simak-panel-head strong {
+        font-size: 15px;
+        color: #1e293b;
+        font-weight: 700;
     }
 
     .simak-panel-meta {
@@ -72,25 +81,224 @@
     .simak-panel-meta .badge {
         font-size: 11px;
         font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 6px;
     }
 
     .simak-master-no .badge {
-        min-width: 56px;
+        min-width: 60px;
         justify-content: center;
         font-size: 11px;
+        padding: 4px 6px;
+        font-family: monospace;
+    }
+
+    .simak-master-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        background: #fff;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .simak-master-item:hover {
+        border-color: var(--app-primary);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+        transform: translateY(-1px);
+    }
+
+    /* Node Color Coding */
+    .simak-master-item.row-kind-section {
+        background: #1e293b;
+        border-color: #0f172a;
+    }
+    .simak-master-item.row-kind-section .simak-master-title {
+        color: #f8fafc;
+        font-weight: 700;
+        font-size: 14px;
+    }
+    .simak-master-item.row-kind-section .simak-master-sub {
+        color: #94a3b8;
+    }
+    .simak-master-item.row-kind-section .drag-handle {
+        color: #94a3b8;
+    }
+    .simak-master-item.row-kind-section .node-toggle-btn {
+        color: #94a3b8;
+    }
+
+    .simak-master-item.row-kind-group {
+        background: #f8fafc;
+        border-left: 4px solid #64748b;
+    }
+    .simak-master-item.row-kind-group .simak-master-title {
+        color: #334155;
+        font-weight: 600;
+    }
+
+    .simak-master-item.row-kind-question {
+        background: #fff;
+        border-left: 4px solid var(--app-primary);
+    }
+
+    .simak-master-item.row-kind-text {
+        background: #fff;
+        border-left: 4px solid #10b981;
+    }
+
+    .simak-master-item.row-kind-separator {
+        background: #f1f5f9;
+        border: 1px dashed #cbd5e1;
+    }
+
+    .simak-master-item.is-inactive {
+        opacity: 0.6;
+        background: #f1f5f9;
+    }
+
+    .simak-master-item.is-share-hidden {
+        border-style: dashed;
+    }
+
+    .simak-master-item.is-selected {
+        border-color: var(--app-primary);
+        box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.2) !important;
+    }
+
+    .simak-master-row {
+        display: grid;
+        grid-template-columns: 28px 28px 75px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 14px;
+    }
+
+    .drag-handle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: grab;
+        color: #94a3b8;
+        padding: 4px;
+        transition: color 0.15s;
+    }
+
+    .drag-handle:hover {
+        color: var(--app-primary);
+    }
+
+    .node-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        color: #64748b;
+        transition: all 0.2s ease;
+    }
+
+    .node-toggle-btn:hover {
+        color: var(--app-primary);
+        background: rgba(15, 23, 42, 0.05);
+        border-radius: 4px;
+    }
+
+    .node-toggle-btn.is-empty {
+        cursor: default;
+        opacity: 0.25;
+    }
+
+    .node-toggle-btn.is-empty i {
+        font-size: 8px;
+    }
+
+    .node-toggle-btn i {
+        transition: transform 0.2s ease;
+    }
+
+    .simak-master-item.is-collapsed > .simak-master-row .node-toggle-btn i {
+        transform: rotate(-90deg);
+    }
+
+    .simak-master-item.is-collapsed > ul.simak-master-tree-list {
+        display: none !important;
+    }
+
+    .simak-master-meta {
+        min-width: 0;
+        cursor: pointer;
+    }
+
+    .simak-master-title {
+        font-weight: 500;
+        line-height: 1.4;
+        color: #1e293b;
+        font-size: 13.5px;
+    }
+
+    .simak-master-sub {
+        color: #64748b;
+        font-size: 11.5px;
+        margin-top: 4px;
+    }
+
+    .simak-master-actions-flags-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        min-width: 145px;
+        height: 28px;
+    }
+
+    .simak-inline-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        opacity: 0;
+        transform: scale(0.95);
+        transition: all 0.2s ease;
+        pointer-events: none;
+        position: absolute;
+        right: 0;
+        z-index: 5;
+    }
+
+    .simak-inline-actions .btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background: #fff;
     }
 
     .simak-master-flags {
         display: flex;
-        align-items: flex-start;
-        justify-content: flex-end;
-        flex-wrap: wrap;
         gap: 6px;
-        padding-top: 1px;
+        align-items: center;
+        opacity: 1;
+        transition: opacity 0.2s ease;
+    }
+
+    .simak-master-item:hover .simak-inline-actions {
+        opacity: 1;
+        transform: scale(1);
+        pointer-events: auto;
+    }
+
+    .simak-master-item:hover .simak-master-flags {
+        opacity: 0;
+        pointer-events: none;
     }
 
     .simak-panel-body {
-        padding: 14px;
+        padding: 20px;
     }
 
     .simak-master-tree,
@@ -101,81 +309,50 @@
     }
 
     .simak-master-tree ul {
-        margin-left: 24px;
-        border-left: 1px dashed #d0d7de;
-        padding-left: 12px;
+        margin-left: 20px;
+        border-left: 2px solid #e2e8f0;
+        padding-left: 14px;
+        margin-top: 6px;
     }
 
-    .simak-master-item {
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        background: #fff;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    .simak-master-tree-list > li {
+        position: relative;
     }
 
-    .simak-master-item.is-inactive {
-        opacity: 0.68;
-        background: #f8fafc;
-    }
-
-    .simak-master-item.is-share-hidden {
-        border-style: dashed;
-    }
-
-    .simak-master-item.is-selected {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
-    }
-
-    .simak-master-row {
-        display: grid;
-        grid-template-columns: 34px 92px minmax(0, 1fr) auto;
-        gap: 10px;
-        align-items: start;
-        padding: 10px 12px;
-    }
-
-    .drag-handle {
-        cursor: grab;
-        color: #6b7280;
-    }
-
-    .simak-master-meta {
-        min-width: 0;
-        min-width: 0;
-        cursor: pointer;
-    }
-
-    .simak-master-title {
-        font-weight: 600;
-        line-height: 1.3;
-    }
-
-    .simak-master-sub {
-        color: #6b7280;
-        font-size: 12px;
-        margin-top: 2px;
+    .simak-master-tree-list > li::before {
+        content: "";
+        position: absolute;
+        left: -14px;
+        top: 24px;
+        width: 14px;
+        height: 2px;
+        background-color: #e2e8f0;
     }
 
     .simak-status-badge {
-        display: inline-block;
-        margin-left: 6px;
-        font-size: 11px;
-        vertical-align: middle;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 3px 6px;
+        border-radius: 4px;
     }
 
     .empty-tree {
-        border: 1px dashed #d1d5db;
-        border-radius: 8px;
-        padding: 18px;
-        color: #6b7280;
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 32px;
+        text-align: center;
+        color: #64748b;
+        background: #f8fafc;
     }
 
     .simak-form-hint {
         font-size: 12px;
-        color: #6b7280;
-        margin-bottom: 12px;
+        color: #64748b;
+        margin-bottom: 16px;
+        padding: 10px 12px;
+        background: #f0fdf4;
+        border-left: 3px solid #10b981;
+        border-radius: 6px;
     }
 
     .simak-notice-stack {
@@ -192,16 +369,16 @@
 
     .simak-toast {
         pointer-events: auto;
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        border-radius: 10px;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.15);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         overflow: hidden;
         background: #fff;
-        animation: simak-toast-in 0.18s ease-out;
+        animation: simak-toast-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .simak-toast.is-hiding {
-        animation: simak-toast-out 0.18s ease-in forwards;
+        animation: simak-toast-out 0.2s ease-in forwards;
     }
 
     .simak-toast-header {
@@ -209,59 +386,77 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 10px 12px;
-        font-weight: 600;
-        font-size: 13px;
+        padding: 12px 14px;
+        font-weight: 700;
+        font-size: 13.5px;
     }
 
     .simak-toast-body {
-        padding: 10px 12px 12px;
+        padding: 12px 14px 14px;
         font-size: 13px;
-        line-height: 1.4;
-        color: #1f2937;
+        line-height: 1.5;
+        color: #334155;
     }
 
     .simak-toast-success .simak-toast-header {
-        background: #ecfdf3;
+        background: #f0fdf4;
         color: #166534;
+        border-bottom: 1px solid #bbf7d0;
     }
 
     .simak-toast-danger .simak-toast-header {
         background: #fef2f2;
         color: #991b1b;
+        border-bottom: 1px solid #fecaca;
     }
 
     .simak-toast-warning .simak-toast-header {
         background: #fffbeb;
         color: #92400e;
+        border-bottom: 1px solid #fef3c7;
     }
 
     .simak-toast-info .simak-toast-header {
         background: #eff6ff;
         color: #1d4ed8;
+        border-bottom: 1px solid #bfdbfe;
+    }
+
+    /* Search highlight styling */
+    .search-hidden {
+        display: none !important;
+    }
+    
+    .search-match {
+        border-color: #f59e0b !important;
+    }
+
+    /* Dragging ghost styling */
+    .simak-master-tree-list .sortable-ghost {
+        opacity: 0.4;
+        background-color: rgba(10, 102, 194, 0.05);
+        border: 2px dashed var(--app-primary) !important;
     }
 
     @keyframes simak-toast-in {
         from {
             opacity: 0;
-            transform: translateY(-8px);
+            transform: translateY(-12px) scale(0.95);
         }
-
         to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
         }
     }
 
     @keyframes simak-toast-out {
         from {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
         }
-
         to {
             opacity: 0;
-            transform: translateY(-8px);
+            transform: translateY(-12px) scale(0.95);
         }
     }
 
@@ -290,7 +485,7 @@
         <div id="simak-notice-stack" class="simak-notice-stack" aria-live="polite" aria-atomic="true"></div>
 
         <?php
-            $renderTree = static function (array $nodes) use (&$renderTree): void {
+            $renderTree = static function (array $nodes) use (&$renderTree, $shareVisibilityAvailable): void {
                 echo '<ul class="simak-master-tree-list">';
                 foreach ($nodes as $node) {
                     $id = (int) ($node['id'] ?? 0);
@@ -304,7 +499,7 @@
                     $isHiddenShare = (int) ($node['is_hidden_share'] ?? 0) === 1;
                     $children = is_array($node['children'] ?? null) ? $node['children'] : [];
 
-                    echo '<li class="simak-master-item' . (! $isActive ? ' is-inactive' : '') . ($isHiddenShare ? ' is-share-hidden' : '') . '" data-id="' . $id . '"';
+                    echo '<li class="simak-master-item row-kind-' . esc($rowKind) . (! $isActive ? ' is-inactive' : '') . ($isHiddenShare ? ' is-share-hidden' : '') . '" data-id="' . $id . '"';
                     echo ' data-parent_id="' . esc((string) ($node['parent_id'] ?? ''), 'attr') . '"';
                     echo ' data-display_no="' . esc((string) ($node['display_no'] ?? ''), 'attr') . '"';
                     echo ' data-display_no_auto="' . esc((string) ($node['display_no_auto'] ?? ''), 'attr') . '"';
@@ -321,21 +516,51 @@
                     echo ' data-is_hidden_share="' . ($isHiddenShare ? '1' : '0') . '"';
                     echo '>';
                     echo '<div class="simak-master-row">';
+                    
+                    // Column 1: Drag handle
                     echo '<span class="drag-handle" title="Drag untuk ubah urutan/hirarki"><i class="fas fa-grip-lines"></i></span>';
+                    
+                    // Column 2: Chevron Toggle (for sections and groups)
+                    $hasChildren = ($children !== []);
+                    if ($rowKind === 'section' || $rowKind === 'group') {
+                        echo '<span class="node-toggle-btn' . ($hasChildren ? '' : ' is-empty') . '" title="Klik untuk melipat"><i class="fas ' . ($hasChildren ? 'fa-chevron-down' : 'fa-minus') . '"></i></span>';
+                    } else {
+                        echo '<span class="node-toggle-btn is-empty"><i class="fas fa-circle" style="font-size: 5px; opacity: 0.35;"></i></span>';
+                    }
+
+                    // Column 3: Display No
                     echo '<div class="simak-master-no"><span class="badge badge-dark">' . esc($displayNo !== '' ? $displayNo : '-') . '</span></div>';
+                    
+                    // Column 4: Title & Description
                     echo '<div class="simak-master-meta">';
                     echo '<div class="simak-master-title">' . esc($title !== '' ? $title : '-') . '</div>';
                     echo '<div class="simak-master-sub">';
                     echo 'Jenis: <strong>' . esc($rowKind) . '</strong> | Pertanyaan: <strong>' . ($hasQuestion ? 'Ya' : 'Tidak') . '</strong> | Row No: <strong>' . esc((string) ($node['row_no'] ?? '')) . '</strong>';
                     echo '</div>';
                     echo '</div>';
+                    
+                    // Column 5: Inline Actions & Flags
+                    echo '<div class="simak-master-actions-flags-container">';
+                    echo '<div class="simak-inline-actions">';
+                    echo '<button type="button" class="btn btn-xs btn-outline-primary btn-inline-edit" title="Ubah Item"><i class="fas fa-edit"></i></button>';
+                    if ($rowKind !== 'question' && $rowKind !== 'text') {
+                        echo '<button type="button" class="btn btn-xs btn-outline-success btn-inline-add-child" title="Tambah Subitem"><i class="fas fa-plus"></i></button>';
+                    }
+                    echo '<button type="button" class="btn btn-xs btn-outline-warning btn-inline-toggle-status" title="' . ($isActive ? 'Nonaktifkan' : 'Aktifkan') . '"><i class="fas ' . ($isActive ? 'fa-toggle-on text-success' : 'fa-toggle-off') . '"></i></button>';
+                    if (! empty($shareVisibilityAvailable)) {
+                        echo '<button type="button" class="btn btn-xs btn-outline-info btn-inline-toggle-share" title="' . ($isHiddenShare ? 'Tampilkan di Share' : 'Sembunyikan dari Share') . '"><i class="fas ' . ($isHiddenShare ? 'fa-eye-slash text-warning' : 'fa-eye') . '"></i></button>';
+                    }
+                    echo '</div>'; // end inline-actions
+                    
                     echo '<div class="simak-master-flags">';
                     echo '<span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span>';
                     if ($isHiddenShare) {
-                        echo ' <span class="badge badge-warning simak-status-badge">Share: Tersembunyi</span>';
+                        echo '<span class="badge badge-warning simak-status-badge">Share: Sembunyi</span>';
                     }
-                    echo '</div>';
-                    echo '</div>';
+                    echo '</div>'; // end flags
+                    echo '</div>'; // end actions-flags-container
+                    
+                    echo '</div>'; // end row
 
                     if ($children !== []) {
                         $renderTree($children);
@@ -357,7 +582,19 @@
                             <span class="badge badge-secondary" id="simak-count-inactive">Nonaktif: 0</span>
                         </div>
                     </div>
-                    <small class="text-muted d-none d-md-inline">Klik item untuk edit di panel kanan</small>
+                    <small class="text-muted d-none d-md-inline">Klik item untuk edit/detail</small>
+                </div>
+                <div class="simak-search-filter-bar px-3 py-2 border-bottom d-flex align-items-center justify-content-between bg-light" style="gap:10px;">
+                    <div class="input-group input-group-sm" style="max-width: 250px;">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+                        </div>
+                        <input type="text" id="simak-search-input" class="form-control border-left-0" placeholder="Cari pertanyaan...">
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary" id="btn-expand-all" title="Buka Semua"><i class="fas fa-angle-double-down"></i> Buka</button>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-collapse-all" title="Tutup Semua"><i class="fas fa-angle-double-up"></i> Tutup</button>
+                    </div>
                 </div>
                 <div class="simak-panel-body">
                     <?php if (! empty($itemsTree ?? [])): ?>
@@ -794,6 +1031,12 @@
                         root.querySelectorAll('ul.simak-master-tree-list').forEach(initSortable);
                     }
 
+                    // Re-trigger search text query if search term was active
+                    var searchInput = document.getElementById('simak-search-input');
+                    if (searchInput && searchInput.value !== '') {
+                        searchInput.dispatchEvent(new Event('input'));
+                    }
+
                     if (selectedId) {
                         var selectedEl = document.querySelector('.simak-master-item[data-id="' + selectedId + '"]');
                         if (selectedEl) {
@@ -1043,6 +1286,263 @@
 
         updateStatusSummary();
         setCreateMode('', 'Tambah Item Master');
+
+        // --- Real-time Search & Filter ---
+        var setupSearchInput = function() {
+            var searchInput = document.getElementById('simak-search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    var query = searchInput.value.toLowerCase().trim();
+                    var items = root ? root.querySelectorAll('.simak-master-item') : [];
+                    
+                    // Reset
+                    items.forEach(function (item) {
+                        item.classList.remove('search-hidden', 'search-match');
+                        var titleEl = item.querySelector('.simak-master-title');
+                        if (titleEl && titleEl.dataset.originalHtml) {
+                            titleEl.innerHTML = titleEl.dataset.originalHtml;
+                        }
+                    });
+
+                    if (query === '') {
+                        return;
+                    }
+
+                    var matches = [];
+                    items.forEach(function (item) {
+                        var titleEl = item.querySelector('.simak-master-title');
+                        if (!titleEl) return;
+                        
+                        if (!titleEl.dataset.originalHtml) {
+                            titleEl.dataset.originalHtml = titleEl.innerHTML;
+                        }
+
+                        var text = titleEl.textContent.toLowerCase();
+                        if (text.indexOf(query) !== -1) {
+                            item.classList.add('search-match');
+                            matches.push(item);
+
+                            var rawHTML = titleEl.dataset.originalHtml;
+                            var reg = new RegExp('(' + query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + ')', 'gi');
+                            titleEl.innerHTML = rawHTML.replace(reg, '<mark class="bg-warning p-0">$1</mark>');
+                        }
+                    });
+
+                    // Hide non-matches
+                    items.forEach(function (item) {
+                        if (!item.classList.contains('search-match')) {
+                            item.classList.add('search-hidden');
+                        }
+                    });
+
+                    // Restore match ancestors and auto-expand them
+                    matches.forEach(function (item) {
+                        item.classList.remove('search-hidden');
+                        var parent = item.parentElement.closest('.simak-master-item');
+                        while (parent) {
+                            parent.classList.remove('search-hidden');
+                            parent.classList.remove('is-collapsed');
+                            parent = parent.parentElement.closest('.simak-master-item');
+                        }
+                    });
+                });
+            }
+        };
+
+        // --- Expand/Collapse All ---
+        var setupExpandCollapseAll = function() {
+            var expandAllBtn = document.getElementById('btn-expand-all');
+            if (expandAllBtn) {
+                expandAllBtn.addEventListener('click', function () {
+                    if (!root) return;
+                    root.querySelectorAll('.simak-master-item').forEach(function (item) {
+                        item.classList.remove('is-collapsed');
+                    });
+                });
+            }
+
+            var collapseAllBtn = document.getElementById('btn-collapse-all');
+            if (collapseAllBtn) {
+                collapseAllBtn.addEventListener('click', function () {
+                    if (!root) return;
+                    root.querySelectorAll('.simak-master-item').forEach(function (item) {
+                        if (item.querySelector('ul.simak-master-tree-list')) {
+                            item.classList.add('is-collapsed');
+                        }
+                    });
+                });
+            }
+        };
+
+        // --- Event Delegation on Tree Root (Toggle & Inline Actions) ---
+        var setupTreeEventDelegation = function() {
+            if (root) {
+                root.addEventListener('click', function (e) {
+                    // 1. Chevron toggle click
+                    var toggleBtn = e.target.closest('.node-toggle-btn');
+                    if (toggleBtn && !toggleBtn.classList.contains('is-empty')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var itemEl = toggleBtn.closest('.simak-master-item');
+                        if (itemEl) {
+                            itemEl.classList.toggle('is-collapsed');
+                        }
+                        return;
+                    }
+
+                    // 2. Inline Edit action
+                    var inlineEdit = e.target.closest('.btn-inline-edit');
+                    if (inlineEdit) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var itemEl = inlineEdit.closest('.simak-master-item');
+                        setEditModeFromItem(itemEl);
+                        return;
+                    }
+
+                    // 3. Inline Add Child action
+                    var inlineAdd = e.target.closest('.btn-inline-add-child');
+                    if (inlineAdd) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var itemEl = inlineAdd.closest('.simak-master-item');
+                        var id = itemEl.getAttribute('data-id') || '';
+                        setCreateMode(id, 'Tambah Child dari Item #' + id);
+                        if (uraianInput) {
+                            uraianInput.focus();
+                        }
+                        return;
+                    }
+
+                    // 4. Inline Toggle Active status action
+                    var inlineStatus = e.target.closest('.btn-inline-toggle-status');
+                    if (inlineStatus) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var itemEl = inlineStatus.closest('.simak-master-item');
+                        if (itemEl) {
+                            var id = itemEl.getAttribute('data-id');
+                            var isActive = (itemEl.getAttribute('data-is_active') || '1') === '1';
+                            var nextStatus = isActive ? 0 : 1;
+                            runToggleStatusInline(id, nextStatus, inlineStatus);
+                        }
+                        return;
+                    }
+
+                    // 5. Inline Toggle Share visibility action
+                    var inlineShare = e.target.closest('.btn-inline-toggle-share');
+                    if (inlineShare) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var itemEl = inlineShare.closest('.simak-master-item');
+                        if (itemEl) {
+                            var id = itemEl.getAttribute('data-id');
+                            var isHidden = (itemEl.getAttribute('data-is_hidden_share') || '0') === '1';
+                            var nextVisibility = isHidden ? 0 : 1;
+                            runToggleShareInline(id, nextVisibility, inlineShare);
+                        }
+                        return;
+                    }
+                });
+            }
+        };
+
+        var runToggleStatusInline = function (id, nextStatus, buttonEl) {
+            if (!id) return;
+            var originalHtml = buttonEl.innerHTML;
+            buttonEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            buttonEl.disabled = true;
+
+            var formData = new FormData();
+            formData.append('is_active', String(nextStatus));
+            formData.append(csrfName, csrfValue);
+
+            fetch(baseUrl + '/' + encodeURIComponent(id) + '/status', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+                .then(function (response) {
+                    return response.json().then(function (json) {
+                        return { ok: response.ok, json: json };
+                    });
+                })
+                .then(function (result) {
+                    var json = result.json || {};
+                    syncCsrfFromJson(json);
+                    if (!result.ok || json.status !== 'ok') {
+                        showNotice(json.message || 'Gagal mengubah status item.', 'danger');
+                        buttonEl.innerHTML = originalHtml;
+                        buttonEl.disabled = false;
+                        return;
+                    }
+
+                    var currentSelectedId = selectedIdInput ? selectedIdInput.value : '';
+                    refreshPanels(currentSelectedId, formModeLabel ? formModeLabel.textContent : 'Tambah Item Master').then(function () {
+                        showNotice(json.message || 'Status item berhasil diubah.', 'success');
+                    });
+                })
+                .catch(function () {
+                    showNotice('Gagal mengubah status item.', 'danger');
+                    buttonEl.innerHTML = originalHtml;
+                    buttonEl.disabled = false;
+                });
+        };
+
+        var runToggleShareInline = function (id, nextVisibility, buttonEl) {
+            if (!id) return;
+            var originalHtml = buttonEl.innerHTML;
+            buttonEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            buttonEl.disabled = true;
+
+            var formData = new FormData();
+            formData.append('is_hidden_share', String(nextVisibility));
+            formData.append(csrfName, csrfValue);
+
+            fetch(baseUrl + '/' + encodeURIComponent(id) + '/share-visibility', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+                .then(function (response) {
+                    return response.json().then(function (json) {
+                        return { ok: response.ok, json: json };
+                    });
+                })
+                .then(function (result) {
+                    var json = result.json || {};
+                    syncCsrfFromJson(json);
+                    if (!result.ok || json.status !== 'ok') {
+                        showNotice(json.message || 'Gagal mengubah visibilitas share item.', 'danger');
+                        buttonEl.innerHTML = originalHtml;
+                        buttonEl.disabled = false;
+                        return;
+                    }
+
+                    var currentSelectedId = selectedIdInput ? selectedIdInput.value : '';
+                    refreshPanels(currentSelectedId, formModeLabel ? formModeLabel.textContent : 'Tambah Item Master').then(function () {
+                        showNotice(json.message || 'Visibilitas share item berhasil diubah.', 'success');
+                    });
+                })
+                .catch(function () {
+                    showNotice('Gagal mengubah visibilitas share item.', 'danger');
+                    buttonEl.innerHTML = originalHtml;
+                    buttonEl.disabled = false;
+                });
+        };
+
+        // Initialize features
+        setupSearchInput();
+        setupExpandCollapseAll();
+        setupTreeEventDelegation();
     })();
 </script>
 <?= $this->endSection(); ?>
