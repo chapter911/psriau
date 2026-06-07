@@ -5,7 +5,7 @@
 <style>
     .simak-split-layout {
         display: grid;
-        grid-template-columns: 1.2fr 1fr;
+        grid-template-columns: 1.4fr 1fr;
         gap: 16px;
     }
 
@@ -85,71 +85,98 @@
         border-radius: 6px;
     }
 
-    .simak-master-no .badge {
-        min-width: 60px;
-        justify-content: center;
-        font-size: 11px;
-        padding: 4px 6px;
-        font-family: monospace;
+    .simak-panel-body {
+        padding: 20px;
+        overflow-x: auto; /* Allow horizontal scrolling on small screens */
+    }
+
+    /* Tree Grid Table Styling */
+    .simak-table-grid-wrapper {
+        min-width: 780px; /* Ensure table layout columns fit perfectly */
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .simak-table-header {
+        display: flex;
+        align-items: center;
+        padding: 10px 14px;
+        background: #f1f5f9;
+        border-bottom: 2px solid #cbd5e1;
+        font-weight: 700;
+        font-size: 11.5px;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .simak-col-handle { width: 24px; flex-shrink: 0; display: flex; justify-content: center; }
+    .simak-col-toggle { width: 24px; flex-shrink: 0; display: flex; justify-content: center; }
+    .simak-col-no { width: 60px; flex-shrink: 0; display: flex; justify-content: center; }
+    .simak-col-uraian { flex: 1; min-width: 150px; }
+    .simak-col-jenis { width: 85px; flex-shrink: 0; text-align: center; }
+    .simak-col-question { width: 50px; flex-shrink: 0; text-align: center; }
+    .simak-col-draft { width: 50px; flex-shrink: 0; text-align: center; }
+    .simak-col-status { width: 75px; flex-shrink: 0; text-align: center; }
+    .simak-col-share { width: 75px; flex-shrink: 0; text-align: center; }
+    .simak-col-aksi { width: 110px; flex-shrink: 0; display: flex; justify-content: flex-end; gap: 4px; }
+
+    .simak-master-tree,
+    .simak-master-tree ul {
+        list-style: none;
+        margin: 0;
+        padding-left: 0;
+    }
+
+    .simak-master-tree ul {
+        margin-top: 0;
     }
 
     .simak-master-item {
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        margin-bottom: 8px;
         background: #fff;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
+        border-bottom: 1px solid #e2e8f0;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .simak-master-item:last-child {
+        border-bottom: none;
     }
 
     .simak-master-item:hover {
-        border-color: var(--app-primary);
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-        transform: translateY(-1px);
+        background: #f8fafc;
     }
 
-    /* Node Color Coding */
+    .simak-master-row {
+        display: flex;
+        align-items: center;
+        padding: 8px 14px;
+        min-height: 48px;
+    }
+
+    /* Node Kind Coding */
     .simak-master-item.row-kind-section {
-        background: #1e293b;
-        border-color: #0f172a;
+        background: #f8fafc;
+    }
+    .simak-master-item.row-kind-section > .simak-master-row {
+        background: rgba(15, 23, 42, 0.03);
     }
     .simak-master-item.row-kind-section .simak-master-title {
-        color: #f8fafc;
         font-weight: 700;
-        font-size: 14px;
-    }
-    .simak-master-item.row-kind-section .simak-master-sub {
-        color: #94a3b8;
-    }
-    .simak-master-item.row-kind-section .drag-handle {
-        color: #94a3b8;
-    }
-    .simak-master-item.row-kind-section .node-toggle-btn {
-        color: #94a3b8;
+        color: #0f172a;
     }
 
     .simak-master-item.row-kind-group {
-        background: #f8fafc;
-        border-left: 4px solid #64748b;
+        background: #fff;
     }
     .simak-master-item.row-kind-group .simak-master-title {
-        color: #334155;
         font-weight: 600;
+        color: #1e293b;
     }
 
-    .simak-master-item.row-kind-question {
-        background: #fff;
-        border-left: 4px solid var(--app-primary);
-    }
-
-    .simak-master-item.row-kind-text {
-        background: #fff;
-        border-left: 4px solid #10b981;
-    }
-
-    .simak-master-item.row-kind-separator {
-        background: #f1f5f9;
-        border: 1px dashed #cbd5e1;
+    .simak-master-item.row-kind-question .simak-master-title {
+        font-weight: 400;
+        color: #334155;
     }
 
     .simak-master-item.is-inactive {
@@ -157,31 +184,17 @@
         background: #f1f5f9;
     }
 
-    .simak-master-item.is-share-hidden {
-        border-style: dashed;
-    }
-
     .simak-master-item.is-selected {
-        border-color: var(--app-primary);
-        box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.2) !important;
-    }
-
-    .simak-master-row {
-        display: grid;
-        grid-template-columns: 28px 28px 75px minmax(0, 1fr) auto;
-        gap: 12px;
-        align-items: center;
-        padding: 12px 14px;
+        background: rgba(10, 102, 194, 0.04) !important;
+        outline: 2px solid var(--app-primary);
+        outline-offset: -2px;
     }
 
     .drag-handle {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
         cursor: grab;
         color: #94a3b8;
         padding: 4px;
-        transition: color 0.15s;
+        display: inline-flex;
     }
 
     .drag-handle:hover {
@@ -210,10 +223,6 @@
         opacity: 0.25;
     }
 
-    .node-toggle-btn.is-empty i {
-        font-size: 8px;
-    }
-
     .node-toggle-btn i {
         transition: transform 0.2s ease;
     }
@@ -227,106 +236,31 @@
     }
 
     .simak-master-meta {
-        min-width: 0;
         cursor: pointer;
+        min-width: 0;
     }
 
     .simak-master-title {
-        font-weight: 500;
+        font-size: 13px;
         line-height: 1.4;
-        color: #1e293b;
-        font-size: 13.5px;
-    }
-
-    .simak-master-sub {
-        color: #64748b;
-        font-size: 11.5px;
-        margin-top: 4px;
-    }
-
-    .simak-master-actions-flags-container {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        min-width: 145px;
-        height: 28px;
     }
 
     .simak-inline-actions {
         display: flex;
-        gap: 6px;
+        gap: 4px;
         align-items: center;
-        opacity: 0;
-        transform: scale(0.95);
-        transition: all 0.2s ease;
-        pointer-events: none;
-        position: absolute;
-        right: 0;
-        z-index: 5;
     }
 
     .simak-inline-actions .btn {
-        width: 26px;
-        height: 26px;
-        border-radius: 6px;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         padding: 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         background: #fff;
-    }
-
-    .simak-master-flags {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-        opacity: 1;
-        transition: opacity 0.2s ease;
-    }
-
-    .simak-master-item:hover .simak-inline-actions {
-        opacity: 1;
-        transform: scale(1);
-        pointer-events: auto;
-    }
-
-    .simak-master-item:hover .simak-master-flags {
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    .simak-panel-body {
-        padding: 20px;
-    }
-
-    .simak-master-tree,
-    .simak-master-tree ul {
-        list-style: none;
-        margin: 0;
-        padding-left: 0;
-    }
-
-    .simak-master-tree ul {
-        margin-left: 20px;
-        border-left: 2px solid #e2e8f0;
-        padding-left: 14px;
-        margin-top: 6px;
-    }
-
-    .simak-master-tree-list > li {
-        position: relative;
-    }
-
-    .simak-master-tree-list > li::before {
-        content: "";
-        position: absolute;
-        left: -14px;
-        top: 24px;
-        width: 14px;
-        height: 2px;
-        background-color: #e2e8f0;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
     .simak-status-badge {
@@ -428,7 +362,7 @@
     }
     
     .search-match {
-        border-color: #f59e0b !important;
+        background: #fef08a !important;
     }
 
     /* Dragging ghost styling */
@@ -485,13 +419,12 @@
         <div id="simak-notice-stack" class="simak-notice-stack" aria-live="polite" aria-atomic="true"></div>
 
         <?php
-            $renderTree = static function (array $nodes) use (&$renderTree, $shareVisibilityAvailable): void {
+            $renderTree = static function (array $nodes, int $depth = 0) use (&$renderTree, $shareVisibilityAvailable): void {
                 echo '<ul class="simak-master-tree-list">';
                 foreach ($nodes as $node) {
                     $id = (int) ($node['id'] ?? 0);
                     $displayNo = trim((string) ($node['display_no_auto'] ?? $node['display_no'] ?? ''));
                     $uraian = trim((string) ($node['uraian'] ?? ''));
-                    $title = trim($displayNo . ' ' . $uraian);
                     $rowKind = (string) ($node['row_kind'] ?? 'question');
                     $hasQuestion = (int) ($node['has_question'] ?? 0) === 1;
                     $hasDraft = (int) ($node['has_draft'] ?? 0) === 1;
@@ -518,52 +451,75 @@
                     echo '<div class="simak-master-row">';
                     
                     // Column 1: Drag handle
-                    echo '<span class="drag-handle" title="Drag untuk ubah urutan/hirarki"><i class="fas fa-grip-lines"></i></span>';
+                    echo '<div class="simak-col-handle">';
+                    echo '<span class="drag-handle" title="Seret untuk mengubah urutan/susunan"><i class="fas fa-grip-lines"></i></span>';
+                    echo '</div>';
+
+                    // Column 2: Spacer for indentation depth
+                    $indentWidth = $depth * 20;
+                    echo '<div class="simak-col-indent" style="width: ' . $indentWidth . 'px; flex-shrink: 0;"></div>';
                     
-                    // Column 2: Chevron Toggle (for sections and groups)
+                    // Column 3: Chevron Toggle (for sections and groups)
+                    echo '<div class="simak-col-toggle">';
                     $hasChildren = ($children !== []);
                     if ($rowKind === 'section' || $rowKind === 'group') {
                         echo '<span class="node-toggle-btn' . ($hasChildren ? '' : ' is-empty') . '" title="Klik untuk melipat"><i class="fas ' . ($hasChildren ? 'fa-chevron-down' : 'fa-minus') . '"></i></span>';
                     } else {
                         echo '<span class="node-toggle-btn is-empty"><i class="fas fa-circle" style="font-size: 5px; opacity: 0.35;"></i></span>';
                     }
+                    echo '</div>';
 
-                    // Column 3: Display No
-                    echo '<div class="simak-master-no"><span class="badge badge-dark">' . esc($displayNo !== '' ? $displayNo : '-') . '</span></div>';
-                    
-                    // Column 4: Title & Description
-                    echo '<div class="simak-master-meta">';
-                    echo '<div class="simak-master-title">' . esc($title !== '' ? $title : '-') . '</div>';
-                    echo '<div class="simak-master-sub">';
-                    echo 'Jenis: <strong>' . esc($rowKind) . '</strong> | Pertanyaan: <strong>' . ($hasQuestion ? 'Ya' : 'Tidak') . '</strong> | Row No: <strong>' . esc((string) ($node['row_no'] ?? '')) . '</strong>';
-                    echo '</div>';
+                    // Column 4: Display No
+                    echo '<div class="simak-col-no">';
+                    echo '<span class="badge badge-dark">' . esc($displayNo !== '' ? $displayNo : '-') . '</span>';
                     echo '</div>';
                     
-                    // Column 5: Inline Actions & Flags
-                    echo '<div class="simak-master-actions-flags-container">';
-                    echo '<div class="simak-inline-actions">';
+                    // Column 5: Uraian Title
+                    echo '<div class="simak-col-uraian simak-master-meta">';
+                    echo '<div class="simak-master-title">' . esc($uraian !== '' ? $uraian : '-') . '</div>';
+                    echo '</div>';
+
+                    // Column 6: Jenis Row Kind
+                    echo '<div class="simak-col-jenis">';
+                    echo '<span class="badge badge-light text-capitalize">' . esc($rowKind) . '</span>';
+                    echo '</div>';
+
+                    // Column 7: Pertanyaan status
+                    echo '<div class="simak-col-question">';
+                    echo $hasQuestion ? '<i class="fas fa-check text-success" title="Punya Pertanyaan"></i>' : '<i class="fas fa-times text-muted" title="Tidak Ada Pertanyaan"></i>';
+                    echo '</div>';
+
+                    // Column 8: Draft status
+                    echo '<div class="simak-col-draft">';
+                    echo $hasDraft ? '<i class="fas fa-check text-success" title="Punya Draft"></i>' : '<i class="fas fa-times text-muted" title="Tidak Ada Draft"></i>';
+                    echo '</div>';
+
+                    // Column 9: Status (Active/Inactive)
+                    echo '<div class="simak-col-status">';
+                    echo '<span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span>';
+                    echo '</div>';
+
+                    // Column 10: Share Status
+                    echo '<div class="simak-col-share">';
+                    echo $isHiddenShare ? '<span class="badge badge-warning simak-status-badge">Sembunyi</span>' : '<span class="badge badge-info simak-status-badge">Tampil</span>';
+                    echo '</div>';
+                    
+                    // Column 11: Action Buttons
+                    echo '<div class="simak-col-aksi">';
                     echo '<button type="button" class="btn btn-xs btn-outline-primary btn-inline-edit" title="Ubah Item"><i class="fas fa-edit"></i></button>';
                     if ($rowKind !== 'question' && $rowKind !== 'text') {
                         echo '<button type="button" class="btn btn-xs btn-outline-success btn-inline-add-child" title="Tambah Subitem"><i class="fas fa-plus"></i></button>';
                     }
-                    echo '<button type="button" class="btn btn-xs btn-outline-warning btn-inline-toggle-status" title="' . ($isActive ? 'Nonaktifkan' : 'Aktifkan') . '"><i class="fas ' . ($isActive ? 'fa-toggle-on text-success' : 'fa-toggle-off') . '"></i></button>';
+                    echo '<button type="button" class="btn btn-xs btn-outline-secondary btn-inline-toggle-status" title="' . ($isActive ? 'Nonaktifkan' : 'Aktifkan') . '"><i class="fas ' . ($isActive ? 'fa-toggle-on text-success' : 'fa-toggle-off') . '"></i></button>';
                     if (! empty($shareVisibilityAvailable)) {
                         echo '<button type="button" class="btn btn-xs btn-outline-info btn-inline-toggle-share" title="' . ($isHiddenShare ? 'Tampilkan di Share' : 'Sembunyikan dari Share') . '"><i class="fas ' . ($isHiddenShare ? 'fa-eye-slash text-warning' : 'fa-eye') . '"></i></button>';
                     }
-                    echo '</div>'; // end inline-actions
-                    
-                    echo '<div class="simak-master-flags">';
-                    echo '<span class="badge ' . ($isActive ? 'badge-success' : 'badge-secondary') . ' simak-status-badge">' . ($isActive ? 'Aktif' : 'Nonaktif') . '</span>';
-                    if ($isHiddenShare) {
-                        echo '<span class="badge badge-warning simak-status-badge">Share: Sembunyi</span>';
-                    }
-                    echo '</div>'; // end flags
-                    echo '</div>'; // end actions-flags-container
+                    echo '</div>';
                     
                     echo '</div>'; // end row
 
                     if ($children !== []) {
-                        $renderTree($children);
+                        $renderTree($children, $depth + 1);
                     }
 
                     echo '</li>';
@@ -598,9 +554,24 @@
                 </div>
                 <div class="simak-panel-body">
                     <?php if (! empty($itemsTree ?? [])): ?>
-                        <ul class="simak-master-tree" id="simak-master-root">
-                            <?php $renderTree($itemsTree); ?>
-                        </ul>
+                        <div class="simak-table-grid-wrapper">
+                            <!-- Table Header -->
+                            <div class="simak-table-header d-none d-md-flex">
+                                <div class="simak-col-handle"></div>
+                                <div class="simak-col-toggle"></div>
+                                <div class="simak-col-no">No</div>
+                                <div class="simak-col-uraian">Uraian</div>
+                                <div class="simak-col-jenis text-center">Jenis</div>
+                                <div class="simak-col-question text-center">Tanya</div>
+                                <div class="simak-col-draft text-center">Draft</div>
+                                <div class="simak-col-status text-center">Status</div>
+                                <div class="simak-col-share text-center">Share</div>
+                                <div class="simak-col-aksi text-right">Aksi</div>
+                            </div>
+                            <ul class="simak-master-tree" id="simak-master-root">
+                                <?php $renderTree($itemsTree); ?>
+                            </ul>
+                        </div>
                     <?php else: ?>
                         <div class="empty-tree">
                             Master SIMAK konsultasi belum memiliki item. Gunakan tombol "Tambah Root" di panel kanan.
