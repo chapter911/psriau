@@ -87,15 +87,15 @@
 
     .simak-panel-body {
         padding: 20px;
-        overflow-x: auto; /* Allow horizontal scrolling on small screens */
     }
 
     /* Tree Grid Table Styling */
     .simak-table-grid-wrapper {
-        min-width: 780px; /* Ensure table layout columns fit perfectly */
         border: 1px solid #e2e8f0;
         border-radius: 8px;
-        overflow: hidden;
+        position: relative;
+        max-height: calc(100vh - 240px);
+        overflow: auto;
     }
 
     .simak-table-header {
@@ -109,6 +109,10 @@
         color: #475569;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        min-width: 780px;
     }
 
     .simak-col-handle { width: 24px; flex-shrink: 0; display: flex; justify-content: center; }
@@ -122,14 +126,17 @@
     .simak-col-share { width: 75px; flex-shrink: 0; text-align: center; }
     .simak-col-aksi { width: 110px; flex-shrink: 0; display: flex; justify-content: flex-end; gap: 4px; }
 
-    .simak-master-tree,
+    .simak-master-tree {
+        list-style: none;
+        margin: 0;
+        padding-left: 0;
+        min-width: 780px;
+    }
+
     .simak-master-tree ul {
         list-style: none;
         margin: 0;
         padding-left: 0;
-    }
-
-    .simak-master-tree ul {
         margin-top: 0;
     }
 
