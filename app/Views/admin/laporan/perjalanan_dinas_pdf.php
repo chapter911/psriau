@@ -30,17 +30,35 @@ $getJabatan = function($jabatan): string {
     $parts = explode(',', $jabatan, 2);
     return trim($parts[0]);
 };
-// =============================================
 
-$pelaksanaSignerLeft  = $pelaksana[0] ?? [];
-$pelaksanaSignerRight = $pelaksana[1] ?? [];
-$pelaksanaSignerExtra = $pelaksana[2] ?? [];
+$getSignatureJabatan = function($person): string {
+    $jabatan = $person['jabatan'] ?? '';
+    if (empty($jabatan)) return '';
+    
+    $nip = trim((string) ($person['nip'] ?? ''));
+    if ($nip === '198002142014121002') {
+        return "Kepala Satuan Kerja,<br/>Pelaksanaan Prasarana Strategis Riau";
+    }
+    
+    $parts = explode(',', $jabatan);
+    $parts = array_map('trim', $parts);
+    
+    if (preg_match('/^(kepala|satker)/i', $parts[0]) && isset($parts[1]) && !empty($parts[1])) {
+        $title = str_replace('Satker Mandiri', 'Satuan Kerja', $parts[0]);
+        return $title . ',<br/>' . $parts[1];
+    }
+    
+    return $parts[0] . ',';
+};
 
-if ($pelaksanaSignerLeft === [] && is_array($creatorPegawai)) {
-    $pelaksanaSignerLeft = $creatorPegawai;
+$executorsSignList = [];
+if (!empty($pelaksana)) {
+    $executorsSignList = $pelaksana;
+} elseif (!empty($creatorPegawai)) {
+    if (is_array($creatorPegawai) && isset($creatorPegawai['nama']) && !empty(trim((string) $creatorPegawai['nama']))) {
+        $executorsSignList = [$creatorPegawai];
+    }
 }
-
-$isThreeExe = !empty($pelaksanaSignerExtra) && !empty(trim((string) ($pelaksanaSignerExtra['nama'] ?? '')));
 
 $resolvePhotoSrc = static function ($photo): string {
     $candidates = [];
@@ -286,15 +304,25 @@ $resolvePhotoSrc = static function ($photo): string {
             <td class="colon">:</td>
             <td class="value">
                 <?php if (!empty($pelaksana)): ?>
-                <?php foreach ($pelaksana as $idx => $p): ?>
-                <div class="pelaksana-block">
-                    <div class="pelaksana-line"><span class="pelaksana-no"><?= (int) $idx + 1; ?>.</span><span
-                            class="pelaksana-key">Nama</span>:
-                        <strong><?= esc((string) ($p['nama'] ?? '-')); ?></strong></div>
-                    <div class="pelaksana-line"><span class="pelaksana-no"></span><span
-                            class="pelaksana-key">Jabatan</span>: <?= esc((string) ($p['jabatan'] ?? '-')); ?></div>
-                </div>
-                <?php endforeach; ?>
+                <table style="width:100%; border-collapse:collapse; border:none; margin:0; padding:0;">
+                    <?php foreach ($pelaksana as $idx => $p): ?>
+                    <tr style="border:none;">
+                        <td style="width:18px; border:none; padding:2px 0; vertical-align:top; font-size:11pt;"><?= (int) $idx + 1; ?>.</td>
+                        <td style="width:50px; border:none; padding:2px 0; vertical-align:top; font-size:11pt;">Nama</td>
+                        <td style="width:10px; border:none; padding:2px 0; vertical-align:top; font-size:11pt;">:</td>
+                        <td style="border:none; padding:2px 0; vertical-align:top; font-size:11pt;"><strong><?= esc((string) ($p['nama'] ?? '-')); ?></strong></td>
+                    </tr>
+                    <tr style="border:none;">
+                        <td style="border:none; padding:2px 0; vertical-align:top; font-size:11pt;"></td>
+                        <td style="border:none; padding:2px 0; vertical-align:top; font-size:11pt;">Jabatan</td>
+                        <td style="border:none; padding:2px 0; vertical-align:top; font-size:11pt;">:</td>
+                        <td style="border:none; padding:2px 0; vertical-align:top; font-size:11pt;"><?= esc($getJabatan($p['jabatan'] ?? '')); ?></td>
+                    </tr>
+                    <?php if ($idx < count($pelaksana) - 1): ?>
+                    <tr style="border:none;"><td colspan="4" style="height:6px; border:none; padding:0;"></td></tr>
+                    <?php endif; ?>
+                    <?php endforeach; ?>
+                </table>
                 <?php else: ?>-
                 <?php endif; ?>
             </td>
@@ -335,27 +363,32 @@ $resolvePhotoSrc = static function ($photo): string {
 
     <div style="text-align:center; margin-top:8px;">Pekanbaru, <?= esc($renderedDate); ?><br/>Dibuat Oleh :</div>
 
-    <?php if ($isThreeExe): ?>
-    <table class="ttd-grid-3">
+    <?php if (!empty($executorsSignList)): ?>
+    <?php
+    $executorsCount = count($executorsSignList);
+    $colWidth = 100 / $executorsCount;
+    ?>
+    <table style="width:100%; border-collapse:collapse; margin-top:12px;">
         <tr>
-            <td>
-                <div style="min-height:70px"></div>
-                <div class="bold"><?= esc($getJabatan($pelaksanaSignerLeft['jabatan'] ?? '')); ?></div>
-                <div class="bold" style="text-decoration:underline;"><?= esc((string) ($pelaksanaSignerLeft['nama'] ?? '-')); ?></div>
-                <div>NIP. <?= esc((string) ($pelaksanaSignerLeft['nip'] ?? '-')); ?></div>
+            <?php foreach ($executorsSignList as $person): ?>
+            <?php 
+                $nipVal = trim((string) ($person['nip'] ?? ''));
+                $nipLabel = 'NIP. ' . $nipVal;
+                if ($nipVal !== '') {
+                    if (preg_match('/^(nip|nipppk|ni\s*pppk)/i', $nipVal)) {
+                        $nipLabel = $nipVal;
+                    }
+                } else {
+                    $nipLabel = 'NIP. -';
+                }
+            ?>
+            <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
+                <div class="bold"><?= $getSignatureJabatan($person); ?></div>
+                <div style="min-height:60px"></div>
+                <div class="bold" style="text-decoration:underline;"><?= esc((string) ($person['nama'] ?? '-')); ?></div>
+                <div><?= esc($nipLabel); ?></div>
             </td>
-            <td>
-                <div style="min-height:70px"></div>
-                <div class="bold"><?= esc($getJabatan($pelaksanaSignerRight['jabatan'] ?? '')); ?></div>
-                <div class="bold" style="text-decoration:underline;"><?= esc((string) ($pelaksanaSignerRight['nama'] ?? '-')); ?></div>
-                <div>NIP. <?= esc((string) ($pelaksanaSignerRight['nip'] ?? '-')); ?></div>
-            </td>
-            <td>
-                <div style="min-height:70px"></div>
-                <div class="bold"><?= esc($getJabatan($pelaksanaSignerExtra['jabatan'] ?? '')); ?></div>
-                <div class="bold" style="text-decoration:underline;"><?= esc((string) ($pelaksanaSignerExtra['nama'] ?? '-')); ?></div>
-                <div>NIP. <?= esc((string) ($pelaksanaSignerExtra['nip'] ?? '-')); ?></div>
-            </td>
+            <?php endforeach; ?>
         </tr>
     </table>
     <?php endif; ?>
@@ -372,12 +405,23 @@ $resolvePhotoSrc = static function ($photo): string {
         ?>
         <div style="margin-top:14px;">
             <?php for ($col = 0; $col < $itemsInThisRow && $idx < $diketahuiCount; $col++): ?>
-            <?php $person = $diketahuiList[$idx]; ?>
+            <?php 
+                $person = $diketahuiList[$idx]; 
+                $nipVal = trim((string) ($person['nip'] ?? ''));
+                $nipLabel = 'NIP. ' . $nipVal;
+                if ($nipVal !== '') {
+                    if (preg_match('/^(nip|nipppk|ni\s*pppk)/i', $nipVal)) {
+                        $nipLabel = $nipVal;
+                    }
+                } else {
+                    $nipLabel = 'NIP. -';
+                }
+            ?>
             <div style="display:inline-block; width:<?= $colWidth ?>%; text-align:center; vertical-align:top;">
-                <div style="min-height:70px"></div>
-                <div class="bold"><?= esc($getJabatan($person['jabatan'] ?? '')); ?></div>
+                <div class="bold"><?= $getSignatureJabatan($person); ?></div>
+                <div style="min-height:60px"></div>
                 <div class="bold" style="text-decoration:underline;"><?= esc((string) ($person['nama'] ?? '-')); ?></div>
-                <div>NIP. <?= esc((string) ($person['nip'] ?? '-')); ?></div>
+                <div><?= esc($nipLabel); ?></div>
             </div>
             <?php $idx++; endfor; ?>
         </div>
