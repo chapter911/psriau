@@ -16,7 +16,7 @@ class Kontrak extends BaseController
     private const SHARED_SIMAK_OTP_SESSION_TTL_SECONDS = 1200;
 
     // Set TRUE untuk bypass OTP saat testing/smoke test
-    private const SHARED_SIMAK_OTP_BYPASS = true;
+    private const SHARED_SIMAK_OTP_BYPASS = false;
 
     public function paket()
     {

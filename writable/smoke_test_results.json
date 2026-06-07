@@ -1,0 +1,412 @@
+{
+    "timestamp": "2026-06-06 14:55:12",
+    "email_respondent": "agung.justik@gmail.com",
+    "status_overall": "SUCCESS",
+    "total_items": 6,
+    "passed": 6,
+    "failed": 0,
+    "items": [
+        {
+            "index": 1,
+            "category": "Konstruksi",
+            "name": "Smoke Test Konstruksi 1 - 20260606145512",
+            "nomor_kontrak": "SMOKE\/KON\/COMPL\/1\/20260606145512",
+            "id": 1,
+            "share_token": "70ea08ca1ca52533363c228fab352230e909c9a4a083f4a7",
+            "share_url": "https:\/\/satkerpps-riau.online\/simak\/share\/70ea08ca1ca52533363c228fab352230e909c9a4a083f4a7",
+            "status": "PASS",
+            "steps": [
+                {
+                    "name": "Create Item",
+                    "status": "PASS",
+                    "message": "Created item ID 1"
+                },
+                {
+                    "name": "Generate Share Link",
+                    "status": "PASS",
+                    "message": "Token: 70ea08ca1c..."
+                },
+                {
+                    "name": "Upload draft Row 53",
+                    "status": "PASS",
+                    "message": "Uploaded successfully using file"
+                },
+                {
+                    "name": "Blocked Final Row 53",
+                    "status": "PASS",
+                    "message": "Correctly blocked upload: Draft not verified Sesuai"
+                },
+                {
+                    "name": "Verify Draft Row 53",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Upload final Row 53",
+                    "status": "PASS",
+                    "message": "Uploaded final successfully"
+                },
+                {
+                    "name": "Verify Final Row 53",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Verify draft Row 222 (Tidak Sesuai)",
+                    "status": "PASS",
+                    "message": "Marked tidak_sesuai successfully"
+                },
+                {
+                    "name": "Verify Final Feedback Loop Row 55",
+                    "status": "PASS",
+                    "message": "Successfully uploaded, rejected, re-uploaded, and approved."
+                },
+                {
+                    "name": "Upload & Verify 31 Final-Only Lengkap Rows",
+                    "status": "PASS",
+                    "message": "Verified 31 final-only rows as Sesuai using mixed methods"
+                },
+                {
+                    "name": "Upload & Verify 7 Final-Only Belum Sesuai Rows",
+                    "status": "PASS",
+                    "message": "Verified 7 final-only rows as Tidak Sesuai using mixed methods"
+                }
+            ]
+        },
+        {
+            "index": 2,
+            "category": "Konstruksi",
+            "name": "Smoke Test Konstruksi 2 - 20260606145512",
+            "nomor_kontrak": "SMOKE\/KON\/COMPL\/2\/20260606145512",
+            "id": 2,
+            "share_token": "b4c66599dec839d577b1b04bfa5853eeda5eedce24c96940",
+            "share_url": "https:\/\/satkerpps-riau.online\/simak\/share\/b4c66599dec839d577b1b04bfa5853eeda5eedce24c96940",
+            "status": "PASS",
+            "steps": [
+                {
+                    "name": "Create Item",
+                    "status": "PASS",
+                    "message": "Created item ID 2"
+                },
+                {
+                    "name": "Generate Share Link",
+                    "status": "PASS",
+                    "message": "Token: b4c66599de..."
+                },
+                {
+                    "name": "Upload draft Row 53",
+                    "status": "PASS",
+                    "message": "Uploaded successfully using drive"
+                },
+                {
+                    "name": "Blocked Final Row 53",
+                    "status": "PASS",
+                    "message": "Correctly blocked upload: Draft not verified Sesuai"
+                },
+                {
+                    "name": "Verify Draft Row 53",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Upload final Row 53",
+                    "status": "PASS",
+                    "message": "Uploaded final successfully"
+                },
+                {
+                    "name": "Verify Final Row 53",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Verify draft Row 222 (Tidak Sesuai)",
+                    "status": "PASS",
+                    "message": "Marked tidak_sesuai successfully"
+                },
+                {
+                    "name": "Verify Final Feedback Loop Row 55",
+                    "status": "PASS",
+                    "message": "Successfully uploaded, rejected, re-uploaded, and approved."
+                },
+                {
+                    "name": "Upload & Verify 31 Final-Only Lengkap Rows",
+                    "status": "PASS",
+                    "message": "Verified 31 final-only rows as Sesuai using mixed methods"
+                },
+                {
+                    "name": "Upload & Verify 7 Final-Only Belum Sesuai Rows",
+                    "status": "PASS",
+                    "message": "Verified 7 final-only rows as Tidak Sesuai using mixed methods"
+                }
+            ]
+        },
+        {
+            "index": 3,
+            "category": "Konstruksi",
+            "name": "Smoke Test Konstruksi 3 - 20260606145512",
+            "nomor_kontrak": "SMOKE\/KON\/COMPL\/3\/20260606145512",
+            "id": 3,
+            "share_token": "6e49fb2c4dd9aad1d03ee800f504d09ee09951b433d30cf2",
+            "share_url": "https:\/\/satkerpps-riau.online\/simak\/share\/6e49fb2c4dd9aad1d03ee800f504d09ee09951b433d30cf2",
+            "status": "PASS",
+            "steps": [
+                {
+                    "name": "Create Item",
+                    "status": "PASS",
+                    "message": "Created item ID 3"
+                },
+                {
+                    "name": "Generate Share Link",
+                    "status": "PASS",
+                    "message": "Token: 6e49fb2c4d..."
+                },
+                {
+                    "name": "Upload draft Row 53",
+                    "status": "PASS",
+                    "message": "Uploaded successfully using none"
+                },
+                {
+                    "name": "Blocked Final Row 53",
+                    "status": "PASS",
+                    "message": "Correctly blocked upload: Draft not verified Sesuai"
+                },
+                {
+                    "name": "Verify Draft Row 53",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Upload final Row 53",
+                    "status": "PASS",
+                    "message": "Uploaded final successfully"
+                },
+                {
+                    "name": "Verify Final Row 53",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Verify draft Row 222 (Tidak Sesuai)",
+                    "status": "PASS",
+                    "message": "Marked tidak_sesuai successfully"
+                },
+                {
+                    "name": "Verify Final Feedback Loop Row 55",
+                    "status": "PASS",
+                    "message": "Successfully uploaded, rejected, re-uploaded, and approved."
+                },
+                {
+                    "name": "Upload & Verify 31 Final-Only Lengkap Rows",
+                    "status": "PASS",
+                    "message": "Verified 31 final-only rows as Sesuai using mixed methods"
+                },
+                {
+                    "name": "Upload & Verify 7 Final-Only Belum Sesuai Rows",
+                    "status": "PASS",
+                    "message": "Verified 7 final-only rows as Tidak Sesuai using mixed methods"
+                }
+            ]
+        },
+        {
+            "index": 4,
+            "category": "Konsultasi",
+            "name": "Smoke Test Konsultasi 1 - 20260606145512",
+            "nomor_kontrak": "SMOKE\/KONS\/COMPL\/1\/20260606145512",
+            "id": 1,
+            "share_token": "052010a16c75a8bef6b289084d2a29373964dc629c6722b1",
+            "share_url": "https:\/\/satkerpps-riau.online\/simak\/share\/052010a16c75a8bef6b289084d2a29373964dc629c6722b1",
+            "status": "PASS",
+            "steps": [
+                {
+                    "name": "Create Item",
+                    "status": "PASS",
+                    "message": "Created item ID 1"
+                },
+                {
+                    "name": "Generate Share Link",
+                    "status": "PASS",
+                    "message": "Token: 052010a16c..."
+                },
+                {
+                    "name": "Upload draft Row 38",
+                    "status": "PASS",
+                    "message": "Uploaded successfully using file"
+                },
+                {
+                    "name": "Blocked Final Row 38",
+                    "status": "PASS",
+                    "message": "Correctly blocked upload: Draft not verified Sesuai"
+                },
+                {
+                    "name": "Verify Draft Row 38",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Upload final Row 38",
+                    "status": "PASS",
+                    "message": "Uploaded final successfully"
+                },
+                {
+                    "name": "Verify Final Row 38",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Verify draft Row 39 (Tidak Sesuai)",
+                    "status": "PASS",
+                    "message": "Marked tidak_sesuai successfully"
+                },
+                {
+                    "name": "Verify Final Feedback Loop Row 40",
+                    "status": "PASS",
+                    "message": "Successfully uploaded, rejected, re-uploaded, and approved."
+                },
+                {
+                    "name": "Upload & Verify 16 Final-Only Lengkap Rows",
+                    "status": "PASS",
+                    "message": "Verified 16 final-only rows as Sesuai using mixed methods"
+                },
+                {
+                    "name": "Upload & Verify 4 Final-Only Belum Sesuai Rows",
+                    "status": "PASS",
+                    "message": "Verified 4 final-only rows as Tidak Sesuai using mixed methods"
+                }
+            ]
+        },
+        {
+            "index": 5,
+            "category": "Konsultasi",
+            "name": "Smoke Test Konsultasi 2 - 20260606145512",
+            "nomor_kontrak": "SMOKE\/KONS\/COMPL\/2\/20260606145512",
+            "id": 2,
+            "share_token": "0975423962a997a18d78180a4e27c4a16e0769d4e709168e",
+            "share_url": "https:\/\/satkerpps-riau.online\/simak\/share\/0975423962a997a18d78180a4e27c4a16e0769d4e709168e",
+            "status": "PASS",
+            "steps": [
+                {
+                    "name": "Create Item",
+                    "status": "PASS",
+                    "message": "Created item ID 2"
+                },
+                {
+                    "name": "Generate Share Link",
+                    "status": "PASS",
+                    "message": "Token: 0975423962..."
+                },
+                {
+                    "name": "Upload draft Row 38",
+                    "status": "PASS",
+                    "message": "Uploaded successfully using drive"
+                },
+                {
+                    "name": "Blocked Final Row 38",
+                    "status": "PASS",
+                    "message": "Correctly blocked upload: Draft not verified Sesuai"
+                },
+                {
+                    "name": "Verify Draft Row 38",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Upload final Row 38",
+                    "status": "PASS",
+                    "message": "Uploaded final successfully"
+                },
+                {
+                    "name": "Verify Final Row 38",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Verify draft Row 39 (Tidak Sesuai)",
+                    "status": "PASS",
+                    "message": "Marked tidak_sesuai successfully"
+                },
+                {
+                    "name": "Verify Final Feedback Loop Row 40",
+                    "status": "PASS",
+                    "message": "Successfully uploaded, rejected, re-uploaded, and approved."
+                },
+                {
+                    "name": "Upload & Verify 16 Final-Only Lengkap Rows",
+                    "status": "PASS",
+                    "message": "Verified 16 final-only rows as Sesuai using mixed methods"
+                },
+                {
+                    "name": "Upload & Verify 4 Final-Only Belum Sesuai Rows",
+                    "status": "PASS",
+                    "message": "Verified 4 final-only rows as Tidak Sesuai using mixed methods"
+                }
+            ]
+        },
+        {
+            "index": 6,
+            "category": "Konsultasi",
+            "name": "Smoke Test Konsultasi 3 - 20260606145512",
+            "nomor_kontrak": "SMOKE\/KONS\/COMPL\/3\/20260606145512",
+            "id": 3,
+            "share_token": "9b65cdbeae8c5fc9c79e072f5a45b1866de2cdebcc6f3fdc",
+            "share_url": "https:\/\/satkerpps-riau.online\/simak\/share\/9b65cdbeae8c5fc9c79e072f5a45b1866de2cdebcc6f3fdc",
+            "status": "PASS",
+            "steps": [
+                {
+                    "name": "Create Item",
+                    "status": "PASS",
+                    "message": "Created item ID 3"
+                },
+                {
+                    "name": "Generate Share Link",
+                    "status": "PASS",
+                    "message": "Token: 9b65cdbeae..."
+                },
+                {
+                    "name": "Upload draft Row 38",
+                    "status": "PASS",
+                    "message": "Uploaded successfully using none"
+                },
+                {
+                    "name": "Blocked Final Row 38",
+                    "status": "PASS",
+                    "message": "Correctly blocked upload: Draft not verified Sesuai"
+                },
+                {
+                    "name": "Verify Draft Row 38",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Upload final Row 38",
+                    "status": "PASS",
+                    "message": "Uploaded final successfully"
+                },
+                {
+                    "name": "Verify Final Row 38",
+                    "status": "PASS",
+                    "message": "Marked sesuai successfully"
+                },
+                {
+                    "name": "Verify draft Row 39 (Tidak Sesuai)",
+                    "status": "PASS",
+                    "message": "Marked tidak_sesuai successfully"
+                },
+                {
+                    "name": "Verify Final Feedback Loop Row 40",
+                    "status": "PASS",
+                    "message": "Successfully uploaded, rejected, re-uploaded, and approved."
+                },
+                {
+                    "name": "Upload & Verify 16 Final-Only Lengkap Rows",
+                    "status": "PASS",
+                    "message": "Verified 16 final-only rows as Sesuai using mixed methods"
+                },
+                {
+                    "name": "Upload & Verify 4 Final-Only Belum Sesuai Rows",
+                    "status": "PASS",
+                    "message": "Verified 4 final-only rows as Tidak Sesuai using mixed methods"
+                }
+            ]
+        }
+    ]
+}
