@@ -348,8 +348,12 @@ class Pegawai extends BaseController
             'golongan' => 'permit_empty|max_length[50]',
             'masa_kerja' => 'permit_empty|max_length[50]',
             'is_active' => 'required|in_list[0,1]',
-            'foto' => 'if_exist|is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png,image/webp]',
         ];
+
+        $fotoFile = $this->request->getFile('foto');
+        if ($fotoFile && $fotoFile->isValid()) {
+            $rules['foto'] = 'is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png,image/webp]';
+        }
 
         if (! $this->validate($rules)) {
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'Data pegawai belum valid.');
@@ -423,8 +427,12 @@ class Pegawai extends BaseController
             'golongan' => 'permit_empty|max_length[50]',
             'masa_kerja' => 'permit_empty|max_length[50]',
             'is_active' => 'required|in_list[0,1]',
-            'foto' => 'if_exist|is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png,image/webp]',
         ];
+
+        $fotoFile = $this->request->getFile('foto');
+        if ($fotoFile && $fotoFile->isValid()) {
+            $rules['foto'] = 'is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png,image/webp]';
+        }
 
         if (! $this->validate($rules)) {
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'Data pegawai belum valid.');
