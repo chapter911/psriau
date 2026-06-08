@@ -341,7 +341,7 @@ class Pegawai extends BaseController
         $rules = [
             'nip' => 'required|max_length[30]',
             'nama' => 'required|max_length[150]',
-            'jenis_pegawai' => 'required|in_list[cpns,pns,konsultan]',
+            'jenis_pegawai' => 'required|in_list[cpns,pns,konsultan,pppk]',
             'jabatan_utama_id' => 'required|integer',
             'jabatan_perbendaharaan_id' => 'permit_empty|integer',
             'eselon' => 'permit_empty|max_length[50]',
@@ -416,7 +416,7 @@ class Pegawai extends BaseController
         $rules = [
             'nip' => 'required|max_length[30]',
             'nama' => 'required|max_length[150]',
-            'jenis_pegawai' => 'required|in_list[cpns,pns,konsultan]',
+            'jenis_pegawai' => 'required|in_list[cpns,pns,konsultan,pppk]',
             'jabatan_utama_id' => 'required|integer',
             'jabatan_perbendaharaan_id' => 'permit_empty|integer',
             'eselon' => 'permit_empty|max_length[50]',
@@ -656,7 +656,7 @@ class Pegawai extends BaseController
                 continue;
             }
 
-            if (! in_array($jenisPegawai, ['cpns', 'pns', 'konsultan'], true)) {
+            if (! in_array($jenisPegawai, ['cpns', 'pns', 'konsultan', 'pppk'], true)) {
                 $skipped++;
                 continue;
             }

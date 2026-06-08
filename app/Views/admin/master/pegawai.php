@@ -155,7 +155,7 @@
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <div class="alert alert-info mb-3">
-                        Kolom wajib: <strong>nip</strong>, <strong>nama</strong>, <strong>jabatan_utama</strong>, <strong>jenis_pegawai</strong> (cpns/pns/konsultan).<br>
+                        Kolom wajib: <strong>nip</strong>, <strong>nama</strong>, <strong>jabatan_utama</strong>, <strong>jenis_pegawai</strong> (cpns/pns/konsultan/pppk).<br>
                         Kolom opsional: <strong>jabatan_perbendaharaan</strong>, <strong>eselon</strong>, <strong>golongan</strong>, <strong>masa_kerja</strong>, <strong>status</strong>.
                     </div>
                     <div class="mb-3">
@@ -238,6 +238,7 @@
                         <select name="jenis_pegawai" class="form-control" required>
                             <option value="pns">PNS</option>
                             <option value="cpns">CPNS</option>
+                            <option value="pppk">PPPK</option>
                             <option value="konsultan">Konsultan</option>
                         </select>
                     </div>
@@ -330,6 +331,7 @@
                         <select id="edit_jenis_pegawai" name="jenis_pegawai" class="form-control" required>
                             <option value="pns">PNS</option>
                             <option value="cpns">CPNS</option>
+                            <option value="pppk">PPPK</option>
                             <option value="konsultan">Konsultan</option>
                         </select>
                     </div>
