@@ -266,6 +266,7 @@ $resolvePhotoSrc = static function ($photo): string {
 
     .foto-grid td {
         width: 50%;
+        height: 242px;
         border: 1px solid #000;
         padding: 6px;
         vertical-align: middle;
@@ -274,8 +275,7 @@ $resolvePhotoSrc = static function ($photo): string {
 
     .foto-grid img {
         max-width: 100%;
-        height: 230px;
-        object-fit: contain;
+        max-height: 230px;
         display: block;
         margin: 0 auto;
     }
