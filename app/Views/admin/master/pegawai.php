@@ -32,8 +32,8 @@
                     <th class="text-center">FOTO</th>
                     <th class="text-center">NIP</th>
                     <th class="text-center">NAMA</th>
-                    <th class="text-center">JABATAN (FUNGSIONAL/PELAKSANA)</th>
-                    <th class="text-center">JABATAN (PERBENDAHARAAN)</th>
+                    <th class="text-center" style="width: 160px; min-width: 160px; max-width: 180px; white-space: normal;">JABATAN (FUNGSIONAL/PELAKSANA)</th>
+                    <th class="text-center" style="width: 160px; min-width: 160px; max-width: 180px; white-space: normal;">JABATAN (PERBENDAHARAAN)</th>
                     <th class="text-center">JENIS PEGAWAI</th>
                     <th class="text-center">ESELON</th>
                     <th class="text-center">GOLONGAN</th>
@@ -92,8 +92,8 @@
                         </td>
                         <td><?= esc((string) ($item['nip'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['nama'] ?? '-')); ?></td>
-                        <td><?= esc((string) ($item['jabatan_utama_label'] ?? '-')); ?></td>
-                        <td><?= esc((string) ($item['jabatan_perbendaharaan_label'] ?? '-')); ?></td>
+                        <td style="white-space: normal;"><?= esc((string) ($item['jabatan_utama_label'] ?? '-')); ?></td>
+                        <td style="white-space: normal;"><?= esc((string) ($item['jabatan_perbendaharaan_label'] ?? '-')); ?></td>
                         <td class="text-center text-uppercase"><?= esc((string) ($item['jenis_pegawai'] ?? 'pns')); ?></td>
                         <td><?= esc((string) ($item['eselon'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['golongan'] ?? '-')); ?></td>
