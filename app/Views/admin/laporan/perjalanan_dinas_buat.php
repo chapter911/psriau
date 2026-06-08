@@ -305,6 +305,72 @@
                     </div>
                 </div>
 
+                <div class="card border shadow-none mb-3">
+                    <div class="card-body">
+                        <div class="trip-section-title mb-2">Dokumen Pendukung</div>
+                        <input type="file" id="dokumenPendukung" name="dokumen_pendukung[]" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar" multiple class="d-none">
+                        <div class="photo-dropzone" id="fileDropzone">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3" style="gap:12px;">
+                                <div>
+                                    <strong>Tambah dokumen pendukung</strong>
+                                    <div class="text-muted small">Klik tombol atau seret file (tiket pesawat, nota, struk bensin, dll) ke area ini.</div>
+                                </div>
+                                <div class="text-right">
+                                    <button type="button" class="btn btn-outline-primary" id="btnPickFiles">Pilih File</button>
+                                    <div class="small text-muted mt-1" id="fileCounter">0 file dipilih</div>
+                                </div>
+                            </div>
+                            <div class="photo-dropzone__target text-center text-muted">
+                                Drop file di sini untuk upload cepat.
+                            </div>
+                            <div class="mt-3 d-flex flex-wrap" id="selectedFilePreview" style="gap: 10px;"></div>
+
+                        <?php $existingDocs = $existing_dokumen_pendukung ?? []; ?>
+                        <?php if (!empty($existingDocs)): ?>
+                            <div class="existing-photo-section">
+                                <div class="existing-photo-title">Dokumen pendukung tersimpan (<?= count($existingDocs); ?> file)</div>
+                                <div id="existingFileList" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    <?php foreach ($existingDocs as $fIdx => $doc): ?>
+                                        <?php 
+                                            $filePath = trim((string) ($doc['file_path'] ?? ''));
+                                            $fileName = trim((string) ($doc['name'] ?? 'File'));
+                                            $docUrl = $filePath !== '' ? media_url($filePath) : '';
+                                        ?>
+                                        <?php if ($docUrl !== ''): ?>
+                                            <div class="existing-photo-item" data-existing-index="<?= (int) $fIdx; ?>" style="display: flex; flex-direction: column; width: 126px;">
+                                                <div style="position: relative; width: 100%; aspect-ratio: 1/1; border: 1px solid #dbe3ee; border-radius: 8px; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center;">
+                                                    <?php 
+                                                        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+                                                        if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)): 
+                                                    ?>
+                                                        <img src="<?= esc($docUrl); ?>" alt="<?= esc($fileName); ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                                                    <?php else: ?>
+                                                        <?php 
+                                                            $icon = 'fa-file';
+                                                            $color = 'text-secondary';
+                                                            if ($ext === 'pdf') { $icon = 'fa-file-pdf'; $color = 'text-danger'; }
+                                                            elseif (in_array($ext, ['doc', 'docx'], true)) { $icon = 'fa-file-word'; $color = 'text-primary'; }
+                                                            elseif (in_array($ext, ['xls', 'xlsx'], true)) { $icon = 'fa-file-excel'; $color = 'text-success'; }
+                                                        ?>
+                                                        <i class="fas <?= $icon; ?> <?= $color; ?>" style="font-size: 2.2rem;"></i>
+                                                    <?php endif; ?>
+                                                    <button type="button" class="btn-remove-existing" title="Hapus file ini">&times;</button>
+                                                </div>
+                                                <div class="selected-photo-card__meta" style="padding: 6px 4px;">
+                                                    <div class="selected-photo-card__name" style="font-size: 10px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="<?= esc($fileName); ?>"><?= esc($fileName); ?></div>
+                                                    <a href="<?= esc($docUrl); ?>" target="_blank" class="small font-weight-bold" style="text-decoration: underline;">Unduh</a>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        </div>
+                        <small class="text-muted d-block mt-2">Format dokumen didukung: PDF, gambar (JPG, PNG), Word (DOC, DOCX), Excel (XLS, XLSX), TXT, ZIP, RAR.</small>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>Dibuat Oleh</label>
                     <input type="text" class="form-control" value="<?= esc($creatorName); ?>" readonly>
@@ -329,6 +395,7 @@
                     </div>
                 </div>
                 <input type="hidden" name="removed_foto_indices" id="removedFotoIndices" value="">
+                <input type="hidden" name="removed_file_indices" id="removedFileIndices" value="">
             </form>
         </div>
     </div>
@@ -524,6 +591,183 @@
 
     updateCounter();
 })();
+
+// Javascript for Dokumen Pendukung dropzone, selection, previews, and deletion
+(function () {
+    var fileInput = document.getElementById('dokumenPendukung');
+    var pickButton = document.getElementById('btnPickFiles');
+    var dropzone = document.getElementById('fileDropzone');
+    var previewContainer = document.getElementById('selectedFilePreview');
+    var counter = document.getElementById('fileCounter');
+    var selectedItems = [];
+    var removedExistingIndices = [];
+    var existingList = document.getElementById('existingFileList');
+
+    if (existingList) {
+        existingList.addEventListener('click', function (e) {
+            var btn = e.target.closest('.btn-remove-existing');
+            if (!btn) return;
+            var item = btn.closest('.existing-photo-item');
+            if (!item) return;
+            var idx = parseInt(item.getAttribute('data-existing-index'), 10);
+            if (!removedExistingIndices.includes(idx)) {
+                removedExistingIndices.push(idx);
+            }
+            item.remove();
+            updateRemovedIndices();
+        });
+    }
+
+    function updateRemovedIndices() {
+        var field = document.getElementById('removedFileIndices');
+        if (field) field.value = JSON.stringify(removedExistingIndices);
+    }
+
+    function showNotice(message, type) {
+        var notice = document.getElementById('fileUploadNotice');
+        if (!notice) {
+            notice = document.createElement('div');
+            notice.id = 'fileUploadNotice';
+            notice.className = 'alert alert-info mt-3 mb-0';
+            dropzone.appendChild(notice);
+        }
+        notice.className = type === 'danger' ? 'alert alert-danger mt-3 mb-0' : 'alert alert-info mt-3 mb-0';
+        notice.textContent = message;
+    }
+
+    function updateCounter() {
+        if (counter) {
+            counter.textContent = selectedItems.length + ' file dipilih';
+        }
+    }
+
+    function syncFileInput() {
+        if (typeof DataTransfer === 'undefined' || !fileInput) {
+            return;
+        }
+        var dataTransfer = new DataTransfer();
+        selectedItems.forEach(function (item) {
+            dataTransfer.items.add(item.file);
+        });
+        fileInput.files = dataTransfer.files;
+    }
+
+    window.syncDocFileInput = syncFileInput;
+
+    function renderPreview() {
+        if (!previewContainer) {
+            return;
+        }
+        previewContainer.innerHTML = '';
+
+        selectedItems.forEach(function (item, index) {
+            var card = document.createElement('div');
+            card.className = 'selected-photo-card';
+            card.style.display = 'flex';
+            card.style.flexDirection = 'column';
+            card.style.width = '126px';
+
+            var isImage = item.file && item.file.type && item.file.type.indexOf('image/') === 0;
+            var previewContent = '';
+            if (isImage) {
+                previewContent = '<img src="' + item.previewUrl + '" alt="' + item.name + '" style="width: 100%; height: 100%; object-fit: cover;">';
+            } else {
+                var icon = 'fa-file';
+                var color = 'text-secondary';
+                if (item.name.endsWith('.pdf')) { icon = 'fa-file-pdf'; color = 'text-danger'; }
+                else if (item.name.endsWith('.doc') || item.name.endsWith('.docx')) { icon = 'fa-file-word'; color = 'text-primary'; }
+                else if (item.name.endsWith('.xls') || item.name.endsWith('.xlsx')) { icon = 'fa-file-excel'; color = 'text-success'; }
+                previewContent = '<i class="fas ' + icon + ' ' + color + '" style="font-size: 2.2rem;"></i>';
+            }
+
+            card.innerHTML = '' +
+                '<div class="selected-photo-card__preview" style="position: relative; width: 100%; aspect-ratio: 1/1; border: 1px solid #dbe3ee; border-radius: 8px; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center;">' +
+                    previewContent +
+                    '<button type="button" class="selected-photo-card__remove" aria-label="Hapus file">&times;</button>' +
+                '</div>' +
+                '<div class="selected-photo-card__meta" style="padding: 6px 4px;">' +
+                    '<div class="selected-photo-card__name" style="font-size: 10px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="' + item.name + '">' + item.name + '</div>' +
+                    '<div style="font-size: 9px; color:#64748b;">' + item.sizeLabel + '</div>' +
+                '</div>';
+
+            var removeButton = card.querySelector('.selected-photo-card__remove');
+            if (removeButton) {
+                removeButton.addEventListener('click', function () {
+                    if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+                    selectedItems.splice(index, 1);
+                    syncFileInput();
+                    renderPreview();
+                    updateCounter();
+                });
+            }
+            previewContainer.appendChild(card);
+        });
+    }
+
+    function addFiles(fileList) {
+        var incomingFiles = Array.prototype.slice.call(fileList || []).filter(function (file) {
+            return file;
+        });
+
+        if (incomingFiles.length === 0) {
+            showNotice('Silakan pilih file yang valid.', 'danger');
+            return;
+        }
+
+        incomingFiles.forEach(function (file) {
+            var pUrl = '';
+            if (file.type && file.type.indexOf('image/') === 0) {
+                pUrl = URL.createObjectURL(file);
+            }
+            selectedItems.push({
+                file: file,
+                previewUrl: pUrl,
+                name: file.name,
+                sizeLabel: Math.max(1, Math.round(file.size / 1024)) + ' KB',
+            });
+        });
+
+        syncFileInput();
+        renderPreview();
+        updateCounter();
+        showNotice('Dokumen siap diunggah.', 'info');
+    }
+
+    if (pickButton && fileInput) {
+        pickButton.addEventListener('click', function () {
+            fileInput.click();
+        });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function () {
+            addFiles(fileInput.files);
+            fileInput.value = '';
+        });
+    }
+
+    if (dropzone) {
+        ['dragenter', 'dragover'].forEach(function (eventName) {
+            dropzone.addEventListener(eventName, function (event) {
+                event.preventDefault();
+                dropzone.classList.add('is-dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(function (eventName) {
+            dropzone.addEventListener(eventName, function (event) {
+                event.preventDefault();
+                dropzone.classList.remove('is-dragover');
+            });
+        });
+
+        dropzone.addEventListener('drop', function (event) {
+            addFiles(event.dataTransfer ? event.dataTransfer.files : []);
+        });
+    }
+
+    updateCounter();
+})();
 </script>
 <script>
 // Initialize Summernote and ensure summernote content is submitted
@@ -547,6 +791,15 @@
                 }
             } catch (e) {
                 console.error('syncPhotoFileInput error:', e);
+            }
+
+            // Ensure document input contains selected documents before submit
+            try {
+                if (typeof window.syncDocFileInput === 'function') {
+                    window.syncDocFileInput();
+                }
+            } catch (e) {
+                console.error('syncDocFileInput error:', e);
             }
 
             // Sync summernote content to hidden textarea before submit

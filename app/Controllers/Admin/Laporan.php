@@ -408,8 +408,9 @@ class Laporan extends BaseController
                 $row['periode'] = $periodeLabel;
                 $row['pelaksana_names_label'] = implode(', ', $pelaksanaNames) ?: '-';
 
-                // Differentiate Laporan Perjadin (dynamic PDF) and Verified SPT
-                $dokumenHtml = '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-xs btn-outline-danger mr-1" title="Unduh Laporan Perjadin" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i> Perjadin</a>';
+                // Differentiate Laporan Perjadin (dynamic PDF), Verified SPT, and Dokumen Pendukung
+                $dokumenHtml = '<div class="d-flex flex-wrap align-items-center" style="gap: 4px;">';
+                $dokumenHtml .= '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-xs btn-outline-danger" title="Unduh Laporan Perjadin" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i> Perjadin</a>';
                 
                 if (! empty($row['verified_spt_path'])) {
                     $verifiedUrl = media_url($row['verified_spt_path']);
@@ -417,6 +418,30 @@ class Laporan extends BaseController
                     $icon = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'fa-file-image' : 'fa-file-signature';
                     $dokumenHtml .= '<a href="' . $verifiedUrl . '" class="btn btn-xs btn-outline-success" title="Unduh Verified SPT & Perjadin" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i> Verified</a>';
                 }
+
+                $docs = json_decode((string) ($row['dokumen_pendukung_json'] ?? '[]'), true);
+                if (is_array($docs) && $docs !== []) {
+                    foreach ($docs as $doc) {
+                        $filePath = trim((string) ($doc['file_path'] ?? ''));
+                        $fileName = trim((string) ($doc['name'] ?? 'File'));
+                        if ($filePath !== '') {
+                            $docUrl = media_url($filePath);
+                            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+                            $icon = 'fa-paperclip';
+                            if ($ext === 'pdf') {
+                                $icon = 'fa-file-pdf';
+                            } elseif (in_array($ext, ['doc', 'docx'], true)) {
+                                $icon = 'fa-file-word';
+                            } elseif (in_array($ext, ['xls', 'xlsx'], true)) {
+                                $icon = 'fa-file-excel';
+                            }
+                            
+                            $shortName = strlen($fileName) > 15 ? substr($fileName, 0, 12) . '...' : $fileName;
+                            $dokumenHtml .= '<a href="' . $docUrl . '" class="btn btn-xs btn-outline-info" title="Unduh File Pendukung: ' . esc($fileName, 'attr') . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i> ' . esc($shortName) . '</a>';
+                        }
+                    }
+                }
+                $dokumenHtml .= '</div>';
                 
                 $row['dokumen_html'] = $dokumenHtml;
                 
@@ -729,6 +754,7 @@ class Laporan extends BaseController
         $storedPelaksana = $this->decodeJsonArray((string) ($existing['pelaksana_json'] ?? '[]'));
         $storedDiketahui = $this->decodeJsonObject((string) ($existing['diketahui_oleh_json'] ?? '{}'));
         $existingPhotos = $this->decodeJsonArray((string) ($existing['foto_dokumentasi_json'] ?? '[]'));
+        $existingDocs = $this->decodeJsonArray((string) ($existing['dokumen_pendukung_json'] ?? '[]'));
 
         $currentInput = [
             'nomor_surat_tugas' => trim((string) ($existing['nomor_surat_tugas'] ?? '')),
@@ -762,6 +788,7 @@ class Laporan extends BaseController
                 'is_edit' => true,
                 'submit_label_primary' => 'Simpan Perubahan',
                 'existing_foto_dokumentasi' => $existingPhotos,
+                'existing_dokumen_pendukung' => $existingDocs,
             ]);
         }
 
@@ -810,6 +837,7 @@ class Laporan extends BaseController
         }
 
         $existingPhotos = $this->decodeJsonArray((string) ($existing['foto_dokumentasi_json'] ?? '[]'));
+        $existingDocs = $this->decodeJsonArray((string) ($existing['dokumen_pendukung_json'] ?? '[]'));
 
         // Filter foto existing yang dihapus oleh user, hapus juga file fisiknya
         $removedIndices = [];
@@ -830,14 +858,40 @@ class Laporan extends BaseController
             $existingPhotos = array_values(array_filter($existingPhotos, static fn ($key): bool => ! in_array($key, $removedIndices, true), ARRAY_FILTER_USE_KEY));
         }
 
+        // Filter dokumen pendukung existing yang dihapus oleh user, hapus file fisiknya
+        $removedFileIndices = [];
+        $removedFileRaw = trim((string) $this->request->getPost('removed_file_indices'));
+        if ($removedFileRaw !== '') {
+            $decoded = json_decode($removedFileRaw, true);
+            if (is_array($decoded)) {
+                $removedFileIndices = array_values($decoded);
+            }
+        }
+        if ($removedFileIndices !== []) {
+            foreach ($removedFileIndices as $removedFileIdx) {
+                $removedFile = $existingDocs[$removedFileIdx] ?? null;
+                if ($removedFile !== null) {
+                    $this->deletePerjalananDinasFile($removedFile);
+                }
+            }
+            $existingDocs = array_values(array_filter($existingDocs, static fn ($key): bool => ! in_array($key, $removedFileIndices, true), ARRAY_FILTER_USE_KEY));
+        }
+
         // Upload foto baru ke file fisik
         $uploadResult = $this->uploadPerjalananDinasPhotos('foto_dokumentasi');
         if ($uploadResult['error'] !== null) {
             $errors[] = $uploadResult['error'];
         }
         $newPhotos = $uploadResult['photos'];
-
         $photos = array_values(array_merge($existingPhotos, $newPhotos));
+
+        // Upload file pendukung baru ke file fisik
+        $uploadFilesResult = $this->uploadPerjalananDinasFiles('dokumen_pendukung');
+        if ($uploadFilesResult['error'] !== null) {
+            $errors[] = $uploadFilesResult['error'];
+        }
+        $newDocs = $uploadFilesResult['files'];
+        $docs = array_values(array_merge($existingDocs, $newDocs));
 
         if ($errors !== []) {
             return view('admin/laporan/perjalanan_dinas_buat', [
@@ -854,6 +908,7 @@ class Laporan extends BaseController
                 'is_edit' => true,
                 'submit_label_primary' => 'Simpan Perubahan',
                 'existing_foto_dokumentasi' => $photos,
+                'existing_dokumen_pendukung' => $docs,
             ]);
         }
 
@@ -867,6 +922,7 @@ class Laporan extends BaseController
             'laporan_hasil' => $currentInput['laporan_hasil'],
             'pelaksana_json' => json_encode($this->buildPegawaiRowsByIds($pegawaiRows, $currentInput['pelaksana_id']), JSON_UNESCAPED_UNICODE),
             'foto_dokumentasi_json' => json_encode($photos, JSON_UNESCAPED_UNICODE),
+            'dokumen_pendukung_json' => json_encode($docs, JSON_UNESCAPED_UNICODE),
             'creator_name' => trim((string) ($existing['creator_name'] ?? session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
             'creator_pegawai_json' => json_encode($creatorPegawai, JSON_UNESCAPED_UNICODE),
             'diketahui_oleh_json' => json_encode($this->findPegawaiById($pegawaiRows, $currentInput['diketahui_oleh_id']) ?? [], JSON_UNESCAPED_UNICODE),
@@ -921,6 +977,7 @@ class Laporan extends BaseController
                 ],
                 'form_error' => null,
                 'existing_foto_dokumentasi' => $draftData['foto_dokumentasi'] ?? [],
+                'existing_dokumen_pendukung' => $draftData['dokumen_pendukung'] ?? [],
             ]);
         }
 
@@ -991,12 +1048,39 @@ class Laporan extends BaseController
             $draftPhotos = array_values(array_filter($draftPhotos, static fn ($key): bool => ! in_array($key, $removedIndices, true), ARRAY_FILTER_USE_KEY));
         }
 
+        // Draft dokumen pendukung (dari sesi sebelumnya) — filter yang dihapus user
+        $draftFiles = array_values(array_filter((array) ($draftData['dokumen_pendukung'] ?? []), 'is_array'));
+        $removedFileIndices = [];
+        $removedFileRaw = trim((string) $this->request->getPost('removed_file_indices'));
+        if ($removedFileRaw !== '') {
+            $decoded = json_decode($removedFileRaw, true);
+            if (is_array($decoded)) {
+                $removedFileIndices = array_values($decoded);
+            }
+        }
+        if ($removedFileIndices !== []) {
+            foreach ($removedFileIndices as $removedFileIdx) {
+                $removedFile = $draftFiles[$removedFileIdx] ?? null;
+                if ($removedFile !== null) {
+                    $this->deletePerjalananDinasFile($removedFile);
+                }
+            }
+            $draftFiles = array_values(array_filter($draftFiles, static fn ($key): bool => ! in_array($key, $removedFileIndices, true), ARRAY_FILTER_USE_KEY));
+        }
+
         // Upload foto baru ke file fisik
         $uploadResult = $this->uploadPerjalananDinasPhotos('foto_dokumentasi');
         if ($uploadResult['error'] !== null) {
             $errors[] = $uploadResult['error'];
         }
         $photos = $uploadResult['photos'];
+
+        // Upload file pendukung baru ke file fisik
+        $uploadFilesResult = $this->uploadPerjalananDinasFiles('dokumen_pendukung');
+        if ($uploadFilesResult['error'] !== null) {
+            $errors[] = $uploadFilesResult['error'];
+        }
+        $newDocs = $uploadFilesResult['files'];
 
         if ($errors !== []) {
             return view('admin/laporan/perjalanan_dinas_buat', [
@@ -1010,6 +1094,7 @@ class Laporan extends BaseController
                 'current_input' => $currentInput,
                 'form_error' => implode(' ', $errors),
                 'existing_foto_dokumentasi' => array_values(array_merge($draftPhotos, $photos)),
+                'existing_dokumen_pendukung' => array_values(array_merge($draftFiles, $newDocs)),
             ]);
         }
 
@@ -1023,6 +1108,7 @@ class Laporan extends BaseController
             'laporan_hasil' => $currentInput['laporan_hasil'],
             'pelaksana' => $this->buildPegawaiRowsByIds($pegawaiRows, $currentInput['pelaksana_id']),
             'foto_dokumentasi' => array_values(array_merge($draftPhotos, $photos)),
+            'dokumen_pendukung' => array_values(array_merge($draftFiles, $newDocs)),
             'creator_name' => trim((string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
             'creator_pegawai' => $creatorPegawai,
             'diketahui_oleh' => $this->findPegawaiById($pegawaiRows, $currentInput['diketahui_oleh_id']) ?? [
@@ -1034,7 +1120,7 @@ class Laporan extends BaseController
 
         $saveMode = strtolower(trim((string) $this->request->getPost('save_mode')));
         if ($saveMode === 'draft') {
-            // Simpan draft di sesi — foto sudah di-upload ke file fisik
+            // Simpan draft di sesi — foto & file sudah di-upload ke file fisik
             session()->set('laporan_perjalanan_dinas_draft', $data);
             return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('success', 'Draft laporan berhasil disimpan.');
         }
@@ -1057,6 +1143,7 @@ class Laporan extends BaseController
                 'laporan_hasil' => $data['laporan_hasil'],
                 'pelaksana_json' => json_encode($data['pelaksana'], JSON_UNESCAPED_UNICODE),
                 'foto_dokumentasi_json' => json_encode($data['foto_dokumentasi'], JSON_UNESCAPED_UNICODE),
+                'dokumen_pendukung_json' => json_encode($data['dokumen_pendukung'], JSON_UNESCAPED_UNICODE),
                 'creator_name' => $data['creator_name'],
                 'creator_pegawai_json' => json_encode($data['creator_pegawai'], JSON_UNESCAPED_UNICODE),
                 'diketahui_oleh_json' => json_encode($data['diketahui_oleh'], JSON_UNESCAPED_UNICODE),
@@ -1069,6 +1156,9 @@ class Laporan extends BaseController
                 // Jika DB gagal, hapus file yang baru di-upload agar tidak orphan
                 foreach ($photos as $p) {
                     $this->deletePerjalananDinasPhotoFile($p);
+                }
+                foreach ($newDocs as $d) {
+                    $this->deletePerjalananDinasFile($d);
                 }
                 return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('error', 'Gagal menyimpan laporan. Silakan coba lagi.');
             }
@@ -1568,6 +1658,118 @@ class Laporan extends BaseController
         // Pastikan path terbatas dalam folder upload perjalanan dinas
         $safePath = ltrim($filePath, '/\\');
         if (strpos($safePath, 'uploads/laporan/perjalanan_dinas/') !== 0) {
+            return;
+        }
+
+        $absPath = FCPATH . $safePath;
+        if (is_file($absPath)) {
+            @unlink($absPath);
+        }
+    }
+
+    private function uploadPerjalananDinasFiles(string $fieldName): array
+    {
+        if ($this->isPostBodyTooLarge()) {
+            return [
+                'files' => [],
+                'error' => 'Upload gagal karena batas server lebih kecil dari total file yang diunggah. Perbesar post_max_size/upload_max_filesize di server, lalu coba lagi.',
+            ];
+        }
+
+        $files = $this->request->getFileMultiple($fieldName);
+        if (! is_array($files) || $files === []) {
+            $files = $this->request->getFileMultiple($fieldName . '[]');
+        }
+
+        if (! is_array($files) || $files === []) {
+            $singleFile = $this->request->getFile($fieldName);
+            if (is_array($singleFile)) {
+                $files = $singleFile;
+            } elseif ($singleFile !== null) {
+                $files = [$singleFile];
+            }
+        }
+
+        if (! is_array($files) || $files === []) {
+            return ['files' => [], 'error' => null];
+        }
+
+        $flatFiles = [];
+        array_walk_recursive($files, static function ($file) use (&$flatFiles): void {
+            $flatFiles[] = $file;
+        });
+
+        $uploadDir = FCPATH . 'uploads/laporan/perjalanan_dinas_files';
+        if (! is_dir($uploadDir) && ! @mkdir($uploadDir, 0775, true) && ! is_dir($uploadDir)) {
+            return ['files' => [], 'error' => 'Folder upload dokumen tidak dapat dibuat di server.'];
+        }
+
+        if (! is_writable($uploadDir)) {
+            return ['files' => [], 'error' => 'Folder upload dokumen tidak dapat ditulis. Periksa permission folder uploads/laporan/perjalanan_dinas_files.'];
+        }
+
+        $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'zip', 'rar'];
+        $result = [];
+
+        foreach ($flatFiles as $file) {
+            if (! $file || $file->getError() === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+
+            $error = (int) $file->getError();
+            if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) {
+                return ['files' => [], 'error' => 'Ukuran file terlalu besar. Maksimal 10MB per file.'];
+            }
+
+            if ($error !== UPLOAD_ERR_OK || ! $file->isValid()) {
+                return ['files' => [], 'error' => 'Upload file gagal. Silakan pilih ulang file dan coba lagi.'];
+            }
+
+            if ((int) $file->getSize() > self::DAILY_MAX_FILE_SIZE_BYTES) {
+                return ['files' => [], 'error' => 'Ukuran file terlalu besar. Maksimal 10MB per file.'];
+            }
+
+            $clientExtension = strtolower((string) $file->getClientExtension());
+            $isAllowedFile = in_array($clientExtension, $allowedExtensions, true);
+
+            if (! $isAllowedFile) {
+                return ['files' => [], 'error' => 'Format file tidak didukung. Gunakan PDF, JPG, JPEG, PNG, DOC, DOCX, XLS, XLSX, TXT, ZIP, atau RAR.'];
+            }
+
+            try {
+                $newName = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $clientExtension;
+            } catch (\Throwable $e) {
+                return ['files' => [], 'error' => 'Gagal menyiapkan nama file upload. Silakan coba lagi.'];
+            }
+
+            try {
+                $file->move($uploadDir, $newName);
+            } catch (\Throwable $e) {
+                return ['files' => [], 'error' => 'Gagal menyimpan file ke server. Periksa permission folder uploads/laporan/perjalanan_dinas_files.'];
+            }
+
+            if (! is_file($uploadDir . DIRECTORY_SEPARATOR . $newName)) {
+                return ['files' => [], 'error' => 'File tidak tersimpan di server. Silakan coba lagi.'];
+            }
+
+            $result[] = [
+                'file_path' => '/uploads/laporan/perjalanan_dinas_files/' . $newName,
+                'name'      => $file->getClientName(),
+            ];
+        }
+
+        return ['files' => $result, 'error' => null];
+    }
+
+    private function deletePerjalananDinasFile(array $fileInfo): void
+    {
+        $filePath = trim((string) ($fileInfo['file_path'] ?? ''));
+        if ($filePath === '') {
+            return;
+        }
+
+        $safePath = ltrim($filePath, '/\\');
+        if (strpos($safePath, 'uploads/laporan/perjalanan_dinas_files/') !== 0) {
             return;
         }
 
