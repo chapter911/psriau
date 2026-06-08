@@ -320,16 +320,66 @@ class Laporan extends BaseController
     public function perjalananDinas()
     {
         if (! $this->canViewLaporan()) {
+            if ($this->request->isAJAX() || $this->isDataTableRequest()) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Akses ditolak.',
+                ]);
+            }
             return redirect()->to(site_url('/admin'));
         }
 
-        $reports = [];
-        if (db_connect()->tableExists('laporan_perjalanan_dinas')) {
-            $rows = (new LaporanPerjalananDinasModel())
-                ->orderBy('id', 'DESC')
-                ->findAll();
+        if ($this->request->isAJAX() || $this->isDataTableRequest()) {
+            return $this->perjalananDinasDataTable();
+        }
 
-            $reports = array_map(function (array $row): array {
+        return view('admin/laporan/perjalanan_dinas', [
+            'title' => 'Laporan Perjalanan Dinas',
+            'can_edit' => $this->canManageLaporan(),
+            'kabupaten_options' => $this->loadKabupatenOptions(),
+            'pegawai_options' => $this->loadPegawaiOptions(),
+        ]);
+    }
+
+    private function perjalananDinasDataTable()
+    {
+        $canEdit = $this->canManageLaporan();
+        
+        return $this->respondPerjalananDinasDataTable(
+            fn () => db_connect()->table('laporan_perjalanan_dinas'),
+            function ($builder): void {
+                $startDate = trim((string) $this->request->getGet('filter_start_date'));
+                $endDate = trim((string) $this->request->getGet('filter_end_date'));
+                $kota = trim((string) $this->request->getGet('filter_kota'));
+                $pelaksanaId = (int) $this->request->getGet('filter_pelaksana');
+
+                if ($startDate !== '') {
+                    $builder->where('periode_mulai >=', $startDate);
+                }
+                if ($endDate !== '') {
+                    $builder->where('periode_selesai <=', $endDate);
+                }
+                if ($kota !== '') {
+                    $builder->where('kota_tujuan', $kota);
+                }
+                if ($pelaksanaId > 0) {
+                    $builder->groupStart()
+                        ->like('pelaksana_json', '"id":' . $pelaksanaId . ',')
+                        ->orLike('pelaksana_json', '"id":' . $pelaksanaId . '}')
+                        ->groupEnd();
+                }
+            },
+            ['nomor_surat_tugas', 'kota_tujuan', 'tujuan', 'sasaran', 'laporan_hasil', 'pelaksana_json', 'creator_name'],
+            [
+                0 => 'id',
+                1 => 'tujuan',
+                2 => 'kota_tujuan',
+                3 => 'periode_mulai',
+                4 => 'id',
+                5 => 'id',
+                6 => 'id',
+            ],
+            function (array $row) use ($canEdit): array {
                 $pelaksanaRows = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true);
                 if (! is_array($pelaksanaRows)) {
                     $pelaksanaRows = [];
@@ -349,22 +399,152 @@ class Laporan extends BaseController
                     $periodeLabel = '-';
                 }
 
-                return [
-                    'id' => (int) ($row['id'] ?? 0),
-                    'tujuan' => (string) ($row['tujuan'] ?? ''),
-                    'kota_tujuan' => (string) ($row['kota_tujuan'] ?? ''),
-                    'periode' => $periodeLabel,
-                    'pelaksana_names' => $pelaksanaNames,
-                    'is_final' => (int) ($row['is_final'] ?? 0),
-                ];
-            }, $rows);
+                $row['periode'] = $periodeLabel;
+                $row['pelaksana_names_label'] = implode(', ', $pelaksanaNames) ?: '-';
+
+                $row['dokumen_html'] = '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-sm btn-outline-danger" title="Lihat Dokumen" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i></a>';
+                
+                if ($canEdit) {
+                    $row['action_html'] = '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/ubah') . '" class="btn btn-sm btn-outline-primary" title="Ubah Data"><i class="fas fa-pen"></i></a>';
+                } else {
+                    $row['action_html'] = '<span class="text-muted">-</span>';
+                }
+
+                return $row;
+            }
+        );
+    }
+
+    private function respondPerjalananDinasDataTable(callable $queryFactory, callable $filterApplier, array $searchColumns, array $orderColumns, ?callable $rowMapper = null)
+    {
+        try {
+            $draw = $this->getDataTableDraw();
+            $start = $this->getDataTableStart();
+            $length = $this->getDataTableLength();
+            $search = $this->getDataTableSearchTerm();
+            $orderIndex = $this->getDataTableOrderColumnIndex();
+            $orderDirection = $this->getDataTableOrderDirection();
+
+            $totalBuilder = $queryFactory();
+            $filterApplier($totalBuilder);
+            $recordsTotal = (int) $totalBuilder->countAllResults(false);
+
+            $filteredBuilder = $queryFactory();
+            $filterApplier($filteredBuilder);
+            $this->applyDataTableSearch($filteredBuilder, $searchColumns, $search);
+            $recordsFiltered = (int) $filteredBuilder->countAllResults(false);
+
+            $orderColumn = $orderColumns[$orderIndex] ?? $orderColumns[0] ?? '';
+            if ($orderColumn !== '') {
+                $filteredBuilder->orderBy($orderColumn, $orderDirection);
+            }
+
+            $rows = $filteredBuilder->limit($length, $start)->get()->getResultArray();
+
+            if ($rowMapper !== null) {
+                $rows = array_map($rowMapper, $rows);
+            }
+
+            return $this->response->setJSON([
+                'draw' => $draw,
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $rows,
+            ]);
+        } catch (\Throwable $exception) {
+            log_message('error', 'DataTable perjalanan dinas gagal dimuat: ' . $exception->getMessage());
+
+            return $this->response->setJSON([
+                'draw' => $this->getDataTableDraw(),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => 'Gagal memuat data perjalanan dinas.',
+            ]);
+        }
+    }
+
+    private function applyDataTableSearch($builder, array $columns, string $searchTerm): void
+    {
+        $searchTerm = trim($searchTerm);
+        if ($searchTerm === '' || $columns === []) {
+            return;
         }
 
-        return view('admin/laporan/perjalanan_dinas', [
-            'title' => 'Laporan Perjalanan Dinas',
-            'can_edit' => $this->canManageLaporan(),
-            'reports' => $reports,
-        ]);
+        $builder->groupStart();
+        foreach ($columns as $index => $column) {
+            if ($index === 0) {
+                $builder->like($column, $searchTerm);
+                continue;
+            }
+
+            $builder->orLike($column, $searchTerm);
+        }
+        $builder->groupEnd();
+    }
+
+    private function getDataTableDraw(): int
+    {
+        return max(0, (int) $this->request->getGet('draw'));
+    }
+
+    private function getDataTableStart(): int
+    {
+        return max(0, (int) $this->request->getGet('start'));
+    }
+
+    private function getDataTableLength(): int
+    {
+        $length = (int) $this->request->getGet('length');
+
+        return $length > 0 ? $length : 10;
+    }
+
+    private function getDataTableSearchTerm(): string
+    {
+        $search = $this->request->getGet('search');
+        if (! is_array($search)) {
+            return '';
+        }
+
+        return trim((string) ($search['value'] ?? ''));
+    }
+
+    private function getDataTableOrderColumnIndex(): int
+    {
+        $order = $this->request->getGet('order');
+        if (! is_array($order) || $order === []) {
+            return 0;
+        }
+
+        $first = $order[0] ?? [];
+        if (! is_array($first)) {
+            return 0;
+        }
+
+        return max(0, (int) ($first['column'] ?? 0));
+    }
+
+    private function getDataTableOrderDirection(): string
+    {
+        $order = $this->request->getGet('order');
+        if (! is_array($order) || $order === []) {
+            return 'DESC';
+        }
+
+        $first = $order[0] ?? [];
+        if (! is_array($first)) {
+            return 'DESC';
+        }
+
+        return strtolower((string) ($first['dir'] ?? 'desc')) === 'asc' ? 'ASC' : 'DESC';
+    }
+
+    private function isDataTableRequest(): bool
+    {
+        return $this->request->getGet('draw') !== null
+            && $this->request->getGet('start') !== null
+            && $this->request->getGet('length') !== null;
     }
 
     private function writeSmokeLog(string $label, $payload): void
