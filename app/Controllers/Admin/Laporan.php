@@ -409,7 +409,7 @@ class Laporan extends BaseController
                 $row['pelaksana_names_label'] = implode(', ', $pelaksanaNames) ?: '-';
 
                 // Differentiate Laporan Perjadin (dynamic PDF), Verified SPT, and Dokumen Pendukung
-                $dokumenHtml = '<div class="d-flex flex-wrap align-items-center" style="gap: 4px;">';
+                $dokumenHtml = '<div class="d-flex flex-wrap align-items-center justify-content-center" style="gap: 4px;">';
                 $dokumenHtml .= '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-xs btn-outline-danger" title="Unduh Laporan Perjadin" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i> Perjadin</a>';
                 
                 if (! empty($row['verified_spt_path'])) {
