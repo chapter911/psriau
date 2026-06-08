@@ -233,6 +233,11 @@ $resolvePhotoSrc = static function ($photo): string {
         page-break-before: always;
     }
 
+    .avoid-break {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
 
     .ttd-grid-3 {
         width: 100%;
@@ -357,77 +362,102 @@ $resolvePhotoSrc = static function ($photo): string {
         <?php else: ?>
         <div class="report-content">&nbsp;</div>
         <?php endif; ?>
-    </div>
+    </div>    <div class="avoid-break" style="margin-top:16px;">
+        <div style="text-align:center;">Pekanbaru, <?= esc($renderedDate); ?><br/>Dibuat Oleh :</div>
 
-    <div class="page-break"></div>
-
-    <div style="text-align:center; margin-top:8px;">Pekanbaru, <?= esc($renderedDate); ?><br/>Dibuat Oleh :</div>
-
-    <?php if (!empty($executorsSignList)): ?>
-    <?php
-    $executorsCount = count($executorsSignList);
-    $colWidth = 100 / $executorsCount;
-    ?>
-    <table style="width:100%; border-collapse:collapse; margin-top:12px;">
-        <tr>
-            <?php foreach ($executorsSignList as $person): ?>
-            <?php 
-                $nipVal = trim((string) ($person['nip'] ?? ''));
-                $nipLabel = 'NIP. ' . $nipVal;
-                if ($nipVal !== '') {
-                    if (preg_match('/^(nip|nipppk|ni\s*pppk)/i', $nipVal)) {
-                        $nipLabel = $nipVal;
-                    }
-                } else {
-                    $nipLabel = 'NIP. -';
-                }
-            ?>
-            <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
-                <div class="bold"><?= $getSignatureJabatan($person); ?></div>
-                <div style="min-height:60px"></div>
-                <div class="bold" style="text-decoration:underline;"><?= esc((string) ($person['nama'] ?? '-')); ?></div>
-                <div><?= esc($nipLabel); ?></div>
-            </td>
-            <?php endforeach; ?>
-        </tr>
-    </table>
-    <?php endif; ?>
-
-    <!-- DIKETAHUI OLEH SECTION -->
-    <?php if (!empty($diketahuiList)): ?>
-    <div style="margin-top:20px;">
-        <div class="center bold known-judul">Diketahui Oleh :</div>
+        <?php if (!empty($executorsSignList)): ?>
         <?php
-        $idx = 0;
-        for ($row = 0; $row < $diketahuiRows; $row++):
-            $itemsInThisRow = ($row === 0) ? $diketahuiPerRow : ($diketahuiCount - $diketahuiPerRow);
-            $colWidth = $itemsInThisRow > 0 ? (100 / $itemsInThisRow) : 100;
+        $executorsCount = count($executorsSignList);
+        $colWidth = 100 / $executorsCount;
         ?>
-        <div style="margin-top:14px;">
-            <?php for ($col = 0; $col < $itemsInThisRow && $idx < $diketahuiCount; $col++): ?>
-            <?php 
-                $person = $diketahuiList[$idx]; 
-                $nipVal = trim((string) ($person['nip'] ?? ''));
-                $nipLabel = 'NIP. ' . $nipVal;
-                if ($nipVal !== '') {
-                    if (preg_match('/^(nip|nipppk|ni\s*pppk)/i', $nipVal)) {
-                        $nipLabel = $nipVal;
+        <table style="width:100%; border-collapse:collapse; margin-top:12px;">
+            <tr>
+                <?php foreach ($executorsSignList as $person): ?>
+                <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
+                    <div class="bold"><?= $getSignatureJabatan($person); ?></div>
+                </td>
+                <?php endforeach; ?>
+            </tr>
+            <tr>
+                <?php foreach ($executorsSignList as $person): ?>
+                <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
+                    <div style="height:60px;"></div>
+                </td>
+                <?php endforeach; ?>
+            </tr>
+            <tr>
+                <?php foreach ($executorsSignList as $person): ?>
+                <?php 
+                    $nipVal = trim((string) ($person['nip'] ?? ''));
+                    $nipLabel = 'NIP. ' . $nipVal;
+                    if ($nipVal !== '') {
+                        if (preg_match('/^(nip|nipppk|ni\s*pppk)/i', $nipVal)) {
+                            $nipLabel = $nipVal;
+                        }
+                    } else {
+                        $nipLabel = 'NIP. -';
                     }
-                } else {
-                    $nipLabel = 'NIP. -';
-                }
+                ?>
+                <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
+                    <div class="bold" style="text-decoration:underline;"><?= esc((string) ($person['nama'] ?? '-')); ?></div>
+                    <div><?= esc($nipLabel); ?></div>
+                </td>
+                <?php endforeach; ?>
+            </tr>
+        </table>
+        <?php endif; ?>
+
+        <!-- DIKETAHUI OLEH SECTION -->
+        <?php if (!empty($diketahuiList)): ?>
+        <div style="margin-top:20px;">
+            <div class="center bold known-judul">Diketahui Oleh :</div>
+            <?php
+            $idx = 0;
+            for ($row = 0; $row < $diketahuiRows; $row++):
+                $itemsInThisRow = ($row === 0) ? $diketahuiPerRow : ($diketahuiCount - $diketahuiPerRow);
+                $colWidth = $itemsInThisRow > 0 ? (100 / $itemsInThisRow) : 100;
+                $rowPersons = array_slice($diketahuiList, $idx, $itemsInThisRow);
+                $idx += $itemsInThisRow;
             ?>
-            <div style="display:inline-block; width:<?= $colWidth ?>%; text-align:center; vertical-align:top;">
-                <div class="bold"><?= $getSignatureJabatan($person); ?></div>
-                <div style="min-height:60px"></div>
-                <div class="bold" style="text-decoration:underline;"><?= esc((string) ($person['nama'] ?? '-')); ?></div>
-                <div><?= esc($nipLabel); ?></div>
-            </div>
-            <?php $idx++; endfor; ?>
+            <table style="width:100%; border-collapse:collapse; margin-top:14px;">
+                <tr>
+                    <?php foreach ($rowPersons as $person): ?>
+                    <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
+                        <div class="bold"><?= $getSignatureJabatan($person); ?></div>
+                    </td>
+                    <?php endforeach; ?>
+                </tr>
+                <tr>
+                    <?php foreach ($rowPersons as $person): ?>
+                    <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
+                        <div style="height:60px;"></div>
+                    </td>
+                    <?php endforeach; ?>
+                </tr>
+                <tr>
+                    <?php foreach ($rowPersons as $person): ?>
+                    <?php 
+                        $nipVal = trim((string) ($person['nip'] ?? ''));
+                        $nipLabel = 'NIP. ' . $nipVal;
+                        if ($nipVal !== '') {
+                            if (preg_match('/^(nip|nipppk|ni\s*pppk)/i', $nipVal)) {
+                                $nipLabel = $nipVal;
+                            }
+                        } else {
+                            $nipLabel = 'NIP. -';
+                        }
+                    ?>
+                    <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
+                        <div class="bold" style="text-decoration:underline;"><?= esc((string) ($person['nama'] ?? '-')); ?></div>
+                        <div><?= esc($nipLabel); ?></div>
+                    </td>
+                    <?php endforeach; ?>
+                </tr>
+            </table>
+            <?php endfor; ?>
         </div>
-        <?php endfor; ?>
+        <?php endif; ?>
     </div>
-    <?php endif; ?>
 
     <div class="page-break"></div>
 
