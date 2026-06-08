@@ -19,7 +19,7 @@ define('ENVIRONMENT', 'development');
 // Mock session variables in CodeIgniter Services
 $session = \Config\Services::session();
 $session->set([
-    'role' => 'admin',
+    'role' => 'super_administrator',
     'userId' => 1,
     'username' => 'admin',
     'fullName' => 'Admin'

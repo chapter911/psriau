@@ -13,7 +13,7 @@ class LaporanPerjalananDinasModel extends Model
         'nomor_surat_tugas', 'periode_mulai', 'periode_selesai', 'kota_tujuan',
         'tujuan', 'sasaran', 'laporan_hasil', 'pelaksana_json', 'foto_dokumentasi_json',
         'creator_name', 'creator_pegawai_json', 'diketahui_oleh_json', 'is_final',
-        'created_at', 'updated_at',
+        'verified_spt_path', 'created_at', 'updated_at',
     ];
     protected $useTimestamps = false;
 }

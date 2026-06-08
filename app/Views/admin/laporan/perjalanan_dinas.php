@@ -71,15 +71,58 @@
                         <th style="width:220px;">Periode</th>
                         <th>Nama Pelaksana</th>
                         <th style="width:110px;" class="text-center">Lihat Dokumen</th>
+                        <?php if ($can_upload_verified ?? false): ?>
+                            <th style="width:130px;" class="text-center">Upload Verified Perjadin & SPT</th>
+                        <?php endif; ?>
                         <th style="width:90px;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                 </tbody>
             </table>
+    </div>
+</div>
+
+<?php if ($can_upload_verified ?? false): ?>
+<div class="modal fade" id="modal-upload-verified" tabindex="-1" role="dialog" aria-labelledby="modalUploadVerifiedTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalUploadVerifiedTitle">Upload Verified Perjadin & SPT</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="form-upload-verified" action="" method="post" enctype="multipart/form-data">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="font-weight-bold mb-1">Nomor Surat Tugas</label>
+                        <p id="upload_nomor_label" class="form-control-plaintext text-secondary font-weight-bold py-0">-</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="verified_spt_file" class="font-weight-bold mb-1">File Laporan & SPT Terverifikasi <span class="text-danger">*</span></label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="verified_spt_file" name="verified_spt" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <label class="custom-file-label" for="verified_spt_file">Pilih file (PDF, JPG, JPEG, PNG)</label>
+                        </div>
+                        <small class="form-text text-muted mt-2">Maksimal ukuran file: 10MB. Mengupload file baru akan menimpa file terverifikasi sebelumnya jika ada.</small>
+                    </div>
+                    <div id="existing_verified_file_container" class="alert alert-info py-2 px-3 mt-3 d-none">
+                        <i class="fas fa-info-circle mr-1"></i> File terverifikasi saat ini: 
+                        <a href="" id="existing_verified_file_link" target="_blank" class="font-weight-bold text-white text-underline" style="text-decoration: underline;">Lihat File</a>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Upload & Simpan</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+<?php endif; ?>
+
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>
@@ -95,12 +138,71 @@
         }
 
         const canEdit = <?= json_encode($canEdit, JSON_UNESCAPED_UNICODE); ?>;
+        const canUploadVerified = <?= json_encode($can_upload_verified ?? false, JSON_UNESCAPED_UNICODE); ?>;
         const dataUrl = <?= json_encode(site_url('admin/laporan/perjalanan-dinas'), JSON_UNESCAPED_UNICODE); ?>;
 
         const $filterStartDate = $('#filter_start_date');
         const $filterEndDate = $('#filter_end_date');
         const $filterKota = $('#filter_kota');
         const $filterPelaksana = $('#filter_pelaksana');
+
+        const columns = [
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                className: 'text-center',
+                render: function (data, type, row, meta) {
+                    return meta.row + meta.settings._iDisplayStart + 1;
+                }
+            },
+            { 
+                data: 'tujuan',
+                render: function (data) {
+                    return data ? $('<div/>').text(data).html() : '-';
+                }
+            },
+            { 
+                data: 'kota_tujuan',
+                render: function (data) {
+                    return data ? $('<div/>').text(data).html() : '-';
+                }
+            },
+            { 
+                data: 'periode',
+                render: function (data) {
+                    return data ? $('<div/>').text(data).html() : '-';
+                }
+            },
+            { 
+                data: 'pelaksana_names_label',
+                render: function (data) {
+                    return data ? $('<div/>').text(data).html() : '-';
+                }
+            },
+            {
+                data: 'dokumen_html',
+                orderable: false,
+                searchable: false,
+                className: 'text-center'
+            }
+        ];
+
+        if (canUploadVerified) {
+            columns.push({
+                data: 'upload_verified_html',
+                orderable: false,
+                searchable: false,
+                className: 'text-center'
+            });
+        }
+
+        columns.push({
+            data: 'action_html',
+            orderable: false,
+            searchable: false,
+            className: 'text-center'
+        });
 
         const dt = $table.DataTable({
             processing: true,
@@ -121,53 +223,7 @@
                     d.filter_pelaksana = $filterPelaksana.val();
                 }
             },
-            columns: [
-                {
-                    data: null,
-                    orderable: false,
-                    searchable: false,
-                    className: 'text-center',
-                    render: function (data, type, row, meta) {
-                        return meta.row + meta.settings._iDisplayStart + 1;
-                    }
-                },
-                { 
-                    data: 'tujuan',
-                    render: function (data) {
-                        return data ? $('<div/>').text(data).html() : '-';
-                    }
-                },
-                { 
-                    data: 'kota_tujuan',
-                    render: function (data) {
-                        return data ? $('<div/>').text(data).html() : '-';
-                    }
-                },
-                { 
-                    data: 'periode',
-                    render: function (data) {
-                        return data ? $('<div/>').text(data).html() : '-';
-                    }
-                },
-                { 
-                    data: 'pelaksana_names_label',
-                    render: function (data) {
-                        return data ? $('<div/>').text(data).html() : '-';
-                    }
-                },
-                {
-                    data: 'dokumen_html',
-                    orderable: false,
-                    searchable: false,
-                    className: 'text-center'
-                },
-                {
-                    data: 'action_html',
-                    orderable: false,
-                    searchable: false,
-                    className: 'text-center'
-                }
-            ],
+            columns: columns,
             language: {
                 search: 'Cari:',
                 lengthMenu: 'Tampilkan _MENU_ data',
@@ -207,6 +263,48 @@
             
             dt.ajax.reload();
         });
+
+        if (canUploadVerified) {
+            // Handle click on upload verified button (using delegation)
+            $table.on('click', '.btn-upload-verified', function () {
+                const $btn = $(this);
+                const id = $btn.data('id');
+                const nomor = $btn.data('nomor');
+                const existing = $btn.data('existing');
+
+                const $modal = $('#modal-upload-verified');
+                const $form = $('#form-upload-verified');
+                
+                // Set action dynamically
+                $form.attr('action', '<?= site_url("admin/laporan/perjalanan-dinas"); ?>/' + id + '/upload-verified');
+                
+                // Set label nomor
+                $('#upload_nomor_label').text(nomor);
+                
+                // Reset file input label
+                $modal.find('.custom-file-input').val('');
+                $modal.find('.custom-file-label').html('Pilih file (PDF, JPG, JPEG, PNG)');
+
+                // Handle existing file preview
+                const $container = $('#existing_verified_file_container');
+                const $link = $('#existing_verified_file_link');
+                if (existing && existing !== '') {
+                    $link.attr('href', '<?= media_url(""); ?>' + '/' + existing);
+                    $container.removeClass('d-none');
+                } else {
+                    $link.attr('href', '#');
+                    $container.addClass('d-none');
+                }
+
+                $modal.modal('show');
+            });
+
+            // Update file label on file selection
+            $(document).on('change', '.custom-file-input', function (e) {
+                let fileName = e.target.files[0] ? e.target.files[0].name : 'Pilih file (PDF, JPG, JPEG, PNG)';
+                $(this).next('.custom-file-label').html(fileName);
+            });
+        }
     })();
 </script>
 <?= $this->endSection(); ?>

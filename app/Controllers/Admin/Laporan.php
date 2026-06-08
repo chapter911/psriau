@@ -333,9 +333,13 @@ class Laporan extends BaseController
             return $this->perjalananDinasDataTable();
         }
 
+        $role = strtolower((string) session()->get('role'));
+        $canUploadVerified = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+
         return view('admin/laporan/perjalanan_dinas', [
             'title' => 'Laporan Perjalanan Dinas',
             'can_edit' => $this->canManageLaporan(),
+            'can_upload_verified' => $canUploadVerified,
             'kabupaten_options' => $this->loadKabupatenOptions(),
             'pegawai_options' => $this->loadPegawaiOptions(),
         ]);
@@ -344,6 +348,8 @@ class Laporan extends BaseController
     private function perjalananDinasDataTable()
     {
         $canEdit = $this->canManageLaporan();
+        $role = strtolower((string) session()->get('role'));
+        $canUploadVerified = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
         
         return $this->respondPerjalananDinasDataTable(
             fn () => db_connect()->table('laporan_perjalanan_dinas'),
@@ -379,7 +385,7 @@ class Laporan extends BaseController
                 5 => 'id',
                 6 => 'id',
             ],
-            function (array $row) use ($canEdit): array {
+            function (array $row) use ($canEdit, $canUploadVerified): array {
                 $pelaksanaRows = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true);
                 if (! is_array($pelaksanaRows)) {
                     $pelaksanaRows = [];
@@ -402,7 +408,30 @@ class Laporan extends BaseController
                 $row['periode'] = $periodeLabel;
                 $row['pelaksana_names_label'] = implode(', ', $pelaksanaNames) ?: '-';
 
-                $row['dokumen_html'] = '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-sm btn-outline-danger" title="Lihat Dokumen" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i></a>';
+                // Differentiate Laporan Perjadin (dynamic PDF) and Verified SPT
+                $dokumenHtml = '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-xs btn-outline-danger mr-1" title="Unduh Laporan Perjadin" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i> Perjadin</a>';
+                
+                if (! empty($row['verified_spt_path'])) {
+                    $verifiedUrl = media_url($row['verified_spt_path']);
+                    $ext = strtolower(pathinfo((string) $row['verified_spt_path'], PATHINFO_EXTENSION));
+                    $icon = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'fa-file-image' : 'fa-file-signature';
+                    $dokumenHtml .= '<a href="' . $verifiedUrl . '" class="btn btn-xs btn-outline-success" title="Unduh Verified SPT & Perjadin" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i> Verified</a>';
+                }
+                
+                $row['dokumen_html'] = $dokumenHtml;
+                
+                // Add conditional Upload Verified cell
+                if ($canUploadVerified) {
+                    $existingFile = ! empty($row['verified_spt_path']) ? esc((string) $row['verified_spt_path'], 'attr') : '';
+                    $nomorSurat = esc((string) ($row['nomor_surat_tugas'] ?? '-'), 'attr');
+                    if ($existingFile !== '') {
+                        $row['upload_verified_html'] = '<button type="button" class="btn btn-xs btn-success btn-upload-verified" data-id="' . (int) ($row['id'] ?? 0) . '" data-nomor="' . $nomorSurat . '" data-existing="' . $existingFile . '" title="Re-upload Verified Perjadin & SPT"><i class="fas fa-sync-alt"></i> Re-upload</button>';
+                    } else {
+                        $row['upload_verified_html'] = '<button type="button" class="btn btn-xs btn-primary btn-upload-verified" data-id="' . (int) ($row['id'] ?? 0) . '" data-nomor="' . $nomorSurat . '" data-existing="" title="Upload Verified Perjadin & SPT"><i class="fas fa-upload"></i> Upload</button>';
+                    }
+                } else {
+                    $row['upload_verified_html'] = '';
+                }
                 
                 if ($canEdit) {
                     $row['action_html'] = '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/ubah') . '" class="btn btn-sm btn-outline-primary" title="Ubah Data"><i class="fas fa-pen"></i></a>';
@@ -562,6 +591,66 @@ class Laporan extends BaseController
         // Also write to PHP error log for backup
         $logLine = 'SMOKE_LOG [' . $label . ']: ' . json_encode($payload, JSON_UNESCAPED_UNICODE);
         error_log($logLine);
+    }
+    public function perjalananDinasUploadVerified(int $id)
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $role = strtolower((string) session()->get('role'));
+        $canUploadVerified = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        if (! $canUploadVerified) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Anda tidak memiliki hak akses untuk mengupload verified perjadin & SPT.');
+        }
+
+        $model = new LaporanPerjalananDinasModel();
+        $row = $model->find($id);
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+        }
+
+        $file = $this->request->getFile('verified_spt');
+        if (! $file || $file->getError() === UPLOAD_ERR_NO_FILE) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Silakan pilih file terlebih dahulu.');
+        }
+
+        if (! $file->isValid()) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'File tidak valid: ' . $file->getErrorString());
+        }
+
+        $ext = strtolower($file->getClientExtension());
+        if (! in_array($ext, ['pdf', 'jpg', 'jpeg', 'png'], true)) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Ekstensi file tidak diizinkan. Hanya menerima PDF, JPG, JPEG, PNG.');
+        }
+
+        if ($file->getSize() > 10 * 1024 * 1024) {
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Ukuran file maksimal adalah 10MB.');
+        }
+
+        $uploadDir = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'verified_perjadin';
+        if (! is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0775, true);
+        }
+
+        $newName = $file->getRandomName();
+        if ($file->move($uploadDir, $newName, true)) {
+            $oldPath = trim((string) ($row['verified_spt_path'] ?? ''));
+            if ($oldPath !== '') {
+                $oldFullPath = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . ltrim($oldPath, '/');
+                if (is_file($oldFullPath)) {
+                    @unlink($oldFullPath);
+                }
+            }
+
+            $model->update($id, [
+                'verified_spt_path' => 'uploads/verified_perjadin/' . $newName
+            ]);
+
+            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('success', 'File verified perjadin & SPT berhasil diupload.');
+        }
+
+        return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Gagal memindahkan file ke direktori upload.');
     }
 
     public function perjalananDinasDokumen(int $id)
