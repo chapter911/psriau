@@ -438,7 +438,8 @@ class Pegawai extends BaseController
 
         if (! $this->validate($rules)) {
             $errors = $this->validator->getErrors();
-            $errorMsg = 'Data pegawai belum valid: ' . implode(', ', $errors);
+            $postData = $this->request->getPost();
+            $errorMsg = 'Data pegawai belum valid: ' . implode(', ', $errors) . ' [Method: ' . $this->request->getMethod() . ', POST Keys: ' . implode(', ', array_keys($postData)) . ']';
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', $errorMsg);
         }
 
