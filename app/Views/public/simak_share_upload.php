@@ -1103,7 +1103,7 @@
                 <input type="hidden" name="tipe_dokumen" id="upload_tipe_dokumen_modal" value="final">
                 <div class="modal-body">
                     <div class="upload-lock-overlay" id="uploadGoogleLock">
-                        Verifikasi OTP terlebih dahulu untuk mengaktifkan upload file lokal atau link Google Drive.
+                        Verifikasi OTP terlebih dahulu untuk mengaktifkan upload file.
                     </div>
                     <div class="alert alert-light border py-2">
                         <div><strong>No:</strong> <span id="upload_row_label_modal">-</span></div>
@@ -1115,7 +1115,6 @@
                         <label for="upload_method">Metode Upload</label>
                         <select id="upload_method" name="upload_method" class="form-control">
                             <option value="file">Upload File</option>
-                            <option value="drive">Link Google Drive</option>
                             <option value="none">Dokumen Memang Tidak Ada</option>
                         </select>
                     </div>
@@ -1123,14 +1122,12 @@
                     <div class="form-group mb-3" id="uploadFileGroup">
                         <label for="dokumen_file_modal">File Dokumen</label>
                         <input type="file" id="dokumen_file_modal" name="dokumen_file" class="form-control-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip">
-                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP. Maksimal 5MB. Untuk file di atas 5MB, gunakan link Google Drive.</small>
+                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP. Maksimal <?= (int) ($appSetting['simak_max_upload_mb'] ?? 20); ?>MB.</small>
                         <div id="upload_file_status" class="small mt-2 text-muted">Status file: belum dipilih.</div>
                     </div>
 
                     <div class="form-group mb-3 d-none" id="uploadDriveGroup">
-                        <label for="google_drive_link_modal">Link Google Drive</label>
-                        <input type="url" id="google_drive_link_modal" name="google_drive_link" class="form-control" placeholder="https://drive.google.com/...">
-                        <small class="text-muted">Gunakan link file dari Google Drive atau Google Docs.</small>
+                        <input type="hidden" id="google_drive_link_modal" name="google_drive_link" value="">
                     </div>
 
                     <div class="form-group mb-3 d-none" id="uploadNoDocumentGroup">
@@ -1195,6 +1192,7 @@
     var otpTouchThrottleMs = 60 * 1000;
     var autoCompressThresholdBytes = 5 * 1024 * 1024;
     var maxUploadBytes = 100 * 1024 * 1024;
+    var maxUploadAllowedBytes = <?= (int) ($appSetting['simak_max_upload_mb'] ?? 20); ?> * 1024 * 1024;
 
     function sendOtpTouch(force) {
         if (!otpVerified || isDevMode || !otpTouchUrl) {
@@ -1637,7 +1635,7 @@
         }
 
         var selectedFile = dokumenFileEl.files[0];
-        if (enforceGoogleDriveOnlyForLargeFile(selectedFile)) {
+        if (checkFileTooLarge(selectedFile)) {
             refreshFileStatus();
             return;
         }
@@ -1726,8 +1724,8 @@
 
         if (googleAuthHint) {
             googleAuthHint.textContent = signedIn
-                ? 'Kode OTP sudah diverifikasi. Anda dapat mengupload dokumen lokal atau memakai link Google Drive.'
-                : 'Verifikasi OTP dipakai untuk membuka upload file lokal dan link Google Drive.';
+                ? 'Kode OTP sudah diverifikasi. Anda dapat mengupload dokumen.'
+                : 'Verifikasi OTP dipakai untuk membuka upload file.';
         }
 
     }
@@ -2099,28 +2097,21 @@
         }
     }
 
-    function enforceGoogleDriveOnlyForLargeFile(file) {
-        if (!file || !file.size || file.size <= autoCompressThresholdBytes) {
+    function checkFileTooLarge(file) {
+        if (!file || !file.size || file.size <= maxUploadAllowedBytes) {
             return false;
-        }
-
-        if (uploadMethodEl) {
-            uploadMethodEl.value = 'drive';
         }
 
         if (dokumenFileEl) {
             dokumenFileEl.value = '';
         }
 
-        if (googleDriveLinkEl) {
-            googleDriveLinkEl.value = '';
-        }
-
-        syncUploadMethodUI();
-        showGoogleDriveOnlyNotice(file.name, file.size);
-
-        if (googleDriveLinkEl) {
-            googleDriveLinkEl.focus();
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            window.Swal.fire({
+                icon: 'warning',
+                title: 'File terlalu besar',
+                text: 'Ukuran file ' + String(file.name || 'dokumen') + ' (' + formatBytes(file.size) + ') melebihi batas maksimal <?= (int) ($appSetting['simak_max_upload_mb'] ?? 20); ?>MB. Silakan pilih file yang lebih kecil.',
+            });
         }
 
         return true;
@@ -2164,7 +2155,11 @@
         var fileSize = selectedFile && selectedFile.size ? selectedFile.size : 0;
 
         if (fileSize > autoCompressThresholdBytes) {
-            setFileStatus(fileName + ' (' + formatBytes(fileSize) + ') - gunakan link Google Drive.', 'warning');
+            if (fileSize > maxUploadAllowedBytes) {
+                setFileStatus(fileName + ' (' + formatBytes(fileSize) + ') - terlalu besar (maks <?= (int) ($appSetting['simak_max_upload_mb'] ?? 20); ?>MB).', 'warning');
+            } else {
+                setFileStatus(fileName + ' (' + formatBytes(fileSize) + ') - file akan dikompresi otomatis.', 'info');
+            }
             return;
         }
 
@@ -2315,17 +2310,7 @@
                 return;
             }
 
-            if (selectedMethod === 'drive' && !hasDriveLink) {
-                event.preventDefault();
-                if (window.Swal) {
-                    window.Swal.fire({
-                        icon: 'warning',
-                        title: 'Dokumen belum diisi',
-                        text: 'Silakan isi link Google Drive.',
-                    });
-                }
-                return;
-            }
+            // Drive option removed
 
             if (selectedMethod === 'none') {
                 var keteranganTidakAda = String(keteranganTidakAdaEl && keteranganTidakAdaEl.value ? keteranganTidakAdaEl.value : '').trim();
@@ -2345,9 +2330,8 @@
                 }
             }
 
-            if (selectedMethod !== 'drive' && hasFile && dokumenFileEl && dokumenFileEl.files[0] && dokumenFileEl.files[0].size > autoCompressThresholdBytes) {
+            if (hasFile && dokumenFileEl && dokumenFileEl.files[0] && checkFileTooLarge(dokumenFileEl.files[0])) {
                 event.preventDefault();
-                enforceGoogleDriveOnlyForLargeFile(dokumenFileEl.files[0]);
                 return;
             }
 

@@ -17,6 +17,12 @@ class GoogleDriveService
         if (empty($jsonPath)) {
             // Default fallback to project root
             $jsonPath = ROOTPATH . 'google-service-account.json';
+        } else {
+            $jsonPath = trim($jsonPath, " \t\n\r\0\x0B'\"");
+            // If it is a relative path, resolve it relative to the project root
+            if ($jsonPath !== '' && $jsonPath[0] !== '/' && $jsonPath[0] !== '\\' && substr($jsonPath, 1, 2) !== ':\\') {
+                $jsonPath = ROOTPATH . $jsonPath;
+            }
         }
 
         if (!file_exists($jsonPath)) {

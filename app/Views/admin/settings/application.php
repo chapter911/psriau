@@ -123,6 +123,21 @@
             </div>
 
             <div class="form-group">
+                <label for="simak_max_upload_mb">Maksimal Batas Ukuran Upload SIMAK (MB)</label>
+                <input
+                    type="number"
+                    id="simak_max_upload_mb"
+                    name="simak_max_upload_mb"
+                    class="form-control"
+                    value="<?= old('simak_max_upload_mb', (int) ($setting['simak_max_upload_mb'] ?? 20)); ?>"
+                    min="1"
+                    max="200"
+                    required
+                >
+                <small class="text-muted">Batas maksimum ukuran berkas yang diperbolehkan untuk diunggah langsung (dalam Megabytes). Contoh: 20.</small>
+            </div>
+
+            <div class="form-group">
                 <label for="auto_logout_minutes">Timer Logout Otomatis (menit)</label>
                 <input
                     type="number"

@@ -3073,6 +3073,24 @@ class Kontrak extends BaseController
                 $this->tryCompressPdfWithGhostscript($storedPath);
             }
             $relativePath = $subDir . '/' . $storedName;
+
+            $originalName = (string) $file->getClientName();
+            $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
+            if (is_file($storedPath)) {
+                $fileSize = (int) (@filesize($storedPath) ?: $file->getSizeByUnit('b'));
+            } else {
+                $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
+            }
+
+            $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
+            if ($gdriveLink === 'FAILED_UPLOAD') {
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
+            } elseif ($gdriveLink === 'NOT_READY') {
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
+            } elseif ($gdriveLink !== null) {
+                $relativePath = $gdriveLink;
+                $storedName = '';
+            }
         }
 
         $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
@@ -3147,11 +3165,11 @@ class Kontrak extends BaseController
                 'verifikasi_ki' => $isDocumentComplete ? $ver : 'belum_verifikasi',
                 'keterangan' => $ket,
                 'pic' => $pic,
-                'file_original_name' => (string) $file->getClientName(),
+                'file_original_name' => $originalName,
                 'file_stored_name' => $storedName,
                 'file_relative_path' => $relativePath,
-                'file_mime' => (string) ($file->getClientMimeType() ?: ''),
-                'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+                'file_mime' => $mimeType,
+                'file_size' => $fileSize,
                 'tipe_dokumen' => $tipeDokumen,
                 'created_by' => $actor,
                 'created_date' => $today,
@@ -3333,6 +3351,24 @@ class Kontrak extends BaseController
             $this->tryCompressPdfWithGhostscript($storedPath);
         }
         $relativePath = $subDir . '/' . $storedName;
+
+        $originalName = (string) $file->getClientName();
+        $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
+        if (is_file($storedPath)) {
+            $fileSize = (int) (@filesize($storedPath) ?: $file->getSizeByUnit('b'));
+        } else {
+            $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
+        }
+
+        $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
+        if ($gdriveLink === 'FAILED_UPLOAD') {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
+        } elseif ($gdriveLink === 'NOT_READY') {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
+        } elseif ($gdriveLink !== null) {
+            $relativePath = $gdriveLink;
+            $storedName = '';
+        }
         $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
         if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
             $tipeDokumen = 'final';
@@ -3407,11 +3443,11 @@ class Kontrak extends BaseController
             'verifikasi_ki' => $verifikasiKi,
             'keterangan' => 'Upload dokumen dari admin',
             'pic' => $actor,
-            'file_original_name' => (string) $file->getClientName(),
+            'file_original_name' => $originalName,
             'file_stored_name' => $storedName,
             'file_relative_path' => $relativePath,
-            'file_mime' => (string) ($file->getClientMimeType() ?: ''),
-            'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+            'file_mime' => $mimeType,
+            'file_size' => $fileSize,
             'tipe_dokumen' => $tipeDokumen,
             'created_by' => $actor,
             'created_date' => $today,
@@ -3910,33 +3946,14 @@ class Kontrak extends BaseController
             $originalName = (string) $file->getClientName();
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
 
-            $serviceAccountPath = getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH');
-            $driveFolderId = getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
-
-            if (! empty($serviceAccountPath) && ! empty($driveFolderId)) {
-                $gdrive = new \App\Libraries\GoogleDriveService();
-                if ($gdrive->isReady()) {
-                    $webViewLink = $gdrive->uploadFile($storedPath, $originalName, $mimeType, (string) $driveFolderId);
-                    if ($webViewLink !== null) {
-                        $relativePath = $webViewLink;
-                        $storedName = '';
-                        if (is_file($storedPath)) {
-                            @unlink($storedPath);
-                        }
-                    } else {
-                        log_message('error', 'sharedUploadSimakDokumen - Google Drive upload failed for: ' . $originalName);
-                        if (is_file($storedPath)) {
-                            @unlink($storedPath);
-                        }
-                        return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
-                    }
-                } else {
-                    log_message('error', 'sharedUploadSimakDokumen - GoogleDriveService is not ready.');
-                    if (is_file($storedPath)) {
-                        @unlink($storedPath);
-                    }
-                    return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
-                }
+            $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
+            if ($gdriveLink === 'FAILED_UPLOAD') {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
+            } elseif ($gdriveLink === 'NOT_READY') {
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
+            } elseif ($gdriveLink !== null) {
+                $relativePath = $gdriveLink;
+                $storedName = '';
             }
         }
 
@@ -7425,6 +7442,22 @@ class Kontrak extends BaseController
                 $fileSize = (int) (@filesize($storedPath) ?: $fileSize);
             }
             $relativePath = $subDir . '/' . $storedName;
+
+            $originalName = (string) $file->getClientName();
+            $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
+            if (is_file($storedPath)) {
+                $fileSize = (int) (@filesize($storedPath) ?: $fileSize);
+            }
+
+            $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
+            if ($gdriveLink === 'FAILED_UPLOAD') {
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
+            } elseif ($gdriveLink === 'NOT_READY') {
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
+            } elseif ($gdriveLink !== null) {
+                $relativePath = $gdriveLink;
+                $storedName = '';
+            }
         }
 
         $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
@@ -7474,12 +7507,12 @@ class Kontrak extends BaseController
                 'verifikasi_ki' => $ver,
                 'keterangan' => $ket,
                 'pic' => $pic,
-                'file_original_name' => (string) $file->getClientName(),
+                'file_original_name' => $originalName,
                 'file_stored_name' => $storedName,
                 'file_relative_path' => $relativePath,
-                'file_mime' => (string) ($file->getClientMimeType() ?: ''),
+                'file_mime' => $mimeType,
                 'file_size' => $fileSize,
-                'nama_file' => (string) $file->getClientName(),
+                'nama_file' => $originalName,
                 'file_path' => $relativePath,
                 'status' => ($kel === 'ada' && $ver === 'sesuai') ? 'Lengkap' : (($kel === 'ada' && $ver === 'tidak_sesuai') ? 'Belum Sesuai' : (($kel === 'ada') ? 'Belum Verifikasi' : (($ver === 'sesuai') ? 'Selesai' : 'Tidak Ada'))),
                 'catatan' => $ket,
@@ -7655,6 +7688,24 @@ class Kontrak extends BaseController
             $this->tryCompressPdfWithGhostscript($storedPath);
         }
         $relativePath = $subDir . '/' . $storedName;
+
+        $originalName = (string) $file->getClientName();
+        $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
+        if (is_file($storedPath)) {
+            $fileSize = (int) (@filesize($storedPath) ?: $file->getSizeByUnit('b'));
+        } else {
+            $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
+        }
+
+        $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
+        if ($gdriveLink === 'FAILED_UPLOAD') {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
+        } elseif ($gdriveLink === 'NOT_READY') {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
+        } elseif ($gdriveLink !== null) {
+            $relativePath = $gdriveLink;
+            $storedName = '';
+        }
         $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
         if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
             $tipeDokumen = 'final';
@@ -7722,11 +7773,11 @@ class Kontrak extends BaseController
             'verifikasi_ki' => $verifikasiKi,
             'keterangan' => 'Upload dokumen dari admin',
             'pic' => $actor,
-            'file_original_name' => (string) $file->getClientName(),
+            'file_original_name' => $originalName,
             'file_stored_name' => $storedName,
             'file_relative_path' => $relativePath,
-            'file_mime' => (string) ($file->getClientMimeType() ?: ''),
-            'file_size' => (int) ($file->getSizeByUnit('b') ?? 0),
+            'file_mime' => $mimeType,
+            'file_size' => $fileSize,
             'tipe_dokumen' => $tipeDokumen,
             'created_by' => $actor,
             'created_date' => $today,
@@ -7792,5 +7843,38 @@ class Kontrak extends BaseController
             ->setHeader('Content-Type', $mime)
             ->setHeader('Content-Disposition', 'inline; filename="' . addslashes($fileName) . '"')
             ->setBody($content === false ? '' : $content);
+    }
+
+    private function uploadFileToGoogleDriveIfConfigured(string $storedPath, string $originalName, string $mimeType): ?string
+    {
+        $serviceAccountPath = getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH');
+        $driveFolderId = getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
+
+        if (! empty($serviceAccountPath) && ! empty($driveFolderId)) {
+            $gdrive = new \App\Libraries\GoogleDriveService();
+            if ($gdrive->isReady()) {
+                $webViewLink = $gdrive->uploadFile($storedPath, $originalName, $mimeType, (string) $driveFolderId);
+                if ($webViewLink !== null) {
+                    if (is_file($storedPath)) {
+                        @unlink($storedPath);
+                    }
+                    return $webViewLink;
+                } else {
+                    log_message('error', 'uploadFileToGoogleDriveIfConfigured - Google Drive upload failed for: ' . $originalName);
+                    if (is_file($storedPath)) {
+                        @unlink($storedPath);
+                    }
+                    return 'FAILED_UPLOAD';
+                }
+            } else {
+                log_message('error', 'uploadFileToGoogleDriveIfConfigured - GoogleDriveService is not ready.');
+                if (is_file($storedPath)) {
+                    @unlink($storedPath);
+                }
+                return 'NOT_READY';
+            }
+        }
+
+        return null;
     }
 }
