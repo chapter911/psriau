@@ -2275,8 +2275,117 @@
             dokumenFileEl.addEventListener('change', handleDokumenFileChange);
         }
 
+        function submitFormWithProgress(method) {
+            if (isSubmitting) return;
+            isSubmitting = true;
+
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                var isNone = method === 'none';
+                var title = isNone ? 'Menyimpan keterangan...' : 'Mengunggah dokumen...';
+                var html = isNone 
+                    ? '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted">Mohon tunggu sebentar...</div></div>'
+                    : '<div class="text-left"><div class="font-weight-semibold mb-2" id="uploadStatusLabel">Menghubungi server...</div><div class="progress" style="height: 18px;"><div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="uploadProgressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div></div></div>';
+
+                window.Swal.fire({
+                    title: title,
+                    html: html,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: function () {
+                        if (isNone) {
+                            window.Swal.showLoading();
+                        }
+
+                        var xhr = new XMLHttpRequest();
+                        var formData = new FormData(uploadForm);
+
+                        if (!isNone) {
+                            xhr.upload.addEventListener('progress', function(e) {
+                                if (e.lengthComputable) {
+                                    var percent = Math.round((e.loaded / e.total) * 100);
+                                    var progressBar = document.getElementById('uploadProgressBar');
+                                    var statusLabel = document.getElementById('uploadStatusLabel');
+                                    if (progressBar) {
+                                        progressBar.style.width = percent + '%';
+                                        progressBar.setAttribute('aria-valuenow', percent);
+                                        progressBar.textContent = percent + '%';
+                                    }
+                                    if (statusLabel) {
+                                        if (percent === 100) {
+                                            statusLabel.innerHTML = 'Hampir selesai... Memproses di Google Drive.';
+                                        } else {
+                                            statusLabel.innerHTML = 'Mengirim file: ' + percent + '%';
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                        xhr.addEventListener('load', function() {
+                            isSubmitting = false;
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                var hasError = false;
+                                var errorMsg = '';
+                                try {
+                                    var parser = new DOMParser();
+                                    var doc = parser.parseFromString(xhr.responseText, 'text/html');
+                                    var alertEl = doc.querySelector('.alert-danger');
+                                    if (alertEl) {
+                                        hasError = true;
+                                        errorMsg = alertEl.textContent.trim();
+                                    }
+                                } catch (err) {}
+
+                                if (hasError) {
+                                    window.Swal.fire({
+                                        icon: 'error',
+                                        title: 'Gagal Menyimpan',
+                                        text: errorMsg
+                                    });
+                                } else {
+                                    if (uploadModalEl && window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+                                        window.jQuery(uploadModalEl).modal('hide');
+                                    }
+                                    saveScrollPosition();
+                                    var activeTab = document.querySelector('#shareTabs a.active');
+                                    if (activeTab) {
+                                        saveActiveTab(activeTab.getAttribute('href') || '');
+                                    }
+                                    window.location.reload();
+                                }
+                            } else {
+                                window.Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal Menyimpan',
+                                    text: 'Gagal memproses unggahan. Silakan coba lagi.'
+                                });
+                            }
+                        });
+
+                        xhr.addEventListener('error', function() {
+                            isSubmitting = false;
+                            window.Swal.fire({
+                                icon: 'error',
+                                title: 'Koneksi Terputus',
+                                text: 'Gagal menghubungi server. Periksa koneksi internet Anda.'
+                            });
+                        });
+
+                        xhr.open('POST', uploadForm.action, true);
+                        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                        xhr.send(formData);
+                    }
+                });
+            } else {
+                // Fallback
+                uploadForm.submit();
+            }
+        }
+
         uploadForm.addEventListener('submit', async function (event) {
             if (isSubmitting) {
+                event.preventDefault();
                 return;
             }
 
@@ -2335,8 +2444,9 @@
                 return;
             }
 
+            event.preventDefault();
+
             if (selectedMethod !== 'drive' && hasFile && dokumenFileEl && dokumenFileEl.files[0]) {
-                event.preventDefault();
                 var sourceFile = dokumenFileEl.files[0];
                 var sourceExt = getFileExtension(sourceFile.name);
                 var shouldCompress = sourceFile.size > autoCompressThresholdBytes && canAutoCompress(sourceExt);
@@ -2401,35 +2511,11 @@
                     setFileStatus('Ukuran file >100MB.', 'warning');
                 }
 
-                if (window.Swal && typeof window.Swal.fire === 'function') {
-                    window.Swal.fire({
-                        title: 'Mengunggah dokumen...',
-                        text: 'Mohon tunggu sebentar',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        didOpen: function () {
-                            window.Swal.showLoading();
-                        }
-                    });
-                }
-
-                isSubmitting = true;
-                // Close modal before submit
-                if (uploadModalEl && window.jQuery && typeof window.jQuery.fn.modal === 'function') {
-                    window.jQuery(uploadModalEl).modal('hide');
-                }
-                // Save scroll and tab position before redirect
-                saveScrollPosition();
-                var activeTab = document.querySelector('#shareTabs a.active');
-                if (activeTab) {
-                    saveActiveTab(activeTab.getAttribute('href') || '');
-                }
-                uploadForm.submit();
+                submitFormWithProgress(selectedMethod);
                 return;
             }
 
             if (selectedMethod === 'drive' && !isAllowedGoogleDriveUrl(driveLink)) {
-                event.preventDefault();
                 if (window.Swal) {
                     window.Swal.fire({
                         icon: 'warning',
@@ -2440,29 +2526,7 @@
                 return;
             }
 
-            if (window.Swal && typeof window.Swal.fire === 'function') {
-                window.Swal.fire({
-                    title: selectedMethod === 'none' ? 'Menyimpan keterangan...' : 'Mengunggah dokumen...',
-                    text: 'Mohon tunggu sebentar',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    didOpen: function () {
-                        window.Swal.showLoading();
-                    }
-                });
-            }
-
-            isSubmitting = true;
-            // Close modal before submit
-            if (uploadModalEl && window.jQuery && typeof window.jQuery.fn.modal === 'function') {
-                window.jQuery(uploadModalEl).modal('hide');
-            }
-            // Save scroll and tab position before redirect
-            saveScrollPosition();
-            var activeTab = document.querySelector('#shareTabs a.active');
-            if (activeTab) {
-                saveActiveTab(activeTab.getAttribute('href') || '');
-            }
+            submitFormWithProgress(selectedMethod);
         });
 
         updateUploadLockState();
