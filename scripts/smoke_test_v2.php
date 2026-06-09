@@ -316,12 +316,12 @@ foreach ($explicitRows as $i => $r) {
 }
 
 // Test "dokumen tidak ada" path
-echo "\n[STEP 6] UPLOAD 'Dokumen Tidak Ada' TEST (2 rows) via respondent share URL...\n";
-$noneRows = array_slice($konFinal, 3, 2);
-foreach ($noneRows as $r) {
+echo "\n[STEP 6] UPLOAD FILE TEST (2 rows) via respondent share URL...\n";
+$explicitRows2 = array_slice($konFinal, 3, 2);
+foreach ($explicitRows2 as $r) {
     $rowNo = $r['row_no'];
-    echo "  >> Reporting 'Dokumen Tidak Ada' Row {$rowNo}...\n";
-    $result = uploadNoneViaShare($konToken, $rowNo, 'final', $konDocTable, $konId);
+    echo "  >> Uploading FILE to Row {$rowNo} (tipe: final)...\n";
+    $result = uploadFileViaShare($konToken, $rowNo, 'final', $konDocTable, $konId);
     if ($result['ok']) {
         echo "     [+] BERHASIL! Doc ID: {$result['doc_id']}, Storage: {$result['storage']}\n";
     } else {
@@ -348,16 +348,9 @@ $rowIdx = 0;
 echo "  [STEP 7b] Upload + Verifikasi sisa rows Sesuai...\n";
 while ($sesuaiCount < $konNeedL && $rowIdx < count($remainingRows)) {
     $r = $remainingRows[$rowIdx++];
-    $method = ($sesuaiCount % 3 === 2) ? 'none' : 'file';
-    if ($method === 'file') {
-        $res = uploadFileViaShare($konToken, $r['row_no'], 'final', $konDocTable, $konId);
-        $marker = $res['ok'] ? "file ✓" : "file FAIL";
-    } else {
-        $res = uploadNoneViaShare($konToken, $r['row_no'], 'final', $konDocTable, $konId);
-        $marker = $res['ok'] ? "none ✓" : "none FAIL";
-    }
-    $kel = ($method === 'none') ? 'tidak' : 'ada';
-    verifyAdmin('konstruksi', $konId, $r['row_no'], 'final', $kel, 'sesuai');
+    $res = uploadFileViaShare($konToken, $r['row_no'], 'final', $konDocTable, $konId);
+    $marker = $res['ok'] ? "file ✓" : "file FAIL";
+    verifyAdmin('konstruksi', $konId, $r['row_no'], 'final', 'ada', 'sesuai');
     echo "    [+] Row {$r['row_no']} -> Sesuai ({$marker})\n";
     $sesuaiCount++;
 }
@@ -366,16 +359,9 @@ while ($sesuaiCount < $konNeedL && $rowIdx < count($remainingRows)) {
 echo "  [STEP 7c] Upload + Verifikasi rows Tidak Sesuai (Belum Sesuai)...\n";
 while ($tidakSesuaiCount < $konNeedBS && $rowIdx < count($remainingRows)) {
     $r = $remainingRows[$rowIdx++];
-    $method = ($tidakSesuaiCount % 2 === 0) ? 'file' : 'none';
-    if ($method === 'file') {
-        $res = uploadFileViaShare($konToken, $r['row_no'], 'final', $konDocTable, $konId);
-        $marker = $res['ok'] ? "file ✓" : "file FAIL";
-    } else {
-        $res = uploadNoneViaShare($konToken, $r['row_no'], 'final', $konDocTable, $konId);
-        $marker = $res['ok'] ? "none ✓" : "none FAIL";
-    }
-    $kel = ($method === 'none') ? 'tidak' : 'ada';
-    verifyAdmin('konstruksi', $konId, $r['row_no'], 'final', $kel, 'tidak_sesuai');
+    $res = uploadFileViaShare($konToken, $r['row_no'], 'final', $konDocTable, $konId);
+    $marker = $res['ok'] ? "file ✓" : "file FAIL";
+    verifyAdmin('konstruksi', $konId, $r['row_no'], 'final', 'ada', 'tidak_sesuai');
     echo "    [+] Row {$r['row_no']} -> Tidak Sesuai ({$marker})\n";
     $tidakSesuaiCount++;
 }
@@ -452,12 +438,12 @@ foreach ($explicitKons as $r) {
     }
 }
 
-echo "\n[STEP 12] UPLOAD 'Dokumen Tidak Ada' TEST (2 rows)...\n";
-$noneKons = array_slice($konsFinal, 3, 2);
-foreach ($noneKons as $r) {
+echo "\n[STEP 12] UPLOAD FILE TEST (2 rows)...\n";
+$explicitKons2 = array_slice($konsFinal, 3, 2);
+foreach ($explicitKons2 as $r) {
     $rowNo = $r['row_no'];
-    echo "  >> Reporting 'Dokumen Tidak Ada' Row {$rowNo}...\n";
-    $result = uploadNoneViaShare($konsToken, $rowNo, 'final', $konsDocTable, $konsId);
+    echo "  >> Uploading FILE to Row {$rowNo} (tipe: final)...\n";
+    $result = uploadFileViaShare($konsToken, $rowNo, 'final', $konsDocTable, $konsId);
     if ($result['ok']) {
         echo "     [+] BERHASIL! Doc ID: {$result['doc_id']}, Storage: {$result['storage']}\n";
     } else {
@@ -481,16 +467,9 @@ echo "  [STEP 13b] Upload + Verifikasi sisa rows Sesuai...\n";
 $rowIdx = 0;
 while ($konsSesuai < $konsNeedL && $rowIdx < count($remainKons)) {
     $r = $remainKons[$rowIdx++];
-    $method = ($konsSesuai % 3 === 2) ? 'none' : 'file';
-    if ($method === 'file') {
-        $res = uploadFileViaShare($konsToken, $r['row_no'], 'final', $konsDocTable, $konsId);
-        $marker = $res['ok'] ? "file ✓" : "file FAIL";
-    } else {
-        $res = uploadNoneViaShare($konsToken, $r['row_no'], 'final', $konsDocTable, $konsId);
-        $marker = $res['ok'] ? "none ✓" : "none FAIL";
-    }
-    $kel = ($method === 'none') ? 'tidak' : 'ada';
-    verifyAdmin('konsultasi', $konsId, $r['row_no'], 'final', $kel, 'sesuai');
+    $res = uploadFileViaShare($konsToken, $r['row_no'], 'final', $konsDocTable, $konsId);
+    $marker = $res['ok'] ? "file ✓" : "file FAIL";
+    verifyAdmin('konsultasi', $konsId, $r['row_no'], 'final', 'ada', 'sesuai');
     echo "    [+] Row {$r['row_no']} -> Sesuai ({$marker})\n";
     $konsSesuai++;
 }
@@ -498,16 +477,9 @@ while ($konsSesuai < $konsNeedL && $rowIdx < count($remainKons)) {
 echo "  [STEP 13c] Upload + Verifikasi rows Tidak Sesuai...\n";
 while ($konsTidakS < $konsNeedBS && $rowIdx < count($remainKons)) {
     $r = $remainKons[$rowIdx++];
-    $method = ($konsTidakS % 2 === 0) ? 'file' : 'none';
-    if ($method === 'file') {
-        $res = uploadFileViaShare($konsToken, $r['row_no'], 'final', $konsDocTable, $konsId);
-        $marker = $res['ok'] ? "file ✓" : "file FAIL";
-    } else {
-        $res = uploadNoneViaShare($konsToken, $r['row_no'], 'final', $konsDocTable, $konsId);
-        $marker = $res['ok'] ? "none ✓" : "none FAIL";
-    }
-    $kel = ($method === 'none') ? 'tidak' : 'ada';
-    verifyAdmin('konsultasi', $konsId, $r['row_no'], 'final', $kel, 'tidak_sesuai');
+    $res = uploadFileViaShare($konsToken, $r['row_no'], 'final', $konsDocTable, $konsId);
+    $marker = $res['ok'] ? "file ✓" : "file FAIL";
+    verifyAdmin('konsultasi', $konsId, $r['row_no'], 'final', 'ada', 'tidak_sesuai');
     echo "    [+] Row {$r['row_no']} -> Tidak Sesuai ({$marker})\n";
     $konsTidakS++;
 }

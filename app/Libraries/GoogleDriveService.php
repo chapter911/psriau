@@ -10,6 +10,7 @@ class GoogleDriveService
 {
     private ?Client $client = null;
     private ?Drive $service = null;
+    private ?string $lastError = null;
 
     public function __construct()
     {
@@ -28,7 +29,8 @@ class GoogleDriveService
         log_message('info', 'GoogleDriveService - Resolved credential path: ' . $jsonPath);
 
         if (!file_exists($jsonPath)) {
-            log_message('error', 'GoogleDriveService - Credentials file not found at: ' . $jsonPath);
+            $this->lastError = 'Credentials file not found at: ' . $jsonPath;
+            log_message('error', 'GoogleDriveService - ' . $this->lastError);
             log_message('error', 'GoogleDriveService - ROOTPATH is: ' . ROOTPATH);
             return;
         }
@@ -42,8 +44,14 @@ class GoogleDriveService
             $this->service = new Drive($this->client);
             log_message('info', 'GoogleDriveService - Initialized successfully.');
         } catch (\Throwable $e) {
-            log_message('error', 'GoogleDriveService - Failed to initialize: ' . $e->getMessage());
+            $this->lastError = 'Failed to initialize: ' . $e->getMessage();
+            log_message('error', 'GoogleDriveService - ' . $this->lastError);
         }
+    }
+
+    public function getLastError(): ?string
+    {
+        return $this->lastError;
     }
 
     /**
@@ -71,7 +79,8 @@ class GoogleDriveService
     public function uploadFile(string $localFilePath, string $fileName, string $mimeType, string $folderId): ?string
     {
         if (!$this->isReady()) {
-            log_message('error', 'GoogleDriveService - uploadFile aborted: Service not ready.');
+            $this->lastError = 'Service not ready.';
+            log_message('error', 'GoogleDriveService - uploadFile aborted: ' . $this->lastError);
             return null;
         }
 
@@ -83,7 +92,8 @@ class GoogleDriveService
 
             $content = file_get_contents($localFilePath);
             if ($content === false) {
-                log_message('error', 'GoogleDriveService - Failed to read local file: ' . $localFilePath);
+                $this->lastError = 'Failed to read local file: ' . $localFilePath;
+                log_message('error', 'GoogleDriveService - ' . $this->lastError);
                 return null;
             }
 
@@ -101,7 +111,8 @@ class GoogleDriveService
             log_message('info', 'GoogleDriveService - Uploaded: ' . $fileName . ' -> ' . $file->webViewLink);
             return $file->webViewLink;
         } catch (\Throwable $e) {
-            log_message('error', 'GoogleDriveService - uploadFile failed: ' . $e->getMessage());
+            $this->lastError = 'uploadFile failed: ' . $e->getMessage();
+            log_message('error', 'GoogleDriveService - ' . $this->lastError);
             return null;
         }
     }

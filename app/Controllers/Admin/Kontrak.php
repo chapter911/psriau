@@ -7852,27 +7852,26 @@ class Kontrak extends BaseController
 
         if (! empty($serviceAccountPath) && ! empty($driveFolderId)) {
             $gdrive = new \App\Libraries\GoogleDriveService();
-            if ($gdrive->isReady()) {
-                $webViewLink = $gdrive->uploadFile($storedPath, $originalName, $mimeType, (string) $driveFolderId);
-                if ($webViewLink !== null) {
-                    if (is_file($storedPath)) {
-                        @unlink($storedPath);
-                    }
-                    return $webViewLink;
-                } else {
-                    log_message('error', 'uploadFileToGoogleDriveIfConfigured - Google Drive upload failed for: ' . $originalName);
-                    if (is_file($storedPath)) {
-                        @unlink($storedPath);
-                    }
-                    return 'FAILED_UPLOAD';
-                }
-            } else {
-                log_message('error', 'uploadFileToGoogleDriveIfConfigured - GoogleDriveService is not ready.');
+            if (! $gdrive->isReady()) {
+                $reason = $gdrive->getLastError() ?: 'Service not ready.';
+                log_message('error', 'uploadFileToGoogleDriveIfConfigured - GoogleDriveService is not ready. Reason: ' . $reason);
+                return 'NOT_READY';
+            }
+
+            $webViewLink = $gdrive->uploadFile($storedPath, $originalName, $mimeType, (string) $driveFolderId);
+            if ($webViewLink !== null) {
                 if (is_file($storedPath)) {
                     @unlink($storedPath);
                 }
-                return 'NOT_READY';
+                return $webViewLink;
             }
+
+            $reason = $gdrive->getLastError() ?: 'Unknown error';
+            log_message('error', 'uploadFileToGoogleDriveIfConfigured - Google Drive upload failed for: ' . $originalName . '. Reason: ' . $reason);
+            if (is_file($storedPath)) {
+                @unlink($storedPath);
+            }
+            return 'FAILED_UPLOAD';
         }
 
         return null;
