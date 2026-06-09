@@ -63,6 +63,20 @@
         bottom: 50% !important;
         transform: translateY(50%) !important;
     }
+    
+    /* Text styling for Tujuan column */
+    .text-tujuan {
+        max-width: 280px;
+        font-size: 12.5px;
+        line-height: 1.4;
+        white-space: normal;
+        word-break: break-word;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 </style>
 
 <div class="card">
@@ -126,7 +140,7 @@
                 <thead>
                     <tr>
                         <th style="width:60px;" class="text-center">No</th>
-                        <th>Tujuan</th>
+                        <th style="width:280px;">Tujuan</th>
                         <th style="width:220px;">Kota Tujuan</th>
                         <th style="width:220px;">Periode</th>
                         <th>Nama Pelaksana</th>
@@ -219,7 +233,9 @@
             { 
                 data: 'tujuan',
                 render: function (data) {
-                    return data ? $('<div/>').text(data).html() : '-';
+                    if (!data) return '-';
+                    const escaped = $('<div/>').text(data).html();
+                    return '<div class="text-tujuan" title="' + escaped + '">' + escaped + '</div>';
                 }
             },
             { 
