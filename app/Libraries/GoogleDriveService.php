@@ -18,23 +18,29 @@ class GoogleDriveService
             // Default fallback to project root
             $jsonPath = ROOTPATH . 'google-service-account.json';
         } else {
-            $jsonPath = trim($jsonPath, " \t\n\r\0\x0B'\"");
+            $jsonPath = trim($jsonPath, " \t\n\r\0\x0B'\";");
             // If it is a relative path, resolve it relative to the project root
             if ($jsonPath !== '' && $jsonPath[0] !== '/' && $jsonPath[0] !== '\\' && substr($jsonPath, 1, 2) !== ':\\') {
                 $jsonPath = ROOTPATH . $jsonPath;
             }
         }
 
+        log_message('info', 'GoogleDriveService - Resolved credential path: ' . $jsonPath);
+
         if (!file_exists($jsonPath)) {
             log_message('error', 'GoogleDriveService - Credentials file not found at: ' . $jsonPath);
+            log_message('error', 'GoogleDriveService - ROOTPATH is: ' . ROOTPATH);
             return;
         }
 
         try {
             $this->client = new Client();
             $this->client->setAuthConfig($jsonPath);
+            // Request both DRIVE_FILE (for Shared Drive uploads) and DRIVE scopes
             $this->client->addScope(Drive::DRIVE);
+            $this->client->addScope(Drive::DRIVE_FILE);
             $this->service = new Drive($this->client);
+            log_message('info', 'GoogleDriveService - Initialized successfully.');
         } catch (\Throwable $e) {
             log_message('error', 'GoogleDriveService - Failed to initialize: ' . $e->getMessage());
         }
@@ -53,6 +59,9 @@ class GoogleDriveService
     /**
      * Upload a local file to Google Drive.
      *
+     * Supports both regular shared folders (My Drive) and Shared Drives (Team Drive).
+     * supportsAllDrives=true is required for Shared Drive uploads.
+     *
      * @param string $localFilePath Absolute path of the file on local disk
      * @param string $fileName Original client file name
      * @param string $mimeType Mime type of the file
@@ -68,8 +77,8 @@ class GoogleDriveService
 
         try {
             $fileMetadata = new DriveFile([
-                'name' => $fileName,
-                'parents' => [$folderId]
+                'name'    => $fileName,
+                'parents' => [$folderId],
             ]);
 
             $content = file_get_contents($localFilePath);
@@ -78,13 +87,18 @@ class GoogleDriveService
                 return null;
             }
 
+            // supportsAllDrives=true is required to upload into Shared Drives.
+            // It also works fine for regular My Drive folders that are shared to
+            // the Service Account.
             $file = $this->service->files->create($fileMetadata, [
-                'data' => $content,
-                'mimeType' => $mimeType,
-                'uploadType' => 'multipart',
-                'fields' => 'id, webViewLink'
+                'data'              => $content,
+                'mimeType'          => $mimeType,
+                'uploadType'        => 'multipart',
+                'fields'            => 'id, webViewLink',
+                'supportsAllDrives' => true,
             ]);
 
+            log_message('info', 'GoogleDriveService - Uploaded: ' . $fileName . ' -> ' . $file->webViewLink);
             return $file->webViewLink;
         } catch (\Throwable $e) {
             log_message('error', 'GoogleDriveService - uploadFile failed: ' . $e->getMessage());
