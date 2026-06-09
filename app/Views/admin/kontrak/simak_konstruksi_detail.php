@@ -4,7 +4,7 @@
 <?php
     $leafRowsCount = 0;
     foreach (($templateItems ?? []) as $row) {
-        if ((bool) ($row['is_leaf'] ?? false) === true) {
+        if ((bool) ($row['is_leaf'] ?? false) === true && (int) ($row['is_hidden_share'] ?? 0) !== 1) {
             $leafRowsCount++;
         }
     }

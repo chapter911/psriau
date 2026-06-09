@@ -4964,7 +4964,7 @@ class Kontrak extends BaseController
         return $grouped;
     }
 
-    private function getSimakAdministrasiKelengkapanBySimakId(array $simakIds, string $type = 'konstruksi', bool $includeHiddenShare = true): array
+    private function getSimakAdministrasiKelengkapanBySimakId(array $simakIds, string $type = 'konstruksi', bool $includeHiddenShare = false): array
     {
         $simakIds = array_values(array_unique(array_filter(array_map('intval', $simakIds), static function (int $id): bool {
             return $id > 0;
@@ -5552,6 +5552,7 @@ class Kontrak extends BaseController
                     'section_title' => $currentSectionTitle,
                     'has_children' => $hasChildren,
                     'is_leaf' => $hasQuestion && ! $hasChildren,
+                    'is_hidden_share' => (int) ($item['is_hidden_share'] ?? 0),
                 ];
 
                 if ($children !== []) {
@@ -5968,6 +5969,7 @@ class Kontrak extends BaseController
                     'section_title' => $currentSectionTitle,
                     'has_children' => $hasChildren,
                     'is_leaf' => $hasQuestion && ! $hasChildren,
+                    'is_hidden_share' => (int) ($item['is_hidden_share'] ?? 0),
                 ];
 
                 if ($children !== []) {
