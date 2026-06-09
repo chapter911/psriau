@@ -356,7 +356,9 @@ class Pegawai extends BaseController
         }
 
         if (! $this->validate($rules)) {
-            return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'Data pegawai belum valid.');
+            $errors = $this->validator->getErrors();
+            $errorMsg = 'Data pegawai belum valid: ' . implode(', ', $errors);
+            return redirect()->to('/admin/master/pegawai')->withInput()->with('error', $errorMsg);
         }
 
         $model = new MstPegawaiModel();
@@ -435,7 +437,9 @@ class Pegawai extends BaseController
         }
 
         if (! $this->validate($rules)) {
-            return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'Data pegawai belum valid.');
+            $errors = $this->validator->getErrors();
+            $errorMsg = 'Data pegawai belum valid: ' . implode(', ', $errors);
+            return redirect()->to('/admin/master/pegawai')->withInput()->with('error', $errorMsg);
         }
 
         $model = new MstPegawaiModel();

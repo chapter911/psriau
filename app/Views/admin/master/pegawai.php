@@ -475,10 +475,11 @@
         const fieldStatus = document.getElementById('edit_is_active');
         const fotoPreview = document.getElementById('edit_foto_preview');
 
-        const applyEditData = (trigger) => {
-            if (!trigger) {
+        const applyEditData = (el) => {
+            if (!el) {
                 return;
             }
+            const trigger = el.closest('button[data-target="#modal-ubah-pegawai"]') || el;
 
             const id = trigger.getAttribute('data-id') || '';
             form.action = '<?= site_url('/admin/master/pegawai'); ?>/' + encodeURIComponent(id) + '/ubah';
