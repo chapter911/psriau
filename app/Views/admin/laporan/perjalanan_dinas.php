@@ -5,6 +5,66 @@
     $reports = $reports ?? [];
     $canEdit = (bool) ($can_edit ?? false);
 ?>
+<style>
+    /* Table styling improvements */
+    #tablePerjalananDinas thead th {
+        vertical-align: middle !important;
+        text-align: center;
+        padding: 8px 10px !important;
+        font-size: 13.5px;
+        line-height: 1.3;
+        font-weight: 600;
+    }
+    
+    #tablePerjalananDinas tbody td {
+        vertical-align: middle !important;
+        padding: 8px 10px !important;
+        font-size: 13.5px;
+    }
+    
+    /* Make document action buttons larger and cleaner (icon only) */
+    .doc-btn-group {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .doc-btn-group .btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .doc-btn-group .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    }
+    
+    /* Align custom table sorting icons in AdminLTE/Bootstrap4 DataTables */
+    table.dataTable thead .sorting::before, 
+    table.dataTable thead .sorting_asc::before, 
+    table.dataTable thead .sorting_desc::before, 
+    table.dataTable thead .sorting_asc_disabled::before, 
+    table.dataTable thead .sorting_desc_disabled::before,
+    table.dataTable thead .sorting::after, 
+    table.dataTable thead .sorting_asc::after, 
+    table.dataTable thead .sorting_desc::after, 
+    table.dataTable thead .sorting_asc_disabled::after, 
+    table.dataTable thead .sorting_desc_disabled::after {
+        bottom: 50% !important;
+        transform: translateY(50%) !important;
+    }
+</style>
+
 <div class="card">
     <div class="card-header d-flex align-items-center">
         <h3 class="card-title mb-0">Laporan Perjalanan Dinas</h3>
@@ -72,7 +132,7 @@
                         <th>Nama Pelaksana</th>
                         <th style="width:110px;" class="text-center">Lihat Dokumen</th>
                         <?php if ($can_upload_verified ?? false): ?>
-                            <th style="width:130px;" class="text-center">Upload Verified Perjadin & SPT</th>
+                            <th style="width:130px;" class="text-center">Upload Verified</th>
                         <?php endif; ?>
                         <th style="width:90px;" class="text-center">Aksi</th>
                     </tr>
@@ -80,7 +140,7 @@
                 <tbody>
                 </tbody>
             </table>
-    </div>
+        </div>
 </div>
 
 <?php if ($can_upload_verified ?? false): ?>

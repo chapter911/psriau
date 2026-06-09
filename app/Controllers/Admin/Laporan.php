@@ -409,14 +409,16 @@ class Laporan extends BaseController
                 $row['pelaksana_names_label'] = implode(', ', $pelaksanaNames) ?: '-';
 
                 // Differentiate Laporan Perjadin (dynamic PDF), Verified SPT, and Dokumen Pendukung
-                $dokumenHtml = '<div class="d-flex flex-wrap align-items-center justify-content-center" style="gap: 4px;">';
-                $dokumenHtml .= '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-xs btn-outline-danger" title="Unduh Laporan Perjadin" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i> Perjadin</a>';
+                $dokumenHtml = '<div class="doc-btn-group">';
+                $dokumenHtml .= '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-danger" title="Laporan Perjadin (PDF)" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i></a>';
                 
                 if (! empty($row['verified_spt_path'])) {
                     $verifiedUrl = media_url($row['verified_spt_path']);
                     $ext = strtolower(pathinfo((string) $row['verified_spt_path'], PATHINFO_EXTENSION));
                     $icon = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'fa-file-image' : 'fa-file-signature';
-                    $dokumenHtml .= '<a href="' . $verifiedUrl . '" class="btn btn-xs btn-outline-success" title="Unduh Verified SPT & Perjadin" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i> Verified</a>';
+                    $btnClass = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'btn-warning text-white' : 'btn-success';
+                    $titleLabel = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'Lihat Foto Verified SPT/Perjadin' : 'Unduh Verified SPT (PDF)';
+                    $dokumenHtml .= '<a href="' . $verifiedUrl . '" class="btn ' . $btnClass . '" title="' . $titleLabel . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
                 }
 
                 $docs = json_decode((string) ($row['dokumen_pendukung_json'] ?? '[]'), true);
@@ -427,17 +429,24 @@ class Laporan extends BaseController
                         if ($filePath !== '') {
                             $docUrl = media_url($filePath);
                             $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+                            
                             $icon = 'fa-paperclip';
+                            $btnClass = 'btn-info';
                             if ($ext === 'pdf') {
                                 $icon = 'fa-file-pdf';
+                                $btnClass = 'btn-danger';
                             } elseif (in_array($ext, ['doc', 'docx'], true)) {
                                 $icon = 'fa-file-word';
+                                $btnClass = 'btn-primary';
                             } elseif (in_array($ext, ['xls', 'xlsx'], true)) {
                                 $icon = 'fa-file-excel';
+                                $btnClass = 'btn-success';
+                            } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'], true)) {
+                                $icon = 'fa-file-image';
+                                $btnClass = 'btn-warning text-white';
                             }
                             
-                            $shortName = strlen($fileName) > 15 ? substr($fileName, 0, 12) . '...' : $fileName;
-                            $dokumenHtml .= '<a href="' . $docUrl . '" class="btn btn-xs btn-outline-info" title="Unduh File Pendukung: ' . esc($fileName, 'attr') . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i> ' . esc($shortName) . '</a>';
+                            $dokumenHtml .= '<a href="' . $docUrl . '" class="btn ' . $btnClass . '" title="File Pendukung: ' . esc($fileName, 'attr') . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
                         }
                     }
                 }
@@ -450,9 +459,9 @@ class Laporan extends BaseController
                     $existingFile = ! empty($row['verified_spt_path']) ? esc((string) $row['verified_spt_path'], 'attr') : '';
                     $nomorSurat = esc((string) ($row['nomor_surat_tugas'] ?? '-'), 'attr');
                     if ($existingFile !== '') {
-                        $row['upload_verified_html'] = '<button type="button" class="btn btn-xs btn-success btn-upload-verified" data-id="' . (int) ($row['id'] ?? 0) . '" data-nomor="' . $nomorSurat . '" data-existing="' . $existingFile . '" title="Re-upload Verified Perjadin & SPT"><i class="fas fa-sync-alt"></i> Re-upload</button>';
+                        $row['upload_verified_html'] = '<button type="button" class="btn btn-sm btn-success btn-upload-verified" data-id="' . (int) ($row['id'] ?? 0) . '" data-nomor="' . $nomorSurat . '" data-existing="' . $existingFile . '" title="Re-upload Verified Perjadin & SPT"><i class="fas fa-sync-alt"></i> Re-upload</button>';
                     } else {
-                        $row['upload_verified_html'] = '<button type="button" class="btn btn-xs btn-primary btn-upload-verified" data-id="' . (int) ($row['id'] ?? 0) . '" data-nomor="' . $nomorSurat . '" data-existing="" title="Upload Verified Perjadin & SPT"><i class="fas fa-upload"></i> Upload</button>';
+                        $row['upload_verified_html'] = '<button type="button" class="btn btn-sm btn-primary btn-upload-verified" data-id="' . (int) ($row['id'] ?? 0) . '" data-nomor="' . $nomorSurat . '" data-existing="" title="Upload Verified Perjadin & SPT"><i class="fas fa-upload"></i> Upload</button>';
                     }
                 } else {
                     $row['upload_verified_html'] = '';
