@@ -43,6 +43,7 @@ $RECYCLE.BIN/
 # as it poses a security risk.
 .env
 client_secret_*.json
+google-service-account.json
 .vagrant
 Vagrantfile
 
@@ -142,3 +143,4 @@ simak_smoke_test_report_2026-05-27.html
 # Foto perjalanan dinas: abaikan semua file kecuali index.html
 /public/uploads/laporan/perjalanan_dinas/*
 !/public/uploads/laporan/perjalanan_dinas/index.html
+google-service-account.json

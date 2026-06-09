@@ -3909,6 +3909,35 @@ class Kontrak extends BaseController
             $relativePath = $subDir . '/' . $storedName;
             $originalName = (string) $file->getClientName();
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
+
+            $serviceAccountPath = getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH');
+            $driveFolderId = getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
+
+            if (! empty($serviceAccountPath) && ! empty($driveFolderId)) {
+                $gdrive = new \App\Libraries\GoogleDriveService();
+                if ($gdrive->isReady()) {
+                    $webViewLink = $gdrive->uploadFile($storedPath, $originalName, $mimeType, (string) $driveFolderId);
+                    if ($webViewLink !== null) {
+                        $relativePath = $webViewLink;
+                        $storedName = '';
+                        if (is_file($storedPath)) {
+                            @unlink($storedPath);
+                        }
+                    } else {
+                        log_message('error', 'sharedUploadSimakDokumen - Google Drive upload failed for: ' . $originalName);
+                        if (is_file($storedPath)) {
+                            @unlink($storedPath);
+                        }
+                        return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
+                    }
+                } else {
+                    log_message('error', 'sharedUploadSimakDokumen - GoogleDriveService is not ready.');
+                    if (is_file($storedPath)) {
+                        @unlink($storedPath);
+                    }
+                    return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
+                }
+            }
         }
 
         $kelengkapanDokumen = $uploadMethod === 'none' ? 'tidak' : 'ada';
