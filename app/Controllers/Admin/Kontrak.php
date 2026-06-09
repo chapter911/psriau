@@ -7868,10 +7868,11 @@ class Kontrak extends BaseController
 
             $reason = $gdrive->getLastError() ?: 'Unknown error';
             log_message('error', 'uploadFileToGoogleDriveIfConfigured - Google Drive upload failed for: ' . $originalName . '. Reason: ' . $reason);
-            if (is_file($storedPath)) {
-                @unlink($storedPath);
-            }
-            return 'FAILED_UPLOAD';
+            // When Drive upload fails, keep the local copy and fall back to using
+            // the local stored path so the upload persists in the DB. Do NOT
+            // unlink the local file here. Returning null allows caller to use
+            // the local path as a fallback storage location.
+            return null;
         }
 
         return null;
