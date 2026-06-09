@@ -4127,6 +4127,11 @@ class Kontrak extends BaseController
 
     private function isSharedSimakOtpGranted(string $token, bool $touchActivity = true): bool
     {
+        // Bypass OTP untuk admin/editor yang sudah login
+        if ($this->canViewKontrak()) {
+            return true;
+        }
+
         // Bypass OTP untuk testing
         if (self::SHARED_SIMAK_OTP_BYPASS) {
             return true;
