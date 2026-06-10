@@ -1651,6 +1651,15 @@ class Kontrak extends BaseController
         if (! is_array($simak)) {
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Data SIMAK konstruksi tidak ditemukan.');
         }
+        
+        $confirm = trim((string) $this->request->getPost('confirm_nomor_kontrak'));
+        if ($confirm === '') {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Konfirmasi nomor kontrak wajib diisi. Ketik nomor kontrak untuk melanjutkan.');
+        }
+
+        if ($confirm !== (string) ($simak['nomor_kontrak'] ?? '')) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Nomor kontrak yang diketik tidak cocok. Penghapusan dibatalkan.');
+        }
 
         $db->transStart();
         try {
@@ -1680,6 +1689,15 @@ class Kontrak extends BaseController
         $simak = $db->table('trn_kontrak_simak_konsultasi')->where('id', $id)->get()->getRowArray();
         if (! is_array($simak)) {
             return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Data SIMAK konsultasi tidak ditemukan.');
+        }
+        
+        $confirm = trim((string) $this->request->getPost('confirm_nomor_kontrak'));
+        if ($confirm === '') {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Konfirmasi nomor kontrak wajib diisi. Ketik nomor kontrak untuk melanjutkan.');
+        }
+
+        if ($confirm !== (string) ($simak['nomor_kontrak'] ?? '')) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Nomor kontrak yang diketik tidak cocok. Penghapusan dibatalkan.');
         }
 
         $db->transStart();
