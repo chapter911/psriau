@@ -87,8 +87,11 @@
                     title: title,
                     html: '<div style="text-align: left; margin: 1rem 0;">' +
                           '<p style="margin-bottom: 0.5rem;"><strong>Nomor Kontrak:</strong></p>' +
-                          '<div style="background: #f5f5f5; padding: 0.75rem; border-radius: 4px; border: 1px solid #ddd; word-break: break-all; user-select: all; cursor: copy;" title="Klik untuk salin">' +
+                          '<div style="display: flex; gap: 0.5rem; align-items: center;">' +
+                          '<div style="flex: 1; background: #f5f5f5; padding: 0.75rem; border-radius: 4px; border: 1px solid #ddd; word-break: break-all; font-family: monospace;">' +
                           nomor +
+                          '</div>' +
+                          '<button type="button" id="simak-copy-nomor-btn" style="padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; font-size: 0.9rem;">Salin</button>' +
                           '</div>' +
                           '<p style="margin-top: 1rem; margin-bottom: 0.5rem;"><strong>Ketik nomor kontrak di bawah untuk konfirmasi penghapusan:</strong></p>' +
                           '</div>',
@@ -99,12 +102,16 @@
                     cancelButtonText: 'Batal',
                     reverseButtons: true,
                     didOpen: () => {
-                        const copyBox = document.querySelector('.swal2-popup [style*="background: #f5f5f5"]');
-                        if (copyBox) {
-                            copyBox.addEventListener('click', () => {
-                                const text = copyBox.textContent || '';
-                                navigator.clipboard.writeText(text).then(() => {
-                                    Swal.showValidationMessage('Nomor kontrak disalin!');
+                        const copyBtn = document.getElementById('simak-copy-nomor-btn');
+                        if (copyBtn) {
+                            copyBtn.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                navigator.clipboard.writeText(nomor).then(() => {
+                                    const originalText = copyBtn.textContent;
+                                    copyBtn.textContent = 'Disalin!';
+                                    setTimeout(() => {
+                                        copyBtn.textContent = originalText;
+                                    }, 2000);
                                 });
                             });
                         }
@@ -301,6 +308,11 @@
         document.querySelectorAll('form').forEach((form) => {
             form.addEventListener('submit', (event) => {
                 if (form.dataset.confirmed === '1' || form.dataset.skipConfirm === '1') {
+                    return;
+                }
+
+                // Skip SIMAK delete forms (handled separately)
+                if (form.classList.contains('simak-delete-form')) {
                     return;
                 }
 
