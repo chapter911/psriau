@@ -3162,8 +3162,11 @@ class Kontrak extends BaseController
 
             $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
             if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
-                // Google Drive not available — keep local file as fallback
-                log_message('warning', 'uploadSimakVerifikasiDokumen - Google Drive unavailable (' . $gdriveLink . '), falling back to local storage for: ' . $originalName);
+                if (is_file($storedPath)) {
+                    @unlink($storedPath);
+                }
+                log_message('error', 'uploadSimakVerifikasiDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
             } elseif ($gdriveLink !== null) {
                 $relativePath = $gdriveLink;
                 $storedName = '';
@@ -3439,8 +3442,11 @@ class Kontrak extends BaseController
 
         $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
         if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
-            // Google Drive not available — keep local file as fallback
-            log_message('warning', 'adminUploadSimakDokumen - Google Drive unavailable (' . $gdriveLink . '), falling back to local storage for: ' . $originalName);
+            if (is_file($storedPath)) {
+                @unlink($storedPath);
+            }
+            log_message('error', 'adminUploadSimakDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
         } elseif ($gdriveLink !== null) {
             $relativePath = $gdriveLink;
             $storedName = '';
@@ -4024,8 +4030,11 @@ class Kontrak extends BaseController
 
             $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
             if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
-                // Google Drive not available — keep local file as fallback
-                log_message('warning', 'sharedUploadSimakDokumen - Google Drive unavailable (' . $gdriveLink . '), falling back to local storage for: ' . $originalName);
+                if (is_file($storedPath)) {
+                    @unlink($storedPath);
+                }
+                log_message('error', 'sharedUploadSimakDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
             } elseif ($gdriveLink !== null) {
                 $relativePath = $gdriveLink;
                 $storedName = '';
@@ -7526,8 +7535,11 @@ class Kontrak extends BaseController
 
             $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
             if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
-                // Google Drive not available — keep local file as fallback
-                log_message('warning', 'uploadSimakKonsultasiVerifikasiDokumen - Google Drive unavailable (' . $gdriveLink . '), falling back to local storage for: ' . $originalName);
+                if (is_file($storedPath)) {
+                    @unlink($storedPath);
+                }
+                log_message('error', 'uploadSimakKonsultasiVerifikasiDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
             } elseif ($gdriveLink !== null) {
                 $relativePath = $gdriveLink;
                 $storedName = '';
@@ -7773,8 +7785,11 @@ class Kontrak extends BaseController
 
         $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
         if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
-            // Google Drive not available — keep local file as fallback
-            log_message('warning', 'adminUploadSimakKonsultasiDokumen - Google Drive unavailable (' . $gdriveLink . '), falling back to local storage for: ' . $originalName);
+            if (is_file($storedPath)) {
+                @unlink($storedPath);
+            }
+            log_message('error', 'adminUploadSimakKonsultasiDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
         } elseif ($gdriveLink !== null) {
             $relativePath = $gdriveLink;
             $storedName = '';
@@ -7918,36 +7933,41 @@ class Kontrak extends BaseController
             ->setBody($content === false ? '' : $content);
     }
 
+    private function isGoogleDriveUploadConfigured(): bool
+    {
+        $serviceAccountPath = trim((string) getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH'));
+        $driveFolderId = trim((string) getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID'));
+
+        return $serviceAccountPath !== '' && $driveFolderId !== '';
+    }
+
     private function uploadFileToGoogleDriveIfConfigured(string $storedPath, string $originalName, string $mimeType): ?string
     {
-        $serviceAccountPath = getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH');
-        $driveFolderId = getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
+        $serviceAccountPath = trim((string) getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH'));
+        $driveFolderId = trim((string) getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID'));
 
-        if (! empty($serviceAccountPath) && ! empty($driveFolderId)) {
-            $gdrive = new \App\Libraries\GoogleDriveService();
-            if (! $gdrive->isReady()) {
-                $reason = $gdrive->getLastError() ?: 'Service not ready.';
-                log_message('error', 'uploadFileToGoogleDriveIfConfigured - GoogleDriveService is not ready. Reason: ' . $reason);
-                return 'NOT_READY';
-            }
-
-            $webViewLink = $gdrive->uploadFile($storedPath, $originalName, $mimeType, (string) $driveFolderId);
-            if ($webViewLink !== null) {
-                if (is_file($storedPath)) {
-                    @unlink($storedPath);
-                }
-                return $webViewLink;
-            }
-
-            $reason = $gdrive->getLastError() ?: 'Unknown error';
-            log_message('error', 'uploadFileToGoogleDriveIfConfigured - Google Drive upload failed for: ' . $originalName . '. Reason: ' . $reason);
-            // When Drive upload fails, keep the local copy and fall back to using
-            // the local stored path so the upload persists in the DB. Do NOT
-            // unlink the local file here. Returning null allows caller to use
-            // the local path as a fallback storage location.
-            return null;
+        if ($serviceAccountPath === '' || $driveFolderId === '') {
+            log_message('error', 'uploadFileToGoogleDriveIfConfigured - Google Drive config missing.');
+            return 'NOT_READY';
         }
 
-        return null;
+        $gdrive = new \App\Libraries\GoogleDriveService();
+        if (! $gdrive->isReady()) {
+            $reason = $gdrive->getLastError() ?: 'Service not ready.';
+            log_message('error', 'uploadFileToGoogleDriveIfConfigured - GoogleDriveService is not ready. Reason: ' . $reason);
+            return 'NOT_READY';
+        }
+
+        $webViewLink = $gdrive->uploadFile($storedPath, $originalName, $mimeType, $driveFolderId);
+        if ($webViewLink !== null) {
+            if (is_file($storedPath)) {
+                @unlink($storedPath);
+            }
+            return $webViewLink;
+        }
+
+        $reason = $gdrive->getLastError() ?: 'Unknown error';
+        log_message('error', 'uploadFileToGoogleDriveIfConfigured - Google Drive upload failed for: ' . $originalName . '. Reason: ' . $reason);
+        return 'FAILED_UPLOAD';
     }
 }
