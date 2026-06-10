@@ -28,6 +28,13 @@ $routes->get('simak/share/(:segment)/download-dokumen/(:num)', 'Admin\\Kontrak::
 
 $routes->get('privacy-policy', 'Legal::privacy');
 $routes->get('terms-of-service', 'Legal::terms');
+
+// OAuth routes for Google Drive
+$routes->get('oauth/connect', 'Oauth::connect');
+$routes->get('oauth/callback', 'Oauth::callback');
+$routes->get('oauth/status', 'Oauth::status');
+$routes->get('oauth/disconnect', 'Oauth::disconnect');
+$routes->get('oauth/test', 'Oauth::test');
 // Media streaming fallback removed — serve assets directly from /public
 
 $routes->get('masuk', 'Auth::loginForm');
