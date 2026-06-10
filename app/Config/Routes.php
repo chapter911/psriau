@@ -32,6 +32,7 @@ $routes->get('terms-of-service', 'Legal::terms');
 // OAuth routes for Google Drive
 $routes->get('oauth/connect', 'Oauth::connect');
 $routes->get('oauth/callback', 'Oauth::callback');
+$routes->get('oauth/success', 'Oauth::success');
 $routes->get('oauth/status', 'Oauth::status');
 $routes->get('oauth/disconnect', 'Oauth::disconnect');
 $routes->get('oauth/test', 'Oauth::test');

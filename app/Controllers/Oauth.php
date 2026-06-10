@@ -21,7 +21,7 @@ class Oauth extends BaseController
     /**
      * Redirect user to Google OAuth consent page
      */
-    public function connect(): string
+    public function connect(): \CodeIgniter\HTTP\RedirectResponse|string
     {
         $authUrl = $this->oauthService->getAuthUrl();
 
@@ -54,14 +54,23 @@ class Oauth extends BaseController
         if ($this->oauthService->handleCallback($code)) {
             log_message('info', 'OAuth Controller - Authentication successful');
 
-            // Return success response
-            return view('oauth/success', [
-                'message' => 'Google Drive authentication successful! You can now upload files.'
-            ]);
+            // Return success response - redirect to success page
+            header('Location: ' . base_url('oauth/success'));
+            exit;
         } else {
             log_message('error', 'OAuth Controller - Authentication failed: ' . $this->oauthService->getLastError());
             return $this->fail('Authentication failed: ' . $this->oauthService->getLastError());
         }
+    }
+
+    /**
+     * OAuth success page
+     */
+    public function success(): string
+    {
+        return view('oauth/success', [
+            'message' => 'Google Drive authentication successful! You can now upload files.'
+        ]);
     }
 
     /**
