@@ -3161,7 +3161,7 @@ class Kontrak extends BaseController
                 'kode' => (string) ($targetTemplate['display_no'] ?? ''),
                 'uraian' => (string) ($targetTemplate['uraian'] ?? ''),
                 'kelengkapan_dokumen' => $kel,
-                'verifikasi_ki' => $isDocumentComplete ? $ver : 'belum_verifikasi',
+                'verifikasi_ki' => in_array($ver, ['sesuai', 'tidak_sesuai'], true) ? $ver : 'belum_verifikasi',
                 'keterangan' => $ket,
                 'pic' => $pic,
                 'file_original_name' => $originalName,
