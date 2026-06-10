@@ -1640,6 +1640,66 @@ class Kontrak extends BaseController
             ->setBody($binary === false ? '' : $binary);
     }
 
+    public function deleteSimak(int $id)
+    {
+        if (! $this->canManageKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Anda tidak memiliki akses untuk menghapus data.');
+        }
+
+        $db = db_connect();
+        $simak = $db->table('trn_kontrak_simak')->where('id', $id)->get()->getRowArray();
+        if (! is_array($simak)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Data SIMAK konstruksi tidak ditemukan.');
+        }
+
+        $db->transStart();
+        try {
+            $db->table('trn_kontrak_simak_verifikasi_dokumen')->where('simak_id', $id)->delete();
+            $db->table('trn_kontrak_simak_verifikasi')->where('simak_id', $id)->delete();
+            $db->table('trn_kontrak_simak_share')->where('simak_id', $id)->delete();
+            if ($db->tableExists('trn_kontrak_simak_add_on')) {
+                $db->table('trn_kontrak_simak_add_on')->where('simak_id', $id)->delete();
+            }
+            $db->table('trn_kontrak_simak')->where('id', $id)->delete();
+            $db->transComplete();
+        } catch (\Exception $e) {
+            $db->transRollback();
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Gagal menghapus data: ' . $e->getMessage());
+        }
+
+        return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('success', 'Data SIMAK konstruksi berhasil dihapus.');
+    }
+
+    public function deleteSimakKonsultasi(int $id)
+    {
+        if (! $this->canManageKontrak()) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Anda tidak memiliki akses untuk menghapus data.');
+        }
+
+        $db = db_connect();
+        $simak = $db->table('trn_kontrak_simak_konsultasi')->where('id', $id)->get()->getRowArray();
+        if (! is_array($simak)) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Data SIMAK konsultasi tidak ditemukan.');
+        }
+
+        $db->transStart();
+        try {
+            $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')->where('simak_id', $id)->delete();
+            $db->table('trn_kontrak_simak_konsultasi_verifikasi')->where('simak_id', $id)->delete();
+            $db->table('trn_kontrak_simak_konsultasi_share')->where('simak_id', $id)->delete();
+            if ($db->tableExists('trn_kontrak_simak_konsultasi_add_on')) {
+                $db->table('trn_kontrak_simak_konsultasi_add_on')->where('simak_id', $id)->delete();
+            }
+            $db->table('trn_kontrak_simak_konsultasi')->where('id', $id)->delete();
+            $db->transComplete();
+        } catch (\Exception $e) {
+            $db->transRollback();
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Gagal menghapus data: ' . $e->getMessage());
+        }
+
+        return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('success', 'Data SIMAK konsultasi berhasil dihapus.');
+    }
+
     private function exportSimakDetailHtml(int $id, string $type)
     {
         if (! $this->canViewKontrak()) {

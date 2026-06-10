@@ -194,6 +194,12 @@
                                         data-email-responden_2="<?= esc((string) ($item['email_responden_2'] ?? '')); ?>"
                                     >EDIT</button>
                                 <?php endif; ?>
+                                <?php if (($can_import ?? false) === true): ?>
+                                    <form action="<?= site_url('/admin/kontrak/simak/konstruksi/' . (int) ($item['id'] ?? 0) . '/hapus'); ?>" method="post" class="d-inline" data-confirm-title="Hapus Data SIMAK" data-confirm-text="Hapus kontrak <?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?> dan semua data terkait?" data-confirm-button="Ya, hapus">
+                                        <?= csrf_field(); ?>
+                                        <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
+                                    </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
