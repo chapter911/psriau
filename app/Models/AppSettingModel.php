@@ -22,6 +22,7 @@ class AppSettingModel extends Model
         'simak_max_upload_mb',
         'auto_logout_minutes',
         'preloader_duration_ms',
+        'maintenance_mode',
         'updated_at',
         'updated_by',
     ];

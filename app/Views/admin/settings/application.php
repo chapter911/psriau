@@ -23,6 +23,29 @@
             </div>
 
             <div class="form-group mb-4">
+                <label>Mode Maintenance</label>
+                <div class="form-check">
+                    <input
+                        type="hidden"
+                        name="maintenance_mode"
+                        value="0"
+                    >
+                    <input
+                        type="checkbox"
+                        id="maintenance_mode"
+                        name="maintenance_mode"
+                        class="form-check-input"
+                        value="1"
+                        <?= (int) old('maintenance_mode', $setting['maintenance_mode'] ?? 0) === 1 ? 'checked' : ''; ?>
+                    >
+                    <label class="form-check-label" for="maintenance_mode">
+                        Aktifkan mode maintenance
+                    </label>
+                </div>
+                <small class="text-muted">Saat diaktifkan, semua halaman publik akan menampilkan halaman maintenance sementara Anda masih dapat masuk ke area admin.</small>
+            </div>
+
+            <div class="form-group mb-4">
                 <label for="primary_color">Warna Primary Aplikasi</label>
                 <input
                     type="color"

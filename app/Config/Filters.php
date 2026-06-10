@@ -36,6 +36,7 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
         'auth'          => AuthFilter::class,
+        'maintenance'   => \App\Filters\MaintenanceFilter::class,
     ];
 
     /**
@@ -74,6 +75,13 @@ class Filters extends BaseFilters
      */
     public array $globals = [
         'before' => [
+            'maintenance' => [
+                'except' => [
+                    'admin/*',
+                    'masuk',
+                    'keluar',
+                ],
+            ],
             // 'honeypot',
             // 'csrf',
             // 'invalidchars',

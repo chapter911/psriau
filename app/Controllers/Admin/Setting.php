@@ -37,6 +37,7 @@ class Setting extends BaseController
                 'simak_max_upload_mb' => 'required|integer|greater_than_equal_to[1]|less_than_equal_to[1000]',
                 'auto_logout_minutes' => 'required|integer|greater_than_equal_to[1]|less_than_equal_to[1440]',
                 'preloader_duration_ms' => 'required|integer|greater_than_equal_to[0]|less_than_equal_to[10000]',
+                'maintenance_mode' => 'permit_empty|in_list[0,1]',
             ];
 
             if (! $this->validate($rules)) {
@@ -54,7 +55,8 @@ class Setting extends BaseController
                 $this->deleteLocalImage($setting['login_background_url'] ?? null);
             }
 
-            $settingModel->update((int) $setting['id'], [
+            $maintenanceMode = (string) $this->request->getPost('maintenance_mode');
+            $data = [
                 'app_name'             => trim((string) $this->request->getPost('app_name')),
                 'primary_color'        => strtoupper((string) $this->request->getPost('primary_color')),
                 'sidebar_bg_color'     => strtoupper((string) $this->request->getPost('sidebar_bg_color')),
@@ -69,7 +71,13 @@ class Setting extends BaseController
                 'preloader_duration_ms' => (int) $this->request->getPost('preloader_duration_ms'),
                 'updated_at'           => date('Y-m-d H:i:s'),
                 'updated_by'           => (int) session()->get('userId'),
-            ]);
+            ];
+
+            if ($this->hasAppSettingsColumn('maintenance_mode')) {
+                $data['maintenance_mode'] = $maintenanceMode === '1' ? 1 : 0;
+            }
+
+            $settingModel->update((int) $setting['id'], $data);
 
             return redirect()->to('/admin/pengaturan/application')->with('message', 'Pengaturan aplikasi berhasil diperbarui.');
         }
@@ -942,7 +950,7 @@ class Setting extends BaseController
             return $setting;
         }
 
-        $id = $model->insert([
+        $insertData = [
             'app_name'             => 'PLN EPM-Digi',
             'primary_color'        => '#0A66C2',
             'sidebar_bg_color'     => '#2F3A45',
@@ -956,7 +964,13 @@ class Setting extends BaseController
             'preloader_duration_ms' => 500,
             'updated_at'           => date('Y-m-d H:i:s'),
             'updated_by'           => (int) session()->get('userId'),
-        ], true);
+        ];
+
+        if ($this->hasAppSettingsColumn('maintenance_mode')) {
+            $insertData['maintenance_mode'] = 0;
+        }
+
+        $id = $model->insert($insertData, true);
 
         return (array) $model->find((int) $id);
     }
@@ -966,6 +980,16 @@ class Setting extends BaseController
         $value = trim((string) $value);
 
         return $value !== '' ? $value : null;
+    }
+
+    private function hasAppSettingsColumn(string $columnName): bool
+    {
+        try {
+            $db = db_connect();
+            return $db->tableExists('app_settings') && $db->fieldExists($columnName, 'app_settings');
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     private function uploadImage(string $fieldName, string $directory): ?string

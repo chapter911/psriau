@@ -73,6 +73,7 @@ abstract class BaseController extends Controller
             'simak_max_upload_mb'  => 20,
             'auto_logout_minutes'  => 60,
             'preloader_duration_ms' => 500,
+            'maintenance_mode'     => false,
         ];
 
         try {
