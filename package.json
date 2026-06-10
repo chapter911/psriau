@@ -1,0 +1,29 @@
+{
+  "name": "psriau",
+  "version": "1.0.0",
+  "description": "Proyek ini adalah aplikasi web berbasis CodeIgniter 4 untuk mengelola konten profil instansi, informasi acara, berita/artikel, serta panel admin untuk manajemen data.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "example": "example",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chapter911/psriau.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/chapter911/psriau/issues"
+  },
+  "homepage": "https://github.com/chapter911/psriau#readme",
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}

@@ -138,6 +138,15 @@ simak_smoke_test_guide.html
 simak_smoke_test_report_2026-05-27.html
 
 #-------------------------
+# Smoke Test Files
+#-------------------------
+/.smoke_tests/
+smoke_test*.js
+step*.png
+gdrive_*.png
+error_state.png
+
+#-------------------------
 # Upload Files (bukan kode, jangan dimasukkan ke git)
 #-------------------------
 # Foto perjalanan dinas: abaikan semua file kecuali index.html

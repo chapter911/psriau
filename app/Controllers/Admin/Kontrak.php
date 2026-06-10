@@ -3138,38 +3138,22 @@ class Kontrak extends BaseController
                 return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
             }
 
-            $subDir = 'uploads/simak_verifikasi/' . $id . '/' . $rowNo;
-            $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
-            if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
-                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal membuat direktori upload dokumen.');
-            }
-
-            $storedName = $file->getRandomName();
-            $file->move($absDir, $storedName, true);
-            $storedPath = $absDir . DIRECTORY_SEPARATOR . $storedName;
-            if ($ext === 'pdf' && ((int) ($file->getSizeByUnit('b') ?? 0)) > (1024 * 1024)) {
-                $this->tryCompressPdfWithGhostscript($storedPath);
-            }
-            $relativePath = $subDir . '/' . $storedName;
-
             $originalName = (string) $file->getClientName();
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
-            if (is_file($storedPath)) {
-                $fileSize = (int) (@filesize($storedPath) ?: $file->getSizeByUnit('b'));
-            } else {
-                $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
-            }
+            $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
 
-            $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
+            // Upload langsung ke Google Drive tanpa simpan di server lokal
+            $gdriveLink = $this->uploadFileToGoogleDriveDirect($file->getStream()->getContents(), $originalName, $mimeType);
             if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
-                if (is_file($storedPath)) {
-                    @unlink($storedPath);
-                }
                 log_message('error', 'uploadSimakVerifikasiDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
                 return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
             } elseif ($gdriveLink !== null) {
                 $relativePath = $gdriveLink;
                 $storedName = '';
+            } else {
+                // Fallback: tidak ada penyimpanan lokal, upload gagal
+                log_message('error', 'uploadSimakVerifikasiDokumen - No storage configured and Google Drive failed for: ' . $originalName);
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload dokumen gagal: Tidak ada penyimpanan yang dikonfigurasi.');
             }
         }
 
@@ -3418,38 +3402,22 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
         }
 
-        $subDir = 'uploads/simak_admin/' . $id . '/' . $rowNo;
-        $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
-        if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
-            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal membuat direktori upload dokumen.');
-        }
-
-        $storedName = $file->getRandomName();
-        $file->move($absDir, $storedName, true);
-        $storedPath = $absDir . DIRECTORY_SEPARATOR . $storedName;
-        if ($ext === 'pdf' && ((int) ($file->getSizeByUnit('b') ?? 0)) > (1024 * 1024)) {
-            $this->tryCompressPdfWithGhostscript($storedPath);
-        }
-        $relativePath = $subDir . '/' . $storedName;
-
         $originalName = (string) $file->getClientName();
         $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
-        if (is_file($storedPath)) {
-            $fileSize = (int) (@filesize($storedPath) ?: $file->getSizeByUnit('b'));
-        } else {
-            $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
-        }
+        $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
 
-        $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
+        // Upload langsung ke Google Drive tanpa simpan di server lokal
+        $gdriveLink = $this->uploadFileToGoogleDriveDirect($file->getStream()->getContents(), $originalName, $mimeType);
         if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
-            if (is_file($storedPath)) {
-                @unlink($storedPath);
-            }
             log_message('error', 'adminUploadSimakDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
         } elseif ($gdriveLink !== null) {
             $relativePath = $gdriveLink;
             $storedName = '';
+        } else {
+            // Fallback: tidak ada penyimpanan lokal, upload gagal
+            log_message('error', 'adminUploadSimakDokumen - No storage configured and Google Drive failed for: ' . $originalName);
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload dokumen gagal: Tidak ada penyimpanan yang dikonfigurasi.');
         }
         $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
         if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
@@ -4000,44 +3968,22 @@ class Kontrak extends BaseController
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP.');
             }
 
-            $subDir = 'uploads/simak_verifikasi/' . $simakId . '/' . $rowNo;
             $originalName = (string) $file->getClientName();
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
+            $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
 
-            $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
-            if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
-                log_message('error', 'sharedUploadSimakDokumen - failed to create upload dir: ' . json_encode($debugInfo));
-                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal membuat direktori upload dokumen.');
-            }
-
-            $storedName = $file->getRandomName();
-            $file->move($absDir, $storedName, true);
-
-            $storedPath = $absDir . DIRECTORY_SEPARATOR . $storedName;
-            if ($ext === 'pdf' && $uploadedSize > (1024 * 1024)) {
-                $this->tryCompressPdfWithGhostscript($storedPath);
-            }
-
-            if (is_file($storedPath)) {
-                $fileSize = (int) (@filesize($storedPath) ?: $uploadedSize);
-            } else {
-                $fileSize = $uploadedSize;
-            }
-
-            $relativePath = $subDir . '/' . $storedName;
-            $originalName = (string) $file->getClientName();
-            $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
-
-            $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
+            // Upload langsung ke Google Drive tanpa simpan di server lokal
+            $gdriveLink = $this->uploadFileToGoogleDriveDirect($file->getStream()->getContents(), $originalName, $mimeType);
             if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
-                if (is_file($storedPath)) {
-                    @unlink($storedPath);
-                }
                 log_message('error', 'sharedUploadSimakDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
             } elseif ($gdriveLink !== null) {
                 $relativePath = $gdriveLink;
                 $storedName = '';
+            } else {
+                // Fallback: tidak ada penyimpanan lokal, upload gagal
+                log_message('error', 'sharedUploadSimakDokumen - No storage configured and Google Drive failed for: ' . $originalName);
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload dokumen gagal: Tidak ada penyimpanan yang dikonfigurasi.');
             }
         }
 
@@ -7511,38 +7457,22 @@ class Kontrak extends BaseController
                 return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
             }
 
-            $subDir = 'uploads/simak_konsultasi_verifikasi/' . $id . '/' . $rowNo;
-            $absDir = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
-            if (! is_dir($absDir) && ! @mkdir($absDir, 0775, true) && ! is_dir($absDir)) {
-                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Gagal membuat direktori upload dokumen.');
-            }
-
-            $storedName = $file->getRandomName();
-            $file->move($absDir, $storedName, true);
-            $storedPath = $absDir . DIRECTORY_SEPARATOR . $storedName;
-            $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
-            if ($ext === 'pdf' && $fileSize > (1024 * 1024)) {
-                $this->tryCompressPdfWithGhostscript($storedPath);
-                $fileSize = (int) (@filesize($storedPath) ?: $fileSize);
-            }
-            $relativePath = $subDir . '/' . $storedName;
-
             $originalName = (string) $file->getClientName();
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
-            if (is_file($storedPath)) {
-                $fileSize = (int) (@filesize($storedPath) ?: $fileSize);
-            }
+            $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
 
-            $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
+            // Upload langsung ke Google Drive tanpa simpan di server lokal
+            $gdriveLink = $this->uploadFileToGoogleDriveDirect($file->getStream()->getContents(), $originalName, $mimeType);
             if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
-                if (is_file($storedPath)) {
-                    @unlink($storedPath);
-                }
                 log_message('error', 'uploadSimakKonsultasiVerifikasiDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
                 return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
             } elseif ($gdriveLink !== null) {
                 $relativePath = $gdriveLink;
                 $storedName = '';
+            } else {
+                // Fallback: tidak ada penyimpanan lokal, upload gagal
+                log_message('error', 'uploadSimakKonsultasiVerifikasiDokumen - No storage configured and Google Drive failed for: ' . $originalName);
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Upload dokumen gagal: Tidak ada penyimpanan yang dikonfigurasi.');
             }
         }
 
@@ -7968,6 +7898,43 @@ class Kontrak extends BaseController
 
         $reason = $gdrive->getLastError() ?: 'Unknown error';
         log_message('error', 'uploadFileToGoogleDriveIfConfigured - Google Drive upload failed for: ' . $originalName . '. Reason: ' . $reason);
+        return 'FAILED_UPLOAD';
+    }
+
+    /**
+     * Upload file content directly to Google Drive without local storage.
+     * File is uploaded from memory to Google Drive only.
+     *
+     * @param string $fileContent Binary content of the file
+     * @param string $originalName Original client file name
+     * @param string $mimeType Mime type of the file
+     * @return string|null Web view link of the uploaded file, or 'NOT_READY' if config missing, 'FAILED_UPLOAD' if failed
+     */
+    private function uploadFileToGoogleDriveDirect(string $fileContent, string $originalName, string $mimeType): ?string
+    {
+        $serviceAccountPath = trim((string) getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH'));
+        $driveFolderId = trim((string) getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID'));
+
+        if ($serviceAccountPath === '' || $driveFolderId === '') {
+            log_message('error', 'uploadFileToGoogleDriveDirect - Google Drive config missing.');
+            return 'NOT_READY';
+        }
+
+        $gdrive = new \App\Libraries\GoogleDriveService();
+        if (! $gdrive->isReady()) {
+            $reason = $gdrive->getLastError() ?: 'Service not ready.';
+            log_message('error', 'uploadFileToGoogleDriveDirect - GoogleDriveService is not ready. Reason: ' . $reason);
+            return 'NOT_READY';
+        }
+
+        $webViewLink = $gdrive->uploadFileContent($fileContent, $originalName, $mimeType, $driveFolderId);
+        if ($webViewLink !== null) {
+            log_message('info', 'uploadFileToGoogleDriveDirect - Uploaded directly to Google Drive: ' . $originalName . ' -> ' . $webViewLink);
+            return $webViewLink;
+        }
+
+        $reason = $gdrive->getLastError() ?: 'Unknown error';
+        log_message('error', 'uploadFileToGoogleDriveDirect - Google Drive upload failed for: ' . $originalName . '. Reason: ' . $reason);
         return 'FAILED_UPLOAD';
     }
 }

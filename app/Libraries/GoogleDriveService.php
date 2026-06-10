@@ -84,18 +84,40 @@ class GoogleDriveService
             return null;
         }
 
+        $content = file_get_contents($localFilePath);
+        if ($content === false) {
+            $this->lastError = 'Failed to read local file: ' . $localFilePath;
+            log_message('error', 'GoogleDriveService - ' . $this->lastError);
+            return null;
+        }
+
+        return $this->uploadFileContent($content, $fileName, $mimeType, $folderId);
+    }
+
+    /**
+     * Upload file content directly to Google Drive without local storage.
+     *
+     * Supports both regular shared folders (My Drive) and Shared Drives (Team Drive).
+     *
+     * @param string $content Binary content of the file
+     * @param string $fileName Original client file name
+     * @param string $mimeType Mime type of the file
+     * @param string $folderId Google Drive Parent Folder ID
+     * @return string|null Web view link of the uploaded file, or null on failure
+     */
+    public function uploadFileContent(string $content, string $fileName, string $mimeType, string $folderId): ?string
+    {
+        if (!$this->isReady()) {
+            $this->lastError = 'Service not ready.';
+            log_message('error', 'GoogleDriveService - uploadFileContent aborted: ' . $this->lastError);
+            return null;
+        }
+
         try {
             $fileMetadata = new DriveFile([
                 'name'    => $fileName,
                 'parents' => [$folderId],
             ]);
-
-            $content = file_get_contents($localFilePath);
-            if ($content === false) {
-                $this->lastError = 'Failed to read local file: ' . $localFilePath;
-                log_message('error', 'GoogleDriveService - ' . $this->lastError);
-                return null;
-            }
 
             // supportsAllDrives=true is required to upload into Shared Drives.
             // It also works fine for regular My Drive folders that are shared to
@@ -108,10 +130,10 @@ class GoogleDriveService
                 'supportsAllDrives' => true,
             ]);
 
-            log_message('info', 'GoogleDriveService - Uploaded: ' . $fileName . ' -> ' . $file->webViewLink);
+            log_message('info', 'GoogleDriveService - Uploaded (direct): ' . $fileName . ' -> ' . $file->webViewLink);
             return $file->webViewLink;
         } catch (\Throwable $e) {
-            $this->lastError = 'uploadFile failed: ' . $e->getMessage();
+            $this->lastError = 'uploadFileContent failed: ' . $e->getMessage();
             log_message('error', 'GoogleDriveService - ' . $this->lastError);
             return null;
         }
