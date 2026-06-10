@@ -47,6 +47,78 @@
     })();
 
     (() => {
+        // Handle SIMAK delete forms: show SweetAlert2 input prompting user to type nomor kontrak
+        document.querySelectorAll('form.simak-delete-form').forEach((form) => {
+            form.addEventListener('submit', (ev) => {
+                ev.preventDefault();
+
+                const nomorFromAttr = (form.dataset.nomorKontrak || '').toString().trim();
+                let nomor = nomorFromAttr;
+                if (!nomor) {
+                    const tr = form.closest('tr');
+                    nomor = tr ? (tr.dataset.nomorKontrak || '').toString().trim() : '';
+                }
+
+                const title = 'Hapus Data SIMAK';
+                const inputLabel = 'Ketik nomor kontrak untuk konfirmasi';
+                const placeholder = nomor || '';
+
+                const fallbackPrompt = () => {
+                    const value = window.prompt(inputLabel + (placeholder ? '\n\n' + placeholder : '')) || '';
+                    if (value === nomor && nomor !== '') {
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'confirm_nomor_kontrak';
+                        hidden.value = nomor;
+                        form.appendChild(hidden);
+                        form.dataset.confirmed = '1';
+                        form.submit();
+                        return;
+                    }
+                    window.alert('Konfirmasi nomor kontrak tidak cocok. Penghapusan dibatalkan.');
+                };
+
+                if (typeof Swal === 'undefined') {
+                    fallbackPrompt();
+                    return;
+                }
+
+                Swal.fire({
+                    title: title,
+                    input: 'text',
+                    inputLabel: inputLabel,
+                    inputPlaceholder: placeholder,
+                    showCancelButton: true,
+                    confirmButtonText: 'Hapus',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    preConfirm: (value) => {
+                        if (!value || value.toString().trim() === '') {
+                            Swal.showValidationMessage('Silakan ketik nomor kontrak untuk konfirmasi.');
+                            return false;
+                        }
+                        if (nomor !== '' && value.toString().trim() !== nomor) {
+                            Swal.showValidationMessage('Nomor kontrak tidak cocok.');
+                            return false;
+                        }
+                        return value.toString().trim();
+                    }
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+                    const confirmedValue = result.value || '';
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'confirm_nomor_kontrak';
+                    hidden.value = confirmedValue;
+                    form.appendChild(hidden);
+                    form.dataset.confirmed = '1';
+                    form.submit();
+                });
+            });
+        });
+    })();
+
+    (() => {
         const preloaderShownAt = typeof window.__appPreloaderStart === 'number'
             ? window.__appPreloaderStart
             : (typeof performance !== 'undefined' ? performance.now() : Date.now());

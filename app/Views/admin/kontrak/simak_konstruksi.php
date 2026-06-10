@@ -195,14 +195,9 @@
                                     >EDIT</button>
                                 <?php endif; ?>
                                 <?php if (($can_import ?? false) === true): ?>
-                                    <form action="<?= site_url('/admin/kontrak/simak/konstruksi/' . (int) ($item['id'] ?? 0) . '/hapus'); ?>" method="post" class="d-inline simak-delete-form">
+                                    <form action="<?= site_url('/admin/kontrak/simak/konstruksi/' . (int) ($item['id'] ?? 0) . '/hapus'); ?>" method="post" class="d-inline simak-delete-form" data-nomor-kontrak="<?= esc((string) ($item['nomor_kontrak'] ?? '')); ?>">
                                         <?= csrf_field(); ?>
-                                        <div class="input-group input-group-sm" style="max-width:360px; display:inline-flex; align-items:center;">
-                                            <input type="text" name="confirm_nomor_kontrak" class="form-control form-control-sm" placeholder="Ketik nomor kontrak untuk konfirmasi" required>
-                                            <div class="input-group-append">
-                                                <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
-                                            </div>
-                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
                                     </form>
                                 <?php endif; ?>
                             </td>
