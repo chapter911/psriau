@@ -159,20 +159,38 @@ function uploadShare(string $token, int $rowNo, string $type, string $method = '
 }
 
 // -------------------------------------------------------
-// Admin verify
+// Admin verify (with file when kel='ada')
 // -------------------------------------------------------
 function verifyDoc(string $cat, int $simakId, int $rowNo, string $type, string $kel, string $ver): void {
+    global $dummyFile;
     $csrf = getCsrf(dirname(__FILE__) . '/../writable/smoke_test_single_cookies.txt');
     $url  = BASE_URL . "/admin/kontrak/simak/" . strtolower($cat) . "/{$simakId}/verifikasi/upload";
-    req($url, 'POST', http_build_query([
-        'row_no'              => $rowNo,
-        'tipe_dokumen'        => $type,
-        'kelengkapan_dokumen' => $kel,
-        'verifikasi_ki'       => $ver,
-        'keterangan'          => "Smoke test verify $ver",
-        'pic'                 => 'Smoke Test Script',
-        'csrf_test_name'      => $csrf,
-    ]));
+
+    if ($kel === 'ada') {
+        // Must send file as multipart when kelengkapan_dokumen=ada
+        $fields = [
+            'row_no'              => $rowNo,
+            'tipe_dokumen'        => $type,
+            'kelengkapan_dokumen' => $kel,
+            'verifikasi_ki'       => $ver,
+            'keterangan'          => "Smoke test verify $ver",
+            'pic'                 => 'Smoke Test Script',
+            'csrf_test_name'      => $csrf,
+            'dokumen_file'        => new CURLFile($dummyFile, 'application/pdf', 'smoke_verif.pdf'),
+        ];
+        req($url, 'POST', $fields);
+    } else {
+        // kel='tidak': no file needed, send as url-encoded
+        req($url, 'POST', http_build_query([
+            'row_no'              => $rowNo,
+            'tipe_dokumen'        => $type,
+            'kelengkapan_dokumen' => $kel,
+            'verifikasi_ki'       => $ver,
+            'keterangan'          => "Smoke test verify $ver - dokumen memang tidak ada",
+            'pic'                 => 'Smoke Test Script',
+            'csrf_test_name'      => $csrf,
+        ]));
+    }
 }
 
 // -------------------------------------------------------

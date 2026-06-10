@@ -3083,10 +3083,9 @@ class Kontrak extends BaseController
             }
 
             $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
-            if ($gdriveLink === 'FAILED_UPLOAD') {
-                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
-            } elseif ($gdriveLink === 'NOT_READY') {
-                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
+            if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
+                // Google Drive not available — keep local file as fallback
+                log_message('warning', 'uploadSimakVerifikasiDokumen - Google Drive unavailable (' . $gdriveLink . '), falling back to local storage for: ' . $originalName);
             } elseif ($gdriveLink !== null) {
                 $relativePath = $gdriveLink;
                 $storedName = '';
@@ -3361,10 +3360,9 @@ class Kontrak extends BaseController
         }
 
         $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
-        if ($gdriveLink === 'FAILED_UPLOAD') {
-            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
-        } elseif ($gdriveLink === 'NOT_READY') {
-            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
+        if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
+            // Google Drive not available — keep local file as fallback
+            log_message('warning', 'adminUploadSimakDokumen - Google Drive unavailable (' . $gdriveLink . '), falling back to local storage for: ' . $originalName);
         } elseif ($gdriveLink !== null) {
             $relativePath = $gdriveLink;
             $storedName = '';
@@ -3947,10 +3945,9 @@ class Kontrak extends BaseController
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
 
             $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
-            if ($gdriveLink === 'FAILED_UPLOAD') {
-                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
-            } elseif ($gdriveLink === 'NOT_READY') {
-                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
+            if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
+                // Google Drive not available — keep local file as fallback
+                log_message('warning', 'sharedUploadSimakDokumen - Google Drive unavailable (' . $gdriveLink . '), falling back to local storage for: ' . $originalName);
             } elseif ($gdriveLink !== null) {
                 $relativePath = $gdriveLink;
                 $storedName = '';
@@ -7450,10 +7447,9 @@ class Kontrak extends BaseController
             }
 
             $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
-            if ($gdriveLink === 'FAILED_UPLOAD') {
-                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
-            } elseif ($gdriveLink === 'NOT_READY') {
-                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
+            if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
+                // Google Drive not available — keep local file as fallback
+                log_message('warning', 'uploadSimakKonsultasiVerifikasiDokumen - Google Drive unavailable (' . $gdriveLink . '), falling back to local storage for: ' . $originalName);
             } elseif ($gdriveLink !== null) {
                 $relativePath = $gdriveLink;
                 $storedName = '';
@@ -7698,10 +7694,9 @@ class Kontrak extends BaseController
         }
 
         $gdriveLink = $this->uploadFileToGoogleDriveIfConfigured($storedPath, $originalName, $mimeType);
-        if ($gdriveLink === 'FAILED_UPLOAD') {
-            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Gagal mengunggah file ke Google Drive. Silakan hubungi admin.');
-        } elseif ($gdriveLink === 'NOT_READY') {
-            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Layanan Google Drive tidak siap. Periksa konfigurasi kredensial.');
+        if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
+            // Google Drive not available — keep local file as fallback
+            log_message('warning', 'adminUploadSimakKonsultasiDokumen - Google Drive unavailable (' . $gdriveLink . '), falling back to local storage for: ' . $originalName);
         } elseif ($gdriveLink !== null) {
             $relativePath = $gdriveLink;
             $storedName = '';
