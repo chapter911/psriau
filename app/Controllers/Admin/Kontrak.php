@@ -7873,8 +7873,17 @@ class Kontrak extends BaseController
 
     private function uploadFileToGoogleDriveIfConfigured(string $storedPath, string $originalName, string $mimeType): ?string
     {
-        $serviceAccountPath = trim((string) getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH'));
         $driveFolderId = trim((string) getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID'));
+        $oauthClientId = trim((string) getenv('GOOGLE_CLIENT_ID'));
+        $oauthClientSecret = trim((string) getenv('GOOGLE_CLIENT_SECRET'));
+
+        // Use OAuth for personal Gmail accounts (recommended)
+        if ($oauthClientId !== '' && $oauthClientSecret !== '' && $driveFolderId !== '') {
+            return $this->uploadFileToGoogleDriveOAuth($storedPath, $originalName, $mimeType);
+        }
+
+        // Fallback to Service Account (only works with Google Workspace or Shared Drives)
+        $serviceAccountPath = trim((string) getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH'));
 
         if ($serviceAccountPath === '' || $driveFolderId === '') {
             log_message('error', 'uploadFileToGoogleDriveIfConfigured - Google Drive config missing.');
@@ -7902,6 +7911,37 @@ class Kontrak extends BaseController
     }
 
     /**
+     * Upload file using OAuth 2.0 (for personal Gmail accounts)
+     *
+     * @param string $storedPath Local file path
+     * @param string $originalName Original file name
+     * @param string $mimeType MIME type
+     * @return string|null Web view link or error string
+     */
+    private function uploadFileToGoogleDriveOAuth(string $storedPath, string $originalName, string $mimeType): ?string
+    {
+        $oauth = new \App\Libraries\GoogleOAuthService();
+
+        if (!$oauth->isAuthenticated()) {
+            log_message('error', 'uploadFileToGoogleDriveOAuth - Not authenticated with Google. Please connect via /oauth/connect');
+            return 'NOT_READY';
+        }
+
+        $webViewLink = $oauth->uploadFile($storedPath, $originalName, $mimeType);
+        if ($webViewLink !== null) {
+            if (is_file($storedPath)) {
+                @unlink($storedPath);
+            }
+            log_message('info', 'uploadFileToGoogleDriveOAuth - Uploaded via OAuth: ' . $originalName . ' -> ' . $webViewLink);
+            return $webViewLink;
+        }
+
+        $reason = $oauth->getLastError() ?: 'Unknown error';
+        log_message('error', 'uploadFileToGoogleDriveOAuth - OAuth upload failed for: ' . $originalName . '. Reason: ' . $reason);
+        return 'FAILED_UPLOAD';
+    }
+
+    /**
      * Upload file content directly to Google Drive without local storage.
      * File is uploaded from memory to Google Drive only.
      *
@@ -7912,8 +7952,17 @@ class Kontrak extends BaseController
      */
     private function uploadFileToGoogleDriveDirect(string $fileContent, string $originalName, string $mimeType): ?string
     {
-        $serviceAccountPath = trim((string) getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH'));
         $driveFolderId = trim((string) getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID'));
+        $oauthClientId = trim((string) getenv('GOOGLE_CLIENT_ID'));
+        $oauthClientSecret = trim((string) getenv('GOOGLE_CLIENT_SECRET'));
+
+        // Use OAuth for personal Gmail accounts (recommended)
+        if ($oauthClientId !== '' && $oauthClientSecret !== '' && $driveFolderId !== '') {
+            return $this->uploadFileToGoogleDriveDirectOAuth($fileContent, $originalName, $mimeType);
+        }
+
+        // Fallback to Service Account (only works with Google Workspace or Shared Drives)
+        $serviceAccountPath = trim((string) getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH'));
 
         if ($serviceAccountPath === '' || $driveFolderId === '') {
             log_message('error', 'uploadFileToGoogleDriveDirect - Google Drive config missing.');
@@ -7935,6 +7984,34 @@ class Kontrak extends BaseController
 
         $reason = $gdrive->getLastError() ?: 'Unknown error';
         log_message('error', 'uploadFileToGoogleDriveDirect - Google Drive upload failed for: ' . $originalName . '. Reason: ' . $reason);
+        return 'FAILED_UPLOAD';
+    }
+
+    /**
+     * Upload file content directly using OAuth 2.0 (for personal Gmail accounts)
+     *
+     * @param string $fileContent Binary content of the file
+     * @param string $originalName Original client file name
+     * @param string $mimeType Mime type of the file
+     * @return string|null Web view link or error string
+     */
+    private function uploadFileToGoogleDriveDirectOAuth(string $fileContent, string $originalName, string $mimeType): ?string
+    {
+        $oauth = new \App\Libraries\GoogleOAuthService();
+
+        if (!$oauth->isAuthenticated()) {
+            log_message('error', 'uploadFileToGoogleDriveDirectOAuth - Not authenticated with Google. Please connect via /oauth/connect');
+            return 'NOT_READY';
+        }
+
+        $webViewLink = $oauth->uploadFileContent($fileContent, $originalName, $mimeType);
+        if ($webViewLink !== null) {
+            log_message('info', 'uploadFileToGoogleDriveDirectOAuth - Uploaded via OAuth: ' . $originalName . ' -> ' . $webViewLink);
+            return $webViewLink;
+        }
+
+        $reason = $oauth->getLastError() ?: 'Unknown error';
+        log_message('error', 'uploadFileToGoogleDriveDirectOAuth - OAuth upload failed for: ' . $originalName . '. Reason: ' . $reason);
         return 'FAILED_UPLOAD';
     }
 }
