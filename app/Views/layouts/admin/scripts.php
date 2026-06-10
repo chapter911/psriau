@@ -85,13 +85,30 @@
 
                 Swal.fire({
                     title: title,
+                    html: '<div style="text-align: left; margin: 1rem 0;">' +
+                          '<p style="margin-bottom: 0.5rem;"><strong>Nomor Kontrak:</strong></p>' +
+                          '<div style="background: #f5f5f5; padding: 0.75rem; border-radius: 4px; border: 1px solid #ddd; word-break: break-all; user-select: all; cursor: copy;" title="Klik untuk salin">' +
+                          nomor +
+                          '</div>' +
+                          '<p style="margin-top: 1rem; margin-bottom: 0.5rem;"><strong>Ketik nomor kontrak di bawah untuk konfirmasi penghapusan:</strong></p>' +
+                          '</div>',
                     input: 'text',
-                    inputLabel: inputLabel,
-                    inputPlaceholder: placeholder,
+                    inputPlaceholder: nomor || 'Ketik nomor kontrak',
                     showCancelButton: true,
-                    confirmButtonText: 'Hapus',
+                    confirmButtonText: 'Ya, Hapus',
                     cancelButtonText: 'Batal',
                     reverseButtons: true,
+                    didOpen: () => {
+                        const copyBox = document.querySelector('.swal2-popup [style*="background: #f5f5f5"]');
+                        if (copyBox) {
+                            copyBox.addEventListener('click', () => {
+                                const text = copyBox.textContent || '';
+                                navigator.clipboard.writeText(text).then(() => {
+                                    Swal.showValidationMessage('Nomor kontrak disalin!');
+                                });
+                            });
+                        }
+                    },
                     preConfirm: (value) => {
                         if (!value || value.toString().trim() === '') {
                             Swal.showValidationMessage('Silakan ketik nomor kontrak untuk konfirmasi.');
