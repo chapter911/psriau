@@ -124,7 +124,30 @@
     .simak-col-draft { width: 50px; flex-shrink: 0; text-align: center; }
     .simak-col-status { width: 75px; flex-shrink: 0; text-align: center; }
     .simak-col-share { width: 75px; flex-shrink: 0; text-align: center; }
-    .simak-col-aksi { width: 110px; flex-shrink: 0; display: flex; justify-content: flex-end; gap: 4px; }
+    .simak-col-aksi { width: 140px; flex-shrink: 0; display: flex; justify-content: flex-end; gap: 3px; align-items: center; }
+
+    /* Action button styles */
+    .simak-col-aksi .btn-xs {
+        padding: 4px 7px;
+        font-size: 11px;
+        min-width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .simak-col-aksi .btn-inline-delete {
+        color: #dc2626 !important;
+        background: transparent;
+        border: 1px solid #fca5a5;
+    }
+
+    .simak-col-aksi .btn-inline-delete:hover {
+        color: #fff !important;
+        background: #dc2626;
+        border-color: #dc2626;
+    }
 
     .simak-master-tree {
         list-style: none;
