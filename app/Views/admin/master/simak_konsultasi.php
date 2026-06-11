@@ -521,6 +521,9 @@
                     if (! empty($shareVisibilityAvailable)) {
                         echo '<button type="button" class="btn btn-xs btn-outline-info btn-inline-toggle-share" title="' . ($isHiddenShare ? 'Tampilkan di Share' : 'Sembunyikan dari Share') . '"><i class="fas ' . ($isHiddenShare ? 'fa-eye-slash text-warning' : 'fa-eye') . '"></i></button>';
                     }
+                    if (! empty($can_delete)) {
+                        echo '<button type="button" class="btn btn-xs btn-outline-danger btn-inline-delete" title="Hapus Item"><i class="fas fa-trash"></i></button>';
+                    }
                     echo '</div>';
                     
                     echo '</div>'; // end row
@@ -683,6 +686,29 @@
                 </div>
             </form>
         </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="modal-delete-confirm" tabindex="-1" role="dialog" aria-labelledby="modalDeleteConfirmLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalDeleteConfirmLabel"><i class="fas fa-exclamation-triangle"></i> Konfirmasi Hapus</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus item ini?</p>
+                <p class="text-danger"><strong id="delete-item-name"></strong></p>
+                <p class="text-muted small mb-0" id="delete-item-info"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" id="btn-confirm-delete"><i class="fas fa-trash"></i> Ya, Hapus</button>
+            </div>
         </div>
     </div>
 </div>
@@ -989,7 +1015,161 @@
                     showFormModal();
                 });
             });
+
+            // Bind edit button clicks
+            root.querySelectorAll('.simak-master-item .btn-inline-edit').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var itemEl = btn.closest('.simak-master-item');
+                    setEditModeFromItem(itemEl);
+                    showFormModal();
+                });
+            });
+
+            // Bind add child button clicks
+            root.querySelectorAll('.simak-master-item .btn-inline-add-child').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var itemEl = btn.closest('.simak-master-item');
+                    var itemId = itemEl.getAttribute('data-id') || '';
+                    setCreateMode(itemId, 'Tambah Child dari Item #' + itemId);
+                    showFormModal();
+                });
+            });
+
+            // Bind toggle status button clicks
+            root.querySelectorAll('.simak-master-item .btn-inline-toggle-status').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var itemEl = btn.closest('.simak-master-item');
+                    var itemId = itemEl.getAttribute('data-id') || '';
+                    clearSelection();
+                    itemEl.classList.add('is-selected');
+                    if (selectedIdInput) selectedIdInput.value = itemId;
+                    toggleStatusAjax();
+                });
+            });
+
+            // Bind toggle share visibility button clicks
+            root.querySelectorAll('.simak-master-item .btn-inline-toggle-share').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var itemEl = btn.closest('.simak-master-item');
+                    var itemId = itemEl.getAttribute('data-id') || '';
+                    clearSelection();
+                    itemEl.classList.add('is-selected');
+                    if (selectedIdInput) selectedIdInput.value = itemId;
+                    toggleShareVisibilityAjax();
+                });
+            });
+
+            // Bind delete button clicks
+            root.querySelectorAll('.simak-master-item .btn-inline-delete').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var itemEl = btn.closest('.simak-master-item');
+                    var itemId = itemEl.getAttribute('data-id') || '';
+                    var itemUraian = itemEl.getAttribute('data-uraian') || '';
+                    var itemRowKind = itemEl.getAttribute('data-row_kind') || '';
+                    var hasChildren = itemEl.querySelector(':scope > ul.simak-master-tree-list');
+
+                    // Show confirmation modal
+                    var deleteModal = document.getElementById('modal-delete-confirm');
+                    var deleteItemName = document.getElementById('delete-item-name');
+                    var deleteItemInfo = document.getElementById('delete-item-info');
+
+                    if (deleteItemName) deleteItemName.textContent = itemUraian;
+                    if (deleteItemInfo) {
+                        var infoText = 'Jenis: ' + itemRowKind;
+                        if (hasChildren) {
+                            var childCount = itemEl.querySelectorAll(':scope ul li.simak-master-item').length;
+                            infoText += ' | Memiliki ' + childCount + ' subitem (akan ikut dihapus)';
+                        }
+                        deleteItemInfo.textContent = infoText;
+                    }
+
+                    // Store the item ID for deletion
+                    deleteModal.setAttribute('data-delete-id', itemId);
+
+                    // Show modal
+                    if (window.jQuery && typeof window.jQuery === 'function') {
+                        window.jQuery(deleteModal).modal('show');
+                    } else if (window.bootstrap && window.bootstrap.Modal) {
+                        var m = new window.bootstrap.Modal(deleteModal);
+                        m.show();
+                    } else {
+                        deleteModal.style.display = 'block';
+                    }
+                });
+            });
         };
+
+        // Delete confirmation button handler
+        var confirmDeleteBtn = document.getElementById('btn-confirm-delete');
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', function () {
+                var deleteModal = document.getElementById('modal-delete-confirm');
+                var deleteId = deleteModal.getAttribute('data-delete-id');
+
+                if (!deleteId) {
+                    showNotice('ID item tidak ditemukan.', 'danger');
+                    return;
+                }
+
+                confirmDeleteBtn.disabled = true;
+
+                var formData = new FormData();
+                formData.append(csrfName, csrfValue);
+
+                fetch(baseUrl + '/' + encodeURIComponent(deleteId) + '/hapus', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(function (response) {
+                        return response.json().then(function (json) {
+                            return { ok: response.ok, json: json };
+                        });
+                    })
+                    .then(function (result) {
+                        var json = result.json || {};
+                        syncCsrfFromJson(json);
+
+                        // Hide confirmation modal
+                        if (window.jQuery && typeof window.jQuery === 'function') {
+                            window.jQuery(deleteModal).modal('hide');
+                        } else {
+                            var closeBtn = deleteModal.querySelector('[data-dismiss="modal"]');
+                            if (closeBtn) closeBtn.click();
+                        }
+
+                        if (!result.ok || json.status !== 'ok') {
+                            showNotice(json.message || 'Gagal menghapus item.', 'danger');
+                            return;
+                        }
+
+                        // Refresh panels and show success notice
+                        var refreshPromise = refreshPanelsWithoutFlash('', 'Tambah Item Master');
+                        refreshPromise.then(function () {
+                            showNotice(json.message || 'Item berhasil dihapus.', 'success');
+                        });
+                    })
+                    .catch(function () {
+                        showNotice('Gagal menghapus item.', 'danger');
+                        // Hide modal on error too
+                        if (window.jQuery && typeof window.jQuery === 'function') {
+                            window.jQuery(deleteModal).modal('hide');
+                        }
+                    })
+                    .finally(function () {
+                        confirmDeleteBtn.disabled = false;
+                    });
+            });
+        }
 
         var updateStatusSummary = function () {
             var activeCount = 0;

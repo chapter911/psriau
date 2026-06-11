@@ -671,6 +671,63 @@ class MasterSimak extends BaseController
         return redirect()->to('/admin/master/simak/konstruksi')->with('success', $message);
     }
 
+    public function konstruksiDelete(int $id)
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSTRUKSI);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $permissions = $this->resolveMenuPermissions(self::MENU_LINK_KONSTRUKSI);
+        if (! $this->canManageMasterData() || ! (bool) ($permissions['delete'] ?? false)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk menghapus item master SIMAK konstruksi.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Anda tidak memiliki akses untuk menghapus item master SIMAK konstruksi.');
+        }
+
+        $model = new MasterSimakKonstruksiItemModel();
+
+        // Check if item exists
+        $item = $model->find($id);
+        if (! $item) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Item tidak ditemukan.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Item tidak ditemukan.');
+        }
+
+        // Get all child IDs recursively
+        $childIds = $this->getAllChildIds($model, $id);
+        $allIds = array_merge([$id], $childIds);
+
+        // Delete all items (parent and children)
+        $model->delete($allIds);
+
+        // Rebuild display numbers
+        $this->rebuildSimakKonstruksiDisplayNumbers();
+
+        if ($this->wantsJsonResponse()) {
+            $count = count($allIds);
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'message' => $count > 1
+                    ? "Item dan {$count} subitem berhasil dihapus."
+                    : 'Item berhasil dihapus.',
+            ] + $this->csrfPayload());
+        }
+
+        return redirect()->to('/admin/master/simak/konstruksi')->with('success', 'Item berhasil dihapus.');
+    }
+
     public function konstruksiSaveHierarchy()
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSTRUKSI);
@@ -1175,6 +1232,63 @@ class MasterSimak extends BaseController
         ] + $this->csrfPayload());
     }
 
+    public function konsultasiDelete(int $id)
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSULTASI);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $permissions = $this->resolveMenuPermissions(self::MENU_LINK_KONSULTASI);
+        if (! $this->canManageMasterData() || ! (bool) ($permissions['delete'] ?? false)) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk menghapus item master SIMAK konsultasi.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Anda tidak memiliki akses untuk menghapus item master SIMAK konsultasi.');
+        }
+
+        $model = new MasterSimakKonsultasiItemModel();
+
+        // Check if item exists
+        $item = $model->find($id);
+        if (! $item) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Item tidak ditemukan.',
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Item tidak ditemukan.');
+        }
+
+        // Get all child IDs recursively
+        $childIds = $this->getAllChildIds($model, $id);
+        $allIds = array_merge([$id], $childIds);
+
+        // Delete all items (parent and children)
+        $model->delete($allIds);
+
+        // Rebuild display numbers
+        $this->rebuildSimakKonsultasiDisplayNumbers();
+
+        if ($this->wantsJsonResponse()) {
+            $count = count($allIds);
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'message' => $count > 1
+                    ? "Item dan {$count} subitem berhasil dihapus."
+                    : 'Item berhasil dihapus.',
+            ] + $this->csrfPayload());
+        }
+
+        return redirect()->to('/admin/master/simak/konsultasi')->with('success', 'Item berhasil dihapus.');
+    }
+
     private function denyIfNoMenuAccess(string $menuLink): ?RedirectResponse
     {
         if ($this->hasMenuAccess($menuLink)) {
@@ -1444,6 +1558,27 @@ class MasterSimak extends BaseController
                 $this->flattenHierarchyPayload($children, $id, $out);
             }
         }
+    }
+
+    /**
+     * Get all child IDs recursively for a given parent ID
+     */
+    private function getAllChildIds($model, int $parentId): array
+    {
+        $children = $model->where('parent_id', $parentId)->findAll();
+        $childIds = [];
+
+        foreach ($children as $child) {
+            $childId = (int) ($child['id'] ?? 0);
+            if ($childId > 0) {
+                $childIds[] = $childId;
+                // Recursively get children of this child
+                $grandchildren = $this->getAllChildIds($model, $childId);
+                $childIds = array_merge($childIds, $grandchildren);
+            }
+        }
+
+        return $childIds;
     }
 
 }
