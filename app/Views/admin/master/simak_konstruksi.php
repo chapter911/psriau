@@ -997,6 +997,61 @@
                 });
         };
 
+        // Refresh panels without triggering server-side flash messages (for post-save scenarios)
+        var refreshPanelsWithoutFlash = function (selectedId, formLabel) {
+            return fetch(window.location.href + (window.location.href.indexOf('?') > -1 ? '&' : '?') + '_silent=1', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Gagal menyegarkan data');
+                    }
+                    return response.text();
+                })
+                .then(function (html) {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(html, 'text/html');
+                    var freshTreePanelBody = doc.querySelector('.simak-tree-panel .simak-panel-body');
+                    var freshParentSelect = doc.getElementById('parent_id');
+
+                    if (treePanelBody && freshTreePanelBody) {
+                        treePanelBody.innerHTML = freshTreePanelBody.innerHTML;
+                    }
+
+                    if (parentSelect && freshParentSelect) {
+                        parentSelect.innerHTML = freshParentSelect.innerHTML;
+                    }
+
+                    root = document.getElementById('simak-master-root');
+                    bindTreeItemClicks();
+                    updateStatusSummary();
+
+                    if (root) {
+                        root.querySelectorAll('ul.simak-master-tree-list').forEach(initSortable);
+                    }
+
+                    // Re-trigger search text query if search term was active
+                    var searchInput = document.getElementById('simak-search-input');
+                    if (searchInput && searchInput.value !== '') {
+                        searchInput.dispatchEvent(new Event('input'));
+                    }
+
+                    if (selectedId) {
+                        var selectedEl = document.querySelector('.simak-master-item[data-id="' + selectedId + '"]');
+                        if (selectedEl) {
+                            setEditModeFromItem(selectedEl);
+                            return;
+                        }
+                    }
+
+                    setCreateMode('', formLabel || 'Tambah Item Baru');
+                });
+        };
+
         var toggleStatusAjax = function () {
             if (!toggleStatusButton || !selectedIdInput || !selectedIdInput.value) {
                 return;
@@ -1136,9 +1191,16 @@
                         }
 
                         var id = json.id ? String(json.id) : '';
-                        return refreshPanels(id, 'Tambah Item Baru').then(function () {
+
+                        // First hide modal immediately
+                        hideFormModal();
+
+                        // Then refresh panels (without triggering server-side flash)
+                        var refreshPromise = refreshPanelsWithoutFlash(id, 'Tambah Item Baru');
+
+                        // Show success notice after refresh completes
+                        refreshPromise.then(function () {
                             showNotice(json.message || 'Berhasil menyimpan data master.', 'success');
-                            hideFormModal();
                         });
                     })
                     .catch(function () {

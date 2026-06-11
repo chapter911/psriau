@@ -15,11 +15,24 @@ class MasterSimak extends BaseController
     private const MENU_LINK_KONSTRUKSI = 'admin/master/simak/konstruksi';
     private const MENU_LINK_KONSULTASI = 'admin/master/simak/konsultasi';
 
+    /**
+     * Check if request is a silent AJAX refresh (no flash messages)
+     */
+    private function isSilentRefresh(): bool
+    {
+        return $this->request->isAJAX() && $this->request->getGet('_silent') === '1';
+    }
+
     public function konstruksi()
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSTRUKSI);
         if ($forbidden instanceof RedirectResponse) {
             return $forbidden;
+        }
+
+        // Clear any flash messages for silent AJAX refreshes
+        if ($this->isSilentRefresh()) {
+            $this->session->markAsFlashdata(['success', 'error', 'warning', 'info']);
         }
 
         $db = db_connect();
@@ -727,6 +740,11 @@ class MasterSimak extends BaseController
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK_KONSULTASI);
         if ($forbidden instanceof RedirectResponse) {
             return $forbidden;
+        }
+
+        // Clear any flash messages for silent AJAX refreshes
+        if ($this->isSilentRefresh()) {
+            $this->session->markAsFlashdata(['success', 'error', 'warning', 'info']);
         }
 
         $db = db_connect();
