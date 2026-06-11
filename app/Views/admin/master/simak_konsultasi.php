@@ -1484,6 +1484,8 @@
 
                         // Use AJAX refresh and then expand the saved item
                         var refreshUrl = window.location.href;
+                        // Remove _silent if already present to avoid duplicates
+                        refreshUrl = refreshUrl.replace(/[?&]_silent=1/g, '');
                         if (refreshUrl.indexOf('?') > -1) {
                             refreshUrl += '&_silent=1';
                         } else {
@@ -1497,8 +1499,18 @@
                                 'X-Requested-With': 'XMLHttpRequest'
                             }
                         })
-                        .then(function (response) { return response.text(); })
+                        .then(function (response) {
+                            if (!response.ok) {
+                                throw new Error('Refresh failed');
+                            }
+                            return response.text();
+                        })
                         .then(function (html) {
+                            // Check if response is valid HTML
+                            if (!html || html.trim() === '' || (html.indexOf('<!DOCTYPE') === -1 && html.indexOf('<html') === -1)) {
+                                throw new Error('Invalid response');
+                            }
+
                             var parser = new DOMParser();
                             var doc = parser.parseFromString(html, 'text/html');
                             var freshTreePanelBody = doc.querySelector('.simak-tree-panel .simak-panel-body');
