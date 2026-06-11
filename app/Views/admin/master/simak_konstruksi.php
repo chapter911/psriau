@@ -595,7 +595,7 @@
 
 <!-- Master Form Modal -->
 <div class="modal fade" id="modal-master-form" tabindex="-1" role="dialog" aria-labelledby="modalMasterFormLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header bg-light">
                 <h5 class="modal-title" id="form-mode-label">Tambah Item Master</h5>
@@ -607,45 +607,47 @@
                 <?= csrf_field(); ?>
                 <input type="hidden" id="selected_id" value="">
                 <div class="modal-body">
-                    <div class="simak-form-hint">Nomor tampil dibuat otomatis, sedangkan urutan diubah lewat tarik dan lepas di tabel grid utama.</div>
+                    <div class="simak-form-hint mb-3">Nomor tampil dibuat otomatis, sedangkan urutan diubah lewat tarik dan lepas di tabel grid utama.</div>
 
+                    <!-- Parent Selection -->
                     <div class="form-group">
                         <label for="parent_id">Item Induk</label>
                         <select class="form-control" name="parent_id" id="parent_id" <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
-                            <option value="">(Tanpa Induk)</option>
+                            <option value="">(Tanpa Induk - Root)</option>
                             <?php foreach (($parentOptions ?? []) as $opt): ?>
                                 <option value="<?= (int) ($opt['id'] ?? 0); ?>"><?= esc((string) ($opt['label'] ?? '')); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="uraian">Uraian</label>
-                        <textarea class="form-control" name="uraian" id="uraian" rows="3" required <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="row_kind">Jenis Item</label>
-                        <select class="form-control" name="row_kind" id="row_kind" required <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
-                            <option value="section">Bagian</option>
-                            <option value="group">Subbagian</option>
-                            <option value="question">Pertanyaan</option>
-                            <option value="text">Teks</option>
-                            <option value="separator">Pemisah</option>
-                        </select>
-                    </div>
-                    <div class="custom-control custom-checkbox mb-3">
-                        <input type="checkbox" class="custom-control-input" id="has_question" name="has_question" value="1" <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
-                        <label class="custom-control-label" for="has_question">Item ini punya pertanyaan</label>
+
+                    <!-- Dynamic Rows Table -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" id="dynamic-items-table">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 40px;">#</th>
+                                    <th>Uraian</th>
+                                    <th style="width: 120px;">Jenis</th>
+                                    <th style="width: 80px; text-align: center;">Tanya</th>
+                                    <th style="width: 80px; text-align: center;">Draft</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="dynamic-items-body">
+                                <!-- Row template will be inserted here -->
+                            </tbody>
+                        </table>
                     </div>
 
-                    <div class="custom-control custom-checkbox mb-3">
-                        <input type="checkbox" class="custom-control-input" id="has_draft" name="has_draft" value="1" <?= empty($can_edit) && empty($can_add) ? 'disabled' : ''; ?>>
-                        <label class="custom-control-label" for="has_draft">Item ini punya draft</label>
-                    </div>
+                    <!-- Add Row Button -->
+                    <button type="button" class="btn btn-outline-success btn-sm" id="btn-add-row">
+                        <i class="fas fa-plus"></i> Tambah Baris
+                    </button>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                     <?php if (! empty($can_add) || ! empty($can_edit)): ?>
-                        <button type="submit" class="btn btn-primary" id="btn-submit-form">Simpan</button>
+                        <button type="submit" class="btn btn-primary" id="btn-submit-form">Simpan Semua</button>
                     <?php endif; ?>
                     <?php if (! empty($can_edit)): ?>
                         <button type="button" class="btn btn-outline-warning btn-sm" id="btn-toggle-status" disabled>Aktifkan/Nonaktifkan</button>
@@ -719,10 +721,8 @@
         var formModeLabel = document.getElementById('form-mode-label');
         var selectedIdInput = document.getElementById('selected_id');
         var parentSelect = document.getElementById('parent_id');
-        var uraianInput = document.getElementById('uraian');
-        var rowKindSelect = document.getElementById('row_kind');
-        var hasQuestionInput = document.getElementById('has_question');
-        var hasDraftInput = document.getElementById('has_draft');
+        var dynamicItemsBody = document.getElementById('dynamic-items-body');
+        var addRowButton = document.getElementById('btn-add-row');
         var addRootButton = document.getElementById('btn-add-root');
         var addChildButton = document.getElementById('btn-add-child');
         var resetButton = document.getElementById('btn-reset-selection');
@@ -736,10 +736,85 @@
         var csrfValue = <?= json_encode(csrf_hash(), JSON_UNESCAPED_UNICODE); ?>;
         var addUrl = <?= json_encode(site_url('/admin/master/simak/konstruksi/tambah'), JSON_UNESCAPED_UNICODE); ?>;
         var baseUrl = <?= json_encode(site_url('/admin/master/simak/konstruksi'), JSON_UNESCAPED_UNICODE); ?>;
+        var rowCounter = 0;
+
+        // Create a single row HTML
+        var createRowHTML = function (index) {
+            return '<tr class="dynamic-row" data-row="' + index + '">' +
+                '<td class="text-center row-number" style="vertical-align: middle;">' + (index + 1) + '</td>' +
+                '<td><textarea class="form-control form-control-sm row-uraian" name="items[' + index + '][uraian]" rows="2" required placeholder="Ketik uraian di sini..."></textarea></td>' +
+                '<td><select class="form-control form-control-sm row-kind" name="items[' + index + '][row_kind]" required>' +
+                    '<option value="section">Bagian</option>' +
+                    '<option value="group">Subbagian</option>' +
+                    '<option value="question" selected>Pertanyaan</option>' +
+                    '<option value="text">Teks</option>' +
+                    '<option value="separator">Pemisah</option>' +
+                '</select></td>' +
+                '<td class="text-center"><input type="checkbox" class="form-check-input row-question" name="items[' + index + '][has_question]" value="1"></td>' +
+                '<td class="text-center"><input type="checkbox" class="form-check-input row-draft" name="items[' + index + '][has_draft]" value="1"></td>' +
+                '<td class="text-center"><button type="button" class="btn btn-xs btn-outline-danger btn-remove-row" title="Hapus Baris"><i class="fas fa-times"></i></button></td>' +
+            '</tr>';
+        };
+
+        // Add a new row
+        var addNewRow = function () {
+            if (!dynamicItemsBody) return;
+            var rowHtml = createRowHTML(rowCounter);
+            dynamicItemsBody.insertAdjacentHTML('beforeend', rowHtml);
+            rowCounter++;
+            updateRowNumbers();
+        };
+
+        // Update row numbers
+        var updateRowNumbers = function () {
+            if (!dynamicItemsBody) return;
+            var rows = dynamicItemsBody.querySelectorAll('tr.dynamic-row');
+            rows.forEach(function (row, idx) {
+                var numCell = row.querySelector('.row-number');
+                if (numCell) numCell.textContent = idx + 1;
+            });
+        };
+
+        // Remove a row
+        var removeRow = function (btn) {
+            var row = btn.closest('tr.dynamic-row');
+            if (row) {
+                row.remove();
+                updateRowNumbers();
+            }
+        };
+
+        // Bind add row button
+        if (addRowButton) {
+            addRowButton.addEventListener('click', function () {
+                addNewRow();
+            });
+        }
+
+        // Bind remove row buttons (delegation)
+        if (dynamicItemsBody) {
+            dynamicItemsBody.addEventListener('click', function (e) {
+                var removeBtn = e.target.closest('.btn-remove-row');
+                if (removeBtn) {
+                    removeRow(removeBtn);
+                }
+            });
+        }
 
         var showFormModal = function () {
             var modalEl = document.getElementById('modal-master-form');
             if (!modalEl) return;
+
+            // Reset form and add initial row
+            if (form) {
+                form.reset();
+            }
+            if (dynamicItemsBody) {
+                dynamicItemsBody.innerHTML = '';
+                rowCounter = 0;
+                addNewRow(); // Add first row
+            }
+
             if (window.jQuery && typeof window.jQuery === 'function') {
                 window.jQuery(modalEl).modal('show');
                 return;
@@ -872,15 +947,14 @@
             if (formModeLabel) formModeLabel.textContent = label || 'Tambah Item Baru';
             if (selectedIdInput) selectedIdInput.value = '';
             if (parentSelect) parentSelect.value = parentId || '';
-            if (uraianInput) uraianInput.value = '';
-            if (rowKindSelect) rowKindSelect.value = 'section';
-            if (hasQuestionInput) {
-                hasQuestionInput.checked = false;
-                hasQuestionInput.disabled = false;
+
+            // Reset dynamic table with single empty row
+            if (dynamicItemsBody) {
+                dynamicItemsBody.innerHTML = '';
+                rowCounter = 0;
+                addNewRow();
             }
-            if (hasDraftInput) {
-                hasDraftInput.checked = false;
-            }
+
             if (toggleStatusButton) {
                 toggleStatusButton.disabled = true;
                 toggleStatusButton.textContent = 'Aktifkan/Nonaktifkan';
@@ -906,15 +980,29 @@
             if (formModeLabel) formModeLabel.textContent = 'Ubah Item #' + id;
             if (selectedIdInput) selectedIdInput.value = id;
             if (parentSelect) parentSelect.value = itemEl.getAttribute('data-parent_id') || '';
-            if (uraianInput) uraianInput.value = itemEl.getAttribute('data-uraian') || '';
-            if (rowKindSelect) rowKindSelect.value = itemEl.getAttribute('data-row_kind') || 'question';
-            if (hasQuestionInput) {
-                hasQuestionInput.checked = (itemEl.getAttribute('data-has_question') || '0') === '1';
-                hasQuestionInput.disabled = rowKindSelect && rowKindSelect.value === 'question';
+
+            // Populate dynamic table with single row for editing
+            if (dynamicItemsBody) {
+                dynamicItemsBody.innerHTML = '';
+                rowCounter = 0;
+                var rowHtml = '<tr class="dynamic-row" data-row="0">' +
+                    '<td class="text-center row-number" style="vertical-align: middle;">1</td>' +
+                    '<td><textarea class="form-control form-control-sm row-uraian" name="items[0][uraian]" rows="2" required>' + (itemEl.getAttribute('data-uraian') || '') + '</textarea></td>' +
+                    '<td><select class="form-control form-control-sm row-kind" name="items[0][row_kind]" required>' +
+                        '<option value="section"' + ((itemEl.getAttribute('data-row_kind') || '') === 'section' ? ' selected' : '') + '>Bagian</option>' +
+                        '<option value="group"' + ((itemEl.getAttribute('data-row_kind') || '') === 'group' ? ' selected' : '') + '>Subbagian</option>' +
+                        '<option value="question"' + ((itemEl.getAttribute('data-row_kind') || '') === 'question' ? ' selected' : '') + '>Pertanyaan</option>' +
+                        '<option value="text"' + ((itemEl.getAttribute('data-row_kind') || '') === 'text' ? ' selected' : '') + '>Teks</option>' +
+                        '<option value="separator"' + ((itemEl.getAttribute('data-row_kind') || '') === 'separator' ? ' selected' : '') + '>Pemisah</option>' +
+                    '</select></td>' +
+                    '<td class="text-center"><input type="checkbox" class="form-check-input row-question" name="items[0][has_question]" value="1"' + ((itemEl.getAttribute('data-has_question') || '0') === '1' ? ' checked' : '') + '></td>' +
+                    '<td class="text-center"><input type="checkbox" class="form-check-input row-draft" name="items[0][has_draft]" value="1"' + ((itemEl.getAttribute('data-has_draft') || '0') === '1' ? ' checked' : '') + '></td>' +
+                    '<td class="text-center"><button type="button" class="btn btn-xs btn-outline-danger btn-remove-row" title="Hapus Baris"><i class="fas fa-times"></i></button></td>' +
+                '</tr>';
+                dynamicItemsBody.insertAdjacentHTML('beforeend', rowHtml);
+                rowCounter = 1;
             }
-            if (hasDraftInput) {
-                hasDraftInput.checked = (itemEl.getAttribute('data-has_draft') || '0') === '1';
-            }
+
             if (toggleStatusButton) {
                 updateToggleButton((itemEl.getAttribute('data-is_active') || '1') === '1');
             }
