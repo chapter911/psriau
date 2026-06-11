@@ -3035,6 +3035,13 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
         }
 
+        // Get SIMAK package info for structured folder upload
+        $packageInfo = $this->getSimakPackageInfo($id, 'konstruksi');
+        $namaPaket = ($packageInfo['nama_paket'] ?? '') ?: 'Tanpa Paket';
+        $penyedia = ($packageInfo['penyedia'] ?? '') ?: 'Tanpa Penyedia';
+        $headerUraian = (string) ($targetTemplate['display_no'] ?? '');
+        $uraian = (string) ($targetTemplate['uraian'] ?? '');
+
         $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
         if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tipe dokumen tidak valid.');
@@ -3142,8 +3149,16 @@ class Kontrak extends BaseController
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
             $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
 
-            // Upload langsung ke Google Drive tanpa simpan di server lokal
-            $gdriveLink = $this->uploadFileToGoogleDriveDirect($file->getStream()->getContents(), $originalName, $mimeType);
+            // Upload langsung ke Google Drive tanpa simpan di server lokal (structured)
+            $gdriveLink = $this->uploadFileToGoogleDriveStructured(
+                $file->getStream()->getContents(),
+                $originalName,
+                $mimeType,
+                $namaPaket,
+                $penyedia,
+                $headerUraian,
+                $uraian
+            );
             if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
                 log_message('error', 'uploadSimakVerifikasiDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
                 return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
@@ -3382,6 +3397,13 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload hanya diizinkan pada baris terbawah.');
         }
 
+        // Get SIMAK package info for structured folder upload
+        $packageInfo = $this->getSimakPackageInfo($id, 'konstruksi');
+        $namaPaket = ($packageInfo['nama_paket'] ?? '') ?: 'Tanpa Paket';
+        $penyedia = ($packageInfo['penyedia'] ?? '') ?: 'Tanpa Penyedia';
+        $headerUraian = (string) ($targetTemplate['display_no'] ?? '');
+        $uraian = (string) ($targetTemplate['uraian'] ?? '');
+
         $existingVerifikasi = $db->table('trn_kontrak_simak_verifikasi')
             ->select('verifikasi_ki')
             ->where('simak_id', $id)
@@ -3406,8 +3428,16 @@ class Kontrak extends BaseController
         $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
         $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
 
-        // Upload langsung ke Google Drive tanpa simpan di server lokal
-        $gdriveLink = $this->uploadFileToGoogleDriveDirect($file->getStream()->getContents(), $originalName, $mimeType);
+        // Upload langsung ke Google Drive tanpa simpan di server lokal (structured)
+        $gdriveLink = $this->uploadFileToGoogleDriveStructured(
+            $file->getStream()->getContents(),
+            $originalName,
+            $mimeType,
+            $namaPaket,
+            $penyedia,
+            $headerUraian,
+            $uraian
+        );
         if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
             log_message('error', 'adminUploadSimakDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
@@ -3773,6 +3803,16 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
         }
 
+        // Get SIMAK type for structured folder upload
+        $sharedType = (string) ($shared['type'] ?? 'konstruksi');
+
+        // Get SIMAK package info for structured folder upload
+        $packageInfo = $this->getSimakPackageInfo($simakId, $sharedType);
+        $namaPaket = ($packageInfo['nama_paket'] ?? '') ?: 'Tanpa Paket';
+        $penyedia = ($packageInfo['penyedia'] ?? '') ?: 'Tanpa Penyedia';
+        $headerUraian = (string) ($targetTemplate['display_no'] ?? '');
+        $uraian = (string) ($targetTemplate['uraian'] ?? '');
+
         // Check if this row has draft requirement
         $hasDraftRow = (bool) ($targetTemplate['has_draft'] ?? false);
 
@@ -3972,8 +4012,16 @@ class Kontrak extends BaseController
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
             $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
 
-            // Upload langsung ke Google Drive tanpa simpan di server lokal
-            $gdriveLink = $this->uploadFileToGoogleDriveDirect($file->getStream()->getContents(), $originalName, $mimeType);
+            // Upload langsung ke Google Drive tanpa simpan di server lokal (structured)
+            $gdriveLink = $this->uploadFileToGoogleDriveStructured(
+                $file->getStream()->getContents(),
+                $originalName,
+                $mimeType,
+                $namaPaket,
+                $penyedia,
+                $headerUraian,
+                $uraian
+            );
             if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
                 log_message('error', 'sharedUploadSimakDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
@@ -7361,6 +7409,13 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Upload hanya diizinkan pada baris hirarki terbawah.');
         }
 
+        // Get SIMAK package info for structured folder upload
+        $packageInfo = $this->getSimakPackageInfo($id, 'konsultasi');
+        $namaPaket = ($packageInfo['nama_paket'] ?? '') ?: 'Tanpa Paket';
+        $penyedia = ($packageInfo['penyedia'] ?? '') ?: 'Tanpa Penyedia';
+        $headerUraian = (string) ($targetTemplate['display_no'] ?? '');
+        $uraian = (string) ($targetTemplate['uraian'] ?? '');
+
         $tipeDokumen = strtolower(trim((string) $this->request->getPost('tipe_dokumen')));
         if (! in_array($tipeDokumen, ['draft', 'final'], true)) {
             return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tipe dokumen tidak valid.');
@@ -7461,8 +7516,16 @@ class Kontrak extends BaseController
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
             $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
 
-            // Upload langsung ke Google Drive tanpa simpan di server lokal
-            $gdriveLink = $this->uploadFileToGoogleDriveDirect($file->getStream()->getContents(), $originalName, $mimeType);
+            // Upload langsung ke Google Drive tanpa simpan di server lokal (structured)
+            $gdriveLink = $this->uploadFileToGoogleDriveStructured(
+                $file->getStream()->getContents(),
+                $originalName,
+                $mimeType,
+                $namaPaket,
+                $penyedia,
+                $headerUraian,
+                $uraian
+            );
             if ($gdriveLink === 'FAILED_UPLOAD' || $gdriveLink === 'NOT_READY') {
                 log_message('error', 'uploadSimakKonsultasiVerifikasiDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
                 return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
@@ -8013,5 +8076,181 @@ class Kontrak extends BaseController
         $reason = $oauth->getLastError() ?: 'Unknown error';
         log_message('error', 'uploadFileToGoogleDriveDirectOAuth - OAuth upload failed for: ' . $originalName . '. Reason: ' . $reason);
         return 'FAILED_UPLOAD';
+    }
+
+    /**
+     * Upload file content to structured SIMAK folder hierarchy in Google Drive.
+     *
+     * Folder structure:
+     * [Root Folder] / [Nama Paket] / [Penyedia] / [Header Uraian] / [Uraian] / [file]
+     *
+     * @param string $fileContent Binary content of the file
+     * @param string $originalName Original client file name
+     * @param string $mimeType Mime type of the file
+     * @param string $namaPaket Package name
+     * @param string $penyedia Provider name
+     * @param string $headerUraian Header description (display_no)
+     * @param string $uraian Description text
+     * @return string|null Web view link or error string ('NOT_READY', 'FAILED_UPLOAD')
+     */
+    private function uploadFileToGoogleDriveStructured(
+        string $fileContent,
+        string $originalName,
+        string $mimeType,
+        string $namaPaket,
+        string $penyedia,
+        string $headerUraian,
+        string $uraian
+    ): ?string {
+        $driveFolderId = trim((string) getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID'));
+        $oauthClientId = trim((string) getenv('GOOGLE_CLIENT_ID'));
+        $oauthClientSecret = trim((string) getenv('GOOGLE_CLIENT_SECRET'));
+
+        // Use OAuth for personal Gmail accounts (recommended)
+        if ($oauthClientId !== '' && $oauthClientSecret !== '' && $driveFolderId !== '') {
+            return $this->uploadFileToGoogleDriveStructuredOAuth(
+                $fileContent,
+                $originalName,
+                $mimeType,
+                $driveFolderId,
+                $namaPaket,
+                $penyedia,
+                $headerUraian,
+                $uraian
+            );
+        }
+
+        // Fallback to Service Account (only works with Google Workspace or Shared Drives)
+        $serviceAccountPath = trim((string) getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH'));
+
+        if ($serviceAccountPath === '' || $driveFolderId === '') {
+            log_message('error', 'uploadFileToGoogleDriveStructured - Google Drive config missing.');
+            return 'NOT_READY';
+        }
+
+        $gdrive = new \App\Libraries\GoogleDriveService();
+        if (!$gdrive->isReady()) {
+            $reason = $gdrive->getLastError() ?: 'Service not ready.';
+            log_message('error', 'uploadFileToGoogleDriveStructured - GoogleDriveService is not ready. Reason: ' . $reason);
+            return 'NOT_READY';
+        }
+
+        // Build structured folder path
+        $targetFolderId = $gdrive->buildSimakFolderPath(
+            $driveFolderId,
+            $namaPaket,
+            $penyedia,
+            $headerUraian,
+            $uraian
+        );
+
+        if ($targetFolderId === null) {
+            log_message('error', 'uploadFileToGoogleDriveStructured - Failed to build folder path for: ' . $namaPaket . '/' . $penyedia . '/' . $headerUraian . '/' . $uraian);
+            return 'FAILED_UPLOAD';
+        }
+
+        // Upload file to the structured folder
+        $webViewLink = $gdrive->uploadFileContentToFolder($fileContent, $originalName, $mimeType, $targetFolderId);
+        if ($webViewLink !== null) {
+            log_message('info', 'uploadFileToGoogleDriveStructured - Uploaded to structured folder: ' .
+                $namaPaket . '/' . $penyedia . '/' . $headerUraian . '/' . $uraian . ' -> ' . $webViewLink);
+            return $webViewLink;
+        }
+
+        $reason = $gdrive->getLastError() ?: 'Unknown error';
+        log_message('error', 'uploadFileToGoogleDriveStructured - Upload failed: ' . $reason);
+        return 'FAILED_UPLOAD';
+    }
+
+    /**
+     * Upload file content to structured SIMAK folder using OAuth 2.0.
+     *
+     * @param string $fileContent Binary content of the file
+     * @param string $originalName Original client file name
+     * @param string $mimeType Mime type of the file
+     * @param string $driveFolderId Root Drive folder ID
+     * @param string $namaPaket Package name
+     * @param string $penyedia Provider name
+     * @param string $headerUraian Header description
+     * @param string $uraian Description text
+     * @return string|null Web view link or error string
+     */
+    private function uploadFileToGoogleDriveStructuredOAuth(
+        string $fileContent,
+        string $originalName,
+        string $mimeType,
+        string $driveFolderId,
+        string $namaPaket,
+        string $penyedia,
+        string $headerUraian,
+        string $uraian
+    ): ?string {
+        $oauth = new \App\Libraries\GoogleOAuthService();
+
+        if (!$oauth->isAuthenticated()) {
+            log_message('error', 'uploadFileToGoogleDriveStructuredOAuth - Not authenticated with Google.');
+            return 'NOT_READY';
+        }
+
+        // Build structured folder path
+        $targetFolderId = $oauth->buildSimakFolderPath(
+            $driveFolderId,
+            $namaPaket,
+            $penyedia,
+            $headerUraian,
+            $uraian
+        );
+
+        if ($targetFolderId === null) {
+            log_message('error', 'uploadFileToGoogleDriveStructuredOAuth - Failed to build folder path for: ' .
+                $namaPaket . '/' . $penyedia . '/' . $headerUraian . '/' . $uraian);
+            return 'FAILED_UPLOAD';
+        }
+
+        // Upload file to the structured folder
+        $webViewLink = $oauth->uploadFileContentToFolder($fileContent, $originalName, $mimeType, $targetFolderId);
+        if ($webViewLink !== null) {
+            log_message('info', 'uploadFileToGoogleDriveStructuredOAuth - Uploaded to structured folder: ' .
+                $namaPaket . '/' . $penyedia . '/' . $headerUraian . '/' . $uraian . ' -> ' . $webViewLink);
+            return $webViewLink;
+        }
+
+        $reason = $oauth->getLastError() ?: 'Unknown error';
+        log_message('error', 'uploadFileToGoogleDriveStructuredOAuth - Upload failed: ' . $reason);
+        return 'FAILED_UPLOAD';
+    }
+
+    /**
+     * Fetch SIMAK item data including package name and provider.
+     *
+     * @param int $simakId SIMAK item ID
+     * @param string $type 'konstruksi' or 'konsultasi'
+     * @return array|null Array with 'nama_paket' and 'penyedia' or null if not found
+     */
+    private function getSimakPackageInfo(int $simakId, string $type = 'konstruksi'): ?array
+    {
+        $db = db_connect();
+        $table = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi' : 'trn_kontrak_simak';
+
+        if (!$db->tableExists($table)) {
+            return null;
+        }
+
+        $builder = $db->table($table)
+            ->select('nama_paket, penyedia')
+            ->where('id', $simakId);
+
+        $this->applyNotDeletedWhere($builder, $table);
+
+        $result = $builder->get()->getRowArray();
+
+        if (!is_array($result)) {
+            return null;
+        }
+
+        return [
+            'nama_paket' => trim((string) ($result['nama_paket'] ?? '')),
+            'penyedia' => trim((string) ($result['penyedia'] ?? '')),
+        ];
     }
 }

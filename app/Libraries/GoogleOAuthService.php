@@ -249,6 +249,210 @@ class GoogleOAuthService
     }
 
     /**
+     * Find a folder by name under a specific parent folder.
+     *
+     * @param string $folderName Name of the folder to find
+     * @param string $parentId Parent folder ID (use 'root' for root)
+     * @return string|null Folder ID if found, null otherwise
+     */
+    public function findFolder(string $folderName, string $parentId): ?string
+    {
+        if (!$this->isAuthenticated()) {
+            return null;
+        }
+
+        try {
+            $query = "name='" . str_replace("'", "\\'", $folderName) . "' and mimeType='application/vnd.google-apps.folder' and trashed=false";
+
+            if ($parentId !== 'root') {
+                $query .= " and '" . $parentId . "' in parents";
+            }
+
+            $results = $this->service->files->listFiles([
+                'q' => $query,
+                'fields' => 'files(id, name)',
+            ]);
+
+            $files = $results->getFiles();
+            if (!empty($files)) {
+                return $files[0]->getId();
+            }
+
+            return null;
+        } catch (\Throwable $e) {
+            log_message('error', 'GoogleOAuthService - findFolder failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Create a new folder under a specific parent folder.
+     *
+     * @param string $folderName Name of the folder to create
+     * @param string $parentId Parent folder ID (use 'root' for root)
+     * @return string|null Folder ID if created successfully, null otherwise
+     */
+    public function createFolder(string $folderName, string $parentId): ?string
+    {
+        if (!$this->isAuthenticated()) {
+            return null;
+        }
+
+        try {
+            $fileMetadata = new DriveFile([
+                'name' => $folderName,
+                'mimeType' => 'application/vnd.google-apps.folder',
+                'parents' => [$parentId],
+            ]);
+
+            $file = $this->service->files->create($fileMetadata, [
+                'fields' => 'id',
+            ]);
+
+            log_message('info', 'GoogleOAuthService - Created folder: ' . $folderName . ' (ID: ' . $file->getId() . ')');
+            return $file->getId();
+        } catch (\Throwable $e) {
+            log_message('error', 'GoogleOAuthService - createFolder failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Find or create a folder by name under a specific parent folder.
+     *
+     * @param string $folderName Name of the folder to find or create
+     * @param string $parentId Parent folder ID (use 'root' for root)
+     * @return string|null Folder ID if found or created, null on error
+     */
+    public function findOrCreateFolder(string $folderName, string $parentId): ?string
+    {
+        $existingId = $this->findFolder($folderName, $parentId);
+        if ($existingId !== null) {
+            return $existingId;
+        }
+
+        return $this->createFolder($folderName, $parentId);
+    }
+
+    /**
+     * Build structured folder path for SIMAK uploads.
+     * Creates and returns the final folder ID for the uraian item.
+     *
+     * Folder structure:
+     * [Root] / SIMAK / [Nama Paket] / [Penyedia] / [Header Uraian] / [Uraian]
+     *
+     * @param string $rootFolderId Root folder ID
+     * @param string $namaPaket Package name
+     * @param string $penyedia Provider name
+     * @param string $headerUraian Header description (e.g., "A", "B", "1")
+     * @param string $uraian Description text
+     * @return string|null Final folder ID for the uraian folder, null on error
+     */
+    public function buildSimakFolderPath(
+        string $rootFolderId,
+        string $namaPaket,
+        string $penyedia,
+        string $headerUraian,
+        string $uraian
+    ): ?string {
+        if (!$this->isAuthenticated()) {
+            $this->lastError = 'Not authenticated';
+            return null;
+        }
+
+        // Sanitize folder names using helper function
+        $sanitizedPaket = sanitizeFolderName($namaPaket);
+        $sanitizedPenyedia = sanitizeFolderName($penyedia);
+        $sanitizedHeader = sanitizeFolderName($headerUraian);
+        $sanitizedUraian = sanitizeFolderName($uraian);
+
+        // Build the folder hierarchy
+        $currentFolderId = $rootFolderId;
+
+        // Level 1: SIMAK (prefix folder)
+        $simakFolderId = $this->findOrCreateFolder('SIMAK', $currentFolderId);
+        if ($simakFolderId === null) {
+            log_message('error', 'GoogleOAuthService - Failed to create/access SIMAK folder');
+            return null;
+        }
+        $currentFolderId = $simakFolderId;
+
+        // Level 2: Nama Paket
+        $paketFolderId = $this->findOrCreateFolder($sanitizedPaket, $currentFolderId);
+        if ($paketFolderId === null) {
+            log_message('error', 'GoogleOAuthService - Failed to create/access paket folder: ' . $sanitizedPaket);
+            return null;
+        }
+        $currentFolderId = $paketFolderId;
+
+        // Level 3: Penyedia
+        $penyediaFolderId = $this->findOrCreateFolder($sanitizedPenyedia, $currentFolderId);
+        if ($penyediaFolderId === null) {
+            log_message('error', 'GoogleOAuthService - Failed to create/access penyedia folder: ' . $sanitizedPenyedia);
+            return null;
+        }
+        $currentFolderId = $penyediaFolderId;
+
+        // Level 4: Header Uraian
+        $headerFolderId = $this->findOrCreateFolder($sanitizedHeader, $currentFolderId);
+        if ($headerFolderId === null) {
+            log_message('error', 'GoogleOAuthService - Failed to create/access header folder: ' . $sanitizedHeader);
+            return null;
+        }
+        $currentFolderId = $headerFolderId;
+
+        // Level 5: Uraian
+        $uraianFolderId = $this->findOrCreateFolder($sanitizedUraian, $currentFolderId);
+        if ($uraianFolderId === null) {
+            log_message('error', 'GoogleOAuthService - Failed to create/access uraian folder: ' . $sanitizedUraian);
+            return null;
+        }
+
+        log_message('info', 'GoogleOAuthService - Built SIMAK folder path: ' .
+            'SIMAK/' . $sanitizedPaket . '/' . $sanitizedPenyedia . '/' . $sanitizedHeader . '/' . $sanitizedUraian);
+
+        return $uraianFolderId;
+    }
+
+    /**
+     * Upload file content to a specific folder.
+     *
+     * @param string $content Binary content of the file
+     * @param string $fileName Original client file name
+     * @param string $mimeType Mime type of the file
+     * @param string $folderId Target folder ID
+     * @return string|null Web view link of the uploaded file, or null on failure
+     */
+    public function uploadFileContentToFolder(string $content, string $fileName, string $mimeType, string $folderId): ?string
+    {
+        if (!$this->isAuthenticated()) {
+            $this->lastError = 'Not authenticated';
+            return null;
+        }
+
+        try {
+            $fileMetadata = new DriveFile([
+                'name'    => $fileName,
+                'parents' => [$folderId],
+            ]);
+
+            $file = $this->service->files->create($fileMetadata, [
+                'data'       => $content,
+                'mimeType'   => $mimeType,
+                'uploadType' => 'multipart',
+                'fields'     => 'id, webViewLink',
+            ]);
+
+            log_message('info', 'GoogleOAuthService - Uploaded to folder: ' . $fileName . ' -> ' . $file->webViewLink);
+            return $file->webViewLink;
+        } catch (\Throwable $e) {
+            $this->lastError = 'Upload to folder failed: ' . $e->getMessage();
+            log_message('error', 'GoogleOAuthService - ' . $this->lastError);
+            return null;
+        }
+    }
+
+    /**
      * Revoke the current token (logout)
      */
     public function revokeToken(): bool
