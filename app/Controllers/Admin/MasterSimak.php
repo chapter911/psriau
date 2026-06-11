@@ -377,99 +377,6 @@ class MasterSimak extends BaseController
             return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Anda tidak memiliki akses untuk menambah master SIMAK konstruksi.');
         }
 
-        // Get items from the new dynamic table format
-        $items = $this->request->getPost('items');
-        $parentId = (int) ($this->request->getPost('parent_id') ?? 0);
-        $parentId = $parentId > 0 ? $parentId : null;
-
-        // If items array is provided (new format), insert multiple items
-        if (is_array($items) && count($items) > 0) {
-            $model = new MasterSimakKonstruksiItemModel();
-            $db = db_connect();
-            $hasDisplayNoColumn = $db->fieldExists('display_no', 'mst_simak_konstruksi_item');
-
-            // Get base ordering for parent
-            $orderingBuilder = $model->selectMax('ordering', 'max_ordering');
-            if ($parentId === null) {
-                $orderingBuilder->where('parent_id', null);
-            } else {
-                $orderingBuilder->where('parent_id', $parentId);
-            }
-            $baseOrdering = (int) (($orderingBuilder->first()['max_ordering'] ?? 0));
-
-            $insertedIds = [];
-            $rowNo = (int) (($model->selectMax('row_no', 'max_row')->first()['max_row'] ?? 0));
-
-            $db->transStart();
-            foreach ($items as $index => $item) {
-                $uraian = trim((string) ($item['uraian'] ?? ''));
-                $rowKind = trim((string) ($item['row_kind'] ?? 'question'));
-
-                // Skip empty rows
-                if ($uraian === '') {
-                    continue;
-                }
-
-                // Validate row_kind
-                if (! in_array($rowKind, ['section', 'group', 'question', 'text', 'separator'], true)) {
-                    $rowKind = 'question';
-                }
-
-                $rowNo++;
-                $baseOrdering++;
-
-                $payload = [
-                    'parent_id' => $parentId,
-                    'row_no' => $rowNo,
-                    'uraian' => $uraian,
-                    'row_kind' => $rowKind,
-                    'has_question' => $rowKind === 'question' ? 1 : ((int) (($item['has_question'] ?? null) ? 1 : 0)),
-                    'has_draft' => (int) (($item['has_draft'] ?? null) ? 1 : 0),
-                    'ordering' => $baseOrdering,
-                    'is_active' => 1,
-                ];
-
-                if ($hasDisplayNoColumn) {
-                    $payload['display_no'] = '';
-                }
-
-                $model->insert($payload);
-                $insertedIds[] = (int) $model->getInsertID();
-
-                if ($db->fieldExists('is_hidden_share', 'mst_simak_konstruksi_item')) {
-                    $model->update((int) $model->getInsertID(), ['is_hidden_share' => 0]);
-                }
-            }
-            $db->transComplete();
-
-            if ($db->transStatus() === false) {
-                if ($this->wantsJsonResponse()) {
-                    return $this->response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)->setJSON([
-                        'status' => 'error',
-                        'message' => 'Gagal menyimpan data.',
-                    ] + $this->csrfPayload());
-                }
-                return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Gagal menyimpan data.');
-            }
-
-            $this->rebuildSimakKonstruksiDisplayNumbers();
-
-            $count = count($insertedIds);
-            if ($this->wantsJsonResponse()) {
-                return $this->response->setJSON([
-                    'status' => 'ok',
-                    'message' => $count > 1
-                        ? "{$count} item berhasil ditambahkan."
-                        : 'Item berhasil ditambahkan.',
-                    'id' => $insertedIds[0] ?? 0,
-                    'count' => $count,
-                ] + $this->csrfPayload());
-            }
-
-            return redirect()->to('/admin/master/simak/konstruksi')->with('success', $count > 1 ? "{$count} item berhasil ditambahkan." : 'Item berhasil ditambahkan.');
-        }
-
-        // Fallback to old single item format (for backwards compatibility)
         if (! $this->validate([
             'uraian' => 'required',
             'row_kind' => 'required|in_list[section,group,question,text,separator]',
@@ -487,6 +394,8 @@ class MasterSimak extends BaseController
 
         $model = new MasterSimakKonstruksiItemModel();
         $db = db_connect();
+        $parentId = (int) ($this->request->getPost('parent_id') ?? 0);
+        $parentId = $parentId > 0 ? $parentId : null;
         $rowKind = trim((string) $this->request->getPost('row_kind'));
 
         $nextRowNo = (int) (($model->selectMax('row_no', 'max_row')->first()['max_row'] ?? 0) + 1);
@@ -554,6 +463,21 @@ class MasterSimak extends BaseController
             return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Anda tidak memiliki akses untuk mengubah master SIMAK konstruksi.');
         }
 
+        if (! $this->validate([
+            'uraian' => 'required',
+            'row_kind' => 'required|in_list[section,group,question,text,separator]',
+        ])) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data master belum valid.',
+                    'errors' => $this->validator?->getErrors() ?? [],
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konstruksi')->withInput()->with('error', 'Data master belum valid.');
+        }
+
         $model = new MasterSimakKonstruksiItemModel();
         $db = db_connect();
         $existing = $model->find($id);
@@ -579,71 +503,6 @@ class MasterSimak extends BaseController
             }
 
             return redirect()->to('/admin/master/simak/konstruksi')->with('error', 'Parent tidak boleh sama dengan item saat ini.');
-        }
-
-        // Check for items array (new dynamic table format)
-        $items = $this->request->getPost('items');
-        if (is_array($items) && isset($items[0])) {
-            $item = $items[0];
-            $uraian = trim((string) ($item['uraian'] ?? ''));
-            $rowKind = trim((string) ($item['row_kind'] ?? 'question'));
-
-            if ($uraian === '') {
-                if ($this->wantsJsonResponse()) {
-                    return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
-                        'status' => 'error',
-                        'message' => 'Uraian tidak boleh kosong.',
-                    ] + $this->csrfPayload());
-                }
-                return redirect()->to('/admin/master/simak/konstruksi')->withInput()->with('error', 'Uraian tidak boleh kosong.');
-            }
-
-            if (! in_array($rowKind, ['section', 'group', 'question', 'text', 'separator'], true)) {
-                $rowKind = 'question';
-            }
-
-            $hasDisplayNoColumn = $db->fieldExists('display_no', 'mst_simak_konstruksi_item');
-
-            $payload = [
-                'parent_id' => $parentId,
-                'uraian' => $uraian,
-                'row_kind' => $rowKind,
-                'has_question' => $rowKind === 'question' ? 1 : ((int) (($item['has_question'] ?? null) ? 1 : 0)),
-                'has_draft' => (int) (($item['has_draft'] ?? null) ? 1 : 0),
-            ];
-
-            if ($hasDisplayNoColumn) {
-                $payload['display_no'] = (string) ($existing['display_no'] ?? '');
-            }
-
-            $model->update($id, $payload);
-            $this->rebuildSimakKonstruksiDisplayNumbers();
-
-            if ($this->wantsJsonResponse()) {
-                return $this->response->setJSON([
-                    'status' => 'ok',
-                    'message' => 'Item master SIMAK konstruksi berhasil diubah.',
-                    'id' => $id,
-                ] + $this->csrfPayload());
-            }
-
-            return redirect()->to('/admin/master/simak/konstruksi')->with('success', 'Item master SIMAK konstruksi berhasil diubah.');
-        }
-
-        // Fallback to old single item format
-        if (! $this->validate([
-            'uraian' => 'required',
-            'row_kind' => 'required|in_list[section,group,question,text,separator]',
-        ])) {
-            if ($this->wantsJsonResponse()) {
-                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
-                    'status' => 'error',
-                    'message' => 'Data master belum valid.',
-                    'errors' => $this->validator?->getErrors() ?? [],
-                ] + $this->csrfPayload());
-            }
-
-            return redirect()->to('/admin/master/simak/konstruksi')->withInput()->with('error', 'Data master belum valid.');
         }
 
         $rowKind = trim((string) $this->request->getPost('row_kind'));
@@ -1005,99 +864,6 @@ class MasterSimak extends BaseController
             return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Anda tidak memiliki akses untuk menambah master SIMAK konsultasi.');
         }
 
-        // Get items from the new dynamic table format
-        $items = $this->request->getPost('items');
-        $parentId = (int) ($this->request->getPost('parent_id') ?? 0);
-        $parentId = $parentId > 0 ? $parentId : null;
-
-        // If items array is provided (new format), insert multiple items
-        if (is_array($items) && count($items) > 0) {
-            $model = new MasterSimakKonsultasiItemModel();
-            $db = db_connect();
-            $hasDisplayNoColumn = $db->fieldExists('display_no', 'mst_simak_konsultasi_item');
-
-            // Get base ordering for parent
-            $orderingBuilder = $model->selectMax('ordering', 'max_ordering');
-            if ($parentId === null) {
-                $orderingBuilder->where('parent_id', null);
-            } else {
-                $orderingBuilder->where('parent_id', $parentId);
-            }
-            $baseOrdering = (int) (($orderingBuilder->first()['max_ordering'] ?? 0));
-
-            $insertedIds = [];
-            $rowNo = (int) (($model->selectMax('row_no', 'max_row')->first()['max_row'] ?? 0));
-
-            $db->transStart();
-            foreach ($items as $index => $item) {
-                $uraian = trim((string) ($item['uraian'] ?? ''));
-                $rowKind = trim((string) ($item['row_kind'] ?? 'question'));
-
-                // Skip empty rows
-                if ($uraian === '') {
-                    continue;
-                }
-
-                // Validate row_kind
-                if (! in_array($rowKind, ['section', 'group', 'question', 'text', 'separator'], true)) {
-                    $rowKind = 'question';
-                }
-
-                $rowNo++;
-                $baseOrdering++;
-
-                $payload = [
-                    'parent_id' => $parentId,
-                    'row_no' => $rowNo,
-                    'uraian' => $uraian,
-                    'row_kind' => $rowKind,
-                    'has_question' => $rowKind === 'question' ? 1 : ((int) (($item['has_question'] ?? null) ? 1 : 0)),
-                    'has_draft' => (int) (($item['has_draft'] ?? null) ? 1 : 0),
-                    'ordering' => $baseOrdering,
-                    'is_active' => 1,
-                ];
-
-                if ($hasDisplayNoColumn) {
-                    $payload['display_no'] = '';
-                }
-
-                $model->insert($payload);
-                $insertedIds[] = (int) $model->getInsertID();
-
-                if ($db->fieldExists('is_hidden_share', 'mst_simak_konsultasi_item')) {
-                    $model->update((int) $model->getInsertID(), ['is_hidden_share' => 0]);
-                }
-            }
-            $db->transComplete();
-
-            if ($db->transStatus() === false) {
-                if ($this->wantsJsonResponse()) {
-                    return $this->response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)->setJSON([
-                        'status' => 'error',
-                        'message' => 'Gagal menyimpan data.',
-                    ] + $this->csrfPayload());
-                }
-                return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Gagal menyimpan data.');
-            }
-
-            $this->rebuildSimakKonsultasiDisplayNumbers();
-
-            $count = count($insertedIds);
-            if ($this->wantsJsonResponse()) {
-                return $this->response->setJSON([
-                    'status' => 'ok',
-                    'message' => $count > 1
-                        ? "{$count} item berhasil ditambahkan."
-                        : 'Item berhasil ditambahkan.',
-                    'id' => $insertedIds[0] ?? 0,
-                    'count' => $count,
-                ] + $this->csrfPayload());
-            }
-
-            return redirect()->to('/admin/master/simak/konsultasi')->with('success', $count > 1 ? "{$count} item berhasil ditambahkan." : 'Item berhasil ditambahkan.');
-        }
-
-        // Fallback to old single item format (for backwards compatibility)
         if (! $this->validate([
             'uraian' => 'required',
             'row_kind' => 'required|in_list[section,group,question,text,separator]',
@@ -1115,6 +881,8 @@ class MasterSimak extends BaseController
 
         $model = new MasterSimakKonsultasiItemModel();
         $db = db_connect();
+        $parentId = (int) ($this->request->getPost('parent_id') ?? 0);
+        $parentId = $parentId > 0 ? $parentId : null;
         $rowKind = trim((string) $this->request->getPost('row_kind'));
 
         $nextRowNo = (int) (($model->selectMax('row_no', 'max_row')->first()['max_row'] ?? 0) + 1);
@@ -1187,6 +955,21 @@ class MasterSimak extends BaseController
             return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Anda tidak memiliki akses untuk mengubah master SIMAK konsultasi.');
         }
 
+        if (! $this->validate([
+            'uraian' => 'required',
+            'row_kind' => 'required|in_list[section,group,question,text,separator]',
+        ])) {
+            if ($this->wantsJsonResponse()) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data master belum valid.',
+                    'errors' => $this->validator?->getErrors() ?? [],
+                ] + $this->csrfPayload());
+            }
+
+            return redirect()->to('/admin/master/simak/konsultasi')->withInput()->with('error', 'Data master belum valid.');
+        }
+
         $model = new MasterSimakKonsultasiItemModel();
         $db = db_connect();
         $existing = $model->find($id);
@@ -1212,71 +995,6 @@ class MasterSimak extends BaseController
             }
 
             return redirect()->to('/admin/master/simak/konsultasi')->with('error', 'Parent tidak boleh sama dengan item saat ini.');
-        }
-
-        // Check for items array (new dynamic table format)
-        $items = $this->request->getPost('items');
-        if (is_array($items) && isset($items[0])) {
-            $item = $items[0];
-            $uraian = trim((string) ($item['uraian'] ?? ''));
-            $rowKind = trim((string) ($item['row_kind'] ?? 'question'));
-
-            if ($uraian === '') {
-                if ($this->wantsJsonResponse()) {
-                    return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
-                        'status' => 'error',
-                        'message' => 'Uraian tidak boleh kosong.',
-                    ] + $this->csrfPayload());
-                }
-                return redirect()->to('/admin/master/simak/konsultasi')->withInput()->with('error', 'Uraian tidak boleh kosong.');
-            }
-
-            if (! in_array($rowKind, ['section', 'group', 'question', 'text', 'separator'], true)) {
-                $rowKind = 'question';
-            }
-
-            $hasDisplayNoColumn = $db->fieldExists('display_no', 'mst_simak_konsultasi_item');
-
-            $payload = [
-                'parent_id' => $parentId,
-                'uraian' => $uraian,
-                'row_kind' => $rowKind,
-                'has_question' => $rowKind === 'question' ? 1 : ((int) (($item['has_question'] ?? null) ? 1 : 0)),
-                'has_draft' => (int) (($item['has_draft'] ?? null) ? 1 : 0),
-            ];
-
-            if ($hasDisplayNoColumn) {
-                $payload['display_no'] = (string) ($existing['display_no'] ?? '');
-            }
-
-            $model->update($id, $payload);
-            $this->rebuildSimakKonsultasiDisplayNumbers();
-
-            if ($this->wantsJsonResponse()) {
-                return $this->response->setJSON([
-                    'status' => 'ok',
-                    'message' => 'Item master SIMAK konsultasi berhasil diubah.',
-                    'id' => $id,
-                ] + $this->csrfPayload());
-            }
-
-            return redirect()->to('/admin/master/simak/konsultasi')->with('success', 'Item master SIMAK konsultasi berhasil diubah.');
-        }
-
-        // Fallback to old single item format
-        if (! $this->validate([
-            'uraian' => 'required',
-            'row_kind' => 'required|in_list[section,group,question,text,separator]',
-        ])) {
-            if ($this->wantsJsonResponse()) {
-                return $this->response->setStatusCode(ResponseInterface::HTTP_UNPROCESSABLE_ENTITY)->setJSON([
-                    'status' => 'error',
-                    'message' => 'Data master belum valid.',
-                    'errors' => $this->validator?->getErrors() ?? [],
-                ] + $this->csrfPayload());
-            }
-
-            return redirect()->to('/admin/master/simak/konsultasi')->withInput()->with('error', 'Data master belum valid.');
         }
 
         $rowKind = trim((string) $this->request->getPost('row_kind'));
