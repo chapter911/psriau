@@ -1574,6 +1574,17 @@
         updateStatusSummary();
         setCreateMode('', 'Tambah Item Master');
 
+        // --- Collapse all nodes by default on page load ---
+        var collapseAllByDefault = function() {
+            if (!root) return;
+            root.querySelectorAll('.simak-master-item').forEach(function (item) {
+                if (item.querySelector('ul.simak-master-tree-list')) {
+                    item.classList.add('is-collapsed');
+                }
+            });
+        };
+        collapseAllByDefault();
+
         // --- Real-time Search & Filter ---
         var setupSearchInput = function() {
             var searchInput = document.getElementById('simak-search-input');

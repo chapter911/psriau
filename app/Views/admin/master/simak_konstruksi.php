@@ -1501,6 +1501,17 @@
         updateStatusSummary();
         setCreateMode('', 'Tambah Item Baru');
 
+        // --- Collapse all nodes by default on page load ---
+        var collapseAllByDefault = function() {
+            if (!root) return;
+            root.querySelectorAll('.simak-master-item').forEach(function (item) {
+                if (item.querySelector('ul.simak-master-tree-list')) {
+                    item.classList.add('is-collapsed');
+                }
+            });
+        };
+        collapseAllByDefault();
+
         var importBtn = document.getElementById('btn-open-import');
         if (importBtn) {
             importBtn.addEventListener('click', function () {
