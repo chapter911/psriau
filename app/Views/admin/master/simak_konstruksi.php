@@ -430,7 +430,7 @@
         <div id="simak-notice-stack" class="simak-notice-stack" aria-live="polite" aria-atomic="true"></div>
 
         <?php
-            $renderTree = static function (array $nodes, int $depth = 0) use (&$renderTree, $shareVisibilityAvailable): void {
+            $renderTree = static function (array $nodes, int $depth = 0) use (&$renderTree, $shareVisibilityAvailable, $can_delete): void {
                 echo '<ul class="simak-master-tree-list">';
                 foreach ($nodes as $node) {
                     $id = (int) ($node['id'] ?? 0);
