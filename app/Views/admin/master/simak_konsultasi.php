@@ -1435,8 +1435,14 @@
         var submitMasterFormAjax = function () {
             if (!form) return;
 
+            var isSubmitting = false;
+
             form.addEventListener('submit', function (event) {
                 event.preventDefault();
+
+                // Prevent double submission
+                if (isSubmitting) return;
+                isSubmitting = true;
 
                 var submitButton = document.getElementById('btn-submit-form');
                 if (submitButton) submitButton.disabled = true;
@@ -1444,7 +1450,9 @@
                 var formData = new FormData(form);
                 formData.set(csrfName, csrfValue);
 
-                fetch(form.getAttribute('action'), {
+                var actionUrl = form.getAttribute('action');
+
+                fetch(actionUrl, {
                     method: 'POST',
                     body: formData,
                     credentials: 'same-origin',
@@ -1463,26 +1471,36 @@
                         syncCsrfFromJson(json);
                         if (!result.ok || json.status !== 'ok') {
                             showNotice(json.message || 'Gagal menyimpan data master.', 'danger');
+                            isSubmitting = false;
+                            if (submitButton) submitButton.disabled = false;
                             return;
                         }
 
                         var id = json.id ? String(json.id) : '';
 
-                        // First hide modal immediately
+                        // Immediately hide modal
                         hideFormModal();
 
-                        // Then refresh panels (without triggering server-side flash)
-                        var refreshPromise = refreshPanelsWithoutFlash(id, 'Tambah Item Master');
+                        // Show success notice
+                        showNotice(json.message || 'Berhasil menyimpan data master.', 'success');
 
-                        // Show success notice after refresh completes
-                        refreshPromise.then(function () {
-                            showNotice(json.message || 'Berhasil menyimpan data master.', 'success');
-                        });
+                        // Refresh the page to show new data (simpler and more reliable)
+                        // Use _silent=1 to avoid flash messages
+                        var refreshUrl = window.location.href;
+                        if (refreshUrl.indexOf('?') > -1) {
+                            refreshUrl += '&_silent=1';
+                        } else {
+                            refreshUrl += '?_silent=1';
+                        }
+
+                        // Reload the page after a short delay to ensure modal is closed
+                        setTimeout(function() {
+                            window.location.href = refreshUrl;
+                        }, 300);
                     })
                     .catch(function () {
                         showNotice('Gagal menyimpan data master.', 'danger');
-                    })
-                    .finally(function () {
+                        isSubmitting = false;
                         if (submitButton) submitButton.disabled = false;
                     });
             });
