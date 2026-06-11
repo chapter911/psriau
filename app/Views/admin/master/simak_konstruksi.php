@@ -1404,15 +1404,12 @@
                         }
 
                         var id = json.id ? String(json.id) : '';
+                        var count = json.count || 1;
 
                         // Immediately hide modal
                         hideFormModal();
 
-                        // Show success notice
-                        showNotice(json.message || 'Berhasil menyimpan data master.', 'success');
-
-                        // Refresh the page to show new data (simpler and more reliable)
-                        // Use _silent=1 to avoid flash messages
+                        // Use AJAX refresh and then expand the saved item
                         var refreshUrl = window.location.href;
                         if (refreshUrl.indexOf('?') > -1) {
                             refreshUrl += '&_silent=1';
@@ -1420,10 +1417,77 @@
                             refreshUrl += '?_silent=1';
                         }
 
-                        // Reload the page after a short delay to ensure modal is closed
-                        setTimeout(function() {
-                            window.location.href = refreshUrl;
-                        }, 300);
+                        fetch(refreshUrl, {
+                            method: 'GET',
+                            credentials: 'same-origin',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(function (response) { return response.text(); })
+                        .then(function (html) {
+                            var parser = new DOMParser();
+                            var doc = parser.parseFromString(html, 'text/html');
+                            var freshTreePanelBody = doc.querySelector('.simak-tree-panel .simak-panel-body');
+                            var freshParentSelect = doc.getElementById('parent_id');
+
+                            if (treePanelBody && freshTreePanelBody) {
+                                treePanelBody.innerHTML = freshTreePanelBody.innerHTML;
+                            }
+
+                            if (parentSelect && freshParentSelect) {
+                                parentSelect.innerHTML = freshParentSelect.innerHTML;
+                            }
+
+                            root = document.getElementById('simak-master-root');
+                            bindTreeItemClicks();
+                            updateStatusSummary();
+
+                            if (root) {
+                                root.querySelectorAll('ul.simak-master-tree-list').forEach(initSortable);
+                            }
+
+                            // Helper: collapse all items
+                            var collapseAll = function() {
+                                if (!root) return;
+                                root.querySelectorAll('.simak-master-item').forEach(function (item) {
+                                    if (item.querySelector('ul.simak-master-tree-list')) {
+                                        item.classList.add('is-collapsed');
+                                    }
+                                });
+                            };
+
+                            // Helper: expand item and its parents
+                            var expandItemAndParents = function(itemId) {
+                                if (!root || !itemId) return;
+                                var savedItem = root.querySelector('.simak-master-item[data-id="' + itemId + '"]');
+                                if (savedItem) {
+                                    var parent = savedItem.parentElement.closest('.simak-master-item');
+                                    while (parent) {
+                                        parent.classList.remove('is-collapsed');
+                                        parent = parent.parentElement.closest('.simak-master-item');
+                                    }
+                                    savedItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            };
+
+                            // Collapse all, then expand saved item
+                            collapseAll();
+                            if (id) {
+                                expandItemAndParents(id);
+                            }
+
+                            setCreateMode('', 'Tambah Item Baru');
+                        })
+                        .catch(function () {
+                            // Fallback to page reload on error
+                            window.location.reload();
+                        });
+
+                        // Show success notice
+                        showNotice(json.message || 'Berhasil menyimpan data master.', 'success');
+                        isSubmitting = false;
+                        if (submitButton) submitButton.disabled = false;
                     })
                     .catch(function () {
                         showNotice('Gagal menyimpan data master.', 'danger');
