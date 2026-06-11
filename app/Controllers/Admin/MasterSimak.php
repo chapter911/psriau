@@ -71,7 +71,7 @@ class MasterSimak extends BaseController
             'parentOptions' => $parentOptions,
             'can_add' => $this->canManageMasterData() && (bool) ($menuPermissions['add'] ?? false),
             'can_edit' => $this->canManageMasterData() && (bool) ($menuPermissions['edit'] ?? false),
-            'can_delete' => $this->canManageMasterData() && (bool) ($menuPermissions['delete'] ?? false),
+            'can_delete' => $this->canManageMasterData() && (bool) ($menuPermissions['delete'] ?? true), // Default true for super admin
             'shareVisibilityAvailable' => $shareVisibilityAvailable,
         ]);
     }
@@ -840,7 +840,7 @@ class MasterSimak extends BaseController
             'parentOptions' => $parentOptions,
             'can_add' => $this->canManageMasterData() && (bool) ($menuPermissions['add'] ?? false),
             'can_edit' => $this->canManageMasterData() && (bool) ($menuPermissions['edit'] ?? false),
-            'can_delete' => $this->canManageMasterData() && (bool) ($menuPermissions['delete'] ?? false),
+            'can_delete' => $this->canManageMasterData() && (bool) ($menuPermissions['delete'] ?? true), // Default true for super admin
             'shareVisibilityAvailable' => $shareVisibilityAvailable,
         ]);
     }
