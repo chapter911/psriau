@@ -154,9 +154,22 @@ class Oauth extends BaseController
             return $this->response->setStatusCode(403)->setBody('Access Denied');
         }
 
+        $logDir = WRITEPATH . 'logs/';
+        $logFileContent = "=== Log Directory Listing ===\n";
+        if (is_dir($logDir)) {
+            $files = scandir($logDir);
+            foreach ($files as $file) {
+                if ($file === '.' || $file === '..') continue;
+                $filePath = $logDir . $file;
+                $logFileContent .= sprintf("%s - %d bytes - modified: %s\n", $file, filesize($filePath), date('Y-m-d H:i:s', filemtime($filePath)));
+            }
+        } else {
+            $logFileContent .= "Directory not found: $logDir\n";
+        }
+
         $logFile = WRITEPATH . 'logs/log-' . date('Y-m-d') . '.log';
         $rawLogFile = WRITEPATH . 'logs/simak_upload_raw.log';
-        $logFileContent = '';
+        $logFileContent .= "\n";
 
         if (is_file($logFile)) {
             $logFileContent = "--- " . basename($logFile) . " (Last 100 lines) ---\n";
