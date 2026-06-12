@@ -3657,6 +3657,7 @@ class Kontrak extends BaseController
 
     public function sharedRequestOtp(string $token)
     {
+        log_message('error', 'sharedRequestOtp - entry point: token=' . $token . ' POST=' . json_encode($this->request->getPost()));
         $shared = $this->resolveSharedSimak($token);
         if ($shared === null) {
             return $this->renderSharedInvalidLink(
@@ -3692,6 +3693,7 @@ class Kontrak extends BaseController
 
     public function sharedVerifyOtp(string $token)
     {
+        log_message('error', 'sharedVerifyOtp - entry point: token=' . $token . ' POST=' . json_encode($this->request->getPost()));
         $shared = $this->resolveSharedSimak($token);
         if ($shared === null) {
             return $this->renderSharedInvalidLink(
@@ -3762,6 +3764,7 @@ class Kontrak extends BaseController
 
     public function sharedUploadSimakDokumen(string $token)
     {
+        log_message('error', 'sharedUploadSimakDokumen - entry point: token=' . $token . ' POST=' . json_encode($this->request->getPost()) . ' FILES=' . json_encode(is_array($_FILES) ? array_keys($_FILES) : []));
         $shared = $this->resolveSharedSimak($token);
         if ($shared === null) {
             return $this->renderSharedInvalidLink(
