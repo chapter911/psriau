@@ -180,4 +180,23 @@ class Oauth extends BaseController
 
         return $this->response->setBody('<pre>' . esc($logFileContent) . '</pre>');
     }
+
+    /**
+     * Public diagnostic endpoint to view active session variables
+     */
+    public function diagSession(): \CodeIgniter\HTTP\Response
+    {
+        $auth = $this->request->getGet('auth');
+        if ($auth !== 'Antigravity999') {
+            return $this->response->setStatusCode(403)->setBody('Access Denied');
+        }
+
+        $sessionData = session()->get();
+        return $this->response->setJSON([
+            'session_id' => session_id(),
+            'session_data' => $sessionData,
+            'is_logged_in' => session()->get('isLoggedIn') ? 'yes' : 'no',
+            'role' => session()->get('role'),
+        ]);
+    }
 }
