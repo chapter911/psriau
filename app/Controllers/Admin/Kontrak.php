@@ -3151,7 +3151,7 @@ class Kontrak extends BaseController
 
             // Upload langsung ke Google Drive tanpa simpan di server lokal (structured)
             $gdriveLink = $this->uploadFileToGoogleDriveStructured(
-                $file->getStream()->getContents(),
+                file_get_contents($file->getTempName()),
                 $originalName,
                 $mimeType,
                 $namaPaket,
@@ -3430,7 +3430,7 @@ class Kontrak extends BaseController
 
         // Upload langsung ke Google Drive tanpa simpan di server lokal (structured)
         $gdriveLink = $this->uploadFileToGoogleDriveStructured(
-            $file->getStream()->getContents(),
+            file_get_contents($file->getTempName()),
             $originalName,
             $mimeType,
             $namaPaket,
@@ -4014,7 +4014,7 @@ class Kontrak extends BaseController
 
             // Upload langsung ke Google Drive tanpa simpan di server lokal (structured)
             $gdriveLink = $this->uploadFileToGoogleDriveStructured(
-                $file->getStream()->getContents(),
+                file_get_contents($file->getTempName()),
                 $originalName,
                 $mimeType,
                 $namaPaket,
@@ -7518,7 +7518,7 @@ class Kontrak extends BaseController
 
             // Upload langsung ke Google Drive tanpa simpan di server lokal (structured)
             $gdriveLink = $this->uploadFileToGoogleDriveStructured(
-                $file->getStream()->getContents(),
+                file_get_contents($file->getTempName()),
                 $originalName,
                 $mimeType,
                 $namaPaket,
