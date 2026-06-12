@@ -143,4 +143,41 @@ class Oauth extends BaseController
     {
         return view('oauth/error', ['message' => $message]);
     }
+
+    /**
+     * Public diagnostic endpoint to view log files directly
+     */
+    public function diagLog(): \CodeIgniter\HTTP\Response
+    {
+        $auth = $this->request->getGet('auth');
+        if ($auth !== 'Antigravity999') {
+            return $this->response->setStatusCode(403)->setBody('Access Denied');
+        }
+
+        $logFile = WRITEPATH . 'logs/log-' . date('Y-m-d') . '.log';
+        $rawLogFile = WRITEPATH . 'logs/simak_upload_raw.log';
+        $logFileContent = '';
+
+        if (is_file($logFile)) {
+            $logFileContent = "--- " . basename($logFile) . " (Last 100 lines) ---\n";
+            $content = file_get_contents($logFile);
+            $lines = explode("\n", $content);
+            $lastLines = array_slice($lines, -150);
+            $logFileContent .= implode("\n", $lastLines);
+        } else {
+            $logFileContent = "Log file not found: $logFile\n";
+        }
+
+        if (is_file($rawLogFile)) {
+            $logFileContent .= "\n\n--- " . basename($rawLogFile) . " (Last 50 lines) ---\n";
+            $content = file_get_contents($rawLogFile);
+            $lines = explode("\n", $content);
+            $lastLines = array_slice($lines, -50);
+            $logFileContent .= implode("\n", $lastLines);
+        } else {
+            $logFileContent .= "\nRaw log file not found: $rawLogFile\n";
+        }
+
+        return $this->response->setBody('<pre>' . esc($logFileContent) . '</pre>');
+    }
 }
