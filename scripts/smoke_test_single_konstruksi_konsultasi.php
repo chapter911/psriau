@@ -102,7 +102,22 @@ function req(string $url, string $method = 'GET', $fields = null): array {
     $hs = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    return ['code' => $code, 'body' => substr($response, $hs), 'headers' => substr($response, 0, $hs)];
+    $body = substr($response, $hs);
+    
+    // Print debug info if not a simple page fetch
+    if ($method === 'POST') {
+        if ($code !== 200 && $code !== 302) {
+            echo "    [DEBUG POST] URL: $url | HTTP Code: $code\n";
+        }
+        if (preg_match('/<div class="alert alert-danger"[^>]*>(.*?)<\/div>/s', $body, $m)) {
+            echo "    [ALERT ERROR] URL: $url | Error: " . trim(strip_tags($m[1])) . "\n";
+        }
+        if (preg_match('/<div class="invalid-feedback"[^>]*>(.*?)<\/div>/s', $body, $m)) {
+            echo "    [VALIDATION ERROR] URL: $url | Error: " . trim(strip_tags($m[1])) . "\n";
+        }
+    }
+    
+    return ['code' => $code, 'body' => $body, 'headers' => substr($response, 0, $hs)];
 }
 
 // -------------------------------------------------------

@@ -1,0 +1,1455 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SATKER PS-RIAU</title>
+            <link rel="icon" type="image/png" href="https://satkerpps-riau.online/uploads/branding/1774740768_77e8482499660c14c637.png">
+        <link rel="apple-touch-icon" href="https://satkerpps-riau.online/uploads/branding/1774740768_77e8482499660c14c637.png">
+        <script>
+        window.__appPreloaderStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    </script>
+    <link rel="stylesheet" href="https://satkerpps-riau.online/assets/adminlte/plugins/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="https://satkerpps-riau.online/assets/adminlte/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://satkerpps-riau.online/assets/adminlte/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://satkerpps-riau.online/assets/adminlte/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://satkerpps-riau.online/assets/adminlte/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="https://satkerpps-riau.online/assets/adminlte/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    <style>
+        :root {
+            --app-primary: #0A66C2;
+            --sidebar-bg: #343A40;
+            --sidebar-text: #C2C7D0;
+            --sidebar-active-bg: #007BFF;
+            --sidebar-active-text: #FFFFFF;
+        }
+
+        .brand-image-custom {
+            width: 33px;
+            height: 33px;
+            object-fit: contain;
+            border-radius: 8px;
+            background: #fff;
+            padding: 3px;
+            margin-right: 0.5rem;
+        }
+
+        .brand-fallback {
+            width: 33px;
+            height: 33px;
+            border-radius: 8px;
+            background: #2d7f8b;
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .setting-preview {
+            max-height: 88px;
+            width: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 6px;
+            background: #fff;
+            margin-top: 8px;
+        }
+
+        .inline-form {
+            display: inline-block;
+        }
+
+        .btn-primary,
+        .bg-primary,
+        .badge-primary {
+            background-color: var(--app-primary) !important;
+            border-color: var(--app-primary) !important;
+        }
+
+        .text-primary {
+            color: var(--app-primary) !important;
+        }
+
+        .card-primary:not(.card-outline) > .card-header,
+        .nav-pills .nav-link.active,
+        .page-item.active .page-link {
+            background-color: var(--app-primary) !important;
+            border-color: var(--app-primary) !important;
+        }
+
+        .page-link {
+            color: var(--app-primary);
+        }
+
+        .main-sidebar {
+            background-color: var(--sidebar-bg) !important;
+        }
+
+        .main-sidebar .brand-link,
+        .main-sidebar .nav-sidebar .nav-link,
+        .main-sidebar .nav-sidebar .nav-link p,
+        .main-sidebar .nav-sidebar .nav-link .nav-icon,
+        .main-sidebar .nav-sidebar .nav-header {
+            color: var(--sidebar-text) !important;
+        }
+
+        .main-sidebar .nav-sidebar > .nav-item > .nav-link.active,
+        .main-sidebar .nav-sidebar .nav-treeview > .nav-item > .nav-link.active {
+            background-color: var(--sidebar-active-bg) !important;
+            color: var(--sidebar-active-text) !important;
+        }
+
+        .main-sidebar .nav-sidebar > .nav-item > .nav-link.active p,
+        .main-sidebar .nav-sidebar > .nav-item > .nav-link.active .nav-icon,
+        .main-sidebar .nav-sidebar .nav-treeview > .nav-item > .nav-link.active p,
+        .main-sidebar .nav-sidebar .nav-treeview > .nav-item > .nav-link.active .nav-icon {
+            color: var(--sidebar-active-text) !important;
+        }
+
+        .main-sidebar .nav-sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            color: #fff !important;
+        }
+
+        /* Table header global styling */
+        table thead th,
+        table thead {
+            background-color: var(--sidebar-bg) !important;
+            color: #fff !important;
+        }
+
+        table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            border-color: var(--sidebar-bg) !important;
+            font-weight: 600;
+            background-clip: padding-box;
+        }
+
+        .modal table thead th {
+            z-index: 1056;
+        }
+
+        .modal .table-responsive,
+        .modal .table-responsive-sm,
+        .modal .table-responsive-md,
+        .modal .table-responsive-lg,
+        .modal .table-responsive-xl {
+            overflow: auto;
+        }
+
+        .app-preloader-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            color: #1f2d3d;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .app-preloader-logo {
+            width: 54px;
+            height: 54px;
+            border-radius: 12px;
+            object-fit: contain;
+            background: #fff;
+            border: 1px solid #d8dee4;
+            padding: 6px;
+            box-shadow: 0 8px 22px rgba(15, 23, 32, 0.14);
+        }
+
+        .app-preloader-fallback {
+            width: 54px;
+            height: 54px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, #1f6c71, #0f3f43);
+            color: #fff;
+            font-weight: 800;
+            box-shadow: 0 8px 22px rgba(15, 23, 32, 0.2);
+        }
+
+        .app-preloader-name {
+            font-size: 1.05rem;
+            line-height: 1.2;
+            max-width: 260px;
+        }
+
+        .app-preloader-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .app-preloader-subtitle {
+            font-size: 0.78rem;
+            color: #6b7785;
+            font-weight: 600;
+            margin-top: 0.15rem;
+            max-width: 300px;
+        }
+
+        .app-preloader-bar {
+            width: min(220px, 62vw);
+            height: 3px;
+            margin-top: 0.95rem;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(31, 108, 113, 0.14);
+        }
+
+        .app-preloader-bar span {
+            display: block;
+            width: 40%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #1f6c71, #c4471f, #1f6c71);
+            background-size: 200% 100%;
+            animation: preloader-bar-move 1.2s ease-in-out infinite;
+        }
+
+        @media (max-width: 480px) {
+            .app-preloader-brand {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.45rem;
+            }
+
+            .app-preloader-text {
+                align-items: center;
+            }
+
+            .app-preloader-name {
+                font-size: 0.92rem;
+                max-width: 185px;
+            }
+
+            .app-preloader-subtitle {
+                max-width: 210px;
+                font-size: 0.7rem;
+            }
+
+            .app-preloader-bar {
+                width: min(150px, 72vw);
+                margin-top: 0.7rem;
+            }
+        }
+
+        @keyframes preloader-bar-move {
+            0% {
+                transform: translateX(-120%);
+            }
+            100% {
+                transform: translateX(320%);
+            }
+        }
+    </style>
+</head>
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed" data-preloader-duration="800">
+<div class="wrapper">
+    <div class="preloader flex-column justify-content-center align-items-center">
+        <div class="app-preloader-brand animation__shake">
+                            <img src="/uploads/branding/1774740768_77e8482499660c14c637.png" alt="Logo SATKER PS-RIAU" class="app-preloader-logo">
+                        <div class="app-preloader-text">
+                <span class="app-preloader-name">SATKER PS-RIAU</span>
+                                    <small class="app-preloader-subtitle">Satker PPS Kementerian PU</small>
+                            </div>
+        </div>
+        <div class="app-preloader-bar" aria-hidden="true"><span></span></div>
+    </div>
+
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <ul class="navbar-nav">
+        <li class="nav-item">
+            <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+        </li>
+                    <li class="nav-item d-none d-md-flex align-items-center flex-wrap py-1">
+                <span class="nav-link text-dark font-weight-bold pr-2 mb-0" style="cursor: default;">
+                    <i class="fas fa-tools mr-1"></i>
+                </span>
+                <form action="https://satkerpps-riau.online/admin/pengaturan/application/git-pull" method="post" class="mr-1 mb-0 js-ops-tool-form" data-loading-text="Menjalankan Git Pull..." data-skip-confirm="1">
+                    <input type="hidden" name="csrf_test_name" value="fe0563ced7809a4b8f514917f7122bf8">                    <input type="hidden" name="redirect_to" value="https://satkerpps-riau.online/admin/pengaturan/application">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-code-branch mr-1"></i> Git Pull
+                    </button>
+                </form>
+                <form action="https://satkerpps-riau.online/admin/pengaturan/application/merge-database" method="post" class="mr-1 mb-0 js-ops-tool-form" data-loading-text="Menjalankan Merge Database..." data-skip-confirm="1">
+                    <input type="hidden" name="csrf_test_name" value="fe0563ced7809a4b8f514917f7122bf8">                    <input type="hidden" name="redirect_to" value="https://satkerpps-riau.online/admin/pengaturan/application">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-database mr-1"></i> Merge Database
+                    </button>
+                </form>
+                <button type="button" class="btn btn-sm btn-outline-warning mb-0" data-toggle="modal" data-target="#errorLogModalNavbar">
+                    <i class="fas fa-triangle-exclamation mr-1"></i> Lihat Log Error
+                </button>
+            </li>
+
+            <li class="nav-item dropdown d-md-none">
+                <a class="nav-link dropdown-toggle text-dark font-weight-bold" href="#" id="opsToolsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-tools mr-1"></i>
+                </a>
+                <div class="dropdown-menu" aria-labelledby="opsToolsDropdown">
+                    <form action="https://satkerpps-riau.online/admin/pengaturan/application/git-pull" method="post" class="js-ops-tool-form mb-0" data-loading-text="Menjalankan Git Pull..." data-skip-confirm="1">
+                        <input type="hidden" name="csrf_test_name" value="fe0563ced7809a4b8f514917f7122bf8">                        <input type="hidden" name="redirect_to" value="https://satkerpps-riau.online/admin/pengaturan/application">
+                        <button type="submit" class="dropdown-item">
+                            <i class="fas fa-code-branch mr-2 text-primary"></i> Git Pull
+                        </button>
+                    </form>
+                    <form action="https://satkerpps-riau.online/admin/pengaturan/application/merge-database" method="post" class="js-ops-tool-form mb-0" data-loading-text="Menjalankan Merge Database..." data-skip-confirm="1">
+                        <input type="hidden" name="csrf_test_name" value="fe0563ced7809a4b8f514917f7122bf8">                        <input type="hidden" name="redirect_to" value="https://satkerpps-riau.online/admin/pengaturan/application">
+                        <button type="submit" class="dropdown-item">
+                            <i class="fas fa-database mr-2 text-primary"></i> Merge Database
+                        </button>
+                    </form>
+                    <button type="button" class="dropdown-item text-warning" data-toggle="modal" data-target="#errorLogModalNavbar">
+                        <i class="fas fa-triangle-exclamation mr-2"></i> Lihat Log Error
+                    </button>
+                </div>
+            </li>
+            </ul>
+
+    <ul class="navbar-nav ml-auto">
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-dark" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-user-circle mr-1"></i>
+                Agung Justika Indra Kesuma, ST <span class="text-muted" style="font-size:0.9em;">(super_administrator)</span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalUpdatePassword" role="button">
+                    <i class="fas fa-key mr-1"></i> Update Password
+                </a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item text-danger" href="https://satkerpps-riau.online/keluar">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Keluar
+                </a>
+            </div>
+        </li>
+    </ul>
+</nav>
+
+<div class="modal fade" id="modalUpdatePassword" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title mb-0">Update Password</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="navbarPasswordForm" action="https://satkerpps-riau.online/admin/password/update" method="post" autocomplete="off" data-skip-confirm="1">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_test_name" value="fe0563ced7809a4b8f514917f7122bf8">                    <div class="alert alert-danger d-none" id="navbarPasswordError"></div>
+                    <div class="alert alert-success d-none" id="navbarPasswordSuccess"></div>
+                    <div class="form-group">
+                        <label for="navbar_current_password">Password Lama</label>
+                        <input type="password" name="current_password" id="navbar_current_password" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="navbar_new_password">Password Baru</label>
+                        <input type="password" name="new_password" id="navbar_new_password" class="form-control" minlength="6" required>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label for="navbar_confirm_password">Konfirmasi Password Baru</label>
+                        <input type="password" name="confirm_password" id="navbar_confirm_password" class="form-control" minlength="6" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                    <button type="submit" class="btn btn-primary" id="navbarPasswordSubmitBtn">
+                        <i class="fas fa-key mr-1"></i> Update Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="errorLogModalNavbar" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title mb-0">Log Error Aplikasi</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="navbarErrorLogDate">Pilih File Log Error</label>
+                    <select class="form-control" id="navbarErrorLogDate">
+                        <option value="">- pilih file log -</option>
+                    </select>
+                    <small class="text-muted">Menampilkan 3 file log terbaru. Pilih salah satu untuk melihat isi file.</small>
+                </div>
+                <div id="navbarErrorLogResult" class="border rounded p-3" style="max-height: 50vh; overflow:auto;">
+                    <div class="text-muted">Belum ada data ditampilkan.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="navbarCommandResultModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title mb-0">Hasil Git Pull</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success mb-3">
+                    Perintah berhasil dijalankan.                </div>
+                <pre style="white-space: pre-wrap; max-height: 50vh; background:#0b1220; color:#d6e1ff; padding:14px; border-radius:8px;">From github.com:chapter911/psriau
+   199af65..3fe89d1  main       -&gt; origin/main
+Updating 199af65..3fe89d1
+Fast-forward
+ app/Helpers/CustomHelper.php  | 268 ------------------------------------------
+ app/Helpers/custom_helper.php |  62 ++++++++++
+ 2 files changed, 62 insertions(+), 268 deletions(-)
+ delete mode 100644 app/Helpers/CustomHelper.php</pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(() => {
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('navbarPasswordForm');
+        if (!form) {
+            return;
+        }
+
+        const blurActiveElement = (modalElement) => {
+            const active = document.activeElement;
+            if (!active || typeof active.blur !== 'function') {
+                return;
+            }
+
+            if (!modalElement || modalElement.contains(active)) {
+                active.blur();
+            }
+        };
+
+        const modal = window.jQuery ? window.jQuery('#modalUpdatePassword') : null;
+        const modalElement = document.getElementById('modalUpdatePassword');
+        const shouldOpenPasswordModal = false;
+        const errorBox = document.getElementById('navbarPasswordError');
+        const successBox = document.getElementById('navbarPasswordSuccess');
+        const submitButton = document.getElementById('navbarPasswordSubmitBtn');
+        const csrfInput = form.querySelector('input[name="csrf_test_name"]');
+
+        const setAlert = (element, message) => {
+            if (!element) {
+                return;
+            }
+
+            if (!message) {
+                element.classList.add('d-none');
+                element.textContent = '';
+                return;
+            }
+
+            element.textContent = message;
+            element.classList.remove('d-none');
+        };
+
+        const resetFormState = () => {
+            form.reset();
+            setAlert(errorBox, '');
+            setAlert(successBox, '');
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<i class="fas fa-key mr-1"></i> Update Password';
+        };
+
+        if (modal && typeof modal.on === 'function') {
+            modal.on('hide.bs.modal', () => {
+                blurActiveElement(modalElement);
+            });
+            modal.on('hidden.bs.modal', resetFormState);
+
+            if (shouldOpenPasswordModal) {
+                modal.modal('show');
+            }
+        }
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            setAlert(errorBox, '');
+            setAlert(successBox, '');
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'Menyimpan...';
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    body: new FormData(form),
+                });
+
+                const payload = await response.json();
+
+                if (payload.csrfHash && csrfInput) {
+                    csrfInput.value = payload.csrfHash;
+                }
+
+                if (!response.ok || payload.status !== 'ok') {
+                    throw new Error(payload.message || 'Gagal memperbarui password.');
+                }
+
+                setAlert(successBox, payload.message || 'Password berhasil diubah.');
+                if (modal && typeof modal.modal === 'function') {
+                    window.setTimeout(() => {
+                        modal.modal('hide');
+                    }, 850);
+                } else {
+                    resetFormState();
+                }
+            } catch (error) {
+                setAlert(errorBox, error.message || 'Gagal memperbarui password.');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-key mr-1"></i> Update Password';
+            }
+        });
+    });
+})();
+
+(() => {
+    document.addEventListener('DOMContentLoaded', () => {
+        const dateSelect = document.getElementById('navbarErrorLogDate');
+        const resultBox = document.getElementById('navbarErrorLogResult');
+
+        const opsForms = document.querySelectorAll('form.js-ops-tool-form');
+        if (opsForms.length > 0) {
+            opsForms.forEach((form) => {
+                form.addEventListener('submit', () => {
+                    if (form.dataset.submitting === '1') {
+                        return;
+                    }
+
+                    form.dataset.submitting = '1';
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Mohon Tunggu',
+                            text: form.getAttribute('data-loading-text') || 'Memproses perintah...',
+                            allowOutsideClick: false,
+                            showConfirmButton: false,
+                            didOpen: () => Swal.showLoading(),
+                        });
+                    }
+                });
+            });
+        }
+
+        if (!dateSelect || !resultBox) {
+            return;
+        }
+
+        const escapeHtml = (value) => String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+
+        const renderLogContent = (payload) => {
+            const fileName = payload && payload.file ? String(payload.file) : '-';
+            const content = payload && payload.content ? String(payload.content) : '';
+            const isTruncated = Boolean(payload && payload.isTruncated);
+            const totalLines = Number(payload && payload.totalLines ? payload.totalLines : 0);
+            const displayedLines = Number(payload && payload.displayedLines ? payload.displayedLines : 0);
+
+            if (!content.trim()) {
+                resultBox.innerHTML = `<div class="text-muted">File ${escapeHtml(fileName)} kosong.</div>`;
+                return;
+            }
+
+            const meta = isTruncated
+                ? `<div class="alert alert-warning py-2 px-3 mb-2">Menampilkan ${escapeHtml(String(displayedLines))} dari ${escapeHtml(String(totalLines))} baris terakhir.</div>`
+                : '';
+
+            resultBox.innerHTML = `
+                <div class="mb-2"><strong>File:</strong> ${escapeHtml(fileName)}</div>
+                ${meta}
+                <pre class="mb-0" style="white-space: pre-wrap; background:#0b1220; color:#d6e1ff; padding:12px; border-radius:8px;">${escapeHtml(content)}</pre>
+            `;
+        };
+
+        const loadDates = async () => {
+            dateSelect.innerHTML = '<option value="">Memuat file log...</option>';
+            try {
+                const response = await fetch('https://satkerpps-riau.online/admin/pengaturan/application/error-log-dates', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                const payload = await response.json();
+                if (!response.ok || payload.status !== 'ok') {
+                    throw new Error(payload.message || 'Gagal memuat daftar file log.');
+                }
+
+                const dates = Array.isArray(payload.data) ? payload.data : [];
+                if (dates.length === 0) {
+                    dateSelect.innerHTML = '<option value="">- tidak ada file log -</option>';
+                    return;
+                }
+
+                dateSelect.innerHTML = '<option value="">- pilih file log -</option>' + dates
+                    .map((date) => `<option value="${escapeHtml(date)}">${escapeHtml(date)}</option>`)
+                    .join('');
+            } catch (error) {
+                dateSelect.innerHTML = '<option value="">- gagal memuat file log -</option>';
+                resultBox.innerHTML = `<div class="text-danger">${escapeHtml(error.message || 'Gagal memuat file log.')}</div>`;
+            }
+        };
+
+        const fetchLogsByDate = async (date) => {
+            if (!date) {
+                resultBox.innerHTML = '<div class="text-muted">Pilih file log untuk melihat isinya.</div>';
+                return;
+            }
+
+            resultBox.innerHTML = '<div class="text-muted">Memuat isi file log...</div>';
+            try {
+                const response = await fetch(`https://satkerpps-riau.online/admin/pengaturan/application/error-logs?file=${encodeURIComponent(date)}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                const payload = await response.json();
+                if (!response.ok || payload.status !== 'ok') {
+                    throw new Error(payload.message || 'Gagal memuat isi file log.');
+                }
+
+                renderLogContent(payload.data || {});
+            } catch (error) {
+                resultBox.innerHTML = `<div class="text-danger">${escapeHtml(error.message || 'Gagal memuat isi file log.')}</div>`;
+            }
+        };
+
+        dateSelect.addEventListener('change', (event) => {
+            fetchLogsByDate(event.target.value || '');
+        });
+
+        if (window.jQuery) {
+            const blurActiveElementInModal = (modalId) => {
+                const modalEl = document.getElementById(modalId);
+                const active = document.activeElement;
+                if (!active || typeof active.blur !== 'function') {
+                    return;
+                }
+
+                if (!modalEl || modalEl.contains(active)) {
+                    active.blur();
+                }
+            };
+
+            window.jQuery('#errorLogModalNavbar').on('show.bs.modal', () => {
+                resultBox.innerHTML = '<div class="text-muted">Pilih file log untuk melihat isinya.</div>';
+                loadDates();
+            });
+
+            window.jQuery('#errorLogModalNavbar').on('hide.bs.modal', () => {
+                blurActiveElementInModal('errorLogModalNavbar');
+            });
+
+            window.jQuery('#errorLogModalNavbar').on('hidden.bs.modal', () => {
+                dateSelect.innerHTML = '<option value="">- pilih file log -</option>';
+                resultBox.innerHTML = '<div class="text-muted">Belum ada data ditampilkan.</div>';
+            });
+
+                        window.jQuery('#navbarCommandResultModal').on('hide.bs.modal', () => {
+                blurActiveElementInModal('navbarCommandResultModal');
+            });
+
+            window.jQuery('#navbarCommandResultModal').modal('show');
+                    }
+    });
+})();
+</script>
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="https://satkerpps-riau.online/admin" class="brand-link d-flex align-items-center">
+                    <img src="/uploads/branding/1774740768_77e8482499660c14c637.png" alt="Logo Satker PPS Kementerian PU" class="brand-image-custom">
+                <span class="brand-text font-weight-light">Prasarana Strategis</span>
+    </a>
+
+    <div class="sidebar">
+        <nav class="mt-2">
+                        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false"><li class="nav-item"><a href="https://satkerpps-riau.online/admin" class="nav-link "><i class="nav-icon fas fa-school"></i><p>Dashboard</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/map" class="nav-link "><i class="nav-icon fas fa-map-marked-alt"></i><p>Map</p></a></li><li class="nav-item has-treeview "><a href="#" class="nav-link "><i class="nav-icon fas fa-home"></i><p>Halaman Utama<i class="right fas fa-angle-left"></i></p></a><ul class="nav nav-treeview"><li class="nav-item"><a href="https://satkerpps-riau.online/admin/pengaturan-home" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Pengaturan Halaman</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/acara" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Kelola Acara</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/berita" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Kelola Berita</p></a></li></ul></li><li class="nav-item has-treeview "><a href="https://satkerpps-riau.online/" class="nav-link "><i class="nav-icon fas fa-file-signature"></i><p>Kontrak<i class="right fas fa-angle-left"></i></p></a><ul class="nav nav-treeview"><li class="nav-item"><a href="https://satkerpps-riau.online/admin/kontrak/paket" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Paket</p></a></li><li class="nav-item has-treeview "><a href="https://satkerpps-riau.online/" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Simak<i class="right fas fa-angle-left"></i></p></a><ul class="nav nav-treeview"><li class="nav-item"><a href="https://satkerpps-riau.online/admin/kontrak/simak/konstruksi" class="nav-link "><i class="nav-icon far fa-dot-circle"></i><p>Konstruksi</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/kontrak/simak/konsultasi" class="nav-link "><i class="nav-icon far fa-dot-circle"></i><p>Konsultasi</p></a></li></ul></li></ul></li><li class="nav-item has-treeview "><a href="https://satkerpps-riau.online/" class="nav-link "><i class="nav-icon fas fa-clipboard-list"></i><p>Laporan<i class="right fas fa-angle-left"></i></p></a><ul class="nav nav-treeview"><li class="nav-item"><a href="https://satkerpps-riau.online/admin/laporan/harian" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Harian</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/laporan/mingguan" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Mingguan</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/laporan/perjalanan-dinas" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Perjalanan Dinas</p></a></li></ul></li><li class="nav-item has-treeview "><a href="https://satkerpps-riau.online/" class="nav-link "><i class="nav-icon fas fa-images"></i><p>Dokumentasi<i class="right fas fa-angle-left"></i></p></a><ul class="nav nav-treeview"><li class="nav-item"><a href="https://satkerpps-riau.online/admin/dokumentasi/kegiatan-lapangan" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Kegiatan Lapangan</p></a></li></ul></li><li class="nav-item has-treeview "><a href="https://satkerpps-riau.online/" class="nav-link "><i class="nav-icon fas fa-boxes"></i><p>Master<i class="right fas fa-angle-left"></i></p></a><ul class="nav nav-treeview"><li class="nav-item"><a href="https://satkerpps-riau.online/admin/master/kop-surat" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Kop Surat</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/master/sekolah" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Sekolah</p></a></li><li class="nav-item has-treeview "><a href="https://satkerpps-riau.online/admin/master/wilayah" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Wilayah Administratif<i class="right fas fa-angle-left"></i></p></a><ul class="nav nav-treeview"><li class="nav-item"><a href="https://satkerpps-riau.online/admin/master/provinsi" class="nav-link "><i class="nav-icon far fa-dot-circle"></i><p>Provinsi</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/master/kabupaten" class="nav-link "><i class="nav-icon far fa-dot-circle"></i><p>Kabupaten</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/master/kecamatan" class="nav-link "><i class="nav-icon far fa-dot-circle"></i><p>Kecamatan</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/master/kelurahan" class="nav-link "><i class="nav-icon far fa-dot-circle"></i><p>Kelurahan</p></a></li></ul></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/master/pegawai" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Pegawai</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/master/jabatan" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Jabatan</p></a></li><li class="nav-item has-treeview "><a href="#" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Simak<i class="right fas fa-angle-left"></i></p></a><ul class="nav nav-treeview"><li class="nav-item"><a href="https://satkerpps-riau.online/admin/master/simak/konstruksi" class="nav-link "><i class="nav-icon far fa-dot-circle"></i><p>Kontruksi</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/master/simak/konsultasi" class="nav-link "><i class="nav-icon far fa-dot-circle"></i><p>Konsultasi</p></a></li></ul></li></ul></li><li class="nav-item has-treeview menu-open"><a href="#" class="nav-link "><i class="nav-icon fas fa-tools"></i><p>Pengaturan<i class="right fas fa-angle-left"></i></p></a><ul class="nav nav-treeview"><li class="nav-item"><a href="https://satkerpps-riau.online/admin/utility/user" class="nav-link "><i class="nav-icon far fa-circle"></i><p>User</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/utility/user-group" class="nav-link "><i class="nav-icon far fa-circle"></i><p>User Role</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/pengaturan/application" class="nav-link active"><i class="nav-icon far fa-circle"></i><p>Application</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/pengaturan/menus" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Menus</p></a></li></ul></li><li class="nav-item has-treeview "><a href="https://satkerpps-riau.online/" class="nav-link "><i class="nav-icon fas fa-history"></i><p>History<i class="right fas fa-angle-left"></i></p></a><ul class="nav nav-treeview"><li class="nav-item"><a href="https://satkerpps-riau.online/admin/history/login" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Login</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/history/edit" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Edit</p></a></li><li class="nav-item"><a href="https://satkerpps-riau.online/admin/history/delete" class="nav-link "><i class="nav-icon far fa-circle"></i><p>Delete</p></a></li></ul></li></ul>        </nav>
+    </div>
+</aside>
+    <div class="content-wrapper">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">Panel Manajemen</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    Git pull selesai.                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                        
+            <div class="card card-primary mb-4">
+    <div class="card-header">
+        <h3 class="card-title">Setting Tampilan Aplikasi</h3>
+    </div>
+    <form action="https://satkerpps-riau.online/admin/pengaturan/application" method="post" enctype="multipart/form-data">
+        <div class="card-body">
+            <input type="hidden" name="csrf_test_name" value="fe0563ced7809a4b8f514917f7122bf8">
+
+            <div class="form-group mb-4">
+                <label for="app_name">Nama Aplikasi</label>
+                <input
+                    type="text"
+                    id="app_name"
+                    name="app_name"
+                    class="form-control"
+                    value="SATKER PS-RIAU"
+                    required
+                >
+            </div>
+
+            <div class="form-group mb-4">
+                <label>Mode Maintenance</label>
+                <div class="form-check">
+                    <input
+                        type="hidden"
+                        name="maintenance_mode"
+                        value="0"
+                    >
+                    <input
+                        type="checkbox"
+                        id="maintenance_mode"
+                        name="maintenance_mode"
+                        class="form-check-input"
+                        value="1"
+                                            >
+                    <label class="form-check-label" for="maintenance_mode">
+                        Aktifkan mode maintenance
+                    </label>
+                </div>
+                <small class="text-muted">Saat diaktifkan, semua halaman publik akan menampilkan halaman maintenance sementara Anda masih dapat masuk ke area admin.</small>
+            </div>
+
+            <div class="form-group mb-4">
+                <label for="primary_color">Warna Primary Aplikasi</label>
+                <input
+                    type="color"
+                    id="primary_color"
+                    name="primary_color"
+                    class="form-control"
+                    value="#0A66C2"
+                    style="max-width: 92px;"
+                    required
+                >
+                <small class="text-muted">Warna ini digunakan untuk elemen utama aplikasi.</small>
+            </div>
+
+            <div class="card card-light mb-4">
+                <div class="card-header py-2"><h5 class="card-title mb-0" style="font-size:1rem;">Pengaturan Warna Sidebar</h5></div>
+                <div class="card-body pb-2">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="sidebar_bg_color">Background Sidebar</label>
+                            <input type="color" id="sidebar_bg_color" name="sidebar_bg_color" class="form-control" value="#343A40" style="max-width: 92px;" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="sidebar_text_color">Teks Sidebar</label>
+                            <input type="color" id="sidebar_text_color" name="sidebar_text_color" class="form-control" value="#C2C7D0" style="max-width: 92px;" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="sidebar_active_bg_color">Active Sidebar</label>
+                            <input type="color" id="sidebar_active_bg_color" name="sidebar_active_bg_color" class="form-control" value="#007BFF" style="max-width: 92px;" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="sidebar_active_text_color">Teks Active Sidebar</label>
+                            <input type="color" id="sidebar_active_text_color" name="sidebar_active_text_color" class="form-control" value="#FFFFFF" style="max-width: 92px;" required>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-2">Atur kontras sidebar supaya menu dan submenu lebih jelas terlihat.</small>
+                    <div class="mt-3">
+                        <button
+                            type="submit"
+                            class="btn btn-outline-secondary btn-sm"
+                            formaction="https://satkerpps-riau.online/admin/pengaturan/application/reset-sidebar"
+                            formmethod="post"
+                            formnovalidate
+                            data-confirm-title="Reset Sidebar"
+                            data-confirm-text="Reset warna sidebar ke default AdminLTE?"
+                            data-confirm-button="Ya, reset"
+                        >
+                            <i class="fas fa-rotate-left mr-1"></i> Reset Pengaturan Sidebar (Default AdminLTE)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-light mb-4">
+                <div class="card-header py-2"><h5 class="card-title mb-0" style="font-size:1rem;">Logo & Background Login</h5></div>
+                <div class="card-body pb-2">
+                    <div class="row align-items-center mb-3">
+                        <div class="col-md-3 text-center">
+                                                            <img src="/uploads/branding/1774773296_62f922407f66fb004e77.jpg" alt="Preview logo aplikasi" class="setting-preview mb-2" style="max-height: 80px;">
+                                                    </div>
+                        <div class="col-md-9">
+                            <label for="app_logo_file">Logo Aplikasi</label>
+                            <input type="file" id="app_logo_file" name="app_logo_file" class="form-control mb-1" accept="image/*">
+                            <small class="text-muted">Kosongkan jika tidak ingin mengganti logo. Maksimal 2 MB.</small>
+                        </div>
+                    </div>
+                    <div class="row align-items-center">
+                        <div class="col-md-3 text-center">
+                                                            <img src="/uploads/branding/1774772983_81e10fb9b662aaec1b7e.png" alt="Preview background login" class="setting-preview mb-2" style="max-height: 80px;">
+                                                    </div>
+                        <div class="col-md-9">
+                            <label for="login_bg_file">Background Login</label>
+                            <input type="file" id="login_bg_file" name="login_bg_file" class="form-control mb-1" accept="image/*">
+                            <small class="text-muted">Kosongkan jika tidak ingin mengganti background login. Maksimal 4 MB.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="simak_upload_tutorial_url">Link Tutorial Upload SIMAK (YouTube)</label>
+                <input
+                    type="url"
+                    id="simak_upload_tutorial_url"
+                    name="simak_upload_tutorial_url"
+                    class="form-control"
+                    value="https://www.youtube.com/watch?v=fHQhAJ-B3qE"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                >
+                <small class="text-muted">Dipakai pada halaman share SIMAK sebagai tombol tutorial upload. Kosongkan jika ingin menyembunyikan tombol.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="simak_max_upload_mb">Maksimal Batas Ukuran Upload SIMAK (MB)</label>
+                <input
+                    type="number"
+                    id="simak_max_upload_mb"
+                    name="simak_max_upload_mb"
+                    class="form-control"
+                    value="20"
+                    min="1"
+                    max="1000"
+                    required
+                >
+                <small class="text-muted">Batas maksimum ukuran berkas yang diperbolehkan untuk diunggah langsung (dalam Megabytes). Contoh: 20.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="auto_logout_minutes">Timer Logout Otomatis (menit)</label>
+                <input
+                    type="number"
+                    id="auto_logout_minutes"
+                    name="auto_logout_minutes"
+                    class="form-control"
+                    value="30"
+                    min="1"
+                    max="1440"
+                    required
+                >
+                <small class="text-muted">Pengguna akan otomatis logout jika tidak ada aktivitas sesuai durasi ini.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="preloader_duration_ms">Durasi Preloader Halaman (ms)</label>
+                <input
+                    type="number"
+                    id="preloader_duration_ms"
+                    name="preloader_duration_ms"
+                    class="form-control"
+                    value="800"
+                    min="0"
+                    max="10000"
+                    step="1"
+                    required
+                >
+                <small class="text-muted">Digunakan untuk menentukan berapa lama preloader tampil sebelum halaman disembunyikan. Contoh: 500 ms.</small>
+            </div>
+        </div>
+
+        <div class="card-footer d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <button type="submit" class="btn btn-primary mr-2">
+                    <i class="fas fa-floppy-disk mr-1"></i> Simpan Setting
+                </button>
+                <button type="button" class="btn btn-outline-info" data-toggle="modal" data-target="#testEmailModal">
+                    <i class="fas fa-paper-plane mr-1"></i> Uji Coba Kirim Email
+                </button>
+            </div>
+            <span class="text-muted small">Pastikan perubahan tampilan sesuai identitas aplikasi.</span>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="testEmailModal" tabindex="-1" role="dialog" aria-labelledby="testEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testEmailModalLabel">Uji Coba Kirim Email</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="testEmailForm" method="post" action="https://satkerpps-riau.online/admin/pengaturan/application/test-email">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_test_name" value="fe0563ced7809a4b8f514917f7122bf8">
+                    <div class="alert d-none" id="testEmailResult" role="alert"></div>
+
+                    <div class="form-group">
+                        <label for="test_email_to">Email Tujuan</label>
+                        <input type="email" class="form-control" id="test_email_to" name="to_email" placeholder="contoh@domain.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="test_email_subject">Subject</label>
+                        <input type="text" class="form-control" id="test_email_subject" name="subject" value="Uji Coba Email - SATKER PPS Riau">
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="test_email_message">Isi Pesan</label>
+                        <textarea class="form-control" id="test_email_message" name="message" rows="4">Ini adalah email uji coba dari halaman Pengaturan Aplikasi.</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                    <button type="submit" class="btn btn-info" id="testEmailSubmitBtn">
+                        <i class="fas fa-paper-plane mr-1"></i> Kirim Uji Coba
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    (() => {
+        const form = document.getElementById('testEmailForm');
+        if (!form) {
+            return;
+        }
+
+        const submitBtn = document.getElementById('testEmailSubmitBtn');
+        const resultBox = document.getElementById('testEmailResult');
+
+        const showResult = (ok, message, detail = '') => {
+            if (!resultBox) {
+                return;
+            }
+
+            resultBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+            resultBox.classList.add(ok ? 'alert-success' : 'alert-danger');
+
+            const detailHtml = detail ? `<hr class="my-2"><pre class="mb-0" style="white-space:pre-wrap;max-height:220px;overflow:auto;">${detail.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>` : '';
+            resultBox.innerHTML = `<div>${message}</div>${detailHtml}`;
+        };
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (!submitBtn) {
+                return;
+            }
+
+            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Mengirim...';
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: new FormData(form),
+                });
+
+                const payload = await response.json();
+                const isOk = response.ok && payload && payload.status === 'ok';
+                const message = (payload && payload.message) ? payload.message : 'Terjadi kesalahan saat memproses permintaan.';
+                const detail = (payload && payload.error_detail) ? payload.error_detail : '';
+
+                showResult(isOk, message, detail);
+
+                if (payload && payload.csrf_hash) {
+                    const tokenField = form.querySelector('input[name="csrf_test_name"]');
+                    if (tokenField) {
+                        tokenField.value = payload.csrf_hash;
+                    }
+                }
+            } catch (error) {
+                showResult(false, 'Request gagal dijalankan.', error && error.message ? error.message : 'Unknown error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+    })();
+</script>
+        </div>
+    </section>
+</div>
+    <footer class="main-footer">
+    <strong>Satker PPS Kementerian PU</strong>
+    <div class="float-right d-none d-sm-inline-block">
+        <a href="https://satkerpps-riau.online/">Kembali ke Situs Publik</a>
+    </div>
+</footer>
+</div>
+<script src="https://satkerpps-riau.online/assets/adminlte/plugins/jquery/jquery.min.js"></script>
+<script src="https://satkerpps-riau.online/assets/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="https://satkerpps-riau.online/assets/adminlte/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="https://satkerpps-riau.online/assets/adminlte/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://satkerpps-riau.online/assets/adminlte/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="https://satkerpps-riau.online/assets/adminlte/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+<script src="https://satkerpps-riau.online/assets/adminlte/plugins/select2/js/select2.full.min.js"></script>
+<script src="https://satkerpps-riau.online/assets/adminlte/dist/js/adminlte.min.js"></script>
+<script src="https://satkerpps-riau.online/assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js"></script>
+<script>
+    (() => {
+        const passwordWarning = null;
+        if (!passwordWarning || typeof passwordWarning !== 'object') {
+            return;
+        }
+
+        const title = String(passwordWarning.title || 'Segera Ganti Password');
+        const text = String(passwordWarning.text || 'Silakan segera ganti password Anda untuk keamanan akun.');
+        const changePasswordUrl = String(passwordWarning.changePasswordUrl || 'https://satkerpps-riau.online/admin/password');
+
+        const fallback = () => {
+            if (window.confirm(title + '\n\n' + text + '\n\nBuka halaman ganti password sekarang?')) {
+                window.location.href = changePasswordUrl;
+            }
+        };
+
+        if (typeof Swal === 'undefined') {
+            fallback();
+            return;
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title,
+            text,
+            confirmButtonText: 'Ganti Password Sekarang',
+            showCancelButton: true,
+            cancelButtonText: 'Nanti',
+            reverseButtons: true,
+            focusConfirm: true,
+            allowOutsideClick: false,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = changePasswordUrl;
+            }
+        });
+    })();
+
+    (() => {
+        // Handle SIMAK delete forms: show SweetAlert2 input prompting user to type nomor kontrak
+        document.querySelectorAll('form.simak-delete-form').forEach((form) => {
+            form.addEventListener('submit', (ev) => {
+                ev.preventDefault();
+
+                const nomorFromAttr = (form.dataset.nomorKontrak || '').toString().trim();
+                let nomor = nomorFromAttr;
+                if (!nomor) {
+                    const tr = form.closest('tr');
+                    nomor = tr ? (tr.dataset.nomorKontrak || '').toString().trim() : '';
+                }
+
+                const title = 'Hapus Data SIMAK';
+                const inputLabel = 'Ketik nomor kontrak untuk konfirmasi';
+                const placeholder = nomor || '';
+
+                const fallbackPrompt = () => {
+                    const value = window.prompt(inputLabel + (placeholder ? '\n\n' + placeholder : '')) || '';
+                    if (value === nomor && nomor !== '') {
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'confirm_nomor_kontrak';
+                        hidden.value = nomor;
+                        form.appendChild(hidden);
+                        form.dataset.confirmed = '1';
+                        form.submit();
+                        return;
+                    }
+                    window.alert('Konfirmasi nomor kontrak tidak cocok. Penghapusan dibatalkan.');
+                };
+
+                if (typeof Swal === 'undefined') {
+                    fallbackPrompt();
+                    return;
+                }
+
+                Swal.fire({
+                    title: title,
+                    html: '<div style="text-align: left; margin: 1rem 0;">' +
+                          '<p style="margin-bottom: 0.5rem;"><strong>Nomor Kontrak:</strong></p>' +
+                          '<div style="display: flex; gap: 0.5rem; align-items: center;">' +
+                          '<div style="flex: 1; background: #f5f5f5; padding: 0.75rem; border-radius: 4px; border: 1px solid #ddd; word-break: break-all; font-family: monospace;">' +
+                          nomor +
+                          '</div>' +
+                          '<button type="button" id="simak-copy-nomor-btn" style="padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; font-size: 0.9rem;">Salin</button>' +
+                          '</div>' +
+                          '<p style="margin-top: 1rem; margin-bottom: 0.5rem;"><strong>Ketik nomor kontrak di bawah untuk konfirmasi penghapusan:</strong></p>' +
+                          '</div>',
+                    input: 'text',
+                    inputPlaceholder: nomor || 'Ketik nomor kontrak',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    didOpen: () => {
+                        const copyBtn = document.getElementById('simak-copy-nomor-btn');
+                        if (copyBtn) {
+                            copyBtn.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                navigator.clipboard.writeText(nomor).then(() => {
+                                    const originalText = copyBtn.textContent;
+                                    copyBtn.textContent = 'Disalin!';
+                                    setTimeout(() => {
+                                        copyBtn.textContent = originalText;
+                                    }, 2000);
+                                });
+                            });
+                        }
+                    },
+                    preConfirm: (value) => {
+                        if (!value || value.toString().trim() === '') {
+                            Swal.showValidationMessage('Silakan ketik nomor kontrak untuk konfirmasi.');
+                            return false;
+                        }
+                        if (nomor !== '' && value.toString().trim() !== nomor) {
+                            Swal.showValidationMessage('Nomor kontrak tidak cocok.');
+                            return false;
+                        }
+                        return value.toString().trim();
+                    }
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+                    const confirmedValue = result.value || '';
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'confirm_nomor_kontrak';
+                    hidden.value = confirmedValue;
+                    form.appendChild(hidden);
+                    form.dataset.confirmed = '1';
+                    form.submit();
+                });
+            });
+        });
+    })();
+
+    (() => {
+        const preloaderShownAt = typeof window.__appPreloaderStart === 'number'
+            ? window.__appPreloaderStart
+            : (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        const minimumVisibleMs = Number(document.body?.dataset.preloaderDuration || 800);
+
+        window.addEventListener('load', () => {
+            const preloader = document.querySelector('.preloader');
+            if (!preloader) {
+                return;
+            }
+
+            const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+            const remaining = Math.max(0, minimumVisibleMs - (now - preloaderShownAt));
+
+            window.setTimeout(() => {
+                preloader.style.transition = 'opacity .28s ease';
+                preloader.style.opacity = '0';
+                window.setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 300);
+            }, remaining);
+        });
+    })();
+
+    (() => {
+        if (typeof $ === 'undefined' || ! $.fn || ! $.fn.select2) {
+            return;
+        }
+
+        const initSelect2 = (root) => {
+            const $root = root ? $(root) : $(document);
+            const $targets = $root.find('select').add($root.filter('select'));
+
+            const buildPlaceholder = ($select) => {
+                const explicitPlaceholder = ($select.data('placeholder') || '').toString().trim();
+                if (explicitPlaceholder !== '') {
+                    return explicitPlaceholder;
+                }
+
+                const firstOption = $select.find('option').first();
+                if (firstOption.length === 0) {
+                    return '';
+                }
+
+                const firstValue = (firstOption.attr('value') || '').toString().trim();
+                const firstText = (firstOption.text() || '').toString().trim();
+                if (firstValue === '' && firstText !== '') {
+                    return firstText;
+                }
+
+                return '';
+            };
+
+            $targets.each(function () {
+                const $select = $(this);
+
+                if ($select.closest('.swal2-container, .swal2-popup').length > 0 || $select.hasClass('swal2-select')) {
+                    return;
+                }
+
+                if ($select.closest('.dataTables_length').length > 0 || ($select.attr('name') || '').endsWith('_length')) {
+                    return;
+                }
+
+                if ($select.hasClass('no-select2') || $select.data('select2')) {
+                    return;
+                }
+
+                const inModal = $select.closest('.modal').length > 0;
+                const options = {
+                    theme: 'bootstrap4',
+                    width: '100%',
+                    minimumResultsForSearch: 0,
+                    closeOnSelect: false,
+                    selectOnClose: false,
+                };
+
+                const placeholder = buildPlaceholder($select);
+                if (placeholder !== '') {
+                    options.placeholder = placeholder;
+                }
+
+                const isRequired = $select.prop('required') === true;
+                const isMultiple = $select.prop('multiple') === true;
+                if (!isRequired && !isMultiple) {
+                    options.allowClear = true;
+                }
+
+                if (inModal) {
+                    options.dropdownParent = $select.closest('.modal');
+                }
+
+                $select.select2(options);
+            });
+        };
+
+        initSelect2(document);
+
+        $(document).on('shown.bs.modal', '.modal', function () {
+            initSelect2(this);
+        });
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) {
+                        initSelect2(node);
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    })();
+
+    (() => {
+        if (typeof $ === 'undefined' || ! $.fn.DataTable) return;
+
+        $('.js-datatable').each(function () {
+            const tableOrder = $(this).data('order') || [[0, 'asc']];
+
+            $(this).DataTable({
+                responsive: false,
+                autoWidth: false,
+                scrollX: true,
+                scrollCollapse: true,
+                order: tableOrder,
+                language: {
+                    search: 'Cari:',
+                    lengthMenu: 'Tampilkan _MENU_ data',
+                    info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+                    infoEmpty: 'Tidak ada data',
+                    zeroRecords: 'Data tidak ditemukan',
+                    paginate: {
+                        first: 'Awal',
+                        last: 'Akhir',
+                        next: 'Berikutnya',
+                        previous: 'Sebelumnya'
+                    }
+                }
+            });
+        });
+    })();
+
+    (() => {
+        const buildConfirmConfig = (form, submitter) => {
+            const title = (submitter && submitter.dataset.confirmTitle) || form.dataset.confirmTitle || 'Konfirmasi';
+            const text = (submitter && submitter.dataset.confirmText) || form.dataset.confirmText || 'Yakin ingin melanjutkan?';
+            const confirmButtonText = (submitter && submitter.dataset.confirmButton) || form.dataset.confirmButton || 'Ya, lanjutkan';
+
+            return {
+                icon: 'question',
+                title,
+                text,
+                showCancelButton: true,
+                confirmButtonText,
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusCancel: true,
+            };
+        };
+
+        document.querySelectorAll('form').forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                if (form.dataset.confirmed === '1' || form.dataset.skipConfirm === '1') {
+                    return;
+                }
+
+                // Skip SIMAK delete forms (handled separately)
+                if (form.classList.contains('simak-delete-form')) {
+                    return;
+                }
+
+                const method = (form.getAttribute('method') || 'get').toLowerCase();
+                if (method !== 'post') {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const submitter = event.submitter || null;
+                const config = buildConfirmConfig(form, submitter);
+                const fallbackConfirm = () => {
+                    const ok = window.confirm(config.text || 'Yakin ingin melanjutkan?');
+                    if (ok) {
+                        form.dataset.confirmed = '1';
+                        if (submitter && typeof form.requestSubmit === 'function') {
+                            form.requestSubmit(submitter);
+                            return;
+                        }
+
+                        form.submit();
+                    }
+                };
+
+                if (typeof Swal === 'undefined') {
+                    fallbackConfirm();
+                    return;
+                }
+
+                Swal.fire(config).then((result) => {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    form.dataset.confirmed = '1';
+                    if (submitter && typeof form.requestSubmit === 'function') {
+                        form.requestSubmit(submitter);
+                        return;
+                    }
+
+                    form.submit();
+                });
+            });
+        });
+    })();
+
+    (() => {
+        const autoLogoutMinutes = 30;
+        if (autoLogoutMinutes <= 0) {
+            return;
+        }
+
+        let timerId = null;
+        const logoutUrl = 'https://satkerpps-riau.online/keluar';
+        const resetTimer = () => {
+            if (timerId) {
+                window.clearTimeout(timerId);
+            }
+
+            timerId = window.setTimeout(() => {
+                window.location.href = logoutUrl;
+            }, autoLogoutMinutes * 60 * 1000);
+        };
+
+        ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach((eventName) => {
+            window.addEventListener(eventName, resetTimer, { passive: true });
+        });
+
+        resetTimer();
+    })();
+
+    (() => {
+        const perms = {"add":true,"edit":true,"delete":true,"export":true,"import":true,"approval":true};
+
+        if (!perms || typeof perms !== 'object') {
+            return;
+        }
+
+        const hideBySelector = (selector) => {
+            document.querySelectorAll(selector).forEach((el) => {
+                el.style.display = 'none';
+            });
+        };
+
+        if (!perms.add) {
+            hideBySelector('a[href*="/tambah"], form[action*="/tambah"], button[data-target*="tambah"], button[id*="tambah"], button[id*="Tambah"], button[class*="tambah"], button[class*="Tambah"]');
+        }
+
+        if (!perms.edit) {
+            hideBySelector('a[href*="/ubah"], form[action*="/ubah"], form[action*="/update"], form[action*="/status"], form[action*="/save"], button[id*="ubah"], button[id*="Ubah"], button[class*="edit"], button[class*="Edit"]');
+        }
+
+        if (!perms.delete) {
+            hideBySelector('a[href*="/hapus"], form[action*="/hapus"], form[action*="/delete"], button[id*="hapus"], button[id*="Hapus"], button[class*="delete"], button[class*="Delete"]');
+        }
+
+        if (!perms.export) {
+            hideBySelector('a[href*="/export"], form[action*="/export"], button[id*="export"], button[id*="Export"], button[class*="export"], button[class*="Export"]');
+        }
+
+        if (!perms.import) {
+            hideBySelector('a[href*="/import"], form[action*="/import"], button[id*="import"], button[id*="Import"], button[class*="import"], button[class*="Import"]');
+        }
+
+        if (!perms.approval) {
+            hideBySelector('a[href*="/approval"], a[href*="/approve"], form[action*="/approval"], form[action*="/approve"], button[id*="approval"], button[id*="Approval"], button[class*="approval"], button[class*="Approval"]');
+        }
+    })();
+</script>
+</body>
+</html>
