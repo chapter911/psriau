@@ -434,3 +434,65 @@ if (! function_exists('formatBytes')) {
         return round($bytes, $precision) . ' ' . $units[$i];
     }
 }
+
+if (! function_exists('sanitizeFileName')) {
+    /**
+     * Sanitize string untuk digunakan sebagai nama folder/file
+     *
+     * - Menghapus karakter yang tidak diizinkan: / \ : * ? " < > |
+     * - Mengganti multiple spasi dengan single spasi
+     * - Trim whitespace
+     * - Membatasi panjang maksimal
+     *
+     * @param string $name Nama yang akan disanitasi
+     * @param int $maxLength Maksimal panjang nama (default 100)
+     * @return string Nama yang sudah disanitasi
+     */
+    function sanitizeFileName(string $name, int $maxLength = 100): string
+    {
+        if (empty($name)) {
+            return 'unnamed';
+        }
+
+        // Hapus karakter yang tidak diizinkan di nama file/folder
+        $name = preg_replace('/[\/\\\\:*?"<>|]/', '', $name);
+
+        // Ganti multiple spasi dengan single spasi
+        $name = preg_replace('/\s+/', ' ', $name);
+
+        // Trim whitespace
+        $name = trim($name);
+
+        // Ganti karakter titik di awal atau akhir (mencegah masalah)
+        $name = preg_replace('/^\.+|\.+$/', '', $name);
+
+        // Jika kosong setelah sanitasi, gunakan placeholder
+        if (empty($name)) {
+            return 'unnamed';
+        }
+
+        // Batasi panjang
+        if (mb_strlen($name) > $maxLength) {
+            $name = mb_substr($name, 0, $maxLength);
+            // Trim lagi karena mungkin pemotongan memotong di tengah kata
+            $name = trim($name);
+        }
+
+        return $name;
+    }
+}
+
+if (! function_exists('sanitizeFolderName')) {
+    /**
+     * Sanitize path components untuk folder hierarchy
+     * Sama seperti sanitizeFileName tapi dengan batas yang lebih panjang
+     *
+     * @param string $name Nama yang akan disanitasi
+     * @return string Nama yang sudah disanitasi
+     */
+    function sanitizeFolderName(string $name): string
+    {
+        return sanitizeFileName($name, 100);
+    }
+}
+
