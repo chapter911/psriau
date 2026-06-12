@@ -172,7 +172,7 @@ class Oauth extends BaseController
         $logFileContent .= "\n";
 
         if (is_file($logFile)) {
-            $logFileContent = "--- " . basename($logFile) . " (Last 100 lines) ---\n";
+            $logFileContent .= "--- " . basename($logFile) . " (Last 100 lines) ---\n";
             $content = file_get_contents($logFile);
             $lines = explode("\n", $content);
             $lastLines = array_slice($lines, -150);
