@@ -135,6 +135,12 @@ class Setting extends BaseController
 
         $message = $success ? 'Git pull selesai.' : 'Git pull gagal.';
 
+        if ($success) {
+            if (function_exists('opcache_reset')) {
+                @opcache_reset();
+            }
+        }
+
         return redirect()->to($redirectTarget)
             ->with($success ? 'message' : 'error', $message)
             ->with('command_result', [
