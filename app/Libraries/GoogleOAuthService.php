@@ -360,6 +360,9 @@ class GoogleOAuthService
             return null;
         }
 
+        // Load custom helper for folder/file sanitization
+        helper('custom');
+
         // Sanitize folder names using helper function
         $sanitizedPaket = sanitizeFolderName($namaPaket);
         $sanitizedPenyedia = sanitizeFolderName($penyedia);
