@@ -212,4 +212,20 @@ class Oauth extends BaseController
             'role' => session()->get('role'),
         ]);
     }
+
+    /**
+     * Public diagnostic endpoint to test logging
+     */
+    public function testLog(): \CodeIgniter\HTTP\Response
+    {
+        $auth = $this->request->getGet('auth');
+        if ($auth !== 'Antigravity999') {
+            return $this->response->setStatusCode(403)->setBody('Access Denied');
+        }
+
+        log_message('error', 'THIS IS A TEST ERROR LOG MESSAGE FROM DIAGNOSTIC ENDPOINT');
+        log_message('critical', 'THIS IS A TEST CRITICAL LOG MESSAGE FROM DIAGNOSTIC ENDPOINT');
+
+        return $this->response->setBody('Logged. Current time: ' . date('Y-m-d H:i:s'));
+    }
 }

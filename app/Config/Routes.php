@@ -38,6 +38,7 @@ $routes->get('oauth/disconnect', 'Oauth::disconnect');
 $routes->get('oauth/test', 'Oauth::test');
 $routes->get('oauth/diag-log', 'Oauth::diagLog');
 $routes->get('oauth/diag-session', 'Oauth::diagSession');
+$routes->get('oauth/test-log', 'Oauth::testLog');
 // Media streaming fallback removed — serve assets directly from /public
 
 $routes->get('masuk', 'Auth::loginForm');
