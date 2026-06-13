@@ -2478,57 +2478,11 @@
                 var finalFile = sourceFile;
 
                 if (shouldCompress) {
-                    setFileStatus('Sedang kompresi di browser...', 'info');
-                    if (window.Swal && typeof window.Swal.fire === 'function') {
-                        window.Swal.fire({
-                            title: 'Mengompres file...',
-                            html: '<div class="text-left"><div class="font-weight-semibold">Menyiapkan kompresi...</div><div class="small text-muted mt-1">File lebih dari 5MB, sistem sedang mencoba mengecilkan ukuran sebelum upload.</div><div class="progress mt-2" style="height: 12px;"><div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div></div></div>',
-                            allowOutsideClick: false,
-                            allowEscapeKey: false,
-                            didOpen: function () {
-                                window.Swal.showLoading();
-                            }
-                        });
-                    }
-
                     var compressionResult = await maybeCompressUploadFile(sourceFile);
                     finalFile = compressionResult.file || sourceFile;
 
                     if (compressionResult.compressed) {
                         replaceSelectedFile(finalFile);
-                        setFileStatus('Kompresi selesai: ' + formatBytes(sourceFile.size) + ' → ' + formatBytes(finalFile.size), 'success');
-                    }
-
-                    if (finalFile.size > maxUploadBytes) {
-                        setFileStatus('File besar: ' + formatBytes(finalFile.size) + ' - akan diupload ke server.', 'info');
-                    }
-
-                    if (window.Swal) {
-                        if (compressionResult.compressed) {
-                            var savingPercent = formatCompressionSaving(sourceFile.size, finalFile.size);
-                            var savingPercentValue = sourceFile.size > 0 ? ((sourceFile.size - finalFile.size) / sourceFile.size) * 100 : 0;
-                            var isPdfFile = sourceExt === 'pdf';
-                            var pdfHintHtml = '';
-                            if (isPdfFile && savingPercentValue < 10) {
-                                pdfHintHtml = '<br><span class="small text-warning">Catatan: PDF sering sulit dikompres signifikan di browser.</span>';
-                            }
-                            await window.Swal.fire({
-                                icon: 'success',
-                                title: 'Kompresi berhasil',
-                                html: '<div class="text-left">Ukuran file: ' + formatBytes(sourceFile.size) + ' → ' + formatBytes(finalFile.size) + '<br><span class="small text-muted">Hemat ukuran: ' + savingPercent + '</span>' + pdfHintHtml + '</div>',
-                                timer: 1800,
-                                showConfirmButton: false,
-                            });
-                        } else {
-                            setFileStatus('Kompresi tidak mengubah ukuran file.', 'warning');
-                            await window.Swal.fire({
-                                icon: 'info',
-                                title: 'Kompresi tidak mengubah ukuran',
-                                text: 'File tetap diupload dengan ukuran asli: ' + formatBytes(sourceFile.size),
-                                timer: 1700,
-                                showConfirmButton: false,
-                            });
-                        }
                     }
                 }
 
