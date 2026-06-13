@@ -4056,10 +4056,11 @@ class Kontrak extends BaseController
             }
         }
 
-        log_message('info', 'sharedUploadSimakDokumen - proceeding to save to database: ' . json_encode(['simak_id' => $simakId, 'row_no' => $rowNo, 'kelengkapan' => $kelengkapanDokumen]));
-
         $kelengkapanDokumen = $uploadMethod === 'none' ? 'tidak' : 'ada';
         $keterangan = $uploadMethod === 'none' ? $keteranganTidakAda : 'Menunggu Verifikasi';
+
+        log_message('info', 'sharedUploadSimakDokumen - proceeding to save to database: ' . json_encode(['simak_id' => $simakId, 'row_no' => $rowNo, 'kelengkapan' => $kelengkapanDokumen]));
+
         $pic = is_array($existingVerifikasi) ? trim((string) ($existingVerifikasi['pic'] ?? '')) : '';
 
         $verifikasiRow = [
@@ -4284,10 +4285,18 @@ class Kontrak extends BaseController
             return true;
         }
 
+        // Debug: log session info
+        $sessionKey = $this->getSharedSimakOtpSessionKey($token);
+        $sessionData = session()->get($sessionKey);
+        $sessionId = session()->sessionID ?? 'no_session';
+        $cookies = $this->request->getCookie();
+        log_message('error', 'isSharedSimakOtpGranted - DEBUG: session_key=' . $sessionKey . ', session_id=' . $sessionId . ', has_session_data=' . (is_array($sessionData) ? 'YES' : 'NO') . ', cookies_count=' . count($cookies) . ', cookie_names=' . json_encode(array_keys($cookies)) . ', state=' . json_encode($sessionData));
+
         $state = $this->getSharedSimakOtpState($token);
         if (! is_array($state)
             || ($state['status'] ?? '') !== 'verified'
             || (int) ($state['expires_at'] ?? 0) <= time()) {
+            log_message('error', 'isSharedSimakOtpGranted - OTP not granted: state_is_array=' . (is_array($state) ? 'YES' : 'NO') . ', status=' . ($state['status'] ?? 'NULL') . ', expires_at=' . ($state['expires_at'] ?? 'NULL'));
             return false;
         }
 
