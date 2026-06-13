@@ -133,6 +133,8 @@ class GoogleOAuthService
                 return false;
             }
 
+            $this->client->setAccessToken($accessToken);
+
             // Check if token is expired and try to refresh
             if ($this->client->isAccessTokenExpired()) {
                 log_message('info', 'GoogleOAuthService - Token expired, attempting refresh...');
@@ -141,13 +143,12 @@ class GoogleOAuthService
                     $newToken = $this->client->refreshToken($accessToken['refresh_token']);
                     $this->saveToken($newToken);
                     $accessToken = $newToken;
+                    $this->client->setAccessToken($accessToken);
                 } else {
                     log_message('error', 'GoogleOAuthService - No refresh token available');
                     return false;
                 }
             }
-
-            $this->client->setAccessToken($accessToken);
             $this->service = new Drive($this->client);
 
             log_message('info', 'GoogleOAuthService - Token loaded successfully');
