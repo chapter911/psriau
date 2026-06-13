@@ -2333,12 +2333,24 @@
                                 try {
                                     var parser = new DOMParser();
                                     var doc = parser.parseFromString(xhr.responseText, 'text/html');
-                                    var alertEl = doc.querySelector('.alert-danger');
+                                    // Check for error alerts (multiple selector for different alert styles)
+                                    var alertEl = doc.querySelector('.alert-danger, .alert-error, .alert.alert-danger, [class*="alert"][class*="danger"], .swal2-icon-error');
                                     if (alertEl) {
                                         hasError = true;
                                         errorMsg = alertEl.textContent.trim();
                                     }
-                                } catch (err) {}
+                                    // Also check for redirect (current page reload indicator)
+                                    var hasSuccess = doc.querySelector('.alert-success, .alert.alert-success, [class*="alert"][class*="success"]');
+                                    if (!hasError && !hasSuccess) {
+                                        // No success message found - check if we're on the same page or got redirected
+                                        var currentUrl = window.location.href;
+                                        var isSamePage = xhr.responseURL && xhr.responseURL.indexOf('/upload') !== -1;
+                                        // If we don't have explicit success, this might be a silent failure
+                                        console.log('Upload response check - hasError:', hasError, ', hasSuccess:', !!hasSuccess, ', responseURL:', xhr.responseURL);
+                                    }
+                                } catch (err) {
+                                    console.error('Error parsing response:', err);
+                                }
 
                                 if (hasError) {
                                     window.Swal.fire({
@@ -2358,10 +2370,20 @@
                                     window.location.reload();
                                 }
                             } else {
+                                var errorDetail = '';
+                                try {
+                                    var parser2 = new DOMParser();
+                                    var doc2 = parser2.parseFromString(xhr.responseText, 'text/html');
+                                    var alertEl2 = doc2.querySelector('.alert-danger, .alert-error');
+                                    if (alertEl2) {
+                                        errorDetail = alertEl2.textContent.trim();
+                                    }
+                                } catch (err2) {}
+
                                 window.Swal.fire({
                                     icon: 'error',
-                                    title: 'Gagal Menyimpan',
-                                    text: 'Gagal memproses unggahan. Silakan coba lagi.'
+                                    title: 'Gagal Menyimpan (HTTP ' + xhr.status + ')',
+                                    text: errorDetail || 'Gagal memproses unggahan. Silakan coba lagi.'
                                 });
                             }
                         });

@@ -3764,9 +3764,19 @@ class Kontrak extends BaseController
 
     public function sharedUploadSimakDokumen(string $token)
     {
-        log_message('error', 'sharedUploadSimakDokumen - entry point: token=' . $token . ' POST=' . json_encode($this->request->getPost()) . ' FILES=' . json_encode(is_array($_FILES) ? array_keys($_FILES) : []));
+        $debugInfo = [
+            'token' => $token,
+            'post_keys' => array_keys($this->request->getPost()),
+            'files_keys' => is_array($_FILES) ? array_keys($_FILES) : [],
+            'otp_session_key' => $this->getSharedSimakOtpSessionKey($token),
+            'otp_granted' => false,
+            'step' => 'start',
+        ];
+        log_message('error', 'sharedUploadSimakDokumen - entry: ' . json_encode($debugInfo));
+
         $shared = $this->resolveSharedSimak($token);
         if ($shared === null) {
+            log_message('error', 'sharedUploadSimakDokumen - invalid token');
             return $this->renderSharedInvalidLink(
                 'Tautan share SIMAK tidak valid.',
                 $token,
@@ -3775,12 +3785,19 @@ class Kontrak extends BaseController
         }
 
         if ($this->isPostBodyTooLarge()) {
+            log_message('error', 'sharedUploadSimakDokumen - body too large');
             return redirect()->to(site_url('simak/share/' . $token . '?error=' . rawurlencode('Upload gagal karena ukuran request melebihi batas server (post_max_size/upload_max_filesize). Perbesar batas upload di server lalu coba lagi.')));
         }
 
+        $debugInfo['otp_granted'] = $this->isSharedSimakOtpGranted($token, false);
+        log_message('error', 'sharedUploadSimakDokumen - OTP check: granted=' . ($debugInfo['otp_granted'] ? 'YES' : 'NO') . ', session_key=' . $debugInfo['otp_session_key']);
+
         if (! $this->isSharedSimakOtpGranted($token)) {
+            log_message('error', 'sharedUploadSimakDokumen - OTP not granted');
             return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Kode OTP verifikasi belum valid. Silakan kirim dan masukkan kode terlebih dahulu.');
         }
+
+        $debugInfo['step'] = 'otp_ok';
 
         $db = db_connect();
         $tableVerifikasi = (string) ($shared['table_verifikasi'] ?? 'trn_kontrak_simak_verifikasi');
@@ -4031,12 +4048,15 @@ class Kontrak extends BaseController
             } elseif ($gdriveLink !== null) {
                 $relativePath = $gdriveLink;
                 $storedName = '';
+                log_message('info', 'sharedUploadSimakDokumen - Google Drive upload SUCCESS: ' . $originalName . ' -> ' . $gdriveLink);
             } else {
                 // Fallback: tidak ada penyimpanan lokal, upload gagal
                 log_message('error', 'sharedUploadSimakDokumen - No storage configured and Google Drive failed for: ' . $originalName);
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload dokumen gagal: Tidak ada penyimpanan yang dikonfigurasi.');
             }
         }
+
+        log_message('info', 'sharedUploadSimakDokumen - proceeding to save to database: ' . json_encode(['simak_id' => $simakId, 'row_no' => $rowNo, 'kelengkapan' => $kelengkapanDokumen]));
 
         $kelengkapanDokumen = $uploadMethod === 'none' ? 'tidak' : 'ada';
         $keterangan = $uploadMethod === 'none' ? $keteranganTidakAda : 'Menunggu Verifikasi';
