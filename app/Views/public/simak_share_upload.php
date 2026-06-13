@@ -1192,7 +1192,7 @@
     var otpTouchThrottleMs = 60 * 1000;
     var autoCompressThresholdBytes = 5 * 1024 * 1024;
     var maxUploadBytes = 100 * 1024 * 1024;
-    var maxUploadAllowedBytes = <?= (int) ($appSetting['simak_max_upload_mb'] ?? 20); ?> * 1024 * 1024;
+    var maxUploadAllowedBytes = (<?= (int) ($appSetting['simak_max_upload_mb'] ?? 0); ?> || 0) * 1024 * 1024;
 
     function sendOtpTouch(force) {
         if (!otpVerified || isDevMode || !otpTouchUrl) {
@@ -2098,7 +2098,8 @@
     }
 
     function checkFileTooLarge(file) {
-        if (!file || !file.size || file.size <= maxUploadAllowedBytes) {
+        // Jika maxUploadAllowedBytes = 0, berarti tidak ada batas (unlimited)
+        if (!file || !file.size || (maxUploadAllowedBytes > 0 && file.size <= maxUploadAllowedBytes)) {
             return false;
         }
 
@@ -2110,7 +2111,9 @@
             window.Swal.fire({
                 icon: 'warning',
                 title: 'File terlalu besar',
-                text: 'Ukuran file ' + String(file.name || 'dokumen') + ' (' + formatBytes(file.size) + ') melebihi batas maksimal <?= (int) ($appSetting['simak_max_upload_mb'] ?? 20); ?>MB. Silakan pilih file yang lebih kecil.',
+                text: maxUploadAllowedBytes > 0
+                    ? 'Ukuran file ' + String(file.name || 'dokumen') + ' (' + formatBytes(file.size) + ') melebihi batas maksimal <?= (int) ($appSetting['simak_max_upload_mb'] ?? 0); ?>MB. Silakan pilih file yang lebih kecil.'
+                    : 'Ukuran file ' + String(file.name || 'dokumen') + ' (' + formatBytes(file.size) + ') terlalu besar. Batas maksimal upload adalah ' + formatBytes(maxUploadBytes) + '.'
             });
         }
 

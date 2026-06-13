@@ -70,7 +70,7 @@ abstract class BaseController extends Controller
             'app_logo_url'         => '',
             'login_background_url' => '',
             'simak_upload_tutorial_url' => 'https://www.youtube.com/watch?v=fHQhAJ-B3qE',
-            'simak_max_upload_mb'  => 20,
+            'simak_max_upload_mb'  => 0, // 0 = unlimited
             'auto_logout_minutes'  => 60,
             'preloader_duration_ms' => 500,
             'maintenance_mode'     => false,

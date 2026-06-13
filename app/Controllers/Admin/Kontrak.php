@@ -8109,8 +8109,11 @@ class Kontrak extends BaseController
         $oauthClientId = trim((string) getenv('GOOGLE_CLIENT_ID'));
         $oauthClientSecret = trim((string) getenv('GOOGLE_CLIENT_SECRET'));
 
+        log_message('info', 'uploadFileToGoogleDriveStructured - Entry. OAuth configured: ' . ($oauthClientId !== '' ? 'YES' : 'NO') . ', Secret: ' . ($oauthClientSecret !== '' ? 'YES' : 'NO') . ', FolderId: ' . ($driveFolderId !== '' ? $driveFolderId : 'EMPTY'));
+
         // Use OAuth for personal Gmail accounts (recommended)
         if ($oauthClientId !== '' && $oauthClientSecret !== '' && $driveFolderId !== '') {
+            log_message('info', 'uploadFileToGoogleDriveStructured - Attempting OAuth flow');
             return $this->uploadFileToGoogleDriveStructuredOAuth(
                 $fileContent,
                 $originalName,
@@ -8125,6 +8128,7 @@ class Kontrak extends BaseController
 
         // Fallback to Service Account (only works with Google Workspace or Shared Drives)
         $serviceAccountPath = trim((string) getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH'));
+        log_message('info', 'uploadFileToGoogleDriveStructured - Falling back to Service Account. Path: ' . ($serviceAccountPath !== '' ? $serviceAccountPath : 'EMPTY'));
 
         if ($serviceAccountPath === '' || $driveFolderId === '') {
             log_message('error', 'uploadFileToGoogleDriveStructured - Google Drive config missing.');
@@ -8190,7 +8194,10 @@ class Kontrak extends BaseController
     ): ?string {
         $oauth = new \App\Libraries\GoogleOAuthService();
 
-        if (!$oauth->isAuthenticated()) {
+        $isAuth = $oauth->isAuthenticated();
+        log_message('info', 'uploadFileToGoogleDriveStructuredOAuth - isAuthenticated: ' . ($isAuth ? 'YES' : 'NO') . ', LastError: ' . ($oauth->getLastError() ?: 'none'));
+
+        if (!$isAuth) {
             log_message('error', 'uploadFileToGoogleDriveStructuredOAuth - Not authenticated with Google.');
             return 'NOT_READY';
         }

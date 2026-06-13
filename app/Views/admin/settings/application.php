@@ -152,12 +152,12 @@
                     id="simak_max_upload_mb"
                     name="simak_max_upload_mb"
                     class="form-control"
-                    value="<?= old('simak_max_upload_mb', (int) ($setting['simak_max_upload_mb'] ?? 20)); ?>"
-                    min="1"
+                    value="<?= old('simak_max_upload_mb', (int) ($setting['simak_max_upload_mb'] ?? 0)); ?>"
+                    min="0"
                     max="1000"
                     required
                 >
-                <small class="text-muted">Batas maksimum ukuran berkas yang diperbolehkan untuk diunggah langsung (dalam Megabytes). Contoh: 20.</small>
+                <small class="text-muted">Batas maksimum ukuran berkas yang diperbolehkan untuk diunggah langsung (dalam Megabytes). Isi 0 untuk unlimited (tanpa batas).</small>
             </div>
 
             <div class="form-group">
