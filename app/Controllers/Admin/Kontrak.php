@@ -5125,7 +5125,7 @@ class Kontrak extends BaseController
         return $grouped;
     }
 
-    private function getSimakAdministrasiKelengkapanBySimakId(array $simakIds, string $type = 'konstruksi', bool $includeHiddenShare = false): array
+    private function getSimakAdministrasiKelengkapanBySimakId(array $simakIds, string $type = 'konstruksi', bool $includeHiddenShare = true): array
     {
         $simakIds = array_values(array_unique(array_filter(array_map('intval', $simakIds), static function (int $id): bool {
             return $id > 0;
