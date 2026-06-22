@@ -752,7 +752,7 @@
                             accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip,.rar"
                             required
                         >
-                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP, RAR (Max 50MB)</small>
+                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP, RAR (Max <?= (int) ($appSetting['simak_max_upload_mb'] ?? 50); ?>MB)</small>
                         <div class="invalid-feedback d-block" id="admin_upload_file_error" style="display: none; color: #dc3545;">File wajib dipilih</div>
                     </div>
                 </div>

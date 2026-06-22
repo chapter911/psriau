@@ -3,6 +3,7 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Models\AppSettingModel;
 use App\Traits\SimakNumberingTrait;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -17,6 +18,39 @@ class Kontrak extends BaseController
 
     // Set TRUE untuk bypass OTP saat testing/smoke test
     private const SHARED_SIMAK_OTP_BYPASS = false;
+
+    /**
+     * Get app setting value by key, with optional default
+     */
+    private function getAppSetting(string $key, mixed $default = null): mixed
+    {
+        try {
+            $setting = (new AppSettingModel())->first();
+            if (is_array($setting) && array_key_exists($key, $setting)) {
+                return $setting[$key];
+            }
+        } catch (\Throwable $e) {
+            // Keep default on error
+        }
+        return $default;
+    }
+
+    /**
+     * Get SIMAK max upload size in MB (0 = unlimited, default 50MB)
+     */
+    private function getSimakMaxUploadMb(): int
+    {
+        $mb = (int) $this->getAppSetting('simak_max_upload_mb', 0);
+        return $mb > 0 ? $mb : 50; // Default to 50MB if not set or unlimited
+    }
+
+    /**
+     * Get SIMAK max upload size in bytes
+     */
+    private function getSimakMaxUploadBytes(): int
+    {
+        return $this->getSimakMaxUploadMb() * 1024 * 1024;
+    }
 
     public function paket()
     {
@@ -2770,6 +2804,9 @@ class Kontrak extends BaseController
             'verifikasiByRow' => $verifikasiByRow,
             'dokumenByRow' => $dokumenByRow,
             'kelengkapanPercentage' => $kelengkapanPercentage,
+            'appSetting' => [
+                'simak_max_upload_mb' => $this->getSimakMaxUploadMb(),
+            ],
         ]);
     }
 
@@ -3424,9 +3461,15 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP/RAR.');
         }
 
+        $maxFileSizeBytes = $this->getSimakMaxUploadBytes();
+        $maxFileSizeMb = $this->getSimakMaxUploadMb();
+        $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
+        if ($fileSize > $maxFileSizeBytes) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', "Ukuran file maksimal {$maxFileSizeMb}MB.");
+        }
+
         $originalName = (string) $file->getClientName();
         $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
-        $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
 
         // Upload langsung ke Google Drive tanpa simpan di server lokal (structured)
         $gdriveLink = $this->uploadFileToGoogleDriveStructured(
@@ -4015,11 +4058,12 @@ class Kontrak extends BaseController
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'File upload tidak valid.');
             }
 
-            $maxFileSize = 100 * 1024 * 1024; // 100MB max
+            $maxFileSizeBytes = $this->getSimakMaxUploadBytes();
+            $maxFileSizeMb = $this->getSimakMaxUploadMb();
             $uploadedSize = (int) ($file->getSizeByUnit('b') ?? 0);
-            if ($uploadedSize <= 0 || $uploadedSize > $maxFileSize) {
+            if ($uploadedSize <= 0 || $uploadedSize > $maxFileSizeBytes) {
                 log_message('error', 'sharedUploadSimakDokumen - invalid file size: ' . json_encode($debugInfo));
-                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Ukuran file maksimal 100MB.');
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', "Ukuran file maksimal {$maxFileSizeMb}MB.");
             }
 
             $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar'];
@@ -6751,6 +6795,9 @@ class Kontrak extends BaseController
             'verifikasiByRow' => $verifikasiByRow,
             'dokumenByRow' => $dokumenByRow,
             'kelengkapanPercentage' => $kelengkapanPercentage,
+            'appSetting' => [
+                'simak_max_upload_mb' => $this->getSimakMaxUploadMb(),
+            ],
         ]);
     }
 
@@ -7545,9 +7592,15 @@ class Kontrak extends BaseController
                 return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP/RAR.');
             }
 
+            $maxFileSizeBytes = $this->getSimakMaxUploadBytes();
+            $maxFileSizeMb = $this->getSimakMaxUploadMb();
+            $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
+            if ($fileSize > $maxFileSizeBytes) {
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', "Ukuran file maksimal {$maxFileSizeMb}MB.");
+            }
+
             $originalName = (string) $file->getClientName();
             $mimeType = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
-            $fileSize = (int) ($file->getSizeByUnit('b') ?? 0);
 
             // Upload langsung ke Google Drive tanpa simpan di server lokal (structured)
             $gdriveLink = $this->uploadFileToGoogleDriveStructured(
@@ -7785,6 +7838,13 @@ class Kontrak extends BaseController
         $ext = strtolower((string) $file->getClientExtension());
         if (! in_array($ext, $allowedExt, true)) {
             return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP/RAR.');
+        }
+
+        $maxFileSizeBytes = $this->getSimakMaxUploadBytes();
+        $maxFileSizeMb = $this->getSimakMaxUploadMb();
+        $fileSizeCheck = (int) ($file->getSizeByUnit('b') ?? 0);
+        if ($fileSizeCheck > $maxFileSizeBytes) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', "Ukuran file maksimal {$maxFileSizeMb}MB.");
         }
 
         $subDir = 'uploads/simak_admin_konsultasi/' . $id . '/' . $rowNo;
