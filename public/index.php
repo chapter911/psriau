@@ -1,5 +1,12 @@
 <?php
 
+// Increase upload limits for large files (up to 1GB)
+ini_set('upload_max_filesize', '1000M');
+ini_set('post_max_size', '1200M');
+ini_set('max_execution_time', '1800');
+ini_set('max_input_time', '1800');
+ini_set('memory_limit', '1024M');
+
 // Removed temporary response hack: rely on host and application routing
 
 use CodeIgniter\Boot;
