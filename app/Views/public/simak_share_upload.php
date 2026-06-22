@@ -1115,10 +1115,8 @@
                         <label for="upload_method">Metode Upload</label>
                         <select id="upload_method" name="upload_method" class="form-control">
                             <option value="file">Upload File</option>
-                            <option value="gdrive">Upload Langsung ke Google Drive (Disarankan untuk file besar)</option>
                             <option value="none">Dokumen Memang Tidak Ada</option>
                         </select>
-                        <small class="text-muted">Untuk file besar (>100MB), gunakan <strong>Upload Langsung ke Google Drive</strong>.</small>
                     </div>
 
                     <div class="form-group mb-3" id="uploadFileGroup">
@@ -1479,141 +1477,6 @@
         return extractDriveFolderIdFromUrl(googleDriveUploadFolderUrl);
     }
 
-    async function uploadToGoogleDriveDirect(file, folderId, fileName, rowNo) {
-        var progressBar = document.getElementById('gdriveProgressBar');
-        var progressText = document.getElementById('gdriveProgressText');
-
-        function updateProgress(percent, text) {
-            if (progressBar) {
-                progressBar.style.width = percent + '%';
-                progressBar.textContent = percent + '%';
-            }
-            if (progressText) {
-                progressText.textContent = text;
-            }
-        }
-
-        try {
-            updateProgress(10, 'Mendapatkan akses Google...');
-            var accessToken = await ensureGoogleDriveAccessToken();
-            if (!accessToken) {
-                throw new Error('Gagal mendapatkan akses Google. Silakan login Google terlebih dahulu.');
-            }
-
-            updateProgress(30, 'Mengupload file ke Google Drive...');
-
-            // Create xhr for progress tracking
-            var result = await new Promise(function(resolve, reject) {
-                var metadata = {
-                    name: String(fileName || file.name || 'dokumen'),
-                    parents: [String(folderId || '').trim()],
-                };
-
-                var formData = new FormData();
-                formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-                formData.append('file', file);
-
-                var xhr = new XMLHttpRequest();
-                var uploadUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink,webContentLink';
-
-                xhr.open('POST', uploadUrl, true);
-                xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
-
-                xhr.upload.addEventListener('progress', function(e) {
-                    if (e.lengthComputable) {
-                        var percent = Math.round(30 + (e.loaded / e.total) * 60);
-                        updateProgress(percent, 'Mengupload: ' + percent + '%');
-                    }
-                });
-
-                xhr.addEventListener('load', function() {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            var data = JSON.parse(xhr.responseText);
-                            var link = data.webViewLink || data.webContentLink || ('https://drive.google.com/file/d/' + data.id + '/view');
-                            resolve({ link: link, id: data.id, name: data.name });
-                        } catch (e) {
-                            reject(new Error('Gagal parse response dari Google Drive.'));
-                        }
-                    } else {
-                        try {
-                            var errData = JSON.parse(xhr.responseText);
-                            reject(new Error(errData.error ? errData.error.message : 'Upload gagal.'));
-                        } catch (e) {
-                            reject(new Error('Upload gagal (HTTP ' + xhr.status + ').'));
-                        }
-                    }
-                });
-
-                xhr.addEventListener('error', function() {
-                    reject(new Error('Koneksi ke Google Drive terputus.'));
-                });
-
-                xhr.send(formData);
-            });
-
-            updateProgress(95, 'Menyimpan ke database...');
-
-            // Submit to server with Google Drive link
-            var csrfToken = document.querySelector('input[name="csrf_simak_token"]');
-            var csrfName = csrfToken ? csrfToken.name : 'csrf_simak_token';
-            var csrfHash = csrfToken ? csrfToken.value : '';
-
-            var submitFormData = new FormData();
-            submitFormData.append('row_no', rowNo);
-            submitFormData.append('tipe_dokumen', String(document.getElementById('upload_tipe_dokumen_modal') ? document.getElementById('upload_tipe_dokumen_modal').value : 'final'));
-            submitFormData.append('upload_method', 'drive');
-            submitFormData.append('google_drive_link', result.link);
-            submitFormData.append(csrfName, csrfHash);
-
-            // Get current CSRF for next request
-            var xhr2 = new XMLHttpRequest();
-            xhr2.open('POST', uploadForm.action, true);
-            xhr2.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-
-            await new Promise(function(resolve, reject) {
-                xhr2.onload = function() {
-                    if (xhr2.status >= 200 && xhr2.status < 300) {
-                        resolve();
-                    } else {
-                        reject(new Error('Gagal menyimpan ke database.'));
-                    }
-                };
-                xhr2.onerror = function() {
-                    reject(new Error('Koneksi ke server terputus.'));
-                };
-                xhr2.send(submitFormData);
-            });
-
-            updateProgress(100, 'Selesai!');
-
-            if (window.Swal) {
-                window.Swal.fire({
-                    icon: 'success',
-                    title: 'Upload Berhasil!',
-                    text: 'File berhasil diupload ke Google Drive dan tersimpan di database.',
-                    showConfirmButton: false,
-                    timer: 2000,
-                    timerProgressBar: true,
-                }).then(function() {
-                    if (uploadModalEl && window.jQuery && typeof window.jQuery.fn.modal === 'function') {
-                        window.jQuery(uploadModalEl).modal('hide');
-                    }
-                    window.location.reload();
-                });
-            }
-
-        } catch (error) {
-            if (window.Swal) {
-                window.Swal.fire({
-                    icon: 'error',
-                    title: 'Upload Gagal',
-                    text: error.message || 'Terjadi kesalahan saat upload ke Google Drive.',
-                });
-            }
-        }
-    }
-
     async function uploadFileDirectToGoogleDrive(file, accessToken, folderId) {
         if (isDevMode) {
             var devFileName = String(file && file.name ? file.name : 'dokumen-' + Date.now());
@@ -1739,18 +1602,24 @@
 
     function syncUploadMethodUI() {
         var method = String(uploadMethodEl && uploadMethodEl.value ? uploadMethodEl.value : 'file').toLowerCase();
-        var useGdrive = method === 'gdrive';
+        var useDrive = method === 'drive';
         var useNoDocument = method === 'none';
 
         if (uploadFileGroupEl) {
-            uploadFileGroupEl.classList.toggle('d-none', useGdrive || useNoDocument);
+            uploadFileGroupEl.classList.toggle('d-none', useDrive || useNoDocument);
+        }
+        if (uploadDriveGroupEl) {
+            uploadDriveGroupEl.classList.toggle('d-none', !useDrive || useNoDocument);
         }
         if (uploadNoDocumentGroupEl) {
             uploadNoDocumentGroupEl.classList.toggle('d-none', !useNoDocument);
         }
 
-        if (useNoDocument && dokumenFileEl) {
+        if ((useDrive || useNoDocument) && dokumenFileEl) {
             dokumenFileEl.value = '';
+        }
+        if ((!useDrive || useNoDocument) && googleDriveLinkEl) {
+            googleDriveLinkEl.value = '';
         }
         if (!useNoDocument && keteranganTidakAdaEl) {
             keteranganTidakAdaEl.value = '';
@@ -2559,6 +2428,8 @@
             }
 
             var hasFile = !!(dokumenFileEl && dokumenFileEl.files && dokumenFileEl.files.length > 0);
+            var driveLink = String(googleDriveLinkEl && googleDriveLinkEl.value ? googleDriveLinkEl.value : '').trim();
+            var hasDriveLink = driveLink !== '';
             var rowNoValue = parseInt(String(rowNoEl && rowNoEl.value ? rowNoEl.value : '0').trim(), 10) || 0;
 
             if (rowNoValue <= 0) {
@@ -2573,50 +2444,7 @@
                 return;
             }
 
-            // Handle Google Drive direct upload (bypass server)
-            if (selectedMethod === 'gdrive') {
-                event.preventDefault();
-
-                if (!hasFile) {
-                    if (window.Swal) {
-                        window.Swal.fire({
-                            icon: 'warning',
-                            title: 'File belum dipilih',
-                            text: 'Silakan pilih file untuk diupload.',
-                        });
-                    }
-                    return;
-                }
-
-                var gdriveFile = dokumenFileEl.files[0];
-                var gdriveFolderId = resolveDriveUploadFolderId();
-
-                if (!gdriveFolderId) {
-                    if (window.Swal) {
-                        window.Swal.fire({
-                            icon: 'error',
-                            title: 'Google Drive belum dikonfigurasi',
-                            text: 'Hubungi admin untuk mengkonfigurasi folder Google Drive.',
-                        });
-                    }
-                    return;
-                }
-
-                // Show loading with progress
-                if (window.Swal) {
-                    window.Swal.fire({
-                        title: 'Mengupload ke Google Drive...',
-                        html: '<div class="text-center"><div class="spinner-border text-primary mb-2" role="status"></div><div id="gdriveProgressText">Menghubungi Google Drive...</div><div class="progress mt-2" style="height: 20px;"><div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="gdriveProgressBar" style="width: 0%;">0%</div></div></div>',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        showConfirmButton: false,
-                        didOpen: function () {
-                            uploadToGoogleDriveDirect(gdriveFile, gdriveFolderId, gdriveFile.name, rowNoValue);
-                        }
-                    });
-                }
-                return;
-            }
+            // Drive option removed
 
             if (selectedMethod === 'none') {
                 var keteranganTidakAda = String(keteranganTidakAdaEl && keteranganTidakAdaEl.value ? keteranganTidakAdaEl.value : '').trim();
