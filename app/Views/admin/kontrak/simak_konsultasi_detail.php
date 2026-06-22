@@ -404,6 +404,7 @@
                                             $isInputRow = $isLeaf
                                                 && (! in_array($rowType, ['section_header', 'subsection_header'], true) || $isPromotedSubsectionInput);
                                             $hasDraft = (bool) ($row['has_draft'] ?? false);
+                                            $isAdmin = in_array(strtolower((string) session()->get('role')), ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
                                             $existing = $verifikasiByRow[$rowNo] ?? [];
                                             $kelengkapan = (string) ($existing['kelengkapan_dokumen'] ?? '');
                                             $verifikasi = (string) ($existing['verifikasi_ki'] ?? '');
@@ -470,8 +471,8 @@
                                             $finalActionVerifikasi = strtolower(trim((string) ($finalDokumen['verifikasi_ki'] ?? $verifikasi)));
                                             $finalActionKeterangan = (string) ($finalDokumen['keterangan'] ?? $keterangan);
                                             $finalActionPic = (string) ($finalDokumen['pic'] ?? $pic);
-                                            // canUploadFinal: untuk items dengan draft, perlu verifikasi='sesuai'; untuk final-only, tampilkan jika ada placeholder
-                                            $canUploadFinal = ($hasDraft ? $verifikasi === 'sesuai' : ($draftApproved || ! $hasDraft)) && ! $finalApproved;
+                                            // canUploadFinal: Admin bisa upload kapan saja; user lain perlu verifikasi='sesuai' jika ada draft
+                                            $canUploadFinal = ($isAdmin || ($hasDraft ? $verifikasi === 'sesuai' : ($draftApproved || ! $hasDraft))) && ! $finalApproved;
                                             $canUploadDraft = $hasDraft && ! $draftApproved && ! $finalApproved && ! $draftHasFile;
                                             // Check jika menunggu verifikasi (record ada tapi verifikasi belum sesuai/null)
                                             $hasPendingDraft = $hasDraft && ($draftDokumen !== null || $kelengkapan === 'tidak') && $draftVerifikasi !== 'sesuai' && $draftVerifikasi !== 'tidak_sesuai';
