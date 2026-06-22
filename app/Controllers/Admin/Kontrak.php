@@ -3454,7 +3454,8 @@ class Kontrak extends BaseController
             $tipeDokumen = 'final';
         }
 
-        if ($tipeDokumen === 'final') {
+        // Admin dapat upload Final tanpa perlu baris sudah diverifikasi "Sesuai"
+        if ($tipeDokumen === 'final' && ! $this->canManageKontrak()) {
             $rowVerificationStatus = strtolower(trim((string) ($existingVerifikasi['verifikasi_ki'] ?? '')));
             if ($rowVerificationStatus !== 'sesuai') {
                 return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Upload Final hanya tersedia setelah baris diverifikasi Sesuai.');
