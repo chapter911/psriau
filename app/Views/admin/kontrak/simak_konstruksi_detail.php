@@ -749,10 +749,10 @@
                             class="form-control"
                             id="admin_upload_file"
                             name="dokumen_file"
-                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip,.rar"
                             required
                         >
-                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX (Max 50MB)</small>
+                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP, RAR (Max 50MB)</small>
                         <div class="invalid-feedback d-block" id="admin_upload_file_error" style="display: none; color: #dc3545;">File wajib dipilih</div>
                     </div>
                 </div>

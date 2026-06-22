@@ -3139,10 +3139,10 @@ class Kontrak extends BaseController
         }
         $isDocumentComplete = $ver === 'sesuai' && ($kel === 'tidak' || $hasUpload || $selectedDocId > 0);
         if ($hasUpload) {
-            $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
+            $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar'];
             $ext = strtolower((string) $file->getClientExtension());
             if (! in_array($ext, $allowedExt, true)) {
-                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP/RAR.');
             }
 
             $originalName = (string) $file->getClientName();
@@ -3418,10 +3418,10 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'File upload tidak valid.');
         }
 
-        $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
+        $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar'];
         $ext = strtolower((string) $file->getClientExtension());
         if (! in_array($ext, $allowedExt, true)) {
-            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP/RAR.');
         }
 
         $originalName = (string) $file->getClientName();
@@ -4022,11 +4022,11 @@ class Kontrak extends BaseController
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Ukuran file maksimal 100MB.');
             }
 
-            $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'zip'];
+            $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar'];
             $ext = strtolower((string) $file->getClientExtension());
             if (! in_array($ext, $allowedExt, true)) {
                 log_message('error', 'sharedUploadSimakDokumen - unsupported extension: ' . json_encode($debugInfo));
-                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP.');
+                return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP/RAR.');
             }
 
             $originalName = (string) $file->getClientName();
@@ -7539,10 +7539,10 @@ class Kontrak extends BaseController
             }
         }
         if ($hasUpload) {
-            $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
+            $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar'];
             $ext = strtolower((string) $file->getClientExtension());
             if (! in_array($ext, $allowedExt, true)) {
-                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP/RAR.');
             }
 
             $originalName = (string) $file->getClientName();
@@ -7781,10 +7781,10 @@ class Kontrak extends BaseController
             return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'File upload tidak valid.');
         }
 
-        $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
+        $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar'];
         $ext = strtolower((string) $file->getClientExtension());
         if (! in_array($ext, $allowedExt, true)) {
-            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX.');
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi/' . $id))->with('error', 'Tipe file tidak didukung. Gunakan PDF/JPG/PNG/DOC/DOCX/XLS/XLSX/ZIP/RAR.');
         }
 
         $subDir = 'uploads/simak_admin_konsultasi/' . $id . '/' . $rowNo;

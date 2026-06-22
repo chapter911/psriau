@@ -1121,8 +1121,8 @@
 
                     <div class="form-group mb-3" id="uploadFileGroup">
                         <label for="dokumen_file_modal">File Dokumen</label>
-                        <input type="file" id="dokumen_file_modal" name="dokumen_file" class="form-control-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip">
-                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP. Maksimal <?= (int) ($appSetting['simak_max_upload_mb'] ?? 20); ?>MB.</small>
+                        <input type="file" id="dokumen_file_modal" name="dokumen_file" class="form-control-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip,.rar">
+                        <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP, RAR. Maksimal <?= (int) ($appSetting['simak_max_upload_mb'] ?? 20); ?>MB.</small>
                         <div id="upload_file_status" class="small mt-2 text-muted">Status file: belum dipilih.</div>
                     </div>
 
