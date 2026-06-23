@@ -165,6 +165,7 @@
                                         data-share-url="<?= site_url('admin/kontrak/simak/konstruksi/' . (int) ($item['id'] ?? 0) . '/share'); ?>"
                                         data-share-deactivate-url="<?= site_url('admin/kontrak/simak/konstruksi/' . (int) ($item['id'] ?? 0) . '/share/deactivate'); ?>"
                                         data-share-public-url="<?= esc(trim((string) ($item['share_public_url'] ?? ''))); ?>"
+                                        data-has-gdrive="<?= esc((string) ($item['has_gdrive_documents'] ?? '0')); ?>"
                                         data-nomor-kontrak="<?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?>"
                                         data-nama-paket="<?= esc((string) ($item['nama_paket'] ?? '-')); ?>"
                                     >
@@ -945,6 +946,7 @@
             var shareUrl = String(this.getAttribute('data-share-url') || '').trim();
             var deactivateUrl = String(this.getAttribute('data-share-deactivate-url') || '').trim();
             var currentShareUrl = String(this.getAttribute('data-share-public-url') || '').trim();
+            var hasGdrive = String(this.getAttribute('data-has-gdrive') || '0').trim() === '1';
             var nomorKontrak = String(this.getAttribute('data-nomor-kontrak') || '-').trim();
             var namaPaket = String(this.getAttribute('data-nama-paket') || '-').trim();
             var statusLengkap = row ? String(row.getAttribute('data-kelengkapan-lengkap') || '0').trim() : '0';
@@ -956,6 +958,7 @@
             selectedShareConfig.deactivateUrl = deactivateUrl;
             selectedShareConfig.currentShareUrl = currentShareUrl;
             selectedShareConfig.isActive = currentShareUrl !== '';
+            selectedShareConfig.hasGdrive = hasGdrive;
             selectedShareConfig.nomorKontrak = nomorKontrak;
             selectedShareConfig.namaPaket = namaPaket;
             selectedShareConfig.statusLengkap = statusLengkap;
@@ -979,6 +982,15 @@
 
             if (btnOpenCurrentShareLink) {
                 btnOpenCurrentShareLink.disabled = currentShareUrl === '';
+            }
+
+            // Tampilkan/sembunyikan tombol Salin berdasarkan apakah ada dokumen Google Drive
+            if (btnCopyCurrentShareLink) {
+                if (currentShareUrl !== '' && hasGdrive) {
+                    btnCopyCurrentShareLink.style.display = '';
+                } else {
+                    btnCopyCurrentShareLink.style.display = 'none';
+                }
             }
 
             if (btnDeactivateShareLink) {
@@ -1070,6 +1082,11 @@
                 });
 
                 refreshSimakTable();
+
+                // Tampilkan kembali tombol Salin setelah link baru dibuat (hanya jika ada Google Drive documents)
+                if (btnCopyCurrentShareLink && selectedShareConfig.hasGdrive) {
+                    btnCopyCurrentShareLink.style.display = '';
+                }
             }).fail(function (xhr) {
                 var message = xhr && xhr.responseJSON && xhr.responseJSON.message
                     ? xhr.responseJSON.message
@@ -1101,6 +1118,16 @@
             var messageTemplate = "Mohon untuk melengkapi Kelengkapan Dokumen Administrasi.\n\nNomor Kontrak : " + nomorKontrak + "\nNama Paket : " + namaPaket + "\n\nLengkap : " + formatPercent(selectedShareConfig.statusLengkap) + "\nBelum Sesuai : " + formatPercent(selectedShareConfig.statusBelumSesuai) + "\nMenunggu Verifikasi : " + formatPercent(selectedShareConfig.statusBelumVerifikasi) + "\nBelum Ada : " + formatPercent(selectedShareConfig.statusBelumAda) + "\n\nLink Dokumen :\n" + url;
 
             var onSuccess = function () {
+                // Update link dengan link dokumen terbaru (hanya untuk Google Drive)
+                if (shareCurrentLinkInput && selectedShareConfig && selectedShareConfig.shareUrl && selectedShareConfig.hasGdrive) {
+                    shareCurrentLinkInput.value = selectedShareConfig.shareUrl;
+                }
+
+                // Sembunyikan tombol Salin setelah berhasil disalin
+                if (btnCopyCurrentShareLink) {
+                    btnCopyCurrentShareLink.style.display = 'none';
+                }
+
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'success',

@@ -999,6 +999,7 @@ class Kontrak extends BaseController
 
         $kelengkapanBySimakId = $this->getSimakAdministrasiKelengkapanBySimakId($simakIds, $type);
         $shareUrlBySimakId = $this->getSimakSharePublicUrlBySimakId($simakIds, $type);
+        $gdriveStatusBySimakId = $this->getSimakGdriveStatusBySimakId($simakIds, $type);
 
         foreach ($rows as &$row) {
             $simakId = (int) ($row['id'] ?? 0);
@@ -1009,6 +1010,7 @@ class Kontrak extends BaseController
             $row['kelengkapan_dokumen_belum_verifikasi_persen'] = (float) ($summary['belum_verifikasi_persen'] ?? 0);
             $row['kelengkapan_dokumen_belum_ada_persen'] = (float) ($summary['belum_ada_persen'] ?? 0);
             $row['share_public_url'] = (string) ($shareUrlBySimakId[$simakId] ?? '');
+            $row['has_gdrive_documents'] = ($gdriveStatusBySimakId[$simakId] ?? false) === true ? '1' : '0';
         }
         unset($row);
 
@@ -4761,6 +4763,47 @@ class Kontrak extends BaseController
             }
 
             $result[$simakId] = site_url('simak/share/' . $token);
+        }
+
+        return $result;
+    }
+
+    private function getSimakGdriveStatusBySimakId(array $simakIds, string $type = 'konstruksi'): array
+    {
+        $simakIds = array_values(array_unique(array_filter(array_map('intval', $simakIds), static function (int $id): bool {
+            return $id > 0;
+        })));
+
+        if ($simakIds === []) {
+            return [];
+        }
+
+        $db = db_connect();
+        $tableDokumen = ($type === 'konsultasi') ? 'trn_kontrak_simak_konsultasi_verifikasi_dokumen' : 'trn_kontrak_simak_verifikasi_dokumen';
+        if (! $db->tableExists($tableDokumen)) {
+            return array_fill_keys($simakIds, false);
+        }
+
+        // Check if file_relative_path contains Google Drive domains
+        $rows = $db->table($tableDokumen)
+            ->select('DISTINCT(simak_id) as skim_id')
+            ->whereIn('simak_id', $simakIds)
+            ->where('file_relative_path LIKE', '%drive.google.com%', false)
+            ->orWhere('file_relative_path LIKE', '%docs.google.com%', false)
+            ->get()
+            ->getResultArray();
+
+        $gdriveSimakIds = [];
+        foreach ($rows as $row) {
+            $simakId = (int) ($row['skim_id'] ?? 0);
+            if ($simakId > 0) {
+                $gdriveSimakIds[$simakId] = true;
+            }
+        }
+
+        $result = [];
+        foreach ($simakIds as $simakId) {
+            $result[$simakId] = isset($gdriveSimakIds[$simakId]);
         }
 
         return $result;
