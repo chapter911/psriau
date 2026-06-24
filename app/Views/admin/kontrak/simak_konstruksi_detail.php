@@ -609,14 +609,38 @@
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
+                                                    <?php
+                                                    $isGdriveLink = is_array($finalDokumen) && ($finalDokumen['is_google_drive_link'] ?? false);
+                                                    $isCopied = is_array($finalDokumen) && ($finalDokumen['copied_to_project_drive'] ?? false);
+                                                    $gdriveSourceUrl = is_array($finalDokumen) ? ($finalDokumen['google_drive_source_url'] ?? '') : '';
+                                                    ?>
                                                     <?php if ($finalHasFile): ?>
+                                                        <?php if ($isGdriveLink): ?>
+                                                            <?php if (!$isCopied): ?>
+                                                                <span class="badge badge-warning" title="Dari Google Drive User">
+                                                                    <i class="fas fa-link"></i> GD Link
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    class="btn btn-success btn-sm ml-1 btn-salin-gdrive"
+                                                                    data-id="<?= (int) ($finalDokumen['id'] ?? 0); ?>"
+                                                                    data-url="<?= esc($gdriveSourceUrl); ?>"
+                                                                    data-file="<?= esc((string) ($finalDokumen['file_original_name'] ?? 'Dokumen')); ?>"
+                                                                    title="Salin ke Google Drive Proyek"
+                                                                ><i class="fas fa-copy"></i> Salin</button>
+                                                            <?php else: ?>
+                                                                <span class="badge badge-success" title="Sudah disalin ke GD Proyek">
+                                                                    <i class="fas fa-check"></i> Disalin
+                                                                </span>
+                                                            <?php endif; ?>
+                                                        <?php endif; ?>
                                                         <a
                                                             href="<?= site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/' . (int) ($finalDokumen['id'] ?? 0)); ?>"
                                                             target="_blank"
                                                             rel="noopener"
                                                             class="btn btn-info btn-sm"
                                                             title="Lihat dokumen final: <?= esc((string) ($finalDokumen['file_original_name'] ?? 'Dokumen')); ?>"
-                                                        ><i class="fas fa-eye"></i> Lihat Final</a>
+                                                        ><i class="fas fa-eye"></i> Lihat</a>
                                                     <?php elseif (is_array($finalDokumen)): ?>
                                                         <span class="badge badge-danger">Tidak Ada</span>
                                                     <?php else: ?>
@@ -743,17 +767,44 @@
                         <div class="invalid-feedback d-block" id="kelengkapan_error" style="display: none; color: #dc3545;">Kelengkapan dokumen wajib dipilih</div>
                     </div>
                     <div class="form-group">
-                        <label for="admin_upload_file">File Dokumen <span class="text-danger">*</span></label>
+                        <label for="admin_upload_file">File Dokumen</label>
                         <input
                             type="file"
                             class="form-control"
                             id="admin_upload_file"
                             name="dokumen_file"
                             accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip,.rar"
-                            required
                         >
                         <small class="text-muted">Format: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, ZIP, RAR (Max <?= (int) ($appSetting['simak_max_upload_mb'] ?? 50); ?>MB)</small>
                         <div class="invalid-feedback d-block" id="admin_upload_file_error" style="display: none; color: #dc3545;">File wajib dipilih</div>
+                    </div>
+
+                    <?php if (session()->getFlashdata('show_google_drive_input')): ?>
+                    <div class="alert alert-warning">
+                        <h5><i class="icon fas fa-exclamation-triangle"></i> File Terlalu Besar</h5>
+                        <p>Ukuran file maksimal adalah <strong><?= (int) ($appSetting['simak_max_upload_mb'] ?? 50) ?>MB</strong>.</p>
+                        <hr>
+                        <p><strong>Alternatif:</strong> Silakan upload file ke Google Drive Anda, lalu masukkan linknya:</p>
+                        <ol class="mb-0">
+                            <li>Buka <a href="https://drive.google.com" target="_blank">Google Drive</a></li>
+                            <li>Upload file Anda</li>
+                            <li>Klik kanan → "Get link" → "Anyone with the link" → "Viewer"</li>
+                            <li>Salin link dan paste di bawah</li>
+                        </ol>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="form-group">
+                        <label for="admin_upload_gdrive_url">Atau Link Google Drive</label>
+                        <input
+                            type="url"
+                            class="form-control"
+                            id="admin_upload_gdrive_url"
+                            name="google_drive_url"
+                            placeholder="https://drive.google.com/file/d/..."
+                            value="<?= esc(old('google_drive_url', '')) ?>"
+                        >
+                        <small class="text-muted">Gunakan ini jika file lebih dari <?= (int) ($appSetting['simak_max_upload_mb'] ?? 50) ?>MB. Pastikan file dapat diakses "Anyone with link".</small>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -1374,16 +1425,114 @@
 
     if (adminUploadForm) {
         adminUploadForm.addEventListener('submit', function (e) {
-            if (adminUploadFileInput && (!adminUploadFileInput.value || adminUploadFileInput.value === '')) {
+            var fileInput = document.getElementById('admin_upload_file');
+            var gdriveInput = document.getElementById('admin_upload_gdrive_url');
+            var hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+            var hasGdrive = gdriveInput && gdriveInput.value && gdriveInput.value.trim() !== '';
+
+            // Must have either file or Google Drive link
+            if (!hasFile && !hasGdrive) {
                 e.preventDefault();
                 var fileError = document.getElementById('admin_upload_file_error');
                 if (fileError) {
+                    fileError.textContent = 'Pilih file atau masukkan link Google Drive';
+                    fileError.style.display = 'block';
+                }
+                return false;
+            }
+
+            // Cannot have both
+            if (hasFile && hasGdrive) {
+                e.preventDefault();
+                var fileError = document.getElementById('admin_upload_file_error');
+                if (fileError) {
+                    fileError.textContent = 'Gunakan salah satu saja: upload file atau link Google Drive';
                     fileError.style.display = 'block';
                 }
                 return false;
             }
         });
     }
+
+    // Google Drive Salin Button Handler
+    var salinButtons = document.querySelectorAll('.btn-salin-gdrive');
+    salinButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var button = this;
+            var dokumenId = button.getAttribute('data-id');
+            var sourceUrl = button.getAttribute('data-url');
+            var fileName = button.getAttribute('data-file');
+
+            var confirmed = confirm('Salin file dari Google Drive ke Google Drive proyek?\n\nFile: ' + fileName + '\nSumber: ' + sourceUrl);
+            if (!confirmed) return;
+
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyalin...';
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', baseUrl + '/admin/kontrak/salinDokumenGoogleDrive/' + dokumenId, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            // Update badge
+                            var badge = button.closest('td').querySelector('.badge-warning');
+                            if (badge) {
+                                badge.classList.remove('badge-warning');
+                                badge.classList.add('badge-success');
+                                badge.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                            }
+                            // Remove button
+                            button.remove();
+                            // Show success
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: response.message,
+                                    footer: '<a href="' + response.new_url + '" target="_blank">Buka file</a>'
+                                });
+                            } else {
+                                alert('File berhasil disalin ke Google Drive proyek!');
+                            }
+                        } else {
+                            button.disabled = false;
+                            button.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal',
+                                    text: response.message
+                                });
+                            } else {
+                                alert('Gagal: ' + response.message);
+                            }
+                        }
+                    } catch (e) {
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                        alert('Error parsing response');
+                    }
+                } else {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                    alert('Server error: ' + xhr.status);
+                }
+            };
+
+            xhr.onerror = function() {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                alert('Network error');
+            };
+
+            xhr.send();
+        });
+    });
 
     var filterUraian = document.getElementById('filter-uraian');
     var filterKelengkapan = document.getElementById('filter-kelengkapan');

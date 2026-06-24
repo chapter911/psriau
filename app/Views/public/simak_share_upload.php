@@ -1126,6 +1126,12 @@
                         <div id="upload_file_status" class="small mt-2 text-muted">Status file: belum dipilih.</div>
                     </div>
 
+                    <div class="form-group mb-3" id="uploadGoogleDriveManualGroup">
+                        <label for="google_drive_manual_link">Atau Link Google Drive</label>
+                        <input type="url" id="google_drive_manual_link" class="form-control" placeholder="https://drive.google.com/file/d/...">
+                        <small class="text-muted">Gunakan opsi ini jika file lebih dari <?= (int) ($appSetting['simak_max_upload_mb'] ?? 20); ?>MB. Pastikan file dapat diakses "Anyone with link" (Viewer).</small>
+                    </div>
+
                     <div class="form-group mb-3 d-none" id="uploadDriveGroup">
                         <input type="hidden" id="google_drive_link_modal" name="google_drive_link" value="">
                     </div>
@@ -2278,6 +2284,38 @@
             dokumenFileEl.addEventListener('change', handleDokumenFileChange);
         }
 
+        // Handle Google Drive manual link input
+        var googleDriveManualLinkEl = document.getElementById('google_drive_manual_link');
+        if (googleDriveManualLinkEl) {
+            googleDriveManualLinkEl.addEventListener('input', function() {
+                var manualLink = String(this.value || '').trim();
+                if (manualLink !== '' && isAllowedGoogleDriveUrl(manualLink)) {
+                    // Set upload method to 'drive' and populate hidden field
+                    if (uploadMethodEl) {
+                        uploadMethodEl.value = 'drive';
+                    }
+                    if (googleDriveLinkEl) {
+                        googleDriveLinkEl.value = manualLink;
+                    }
+                    setFileStatus('Link Google Drive: ' + manualLink.substring(0, 50) + '...', 'info');
+                }
+            });
+
+            googleDriveManualLinkEl.addEventListener('change', function() {
+                var manualLink = String(this.value || '').trim();
+                if (manualLink !== '' && !isAllowedGoogleDriveUrl(manualLink)) {
+                    if (window.Swal) {
+                        window.Swal.fire({
+                            icon: 'warning',
+                            title: 'Link tidak valid',
+                            text: 'Gunakan link dari drive.google.com atau docs.google.com.',
+                        });
+                    }
+                    this.value = '';
+                }
+            });
+        }
+
         function submitFormWithProgress(method) {
             if (isSubmitting) return;
             isSubmitting = true;
@@ -2429,7 +2467,25 @@
 
             var hasFile = !!(dokumenFileEl && dokumenFileEl.files && dokumenFileEl.files.length > 0);
             var driveLink = String(googleDriveLinkEl && googleDriveLinkEl.value ? googleDriveLinkEl.value : '').trim();
-            var hasDriveLink = driveLink !== '';
+
+            // Check if user entered a manual Google Drive link
+            var manualGoogleDriveLink = '';
+            if (googleDriveManualLinkEl) {
+                var manualLinkValue = String(googleDriveManualLinkEl.value || '').trim();
+                if (manualLinkValue !== '' && isAllowedGoogleDriveUrl(manualLinkValue)) {
+                    manualGoogleDriveLink = manualLinkValue;
+                    // Auto-switch to drive method if manual link is entered
+                    if (selectedMethod !== 'drive') {
+                        selectedMethod = 'drive';
+                        driveLink = manualGoogleDriveLink;
+                        if (googleDriveLinkEl) {
+                            googleDriveLinkEl.value = manualGoogleDriveLink;
+                        }
+                    }
+                }
+            }
+
+            var hasDriveLink = driveLink !== '' || manualGoogleDriveLink !== '';
             var rowNoValue = parseInt(String(rowNoEl && rowNoEl.value ? rowNoEl.value : '0').trim(), 10) || 0;
 
             if (rowNoValue <= 0) {
@@ -2462,6 +2518,13 @@
                     }
                     return;
                 }
+            }
+
+            // If manual Google Drive link is entered but no file, proceed with drive method
+            if (manualGoogleDriveLink !== '' && !hasFile) {
+                event.preventDefault();
+                submitFormWithProgress('drive');
+                return;
             }
 
             if (hasFile && dokumenFileEl && dokumenFileEl.files[0] && checkFileTooLarge(dokumenFileEl.files[0])) {
