@@ -4788,8 +4788,10 @@ class Kontrak extends BaseController
         $rows = $db->table($tableDokumen)
             ->select('DISTINCT(simak_id) as skim_id')
             ->whereIn('simak_id', $simakIds)
-            ->where('file_relative_path LIKE', '%drive.google.com%', false)
-            ->orWhere('file_relative_path LIKE', '%docs.google.com%', false)
+            ->groupStart()
+                ->like('file_relative_path', 'drive.google.com')
+                ->orLike('file_relative_path', 'docs.google.com')
+            ->groupEnd()
             ->get()
             ->getResultArray();
 
