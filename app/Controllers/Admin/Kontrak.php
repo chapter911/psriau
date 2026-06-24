@@ -2741,7 +2741,7 @@ class Kontrak extends BaseController
         $dokumenByRow = [];
         if ($db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
             $dokumenBuilder = $db->table('trn_kontrak_simak_verifikasi_dokumen')
-                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, tipe_dokumen, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
+                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, tipe_dokumen, kelengkapan_dokumen, verifikasi_ki, keterangan, pic, is_google_drive_link, google_drive_source_url, copied_to_project_drive, copied_to_project_drive_at, copied_to_project_drive_by, original_file_id')
                 ->where('simak_id', $id)
                 ->orderBy('row_no', 'ASC')
                 ->orderBy('id', 'DESC');
@@ -5237,7 +5237,7 @@ class Kontrak extends BaseController
             $dokumenByRow = [];
             if ($db->tableExists($tableDokumen)) {
                 $dokumenBuilder = $db->table($tableDokumen)
-                    ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, tipe_dokumen, verifikasi_ki')
+                    ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, tipe_dokumen, verifikasi_ki, is_google_drive_link, google_drive_source_url, copied_to_project_drive, copied_to_project_drive_at, copied_to_project_drive_by, original_file_id')
                     ->where('simak_id', $shareSimakId)
                     ->orderBy('row_no', 'ASC')
                     ->orderBy('id', 'DESC');
@@ -7081,7 +7081,7 @@ class Kontrak extends BaseController
         $dokumenByRow = [];
         if ($db->tableExists('trn_kontrak_simak_konsultasi_verifikasi_dokumen')) {
             $dokumenBuilder = $db->table('trn_kontrak_simak_konsultasi_verifikasi_dokumen')
-                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, tipe_dokumen, kelengkapan_dokumen, verifikasi_ki, keterangan, pic')
+                ->select('id, row_no, file_original_name, file_relative_path, file_mime, file_size, created_at, created_by, tipe_dokumen, kelengkapan_dokumen, verifikasi_ki, keterangan, pic, is_google_drive_link, google_drive_source_url, copied_to_project_drive, copied_to_project_drive_at, copied_to_project_drive_by, original_file_id')
                 ->where('simak_id', $id)
                 ->orderBy('row_no', 'ASC')
                 ->orderBy('id', 'DESC');
