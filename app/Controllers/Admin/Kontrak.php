@@ -4620,7 +4620,19 @@ class Kontrak extends BaseController
 
             if (!$fileContent) {
                 log_message('error', 'salinDokumenGoogleDrive - Failed to download file: ' . $googleDriveSourceUrl);
-                return $this->response->setJSON(['success' => false, 'message' => 'Gagal download file dari Google Drive. Pastikan file dapat diakses oleh siapa saja dengan link.']);
+
+                // Provide more helpful error message based on what we know
+                $debugInfo = [
+                    'file_id' => $fileId,
+                    'source_url' => $googleDriveSourceUrl,
+                    'mime_detected' => isset($fileContent['mimeType']) ? $fileContent['mimeType'] : 'N/A',
+                ];
+
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal download file dari Google Drive. Pastikan file sudah diset ke "Anyone with the link" dan "Viewer" (bukan "Commenter" atau "Editor").',
+                    'debug' => $debugInfo
+                ]);
             }
 
             // Get file name dari dokumen atau generate
@@ -4686,9 +4698,28 @@ class Kontrak extends BaseController
      */
     private function downloadGoogleDriveFile(string $fileId, string $url): ?array
     {
-        // Try direct download URL
+        // Method 1: Try direct download URL with curl
         $downloadUrl = "https://drive.google.com/uc?export=download&id={$fileId}";
 
+        // First, get cookies by visiting the main page
+        $cookieFile = tempnam(sys_get_temp_dir(), 'gd_cookies_');
+
+        // First request - visit the file page to get cookies
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => "https://drive.google.com/file/d/{$fileId}/view",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            CURLOPT_COOKIEJAR => $cookieFile,
+            CURLOPT_COOKIEFILE => $cookieFile,
+        ]);
+        curl_exec($ch);
+        curl_close($ch);
+
+        // Second request - download the file with cookies
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $downloadUrl,
@@ -4696,7 +4727,8 @@ class Kontrak extends BaseController
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_TIMEOUT => 120,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            CURLOPT_COOKIEFILE => $cookieFile,
         ]);
 
         $content = curl_exec($ch);
@@ -4704,42 +4736,68 @@ class Kontrak extends BaseController
         $error = curl_error($ch);
         curl_close($ch);
 
+        // Cleanup cookie file
+        @unlink($cookieFile);
+
         if ($error) {
             log_message('error', 'downloadGoogleDriveFile - Curl error: ' . $error);
             return null;
         }
 
-        // Check if we got a HTML page (confirm page) instead of file
-        // Large files require confirmation
-        if ($httpCode == 200 && strlen($content) < 5000 && preg_match('/<form.*?action=.*?confirm/i', $content)) {
-            log_message('info', 'downloadGoogleDriveFile - File requires confirmation, trying with cookie: ' . $fileId);
-            return $this->downloadLargeGoogleDriveFile($fileId);
-        }
+        log_message('info', 'downloadGoogleDriveFile - HTTP ' . $httpCode . ', Content length: ' . strlen($content) . ', First 200 chars: ' . substr($content, 0, 200));
 
+        // Check if we got a confirmation page (Google Drive shows warning for large/suspicious files)
         if ($httpCode == 200 && strlen($content) > 0) {
-            // Skip if content is HTML (error page)
-            if (preg_match('/<html/i', $content) && strlen($content) < 10000 && !preg_match('/pdf/i', substr($content, 0, 1000))) {
-                log_message('error', 'downloadGoogleDriveFile - Got HTML instead of file');
-                return null;
+            // Check if response is HTML (confirmation page or error)
+            $isHtml = preg_match('/<html/i', substr($content, 0, 500));
+
+            if ($isHtml) {
+                // Check if it's a confirmation page (contains "confirm" or "download anyway")
+                if (stripos($content, 'confirm') !== false || stripos($content, 'download anyway') !== false || strlen($content) < 50000) {
+                    log_message('info', 'downloadGoogleDriveFile - Got confirmation page, trying with confirm parameter');
+                    $result = $this->downloadLargeGoogleDriveFile($fileId);
+                    if ($result) {
+                        return $result;
+                    }
+                }
+
+                // Check for specific error messages
+                if (stripos($content, 'access denied') !== false || stripos($content, 'not found') !== false || stripos($content, 'Quota exceeded') !== false) {
+                    log_message('error', 'downloadGoogleDriveFile - Access denied, file not found, or quota exceeded');
+                    return null;
+                }
+
+                // If HTML but short, might be error page
+                if (strlen($content) < 10000) {
+                    log_message('error', 'downloadGoogleDriveFile - Got short HTML response, file may not be accessible');
+                    return null;
+                }
             }
 
-            // Detect mime type from content
+            // Try to detect mime type
             $finfo = new finfo(FILEINFO_MIME_TYPE);
             $mimeType = $finfo->buffer($content);
 
             // If mime type is HTML, we got an error page
             if (strpos($mimeType, 'text/html') !== false) {
-                log_message('error', 'downloadGoogleDriveFile - Got HTML mime type, file not accessible');
-                return null;
+                // Check if it's actually an error
+                if (strlen($content) < 50000) {
+                    log_message('error', 'downloadGoogleDriveFile - Got HTML mime type, file not accessible');
+                    return null;
+                }
             }
 
-            return [
-                'content' => $content,
-                'mimeType' => $mimeType,
-            ];
+            // Success - got actual file content
+            if (strlen($content) > 0 && strpos($mimeType, 'text/html') === false) {
+                log_message('info', 'downloadGoogleDriveFile - Success, mime: ' . $mimeType . ', size: ' . strlen($content));
+                return [
+                    'content' => $content,
+                    'mimeType' => $mimeType,
+                ];
+            }
         }
 
-        log_message('error', 'downloadGoogleDriveFile - HTTP ' . $httpCode . ' or empty content');
+        log_message('error', 'downloadGoogleDriveFile - Failed to download, HTTP: ' . $httpCode);
         return null;
     }
 
@@ -4750,6 +4808,25 @@ class Kontrak extends BaseController
     {
         $confirmUrl = "https://drive.google.com/uc?export=download&confirm=t&id={$fileId}";
 
+        // First get cookies from the file page
+        $cookieFile = tempnam(sys_get_temp_dir(), 'gd_cookies_');
+
+        // First request - visit the file page to get cookies
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => "https://drive.google.com/file/d/{$fileId}/view",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            CURLOPT_COOKIEJAR => $cookieFile,
+            CURLOPT_COOKIEFILE => $cookieFile,
+        ]);
+        curl_exec($ch);
+        curl_close($ch);
+
+        // Second request - download with confirm
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $confirmUrl,
@@ -4757,7 +4834,8 @@ class Kontrak extends BaseController
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_TIMEOUT => 300,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            CURLOPT_COOKIEFILE => $cookieFile,
         ]);
 
         $content = curl_exec($ch);
@@ -4765,34 +4843,52 @@ class Kontrak extends BaseController
         $error = curl_error($ch);
         curl_close($ch);
 
+        // Cleanup cookie file
+        @unlink($cookieFile);
+
         if ($error || $httpCode != 200) {
             log_message('error', 'downloadLargeGoogleDriveFile - Curl error or HTTP error: ' . $error . ' / ' . $httpCode);
             return null;
         }
 
-        if (strlen($content) > 1000) {
-            // Skip if content is HTML
-            if (preg_match('/<html/i', $content) && strlen($content) < 10000) {
-                log_message('error', 'downloadLargeGoogleDriveFile - Got HTML instead of file');
+        log_message('info', 'downloadLargeGoogleDriveFile - HTTP ' . $httpCode . ', Content length: ' . strlen($content) . ', First 200 chars: ' . substr($content, 0, 200));
+
+        // Check if response is HTML
+        $isHtml = preg_match('/<html/i', substr($content, 0, 500));
+
+        if ($isHtml) {
+            // Still got HTML - file might not be accessible
+            if (stripos($content, 'confirm') !== false && strlen($content) < 10000) {
+                log_message('error', 'downloadLargeGoogleDriveFile - Still got confirmation page');
                 return null;
             }
 
-            $finfo = new finfo(FILEINFO_MIME_TYPE);
-            $mimeType = $finfo->buffer($content);
-
-            // If mime type is HTML, we got an error page
-            if (strpos($mimeType, 'text/html') !== false) {
-                log_message('error', 'downloadLargeGoogleDriveFile - Got HTML mime type');
+            if (strlen($content) < 50000) {
+                log_message('error', 'downloadLargeGoogleDriveFile - Got short HTML response');
                 return null;
             }
+        }
 
+        // Try to detect mime type
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->buffer($content);
+
+        // If mime type is HTML, we got an error page
+        if (strpos($mimeType, 'text/html') !== false && strlen($content) < 50000) {
+            log_message('error', 'downloadLargeGoogleDriveFile - Got HTML mime type');
+            return null;
+        }
+
+        // Success - got actual file content
+        if (strlen($content) > 0) {
+            log_message('info', 'downloadLargeGoogleDriveFile - Success, mime: ' . $mimeType . ', size: ' . strlen($content));
             return [
                 'content' => $content,
                 'mimeType' => $mimeType,
             ];
         }
 
-        log_message('error', 'downloadLargeGoogleDriveFile - Content too small or empty');
+        log_message('error', 'downloadLargeGoogleDriveFile - Content empty');
         return null;
     }
 

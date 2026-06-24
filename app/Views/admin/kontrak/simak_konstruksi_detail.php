@@ -1526,79 +1526,105 @@
             var sourceUrl = button.getAttribute('data-url');
             var fileName = button.getAttribute('data-file');
 
-            var confirmed = confirm('Salin file dari Google Drive ke Google Drive proyek?\n\nFile: ' + fileName + '\nSumber: ' + sourceUrl);
-            if (!confirmed) return;
+            // Show confirmation dialog
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'question',
+                    title: 'Salin ke Google Drive Proyek?',
+                    html: 'File: <strong>' + fileName + '</strong><br>Sumber: <a href="' + sourceUrl + '" target="_blank">' + sourceUrl.substring(0, 50) + '...</a>',
+                    showCancelButton: true,
+                    confirmButtonText: 'Salin',
+                    cancelButtonText: 'Batal',
+                    allowOutsideClick: false
+                }).then(function(result) {
+                    if (!result.isConfirmed) return;
 
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    // Show loading dialog
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Menyalin file...',
+                        html: '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted">Mengdownload dari Google Drive...</div></div>',
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    });
 
-            // Prepare form data with CSRF token
-            var formData = new FormData();
-            formData.append(typeof csrfTokenName !== 'undefined' ? csrfTokenName : 'csrf_token_name', typeof csrfHash !== 'undefined' ? csrfHash : '');
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', baseUrl + '/admin/kontrak/simak/konstruksi/salin-dokumen-gdrive/' + dokumenId, true);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.success) {
-                            // Update badge in Keterangan column (find the row first, then the badge-warning)
-                            var row = button.closest('tr');
-                            if (row) {
-                                var badge = row.querySelector('.badge-warning');
-                                if (badge) {
-                                    badge.classList.remove('badge-warning');
-                                    badge.classList.add('badge-success');
-                                    badge.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                    // Prepare form data with CSRF token
+                    var formData = new FormData();
+                    formData.append(typeof csrfTokenName !== 'undefined' ? csrfTokenName : 'csrf_token_name', typeof csrfHash !== 'undefined' ? csrfHash : '');
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', baseUrl + '/admin/kontrak/simak/konstruksi/salin-dokumen-gdrive/' + dokumenId, true);
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                    xhr.onload = function() {
+                        if (xhr.status === 200) {
+                            try {
+                                var response = JSON.parse(xhr.responseText);
+                                if (response.success) {
+                                    // Update badge in Keterangan column
+                                    var row = button.closest('tr');
+                                    if (row) {
+                                        var badge = row.querySelector('.badge-warning');
+                                        if (badge) {
+                                            badge.classList.remove('badge-warning');
+                                            badge.classList.add('badge-success');
+                                            badge.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                                        }
+                                    }
+                                    // Remove button
+                                    button.remove();
+                                    // Show success
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil',
+                                        text: 'File berhasil disalin ke Google Drive proyek.',
+                                        footer: '<a href="' + response.new_url + '" target="_blank">Buka file</a>'
+                                    });
+                                } else {
+                                    button.disabled = false;
+                                    button.innerHTML = '<i class="fas fa-copy"></i>';
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Gagal',
+                                        text: response.message
+                                    });
                                 }
-                            }
-                            // Remove button
-                            button.remove();
-                            // Show success
-                            if (typeof Swal !== 'undefined') {
+                            } catch (e) {
+                                button.disabled = false;
+                                button.innerHTML = '<i class="fas fa-copy"></i>';
                                 Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil',
-                                    text: response.message,
-                                    footer: '<a href="' + response.new_url + '" target="_blank">Buka file</a>'
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'Terjadi kesalahan saat memproses response.'
                                 });
-                            } else {
-                                alert('File berhasil disalin ke Google Drive proyek!');
                             }
                         } else {
                             button.disabled = false;
                             button.innerHTML = '<i class="fas fa-copy"></i>';
-                            if (typeof Swal !== 'undefined') {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Gagal',
-                                    text: response.message
-                                });
-                            } else {
-                                alert('Gagal: ' + response.message);
-                            }
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Server Error',
+                                text: 'Status: ' + xhr.status
+                            });
                         }
-                    } catch (e) {
+                    };
+
+                    xhr.onerror = function() {
                         button.disabled = false;
                         button.innerHTML = '<i class="fas fa-copy"></i>';
-                        alert('Error parsing response');
-                    }
-                } else {
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-copy"></i>';
-                    alert('Server error: ' + xhr.status);
-                }
-            };
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Network Error',
+                            text: 'Tidak dapat terhubung ke server.'
+                        });
+                    };
 
-            xhr.onerror = function() {
-                button.disabled = false;
-                button.innerHTML = '<i class="fas fa-copy"></i>';
-                alert('Network error');
-            };
-
-            xhr.send(formData);
+                    xhr.send(formData);
+                });
+            }
         });
     });
 
