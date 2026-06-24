@@ -50,6 +50,7 @@ class LupaAbsen extends BaseController
 
         $db = db_connect();
 
+        // Check if table exists
         if (! $db->tableExists('lupa_absen')) {
             return $this->response->setJSON([
                 'draw' => $draw,
@@ -60,13 +61,6 @@ class LupaAbsen extends BaseController
         }
 
         $builder = $db->table('lupa_absen');
-
-        // Filter by logged in user (non-admin can only see their own)
-        $username = trim((string) session()->get('username'));
-        $role = strtolower((string) session()->get('role'));
-        if (! in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true)) {
-            $builder->where('created_by', $username);
-        }
 
         $recordsTotal = (int) $builder->countAllResults(false);
 
@@ -140,10 +134,10 @@ class LupaAbsen extends BaseController
             return redirect()->to(site_url('admin/surat/lupa-absen'));
         }
 
-        return $this->simpanLupaAbsen(0);
+        return $this->simpanLupaAbsen();
     }
 
-    private function simpanLupaAbsen(int $id): RedirectResponse
+    private function simpanLupaAbsen()
     {
         $nama = trim((string) $this->request->getPost('nama'));
         $nip = trim((string) $this->request->getPost('nip'));
@@ -179,19 +173,17 @@ class LupaAbsen extends BaseController
         $model = new LupaAbsenModel();
         $username = trim((string) session()->get('username'));
 
-        // Generate nomor surat
-        $nomorSurat = $this->generateNomorSurat();
-
+        // Nomor surat akan di-generate saat PDF di-generate
         $data = [
             'nama' => $nama,
             'nip' => $nip,
-            'jabatan_id' => $jabatanId,
+            'jabatan_id' => $jabatanId ?: null,
             'jabatan' => $jabatan,
             'unit_kerja' => $unitKerja,
             'tanggal_absen' => $tanggalAbsen,
             'jenis_absen' => $jenisAbsen,
             'alasan_detail' => $alasanDetail,
-            'nomor_surat' => $nomorSurat,
+            'nomor_surat' => null, // Akan di-generate saat PDF
             'status' => 'pending',
             'created_by' => $username,
             'created_at' => date('Y-m-d H:i:s'),
@@ -204,24 +196,7 @@ class LupaAbsen extends BaseController
             return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Gagal menyimpan data. Silakan coba lagi.');
         }
 
-        return redirect()->to(site_url('admin/surat/lupa-absen'))->with('success', 'Pengajuan lupa absen berhasil disimpan. Nomor Surat: ' . $nomorSurat);
-    }
-
-    private function generateNomorSurat(): string
-    {
-        $db = db_connect();
-        $year = date('Y');
-        $month = date('m');
-
-        // Get max id for this year-month
-        $builder = $db->table('lupa_absen')
-            ->selectMax('id', 'max_id')
-            ->get();
-
-        $row = $builder->getRowArray();
-        $nextNum = ((int) ($row['max_id'] ?? 0)) + 1;
-
-        return sprintf('%03d/LOA-%s%s', $nextNum, $month, substr($year, -2));
+        return redirect()->to(site_url('admin/surat/lupa-absen'))->with('success', 'Pengajuan lupa absen berhasil disimpan.');
     }
 
     public function pdf(int $id)
@@ -235,6 +210,14 @@ class LupaAbsen extends BaseController
 
         if (! is_array($row)) {
             return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Data tidak ditemukan.');
+        }
+
+        // Generate nomor surat on-the-fly if not set
+        $nomorSurat = $row['nomor_surat'] ?? '';
+        if (empty($nomorSurat)) {
+            $nomorSurat = $this->generateNomorSurat($id);
+            // Update the record with the generated nomor_surat
+            $model->update($id, ['nomor_surat' => $nomorSurat]);
         }
 
         // Get app settings for header
@@ -271,7 +254,7 @@ class LupaAbsen extends BaseController
             'app_name' => $appSetting['app_name'] ?? 'KEMENTERIAN PEKERJAAN UMUM',
             'official_name' => $homeSetting['official_name'] ?? 'Satuan Kerja Prasarana Strategis Riau',
             'kop_surat_logo' => !empty($appSetting['app_logo_url']) ? base_url($appSetting['app_logo_url']) : '',
-            'nomor_surat' => $row['nomor_surat'] ?? '',
+            'nomor_surat' => $nomorSurat,
             'nama' => $row['nama'] ?? '',
             'nip' => $row['nip'] ?? '',
             'jabatan' => $row['jabatan'] ?? '',
@@ -302,30 +285,26 @@ class LupaAbsen extends BaseController
             ->setBody($dompdf->output());
     }
 
+    private function generateNomorSurat(int $id): string
+    {
+        $year = date('Y');
+        $month = date('m');
+
+        // Use the ID for numbering
+        return sprintf('%03d/LOA-%s%s', $id, $month, substr($year, -2));
+    }
+
     public function hapus(int $id): RedirectResponse
     {
         if (! $this->canAccess()) {
             return redirect()->to(site_url('/admin'));
         }
 
-        $role = strtolower((string) session()->get('role'));
-        $username = trim((string) session()->get('username'));
-
         $model = new LupaAbsenModel();
         $existing = $model->find($id);
 
         if (! is_array($existing)) {
             return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Data tidak ditemukan.');
-        }
-
-        // Non-admin can only delete their own pending submissions
-        if (! in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true)) {
-            if (($existing['created_by'] ?? '') !== $username) {
-                return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Anda tidak memiliki akses untuk menghapus data ini.');
-            }
-            if (($existing['status'] ?? '') !== 'pending') {
-                return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Data yang sudah diproses tidak dapat dihapus.');
-            }
         }
 
         $model->delete($id);
@@ -410,15 +389,12 @@ class LupaAbsen extends BaseController
             ];
         }
 
-        // Try to find by NIP first (username might be NIP)
         $username = trim((string) session()->get('username'));
         $fullName = trim((string) (session()->get('fullName') ?? ''));
 
-        // Build query - try matching by username (which might be NIP) or full name
         $builder = $db->table('mst_pegawai');
-        $builder->select('mst_pegawai.*, ju.jabatan AS jabatan_label, jp.jabatan AS jabatan_perbendaharaan');
+        $builder->select('mst_pegawai.*, ju.jabatan AS jabatan_label');
         $builder->join('mst_jabatan ju', 'ju.id = mst_pegawai.jabatan_utama_id', 'left');
-        $builder->join('mst_jabatan jp', 'jp.id = mst_pegawai.jabatan_perbendaharaan_id', 'left');
         $builder->where('mst_pegawai.is_active', 1);
         $builder->groupStart();
         $builder->where('mst_pegawai.nip', $username);
@@ -429,7 +405,6 @@ class LupaAbsen extends BaseController
         $pegawai = $builder->get()->getRowArray();
 
         if (! is_array($pegawai)) {
-            // Fallback to session data
             return [
                 'nama' => $fullName ?: $username,
                 'nip' => $username,
@@ -443,7 +418,7 @@ class LupaAbsen extends BaseController
             'nama' => trim((string) ($pegawai['nama'] ?? '')),
             'nip' => trim((string) ($pegawai['nip'] ?? '')),
             'jabatan_id' => (int) ($pegawai['jabatan_utama_id'] ?? 0),
-            'jabatan' => trim((string) ($pegawai['jabatan_label'] ?? $pegawai['jabatan'] ?? '')),
+            'jabatan' => trim((string) ($pegawai['jabatan_label'] ?? '')),
             'unit_kerja' => trim((string) ($pegawai['unit_kerja'] ?? '')) ?: 'Satuan Kerja Prasarana Strategis Riau',
         ];
     }
@@ -483,7 +458,6 @@ class LupaAbsen extends BaseController
         if (! is_array($search)) {
             return '';
         }
-
         return trim((string) ($search['value'] ?? ''));
     }
 
@@ -493,12 +467,10 @@ class LupaAbsen extends BaseController
         if (! is_array($order) || $order === []) {
             return 0;
         }
-
         $first = $order[0] ?? [];
         if (! is_array($first)) {
             return 0;
         }
-
         return max(0, (int) ($first['column'] ?? 0));
     }
 
@@ -508,12 +480,10 @@ class LupaAbsen extends BaseController
         if (! is_array($order) || $order === []) {
             return 'DESC';
         }
-
         $first = $order[0] ?? [];
         if (! is_array($first)) {
             return 'DESC';
         }
-
         return strtolower((string) ($first['dir'] ?? 'desc')) === 'asc' ? 'ASC' : 'DESC';
     }
 }
