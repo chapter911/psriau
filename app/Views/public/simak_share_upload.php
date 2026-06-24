@@ -1126,10 +1126,10 @@
                         <div id="upload_file_status" class="small mt-2 text-muted">Status file: belum dipilih.</div>
                     </div>
 
-                    <div class="form-group mb-3" id="uploadGoogleDriveManualGroup">
-                        <label for="google_drive_manual_link">Atau Link Google Drive</label>
+                    <div class="form-group mb-3 d-none" id="uploadGoogleDriveManualGroup">
+                        <label for="google_drive_manual_link"><i class="fas fa-link"></i> Link Google Drive</label>
                         <input type="url" id="google_drive_manual_link" class="form-control" placeholder="https://drive.google.com/file/d/...">
-                        <small class="text-muted">Gunakan opsi ini jika file lebih dari <?= (int) ($appSetting['simak_max_upload_mb'] ?? 20); ?>MB. Pastikan file dapat diakses "Anyone with link" (Viewer).</small>
+                        <small class="text-muted">Pastikan file dapat diakses "Anyone with the link" (Viewer).</small>
                     </div>
 
                     <div class="form-group mb-3 d-none" id="uploadDriveGroup">
@@ -1602,6 +1602,15 @@
         if (keteranganTidakAdaEl) {
             keteranganTidakAdaEl.value = '';
         }
+        // Reset Google Drive manual input
+        var googleDriveManualLinkEl = document.getElementById('google_drive_manual_link');
+        var uploadGoogleDriveManualGroupEl = document.getElementById('uploadGoogleDriveManualGroup');
+        if (googleDriveManualLinkEl) {
+            googleDriveManualLinkEl.value = '';
+        }
+        if (uploadGoogleDriveManualGroupEl) {
+            uploadGoogleDriveManualGroupEl.classList.add('d-none');
+        }
         syncUploadMethodUI();
         refreshFileStatus();
     }
@@ -1619,6 +1628,12 @@
         }
         if (uploadNoDocumentGroupEl) {
             uploadNoDocumentGroupEl.classList.toggle('d-none', !useNoDocument);
+        }
+
+        // Keep Google Drive manual input hidden (it's only shown when file is too large)
+        var uploadGoogleDriveManualGroupEl = document.getElementById('uploadGoogleDriveManualGroup');
+        if (uploadGoogleDriveManualGroupEl) {
+            uploadGoogleDriveManualGroupEl.classList.add('d-none');
         }
 
         if ((useDrive || useNoDocument) && dokumenFileEl) {
@@ -2113,13 +2128,35 @@
             dokumenFileEl.value = '';
         }
 
+        // Hide file input, show Google Drive input
+        var uploadFileGroupEl = document.getElementById('uploadFileGroup');
+        var uploadGoogleDriveManualGroupEl = document.getElementById('uploadGoogleDriveManualGroup');
+        var googleDriveManualLinkEl = document.getElementById('google_drive_manual_link');
+        var googleDriveLinkEl = document.getElementById('google_drive_link_modal');
+
+        if (uploadFileGroupEl) uploadFileGroupEl.classList.add('d-none');
+        if (uploadGoogleDriveManualGroupEl) uploadGoogleDriveManualGroupEl.classList.remove('d-none');
+        if (googleDriveManualLinkEl) {
+            googleDriveManualLinkEl.value = '';
+            googleDriveManualLinkEl.focus();
+        }
+
+        var maxUploadMb = <?= (int) ($appSetting['simak_max_upload_mb'] ?? 20); ?>;
+
         if (window.Swal && typeof window.Swal.fire === 'function') {
             window.Swal.fire({
                 icon: 'warning',
-                title: 'File terlalu besar',
-                text: maxUploadAllowedBytes > 0
-                    ? 'Ukuran file ' + String(file.name || 'dokumen') + ' (' + formatBytes(file.size) + ') melebihi batas maksimal <?= (int) ($appSetting['simak_max_upload_mb'] ?? 0); ?>MB. Silakan pilih file yang lebih kecil.'
-                    : 'Ukuran file ' + String(file.name || 'dokumen') + ' (' + formatBytes(file.size) + ') terlalu besar. Batas maksimal upload adalah ' + formatBytes(maxUploadBytes) + '.'
+                title: 'File Terlalu Besar',
+                html: 'Ukuran file <strong>' + String(file.name || 'dokumen') + '</strong> (' + formatBytes(file.size) + ') melebihi batas maksimal <strong>' + maxUploadMb + 'MB</strong>.' +
+                      '<br><br><strong>Alternatif:</strong> Silakan upload file ke Google Drive Anda, lalu masukkan linknya:' +
+                      '<ol class="text-left" style="display: inline-block; text-align: left;">' +
+                      '<li>Buka <a href="https://drive.google.com" target="_blank">Google Drive</a></li>' +
+                      '<li>Upload file Anda</li>' +
+                      '<li>Klik kanan → "Get link" → "Anyone with the link" → "Viewer"</li>' +
+                      '<li>Salin link dan paste di kolom yang muncul</li>' +
+                      '</ol>',
+                showCloseButton: true,
+                confirmButtonText: 'Mengerti'
             });
         }
 

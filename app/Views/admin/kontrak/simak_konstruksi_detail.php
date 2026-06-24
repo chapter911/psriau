@@ -766,7 +766,7 @@
                         <small class="text-muted">Jika memilih Dokumen Memang Tidak Ada, keterangan wajib diisi.</small>
                         <div class="invalid-feedback d-block" id="kelengkapan_error" style="display: none; color: #dc3545;">Kelengkapan dokumen wajib dipilih</div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="admin_upload_file_group">
                         <label for="admin_upload_file">File Dokumen</label>
                         <input
                             type="file"
@@ -779,32 +779,17 @@
                         <div class="invalid-feedback d-block" id="admin_upload_file_error" style="display: none; color: #dc3545;">File wajib dipilih</div>
                     </div>
 
-                    <?php if (session()->getFlashdata('show_google_drive_input')): ?>
-                    <div class="alert alert-warning">
-                        <h5><i class="icon fas fa-exclamation-triangle"></i> File Terlalu Besar</h5>
-                        <p>Ukuran file maksimal adalah <strong><?= (int) ($appSetting['simak_max_upload_mb'] ?? 50) ?>MB</strong>.</p>
-                        <hr>
-                        <p><strong>Alternatif:</strong> Silakan upload file ke Google Drive Anda, lalu masukkan linknya:</p>
-                        <ol class="mb-0">
-                            <li>Buka <a href="https://drive.google.com" target="_blank">Google Drive</a></li>
-                            <li>Upload file Anda</li>
-                            <li>Klik kanan → "Get link" → "Anyone with the link" → "Viewer"</li>
-                            <li>Salin link dan paste di bawah</li>
-                        </ol>
-                    </div>
-                    <?php endif; ?>
-
-                    <div class="form-group">
-                        <label for="admin_upload_gdrive_url">Atau Link Google Drive</label>
+                    <div class="form-group d-none" id="admin_upload_gdrive_group">
+                        <label for="admin_upload_gdrive_url"><i class="fas fa-link"></i> Link Google Drive</label>
                         <input
                             type="url"
                             class="form-control"
                             id="admin_upload_gdrive_url"
                             name="google_drive_url"
                             placeholder="https://drive.google.com/file/d/..."
-                            value="<?= esc(old('google_drive_url', '')) ?>"
+                            value=""
                         >
-                        <small class="text-muted">Gunakan ini jika file lebih dari <?= (int) ($appSetting['simak_max_upload_mb'] ?? 50) ?>MB. Pastikan file dapat diakses "Anyone with link".</small>
+                        <small class="text-muted">Pastikan file dapat diakses "Anyone with the link" (Viewer).</small>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -1419,9 +1404,80 @@
             if (adminUploadFileInput) {
                 adminUploadFileInput.value = '';
             }
+            // Reset Google Drive input visibility
+            var gdriveGroup = document.getElementById('admin_upload_gdrive_group');
+            var fileGroup = document.getElementById('admin_upload_file_group');
+            var gdriveInput = document.getElementById('admin_upload_gdrive_url');
+            if (gdriveGroup) gdriveGroup.classList.add('d-none');
+            if (fileGroup) fileGroup.classList.remove('d-none');
+            if (gdriveInput) gdriveInput.value = '';
             window.jQuery('#modal-admin-upload-dokumen').modal('show');
         });
     });
+
+    // File change handler - check if file is too large
+    var maxUploadMb = <?= (int) ($appSetting['simak_max_upload_mb'] ?? 50); ?>;
+    var maxUploadBytes = maxUploadMb * 1024 * 1024;
+
+    if (adminUploadFileInput) {
+        adminUploadFileInput.addEventListener('change', function(e) {
+            var file = e.target.files && e.target.files[0];
+            var gdriveGroup = document.getElementById('admin_upload_gdrive_group');
+            var fileGroup = document.getElementById('admin_upload_file_group');
+            var gdriveInput = document.getElementById('admin_upload_gdrive_url');
+            var fileError = document.getElementById('admin_upload_file_error');
+
+            if (!file) {
+                // No file selected - reset
+                if (gdriveGroup) gdriveGroup.classList.add('d-none');
+                if (fileGroup) fileGroup.classList.remove('d-none');
+                if (gdriveInput) gdriveInput.value = '';
+                return;
+            }
+
+            if (file.size > maxUploadBytes) {
+                // File too large - show Google Drive option
+                e.target.value = ''; // Clear the file input
+
+                // Hide file input, show Google Drive input
+                if (fileGroup) fileGroup.classList.add('d-none');
+                if (gdriveGroup) gdriveGroup.classList.remove('d-none');
+                if (gdriveInput) gdriveInput.value = '';
+
+                // Show SweetAlert with instructions
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'File Terlalu Besar',
+                        html: 'Ukuran file <strong>' + file.name + '</strong> (' + formatBytes(file.size) + ') melebihi batas maksimal <strong>' + maxUploadMb + 'MB</strong>.' +
+                              '<br><br><strong>Alternatif:</strong> Silakan upload file ke Google Drive Anda, lalu masukkan linknya:' +
+                              '<ol class="text-left" style="display: inline-block; text-align: left;">' +
+                              '<li>Buka <a href="https://drive.google.com" target="_blank">Google Drive</a></li>' +
+                              '<li>Upload file Anda</li>' +
+                              '<li>Klik kanan → "Get link" → "Anyone with the link" → "Viewer"</li>' +
+                              '<li>Salin link dan paste di kolom yang muncul</li>' +
+                              '</ol>',
+                        showCloseButton: true,
+                        confirmButtonText: 'Mengerti'
+                    });
+                }
+            } else {
+                // File is OK - ensure Google Drive input is hidden
+                if (gdriveGroup) gdriveGroup.classList.add('d-none');
+                if (fileGroup) fileGroup.classList.remove('d-none');
+                if (gdriveInput) gdriveInput.value = '';
+            }
+        });
+    }
+
+    // Helper function to format bytes
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        var k = 1024;
+        var sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
 
     if (adminUploadForm) {
         adminUploadForm.addEventListener('submit', function (e) {
