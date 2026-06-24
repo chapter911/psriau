@@ -135,13 +135,17 @@ class LupaAbsen extends BaseController
         }
 
         if (strtolower((string) $this->request->getMethod()) !== 'post') {
+            // Auto-fill employee data from logged-in user
+            $pegawaiData = $this->getCurrentPegawaiData();
+
             return view('admin/surat/lupa_absen_form', [
                 'title' => 'Ajukan Lupa Absen',
-                'current_input' => [],
+                'current_input' => $pegawaiData,
                 'form_error' => null,
                 'is_edit' => false,
                 'existing_entries' => [],
                 'jabatan_options' => $this->loadJabatanOptions(),
+                'current_pegawai' => $pegawaiData,
             ]);
         }
 
@@ -187,6 +191,7 @@ class LupaAbsen extends BaseController
                 'id' => $id,
                 'existing_entries' => $entries,
                 'jabatan_options' => $this->loadJabatanOptions(),
+                'current_pegawai' => $existing, // For edit mode, use existing data
             ]);
         }
 
@@ -520,6 +525,64 @@ class LupaAbsen extends BaseController
             $row['display_label'] = trim((string) ($row['jabatan'] ?? ''));
             return $row;
         }, $rows);
+    }
+
+    /**
+     * Get current logged-in employee's data from mst_pegawai table
+     */
+    private function getCurrentPegawaiData(): array
+    {
+        $db = db_connect();
+
+        if (! $db->tableExists('mst_pegawai')) {
+            return [
+                'nama' => session()->get('fullName') ?? session()->get('username') ?? '',
+                'nip' => '',
+                'jabatan_id' => 0,
+                'jabatan' => '',
+                'unit_kerja' => '',
+            ];
+        }
+
+        // Try to find by NIP first (username might be NIP)
+        $username = trim((string) session()->get('username'));
+        $fullName = trim((string) (session()->get('fullName') ?? ''));
+
+        // Build query - try matching by username (which might be NIP) or full name
+        $builder = $db->table('mst_pegawai');
+        $builder->select('mst_pegawai.*, ju.jabatan AS jabatan_label, jp.jabatan AS jabatan_perbendaharaan');
+        $builder->join('mst_jabatan ju', 'ju.id = mst_pegawai.jabatan_utama_id', 'left');
+        $builder->join('mst_jabatan jp', 'jp.id = mst_pegawai.jabatan_perbendaharaan_id', 'left');
+        $builder->where('mst_pegawai.is_active', 1);
+        $builder->groupStart();
+        $builder->where('mst_pegawai.nip', $username);
+        $builder->orWhere('LOWER(mst_pegawai.nama)', strtolower($fullName));
+        $builder->groupEnd();
+        $builder->limit(1);
+
+        $pegawai = $builder->get()->getRowArray();
+
+        if (! is_array($pegawai)) {
+            // Fallback to session data
+            return [
+                'nama' => $fullName ?: $username,
+                'nip' => $username,
+                'jabatan_id' => 0,
+                'jabatan' => '',
+                'unit_kerja' => '',
+            ];
+        }
+
+        // Build unit kerja from related tables if available
+        $unitKerja = trim((string) ($pegawai['unit_kerja'] ?? ''));
+
+        return [
+            'nama' => trim((string) ($pegawai['nama'] ?? '')),
+            'nip' => trim((string) ($pegawai['nip'] ?? '')),
+            'jabatan_id' => (int) ($pegawai['jabatan_utama_id'] ?? 0),
+            'jabatan' => trim((string) ($pegawai['jabatan_label'] ?? $pegawai['jabatan'] ?? '')),
+            'unit_kerja' => $unitKerja ?: 'Satuan Kerja Prasarana Strategis Riau',
+        ];
     }
 
     private function canAccess(): bool

@@ -5,6 +5,7 @@
     $isEdit = (bool) ($is_edit ?? false);
     $title = $title ?? ($isEdit ? 'Ubah Lupa Absen' : 'Ajukan Lupa Absen');
     $currentInput = $current_input ?? [];
+    $currentPegawai = $current_pegawai ?? [];
     $formError = $form_error ?? null;
     $formId = $id ?? null;
     $existingEntries = $existing_entries ?? [];
@@ -18,6 +19,28 @@
         width: 32px;
         height: 32px;
         padding: 0;
+    }
+    .pegawai-info {
+        background-color: #e8f4fd;
+        border: 1px solid #b8daff;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    .pegawai-info .info-row {
+        display: flex;
+        margin-bottom: 8px;
+    }
+    .pegawai-info .info-row:last-child {
+        margin-bottom: 0;
+    }
+    .pegawai-info .info-label {
+        font-weight: 600;
+        width: 140px;
+        flex-shrink: 0;
+    }
+    .pegawai-info .info-value {
+        color: #333;
     }
 </style>
 
@@ -41,66 +64,98 @@
         <form method="POST" action="<?= site_url('admin/surat/lupa-absen' . ($isEdit ? '/' . $formId . '/ubah' : '/buat')); ?>" autocomplete="off" id="formLupaAbsen">
             <?= csrf_field(); ?>
 
-            <!-- Data Pegawai -->
+            <!-- Data Pegawai (Auto-fill dari Login) -->
             <div class="card card-outline card-primary mb-3">
                 <div class="card-header">
                     <h3 class="card-title mb-0">Data Pegawai</h3>
+                    <?php if (! $isEdit): ?>
+                        <span class="badge badge-info ml-2">Otomatis dari data login</span>
+                    <?php endif; ?>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="nama">Nama Lengkap <span class="text-danger">*</span></label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="nama"
-                                       name="nama"
-                                       value="<?= esc((string) ($currentInput['nama'] ?? '')); ?>"
-                                       required
-                                       placeholder="Masukkan nama lengkap">
+                    <?php if (! $isEdit): ?>
+                        <!-- Display mode - show auto-filled data -->
+                        <div class="pegawai-info">
+                            <div class="info-row">
+                                <span class="info-label">Nama:</span>
+                                <span class="info-value"><?= esc($currentPegawai['nama'] ?? '-'); ?></span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">NIP:</span>
+                                <span class="info-value"><?= esc($currentPegawai['nip'] ?? '-'); ?></span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Jabatan:</span>
+                                <span class="info-value"><?= esc($currentPegawai['jabatan'] ?? '-'); ?></span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Unit Kerja:</span>
+                                <span class="info-value"><?= esc($currentPegawai['unit_kerja'] ?? '-'); ?></span>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="nip">NIP <span class="text-danger">*</span></label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="nip"
-                                       name="nip"
-                                       value="<?= esc((string) ($currentInput['nip'] ?? '')); ?>"
-                                       required
-                                       placeholder="Masukkan NIP">
+                        <!-- Hidden fields to submit employee data -->
+                        <input type="hidden" name="nama" value="<?= esc($currentPegawai['nama'] ?? ''); ?>">
+                        <input type="hidden" name="nip" value="<?= esc($currentPegawai['nip'] ?? ''); ?>">
+                        <input type="hidden" name="jabatan_id" value="<?= (int) ($currentPegawai['jabatan_id'] ?? 0); ?>">
+                        <input type="hidden" name="jabatan_display" value="<?= esc($currentPegawai['jabatan'] ?? ''); ?>">
+                        <input type="hidden" name="unit_kerja" value="<?= esc($currentPegawai['unit_kerja'] ?? ''); ?>">
+                    <?php else: ?>
+                        <!-- Edit mode - allow editing -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="nama">Nama Lengkap <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="nama"
+                                           name="nama"
+                                           value="<?= esc((string) ($currentInput['nama'] ?? '')); ?>"
+                                           required
+                                           placeholder="Masukkan nama lengkap">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="nip">NIP <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="nip"
+                                           name="nip"
+                                           value="<?= esc((string) ($currentInput['nip'] ?? '')); ?>"
+                                           required
+                                           placeholder="Masukkan NIP">
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="jabatan_id">Jabatan <span class="text-danger">*</span></label>
-                                <select class="form-control select2" id="jabatan_id" name="jabatan_id" required>
-                                    <option value="">-- Pilih Jabatan --</option>
-                                    <?php foreach ($jabatan_options as $jab): ?>
-                                        <option value="<?= (int) ($jab['id'] ?? 0); ?>"
-                                            <?= ((int) ($currentInput['jabatan_id'] ?? 0) === (int) ($jab['id'] ?? 0)) ? 'selected' : ''; ?>>
-                                            <?= esc($jab['display_label'] ?? ($jab['jabatan'] ?? '')); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="jabatan_id">Jabatan <span class="text-danger">*</span></label>
+                                    <select class="form-control select2" id="jabatan_id" name="jabatan_id" required>
+                                        <option value="">-- Pilih Jabatan --</option>
+                                        <?php foreach ($jabatan_options as $jab): ?>
+                                            <option value="<?= (int) ($jab['id'] ?? 0); ?>"
+                                                <?= ((int) ($currentInput['jabatan_id'] ?? 0) === (int) ($jab['id'] ?? 0)) ? 'selected' : ''; ?>>
+                                                <?= esc($jab['display_label'] ?? ($jab['jabatan'] ?? '')); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="unit_kerja">Unit Kerja <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="unit_kerja"
+                                           name="unit_kerja"
+                                           value="<?= esc((string) ($currentInput['unit_kerja'] ?? '')); ?>"
+                                           required
+                                           placeholder="Contoh: Sekretariat Direktorat Jenderal Prasarana Strategis">
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="unit_kerja">Unit Kerja <span class="text-danger">*</span></label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="unit_kerja"
-                                       name="unit_kerja"
-                                       value="<?= esc((string) ($currentInput['unit_kerja'] ?? '')); ?>"
-                                       required
-                                       placeholder="Contoh: Sekretariat Direktorat Jenderal Prasarana Strategis">
-                            </div>
-                        </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -120,8 +175,8 @@
                                     <th style="width: 50px;" class="text-center">No</th>
                                     <th style="width: 150px;" class="text-center">Tanggal</th>
                                     <th style="width: 120px;" class="text-center">Hari</th>
-                                    <th style="width: 120px;" class="text-center">Jam</th>
-                                    <th style="width: 180px;" class="text-center">Jenis Absen</th>
+                                    <th style="width: 100px;" class="text-center">Jam</th>
+                                    <th style="width: 150px;" class="text-center">Jenis Absen</th>
                                     <th>Keterangan</th>
                                     <th style="width: 80px;" class="text-center">Aksi</th>
                                 </tr>
@@ -329,7 +384,7 @@ $(document).ready(function() {
             $(this).find('input, select').each(function() {
                 var name = $(this).attr('name');
                 if (name) {
-                    $(this).attr('name', name.replace(/\[\d+\]/, '[' + index + ']'));
+                    $(this).attr('name', name.replace(/\[\d+\]/g, '[' + index + ']'));
                 }
             });
         });
