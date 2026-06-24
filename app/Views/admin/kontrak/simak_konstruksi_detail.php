@@ -1583,25 +1583,26 @@
                                         text: 'File berhasil disalin ke Google Drive proyek.',
                                         footer: '<a href="' + response.new_url + '" target="_blank">Buka file</a>'
                                     });
-                                } else if (response.keep_original) {
-                                    // Copy failed but we keep the original link - mark as copied
-                                    var row = button.closest('tr');
-                                    if (row) {
-                                        var badge = row.querySelector('.badge-warning');
-                                        if (badge) {
-                                            badge.classList.remove('badge-warning');
-                                            badge.classList.add('badge-success');
-                                            badge.innerHTML = '<i class="fas fa-check"></i> Disalin';
-                                        }
-                                    }
-                                    // Remove button
-                                    button.remove();
-                                    // Show info with original link
+                                } else if (response.instruction) {
+                                    // File tidak bisa diakses otomatis - berikan instruksi untuk share
+                                    button.disabled = false;
+                                    button.innerHTML = '<i class="fas fa-copy"></i>';
                                     Swal.fire({
                                         icon: 'info',
-                                        title: 'Link Asli Digunakan',
-                                        text: 'File disimpan dengan link Google Drive asli. Link asli akan tetap dapat diakses.',
-                                        footer: '<a href="' + response.original_url + '" target="_blank">Buka Link Asli</a>'
+                                        title: 'File Perlu Di-share',
+                                        html: '<p>File tidak dapat diakses otomatis oleh sistem.</p>' +
+                                              '<p><strong>Langkah:</strong></p>' +
+                                              '<ol style="text-align: left;">' +
+                                              '<li>Buka file di Google Drive</li>' +
+                                              '<li>Klik "Share" → "Share with people and groups"</li>' +
+                                              '<li>Tambahkan email ini:<br>' +
+                                              '<code style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">' + response.email_to_share + '</code></li>' +
+                                              '<li>Pilih akses "Reader" atau lebih tinggi</li>' +
+                                              '<li>Klik "Send"</li>' +
+                                              '<li>Klik tombol "Salin" lagi</li>' +
+                                              '</ol>' +
+                                              '<p class="mt-2"><small>Email Service Account ini adalah akun sistem yang digunakan untuk mengelola file.</small></p>',
+                                        confirmButtonText: 'Mengerti'
                                     });
                                 } else {
                                     button.disabled = false;

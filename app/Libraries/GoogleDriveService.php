@@ -305,4 +305,83 @@ class GoogleDriveService
             return null;
         }
     }
+
+    /**
+     * Download a file by its Google Drive ID using the Drive API
+     *
+     * This method uses the Google Drive API to download a file.
+     * The file must be accessible to the Service Account.
+     *
+     * @param string $fileId Google Drive File ID
+     * @return array|null ['content' => binary, 'mimeType' => string] or null on failure
+     */
+    public function downloadFileById(string $fileId): ?array
+    {
+        if (!$this->isReady()) {
+            $this->lastError = 'Service not ready.';
+            log_message('error', 'GoogleDriveService - downloadFileById aborted: ' . $this->lastError);
+            return null;
+        }
+
+        try {
+            // First, get file metadata to check permissions and get mime type
+            $fileMetadata = $this->service->files->get($fileId, [
+                'fields' => 'id, name, mimeType, permissions, shared',
+                'supportsAllDrives' => true,
+            ]);
+
+            $mimeType = $fileMetadata->mimeType ?? 'application/octstream';
+            $fileName = $fileMetadata->name ?? 'file';
+
+            log_message('info', 'GoogleDriveService - downloadFileById: Found file "' . $fileName . '" with mimeType: ' . $mimeType);
+
+            // Check if it's a Google Drive folder - can't download folders
+            if ($mimeType === 'application/vnd.google-apps.folder') {
+                $this->lastError = 'Cannot download a folder.';
+                log_message('error', 'GoogleDriveService - downloadFileById: File is a folder');
+                return null;
+            }
+
+            // Download the file content
+            $response = $this->service->files->get($fileId, [
+                'alt' => 'media',
+                'supportsAllDrives' => true,
+            ]);
+
+            $content = $response->getBody()->getContents();
+
+            if (empty($content)) {
+                $this->lastError = 'Downloaded content is empty.';
+                log_message('error', 'GoogleDriveService - downloadFileById: Empty content');
+                return null;
+            }
+
+            log_message('info', 'GoogleDriveService - downloadFileById: Downloaded ' . strlen($content) . ' bytes');
+
+            return [
+                'content' => $content,
+                'mimeType' => $mimeType,
+            ];
+
+        } catch (\Google\Service\Exception $e) {
+            $errorCode = $e->getCode();
+            $errorMessage = $e->getMessage();
+
+            if ($errorCode === 403) {
+                $this->lastError = 'Permission denied: The Service Account does not have access to this file. Please ensure the file is shared with the Service Account email.';
+                log_message('error', 'GoogleDriveService - downloadFileById - Permission denied: ' . $errorMessage);
+            } elseif ($errorCode === 404) {
+                $this->lastError = 'File not found.';
+                log_message('error', 'GoogleDriveService - downloadFileById - File not found: ' . $errorMessage);
+            } else {
+                $this->lastError = 'API Error (' . $errorCode . '): ' . $errorMessage;
+                log_message('error', 'GoogleDriveService - downloadFileById - API Error: ' . $errorMessage);
+            }
+            return null;
+        } catch (\Throwable $e) {
+            $this->lastError = 'Download failed: ' . $e->getMessage();
+            log_message('error', 'GoogleDriveService - downloadFileById - Error: ' . $e->getMessage());
+            return null;
+        }
+    }
 }

@@ -4564,8 +4564,8 @@ class Kontrak extends BaseController
     }
 
     /**
-     * Update dokumen dari Google Drive user ke Google Drive proyek (dengan copy file)
-     * CATATAN: Metode ini memerlukan file dapat diakses publik. Jika gagal, gunakan link langsung.
+     * Salin dokumen dari Google Drive user ke Google Drive proyek
+     * Menggunakan Google Drive API untuk akses langsung
      */
     public function salinDokumenGoogleDrive(int $dokumenId): \CodeIgniter\HTTP\Response
     {
@@ -4603,44 +4603,51 @@ class Kontrak extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Link Google Drive source tidak ditemukan.']);
         }
 
-        // Coba download dan upload ulang
+        // Extract file ID dari source URL
+        $fileId = $this->extractGoogleDriveFileId($googleDriveSourceUrl);
+        if (!$fileId) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Tidak dapat membaca file ID dari link.']);
+        }
+
+        // Get project folder ID dari config
+        $projectFolderId = env('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
+        if (empty($projectFolderId)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Google Drive folder ID proyek belum dikonfigurasi. Hubungi admin.']);
+        }
+
+        // Load Google Drive service
+        if (!class_exists('\App\Libraries\GoogleDriveService')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Google Drive service tidak tersedia. Hubungi admin.']);
+        }
+
+        $driveService = new \App\Libraries\GoogleDriveService();
+        if (!$driveService->isReady()) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Google Drive service belum dikonfigurasi. Hubungi admin.']);
+        }
+
         try {
-            // Extract file ID dari source URL
-            $fileId = $this->extractGoogleDriveFileId($googleDriveSourceUrl);
-            if (!$fileId) {
-                // Jika tidak bisa extract file ID, skip copy
-                log_message('info', 'salinDokumenGoogleDrive - Cannot extract file ID, keeping original link');
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Tidak dapat mengakses file secara langsung. Link asli akan tetap digunakan.',
-                    'keep_original' => true,
-                    'original_url' => $googleDriveSourceUrl
-                ]);
-            }
-
-            // Get project folder ID dari config
-            $projectFolderId = env('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
-            if (empty($projectFolderId)) {
-                // Jika tidak ada folder ID, skip copy
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Google Drive folder ID proyek belum dikonfigurasi. Link asli akan tetap digunakan.',
-                    'keep_original' => true,
-                    'original_url' => $googleDriveSourceUrl
-                ]);
-            }
-
-            // Download file dari Google Drive user (public/shared link)
-            $fileContent = $this->downloadGoogleDriveFile($fileId, $googleDriveSourceUrl);
+            // Coba download file menggunakan Drive API
+            $fileContent = $driveService->downloadFileById($fileId);
 
             if (!$fileContent) {
-                // Jika download gagal, skip copy dan gunakan link asli
-                log_message('info', 'salinDokumenGoogleDrive - Download failed, keeping original link: ' . $googleDriveSourceUrl);
+                $lastError = $driveService->getLastError();
+
+                // Jika error spesifik permission, berikan instruksi
+                if (strpos($lastError, ' permission') !== false || strpos($lastError, 'File not found') !== false) {
+                    $serviceAccountEmail = $this->getGoogleDriveServiceAccountEmail();
+
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'File tidak dapat diakses otomatis. Mohon share file ke email ini: ' . $serviceAccountEmail,
+                        'instruction' => true,
+                        'email_to_share' => $serviceAccountEmail,
+                        'file_id' => $fileId,
+                    ]);
+                }
+
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'File tidak dapat diakses secara otomatis. Link asli akan tetap digunakan. Anda bisa mengakses file langsung melalui link asli.',
-                    'keep_original' => true,
-                    'original_url' => $googleDriveSourceUrl
+                    'message' => 'Gagal download file: ' . $lastError,
                 ]);
             }
 
@@ -4649,26 +4656,6 @@ class Kontrak extends BaseController
             $fileName = !empty($originalFileName) && $originalFileName !== 'Google Drive Link'
                 ? $originalFileName
                 : 'dokumen_' . $dokumenId . '_' . date('YmdHis');
-
-            // Load Google Drive service
-            if (!class_exists('\App\Libraries\GoogleDriveService')) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Google Drive service tidak tersedia. Link asli akan tetap digunakan.',
-                    'keep_original' => true,
-                    'original_url' => $googleDriveSourceUrl
-                ]);
-            }
-
-            $driveService = new \App\Libraries\GoogleDriveService();
-            if (!$driveService->isReady()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Google Drive service belum dikonfigurasi. Link asli akan tetap digunakan.',
-                    'keep_original' => true,
-                    'original_url' => $googleDriveSourceUrl
-                ]);
-            }
 
             // Upload ke Google Drive proyek
             $newFileId = $driveService->uploadFileContentToFolder(
@@ -4703,103 +4690,31 @@ class Kontrak extends BaseController
                 ]);
             }
 
-            // Jika upload gagal, gunakan link asli
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Upload ke Google Drive proyek gagal. Link asli akan tetap digunakan.',
-                'keep_original' => true,
-                'original_url' => $googleDriveSourceUrl
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal upload ke Google Drive proyek.']);
 
         } catch (\Exception $e) {
             log_message('error', 'salinDokumenGoogleDrive - Exception: ' . $e->getMessage());
-            // Jika error, gunakan link asli
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Terjadi error: ' . $e->getMessage() . '. Link asli akan tetap digunakan.',
-                'keep_original' => true,
-                'original_url' => $googleDriveSourceUrl
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
         }
     }
 
     /**
-     * Download file dari Google Drive public/shared link
+     * Get Google Drive Service Account email
      */
-    private function downloadGoogleDriveFile(string $fileId, string $url): ?array
+    private function getGoogleDriveServiceAccountEmail(): string
     {
-        // First get cookies from the file page
-        $cookieFile = tempnam(sys_get_temp_dir(), 'gd_cookies_');
+        $jsonPath = env('GOOGLE_SERVICE_ACCOUNT_JSON_PATH') ?: ROOTPATH . 'google-service-account.json';
+        $jsonPath = trim($jsonPath, " \t\n\r\0\x0B'\"");
 
-        // First request - visit the file page to get cookies
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => "https://drive.google.com/file/d/{$fileId}/view",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            CURLOPT_COOKIEJAR => $cookieFile,
-            CURLOPT_COOKIEFILE => $cookieFile,
-        ]);
-        curl_exec($ch);
-        curl_close($ch);
-
-        // Second request - download the file with cookies
-        $downloadUrl = "https://drive.google.com/uc?export=download&id={$fileId}";
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $downloadUrl,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_TIMEOUT => 120,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            CURLOPT_COOKIEFILE => $cookieFile,
-        ]);
-
-        $content = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        // Cleanup cookie file
-        @unlink($cookieFile);
-
-        if ($error) {
-            log_message('error', 'downloadGoogleDriveFile - Curl error: ' . $error);
-            return null;
-        }
-
-        // Check if we got HTML (confirmation page or error)
-        if ($httpCode == 200 && strlen($content) > 0) {
-            $isHtml = preg_match('/<html/i', substr($content, 0, 500));
-
-            if ($isHtml && strlen($content) < 100000) {
-                // Got HTML - file might not be accessible
-                return null;
-            }
-
-            // Try to detect mime type
-            $finfo = new finfo(FILEINFO_MIME_TYPE);
-            $mimeType = $finfo->buffer($content);
-
-            // If mime type is HTML, it's an error page
-            if (strpos($mimeType, 'text/html') !== false && strlen($content) < 100000) {
-                return null;
-            }
-
-            // Success - got actual file content
-            if (strlen($content) > 0 && strpos($mimeType, 'text/html') === false) {
-                return [
-                    'content' => $content,
-                    'mimeType' => $mimeType,
-                ];
+        if (file_exists($jsonPath)) {
+            $json = file_get_contents($jsonPath);
+            $data = json_decode($json, true);
+            if (isset($data['client_email'])) {
+                return $data['client_email'];
             }
         }
 
-        return null;
+        return 'service-account@your-project.iam.gserviceaccount.com';
     }
 
     private function isPreviewableSharedDokumen(string $mimeType, string $fileName): bool
