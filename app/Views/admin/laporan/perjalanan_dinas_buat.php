@@ -10,7 +10,7 @@
     $selectedPelaksana = array_map('intval', (array) ($input['pelaksana_id'] ?? []));
     $selectedKabupaten = trim((string) ($input['kota_tujuan'] ?? ''));
     $selectedKabupatenExists = false;
-    $formAction = (string) ($form_action ?? site_url('admin/laporan/perjalanan-dinas/buat'));
+    $formAction = (string) ($form_action ?? site_url('admin/surat/perjalanan-dinas/buat'));
     $isEdit = (bool) ($is_edit ?? false);
     $submitLabelPrimary = (string) ($submit_label_primary ?? 'Simpan Final');
     $existingFotoDokumentasi = $existing_foto_dokumentasi ?? [];
@@ -154,7 +154,7 @@
         <div class="card-header d-flex align-items-center">
             <h3 class="card-title mb-0 trip-headline">Buat Laporan Perjalanan Dinas</h3>
             <div class="card-tools ml-auto">
-                <a href="<?= site_url('admin/laporan/perjalanan-dinas'); ?>" class="btn btn-secondary btn-sm">Kembali</a>
+                <a href="<?= site_url('admin/surat/perjalanan-dinas'); ?>" class="btn btn-secondary btn-sm">Kembali</a>
             </div>
         </div>
         <div class="card-body">

@@ -410,7 +410,7 @@ class Laporan extends BaseController
 
                 // Differentiate Laporan Perjadin (dynamic PDF), Verified SPT, and Dokumen Pendukung
                 $dokumenHtml = '<div class="doc-btn-group">';
-                $dokumenHtml .= '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-danger" title="Laporan Perjadin (PDF)" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i></a>';
+                $dokumenHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-danger" title="Laporan Perjadin (PDF)" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i></a>';
                 
                 if (! empty($row['verified_spt_path'])) {
                     $verifiedUrl = media_url($row['verified_spt_path']);
@@ -468,7 +468,7 @@ class Laporan extends BaseController
                 }
                 
                 if ($canEdit) {
-                    $row['action_html'] = '<a href="' . site_url('admin/laporan/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/ubah') . '" class="btn btn-sm btn-outline-primary" title="Ubah Data"><i class="fas fa-pen"></i></a>';
+                    $row['action_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/ubah') . '" class="btn btn-sm btn-outline-primary" title="Ubah Data"><i class="fas fa-pen"></i></a>';
                 } else {
                     $row['action_html'] = '<span class="text-muted">-</span>';
                 }
@@ -635,31 +635,31 @@ class Laporan extends BaseController
         $role = strtolower((string) session()->get('role'));
         $canUploadVerified = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
         if (! $canUploadVerified) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Anda tidak memiliki hak akses untuk mengupload verified perjadin & SPT.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Anda tidak memiliki hak akses untuk mengupload verified perjadin & SPT.');
         }
 
         $model = new LaporanPerjalananDinasModel();
         $row = $model->find($id);
         if (! is_array($row)) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
         }
 
         $file = $this->request->getFile('verified_spt');
         if (! $file || $file->getError() === UPLOAD_ERR_NO_FILE) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Silakan pilih file terlebih dahulu.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Silakan pilih file terlebih dahulu.');
         }
 
         if (! $file->isValid()) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'File tidak valid: ' . $file->getErrorString());
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'File tidak valid: ' . $file->getErrorString());
         }
 
         $ext = strtolower($file->getClientExtension());
         if (! in_array($ext, ['pdf', 'jpg', 'jpeg', 'png'], true)) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Ekstensi file tidak diizinkan. Hanya menerima PDF, JPG, JPEG, PNG.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Ekstensi file tidak diizinkan. Hanya menerima PDF, JPG, JPEG, PNG.');
         }
 
         if ($file->getSize() > 10 * 1024 * 1024) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Ukuran file maksimal adalah 10MB.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Ukuran file maksimal adalah 10MB.');
         }
 
         $uploadDir = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'verified_perjadin';
@@ -681,10 +681,10 @@ class Laporan extends BaseController
                 'verified_spt_path' => 'uploads/verified_perjadin/' . $newName
             ]);
 
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('success', 'File verified perjadin & SPT berhasil diupload.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('success', 'File verified perjadin & SPT berhasil diupload.');
         }
 
-        return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Gagal memindahkan file ke direktori upload.');
+        return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Gagal memindahkan file ke direktori upload.');
     }
 
     public function perjalananDinasDokumen(int $id)
@@ -694,12 +694,12 @@ class Laporan extends BaseController
         }
 
         if (! db_connect()->tableExists('laporan_perjalanan_dinas')) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Tabel laporan perjalanan dinas belum tersedia.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Tabel laporan perjalanan dinas belum tersedia.');
         }
 
         $row = (new LaporanPerjalananDinasModel())->find($id);
         if (! is_array($row)) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
         }
 
         $data = [
@@ -743,17 +743,17 @@ class Laporan extends BaseController
         }
 
         if (! $this->canManageLaporan()) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Anda tidak memiliki akses untuk mengubah laporan perjalanan dinas.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Anda tidak memiliki akses untuk mengubah laporan perjalanan dinas.');
         }
 
         if (! db_connect()->tableExists('laporan_perjalanan_dinas')) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Tabel laporan perjalanan dinas belum tersedia.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Tabel laporan perjalanan dinas belum tersedia.');
         }
 
         $model = new LaporanPerjalananDinasModel();
         $existing = $model->find($id);
         if (! is_array($existing)) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
         }
 
         $pegawaiRows = $this->loadPegawaiOptions();
@@ -793,7 +793,7 @@ class Laporan extends BaseController
                 'creator_pegawai' => $creatorPegawai,
                 'current_input' => $currentInput,
                 'form_error' => null,
-                'form_action' => site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'),
+                'form_action' => site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah'),
                 'is_edit' => true,
                 'submit_label_primary' => 'Simpan Perubahan',
                 'existing_foto_dokumentasi' => $existingPhotos,
@@ -802,7 +802,7 @@ class Laporan extends BaseController
         }
 
         if ($this->isPostBodyTooLarge()) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'))
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah'))
                 ->with('error', 'Upload gagal: ukuran data melebihi batas server (post_max_size). Kurangi jumlah atau ukuran foto dan coba lagi.');
         }
 
@@ -913,7 +913,7 @@ class Laporan extends BaseController
                 'creator_pegawai' => $creatorPegawai,
                 'current_input' => $currentInput,
                 'form_error' => implode(' ', $errors),
-                'form_action' => site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'),
+                'form_action' => site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah'),
                 'is_edit' => true,
                 'submit_label_primary' => 'Simpan Perubahan',
                 'existing_foto_dokumentasi' => $photos,
@@ -941,10 +941,10 @@ class Laporan extends BaseController
 
         $ok = $model->update($id, $payload);
         if (! $ok) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas/' . $id . '/ubah'))->with('error', 'Gagal memperbarui laporan.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah'))->with('error', 'Gagal memperbarui laporan.');
         }
 
-        return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('success', 'Laporan berhasil diperbarui.');
+        return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('success', 'Laporan berhasil diperbarui.');
     }
 
     public function perjalananDinasBuat()
@@ -991,7 +991,7 @@ class Laporan extends BaseController
         }
 
         if ($this->isPostBodyTooLarge()) {
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas/buat'))
                 ->with('error', 'Upload gagal: ukuran data melebihi batas server (post_max_size). Kurangi jumlah atau ukuran foto dan coba lagi.');
         }
 
@@ -1131,13 +1131,13 @@ class Laporan extends BaseController
         if ($saveMode === 'draft') {
             // Simpan draft di sesi — foto & file sudah di-upload ke file fisik
             session()->set('laporan_perjalanan_dinas_draft', $data);
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('success', 'Draft laporan berhasil disimpan.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas/buat'))->with('success', 'Draft laporan berhasil disimpan.');
         }
 
         if ($saveMode === 'final') {
             // Persist final submission to DB
             if (! db_connect()->tableExists('laporan_perjalanan_dinas')) {
-                return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('error', 'Tabel penyimpanan laporan belum tersedia.');
+                return redirect()->to(site_url('admin/surat/perjalanan-dinas/buat'))->with('error', 'Tabel penyimpanan laporan belum tersedia.');
             }
 
             $model = new LaporanPerjalananDinasModel();
@@ -1169,16 +1169,16 @@ class Laporan extends BaseController
                 foreach ($newDocs as $d) {
                     $this->deletePerjalananDinasFile($d);
                 }
-                return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('error', 'Gagal menyimpan laporan. Silakan coba lagi.');
+                return redirect()->to(site_url('admin/surat/perjalanan-dinas/buat'))->with('error', 'Gagal menyimpan laporan. Silakan coba lagi.');
             }
 
             session()->remove('laporan_perjalanan_dinas_draft');
 
-            return redirect()->to(site_url('admin/laporan/perjalanan-dinas'))->with('success', 'Laporan berhasil disimpan.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('success', 'Laporan berhasil disimpan.');
         }
 
         // Fallback: if save mode not recognized, redirect back with notice.
-        return redirect()->to(site_url('admin/laporan/perjalanan-dinas/buat'))->with('error', 'Aksi simpan tidak valid.');
+        return redirect()->to(site_url('admin/surat/perjalanan-dinas/buat'))->with('error', 'Aksi simpan tidak valid.');
     }
 
     private function loadPegawaiOptions(): array

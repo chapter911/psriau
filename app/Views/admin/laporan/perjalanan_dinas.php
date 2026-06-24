@@ -83,7 +83,7 @@
     <div class="card-header d-flex align-items-center">
         <h3 class="card-title mb-0">Laporan Perjalanan Dinas</h3>
         <div class="card-tools ml-auto">
-            <a href="<?= site_url('admin/laporan/perjalanan-dinas/buat'); ?>" class="btn btn-primary btn-sm">Buat Laporan</a>
+            <a href="<?= site_url('admin/surat/perjalanan-dinas/buat'); ?>" class="btn btn-primary btn-sm">Buat Laporan</a>
         </div>
     </div>
     <div class="card-body">
@@ -213,7 +213,7 @@
 
         const canEdit = <?= json_encode($canEdit, JSON_UNESCAPED_UNICODE); ?>;
         const canUploadVerified = <?= json_encode($can_upload_verified ?? false, JSON_UNESCAPED_UNICODE); ?>;
-        const dataUrl = <?= json_encode(site_url('admin/laporan/perjalanan-dinas'), JSON_UNESCAPED_UNICODE); ?>;
+        const dataUrl = <?= json_encode(site_url('admin/surat/perjalanan-dinas'), JSON_UNESCAPED_UNICODE); ?>;
 
         const $filterStartDate = $('#filter_start_date');
         const $filterEndDate = $('#filter_end_date');
@@ -352,7 +352,7 @@
                 const $form = $('#form-upload-verified');
                 
                 // Set action dynamically
-                $form.attr('action', '<?= site_url("admin/laporan/perjalanan-dinas"); ?>/' + id + '/upload-verified');
+                $form.attr('action', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/upload-verified');
                 
                 // Set label nomor
                 $('#upload_nomor_label').text(nomor);
