@@ -14,18 +14,25 @@ class AddSuratSuratMenuWithSubmenus extends Migration
             return;
         }
 
-        // 1. Create "Surat-surat" main menu item (menu_lv1)
+        // 1. Find or create "Surat-surat" main menu item (menu_lv1)
         $suratSuratMenuId = $this->findOrCreateLv1Menu('Surat-surat', null, 'fas fa-envelope-open-text', $this->getNextLv1Ordering());
 
         if ($suratSuratMenuId === null) {
             return;
         }
 
-        // 2. Create "Perjalanan Dinas" submenu under "Surat-surat"
-        $this->ensureLv2Menu($suratSuratMenuId, 'Perjalanan Dinas', 'admin/surat/perjalanan-dinas', 'far fa-plane', $this->getNextLv2Ordering($suratSuratMenuId));
+        // 2. Ensure "Perjalanan Dinas" submenu exists under "Surat-surat"
+        // Check if already exists under Surat-surat with correct link
+        $existingPerjadin = $this->findLv2ByHeaderAndLink($suratSuratMenuId, 'admin/surat/perjalanan-dinas');
+        if ($existingPerjadin === null) {
+            $this->ensureLv2Menu($suratSuratMenuId, 'Perjalanan Dinas', 'admin/surat/perjalanan-dinas', 'far fa-plane', $this->getNextLv2Ordering($suratSuratMenuId));
+        }
 
-        // 3. Create "Lupa Absen" submenu under "Surat-surat"
-        $this->ensureLv2Menu($suratSuratMenuId, 'Lupa Absen', 'admin/surat/lupa-absen', 'far fa-clock', $this->getNextLv2Ordering($suratSuratMenuId));
+        // 3. Ensure "Lupa Absen" submenu exists under "Surat-surat"
+        $existingLupaAbsen = $this->findLv2ByHeaderAndLink($suratSuratMenuId, 'admin/surat/lupa-absen');
+        if ($existingLupaAbsen === null) {
+            $this->ensureLv2Menu($suratSuratMenuId, 'Lupa Absen', 'admin/surat/lupa-absen', 'far fa-clock', $this->getNextLv2Ordering($suratSuratMenuId));
+        }
     }
 
     public function down()
@@ -68,11 +75,19 @@ class AddSuratSuratMenuWithSubmenus extends Migration
             ->get()
             ->getRowArray();
 
-        if (! is_array($row) || ! isset($row['id'])) {
-            return null;
-        }
+        return isset($row['id']) ? (string) $row['id'] : null;
+    }
 
-        return (string) $row['id'];
+    private function findLv2ByHeaderAndLink(string $headerId, string $link): ?string
+    {
+        $row = $this->db->table('menu_lv2')
+            ->select('id')
+            ->where('header', $headerId)
+            ->where('LOWER(link)', strtolower($link))
+            ->get()
+            ->getRowArray();
+
+        return isset($row['id']) ? (string) $row['id'] : null;
     }
 
     private function findOrCreateLv1Menu(string $label, ?string $link, string $icon, int $ordering): ?string
@@ -129,19 +144,13 @@ class AddSuratSuratMenuWithSubmenus extends Migration
 
     private function ensureLv2Menu(string $headerId, string $label, string $link, string $icon, int $ordering): void
     {
-        // Check if exists by link
-        $existingByLink = $this->db->table('menu_lv2')
-            ->select('id')
-            ->where('header', $headerId)
-            ->where('LOWER(link)', strtolower($link))
-            ->get()
-            ->getRowArray();
-
-        if (is_array($existingByLink) && isset($existingByLink['id'])) {
+        // Check if exists by link under this header
+        $existingByLink = $this->findLv2ByHeaderAndLink($headerId, $link);
+        if ($existingByLink !== null) {
             return;
         }
 
-        // Check if exists by label
+        // Check if exists by label under this header
         $existingByLabel = $this->db->table('menu_lv2')
             ->select('id')
             ->where('header', $headerId)
@@ -149,7 +158,7 @@ class AddSuratSuratMenuWithSubmenus extends Migration
             ->get()
             ->getRowArray();
 
-        if (is_array($existingByLabel) && isset($existingByLabel['id'])) {
+        if (isset($existingByLabel['id'])) {
             return;
         }
 
