@@ -1505,11 +1505,13 @@
             button.disabled = true;
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', baseUrl + '/admin/kontrak/salinDokumenGoogleDrive/' + dokumenId, true);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            // Prepare form data with CSRF token
+            var formData = new FormData();
+            formData.append(typeof csrfTokenName !== 'undefined' ? csrfTokenName : 'csrf_token_name', typeof csrfHash !== 'undefined' ? csrfHash : '');
 
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', baseUrl + '/admin/kontrak/simak/konsultasi/salin-dokumen-gdrive/' + dokumenId, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onload = function() {
                 if (xhr.status === 200) {
                     try {
@@ -1569,7 +1571,7 @@
                 alert('Network error');
             };
 
-            xhr.send();
+            xhr.send(formData);
         });
     });
 

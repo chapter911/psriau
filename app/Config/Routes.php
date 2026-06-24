@@ -107,6 +107,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('kontrak/simak/konstruksi/(:num)/share/deactivate', 'Admin\\Kontrak::deactivateSimakShare/$1');
 	$routes->post('kontrak/simak/konstruksi/(:num)/hapus', 'Admin\\Kontrak::deleteSimak/$1');
 	$routes->get('kontrak/simak/konstruksi/verifikasi-dokumen/(:num)', 'Admin\\Kontrak::viewSimakVerifikasiDokumen/$1');
+	$routes->post('kontrak/simak/konstruksi/salin-dokumen-gdrive/(:num)', 'Admin\\Kontrak::salinDokumenGoogleDrive/$1');
 	$routes->get('kontrak/simak/konstruksi/(:num)', 'Admin\\Kontrak::detailSimak/$1');
 	$routes->get('kontrak/simak/konstruksi/(:num)/export/excel', 'Admin\\Kontrak::exportSimakKonstruksiDetailExcel/$1');
 	$routes->get('kontrak/simak/konstruksi/(:num)/export/html', 'Admin\\Kontrak::exportSimakKonstruksiDetailHtml/$1');
@@ -124,6 +125,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('kontrak/simak/konsultasi/(:num)/share/deactivate', 'Admin\\Kontrak::deactivateSimakKonsultasiShare/$1');
 	$routes->post('kontrak/simak/konsultasi/(:num)/hapus', 'Admin\\Kontrak::deleteSimakKonsultasi/$1');
 	$routes->get('kontrak/simak/konsultasi/verifikasi-dokumen/(:num)', 'Admin\\Kontrak::viewSimakKonsultasiVerifikasiDokumen/$1');
+	$routes->post('kontrak/simak/konsultasi/salin-dokumen-gdrive/(:num)', 'Admin\\Kontrak::salinDokumenGoogleDrive/$1');
 	$routes->get('kontrak/simak/konsultasi/(:num)', 'Admin\\Kontrak::detailSimakKonsultasi/$1');
 	$routes->get('kontrak/simak/konsultasi/(:num)/export/excel', 'Admin\\Kontrak::exportSimakKonsultasiDetailExcel/$1');
 	$routes->get('kontrak/simak/konsultasi/(:num)/export/html', 'Admin\\Kontrak::exportSimakKonsultasiDetailHtml/$1');

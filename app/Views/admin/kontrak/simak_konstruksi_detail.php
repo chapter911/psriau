@@ -1530,13 +1530,15 @@
             if (!confirmed) return;
 
             button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyalin...';
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            // Prepare form data with CSRF token
+            var formData = new FormData();
+            formData.append(typeof csrfTokenName !== 'undefined' ? csrfTokenName : 'csrf_token_name', typeof csrfHash !== 'undefined' ? csrfHash : '');
 
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', baseUrl + '/admin/kontrak/salinDokumenGoogleDrive/' + dokumenId, true);
+            xhr.open('POST', baseUrl + '/admin/kontrak/simak/konstruksi/salin-dokumen-gdrive/' + dokumenId, true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
             xhr.onload = function() {
                 if (xhr.status === 200) {
                     try {
@@ -1580,7 +1582,7 @@
                         }
                     } catch (e) {
                         button.disabled = false;
-                        button.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                        button.innerHTML = '<i class="fas fa-copy"></i>';
                         alert('Error parsing response');
                     }
                 } else {
@@ -1596,7 +1598,7 @@
                 alert('Network error');
             };
 
-            xhr.send();
+            xhr.send(formData);
         });
     });
 
