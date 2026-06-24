@@ -200,6 +200,22 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('laporan/perjalanan-dinas/(:num)/dokumen', 'Admin\\Laporan::perjalananDinasDokumen/$1');
 	$routes->post('laporan/perjalanan-dinas/(:num)/upload-verified', 'Admin\\Laporan::perjalananDinasUploadVerified/$1');
 	$routes->match(['get', 'post'], 'laporan/perjalanan-dinas/(:num)/ubah', 'Admin\\Laporan::perjalananDinasEdit/$1');
+
+	// Surat Routes - Perjalanan Dinas (alias dari Laporan)
+	$routes->get('surat/perjalanan-dinas', 'Admin\\Laporan::perjalananDinas');
+	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/buat', 'Admin\\Laporan::perjalananDinasBuat');
+	$routes->get('surat/perjalanan-dinas/(:num)/dokumen', 'Admin\\Laporan::perjalananDinasDokumen/$1');
+	$routes->post('surat/perjalanan-dinas/(:num)/upload-verified', 'Admin\\Laporan::perjalananDinasUploadVerified/$1');
+	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/(:num)/ubah', 'Admin\\Laporan::perjalananDinasEdit/$1');
+
+	// Surat Routes - Lupa Absen
+	$routes->get('surat/lupa-absen', 'Admin\\LupaAbsen::index');
+	$routes->match(['get', 'post'], 'surat/lupa-absen/buat', 'Admin\\LupaAbsen::buat');
+	$routes->match(['get', 'post'], 'surat/lupa-absen/(:num)/ubah', 'Admin\\LupaAbsen::ubah/$1');
+	$routes->get('surat/lupa-absen/(:num)/hapus', 'Admin\\LupaAbsen::hapus/$1');
+	$routes->get('surat/lupa-absen/(:num)/approve', 'Admin\\LupaAbsen::approve/$1');
+	$routes->get('surat/lupa-absen/(:num)/reject', 'Admin\\LupaAbsen::reject/$1');
+
 	$routes->get('kontrak/export/(:any)/(:num)', 'Admin\\Kontrak::exportDocument/$1/$2');
 	$routes->post('slide/tambah', 'Admin\\HomeSetting::createSlide');
 	$routes->post('slide/(:num)/ubah', 'Admin\\HomeSetting::updateSlide/$1');
