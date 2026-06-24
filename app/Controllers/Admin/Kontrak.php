@@ -4565,7 +4565,7 @@ class Kontrak extends BaseController
 
     /**
      * Salin dokumen dari Google Drive user ke Google Drive proyek
-     * Menggunakan Google Drive API untuk akses langsung
+     * Flow: Buka folder GD proyek → User upload manual → User paste link baru
      */
     public function salinDokumenGoogleDrive(int $dokumenId): \CodeIgniter\HTTP\Response
     {
@@ -4603,118 +4603,125 @@ class Kontrak extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Link Google Drive source tidak ditemukan.']);
         }
 
-        // Extract file ID dari source URL
+        // Extract file ID dan info dokumen
         $fileId = $this->extractGoogleDriveFileId($googleDriveSourceUrl);
-        if (!$fileId) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Tidak dapat membaca file ID dari link.']);
-        }
+        $originalFileName = trim((string) ($dokumen['file_original_name'] ?? ''));
+        $simakId = (int) ($dokumen['simak_id'] ?? 0);
+        $rowNo = (int) ($dokumen['row_no'] ?? 0);
 
-        // Get project folder ID dari config
+        // Get package info untuk folder path
+        $packageInfo = $this->getSimakPackageInfo($simakId, 'konstruksi');
+        $namaPaket = ($packageInfo['nama_paket'] ?? '') ?: 'Tanpa Paket';
+        $penyedia = ($packageInfo['penyedia'] ?? '') ?: 'Tanpa Penyedia';
+        $kode = (string) ($dokumen['kode'] ?? '');
+
+        // Get atau buat folder di Google Drive
         $projectFolderId = env('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
-        if (empty($projectFolderId)) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Google Drive folder ID proyek belum dikonfigurasi. Hubungi admin.']);
+
+        if (!empty($projectFolderId)) {
+            $folderUrl = $this->getOrCreateSimakFolderUrl($projectFolderId, $namaPaket, $penyedia, $kode);
+        } else {
+            // Fallback: buka folder utama
+            $folderUrl = env('GOOGLE_DRIVE_UPLOAD_FOLDER_URL') ?: 'https://drive.google.com';
         }
 
-        // Load Google Drive service
-        if (!class_exists('\App\Libraries\GoogleDriveService')) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Google Drive service tidak tersedia. Hubungi admin.']);
-        }
-
-        $driveService = new \App\Libraries\GoogleDriveService();
-        if (!$driveService->isReady()) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Google Drive service belum dikonfigurasi. Hubungi admin.']);
-        }
-
-        try {
-            // Coba download file menggunakan Drive API
-            $fileContent = $driveService->downloadFileById($fileId);
-
-            if (!$fileContent) {
-                $lastError = $driveService->getLastError();
-
-                // Jika error spesifik permission, berikan instruksi
-                if (strpos($lastError, ' permission') !== false || strpos($lastError, 'File not found') !== false) {
-                    $serviceAccountEmail = $this->getGoogleDriveServiceAccountEmail();
-
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'File tidak dapat diakses otomatis. Mohon share file ke email ini: ' . $serviceAccountEmail,
-                        'instruction' => true,
-                        'email_to_share' => $serviceAccountEmail,
-                        'file_id' => $fileId,
-                    ]);
-                }
-
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Gagal download file: ' . $lastError,
-                ]);
-            }
-
-            // Get file name dari dokumen atau generate
-            $originalFileName = trim((string) ($dokumen['file_original_name'] ?? ''));
-            $fileName = !empty($originalFileName) && $originalFileName !== 'Google Drive Link'
-                ? $originalFileName
-                : 'dokumen_' . $dokumenId . '_' . date('YmdHis');
-
-            // Upload ke Google Drive proyek
-            $newFileId = $driveService->uploadFileContentToFolder(
-                $fileContent['content'],
-                $fileName,
-                $fileContent['mimeType'],
-                $projectFolderId
-            );
-
-            if ($newFileId) {
-                // Update database
-                $now = date('Y-m-d H:i:s');
-                $actorId = (int) (session()->get('user_id') ?? 0);
-
-                $db->table('trn_kontrak_simak_verifikasi_dokumen')
-                    ->where('id', $dokumenId)
-                    ->update([
-                        'copied_to_project_drive' => 1,
-                        'copied_to_project_drive_at' => $now,
-                        'copied_to_project_drive_by' => $actorId,
-                        'file_relative_path' => "https://drive.google.com/file/d/{$newFileId}/view",
-                    ]);
-
-                $newUrl = "https://drive.google.com/file/d/{$newFileId}/view";
-
-                log_message('info', 'salinDokumenGoogleDrive - SUCCESS: Dokumen ID ' . $dokumenId . ' disalin ke GD proyek: ' . $newUrl);
-
-                return $this->response->setJSON([
-                    'success' => true,
-                    'message' => 'File berhasil disalin ke Google Drive proyek.',
-                    'new_url' => $newUrl
-                ]);
-            }
-
-            return $this->response->setJSON(['success' => false, 'message' => 'Gagal upload ke Google Drive proyek.']);
-
-        } catch (\Exception $e) {
-            log_message('error', 'salinDokumenGoogleDrive - Exception: ' . $e->getMessage());
-            return $this->response->setJSON(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
-        }
+        return $this->response->setJSON([
+            'success' => true,
+            'ready_for_upload' => true,
+            'folder_url' => $folderUrl,
+            'dokumen_id' => $dokumenId,
+            'source_url' => $googleDriveSourceUrl,
+            'file_name' => $originalFileName,
+            'message' => 'Folder Google Drive berhasil dibuka. Upload file secara manual, lalu masukkan link baru.'
+        ]);
     }
 
     /**
-     * Get Google Drive Service Account email
+     * Simpan link baru setelah user upload manual
      */
-    private function getGoogleDriveServiceAccountEmail(): string
+    public function simpanLinkBaruGoogleDrive(int $dokumenId): \CodeIgniter\HTTP\Response
     {
-        $jsonPath = env('GOOGLE_SERVICE_ACCOUNT_JSON_PATH') ?: ROOTPATH . 'google-service-account.json';
-        $jsonPath = trim($jsonPath, " \t\n\r\0\x0B'\"");
-
-        if (file_exists($jsonPath)) {
-            $json = file_get_contents($jsonPath);
-            $data = json_decode($json, true);
-            if (isset($data['client_email'])) {
-                return $data['client_email'];
-            }
+        // Cek permission
+        if (!$this->canViewKontrak()) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Anda tidak memiliki akses.']);
         }
 
-        return 'service-account@your-project.iam.gserviceaccount.com';
+        $newLink = trim((string) $this->request->getPost('new_google_drive_url'));
+
+        if (empty($newLink)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Link Google Drive baru wajib diisi.']);
+        }
+
+        // Validasi link Google Drive
+        if (!$this->isAllowedGoogleDriveUrl($newLink)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Link Google Drive tidak valid. Gunakan link dari drive.google.com atau docs.google.com.']);
+        }
+
+        $db = db_connect();
+
+        if (!$db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Tabel dokumen tidak tersedia.']);
+        }
+
+        $builder = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->select('*')
+            ->where('id', $dokumenId);
+        $this->applyNotDeletedWhere($builder, 'trn_kontrak_simak_verifikasi_dokumen');
+        $dokumen = $builder->get()->getRowArray();
+
+        if (!$dokumen) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Dokumen tidak ditemukan.']);
+        }
+
+        // Update dengan link baru
+        $now = date('Y-m-d H:i:s');
+        $actorId = (int) (session()->get('user_id') ?? 0);
+
+        $db->table('trn_kontrak_simak_verifikasi_dokumen')
+            ->where('id', $dokumenId)
+            ->update([
+                'copied_to_project_drive' => 1,
+                'copied_to_project_drive_at' => $now,
+                'copied_to_project_drive_by' => $actorId,
+                'file_relative_path' => $newLink,
+            ]);
+
+        log_message('info', 'simpanLinkBaruGoogleDrive - SUCCESS: Dokumen ID ' . $dokumenId . ' link diupdate ke: ' . $newLink);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => 'Link berhasil disimpan.',
+            'new_url' => $newLink
+        ]);
+    }
+
+    /**
+     * Get or create SIMAK folder and return URL
+     */
+    private function getOrCreateSimakFolderUrl(string $rootFolderId, string $namaPaket, string $penyedia, string $kode): string
+    {
+        if (!class_exists('\App\Libraries\GoogleDriveService')) {
+            return env('GOOGLE_DRIVE_UPLOAD_FOLDER_URL') ?: 'https://drive.google.com';
+        }
+
+        try {
+            $driveService = new \App\Libraries\GoogleDriveService();
+            if (!$driveService->isReady()) {
+                return env('GOOGLE_DRIVE_UPLOAD_FOLDER_URL') ?: 'https://drive.google.com';
+            }
+
+            // Build folder path
+            $folderId = $driveService->buildSimakFolderPath($rootFolderId, $namaPaket, $penyedia, $kode, '');
+
+            if ($folderId) {
+                return "https://drive.google.com/drive/folders/{$folderId}";
+            }
+
+            return env('GOOGLE_DRIVE_UPLOAD_FOLDER_URL') ?: 'https://drive.google.com';
+        } catch (\Exception $e) {
+            log_message('error', 'getOrCreateSimakFolderUrl - Error: ' . $e->getMessage());
+            return env('GOOGLE_DRIVE_UPLOAD_FOLDER_URL') ?: 'https://drive.google.com';
+        }
     }
 
     private function isPreviewableSharedDokumen(string $mimeType, string $fileName): bool

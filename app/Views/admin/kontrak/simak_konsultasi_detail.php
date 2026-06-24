@@ -1490,7 +1490,7 @@
         });
     }
 
-    // Google Drive Salin Button Handler
+    // Google Drive Salin Button Handler - Manual upload flow
     var salinButtons = document.querySelectorAll('.btn-salin-gdrive');
     salinButtons.forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -1499,174 +1499,141 @@
             var sourceUrl = button.getAttribute('data-url');
             var fileName = button.getAttribute('data-file');
 
-            // Show confirmation dialog
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'question',
-                    title: 'Salin ke Google Drive Proyek?',
-                    html: 'File: <strong>' + fileName + '</strong><br>Sumber: <a href="' + sourceUrl + '" target="_blank">' + sourceUrl.substring(0, 50) + '...</a>',
-                    showCancelButton: true,
-                    confirmButtonText: 'Salin',
-                    cancelButtonText: 'Batal',
-                    allowOutsideClick: false
-                }).then(function(result) {
-                    if (!result.isConfirmed) return;
+            // Prepare form data with CSRF token
+            var formData = new FormData();
+            formData.append(typeof csrfTokenName !== 'undefined' ? csrfTokenName : 'csrf_token_name', typeof csrfHash !== 'undefined' ? csrfHash : '');
 
-                    // Show loading dialog
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Menyalin file...',
-                        html: '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted">Mengdownload dari Google Drive...</div></div>',
-                        showConfirmButton: false,
-                        allowOutsideClick: false,
-                        allowEscapeKey: false
-                    });
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', baseUrl + '/admin/kontrak/simak/konsultasi/salin-dokumen-gdrive/' + dokumenId, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.success && response.ready_for_upload) {
+                            // Open Google Drive folder in new tab
+                            window.open(response.folder_url, '_blank');
 
-                    button.disabled = true;
-                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-                    // Prepare form data with CSRF token
-                    var formData = new FormData();
-                    formData.append(typeof csrfTokenName !== 'undefined' ? csrfTokenName : 'csrf_token_name', typeof csrfHash !== 'undefined' ? csrfHash : '');
-
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', baseUrl + '/admin/kontrak/simak/konsultasi/salin-dokumen-gdrive/' + dokumenId, true);
-                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                    xhr.onload = function() {
-                        if (xhr.status === 200) {
-                            try {
-                                var response = JSON.parse(xhr.responseText);
-                                if (response.success) {
-                                    // Update badge in Keterangan column
-                                    var row = button.closest('tr');
-                                    if (row) {
-                                        var badge = row.querySelector('.badge-warning');
-                                        if (badge) {
-                                            badge.classList.remove('badge-warning');
-                                            badge.classList.add('badge-success');
-                                            badge.innerHTML = '<i class="fas fa-check"></i> Disalin';
-                                        }
+                            // Show dialog to enter new link
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Upload Manual',
+                                html: '<p>Folder Google Drive telah dibuka di tab baru.</p>' +
+                                      '<p><strong>Langkah:</strong></p>' +
+                                      '<ol style="text-align: left;">' +
+                                      '<li>Upload file <strong>' + fileName + '</strong> ke folder tersebut</li>' +
+                                      '<li>Klik kanan file → "Get link"</li>' +
+                                      '<li>Pilih "Anyone with the link" → "Viewer"</li>' +
+                                      '<li>Salin link dan paste di bawah</li>' +
+                                      '</ol>' +
+                                      '<div class="form-group mt-3">' +
+                                      '<label for="new_gdrive_link"><strong>Link Google Drive Baru:</strong></label>' +
+                                      '<input type="url" class="form-control" id="new_gdrive_link" placeholder="https://drive.google.com/file/d/...">' +
+                                      '</div>',
+                                showCancelButton: true,
+                                confirmButtonText: 'Simpan Link',
+                                cancelButtonText: 'Batal',
+                                preConfirm: function() {
+                                    var newLink = document.getElementById('new_gdrive_link').value.trim();
+                                    if (!newLink) {
+                                        Swal.showValidationMessage('Link Google Drive wajib diisi');
+                                        return false;
                                     }
-                                    // Remove button
-                                    button.remove();
-                                    // Show success
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Berhasil',
-                                        text: 'File berhasil disalin ke Google Drive proyek.',
-                                        footer: '<a href="' + response.new_url + '" target="_blank">Buka file</a>'
-                                    });
-                                } else if (response.instruction) {
-                                    // File tidak bisa diakses otomatis - berikan instruksi untuk share
-                                    button.disabled = false;
-                                    button.innerHTML = '<i class="fas fa-copy"></i>';
-                                    Swal.fire({
-                                        icon: 'info',
-                                        title: 'File Perlu Di-share',
-                                        html: '<p>File tidak dapat diakses otomatis oleh sistem.</p>' +
-                                              '<p><strong>Langkah:</strong></p>' +
-                                              '<ol style="text-align: left;">' +
-                                              '<li>Buka file di Google Drive</li>' +
-                                              '<li>Klik "Share" → "Share with people and groups"</li>' +
-                                              '<li>Tambahkan email ini:<br>' +
-                                              '<code style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">' + response.email_to_share + '</code></li>' +
-                                              '<li>Pilih akses "Reader" atau lebih tinggi</li>' +
-                                              '<li>Klik "Send"</li>' +
-                                              '<li>Klik tombol "Salin" lagi</li>' +
-                                              '</ol>' +
-                                              '<p class="mt-2"><small>Email Service Account ini adalah akun sistem yang digunakan untuk mengelola file.</small></p>',
-                                        confirmButtonText: 'Mengerti'
-                                    });
-                                } else {
-                                    button.disabled = false;
-                                    button.innerHTML = '<i class="fas fa-copy"></i>';
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'Gagal',
-                                        text: response.message
-                                    });
+                                    if (newLink.indexOf('drive.google.com') === -1 && newLink.indexOf('docs.google.com') === -1) {
+                                        Swal.showValidationMessage('Link harus dari Google Drive');
+                                        return false;
+                                    }
+                                    return newLink;
                                 }
-                            } catch (e) {
-                                button.disabled = false;
-                                button.innerHTML = '<i class="fas fa-copy"></i>';
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Error',
-                                    text: 'Terjadi kesalahan saat memproses response.'
-                                });
-                            }
+                            }).then(function(result) {
+                                if (result.isConfirmed && result.value) {
+                                    // Save new link
+                                    var linkFormData = new FormData();
+                                    linkFormData.append(typeof csrfTokenName !== 'undefined' ? csrfTokenName : 'csrf_token_name', typeof csrfHash !== 'undefined' ? csrfHash : '');
+                                    linkFormData.append('new_google_drive_url', result.value);
+
+                                    var saveXhr = new XMLHttpRequest();
+                                    saveXhr.open('POST', baseUrl + '/admin/kontrak/simak/konsultasi/simpan-link-gdrive/' + dokumenId, true);
+                                    saveXhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                                    saveXhr.onload = function() {
+                                        if (saveXhr.status === 200) {
+                                            try {
+                                                var saveResponse = JSON.parse(saveXhr.responseText);
+                                                if (saveResponse.success) {
+                                                    // Update badge in Keterangan column
+                                                    var row = button.closest('tr');
+                                                    if (row) {
+                                                        var badge = row.querySelector('.badge-warning');
+                                                        if (badge) {
+                                                            badge.classList.remove('badge-warning');
+                                                            badge.classList.add('badge-success');
+                                                            badge.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                                                        }
+                                                    }
+                                                    // Remove button
+                                                    button.remove();
+                                                    // Show success
+                                                    Swal.fire({
+                                                        icon: 'success',
+                                                        title: 'Berhasil',
+                                                        text: 'Link berhasil disimpan.',
+                                                        footer: '<a href="' + saveResponse.new_url + '" target="_blank">Buka file</a>'
+                                                    });
+                                                } else {
+                                                    Swal.fire({
+                                                        icon: 'error',
+                                                        title: 'Gagal',
+                                                        text: saveResponse.message
+                                                    });
+                                                }
+                                            } catch (e) {
+                                                Swal.fire({
+                                                    icon: 'error',
+                                                    title: 'Error',
+                                                    text: 'Terjadi kesalahan saat memproses response.'
+                                                });
+                                            }
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                title: 'Server Error',
+                                                text: 'Status: ' + saveXhr.status
+                                            });
+                                        }
+                                    };
+                                    saveXhr.send(linkFormData);
+                                }
+                            });
                         } else {
-                            button.disabled = false;
-                            button.innerHTML = '<i class="fas fa-copy"></i>';
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Server Error',
-                                text: 'Status: ' + xhr.status
+                                title: 'Gagal',
+                                text: response.message
                             });
                         }
-                    };
-
-                    xhr.onerror = function() {
-                        button.disabled = false;
-                        button.innerHTML = '<i class="fas fa-copy"></i>';
+                    } catch (e) {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Network Error',
-                            text: 'Tidak dapat terhubung ke server.'
+                            title: 'Error',
+                            text: 'Terjadi kesalahan saat memproses response.'
                         });
-                    };
-
-                    xhr.send(formData);
-                });
-            } else {
-                // Fallback to native confirm if SweetAlert not available
-                var confirmed = confirm('Salin file dari Google Drive ke Google Drive proyek?\n\nFile: ' + fileName + '\nSumber: ' + sourceUrl);
-                if (!confirmed) return;
-
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-                var formData = new FormData();
-                formData.append(typeof csrfTokenName !== 'undefined' ? csrfTokenName : 'csrf_token_name', typeof csrfHash !== 'undefined' ? csrfHash : '');
-
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', baseUrl + '/admin/kontrak/simak/konsultasi/salin-dokumen-gdrive/' + dokumenId, true);
-                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                xhr.onload = function() {
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-copy"></i>';
-                    if (xhr.status === 200) {
-                        try {
-                            var response = JSON.parse(xhr.responseText);
-                            if (response.success) {
-                                var row = button.closest('tr');
-                                if (row) {
-                                    var badge = row.querySelector('.badge-warning');
-                                    if (badge) {
-                                        badge.classList.remove('badge-warning');
-                                        badge.classList.add('badge-success');
-                                        badge.innerHTML = '<i class="fas fa-check"></i> Disalin';
-                                    }
-                                }
-                                button.remove();
-                                alert('File berhasil disalin ke Google Drive proyek!');
-                            } else {
-                                alert('Gagal: ' + response.message);
-                            }
-                        } catch (e) {
-                            alert('Error parsing response');
-                        }
-                    } else {
-                        alert('Server error: ' + xhr.status);
                     }
-                };
-                xhr.onerror = function() {
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-copy"></i>';
-                    alert('Network error');
-                };
-                xhr.send(formData);
-            }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Server Error',
+                        text: 'Status: ' + xhr.status
+                    });
+                }
+            };
+            xhr.onerror = function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Network Error',
+                    text: 'Tidak dapat terhubung ke server.'
+                });
+            };
+            xhr.send(formData);
         });
     });
 
