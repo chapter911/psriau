@@ -24,10 +24,14 @@ class LupaAbsen extends BaseController
         $role = strtolower((string) session()->get('role'));
         $canApprove = in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
 
+        // Get current employee data for modal display
+        $pegawaiData = $this->getCurrentPegawaiData();
+
         return view('admin/surat/lupa_absen', [
             'title' => 'Lupa Absen',
             'can_edit' => $this->canAccess(),
             'can_approve' => $canApprove,
+            'current_pegawai' => $pegawaiData,
         ]);
     }
 
@@ -78,7 +82,7 @@ class LupaAbsen extends BaseController
         $recordsFiltered = (int) $builder->countAllResults(false);
 
         // Order
-        $orderColumns = ['id', 'nip', 'nama', 'tanggal_surat', 'id', 'status', 'id'];
+        $orderColumns = ['id', 'nip', 'nama', 'tanggal_absen', 'jenis_absen', 'alasan_detail', 'status', 'id'];
         $orderColumn = $orderColumns[$orderIndex] ?? $orderColumns[0];
         $builder->orderBy($orderColumn, $orderDirection);
 
@@ -94,11 +98,10 @@ class LupaAbsen extends BaseController
             };
 
             $row['status_badge'] = $statusBadge;
-            $row['tanggal_surat_formatted'] = !empty($row['tanggal_surat']) ? date('d/m/Y', strtotime($row['tanggal_surat'])) : '-';
+            $row['tanggal_formatted'] = !empty($row['tanggal_absen']) ? date('d/m/Y', strtotime($row['tanggal_absen'])) : '-';
 
-            // Count entries
-            $entries = json_decode((string) ($row['entries_json'] ?? '[]'), true);
-            $row['jumlah_entri'] = is_array($entries) ? count($entries) : 0;
+            $jenis = trim((string) ($row['jenis_absen'] ?? ''));
+            $row['jenis_formatted'] = $jenis === 'Masuk' ? '<span class="badge badge-info">Masuk</span>' : '<span class="badge badge-secondary">Pulang</span>';
 
             // Dokumen button
             $dokumenHtml = '<div class="doc-btn-group">';
@@ -108,7 +111,6 @@ class LupaAbsen extends BaseController
 
             $actions = '';
             if ($canEdit && $status === 'pending') {
-                $actions .= '<a href="' . site_url('admin/surat/lupa-absen/' . (int) ($row['id'] ?? 0) . '/ubah') . '" class="btn btn-sm btn-outline-primary" title="Ubah"><i class="fas fa-pen"></i></a> ';
                 $actions .= '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' . (int) ($row['id'] ?? 0) . '" title="Hapus"><i class="fas fa-trash"></i></button>';
             }
             if ($canApprove && $status === 'pending') {
@@ -135,67 +137,10 @@ class LupaAbsen extends BaseController
         }
 
         if (strtolower((string) $this->request->getMethod()) !== 'post') {
-            // Auto-fill employee data from logged-in user
-            $pegawaiData = $this->getCurrentPegawaiData();
-
-            return view('admin/surat/lupa_absen_form', [
-                'title' => 'Ajukan Lupa Absen',
-                'current_input' => $pegawaiData,
-                'form_error' => null,
-                'is_edit' => false,
-                'existing_entries' => [],
-                'jabatan_options' => $this->loadJabatanOptions(),
-                'current_pegawai' => $pegawaiData,
-            ]);
+            return redirect()->to(site_url('admin/surat/lupa-absen'));
         }
 
         return $this->simpanLupaAbsen(0);
-    }
-
-    public function ubah(int $id)
-    {
-        if (! $this->canAccess()) {
-            return redirect()->to(site_url('/admin'));
-        }
-
-        $model = new LupaAbsenModel();
-        $existing = $model->find($id);
-
-        if (! is_array($existing)) {
-            return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Data tidak ditemukan.');
-        }
-
-        // Non-admin can only edit their own pending submissions
-        $role = strtolower((string) session()->get('role'));
-        $username = trim((string) session()->get('username'));
-        if (! in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true)) {
-            if (($existing['created_by'] ?? '') !== $username) {
-                return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Anda tidak memiliki akses untuk mengubah data ini.');
-            }
-            if (($existing['status'] ?? '') !== 'pending') {
-                return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Data yang sudah diproses tidak dapat diubah.');
-            }
-        }
-
-        if (strtolower((string) $this->request->getMethod()) !== 'post') {
-            $entries = json_decode((string) ($existing['entries_json'] ?? '[]'), true);
-            if (! is_array($entries)) {
-                $entries = [];
-            }
-
-            return view('admin/surat/lupa_absen_form', [
-                'title' => 'Ubah Lupa Absen',
-                'current_input' => $existing,
-                'form_error' => null,
-                'is_edit' => true,
-                'id' => $id,
-                'existing_entries' => $entries,
-                'jabatan_options' => $this->loadJabatanOptions(),
-                'current_pegawai' => $existing, // For edit mode, use existing data
-            ]);
-        }
-
-        return $this->simpanLupaAbsen($id);
     }
 
     private function simpanLupaAbsen(int $id): RedirectResponse
@@ -203,28 +148,11 @@ class LupaAbsen extends BaseController
         $nama = trim((string) $this->request->getPost('nama'));
         $nip = trim((string) $this->request->getPost('nip'));
         $jabatanId = (int) $this->request->getPost('jabatan_id');
-        $jabatan = trim((string) $this->request->getPost('jabatan_display') ?? '');
-        $unitKerja = trim((string) $this->request->getPost('unit_kerja'));
-        $tanggalSurat = trim((string) $this->request->getPost('tanggal_surat'));
-        $alasanKategori = trim((string) $this->request->getPost('alasan_kategori'));
+        $jabatan = trim((string) $this->request->getPost('jabatan') ?? '');
+        $unitKerja = trim((string) $this->request->getPost('unit_kerja') ?? '');
+        $tanggalAbsen = trim((string) $this->request->getPost('tanggal_absen'));
+        $jenisAbsen = trim((string) $this->request->getPost('jenis_absen'));
         $alasanDetail = trim((string) $this->request->getPost('alasan_detail'));
-
-        // Get entries from form
-        $entriesRaw = $this->request->getPost('entries');
-        $entries = [];
-        if (is_array($entriesRaw)) {
-            foreach ($entriesRaw as $entry) {
-                if (is_array($entry) && !empty($entry['tanggal'])) {
-                    $entries[] = [
-                        'tanggal' => trim((string) ($entry['tanggal'] ?? '')),
-                        'hari' => trim((string) ($entry['hari'] ?? '')),
-                        'jam' => trim((string) ($entry['jam'] ?? '')),
-                        'jenis' => trim((string) ($entry['jenis'] ?? '')),
-                        'keterangan' => trim((string) ($entry['keterangan'] ?? '')),
-                    ];
-                }
-            }
-        }
 
         $errors = [];
 
@@ -234,94 +162,58 @@ class LupaAbsen extends BaseController
         if ($nip === '') {
             $errors[] = 'NIP wajib diisi.';
         }
-        if ($jabatanId <= 0) {
-            $errors[] = 'Jabatan wajib dipilih.';
+        if ($tanggalAbsen === '') {
+            $errors[] = 'Tanggal absen wajib diisi.';
         }
-        if ($unitKerja === '') {
-            $errors[] = 'Unit kerja wajib diisi.';
-        }
-        if ($tanggalSurat === '') {
-            $errors[] = 'Tanggal surat wajib diisi.';
-        }
-        if ($alasanKategori === '') {
-            $errors[] = 'Kategori alasan wajib dipilih.';
+        if (! in_array($jenisAbsen, ['Masuk', 'Pulang'], true)) {
+            $errors[] = 'Jenis absen tidak valid.';
         }
         if ($alasanDetail === '') {
-            $errors[] = 'Detail alasan wajib diisi.';
-        }
-        if (empty($entries)) {
-            $errors[] = 'Minimal 1 entri absensi wajib diisi.';
-        }
-
-        // Get jabatan label from options
-        $jabatanOptions = $this->loadJabatanOptions();
-        $jabatanLabel = '';
-        foreach ($jabatanOptions as $opt) {
-            if ((int) ($opt['id'] ?? 0) === $jabatanId) {
-                $jabatanLabel = $opt['jabatan'] ?? '';
-                break;
-            }
+            $errors[] = 'Alasan wajib diisi.';
         }
 
         if ($errors !== []) {
-            return view('admin/surat/lupa_absen_form', [
-                'title' => $id > 0 ? 'Ubah Lupa Absen' : 'Ajukan Lupa Absen',
-                'current_input' => [
-                    'nama' => $nama,
-                    'nip' => $nip,
-                    'jabatan_id' => $jabatanId,
-                    'unit_kerja' => $unitKerja,
-                    'tanggal_surat' => $tanggalSurat,
-                    'alasan_kategori' => $alasanKategori,
-                    'alasan_detail' => $alasanDetail,
-                ],
-                'form_error' => implode(' ', $errors),
-                'is_edit' => $id > 0,
-                'id' => $id > 0 ? $id : null,
-                'existing_entries' => $entries,
-                'jabatan_options' => $jabatanOptions,
-            ]);
+            return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', implode(' ', $errors));
         }
 
         $model = new LupaAbsenModel();
         $username = trim((string) session()->get('username'));
 
         // Generate nomor surat
-        $nomorSurat = $this->generateNomorSurat($id > 0);
+        $nomorSurat = $this->generateNomorSurat();
 
         $data = [
             'nama' => $nama,
             'nip' => $nip,
             'jabatan_id' => $jabatanId,
-            'jabatan' => $jabatanLabel ?: $jabatan,
+            'jabatan' => $jabatan,
             'unit_kerja' => $unitKerja,
-            'tanggal_surat' => $tanggalSurat,
-            'nomor_surat' => $nomorSurat,
-            'alasan_kategori' => $alasanKategori,
+            'tanggal_absen' => $tanggalAbsen,
+            'jenis_absen' => $jenisAbsen,
             'alasan_detail' => $alasanDetail,
-            'entries_json' => json_encode($entries, JSON_UNESCAPED_UNICODE),
+            'nomor_surat' => $nomorSurat,
             'status' => 'pending',
+            'created_by' => $username,
+            'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ];
 
-        if ($id > 0) {
-            $model->update($id, $data);
-            return redirect()->to(site_url('admin/surat/lupa-absen'))->with('success', 'Data berhasil diperbarui.');
+        $insertId = $model->insert($data);
+
+        if ($insertId === false) {
+            return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Gagal menyimpan data. Silakan coba lagi.');
         }
 
-        $data['created_by'] = $username;
-        $data['created_at'] = date('Y-m-d H:i:s');
-        $model->insert($data);
-
-        return redirect()->to(site_url('admin/surat/lupa-absen'))->with('success', 'Pengajuan lupa absen berhasil disimpan.');
+        return redirect()->to(site_url('admin/surat/lupa-absen'))->with('success', 'Pengajuan lupa absen berhasil disimpan. Nomor Surat: ' . $nomorSurat);
     }
 
-    private function generateNomorSurat(bool $isEdit): string
+    private function generateNomorSurat(): string
     {
         $db = db_connect();
         $year = date('Y');
+        $month = date('m');
 
-        // Get max id for this year
+        // Get max id for this year-month
         $builder = $db->table('lupa_absen')
             ->selectMax('id', 'max_id')
             ->get();
@@ -329,7 +221,7 @@ class LupaAbsen extends BaseController
         $row = $builder->getRowArray();
         $nextNum = ((int) ($row['max_id'] ?? 0)) + 1;
 
-        return sprintf('%03d/SUR.PERNYATAAN-LOA/%s', $nextNum, $year);
+        return sprintf('%03d/LOA-%s%s', $nextNum, $month, substr($year, -2));
     }
 
     public function pdf(int $id)
@@ -343,12 +235,6 @@ class LupaAbsen extends BaseController
 
         if (! is_array($row)) {
             return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Data tidak ditemukan.');
-        }
-
-        // Parse entries
-        $entries = json_decode((string) ($row['entries_json'] ?? '[]'), true);
-        if (! is_array($entries)) {
-            $entries = [];
         }
 
         // Get app settings for header
@@ -390,10 +276,10 @@ class LupaAbsen extends BaseController
             'nip' => $row['nip'] ?? '',
             'jabatan' => $row['jabatan'] ?? '',
             'unit_kerja' => $row['unit_kerja'] ?? '',
-            'tanggal_surat' => $row['tanggal_surat'] ?? date('Y-m-d'),
-            'alasan_kategori' => $row['alasan_kategori'] ?? '',
+            'tanggal_absen' => $row['tanggal_absen'] ?? '',
+            'jenis_absen' => $row['jenis_absen'] ?? '',
             'alasan_detail' => $row['alasan_detail'] ?? '',
-            'entries' => $entries,
+            'tanggal_surat' => !empty($row['created_at']) ? date('Y-m-d', strtotime($row['created_at'])) : date('Y-m-d'),
         ];
 
         $html = view('admin/surat/lupa_absen_pdf', $data);
@@ -412,7 +298,7 @@ class LupaAbsen extends BaseController
 
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
             ->setBody($dompdf->output());
     }
 
@@ -507,26 +393,6 @@ class LupaAbsen extends BaseController
         return redirect()->to(site_url('admin/surat/lupa-absen'))->with('success', 'Pengajuan lupa absen telah ditolak.');
     }
 
-    private function loadJabatanOptions(): array
-    {
-        if (! db_connect()->tableExists('mst_jabatan')) {
-            return [];
-        }
-
-        $db = db_connect();
-        $rows = $db->table('mst_jabatan')
-            ->select('id, jabatan, jenis_jabatan')
-            ->where('is_active', 1)
-            ->orderBy('jabatan', 'ASC')
-            ->get()
-            ->getResultArray();
-
-        return array_map(static function (array $row) {
-            $row['display_label'] = trim((string) ($row['jabatan'] ?? ''));
-            return $row;
-        }, $rows);
-    }
-
     /**
      * Get current logged-in employee's data from mst_pegawai table
      */
@@ -573,15 +439,12 @@ class LupaAbsen extends BaseController
             ];
         }
 
-        // Build unit kerja from related tables if available
-        $unitKerja = trim((string) ($pegawai['unit_kerja'] ?? ''));
-
         return [
             'nama' => trim((string) ($pegawai['nama'] ?? '')),
             'nip' => trim((string) ($pegawai['nip'] ?? '')),
             'jabatan_id' => (int) ($pegawai['jabatan_utama_id'] ?? 0),
             'jabatan' => trim((string) ($pegawai['jabatan_label'] ?? $pegawai['jabatan'] ?? '')),
-            'unit_kerja' => $unitKerja ?: 'Satuan Kerja Prasarana Strategis Riau',
+            'unit_kerja' => trim((string) ($pegawai['unit_kerja'] ?? '')) ?: 'Satuan Kerja Prasarana Strategis Riau',
         ];
     }
 

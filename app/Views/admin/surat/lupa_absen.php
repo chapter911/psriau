@@ -4,6 +4,7 @@
 <?php
     $canEdit = (bool) ($can_edit ?? false);
     $canApprove = (bool) ($can_approve ?? false);
+    $currentPegawai = $current_pegawai ?? [];
 ?>
 <style>
     #tableLupaAbsen thead th {
@@ -17,20 +18,6 @@
         vertical-align: middle !important;
         padding: 8px 10px !important;
         font-size: 13.5px;
-    }
-
-    table.dataTable thead .sorting::before,
-    table.dataTable thead .sorting_asc::before,
-    table.dataTable thead .sorting_desc::before,
-    table.dataTable thead .sorting_asc_disabled::before,
-    table.dataTable thead .sorting_desc_disabled::before,
-    table.dataTable thead .sorting::after,
-    table.dataTable thead .sorting_asc::after,
-    table.dataTable thead .sorting_desc::after,
-    table.dataTable thead .sorting_asc_disabled::after,
-    table.dataTable thead .sorting_desc_disabled::after {
-        bottom: 50% !important;
-        transform: translateY(50%) !important;
     }
 
     .doc-btn-group {
@@ -56,9 +43,9 @@
     <div class="card-header d-flex align-items-center">
         <h3 class="card-title mb-0">Daftar Pengajuan Lupa Absen</h3>
         <div class="card-tools ml-auto">
-            <a href="<?= site_url('admin/surat/lupa-absen/buat'); ?>" class="btn btn-primary btn-sm">
+            <button type="button" class="btn btn-primary btn-sm" onclick="openCreateModal()">
                 <i class="fas fa-plus"></i> Ajukan Lupa Absen
-            </a>
+            </button>
         </div>
     </div>
     <div class="card-body">
@@ -83,8 +70,9 @@
                         <th style="width: 50px;">No</th>
                         <th>NIP</th>
                         <th>Nama</th>
-                        <th>Tanggal Pengajuan</th>
-                        <th>Jumlah Entri</th>
+                        <th>Tanggal</th>
+                        <th>Jenis</th>
+                        <th>Alasan</th>
                         <th>Status</th>
                         <th>Dokumen</th>
                         <th>Aksi</th>
@@ -93,6 +81,69 @@
                 <tbody>
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Buat/Edit Lupa Absen -->
+<div class="modal fade" id="modalLupaAbsen" tabindex="-1" role="dialog" aria-labelledby="modalLupaAbsenTitle" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalLupaAbsenTitle">Ajukan Lupa Absen</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <form method="POST" action="<?= site_url('admin/surat/lupa-absen/buat'); ?>" id="formLupaAbsen">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <!-- Data Pegawai (Read-only) -->
+                    <div class="alert alert-info mb-3">
+                        <strong>Data Pegawai:</strong><br>
+                        Nama: <?= esc($currentPegawai['nama'] ?? '-'); ?><br>
+                        NIP: <?= esc($currentPegawai['nip'] ?? '-'); ?><br>
+                        Jabatan: <?= esc($currentPegawai['jabatan'] ?? '-'); ?>
+                    </div>
+
+                    <input type="hidden" name="nama" value="<?= esc($currentPegawai['nama'] ?? ''); ?>">
+                    <input type="hidden" name="nip" value="<?= esc($currentPegawai['nip'] ?? ''); ?>">
+                    <input type="hidden" name="jabatan_id" value="<?= (int) ($currentPegawai['jabatan_id'] ?? 0); ?>">
+                    <input type="hidden" name="jabatan" value="<?= esc($currentPegawai['jabatan'] ?? ''); ?>">
+                    <input type="hidden" name="unit_kerja" value="<?= esc($currentPegawai['unit_kerja'] ?? ''); ?>">
+
+                    <div class="form-group">
+                        <label for="tanggal_absen">Tanggal <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="tanggal_absen" name="tanggal_absen" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="jenis_absen">Jenis Absen <span class="text-danger">*</span></label>
+                        <select class="form-control" id="jenis_absen" name="jenis_absen" required onchange="updateAlasanTemplate()">
+                            <option value="">-- Pilih --</option>
+                            <option value="Masuk">Absen Masuk</option>
+                            <option value="Pulang">Absen Pulang</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alasan">Alasan <span class="text-danger">*</span></label>
+                        <select class="form-control" id="alasan_template" onchange="applyTemplate()">
+                            <option value="">-- Pilih Template --</option>
+                            <option value="Lupa Absen Masuk">Lupa Absen Masuk</option>
+                            <option value="Lupa Absen Pulang">Lupa Absen Pulang</option>
+                            <option value="Terlambat Masuk">Terlambat Masuk</option>
+                            <option value="Terlambat Pulang">Terlambat Pulang</option>
+                            <option value="custom">Ketik Manual...</option>
+                        </select>
+                        <input type="text" class="form-control mt-2" id="alasan_custom" name="alasan_detail" placeholder="Ketik alasan di sini..." style="display: none;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Ajukan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -106,7 +157,7 @@
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
             <div class="modal-body">
-                <p>Apakah Anda yakin ingin menghapus data pengajuan lupa absen ini?</p>
+                <p>Apakah Anda yakin ingin menghapus pengajuan lupa absen ini?</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
@@ -117,6 +168,50 @@
 </div>
 
 <script>
+function openCreateModal() {
+    // Reset form
+    $('#formLupaAbsen')[0].reset();
+    $('#alasan_template').val('').trigger('change');
+    $('#alasan_custom').hide();
+
+    // Set default date to today
+    var today = new Date().toISOString().split('T')[0];
+    $('#tanggal_absen').val(today);
+
+    // Show modal
+    $('#modalLupaAbsen').modal('show');
+}
+
+function updateAlasanTemplate() {
+    var jenis = $('#jenis_absen').val();
+
+    if (jenis === 'Masuk') {
+        $('#alasan_template').val('Lupa Absen Masuk');
+    } else if (jenis === 'Pulang') {
+        $('#alasan_template').val('Lupa Absen Pulang');
+    }
+
+    applyTemplate();
+}
+
+function applyTemplate() {
+    var template = $('#alasan_template').val();
+
+    if (template === 'custom') {
+        $('#alasan_custom').show().focus();
+        $('#alasan_custom').attr('name', 'alasan_detail');
+    } else if (template) {
+        $('#alasan_custom').hide();
+        // Create or update hidden input
+        if ($('#hidden_alasan').length) {
+            $('#hidden_alasan').val(template);
+        } else {
+            $('#formLupaAbsen').append('<input type="hidden" id="hidden_alasan" name="alasan_detail" value="">');
+            $('#hidden_alasan').val(template);
+        }
+    }
+}
+
 $(document).ready(function() {
     var table = $('#tableLupaAbsen').DataTable({
         processing: true,
@@ -141,8 +236,9 @@ $(document).ready(function() {
             },
             { data: 'nip', className: 'text-center' },
             { data: 'nama' },
-            { data: 'tanggal_surat_formatted', className: 'text-center' },
-            { data: 'jumlah_entri', className: 'text-center' },
+            { data: 'tanggal_formatted', className: 'text-center' },
+            { data: 'jenis_formatted', className: 'text-center' },
+            { data: 'alasan_detail', className: 'text-left' },
             { data: 'status_badge', className: 'text-center', sortable: false, searchable: false },
             { data: 'dokumen_html', className: 'text-center', sortable: false, searchable: false },
             { data: 'action_html', className: 'text-center', sortable: false, searchable: false }
