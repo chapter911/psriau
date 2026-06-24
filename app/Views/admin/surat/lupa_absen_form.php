@@ -7,7 +7,20 @@
     $currentInput = $current_input ?? [];
     $formError = $form_error ?? null;
     $formId = $id ?? null;
+    $existingEntries = $existing_entries ?? [];
+    $jabatanOptions = $jabatan_options ?? [];
 ?>
+<style>
+    .table-entry td {
+        vertical-align: middle;
+    }
+    .btn-remove-entry {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+    }
+</style>
+
 <div class="card">
     <div class="card-header">
         <h3 class="card-title mb-0"><?= esc($title); ?></h3>
@@ -25,78 +38,195 @@
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="<?= site_url('admin/surat/lupa-absen' . ($isEdit ? '/' . $formId . '/ubah' : '/buat')); ?>" autocomplete="off">
+        <form method="POST" action="<?= site_url('admin/surat/lupa-absen' . ($isEdit ? '/' . $formId . '/ubah' : '/buat')); ?>" autocomplete="off" id="formLupaAbsen">
             <?= csrf_field(); ?>
 
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="nip">NIP <span class="text-danger">*</span></label>
-                        <input type="text"
-                               class="form-control"
-                               id="nip"
-                               name="nip"
-                               value="<?= esc((string) ($currentInput['nip'] ?? '')); ?>"
-                               required
-                               placeholder="Masukkan NIP">
-                    </div>
+            <!-- Data Pegawai -->
+            <div class="card card-outline card-primary mb-3">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Data Pegawai</h3>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="nama">Nama Lengkap <span class="text-danger">*</span></label>
-                        <input type="text"
-                               class="form-control"
-                               id="nama"
-                               name="nama"
-                               value="<?= esc((string) ($currentInput['nama'] ?? '')); ?>"
-                               required
-                               placeholder="Masukkan nama lengkap">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="nama">Nama Lengkap <span class="text-danger">*</span></label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="nama"
+                                       name="nama"
+                                       value="<?= esc((string) ($currentInput['nama'] ?? '')); ?>"
+                                       required
+                                       placeholder="Masukkan nama lengkap">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="nip">NIP <span class="text-danger">*</span></label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="nip"
+                                       name="nip"
+                                       value="<?= esc((string) ($currentInput['nip'] ?? '')); ?>"
+                                       required
+                                       placeholder="Masukkan NIP">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="jabatan_id">Jabatan <span class="text-danger">*</span></label>
+                                <select class="form-control select2" id="jabatan_id" name="jabatan_id" required>
+                                    <option value="">-- Pilih Jabatan --</option>
+                                    <?php foreach ($jabatan_options as $jab): ?>
+                                        <option value="<?= (int) ($jab['id'] ?? 0); ?>"
+                                            <?= ((int) ($currentInput['jabatan_id'] ?? 0) === (int) ($jab['id'] ?? 0)) ? 'selected' : ''; ?>>
+                                            <?= esc($jab['display_label'] ?? ($jab['jabatan'] ?? '')); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="unit_kerja">Unit Kerja <span class="text-danger">*</span></label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="unit_kerja"
+                                       name="unit_kerja"
+                                       value="<?= esc((string) ($currentInput['unit_kerja'] ?? '')); ?>"
+                                       required
+                                       placeholder="Contoh: Sekretariat Direktorat Jenderal Prasarana Strategis">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="tanggal_absen">Tanggal Absen <span class="text-danger">*</span></label>
-                        <input type="date"
-                               class="form-control"
-                               id="tanggal_absen"
-                               name="tanggal_absen"
-                               value="<?= esc((string) ($currentInput['tanggal_absen'] ?? '')); ?>"
-                               required>
-                    </div>
+            <!-- Tabel Absensi -->
+            <div class="card card-outline card-primary mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Tabel Absensi yang Terlewat</h3>
+                    <button type="button" class="btn btn-success btn-sm" id="btn-add-entry">
+                        <i class="fas fa-plus"></i> Tambah Baris
+                    </button>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="jenis_absen">Jenis Absen <span class="text-danger">*</span></label>
-                        <select class="form-control" id="jenis_absen" name="jenis_absen" required>
-                            <option value="">-- Pilih --</option>
-                            <option value="masuk" <?= (($currentInput['jenis_absen'] ?? '') === 'masuk') ? 'selected' : ''; ?>>Absen Masuk</option>
-                            <option value="pulang" <?= (($currentInput['jenis_absen'] ?? '') === 'pulang') ? 'selected' : ''; ?>>Absen Pulang</option>
-                        </select>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="tableEntries">
+                            <thead class="bg-primary text-white">
+                                <tr>
+                                    <th style="width: 50px;" class="text-center">No</th>
+                                    <th style="width: 150px;" class="text-center">Tanggal</th>
+                                    <th style="width: 120px;" class="text-center">Hari</th>
+                                    <th style="width: 120px;" class="text-center">Jam</th>
+                                    <th style="width: 180px;" class="text-center">Jenis Absen</th>
+                                    <th>Keterangan</th>
+                                    <th style="width: 80px;" class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="entriesBody">
+                                <?php
+                                $entries = $existingEntries;
+                                if (empty($entries)) {
+                                    $entries = [[
+                                        'tanggal' => '',
+                                        'hari' => '',
+                                        'jam' => '',
+                                        'jenis' => '',
+                                        'keterangan' => ''
+                                    ]];
+                                }
+                                foreach ($entries as $idx => $entry):
+                                ?>
+                                <tr class="table-entry" data-index="<?= $idx; ?>">
+                                    <td class="text-center align-middle"><?= $idx + 1; ?></td>
+                                    <td>
+                                        <input type="date" class="form-control form-control-sm" name="entries[<?= $idx; ?>][tanggal]" value="<?= esc((string) ($entry['tanggal'] ?? '')); ?>" required>
+                                    </td>
+                                    <td>
+                                        <select class="form-control form-control-sm" name="entries[<?= $idx; ?>][hari]" required>
+                                            <option value="">--</option>
+                                            <?php
+                                            $days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+                                            $selectedHari = $entry['hari'] ?? '';
+                                            foreach ($days as $day):
+                                            ?>
+                                            <option value="<?= $day; ?>" <?= ($selectedHari === $day) ? 'selected' : ''; ?>><?= $day; ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="time" class="form-control form-control-sm" name="entries[<?= $idx; ?>][jam]" value="<?= esc((string) ($entry['jam'] ?? '')); ?>" required>
+                                    </td>
+                                    <td>
+                                        <select class="form-control form-control-sm" name="entries[<?= $idx; ?>][jenis]" required>
+                                            <option value="">-- Pilih --</option>
+                                            <option value="Masuk" <?= (($entry['jenis'] ?? '') === 'Masuk') ? 'selected' : ''; ?>>Absen Masuk</option>
+                                            <option value="Pulang" <?= (($entry['jenis'] ?? '') === 'Pulang') ? 'selected' : ''; ?>>Absen Pulang</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" name="entries[<?= $idx; ?>][keterangan]" value="<?= esc((string) ($entry['keterangan'] ?? '')); ?>" placeholder="Contoh: Terlambat karena macet">
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-danger btn-sm btn-remove-entry <?= ($idx === 0) ? 'd-none' : ''; ?>" title="Hapus Baris">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="jam_absen">Jam Absen <span class="text-danger">*</span></label>
-                        <input type="time"
-                               class="form-control"
-                               id="jam_absen"
-                               name="jam_absen"
-                               value="<?= esc((string) ($currentInput['jam_absen'] ?? '')); ?>"
-                               required>
-                    </div>
+                    <small class="text-muted">Minimal 1 baris harus diisi. Gunakan tombol "Tambah Baris" untuk menambah entri.</small>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="keterangan">Keterangan</label>
-                <textarea class="form-control"
-                          id="keterangan"
-                          name="keterangan"
-                          rows="4"
-                          placeholder="Jelaskan mengapa lupa absen (opsional)"><?= esc((string) ($currentInput['keterangan'] ?? '')); ?></textarea>
+            <!-- Alasan -->
+            <div class="card card-outline card-primary mb-3">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Alasan Terlambat / Tidak Presensi</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="alasan_kategori">Kategori Alasan <span class="text-danger">*</span></label>
+                                <select class="form-control" id="alasan_kategori" name="alasan_kategori" required>
+                                    <option value="">-- Pilih Kategori --</option>
+                                    <option value="Macet / Terlambat" <?= (($currentInput['alasan_kategori'] ?? '') === 'Macet / Terlambat') ? 'selected' : ''; ?>>Macet / Terlambat</option>
+                                    <option value="Kendaraan Bermotor Rusak" <?= (($currentInput['alasan_kategori'] ?? '') === 'Kendaraan Bermotor Rusak') ? 'selected' : ''; ?>>Kendaraan Bermotor Rusak</option>
+                                    <option value="Sakit" <?= (($currentInput['alasan_kategori'] ?? '') === 'Sakit') ? 'selected' : ''; ?>>Sakit</option>
+                                    <option value="Urusan Keluarga / Darurat" <?= (($currentInput['alasan_kategori'] ?? '') === 'Urusan Keluarga / Darurat') ? 'selected' : ''; ?>>Urusan Keluarga / Darurat</option>
+                                    <option value="Lupa / Kelalaian" <?= (($currentInput['alasan_kategori'] ?? '') === 'Lupa / Kelalaian') ? 'selected' : ''; ?>>Lupa / Kelalaian</option>
+                                    <option value="Lainnya" <?= (($currentInput['alasan_kategori'] ?? '') === 'Lainnya') ? 'selected' : ''; ?>>Lainnya</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="tanggal_surat">Tanggal Surat <span class="text-danger">*</span></label>
+                                <input type="date"
+                                       class="form-control"
+                                       id="tanggal_surat"
+                                       name="tanggal_surat"
+                                       value="<?= esc((string) ($currentInput['tanggal_surat'] ?? date('Y-m-d'))); ?>"
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="alasan_detail">Detail Alasan / Penjelasan <span class="text-danger">*</span></label>
+                        <textarea class="form-control"
+                                  id="alasan_detail"
+                                  name="alasan_detail"
+                                  rows="3"
+                                  required
+                                  placeholder="Jelaskan secara rinci alasan lupa/tidak presensi"><?= esc((string) ($currentInput['alasan_detail'] ?? '')); ?></textarea>
+                    </div>
+                </div>
             </div>
 
             <div class="form-group">
@@ -110,4 +240,105 @@
         </form>
     </div>
 </div>
+
+<script>
+$(document).ready(function() {
+    // Initialize Select2 if available
+    if ($.fn.select2) {
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+    }
+
+    // Auto-calculate day when date changes
+    $(document).on('change', 'input[name*="[tanggal]"]', function() {
+        var dateVal = $(this).val();
+        var $row = $(this).closest('tr');
+        var $hariSelect = $row.find('select[name*="[hari]"]');
+
+        if (dateVal && $hariSelect.length) {
+            var days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            var date = new Date(dateVal);
+            var dayName = days[date.getDay()];
+            $hariSelect.val(dayName).trigger('change');
+        }
+    });
+
+    // Add new row
+    $('#btn-add-entry').click(function() {
+        var $tbody = $('#entriesBody');
+        var newIndex = $tbody.find('tr').length;
+        var newRow = `
+        <tr class="table-entry" data-index="${newIndex}">
+            <td class="text-center align-middle">${newIndex + 1}</td>
+            <td>
+                <input type="date" class="form-control form-control-sm" name="entries[${newIndex}][tanggal]" required>
+            </td>
+            <td>
+                <select class="form-control form-control-sm" name="entries[${newIndex}][hari]" required>
+                    <option value="">--</option>
+                    <option value="Senin">Senin</option>
+                    <option value="Selasa">Selasa</option>
+                    <option value="Rabu">Rabu</option>
+                    <option value="Kamis">Kamis</option>
+                    <option value="Jumat">Jumat</option>
+                    <option value="Sabtu">Sabtu</option>
+                    <option value="Minggu">Minggu</option>
+                </select>
+            </td>
+            <td>
+                <input type="time" class="form-control form-control-sm" name="entries[${newIndex}][jam]" required>
+            </td>
+            <td>
+                <select class="form-control form-control-sm" name="entries[${newIndex}][jenis]" required>
+                    <option value="">-- Pilih --</option>
+                    <option value="Masuk">Absen Masuk</option>
+                    <option value="Pulang">Absen Pulang</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" class="form-control form-control-sm" name="entries[${newIndex}][keterangan]" placeholder="Contoh: Terlambat karena macet">
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm btn-remove-entry" title="Hapus Baris">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+        `;
+        $tbody.append(newRow);
+        renumberRows();
+    });
+
+    // Remove row
+    $(document).on('click', '.btn-remove-entry', function() {
+        var $tbody = $('#entriesBody');
+        if ($tbody.find('tr').length > 1) {
+            $(this).closest('tr').remove();
+            renumberRows();
+        } else {
+            alert('Minimal harus ada 1 baris data!');
+        }
+    });
+
+    function renumberRows() {
+        $('#entriesBody tr').each(function(index) {
+            $(this).find('td:first').text(index + 1);
+            $(this).attr('data-index', index);
+            $(this).find('input, select').each(function() {
+                var name = $(this).attr('name');
+                if (name) {
+                    $(this).attr('name', name.replace(/\[\d+\]/, '[' + index + ']'));
+                }
+            });
+        });
+
+        // Show/hide remove button based on row count
+        var $tbody = $('#entriesBody');
+        $tbody.find('.btn-remove-entry').removeClass('d-none');
+        $tbody.find('tr:first .btn-remove-entry').addClass('d-none');
+    }
+});
+</script>
 <?= $this->endSection(); ?>

@@ -10,12 +10,16 @@ class LupaAbsenModel extends Model
     protected $primaryKey = 'id';
     protected $returnType = 'array';
     protected $allowedFields = [
-        'nip',
         'nama',
-        'tanggal_absen',
-        'jenis_absen',
-        'jam_absen',
-        'keterangan',
+        'nip',
+        'jabatan_id',
+        'jabatan',
+        'unit_kerja',
+        'tanggal_surat',
+        'nomor_surat',
+        'alasan_kategori',
+        'alasan_detail',
+        'entries_json',
         'status',
         'approved_by',
         'approved_at',

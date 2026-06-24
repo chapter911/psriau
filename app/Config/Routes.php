@@ -212,6 +212,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('surat/lupa-absen', 'Admin\\LupaAbsen::index');
 	$routes->match(['get', 'post'], 'surat/lupa-absen/buat', 'Admin\\LupaAbsen::buat');
 	$routes->match(['get', 'post'], 'surat/lupa-absen/(:num)/ubah', 'Admin\\LupaAbsen::ubah/$1');
+	$routes->get('surat/lupa-absen/(:num)/pdf', 'Admin\\LupaAbsen::pdf/$1');
 	$routes->get('surat/lupa-absen/(:num)/hapus', 'Admin\\LupaAbsen::hapus/$1');
 	$routes->get('surat/lupa-absen/(:num)/approve', 'Admin\\LupaAbsen::approve/$1');
 	$routes->get('surat/lupa-absen/(:num)/reject', 'Admin\\LupaAbsen::reject/$1');

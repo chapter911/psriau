@@ -32,6 +32,24 @@
         bottom: 50% !important;
         transform: translateY(50%) !important;
     }
+
+    .doc-btn-group {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        justify-content: center;
+    }
+
+    .doc-btn-group .btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        font-size: 14px;
+    }
 </style>
 
 <div class="card">
@@ -65,10 +83,10 @@
                         <th style="width: 50px;">No</th>
                         <th>NIP</th>
                         <th>Nama</th>
-                        <th>Tanggal Absen</th>
-                        <th>Jenis Absen</th>
-                        <th>Jam Absen</th>
+                        <th>Tanggal Pengajuan</th>
+                        <th>Jumlah Entri</th>
                         <th>Status</th>
+                        <th>Dokumen</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -123,10 +141,10 @@ $(document).ready(function() {
             },
             { data: 'nip', className: 'text-center' },
             { data: 'nama' },
-            { data: 'tanggal_formatted', className: 'text-center' },
-            { data: 'jenis_formatted', className: 'text-center' },
-            { data: 'jam_formatted', className: 'text-center' },
+            { data: 'tanggal_surat_formatted', className: 'text-center' },
+            { data: 'jumlah_entri', className: 'text-center' },
             { data: 'status_badge', className: 'text-center', sortable: false, searchable: false },
+            { data: 'dokumen_html', className: 'text-center', sortable: false, searchable: false },
             { data: 'action_html', className: 'text-center', sortable: false, searchable: false }
         ],
         order: [[0, 'desc']],
