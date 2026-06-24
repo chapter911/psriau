@@ -85,12 +85,12 @@
     </div>
 </div>
 
-<!-- Modal Buat/Edit Lupa Absen -->
-<div class="modal fade" id="modalLupaAbsen" tabindex="-1" role="dialog" aria-labelledby="modalLupaAbsenTitle" aria-hidden="true">
+<!-- Modal Buat Lupa Absen -->
+<div class="modal fade" id="modalLupaAbsen" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="modalLupaAbsenTitle">Ajukan Lupa Absen</h5>
+                <h5 class="modal-title">Ajukan Lupa Absen</h5>
                 <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
             <form method="POST" action="<?= site_url('admin/surat/lupa-absen/buat'); ?>" id="formLupaAbsen">
@@ -125,14 +125,14 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="alasan">Alasan <span class="text-danger">*</span></label>
-                        <select class="form-control" id="alasan_template" onchange="applyTemplate()">
+                        <label for="alasan_detail">Alasan <span class="text-danger">*</span></label>
+                        <select class="form-control" id="alasan_select" onchange="handleAlasanSelect()">
                             <option value="">-- Pilih Template --</option>
                             <option value="Lupa Absen Masuk">Lupa Absen Masuk</option>
                             <option value="Lupa Absen Pulang">Lupa Absen Pulang</option>
                             <option value="Terlambat Masuk">Terlambat Masuk</option>
                             <option value="Terlambat Pulang">Terlambat Pulang</option>
-                            <option value="custom">Ketik Manual...</option>
+                            <option value="__custom__">Ketik Manual...</option>
                         </select>
                         <input type="text" class="form-control mt-2" id="alasan_custom" name="alasan_detail" placeholder="Ketik alasan di sini..." style="display: none;">
                     </div>
@@ -170,45 +170,48 @@
 <script>
 function openCreateModal() {
     // Reset form
-    $('#formLupaAbsen')[0].reset();
-    $('#alasan_template').val('').trigger('change');
-    $('#alasan_custom').hide();
+    document.getElementById('formLupaAbsen').reset();
+    document.getElementById('alasan_custom').style.display = 'none';
+    document.getElementById('alasan_select').value = '';
 
     // Set default date to today
     var today = new Date().toISOString().split('T')[0];
-    $('#tanggal_absen').val(today);
+    document.getElementById('tanggal_absen').value = today;
 
     // Show modal
     $('#modalLupaAbsen').modal('show');
 }
 
 function updateAlasanTemplate() {
-    var jenis = $('#jenis_absen').val();
+    var jenis = document.getElementById('jenis_absen').value;
+    var select = document.getElementById('alasan_select');
 
     if (jenis === 'Masuk') {
-        $('#alasan_template').val('Lupa Absen Masuk');
+        select.value = 'Lupa Absen Masuk';
     } else if (jenis === 'Pulang') {
-        $('#alasan_template').val('Lupa Absen Pulang');
+        select.value = 'Lupa Absen Pulang';
     }
 
-    applyTemplate();
+    handleAlasanSelect();
 }
 
-function applyTemplate() {
-    var template = $('#alasan_template').val();
+function handleAlasanSelect() {
+    var select = document.getElementById('alasan_select');
+    var customInput = document.getElementById('alasan_custom');
 
-    if (template === 'custom') {
-        $('#alasan_custom').show().focus();
-        $('#alasan_custom').attr('name', 'alasan_detail');
-    } else if (template) {
-        $('#alasan_custom').hide();
-        // Create or update hidden input
-        if ($('#hidden_alasan').length) {
-            $('#hidden_alasan').val(template);
-        } else {
-            $('#formLupaAbsen').append('<input type="hidden" id="hidden_alasan" name="alasan_detail" value="">');
-            $('#hidden_alasan').val(template);
-        }
+    if (select.value === '__custom__') {
+        customInput.style.display = 'block';
+        customInput.required = true;
+        customInput.focus();
+    } else if (select.value !== '') {
+        // Set the hidden field directly
+        customInput.name = 'alasan_detail';
+        customInput.value = select.value;
+        customInput.style.display = 'none';
+        customInput.required = false;
+    } else {
+        customInput.style.display = 'none';
+        customInput.required = false;
     }
 }
 
@@ -218,11 +221,7 @@ $(document).ready(function() {
         serverSide: true,
         ajax: {
             url: '<?= site_url('admin/surat/lupa-absen'); ?>',
-            type: 'GET',
-            error: function(xhr, error, thrown) {
-                console.error('DataTable error:', thrown);
-                alert('Gagal memuat data. Silakan refresh halaman.');
-            }
+            type: 'GET'
         },
         columns: [
             {
@@ -238,7 +237,7 @@ $(document).ready(function() {
             { data: 'nama' },
             { data: 'tanggal_formatted', className: 'text-center' },
             { data: 'jenis_formatted', className: 'text-center' },
-            { data: 'alasan_detail', className: 'text-left' },
+            { data: 'alasan_detail' },
             { data: 'status_badge', className: 'text-center', sortable: false, searchable: false },
             { data: 'dokumen_html', className: 'text-center', sortable: false, searchable: false },
             { data: 'action_html', className: 'text-center', sortable: false, searchable: false }
