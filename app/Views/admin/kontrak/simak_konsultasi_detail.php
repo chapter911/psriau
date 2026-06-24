@@ -1556,6 +1556,26 @@
                                         text: 'File berhasil disalin ke Google Drive proyek.',
                                         footer: '<a href="' + response.new_url + '" target="_blank">Buka file</a>'
                                     });
+                                } else if (response.keep_original) {
+                                    // Copy failed but we keep the original link - mark as copied
+                                    var row = button.closest('tr');
+                                    if (row) {
+                                        var badge = row.querySelector('.badge-warning');
+                                        if (badge) {
+                                            badge.classList.remove('badge-warning');
+                                            badge.classList.add('badge-success');
+                                            badge.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                                        }
+                                    }
+                                    // Remove button
+                                    button.remove();
+                                    // Show info with original link
+                                    Swal.fire({
+                                        icon: 'info',
+                                        title: 'Link Asli Digunakan',
+                                        text: 'File disimpan dengan link Google Drive asli. Link asli akan tetap dapat diakses.',
+                                        footer: '<a href="' + response.original_url + '" target="_blank">Buka Link Asli</a>'
+                                    });
                                 } else {
                                     button.disabled = false;
                                     button.innerHTML = '<i class="fas fa-copy"></i>';

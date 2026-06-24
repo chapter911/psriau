@@ -4564,7 +4564,8 @@ class Kontrak extends BaseController
     }
 
     /**
-     * Salin dokumen dari Google Drive user ke Google Drive proyek
+     * Update dokumen dari Google Drive user ke Google Drive proyek (dengan copy file)
+     * CATATAN: Metode ini memerlukan file dapat diakses publik. Jika gagal, gunakan link langsung.
      */
     public function salinDokumenGoogleDrive(int $dokumenId): \CodeIgniter\HTTP\Response
     {
@@ -4602,36 +4603,44 @@ class Kontrak extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Link Google Drive source tidak ditemukan.']);
         }
 
+        // Coba download dan upload ulang
         try {
             // Extract file ID dari source URL
             $fileId = $this->extractGoogleDriveFileId($googleDriveSourceUrl);
             if (!$fileId) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Tidak dapat membaca file ID dari link.']);
+                // Jika tidak bisa extract file ID, skip copy
+                log_message('info', 'salinDokumenGoogleDrive - Cannot extract file ID, keeping original link');
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Tidak dapat mengakses file secara langsung. Link asli akan tetap digunakan.',
+                    'keep_original' => true,
+                    'original_url' => $googleDriveSourceUrl
+                ]);
             }
 
             // Get project folder ID dari config
             $projectFolderId = env('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
             if (empty($projectFolderId)) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Google Drive folder ID proyek belum dikonfigurasi.']);
+                // Jika tidak ada folder ID, skip copy
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Google Drive folder ID proyek belum dikonfigurasi. Link asli akan tetap digunakan.',
+                    'keep_original' => true,
+                    'original_url' => $googleDriveSourceUrl
+                ]);
             }
 
             // Download file dari Google Drive user (public/shared link)
             $fileContent = $this->downloadGoogleDriveFile($fileId, $googleDriveSourceUrl);
 
             if (!$fileContent) {
-                log_message('error', 'salinDokumenGoogleDrive - Failed to download file: ' . $googleDriveSourceUrl);
-
-                // Provide more helpful error message based on what we know
-                $debugInfo = [
-                    'file_id' => $fileId,
-                    'source_url' => $googleDriveSourceUrl,
-                    'mime_detected' => isset($fileContent['mimeType']) ? $fileContent['mimeType'] : 'N/A',
-                ];
-
+                // Jika download gagal, skip copy dan gunakan link asli
+                log_message('info', 'salinDokumenGoogleDrive - Download failed, keeping original link: ' . $googleDriveSourceUrl);
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Gagal download file dari Google Drive. Pastikan file sudah diset ke "Anyone with the link" dan "Viewer" (bukan "Commenter" atau "Editor").',
-                    'debug' => $debugInfo
+                    'message' => 'File tidak dapat diakses secara otomatis. Link asli akan tetap digunakan. Anda bisa mengakses file langsung melalui link asli.',
+                    'keep_original' => true,
+                    'original_url' => $googleDriveSourceUrl
                 ]);
             }
 
@@ -4642,14 +4651,23 @@ class Kontrak extends BaseController
                 : 'dokumen_' . $dokumenId . '_' . date('YmdHis');
 
             // Load Google Drive service
-            $driveService = null;
             if (!class_exists('\App\Libraries\GoogleDriveService')) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Google Drive service tidak tersedia.']);
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Google Drive service tidak tersedia. Link asli akan tetap digunakan.',
+                    'keep_original' => true,
+                    'original_url' => $googleDriveSourceUrl
+                ]);
             }
 
             $driveService = new \App\Libraries\GoogleDriveService();
             if (!$driveService->isReady()) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Google Drive service belum dikonfigurasi.']);
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Google Drive service belum dikonfigurasi. Link asli akan tetap digunakan.',
+                    'keep_original' => true,
+                    'original_url' => $googleDriveSourceUrl
+                ]);
             }
 
             // Upload ke Google Drive proyek
@@ -4685,11 +4703,23 @@ class Kontrak extends BaseController
                 ]);
             }
 
-            return $this->response->setJSON(['success' => false, 'message' => 'Gagal upload ke Google Drive proyek.']);
+            // Jika upload gagal, gunakan link asli
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Upload ke Google Drive proyek gagal. Link asli akan tetap digunakan.',
+                'keep_original' => true,
+                'original_url' => $googleDriveSourceUrl
+            ]);
 
         } catch (\Exception $e) {
             log_message('error', 'salinDokumenGoogleDrive - Exception: ' . $e->getMessage());
-            return $this->response->setJSON(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+            // Jika error, gunakan link asli
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Terjadi error: ' . $e->getMessage() . '. Link asli akan tetap digunakan.',
+                'keep_original' => true,
+                'original_url' => $googleDriveSourceUrl
+            ]);
         }
     }
 
@@ -4698,10 +4728,7 @@ class Kontrak extends BaseController
      */
     private function downloadGoogleDriveFile(string $fileId, string $url): ?array
     {
-        // Method 1: Try direct download URL with curl
-        $downloadUrl = "https://drive.google.com/uc?export=download&id={$fileId}";
-
-        // First, get cookies by visiting the main page
+        // First get cookies from the file page
         $cookieFile = tempnam(sys_get_temp_dir(), 'gd_cookies_');
 
         // First request - visit the file page to get cookies
@@ -4720,6 +4747,7 @@ class Kontrak extends BaseController
         curl_close($ch);
 
         // Second request - download the file with cookies
+        $downloadUrl = "https://drive.google.com/uc?export=download&id={$fileId}";
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $downloadUrl,
@@ -4744,52 +4772,26 @@ class Kontrak extends BaseController
             return null;
         }
 
-        log_message('info', 'downloadGoogleDriveFile - HTTP ' . $httpCode . ', Content length: ' . strlen($content) . ', First 200 chars: ' . substr($content, 0, 200));
-
-        // Check if we got a confirmation page (Google Drive shows warning for large/suspicious files)
+        // Check if we got HTML (confirmation page or error)
         if ($httpCode == 200 && strlen($content) > 0) {
-            // Check if response is HTML (confirmation page or error)
             $isHtml = preg_match('/<html/i', substr($content, 0, 500));
 
-            if ($isHtml) {
-                // Check if it's a confirmation page (contains "confirm" or "download anyway")
-                if (stripos($content, 'confirm') !== false || stripos($content, 'download anyway') !== false || strlen($content) < 50000) {
-                    log_message('info', 'downloadGoogleDriveFile - Got confirmation page, trying with confirm parameter');
-                    $result = $this->downloadLargeGoogleDriveFile($fileId);
-                    if ($result) {
-                        return $result;
-                    }
-                }
-
-                // Check for specific error messages
-                if (stripos($content, 'access denied') !== false || stripos($content, 'not found') !== false || stripos($content, 'Quota exceeded') !== false) {
-                    log_message('error', 'downloadGoogleDriveFile - Access denied, file not found, or quota exceeded');
-                    return null;
-                }
-
-                // If HTML but short, might be error page
-                if (strlen($content) < 10000) {
-                    log_message('error', 'downloadGoogleDriveFile - Got short HTML response, file may not be accessible');
-                    return null;
-                }
+            if ($isHtml && strlen($content) < 100000) {
+                // Got HTML - file might not be accessible
+                return null;
             }
 
             // Try to detect mime type
             $finfo = new finfo(FILEINFO_MIME_TYPE);
             $mimeType = $finfo->buffer($content);
 
-            // If mime type is HTML, we got an error page
-            if (strpos($mimeType, 'text/html') !== false) {
-                // Check if it's actually an error
-                if (strlen($content) < 50000) {
-                    log_message('error', 'downloadGoogleDriveFile - Got HTML mime type, file not accessible');
-                    return null;
-                }
+            // If mime type is HTML, it's an error page
+            if (strpos($mimeType, 'text/html') !== false && strlen($content) < 100000) {
+                return null;
             }
 
             // Success - got actual file content
             if (strlen($content) > 0 && strpos($mimeType, 'text/html') === false) {
-                log_message('info', 'downloadGoogleDriveFile - Success, mime: ' . $mimeType . ', size: ' . strlen($content));
                 return [
                     'content' => $content,
                     'mimeType' => $mimeType,
@@ -4797,98 +4799,6 @@ class Kontrak extends BaseController
             }
         }
 
-        log_message('error', 'downloadGoogleDriveFile - Failed to download, HTTP: ' . $httpCode);
-        return null;
-    }
-
-    /**
-     * Download file besar dari Google Drive yang memerlukan konfirmasi
-     */
-    private function downloadLargeGoogleDriveFile(string $fileId): ?array
-    {
-        $confirmUrl = "https://drive.google.com/uc?export=download&confirm=t&id={$fileId}";
-
-        // First get cookies from the file page
-        $cookieFile = tempnam(sys_get_temp_dir(), 'gd_cookies_');
-
-        // First request - visit the file page to get cookies
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => "https://drive.google.com/file/d/{$fileId}/view",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            CURLOPT_COOKIEJAR => $cookieFile,
-            CURLOPT_COOKIEFILE => $cookieFile,
-        ]);
-        curl_exec($ch);
-        curl_close($ch);
-
-        // Second request - download with confirm
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $confirmUrl,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_TIMEOUT => 300,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            CURLOPT_COOKIEFILE => $cookieFile,
-        ]);
-
-        $content = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        // Cleanup cookie file
-        @unlink($cookieFile);
-
-        if ($error || $httpCode != 200) {
-            log_message('error', 'downloadLargeGoogleDriveFile - Curl error or HTTP error: ' . $error . ' / ' . $httpCode);
-            return null;
-        }
-
-        log_message('info', 'downloadLargeGoogleDriveFile - HTTP ' . $httpCode . ', Content length: ' . strlen($content) . ', First 200 chars: ' . substr($content, 0, 200));
-
-        // Check if response is HTML
-        $isHtml = preg_match('/<html/i', substr($content, 0, 500));
-
-        if ($isHtml) {
-            // Still got HTML - file might not be accessible
-            if (stripos($content, 'confirm') !== false && strlen($content) < 10000) {
-                log_message('error', 'downloadLargeGoogleDriveFile - Still got confirmation page');
-                return null;
-            }
-
-            if (strlen($content) < 50000) {
-                log_message('error', 'downloadLargeGoogleDriveFile - Got short HTML response');
-                return null;
-            }
-        }
-
-        // Try to detect mime type
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mimeType = $finfo->buffer($content);
-
-        // If mime type is HTML, we got an error page
-        if (strpos($mimeType, 'text/html') !== false && strlen($content) < 50000) {
-            log_message('error', 'downloadLargeGoogleDriveFile - Got HTML mime type');
-            return null;
-        }
-
-        // Success - got actual file content
-        if (strlen($content) > 0) {
-            log_message('info', 'downloadLargeGoogleDriveFile - Success, mime: ' . $mimeType . ', size: ' . strlen($content));
-            return [
-                'content' => $content,
-                'mimeType' => $mimeType,
-            ];
-        }
-
-        log_message('error', 'downloadLargeGoogleDriveFile - Content empty');
         return null;
     }
 
