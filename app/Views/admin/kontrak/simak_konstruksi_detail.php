@@ -588,7 +588,22 @@
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <?= $keterangan !== '' ? esc($keterangan) : '<span class="text-muted">-</span>'; ?>
+                                                    <?php
+                                                    $isGdriveLink = is_array($finalDokumen) && ($finalDokumen['is_google_drive_link'] ?? false);
+                                                    $isCopied = is_array($finalDokumen) && ($finalDokumen['copied_to_project_drive'] ?? false);
+                                                    $gdriveSourceUrl = is_array($finalDokumen) ? ($finalDokumen['google_drive_source_url'] ?? '') : '';
+                                                    $keteranganFinal = $keterangan;
+                                                    if ($isGdriveLink) {
+                                                        if (!$isCopied) {
+                                                            $keteranganFinal .= $keteranganFinal ? ' ' : '';
+                                                            $keteranganFinal .= '<span class="badge badge-warning ml-1" title="Link dari Google Drive User"><i class="fas fa-link"></i> GD Link</span>';
+                                                        } else {
+                                                            $keteranganFinal .= $keteranganFinal ? ' ' : '';
+                                                            $keteranganFinal .= '<span class="badge badge-success ml-1" title="Sudah disalin ke GD Proyek"><i class="fas fa-check"></i> Disalin</span>';
+                                                        }
+                                                    }
+                                                    echo $keteranganFinal ?: '<span class="text-muted">-</span>';
+                                                    ?>
                                                 </td>
                                                 <td>
                                                     <?= $pic !== '' ? esc($pic) : '<span class="text-muted">-</span>'; ?>
@@ -615,32 +630,23 @@
                                                     $gdriveSourceUrl = is_array($finalDokumen) ? ($finalDokumen['google_drive_source_url'] ?? '') : '';
                                                     ?>
                                                     <?php if ($finalHasFile): ?>
-                                                        <?php if ($isGdriveLink): ?>
-                                                            <?php if (!$isCopied): ?>
-                                                                <span class="badge badge-warning" title="Dari Google Drive User">
-                                                                    <i class="fas fa-link"></i> GD Link
-                                                                </span>
-                                                                <button
-                                                                    type="button"
-                                                                    class="btn btn-success btn-sm ml-1 btn-salin-gdrive"
-                                                                    data-id="<?= (int) ($finalDokumen['id'] ?? 0); ?>"
-                                                                    data-url="<?= esc($gdriveSourceUrl); ?>"
-                                                                    data-file="<?= esc((string) ($finalDokumen['file_original_name'] ?? 'Dokumen')); ?>"
-                                                                    title="Salin ke Google Drive Proyek"
-                                                                ><i class="fas fa-copy"></i> Salin</button>
-                                                            <?php else: ?>
-                                                                <span class="badge badge-success" title="Sudah disalin ke GD Proyek">
-                                                                    <i class="fas fa-check"></i> Disalin
-                                                                </span>
-                                                            <?php endif; ?>
-                                                        <?php endif; ?>
                                                         <a
                                                             href="<?= site_url('admin/kontrak/simak/konstruksi/verifikasi-dokumen/' . (int) ($finalDokumen['id'] ?? 0)); ?>"
                                                             target="_blank"
                                                             rel="noopener"
                                                             class="btn btn-info btn-sm"
                                                             title="Lihat dokumen final: <?= esc((string) ($finalDokumen['file_original_name'] ?? 'Dokumen')); ?>"
-                                                        ><i class="fas fa-eye"></i> Lihat</a>
+                                                        ><i class="fas fa-eye"></i></a>
+                                                        <?php if ($isGdriveLink && !$isCopied): ?>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-success btn-sm btn-salin-gdrive"
+                                                            data-id="<?= (int) ($finalDokumen['id'] ?? 0); ?>"
+                                                            data-url="<?= esc($gdriveSourceUrl); ?>"
+                                                            data-file="<?= esc((string) ($finalDokumen['file_original_name'] ?? 'Dokumen')); ?>"
+                                                            title="Salin ke Google Drive Proyek"
+                                                        ><i class="fas fa-copy"></i></button>
+                                                        <?php endif; ?>
                                                     <?php elseif (is_array($finalDokumen)): ?>
                                                         <span class="badge badge-danger">Tidak Ada</span>
                                                     <?php else: ?>
@@ -900,6 +906,7 @@
 (function () {
     'use strict';
 
+    var baseUrl = '<?= rtrim(site_url(), '/'); ?>';
     var dokumenHistoryByRow = <?= json_encode($dokumenByRow ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     var buttons = document.querySelectorAll('.js-open-upload-modal');
     var historyButtons = document.querySelectorAll('.js-open-history-modal');
@@ -1535,12 +1542,15 @@
                     try {
                         var response = JSON.parse(xhr.responseText);
                         if (response.success) {
-                            // Update badge
-                            var badge = button.closest('td').querySelector('.badge-warning');
-                            if (badge) {
-                                badge.classList.remove('badge-warning');
-                                badge.classList.add('badge-success');
-                                badge.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                            // Update badge in Keterangan column (find the row first, then the badge-warning)
+                            var row = button.closest('tr');
+                            if (row) {
+                                var badge = row.querySelector('.badge-warning');
+                                if (badge) {
+                                    badge.classList.remove('badge-warning');
+                                    badge.classList.add('badge-success');
+                                    badge.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                                }
                             }
                             // Remove button
                             button.remove();
@@ -1557,7 +1567,7 @@
                             }
                         } else {
                             button.disabled = false;
-                            button.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                            button.innerHTML = '<i class="fas fa-copy"></i>';
                             if (typeof Swal !== 'undefined') {
                                 Swal.fire({
                                     icon: 'error',
@@ -1575,14 +1585,14 @@
                     }
                 } else {
                     button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                    button.innerHTML = '<i class="fas fa-copy"></i>';
                     alert('Server error: ' + xhr.status);
                 }
             };
 
             xhr.onerror = function() {
                 button.disabled = false;
-                button.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                button.innerHTML = '<i class="fas fa-copy"></i>';
                 alert('Network error');
             };
 
