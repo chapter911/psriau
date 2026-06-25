@@ -239,14 +239,14 @@
                             <td class="text-right"><?= esc(angka_ribuan_id($item['nilai_kontrak'] ?? 0)); ?></td>
                             <td class="text-right"><?= esc(angka_ribuan_id($item['nilai_add_on'] ?? 0)); ?></td>
                             <td class="text-right font-weight-bold"><?= esc(angka_ribuan_id($item['total_kontrak'] ?? 0)); ?></td>
-                                <td>
-                                    <div class="small">
-                                        <div><strong>Lengkap:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_lengkap_persen'] ?? 0), 2, ',', '.')); ?>%</div>
-                                        <div><strong>Belum Sesuai:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_sesuai_persen'] ?? 0), 2, ',', '.')); ?>%</div>
-                                        <div><strong>Menunggu Verifikasi:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_verifikasi_persen'] ?? 0), 2, ',', '.')); ?>%</div>
-                                        <div><strong>Belum ada:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_ada_persen'] ?? 0), 2, ',', '.')); ?>%</div>
-                                    </div>
-                                </td>
+                            <td>
+                                <div class="small">
+                                    <div><strong>Lengkap:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_lengkap_persen'] ?? 0), 2, ',', '.')); ?>%</div>
+                                    <div><strong>Belum Sesuai:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_sesuai_persen'] ?? 0), 2, ',', '.')); ?>%</div>
+                                    <div><strong>Menunggu Verifikasi:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_verifikasi_persen'] ?? 0), 2, ',', '.')); ?>%</div>
+                                    <div><strong>Belum ada:</strong> <?= esc(number_format((float) ($item['kelengkapan_dokumen_belum_ada_persen'] ?? 0), 2, ',', '.')); ?>%</div>
+                                </div>
+                            </td>
                             <td class="text-center">
                                 <?php if (($can_share ?? false) === true): ?>
                                     <button
