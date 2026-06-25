@@ -773,7 +773,7 @@
                                                     <?php endif; ?>
                                                 </td>
                                             <?php else: ?>
-                                                <td colspan="16"></td>
+                                                <td colspan="17"></td>
                                             <?php endif; ?>
                                         </tr>
                                     <?php endforeach; ?>
