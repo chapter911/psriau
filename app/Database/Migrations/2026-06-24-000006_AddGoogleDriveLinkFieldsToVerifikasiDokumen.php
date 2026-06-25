@@ -49,12 +49,21 @@ class AddGoogleDriveLinkFieldsToVerifikasiDokumen extends Migration
             ],
         ];
 
-        $this->forge->addColumn('trn_kontrak_simak_verifikasi_dokumen', $fields);
+        $this->forge->addColumn('trn_kontrak_simak_konsultasi_verifikasi_dokumen', $fields);
+        $this->forge->addColumn('trn_kontrak_simak_konstruksi_verifikasi_dokumen', $fields);
     }
 
     public function down()
     {
-        $this->forge->dropColumn('trn_kontrak_simak_verifikasi_dokumen', [
+        $this->forge->dropColumn('trn_kontrak_simak_konsultasi_verifikasi_dokumen', [
+            'is_google_drive_link',
+            'google_drive_source_url',
+            'copied_to_project_drive',
+            'copied_to_project_drive_at',
+            'copied_to_project_drive_by',
+            'original_file_id',
+        ]);
+        $this->forge->dropColumn('trn_kontrak_simak_konstruksi_verifikasi_dokumen', [
             'is_google_drive_link',
             'google_drive_source_url',
             'copied_to_project_drive',
