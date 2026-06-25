@@ -590,26 +590,6 @@
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
                                                 </td>
-                                                    <td class="<?= esc($statusCellClass); ?>">
-                                                        <?php if ($kelengkapan === 'ada'): ?>
-                                                            <span class="badge badge-success">Ada</span>
-                                                        <?php elseif ($kelengkapan === 'tidak'): ?>
-                                                            <span class="badge badge-danger">Tidak</span>
-                                                        <?php else: ?>
-                                                            <span class="text-muted">-</span>
-                                                        <?php endif; ?>
-                                                        <div style="margin-top:6px;">
-                                                            <?php if ($resolvedStatus === 'lengkap'): ?>
-                                                                <span class="badge badge-success">Lengkap</span>
-                                                            <?php elseif ($resolvedStatus === 'belum_sesuai'): ?>
-                                                                <span class="badge badge-warning">Belum Sesuai</span>
-                                                            <?php elseif ($resolvedStatus === 'belum_verifikasi'): ?>
-                                                                <span class="badge badge-info">Menunggu Verifikasi</span>
-                                                            <?php else: ?>
-                                                                <span class="badge badge-danger">Belum Ada</span>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    </td>
                                                 <td>
                                                     <?php if ($hasDraft): ?>
                                                         <?php if ($draftVerifikasi === 'sesuai'): ?>
@@ -773,7 +753,7 @@
                                                     <?php endif; ?>
                                                 </td>
                                             <?php else: ?>
-                                                <td colspan="17"></td>
+                                                <td colspan="15"></td>
                                             <?php endif; ?>
                                         </tr>
                                     <?php endforeach; ?>
