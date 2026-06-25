@@ -984,9 +984,9 @@
                 btnOpenCurrentShareLink.disabled = currentShareUrl === '';
             }
 
-            // Tampilkan/sembunyikan tombol Salin berdasarkan apakah ada dokumen Google Drive
+            // Tampilkan/sembunyikan tombol Salin jika ada link aktif
             if (btnCopyCurrentShareLink) {
-                if (currentShareUrl !== '' && hasGdrive) {
+                if (currentShareUrl !== '') {
                     btnCopyCurrentShareLink.style.display = '';
                 } else {
                     btnCopyCurrentShareLink.style.display = 'none';
@@ -1083,8 +1083,8 @@
 
                 refreshSimakTable();
 
-                // Tampilkan kembali tombol Salin setelah link baru dibuat (hanya jika ada Google Drive documents)
-                if (btnCopyCurrentShareLink && selectedShareConfig.hasGdrive) {
+                // Tampilkan kembali tombol Salin setelah link baru dibuat
+                if (btnCopyCurrentShareLink) {
                     btnCopyCurrentShareLink.style.display = '';
                 }
             }).fail(function (xhr) {
@@ -1118,8 +1118,8 @@
             var messageTemplate = "Mohon untuk melengkapi Kelengkapan Dokumen Administrasi.\n\nNomor Kontrak : " + nomorKontrak + "\nNama Paket : " + namaPaket + "\n\nLengkap : " + formatPercent(selectedShareConfig.statusLengkap) + "\nBelum Sesuai : " + formatPercent(selectedShareConfig.statusBelumSesuai) + "\nMenunggu Verifikasi : " + formatPercent(selectedShareConfig.statusBelumVerifikasi) + "\nBelum Ada : " + formatPercent(selectedShareConfig.statusBelumAda) + "\n\nLink Dokumen :\n" + url;
 
             var onSuccess = function () {
-                // Update link dengan link dokumen terbaru (hanya untuk Google Drive)
-                if (shareCurrentLinkInput && selectedShareConfig && selectedShareConfig.shareUrl && selectedShareConfig.hasGdrive) {
+                // Update link dengan link dokumen terbaru
+                if (shareCurrentLinkInput && selectedShareConfig && selectedShareConfig.shareUrl) {
                     shareCurrentLinkInput.value = selectedShareConfig.shareUrl;
                 }
 
