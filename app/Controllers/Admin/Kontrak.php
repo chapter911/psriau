@@ -976,7 +976,7 @@ class Kontrak extends BaseController
         }
 
         $builder = $db->table($tableMain . ' s')
-            ->select('s.*, COALESCE(soa.nilai_add_on, 0) AS nilai_add_on, (s.nilai_kontrak + COALESCE(soa.nilai_add_on, 0)) AS total_kontrak')
+            ->select('s.*, COALESCE(soa.nilai_add_on, 0) AS nilai_add_on, (s.nilai_kontrak + COALESCE(soa.nilai_add_on, 0)) AS total_kontrak, mp.nama_paket AS paket_nama, mp.singkatan_paket AS paket_singkatan')
             ->orderBy('s.id', 'DESC');
 
         if ($db->tableExists($tableAddOn)) {
@@ -986,6 +986,11 @@ class Kontrak extends BaseController
             $this->applyNotDeletedWhere($summaryBuilder, $tableAddOn);
 
             $builder->join('(' . $summaryBuilder->getCompiledSelect() . ') soa', 'soa.simak_id = s.id', 'left', false);
+        }
+
+        // Join with mst_paket to get paket name
+        if ($db->tableExists('mst_paket')) {
+            $builder->join('mst_paket mp', 'mp.id = s.paket_id', 'left');
         }
 
         $this->applyNotDeletedWhere($builder, $tableMain, 's.deleted_at');

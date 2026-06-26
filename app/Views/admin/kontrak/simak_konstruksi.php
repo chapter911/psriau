@@ -92,10 +92,11 @@
                     <tr style="white-space: nowrap;">
                         <th class="text-center">#</th>
                         <th>Nomor Kontrak</th>
+                        <th>Paket</th>
                         <th>Nama Paket</th>
                         <th>Tahun Anggaran</th>
                         <th>PPK</th>
-                        
+
                         <th class="text-right">Nilai Kontrak (Rp)</th>
                         <th class="text-right">Nilai Add On (Rp)</th>
                         <th class="text-right">Total Kontrak (Rp)</th>
@@ -137,6 +138,16 @@
                         >
                             <td class="text-center"><?= esc((string) $i++); ?></td>
                             <td><?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?></td>
+                            <td>
+                                <?php
+                                    $paketNama = $item['paket_nama'] ?? '';
+                                    $paketSingkat = $item['paket_singkatan'] ?? '';
+                                    if ($paketNama): ?>
+                                        <?= esc($paketNama); ?><?= $paketSingkat ? ' (' . esc($paketSingkat) . ')' : ''; ?>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                            </td>
                             <td><?= esc((string) ($item['nama_paket'] ?? '-')); ?></td>
                             <td><?= esc((string) ($item['tahun_anggaran'] ?? '-')); ?></td>
                             <td>
@@ -318,23 +329,25 @@
 
                     <h6 class="mb-3">Data Pekerjaan Konstruksi</h6>
 
-                    <div class="form-group">
-                        <label for="paket_id">Pemaketan <span class="text-danger">*</span></label>
-                        <select class="form-control" id="paket_id" name="paket_id" required>
-                            <option value="">-- Pilih Pemaketan --</option>
-                            <?php foreach (($paketOptions ?? []) as $paket): ?>
-                                <option value="<?= esc((string) ($paket['id'] ?? '')); ?>">
-                                    <?= esc((string) ($paket['nama_paket'] ?? '')); ?><?= ! empty($paket['singkatan_paket']) ? ' (' . esc((string) $paket['singkatan_paket']) . ')' : ''; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="nama_paket">Nama Paket</label>
                             <input type="text" class="form-control" id="nama_paket" name="nama_paket" maxlength="255" required>
                         </div>
+                        <div class="form-group col-md-6">
+                            <label for="paket_id">Pemaketan <span class="text-danger">*</span></label>
+                            <select class="form-control" id="paket_id" name="paket_id" required>
+                                <option value="">-- Pilih Pemaketan --</option>
+                                <?php foreach (($paketOptions ?? []) as $paket): ?>
+                                    <option value="<?= esc((string) ($paket['id'] ?? '')); ?>">
+                                        <?= esc((string) ($paket['nama_paket'] ?? '')); ?><?= ! empty($paket['singkatan_paket']) ? ' (' . esc((string) $paket['singkatan_paket']) . ')' : ''; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="tahun_anggaran">Tahun Anggaran</label>
                             <select class="form-control" id="tahun_anggaran" name="tahun_anggaran" required>
@@ -473,23 +486,25 @@
 
                             <h6 class="mb-3">Data Pekerjaan Konstruksi</h6>
 
-                            <div class="form-group">
-                                <label for="paket_id_edit">Pemaketan <span class="text-danger">*</span></label>
-                                <select class="form-control" id="paket_id_edit" name="paket_id" required>
-                                    <option value="">-- Pilih Pemaketan --</option>
-                                    <?php foreach (($paketOptions ?? []) as $paket): ?>
-                                        <option value="<?= esc((string) ($paket['id'] ?? '')); ?>">
-                                            <?= esc((string) ($paket['nama_paket'] ?? '')); ?><?= ! empty($paket['singkatan_paket']) ? ' (' . esc((string) $paket['singkatan_paket']) . ')' : ''; ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="nama_paket_edit">Nama Paket</label>
                                     <input type="text" class="form-control" id="nama_paket_edit" name="nama_paket" maxlength="255" required>
                                 </div>
+                                <div class="form-group col-md-6">
+                                    <label for="paket_id_edit">Pemaketan <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="paket_id_edit" name="paket_id" required>
+                                        <option value="">-- Pilih Pemaketan --</option>
+                                        <?php foreach (($paketOptions ?? []) as $paket): ?>
+                                            <option value="<?= esc((string) ($paket['id'] ?? '')); ?>">
+                                                <?= esc((string) ($paket['nama_paket'] ?? '')); ?><?= ! empty($paket['singkatan_paket']) ? ' (' . esc((string) $paket['singkatan_paket']) . ')' : ''; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="tahun_anggaran_edit">Tahun Anggaran</label>
                                     <select class="form-control" id="tahun_anggaran_edit" name="tahun_anggaran" required>
@@ -1338,6 +1353,9 @@
             }
             if (paketIdEdit) {
                 paketIdEdit.value = this.getAttribute('data-paket-id') || '';
+                if (window.jQuery && window.jQuery.fn) {
+                    window.jQuery(paketIdEdit).trigger('change.select2');
+                }
             }
             if (ppkSelectorEdit) {
                 ppkSelectorEdit.value = this.getAttribute('data-ppk-nip') || '';
