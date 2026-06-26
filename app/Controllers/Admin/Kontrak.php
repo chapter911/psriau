@@ -4653,42 +4653,30 @@ class Kontrak extends BaseController
         $headerUraian = $sectionKey !== '' ? $sectionKey : 'Lainnya';
         $uraianLengkap = ($displayNo !== '' ? $displayNo . ' - ' : '') . ($itemUraian !== '' ? $itemUraian : $originalFileName);
 
-        // Get atau buat folder di Google Drive + upload placeholder file
-        $projectFolderId = env('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
-        $folderUrl = null;
-        $fileUrl = null;
+        // Build display path
         $folderPathDisplay = "SIMAK > {$namaPaket} > {$penyedia} > {$headerUraian} > {$uraianLengkap}";
 
-        if (!empty($projectFolderId)) {
-            log_message('info', "salinDokumenGoogleDrive - Attempting to create folder and upload placeholder: projectFolderId={$projectFolderId}, namaPaket={$namaPaket}, penyedia={$penyedia}, headerUraian={$headerUraian}, uraianLengkap={$uraianLengkap}");
+        // Get atau buat folder di Google Drive + upload placeholder file
+        $folderUrl = null;
+        $fileUrl = null;
 
-            // Try to use GoogleDriveService to create folders and upload placeholder
-            if (class_exists('\App\Libraries\GoogleDriveService')) {
-                $driveService = new \App\Libraries\GoogleDriveService();
-                if ($driveService->isReady()) {
-                    $result = $driveService->uploadPlaceholderToSimakFolder(
-                        $projectFolderId,
-                        $namaPaket,
-                        $penyedia,
-                        $headerUraian,
-                        $uraianLengkap
-                    );
+        log_message('info', "salinDokumenGoogleDrive - Attempting to create folder and upload placeholder. Path: {$folderPathDisplay}");
 
-                    if ($result) {
-                        $folderUrl = $result['folder_url'];
-                        $fileUrl = $result['file_url'];
-                        $folderPathDisplay = str_replace('SIMAK/', 'SIMAK > ', str_replace('/', ' > ', $result['folder_path']));
-                        log_message('info', "salinDokumenGoogleDrive - SUCCESS: Folder created and placeholder uploaded. URL: {$folderUrl}");
-                    } else {
-                        $lastError = $driveService->getLastError();
-                        log_message('error', "salinDokumenGoogleDrive - GoogleDriveService failed: " . ($lastError ?? 'Unknown error'));
-                    }
-                } else {
-                    log_message('error', "salinDokumenGoogleDrive - GoogleDriveService is not ready");
-                }
-            }
+        // Use the helper method that supports both OAuth and Service Account
+        $result = $this->uploadPlaceholderToSimakFolder(
+            $namaPaket,
+            $penyedia,
+            $headerUraian,
+            $uraianLengkap
+        );
+
+        if ($result !== null) {
+            $folderUrl = $result['folder_url'];
+            $fileUrl = $result['file_url'];
+            $folderPathDisplay = str_replace('SIMAK/', 'SIMAK > ', str_replace('/', ' > ', $result['folder_path']));
+            log_message('info', "salinDokumenGoogleDrive - SUCCESS: Folder created and placeholder uploaded. URL: {$folderUrl}");
         } else {
-            log_message('warning', "salinDokumenGoogleDrive - GOOGLE_DRIVE_UPLOAD_FOLDER_ID is not set in environment");
+            log_message('error', "salinDokumenGoogleDrive - Failed to create folder/upload placeholder. Using fallback.");
         }
 
         // Fallback: buka folder utama jika gagal
@@ -4709,6 +4697,174 @@ class Kontrak extends BaseController
             'file_name' => $originalFileName,
             'message' => 'Folder Google Drive berhasil dibuka. Upload file secara manual, lalu masukkan link baru.'
         ]);
+    }
+
+    /**
+     * Upload placeholder file to SIMAK folder structure.
+     * Follows the same pattern as uploadFileToGoogleDriveStructured.
+     *
+     * @param string $namaPaket Package name
+     * @param string $penyedia Provider name
+     * @param string $headerUraian Header/Section key
+     * @param string $uraian Uraian text
+     * @return array|null ['folder_url' => string, 'file_url' => string, 'folder_path' => string]|null
+     */
+    private function uploadPlaceholderToSimakFolder(
+        string $namaPaket,
+        string $penyedia,
+        string $headerUraian,
+        string $uraian
+    ): ?array {
+        $driveFolderId = trim((string) getenv('GOOGLE_DRIVE_UPLOAD_FOLDER_ID'));
+        $oauthClientId = trim((string) getenv('GOOGLE_CLIENT_ID'));
+        $oauthClientSecret = trim((string) getenv('GOOGLE_CLIENT_SECRET'));
+
+        log_message('info', 'uploadPlaceholderToSimakFolder - Entry. OAuth: ' . ($oauthClientId !== '' ? 'YES' : 'NO') . ', FolderId: ' . ($driveFolderId !== '' ? 'YES' : 'NO'));
+
+        // Build folder path string for reference
+        $folderPath = 'SIMAK/' . $namaPaket . '/' . $penyedia . '/' . $headerUraian . '/' . $uraian;
+
+        // Prepare placeholder content
+        $placeholderFileName = 'UPLOAD DISINI - ' . $uraian . '.txt';
+        $placeholderContent = "UPLOAD FILE ANDA DI SINI\n\nFolder: " . $folderPath . "\n\nPetunjuk:\n1. Upload file dokumen Anda ke folder ini\n2. Pastikan akses file: \"Anyone with the link\" -> \"Viewer\"\n3. Copy link file dan paste di sistem SIMAK\n\nDokumen yang diharapkan:\n- " . $uraian . "\n";
+
+        // Try OAuth first (for personal Gmail accounts)
+        if ($oauthClientId !== '' && $oauthClientSecret !== '' && $driveFolderId !== '') {
+            log_message('info', 'uploadPlaceholderToSimakFolder - Attempting OAuth flow');
+            $result = $this->uploadPlaceholderToSimakFolderOAuth(
+                $placeholderContent,
+                $placeholderFileName,
+                $driveFolderId,
+                $namaPaket,
+                $penyedia,
+                $headerUraian,
+                $uraian
+            );
+            if ($result !== null) {
+                return $result;
+            }
+            log_message('error', 'uploadPlaceholderToSimakFolder - OAuth flow failed, will try Service Account');
+        }
+
+        // Fallback to Service Account
+        $serviceAccountPath = trim((string) getenv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH'));
+        log_message('info', 'uploadPlaceholderToSimakFolder - Trying Service Account. Path: ' . ($serviceAccountPath !== '' ? 'EXISTS' : 'EMPTY'));
+
+        if ($serviceAccountPath === '' || $driveFolderId === '') {
+            log_message('error', 'uploadPlaceholderToSimakFolder - Google Drive config missing.');
+            return null;
+        }
+
+        if (!class_exists('\App\Libraries\GoogleDriveService')) {
+            log_message('error', 'uploadPlaceholderToSimakFolder - GoogleDriveService class not found.');
+            return null;
+        }
+
+        $gdrive = new \App\Libraries\GoogleDriveService();
+        if (!$gdrive->isReady()) {
+            $reason = $gdrive->getLastError() ?: 'Service not ready.';
+            log_message('error', 'uploadPlaceholderToSimakFolder - GoogleDriveService is not ready. Reason: ' . $reason);
+            return null;
+        }
+
+        // Build structured folder path using Service Account
+        $targetFolderId = $gdrive->buildSimakFolderPath(
+            $driveFolderId,
+            $namaPaket,
+            $penyedia,
+            $headerUraian,
+            $uraian
+        );
+
+        if ($targetFolderId === null) {
+            log_message('error', 'uploadPlaceholderToSimakFolder - Failed to build folder path for: ' . $folderPath);
+            return null;
+        }
+
+        // Upload placeholder file
+        $webViewLink = $gdrive->uploadFileContentToFolder(
+            $placeholderContent,
+            $placeholderFileName,
+            'text/plain',
+            $targetFolderId
+        );
+
+        if ($webViewLink !== null) {
+            log_message('info', 'uploadPlaceholderToSimakFolder - SUCCESS: Uploaded placeholder to: ' . $folderPath);
+            return [
+                'folder_url' => "https://drive.google.com/drive/folders/{$targetFolderId}",
+                'file_url' => $webViewLink,
+                'folder_path' => $folderPath,
+            ];
+        }
+
+        $reason = $gdrive->getLastError() ?: 'Unknown error';
+        log_message('error', 'uploadPlaceholderToSimakFolder - Upload failed: ' . $reason);
+        return null;
+    }
+
+    /**
+     * Upload placeholder file using OAuth flow.
+     *
+     * @param string $content File content
+     * @param string $fileName File name
+     * @param string $driveFolderId Root folder ID
+     * @param string $namaPaket Package name
+     * @param string $penyedia Provider name
+     * @param string $headerUraian Header key
+     * @param string $uraian Uraian text
+     * @return array|null
+     */
+    private function uploadPlaceholderToSimakFolderOAuth(
+        string $content,
+        string $fileName,
+        string $driveFolderId,
+        string $namaPaket,
+        string $penyedia,
+        string $headerUraian,
+        string $uraian
+    ): ?array {
+        if (!class_exists('\App\Libraries\GoogleOAuthService')) {
+            log_message('error', 'uploadPlaceholderToSimakFolderOAuth - GoogleOAuthService class not found.');
+            return null;
+        }
+
+        $oauth = new \App\Libraries\GoogleOAuthService();
+        $isAuth = $oauth->isAuthenticated();
+
+        if (!$isAuth) {
+            log_message('error', 'uploadPlaceholderToSimakFolderOAuth - Not authenticated with Google.');
+            return null;
+        }
+
+        // Build structured folder path
+        $targetFolderId = $oauth->buildSimakFolderPath(
+            $driveFolderId,
+            $namaPaket,
+            $penyedia,
+            $headerUraian,
+            $uraian
+        );
+
+        if ($targetFolderId === null) {
+            log_message('error', 'uploadPlaceholderToSimakFolderOAuth - Failed to build folder path');
+            return null;
+        }
+
+        // Upload placeholder file
+        $webViewLink = $oauth->uploadFileContentToFolder($content, $fileName, 'text/plain', $targetFolderId);
+
+        if ($webViewLink !== null) {
+            log_message('info', 'uploadPlaceholderToSimakFolderOAuth - SUCCESS: Uploaded placeholder via OAuth');
+            return [
+                'folder_url' => "https://drive.google.com/drive/folders/{$targetFolderId}",
+                'file_url' => $webViewLink,
+                'folder_path' => 'SIMAK/' . $namaPaket . '/' . $penyedia . '/' . $headerUraian . '/' . $uraian,
+            ];
+        }
+
+        log_message('error', 'uploadPlaceholderToSimakFolderOAuth - Upload failed: ' . ($oauth->getLastError() ?: 'Unknown'));
+        return null;
     }
 
     /**
