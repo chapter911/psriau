@@ -1541,14 +1541,23 @@
                             // Open Google Drive folder in new tab
                             window.open(response.folder_url, '_blank');
 
+                            // Get folder path for display
+                            var folderPath = response.folder_path || 'folder tujuan';
+                            var fileNameToUpload = fileName || 'file yang diperlukan';
+
                             // Show dialog to enter new link
                             Swal.fire({
                                 icon: 'info',
                                 title: 'Upload Manual',
                                 html: '<p>Folder Google Drive telah dibuka di tab baru.</p>' +
+                                      '<div class="alert alert-info text-left">' +
+                                      '<strong><i class="fas fa-folder-open"></i> Path Folder:</strong><br>' +
+                                      '<code style="font-size: 12px;">' + folderPath + '</code>' +
+                                      '</div>' +
                                       '<p><strong>Langkah:</strong></p>' +
-                                      '<ol style="text-align: left;">' +
-                                      '<li>Upload file <strong>' + fileName + '</strong> ke folder tersebut</li>' +
+                                      '<ol style="text-align: left; font-size: 14px;">' +
+                                      '<li>Buka folder <strong>' + folderPath.split(' > ').pop() + '</strong> di tab baru</li>' +
+                                      '<li>Upload file <strong>' + fileNameToUpload + '</strong> ke folder tersebut</li>' +
                                       '<li>Klik kanan file → "Get link"</li>' +
                                       '<li>Pilih "Anyone with the link" → "Viewer"</li>' +
                                       '<li>Salin link dan paste di bawah</li>' +
@@ -1557,6 +1566,7 @@
                                       '<label for="new_gdrive_link"><strong>Link Google Drive Baru:</strong></label>' +
                                       '<input type="url" class="form-control" id="new_gdrive_link" placeholder="https://drive.google.com/file/d/...">' +
                                       '</div>',
+                                width: '600px',
                                 showCancelButton: true,
                                 confirmButtonText: 'Simpan Link',
                                 cancelButtonText: 'Batal',

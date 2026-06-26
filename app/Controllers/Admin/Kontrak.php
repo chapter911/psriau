@@ -4564,6 +4564,25 @@ class Kontrak extends BaseController
     }
 
     /**
+     * Get template item by row number
+     *
+     * @param int $simakId SIMAK ID to determine type (konstruksi/konsultasi)
+     * @param int $rowNo Row number to find
+     * @param string $type 'konstruksi' or 'konsultasi'
+     * @return array|null Template item or null if not found
+     */
+    private function getTemplateItemByRowNo(int $simakId, int $rowNo, string $type = 'konstruksi'): ?array
+    {
+        $templateItems = $this->getSimakTemplateItems($type, true);
+        foreach ($templateItems as $item) {
+            if ((int) ($item['row_no'] ?? 0) === $rowNo) {
+                return $item;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Salin dokumen dari Google Drive user ke Google Drive proyek
      * Flow: Buka folder GD proyek → User upload manual → User paste link baru
      */
@@ -4576,14 +4595,23 @@ class Kontrak extends BaseController
 
         $db = db_connect();
 
-        if (!$db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
+        // Tentukan tipe berdasarkan URL (konstruksi atau konsultasi)
+        $currentUri = service('uri');
+        $type = $currentUri->getSegment(4) ?: 'konstruksi'; // Default ke konstruksi
+        $type = ($type === 'konsultasi') ? 'konsultasi' : 'konstruksi';
+
+        $tableName = ($type === 'konsultasi')
+            ? 'trn_kontrak_simak_konsultasi_verifikasi_dokumen'
+            : 'trn_kontrak_simak_verifikasi_dokumen';
+
+        if (!$db->tableExists($tableName)) {
             return $this->response->setJSON(['success' => false, 'message' => 'Tabel dokumen tidak tersedia.']);
         }
 
-        $builder = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+        $builder = $db->table($tableName)
             ->select('*')
             ->where('id', $dokumenId);
-        $this->applyNotDeletedWhere($builder, 'trn_kontrak_simak_verifikasi_dokumen');
+        $this->applyNotDeletedWhere($builder, $tableName);
         $dokumen = $builder->get()->getRowArray();
 
         if (!$dokumen) {
@@ -4610,25 +4638,39 @@ class Kontrak extends BaseController
         $rowNo = (int) ($dokumen['row_no'] ?? 0);
 
         // Get package info untuk folder path
-        $packageInfo = $this->getSimakPackageInfo($simakId, 'konstruksi');
+        $packageInfo = $this->getSimakPackageInfo($simakId, $type);
         $namaPaket = ($packageInfo['nama_paket'] ?? '') ?: 'Tanpa Paket';
         $penyedia = ($packageInfo['penyedia'] ?? '') ?: 'Tanpa Penyedia';
-        $kode = (string) ($dokumen['kode'] ?? '');
+
+        // Get template item untuk header dan uraian
+        $templateItem = $this->getTemplateItemByRowNo($simakId, $rowNo, $type);
+        $sectionKey = $templateItem ? ($templateItem['section_key'] ?? '') : '';
+        $sectionTitle = $templateItem ? ($templateItem['section_title'] ?? '') : '';
+        $displayNo = $templateItem ? ($templateItem['display_no'] ?? '') : ($dokumen['kode'] ?? '');
+        $itemUraian = $templateItem ? ($templateItem['uraian'] ?? '') : '';
+
+        // Build header uraian (section key/title) dan uraian lengkap untuk folder
+        $headerUraian = $sectionKey !== '' ? $sectionKey : 'Lainnya';
+        $uraianLengkap = ($displayNo !== '' ? $displayNo . ' - ' : '') . ($itemUraian !== '' ? $itemUraian : $originalFileName);
 
         // Get atau buat folder di Google Drive
         $projectFolderId = env('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
 
         if (!empty($projectFolderId)) {
-            $folderUrl = $this->getOrCreateSimakFolderUrl($projectFolderId, $namaPaket, $penyedia, $kode);
+            $folderUrl = $this->getOrCreateSimakFolderUrl($projectFolderId, $namaPaket, $penyedia, $headerUraian, $uraianLengkap);
         } else {
             // Fallback: buka folder utama
             $folderUrl = env('GOOGLE_DRIVE_UPLOAD_FOLDER_URL') ?: 'https://drive.google.com';
         }
 
+        // Build folder path untuk ditampilkan ke user
+        $folderPathDisplay = "SIMAK > {$namaPaket} > {$penyedia} > {$headerUraian} > {$uraianLengkap}";
+
         return $this->response->setJSON([
             'success' => true,
             'ready_for_upload' => true,
             'folder_url' => $folderUrl,
+            'folder_path' => $folderPathDisplay,
             'dokumen_id' => $dokumenId,
             'source_url' => $googleDriveSourceUrl,
             'file_name' => $originalFileName,
@@ -4659,14 +4701,23 @@ class Kontrak extends BaseController
 
         $db = db_connect();
 
-        if (!$db->tableExists('trn_kontrak_simak_verifikasi_dokumen')) {
+        // Tentukan tipe berdasarkan URL (konstruksi atau konsultasi)
+        $currentUri = service('uri');
+        $type = $currentUri->getSegment(4) ?: 'konstruksi';
+        $type = ($type === 'konsultasi') ? 'konsultasi' : 'konstruksi';
+
+        $tableName = ($type === 'konsultasi')
+            ? 'trn_kontrak_simak_konsultasi_verifikasi_dokumen'
+            : 'trn_kontrak_simak_verifikasi_dokumen';
+
+        if (!$db->tableExists($tableName)) {
             return $this->response->setJSON(['success' => false, 'message' => 'Tabel dokumen tidak tersedia.']);
         }
 
-        $builder = $db->table('trn_kontrak_simak_verifikasi_dokumen')
+        $builder = $db->table($tableName)
             ->select('*')
             ->where('id', $dokumenId);
-        $this->applyNotDeletedWhere($builder, 'trn_kontrak_simak_verifikasi_dokumen');
+        $this->applyNotDeletedWhere($builder, $tableName);
         $dokumen = $builder->get()->getRowArray();
 
         if (!$dokumen) {
@@ -4677,7 +4728,7 @@ class Kontrak extends BaseController
         $now = date('Y-m-d H:i:s');
         $actorId = (int) (session()->get('user_id') ?? 0);
 
-        $db->table('trn_kontrak_simak_verifikasi_dokumen')
+        $db->table($tableName)
             ->where('id', $dokumenId)
             ->update([
                 'copied_to_project_drive' => 1,
@@ -4686,7 +4737,7 @@ class Kontrak extends BaseController
                 'file_relative_path' => $newLink,
             ]);
 
-        log_message('info', 'simpanLinkBaruGoogleDrive - SUCCESS: Dokumen ID ' . $dokumenId . ' link diupdate ke: ' . $newLink);
+        log_message('info', 'simpanLinkBaruGoogleDrive - SUCCESS: Dokumen ID ' . $dokumenId . ' (type: ' . $type . ') link diupdate ke: ' . $newLink);
 
         return $this->response->setJSON([
             'success' => true,
@@ -4697,8 +4748,15 @@ class Kontrak extends BaseController
 
     /**
      * Get or create SIMAK folder and return URL
+     *
+     * @param string $rootFolderId Root folder ID
+     * @param string $namaPaket Package name
+     * @param string $penyedia Provider name
+     * @param string $headerUraian Header/Section key (e.g., "A", "B", "1")
+     * @param string $uraian Full uraian text for final folder (e.g., "1 - Surat Penugasan")
+     * @return string Folder URL
      */
-    private function getOrCreateSimakFolderUrl(string $rootFolderId, string $namaPaket, string $penyedia, string $kode): string
+    private function getOrCreateSimakFolderUrl(string $rootFolderId, string $namaPaket, string $penyedia, string $headerUraian, string $uraian): string
     {
         if (!class_exists('\App\Libraries\GoogleDriveService')) {
             return env('GOOGLE_DRIVE_UPLOAD_FOLDER_URL') ?: 'https://drive.google.com';
@@ -4710,8 +4768,9 @@ class Kontrak extends BaseController
                 return env('GOOGLE_DRIVE_UPLOAD_FOLDER_URL') ?: 'https://drive.google.com';
             }
 
-            // Build folder path
-            $folderId = $driveService->buildSimakFolderPath($rootFolderId, $namaPaket, $penyedia, $kode, '');
+            // Build folder path with correct hierarchy
+            // [Root] / SIMAK / [Nama Paket] / [Penyedia] / [Header Uraian] / [Uraian]
+            $folderId = $driveService->buildSimakFolderPath($rootFolderId, $namaPaket, $penyedia, $headerUraian, $uraian);
 
             if ($folderId) {
                 return "https://drive.google.com/drive/folders/{$folderId}";
