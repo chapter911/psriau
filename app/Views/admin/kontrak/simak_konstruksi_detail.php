@@ -1544,15 +1544,16 @@
                             // Get folder path for display
                             var folderPath = response.folder_path || 'folder tujuan';
                             var fileNameToUpload = fileName || 'file yang diperlukan';
+                            var folderUrl = response.folder_url || '#';
 
                             // Show dialog to enter new link
                             Swal.fire({
                                 icon: 'info',
                                 title: 'Upload Manual',
-                                html: '<p>Folder Google Drive telah dibuka di tab baru.</p>' +
-                                      '<div class="alert alert-info text-left">' +
-                                      '<strong><i class="fas fa-folder-open"></i> Path Folder:</strong><br>' +
-                                      '<code style="font-size: 12px;">' + folderPath + '</code>' +
+                                html: '<p class="mb-2">Folder Google Drive telah dibuka di tab baru.</p>' +
+                                      '<div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px; margin-bottom: 15px; text-align: left;">' +
+                                      '<strong><i class="fas fa-folder-open text-warning"></i> Path Folder:</strong><br>' +
+                                      '<span style="color: #000; font-size: 13px; font-weight: 500;">' + folderPath + '</span>' +
                                       '</div>' +
                                       '<p><strong>Langkah:</strong></p>' +
                                       '<ol style="text-align: left; font-size: 14px;">' +

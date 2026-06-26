@@ -4655,16 +4655,29 @@ class Kontrak extends BaseController
 
         // Get atau buat folder di Google Drive
         $projectFolderId = env('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
+        $folderUrl = null;
+        $folderCreationLog = '';
 
         if (!empty($projectFolderId)) {
+            // Log untuk debug
+            log_message('info', "salinDokumenGoogleDrive - Folder creation attempt: projectFolderId={$projectFolderId}, namaPaket={$namaPaket}, penyedia={$penyedia}, headerUraian={$headerUraian}, uraianLengkap={$uraianLengkap}");
+
             $folderUrl = $this->getOrCreateSimakFolderUrl($projectFolderId, $namaPaket, $penyedia, $headerUraian, $uraianLengkap);
+            $folderCreationLog = "Folder URL returned: {$folderUrl}";
         } else {
-            // Fallback: buka folder utama
+            $folderCreationLog = "projectFolderId is empty, using fallback";
+            log_message('warning', "salinDokumenGoogleDrive - GOOGLE_DRIVE_UPLOAD_FOLDER_ID is not set in environment");
+        }
+
+        // Fallback: buka folder utama jika folderUrl kosong atau masih default
+        if (empty($folderUrl) || $folderUrl === 'https://drive.google.com') {
             $folderUrl = env('GOOGLE_DRIVE_UPLOAD_FOLDER_URL') ?: 'https://drive.google.com';
         }
 
         // Build folder path untuk ditampilkan ke user
         $folderPathDisplay = "SIMAK > {$namaPaket} > {$penyedia} > {$headerUraian} > {$uraianLengkap}";
+
+        log_message('info', "salinDokumenGoogleDrive - Final folderUrl: {$folderUrl}, path: {$folderPathDisplay}");
 
         return $this->response->setJSON([
             'success' => true,
