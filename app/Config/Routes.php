@@ -154,6 +154,9 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/jabatan/import', 'Admin\\Jabatan::import');
 	$routes->post('master/jabatan/(:num)/ubah', 'Admin\\Jabatan::edit/$1');
 	$routes->post('master/jabatan/(:num)/status', 'Admin\\Jabatan::updateStatus/$1');
+	$routes->get('master/paket', 'Admin\\Paket::index');
+	$routes->post('master/paket/tambah', 'Admin\\Paket::create');
+	$routes->post('master/paket/(:num)/ubah', 'Admin\\Paket::edit/$1');
 	$routes->get('master/wilayah', 'Admin\\MasterWilayah::wilayah');
 	$routes->get('master/provinsi', 'Admin\\MasterWilayah::provinsi');
 	$routes->post('master/provinsi/tambah', 'Admin\\MasterWilayah::provinsiCreate');
