@@ -75,13 +75,12 @@
         font-size: 1rem;
     }
 
-    .metric-icon.events { background: linear-gradient(145deg, #1689a5, #0f6f87); }
-    .metric-icon.instagram { background: linear-gradient(145deg, #e74366, #c82476); }
-    .metric-icon.slide { background: linear-gradient(145deg, #f59f00, #ea7300); }
     .metric-icon.school { background: linear-gradient(145deg, #7c3aed, #6d28d9); }
     .metric-icon.survey { background: linear-gradient(145deg, #059669, #047857); }
     .metric-icon.laporan { background: linear-gradient(145deg, #2563eb, #1d4ed8); }
     .metric-icon.wilayah { background: linear-gradient(145deg, #dc2626, #b91c1c); }
+    .metric-icon.konstruksi { background: linear-gradient(145deg, #f59e0b, #d97706); }
+    .metric-icon.konsultasi { background: linear-gradient(145deg, #8b5cf6, #7c3aed); }
 
     .metric-value {
         font-size: 1.7rem;
@@ -268,64 +267,6 @@
         </div>
     </div>
 
-    <!-- Content Section -->
-    <h5 class="mt-3" style="color: #1f2f43; font-weight: 700;">📰 Konten & Media</h5>
-    <div class="row">
-        <div class="col-lg-4 col-md-6 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Total Acara</strong>
-                        <span class="metric-icon events"><i class="fas fa-calendar-days"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) $eventCount); ?></div>
-                    <p class="metric-label">Konten acara yang dikelola.</p>
-                    <div class="metric-split">
-                        <span><i class="fas fa-circle text-success mr-1"></i> <?= esc((string) $eventPublishedCount); ?></span>
-                        <span><i class="fas fa-circle text-secondary mr-1"></i> <?= esc((string) $eventDraftCount); ?></span>
-                    </div>
-                    <a href="<?= site_url('/admin/acara'); ?>" class="btn btn-sm btn-outline-primary mt-3">Lihat Acara</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4 col-md-6 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Feed Instagram</strong>
-                        <span class="metric-icon instagram"><i class="fab fa-instagram"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) $articleCount); ?></div>
-                    <p class="metric-label">Post Instagram tersimpan.</p>
-                    <div class="metric-split">
-                        <span><i class="fas fa-circle text-success mr-1"></i> <?= esc((string) $articlePublishedCount); ?></span>
-                        <span><i class="fas fa-circle text-secondary mr-1"></i> <?= esc((string) $articleDraftCount); ?></span>
-                    </div>
-                    <a href="<?= site_url('/admin/berita'); ?>" class="btn btn-sm btn-outline-primary mt-3">Lihat Feed</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4 col-md-12 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Slide Homepage</strong>
-                        <span class="metric-icon slide"><i class="fas fa-images"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) $slideCount); ?></div>
-                    <p class="metric-label">Jumlah slide hero.</p>
-                    <div class="metric-split">
-                        <span><i class="fas fa-circle text-success mr-1"></i> <?= esc((string) $slideActiveCount); ?></span>
-                        <span><i class="fas fa-circle text-secondary mr-1"></i> <?= esc((string) max(0, $slideCount - $slideActiveCount)); ?></span>
-                    </div>
-                    <a href="<?= site_url('/admin/pengaturan-home'); ?>" class="btn btn-sm btn-outline-primary mt-3">Atur Home</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- School & Survey Section -->
     <h5 class="mt-3" style="color: #1f2f43; font-weight: 700;">🏫 Data Sekolah & Survei</h5>
     <div class="row">
@@ -426,6 +367,114 @@
         </div>
     </div>
 
+    <!-- SIMAK Konstruksi Chart -->
+    <h5 class="mt-3" style="color: #1f2f43; font-weight: 700;">🏗️ Kelengkapan Dokumen Konstruksi</h5>
+    <div class="row">
+        <div class="col-lg-6 col-md-6 col-12 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <div class="metric-top">
+                        <strong>Total Konstruksi</strong>
+                        <span class="metric-icon konstruksi"><i class="fas fa-hard-hat"></i></span>
+                    </div>
+                    <div class="metric-value"><?= esc((string) array_sum($konstruksiChartData['ada'] ?? []) + array_sum($konstruksiChartData['tidak_ada'] ?? [])); ?></div>
+                    <p class="metric-label">Paket dengan data verifikasi.</p>
+                    <a href="<?= site_url('/admin/kontrak/simak/konstruksi'); ?>" class="btn btn-sm btn-outline-primary mt-3">Lihat Detail</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-12 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <div class="metric-top">
+                        <strong>Dokumen Ada</strong>
+                        <span class="metric-icon konstruksi"><i class="fas fa-check-circle"></i></span>
+                    </div>
+                    <div class="metric-value"><?= esc((string) array_sum($konstruksiChartData['ada'] ?? [])); ?></div>
+                    <p class="metric-label">Total dokumen terverifikasi.</p>
+                    <div class="metric-split">
+                        <span><i class="fas fa-circle mr-1" style="color: #22c55e;"></i> Ada</span>
+                        <span><i class="fas fa-circle mr-1" style="color: #ef4444;"></i> <?= esc((string) array_sum($konstruksiChartData['tidak_ada'] ?? [])); ?> Tidak Ada</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12 col-12 mb-3">
+            <div class="card panel-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Grafik Kelengkapan Dokumen Konstruksi</h3>
+                </div>
+                <div class="card-body">
+                    <?php if (!empty($konstruksiChartData['labels'])): ?>
+                        <div class="chart-container" style="height: 350px;">
+                            <canvas id="konstruksiChart"></canvas>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle mr-2"></i> Belum ada data kelengkapan dokumen konstruksi.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIMAK Konsultasi Chart -->
+    <h5 class="mt-3" style="color: #1f2f43; font-weight: 700;">📋 Kelengkapan Dokumen Konsultasi</h5>
+    <div class="row">
+        <div class="col-lg-6 col-md-6 col-12 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <div class="metric-top">
+                        <strong>Total Konsultasi</strong>
+                        <span class="metric-icon konsultasi"><i class="fas fa-clipboard-list"></i></span>
+                    </div>
+                    <div class="metric-value"><?= esc((string) array_sum($konsultasiChartData['ada'] ?? []) + array_sum($konsultasiChartData['tidak_ada'] ?? [])); ?></div>
+                    <p class="metric-label">Paket dengan data verifikasi.</p>
+                    <a href="<?= site_url('/admin/kontrak/simak/konsultasi'); ?>" class="btn btn-sm btn-outline-primary mt-3">Lihat Detail</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-12 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <div class="metric-top">
+                        <strong>Dokumen Ada</strong>
+                        <span class="metric-icon konsultasi"><i class="fas fa-check-circle"></i></span>
+                    </div>
+                    <div class="metric-value"><?= esc((string) array_sum($konsultasiChartData['ada'] ?? [])); ?></div>
+                    <p class="metric-label">Total dokumen terverifikasi.</p>
+                    <div class="metric-split">
+                        <span><i class="fas fa-circle mr-1" style="color: #22c55e;"></i> Ada</span>
+                        <span><i class="fas fa-circle mr-1" style="color: #ef4444;"></i> <?= esc((string) array_sum($konsultasiChartData['tidak_ada'] ?? [])); ?> Tidak Ada</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12 col-12 mb-3">
+            <div class="card panel-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Grafik Kelengkapan Dokumen Konsultasi</h3>
+                </div>
+                <div class="card-body">
+                    <?php if (!empty($konsultasiChartData['labels'])): ?>
+                        <div class="chart-container" style="height: 350px;">
+                            <canvas id="konsultasiChart"></canvas>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle mr-2"></i> Belum ada data kelengkapan dokumen konsultasi.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Quick Actions & Checklist -->
     <div class="row mt-3">
         <div class="col-lg-7 col-12 mb-3">
@@ -510,6 +559,146 @@ document.addEventListener('DOMContentLoaded', function() {
                     plugins: {
                         legend: {
                             position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: { size: 12, weight: '600' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    <?php endif; ?>
+
+    <?php if (!empty($konstruksiChartData['labels'])): ?>
+        // Konstruksi Bar Chart
+        const konstruksiData = <?= json_encode([
+            'labels' => $konstruksiChartData['labels'] ?? [],
+            'ada' => $konstruksiChartData['ada'] ?? [],
+            'tidak_ada' => $konstruksiChartData['tidak_ada'] ?? [],
+        ]); ?>;
+
+        const ctxKonstruksi = document.getElementById('konstruksiChart');
+        if (ctxKonstruksi) {
+            new Chart(ctxKonstruksi, {
+                type: 'bar',
+                data: {
+                    labels: konstruksiData.labels,
+                    datasets: [
+                        {
+                            label: 'Ada',
+                            data: konstruksiData.ada,
+                            backgroundColor: '#22c55e',
+                            borderColor: '#16a34a',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Tidak Ada / Belum Sesuai',
+                            data: konstruksiData.tidak_ada,
+                            backgroundColor: '#ef4444',
+                            borderColor: '#dc2626',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0,
+                                font: { size: 11 }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                font: { size: 11 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Jumlah Dokumen',
+                                font: { size: 12, weight: '600' }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: { size: 12, weight: '600' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    <?php endif; ?>
+
+    <?php if (!empty($konsultasiChartData['labels'])): ?>
+        // Konsultasi Bar Chart
+        const konsultasiData = <?= json_encode([
+            'labels' => $konsultasiChartData['labels'] ?? [],
+            'ada' => $konsultasiChartData['ada'] ?? [],
+            'tidak_ada' => $konsultasiChartData['tidak_ada'] ?? [],
+        ]); ?>;
+
+        const ctxKonsultasi = document.getElementById('konsultasiChart');
+        if (ctxKonsultasi) {
+            new Chart(ctxKonsultasi, {
+                type: 'bar',
+                data: {
+                    labels: konsultasiData.labels,
+                    datasets: [
+                        {
+                            label: 'Ada',
+                            data: konsultasiData.ada,
+                            backgroundColor: '#22c55e',
+                            borderColor: '#16a34a',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Tidak Ada / Belum Sesuai',
+                            data: konsultasiData.tidak_ada,
+                            backgroundColor: '#ef4444',
+                            borderColor: '#dc2626',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0,
+                                font: { size: 11 }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                font: { size: 11 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Jumlah Dokumen',
+                                font: { size: 12, weight: '600' }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
                             labels: {
                                 usePointStyle: true,
                                 padding: 15,

@@ -20,18 +20,6 @@ class Dashboard extends BaseController
         $articleModel = new ArticleModel();
         $slideModel   = new HomeSlideModel();
 
-        // Content Statistics
-        $eventCount = $eventModel->countAllResults();
-        $eventPublishedCount = (new EventModel())->where('is_published', 1)->countAllResults();
-        $eventDraftCount = max(0, $eventCount - $eventPublishedCount);
-
-        $articleCount = $articleModel->countAllResults();
-        $articlePublishedCount = (new ArticleModel())->where('is_published', 1)->countAllResults();
-        $articleDraftCount = max(0, $articleCount - $articlePublishedCount);
-
-        $slideCount = $slideModel->countAllResults();
-        $slideActiveCount = (new HomeSlideModel())->where('is_active', 1)->countAllResults();
-
         // School Statistics
         $schoolCount = 0;
         $schoolWithSurvey = 0;
@@ -42,7 +30,7 @@ class Dashboard extends BaseController
             } catch (\Throwable $e) {
                 $schoolCount = 0;
             }
-            
+
             if ($db->tableExists('trn_survey_sekolah')) {
                 try {
                     $schoolWithSurvey = (int) $db->table('mst_sekolah')
@@ -86,28 +74,14 @@ class Dashboard extends BaseController
             }
         }
 
-        // Latest Activities
-        $latestEvents = (new EventModel())
-            ->select('title, event_date, is_published')
-            ->orderBy('updated_at', 'DESC')
-            ->findAll(5);
+        // SIMAK Konstruksi Document Data
+        $konstruksiChartData = $this->getSimakDokumenChartData($db, 'konstruksi');
 
-        $latestInstagramPosts = (new ArticleModel())
-            ->select('title, content, published_at, is_published')
-            ->orderBy('updated_at', 'DESC')
-            ->findAll(5);
+        // SIMAK Konsultasi Document Data
+        $konsultasiChartData = $this->getSimakDokumenChartData($db, 'konsultasi');
 
         return view('admin/dashboard', [
             'pageTitle' => 'Dashboard Admin',
-            // Content
-            'eventCount' => $eventCount,
-            'eventPublishedCount' => $eventPublishedCount,
-            'eventDraftCount' => $eventDraftCount,
-            'articleCount' => $articleCount,
-            'articlePublishedCount' => $articlePublishedCount,
-            'articleDraftCount' => $articleDraftCount,
-            'slideCount' => $slideCount,
-            'slideActiveCount' => $slideActiveCount,
             // Schools
             'schoolCount' => $schoolCount,
             'schoolWithSurvey' => $schoolWithSurvey,
@@ -115,10 +89,106 @@ class Dashboard extends BaseController
             // Reports
             'harianReportCount' => $harianReportCount,
             'mingguanReportCount' => $mingguanReportCount,
-            // Activities
-            'latestEvents' => $latestEvents,
-            'latestInstagramPosts' => $latestInstagramPosts,
+            // SIMAK Charts
+            'konstruksiChartData' => $konstruksiChartData,
+            'konsultasiChartData' => $konsultasiChartData,
         ]);
+    }
+
+    /**
+     * Get document completeness chart data for SIMAK Konstruksi or Konsultasi
+     *
+     * @param mixed $db
+     * @param string $type 'konstruksi' or 'konsultasi'
+     * @return array{labels: string[], ada: int[], tidak_ada: int[]}
+     */
+    private function getSimakDokumenChartData($db, string $type): array
+    {
+        $tableSimak = $type === 'konstruksi' ? 'trn_kontrak_simak' : 'trn_kontrak_simak_konsultasi';
+        $tableVerifikasi = $type === 'konstruksi' ? 'trn_kontrak_simak_verifikasi' : 'trn_kontrak_simak_konsultasi_verifikasi';
+
+        $result = [
+            'labels' => [],
+            'ada' => [],
+            'tidak_ada' => [],
+        ];
+
+        // Check if required tables exist
+        if (!$db->tableExists($tableSimak) || !$db->tableExists('mst_paket')) {
+            return $result;
+        }
+
+        try {
+            // Get distinct paket IDs that have kontrak records
+            $paketQuery = $db->table($tableSimak . ' s')
+                ->select('DISTINCT s.paket_id, mp.nama_paket')
+                ->join('mst_paket mp', 'mp.id = s.paket_id', 'left')
+                ->where('s.paket_id IS NOT NULL', null, false)
+                ->where('mp.nama_paket IS NOT NULL', null, false)
+                ->where('mp.nama_paket !=', '')
+                ->orderBy('mp.nama_paket', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            if (empty($paketQuery)) {
+                return $result;
+            }
+
+            foreach ($paketQuery as $paket) {
+                $paketId = (int) ($paket['paket_id'] ?? 0);
+                $paketNama = trim((string) ($paket['nama_paket'] ?? 'Tanpa Paket'));
+
+                // Skip if no valid paket ID
+                if ($paketId <= 0) {
+                    continue;
+                }
+
+                // Get all SIMAK IDs for this paket
+                $simakIds = $db->table($tableSimak)
+                    ->select('id')
+                    ->where('paket_id', $paketId)
+                    ->get()
+                    ->getResultArray();
+
+                if (empty($simakIds)) {
+                    continue;
+                }
+
+                $simakIdList = array_map(fn($row) => (int) $row['id'], $simakIds);
+
+                // Count verification status for all SIMAK records in this paket
+                $verificationQuery = $db->table($tableVerifikasi)
+                    ->select('
+                        SUM(CASE
+                            WHEN (verifikasi_ki = "sesuai" OR verifikasi_ki = "lengkap")
+                                 AND (kelengkapan_dokumen IS NULL OR kelengkapan_dokumen != "tidak")
+                            THEN 1 ELSE 0
+                        END) as ada_count,
+                        SUM(CASE
+                            WHEN verifikasi_ki IN ("tidak_sesuai", "belum_sesuai", "belum_verifikasi")
+                                 OR kelengkapan_dokumen = "tidak"
+                                 OR verifikasi_ki IS NULL
+                            THEN 1 ELSE 0
+                        END) as tidak_ada_count
+                    ')
+                    ->whereIn('simak_id', $simakIdList)
+                    ->get()
+                    ->getRowArray();
+
+                $result['labels'][] = $paketNama;
+                $result['ada'][] = (int) ($verificationQuery['ada_count'] ?? 0);
+                $result['tidak_ada'][] = (int) ($verificationQuery['tidak_ada_count'] ?? 0);
+            }
+        } catch (\Throwable $e) {
+            // Return empty result on error
+            return [
+                'labels' => [],
+                'ada' => [],
+                'tidak_ada' => [],
+            ];
+        }
+
+        return $result;
     }
 
     public function map(): string
