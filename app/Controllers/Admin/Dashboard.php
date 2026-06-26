@@ -80,10 +80,6 @@ class Dashboard extends BaseController
         // SIMAK Konsultasi Document Data
         $konsultasiChartData = $this->getSimakDokumenChartData($db, 'konsultasi');
 
-        // Debug: Log chart data (remove in production)
-        log_message('debug', 'Konstruksi Chart Data: ' . json_encode($konstruksiChartData));
-        log_message('debug', 'Konsultasi Chart Data: ' . json_encode($konsultasiChartData));
-
         return view('admin/dashboard', [
             'pageTitle' => 'Dashboard Admin',
             // Schools
@@ -198,7 +194,6 @@ class Dashboard extends BaseController
             }
         } catch (\Throwable $e) {
             // Return empty result on error
-            log_message('error', 'SIMAK Chart Error: ' . $e->getMessage());
             return [
                 'labels' => [],
                 'ada' => [],

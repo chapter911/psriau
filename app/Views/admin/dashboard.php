@@ -280,14 +280,13 @@
                     <a href="<?= site_url('/admin/kontrak/simak/konstruksi'); ?>" class="btn btn-sm btn-primary">Lihat Detail</a>
                 </div>
                 <div class="card-body">
-                    <!-- DEBUG: <?php // echo json_encode($konstruksiChartData); // Remove after debugging ?>
                     <?php if (!empty($konstruksiChartData['labels'])): ?>
                         <div class="chart-container">
                             <canvas id="konstruksiChart"></canvas>
                         </div>
                     <?php else: ?>
                         <div class="alert alert-info mb-0">
-                            <i class="fas fa-info-circle mr-2"></i> Belum ada data kelengkapan dokumen konstruksi. (Debug: <?= json_encode($konstruksiChartData) ?>)
+                            <i class="fas fa-info-circle mr-2"></i> Belum ada data kelengkapan dokumen konstruksi.
                         </div>
                     <?php endif; ?>
                 </div>
@@ -300,14 +299,13 @@
                     <a href="<?= site_url('/admin/kontrak/simak/konsultasi'); ?>" class="btn btn-sm btn-primary">Lihat Detail</a>
                 </div>
                 <div class="card-body">
-                    <!-- DEBUG: <?php // echo json_encode($konsultasiChartData); // Remove after debugging ?>
                     <?php if (!empty($konsultasiChartData['labels'])): ?>
                         <div class="chart-container">
                             <canvas id="konsultasiChart"></canvas>
                         </div>
                     <?php else: ?>
                         <div class="alert alert-info mb-0">
-                            <i class="fas fa-info-circle mr-2"></i> Belum ada data kelengkapan dokumen konsultasi. (Debug: <?= json_encode($konsultasiChartData) ?>)
+                            <i class="fas fa-info-circle mr-2"></i> Belum ada data kelengkapan dokumen konsultasi.
                         </div>
                     <?php endif; ?>
                 </div>
