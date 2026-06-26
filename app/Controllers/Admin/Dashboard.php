@@ -157,17 +157,21 @@ class Dashboard extends BaseController
                 $simakIdList = array_map(fn($row) => (int) $row['id'], $simakIds);
 
                 // Count verification status for all SIMAK records in this paket
+                // Status values: lengkap, belum_sesuai, belum_verifikasi, belum_ada
+                // Ada = Lengkap atau Menunggu Verifikasi (lengkap, belum_verifikasi)
+                // Tidak Ada = Belum Sesuai atau Belum Ada (belum_sesuai, belum_ada, NULL)
                 $verificationQuery = $db->table($tableVerifikasi)
                     ->select('
                         SUM(CASE
-                            WHEN (verifikasi_ki = "sesuai" OR verifikasi_ki = "lengkap")
-                                 AND (kelengkapan_dokumen IS NULL OR kelengkapan_dokumen != "tidak")
+                            WHEN status IN ("lengkap", "belum_verifikasi")
+                                 OR (verifikasi_ki IN ("sesuai", "lengkap") AND kelengkapan_dokumen != "tidak")
                             THEN 1 ELSE 0
                         END) as ada_count,
                         SUM(CASE
-                            WHEN verifikasi_ki IN ("tidak_sesuai", "belum_sesuai", "belum_verifikasi")
-                                 OR kelengkapan_dokumen = "tidak"
-                                 OR verifikasi_ki IS NULL
+                            WHEN status IN ("belum_sesuai", "belum_ada")
+                                 OR (verifikasi_ki IN ("tidak_sesuai", "tidak") OR kelengkapan_dokumen = "tidak")
+                                 OR status IS NULL
+                                 OR (verifikasi_ki IS NULL AND kelengkapan_dokumen IS NULL)
                             THEN 1 ELSE 0
                         END) as tidak_ada_count
                     ')

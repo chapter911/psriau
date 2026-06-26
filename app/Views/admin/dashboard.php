@@ -79,8 +79,6 @@
     .metric-icon.survey { background: linear-gradient(145deg, #059669, #047857); }
     .metric-icon.laporan { background: linear-gradient(145deg, #2563eb, #1d4ed8); }
     .metric-icon.wilayah { background: linear-gradient(145deg, #dc2626, #b91c1c); }
-    .metric-icon.konstruksi { background: linear-gradient(145deg, #f59e0b, #d97706); }
-    .metric-icon.konsultasi { background: linear-gradient(145deg, #8b5cf6, #7c3aed); }
 
     .metric-value {
         font-size: 1.7rem;
@@ -267,6 +265,49 @@
         </div>
     </div>
 
+    <!-- SIMAK Dokumentasi Charts -->
+    <h5 class="mt-3" style="color: #1f2f43; font-weight: 700;">📁 Dokumentasi SIMAK</h5>
+    <div class="row">
+        <div class="col-lg-6 col-12 mb-3">
+            <div class="card panel-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">🏗️ Konstruksi</h3>
+                    <a href="<?= site_url('/admin/kontrak/simak/konstruksi'); ?>" class="btn btn-sm btn-primary">Lihat Detail</a>
+                </div>
+                <div class="card-body">
+                    <?php if (!empty($konstruksiChartData['labels'])): ?>
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="konstruksiChart"></canvas>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle mr-2"></i> Belum ada data kelengkapan dokumen konstruksi.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 col-12 mb-3">
+            <div class="card panel-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">📋 Konsultasi</h3>
+                    <a href="<?= site_url('/admin/kontrak/simak/konsultasi'); ?>" class="btn btn-sm btn-primary">Lihat Detail</a>
+                </div>
+                <div class="card-body">
+                    <?php if (!empty($konsultasiChartData['labels'])): ?>
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="konsultasiChart"></canvas>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle mr-2"></i> Belum ada data kelengkapan dokumen konsultasi.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- School & Survey Section -->
     <h5 class="mt-3" style="color: #1f2f43; font-weight: 700;">🏫 Data Sekolah & Survei</h5>
     <div class="row">
@@ -360,114 +401,6 @@
                     <?php else: ?>
                         <div class="alert alert-info mb-0">
                             <i class="fas fa-info-circle mr-2"></i> Belum ada data klasifikasi kerusakan sekolah.
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SIMAK Konstruksi Chart -->
-    <h5 class="mt-3" style="color: #1f2f43; font-weight: 700;">🏗️ Kelengkapan Dokumen Konstruksi</h5>
-    <div class="row">
-        <div class="col-lg-6 col-md-6 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Total Konstruksi</strong>
-                        <span class="metric-icon konstruksi"><i class="fas fa-hard-hat"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) array_sum($konstruksiChartData['ada'] ?? []) + array_sum($konstruksiChartData['tidak_ada'] ?? [])); ?></div>
-                    <p class="metric-label">Paket dengan data verifikasi.</p>
-                    <a href="<?= site_url('/admin/kontrak/simak/konstruksi'); ?>" class="btn btn-sm btn-outline-primary mt-3">Lihat Detail</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6 col-md-6 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Dokumen Ada</strong>
-                        <span class="metric-icon konstruksi"><i class="fas fa-check-circle"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) array_sum($konstruksiChartData['ada'] ?? [])); ?></div>
-                    <p class="metric-label">Total dokumen terverifikasi.</p>
-                    <div class="metric-split">
-                        <span><i class="fas fa-circle mr-1" style="color: #22c55e;"></i> Ada</span>
-                        <span><i class="fas fa-circle mr-1" style="color: #ef4444;"></i> <?= esc((string) array_sum($konstruksiChartData['tidak_ada'] ?? [])); ?> Tidak Ada</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12 col-12 mb-3">
-            <div class="card panel-card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title mb-0">Grafik Kelengkapan Dokumen Konstruksi</h3>
-                </div>
-                <div class="card-body">
-                    <?php if (!empty($konstruksiChartData['labels'])): ?>
-                        <div class="chart-container" style="height: 350px;">
-                            <canvas id="konstruksiChart"></canvas>
-                        </div>
-                    <?php else: ?>
-                        <div class="alert alert-info mb-0">
-                            <i class="fas fa-info-circle mr-2"></i> Belum ada data kelengkapan dokumen konstruksi.
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SIMAK Konsultasi Chart -->
-    <h5 class="mt-3" style="color: #1f2f43; font-weight: 700;">📋 Kelengkapan Dokumen Konsultasi</h5>
-    <div class="row">
-        <div class="col-lg-6 col-md-6 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Total Konsultasi</strong>
-                        <span class="metric-icon konsultasi"><i class="fas fa-clipboard-list"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) array_sum($konsultasiChartData['ada'] ?? []) + array_sum($konsultasiChartData['tidak_ada'] ?? [])); ?></div>
-                    <p class="metric-label">Paket dengan data verifikasi.</p>
-                    <a href="<?= site_url('/admin/kontrak/simak/konsultasi'); ?>" class="btn btn-sm btn-outline-primary mt-3">Lihat Detail</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6 col-md-6 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Dokumen Ada</strong>
-                        <span class="metric-icon konsultasi"><i class="fas fa-check-circle"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) array_sum($konsultasiChartData['ada'] ?? [])); ?></div>
-                    <p class="metric-label">Total dokumen terverifikasi.</p>
-                    <div class="metric-split">
-                        <span><i class="fas fa-circle mr-1" style="color: #22c55e;"></i> Ada</span>
-                        <span><i class="fas fa-circle mr-1" style="color: #ef4444;"></i> <?= esc((string) array_sum($konsultasiChartData['tidak_ada'] ?? [])); ?> Tidak Ada</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12 col-12 mb-3">
-            <div class="card panel-card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title mb-0">Grafik Kelengkapan Dokumen Konsultasi</h3>
-                </div>
-                <div class="card-body">
-                    <?php if (!empty($konsultasiChartData['labels'])): ?>
-                        <div class="chart-container" style="height: 350px;">
-                            <canvas id="konsultasiChart"></canvas>
-                        </div>
-                    <?php else: ?>
-                        <div class="alert alert-info mb-0">
-                            <i class="fas fa-info-circle mr-2"></i> Belum ada data kelengkapan dokumen konsultasi.
                         </div>
                     <?php endif; ?>
                 </div>
@@ -594,7 +527,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             borderWidth: 1
                         },
                         {
-                            label: 'Tidak Ada / Belum Sesuai',
+                            label: 'Tidak Ada',
                             data: konstruksiData.tidak_ada,
                             backgroundColor: '#ef4444',
                             borderColor: '#dc2626',
