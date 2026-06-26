@@ -4653,29 +4653,48 @@ class Kontrak extends BaseController
         $headerUraian = $sectionKey !== '' ? $sectionKey : 'Lainnya';
         $uraianLengkap = ($displayNo !== '' ? $displayNo . ' - ' : '') . ($itemUraian !== '' ? $itemUraian : $originalFileName);
 
-        // Get atau buat folder di Google Drive
+        // Get atau buat folder di Google Drive + upload placeholder file
         $projectFolderId = env('GOOGLE_DRIVE_UPLOAD_FOLDER_ID');
         $folderUrl = null;
-        $folderCreationLog = '';
+        $fileUrl = null;
+        $folderPathDisplay = "SIMAK > {$namaPaket} > {$penyedia} > {$headerUraian} > {$uraianLengkap}";
 
         if (!empty($projectFolderId)) {
-            // Log untuk debug
-            log_message('info', "salinDokumenGoogleDrive - Folder creation attempt: projectFolderId={$projectFolderId}, namaPaket={$namaPaket}, penyedia={$penyedia}, headerUraian={$headerUraian}, uraianLengkap={$uraianLengkap}");
+            log_message('info', "salinDokumenGoogleDrive - Attempting to create folder and upload placeholder: projectFolderId={$projectFolderId}, namaPaket={$namaPaket}, penyedia={$penyedia}, headerUraian={$headerUraian}, uraianLengkap={$uraianLengkap}");
 
-            $folderUrl = $this->getOrCreateSimakFolderUrl($projectFolderId, $namaPaket, $penyedia, $headerUraian, $uraianLengkap);
-            $folderCreationLog = "Folder URL returned: {$folderUrl}";
+            // Try to use GoogleDriveService to create folders and upload placeholder
+            if (class_exists('\App\Libraries\GoogleDriveService')) {
+                $driveService = new \App\Libraries\GoogleDriveService();
+                if ($driveService->isReady()) {
+                    $result = $driveService->uploadPlaceholderToSimakFolder(
+                        $projectFolderId,
+                        $namaPaket,
+                        $penyedia,
+                        $headerUraian,
+                        $uraianLengkap
+                    );
+
+                    if ($result) {
+                        $folderUrl = $result['folder_url'];
+                        $fileUrl = $result['file_url'];
+                        $folderPathDisplay = str_replace('SIMAK/', 'SIMAK > ', str_replace('/', ' > ', $result['folder_path']));
+                        log_message('info', "salinDokumenGoogleDrive - SUCCESS: Folder created and placeholder uploaded. URL: {$folderUrl}");
+                    } else {
+                        $lastError = $driveService->getLastError();
+                        log_message('error', "salinDokumenGoogleDrive - GoogleDriveService failed: " . ($lastError ?? 'Unknown error'));
+                    }
+                } else {
+                    log_message('error', "salinDokumenGoogleDrive - GoogleDriveService is not ready");
+                }
+            }
         } else {
-            $folderCreationLog = "projectFolderId is empty, using fallback";
             log_message('warning', "salinDokumenGoogleDrive - GOOGLE_DRIVE_UPLOAD_FOLDER_ID is not set in environment");
         }
 
-        // Fallback: buka folder utama jika folderUrl kosong atau masih default
-        if (empty($folderUrl) || $folderUrl === 'https://drive.google.com') {
+        // Fallback: buka folder utama jika gagal
+        if (empty($folderUrl)) {
             $folderUrl = env('GOOGLE_DRIVE_UPLOAD_FOLDER_URL') ?: 'https://drive.google.com';
         }
-
-        // Build folder path untuk ditampilkan ke user
-        $folderPathDisplay = "SIMAK > {$namaPaket} > {$penyedia} > {$headerUraian} > {$uraianLengkap}";
 
         log_message('info', "salinDokumenGoogleDrive - Final folderUrl: {$folderUrl}, path: {$folderPathDisplay}");
 
@@ -4683,6 +4702,7 @@ class Kontrak extends BaseController
             'success' => true,
             'ready_for_upload' => true,
             'folder_url' => $folderUrl,
+            'file_url' => $fileUrl,
             'folder_path' => $folderPathDisplay,
             'dokumen_id' => $dokumenId,
             'source_url' => $googleDriveSourceUrl,

@@ -267,6 +267,122 @@ class GoogleDriveService
     }
 
     /**
+     * Upload placeholder file to SIMAK folder structure.
+     * This will create the folder structure and upload a placeholder file.
+     *
+     * @param string $rootFolderId Root folder ID
+     * @param string $namaPaket Package name
+     * @param string $penyedia Provider name
+     * @param string $headerUraian Header/Section key
+     * @param string $uraian Uraian text
+     * @param string $placeholderContent Content of placeholder file
+     * @return array ['folder_url' => string, 'file_url' => string]|null
+     */
+    public function uploadPlaceholderToSimakFolder(
+        string $rootFolderId,
+        string $namaPaket,
+        string $penyedia,
+        string $headerUraian,
+        string $uraian,
+        string $placeholderContent = ''
+    ): ?array {
+        if (!$this->isReady()) {
+            $this->lastError = 'Service not ready.';
+            log_message('error', 'GoogleDriveService - uploadPlaceholderToSimakFolder: Service not ready');
+            return null;
+        }
+
+        // Load custom helper for folder/file sanitization
+        helper('custom');
+
+        // Sanitize folder names
+        $sanitizedPaket = sanitizeFolderName($namaPaket);
+        $sanitizedPenyedia = sanitizeFolderName($penyedia);
+        $sanitizedHeader = sanitizeFolderName($headerUraian);
+        $sanitizedUraian = sanitizeFolderName($uraian);
+
+        // Build the folder hierarchy
+        $currentFolderId = $rootFolderId;
+
+        // Level 1: SIMAK
+        $simakFolderId = $this->findOrCreateFolder('SIMAK', $currentFolderId);
+        if ($simakFolderId === null) {
+            log_message('error', 'GoogleDriveService - uploadPlaceholderToSimakFolder: Failed to create/access SIMAK folder');
+            return null;
+        }
+        $currentFolderId = $simakFolderId;
+
+        // Level 2: Nama Paket
+        $paketFolderId = $this->findOrCreateFolder($sanitizedPaket, $currentFolderId);
+        if ($paketFolderId === null) {
+            log_message('error', 'GoogleDriveService - uploadPlaceholderToSimakFolder: Failed to create/access paket folder: ' . $sanitizedPaket);
+            return null;
+        }
+        $currentFolderId = $paketFolderId;
+
+        // Level 3: Penyedia
+        $penyediaFolderId = $this->findOrCreateFolder($sanitizedPenyedia, $currentFolderId);
+        if ($penyediaFolderId === null) {
+            log_message('error', 'GoogleDriveService - uploadPlaceholderToSimakFolder: Failed to create/access penyedia folder: ' . $sanitizedPenyedia);
+            return null;
+        }
+        $currentFolderId = $penyediaFolderId;
+
+        // Level 4: Header Uraian
+        $headerFolderId = $this->findOrCreateFolder($sanitizedHeader, $currentFolderId);
+        if ($headerFolderId === null) {
+            log_message('error', 'GoogleDriveService - uploadPlaceholderToSimakFolder: Failed to create/access header folder: ' . $sanitizedHeader);
+            return null;
+        }
+        $currentFolderId = $headerFolderId;
+
+        // Level 5: Uraian
+        $uraianFolderId = $this->findOrCreateFolder($sanitizedUraian, $currentFolderId);
+        if ($uraianFolderId === null) {
+            log_message('error', 'GoogleDriveService - uploadPlaceholderToSimakFolder: Failed to create/access uraian folder: ' . $sanitizedUraian);
+            return null;
+        }
+
+        // Build folder path string for reference
+        $folderPathString = 'SIMAK/' . $sanitizedPaket . '/' . $sanitizedPenyedia . '/' . $sanitizedHeader . '/' . $sanitizedUraian;
+        log_message('info', 'GoogleDriveService - uploadPlaceholderToSimakFolder: Created folder path: ' . $folderPathString);
+
+        // Upload placeholder file to the final folder
+        $placeholderFileName = 'UPLOAD DISINI - ' . $sanitizedUraian . '.txt';
+        $placeholderContent = $placeholderContent ?: "UPLOAD FILE ANDA DI SINI\n\nFolder: " . $folderPathString . "\n\nPetunjuk:\n1. Upload file dokumen Anda ke folder ini\n2. Pastikan akses file: \"Anyone with the link\" -> \"Viewer\"\n3. Copy link file dan paste di sistem SIMAK\n\nDokumen yang diharapkan:\n- " . $uraian . "\n";
+
+        try {
+            $fileMetadata = new DriveFile([
+                'name'    => $placeholderFileName,
+                'parents' => [$uraianFolderId],
+            ]);
+
+            $file = $this->service->files->create($fileMetadata, [
+                'data'              => $placeholderContent,
+                'mimeType'          => 'text/plain',
+                'uploadType'        => 'multipart',
+                'fields'            => 'id, name, webViewLink, parents',
+                'supportsAllDrives' => true,
+            ]);
+
+            log_message('info', 'GoogleDriveService - uploadPlaceholderToSimakFolder: Uploaded placeholder: ' . $placeholderFileName);
+
+            // Get the folder URL
+            $folderUrl = "https://drive.google.com/drive/folders/{$uraianFolderId}";
+
+            return [
+                'folder_url' => $folderUrl,
+                'file_url' => $file->getWebViewLink(),
+                'folder_path' => $folderPathString,
+            ];
+        } catch (\Throwable $e) {
+            $this->lastError = 'uploadPlaceholderToSimakFolder failed: ' . $e->getMessage();
+            log_message('error', 'GoogleDriveService - ' . $this->lastError);
+            return null;
+        }
+    }
+
+    /**
      * Upload a file to a specific folder in Google Drive.
      *
      * @param string $content Binary content of the file

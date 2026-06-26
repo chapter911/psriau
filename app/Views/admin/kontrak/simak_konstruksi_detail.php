@@ -1544,20 +1544,32 @@
                             // Get folder path for display
                             var folderPath = response.folder_path || 'folder tujuan';
                             var fileNameToUpload = fileName || 'file yang diperlukan';
-                            var folderUrl = response.folder_url || '#';
+                            var fileUrl = response.file_url || null;
+
+                            // Build additional info about placeholder
+                            var placeholderInfo = '';
+                            if (fileUrl) {
+                                placeholderInfo = '<div class="alert alert-success mt-2" style="font-size: 12px; padding: 8px;">' +
+                                    '<i class="fas fa-check-circle"></i> <strong>Placeholder file sudah diupload!</strong><br>' +
+                                    'File <code>UPLOAD DISINI.txt</code> sudah ada di folder tersebut.<br>' +
+                                    '<a href="' + fileUrl + '" target="_blank" class="alert-link">Klik di sini untuk membuka folder</a>' +
+                                    '</div>';
+                            }
 
                             // Show dialog to enter new link
                             Swal.fire({
                                 icon: 'info',
                                 title: 'Upload Manual',
                                 html: '<p class="mb-2">Folder Google Drive telah dibuka di tab baru.</p>' +
-                                      '<div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px; margin-bottom: 15px; text-align: left;">' +
+                                      '<div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px; margin-bottom: 10px; text-align: left;">' +
                                       '<strong><i class="fas fa-folder-open text-warning"></i> Path Folder:</strong><br>' +
                                       '<span style="color: #000; font-size: 13px; font-weight: 500;">' + folderPath + '</span>' +
                                       '</div>' +
+                                      placeholderInfo +
                                       '<p><strong>Langkah:</strong></p>' +
                                       '<ol style="text-align: left; font-size: 14px;">' +
                                       '<li>Buka folder <strong>' + folderPath.split(' > ').pop() + '</strong> di tab baru</li>' +
+                                      '<li>Hapus file <code>UPLOAD DISINI.txt</code> (opsional)</li>' +
                                       '<li>Upload file <strong>' + fileNameToUpload + '</strong> ke folder tersebut</li>' +
                                       '<li>Klik kanan file → "Get link"</li>' +
                                       '<li>Pilih "Anyone with the link" → "Viewer"</li>' +
@@ -1567,7 +1579,7 @@
                                       '<label for="new_gdrive_link"><strong>Link Google Drive Baru:</strong></label>' +
                                       '<input type="url" class="form-control" id="new_gdrive_link" placeholder="https://drive.google.com/file/d/...">' +
                                       '</div>',
-                                width: '600px',
+                                width: '650px',
                                 showCancelButton: true,
                                 confirmButtonText: 'Simpan Link',
                                 cancelButtonText: 'Batal',
