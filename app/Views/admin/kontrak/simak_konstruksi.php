@@ -141,9 +141,8 @@
                             <td>
                                 <?php
                                     $paketNama = $item['paket_nama'] ?? '';
-                                    $paketSingkat = $item['paket_singkatan'] ?? '';
                                     if ($paketNama): ?>
-                                        <?= esc($paketNama); ?><?= $paketSingkat ? ' (' . esc($paketSingkat) . ')' : ''; ?>
+                                        <?= esc($paketNama); ?>
                                     <?php else: ?>
                                         -
                                     <?php endif; ?>
