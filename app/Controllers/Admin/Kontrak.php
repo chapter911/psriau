@@ -968,6 +968,7 @@ class Kontrak extends BaseController
                 'data' => [],
                 'addOnsBySimakId' => [],
                 'pegawaiOptions' => $this->getSimakPegawaiOptions(),
+                'paketOptions' => $this->getSimakPaketOptions(),
                 'can_edit' => $this->canViewKontrak(),
                 'can_import' => $this->canManageKontrak(),
                 'error' => 'Tabel SIMAK belum tersedia. Jalankan migration.',
@@ -1024,6 +1025,7 @@ class Kontrak extends BaseController
             'data' => $rows,
             'addOnsBySimakId' => $this->getSimakAddOnsBySimakId($type),
             'pegawaiOptions' => $this->getSimakPegawaiOptions(),
+            'paketOptions' => $this->getSimakPaketOptions(),
             'can_edit' => $this->canViewKontrak(),
             'can_import' => $this->canManageKontrak(),
             'can_share' => $this->canManageKontrak(),
@@ -2483,6 +2485,20 @@ class Kontrak extends BaseController
         $metodePemilihan = $this->normalizeSimakMetodePemilihan((string) $this->request->getPost('metode_pemilihan'));
         $emailResponden1 = trim((string) $this->request->getPost('email_responden_1'));
         $emailResponden2 = trim((string) $this->request->getPost('email_responden_2'));
+        $paketId = (int) $this->request->getPost('paket_id');
+
+        // Validate paket_id is required
+        if ($paketId <= 0) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Pemaketan wajib dipilih.');
+        }
+
+        // Validate paket exists
+        if ($db->tableExists('mst_paket')) {
+            $paket = $db->table('mst_paket')->select('id')->where('id', $paketId)->get()->getRowArray();
+            if (! is_array($paket)) {
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Pemaketan tidak ditemukan pada master paket.');
+            }
+        }
 
         // Pada menu konstruksi, field konsultansi belum ditampilkan di form.
         // Gunakan default aman agar proses simpan tidak terblokir.
@@ -2541,6 +2557,7 @@ class Kontrak extends BaseController
 
         $payload = [
             'satker' => $satker,
+            'paket_id' => $paketId,
             'ppk_nama' => $ppkNama,
             'ppk_nip' => $ppkNip,
             'nama_paket' => $namaPaket,
@@ -2609,6 +2626,20 @@ class Kontrak extends BaseController
         $metodePemilihan = $this->normalizeSimakMetodePemilihan((string) $this->request->getPost('metode_pemilihan'));
         $emailResponden1 = trim((string) $this->request->getPost('email_responden_1'));
         $emailResponden2 = trim((string) $this->request->getPost('email_responden_2'));
+        $paketId = (int) $this->request->getPost('paket_id');
+
+        // Validate paket_id is required
+        if ($paketId <= 0) {
+            return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Pemaketan wajib dipilih.');
+        }
+
+        // Validate paket exists
+        if ($db->tableExists('mst_paket')) {
+            $paket = $db->table('mst_paket')->select('id')->where('id', $paketId)->get()->getRowArray();
+            if (! is_array($paket)) {
+                return redirect()->to(site_url('admin/kontrak/simak/konstruksi'))->with('error', 'Pemaketan tidak ditemukan pada master paket.');
+            }
+        }
 
         // Pada menu konstruksi, field konsultansi belum ditampilkan di form.
         // Gunakan default aman agar proses simpan tidak terblokir.
@@ -2669,6 +2700,7 @@ class Kontrak extends BaseController
 
         $payload = [
             'satker' => $satker,
+            'paket_id' => $paketId,
             'ppk_nama' => $ppkNama,
             'ppk_nip' => $ppkNip,
             'nama_paket' => $namaPaket,
@@ -6734,6 +6766,24 @@ class Kontrak extends BaseController
         return $builder->get()->getResultArray();
     }
 
+    private function getSimakPaketOptions(): array
+    {
+        $db = db_connect();
+        if (! $db->tableExists('mst_paket')) {
+            return [];
+        }
+
+        $builder = $db->table('mst_paket p')
+            ->select('p.id, p.nama_paket, p.singkatan_paket')
+            ->orderBy('p.nama_paket', 'ASC');
+
+        if ($this->tableHasColumn('mst_paket', 'is_active')) {
+            $builder->where('p.is_active', 1);
+        }
+
+        return $builder->get()->getResultArray();
+    }
+
     private function canViewKontrak(): bool
     {
         $role = strtolower((string) session()->get('role'));
@@ -7043,9 +7093,23 @@ class Kontrak extends BaseController
         $metodePemilihan = trim((string) $this->request->getPost('metode_pemilihan'));
         $emailResponden1 = trim((string) $this->request->getPost('email_responden_1'));
         $emailResponden2 = trim((string) $this->request->getPost('email_responden_2'));
+        $paketId = (int) $this->request->getPost('paket_id');
+
+        // Validate paket_id is required
+        if ($paketId <= 0) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Pemaketan wajib dipilih.');
+        }
+
+        // Validate paket exists
+        if ($db->tableExists('mst_paket')) {
+            $paket = $db->table('mst_paket')->select('id')->where('id', $paketId)->get()->getRowArray();
+            if (! is_array($paket)) {
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Pemaketan tidak ditemukan pada master paket.');
+            }
+        }
 
         // Validate required fields
-        if ($satker === '' || $ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $tahunAnggaran === '' || 
+        if ($satker === '' || $ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $tahunAnggaran === '' ||
             $jenisPekerjaan === '' || $masaPelaksanaan === '' || $paguAnggaran <= 0 || $penyedia === '' ||
             $nomorKontrak === '' || $nilaiKontrak <= 0 || $metodePemilihan === '') {
             return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Seluruh input wajib terisi.');
@@ -7077,6 +7141,7 @@ class Kontrak extends BaseController
 
         $payload = [
             'satker' => $satker,
+            'paket_id' => $paketId,
             'ppk_nama' => $ppkNama,
             'ppk_nip' => $ppkNip,
             'nama_paket' => $namaPaket,
@@ -7133,9 +7198,23 @@ class Kontrak extends BaseController
         $metodePemilihan = trim((string) $this->request->getPost('metode_pemilihan'));
         $emailResponden1 = trim((string) $this->request->getPost('email_responden_1'));
         $emailResponden2 = trim((string) $this->request->getPost('email_responden_2'));
+        $paketId = (int) $this->request->getPost('paket_id');
 
-        if ($ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $jenisPekerjaan === '' || 
-            $masaPelaksanaan === '' || $paguAnggaran <= 0 || $penyedia === '' || $nilaiKontrak <= 0 || 
+        // Validate paket_id is required
+        if ($paketId <= 0) {
+            return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Pemaketan wajib dipilih.');
+        }
+
+        // Validate paket exists
+        if ($db->tableExists('mst_paket')) {
+            $paket = $db->table('mst_paket')->select('id')->where('id', $paketId)->get()->getRowArray();
+            if (! is_array($paket)) {
+                return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Pemaketan tidak ditemukan pada master paket.');
+            }
+        }
+
+        if ($ppkNip === '' || $ppkNama === '' || $namaPaket === '' || $jenisPekerjaan === '' ||
+            $masaPelaksanaan === '' || $paguAnggaran <= 0 || $penyedia === '' || $nilaiKontrak <= 0 ||
             $metodePemilihan === '') {
             return redirect()->to(site_url('admin/kontrak/simak/konsultasi'))->with('error', 'Seluruh input wajib terisi.');
         }
@@ -7145,6 +7224,7 @@ class Kontrak extends BaseController
         }
 
         $payload = [
+            'paket_id' => $paketId,
             'ppk_nama' => $ppkNama,
             'ppk_nip' => $ppkNip,
             'nama_paket' => $namaPaket,

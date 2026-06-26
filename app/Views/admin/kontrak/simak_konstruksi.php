@@ -185,6 +185,7 @@
                                         class="btn btn-warning btn-sm js-open-edit-simak"
                                         data-id="<?= esc((string) ($item['id'] ?? 0)); ?>"
                                         data-satker="<?= esc((string) ($item['satker'] ?? 'Perencanaan Prasarana Strategis')); ?>"
+                                        data-paket-id="<?= esc((string) ($item['paket_id'] ?? '')); ?>"
                                         data-ppk-nip="<?= esc((string) ($item['ppk_nip'] ?? '')); ?>"
                                         data-nama-paket="<?= esc((string) ($item['nama_paket'] ?? '')); ?>"
                                         data-tahun-anggaran="<?= esc((string) ($item['tahun_anggaran'] ?? '')); ?>"
@@ -316,6 +317,18 @@
                     </div>
 
                     <h6 class="mb-3">Data Pekerjaan Konstruksi</h6>
+
+                    <div class="form-group">
+                        <label for="paket_id">Pemaketan <span class="text-danger">*</span></label>
+                        <select class="form-control" id="paket_id" name="paket_id" required>
+                            <option value="">-- Pilih Pemaketan --</option>
+                            <?php foreach (($paketOptions ?? []) as $paket): ?>
+                                <option value="<?= esc((string) ($paket['id'] ?? '')); ?>">
+                                    <?= esc((string) ($paket['nama_paket'] ?? '')); ?><?= ! empty($paket['singkatan_paket']) ? ' (' . esc((string) $paket['singkatan_paket']) . ')' : ''; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
@@ -459,6 +472,18 @@
                             </div>
 
                             <h6 class="mb-3">Data Pekerjaan Konstruksi</h6>
+
+                            <div class="form-group">
+                                <label for="paket_id_edit">Pemaketan <span class="text-danger">*</span></label>
+                                <select class="form-control" id="paket_id_edit" name="paket_id" required>
+                                    <option value="">-- Pilih Pemaketan --</option>
+                                    <?php foreach (($paketOptions ?? []) as $paket): ?>
+                                        <option value="<?= esc((string) ($paket['id'] ?? '')); ?>">
+                                            <?= esc((string) ($paket['nama_paket'] ?? '')); ?><?= ! empty($paket['singkatan_paket']) ? ' (' . esc((string) $paket['singkatan_paket']) . ')' : ''; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
 
                             <div class="form-row">
                                 <div class="form-group col-md-6">
@@ -1263,6 +1288,7 @@
             var id = this.getAttribute('data-id') || '0';
             var satkerEdit = document.getElementById('satker_edit');
             var ppkSelectorEdit = document.getElementById('pegawai_nip_selector_edit');
+            var paketIdEdit = document.getElementById('paket_id_edit');
             var namaPaketEdit = document.getElementById('nama_paket_edit');
             var tahunAnggaranEdit = document.getElementById('tahun_anggaran_edit');
             var penyediaEdit = document.getElementById('penyedia_edit');
@@ -1309,6 +1335,9 @@
 
             if (satkerEdit) {
                 satkerEdit.value = this.getAttribute('data-satker') || 'Perencanaan Prasarana Strategis';
+            }
+            if (paketIdEdit) {
+                paketIdEdit.value = this.getAttribute('data-paket-id') || '';
             }
             if (ppkSelectorEdit) {
                 ppkSelectorEdit.value = this.getAttribute('data-ppk-nip') || '';
