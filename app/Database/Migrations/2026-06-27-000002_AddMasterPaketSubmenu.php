@@ -10,43 +10,28 @@ class AddMasterPaketSubmenu extends Migration
     {
         $db = $this->db;
 
-        if (! $db->tableExists('menu_lv2') || ! $db->tableExists('menu_lv3')) {
+        if (! $db->tableExists('menu_lv1') || ! $db->tableExists('menu_lv2')) {
             return;
         }
 
-        // Find Master menu_lv2 id
-        $masterLv2Id = $this->findLv2IdByLabel('master');
-        if ($masterLv2Id === null) {
-            // Try to find from menu_lv1
-            $fromLv1 = $db->table('menu_lv1')
-                ->select('id')
-                ->where('LOWER(label)', 'master')
-                ->orderBy('id', 'ASC')
-                ->get()
-                ->getRowArray();
-
-            if (! is_array($fromLv1) || ! isset($fromLv1['id'])) {
-                return;
-            }
-
-            $masterLv2Id = $this->findLv2IdByHeaderAndLabel((string) $fromLv1['id'], 'master');
-            if ($masterLv2Id === null) {
-                return;
-            }
+        // Find Master menu_lv1 id (header)
+        $masterLv1Id = $this->findLv1IdByLabel('master');
+        if ($masterLv1Id === null) {
+            return;
         }
 
-        $this->ensureLv3Menu($masterLv2Id, 'Paket', 'admin/master/paket');
+        $this->ensureLv2Menu($masterLv1Id, 'Paket', 'admin/master/paket', 'far fa-circle');
     }
 
     public function down()
     {
         $db = $this->db;
 
-        if (! $db->tableExists('menu_lv3')) {
+        if (! $db->tableExists('menu_lv2')) {
             return;
         }
 
-        $row = $db->table('menu_lv3')
+        $row = $db->table('menu_lv2')
             ->select('id')
             ->where('LOWER(link)', 'admin/master/paket')
             ->get()
@@ -54,14 +39,15 @@ class AddMasterPaketSubmenu extends Migration
 
         if (is_array($row) && isset($row['id'])) {
             $menuId = (string) $row['id'];
-            $db->table('menu_lv3')->where('id', $menuId)->delete();
+            $db->table('menu_lv2')->where('id', $menuId)->delete();
             $this->deleteMenuAksesByMenuId($menuId);
         }
     }
 
-    private function ensureLv3Menu(string $headerId, string $label, string $link): void
+    private function ensureLv2Menu(string $headerId, string $label, string $link, string $icon): void
     {
-        $existingByLink = $this->db->table('menu_lv3')
+        // Check if already exists by link
+        $existingByLink = $this->db->table('menu_lv2')
             ->select('id')
             ->where('header', $headerId)
             ->where('LOWER(link)', strtolower($link))
@@ -72,7 +58,8 @@ class AddMasterPaketSubmenu extends Migration
             return;
         }
 
-        $existingByLabel = $this->db->table('menu_lv3')
+        // Check if already exists by label
+        $existingByLabel = $this->db->table('menu_lv2')
             ->select('id')
             ->where('header', $headerId)
             ->where('LOWER(label)', strtolower($label))
@@ -83,39 +70,22 @@ class AddMasterPaketSubmenu extends Migration
             return;
         }
 
-        $menuId = $this->generateNextChildMenuId('menu_lv3', $headerId);
-        $this->db->table('menu_lv3')->insert([
+        $menuId = $this->generateNextChildMenuId('menu_lv2', $headerId);
+        $this->db->table('menu_lv2')->insert([
             'id' => $menuId,
             'label' => $label,
             'link' => $link,
-            'icon' => 'far fa-dot-circle',
+            'icon' => $icon,
             'header' => $headerId,
-            'ordering' => $this->getNextOrdering('menu_lv3', $headerId),
+            'ordering' => $this->getNextOrdering('menu_lv2', $headerId),
         ]);
 
         $this->ensureMenuAksesForMenuId($menuId);
     }
 
-    private function findLv2IdByHeaderAndLabel(string $header, string $label): ?string
+    private function findLv1IdByLabel(string $label): ?string
     {
-        $row = $this->db->table('menu_lv2')
-            ->select('id')
-            ->where('header', $header)
-            ->where('LOWER(label)', strtolower($label))
-            ->orderBy('id', 'ASC')
-            ->get()
-            ->getRowArray();
-
-        if (! is_array($row) || ! isset($row['id'])) {
-            return null;
-        }
-
-        return (string) $row['id'];
-    }
-
-    private function findLv2IdByLabel(string $label): ?string
-    {
-        $row = $this->db->table('menu_lv2')
+        $row = $this->db->table('menu_lv1')
             ->select('id')
             ->where('LOWER(label)', strtolower($label))
             ->orderBy('id', 'ASC')
