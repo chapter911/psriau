@@ -1479,6 +1479,15 @@
             var sourceUrl = button.getAttribute('data-url');
             var fileName = button.getAttribute('data-file');
 
+            // Show loading SweetAlert
+            Swal.fire({
+                title: 'Memproses...',
+                html: '<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i><br>Sedang membuat folder dan upload file placeholder<br>di Google Drive...</div>',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                allowEscapeKey: false
+            });
+
             // Prepare form data with CSRF token
             var formData = new FormData();
             formData.append(typeof csrfTokenName !== 'undefined' ? csrfTokenName : 'csrf_token_name', typeof csrfHash !== 'undefined' ? csrfHash : '');
@@ -1509,7 +1518,7 @@
                                     '</div>';
                             }
 
-                            // Show dialog to enter new link
+                            // Show result dialog
                             Swal.fire({
                                 icon: 'info',
                                 title: 'Upload Manual',
@@ -1554,6 +1563,14 @@
                                     var linkFormData = new FormData();
                                     linkFormData.append(typeof csrfTokenName !== 'undefined' ? csrfTokenName : 'csrf_token_name', typeof csrfHash !== 'undefined' ? csrfHash : '');
                                     linkFormData.append('new_google_drive_url', result.value);
+
+                                    // Show loading for save
+                                    Swal.fire({
+                                        title: 'Menyimpan...',
+                                        html: '<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></div>',
+                                        allowOutsideClick: false,
+                                        showConfirmButton: false
+                                    });
 
                                     var saveXhr = new XMLHttpRequest();
                                     saveXhr.open('POST', baseUrl + '/admin/kontrak/simak/konsultasi/simpan-link-gdrive/' + dokumenId, true);
@@ -1608,6 +1625,7 @@
                                 }
                             });
                         } else {
+                            Swal.close();
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal',
@@ -1615,6 +1633,7 @@
                             });
                         }
                     } catch (e) {
+                        Swal.close();
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
@@ -1622,6 +1641,7 @@
                         });
                     }
                 } else {
+                    Swal.close();
                     Swal.fire({
                         icon: 'error',
                         title: 'Server Error',
@@ -1630,6 +1650,7 @@
                 }
             };
             xhr.onerror = function() {
+                Swal.close();
                 Swal.fire({
                     icon: 'error',
                     title: 'Network Error',
