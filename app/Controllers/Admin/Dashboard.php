@@ -98,6 +98,16 @@ class Dashboard extends BaseController
     /**
      * Get document completeness chart data for SIMAK Konstruksi or Konsultasi
      *
+     * Based on the page display:
+     * - Lengkap: 0,00%
+     * - Belum Sesuai: 0,00%
+     * - Menunggu Verifikasi: 26,44%
+     * - Belum ada: 73,56%
+     *
+     * Calculation:
+     * - Ada = Lengkap + Menunggu Verifikasi
+     * - Tidak Ada = Belum Sesuai + Belum Ada
+     *
      * @param mixed $db
      * @param string $type 'konstruksi' or 'konsultasi'
      * @return array{labels: string[], ada: int[], tidak_ada: int[]}
@@ -114,7 +124,7 @@ class Dashboard extends BaseController
         ];
 
         // Check if required tables exist
-        if (!$db->tableExists($tableSimak) || !$db->tableExists('mst_paket')) {
+        if (!$db->tableExists($tableSimak) || !$db->tableExists('mst_paket') || !$db->tableExists($tableVerifikasi)) {
             return $result;
         }
 
@@ -157,31 +167,30 @@ class Dashboard extends BaseController
                 $simakIdList = array_map(fn($row) => (int) $row['id'], $simakIds);
 
                 // Count verification status for all SIMAK records in this paket
-                // Status values: lengkap, belum_sesuai, belum_verifikasi, belum_ada
-                // Ada = Lengkap atau Menunggu Verifikasi (lengkap, belum_verifikasi)
-                // Tidak Ada = Belum Sesuai atau Belum Ada (belum_sesuai, belum_ada, NULL)
-                $verificationQuery = $db->table($tableVerifikasi)
-                    ->select('
-                        SUM(CASE
-                            WHEN status IN ("lengkap", "belum_verifikasi")
-                                 OR (verifikasi_ki IN ("sesuai", "lengkap") AND kelengkapan_dokumen != "tidak")
-                            THEN 1 ELSE 0
-                        END) as ada_count,
-                        SUM(CASE
-                            WHEN status IN ("belum_sesuai", "belum_ada")
-                                 OR (verifikasi_ki IN ("tidak_sesuai", "tidak") OR kelengkapan_dokumen = "tidak")
-                                 OR status IS NULL
-                                 OR (verifikasi_ki IS NULL AND kelengkapan_dokumen IS NULL)
-                            THEN 1 ELSE 0
-                        END) as tidak_ada_count
-                    ')
+                // Fields in verifikasi table:
+                // - kelengkapan_dokumen: 'ada' or 'tidak' (NULL means belum ada)
+                //
+                // Ada = kelengkapan_dokumen = 'ada'
+                // Tidak Ada = kelengkapan_dokumen = 'tidak' OR kelengkapan_dokumen IS NULL OR kelengkapan_dokumen = ''
+                $totalCount = $db->table($tableVerifikasi)
                     ->whereIn('simak_id', $simakIdList)
-                    ->get()
-                    ->getRowArray();
+                    ->countAllResults();
+
+                $adaCount = 0;
+                if ($totalCount > 0) {
+                    // Count ada: kelengkapan_dokumen = 'ada'
+                    $adaCount = (int) $db->table($tableVerifikasi)
+                        ->whereIn('simak_id', $simakIdList)
+                        ->where('kelengkapan_dokumen', 'ada')
+                        ->countAllResults();
+                }
+
+                // Tidak ada: everything else (total - ada)
+                $tidakAdaCount = $totalCount - $adaCount;
 
                 $result['labels'][] = $paketNama;
-                $result['ada'][] = (int) ($verificationQuery['ada_count'] ?? 0);
-                $result['tidak_ada'][] = (int) ($verificationQuery['tidak_ada_count'] ?? 0);
+                $result['ada'][] = max(0, $adaCount);
+                $result['tidak_ada'][] = max(0, $tidakAdaCount);
             }
         } catch (\Throwable $e) {
             // Return empty result on error

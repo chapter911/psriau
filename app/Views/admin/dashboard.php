@@ -204,8 +204,13 @@
 
     .chart-container {
         position: relative;
-        height: 280px;
+        min-height: 300px;
+        height: auto;
         margin: 0 0 1rem 0;
+    }
+
+    .chart-container canvas {
+        max-height: 400px;
     }
 
     .table-sm td,
@@ -276,7 +281,7 @@
                 </div>
                 <div class="card-body">
                     <?php if (!empty($konstruksiChartData['labels'])): ?>
-                        <div class="chart-container" style="height: 400px;">
+                        <div class="chart-container">
                             <canvas id="konstruksiChart"></canvas>
                         </div>
                     <?php else: ?>
@@ -295,7 +300,7 @@
                 </div>
                 <div class="card-body">
                     <?php if (!empty($konsultasiChartData['labels'])): ?>
-                        <div class="chart-container" style="height: 400px;">
+                        <div class="chart-container">
                             <canvas id="konsultasiChart"></canvas>
                         </div>
                     <?php else: ?>
