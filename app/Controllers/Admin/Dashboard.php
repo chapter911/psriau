@@ -124,9 +124,14 @@ class Dashboard extends BaseController
         }
 
         try {
-            // Get verifikasi columns
+            // Get verifikasi columns to determine what fields exist
             $verifikasiColumns = $db->getFieldNames($tableVerifikasi);
             $hasStatusColumn = in_array('status', $verifikasiColumns, true);
+            $hasVerifikasiKi = in_array('verifikasi_ki', $verifikasiColumns, true);
+
+            // Log for debugging
+            log_message('debug', 'SIMAK Chart - Table: ' . $tableVerifikasi . ', Columns: ' . json_encode($verifikasiColumns));
+            log_message('debug', 'SIMAK Chart - hasStatusColumn: ' . ($hasStatusColumn ? 'true' : 'false') . ', hasVerifikasiKi: ' . ($hasVerifikasiKi ? 'true' : 'false'));
 
             // Get ALL paket from mst_paket
             $paketQuery = $db->table('mst_paket')
@@ -138,6 +143,7 @@ class Dashboard extends BaseController
                 ->getResultArray();
 
             if (empty($paketQuery)) {
+                log_message('debug', 'SIMAK Chart - No paket found');
                 return $result;
             }
 
@@ -167,12 +173,12 @@ class Dashboard extends BaseController
                     continue;
                 }
 
+                // Get counts by status from verifikasi table
                 $adaCount = 0;
                 $totalCount = 0;
 
                 if ($hasStatusColumn) {
-                    // Use status column directly
-                    // Ada = status 'lengkap' + 'belum_verifikasi'
+                    // Count Ada (lengkap + belum_verifikasi)
                     $adaCount = (int) $db->table($tableVerifikasi)
                         ->whereIn('simak_id', $simakIds)
                         ->groupStart()
@@ -184,21 +190,31 @@ class Dashboard extends BaseController
                     $totalCount = (int) $db->table($tableVerifikasi)
                         ->whereIn('simak_id', $simakIds)
                         ->countAllResults();
-                } else {
-                    // Fallback: use verifikasi_ki column
-                    // Ada = verifikasi_ki = 'sesuai' (lengkap) + verifikasi_ki = 'belum_verifikasi'
+                } elseif ($hasVerifikasiKi) {
+                    // Use verifikasi_ki column - check all possible values
+                    // Ada = 'sesuai' + 'belum_verifikasi'
                     $adaCount = (int) $db->table($tableVerifikasi)
                         ->whereIn('simak_id', $simakIds)
                         ->groupStart()
                         ->where('verifikasi_ki', 'sesuai')
                         ->orWhere('verifikasi_ki', 'belum_verifikasi')
+                        ->orWhere('verifikasi_ki', 'Lengkap')
+                        ->orWhere('verifikasi_ki', 'lengkap')
+                        ->orWhere('verifikasi_ki', 'MENUNGGU VERIFIKASI')
+                        ->orWhere('verifikasi_ki', 'Menunggu Verifikasi')
                         ->groupEnd()
                         ->countAllResults();
 
                     $totalCount = (int) $db->table($tableVerifikasi)
                         ->whereIn('simak_id', $simakIds)
                         ->countAllResults();
+                } else {
+                    $totalCount = (int) $db->table($tableVerifikasi)
+                        ->whereIn('simak_id', $simakIds)
+                        ->countAllResults();
                 }
+
+                log_message('debug', 'SIMAK Chart - Paket: ' . $paketNama . ', Total: ' . $totalCount . ', Ada: ' . $adaCount);
 
                 // Calculate percentage
                 $adaPercent = 0;
