@@ -130,11 +130,12 @@ class Dashboard extends BaseController
             // Get distinct paket IDs that have kontrak records
             $mainTable = $tableSimak;
             $paketQuery = $db->table($mainTable)
-                ->select('DISTINCT ' . $mainTable . '.paket_id, mp.nama_paket')
+                ->select($mainTable . '.paket_id, mp.nama_paket')
                 ->join('mst_paket mp', 'mp.id = ' . $mainTable . '.paket_id', 'left')
                 ->where($mainTable . '.paket_id IS NOT NULL', null, false)
                 ->where('mp.nama_paket IS NOT NULL', null, false)
                 ->where('mp.nama_paket !=', '')
+                ->groupBy($mainTable . '.paket_id, mp.nama_paket')
                 ->orderBy('mp.nama_paket', 'ASC')
                 ->get()
                 ->getResultArray();
@@ -187,7 +188,7 @@ class Dashboard extends BaseController
 
                 $simakIdList = array_map(fn($row) => (int) $row['id'], $simakIds);
 
-                if ($useTemplate) {
+                if ($useTemplate && !empty($rowNos)) {
                     // Complex logic using template + verifikasi + dokumen
                     $adaCount = 0;
                     $tidakAdaCount = 0;
@@ -197,7 +198,7 @@ class Dashboard extends BaseController
 
                     // Get verifikasi data
                     $verifikasiData = [];
-                    if ($db->tableExists($tableVerifikasi)) {
+                    if ($db->tableExists($tableVerifikasi) && !empty($simakIdList) && !empty($rowNos)) {
                         $verifikasiQuery = $db->table($tableVerifikasi)
                             ->select('simak_id, row_no, kelengkapan_dokumen, verifikasi_ki')
                             ->whereIn('simak_id', $simakIdList)
@@ -213,7 +214,7 @@ class Dashboard extends BaseController
 
                     // Get dokumen data
                     $dokumenData = [];
-                    if ($db->tableExists($tableDokumen)) {
+                    if ($db->tableExists($tableDokumen) && !empty($simakIdList) && !empty($rowNos)) {
                         $dokumenQuery = $db->table($tableDokumen)
                             ->select('simak_id, row_no, tipe_dokumen, file_relative_path, file_stored_name, verifikasi_ki')
                             ->whereIn('simak_id', $simakIdList)
