@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
                                 }
                             }
                         }
@@ -661,7 +661,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
                                 }
                             }
                         }
