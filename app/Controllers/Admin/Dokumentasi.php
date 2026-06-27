@@ -9,7 +9,7 @@ use App\Models\KegiatanLapanganShareModel;
 
 class Dokumentasi extends BaseController
 {
-    private const MAX_PHOTOS = 50;
+    private const MAX_PHOTOS = 200;
 
     public function index(): string
     {
