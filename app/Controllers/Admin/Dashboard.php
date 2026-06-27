@@ -128,10 +128,11 @@ class Dashboard extends BaseController
 
         try {
             // Get distinct paket IDs that have kontrak records
-            $paketQuery = $db->table($tableSimak . ' s')
-                ->select('DISTINCT s.paket_id, mp.nama_paket')
-                ->join('mst_paket mp', 'mp.id = s.paket_id', 'left')
-                ->where('s.paket_id IS NOT NULL', null, false)
+            $mainTable = $tableSimak;
+            $paketQuery = $db->table($mainTable)
+                ->select('DISTINCT ' . $mainTable . '.paket_id, mp.nama_paket')
+                ->join('mst_paket mp', 'mp.id = ' . $mainTable . '.paket_id', 'left')
+                ->where($mainTable . '.paket_id IS NOT NULL', null, false)
                 ->where('mp.nama_paket IS NOT NULL', null, false)
                 ->where('mp.nama_paket !=', '')
                 ->orderBy('mp.nama_paket', 'ASC')
