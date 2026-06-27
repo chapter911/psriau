@@ -510,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php endif; ?>
 
     <?php if (!empty($konstruksiChartData['labels'])): ?>
-        // Konstruksi Bar Chart
+        // Konstruksi Bar Chart (Percentage)
         const konstruksiData = <?= json_encode([
             'labels' => $konstruksiChartData['labels'] ?? [],
             'ada' => $konstruksiChartData['ada'] ?? [],
@@ -553,13 +553,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         y: {
                             beginAtZero: true,
+                            max: 100,
                             ticks: {
-                                stepSize: 1,
-                                font: { size: 11 }
+                                stepSize: 10,
+                                font: { size: 11 },
+                                callback: function(value) {
+                                    return value + '%';
+                                }
                             },
                             title: {
                                 display: true,
-                                text: 'Jumlah Dokumen',
+                                text: 'Persentase (%)',
                                 font: { size: 12, weight: '600' }
                             }
                         }
@@ -571,6 +575,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 usePointStyle: true,
                                 padding: 15,
                                 font: { size: 12, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
                             }
                         }
                     }
@@ -602,7 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             borderWidth: 1
                         },
                         {
-                            label: 'Tidak Ada / Belum Sesuai',
+                            label: 'Tidak Ada',
                             data: konsultasiData.tidak_ada,
                             backgroundColor: '#ef4444',
                             borderColor: '#dc2626',
@@ -623,13 +634,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         y: {
                             beginAtZero: true,
+                            max: 100,
                             ticks: {
-                                stepSize: 1,
-                                font: { size: 11 }
+                                stepSize: 10,
+                                font: { size: 11 },
+                                callback: function(value) {
+                                    return value + '%';
+                                }
                             },
                             title: {
                                 display: true,
-                                text: 'Jumlah Dokumen',
+                                text: 'Persentase (%)',
                                 font: { size: 12, weight: '600' }
                             }
                         }
@@ -641,6 +656,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 usePointStyle: true,
                                 padding: 15,
                                 font: { size: 12, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
                             }
                         }
                     }

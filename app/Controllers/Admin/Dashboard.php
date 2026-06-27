@@ -102,9 +102,11 @@ class Dashboard extends BaseController
      * - Ada = Lengkap + Menunggu Verifikasi
      * - Tidak Ada = Belum Sesuai + Belum Ada
      *
+     * Returns data as percentage (max 100%)
+     *
      * @param mixed $db
      * @param string $type 'konstruksi' or 'konsultasi'
-     * @return array{labels: string[], ada: int[], tidak_ada: int[]}
+     * @return array{labels: string[], ada: float[], tidak_ada: float[]}
      */
     private function getSimakDokumenChartData($db, string $type): array
     {
@@ -118,21 +120,17 @@ class Dashboard extends BaseController
         ];
 
         // Check if required tables exist
-        if (!$db->tableExists($tableSimak) || !$db->tableExists('mst_paket') || !$db->tableExists($tableVerifikasi)) {
+        if (!$db->tableExists('mst_paket')) {
             return $result;
         }
 
         try {
-            // Get distinct paket IDs that have kontrak records
-            $mainTable = $tableSimak;
-            $paketQuery = $db->table($mainTable)
-                ->select($mainTable . '.paket_id, mp.nama_paket')
-                ->join('mst_paket mp', 'mp.id = ' . $mainTable . '.paket_id', 'left')
-                ->where($mainTable . '.paket_id IS NOT NULL', null, false)
-                ->where('mp.nama_paket IS NOT NULL', null, false)
-                ->where('mp.nama_paket !=', '')
-                ->groupBy($mainTable . '.paket_id, mp.nama_paket')
-                ->orderBy('mp.nama_paket', 'ASC')
+            // Get ALL paket from mst_paket (including those without kontrak records)
+            $paketQuery = $db->table('mst_paket')
+                ->select('id, nama_paket')
+                ->where('nama_paket IS NOT NULL', null, false)
+                ->where('nama_paket !=', '')
+                ->orderBy('nama_paket', 'ASC')
                 ->get()
                 ->getResultArray();
 
@@ -140,8 +138,12 @@ class Dashboard extends BaseController
                 return $result;
             }
 
+            // Get columns from verifikasi table
+            $verifikasiColumns = $db->getFieldNames($tableVerifikasi);
+            $hasStatusColumn = in_array('status', $verifikasiColumns, true);
+
             foreach ($paketQuery as $paket) {
-                $paketId = (int) ($paket['paket_id'] ?? 0);
+                $paketId = (int) ($paket['id'] ?? 0);
                 $paketNama = trim((string) ($paket['nama_paket'] ?? 'Tanpa Paket'));
 
                 if ($paketId <= 0) {
@@ -149,90 +151,69 @@ class Dashboard extends BaseController
                 }
 
                 // Get all SIMAK IDs for this paket
-                $simakIds = $db->table($tableSimak)
-                    ->select('id')
-                    ->where('paket_id', $paketId)
-                    ->get()
-                    ->getResultArray();
-
-                if (empty($simakIds)) {
-                    continue;
+                $simakIds = [];
+                if ($db->tableExists($tableSimak)) {
+                    $simakQuery = $db->table($tableSimak)
+                        ->select('id')
+                        ->where('paket_id', $paketId)
+                        ->get()
+                        ->getResultArray();
+                    $simakIds = array_map(fn($row) => (int) $row['id'], $simakQuery);
                 }
 
-                $simakIdList = array_map(fn($row) => (int) $row['id'], $simakIds);
+                $adaCount = 0;
+                $totalCount = 0;
 
-                // Get columns from verifikasi table
-                $verifikasiColumns = $db->getFieldNames($tableVerifikasi);
-
-                // Count based on status field if exists, otherwise use verifikasi_ki
-                if (in_array('status', $verifikasiColumns, true)) {
-                    // Using status column
-                    $adaCount = (int) $db->table($tableVerifikasi)
-                        ->whereIn('simak_id', $simakIdList)
-                        ->whereIn('status', ['lengkap', 'belum_verifikasi'])
-                        ->countAllResults();
-
-                    $tidakAdaCount = (int) $db->table($tableVerifikasi)
-                        ->whereIn('simak_id', $simakIdList)
-                        ->whereIn('status', ['belum_sesuai', 'belum_ada'])
-                        ->countAllResults();
-
-                    // Also count NULL/empty status as tidak ada
-                    $emptyStatusCount = (int) $db->table($tableVerifikasi)
-                        ->select('COUNT(*) as cnt')
-                        ->whereIn('simak_id', $simakIdList)
-                        ->where('status IS NULL', null, false)
-                        ->orWhere('status', '')
-                        ->get()
-                        ->getRowArray()['cnt'] ?? 0;
-
-                    $tidakAdaCount += $emptyStatusCount;
-                } else {
-                    // Using verifikasi_ki and kelengkapan_dokumen columns
-                    // Lengkap/Menunggu Verifikasi (Ada):
-                    // - verifikasi_ki = 'sesuai' AND kelengkapan_dokumen = 'ada'
-                    // - verifikasi_ki = 'belum_verifikasi'
-                    // - kelengkapan_dokumen = 'ada' (and verifikasi_ki is empty)
-                    //
-                    // Belum Sesuai/Belum Ada (Tidak Ada):
-                    // - verifikasi_ki = 'tidak_sesuai'
-                    // - kelengkapan_dokumen = 'tidak'
-                    // - verifikasi_ki is NULL and kelengkapan_dokumen is NULL/empty
-
-                    // Count Ada (Lengkap + Menunggu Verifikasi)
-                    $adaCount = 0;
-
-                    // Count lengkap: verifikasi_ki = 'sesuai' AND kelengkapan_dokumen = 'ada'
-                    $adaCount += (int) $db->table($tableVerifikasi)
-                        ->whereIn('simak_id', $simakIdList)
-                        ->where('verifikasi_ki', 'sesuai')
-                        ->where('kelengkapan_dokumen', 'ada')
-                        ->countAllResults();
-
-                    // Count menunggu verifikasi: verifikasi_ki = 'belum_verifikasi'
-                    $adaCount += (int) $db->table($tableVerifikasi)
-                        ->whereIn('simak_id', $simakIdList)
-                        ->where('verifikasi_ki', 'belum_verifikasi')
-                        ->countAllResults();
-
-                    // Count menunggu verifikasi: kelengkapan_dokumen = 'ada' but verifikasi_ki is empty
-                    $adaCount += (int) $db->table($tableVerifikasi)
-                        ->whereIn('simak_id', $simakIdList)
-                        ->where('kelengkapan_dokumen', 'ada')
-                        ->where('verifikasi_ki IS NULL', null, false)
-                        ->countAllResults();
-
-                    // Total count
+                if (!empty($simakIds) && $db->tableExists($tableVerifikasi)) {
+                    // Get total count
                     $totalCount = (int) $db->table($tableVerifikasi)
-                        ->whereIn('simak_id', $simakIdList)
+                        ->whereIn('simak_id', $simakIds)
                         ->countAllResults();
 
-                    $tidakAdaCount = $totalCount - $adaCount;
+                    if ($totalCount > 0) {
+                        if ($hasStatusColumn) {
+                            // Using status column
+                            $adaCount = (int) $db->table($tableVerifikasi)
+                                ->whereIn('simak_id', $simakIds)
+                                ->whereIn('status', ['lengkap', 'belum_verifikasi'])
+                                ->countAllResults();
+                        } else {
+                            // Using verifikasi_ki and kelengkapan_dokumen columns
+                            // Count lengkap: verifikasi_ki = 'sesuai' AND kelengkapan_dokumen = 'ada'
+                            $adaCount = (int) $db->table($tableVerifikasi)
+                                ->whereIn('simak_id', $simakIds)
+                                ->where('verifikasi_ki', 'sesuai')
+                                ->where('kelengkapan_dokumen', 'ada')
+                                ->countAllResults();
+
+                            // Count menunggu verifikasi: verifikasi_ki = 'belum_verifikasi'
+                            $adaCount += (int) $db->table($tableVerifikasi)
+                                ->whereIn('simak_id', $simakIds)
+                                ->where('verifikasi_ki', 'belum_verifikasi')
+                                ->countAllResults();
+
+                            // Count menunggu verifikasi: kelengkapan_dokumen = 'ada' but verifikasi_ki is empty
+                            $adaCount += (int) $db->table($tableVerifikasi)
+                                ->whereIn('simak_id', $simakIds)
+                                ->where('kelengkapan_dokumen', 'ada')
+                                ->where('verifikasi_ki IS NULL', null, false)
+                                ->countAllResults();
+                        }
+                    }
+                }
+
+                // Calculate percentage (max 100%)
+                $adaPercent = $totalCount > 0 ? min(100, round(($adaCount / $totalCount) * 100, 1)) : 0;
+                $tidakAdaPercent = $totalCount > 0 ? min(100, round((($totalCount - $adaCount) / $totalCount) * 100, 1)) : 0;
+
+                // If no data, show 0% for ada and 100% for tidak ada
+                if ($totalCount === 0) {
+                    $tidakAdaPercent = 100;
                 }
 
                 $result['labels'][] = $paketNama;
-                $result['ada'][] = max(0, $adaCount);
-                $result['tidak_ada'][] = max(0, $tidakAdaCount);
+                $result['ada'][] = $adaPercent;
+                $result['tidak_ada'][] = $tidakAdaPercent;
             }
         } catch (\Throwable $e) {
             log_message('error', 'SIMAK Chart Error: ' . $e->getMessage());
