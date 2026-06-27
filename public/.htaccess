@@ -5,10 +5,16 @@ Options -Indexes
 # PHP Configuration for multi-file uploads
 <IfModule LiteSpeed>
     php_value max_file_uploads 100
+    php_value max_input_vars 5000
+    php_value max_input_nesting_level 64
+    php_value post_max_size 100M
 </IfModule>
 
 <IfModule mod_php.c>
     php_value max_file_uploads 100
+    php_value max_input_vars 5000
+    php_value max_input_nesting_level 64
+    php_value post_max_size 100M
 </IfModule>
 
 ## FallbackResource removed; rely on proper host rewrite configuration
