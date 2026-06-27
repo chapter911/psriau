@@ -98,9 +98,11 @@ class Dashboard extends BaseController
     /**
      * Get document completeness chart data for SIMAK Konstruksi or Konsultasi
      *
-     * Logic matches Konstruksi controller:
+     * Based on the page display logic from Konstruksi controller:
      * - Ada = Lengkap + Menunggu Verifikasi
      * - Tidak Ada = Belum Sesuai + Belum Ada
+     *
+     * Returns data as percentage (max 100%)
      *
      * @param mixed $db
      * @param string $type 'konstruksi' or 'konsultasi'
@@ -110,6 +112,7 @@ class Dashboard extends BaseController
     {
         $tableSimak = $type === 'konstruksi' ? 'trn_kontrak_simak' : 'trn_kontrak_simak_konsultasi';
         $tableVerifikasi = $type === 'konstruksi' ? 'trn_kontrak_simak_verifikasi' : 'trn_kontrak_simak_konsultasi_verifikasi';
+        $tableDokumen = $type === 'konstruksi' ? 'trn_kontrak_simak_verifikasi_dokumen' : 'trn_kontrak_simak_konsultasi_verifikasi_dokumen';
         $tableTemplate = $type === 'konstruksi' ? 'mst_simak_konstruksi_item' : 'mst_simak_konsultasi_item';
 
         $result = [
@@ -118,27 +121,51 @@ class Dashboard extends BaseController
             'tidak_ada' => [],
         ];
 
+        // Check if required tables exist
         if (!$db->tableExists('mst_paket')) {
             return $result;
         }
 
         try {
-            // Get template leaf rows count
-            $totalLeafRows = 0;
+            // Get template items - first try to get columns to determine correct query
+            $leafRows = [];
             if ($db->tableExists($tableTemplate)) {
                 $templateColumns = $db->getFieldNames($tableTemplate);
-                $leafColumn = null;
 
+                // Try different column names for leaf items
+                $leafColumn = null;
+                $rowNoColumn = 'row_no';
+
+                // Check which column indicates a leaf/item
                 if (in_array('is_leaf', $templateColumns, true)) {
                     $leafColumn = 'is_leaf';
                 } elseif (in_array('has_question', $templateColumns, true)) {
                     $leafColumn = 'has_question';
+                } elseif (in_array('is_header', $templateColumns, true)) {
+                    // If is_header exists, leaf items are where is_header = 0
+                    $leafColumn = 'is_header';
                 }
 
                 if ($leafColumn !== null) {
-                    $totalLeafRows = (int) $db->table($tableTemplate)
-                        ->where($leafColumn, 1)
-                        ->countAllResults();
+                    $query = $db->table($tableTemplate)
+                        ->select($rowNoColumn)
+                        ->where($leafColumn . ' =', 1);
+
+                    // If using is_header, we want items where is_header = 0 (not header)
+                    if ($leafColumn === 'is_header') {
+                        $query = $db->table($tableTemplate)
+                            ->select($rowNoColumn)
+                            ->where($leafColumn . ' =', 0);
+                    }
+
+                    $templateQuery = $query->get()->getResultArray();
+
+                    foreach ($templateQuery as $item) {
+                        $rowNo = (int) ($item[$rowNoColumn] ?? 0);
+                        if ($rowNo > 0) {
+                            $leafRows[] = $rowNo;
+                        }
+                    }
                 }
             }
 
@@ -153,6 +180,13 @@ class Dashboard extends BaseController
 
             if (empty($paketQuery)) {
                 return $result;
+            }
+
+            // Get verifikasi columns to determine logic
+            $hasStatusColumn = false;
+            if ($db->tableExists($tableVerifikasi)) {
+                $verifikasiColumns = $db->getFieldNames($tableVerifikasi);
+                $hasStatusColumn = in_array('status', $verifikasiColumns, true);
             }
 
             foreach ($paketQuery as $paket) {
@@ -175,43 +209,123 @@ class Dashboard extends BaseController
                 }
 
                 if (empty($simakIds)) {
+                    // No kontrak for this paket - show 100% tidak ada
                     $result['labels'][] = $paketNama;
                     $result['ada'][] = 0;
                     $result['tidak_ada'][] = 100;
                     continue;
                 }
 
-                $adaCount = 0;
-                $totalCount = 0;
+                // Calculate percentage for this paket based on all SIMAK records
+                $adaPercentTotal = 0;
+                $simakCount = count($simakIds);
 
-                if ($db->tableExists($tableVerifikasi)) {
-                    // Get verifikasi data for all SIMAK in this paket
-                    $verifikasiData = $db->table($tableVerifikasi)
-                        ->select('simak_id, verifikasi_ki, kelengkapan_dokumen')
-                        ->whereIn('simak_id', $simakIds)
-                        ->get()
-                        ->getResultArray();
+                if (!empty($leafRows)) {
+                    // Use template-based calculation
+                    foreach ($simakIds as $simakId) {
+                        $adaCount = 0;
+                        $totalCount = count($leafRows);
 
-                    foreach ($verifikasiData as $row) {
-                        $totalCount++;
-                        $verifikasiKi = strtolower(trim((string) ($row['verifikasi_ki'] ?? '')));
+                        // Get verifikasi data for this SIMAK
+                        $verifikasiData = [];
+                        if ($db->tableExists($tableVerifikasi)) {
+                            $vQuery = $db->table($tableVerifikasi)
+                                ->select('row_no, kelengkapan_dokumen, verifikasi_ki')
+                                ->where('simak_id', $simakId)
+                                ->whereIn('row_no', $leafRows)
+                                ->get()
+                                ->getResultArray();
 
-                        // Ada = verifikasi_ki = 'sesuai' (lengkap) OR verifikasi_ki = 'belum_verifikasi' (menunggu verifikasi)
-                        if ($verifikasiKi === 'sesuai' || $verifikasiKi === 'belum_verifikasi') {
-                            $adaCount++;
+                            foreach ($vQuery as $v) {
+                                $verifikasiData[(int) $v['row_no']] = $v;
+                            }
+                        }
+
+                        // Get dokumen data
+                        $dokumenData = [];
+                        if ($db->tableExists($tableDokumen)) {
+                            $dQuery = $db->table($tableDokumen)
+                                ->select('row_no, tipe_dokumen, file_relative_path, file_stored_name, verifikasi_ki')
+                                ->where('simak_id', $simakId)
+                                ->whereIn('row_no', $leafRows)
+                                ->orderBy('row_no', 'ASC')
+                                ->orderBy('id', 'DESC')
+                                ->get()
+                                ->getResultArray();
+
+                            foreach ($dQuery as $doc) {
+                                $rowNo = (int) $doc['row_no'];
+                                if (!isset($dokumenData[$rowNo])) {
+                                    $dokumenData[$rowNo] = $doc;
+                                }
+                            }
+                        }
+
+                        // Count ada for each leaf row
+                        foreach ($leafRows as $rowNo) {
+                            $vRow = $verifikasiData[$rowNo] ?? null;
+                            $dRow = $dokumenData[$rowNo] ?? null;
+
+                            $status = $this->resolveSimakRowStatus($vRow, $dRow);
+
+                            // Ada = Lengkap + Menunggu Verifikasi
+                            if ($status === 'lengkap' || $status === 'belum_verifikasi') {
+                                $adaCount++;
+                            }
+                        }
+
+                        // Calculate percentage for this SIMAK
+                        $adaPercentTotal += ($totalCount > 0) ? (($adaCount / $totalCount) * 100) : 0;
+                    }
+
+                    // Average percentage across all SIMAK in this paket
+                    $adaPercent = $simakCount > 0 ? ($adaPercentTotal / $simakCount) : 0;
+                    $adaPercent = round(min(100, $adaPercent), 1);
+                    $tidakAdaPercent = round(min(100, 100 - $adaPercent), 1);
+                } else {
+                    // Fallback: use verifikasi table directly
+                    $adaCount = 0;
+                    $totalCount = 0;
+
+                    if ($db->tableExists($tableVerifikasi)) {
+                        $totalCount = (int) $db->table($tableVerifikasi)
+                            ->whereIn('simak_id', $simakIds)
+                            ->countAllResults();
+
+                        if ($totalCount > 0) {
+                            if ($hasStatusColumn) {
+                                $adaCount = (int) $db->table($tableVerifikasi)
+                                    ->whereIn('simak_id', $simakIds)
+                                    ->whereIn('status', ['lengkap', 'belum_verifikasi'])
+                                    ->countAllResults();
+                            } else {
+                                // Count lengkap: verifikasi_ki = 'sesuai' AND kelengkapan_dokumen = 'ada'
+                                $adaCount = (int) $db->table($tableVerifikasi)
+                                    ->whereIn('simak_id', $simakIds)
+                                    ->where('verifikasi_ki', 'sesuai')
+                                    ->where('kelengkapan_dokumen', 'ada')
+                                    ->countAllResults();
+
+                                // Count menunggu verifikasi: verifikasi_ki = 'belum_verifikasi'
+                                $adaCount += (int) $db->table($tableVerifikasi)
+                                    ->whereIn('simak_id', $simakIds)
+                                    ->where('verifikasi_ki', 'belum_verifikasi')
+                                    ->countAllResults();
+
+                                // Count menunggu verifikasi: kelengkapan_dokumen = 'ada' but verifikasi_ki is empty
+                                $adaCount += (int) $db->table($tableVerifikasi)
+                                    ->whereIn('simak_id', $simakIds)
+                                    ->where('kelengkapan_dokumen', 'ada')
+                                    ->where('verifikasi_ki IS NULL', null, false)
+                                    ->countAllResults();
+                            }
                         }
                     }
-                }
 
-                // Calculate percentage
-                $adaPercent = 0;
-                $tidakAdaPercent = 100;
-
-                if ($totalCount > 0) {
-                    $adaPercent = round(($adaCount / $totalCount) * 100, 2);
-                    $adaPercent = min(100, max(0, $adaPercent));
-                    $tidakAdaPercent = round(100 - $adaPercent, 2);
-                    $tidakAdaPercent = max(0, min(100, $tidakAdaPercent));
+                    // Calculate percentage
+                    $adaPercent = $totalCount > 0 ? round(($adaCount / $totalCount) * 100, 1) : 0;
+                    $adaPercent = min(100, $adaPercent);
+                    $tidakAdaPercent = round(min(100, 100 - $adaPercent), 1);
                 }
 
                 $result['labels'][] = $paketNama;
@@ -219,7 +333,7 @@ class Dashboard extends BaseController
                 $result['tidak_ada'][] = $tidakAdaPercent;
             }
         } catch (\Throwable $e) {
-            log_message('error', 'SIMAK Chart Error: ' . $e->getMessage());
+            log_message('error', 'SIMAK Chart Error: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine());
             return [
                 'labels' => [],
                 'ada' => [],
@@ -228,6 +342,68 @@ class Dashboard extends BaseController
         }
 
         return $result;
+    }
+
+    /**
+     * Resolve row status - simplified from Konstruksi controller
+     */
+    private function resolveSimakRowStatus(?array $verifikasiRow, ?array $dokumenRow): string
+    {
+        if ($verifikasiRow === null && $dokumenRow === null) {
+            return 'belum_ada';
+        }
+
+        $rowKelengkapan = strtolower(trim((string) ($verifikasiRow['kelengkapan_dokumen'] ?? '')));
+        $rowVerifikasi = strtolower(trim((string) ($verifikasiRow['verifikasi_ki'] ?? '')));
+
+        // Check dokumen
+        $docVerifikasi = '';
+        $docHasFile = false;
+        $docIsPlaceholder = false;
+
+        if ($dokumenRow !== null) {
+            $docVerifikasi = strtolower(trim((string) ($dokumenRow['verifikasi_ki'] ?? '')));
+            $filePath = trim((string) ($dokumenRow['file_relative_path'] ?? ''));
+            $fileName = trim((string) ($dokumenRow['file_stored_name'] ?? ''));
+            $docHasFile = $filePath !== '';
+            $docIsPlaceholder = $filePath === '' && $fileName === '';
+        }
+
+        // Check for lengkap
+        if ($rowVerifikasi === 'sesuai' && $rowKelengkapan === 'ada') {
+            return 'lengkap';
+        }
+        if ($docVerifikasi === 'sesuai') {
+            return 'lengkap';
+        }
+
+        // Check for belum sesuai
+        if ($rowVerifikasi === 'tidak_sesuai') {
+            return 'belum_sesuai';
+        }
+        if ($docVerifikasi === 'tidak_sesuai') {
+            return 'belum_sesuai';
+        }
+
+        // Check for menunggu verifikasi
+        if ($rowVerifikasi === 'belum_verifikasi') {
+            return 'belum_verifikasi';
+        }
+        if ($docVerifikasi === 'belum_verifikasi') {
+            return 'belum_verifikasi';
+        }
+        if ($rowKelengkapan === 'ada' && $rowVerifikasi === '') {
+            return 'belum_verifikasi';
+        }
+        if ($docHasFile && $docVerifikasi === '') {
+            return 'belum_verifikasi';
+        }
+        if ($docIsPlaceholder) {
+            return 'belum_verifikasi';
+        }
+
+        // Otherwise belum ada
+        return 'belum_ada';
     }
 
     public function map(): string
@@ -349,7 +525,7 @@ class Dashboard extends BaseController
             ->select('mst_sekolah.npsn, mst_sekolah.nama, mst_sekolah.jenis, mst_sekolah.nsm, mst_sekolah.kabupaten, mst_sekolah.kecamatan, mst_sekolah.latitude, mst_sekolah.longitude');
 
         if ($hasSurveyTable) {
-            $latestSurveySubQuery = "SELECT t1.npsn, t1.periode, t1.survey_klasifikasi_kerusakan, t1.survey_tingat_kerusakan, t1.status_lahan, t1.status_penanganan, t1.ekspos_status\n                FROM trn_survey_sekolah t1\n                INNER JOIN (\n                    SELECT npsn, MAX(periode) AS max_periode\n                    FROM trn_survey_sekolah\n                    GROUP BY npsn\n\n                ) latest ON latest.npsn = t1.npsn AND latest.max_periode = t1.periode";
+            $latestSurveySubQuery = "SELECT t1.npsn, t1.periode, t1.survey_klasifikasi_kerusakan, t1.survey_tingat_kerusakan, t1.status_lahan, t1.status_penanganan, t1.ekspos_status\n                FROM trn_survey_sekolah t1\n                INNER JOIN (\n                    SELECT npsn, MAX(periode) AS max_periode\n                    FROM trn_survey_sekolah\n                    GROUP BY npsn\n                ) latest ON latest.npsn = t1.npsn AND latest.max_periode = t1.periode";
 
             $builder
                 ->select('survey_latest.periode, survey_latest.survey_klasifikasi_kerusakan, survey_latest.survey_tingat_kerusakan, survey_latest.status_lahan, survey_latest.status_penanganan, survey_latest.ekspos_status')
