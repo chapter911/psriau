@@ -275,9 +275,9 @@
     <div class="row">
         <div class="col-lg-6 col-12 mb-3">
             <div class="card panel-card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header">
                     <h3 class="card-title mb-0">🏗️ Konstruksi</h3>
-                    <a href="<?= site_url('/admin/kontrak/simak/konstruksi'); ?>" class="btn btn-sm btn-primary">Lihat Detail</a>
+                    <a href="<?= site_url('/admin/kontrak/simak/konstruksi'); ?>" class="btn btn-sm btn-primary ml-auto">Lihat Detail</a>
                 </div>
                 <div class="card-body">
                     <?php if (!empty($konstruksiChartData['labels'])): ?>
@@ -294,9 +294,9 @@
         </div>
         <div class="col-lg-6 col-12 mb-3">
             <div class="card panel-card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header">
                     <h3 class="card-title mb-0">📋 Konsultasi</h3>
-                    <a href="<?= site_url('/admin/kontrak/simak/konsultasi'); ?>" class="btn btn-sm btn-primary">Lihat Detail</a>
+                    <a href="<?= site_url('/admin/kontrak/simak/konsultasi'); ?>" class="btn btn-sm btn-primary ml-auto">Lihat Detail</a>
                 </div>
                 <div class="card-body">
                     <?php if (!empty($konsultasiChartData['labels'])): ?>
@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
                                 }
                             }
                         }
@@ -661,7 +661,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
                                 }
                             }
                         }
