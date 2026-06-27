@@ -98,15 +98,11 @@ class Dashboard extends BaseController
     /**
      * Get document completeness chart data for SIMAK Konstruksi or Konsultasi
      *
-     * Based on the page display:
-     * - Lengkap: 0,00%
-     * - Belum Sesuai: 0,00%
-     * - Menunggu Verifikasi: 26,44%
-     * - Belum ada: 73,56%
-     *
-     * Calculation:
-     * - Ada = Lengkap + Menunggu Verifikasi
-     * - Tidak Ada = Belum Sesuai + Belum Ada
+     * Based on the page display logic from Kontrak controller:
+     * - Lengkap: All documents verified as 'sesuai'
+     * - Belum Sesuai: Documents marked 'tidak_sesuai'
+     * - Menunggu Verifikasi: Documents exist but not yet verified
+     * - Belum Ada: No documents uploaded
      *
      * @param mixed $db
      * @param string $type 'konstruksi' or 'konsultasi'
@@ -116,6 +112,8 @@ class Dashboard extends BaseController
     {
         $tableSimak = $type === 'konstruksi' ? 'trn_kontrak_simak' : 'trn_kontrak_simak_konsultasi';
         $tableVerifikasi = $type === 'konstruksi' ? 'trn_kontrak_simak_verifikasi' : 'trn_kontrak_simak_konsultasi_verifikasi';
+        $tableDokumen = $type === 'konstruksi' ? 'trn_kontrak_simak_verifikasi_dokumen' : 'trn_kontrak_simak_konsultasi_verifikasi_dokumen';
+        $tableTemplate = $type === 'konstruksi' ? 'mst_simak_konstruksi_item' : 'mst_simak_konsultasi_item';
 
         $result = [
             'labels' => [],
@@ -124,7 +122,7 @@ class Dashboard extends BaseController
         ];
 
         // Check if required tables exist
-        if (!$db->tableExists($tableSimak) || !$db->tableExists('mst_paket') || !$db->tableExists($tableVerifikasi)) {
+        if (!$db->tableExists($tableSimak) || !$db->tableExists('mst_paket')) {
             return $result;
         }
 
@@ -144,11 +142,33 @@ class Dashboard extends BaseController
                 return $result;
             }
 
+            // Get template items (leaf rows only)
+            $templateItems = [];
+            if ($db->tableExists($tableTemplate)) {
+                $templateQuery = $db->table($tableTemplate)
+                    ->select('row_no, has_draft')
+                    ->where('is_leaf', 1)
+                    ->where('is_active', 1)
+                    ->get()
+                    ->getResultArray();
+
+                foreach ($templateQuery as $item) {
+                    $rowNo = (int) ($item['row_no'] ?? 0);
+                    if ($rowNo > 0) {
+                        $templateItems[$rowNo] = [
+                            'has_draft' => (bool) ($item['has_draft'] ?? false),
+                        ];
+                    }
+                }
+            }
+
+            // If no template items found, use verifikasi table directly
+            $useTemplate = !empty($templateItems);
+
             foreach ($paketQuery as $paket) {
                 $paketId = (int) ($paket['paket_id'] ?? 0);
                 $paketNama = trim((string) ($paket['nama_paket'] ?? 'Tanpa Paket'));
 
-                // Skip if no valid paket ID
                 if ($paketId <= 0) {
                     continue;
                 }
@@ -166,34 +186,99 @@ class Dashboard extends BaseController
 
                 $simakIdList = array_map(fn($row) => (int) $row['id'], $simakIds);
 
-                // Count verification status for all SIMAK records in this paket
-                // Fields in verifikasi table:
-                // - kelengkapan_dokumen: 'ada' or 'tidak' (NULL means belum ada)
-                //
-                // Ada = kelengkapan_dokumen = 'ada'
-                // Tidak Ada = kelengkapan_dokumen = 'tidak' OR kelengkapan_dokumen IS NULL OR kelengkapan_dokumen = ''
-                $totalCount = $db->table($tableVerifikasi)
-                    ->whereIn('simak_id', $simakIdList)
-                    ->countAllResults();
+                if ($useTemplate) {
+                    // Complex logic using template + verifikasi + dokumen
+                    $adaCount = 0;
+                    $tidakAdaCount = 0;
 
-                $adaCount = 0;
-                if ($totalCount > 0) {
-                    // Count ada: kelengkapan_dokumen = 'ada'
-                    $adaCount = (int) $db->table($tableVerifikasi)
+                    // Get row numbers to check
+                    $rowNos = array_keys($templateItems);
+
+                    // Get verifikasi data
+                    $verifikasiData = [];
+                    if ($db->tableExists($tableVerifikasi)) {
+                        $verifikasiQuery = $db->table($tableVerifikasi)
+                            ->select('simak_id, row_no, kelengkapan_dokumen, verifikasi_ki')
+                            ->whereIn('simak_id', $simakIdList)
+                            ->whereIn('row_no', $rowNos)
+                            ->get()
+                            ->getResultArray();
+
+                        foreach ($verifikasiQuery as $row) {
+                            $key = ((int) $row['simak_id']) . '_' . ((int) $row['row_no']);
+                            $verifikasiData[$key] = $row;
+                        }
+                    }
+
+                    // Get dokumen data
+                    $dokumenData = [];
+                    if ($db->tableExists($tableDokumen)) {
+                        $dokumenQuery = $db->table($tableDokumen)
+                            ->select('simak_id, row_no, tipe_dokumen, file_relative_path, file_stored_name, verifikasi_ki')
+                            ->whereIn('simak_id', $simakIdList)
+                            ->whereIn('row_no', $rowNos)
+                            ->orderBy('row_no', 'ASC')
+                            ->orderBy('id', 'DESC')
+                            ->get()
+                            ->getResultArray();
+
+                        foreach ($dokumenQuery as $doc) {
+                            $key = ((int) $doc['simak_id']) . '_' . ((int) $doc['row_no']);
+                            if (!isset($dokumenData[$key])) {
+                                $dokumenData[$key] = $doc;
+                            }
+                        }
+                    }
+
+                    // Count each SIMAK record
+                    foreach ($simakIdList as $simakId) {
+                        foreach ($rowNos as $rowNo) {
+                            $vKey = $simakId . '_' . $rowNo;
+                            $dKey = $simakId . '_' . $rowNo;
+
+                            $verifikasiRow = $verifikasiData[$vKey] ?? null;
+                            $dokumenRow = $dokumenData[$dKey] ?? null;
+
+                            $status = $this->resolveSimpleRowStatus(
+                                $templateItems[$rowNo]['has_draft'] ?? false,
+                                $verifikasiRow,
+                                $dokumenRow
+                            );
+
+                            // Ada = Lengkap (lengkap) + Menunggu Verifikasi (belum_verifikasi)
+                            // Tidak Ada = Belum Sesuai (belum_sesuai) + Belum Ada (belum_ada)
+                            if ($status === 'lengkap' || $status === 'belum_verifikasi') {
+                                $adaCount++;
+                            } else {
+                                $tidakAdaCount++;
+                            }
+                        }
+                    }
+
+                    $result['labels'][] = $paketNama;
+                    $result['ada'][] = $adaCount;
+                    $result['tidak_ada'][] = $tidakAdaCount;
+                } else {
+                    // Fallback: Simple count from verifikasi table
+                    $totalCount = $db->table($tableVerifikasi)
                         ->whereIn('simak_id', $simakIdList)
-                        ->where('kelengkapan_dokumen', 'ada')
                         ->countAllResults();
+
+                    $adaCount = 0;
+                    if ($totalCount > 0) {
+                        $adaCount = (int) $db->table($tableVerifikasi)
+                            ->whereIn('simak_id', $simakIdList)
+                            ->where('kelengkapan_dokumen', 'ada')
+                            ->countAllResults();
+                    }
+
+                    $result['labels'][] = $paketNama;
+                    $result['ada'][] = $adaCount;
+                    $result['tidak_ada'][] = $totalCount - $adaCount;
                 }
-
-                // Tidak ada: everything else (total - ada)
-                $tidakAdaCount = $totalCount - $adaCount;
-
-                $result['labels'][] = $paketNama;
-                $result['ada'][] = max(0, $adaCount);
-                $result['tidak_ada'][] = max(0, $tidakAdaCount);
             }
         } catch (\Throwable $e) {
-            // Return empty result on error
+            log_message('error', 'SIMAK Chart Error: ' . $e->getMessage());
             return [
                 'labels' => [],
                 'ada' => [],
@@ -202,6 +287,95 @@ class Dashboard extends BaseController
         }
 
         return $result;
+    }
+
+    /**
+     * Resolve single row status - simplified version of Kontrak controller logic
+     */
+    private function resolveSimpleRowStatus(bool $hasDraft, ?array $verifikasiRow, ?array $dokumenRow): string
+    {
+        $rowKelengkapan = strtolower(trim((string) ($verifikasiRow['kelengkapan_dokumen'] ?? '')));
+        $rowVerifikasi = strtolower(trim((string) ($verifikasiRow['verifikasi_ki'] ?? '')));
+
+        // Check dokumen row
+        $docType = $dokumenRow ? strtolower(trim((string) ($dokumenRow['tipe_dokumen'] ?? 'final'))) : '';
+        $docVerifikasi = $dokumenRow ? strtolower(trim((string) ($dokumenRow['verifikasi_ki'] ?? ''))) : '';
+        $docHasFile = $dokumenRow && trim((string) ($dokumenRow['file_relative_path'] ?? '')) !== '';
+        $docIsPlaceholder = $dokumenRow
+            && trim((string) ($dokumenRow['file_relative_path'] ?? '')) === ''
+            && trim((string) ($dokumenRow['file_stored_name'] ?? '')) === '';
+
+        // For items with draft requirement
+        if ($hasDraft) {
+            // Draft verified as 'tidak_sesuai'
+            if ($docType === 'draft' && $docVerifikasi === 'tidak_sesuai') {
+                return 'belum_sesuai';
+            }
+
+            // Draft verified as 'sesuai'
+            if ($docType === 'draft' && $docVerifikasi === 'sesuai') {
+                // Check final dokumen
+                // If we have the final dokumen row separately, check it
+                if ($docType !== 'draft' && $docVerifikasi === 'sesuai') {
+                    return 'lengkap';
+                }
+                if ($docType !== 'draft' && $docVerifikasi === 'tidak_sesuai') {
+                    return 'belum_sesuai';
+                }
+                if ($docHasFile || $docIsPlaceholder) {
+                    return 'belum_verifikasi';
+                }
+                return 'belum_ada';
+            }
+
+            // Row level verification
+            if ($rowVerifikasi === 'tidak_sesuai') {
+                return 'belum_sesuai';
+            }
+            if ($rowVerifikasi === 'sesuai') {
+                return 'belum_ada';
+            }
+            if ($rowVerifikasi === 'belum_verifikasi') {
+                return 'belum_verifikasi';
+            }
+
+            // If we have any document
+            if ($docHasFile || $docIsPlaceholder || $dokumenRow !== null) {
+                return 'belum_verifikasi';
+            }
+
+            return 'belum_ada';
+        }
+
+        // For items without draft requirement (final only)
+        // If we have dokumen row
+        if ($dokumenRow !== null) {
+            if ($docVerifikasi === 'sesuai') {
+                return 'lengkap';
+            }
+            if ($docVerifikasi === 'tidak_sesuai') {
+                return 'belum_sesuai';
+            }
+            if ($docVerifikasi === 'belum_verifikasi' || $docIsPlaceholder || $docVerifikasi === '') {
+                return 'belum_verifikasi';
+            }
+        }
+
+        // Row level verification
+        if ($rowKelengkapan === 'tidak' && $rowVerifikasi === 'sesuai') {
+            return 'lengkap';
+        }
+        if ($rowVerifikasi === 'tidak_sesuai') {
+            return 'belum_sesuai';
+        }
+        if ($rowVerifikasi === 'belum_verifikasi') {
+            return 'belum_verifikasi';
+        }
+        if ($rowKelengkapan !== '' || $rowVerifikasi !== '') {
+            return 'belum_ada';
+        }
+
+        return 'belum_ada';
     }
 
     public function map(): string
