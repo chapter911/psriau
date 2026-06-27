@@ -6,6 +6,15 @@
 
 Options -Indexes
 
+# PHP Configuration for multi-file uploads
+<IfModule LiteSpeed>
+    php_value max_file_uploads 100
+</IfModule>
+
+<IfModule mod_php.c>
+    php_value max_file_uploads 100
+</IfModule>
+
 ## FallbackResource removed; rely on proper host rewrite configuration
 
 # Rewrite engine for routing
