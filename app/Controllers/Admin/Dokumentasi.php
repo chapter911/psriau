@@ -1134,33 +1134,40 @@ class Dokumentasi extends BaseController
 
         // Ukuran font
         $fontSize = max(16, (int) ($width * 0.035));
-
-        // Warna teks (hitam dengan opacity)
-        $textColor = imagecolorallocatealpha($sourceImage, 255, 255, 255, 30);
-
-        // Shadow warna
-        $shadowColor = imagecolorallocatealpha($sourceImage, 0, 0, 0, 60);
+        $fontPath = $this->getFontPath();
 
         // Posisi watermark (pojok kiri atas)
         $padding = (int) ($width * 0.02);
-        $x = $padding;
-        $y = $padding + $fontSize + 10;
 
         // Format jam
         $tanggalHariIni = date('d F Y');
         $jamFormatted = $jam . ' WIB';
-        $fontPath = $this->getFontPath();
+
+        // Gambar background semi-transparan untuk teks
+        $bgColor = imagecolorallocate($sourceImage, 0, 0, 0);
+        imagefilledrectangle($sourceImage, $padding - 5, $padding - 5, $padding + 280, $padding + $fontSize * 2 + 35, $bgColor);
+        imagealphablending($sourceImage, true);
+
+        // Warna teks (putih)
+        $textColor = imagecolorallocate($sourceImage, 255, 255, 255);
+
+        // Shadow warna (hitam)
+        $shadowColor = imagecolorallocate($sourceImage, 0, 0, 0);
+
+        $x = $padding + 5;
+        $y = $padding + $fontSize + 12;
 
         // Gambar teks watermark
         if ($fontPath !== '' && is_file($fontPath)) {
-            // Gunakan TTF font
-            imagettftext($sourceImage, $fontSize, 0, $x + 2, $y + 2, $shadowColor, $fontPath, $lokasi);
-            imagettftext($sourceImage, $fontSize, 0, $x + 2, $y + $fontSize + 17, $shadowColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
+            // Gunakan TTF font - shadow
+            imagettftext($sourceImage, $fontSize, 0, $x + 1, $y + 1, $shadowColor, $fontPath, $lokasi);
+            imagettftext($sourceImage, $fontSize, 0, $x + 1, $y + $fontSize + 12, $shadowColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
+            // TTF font - teks utama
             imagettftext($sourceImage, $fontSize, 0, $x, $y, $textColor, $fontPath, $lokasi);
-            imagettftext($sourceImage, $fontSize, 0, $x, $y + $fontSize + 15, $textColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
+            imagettftext($sourceImage, $fontSize, 0, $x, $y + $fontSize + 10, $textColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
         } else {
-            // Fallback: gunakan GD font bawaan (kualitas lebih rendah)
-            $gdFont = 2; // Font besar built-in GD
+            // Fallback: gunakan GD font bawaan
+            $gdFont = 2;
             imagestring($sourceImage, $gdFont, $x + 1, $y - $fontSize + 1, $lokasi, $shadowColor);
             imagestring($sourceImage, $gdFont, $x + 1, $y + 1, $jamFormatted . ', ' . $tanggalHariIni, $shadowColor);
             imagestring($sourceImage, $gdFont, $x, $y - $fontSize, $lokasi, $textColor);
@@ -1181,27 +1188,29 @@ class Dokumentasi extends BaseController
                 $logoImage = @imagecreatefromwebp($logoFile->getTempName());
             }
 
-            if ($logoImage !== false) {
+            if ($logoImage !== false && $logoImage !== null) {
                 $logoWidth = imagesx($logoImage);
                 $logoHeight = imagesy($logoImage);
 
-                // Ukuran logo (maks 10% dari lebar gambar)
+                // Ukuran logo (maks 12% dari lebar gambar)
                 $maxLogoWidth = (int) ($width * 0.12);
                 $logoRatio = $logoWidth > 0 ? $maxLogoWidth / $logoWidth : 1;
                 $newLogoWidth = (int) ($logoWidth * $logoRatio);
                 $newLogoHeight = (int) ($logoHeight * $logoRatio);
 
-                // Resize logo
+                // Buat image baru untuk logo dengan transparency support
                 $resizedLogo = imagecreatetruecolor($newLogoWidth, $newLogoHeight);
                 imagealphablending($resizedLogo, false);
                 imagesavealpha($resizedLogo, true);
+                $transparent = imagecolorallocatealpha($resizedLogo, 0, 0, 0, 127);
+                imagefill($resizedLogo, 0, 0, $transparent);
                 imagecopyresampled($resizedLogo, $logoImage, 0, 0, 0, 0, $newLogoWidth, $newLogoHeight, $logoWidth, $logoHeight);
 
-                // Posisi logo (pojok kanan bawah)
+                // Posisi logo (pojok kanan bawah dengan padding)
                 $logoX = $width - $newLogoWidth - $padding;
                 $logoY = $height - $newLogoHeight - $padding;
 
-                // Set opacity logo
+                // Copy logo dengan transparency
                 imagecopy($sourceImage, $resizedLogo, $logoX, $logoY, 0, 0, $newLogoWidth, $newLogoHeight);
 
                 imagedestroy($resizedLogo);
