@@ -1131,8 +1131,6 @@ class Dokumentasi extends BaseController
         $height = imagesy($sourceImage);
 
         // --- Konfigurasi Watermark ---
-
-        // Ukuran font
         $fontSize = max(16, (int) ($width * 0.035));
         $fontPath = $this->getFontPath();
 
@@ -1143,35 +1141,53 @@ class Dokumentasi extends BaseController
         $tanggalHariIni = date('d F Y');
         $jamFormatted = $jam . ' WIB';
 
-        // Gambar background semi-transparan untuk teks
-        $bgColor = imagecolorallocate($sourceImage, 0, 0, 0);
-        imagefilledrectangle($sourceImage, $padding - 5, $padding - 5, $padding + 280, $padding + $fontSize * 2 + 35, $bgColor);
-        imagealphablending($sourceImage, true);
-
-        // Warna teks (putih)
+        // Warna teks
         $textColor = imagecolorallocate($sourceImage, 255, 255, 255);
-
-        // Shadow warna (hitam)
-        $shadowColor = imagecolorallocate($sourceImage, 0, 0, 0);
+        $outlineColor = imagecolorallocate($sourceImage, 0, 0, 0);
 
         $x = $padding + 5;
-        $y = $padding + $fontSize + 12;
+        $y = $padding + $fontSize + 15;
 
-        // Gambar teks watermark
+        // Gambar teks watermark dengan stroke outline
         if ($fontPath !== '' && is_file($fontPath) && is_readable($fontPath)) {
-            // Gunakan TTF font - shadow
-            @imagettftext($sourceImage, $fontSize, 0, $x + 1, $y + 1, $shadowColor, $fontPath, $lokasi);
-            @imagettftext($sourceImage, $fontSize, 0, $x + 1, $y + $fontSize + 12, $shadowColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
-            // TTF font - teks utama
-            @imagettftext($sourceImage, $fontSize, 0, $x, $y, $textColor, $fontPath, $lokasi);
-            @imagettftext($sourceImage, $fontSize, 0, $x, $y + $fontSize + 10, $textColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
+            // Text dengan stroke outline (4 arah)
+            $strokeWidth = 2;
+            $texts = [
+                $lokasi,
+                $jamFormatted . ', ' . $tanggalHariIni
+            ];
+            $yPositions = [$y, $y + $fontSize + 8];
+
+            foreach ($texts as $index => $text) {
+                $ty = $yPositions[$index];
+                // Stroke outline (atas, kanan, bawah, kiri, dan diagonal)
+                @imagettftext($sourceImage, $fontSize, 0, $x - $strokeWidth, $ty, $outlineColor, $fontPath, $text);
+                @imagettftext($sourceImage, $fontSize, 0, $x + $strokeWidth, $ty, $outlineColor, $fontPath, $text);
+                @imagettftext($sourceImage, $fontSize, 0, $x, $ty - $strokeWidth, $outlineColor, $fontPath, $text);
+                @imagettftext($sourceImage, $fontSize, 0, $x, $ty + $strokeWidth, $outlineColor, $fontPath, $text);
+                @imagettftext($sourceImage, $fontSize, 0, $x - $strokeWidth, $ty - $strokeWidth, $outlineColor, $fontPath, $text);
+                @imagettftext($sourceImage, $fontSize, 0, $x + $strokeWidth, $ty - $strokeWidth, $outlineColor, $fontPath, $text);
+                @imagettftext($sourceImage, $fontSize, 0, $x - $strokeWidth, $ty + $strokeWidth, $outlineColor, $fontPath, $text);
+                @imagettftext($sourceImage, $fontSize, 0, $x + $strokeWidth, $ty + $strokeWidth, $outlineColor, $fontPath, $text);
+                // Teks utama (putih)
+                @imagettftext($sourceImage, $fontSize, 0, $x, $ty, $textColor, $fontPath, $text);
+            }
         } else {
-            // Fallback: gunakan GD font bawaan
+            // Fallback: gunakan GD font bawaan dengan outline sederhana
             $gdFont = 2;
-            imagestring($sourceImage, $gdFont, $x + 1, $y - $fontSize + 1, $lokasi, $shadowColor);
-            imagestring($sourceImage, $gdFont, $x + 1, $y + 1, $jamFormatted . ', ' . $tanggalHariIni, $shadowColor);
+            $y2 = $y + $fontSize + 5;
+            // Shadow outline
+            imagestring($sourceImage, $gdFont, $x - 1, $y - $fontSize - 1, $lokasi, $outlineColor);
+            imagestring($sourceImage, $gdFont, $x + 1, $y - $fontSize - 1, $lokasi, $outlineColor);
+            imagestring($sourceImage, $gdFont, $x - 1, $y - $fontSize + 1, $lokasi, $outlineColor);
+            imagestring($sourceImage, $gdFont, $x + 1, $y - $fontSize + 1, $lokasi, $outlineColor);
             imagestring($sourceImage, $gdFont, $x, $y - $fontSize, $lokasi, $textColor);
-            imagestring($sourceImage, $gdFont, $x, $y, $jamFormatted . ', ' . $tanggalHariIni, $textColor);
+
+            imagestring($sourceImage, $gdFont, $x - 1, $y2 - 1, $jamFormatted . ', ' . $tanggalHariIni, $outlineColor);
+            imagestring($sourceImage, $gdFont, $x + 1, $y2 - 1, $jamFormatted . ', ' . $tanggalHariIni, $outlineColor);
+            imagestring($sourceImage, $gdFont, $x - 1, $y2 + 1, $jamFormatted . ', ' . $tanggalHariIni, $outlineColor);
+            imagestring($sourceImage, $gdFont, $x + 1, $y2 + 1, $jamFormatted . ', ' . $tanggalHariIni, $outlineColor);
+            imagestring($sourceImage, $gdFont, $x, $y2, $jamFormatted . ', ' . $tanggalHariIni, $textColor);
         }
 
         // --- Logo Watermark ---
