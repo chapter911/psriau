@@ -486,6 +486,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         + ' title="' + escapeHtml(tooltipText) + '">'
                         + '<i class="fas fa-share-alt mr-1"></i>'
                         + '</button>'
+                        + (shareIsActive && sharePublicUrl !== ''
+                            ? '<a class="btn btn-sm btn-outline-primary" href="' + escapeHtml(sharePublicUrl) + '" target="_blank" rel="noopener noreferrer" title="Buka tautan">'
+                            + '<i class="fas fa-external-link-alt"></i>'
+                            + '</a>'
+                            : '<span style="width:30px;"></span>')
                         + '<span class="badge badge-' + statusClass + '">' + statusText + '</span>'
                         + '</div>';
                 }
