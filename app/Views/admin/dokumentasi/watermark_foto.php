@@ -73,14 +73,16 @@
         </div>
     </div>
 </div>
+<?= $this->endSection(); ?>
 
+<?= $this->section('pageScripts'); ?>
 <script>
 $(function() {
-    let generatedImageData = null;
+    var generatedImageData = null;
 
     // Update label file input
     $('.custom-file-input').on('change', function() {
-        let fileName = $(this).val().split('\\').pop();
+        var fileName = $(this).val().split('\\').pop();
         $(this).next('.custom-file-label').addClass('selected').html(fileName || 'Pilih file...');
     });
 
@@ -179,4 +181,4 @@ $(function() {
     });
 });
 </script>
-<?= $this->endSection() ?>
+<?= $this->endSection(); ?>
