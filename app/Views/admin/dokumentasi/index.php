@@ -472,8 +472,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         statusText = 'Kedaluwarsa';
                     }
 
+                    const openLinkBtn = (shareIsActive && sharePublicUrl !== '')
+                        ? '<a class="btn btn-sm btn-outline-primary" href="' + escapeHtml(sharePublicUrl) + '" target="_blank" rel="noopener noreferrer" title="Buka tautan"><i class="fas fa-external-link-alt"></i></a>'
+                        : '';
+
                     return ''
                         + '<div class="d-flex flex-column align-items-center" style="gap:6px;">'
+                        + '<div class="d-flex align-items-center" style="gap:4px;">'
                         + '<button type="button" class="' + btnClass + '"'
                         + ' data-share-url="' + escapeHtml(shareCreateUrl) + '"'
                         + ' data-share-deactivate-url="' + escapeHtml(shareDeactivateUrl) + '"'
@@ -484,13 +489,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         + ' data-share-active="' + (shareIsActive ? '1' : '0') + '"'
                         + ' data-share-status="' + escapeHtml(shareStatus) + '"'
                         + ' title="' + escapeHtml(tooltipText) + '">'
-                        + '<i class="fas fa-share-alt mr-1"></i>'
+                        + '<i class="fas fa-share-alt"></i>'
                         + '</button>'
-                        + (shareIsActive && sharePublicUrl !== ''
-                            ? '<a class="btn btn-sm btn-outline-primary" href="' + escapeHtml(sharePublicUrl) + '" target="_blank" rel="noopener noreferrer" title="Buka tautan">'
-                            + '<i class="fas fa-external-link-alt"></i>'
-                            + '</a>'
-                            : '<span style="width:30px;"></span>')
+                        + openLinkBtn
+                        + '</div>'
                         + '<span class="badge badge-' + statusClass + '">' + statusText + '</span>'
                         + '</div>';
                 }
