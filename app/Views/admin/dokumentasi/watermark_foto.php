@@ -1,10 +1,6 @@
-<?= $this->extend('admin/layouts/app') ?>
+<?= $this->extend('layouts/admin'); ?>
 
-<?= $this->section('page_title') ?>
-<?= $pageTitle ?>
-<?= $this->endSection() ?>
-
-<?= $this->section('content') ?>
+<?= $this->section('content'); ?>
 <div class="card card-primary">
     <div class="card-header">
         <h3 class="card-title"><?= $pageTitle ?></h3>
