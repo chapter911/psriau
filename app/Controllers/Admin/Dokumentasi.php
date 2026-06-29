@@ -1149,14 +1149,23 @@ class Dokumentasi extends BaseController
         // Format jam
         $tanggalHariIni = date('d F Y');
         $jamFormatted = $jam . ' WIB';
+        $fontPath = $this->getFontPath();
 
-        // Gambar teks shadow
-        imagettftext($sourceImage, $fontSize, 0, $x + 2, $y + 2, $shadowColor, $this->getFontPath(), $lokasi);
-        imagettftext($sourceImage, $fontSize, 0, $x + 2, $y + $fontSize + 17, $shadowColor, $this->getFontPath(), $jamFormatted . ', ' . $tanggalHariIni);
-
-        // Gambar teks utama
-        imagettftext($sourceImage, $fontSize, 0, $x, $y, $textColor, $this->getFontPath(), $lokasi);
-        imagettftext($sourceImage, $fontSize, 0, $x, $y + $fontSize + 15, $textColor, $this->getFontPath(), $jamFormatted . ', ' . $tanggalHariIni);
+        // Gambar teks watermark
+        if ($fontPath !== '' && is_file($fontPath)) {
+            // Gunakan TTF font
+            imagettftext($sourceImage, $fontSize, 0, $x + 2, $y + 2, $shadowColor, $fontPath, $lokasi);
+            imagettftext($sourceImage, $fontSize, 0, $x + 2, $y + $fontSize + 17, $shadowColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
+            imagettftext($sourceImage, $fontSize, 0, $x, $y, $textColor, $fontPath, $lokasi);
+            imagettftext($sourceImage, $fontSize, 0, $x, $y + $fontSize + 15, $textColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
+        } else {
+            // Fallback: gunakan GD font bawaan (kualitas lebih rendah)
+            $gdFont = 2; // Font besar built-in GD
+            imagestring($sourceImage, $gdFont, $x + 1, $y - $fontSize + 1, $lokasi, $shadowColor);
+            imagestring($sourceImage, $gdFont, $x + 1, $y + 1, $jamFormatted . ', ' . $tanggalHariIni, $shadowColor);
+            imagestring($sourceImage, $gdFont, $x, $y - $fontSize, $lokasi, $textColor);
+            imagestring($sourceImage, $gdFont, $x, $y, $jamFormatted . ', ' . $tanggalHariIni, $textColor);
+        }
 
         // --- Logo Watermark ---
         if ($logoFile !== null && $logoFile->isValid() && ! $logoFile->hasMoved()) {
@@ -1225,23 +1234,25 @@ class Dokumentasi extends BaseController
 
     private function getFontPath(): string
     {
-        // Coba beberapa lokasi font
+        // Font di dalam project
         $fontPaths = [
-            APPPATH . '../public/fonts/arial.ttf',
-            APPPATH . '../public/fonts/arialbd.ttf',
+            FCPATH . 'fonts/DejaVuSans.ttf',
             FCPATH . 'fonts/arial.ttf',
             FCPATH . 'fonts/arialbd.ttf',
+            APPPATH . '../public/fonts/DejaVuSans.ttf',
+            APPPATH . '../public/fonts/arial.ttf',
             '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
             '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+            '/usr/share/fonts/TTF/DejaVuSans.ttf',
         ];
 
         foreach ($fontPaths as $path) {
-            if (is_file($path)) {
+            if (is_file($path) && is_readable($path)) {
                 return $path;
             }
         }
 
-        // Fallback: tidak menggunakan font (gunakan GD text)
         return '';
     }
 
