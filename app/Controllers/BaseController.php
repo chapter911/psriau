@@ -243,6 +243,13 @@ abstract class BaseController extends Controller
                             'active_pattern' => 'admin/dokumentasi/kegiatan-lapangan*',
                             'children'       => [],
                         ],
+                        [
+                            'label'          => 'Watermark Foto',
+                            'url'            => '/admin/dokumentasi/watermark-foto',
+                            'icon'           => 'far fa-circle',
+                            'active_pattern' => 'admin/dokumentasi/watermark-foto*',
+                            'children'       => [],
+                        ],
                     ],
                 ],
                 [

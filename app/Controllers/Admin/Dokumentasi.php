@@ -994,6 +994,257 @@ class Dokumentasi extends BaseController
         return $dateOnly >= date('Y-m-d');
     }
 
+    public function watermarkFoto(): string
+    {
+        return view('admin/dokumentasi/watermark_foto', [
+            'pageTitle' => 'Watermark Foto',
+        ]);
+    }
+
+    public function prosesWatermark()
+    {
+        if (! $this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status' => 'error',
+                'message' => 'Permintaan tidak valid.',
+            ]);
+        }
+
+        $foto = $this->request->getFile('foto');
+        $logo = $this->request->getFile('logo');
+        $jam = trim((string) $this->request->getPost('jam'));
+        $lokasi = trim((string) $this->request->getPost('lokasi'));
+
+        // Validasi foto
+        if ($foto === null || ! $foto->isValid()) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'message' => 'Foto wajib diupload.',
+            ]);
+        }
+
+        $mimeType = strtolower((string) $foto->getMimeType());
+        if (! str_starts_with($mimeType, 'image/')) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'message' => 'File yang diupload harus berupa gambar.',
+            ]);
+        }
+
+        $extension = strtolower((string) $foto->getClientExtension());
+        if (! in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'message' => 'Format foto tidak didukung. Gunakan JPG, PNG, atau WebP.',
+            ]);
+        }
+
+        // Validasi jam
+        if ($jam === '') {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'message' => 'Jam wajib diisi.',
+            ]);
+        }
+
+        // Validasi lokasi
+        if ($lokasi === '') {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'message' => 'Lokasi wajib diisi.',
+            ]);
+        }
+
+        // Simpan file sementara
+        $tempDir = WRITEPATH . 'temp_watermark';
+        if (! is_dir($tempDir) && ! @mkdir($tempDir, 0775, true) && ! is_dir($tempDir)) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal membuat folder sementara.',
+            ]);
+        }
+
+        try {
+            $fotoName = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
+            $fotoPath = $tempDir . DIRECTORY_SEPARATOR . $fotoName;
+            $foto->move($tempDir, $fotoName);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal menyimpan foto sementara.',
+            ]);
+        }
+
+        // Proses watermark
+        $result = $this->applyWatermark($fotoPath, $logo, $jam, $lokasi);
+
+        // Hapus foto asli
+        @unlink($fotoPath);
+
+        if ($result['error'] !== null) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => $result['error'],
+            ]);
+        }
+
+        return $this->response->setJSON([
+            'status' => 'ok',
+            'message' => 'Watermark berhasil diterapkan.',
+            'image_data' => $result['data'],
+            'csrf_token' => csrf_token(),
+            'csrf_hash' => csrf_hash(),
+        ]);
+    }
+
+    private function applyWatermark(string $imagePath, $logoFile, string $jam, string $lokasi): array
+    {
+        // Dapatkan informasi gambar
+        $imageInfo = @getimagesize($imagePath);
+        if ($imageInfo === false) {
+            return ['data' => null, 'error' => 'Tidak dapat membaca file gambar.'];
+        }
+
+        $mimeType = $imageInfo['mime'];
+
+        // Buat resource gambar dari file asli
+        switch ($mimeType) {
+            case 'image/jpeg':
+            case 'image/jpg':
+                $sourceImage = @imagecreatefromjpeg($imagePath);
+                break;
+            case 'image/png':
+                $sourceImage = @imagecreatefrompng($imagePath);
+                break;
+            case 'image/webp':
+                $sourceImage = @imagecreatefromwebp($imagePath);
+                break;
+            default:
+                return ['data' => null, 'error' => 'Format gambar tidak didukung.'];
+        }
+
+        if ($sourceImage === false) {
+            return ['data' => null, 'error' => 'Gagal memuat gambar.'];
+        }
+
+        $width = imagesx($sourceImage);
+        $height = imagesy($sourceImage);
+
+        // --- Konfigurasi Watermark ---
+
+        // Ukuran font
+        $fontSize = max(16, (int) ($width * 0.035));
+
+        // Warna teks (hitam dengan opacity)
+        $textColor = imagecolorallocatealpha($sourceImage, 255, 255, 255, 30);
+
+        // Shadow warna
+        $shadowColor = imagecolorallocatealpha($sourceImage, 0, 0, 0, 60);
+
+        // Posisi watermark (pojok kiri atas)
+        $padding = (int) ($width * 0.02);
+        $x = $padding;
+        $y = $padding + $fontSize + 10;
+
+        // Format jam
+        $tanggalHariIni = date('d F Y');
+        $jamFormatted = $jam . ' WIB';
+
+        // Gambar teks shadow
+        imagettftext($sourceImage, $fontSize, 0, $x + 2, $y + 2, $shadowColor, $this->getFontPath(), $lokasi);
+        imagettftext($sourceImage, $fontSize, 0, $x + 2, $y + $fontSize + 17, $shadowColor, $this->getFontPath(), $jamFormatted . ', ' . $tanggalHariIni);
+
+        // Gambar teks utama
+        imagettftext($sourceImage, $fontSize, 0, $x, $y, $textColor, $this->getFontPath(), $lokasi);
+        imagettftext($sourceImage, $fontSize, 0, $x, $y + $fontSize + 15, $textColor, $this->getFontPath(), $jamFormatted . ', ' . $tanggalHariIni);
+
+        // --- Logo Watermark ---
+        if ($logoFile !== null && $logoFile->isValid() && ! $logoFile->hasMoved()) {
+            $logoMime = strtolower((string) $logoFile->getMimeType());
+            $logoExtension = strtolower((string) $logoFile->getClientExtension());
+
+            $logoImage = null;
+            if ($logoExtension === 'png' || $logoMime === 'image/png') {
+                $logoImage = @imagecreatefrompng($logoFile->getTempName());
+            } elseif (in_array($logoExtension, ['jpg', 'jpeg']) || $logoMime === 'image/jpeg') {
+                $logoImage = @imagecreatefromjpeg($logoFile->getTempName());
+            } elseif ($logoExtension === 'webp' || $logoMime === 'image/webp') {
+                $logoImage = @imagecreatefromwebp($logoFile->getTempName());
+            }
+
+            if ($logoImage !== false) {
+                $logoWidth = imagesx($logoImage);
+                $logoHeight = imagesy($logoImage);
+
+                // Ukuran logo (maks 10% dari lebar gambar)
+                $maxLogoWidth = (int) ($width * 0.12);
+                $logoRatio = $logoWidth > 0 ? $maxLogoWidth / $logoWidth : 1;
+                $newLogoWidth = (int) ($logoWidth * $logoRatio);
+                $newLogoHeight = (int) ($logoHeight * $logoRatio);
+
+                // Resize logo
+                $resizedLogo = imagecreatetruecolor($newLogoWidth, $newLogoHeight);
+                imagealphablending($resizedLogo, false);
+                imagesavealpha($resizedLogo, true);
+                imagecopyresampled($resizedLogo, $logoImage, 0, 0, 0, 0, $newLogoWidth, $newLogoHeight, $logoWidth, $logoHeight);
+
+                // Posisi logo (pojok kanan bawah)
+                $logoX = $width - $newLogoWidth - $padding;
+                $logoY = $height - $newLogoHeight - $padding;
+
+                // Set opacity logo
+                imagecopy($sourceImage, $resizedLogo, $logoX, $logoY, 0, 0, $newLogoWidth, $newLogoHeight);
+
+                imagedestroy($resizedLogo);
+                imagedestroy($logoImage);
+            }
+        }
+
+        // Konversi ke base64
+        ob_start();
+        if ($mimeType === 'image/png') {
+            imagepng($sourceImage);
+        } elseif ($mimeType === 'image/webp') {
+            imagewebp($sourceImage, null, 90);
+        } else {
+            imagejpeg($sourceImage, null, 95);
+        }
+        $imageData = ob_get_clean();
+
+        imagedestroy($sourceImage);
+
+        if ($imageData === false || $imageData === '') {
+            return ['data' => null, 'error' => 'Gagal menghasilkan gambar dengan watermark.'];
+        }
+
+        $base64 = base64_encode($imageData);
+        $dataUri = 'data:image/jpeg;base64,' . $base64;
+
+        return ['data' => $dataUri, 'error' => null];
+    }
+
+    private function getFontPath(): string
+    {
+        // Coba beberapa lokasi font
+        $fontPaths = [
+            APPPATH . '../public/fonts/arial.ttf',
+            APPPATH . '../public/fonts/arialbd.ttf',
+            FCPATH . 'fonts/arial.ttf',
+            FCPATH . 'fonts/arialbd.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+        ];
+
+        foreach ($fontPaths as $path) {
+            if (is_file($path)) {
+                return $path;
+            }
+        }
+
+        // Fallback: tidak menggunakan font (gunakan GD text)
+        return '';
+    }
+
     private function deleteLocalImage(?string $path): void
     {
         if (empty($path) || strpos($path, '/uploads/') !== 0) {

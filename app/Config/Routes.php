@@ -238,6 +238,10 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'dokumentasi/kegiatan-lapangan/(:num)/ubah', 'Admin\\Dokumentasi::edit/$1');
 	$routes->post('dokumentasi/kegiatan-lapangan/(:num)/hapus', 'Admin\\Dokumentasi::delete/$1');
 
+	// Watermark Foto
+	$routes->get('dokumentasi/watermark-foto', 'Admin\\Dokumentasi::watermarkFoto');
+	$routes->post('dokumentasi/watermark-foto/proses', 'Admin\\Dokumentasi::prosesWatermark');
+
 	$routes->get('acara', 'Admin\\Event::index');
 	$routes->match(['get', 'post'], 'acara/tambah', 'Admin\\Event::create');
 	$routes->match(['get', 'post'], 'acara/(:num)/ubah', 'Admin\\Event::edit/$1');
