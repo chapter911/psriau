@@ -1158,13 +1158,13 @@ class Dokumentasi extends BaseController
         $y = $padding + $fontSize + 12;
 
         // Gambar teks watermark
-        if ($fontPath !== '' && is_file($fontPath)) {
+        if ($fontPath !== '' && is_file($fontPath) && is_readable($fontPath)) {
             // Gunakan TTF font - shadow
-            imagettftext($sourceImage, $fontSize, 0, $x + 1, $y + 1, $shadowColor, $fontPath, $lokasi);
-            imagettftext($sourceImage, $fontSize, 0, $x + 1, $y + $fontSize + 12, $shadowColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
+            @imagettftext($sourceImage, $fontSize, 0, $x + 1, $y + 1, $shadowColor, $fontPath, $lokasi);
+            @imagettftext($sourceImage, $fontSize, 0, $x + 1, $y + $fontSize + 12, $shadowColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
             // TTF font - teks utama
-            imagettftext($sourceImage, $fontSize, 0, $x, $y, $textColor, $fontPath, $lokasi);
-            imagettftext($sourceImage, $fontSize, 0, $x, $y + $fontSize + 10, $textColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
+            @imagettftext($sourceImage, $fontSize, 0, $x, $y, $textColor, $fontPath, $lokasi);
+            @imagettftext($sourceImage, $fontSize, 0, $x, $y + $fontSize + 10, $textColor, $fontPath, $jamFormatted . ', ' . $tanggalHariIni);
         } else {
             // Fallback: gunakan GD font bawaan
             $gdFont = 2;
@@ -1243,22 +1243,30 @@ class Dokumentasi extends BaseController
 
     private function getFontPath(): string
     {
-        // Font di dalam project
+        // Lokasi font yang akan dicek
         $fontPaths = [
+            // WRITEPATH - ini selalu bisa ditulis
+            WRITEPATH . 'fonts/DejaVuSans.ttf',
+            WRITEPATH . 'fonts/arial.ttf',
+            // Public fonts
             FCPATH . 'fonts/DejaVuSans.ttf',
             FCPATH . 'fonts/arial.ttf',
-            FCPATH . 'fonts/arialbd.ttf',
+            // APPPATH relative
             APPPATH . '../public/fonts/DejaVuSans.ttf',
             APPPATH . '../public/fonts/arial.ttf',
+            // Server system fonts
             '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
             '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
             '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
             '/usr/share/fonts/TTF/DejaVuSans.ttf',
+            // Common cPanel paths
+            '/home/agun9011/public_html/satkerpps/public/fonts/DejaVuSans.ttf',
         ];
 
         foreach ($fontPaths as $path) {
-            if (is_file($path) && is_readable($path)) {
-                return $path;
+            $realPath = realpath($path);
+            if ($realPath !== false && is_file($realPath) && is_readable($realPath)) {
+                return $realPath;
             }
         }
 
