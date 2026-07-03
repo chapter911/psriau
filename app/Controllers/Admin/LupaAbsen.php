@@ -27,11 +27,45 @@ class LupaAbsen extends BaseController
         // Get current employee data for modal display
         $pegawaiData = $this->getCurrentPegawaiData();
 
+        $db = db_connect();
+        
+        // Self-healing database migration
+        try {
+            $fields = $db->getFieldData('lupa_absen');
+            $hasKopSuratCol = false;
+            foreach ($fields as $f) {
+                if (strtolower((string) $f->name) === 'kop_surat_id') {
+                    $hasKopSuratCol = true;
+                    break;
+                }
+            }
+            if (! $hasKopSuratCol) {
+                $db->query("ALTER TABLE lupa_absen ADD COLUMN kop_surat_id INT UNSIGNED NULL AFTER jabatan_id;");
+            }
+        } catch (\Throwable $e) {
+            // Ignore if any DB exception occurs
+        }
+
+        $kopSuratList = [];
+        try {
+            if ($db->tableExists('kop_surat')) {
+                $kopSuratList = $db->table('kop_surat')
+                    ->select('id, title AS nama, is_active')
+                    ->orderBy('is_active', 'DESC')
+                    ->orderBy('id', 'DESC')
+                    ->get()
+                    ->getResultArray();
+            }
+        } catch (\Throwable $e) {
+            // Fallback empty array
+        }
+
         return view('admin/surat/lupa_absen', [
             'title' => 'Lupa Absen',
             'can_edit' => $this->canAccess(),
             'can_approve' => $canApprove,
             'current_pegawai' => $pegawaiData,
+            'kop_surat_list' => $kopSuratList,
         ]);
     }
 
@@ -94,8 +128,8 @@ class LupaAbsen extends BaseController
             $row['status_badge'] = $statusBadge;
             $row['tanggal_formatted'] = !empty($row['tanggal_absen']) ? date('d/m/Y', strtotime($row['tanggal_absen'])) : '-';
 
-            $jenis = trim((string) ($row['jenis_absen'] ?? ''));
-            $row['jenis_formatted'] = $jenis === 'Masuk' ? '<span class="badge badge-info">Masuk</span>' : '<span class="badge badge-secondary">Pulang</span>';
+            $jenis = strtolower(trim((string) ($row['jenis_absen'] ?? '')));
+            $row['jenis_formatted'] = $jenis === 'masuk' ? '<span class="badge badge-info">Masuk</span>' : '<span class="badge badge-secondary">Pulang</span>';
 
             // Dokumen button
             $dokumenHtml = '<div class="doc-btn-group">';
@@ -104,12 +138,16 @@ class LupaAbsen extends BaseController
             $row['dokumen_html'] = $dokumenHtml;
 
             $actions = '';
-            if ($canEdit && $status === 'pending') {
-                $actions .= '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' . (int) ($row['id'] ?? 0) . '" title="Hapus"><i class="fas fa-trash"></i></button>';
-            }
-            if ($canApprove && $status === 'pending') {
-                $actions .= ' <button type="button" class="btn btn-sm btn-success btn-approve" data-id="' . (int) ($row['id'] ?? 0) . '" title="Setujui"><i class="fas fa-check"></i></button>';
-                $actions .= ' <button type="button" class="btn btn-sm btn-danger btn-reject" data-id="' . (int) ($row['id'] ?? 0) . '" title="Tolak"><i class="fas fa-times"></i></button>';
+            if (($canEdit || $canApprove) && $status === 'pending') {
+                $actions .= '<div class="d-flex justify-content-center align-items-center" style="gap: 5px; white-space: nowrap;">';
+                if ($canEdit) {
+                    $actions .= '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' . (int) ($row['id'] ?? 0) . '" title="Hapus"><i class="fas fa-trash"></i></button>';
+                }
+                if ($canApprove) {
+                    $actions .= '<button type="button" class="btn btn-sm btn-success btn-approve" data-id="' . (int) ($row['id'] ?? 0) . '" title="Setujui"><i class="fas fa-check"></i></button>';
+                    $actions .= '<button type="button" class="btn btn-sm btn-danger btn-reject" data-id="' . (int) ($row['id'] ?? 0) . '" title="Tolak"><i class="fas fa-times"></i></button>';
+                }
+                $actions .= '</div>';
             }
             $row['action_html'] = $actions ?: '<span class="text-muted">-</span>';
 
@@ -145,8 +183,9 @@ class LupaAbsen extends BaseController
         $jabatan = trim((string) $this->request->getPost('jabatan') ?? '');
         $unitKerja = trim((string) $this->request->getPost('unit_kerja') ?? '');
         $tanggalAbsen = trim((string) $this->request->getPost('tanggal_absen'));
-        $jenisAbsen = trim((string) $this->request->getPost('jenis_absen'));
+        $jenisAbsen = strtolower(trim((string) $this->request->getPost('jenis_absen')));
         $alasanDetail = trim((string) $this->request->getPost('alasan_detail'));
+        $kopSuratId = (int) $this->request->getPost('kop_surat_id');
 
         $errors = [];
 
@@ -159,7 +198,7 @@ class LupaAbsen extends BaseController
         if ($tanggalAbsen === '') {
             $errors[] = 'Tanggal absen wajib diisi.';
         }
-        if (! in_array($jenisAbsen, ['Masuk', 'Pulang'], true)) {
+        if (! in_array($jenisAbsen, ['masuk', 'pulang'], true)) {
             $errors[] = 'Jenis absen tidak valid.';
         }
         if ($alasanDetail === '') {
@@ -188,6 +227,7 @@ class LupaAbsen extends BaseController
             'created_by' => $username,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
+            'kop_surat_id' => $kopSuratId > 0 ? $kopSuratId : null,
         ];
 
         $insertId = $model->insert($data);
@@ -250,6 +290,15 @@ class LupaAbsen extends BaseController
             // Use defaults
         }
 
+        // Fetch employee golongan from database
+        $db = db_connect();
+        $pegawai = $db->table('mst_pegawai')
+            ->select('golongan')
+            ->where('nip', $row['nip'])
+            ->get()
+            ->getRowArray();
+        $golongan = $pegawai['golongan'] ?? '';
+
         $data = [
             'app_name' => $appSetting['app_name'] ?? 'KEMENTERIAN PEKERJAAN UMUM',
             'official_name' => $homeSetting['official_name'] ?? 'Satuan Kerja Prasarana Strategis Riau',
@@ -257,12 +306,14 @@ class LupaAbsen extends BaseController
             'nomor_surat' => $nomorSurat,
             'nama' => $row['nama'] ?? '',
             'nip' => $row['nip'] ?? '',
+            'golongan' => $golongan,
             'jabatan' => $row['jabatan'] ?? '',
             'unit_kerja' => $row['unit_kerja'] ?? '',
             'tanggal_absen' => $row['tanggal_absen'] ?? '',
             'jenis_absen' => $row['jenis_absen'] ?? '',
             'alasan_detail' => $row['alasan_detail'] ?? '',
             'tanggal_surat' => !empty($row['created_at']) ? date('Y-m-d', strtotime($row['created_at'])) : date('Y-m-d'),
+            'kop_surat_id' => isset($row['kop_surat_id']) ? (int) $row['kop_surat_id'] : null,
         ];
 
         $html = view('admin/surat/lupa_absen_pdf', $data);

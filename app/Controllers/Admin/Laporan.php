@@ -468,7 +468,10 @@ class Laporan extends BaseController
                 }
                 
                 if ($canEdit) {
-                    $row['action_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/ubah') . '" class="btn btn-sm btn-outline-primary" title="Ubah Data"><i class="fas fa-pen"></i></a>';
+                    $row['action_html'] = '<div class="d-flex justify-content-center align-items-center" style="gap: 5px; white-space: nowrap;">';
+                    $row['action_html'] .= '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/ubah') . '" class="btn btn-sm btn-outline-primary" title="Ubah Data"><i class="fas fa-pen"></i></a>';
+                    $row['action_html'] .= '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' . (int) ($row['id'] ?? 0) . '" title="Hapus"><i class="fas fa-trash"></i></button>';
+                    $row['action_html'] .= '</div>';
                 } else {
                     $row['action_html'] = '<span class="text-muted">-</span>';
                 }
@@ -476,6 +479,42 @@ class Laporan extends BaseController
                 return $row;
             }
         );
+    }
+
+    public function perjalananDinasHapus(int $id): RedirectResponse
+    {
+        if (! $this->canManageLaporan()) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Anda tidak memiliki akses untuk menghapus laporan perjalanan dinas.');
+        }
+
+        $db = db_connect();
+        $row = $db->table('laporan_perjalanan_dinas')->where('id', $id)->get()->getRowArray();
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Laporan perjalanan dinas tidak ditemukan.');
+        }
+
+        // Delete verified file if exists
+        if (! empty($row['verified_spt_path'])) {
+            $this->deleteStoredFiles([$row['verified_spt_path']]);
+        }
+
+        // Delete support docs if exists
+        $docs = json_decode((string) ($row['dokumen_pendukung_json'] ?? '[]'), true);
+        if (is_array($docs) && $docs !== []) {
+            $paths = [];
+            foreach ($docs as $doc) {
+                if (! empty($doc['file_path'])) {
+                    $paths[] = $doc['file_path'];
+                }
+            }
+            if ($paths !== []) {
+                $this->deleteStoredFiles($paths);
+            }
+        }
+
+        $db->table('laporan_perjalanan_dinas')->where('id', $id)->delete();
+
+        return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('success', 'Laporan perjalanan dinas berhasil dihapus.');
     }
 
     private function respondPerjalananDinasDataTable(callable $queryFactory, callable $filterApplier, array $searchColumns, array $orderColumns, ?callable $rowMapper = null)

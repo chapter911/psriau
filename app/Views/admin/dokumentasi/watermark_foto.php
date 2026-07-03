@@ -26,6 +26,11 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="tanggal">Tanggal <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="tanggal" name="tanggal" required value="<?= date('Y-m-d') ?>">
+                    </div>
+
+                    <div class="form-group">
                         <label for="lokasi">Lokasi <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="lokasi" name="lokasi" placeholder="Contoh: Kantor Pusat PSG" required>
                     </div>
@@ -38,7 +43,7 @@
                                 <label class="custom-file-label" for="logo">Pilih file...</label>
                             </div>
                         </div>
-                        <small class="text-muted">Format: PNG, JPG, WebP. Logo akan ditempatkan di pojok kanan bawah.</small>
+                        <small class="text-muted">Format: PNG, JPG, WebP. Jika dikosongkan, logo instansi default akan digunakan.</small>
                     </div>
 
                     <div class="form-group">

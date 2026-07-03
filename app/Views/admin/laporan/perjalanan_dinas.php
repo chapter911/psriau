@@ -25,10 +25,11 @@
     /* Make document action buttons larger and cleaner (icon only) */
     .doc-btn-group {
         display: inline-flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 6px;
         justify-content: center;
         align-items: center;
+        white-space: nowrap;
     }
     
     .doc-btn-group .btn {
@@ -196,6 +197,25 @@
     </div>
 </div>
 <?php endif; ?>
+
+<!-- Modal Konfirmasi Hapus -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Konfirmasi Hapus</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus data perjalanan dinas ini?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                <a id="btnConfirmDelete" href="#" class="btn btn-danger btn-sm">Hapus</a>
+            </div>
+        </div>
+    </div>
+</div>
 
 <?= $this->endSection(); ?>
 
@@ -381,6 +401,13 @@
                 $(this).next('.custom-file-label').html(fileName);
             });
         }
+
+        // Delete button handler
+        $table.on('click', '.btn-delete', function () {
+            const id = $(this).data('id');
+            $('#btnConfirmDelete').attr('href', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/hapus');
+            $('#deleteModal').modal('show');
+        });
     })();
 </script>
 <?= $this->endSection(); ?>

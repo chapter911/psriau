@@ -71,7 +71,7 @@ class BaselineCurrentSchema extends Migration
   `nama_paket` varchar(255) DEFAULT NULL,
   `kop_surat_id` int(11) unsigned DEFAULT NULL,
   `created_by` varchar(255) DEFAULT NULL,
-  `created_date` date DEFAULT current_timestamp(),
+  `created_date` date DEFAULT NULL,
   `laporan` text DEFAULT NULL,
   `hasil` text DEFAULT NULL,
   `tugas_tanggung_jawab` text DEFAULT NULL
@@ -441,7 +441,7 @@ class BaselineCurrentSchema extends Migration
   `total_penawaran` bigint(20) DEFAULT NULL,
   `tanggal_awal` date DEFAULT NULL,
   `tanggal_akhir` date DEFAULT NULL,
-  `created_date` date DEFAULT current_timestamp(),
+  `created_date` date DEFAULT NULL,
   `created_by` varchar(255) DEFAULT NULL,
   `tahun_anggaran` int(11) DEFAULT NULL,
   `no_sppbj` varchar(255) DEFAULT NULL,
@@ -803,7 +803,18 @@ class BaselineCurrentSchema extends Migration
     public function up()
     {
         // Baseline migration for an already-existing database schema.
-        // Intentionally no-op to avoid re-creating tables during migrate.
+        // If some tables from the baseline schema do not exist, we will create them.
+        $this->db->query('SET FOREIGN_KEY_CHECKS = 0;');
+
+        $totalTables = count($this->tableNames);
+        foreach ($this->createStatements as $index => $sql) {
+            $tableName = $this->tableNames[$totalTables - 1 - $index];
+            if (! $this->db->tableExists($tableName)) {
+                $this->db->query($sql);
+            }
+        }
+
+        $this->db->query('SET FOREIGN_KEY_CHECKS = 1;');
     }
 
     public function down()

@@ -27,6 +27,7 @@ class LupaAbsenModel extends Model
         'created_by',
         'created_at',
         'updated_at',
+        'kop_surat_id',
     ];
     protected $useTimestamps = false;
 }

@@ -5,6 +5,7 @@
     $canEdit = (bool) ($can_edit ?? false);
     $canApprove = (bool) ($can_approve ?? false);
     $currentPegawai = $current_pegawai ?? [];
+    $kopSuratList = $kop_surat_list ?? [];
 ?>
 <style>
     #tableLupaAbsen thead th {
@@ -110,23 +111,36 @@
                     <input type="hidden" name="jabatan" value="<?= esc($currentPegawai['jabatan'] ?? ''); ?>">
                     <input type="hidden" name="unit_kerja" value="<?= esc($currentPegawai['unit_kerja'] ?? ''); ?>">
 
+                    <?php if (!empty($kopSuratList)): ?>
+                        <div class="form-group">
+                            <label for="kop_surat_id">Pilih Kop Surat <span class="text-danger">*</span></label>
+                            <select class="form-control no-select2" id="kop_surat_id" name="kop_surat_id" required>
+                                <?php foreach ($kopSuratList as $kop): ?>
+                                    <option value="<?= $kop['id']; ?>" <?= $kop['is_active'] ? 'selected' : ''; ?>>
+                                        <?= esc($kop['nama']); ?> <?= $kop['is_active'] ? '(Aktif)' : ''; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="form-group">
                         <label for="tanggal_absen">Tanggal <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="tanggal_absen" name="tanggal_absen" required>
                     </div>
 
-                    <div class="form-group">
+                     <div class="form-group">
                         <label for="jenis_absen">Jenis Absen <span class="text-danger">*</span></label>
-                        <select class="form-control" id="jenis_absen" name="jenis_absen" required onchange="updateAlasanTemplate()">
+                        <select class="form-control no-select2" id="jenis_absen" name="jenis_absen" required onchange="updateAlasanTemplate()">
                             <option value="">-- Pilih --</option>
-                            <option value="Masuk">Absen Masuk</option>
-                            <option value="Pulang">Absen Pulang</option>
+                            <option value="masuk">Absen Masuk</option>
+                            <option value="pulang">Absen Pulang</option>
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label for="alasan_detail">Alasan <span class="text-danger">*</span></label>
-                        <select class="form-control" id="alasan_select" onchange="handleAlasanSelect()">
+                        <select class="form-control no-select2" id="alasan_select" onchange="handleAlasanSelect()">
                             <option value="">-- Pilih Template --</option>
                             <option value="Lupa Absen Masuk">Lupa Absen Masuk</option>
                             <option value="Lupa Absen Pulang">Lupa Absen Pulang</option>
@@ -165,8 +179,9 @@
             </div>
         </div>
     </div>
-</div>
+<?= $this->endSection(); ?>
 
+<?= $this->section('pageScripts'); ?>
 <script>
 function openCreateModal() {
     // Reset form
@@ -186,9 +201,9 @@ function updateAlasanTemplate() {
     var jenis = document.getElementById('jenis_absen').value;
     var select = document.getElementById('alasan_select');
 
-    if (jenis === 'Masuk') {
+    if (jenis === 'masuk') {
         select.value = 'Lupa Absen Masuk';
-    } else if (jenis === 'Pulang') {
+    } else if (jenis === 'pulang') {
         select.value = 'Lupa Absen Pulang';
     }
 
@@ -284,5 +299,4 @@ $(document).ready(function() {
     });
 });
 </script>
-
 <?= $this->endSection(); ?>

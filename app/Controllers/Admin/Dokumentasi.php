@@ -1013,6 +1013,7 @@ class Dokumentasi extends BaseController
         $foto = $this->request->getFile('foto');
         $logo = $this->request->getFile('logo');
         $jam = trim((string) $this->request->getPost('jam'));
+        $tanggal = trim((string) $this->request->getPost('tanggal'));
         $lokasi = trim((string) $this->request->getPost('lokasi'));
 
         // Validasi foto
@@ -1047,6 +1048,14 @@ class Dokumentasi extends BaseController
             ]);
         }
 
+        // Validasi tanggal
+        if ($tanggal === '') {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'message' => 'Tanggal wajib diisi.',
+            ]);
+        }
+
         // Validasi lokasi
         if ($lokasi === '') {
             return $this->response->setStatusCode(422)->setJSON([
@@ -1076,7 +1085,7 @@ class Dokumentasi extends BaseController
         }
 
         // Proses watermark
-        $result = $this->applyWatermark($fotoPath, $logo, $jam, $lokasi);
+        $result = $this->applyWatermark($fotoPath, $logo, $jam, $tanggal, $lokasi);
 
         // Hapus foto asli
         @unlink($fotoPath);
@@ -1097,7 +1106,7 @@ class Dokumentasi extends BaseController
         ]);
     }
 
-    private function applyWatermark(string $imagePath, $logoFile, string $jam, string $lokasi): array
+    private function applyWatermark(string $imagePath, $logoFile, string $jam, string $tanggal, string $lokasi): array
     {
         // Dapatkan informasi gambar
         $imageInfo = @getimagesize($imagePath);
@@ -1131,71 +1140,45 @@ class Dokumentasi extends BaseController
         $height = imagesy($sourceImage);
 
         // --- Konfigurasi Watermark ---
-        $fontSize = max(16, (int) ($width * 0.035));
-        $fontPath = $this->getFontPath();
+        $scale = max(0.5, $width / 1080);
+        
+        $fontBold = $this->getCustomFontPath('Bold');
+        $fontMedium = $this->getCustomFontPath('Medium');
+        $fontRegular = $this->getCustomFontPath('Regular');
 
-        // Posisi watermark (pojok kiri atas)
-        $padding = (int) ($width * 0.02);
+        // Spacing dan Padding
+        $paddingX = (int) (60 * $scale);
+        $paddingY = (int) (60 * $scale);
 
-        // Format jam
-        $tanggalHariIni = date('d F Y');
-        $jamFormatted = $jam . ' WIB';
+        // Font Sizes
+        $timeFontSize = (int) (80 * $scale);
+        if ($timeFontSize < 24) $timeFontSize = 24;
 
-        // Warna teks
-        $textColor = imagecolorallocate($sourceImage, 255, 255, 255);
-        $outlineColor = imagecolorallocate($sourceImage, 0, 0, 0);
+        $dateFontSize = (int) (24 * $scale);
+        if ($dateFontSize < 10) $dateFontSize = 10;
 
-        $x = $padding + 5;
-        $y = $padding + $fontSize + 15;
+        $addressFontSize = (int) (22 * $scale);
+        if ($addressFontSize < 10) $addressFontSize = 10;
+        $addressLineHeight = (int) ($addressFontSize * 1.4);
 
-        // Gambar teks watermark dengan stroke outline
-        if ($fontPath !== '' && is_file($fontPath) && is_readable($fontPath)) {
-            // Text dengan stroke outline (4 arah)
-            $strokeWidth = 2;
-            $texts = [
-                $lokasi,
-                $jamFormatted . ', ' . $tanggalHariIni
-            ];
-            $yPositions = [$y, $y + $fontSize + 8];
+        $capsuleFontSize = (int) (12 * $scale);
+        if ($capsuleFontSize < 8) $capsuleFontSize = 8;
 
-            foreach ($texts as $index => $text) {
-                $ty = $yPositions[$index];
-                // Stroke outline (atas, kanan, bawah, kiri, dan diagonal)
-                @imagettftext($sourceImage, $fontSize, 0, $x - $strokeWidth, $ty, $outlineColor, $fontPath, $text);
-                @imagettftext($sourceImage, $fontSize, 0, $x + $strokeWidth, $ty, $outlineColor, $fontPath, $text);
-                @imagettftext($sourceImage, $fontSize, 0, $x, $ty - $strokeWidth, $outlineColor, $fontPath, $text);
-                @imagettftext($sourceImage, $fontSize, 0, $x, $ty + $strokeWidth, $outlineColor, $fontPath, $text);
-                @imagettftext($sourceImage, $fontSize, 0, $x - $strokeWidth, $ty - $strokeWidth, $outlineColor, $fontPath, $text);
-                @imagettftext($sourceImage, $fontSize, 0, $x + $strokeWidth, $ty - $strokeWidth, $outlineColor, $fontPath, $text);
-                @imagettftext($sourceImage, $fontSize, 0, $x - $strokeWidth, $ty + $strokeWidth, $outlineColor, $fontPath, $text);
-                @imagettftext($sourceImage, $fontSize, 0, $x + $strokeWidth, $ty + $strokeWidth, $outlineColor, $fontPath, $text);
-                // Teks utama (putih)
-                @imagettftext($sourceImage, $fontSize, 0, $x, $ty, $textColor, $fontPath, $text);
-            }
-        } else {
-            // Fallback: gunakan GD font bawaan dengan outline sederhana
-            $gdFont = 2;
-            $y2 = $y + $fontSize + 5;
-            // Shadow outline
-            imagestring($sourceImage, $gdFont, $x - 1, $y - $fontSize - 1, $lokasi, $outlineColor);
-            imagestring($sourceImage, $gdFont, $x + 1, $y - $fontSize - 1, $lokasi, $outlineColor);
-            imagestring($sourceImage, $gdFont, $x - 1, $y - $fontSize + 1, $lokasi, $outlineColor);
-            imagestring($sourceImage, $gdFont, $x + 1, $y - $fontSize + 1, $lokasi, $outlineColor);
-            imagestring($sourceImage, $gdFont, $x, $y - $fontSize, $lokasi, $textColor);
-
-            imagestring($sourceImage, $gdFont, $x - 1, $y2 - 1, $jamFormatted . ', ' . $tanggalHariIni, $outlineColor);
-            imagestring($sourceImage, $gdFont, $x + 1, $y2 - 1, $jamFormatted . ', ' . $tanggalHariIni, $outlineColor);
-            imagestring($sourceImage, $gdFont, $x - 1, $y2 + 1, $jamFormatted . ', ' . $tanggalHariIni, $outlineColor);
-            imagestring($sourceImage, $gdFont, $x + 1, $y2 + 1, $jamFormatted . ', ' . $tanggalHariIni, $outlineColor);
-            imagestring($sourceImage, $gdFont, $x, $y2, $jamFormatted . ', ' . $tanggalHariIni, $textColor);
+        // --- 1. Soft Vertical Gradient Overlay at Bottom ---
+        $gradientStart = (int) ($height * 0.60);
+        $gradientEnd = $height;
+        for ($y = $gradientStart; $y < $gradientEnd; $y++) {
+            $ratio = ($y - $gradientStart) / ($gradientEnd - $gradientStart);
+            $alpha = 127 - (int) ($ratio * 72); // 127 (transparent) to 55 (semi-transparent)
+            $color = imagecolorallocatealpha($sourceImage, 0, 0, 0, $alpha);
+            imageline($sourceImage, 0, $y, $width, $y, $color);
         }
 
-        // --- Logo Watermark ---
-        if ($logoFile !== null && $logoFile->isValid() && ! $logoFile->hasMoved()) {
+        // --- 2. Load Logo (Uploaded or Default) ---
+        $logoImage = null;
+        if ($logoFile !== null && $logoFile->isValid() && !$logoFile->hasMoved()) {
             $logoMime = strtolower((string) $logoFile->getMimeType());
             $logoExtension = strtolower((string) $logoFile->getClientExtension());
-
-            $logoImage = null;
             if ($logoExtension === 'png' || $logoMime === 'image/png') {
                 $logoImage = @imagecreatefrompng($logoFile->getTempName());
             } elseif (in_array($logoExtension, ['jpg', 'jpeg']) || $logoMime === 'image/jpeg') {
@@ -1203,36 +1186,151 @@ class Dokumentasi extends BaseController
             } elseif ($logoExtension === 'webp' || $logoMime === 'image/webp') {
                 $logoImage = @imagecreatefromwebp($logoFile->getTempName());
             }
+        }
 
-            if ($logoImage !== false && $logoImage !== null) {
-                $logoWidth = imagesx($logoImage);
-                $logoHeight = imagesy($logoImage);
-
-                // Ukuran logo (maks 12% dari lebar gambar)
-                $maxLogoWidth = (int) ($width * 0.12);
-                $logoRatio = $logoWidth > 0 ? $maxLogoWidth / $logoWidth : 1;
-                $newLogoWidth = (int) ($logoWidth * $logoRatio);
-                $newLogoHeight = (int) ($logoHeight * $logoRatio);
-
-                // Buat image baru untuk logo dengan transparency support
-                $resizedLogo = imagecreatetruecolor($newLogoWidth, $newLogoHeight);
-                imagealphablending($resizedLogo, false);
-                imagesavealpha($resizedLogo, true);
-                $transparent = imagecolorallocatealpha($resizedLogo, 0, 0, 0, 127);
-                imagefill($resizedLogo, 0, 0, $transparent);
-                imagecopyresampled($resizedLogo, $logoImage, 0, 0, 0, 0, $newLogoWidth, $newLogoHeight, $logoWidth, $logoHeight);
-
-                // Posisi logo (pojok kanan bawah dengan padding)
-                $logoX = $width - $newLogoWidth - $padding;
-                $logoY = $height - $newLogoHeight - $padding;
-
-                // Copy logo dengan transparency
-                imagecopy($sourceImage, $resizedLogo, $logoX, $logoY, 0, 0, $newLogoWidth, $newLogoHeight);
-
-                imagedestroy($resizedLogo);
-                imagedestroy($logoImage);
+        // Jika tidak ada logo yang diupload, gunakan logo instansi dari database
+        if ($logoImage === null) {
+            try {
+                $homeSettingModel = new \App\Models\HomeSettingModel();
+                $homeSetting = $homeSettingModel->first();
+                if ($homeSetting && !empty($homeSetting['logo_url'])) {
+                    $defaultLogoPath = FCPATH . ltrim($homeSetting['logo_url'], '/');
+                    if (is_file($defaultLogoPath) && is_readable($defaultLogoPath)) {
+                        $ext = strtolower(pathinfo($defaultLogoPath, PATHINFO_EXTENSION));
+                        if ($ext === 'png') {
+                            $logoImage = @imagecreatefrompng($defaultLogoPath);
+                        } elseif ($ext === 'jpg' || $ext === 'jpeg') {
+                            $logoImage = @imagecreatefromjpeg($defaultLogoPath);
+                        } elseif ($ext === 'webp') {
+                            $logoImage = @imagecreatefromwebp($defaultLogoPath);
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Proceed without default logo on failure
             }
         }
+
+        // --- 3. Warna Teks dan Shadow ---
+        $colorWhite = imagecolorallocate($sourceImage, 255, 255, 255);
+        $colorDark = imagecolorallocate($sourceImage, 0, 0, 0);
+        $colorBar = imagecolorallocate($sourceImage, 253, 184, 19); // PU Yellow / Orange
+        $colorNavy = imagecolorallocate($sourceImage, 12, 53, 106); // PU Dark Navy
+        $colorCapsuleBg = imagecolorallocate($sourceImage, 255, 255, 255);
+
+        // Shadow offset
+        $shadowOffset = (int) max(1, 2 * $scale);
+
+        // --- 4. Render Alamat/Lokasi (Bawah) ---
+        $maxAddressWidth = (int) ($width * 0.65);
+        $addressLines = $this->wrapText($addressFontSize, 0, $fontRegular, $lokasi, $maxAddressWidth);
+        $numLines = count($addressLines);
+        $addressBlockHeight = $numLines * $addressLineHeight;
+
+        $y_address_bottom = $height - $paddingY;
+        for ($i = 0; $i < $numLines; $i++) {
+            $lineText = $addressLines[$i];
+            $y_line = $y_address_bottom - (($numLines - 1 - $i) * $addressLineHeight);
+            $this->drawTextWithShadow($sourceImage, $addressFontSize, 0, $paddingX, $y_line, $colorWhite, $colorDark, $fontRegular, $lineText, $shadowOffset);
+        }
+
+        // --- 5. Render Jam, Vertical Bar, Tanggal & Hari (Tengah) ---
+        $y_address_top = $y_address_bottom - $addressBlockHeight + $addressFontSize;
+        $sectionSpacing = (int) (40 * $scale);
+        $y_time = $y_address_top - $sectionSpacing;
+
+        // Hitung bounding box jam
+        $timeBox = @imagettfbbox($timeFontSize, 0, $fontBold, $jam);
+        $timeWidth = $timeBox[2] - $timeBox[0];
+        $timeHeight = $timeBox[1] - $timeBox[7];
+
+        // Draw Jam
+        $this->drawTextWithShadow($sourceImage, $timeFontSize, 0, $paddingX, $y_time, $colorWhite, $colorDark, $fontBold, $jam, $shadowOffset);
+
+        // Posisi & dimensi vertical bar
+        $barX1 = $paddingX + $timeWidth + (25 * $scale);
+        $barX2 = $barX1 + (6 * $scale);
+        $barTop = $y_time + $timeBox[7] - (2 * $scale);
+        $barBottom = $y_time + $timeBox[1] + (2 * $scale);
+
+        // Draw Vertical Bar dengan shadow
+        imagefilledrectangle($sourceImage, (int)($barX1 + $shadowOffset), (int)($barTop + $shadowOffset), (int)($barX2 + $shadowOffset), (int)($barBottom + $shadowOffset), $colorDark);
+        imagefilledrectangle($sourceImage, (int)$barX1, (int)$barTop, (int)$barX2, (int)$barBottom, $colorBar);
+
+        // Draw Tanggal & Hari
+        $dateStr = date('d/m/Y', strtotime($tanggal));
+        $dayStr = $this->getIndonesianDayName($tanggal);
+        $dateX = $barX2 + (25 * $scale);
+
+        $dateBox = @imagettfbbox($dateFontSize, 0, $fontMedium, $dateStr);
+        $dateHeight = $dateBox[1] - $dateBox[7];
+
+        $y_date = $y_time + $timeBox[7] + $dateHeight + (4 * $scale);
+        $y_day = $y_time + $timeBox[1] - (2 * $scale);
+
+        $this->drawTextWithShadow($sourceImage, $dateFontSize, 0, $dateX, $y_date, $colorWhite, $colorDark, $fontMedium, $dateStr, $shadowOffset);
+        $this->drawTextWithShadow($sourceImage, $dateFontSize, 0, $dateX, $y_day, $colorWhite, $colorDark, $fontMedium, $dayStr, $shadowOffset);
+
+        // --- 6. Render Logo Capsule (Atas) ---
+        $y_time_top = $y_time + $timeBox[7];
+        $capsuleSpacing = (int) (35 * $scale);
+        $capsuleBottom = $y_time_top - $capsuleSpacing;
+        $capsuleHeight = (int) (65 * $scale);
+        if ($capsuleHeight < 36) $capsuleHeight = 36;
+        $capsuleTop = $capsuleBottom - $capsuleHeight;
+        $capsuleLeft = $paddingX;
+
+        $logoSize = (int) (45 * $scale);
+        if ($logoSize < 24) $logoSize = 24;
+
+        $logoX = $capsuleLeft + (15 * $scale);
+        $logoY = $capsuleTop + (($capsuleHeight - $logoSize) / 2);
+
+        $hasLogo = ($logoImage !== null);
+        if ($hasLogo) {
+            $textX = $logoX + $logoSize + (15 * $scale);
+        } else {
+            $textX = $capsuleLeft + (20 * $scale);
+        }
+
+        // Bounding box teks capsule
+        $cBox1 = @imagettfbbox($capsuleFontSize, 0, $fontBold, "KEMENTERIAN");
+        $cBox2 = @imagettfbbox($capsuleFontSize, 0, $fontBold, "PEKERJAAN UMUM");
+        $cW1 = $cBox1[2] - $cBox1[0];
+        $cW2 = $cBox2[2] - $cBox2[0];
+        $cTextWidth = max($cW1, $cW2);
+        $cTextHeight = $cBox1[1] - $cBox1[7];
+
+        $capsuleRight = $textX + $cTextWidth + (20 * $scale);
+
+        // Draw Capsule Background (dengan shadow)
+        $this->drawFilledRoundedRectangle($sourceImage, (int)($capsuleLeft + $shadowOffset), (int)($capsuleTop + $shadowOffset), (int)($capsuleRight + $shadowOffset), (int)($capsuleBottom + $shadowOffset), (int)($capsuleHeight / 2), $colorDark);
+        $this->drawFilledRoundedRectangle($sourceImage, (int)$capsuleLeft, (int)$capsuleTop, (int)$capsuleRight, (int)$capsuleBottom, (int)($capsuleHeight / 2), $colorCapsuleBg);
+
+        // Draw Logo Image
+        if ($hasLogo) {
+            $logoWidth = imagesx($logoImage);
+            $logoHeight = imagesy($logoImage);
+
+            $resizedLogo = imagecreatetruecolor($logoSize, $logoSize);
+            imagealphablending($resizedLogo, false);
+            imagesavealpha($resizedLogo, true);
+            $transparent = imagecolorallocatealpha($resizedLogo, 0, 0, 0, 127);
+            imagefill($resizedLogo, 0, 0, $transparent);
+            imagecopyresampled($resizedLogo, $logoImage, 0, 0, 0, 0, $logoSize, $logoSize, $logoWidth, $logoHeight);
+
+            imagecopy($sourceImage, $resizedLogo, (int)$logoX, (int)$logoY, 0, 0, $logoSize, $logoSize);
+            imagedestroy($resizedLogo);
+            imagedestroy($logoImage);
+        }
+
+        // Draw Capsule Text
+        $capsuleLineSpacing = (int) (3 * $scale);
+        $totalCapsuleTextHeight = (2 * $cTextHeight) + $capsuleLineSpacing;
+        $capsuleTextY = $capsuleTop + (($capsuleHeight - $totalCapsuleTextHeight) / 2) + $cTextHeight;
+
+        @imagettftext($sourceImage, $capsuleFontSize, 0, (int)$textX, (int)$capsuleTextY, $colorNavy, $fontBold, "KEMENTERIAN");
+        @imagettftext($sourceImage, $capsuleFontSize, 0, (int)$textX, (int)($capsuleTextY + $cTextHeight + $capsuleLineSpacing), $colorNavy, $fontBold, "PEKERJAAN UMUM");
 
         // Konversi ke base64
         ob_start();
@@ -1252,9 +1350,94 @@ class Dokumentasi extends BaseController
         }
 
         $base64 = base64_encode($imageData);
-        $dataUri = 'data:image/jpeg;base64,' . $base64;
+        $dataUri = 'data:' . $mimeType . ';base64,' . $base64;
 
         return ['data' => $dataUri, 'error' => null];
+    }
+
+    private function getCustomFontPath(string $style = 'Regular'): string
+    {
+        $path = FCPATH . 'assets/fonts/Barlow-' . $style . '.ttf';
+        if (is_file($path) && is_readable($path)) {
+            return $path;
+        }
+        return $this->getFontPath();
+    }
+
+    private function getIndonesianDayName(string $dateStr): string
+    {
+        $dayOfWeek = date('N', strtotime($dateStr));
+        $days = [
+            1 => 'Senin',
+            2 => 'Selasa',
+            3 => 'Rabu',
+            4 => 'Kamis',
+            5 => 'Jumat',
+            6 => 'Sabtu',
+            7 => 'Minggu'
+        ];
+        return $days[$dayOfWeek] ?? '';
+    }
+
+    private function drawTextWithShadow($image, $size, $angle, $x, $y, $colorText, $colorShadow, $fontFile, $text, $offset = 2)
+    {
+        @imagettftext($image, $size, $angle, $x + $offset, $y + $offset, $colorShadow, $fontFile, $text);
+        @imagettftext($image, $size, $angle, $x, $y, $colorText, $fontFile, $text);
+    }
+
+    private function drawFilledRoundedRectangle($image, $x1, $y1, $x2, $y2, $radius, $color)
+    {
+        $radius = max(0, $radius);
+        $width = $x2 - $x1;
+        $height = $y2 - $y1;
+        
+        if ($radius * 2 > $width) $radius = (int) ($width / 2);
+        if ($radius * 2 > $height) $radius = (int) ($height / 2);
+        
+        if ($radius <= 0) {
+            imagefilledrectangle($image, $x1, $y1, $x2, $y2, $color);
+            return;
+        }
+
+        imagefilledrectangle($image, $x1 + $radius, $y1, $x2 - $radius, $y2, $color);
+        imagefilledrectangle($image, $x1, $y1 + $radius, $x1 + $radius, $y2 - $radius, $color);
+        imagefilledrectangle($image, $x2 - $radius, $y1 + $radius, $x2, $y2 - $radius, $color);
+        
+        imagefilledarc($image, $x1 + $radius, $y1 + $radius, $radius * 2, $radius * 2, 180, 270, $color, IMG_ARC_PIE);
+        imagefilledarc($image, $x2 - $radius, $y1 + $radius, $radius * 2, $radius * 2, 270, 360, $color, IMG_ARC_PIE);
+        imagefilledarc($image, $x2 - $radius, $y2 - $radius, $radius * 2, $radius * 2, 0, 90, $color, IMG_ARC_PIE);
+        imagefilledarc($image, $x1 + $radius, $y2 - $radius, $radius * 2, $radius * 2, 90, 180, $color, IMG_ARC_PIE);
+    }
+
+    private function wrapText(float $fontSize, float $angle, string $fontFace, string $string, int $maxWidth): array
+    {
+        $words = explode(' ', $string);
+        $lines = [];
+        $currentLine = '';
+        foreach ($words as $word) {
+            $testLine = $currentLine === '' ? $word : $currentLine . ' ' . $word;
+            $testBox = @imagettfbbox($fontSize, $angle, $fontFace, $testLine);
+            if ($testBox !== false) {
+                $textWidth = $testBox[2] - $testBox[0];
+                if ($textWidth > $maxWidth) {
+                    if ($currentLine !== '') {
+                        $lines[] = $currentLine;
+                        $currentLine = $word;
+                    } else {
+                        $lines[] = $word;
+                        $currentLine = '';
+                    }
+                } else {
+                    $currentLine = $testLine;
+                }
+            } else {
+                $currentLine = $testLine;
+            }
+        }
+        if ($currentLine !== '') {
+            $lines[] = $currentLine;
+        }
+        return $lines;
     }
 
     private function getFontPath(): string
