@@ -216,7 +216,7 @@
                     theme: 'bootstrap4',
                     width: '100%',
                     minimumResultsForSearch: 0,
-                    closeOnSelect: false,
+                    closeOnSelect: $select.data('close-on-select') !== false && $select.data('close-on-select') !== 'false',
                     selectOnClose: false,
                 };
 
@@ -238,6 +238,20 @@
                 $select.select2(options);
             });
         };
+
+        $(document).on('select2:open', function (e) {
+            const select = e.target;
+            setTimeout(() => {
+                const container = $(select).data('select2')?.$container || $('.select2-container--open');
+                let searchField = container.find('.select2-search__field');
+                if (searchField.length === 0) {
+                    searchField = $('.select2-container--open .select2-search__field');
+                }
+                if (searchField.length > 0) {
+                    searchField[0].focus();
+                }
+            }, 50);
+        });
 
         initSelect2(document);
 

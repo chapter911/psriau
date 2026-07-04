@@ -27,6 +27,72 @@
     <link rel="stylesheet" href="<?= esc(media_url('assets/adminlte/plugins/select2/css/select2.min.css')); ?>">
     <link rel="stylesheet" href="<?= esc(media_url('assets/adminlte/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css')); ?>">
     <link rel="stylesheet" href="<?= esc(media_url('assets/css/site.css')); ?>">
+    <style>
+        /* Customize multiple Select2 selected items to wrap text, stack vertically, and be easy to delete */
+        .select2-container .select2-selection--multiple .select2-selection__rendered {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 6px !important;
+            padding: 6px 8px !important;
+        }
+
+        .select2-container .select2-selection--multiple .select2-selection__choice {
+            display: flex !important;
+            flex-direction: row-reverse !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            float: none !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 6px 12px !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+            background-color: #f8f9fa !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 4px !important;
+            color: #495057 !important;
+            box-sizing: border-box !important;
+            line-height: 1.4 !important;
+        }
+
+        /* Style the remove button to make it larger and easier to click on the right side */
+        .select2-container .select2-selection--multiple .select2-selection__choice__remove {
+            float: none !important;
+            font-size: 1.25rem !important;
+            font-weight: 700 !important;
+            color: #dc3545 !important;
+            margin-left: 12px !important;
+            margin-right: 0 !important;
+            cursor: pointer !important;
+            padding: 0 4px !important;
+            transition: color 0.15s ease-in-out !important;
+        }
+
+        .select2-container .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #bd2130 !important;
+            background-color: transparent !important;
+        }
+
+        /* Ensure container expands properly and search box starts on a new line or fits nicely */
+        .select2-container .select2-selection--multiple {
+            height: auto !important;
+            min-height: 38px !important;
+        }
+
+        .select2-container .select2-selection--multiple .select2-search--inline {
+            display: block !important;
+            width: 100% !important;
+            float: none !important;
+            margin: 4px 0 0 0 !important;
+        }
+
+        .select2-container .select2-selection--multiple .select2-search__field {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 4px 8px !important;
+            height: auto !important;
+        }
+    </style>
 </head>
 <body data-preloader-duration="<?= (int) ($appSetting['preloader_duration_ms'] ?? 500); ?>">
 <?php
@@ -204,7 +270,7 @@
                     theme: 'bootstrap4',
                     width: '100%',
                     minimumResultsForSearch: 0,
-                    closeOnSelect: false,
+                    closeOnSelect: $select.data('close-on-select') !== false && $select.data('close-on-select') !== 'false',
                     selectOnClose: false,
                 };
 
@@ -222,6 +288,20 @@
                 $select.select2(options);
             });
         };
+
+        $(document).on('select2:open', function (e) {
+            const select = e.target;
+            setTimeout(() => {
+                const container = $(select).data('select2')?.$container || $('.select2-container--open');
+                let searchField = container.find('.select2-search__field');
+                if (searchField.length === 0) {
+                    searchField = $('.select2-container--open .select2-search__field');
+                }
+                if (searchField.length > 0) {
+                    searchField[0].focus();
+                }
+            }, 50);
+        });
 
         initSelect2(document);
 

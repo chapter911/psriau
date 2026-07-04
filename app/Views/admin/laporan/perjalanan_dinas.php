@@ -474,7 +474,9 @@
             if ($.fn.select2) {
                 $selectVerify.select2({
                     theme: 'bootstrap4',
-                    placeholder: 'Pilih Dasar SPT'
+                    placeholder: 'Pilih Dasar SPT',
+                    dropdownParent: $modalVerify,
+                    closeOnSelect: true
                 });
             }
 
