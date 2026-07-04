@@ -27,13 +27,12 @@
     <link rel="stylesheet" href="<?= esc(media_url('assets/adminlte/plugins/select2/css/select2.min.css')); ?>">
     <link rel="stylesheet" href="<?= esc(media_url('assets/adminlte/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css')); ?>">
     <link rel="stylesheet" href="<?= esc(media_url('assets/css/site.css')); ?>">
-    <style>
         /* Customize multiple Select2 selected items to wrap text, stack vertically, and be easy to delete */
         .select2-container .select2-selection--multiple .select2-selection__rendered {
             display: flex !important;
             flex-direction: column !important;
-            gap: 6px !important;
-            padding: 6px 8px !important;
+            gap: 0 !important;
+            padding: 0 6px !important;
         }
 
         .select2-container .select2-selection--multiple .select2-selection__choice {
@@ -44,6 +43,7 @@
             float: none !important;
             width: 100% !important;
             margin: 0 !important;
+            margin-top: 6px !important;
             padding: 6px 12px !important;
             white-space: normal !important;
             word-break: break-word !important;
@@ -53,6 +53,10 @@
             color: #495057 !important;
             box-sizing: border-box !important;
             line-height: 1.4 !important;
+        }
+
+        .select2-container .select2-selection--multiple .select2-selection__choice:last-of-type {
+            margin-bottom: 6px !important;
         }
 
         /* Style the remove button to make it larger and easier to click on the right side */
@@ -83,14 +87,21 @@
             display: block !important;
             width: 100% !important;
             float: none !important;
-            margin: 4px 0 0 0 !important;
+            margin: 0 !important;
+        }
+
+        .select2-container .select2-selection--multiple .select2-selection__choice + .select2-search--inline {
+            margin-top: 6px !important;
+            margin-bottom: 6px !important;
         }
 
         .select2-container .select2-selection--multiple .select2-search__field {
             width: 100% !important;
             margin: 0 !important;
-            padding: 4px 8px !important;
-            height: auto !important;
+            padding: 6px 8px !important;
+            height: 36px !important;
+            box-sizing: border-box !important;
+            line-height: 24px !important;
         }
     </style>
 </head>
