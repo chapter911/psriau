@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="<?= esc(media_url('assets/adminlte/plugins/select2/css/select2.min.css')); ?>">
     <link rel="stylesheet" href="<?= esc(media_url('assets/adminlte/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css')); ?>">
     <link rel="stylesheet" href="<?= esc(media_url('assets/css/site.css')); ?>">
+    <style>
         /* Customize multiple Select2 selected items to wrap text, stack vertically, and be easy to delete */
         .select2-container .select2-selection--multiple .select2-selection__rendered {
             display: flex !important;
