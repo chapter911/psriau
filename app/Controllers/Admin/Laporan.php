@@ -335,13 +335,16 @@ class Laporan extends BaseController
 
         $role = strtolower((string) session()->get('role'));
         $canUploadVerified = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        $dasarSptOptions = (new \App\Models\MstDasarSptModel())->orderBy('id', 'ASC')->findAll();
 
         return view('admin/laporan/perjalanan_dinas', [
             'title' => 'Laporan Perjalanan Dinas',
             'can_edit' => $this->canManageLaporan(),
             'can_upload_verified' => $canUploadVerified,
+            'can_verify' => $this->canVerifyLaporan(),
             'kabupaten_options' => $this->loadKabupatenOptions(),
             'pegawai_options' => $this->loadPegawaiOptions(),
+            'dasar_spt_options' => $dasarSptOptions,
         ]);
     }
 
@@ -350,6 +353,7 @@ class Laporan extends BaseController
         $canEdit = $this->canManageLaporan();
         $role = strtolower((string) session()->get('role'));
         $canUploadVerified = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        $canVerify = $this->canVerifyLaporan();
         
         return $this->respondPerjalananDinasDataTable(
             fn () => db_connect()->table('laporan_perjalanan_dinas'),
@@ -385,7 +389,7 @@ class Laporan extends BaseController
                 5 => 'id',
                 6 => 'id',
             ],
-            function (array $row) use ($canEdit, $canUploadVerified): array {
+            function (array $row) use ($canEdit, $canUploadVerified, $canVerify): array {
                 $pelaksanaRows = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true);
                 if (! is_array($pelaksanaRows)) {
                     $pelaksanaRows = [];
@@ -476,9 +480,252 @@ class Laporan extends BaseController
                     $row['action_html'] = '<span class="text-muted">-</span>';
                 }
 
+                // Verification column cell HTML
+                $isVerified = (int) ($row['is_verified'] ?? 0);
+                $dasarSptIds = json_decode((string) ($row['dasar_spt_ids_json'] ?? '[]'), true) ?: [];
+                $tglTtd = trim((string) ($row['tanggal_tanda_tangan'] ?? ''));
+                $nomorSurat = trim((string) ($row['nomor_surat_tugas'] ?? ''));
+
+                $verificationStatusHtml = '';
+                if ($isVerified === 1) {
+                    $formattedTtd = $tglTtd !== '' ? tanggal_indonesia($tglTtd) : '-';
+                    $badgeTitle = "Nomor: " . esc($nomorSurat) . "\nTanggal: " . $formattedTtd;
+                    
+                    $verificationStatusHtml .= '<span class="badge badge-success px-2 py-1 shadow-sm" style="font-size:0.78rem; cursor:pointer;" title="' . esc($badgeTitle, 'attr') . '"><i class="fas fa-check-circle mr-1"></i> Terverifikasi</span>';
+                    $verificationStatusHtml .= '<div class="mt-1 d-flex justify-content-center align-items-center" style="gap: 4px;">';
+                    
+                    // Button to print single Surat Tugas
+                    $verificationStatusHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-spt') . '" class="btn btn-xs btn-outline-danger px-2 font-weight-bold" title="Cetak Surat Tugas (PDF)" target="_blank"><i class="fas fa-file-pdf"></i> SPT</a>';
+                    
+                    if ($canVerify) {
+                        // Button to edit verification
+                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarSptIds), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
+                    }
+                    
+                    $verificationStatusHtml .= '</div>';
+                } else {
+                    $verificationStatusHtml .= '<span class="badge badge-warning px-2 py-1 shadow-sm text-dark" style="font-size:0.78rem;"><i class="fas fa-clock mr-1"></i> Belum Verifikasi</span>';
+                    if ($canVerify) {
+                        $verificationStatusHtml .= '<div class="mt-1">';
+                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-primary px-3 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
+                        $verificationStatusHtml .= '</div>';
+                    }
+                }
+                
+                $row['verification_status_html'] = $verificationStatusHtml;
+
                 return $row;
             }
         );
+    }
+
+    public function perjalananDinasVerify(int $id)
+    {
+        if (! $this->canVerifyLaporan()) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi laporan perjalanan dinas.');
+        }
+
+        $model = new LaporanPerjalananDinasModel();
+        $row = $model->find($id);
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+        }
+
+        $nomorSurat = trim((string) $this->request->getPost('nomor_surat_tugas'));
+        $dasarIds = $this->request->getPost('dasar_spt_ids') ?: [];
+        $tglTtd = trim((string) $this->request->getPost('tanggal_tanda_tangan'));
+
+        if ($nomorSurat === '') {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Nomor Surat Tugas wajib diisi.');
+        }
+
+        if ($tglTtd === '') {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Tanggal tanda tangan wajib diisi.');
+        }
+
+        $model->update($id, [
+            'nomor_surat_tugas' => $nomorSurat,
+            'dasar_spt_ids_json' => json_encode(array_map('intval', (array) $dasarIds)),
+            'tanggal_tanda_tangan' => $tglTtd,
+            'is_verified' => 1,
+        ]);
+
+        return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('success', 'Laporan perjalanan dinas berhasil diverifikasi.');
+    }
+
+    public function perjalananDinasCetakSpt(int $id)
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $row = (new LaporanPerjalananDinasModel())->find($id);
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+        }
+
+        if ((int) ($row['is_verified'] ?? 0) !== 1) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Laporan perjalanan dinas belum diverifikasi.');
+        }
+
+        $dasarIds = json_decode((string) ($row['dasar_spt_ids_json'] ?? '[]'), true) ?: [];
+        $dasarRows = [];
+        if ($dasarIds !== []) {
+            $dasarRows = (new \App\Models\MstDasarSptModel())
+                ->whereIn('id', $dasarIds)
+                ->orderBy('id', 'ASC')
+                ->findAll();
+        }
+
+        $html = $this->renderSuratTugasHtml($row, $dasarRows);
+
+        $dompdfOptions = new \Dompdf\Options();
+        $dompdfOptions->set('isRemoteEnabled', true);
+        $dompdfOptions->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($dompdfOptions);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="surat_tugas_' . $id . '.pdf"')
+            ->setBody($dompdf->output());
+    }
+
+    public function perjalananDinasCetakPeriode()
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $startDate = trim((string) $this->request->getGet('start_date'));
+        $endDate = trim((string) $this->request->getGet('end_date'));
+
+        if ($startDate === '' || $endDate === '') {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Silakan pilih tanggal awal dan tanggal akhir cetak.');
+        }
+
+        $model = new LaporanPerjalananDinasModel();
+        $builder = $model->where('is_verified', 1);
+        $builder->where('periode_mulai >=', $startDate);
+        $builder->where('periode_selesai <=', $endDate);
+        
+        $rows = $builder->orderBy('tanggal_tanda_tangan', 'ASC')
+                        ->orderBy('periode_mulai', 'ASC')
+                        ->findAll();
+
+        if ($rows === []) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Tidak ada data perjalanan dinas terverifikasi dalam periode tersebut.');
+        }
+
+        $dasarSptModel = new \App\Models\MstDasarSptModel();
+        $allDasar = $dasarSptModel->findAll();
+        $dasarLookup = [];
+        foreach ($allDasar as $d) {
+            $dasarLookup[(int) $d['id']] = $d;
+        }
+
+        $records = [];
+        foreach ($rows as $row) {
+            $dasarIds = json_decode((string) ($row['dasar_spt_ids_json'] ?? '[]'), true) ?: [];
+            $dasarRows = [];
+            foreach ($dasarIds as $dId) {
+                if (isset($dasarLookup[(int) $dId])) {
+                    $dasarRows[] = $dasarLookup[(int) $dId];
+                }
+            }
+
+            $periodeMulai = trim((string) ($row['periode_mulai'] ?? ''));
+            $periodeSelesai = trim((string) ($row['periode_selesai'] ?? ''));
+            
+            $durationDays = 0;
+            $durationWord = '';
+            if ($periodeMulai !== '' && $periodeSelesai !== '') {
+                try {
+                    $start = new \DateTime($periodeMulai);
+                    $end = new \DateTime($periodeSelesai);
+                    $durationDays = $start->diff($end)->days + 1;
+                    $durationWord = function_exists('terbilang_angka') ? terbilang_angka($durationDays) : '';
+                } catch (\Throwable $e) {}
+            }
+
+            $records[] = [
+                'nomor_surat_tugas' => (string) ($row['nomor_surat_tugas'] ?? ''),
+                'periode_mulai' => $periodeMulai,
+                'periode_selesai' => $periodeSelesai,
+                'duration_days' => $durationDays,
+                'duration_word' => $durationWord,
+                'kota_tujuan' => (string) ($row['kota_tujuan'] ?? ''),
+                'tujuan' => (string) ($row['tujuan'] ?? ''),
+                'sasaran' => (string) ($row['sasaran'] ?? ''),
+                'pelaksana' => $this->decodeJsonArray((string) ($row['pelaksana_json'] ?? '[]')),
+                'tanggal_tanda_tangan' => (string) ($row['tanggal_tanda_tangan'] ?? ''),
+                'diketahui_oleh' => $this->decodeJsonObject((string) ($row['diketahui_oleh_json'] ?? '{}')),
+                'dasar_spt' => $dasarRows,
+            ];
+        }
+
+        $html = view('admin/laporan/surat_tugas_bulk_pdf', [
+            'records' => $records,
+        ]);
+
+        $dompdfOptions = new \Dompdf\Options();
+        $dompdfOptions->set('isRemoteEnabled', true);
+        $dompdfOptions->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($dompdfOptions);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="rekap_surat_tugas_' . $startDate . '_to_' . $endDate . '.pdf"')
+            ->setBody($dompdf->output());
+    }
+
+    private function renderSuratTugasHtml(array $row, array $dasarRows): string
+    {
+        $periodeMulai = trim((string) ($row['periode_mulai'] ?? ''));
+        $periodeSelesai = trim((string) ($row['periode_selesai'] ?? ''));
+        
+        $durationDays = 0;
+        $durationWord = '';
+        if ($periodeMulai !== '' && $periodeSelesai !== '') {
+            try {
+                $start = new \DateTime($periodeMulai);
+                $end = new \DateTime($periodeSelesai);
+                $durationDays = $start->diff($end)->days + 1;
+                $durationWord = function_exists('terbilang_angka') ? terbilang_angka($durationDays) : '';
+            } catch (\Throwable $e) {}
+        }
+
+        $data = [
+            'nomor_surat_tugas' => (string) ($row['nomor_surat_tugas'] ?? ''),
+            'periode_mulai' => $periodeMulai,
+            'periode_selesai' => $periodeSelesai,
+            'duration_days' => $durationDays,
+            'duration_word' => $durationWord,
+            'kota_tujuan' => (string) ($row['kota_tujuan'] ?? ''),
+            'tujuan' => (string) ($row['tujuan'] ?? ''),
+            'sasaran' => (string) ($row['sasaran'] ?? ''),
+            'pelaksana' => $this->decodeJsonArray((string) ($row['pelaksana_json'] ?? '[]')),
+            'tanggal_tanda_tangan' => (string) ($row['tanggal_tanda_tangan'] ?? ''),
+            'diketahui_oleh' => $this->decodeJsonObject((string) ($row['diketahui_oleh_json'] ?? '{}')),
+            'dasar_spt' => $dasarRows,
+        ];
+
+        return view('admin/laporan/surat_tugas_pdf', [
+            'data' => $data,
+        ]);
+    }
+
+    protected function canVerifyLaporan(): bool
+    {
+        $role = strtolower((string) session()->get('role'));
+        return in_array($role, ['admin', 'editor', 'keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
     }
 
     public function perjalananDinasHapus(int $id): RedirectResponse

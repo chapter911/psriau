@@ -138,6 +138,12 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'master/kop-surat/(:num)/ubah', 'Admin\\KopSurat::edit/$1');
 	$routes->post('master/kop-surat/(:num)/status', 'Admin\\KopSurat::updateStatus/$1');
 	$routes->post('master/kop-surat/(:num)/hapus', 'Admin\\KopSurat::delete/$1');
+
+	// Master Dasar SPT
+	$routes->get('master/dasar-spt', 'Admin\\DasarSpt::index');
+	$routes->post('master/dasar-spt/tambah', 'Admin\\DasarSpt::create');
+	$routes->post('master/dasar-spt/(:num)/ubah', 'Admin\\DasarSpt::edit/$1');
+	$routes->post('master/dasar-spt/(:num)/hapus', 'Admin\\DasarSpt::delete/$1');
 	$routes->get('master/sekolah', 'Admin\\MasterSekolah::index');
 	$routes->post('master/sekolah/tambah', 'Admin\\MasterSekolah::create');
 	$routes->post('master/sekolah/(:segment)/ubah', 'Admin\\MasterSekolah::edit/$1');
@@ -211,11 +217,14 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 
 	// Surat Routes - Perjalanan Dinas (alias dari Laporan)
 	$routes->get('surat/perjalanan-dinas', 'Admin\\Laporan::perjalananDinas');
+	$routes->get('surat/perjalanan-dinas/cetak-periode', 'Admin\\Laporan::perjalananDinasCetakPeriode');
 	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/buat', 'Admin\\Laporan::perjalananDinasBuat');
 	$routes->get('surat/perjalanan-dinas/(:num)/dokumen', 'Admin\\Laporan::perjalananDinasDokumen/$1');
 	$routes->post('surat/perjalanan-dinas/(:num)/upload-verified', 'Admin\\Laporan::perjalananDinasUploadVerified/$1');
 	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/(:num)/ubah', 'Admin\\Laporan::perjalananDinasEdit/$1');
 	$routes->get('surat/perjalanan-dinas/(:num)/hapus', 'Admin\\Laporan::perjalananDinasHapus/$1');
+	$routes->post('surat/perjalanan-dinas/(:num)/verify', 'Admin\\Laporan::perjalananDinasVerify/$1');
+	$routes->get('surat/perjalanan-dinas/(:num)/cetak-spt', 'Admin\\Laporan::perjalananDinasCetakSpt/$1');
 
 	// Surat Routes - Lupa Absen
 	$routes->get('surat/lupa-absen', 'Admin\\LupaAbsen::index');

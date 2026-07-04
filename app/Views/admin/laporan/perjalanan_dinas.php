@@ -131,7 +131,10 @@
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-2">
                     <small class="text-muted">Data akan diperbarui secara otomatis saat filter diubah.</small>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-reset-filter">Reset Filter</button>
+                    <div class="d-flex align-items-center" style="gap:10px;">
+                        <button type="button" class="btn btn-danger btn-sm" id="btn-cetak-periode"><i class="fas fa-file-pdf mr-1"></i> Cetak Surat Tugas (Periode)</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-reset-filter">Reset Filter</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -149,6 +152,7 @@
                         <?php if ($can_upload_verified ?? false): ?>
                             <th style="width:130px;" class="text-center">Upload Verified</th>
                         <?php endif; ?>
+                        <th style="width:150px;" class="text-center">Verifikasi SPT</th>
                         <th style="width:90px;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -198,6 +202,49 @@
 </div>
 <?php endif; ?>
 
+<?php if ($can_verify ?? false): ?>
+<div class="modal fade" id="modal-verify-spt" role="dialog" aria-labelledby="modalVerifyTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <div class="modal-header bg-light py-3" style="border-bottom: 1px solid #e9eef5;">
+                <h5 class="modal-title font-weight-bold text-dark" id="modalVerifyTitle">
+                    <i class="fas fa-check-double text-success mr-2"></i>Verifikasi Laporan Perjadin & SPT
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="form-verify-spt" method="post" action="">
+                <?= csrf_field(); ?>
+                <div class="modal-body py-4">
+                    <div class="form-group">
+                        <label for="verify_nomor_surat" class="font-weight-bold mb-1">Nomor Surat Tugas <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="verify_nomor_surat" name="nomor_surat_tugas" required placeholder="Contoh: 132/SPT/Gs7/2026">
+                    </div>
+                    <div class="form-group">
+                        <label for="verify_dasar_spt" class="font-weight-bold mb-1">Dasar SPT (Legal Basis) <span class="text-danger">*</span></label>
+                        <select class="form-control select2" id="verify_dasar_spt" name="dasar_spt_ids[]" multiple="multiple" data-placeholder="Pilih Dasar SPT" style="width: 100%;" required>
+                            <?php foreach ($dasar_spt_options ?? [] as $ds): ?>
+                                <option value="<?= (int) ($ds['id'] ?? 0); ?>"><?= esc(strip_tags((string) ($ds['uraian'] ?? ''))); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="text-muted mt-1 d-block">Pilih satu atau lebih legal basis yang relevan.</small>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label for="verify_tanggal_ttd" class="font-weight-bold mb-1">Tanggal Tanda Tangan <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="verify_tanggal_ttd" name="tanggal_tanda_tangan" required onfocus="this.showPicker()">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2" style="border-top: 1px solid #e9eef5;">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success btn-sm font-weight-bold" id="btn-save-verify">Simpan Verifikasi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Modal Konfirmasi Hapus -->
 <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
@@ -233,6 +280,7 @@
 
         const canEdit = <?= json_encode($canEdit, JSON_UNESCAPED_UNICODE); ?>;
         const canUploadVerified = <?= json_encode($can_upload_verified ?? false, JSON_UNESCAPED_UNICODE); ?>;
+        const canVerify = <?= json_encode($can_verify ?? false, JSON_UNESCAPED_UNICODE); ?>;
         const dataUrl = <?= json_encode(site_url('admin/surat/perjalanan-dinas'), JSON_UNESCAPED_UNICODE); ?>;
 
         const $filterStartDate = $('#filter_start_date');
@@ -292,6 +340,13 @@
                 className: 'text-center'
             });
         }
+
+        columns.push({
+            data: 'verification_status_html',
+            orderable: false,
+            searchable: false,
+            className: 'text-center'
+        });
 
         columns.push({
             data: 'action_html',
@@ -407,6 +462,62 @@
             const id = $(this).data('id');
             $('#btnConfirmDelete').attr('href', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/hapus');
             $('#deleteModal').modal('show');
+        });
+
+        // Verification button handler (delegated)
+        if (canVerify) {
+            const $modalVerify = $('#modal-verify-spt');
+            const $formVerify = $('#form-verify-spt');
+            const $selectVerify = $('#verify_dasar_spt');
+
+            // Initialize select2 if available
+            if ($.fn.select2) {
+                $selectVerify.select2({
+                    theme: 'bootstrap4',
+                    placeholder: 'Pilih Dasar SPT'
+                });
+            }
+
+            $table.on('click', '.btn-verify-spt', function () {
+                const $btn = $(this);
+                const id = $btn.data('id');
+                const nomor = $btn.data('nomor') || '';
+                const dasarStr = $btn.attr('data-dasar') || '[]';
+                const tgl = $btn.data('tgl') || '';
+
+                $formVerify.attr('action', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/verify');
+                $('#verify_nomor_surat').val(nomor);
+                $('#verify_tanggal_ttd').val(tgl !== '' ? tgl : new Date().toISOString().split('T')[0]);
+
+                let dasarIds = [];
+                try {
+                    dasarIds = JSON.parse(dasarStr);
+                } catch (e) {
+                    dasarIds = [];
+                }
+
+                if ($.fn.select2) {
+                    $selectVerify.val(dasarIds).trigger('change');
+                } else {
+                    $selectVerify.val(dasarIds);
+                }
+
+                $modalVerify.modal('show');
+            });
+        }
+
+        // Cetak Berdasarkan Periode handler
+        $('#btn-cetak-periode').on('click', function () {
+            const start = $filterStartDate.val();
+            const end = $filterEndDate.val();
+
+            if (!start || !end) {
+                alert('Silakan tentukan Tanggal Mulai dan Tanggal Selesai terlebih dahulu.');
+                return;
+            }
+
+            const url = '<?= site_url("admin/surat/perjalanan-dinas/cetak-periode"); ?>?start_date=' + encodeURIComponent(start) + '&end_date=' + encodeURIComponent(end);
+            window.open(url, '_blank');
         });
     })();
 </script>
