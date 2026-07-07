@@ -66,49 +66,76 @@
     }
 
     .photo-dropzone {
-        border: 1px dashed #cfd7e3;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
         border-radius: 16px;
-        padding: 16px;
-        transition: border-color .15s ease, background-color .15s ease, transform .15s ease;
+        padding: 20px;
+        transition: border-color .15s ease, box-shadow .15s ease;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
     }
 
     .photo-dropzone.is-dragover {
-        border-color: #2563eb;
-        background: #eef6ff;
-        transform: translateY(-1px);
+        border-color: #0A66C2;
+        box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.15);
     }
 
     .photo-dropzone__target {
         border-radius: 12px;
-        border: 1px solid #e6ecf3;
-        padding: 24px 16px;
-        background: #fff;
+        border: 2px dashed #cbd5e1;
+        padding: 32px 16px;
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 500;
+        cursor: pointer;
+        transition: border-color .15s ease, background-color .15s ease, color .15s ease;
     }
 
-    #selectedPhotoPreview { gap: 10px; }
+    .photo-dropzone__target:hover,
+    .photo-dropzone.is-dragover .photo-dropzone__target {
+        border-color: #0A66C2;
+        background: #f0f7ff;
+        color: #0A66C2;
+    }
 
-    /* Existing photos (from DB) */
-    .existing-photo-section { margin-top: 14px; }
-    .existing-photo-title { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 8px; }
-    #existingPhotoList { display: flex; flex-wrap: wrap; gap: 8px; }
-    .existing-photo-item { position: relative; }
-    .existing-photo-item img { width: 90px; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; border: 1px solid #dbe3ee; }
-    .existing-photo-item .btn-remove-existing { position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; line-height: 20px; text-align: center; padding: 0; }
+    #selectedPhotoPreview,
+    #existingPhotoList,
+    #selectedFilePreview,
+    #existingFileList {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
 
     .selected-photo-card {
-        width: 126px;
-        border: 1px solid #dbe3ee;
-        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
         overflow: hidden;
         background: #fff;
+        padding: 10px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .selected-photo-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
     .selected-photo-card__preview {
-        position: relative;
-        width: 100%;
-        aspect-ratio: 1/1;
+        width: 70px;
+        height: 70px;
+        border-radius: 8px;
+        overflow: hidden;
         background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid #e2e8f0;
     }
 
     .selected-photo-card__preview img {
@@ -118,34 +145,80 @@
         display: block;
     }
 
-    .selected-photo-card__remove {
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        width: 26px;
-        height: 26px;
-        border: 0;
-        border-radius: 999px;
-        background: rgba(15, 23, 42, 0.8);
-        color: #fff;
-        font-size: 16px;
-        line-height: 26px;
-        padding: 0;
-        cursor: pointer;
-    }
-
     .selected-photo-card__meta {
-        padding: 8px 10px 10px;
-        font-size: 11px;
-        line-height: 1.35;
-        color: #475569;
-        word-break: break-word;
+        flex: 1;
+        padding: 0 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
     }
 
     .selected-photo-card__name {
+        font-size: 13px;
         font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 4px;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .selected-photo-card__size {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 1px;
+    }
+
+    .selected-photo-card__input-wrapper {
+        margin-top: 4px;
+        width: 100%;
+    }
+
+    .selected-photo-card__meta input {
+        border-radius: 6px !important;
+        border: 1px solid #cbd5e1 !important;
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        height: auto !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .selected-photo-card__meta input:focus {
+        border-color: #0A66C2 !important;
+        box-shadow: 0 0 0 2px rgba(10, 102, 194, 0.15) !important;
+        outline: 0;
+    }
+
+    .selected-photo-card__remove-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-left: 8px;
+        flex-shrink: 0;
+    }
+
+    .selected-photo-card__remove {
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 50% !important;
+        background: #fee2e2 !important;
+        color: #ef4444 !important;
+        font-size: 18px !important;
+        line-height: 32px !important;
+        padding: 0 !important;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .selected-photo-card__remove:hover {
+        background: #fecaca !important;
+        color: #dc2626 !important;
     }
 </style>
 
@@ -282,7 +355,7 @@
                             <div class="photo-dropzone__target text-center text-muted">
                                 Drop foto di sini untuk upload cepat.
                             </div>
-                            <div class="mt-3 d-flex flex-wrap" id="selectedPhotoPreview"></div>
+                            <div class="mt-3" id="selectedPhotoPreview"></div>
 
                         <?php if (!empty($existingFotoDokumentasi)): ?>
                             <div class="existing-photo-section">
@@ -291,9 +364,19 @@
                                     <?php foreach ($existingFotoDokumentasi as $fIdx => $foto): ?>
                                         <?php $dataUri = $resolvePhotoSrc($foto); ?>
                                         <?php if ($dataUri !== ''): ?>
-                                            <div class="existing-photo-item" data-existing-index="<?= (int) $fIdx; ?>">
-                                                <img src="<?= esc($dataUri); ?>" alt="Dokumentasi <?= (int) $fIdx + 1; ?>">
-                                                <button type="button" class="btn-remove-existing" title="Hapus foto ini">&times;</button>
+                                            <div class="selected-photo-card existing-photo-item" data-existing-index="<?= (int) $fIdx; ?>">
+                                                <div class="selected-photo-card__preview">
+                                                    <img src="<?= esc($dataUri); ?>" alt="Dokumentasi <?= (int) $fIdx + 1; ?>">
+                                                </div>
+                                                <div class="selected-photo-card__meta">
+                                                    <div class="selected-photo-card__name">Foto Dokumentasi <?= (int) $fIdx + 1; ?></div>
+                                                    <div class="selected-photo-card__input-wrapper">
+                                                        <input type="text" name="existing_foto_keterangan[<?= (int) $fIdx; ?>]" class="form-control form-control-sm" placeholder="Keterangan foto..." value="<?= esc($foto['keterangan'] ?? ''); ?>">
+                                                    </div>
+                                                </div>
+                                                <div class="selected-photo-card__remove-wrapper">
+                                                    <button type="button" class="btn-remove-existing selected-photo-card__remove" title="Hapus foto ini">&times;</button>
+                                                </div>
                                             </div>
                                         <?php endif; ?>
                                     <?php endforeach; ?>
@@ -323,13 +406,13 @@
                             <div class="photo-dropzone__target text-center text-muted">
                                 Drop file di sini untuk upload cepat.
                             </div>
-                            <div class="mt-3 d-flex flex-wrap" id="selectedFilePreview" style="gap: 10px;"></div>
+                            <div class="mt-3" id="selectedFilePreview"></div>
 
                         <?php $existingDocs = $existing_dokumen_pendukung ?? []; ?>
                         <?php if (!empty($existingDocs)): ?>
                             <div class="existing-photo-section">
                                 <div class="existing-photo-title">Dokumen pendukung tersimpan (<?= count($existingDocs); ?> file)</div>
-                                <div id="existingFileList" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                <div id="existingFileList">
                                     <?php foreach ($existingDocs as $fIdx => $doc): ?>
                                         <?php 
                                             $filePath = trim((string) ($doc['file_path'] ?? ''));
@@ -337,8 +420,8 @@
                                             $docUrl = $filePath !== '' ? media_url($filePath) : '';
                                         ?>
                                         <?php if ($docUrl !== ''): ?>
-                                            <div class="existing-photo-item" data-existing-index="<?= (int) $fIdx; ?>" style="display: flex; flex-direction: column; width: 126px;">
-                                                <div style="position: relative; width: 100%; aspect-ratio: 1/1; border: 1px solid #dbe3ee; border-radius: 8px; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center;">
+                                            <div class="selected-photo-card existing-photo-item" data-existing-index="<?= (int) $fIdx; ?>">
+                                                <div class="selected-photo-card__preview">
                                                     <?php 
                                                         $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
                                                         if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)): 
@@ -352,13 +435,19 @@
                                                             elseif (in_array($ext, ['doc', 'docx'], true)) { $icon = 'fa-file-word'; $color = 'text-primary'; }
                                                             elseif (in_array($ext, ['xls', 'xlsx'], true)) { $icon = 'fa-file-excel'; $color = 'text-success'; }
                                                         ?>
-                                                        <i class="fas <?= $icon; ?> <?= $color; ?>" style="font-size: 2.2rem;"></i>
+                                                        <i class="fas <?= $icon; ?> <?= $color; ?>" style="font-size: 2.5rem;"></i>
                                                     <?php endif; ?>
-                                                    <button type="button" class="btn-remove-existing" title="Hapus file ini">&times;</button>
                                                 </div>
-                                                <div class="selected-photo-card__meta" style="padding: 6px 4px;">
-                                                    <div class="selected-photo-card__name" style="font-size: 10px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="<?= esc($fileName); ?>"><?= esc($fileName); ?></div>
-                                                    <a href="<?= esc($docUrl); ?>" target="_blank" class="small font-weight-bold" style="text-decoration: underline;">Unduh</a>
+                                                <div class="selected-photo-card__meta">
+                                                    <div class="selected-photo-card__name" title="<?= esc($fileName); ?>"><?= esc($fileName); ?></div>
+                                                    <div class="selected-photo-card__size"><?= esc(strtoupper($ext)); ?> File</div>
+                                                    <div class="selected-photo-card__input-wrapper">
+                                                        <input type="text" name="existing_dokumen_keterangan[<?= (int) $fIdx; ?>]" class="form-control form-control-sm" placeholder="Keterangan dokumen..." value="<?= esc($doc['keterangan'] ?? ''); ?>">
+                                                    </div>
+                                                </div>
+                                                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-left: 8px;">
+                                                    <a href="<?= esc($docUrl); ?>" target="_blank" class="btn btn-xs btn-outline-primary px-2 font-weight-bold">Unduh</a>
+                                                    <button type="button" class="btn-remove-existing selected-photo-card__remove" title="Hapus file ini">&times;</button>
                                                 </div>
                                             </div>
                                         <?php endif; ?>
@@ -503,11 +592,16 @@
             card.innerHTML = '' +
                 '<div class="selected-photo-card__preview">' +
                     '<img src="' + item.previewUrl + '" alt="' + item.name + '">' +
-                    '<button type="button" class="selected-photo-card__remove" aria-label="Hapus foto">&times;</button>' +
                 '</div>' +
                 '<div class="selected-photo-card__meta">' +
                     '<div class="selected-photo-card__name">' + item.name + '</div>' +
-                    '<div>' + item.sizeLabel + '</div>' +
+                    '<div class="selected-photo-card__size">' + item.sizeLabel + '</div>' +
+                    '<div class="selected-photo-card__input-wrapper">' +
+                        '<input type="text" name="foto_keterangan[]" class="form-control form-control-sm selected-photo-desc" placeholder="Keterangan foto..." value="' + (item.keterangan || '') + '">' +
+                    '</div>' +
+                '</div>' +
+                '<div class="selected-photo-card__remove-wrapper">' +
+                    '<button type="button" class="selected-photo-card__remove" aria-label="Hapus foto">&times;</button>' +
                 '</div>';
 
             var removeButton = card.querySelector('.selected-photo-card__remove');
@@ -518,6 +612,13 @@
                     syncFileInput();
                     renderPreview();
                     updateCounter();
+                });
+            }
+
+            var descInput = card.querySelector('.selected-photo-desc');
+            if (descInput) {
+                descInput.addEventListener('input', function () {
+                    item.keterangan = this.value;
                 });
             }
 
@@ -663,9 +764,6 @@
         selectedItems.forEach(function (item, index) {
             var card = document.createElement('div');
             card.className = 'selected-photo-card';
-            card.style.display = 'flex';
-            card.style.flexDirection = 'column';
-            card.style.width = '126px';
 
             var isImage = item.file && item.file.type && item.file.type.indexOf('image/') === 0;
             var previewContent = '';
@@ -677,17 +775,22 @@
                 if (item.name.endsWith('.pdf')) { icon = 'fa-file-pdf'; color = 'text-danger'; }
                 else if (item.name.endsWith('.doc') || item.name.endsWith('.docx')) { icon = 'fa-file-word'; color = 'text-primary'; }
                 else if (item.name.endsWith('.xls') || item.name.endsWith('.xlsx')) { icon = 'fa-file-excel'; color = 'text-success'; }
-                previewContent = '<i class="fas ' + icon + ' ' + color + '" style="font-size: 2.2rem;"></i>';
+                previewContent = '<i class="fas ' + icon + ' ' + color + '" style="font-size: 2.5rem;"></i>';
             }
 
             card.innerHTML = '' +
-                '<div class="selected-photo-card__preview" style="position: relative; width: 100%; aspect-ratio: 1/1; border: 1px solid #dbe3ee; border-radius: 8px; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center;">' +
+                '<div class="selected-photo-card__preview">' +
                     previewContent +
-                    '<button type="button" class="selected-photo-card__remove" aria-label="Hapus file">&times;</button>' +
                 '</div>' +
-                '<div class="selected-photo-card__meta" style="padding: 6px 4px;">' +
-                    '<div class="selected-photo-card__name" style="font-size: 10px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="' + item.name + '">' + item.name + '</div>' +
-                    '<div style="font-size: 9px; color:#64748b;">' + item.sizeLabel + '</div>' +
+                '<div class="selected-photo-card__meta">' +
+                    '<div class="selected-photo-card__name" title="' + item.name + '">' + item.name + '</div>' +
+                    '<div class="selected-photo-card__size">' + item.sizeLabel + '</div>' +
+                    '<div class="selected-photo-card__input-wrapper">' +
+                        '<input type="text" name="dokumen_keterangan[]" class="form-control form-control-sm selected-doc-desc" placeholder="Keterangan dokumen..." value="' + (item.keterangan || '') + '">' +
+                    '</div>' +
+                '</div>' +
+                '<div class="selected-photo-card__remove-wrapper">' +
+                    '<button type="button" class="selected-photo-card__remove" aria-label="Hapus file">&times;</button>' +
                 '</div>';
 
             var removeButton = card.querySelector('.selected-photo-card__remove');
@@ -700,32 +803,41 @@
                     updateCounter();
                 });
             }
+
+            var descInput = card.querySelector('.selected-doc-desc');
+            if (descInput) {
+                descInput.addEventListener('input', function () {
+                    item.keterangan = this.value;
+                });
+            }
+
             previewContainer.appendChild(card);
         });
-    }
+     }
 
-    function addFiles(fileList) {
-        var incomingFiles = Array.prototype.slice.call(fileList || []).filter(function (file) {
-            return file;
-        });
+     function addFiles(fileList) {
+         var incomingFiles = Array.prototype.slice.call(fileList || []).filter(function (file) {
+             return file;
+         });
 
-        if (incomingFiles.length === 0) {
-            showNotice('Silakan pilih file yang valid.', 'danger');
-            return;
-        }
+         if (incomingFiles.length === 0) {
+             showNotice('Silakan pilih file yang valid.', 'danger');
+             return;
+         }
 
-        incomingFiles.forEach(function (file) {
-            var pUrl = '';
-            if (file.type && file.type.indexOf('image/') === 0) {
-                pUrl = URL.createObjectURL(file);
-            }
-            selectedItems.push({
-                file: file,
-                previewUrl: pUrl,
-                name: file.name,
-                sizeLabel: Math.max(1, Math.round(file.size / 1024)) + ' KB',
-            });
-        });
+         incomingFiles.forEach(function (file) {
+             var pUrl = '';
+             if (file.type && file.type.indexOf('image/') === 0) {
+                 pUrl = URL.createObjectURL(file);
+             }
+             selectedItems.push({
+                 file: file,
+                 previewUrl: pUrl,
+                 name: file.name,
+                 sizeLabel: Math.max(1, Math.round(file.size / 1024)) + ' KB',
+                 keterangan: '',
+             });
+         });
 
         syncFileInput();
         renderPreview();

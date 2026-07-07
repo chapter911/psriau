@@ -266,7 +266,7 @@ $resolvePhotoSrc = static function ($photo): string {
 
     .foto-grid td {
         width: 50%;
-        height: 242px;
+        height: 250px;
         border: 1px solid #000;
         padding: 6px;
         vertical-align: middle;
@@ -275,7 +275,7 @@ $resolvePhotoSrc = static function ($photo): string {
 
     .foto-grid img {
         max-width: 100%;
-        max-height: 230px;
+        max-height: 180px;
         display: block;
         margin: 0 auto;
     }
@@ -474,7 +474,16 @@ $resolvePhotoSrc = static function ($photo): string {
                 <?php if ($src !== ''): ?>
                 <img src="<?= esc($src); ?>" alt="Dokumentasi">
                 <?php else: ?>
-                <div style="height:230px"></div>
+                <div style="height:180px"></div>
+                <?php endif; ?>
+                <?php 
+                    $keterangan = '';
+                    if (is_array($photo) && isset($photo['keterangan'])) {
+                        $keterangan = trim((string) $photo['keterangan']);
+                    }
+                ?>
+                <?php if ($keterangan !== ''): ?>
+                <div style="margin-top: 6px; font-size: 10pt; font-weight: bold;"><?= esc($keterangan); ?></div>
                 <?php endif; ?>
             </td>
             <?php endforeach; ?>

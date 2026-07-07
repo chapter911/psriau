@@ -450,7 +450,12 @@ class Laporan extends BaseController
                                 $btnClass = 'btn-warning text-white';
                             }
                             
-                            $dokumenHtml .= '<a href="' . $docUrl . '" class="btn ' . $btnClass . '" title="File Pendukung: ' . esc($fileName, 'attr') . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
+                             $keterangan = trim((string) ($doc['keterangan'] ?? ''));
+                             $titleLabel = 'File Pendukung: ' . $fileName;
+                             if ($keterangan !== '') {
+                                 $titleLabel .= ' - ' . $keterangan;
+                             }
+                             $dokumenHtml .= '<a href="' . $docUrl . '" class="btn ' . $btnClass . '" title="' . esc($titleLabel, 'attr') . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
                         }
                     }
                 }
@@ -1134,6 +1139,28 @@ class Laporan extends BaseController
         $existingPhotos = $this->decodeJsonArray((string) ($existing['foto_dokumentasi_json'] ?? '[]'));
         $existingDocs = $this->decodeJsonArray((string) ($existing['dokumen_pendukung_json'] ?? '[]'));
 
+        // Map existing photo descriptions (using original indices)
+        $existingKeterangan = $this->request->getPost('existing_foto_keterangan');
+        if (is_array($existingKeterangan)) {
+            foreach ($existingPhotos as $idx => &$photo) {
+                if (is_array($photo)) {
+                    $photo['keterangan'] = isset($existingKeterangan[$idx]) ? trim((string) $existingKeterangan[$idx]) : ($photo['keterangan'] ?? '');
+                }
+            }
+            unset($photo);
+        }
+
+        // Map existing document descriptions (using original indices)
+        $existingDocKeterangan = $this->request->getPost('existing_dokumen_keterangan');
+        if (is_array($existingDocKeterangan)) {
+            foreach ($existingDocs as $idx => &$doc) {
+                if (is_array($doc)) {
+                    $doc['keterangan'] = isset($existingDocKeterangan[$idx]) ? trim((string) $existingDocKeterangan[$idx]) : ($doc['keterangan'] ?? '');
+                }
+            }
+            unset($doc);
+        }
+
         // Filter foto existing yang dihapus oleh user, hapus juga file fisiknya
         $removedIndices = [];
         $removedRaw = trim((string) $this->request->getPost('removed_foto_indices'));
@@ -1325,6 +1352,18 @@ class Laporan extends BaseController
 
         // Draft foto (dari sesi sebelumnya) — filter yang dihapus user
         $draftPhotos = array_values(array_filter((array) ($draftData['foto_dokumentasi'] ?? []), 'is_array'));
+
+        // Map draft/existing photo descriptions (using original indices)
+        $existingKeterangan = $this->request->getPost('existing_foto_keterangan');
+        if (is_array($existingKeterangan)) {
+            foreach ($draftPhotos as $idx => &$photo) {
+                if (is_array($photo)) {
+                    $photo['keterangan'] = isset($existingKeterangan[$idx]) ? trim((string) $existingKeterangan[$idx]) : ($photo['keterangan'] ?? '');
+                }
+            }
+            unset($photo);
+        }
+
         $removedIndices = [];
         $removedRaw = trim((string) $this->request->getPost('removed_foto_indices'));
         if ($removedRaw !== '') {
@@ -1345,6 +1384,18 @@ class Laporan extends BaseController
 
         // Draft dokumen pendukung (dari sesi sebelumnya) — filter yang dihapus user
         $draftFiles = array_values(array_filter((array) ($draftData['dokumen_pendukung'] ?? []), 'is_array'));
+
+        // Map draft/existing document descriptions (using original indices)
+        $existingDocKeterangan = $this->request->getPost('existing_dokumen_keterangan');
+        if (is_array($existingDocKeterangan)) {
+            foreach ($draftFiles as $idx => &$doc) {
+                if (is_array($doc)) {
+                    $doc['keterangan'] = isset($existingDocKeterangan[$idx]) ? trim((string) $existingDocKeterangan[$idx]) : ($doc['keterangan'] ?? '');
+                }
+            }
+            unset($doc);
+        }
+
         $removedFileIndices = [];
         $removedFileRaw = trim((string) $this->request->getPost('removed_file_indices'));
         if ($removedFileRaw !== '') {
@@ -1885,11 +1936,19 @@ class Laporan extends BaseController
 
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
         $result = [];
+        $newKeterangan = (array) $this->request->getPost('foto_keterangan');
+        $keteranganIndex = 0;
 
         foreach ($flatFiles as $file) {
             if (! $file || $file->getError() === UPLOAD_ERR_NO_FILE) {
                 continue;
             }
+
+            $desc = '';
+            if (isset($newKeterangan[$keteranganIndex])) {
+                $desc = trim((string) $newKeterangan[$keteranganIndex]);
+            }
+            $keteranganIndex++;
 
             $error = (int) $file->getError();
             if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) {
@@ -1933,6 +1992,7 @@ class Laporan extends BaseController
             $result[] = [
                 'file_path' => '/uploads/laporan/perjalanan_dinas/' . $newName,
                 'name'      => $file->getClientName(),
+                'keterangan'=> $desc,
             ];
         }
 
@@ -2005,11 +2065,19 @@ class Laporan extends BaseController
 
         $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'zip', 'rar'];
         $result = [];
+        $newKeterangan = (array) $this->request->getPost('dokumen_keterangan');
+        $keteranganIndex = 0;
 
         foreach ($flatFiles as $file) {
             if (! $file || $file->getError() === UPLOAD_ERR_NO_FILE) {
                 continue;
             }
+
+            $desc = '';
+            if (isset($newKeterangan[$keteranganIndex])) {
+                $desc = trim((string) $newKeterangan[$keteranganIndex]);
+            }
+            $keteranganIndex++;
 
             $error = (int) $file->getError();
             if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) {
@@ -2048,8 +2116,9 @@ class Laporan extends BaseController
             }
 
             $result[] = [
-                'file_path' => '/uploads/laporan/perjalanan_dinas_files/' . $newName,
-                'name'      => $file->getClientName(),
+                'file_path'  => '/uploads/laporan/perjalanan_dinas_files/' . $newName,
+                'name'       => $file->getClientName(),
+                'keterangan' => $desc,
             ];
         }
 
