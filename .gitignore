@@ -153,3 +153,4 @@ error_state.png
 /public/uploads/laporan/perjalanan_dinas/*
 !/public/uploads/laporan/perjalanan_dinas/index.html
 google-service-account.json
+/do_not_upload/

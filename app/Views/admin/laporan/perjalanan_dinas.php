@@ -104,11 +104,11 @@
                 <div class="form-row">
                     <div class="form-group col-md-3">
                         <label for="filter_start_date" class="font-weight-bold mb-1">Tanggal Mulai</label>
-                        <input type="date" class="form-control form-control-sm" id="filter_start_date">
+                        <input type="date" class="form-control form-control-sm" id="filter_start_date" value="<?= date('Y-m-01'); ?>">
                     </div>
                     <div class="form-group col-md-3">
                         <label for="filter_end_date" class="font-weight-bold mb-1">Tanggal Selesai</label>
-                        <input type="date" class="form-control form-control-sm" id="filter_end_date">
+                        <input type="date" class="form-control form-control-sm" id="filter_end_date" value="<?= date('Y-m-d'); ?>">
                     </div>
                     <div class="form-group col-md-3">
                         <label for="filter_kota" class="font-weight-bold mb-1">Kota Tujuan</label>
@@ -398,8 +398,8 @@
 
         // Reset button
         $('#btn-reset-filter').on('click', function () {
-            $filterStartDate.val('');
-            $filterEndDate.val('');
+            $filterStartDate.val('<?= date('Y-m-01'); ?>');
+            $filterEndDate.val('<?= date('Y-m-d'); ?>');
             
             // Turn off listeners temporarily to avoid multiple updates
             $filterKota.off('change');
