@@ -145,6 +145,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/dasar-spt/(:num)/ubah', 'Admin\\DasarSpt::edit/$1');
 	$routes->post('master/dasar-spt/(:num)/hapus', 'Admin\\DasarSpt::delete/$1');
 	$routes->get('master/sekolah', 'Admin\\MasterSekolah::index');
+	$routes->get('master/sekolah/export', 'Admin\\MasterSekolah::export');
 	$routes->post('master/sekolah/tambah', 'Admin\\MasterSekolah::create');
 	$routes->post('master/sekolah/(:segment)/ubah', 'Admin\\MasterSekolah::edit/$1');
 	$routes->get('master/pegawai', 'Admin\\Pegawai::index');

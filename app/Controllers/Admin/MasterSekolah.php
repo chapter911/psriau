@@ -5,6 +5,11 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\MstSekolahModel;
 use CodeIgniter\HTTP\RedirectResponse;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class MasterSekolah extends BaseController
 {
@@ -33,7 +38,120 @@ class MasterSekolah extends BaseController
             'mapDefaultId' => (int) ($mapTypes[0]['id'] ?? 1),
             'can_add' => $canManage && (bool) ($menuPermissions['add'] ?? false),
             'can_edit' => $canManage && (bool) ($menuPermissions['edit'] ?? false),
+            'can_export' => (bool) ($menuPermissions['export'] ?? false),
         ]);
+    }
+
+    public function export()
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (! (bool) ($menuPermissions['export'] ?? false)) {
+            return redirect()->to('/admin/master/sekolah')->with('error', 'Anda tidak memiliki izin export pada menu Sekolah.');
+        }
+
+        $items = (new MstSekolahModel())
+            ->orderBy('nama', 'ASC')
+            ->findAll();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Daftar Sekolah');
+
+        $sheet->mergeCells('A1:I1');
+        $sheet->mergeCells('A2:I2');
+        $sheet->mergeCells('A3:I3');
+        $sheet->mergeCells('A4:I4');
+
+        $sheet->setCellValue('A1', 'DAFTAR SEKOLAH');
+        $sheet->setCellValue('A2', 'SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU');
+        $sheet->setCellValue('A3', 'DIREKTORAT JENDERAL PRASARANA STRATEGIS');
+        $sheet->setCellValue('A4', 'KEMENTERIAN PEKERJAAN UMUM');
+
+        $sheet->setCellValue('A6', 'NO.');
+        $sheet->setCellValue('B6', 'NPSN');
+        $sheet->setCellValue('C6', 'NAMA SEKOLAH');
+        $sheet->setCellValue('D6', 'JENIS');
+        $sheet->setCellValue('E6', 'NSM');
+        $sheet->setCellValue('F6', 'KABUPATEN');
+        $sheet->setCellValue('G6', 'KECAMATAN');
+        $sheet->setCellValue('H6', 'LATITUDE');
+        $sheet->setCellValue('I6', 'LONGITUDE');
+
+        // Style the headers
+        $sheet->getStyle('A1:I4')->getFont()->setBold(true)->setSize(12);
+        $sheet->getStyle('A1:I4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:I4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+        $sheet->getStyle('A6:I6')->getFont()->setBold(true);
+        $sheet->getStyle('A6:I6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A6:I6')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A6:I6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE2E8F0');
+
+        $sheet->getColumnDimension('A')->setWidth(6);
+        $sheet->getColumnDimension('B')->setWidth(18);
+        $sheet->getColumnDimension('C')->setWidth(35);
+        $sheet->getColumnDimension('D')->setWidth(18);
+        $sheet->getColumnDimension('E')->setWidth(18);
+        $sheet->getColumnDimension('F')->setWidth(25);
+        $sheet->getColumnDimension('G')->setWidth(25);
+        $sheet->getColumnDimension('H')->setWidth(18);
+        $sheet->getColumnDimension('I')->setWidth(18);
+
+        $row = 7;
+        $no = 1;
+        foreach ($items as $item) {
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValueExplicit('B' . $row, (string) ($item['npsn'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('C' . $row, (string) ($item['nama'] ?? ''));
+            $sheet->setCellValue('D' . $row, (string) ($item['jenis'] ?? ''));
+            $sheet->setCellValueExplicit('E' . $row, (string) ($item['nsm'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('F' . $row, (string) ($item['kabupaten'] ?? ''));
+            $sheet->setCellValue('G' . $row, (string) ($item['kecamatan'] ?? ''));
+            if ($item['latitude'] !== null && $item['latitude'] !== '') {
+                $sheet->setCellValue('H' . $row, (float) $item['latitude']);
+                $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('0.000000');
+            } else {
+                $sheet->setCellValue('H' . $row, '-');
+            }
+
+            if ($item['longitude'] !== null && $item['longitude'] !== '') {
+                $sheet->setCellValue('I' . $row, (float) $item['longitude']);
+                $sheet->getStyle('I' . $row)->getNumberFormat()->setFormatCode('0.000000');
+            } else {
+                $sheet->setCellValue('I' . $row, '-');
+            }
+
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('B' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle('I' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+            $row++;
+        }
+
+        $lastRow = $row - 1;
+        // Apply borders
+        $sheet->getStyle('A6:I' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'sekolah_export_');
+        if ($tmpFile === false) {
+            return redirect()->to('/admin/master/sekolah')->with('error', 'Gagal menyiapkan file export.');
+        }
+
+        $xlsxFile = $tmpFile . '.xlsx';
+        @rename($tmpFile, $xlsxFile);
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($xlsxFile);
+
+        return $this->response->download($xlsxFile, null)->setFileName('daftar_sekolah.xlsx');
     }
 
     private function getMapTypes(): array

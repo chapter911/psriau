@@ -5,9 +5,14 @@
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Daftar Sekolah</h3>
-        <?php if (! empty($can_add)): ?>
+        <?php if (! empty($can_add) || ! empty($can_export)): ?>
             <div class="float-right">
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-sekolah">Tambah Sekolah</button>
+                <?php if (! empty($can_export)): ?>
+                    <a href="<?= site_url('/admin/master/sekolah/export'); ?>" class="btn btn-success mr-2">Export Excel</a>
+                <?php endif; ?>
+                <?php if (! empty($can_add)): ?>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-sekolah">Tambah Sekolah</button>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
     </div>
@@ -21,6 +26,8 @@
                     <th class="text-center">JENIS</th>
                     <th class="text-center">KABUPATEN</th>
                     <th class="text-center">KECAMATAN</th>
+                    <th class="text-right">LATITUDE</th>
+                    <th class="text-right">LONGITUDE</th>
                     <th class="text-center">PETA</th>
                     <?php if (! empty($can_edit)): ?>
                         <th class="text-center">ACTION</th>
@@ -36,6 +43,14 @@
                         <td><?= esc((string) ($item['jenis'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['kabupaten'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['kecamatan'] ?? '-')); ?></td>
+                        <?php
+                            $latVal = $item['latitude'] ?? null;
+                            $lngVal = $item['longitude'] ?? null;
+                            $latStr = ($latVal !== null && $latVal !== '') ? number_format((float)$latVal, 6, '.', '') : '-';
+                            $lngStr = ($lngVal !== null && $lngVal !== '') ? number_format((float)$lngVal, 6, '.', '') : '-';
+                        ?>
+                        <td class="text-right"><?= esc($latStr); ?></td>
+                        <td class="text-right"><?= esc($lngStr); ?></td>
                         <?php
                             $latitude = trim((string) ($item['latitude'] ?? ''));
                             $longitude = trim((string) ($item['longitude'] ?? ''));
