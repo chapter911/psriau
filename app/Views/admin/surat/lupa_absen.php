@@ -50,19 +50,6 @@
         </div>
     </div>
     <div class="card-body">
-        <?php if (session()->getFlashdata('success')): ?>
-            <div class="alert alert-success alert-dismissible fade show">
-                <button type="button" class="close" data-dismiss="alert">&times;</button>
-                <?= esc((string) session()->getFlashdata('success')); ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if (session()->getFlashdata('error')): ?>
-            <div class="alert alert-danger alert-dismissible fade show">
-                <button type="button" class="close" data-dismiss="alert">&times;</button>
-                <?= esc((string) session()->getFlashdata('error')); ?>
-            </div>
-        <?php endif; ?>
 
         <div class="table-responsive">
             <table id="tableLupaAbsen" class="table table-bordered table-striped table-hover w-100">

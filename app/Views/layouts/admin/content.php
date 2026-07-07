@@ -11,9 +11,9 @@
 
     <section class="content">
         <div class="container-fluid">
-            <?php if (session()->getFlashdata('message')): ?>
+            <?php if (session()->getFlashdata('message') || session()->getFlashdata('success')): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <?= esc(session()->getFlashdata('message')); ?>
+                    <?= esc(session()->getFlashdata('message') ?: session()->getFlashdata('success')); ?>
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>

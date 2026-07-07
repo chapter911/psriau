@@ -188,13 +188,7 @@
         }
     }
 </style>
-<?php if (session()->getFlashdata('success')): ?>
-    <div class="alert alert-success"><?= esc((string) session()->getFlashdata('success')); ?></div>
-<?php endif; ?>
 
-<?php if (session()->getFlashdata('error')): ?>
-    <div class="alert alert-danger"><?= esc((string) session()->getFlashdata('error')); ?></div>
-<?php endif; ?>
 
 <?php if (! empty($error ?? '')): ?>
     <div class="alert alert-danger"><?= esc((string) $error); ?></div>
