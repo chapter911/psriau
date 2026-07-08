@@ -213,8 +213,16 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'laporan/perjalanan-dinas/buat', 'Admin\\Laporan::perjalananDinasBuat');
 	$routes->get('laporan/perjalanan-dinas/(:num)/dokumen', 'Admin\\Laporan::perjalananDinasDokumen/$1');
 	$routes->post('laporan/perjalanan-dinas/(:num)/upload-verified', 'Admin\\Laporan::perjalananDinasUploadVerified/$1');
-	$routes->match(['get', 'post'], 'laporan/perjalanan-dinas/(:num)/ubah', 'Admin\\Laporan::perjalananDinasEdit/$1');
 	$routes->get('laporan/perjalanan-dinas/(:num)/hapus', 'Admin\\Laporan::perjalananDinasHapus/$1');
+
+	// RAB Per Gedung Routes
+	$routes->get('laporan/rab-gedung', 'Admin\RabGedung::index');
+	$routes->get('laporan/rab-gedung/detail/(:num)', 'Admin\RabGedung::detail/$1');
+	$routes->get('laporan/rab-gedung/data', 'Admin\RabGedung::data');
+	$routes->post('laporan/rab-gedung/tambah', 'Admin\RabGedung::create');
+	$routes->post('laporan/rab-gedung/(:num)/ubah', 'Admin\RabGedung::edit/$1');
+	$routes->post('laporan/rab-gedung/(:num)/hapus', 'Admin\RabGedung::delete/$1');
+	$routes->post('laporan/rab-gedung/import', 'Admin\RabGedung::import');
 
 	// Surat Routes - Perjalanan Dinas (alias dari Laporan)
 	$routes->get('surat/perjalanan-dinas', 'Admin\\Laporan::perjalananDinas');
