@@ -389,6 +389,70 @@ class Utility extends BaseController
         ]);
     }
 
+    public function userResetPassword(int $id)
+    {
+        if (! $this->canManageUsers()) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'status' => 'error',
+                'message' => 'Tidak memiliki akses untuk mereset password user.',
+                'csrfHash' => csrf_hash(),
+            ]);
+        }
+
+        $model = new UserModel();
+        $user = $model->find($id);
+        if (! is_array($user)) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status' => 'error',
+                'message' => 'User tidak ditemukan.',
+                'csrfHash' => csrf_hash(),
+            ]);
+        }
+
+        $db = db_connect();
+        $pegawai = null;
+
+        if ($db->tableExists('mst_pegawai')) {
+            $pegawai = $db->table('mst_pegawai')
+                ->where('LOWER(nip)', strtolower($user['username']))
+                ->get()
+                ->getRowArray();
+
+            if ($pegawai === null) {
+                $pegawai = $db->table('mst_pegawai')
+                    ->where('LOWER(nama)', strtolower($user['full_name']))
+                    ->get()
+                    ->getRowArray();
+            }
+        }
+
+        $nip = $pegawai !== null ? trim((string) $pegawai['nip']) : '';
+
+        if ($nip === '') {
+            $nip = $user['username'];
+        }
+
+        $data = [
+            'password_hash' => password_hash($nip, PASSWORD_DEFAULT),
+        ];
+
+        try {
+            $model->update($id, $data);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal mereset password.',
+                'csrfHash' => csrf_hash(),
+            ]);
+        }
+
+        return $this->response->setJSON([
+            'status' => 'ok',
+            'message' => 'Password user berhasil direset menjadi NIP (' . $nip . ').',
+            'csrfHash' => csrf_hash(),
+        ]);
+    }
+
     public function userDelete(int $id)
     {
         if (! $this->canManageUsers()) {

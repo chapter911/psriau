@@ -64,8 +64,11 @@
                             </td>
                             <td><span class="badge badge-secondary"><?= esc((string) ($row['role'] ?? '-')); ?></span></td>
                             <td>
-                                <button type="button" class="btn btn-sm btn-outline-primary btn-edit" <?= empty($can_edit ?? false) ? 'disabled' : '' ?>>
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-edit" <?= empty($can_edit ?? false) ? 'disabled' : '' ?> title="Ubah">
                                     <i class="fas fa-pen"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning btn-reset-password" <?= empty($can_edit ?? false) ? 'disabled' : '' ?> title="Reset Password ke NIP">
+                                    <i class="fas fa-key"></i>
                                 </button>
                             </td>
                         </tr>
@@ -418,7 +421,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     mobileBadge,
                     statusBadge,
                     '<span class="badge badge-secondary">' + escapeHtml(String(row.role || '-')) + '</span>',
-                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" ' + (canEdit ? '' : 'disabled') + '><i class="fas fa-pen"></i></button>',
+                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" ' + (canEdit ? '' : 'disabled') + ' title="Ubah"><i class="fas fa-pen"></i></button> ' +
+                    '<button type="button" class="btn btn-sm btn-outline-warning btn-reset-password" ' + (canEdit ? '' : 'disabled') + ' title="Reset Password ke NIP"><i class="fas fa-key"></i></button>',
                 ];
             });
 
@@ -471,7 +475,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 '<td>' + statusBadge + '</td>' +
                 '<td><span class="badge badge-secondary">' + escapeHtml(String(row.role || '-')) + '</span></td>' +
                 '<td>' +
-                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" ' + (canEdit ? '' : 'disabled') + '><i class="fas fa-pen"></i></button> ' +
+                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" ' + (canEdit ? '' : 'disabled') + ' title="Ubah"><i class="fas fa-pen"></i></button> ' +
+                    '<button type="button" class="btn btn-sm btn-outline-warning btn-reset-password" ' + (canEdit ? '' : 'disabled') + ' title="Reset Password ke NIP"><i class="fas fa-key"></i></button>' +
                 '</td>';
 
             tr.dataset.username = String(row.username || '');
@@ -618,6 +623,48 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function resetUserPassword(id, username) {
+        const title = 'Reset Password?';
+        const text = 'Password untuk user "' + escapeHtml(username) + '" akan direset menjadi sama dengan NIP.';
+        
+        if (window.Swal) {
+            window.Swal.fire({
+                title: title,
+                text: text,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Reset!',
+                cancelButtonText: 'Batal'
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    submitResetPassword(id);
+                }
+            });
+        } else {
+            if (confirm(title + "\n\n" + text)) {
+                submitResetPassword(id);
+            }
+        }
+    }
+
+    function submitResetPassword(id) {
+        const url = '<?= site_url('admin/utility/user') ?>/' + encodeURIComponent(id) + '/reset-password';
+        request(url, {})
+            .then(function (result) {
+                updateCsrf(result.data.csrfHash);
+                if (!result.ok) {
+                    throw new Error(result.data.message || 'Gagal mereset password.');
+                }
+                notifySuccess(result.data.message || 'Password berhasil direset.');
+                fetchUsers();
+            })
+            .catch(function (error) {
+                notifyError(error.message || 'Gagal mereset password.');
+            });
+    }
+
     if (btnOpenCreate && canEdit) {
         btnOpenCreate.addEventListener('click', function () {
             openCreateModal();
@@ -645,6 +692,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (userTableBody) {
         userTableBody.addEventListener('click', function (event) {
             const editBtn = event.target.closest('.btn-edit');
+            const resetBtn = event.target.closest('.btn-reset-password');
 
             if (!canEdit) {
                 return;
@@ -654,6 +702,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 const row = editBtn.closest('tr');
                 if (row) {
                     openEditModal(row);
+                }
+                return;
+            }
+
+            if (resetBtn) {
+                const row = resetBtn.closest('tr');
+                if (row) {
+                    const userIdVal = row.getAttribute('data-id');
+                    const usernameVal = row.dataset.username;
+                    resetUserPassword(userIdVal, usernameVal);
                 }
                 return;
             }

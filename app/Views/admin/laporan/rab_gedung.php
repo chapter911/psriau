@@ -8,49 +8,21 @@ $filterPaketId = $filter_paket_id ?? '';
 $pakets = $pakets ?? [];
 ?>
 
-<?php if (session()->getFlashdata('success')): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="icon fas fa-check"></i> <?= session()->getFlashdata('success'); ?>
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
-<?php endif; ?>
-
-<?php if (session()->getFlashdata('error')): ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="icon fas fa-ban"></i> <?= session()->getFlashdata('error'); ?>
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
-<?php endif; ?>
 
 <div class="card mb-3">
     <div class="card-body">
-        <form method="get" action="<?= current_url(); ?>" id="formFilter">
-            <div class="form-row align-items-end">
-                <div class="col-md-4 col-sm-6">
-                    <label for="filter_paket_id" class="small text-muted font-weight-bold">Filter Paket</label>
-                    <select class="form-control form-control-sm" id="filter_paket_id" name="paket_id">
-                        <option value="">-- Semua Paket --</option>
-                        <?php foreach ($pakets as $paket): ?>
-                            <option value="<?= esc((string) $paket['id']); ?>" <?= (string)$filterPaketId === (string)$paket['id'] ? 'selected' : ''; ?>>
-                                <?= esc((string) $paket['nama_paket']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-2 col-sm-3 mt-2 mt-sm-0">
-                    <button type="submit" class="btn btn-primary btn-sm btn-block"><i class="fas fa-filter mr-1"></i> Filter</button>
-                </div>
-                <?php if ($filterPaketId !== ''): ?>
-                <div class="col-md-2 col-sm-3 mt-2 mt-sm-0">
-                    <a href="<?= site_url('admin/laporan/rab-gedung'); ?>" class="btn btn-secondary btn-sm btn-block"><i class="fas fa-undo mr-1"></i> Reset</a>
-                </div>
-                <?php endif; ?>
-            </div>
-        </form>
+        <div class="form-row align-items-end">
+            <div class="col-md-4 col-sm-6">
+                <label for="filter_paket_id" class="small text-muted font-weight-bold">Filter Paket</label>
+                <select class="form-control form-control-sm" id="filter_paket_id" name="paket_id">
+                    <option value="all">- semua paket -</option>
+                    <?php foreach ($pakets as $paket): ?>
+                        <option value="<?= esc((string) $paket['id']); ?>" <?= (string)$filterPaketId === (string)$paket['id'] ? 'selected' : ''; ?>>
+                            <?= esc((string) $paket['nama_paket']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+        </div>
     </div>
 </div>
 
@@ -72,6 +44,7 @@ $pakets = $pakets ?? [];
                     <tr>
                         <th style="width: 50px;" class="text-center">No</th>
                         <th>Sekolah</th>
+                        <th class="text-center">Paket</th>
                         <th>Kecamatan</th>
                         <th>Kabupaten</th>
                         <th style="width: 160px;" class="text-center">Jumlah Pekerjaan</th>
@@ -85,6 +58,13 @@ $pakets = $pakets ?? [];
                             <tr>
                                 <td class="text-center"><?= esc((string) $no++); ?></td>
                                 <td><strong><?= esc((string) ($sekolah['nama'] ?? '-')); ?></strong></td>
+                                <td class="text-center" data-paket-id="<?= esc((string)($sekolah['paket_id'] ?? '')); ?>">
+                                    <?php if (!empty($sekolah['nama_paket'])): ?>
+                                        <span class="badge badge-success"><i class="fas fa-box mr-1"></i> <?= esc($sekolah['nama_paket']); ?></span>
+                                    <?php else: ?>
+                                        <span class="badge badge-warning text-dark"><i class="fas fa-exclamation-triangle mr-1"></i> Belum ada paket</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= esc((string) ($sekolah['kecamatan'] ?? '-')); ?></td>
                                 <td><?= esc((string) ($sekolah['kabupaten'] ?? '-')); ?></td>
                                 <td class="text-center">
@@ -93,16 +73,21 @@ $pakets = $pakets ?? [];
                                 <td class="text-center">
                                     <span class="badge badge-secondary"><?= esc((string) ($sekolah['total_items'] ?? 0)); ?> Item</span>
                                 </td>
-                                <td class="text-center">
-                                    <a href="<?= site_url('admin/laporan/rab-gedung/detail/' . (int) ($sekolah['npsn'] ?? 0)); ?>" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-eye mr-1"></i> Detail
+                                <td class="text-center text-nowrap">
+                                    <a href="<?= site_url('admin/laporan/rab-gedung/detail/' . (int) ($sekolah['npsn'] ?? 0)); ?>" class="btn btn-primary btn-sm mr-1" title="Detail">
+                                        <i class="fas fa-eye"></i> Detail
                                     </a>
+                                    <?php if ($can_edit ?? false): ?>
+                                        <button type="button" class="btn btn-warning btn-sm btn-edit-paket" data-npsn="<?= esc((string)($sekolah['npsn'] ?? '')); ?>" data-nama="<?= esc((string)($sekolah['nama'] ?? '')); ?>" data-paket-id="<?= esc((string)($sekolah['paket_id'] ?? '')); ?>" title="Ubah Paket">
+                                            <i class="fas fa-box"></i> Ubah Paket
+                                        </button>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">Belum ada data sekolah. Silakan import file Excel terlebih dahulu.</td>
+                            <td colspan="8" class="text-center text-muted py-4">Belum ada data sekolah. Silakan import file Excel terlebih dahulu.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -161,6 +146,44 @@ $pakets = $pakets ?? [];
 </div>
 <?php endif; ?>
 
+<!-- Modal Edit Paket Sekolah -->
+<?php if ($can_edit ?? false): ?>
+<div class="modal fade" id="modalEditPaket" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title mb-0"><i class="fas fa-box mr-1"></i> Ubah Paket Sekolah</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="formEditPaket" action="" method="post">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Nama Sekolah</label>
+                        <input type="text" class="form-control" id="edit_paket_sekolah_nama" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_paket_id">Paket <span class="text-danger">*</span></label>
+                        <select class="form-control" id="edit_paket_id" name="paket_id" required>
+                            <option value="">-- Pilih Paket --</option>
+                            <?php foreach ($pakets as $paket): ?>
+                                <option value="<?= esc((string) $paket['id']); ?>"><?= esc((string) $paket['nama_paket']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>
@@ -175,7 +198,7 @@ $(document).ready(function() {
     // Client-side DataTable for the school list
     const $table = $('#tableSekolahRab');
     if ($table.length && ! $.fn.dataTable.isDataTable($table)) {
-        $table.DataTable({
+        const table = $table.DataTable({
             responsive: false,
             autoWidth: false,
             scrollX: true,
@@ -195,7 +218,48 @@ $(document).ready(function() {
                 },
             },
         });
+
+        // Filter handler
+        $('#filter_paket_id').on('change', function() {
+            table.draw();
+        });
+
+        // Custom filtering function based on data-paket-id attribute
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                if (settings.nTable.id !== 'tableSekolahRab') {
+                    return true;
+                }
+                const filterVal = $('#filter_paket_id').val();
+                if (filterVal === '' || filterVal === 'all') {
+                    return true;
+                }
+                
+                const cell = table.cell(dataIndex, 2).node();
+                const rowPaketId = $(cell).data('paket-id');
+                
+                return (String(rowPaketId) === String(filterVal));
+            }
+        );
+
+        // Initial filter load if set
+        if ($('#filter_paket_id').val() !== '' && $('#filter_paket_id').val() !== 'all') {
+            $('#filter_paket_id').trigger('change');
+        }
     }
+
+    // Edit Paket button handler
+    $('.btn-edit-paket').on('click', function() {
+        const npsn = $(this).data('npsn');
+        const nama = $(this).data('nama');
+        const paketId = $(this).data('paket-id');
+
+        $('#formEditPaket').attr('action', '<?= site_url('admin/laporan/rab-gedung/sekolah/'); ?>' + npsn + '/ubah-paket');
+        $('#edit_paket_sekolah_nama').val(nama);
+        $('#edit_paket_id').val(paketId);
+
+        $('#modalEditPaket').modal('show');
+    });
 });
 </script>
 <?= $this->endSection(); ?>

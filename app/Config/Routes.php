@@ -72,6 +72,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('utility/user/list', 'Admin\\Utility::userList');
 	$routes->post('utility/user/tambah', 'Admin\\Utility::userCreate');
 	$routes->post('utility/user/(:num)/ubah', 'Admin\\Utility::userUpdate/$1');
+	$routes->post('utility/user/(:num)/reset-password', 'Admin\\Utility::userResetPassword/$1');
 	$routes->post('utility/user/(:num)/hapus', 'Admin\\Utility::userDelete/$1');
 	$routes->get('utility/role', 'Admin\\Utility::userRole');
 	$routes->post('utility/role/tambah', 'Admin\\Utility::roleCreate');
@@ -223,6 +224,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('laporan/rab-gedung/(:num)/ubah', 'Admin\RabGedung::edit/$1');
 	$routes->post('laporan/rab-gedung/(:num)/hapus', 'Admin\RabGedung::delete/$1');
 	$routes->post('laporan/rab-gedung/import', 'Admin\RabGedung::import');
+	$routes->post('laporan/rab-gedung/sekolah/(:num)/ubah-paket', 'Admin\RabGedung::updateSekolahPaket/$1');
 
 	// Surat Routes - Perjalanan Dinas (alias dari Laporan)
 	$routes->get('surat/perjalanan-dinas', 'Admin\\Laporan::perjalananDinas');
@@ -281,6 +283,16 @@ $routes->group('api', static function ($routes): void {
     $routes->group('', ['filter' => 'api-auth'], static function ($routes): void {
         $routes->get('auth/profile', 'Api\Auth::profile');
         $routes->post('auth/logout', 'Api\Auth::logout');
+
+        // RAB Gedung API
+        $routes->group('rab-gedung', static function ($routes): void {
+            $routes->get('paket', 'Api\RabGedung::paket');
+            $routes->get('sekolah', 'Api\RabGedung::sekolah');
+            $routes->get('pekerjaan', 'Api\RabGedung::pekerjaan');
+            $routes->get('kategori', 'Api\RabGedung::kategori');
+            $routes->get('subkategori', 'Api\RabGedung::subkategori');
+            $routes->get('uraian', 'Api\RabGedung::uraian');
+        });
     });
 });
 

@@ -163,14 +163,13 @@ class RabGedung extends BaseController
         $sekolahsBuilder = $db->table('mst_sekolah s')
             ->select('s.npsn, s.nama, s.kecamatan, s.kabupaten, 
                       COUNT(DISTINCT r.gedung) as total_gedung, 
-                      COUNT(r.id) as total_items')
+                      COUNT(r.id) as total_items,
+                      MIN(r.paket_id) as paket_id,
+                      MIN(mp.nama_paket) as nama_paket')
             ->join('trn_rab_gedung_detail r', 'r.sekolah_npsn = s.npsn', 'inner')
+            ->join('mst_paket mp', 'mp.id = r.paket_id', 'left')
             ->groupBy('s.npsn, s.nama, s.kecamatan, s.kabupaten')
             ->orderBy('s.nama', 'ASC');
-
-        if ($filterPaketId !== null && $filterPaketId !== '') {
-            $sekolahsBuilder->where('r.paket_id', (int)$filterPaketId);
-        }
 
         $sekolahs = $sekolahsBuilder->get()->getResultArray();
 
@@ -182,6 +181,7 @@ class RabGedung extends BaseController
         return view('admin/laporan/rab_gedung', [
             'sekolahs' => $sekolahs,
             'can_import' => $permissions['import'],
+            'can_edit' => $permissions['edit'],
             'pakets' => $pakets,
             'filter_paket_id' => $filterPaketId,
         ]);
@@ -212,6 +212,26 @@ class RabGedung extends BaseController
             ->get()
             ->getResultArray();
 
+        $kategori1Rows = $db->table('trn_rab_gedung_detail')
+            ->select('kategori_1')
+            ->distinct()
+            ->where('sekolah_npsn', $npsn)
+            ->where('kategori_1 IS NOT NULL')
+            ->where('kategori_1 !=', '')
+            ->orderBy('kategori_1', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $kategori2Rows = $db->table('trn_rab_gedung_detail')
+            ->select('kategori_2')
+            ->distinct()
+            ->where('sekolah_npsn', $npsn)
+            ->where('kategori_2 IS NOT NULL')
+            ->where('kategori_2 !=', '')
+            ->orderBy('kategori_2', 'ASC')
+            ->get()
+            ->getResultArray();
+
         // Also fetch all schools for the add/edit dropdown just in case,
         // but default it to this school.
         $allSekolahs = $sekolahModel->orderBy('nama', 'ASC')->findAll();
@@ -229,12 +249,24 @@ class RabGedung extends BaseController
         $paketModel = new MstPaketModel();
         $pakets = $paketModel->where('is_active', 1)->orderBy('nama_paket', 'ASC')->findAll();
 
+        $sekolahPaket = $db->table('trn_rab_gedung_detail')
+            ->select('mst_paket.nama_paket')
+            ->join('mst_paket', 'mst_paket.id = trn_rab_gedung_detail.paket_id', 'left')
+            ->where('trn_rab_gedung_detail.sekolah_npsn', $npsn)
+            ->where('trn_rab_gedung_detail.paket_id IS NOT NULL')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+        $paketNama = $sekolahPaket['nama_paket'] ?? null;
+
         $permissions = $this->resolveMenuPermissions('admin/laporan/rab-gedung');
 
         return view('admin/laporan/rab_gedung_detail', [
             'sekolah' => $sekolah,
             'sekolahs' => $allSekolahs,
             'gedungs' => array_column($gedungRows, 'gedung'),
+            'kategori_1s' => array_column($kategori1Rows, 'kategori_1'),
+            'kategori_2s' => array_column($kategori2Rows, 'kategori_2'),
             'total_kontrak' => (float)($sums['total_kontrak'] ?? 0),
             'total_mcnol' => (float)($sums['total_mcnol'] ?? 0),
             'total_tambah' => (float)($sums['total_tambah'] ?? 0),
@@ -244,6 +276,7 @@ class RabGedung extends BaseController
             'can_delete' => $permissions['delete'],
             'can_import' => $permissions['import'],
             'pakets' => $pakets,
+            'paket_nama' => $paketNama,
         ]);
     }
 
@@ -259,42 +292,54 @@ class RabGedung extends BaseController
             ]);
         }
 
-        $model = new RabGedungDetailModel();
-
-        $queryFactory = function() use ($model) {
-            return $model->builder()
-                ->select('trn_rab_gedung_detail.*, mst_paket.nama_paket')
-                ->join('mst_paket', 'mst_paket.id = trn_rab_gedung_detail.paket_id', 'left');
+        $queryFactory = function(bool $forSums = false) {
+            $builder = db_connect()->table('trn_rab_gedung_detail');
+            if (!$forSums) {
+                $builder->select('trn_rab_gedung_detail.*, mst_paket.nama_paket');
+            }
+            return $builder->join('mst_paket', 'mst_paket.id = trn_rab_gedung_detail.paket_id', 'left');
         };
 
         $filterApplier = function($builder) {
             $npsn = $this->request->getGet('sekolah_npsn');
             $gedung = $this->request->getGet('gedung');
             $paketId = $this->request->getGet('paket_id');
+            $kategori1 = $this->request->getGet('kategori_1');
+            $kategori2 = $this->request->getGet('kategori_2');
             if ($npsn !== null && $npsn !== '') {
                 $builder->where('trn_rab_gedung_detail.sekolah_npsn', $npsn);
             }
             if ($gedung !== null && $gedung !== '') {
                 $builder->where('trn_rab_gedung_detail.gedung', $gedung);
             }
-            if ($paketId !== null && $paketId !== '') {
+            if ($paketId !== null && $paketId !== '' && $paketId !== 'all') {
                 $builder->where('trn_rab_gedung_detail.paket_id', $paketId);
+            }
+            if ($kategori1 !== null && $kategori1 !== '' && $kategori1 !== 'all') {
+                $builder->where('trn_rab_gedung_detail.kategori_1', $kategori1);
+            }
+            if ($kategori2 !== null && $kategori2 !== '' && $kategori2 !== 'all') {
+                $builder->where('trn_rab_gedung_detail.kategori_2', $kategori2);
             }
         };
 
         $searchColumns = ['nama_sekolah', 'gedung', 'kategori_1', 'kategori_2', 'no_urut', 'uraian', 'satuan', 'mst_paket.nama_paket'];
         $orderColumns = [
             'id',
-            'nama_sekolah',
             'gedung',
-            'no_urut',
+            'kategori_1',
+            'kategori_2',
             'uraian',
             'satuan',
             'kontrak_volume',
             'kontrak_harga_satuan',
             'kontrak_jumlah_harga',
             'mc_nol_volume',
-            'mc_nol_jumlah_harga'
+            'mc_nol_jumlah_harga',
+            'tambah_volume',
+            'tambah_jumlah_harga',
+            'kurang_volume',
+            'kurang_jumlah_harga'
         ];
 
         $rowMapper = function($row) {
@@ -741,7 +786,7 @@ class RabGedung extends BaseController
             }
 
             // Calculate sum totals on the filtered query
-            $sumsBuilder = $queryFactory();
+            $sumsBuilder = $queryFactory(true);
             $filterApplier($sumsBuilder);
             $this->applyDataTableSearch($sumsBuilder, $searchColumns, $search);
             $sums = $sumsBuilder->select('SUM(kontrak_jumlah_harga) as sum_kontrak,
@@ -860,5 +905,23 @@ class RabGedung extends BaseController
         }
 
         return strtolower((string) ($first['dir'] ?? 'asc')) === 'desc' ? 'DESC' : 'ASC';
+    }
+
+    public function updateSekolahPaket(int $npsn)
+    {
+        $permissions = $this->resolveMenuPermissions('admin/laporan/rab-gedung');
+        if (!$permissions['edit']) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk mengubah data.');
+        }
+
+        $paketId = $this->request->getPost('paket_id');
+        $paketIdVal = ($paketId !== null && $paketId !== '') ? (int)$paketId : null;
+
+        $db = db_connect();
+        $db->table('trn_rab_gedung_detail')
+            ->where('sekolah_npsn', $npsn)
+            ->update(['paket_id' => $paketIdVal]);
+
+        return redirect()->back()->with('success', 'Paket sekolah berhasil diperbarui.');
     }
 }
