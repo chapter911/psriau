@@ -64,10 +64,23 @@
                             </td>
                             <td><span class="badge badge-secondary"><?= esc((string) ($row['role'] ?? '-')); ?></span></td>
                             <td>
-                                <button type="button" class="btn btn-sm btn-outline-primary btn-edit" <?= empty($can_edit ?? false) ? 'disabled' : '' ?> title="Ubah">
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-edit" 
+                                    <?= empty($can_edit ?? false) ? 'disabled' : '' ?> 
+                                    data-id="<?= esc((string) ($row['id'] ?? '')); ?>"
+                                    data-username="<?= esc((string) ($row['username'] ?? '')); ?>"
+                                    data-full-name="<?= esc((string) ($row['full_name'] ?? '')); ?>"
+                                    data-role="<?= esc((string) ($row['role'] ?? 'editor')); ?>"
+                                    data-is-active="<?= (int) ($row['is_active'] ?? 1) === 1 ? '1' : '0'; ?>"
+                                    data-akses-web="<?= (int) ($row['akses_web'] ?? 1) === 1 ? '1' : '0'; ?>"
+                                    data-akses-mobile="<?= (int) ($row['akses_mobile'] ?? 1) === 1 ? '1' : '0'; ?>"
+                                    title="Ubah">
                                     <i class="fas fa-pen"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-warning btn-reset-password" <?= empty($can_edit ?? false) ? 'disabled' : '' ?> title="Reset Password ke NIP">
+                                <button type="button" class="btn btn-sm btn-outline-warning btn-reset-password" 
+                                    <?= empty($can_edit ?? false) ? 'disabled' : '' ?> 
+                                    data-id="<?= esc((string) ($row['id'] ?? '')); ?>"
+                                    data-username="<?= esc((string) ($row['username'] ?? '')); ?>"
+                                    title="Reset Password ke NIP">
                                     <i class="fas fa-key"></i>
                                 </button>
                             </td>
@@ -421,8 +434,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     mobileBadge,
                     statusBadge,
                     '<span class="badge badge-secondary">' + escapeHtml(String(row.role || '-')) + '</span>',
-                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" ' + (canEdit ? '' : 'disabled') + ' title="Ubah"><i class="fas fa-pen"></i></button> ' +
-                    '<button type="button" class="btn btn-sm btn-outline-warning btn-reset-password" ' + (canEdit ? '' : 'disabled') + ' title="Reset Password ke NIP"><i class="fas fa-key"></i></button>',
+                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" ' + (canEdit ? '' : 'disabled') + ' data-id="' + row.id + '" data-username="' + escapeHtml(row.username) + '" data-full-name="' + escapeHtml(row.full_name) + '" data-role="' + escapeHtml(row.role) + '" data-is-active="' + row.is_active + '" data-akses-web="' + row.akses_web + '" data-akses-mobile="' + row.akses_mobile + '" title="Ubah"><i class="fas fa-pen"></i></button> ' +
+                    '<button type="button" class="btn btn-sm btn-outline-warning btn-reset-password" ' + (canEdit ? '' : 'disabled') + ' data-id="' + row.id + '" data-username="' + escapeHtml(row.username) + '" title="Reset Password ke NIP"><i class="fas fa-key"></i></button>',
                 ];
             });
 
@@ -475,8 +488,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 '<td>' + statusBadge + '</td>' +
                 '<td><span class="badge badge-secondary">' + escapeHtml(String(row.role || '-')) + '</span></td>' +
                 '<td>' +
-                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" ' + (canEdit ? '' : 'disabled') + ' title="Ubah"><i class="fas fa-pen"></i></button> ' +
-                    '<button type="button" class="btn btn-sm btn-outline-warning btn-reset-password" ' + (canEdit ? '' : 'disabled') + ' title="Reset Password ke NIP"><i class="fas fa-key"></i></button>' +
+                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" ' + (canEdit ? '' : 'disabled') + ' data-id="' + row.id + '" data-username="' + escapeHtml(row.username) + '" data-full-name="' + escapeHtml(row.full_name) + '" data-role="' + escapeHtml(row.role) + '" data-is-active="' + row.is_active + '" data-akses-web="' + row.akses_web + '" data-akses-mobile="' + row.akses_mobile + '" title="Ubah"><i class="fas fa-pen"></i></button> ' +
+                    '<button type="button" class="btn btn-sm btn-outline-warning btn-reset-password" ' + (canEdit ? '' : 'disabled') + ' data-id="' + row.id + '" data-username="' + escapeHtml(row.username) + '" title="Reset Password ke NIP"><i class="fas fa-key"></i></button>' +
                 '</td>';
 
             tr.dataset.username = String(row.username || '');
@@ -571,23 +584,23 @@ document.addEventListener('DOMContentLoaded', function () {
         userModal.show();
     }
 
-    function openEditModal(row) {
+    function openEditModal(btn) {
         clearErrors();
         userModalTitle.textContent = 'Ubah User';
         userSubmitBtn.textContent = 'Perbarui';
-        userId.value = row.getAttribute('data-id') || '';
+        userId.value = btn.getAttribute('data-id') || '';
         if (sourceType) {
             sourceType.value = 'manual';
         }
         if (usernamePegawai) {
             usernamePegawai.value = '';
         }
-        username.value = row.dataset.username || '';
-        fullName.value = row.dataset.fullName || '';
-        renderRoleOptions(row.dataset.role || 'editor', true);
-        isActive.checked = String(row.dataset.isActive || '1') === '1';
-        aksesWeb.checked = String(row.dataset.aksesWeb || '1') === '1';
-        aksesMobile.checked = String(row.dataset.aksesMobile || '1') === '1';
+        username.value = btn.dataset.username || '';
+        fullName.value = btn.dataset.fullName || '';
+        renderRoleOptions(btn.dataset.role || 'editor', true);
+        isActive.checked = String(btn.dataset.isActive || '1') === '1';
+        aksesWeb.checked = String(btn.dataset.aksesWeb || '1') === '1';
+        aksesMobile.checked = String(btn.dataset.aksesMobile || '1') === '1';
         password.value = '';
         password.required = false;
         password.disabled = false;
@@ -699,20 +712,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (editBtn) {
-                const row = editBtn.closest('tr');
-                if (row) {
-                    openEditModal(row);
-                }
+                openEditModal(editBtn);
                 return;
             }
 
             if (resetBtn) {
-                const row = resetBtn.closest('tr');
-                if (row) {
-                    const userIdVal = row.getAttribute('data-id');
-                    const usernameVal = row.dataset.username;
-                    resetUserPassword(userIdVal, usernameVal);
-                }
+                const userIdVal = resetBtn.getAttribute('data-id');
+                const usernameVal = resetBtn.dataset.username;
+                resetUserPassword(userIdVal, usernameVal);
                 return;
             }
         });
