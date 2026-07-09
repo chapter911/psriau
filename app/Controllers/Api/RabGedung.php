@@ -238,4 +238,89 @@ class RabGedung extends BaseController
             'data'   => $rows
         ]);
     }
+
+    /**
+     * Download all RAB Gedung data for a specific package.
+     * URL: GET /api/rab-gedung/all
+     */
+    public function all()
+    {
+        $paketId = $this->request->getGet('paket_id');
+
+        if ($paketId === null || $paketId === '') {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_BAD_REQUEST)->setJSON([
+                'status'  => 'error',
+                'message' => 'Parameter paket_id wajib diisi.'
+            ]);
+        }
+
+        $paketModel = new MstPaketModel();
+        $paket = $paketModel->select('id, nama_paket, singkatan_paket')
+                            ->where('id', $paketId)
+                            ->where('is_active', 1)
+                            ->first();
+
+        if (!$paket) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
+                'status'  => 'error',
+                'message' => 'Paket tidak ditemukan atau nonaktif.'
+            ]);
+        }
+
+        $db = db_connect();
+
+        // 1. Get all schools associated with this package
+        $sekolahs = $db->table('mst_sekolah s')
+            ->select('s.npsn, s.nama, s.kabupaten, s.kecamatan')
+            ->join('trn_rab_gedung_detail r', 'r.sekolah_npsn = s.npsn', 'inner')
+            ->where('r.paket_id', $paketId)
+            ->groupBy('s.npsn, s.nama, s.kabupaten, s.kecamatan')
+            ->orderBy('s.nama', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        foreach ($sekolahs as &$sekolah) {
+            $sekolah['npsn'] = (int) $sekolah['npsn'];
+        }
+
+        // 2. Get all details associated with this package where mc_nol_volume > 0
+        $details = $db->table('trn_rab_gedung_detail')
+            ->select('id, sekolah_npsn, pekerjaan_utama, gedung, kategori_1, kategori_2, no_urut, uraian, satuan, kontrak_volume, kontrak_harga_satuan, kontrak_jumlah_harga, mc_nol_volume, mc_nol_jumlah_harga, tambah_volume, tambah_jumlah_harga, kurang_volume, kurang_jumlah_harga, bobot_persen, prestasi_persen')
+            ->where('paket_id', $paketId)
+            ->where('mc_nol_volume >', 0)
+            ->orderBy('sekolah_npsn', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        foreach ($details as &$row) {
+            $row['id'] = (int) $row['id'];
+            $row['sekolah_npsn'] = (int) $row['sekolah_npsn'];
+            $row['kontrak_volume'] = $row['kontrak_volume'] !== null ? (float) $row['kontrak_volume'] : null;
+            $row['kontrak_harga_satuan'] = $row['kontrak_harga_satuan'] !== null ? (float) $row['kontrak_harga_satuan'] : null;
+            $row['kontrak_jumlah_harga'] = $row['kontrak_jumlah_harga'] !== null ? (float) $row['kontrak_jumlah_harga'] : null;
+            $row['mc_nol_volume'] = $row['mc_nol_volume'] !== null ? (float) $row['mc_nol_volume'] : null;
+            $row['mc_nol_jumlah_harga'] = $row['mc_nol_jumlah_harga'] !== null ? (float) $row['mc_nol_jumlah_harga'] : null;
+            $row['tambah_volume'] = $row['tambah_volume'] !== null ? (float) $row['tambah_volume'] : null;
+            $row['tambah_jumlah_harga'] = $row['tambah_jumlah_harga'] !== null ? (float) $row['tambah_jumlah_harga'] : null;
+            $row['kurang_volume'] = $row['kurang_volume'] !== null ? (float) $row['kurang_volume'] : null;
+            $row['kurang_jumlah_harga'] = $row['kurang_jumlah_harga'] !== null ? (float) $row['kurang_jumlah_harga'] : null;
+            $row['bobot_persen'] = $row['bobot_persen'] !== null ? (float) $row['bobot_persen'] : null;
+            $row['prestasi_persen'] = $row['prestasi_persen'] !== null ? (float) $row['prestasi_persen'] : null;
+        }
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => [
+                'paket'   => [
+                    'id'              => (int) $paket['id'],
+                    'nama_paket'      => $paket['nama_paket'],
+                    'singkatan_paket' => $paket['singkatan_paket']
+                ],
+                'sekolah' => $sekolahs,
+                'detail'  => $details
+            ]
+        ]);
+    }
 }
+

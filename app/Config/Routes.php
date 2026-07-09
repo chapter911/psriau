@@ -286,6 +286,7 @@ $routes->group('api', static function ($routes): void {
 
         // RAB Gedung API
         $routes->group('rab-gedung', static function ($routes): void {
+            $routes->get('all', 'Api\RabGedung::all');
             $routes->get('paket', 'Api\RabGedung::paket');
             $routes->get('sekolah', 'Api\RabGedung::sekolah');
             $routes->get('pekerjaan', 'Api\RabGedung::pekerjaan');
