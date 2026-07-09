@@ -5,6 +5,7 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\RabGedungDetailModel;
 use App\Models\MstSekolahModel;
+use App\Models\MstPaketModel;
 use CodeIgniter\HTTP\RedirectResponse;
 
 class RabGedung extends BaseController
@@ -156,22 +157,33 @@ class RabGedung extends BaseController
             return $deny;
         }
 
+        $filterPaketId = $this->request->getGet('paket_id');
         $db = db_connect();
-        $sekolahs = $db->table('mst_sekolah s')
+
+        $sekolahsBuilder = $db->table('mst_sekolah s')
             ->select('s.npsn, s.nama, s.kecamatan, s.kabupaten, 
                       COUNT(DISTINCT r.gedung) as total_gedung, 
                       COUNT(r.id) as total_items')
-            ->join('trn_rab_gedung_detail r', 'r.sekolah_npsn = s.npsn', 'left')
+            ->join('trn_rab_gedung_detail r', 'r.sekolah_npsn = s.npsn', 'inner')
             ->groupBy('s.npsn, s.nama, s.kecamatan, s.kabupaten')
-            ->orderBy('s.nama', 'ASC')
-            ->get()
-            ->getResultArray();
+            ->orderBy('s.nama', 'ASC');
+
+        if ($filterPaketId !== null && $filterPaketId !== '') {
+            $sekolahsBuilder->where('r.paket_id', (int)$filterPaketId);
+        }
+
+        $sekolahs = $sekolahsBuilder->get()->getResultArray();
+
+        $paketModel = new MstPaketModel();
+        $pakets = $paketModel->where('is_active', 1)->orderBy('nama_paket', 'ASC')->findAll();
 
         $permissions = $this->resolveMenuPermissions('admin/laporan/rab-gedung');
 
         return view('admin/laporan/rab_gedung', [
             'sekolahs' => $sekolahs,
             'can_import' => $permissions['import'],
+            'pakets' => $pakets,
+            'filter_paket_id' => $filterPaketId,
         ]);
     }
 
@@ -214,6 +226,9 @@ class RabGedung extends BaseController
             ->get()
             ->getRowArray();
 
+        $paketModel = new MstPaketModel();
+        $pakets = $paketModel->where('is_active', 1)->orderBy('nama_paket', 'ASC')->findAll();
+
         $permissions = $this->resolveMenuPermissions('admin/laporan/rab-gedung');
 
         return view('admin/laporan/rab_gedung_detail', [
@@ -228,6 +243,7 @@ class RabGedung extends BaseController
             'can_edit' => $permissions['edit'],
             'can_delete' => $permissions['delete'],
             'can_import' => $permissions['import'],
+            'pakets' => $pakets,
         ]);
     }
 
@@ -246,21 +262,27 @@ class RabGedung extends BaseController
         $model = new RabGedungDetailModel();
 
         $queryFactory = function() use ($model) {
-            return $model->builder();
+            return $model->builder()
+                ->select('trn_rab_gedung_detail.*, mst_paket.nama_paket')
+                ->join('mst_paket', 'mst_paket.id = trn_rab_gedung_detail.paket_id', 'left');
         };
 
         $filterApplier = function($builder) {
             $npsn = $this->request->getGet('sekolah_npsn');
             $gedung = $this->request->getGet('gedung');
+            $paketId = $this->request->getGet('paket_id');
             if ($npsn !== null && $npsn !== '') {
-                $builder->where('sekolah_npsn', $npsn);
+                $builder->where('trn_rab_gedung_detail.sekolah_npsn', $npsn);
             }
             if ($gedung !== null && $gedung !== '') {
-                $builder->where('gedung', $gedung);
+                $builder->where('trn_rab_gedung_detail.gedung', $gedung);
+            }
+            if ($paketId !== null && $paketId !== '') {
+                $builder->where('trn_rab_gedung_detail.paket_id', $paketId);
             }
         };
 
-        $searchColumns = ['nama_sekolah', 'gedung', 'kategori_1', 'kategori_2', 'no_urut', 'uraian', 'satuan'];
+        $searchColumns = ['nama_sekolah', 'gedung', 'kategori_1', 'kategori_2', 'no_urut', 'uraian', 'satuan', 'mst_paket.nama_paket'];
         $orderColumns = [
             'id',
             'nama_sekolah',
@@ -295,6 +317,7 @@ class RabGedung extends BaseController
             $row['gedung_escaped'] = esc($row['gedung']);
             $row['kategori_1_escaped'] = esc($row['kategori_1']);
             $row['kategori_2_escaped'] = esc($row['kategori_2']);
+            $row['nama_paket_escaped'] = esc($row['nama_paket'] ?? '');
             
             return $row;
         };
@@ -322,6 +345,7 @@ class RabGedung extends BaseController
 
         $data = [
             'sekolah_npsn'         => $npsn ?: null,
+            'paket_id'             => $this->request->getPost('paket_id') !== '' ? (int)$this->request->getPost('paket_id') : null,
             'nama_sekolah'         => $namaSekolah,
             'pekerjaan_utama'      => $this->request->getPost('pekerjaan_utama'),
             'gedung'               => $this->request->getPost('gedung'),
@@ -378,6 +402,7 @@ class RabGedung extends BaseController
 
         $data = [
             'sekolah_npsn'         => $npsn ?: null,
+            'paket_id'             => $this->request->getPost('paket_id') !== '' ? (int)$this->request->getPost('paket_id') : null,
             'nama_sekolah'         => $namaSekolah,
             'pekerjaan_utama'      => $this->request->getPost('pekerjaan_utama'),
             'gedung'               => $this->request->getPost('gedung'),
@@ -436,6 +461,11 @@ class RabGedung extends BaseController
         $permissions = $this->resolveMenuPermissions('admin/laporan/rab-gedung');
         if (!$permissions['import']) {
             return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk import.');
+        }
+
+        $paketId = $this->request->getPost('paket_id') !== '' ? (int)$this->request->getPost('paket_id') : null;
+        if ($paketId === null) {
+            return redirect()->back()->with('error', 'Silakan pilih paket terlebih dahulu.');
         }
 
         $file = $this->request->getFile('file_excel');
@@ -587,6 +617,7 @@ class RabGedung extends BaseController
 
                     $itemsToInsert[] = [
                         'sekolah_npsn'         => $sekolahNpsn,
+                        'paket_id'             => $paketId,
                         'nama_sekolah'         => $currentLocation,
                         'pekerjaan_utama'      => $currentPekerjaanUtama,
                         'gedung'               => $currentGedung,

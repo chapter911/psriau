@@ -4,6 +4,8 @@
 <?php
 $sekolahs = $sekolahs ?? [];
 $canImport = (bool) ($can_import ?? false);
+$filterPaketId = $filter_paket_id ?? '';
+$pakets = $pakets ?? [];
 ?>
 
 <?php if (session()->getFlashdata('success')): ?>
@@ -23,6 +25,34 @@ $canImport = (bool) ($can_import ?? false);
         </button>
     </div>
 <?php endif; ?>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" action="<?= current_url(); ?>" id="formFilter">
+            <div class="form-row align-items-end">
+                <div class="col-md-4 col-sm-6">
+                    <label for="filter_paket_id" class="small text-muted font-weight-bold">Filter Paket</label>
+                    <select class="form-control form-control-sm" id="filter_paket_id" name="paket_id">
+                        <option value="">-- Semua Paket --</option>
+                        <?php foreach ($pakets as $paket): ?>
+                            <option value="<?= esc((string) $paket['id']); ?>" <?= (string)$filterPaketId === (string)$paket['id'] ? 'selected' : ''; ?>>
+                                <?= esc((string) $paket['nama_paket']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-2 col-sm-3 mt-2 mt-sm-0">
+                    <button type="submit" class="btn btn-primary btn-sm btn-block"><i class="fas fa-filter mr-1"></i> Filter</button>
+                </div>
+                <?php if ($filterPaketId !== ''): ?>
+                <div class="col-md-2 col-sm-3 mt-2 mt-sm-0">
+                    <a href="<?= site_url('admin/laporan/rab-gedung'); ?>" class="btn btn-secondary btn-sm btn-block"><i class="fas fa-undo mr-1"></i> Reset</a>
+                </div>
+                <?php endif; ?>
+            </div>
+        </form>
+    </div>
+</div>
 
 <div class="card">
     <div class="card-header d-flex align-items-center">
@@ -104,6 +134,15 @@ $canImport = (bool) ($can_import ?? false);
                             <input type="file" class="custom-file-input" id="file_excel" name="file_excel" accept=".xlsx,.xls" required>
                             <label class="custom-file-label" for="file_excel">Pilih file...</label>
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="import_paket_id">Paket <span class="text-danger">*</span></label>
+                        <select class="form-control" id="import_paket_id" name="paket_id" required>
+                            <option value="">-- Pilih Paket --</option>
+                            <?php foreach ($pakets as $paket): ?>
+                                <option value="<?= esc((string) $paket['id']); ?>"><?= esc((string) $paket['nama_paket']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="form-group mb-0">
                         <div class="custom-control custom-checkbox">

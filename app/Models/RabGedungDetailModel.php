@@ -12,6 +12,7 @@ class RabGedungDetailModel extends Model
     protected $returnType       = 'array';
     protected $allowedFields    = [
         'sekolah_npsn',
+        'paket_id',
         'nama_sekolah',
         'pekerjaan_utama',
         'gedung',

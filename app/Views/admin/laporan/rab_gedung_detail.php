@@ -92,25 +92,36 @@ $totalKurang = $total_kurang ?? 0;
     </div>
     <div class="card-body py-3">
         <div class="row align-items-center">
-            <div class="col-md-3 border-right">
+            <div class="col-md-2 border-right">
                 <span class="text-muted d-block small">NPSN / NSM</span>
                 <span class="font-weight-bold text-dark"><?= esc($sekolah['npsn']); ?> / <?= esc($sekolah['nsm'] ?: '-'); ?></span>
             </div>
-            <div class="col-md-3 border-right">
+            <div class="col-md-2 border-right">
                 <span class="text-muted d-block small">Kecamatan</span>
                 <span class="font-weight-bold text-dark"><?= esc($sekolah['kecamatan'] ?: '-'); ?></span>
             </div>
-            <div class="col-md-3 border-right">
+            <div class="col-md-2 border-right">
                 <span class="text-muted d-block small">Kabupaten</span>
                 <span class="font-weight-bold text-dark"><?= esc($sekolah['kabupaten'] ?: '-'); ?></span>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 border-right">
                 <div class="form-group mb-0">
                     <label for="filterGedung" class="mb-0 text-muted small font-weight-normal">Filter Pekerjaan</label>
                     <select id="filterGedung" class="form-control form-control-sm">
                         <option value="">-- Semua Pekerjaan --</option>
                         <?php foreach ($gedungs as $gedung): ?>
                             <option value="<?= esc($gedung); ?>"><?= esc($gedung); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group mb-0">
+                    <label for="filterPaket" class="mb-0 text-muted small font-weight-normal">Filter Paket</label>
+                    <select id="filterPaket" class="form-control form-control-sm">
+                        <option value="">-- Semua Paket --</option>
+                        <?php foreach ($pakets as $paket): ?>
+                            <option value="<?= esc((string) $paket['id']); ?>"><?= esc((string) $paket['nama_paket']); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -249,6 +260,15 @@ $totalKurang = $total_kurang ?? 0;
                             <label class="custom-file-label" for="file_excel">Pilih file...</label>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label for="import_paket_id">Paket <span class="text-danger">*</span></label>
+                        <select class="form-control" id="import_paket_id" name="paket_id" required>
+                            <option value="">-- Pilih Paket --</option>
+                            <?php foreach ($pakets as $paket): ?>
+                                <option value="<?= esc((string) $paket['id']); ?>"><?= esc((string) $paket['nama_paket']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                     <div class="form-group mb-0">
                         <div class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input" id="clear_data" name="clear_data" value="1" checked>
@@ -283,6 +303,15 @@ $totalKurang = $total_kurang ?? 0;
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="addPaketId">Paket <span class="text-danger">*</span></label>
+                                <select class="form-control" id="addPaketId" name="paket_id" required>
+                                    <option value="">-- Pilih Paket --</option>
+                                    <?php foreach ($pakets as $paket): ?>
+                                        <option value="<?= esc((string) $paket['id']); ?>"><?= esc((string) $paket['nama_paket']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
                             <div class="form-group">
                                 <label for="addPekerjaanUtama">Pekerjaan Utama</label>
                                 <input type="text" class="form-control" id="addPekerjaanUtama" name="pekerjaan_utama" placeholder="Contoh: Rehabilitasi dan Renovasi...">
@@ -381,6 +410,15 @@ $totalKurang = $total_kurang ?? 0;
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="editPaketId">Paket <span class="text-danger">*</span></label>
+                                <select class="form-control" id="editPaketId" name="paket_id" required>
+                                    <option value="">-- Pilih Paket --</option>
+                                    <?php foreach ($pakets as $paket): ?>
+                                        <option value="<?= esc((string) $paket['id']); ?>"><?= esc((string) $paket['nama_paket']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
                             <div class="form-group">
                                 <label for="editPekerjaanUtama">Pekerjaan Utama</label>
                                 <input type="text" class="form-control" id="editPekerjaanUtama" name="pekerjaan_utama">
@@ -508,6 +546,7 @@ $(document).ready(function() {
             data: function(d) {
                 d.sekolah_npsn = '<?= $sekolah['npsn']; ?>';
                 d.gedung = $('#filterGedung').val();
+                d.paket_id = $('#filterPaket').val();
             }
         },
         columns: [
@@ -526,6 +565,9 @@ $(document).ready(function() {
                 className: 'align-middle',
                 render: function(data, type, row) {
                     let html = '<div><strong>' + data + '</strong></div>';
+                    if (row.nama_paket_escaped) {
+                        html += ' <span class="badge badge-success"><i class="fas fa-box mr-1"></i>' + row.nama_paket_escaped + '</span>';
+                    }
                     if (row.kategori_1_escaped) {
                         html += ' <span class="badge badge-info">' + row.kategori_1_escaped + '</span>';
                     }
@@ -604,7 +646,7 @@ $(document).ready(function() {
     });
 
     // Filter triggers reload
-    $('#filterGedung').on('change', function() {
+    $('#filterGedung, #filterPaket').on('change', function() {
         table.ajax.reload();
     });
 
@@ -616,6 +658,7 @@ $(document).ready(function() {
         $('#formEdit').attr('action', '<?= site_url('admin/laporan/rab-gedung/'); ?>' + id + '/ubah');
         
         $('#editSekolahNpsn').val(rowData.sekolah_npsn);
+        $('#editPaketId').val(rowData.paket_id);
         $('#editPekerjaanUtama').val(rowData.pekerjaan_utama);
         $('#editGedung').val(rowData.gedung);
         $('#editKategori1').val(rowData.kategori_1);
