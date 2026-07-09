@@ -226,6 +226,16 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('laporan/rab-gedung/import', 'Admin\RabGedung::import');
 	$routes->post('laporan/rab-gedung/sekolah/(:num)/ubah-paket', 'Admin\RabGedung::updateSekolahPaket/$1');
 
+	// Rekapitulasi Mingguan Routes
+	$routes->get('laporan/rekap-mingguan', 'Admin\RekapMingguan::index');
+	$routes->get('laporan/rekap-mingguan/show/(:num)', 'Admin\RekapMingguan::show/$1');
+	$routes->get('laporan/rekap-mingguan/detail/(:num)', 'Admin\RekapMingguan::detail/$1');
+	$routes->get('laporan/rekap-mingguan/data-detail/(:num)', 'Admin\RekapMingguan::dataDetail/$1');
+	$routes->post('laporan/rekap-mingguan/tambah', 'Admin\RekapMingguan::create');
+	$routes->post('laporan/rekap-mingguan/(:num)/ubah', 'Admin\RekapMingguan::edit/$1');
+	$routes->post('laporan/rekap-mingguan/(:num)/hapus', 'Admin\RekapMingguan::delete/$1');
+	$routes->post('laporan/rekap-mingguan/import', 'Admin\RekapMingguan::import');
+
 	// Surat Routes - Perjalanan Dinas (alias dari Laporan)
 	$routes->get('surat/perjalanan-dinas', 'Admin\\Laporan::perjalananDinas');
 	$routes->get('surat/perjalanan-dinas/cetak-periode', 'Admin\\Laporan::perjalananDinasCetakPeriode');
