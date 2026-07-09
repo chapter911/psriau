@@ -8,6 +8,9 @@ use App\Models\LaporanRekapitulasiMingguanSekolahModel;
 use App\Models\LaporanRekapitulasiMingguanDetailModel;
 use CodeIgniter\HTTP\RedirectResponse;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class RekapMingguan extends BaseController
 {
@@ -811,5 +814,249 @@ class RekapMingguan extends BaseController
             return 'ASC';
         }
         return strtolower((string) ($first['dir'] ?? 'asc')) === 'desc' ? 'DESC' : 'ASC';
+    }
+
+    // EXPORT TO EXCEL
+    public function export(int $id)
+    {
+        $deny = $this->denyIfNoMenuAccess('admin/laporan/rekap-mingguan');
+        if ($deny !== null) {
+            return $deny;
+        }
+
+        $db = db_connect();
+        $rekap = $db->table('laporan_rekapitulasi_mingguan r')
+            ->select('r.*, mp.nama_paket')
+            ->join('mst_paket mp', 'mp.id = r.paket_id', 'left')
+            ->where('r.id', $id)
+            ->get()
+            ->getRowArray();
+
+        if (!$rekap) {
+            return redirect()->to(site_url('admin/laporan/rekap-mingguan'))->with('error', 'Laporan rekapitulasi tidak ditemukan.');
+        }
+
+        $sekolahModel = new LaporanRekapitulasiMingguanSekolahModel();
+        $sekolahs = $sekolahModel->where('rekapitulasi_mingguan_id', $id)->orderBy('id', 'ASC')->findAll();
+
+        // Create Spreadsheet
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Rekapitulasi');
+
+        // Styles
+        $titleStyle = [
+            'font' => [
+                'bold' => true,
+                'size' => 14,
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+            ]
+        ];
+
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '2F3A45'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ]
+            ]
+        ];
+
+        $dataStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => 'CCCCCC'],
+                ]
+            ]
+        ];
+
+        $totalStyle = [
+            'font' => [
+                'bold' => true,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'F2F2F2'],
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ]
+            ]
+        ];
+
+        $pembulatanStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '007BFF'],
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ]
+            ]
+        ];
+
+        // Title Block
+        $sheet->setCellValue('A1', 'REKAPITULASI LAPORAN BOBOT');
+        $sheet->mergeCells('A1:I1');
+        $sheet->getStyle('A1')->applyFromArray($titleStyle);
+
+        $sheet->setCellValue('A2', 'PERIODE: MINGGU ' . $rekap['minggu_ke'] . ' - ' . strtoupper($rekap['judul']));
+        $sheet->mergeCells('A2:I2');
+        $sheet->getStyle('A2')->applyFromArray($titleStyle);
+
+        $sheet->setCellValue('A3', 'PAKET: ' . strtoupper($rekap['nama_paket'] ?? 'TANPA PAKET'));
+        $sheet->mergeCells('A3:I3');
+        $sheet->getStyle('A3')->applyFromArray($titleStyle);
+
+        // Header Row
+        $headers = [
+            'NO.', 
+            'JENIS PEKERJAAN', 
+            'JUMLAH HARGA ADD 2', 
+            'BOBOT (%)', 
+            'PROGRES MINGGU LALU', 
+            'PROGRES MINGGU INI', 
+            'PROGRES SAMPAI MINGGU INI', 
+            'RENCANA', 
+            'DEVIASI'
+        ];
+        
+        $colIndex = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($colIndex . '5', $header);
+            $sheet->getStyle($colIndex . '5')->applyFromArray($headerStyle);
+            $colIndex++;
+        }
+        $sheet->getRowDimension('5')->setRowHeight(30);
+
+        // Data Rows
+        $rowNum = 6;
+        $sumHarga = 0;
+        $sumBobot = 0;
+        $sumLalu = 0;
+        $sumIni = 0;
+        $sumSampai = 0;
+        $sumRencana = 0;
+        $sumDeviasi = 0;
+
+        foreach ($sekolahs as $sekolah) {
+            $sheet->setCellValue('A' . $rowNum, $sekolah['no_urut']);
+            $sheet->setCellValue('B' . $rowNum, $sekolah['nama_sekolah']);
+            $sheet->setCellValue('C' . $rowNum, $sekolah['jumlah_harga']);
+            $sheet->setCellValue('D' . $rowNum, $sekolah['bobot'] / 100);
+            $sheet->setCellValue('E' . $rowNum, $sekolah['progres_minggu_lalu'] / 100);
+            $sheet->setCellValue('F' . $rowNum, $sekolah['progres_minggu_ini'] / 100);
+            $sheet->setCellValue('G' . $rowNum, $sekolah['progres_sampai_minggu_ini'] / 100);
+            $sheet->setCellValue('H' . $rowNum, $sekolah['rencana'] / 100);
+            $sheet->setCellValue('I' . $rowNum, $sekolah['deviasi'] / 100);
+
+            // Format numbers
+            $sheet->getStyle('C' . $rowNum)->getNumberFormat()->setFormatCode('"Rp"#,##0');
+            foreach (['D', 'E', 'F', 'G', 'H', 'I'] as $col) {
+                $sheet->getStyle($col . $rowNum)->getNumberFormat()->setFormatCode('0.000%');
+            }
+
+            // Alignments
+            $sheet->getStyle('A' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('B' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+            $sheet->getStyle('C' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            foreach (['D', 'E', 'F', 'G', 'H', 'I'] as $col) {
+                $sheet->getStyle($col . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            }
+
+            $sheet->getStyle('A' . $rowNum . ':I' . $rowNum)->applyFromArray($dataStyle);
+
+            $sumHarga += (float)$sekolah['jumlah_harga'];
+            $sumBobot += (float)$sekolah['bobot'];
+            $sumLalu += (float)$sekolah['progres_minggu_lalu'];
+            $sumIni += (float)$sekolah['progres_minggu_ini'];
+            $sumSampai += (float)$sekolah['progres_sampai_minggu_ini'];
+            $sumRencana += (float)$sekolah['rencana'];
+            $sumDeviasi += (float)$sekolah['deviasi'];
+
+            $rowNum++;
+        }
+
+        // Totals (A)
+        $sheet->setCellValue('A' . $rowNum, '');
+        $sheet->setCellValue('B' . $rowNum, '(A) Jumlah Harga Pekerjaan (termasuk Biaya Umum dan Keuntungan)');
+        $sheet->setCellValue('C' . $rowNum, $sumHarga);
+        $sheet->setCellValue('D' . $rowNum, $sumBobot / 100);
+        $sheet->setCellValue('E' . $rowNum, $sumLalu / 100);
+        $sheet->setCellValue('F' . $rowNum, $sumIni / 100);
+        $sheet->setCellValue('G' . $rowNum, $sumSampai / 100);
+        $sheet->setCellValue('H' . $rowNum, $sumRencana / 100);
+        $sheet->setCellValue('I' . $rowNum, $sumDeviasi / 100);
+
+        $sheet->getStyle('C' . $rowNum)->getNumberFormat()->setFormatCode('"Rp"#,##0');
+        foreach (['D', 'E', 'F', 'G', 'H', 'I'] as $col) {
+            $sheet->getStyle($col . $rowNum)->getNumberFormat()->setFormatCode('0.000%');
+        }
+
+        $sheet->getStyle('A' . $rowNum . ':I' . $rowNum)->applyFromArray($totalStyle);
+        $rowNum++;
+
+        // PPn (B)
+        $ppn = $sumHarga * 0.11;
+        $sheet->setCellValue('B' . $rowNum, '(B) Pajak Pertambahan Nilai ( PPn ) = 11% x (A)');
+        $sheet->setCellValue('C' . $rowNum, $ppn);
+        $sheet->getStyle('C' . $rowNum)->getNumberFormat()->setFormatCode('"Rp"#,##0');
+        $sheet->getStyle('A' . $rowNum . ':I' . $rowNum)->applyFromArray($totalStyle);
+        $rowNum++;
+
+        // Total (C)
+        $totalVal = $sumHarga + $ppn;
+        $sheet->setCellValue('B' . $rowNum, '(C) Jumlah Total Harga Pekerjaan = (A) + (B)');
+        $sheet->setCellValue('C' . $rowNum, $totalVal);
+        $sheet->getStyle('C' . $rowNum)->getNumberFormat()->setFormatCode('"Rp"#,##0');
+        $sheet->getStyle('A' . $rowNum . ':I' . $rowNum)->applyFromArray($totalStyle);
+        $rowNum++;
+
+        // Pembulatan
+        $pembulatan = round($totalVal, -2);
+        $sheet->setCellValue('B' . $rowNum, 'PEMBULATAN');
+        $sheet->setCellValue('C' . $rowNum, $pembulatan);
+        $sheet->getStyle('C' . $rowNum)->getNumberFormat()->setFormatCode('"Rp"#,##0');
+        $sheet->getStyle('A' . $rowNum . ':I' . $rowNum)->applyFromArray($pembulatanStyle);
+
+        // Auto column widths
+        foreach (range('A', 'I') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Output file
+        $fileName = 'Rekapitulasi_Minggu_' . $rekap['minggu_ke'] . '_' . str_replace(' ', '_', $rekap['nama_paket'] ?? 'Tanpa_Paket') . '.xlsx';
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
     }
 }

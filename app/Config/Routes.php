@@ -229,6 +229,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	// Rekapitulasi Mingguan Routes
 	$routes->get('laporan/rekap-mingguan', 'Admin\RekapMingguan::index');
 	$routes->get('laporan/rekap-mingguan/show/(:num)', 'Admin\RekapMingguan::show/$1');
+	$routes->get('laporan/rekap-mingguan/export/(:num)', 'Admin\RekapMingguan::export/$1');
 	$routes->get('laporan/rekap-mingguan/detail/(:num)', 'Admin\RekapMingguan::detail/$1');
 	$routes->get('laporan/rekap-mingguan/data-detail/(:num)', 'Admin\RekapMingguan::dataDetail/$1');
 	$routes->post('laporan/rekap-mingguan/tambah', 'Admin\RekapMingguan::create');

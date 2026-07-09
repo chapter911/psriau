@@ -38,8 +38,11 @@ $pembulatanVal = round($totalVal, -2);
 ?>
 
 <div class="d-flex align-items-center mb-3">
-    <a href="<?= site_url('admin/laporan/rekap-mingguan'); ?>" class="btn btn-secondary btn-sm">
+    <a href="<?= site_url('admin/laporan/rekap-mingguan'); ?>" class="btn btn-secondary btn-sm mr-2">
         <i class="fas fa-arrow-left mr-1"></i> Kembali ke Daftar Periode
+    </a>
+    <a href="<?= site_url('admin/laporan/rekap-mingguan/export/' . (int)$rekap['id']); ?>" class="btn btn-success btn-sm">
+        <i class="fas fa-file-excel mr-1"></i> Export Excel
     </a>
 </div>
 
