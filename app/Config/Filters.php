@@ -37,6 +37,7 @@ class Filters extends BaseFilters
         'performance'   => PerformanceMetrics::class,
         'auth'          => AuthFilter::class,
         'maintenance'   => \App\Filters\MaintenanceFilter::class,
+        'api-auth'      => \App\Filters\ApiAuthFilter::class,
     ];
 
     /**

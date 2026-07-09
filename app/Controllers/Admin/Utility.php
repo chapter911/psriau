@@ -32,7 +32,7 @@ class Utility extends BaseController
 
         try {
             $users = (new UserModel())
-                ->select('id, username, full_name, role, is_active')
+                ->select('id, username, full_name, role, is_active, akses_web, akses_mobile')
                 ->orderBy('full_name', 'ASC')
                 ->findAll();
         } catch (\Throwable $e) {
@@ -287,6 +287,8 @@ class Utility extends BaseController
                 'full_name' => $fullName,
                 'role' => $role,
                 'is_active' => $this->request->getPost('is_active') ? 1 : 0,
+                'akses_web' => $this->request->getPost('akses_web') !== null ? ($this->request->getPost('akses_web') ? 1 : 0) : 1,
+                'akses_mobile' => $this->request->getPost('akses_mobile') !== null ? ($this->request->getPost('akses_mobile') ? 1 : 0) : 1,
                 'password_hash' => password_hash($password, PASSWORD_DEFAULT),
             ]);
         } catch (\Throwable $e) {
@@ -362,6 +364,8 @@ class Utility extends BaseController
             'full_name' => $fullName,
             'role' => $role,
             'is_active' => $this->request->getPost('is_active') ? 1 : 0,
+            'akses_web' => $this->request->getPost('akses_web') ? 1 : 0,
+            'akses_mobile' => $this->request->getPost('akses_mobile') ? 1 : 0,
         ];
 
         if (trim($password) !== '') {

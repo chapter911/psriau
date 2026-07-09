@@ -4,12 +4,12 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class UserModel extends Model
+class UserTokenModel extends Model
 {
-    protected $table            = 'users';
+    protected $table            = 'user_tokens';
     protected $primaryKey       = 'id';
     protected $returnType       = 'array';
-    protected $allowedFields    = ['username', 'full_name', 'role', 'is_active', 'password_hash', 'akses_web', 'akses_mobile'];
+    protected $allowedFields    = ['user_id', 'token_hash', 'name', 'expires_at'];
     protected $useTimestamps    = true;
     protected $createdField     = 'created_at';
     protected $updatedField     = 'updated_at';

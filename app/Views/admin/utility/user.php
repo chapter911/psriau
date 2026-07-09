@@ -22,17 +22,39 @@
                         <th style="width: 60px;">#</th>
                         <th>Username / NIP</th>
                         <th>Nama Lengkap</th>
-                        <th style="width: 140px;">Status</th>
-                        <th style="width: 140px;">Role</th>
-                        <th style="width: 170px;">Aksi</th>
+                        <th style="width: 130px;">Akses Web</th>
+                        <th style="width: 130px;">Akses Mobile</th>
+                        <th style="width: 120px;">Status</th>
+                        <th style="width: 120px;">Role</th>
+                        <th style="width: 120px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="userTableBody">
                     <?php foreach (($users ?? []) as $idx => $row): ?>
-                        <tr data-id="<?= esc((string) ($row['id'] ?? '')); ?>">
+                        <tr data-id="<?= esc((string) ($row['id'] ?? '')); ?>"
+                            data-username="<?= esc((string) ($row['username'] ?? '')); ?>"
+                            data-full-name="<?= esc((string) ($row['full_name'] ?? '')); ?>"
+                            data-role="<?= esc((string) ($row['role'] ?? 'editor')); ?>"
+                            data-is-active="<?= (int) ($row['is_active'] ?? 1) === 1 ? '1' : '0'; ?>"
+                            data-akses-web="<?= (int) ($row['akses_web'] ?? 1) === 1 ? '1' : '0'; ?>"
+                            data-akses-mobile="<?= (int) ($row['akses_mobile'] ?? 1) === 1 ? '1' : '0'; ?>">
                             <td><?= esc((string) ($idx + 1)); ?></td>
                             <td><?= esc((string) ($row['username'] ?? '-')); ?></td>
                             <td><?= esc((string) ($row['full_name'] ?? '-')); ?></td>
+                            <td>
+                                <?php if ((int) ($row['akses_web'] ?? 1) === 1): ?>
+                                    <span class="badge badge-success"><i class="fas fa-check"></i> Ya</span>
+                                <?php else: ?>
+                                    <span class="badge badge-danger"><i class="fas fa-times"></i> Tidak</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ((int) ($row['akses_mobile'] ?? 1) === 1): ?>
+                                    <span class="badge badge-success"><i class="fas fa-check"></i> Ya</span>
+                                <?php else: ?>
+                                    <span class="badge badge-danger"><i class="fas fa-times"></i> Tidak</span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <?php if ((int) ($row['is_active'] ?? 1) === 1): ?>
                                     <span class="badge badge-success">Aktif</span>
@@ -103,7 +125,18 @@
                         <input type="checkbox" class="custom-control-input" id="isActive" checked>
                         <label class="custom-control-label" for="isActive">Status aktif</label>
                     </div>
-                    <small class="text-muted d-block mt-1">Jika non aktif, user tidak dapat login ke aplikasi.</small>
+                    <small class="text-muted d-block mt-1 mb-3">Jika non aktif, user tidak dapat login ke aplikasi.</small>
+                </div>
+                <div class="form-group border p-2 rounded bg-light">
+                    <label class="d-block font-weight-bold">Hak Akses Platform</label>
+                    <div class="custom-control custom-switch mb-2">
+                        <input type="checkbox" class="custom-control-input" id="aksesWeb" checked>
+                        <label class="custom-control-label" for="aksesWeb">Akses Web</label>
+                    </div>
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="aksesMobile" checked>
+                        <label class="custom-control-label" for="aksesMobile">Akses Mobile (API)</label>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="password">Password <span class="text-muted" id="passwordHint">(wajib diisi)</span></label>
@@ -139,6 +172,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const fullName = document.getElementById('fullName');
     const role = document.getElementById('role');
     const isActive = document.getElementById('isActive');
+    const aksesWeb = document.getElementById('aksesWeb');
+    const aksesMobile = document.getElementById('aksesMobile');
     const password = document.getElementById('password');
     const passwordHint = document.getElementById('passwordHint');
     const passwordAutoHint = document.getElementById('passwordAutoHint');
@@ -368,11 +403,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 const statusBadge = (parseInt(row.is_active || '1', 10) === 1)
                     ? '<span class="badge badge-success">Aktif</span>'
                     : '<span class="badge badge-secondary">Non Aktif</span>';
+                const webBadge = (parseInt(row.akses_web || '1', 10) === 1)
+                    ? '<span class="badge badge-success"><i class="fas fa-check"></i> Ya</span>'
+                    : '<span class="badge badge-danger"><i class="fas fa-times"></i> Tidak</span>';
+                const mobileBadge = (parseInt(row.akses_mobile || '1', 10) === 1)
+                    ? '<span class="badge badge-success"><i class="fas fa-check"></i> Ya</span>'
+                    : '<span class="badge badge-danger"><i class="fas fa-times"></i> Tidak</span>';
 
                 return [
                     index + 1,
                     escapeHtml(String(row.username || '-')),
                     escapeHtml(String(row.full_name || '-')),
+                    webBadge,
+                    mobileBadge,
                     statusBadge,
                     '<span class="badge badge-secondary">' + escapeHtml(String(row.role || '-')) + '</span>',
                     '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" ' + (canEdit ? '' : 'disabled') + '><i class="fas fa-pen"></i></button>',
@@ -393,6 +436,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.dataset.fullName = String(row.full_name || '');
                 this.dataset.role = String(row.role || 'editor');
                 this.dataset.isActive = String(parseInt(row.is_active || '1', 10) === 1 ? '1' : '0');
+                this.dataset.aksesWeb = String(parseInt(row.akses_web || '1', 10) === 1 ? '1' : '0');
+                this.dataset.aksesMobile = String(parseInt(row.akses_mobile || '1', 10) === 1 ? '1' : '0');
             });
 
             return;
@@ -411,10 +456,18 @@ document.addEventListener('DOMContentLoaded', function () {
             const statusBadge = (parseInt(row.is_active || '1', 10) === 1)
                 ? '<span class="badge badge-success">Aktif</span>'
                 : '<span class="badge badge-secondary">Non Aktif</span>';
+            const webBadge = (parseInt(row.akses_web || '1', 10) === 1)
+                ? '<span class="badge badge-success"><i class="fas fa-check"></i> Ya</span>'
+                : '<span class="badge badge-danger"><i class="fas fa-times"></i> Tidak</span>';
+            const mobileBadge = (parseInt(row.akses_mobile || '1', 10) === 1)
+                ? '<span class="badge badge-success"><i class="fas fa-check"></i> Ya</span>'
+                : '<span class="badge badge-danger"><i class="fas fa-times"></i> Tidak</span>';
             tr.innerHTML = '' +
                 '<td>' + (index + 1) + '</td>' +
                 '<td>' + escapeHtml(String(row.username || '-')) + '</td>' +
                 '<td>' + escapeHtml(String(row.full_name || '-')) + '</td>' +
+                '<td>' + webBadge + '</td>' +
+                '<td>' + mobileBadge + '</td>' +
                 '<td>' + statusBadge + '</td>' +
                 '<td><span class="badge badge-secondary">' + escapeHtml(String(row.role || '-')) + '</span></td>' +
                 '<td>' +
@@ -425,6 +478,8 @@ document.addEventListener('DOMContentLoaded', function () {
             tr.dataset.fullName = String(row.full_name || '');
             tr.dataset.role = String(row.role || 'editor');
             tr.dataset.isActive = String(parseInt(row.is_active || '1', 10) === 1 ? '1' : '0');
+            tr.dataset.aksesWeb = String(parseInt(row.akses_web || '1', 10) === 1 ? '1' : '0');
+            tr.dataset.aksesMobile = String(parseInt(row.akses_mobile || '1', 10) === 1 ? '1' : '0');
             userTableBody.appendChild(tr);
         });
     }
@@ -455,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             },
             columnDefs: [
-                { targets: [3, 4, 5], orderable: false },
+                { targets: [3, 4, 5, 6, 7], orderable: false },
             ]
         });
     }
@@ -498,6 +553,8 @@ document.addEventListener('DOMContentLoaded', function () {
         fullName.value = '';
         renderRoleOptions('editor', false);
         isActive.checked = true;
+        aksesWeb.checked = true;
+        aksesMobile.checked = true;
         password.value = '';
         password.required = true;
         password.disabled = false;
@@ -524,6 +581,8 @@ document.addEventListener('DOMContentLoaded', function () {
         fullName.value = row.dataset.fullName || '';
         renderRoleOptions(row.dataset.role || 'editor', true);
         isActive.checked = String(row.dataset.isActive || '1') === '1';
+        aksesWeb.checked = String(row.dataset.aksesWeb || '1') === '1';
+        aksesMobile.checked = String(row.dataset.aksesMobile || '1') === '1';
         password.value = '';
         password.required = false;
         password.disabled = false;
@@ -610,6 +669,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 full_name: fullName.value.trim(),
                 role: role.value,
                 is_active: isActive && isActive.checked ? '1' : '0',
+                akses_web: aksesWeb && aksesWeb.checked ? '1' : '0',
+                akses_mobile: aksesMobile && aksesMobile.checked ? '1' : '0',
                 password: password.value,
             };
 

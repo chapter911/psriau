@@ -272,3 +272,15 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'berita/(:num)/ubah', 'Admin\\Article::edit/$1');
 	$routes->post('berita/(:num)/hapus', 'Admin\\Article::delete/$1');
 });
+
+$routes->group('api', static function ($routes): void {
+    // Public API Routes
+    $routes->post('auth/login', 'Api\Auth::login');
+
+    // Protected API Routes (requires API Auth Filter)
+    $routes->group('', ['filter' => 'api-auth'], static function ($routes): void {
+        $routes->get('auth/profile', 'Api\Auth::profile');
+        $routes->post('auth/logout', 'Api\Auth::logout');
+    });
+});
+

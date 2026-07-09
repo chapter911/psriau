@@ -21,6 +21,15 @@ class AuthFilter implements FilterInterface
                 : redirect()->to('/masuk')->with('error', 'Silakan masuk terlebih dahulu.');
         }
 
+        $db = Database::connect();
+        $userObj = $db->table('users')->select('is_active, akses_web')->where('id', (int) session()->get('userId'))->get()->getRowArray();
+        if (! $userObj || (int) ($userObj['is_active'] ?? 1) !== 1 || (int) ($userObj['akses_web'] ?? 1) !== 1) {
+            session()->destroy();
+            return $isDataTableRequest
+                ? $this->jsonTableError($request, 'Akses Anda dicabut atau dinonaktifkan.')
+                : redirect()->to('/masuk')->with('error', 'Akun Anda dinonaktifkan atau tidak memiliki akses web.');
+        }
+
         $allowedRoles = [];
         if (is_array($arguments)) {
             foreach ($arguments as $argument) {

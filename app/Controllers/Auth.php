@@ -44,6 +44,11 @@ class Auth extends BaseController
             return redirect()->back()->withInput()->with('error', 'Akun Anda nonaktif. Hubungi administrator untuk aktivasi.');
         }
 
+        if ((int) ($user['akses_web'] ?? 1) !== 1) {
+            $this->logLoginAttempt(false, 'no_web_access', $context, $user);
+            return redirect()->back()->withInput()->with('error', 'Akun Anda tidak memiliki akses ke platform Web.');
+        }
+
         session()->set([
             'isLoggedIn' => true,
             'userId'     => $user['id'],
