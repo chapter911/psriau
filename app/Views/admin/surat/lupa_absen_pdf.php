@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Surat Permohonan Izin / Pemberitahuan Lupa Absen</title>
+    <?php if (! empty($globalSetting['logo_url'] ?? '')): ?>
+        <link rel="icon" type="image/png" href="<?= esc(media_url((string) $globalSetting['logo_url'])); ?>">
+        <link rel="apple-touch-icon" href="<?= esc(media_url((string) $globalSetting['logo_url'])); ?>">
+    <?php endif; ?>
     <style>
         * {
             margin: 0;
