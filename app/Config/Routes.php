@@ -6,6 +6,7 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 $routes->get('/', 'Home::index');
+$routes->get('favicon.ico', 'Favicon::index');
 $routes->get('tentang-kami', 'About::index');
 
 $routes->get('acara', 'Events::index');
