@@ -238,20 +238,26 @@
     <!-- Tanda Tangan -->
     <table class="signature-section">
         <tr>
-            <td>
+            <td style="vertical-align: top;">
                 <div class="signature-date" style="visibility: hidden;">&nbsp;</div>
-                <div class="signature-title">Pegawai yang bersangkutan,</div>
-                <div class="signature-name"><?= esc($nama ?? ''); ?></div>
-                <div>NIP. <?= esc($nip ?? '........................'); ?></div>
+                <div class="signature-title" style="margin-bottom: 0;">Pegawai yang bersangkutan,</div>
             </td>
-            <td>
+            <td style="vertical-align: top;">
                 <div class="signature-date">
                     Pekanbaru, <?= formatTanggalIndonesia($tanggal_surat ?? date('Y-m-d')); ?>
                 </div>
-                <div class="signature-title">
+                <div class="signature-title" style="margin-bottom: 0;">
                     Disetujui/tidak disetujui *) oleh<br>
                     Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau
                 </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding-top: 70px; vertical-align: bottom;">
+                <div class="signature-name"><?= esc($nama ?? ''); ?></div>
+                <div>NIP. <?= esc($nip ?? '........................'); ?></div>
+            </td>
+            <td style="padding-top: 70px; vertical-align: bottom;">
                 <div class="signature-name">Muhammad Yudi Prasetya, ST</div>
                 <div>NIP. 198002142014121002</div>
             </td>
