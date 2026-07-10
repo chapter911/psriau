@@ -141,6 +141,7 @@ class LupaAbsen extends BaseController
             if (($canEdit || $canApprove) && $status === 'pending') {
                 $actions .= '<div class="d-flex justify-content-center align-items-center" style="gap: 5px; white-space: nowrap;">';
                 if ($canEdit) {
+                    $actions .= '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" data-id="' . (int) ($row['id'] ?? 0) . '" title="Edit"><i class="fas fa-edit"></i></button>';
                     $actions .= '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' . (int) ($row['id'] ?? 0) . '" title="Hapus"><i class="fas fa-trash"></i></button>';
                 }
                 if ($canApprove) {
@@ -237,6 +238,63 @@ class LupaAbsen extends BaseController
         }
 
         return redirect()->to(site_url('admin/surat/lupa-absen'))->with('success', 'Pengajuan lupa absen berhasil disimpan.');
+    }
+
+    public function ubah(int $id)
+    {
+        if (! $this->canAccess()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $model = new LupaAbsenModel();
+        $existing = $model->find($id);
+
+        if (! is_array($existing)) {
+            return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Data tidak ditemukan.');
+        }
+
+        if (($existing['status'] ?? '') !== 'pending') {
+            return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Data yang sudah diproses tidak dapat diubah.');
+        }
+
+        if (strtolower((string) $this->request->getMethod()) !== 'post') {
+            return redirect()->to(site_url('admin/surat/lupa-absen'));
+        }
+
+        $tanggalAbsen = trim((string) $this->request->getPost('tanggal_absen'));
+        $jenisAbsen = strtolower(trim((string) $this->request->getPost('jenis_absen')));
+        $alasanDetail = trim((string) $this->request->getPost('alasan_detail'));
+        $kopSuratId = (int) $this->request->getPost('kop_surat_id');
+
+        $errors = [];
+
+        if ($tanggalAbsen === '') {
+            $errors[] = 'Tanggal absen wajib diisi.';
+        }
+        if (! in_array($jenisAbsen, ['masuk', 'pulang'], true)) {
+            $errors[] = 'Jenis absen tidak valid.';
+        }
+        if ($alasanDetail === '') {
+            $errors[] = 'Alasan wajib diisi.';
+        }
+
+        if ($errors !== []) {
+            return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', implode(' ', $errors));
+        }
+
+        $data = [
+            'tanggal_absen' => $tanggalAbsen,
+            'jenis_absen' => $jenisAbsen,
+            'alasan_detail' => $alasanDetail,
+            'updated_at' => date('Y-m-d H:i:s'),
+            'kop_surat_id' => $kopSuratId > 0 ? $kopSuratId : null,
+        ];
+
+        if ($model->update($id, $data) === false) {
+            return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Gagal memperbarui data. Silakan coba lagi.');
+        }
+
+        return redirect()->to(site_url('admin/surat/lupa-absen'))->with('success', 'Pengajuan lupa absen berhasil diperbarui.');
     }
 
     public function pdf(int $id)

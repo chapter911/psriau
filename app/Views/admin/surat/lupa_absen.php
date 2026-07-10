@@ -175,11 +175,59 @@ function openCreateModal() {
     document.getElementById('formLupaAbsen').reset();
     document.getElementById('alasan_custom').style.display = 'none';
     document.getElementById('alasan_select').value = '';
+    
+    // Reset form action
+    var actionUrl = '<?= site_url('admin/surat/lupa-absen/buat'); ?>';
+    document.getElementById('formLupaAbsen').setAttribute('action', actionUrl);
+    
+    // Reset modal title
+    $('#modalLupaAbsen .modal-title').text('Ajukan Lupa Absen');
 
     // Set default date to today
     var today = new Date().toISOString().split('T')[0];
     document.getElementById('tanggal_absen').value = today;
 
+    // Show modal
+    $('#modalLupaAbsen').modal('show');
+}
+
+function openEditModal(data) {
+    // Reset form
+    document.getElementById('formLupaAbsen').reset();
+    
+    // Set form action
+    var actionUrl = '<?= site_url('admin/surat/lupa-absen'); ?>/' + data.id + '/ubah';
+    document.getElementById('formLupaAbsen').setAttribute('action', actionUrl);
+    
+    // Set modal title
+    $('#modalLupaAbsen .modal-title').text('Ubah Pengajuan Lupa Absen');
+    
+    // Populate fields
+    document.getElementById('tanggal_absen').value = data.tanggal_absen;
+    document.getElementById('jenis_absen').value = data.jenis_absen;
+    
+    if (document.getElementById('kop_surat_id')) {
+        document.getElementById('kop_surat_id').value = data.kop_surat_id || '';
+    }
+    
+    // Populate alasan
+    var alasan = data.alasan_detail;
+    var templates = ['Lupa Absen Masuk', 'Lupa Absen Pulang', 'Terlambat Masuk', 'Terlambat Pulang'];
+    var select = document.getElementById('alasan_select');
+    var customInput = document.getElementById('alasan_custom');
+    
+    if (templates.includes(alasan)) {
+        select.value = alasan;
+        customInput.value = alasan;
+        customInput.style.display = 'none';
+        customInput.required = false;
+    } else {
+        select.value = '__custom__';
+        customInput.value = alasan;
+        customInput.style.display = 'block';
+        customInput.required = true;
+    }
+    
     // Show modal
     $('#modalLupaAbsen').modal('show');
 }
@@ -259,6 +307,15 @@ $(document).ready(function() {
                 next: 'Berikutnya',
                 previous: 'Sebelumnya'
             }
+        }
+    });
+
+    // Edit button handler
+    $(document).on('click', '.btn-edit', function() {
+        var id = $(this).data('id');
+        var rowData = table.row($(this).closest('tr')).data();
+        if (rowData) {
+            openEditModal(rowData);
         }
     });
 
