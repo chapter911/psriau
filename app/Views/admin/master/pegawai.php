@@ -550,19 +550,27 @@
 
     // AJAX Form Submission and DataTable reloading
     function refreshTable() {
+        const tableElement = $('.js-datatable');
+        let currentPage = 0;
+        let currentSearch = '';
+        let currentOrder = [];
+
+        if ($.fn.DataTable.isDataTable(tableElement)) {
+            const dt = tableElement.DataTable();
+            currentPage = dt.page();
+            currentSearch = dt.search();
+            currentOrder = dt.order();
+            dt.destroy();
+        }
+
         $.ajax({
             url: '<?= site_url('/admin/master/pegawai'); ?>',
             method: 'GET',
             success: function (html) {
-                const tableElement = $('.js-datatable');
-                if ($.fn.DataTable.isDataTable(tableElement)) {
-                    tableElement.DataTable().destroy();
-                }
-
                 const newTableHtml = $(html).find('.js-datatable').html();
                 tableElement.html(newTableHtml);
 
-                tableElement.DataTable({
+                const newDt = tableElement.DataTable({
                     responsive: false,
                     autoWidth: false,
                     scrollX: true,
@@ -581,6 +589,15 @@
                         }
                     }
                 });
+
+                if (currentOrder && currentOrder.length > 0) {
+                    newDt.order(currentOrder);
+                }
+                if (currentSearch) {
+                    newDt.search(currentSearch);
+                }
+
+                newDt.page(currentPage).draw(false);
             },
             error: function () {
                 Swal.fire('Error', 'Gagal memuat ulang data tabel.', 'error');
