@@ -327,14 +327,35 @@ class Pegawai extends BaseController
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
         if ($forbidden instanceof RedirectResponse) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses ke menu ini.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return $forbidden;
         }
 
         if (! $this->isPegawaiTableReady()) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Tabel pegawai belum tersedia. Jalankan migration.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->with('error', 'Tabel pegawai belum tersedia. Jalankan migration.');
         }
 
         if (! $this->canManageMasterData()) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk menambah data pegawai.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->with('error', 'Anda tidak memiliki akses untuk menambah data pegawai.');
         }
 
@@ -358,12 +379,27 @@ class Pegawai extends BaseController
         if (! $this->validate($rules)) {
             $errors = $this->validator->getErrors();
             $errorMsg = 'Data pegawai belum valid: ' . implode(', ', $errors);
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => $errorMsg,
+                    'errors' => $errors,
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', $errorMsg);
         }
 
         $model = new MstPegawaiModel();
         $nip = trim((string) $this->request->getPost('nip'));
         if ($model->where('nip', $nip)->countAllResults() > 0) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'NIP sudah terdaftar.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'NIP sudah terdaftar.');
         }
 
@@ -372,10 +408,24 @@ class Pegawai extends BaseController
         $jabatanPerbendaharaanId = (int) ($this->request->getPost('jabatan_perbendaharaan_id') ?: 0);
 
         if (! isset($jabatanOptions['utama_lookup'][$jabatanUtamaId])) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Jabatan utama tidak valid.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'Jabatan utama tidak valid.');
         }
 
         if ($jabatanPerbendaharaanId > 0 && ! isset($jabatanOptions['perbendaharaan_lookup'][$jabatanPerbendaharaanId])) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Jabatan perbendaharaan tidak valid.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'Jabatan perbendaharaan tidak valid.');
         }
 
@@ -401,6 +451,14 @@ class Pegawai extends BaseController
             'updated_date' => $now,
         ]);
 
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Data pegawai berhasil ditambahkan.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
         return redirect()->to('/admin/master/pegawai')->with('message', 'Data pegawai berhasil ditambahkan.');
     }
 
@@ -408,14 +466,35 @@ class Pegawai extends BaseController
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
         if ($forbidden instanceof RedirectResponse) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses ke menu ini.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return $forbidden;
         }
 
         if (! $this->isPegawaiTableReady()) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Tabel pegawai belum tersedia.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->with('error', 'Tabel pegawai belum tersedia.');
         }
 
         if (! $this->canManageMasterData()) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk mengubah data pegawai.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->with('error', 'Anda tidak memiliki akses untuk mengubah data pegawai.');
         }
 
@@ -438,20 +517,41 @@ class Pegawai extends BaseController
 
         if (! $this->validate($rules)) {
             $errors = $this->validator->getErrors();
-            $postData = $this->request->getPost();
-            $errorMsg = 'Data pegawai belum valid: ' . implode(', ', $errors) . ' [Method: ' . $this->request->getMethod() . ', POST Keys: ' . implode(', ', array_keys($postData)) . ']';
+            $errorMsg = 'Data pegawai belum valid: ' . implode(', ', $errors);
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => $errorMsg,
+                    'errors' => $errors,
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', $errorMsg);
         }
 
         $model = new MstPegawaiModel();
         $existing = $model->find($id);
         if (! is_array($existing)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data pegawai tidak ditemukan.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->with('error', 'Data pegawai tidak ditemukan.');
         }
 
         $nip = trim((string) $this->request->getPost('nip'));
         $duplicate = $model->where('nip', $nip)->where('id !=', $id)->countAllResults();
         if ($duplicate > 0) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'NIP sudah digunakan oleh data lain.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'NIP sudah digunakan oleh data lain.');
         }
 
@@ -460,10 +560,24 @@ class Pegawai extends BaseController
         $jabatanPerbendaharaanId = (int) ($this->request->getPost('jabatan_perbendaharaan_id') ?: 0);
 
         if (! isset($jabatanOptions['utama_lookup'][$jabatanUtamaId])) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Jabatan utama tidak valid.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'Jabatan utama tidak valid.');
         }
 
         if ($jabatanPerbendaharaanId > 0 && ! isset($jabatanOptions['perbendaharaan_lookup'][$jabatanPerbendaharaanId])) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Jabatan perbendaharaan tidak valid.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'Jabatan perbendaharaan tidak valid.');
         }
 
@@ -484,6 +598,14 @@ class Pegawai extends BaseController
             'updated_date' => date('Y-m-d H:i:s'),
         ]);
 
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Data pegawai berhasil diperbarui.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
         return redirect()->to('/admin/master/pegawai')->with('message', 'Data pegawai berhasil diperbarui.');
     }
 
@@ -491,21 +613,49 @@ class Pegawai extends BaseController
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
         if ($forbidden instanceof RedirectResponse) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses ke menu ini.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return $forbidden;
         }
 
         if (! $this->canManageMasterData()) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk mengubah status pegawai.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->with('error', 'Anda tidak memiliki akses untuk mengubah status pegawai.');
         }
 
         $status = (int) $this->request->getPost('is_active');
         if (! in_array($status, [0, 1], true)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Status pegawai tidak valid.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->with('error', 'Status pegawai tidak valid.');
         }
 
         $model = new MstPegawaiModel();
         $existing = $model->find($id);
         if (! is_array($existing)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data pegawai tidak ditemukan.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/pegawai')->with('error', 'Data pegawai tidak ditemukan.');
         }
 
@@ -516,6 +666,14 @@ class Pegawai extends BaseController
         ]);
 
         $message = $status === 1 ? 'Pegawai berhasil diaktifkan.' : 'Pegawai berhasil dinonaktifkan.';
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => $message,
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
         return redirect()->to('/admin/master/pegawai')->with('message', $message);
     }
 

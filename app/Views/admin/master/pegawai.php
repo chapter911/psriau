@@ -125,7 +125,7 @@
                                     data-is_active="<?= esc((string) ($item['is_active'] ?? 1), 'attr'); ?>"
                                 >UBAH</button>
 
-                                <form action="<?= site_url('/admin/master/pegawai/' . (int) ($item['id'] ?? 0) . '/status'); ?>" method="post" class="d-inline-block" onsubmit="return confirm('Yakin ingin mengubah status pegawai ini?');">
+                                <form action="<?= site_url('/admin/master/pegawai/' . (int) ($item['id'] ?? 0) . '/status'); ?>" method="post" class="d-inline-block js-status-form" data-skip-confirm="1">
                                     <?= csrf_field(); ?>
                                     <input type="hidden" name="is_active" value="<?= $isActive ? '0' : '1'; ?>">
                                     <button type="submit" class="btn btn-sm <?= $isActive ? 'btn-secondary' : 'btn-success'; ?>">
@@ -189,7 +189,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="<?= site_url('/admin/master/pegawai/tambah'); ?>" method="post" enctype="multipart/form-data">
+            <form id="form-tambah-pegawai" action="<?= site_url('/admin/master/pegawai/tambah'); ?>" method="post" enctype="multipart/form-data" data-skip-confirm="1">
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <div class="form-row">
@@ -278,7 +278,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="form-ubah-pegawai" action="" method="post" enctype="multipart/form-data">
+            <form id="form-ubah-pegawai" action="" method="post" enctype="multipart/form-data" data-skip-confirm="1">
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <div class="form-row">
@@ -547,5 +547,136 @@
             fotoImage.src = '';
         });
     })();
+
+    // AJAX Form Submission and DataTable reloading
+    function refreshTable() {
+        $.ajax({
+            url: '<?= site_url('/admin/master/pegawai'); ?>',
+            method: 'GET',
+            success: function (html) {
+                const tableElement = $('.js-datatable');
+                if ($.fn.DataTable.isDataTable(tableElement)) {
+                    tableElement.DataTable().destroy();
+                }
+
+                const newTableHtml = $(html).find('.js-datatable').html();
+                tableElement.html(newTableHtml);
+
+                tableElement.DataTable({
+                    responsive: false,
+                    autoWidth: false,
+                    scrollX: true,
+                    scrollCollapse: true,
+                    language: {
+                        search: 'Cari:',
+                        lengthMenu: 'Tampilkan _MENU_ data',
+                        info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+                        infoEmpty: 'Tidak ada data',
+                        zeroRecords: 'Data tidak ditemukan',
+                        paginate: {
+                            first: 'Awal',
+                            last: 'Akhir',
+                            next: 'Berikutnya',
+                            previous: 'Sebelumnya'
+                        }
+                    }
+                });
+            },
+            error: function () {
+                Swal.fire('Error', 'Gagal memuat ulang data tabel.', 'error');
+            }
+        });
+    }
+
+    function submitFormAjax(form, modalSelector = null, isCreate = false) {
+        const submitBtn = $(form).find('button[type="submit"]');
+        const originalBtnText = submitBtn.html();
+        const formData = new FormData(form);
+
+        $.ajax({
+            url: $(form).attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'JSON',
+            beforeSend: function () {
+                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Menyimpan...');
+            },
+            success: function (response) {
+                submitBtn.prop('disabled', false).html(originalBtnText);
+
+                if (response.csrf_hash) {
+                    $('input[name="<?= csrf_token(); ?>"]').val(response.csrf_hash);
+                }
+
+                if (response.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: response.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+
+                    if (modalSelector) {
+                        $(modalSelector).modal('hide');
+                    }
+
+                    if (isCreate) {
+                        form.reset();
+                        $(form).find('.js-masa-kerja-input').val('');
+                    }
+
+                    refreshTable();
+                } else {
+                    Swal.fire('Gagal', response.message || 'Terjadi kesalahan.', 'error');
+                }
+            },
+            error: function (xhr) {
+                submitBtn.prop('disabled', false).html(originalBtnText);
+
+                if (xhr.responseJSON && xhr.responseJSON.csrf_hash) {
+                    $('input[name="<?= csrf_token(); ?>"]').val(xhr.responseJSON.csrf_hash);
+                }
+
+                const errorMsg = xhr.responseJSON && xhr.responseJSON.message 
+                    ? xhr.responseJSON.message 
+                    : 'Terjadi kesalahan sistem. Silakan coba lagi.';
+
+                Swal.fire('Error', errorMsg, 'error');
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        $('#form-tambah-pegawai').on('submit', function (e) {
+            e.preventDefault();
+            submitFormAjax(this, '#modal-tambah-pegawai', true);
+        });
+
+        $('#form-ubah-pegawai').on('submit', function (e) {
+            e.preventDefault();
+            submitFormAjax(this, '#modal-ubah-pegawai', false);
+        });
+
+        $(document).on('submit', '.js-status-form', function (e) {
+            e.preventDefault();
+            const form = this;
+            Swal.fire({
+                title: 'Konfirmasi',
+                text: 'Yakin ingin mengubah status pegawai ini?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Ubah',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitFormAjax(form, null, false);
+                }
+            });
+        });
+    });
 </script>
 <?= $this->endSection(); ?>
