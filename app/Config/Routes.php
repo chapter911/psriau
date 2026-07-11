@@ -69,6 +69,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('pengaturan/menus/(:segment)/ubah', 'Admin\\Setting::updateMenu/$1');
 	$routes->post('pengaturan/menus/(:segment)/icon', 'Admin\\Setting::updateMenuIcon/$1');
 	$routes->post('pengaturan/menus/(:segment)/hapus', 'Admin\\Setting::deleteMenu/$1');
+	$routes->get('pengaturan/api', 'ApiDocs::index');
 	$routes->get('utility/user', 'Admin\\Utility::user');
 	$routes->get('utility/user/list', 'Admin\\Utility::userList');
 	$routes->post('utility/user/tambah', 'Admin\\Utility::userCreate');
@@ -288,6 +289,9 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 });
 
 $routes->group('api', static function ($routes): void {
+    // API Documentation (Swagger UI)
+    $routes->get('docs', 'ApiDocs::index');
+
     // Public API Routes
     $routes->post('auth/login', 'Api\Auth::login');
 

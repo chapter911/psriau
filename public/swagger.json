@@ -1,0 +1,1126 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PSRiau API Documentation",
+    "description": "Dokumentasi API untuk aplikasi PSRiau. Menggunakan mekanisme autentikasi Bearer Token untuk endpoint yang dilindungi.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Server API saat ini"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Masukkan Access Token yang Anda dapatkan setelah melakukan login."
+      }
+    },
+    "schemas": {
+      "StandardResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "message": {
+            "type": "string",
+            "example": "Operasi berhasil dilakukan."
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "error"
+          },
+          "message": {
+            "type": "string",
+            "example": "Terjadi kesalahan atau parameter tidak valid."
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Login Pengguna",
+        "description": "Mengautentikasi pengguna menggunakan username dan password, serta menghasilkan token akses baru.",
+        "tags": [
+          "Autentikasi"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "description": "Username pengguna",
+                    "example": "pegawai.riau"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "description": "Password pengguna",
+                    "example": "password123"
+                  },
+                  "device_name": {
+                    "type": "string",
+                    "description": "Nama perangkat atau aplikasi klien",
+                    "default": "API Token",
+                    "example": "Aplikasi Mobile"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Login berhasil."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string",
+                          "example": "49557434a9b5f483c65c404663673c683b5840d2f0df7a4e69b2d86161474272"
+                        },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "integer",
+                              "example": 12
+                            },
+                            "username": {
+                              "type": "string",
+                              "example": "pegawai.riau"
+                            },
+                            "full_name": {
+                              "type": "string",
+                              "example": "Agung Kesuma"
+                            },
+                            "role": {
+                              "type": "string",
+                              "example": "admin"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parameter kurang atau tidak lengkap",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Username dan password wajib diisi."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kredensial login salah",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Kredensial login tidak valid."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Akun dinonaktifkan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Akun Anda nonaktif. Hubungi administrator untuk aktivasi."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/profile": {
+      "get": {
+        "summary": "Profil Pengguna",
+        "description": "Mendapatkan informasi detail akun dari pengguna yang saat ini terautentikasi.",
+        "tags": [
+          "Autentikasi"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Informasi profil berhasil didapatkan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "integer",
+                              "example": 12
+                            },
+                            "username": {
+                              "type": "string",
+                              "example": "pegawai.riau"
+                            },
+                            "full_name": {
+                              "type": "string",
+                              "example": "Agung Kesuma"
+                            },
+                            "role": {
+                              "type": "string",
+                              "example": "admin"
+                            },
+                            "is_active": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "created_at": {
+                              "type": "string",
+                              "format": "date-time",
+                              "example": "2026-04-20 10:00:00"
+                            },
+                            "updated_at": {
+                              "type": "string",
+                              "format": "date-time",
+                              "example": "2026-07-08 15:30:22"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Token otentikasi tidak valid."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Keluar / Revoke Token",
+        "description": "Mencabut/menghapus token akses aktif dari database sehingga tidak dapat digunakan kembali.",
+        "tags": [
+          "Autentikasi"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logout berhasil dilakukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Logout berhasil. Token telah dicabut."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rab-gedung/paket": {
+      "get": {
+        "summary": "Daftar Paket Aktif",
+        "description": "Mendapatkan daftar paket pekerjaan yang aktif dalam sistem.",
+        "tags": [
+          "RAB Gedung"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mendapatkan daftar paket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "example": 1
+                          },
+                          "nama_paket": {
+                            "type": "string",
+                            "example": "Pembangunan Gedung Kantor A"
+                          },
+                          "singkatan_paket": {
+                            "type": "string",
+                            "example": "GDG-KTR-A"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rab-gedung/sekolah": {
+      "get": {
+        "summary": "Daftar Sekolah",
+        "description": "Mendapatkan daftar sekolah yang terkait dengan RAB. Bisa difilter berdasarkan paket_id.",
+        "tags": [
+          "RAB Gedung"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "paket_id",
+            "in": "query",
+            "description": "ID Paket Pekerjaan untuk memfilter daftar sekolah",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mendapatkan daftar sekolah",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "npsn": {
+                            "type": "integer",
+                            "example": 10203040
+                          },
+                          "nama": {
+                            "type": "string",
+                            "example": "SDN 01 Pekanbaru"
+                          },
+                          "kabupaten": {
+                            "type": "string",
+                            "example": "KOTA PEKANBARU"
+                          },
+                          "kecamatan": {
+                            "type": "string",
+                            "example": "TAMPAN"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rab-gedung/pekerjaan": {
+      "get": {
+        "summary": "Daftar Pekerjaan Utama",
+        "description": "Mendapatkan daftar pekerjaan utama (distinct) untuk sekolah tertentu.",
+        "tags": [
+          "RAB Gedung"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sekolah_npsn",
+            "in": "query",
+            "description": "NPSN Sekolah yang bersangkutan",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "paket_id",
+            "in": "query",
+            "description": "ID Paket Pekerjaan untuk filter tambahan",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mendapatkan daftar pekerjaan utama",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": [
+                        "Pekerjaan Arsitektur",
+                        "Pekerjaan Struktur"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parameter wajib tidak diisi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Parameter sekolah_npsn wajib diisi."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rab-gedung/kategori": {
+      "get": {
+        "summary": "Daftar Kategori 1",
+        "description": "Mendapatkan daftar kategori tingkat pertama (distinct) berdasarkan sekolah dan pekerjaan utama.",
+        "tags": [
+          "RAB Gedung"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sekolah_npsn",
+            "in": "query",
+            "description": "NPSN Sekolah yang bersangkutan",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pekerjaan_utama",
+            "in": "query",
+            "description": "Nama pekerjaan utama",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paket_id",
+            "in": "query",
+            "description": "ID Paket Pekerjaan untuk filter tambahan",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mendapatkan daftar kategori 1",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": [
+                        "LANTAI 1",
+                        "LANTAI 2"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parameter wajib tidak diisi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Parameter sekolah_npsn dan pekerjaan_utama wajib diisi."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rab-gedung/subkategori": {
+      "get": {
+        "summary": "Daftar Kategori 2 (Subkategori)",
+        "description": "Mendapatkan daftar kategori tingkat kedua (distinct) berdasarkan sekolah, pekerjaan utama, dan kategori 1.",
+        "tags": [
+          "RAB Gedung"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sekolah_npsn",
+            "in": "query",
+            "description": "NPSN Sekolah yang bersangkutan",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pekerjaan_utama",
+            "in": "query",
+            "description": "Nama pekerjaan utama",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kategori_1",
+            "in": "query",
+            "description": "Nama kategori 1",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paket_id",
+            "in": "query",
+            "description": "ID Paket Pekerjaan untuk filter tambahan",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mendapatkan daftar subkategori",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": [
+                        "Pekerjaan Dinding",
+                        "Pekerjaan Kusen"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parameter wajib tidak diisi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Parameter sekolah_npsn, pekerjaan_utama, dan kategori_1 wajib diisi."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rab-gedung/uraian": {
+      "get": {
+        "summary": "Daftar Uraian Pekerjaan Detail",
+        "description": "Mendapatkan daftar uraian pekerjaan detail beserta nilai volume, harga satuan, bobot, dan prestasi kerja yang memiliki volume MC-0 > 0.",
+        "tags": [
+          "RAB Gedung"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sekolah_npsn",
+            "in": "query",
+            "description": "NPSN Sekolah yang bersangkutan",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pekerjaan_utama",
+            "in": "query",
+            "description": "Nama pekerjaan utama",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kategori_1",
+            "in": "query",
+            "description": "Nama kategori 1",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kategori_2",
+            "in": "query",
+            "description": "Nama kategori 2 (Subkategori)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paket_id",
+            "in": "query",
+            "description": "ID Paket Pekerjaan untuk filter tambahan",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mendapatkan detail uraian pekerjaan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "example": 523
+                          },
+                          "no_urut": {
+                            "type": "string",
+                            "example": "1.a"
+                          },
+                          "uraian": {
+                            "type": "string",
+                            "example": "Pemasangan Bata Merah"
+                          },
+                          "satuan": {
+                            "type": "string",
+                            "example": "m2"
+                          },
+                          "kontrak_volume": {
+                            "type": "number",
+                            "example": 120.5
+                          },
+                          "kontrak_harga_satuan": {
+                            "type": "number",
+                            "example": 125000
+                          },
+                          "kontrak_jumlah_harga": {
+                            "type": "number",
+                            "example": 15062500
+                          },
+                          "mc_nol_volume": {
+                            "type": "number",
+                            "example": 120.5
+                          },
+                          "mc_nol_jumlah_harga": {
+                            "type": "number",
+                            "example": 15062500
+                          },
+                          "tambah_volume": {
+                            "type": "number",
+                            "example": 0
+                          },
+                          "tambah_jumlah_harga": {
+                            "type": "number",
+                            "example": 0
+                          },
+                          "kurang_volume": {
+                            "type": "number",
+                            "example": 0
+                          },
+                          "kurang_jumlah_harga": {
+                            "type": "number",
+                            "example": 0
+                          },
+                          "bobot_persen": {
+                            "type": "number",
+                            "example": 1.25
+                          },
+                          "prestasi_persen": {
+                            "type": "number",
+                            "example": 100
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parameter wajib tidak diisi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Parameter sekolah_npsn, pekerjaan_utama, kategori_1, dan kategori_2 wajib diisi."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rab-gedung/all": {
+      "get": {
+        "summary": "Unduh Semua Data RAB Gedung",
+        "description": "Mendapatkan semua data sekolah dan detail pekerjaan RAB untuk paket pekerjaan tertentu.",
+        "tags": [
+          "RAB Gedung"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "paket_id",
+            "in": "query",
+            "description": "ID Paket Pekerjaan yang ingin diunduh",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mendapatkan seluruh data paket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "paket": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "nama_paket": {
+                              "type": "string",
+                              "example": "Pembangunan Gedung Kantor A"
+                            },
+                            "singkatan_paket": {
+                              "type": "string",
+                              "example": "GDG-KTR-A"
+                            }
+                          }
+                        },
+                        "sekolah": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "npsn": {
+                                "type": "integer",
+                                "example": 10203040
+                              },
+                              "nama": {
+                                "type": "string",
+                                "example": "SDN 01 Pekanbaru"
+                              },
+                              "kabupaten": {
+                                "type": "string",
+                                "example": "KOTA PEKANBARU"
+                              },
+                              "kecamatan": {
+                                "type": "string",
+                                "example": "TAMPAN"
+                              }
+                            }
+                          }
+                        },
+                        "detail": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "example": 523
+                              },
+                              "sekolah_npsn": {
+                                "type": "integer",
+                                "example": 10203040
+                              },
+                              "pekerjaan_utama": {
+                                "type": "string",
+                                "example": "Pekerjaan Arsitektur"
+                              },
+                              "gedung": {
+                                "type": "string",
+                                "example": "Ruang Kelas Baru"
+                              },
+                              "kategori_1": {
+                                "type": "string",
+                                "example": "LANTAI 1"
+                              },
+                              "kategori_2": {
+                                "type": "string",
+                                "example": "Pekerjaan Dinding"
+                              },
+                              "no_urut": {
+                                "type": "string",
+                                "example": "1.a"
+                              },
+                              "uraian": {
+                                "type": "string",
+                                "example": "Pemasangan Bata Merah"
+                              },
+                              "satuan": {
+                                "type": "string",
+                                "example": "m2"
+                              },
+                              "kontrak_volume": {
+                                "type": "number",
+                                "example": 120.5
+                              },
+                              "kontrak_harga_satuan": {
+                                "type": "number",
+                                "example": 125000
+                              },
+                              "kontrak_jumlah_harga": {
+                                "type": "number",
+                                "example": 15062500
+                              },
+                              "mc_nol_volume": {
+                                "type": "number",
+                                "example": 120.5
+                              },
+                              "mc_nol_jumlah_harga": {
+                                "type": "number",
+                                "example": 15062500
+                              },
+                              "tambah_volume": {
+                                "type": "number",
+                                "example": 0
+                              },
+                              "tambah_jumlah_harga": {
+                                "type": "number",
+                                "example": 0
+                              },
+                              "kurang_volume": {
+                                "type": "number",
+                                "example": 0
+                              },
+                              "kurang_jumlah_harga": {
+                                "type": "number",
+                                "example": 0
+                              },
+                              "bobot_persen": {
+                                "type": "number",
+                                "example": 1.25
+                              },
+                              "prestasi_persen": {
+                                "type": "number",
+                                "example": 100
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parameter wajib tidak diisi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Parameter paket_id wajib diisi."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Paket tidak ditemukan atau nonaktif",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Paket tidak ditemukan atau nonaktif."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
