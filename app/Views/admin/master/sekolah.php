@@ -650,17 +650,12 @@
         });
     })();
 
-    // Event delegation for filter dropdowns change to trigger AJAX filter updates
-    document.addEventListener('change', function(event) {
-        const select = event.target.closest('.js-filter-select');
-        if (!select) {
-            return;
-        }
-
-        if (select.id === 'filter_kabupaten') {
+    // jQuery Event delegation for filter dropdowns change to trigger AJAX filter updates
+    $(document).on('change', '.js-filter-select', function() {
+        if (this.id === 'filter_kabupaten') {
             const filterKecamatan = document.getElementById('filter_kecamatan');
             if (filterKecamatan) {
-                filterKecamatan.value = '*';
+                $(filterKecamatan).val('*');
             }
         }
 
@@ -722,6 +717,13 @@
             success: function (html) {
                 const newTableHtml = $(html).find('.js-datatable').html();
                 tableElement.html(newTableHtml);
+
+                // Destroy old select2 elements inside filter-form before replacing HTML
+                $('#filter-form').find('.js-filter-select').each(function() {
+                    if ($(this).data('select2')) {
+                        $(this).select2('destroy');
+                    }
+                });
 
                 const newFormHtml = $(html).find('#filter-form').html();
                 if (newFormHtml) {
