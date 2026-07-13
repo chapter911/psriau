@@ -1135,6 +1135,42 @@
         try {
             await loadExportLibraries();
 
+            // Compute dynamic 2-column legend content
+            const maxVisible = 14;
+            const showCount = Math.min(activeMarkers.length, maxVisible);
+            const half = Math.ceil(showCount / 2);
+            
+            let col1Html = '';
+            let col2Html = '';
+            
+            for (let i = 0; i < showCount; i++) {
+                const item = activeMarkers[i];
+                const color = getMarkerColor(item.survey_klasifikasi_kerusakan);
+                const itemHtml = `
+                    <div style="display: flex; align-items: center; font-size: 8.5px; margin-bottom: 2px;">
+                        <span style="display: inline-block; width: 14px; height: 14px; background-color: ${color}; border-radius: 50%; border: 1px solid white; color: white; font-family: Arial; font-size: 7.5px; font-weight: bold; text-align: center; line-height: 12px; margin-right: 5px; flex-shrink: 0;">
+                            ${i + 1}
+                        </span>
+                        <div style="font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 145px;" title="${item.nama}">${item.nama}</div>
+                    </div>
+                `;
+                if (i < half) {
+                    col1Html += itemHtml;
+                } else {
+                    col2Html += itemHtml;
+                }
+            }
+            
+            if (activeMarkers.length > maxVisible) {
+                col2Html += `
+                    <div style="font-size: 8px; font-style: italic; color: #555; font-weight: bold; margin-top: 2px; padding-left: 20px;">
+                        ... dan ${activeMarkers.length - maxVisible} lainnya
+                    </div>
+                `;
+            } else if (activeMarkers.length === 0) {
+                col1Html = '<div style="font-size: 9px; font-style: italic; color: #666;">Tidak ada data sekolah</div>';
+            }
+
             // Create temporary map container in hidden area
             const exportContainer = document.createElement('div');
             exportContainer.id = 'temp-export-container';
@@ -1210,32 +1246,13 @@
                         <!-- Legend -->
                         <div style="border: 1px solid black; padding: 12px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box;">
                             <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
-                            <div style="display: flex; flex-direction: column; gap: 5px; max-height: 170px; overflow: hidden;">
-                                ${(() => {
-                                    if (!activeMarkers || activeMarkers.length === 0) {
-                                        return '<div style="font-size: 9px; font-style: italic; color: #666;">Tidak ada data sekolah</div>';
-                                    }
-                                    const maxVisible = 7;
-                                    let html = '';
-                                    for (let i = 0; i < Math.min(activeMarkers.length, maxVisible); i++) {
-                                        const item = activeMarkers[i];
-                                        const color = getMarkerColor(item.survey_klasifikasi_kerusakan);
-                                        html += `
-                                            <div style="display: flex; align-items: center; font-size: 9px;">
-                                                <span style="display: inline-block; width: 10px; height: 10px; background-color: ${color}; border-radius: 50%; margin-right: 8px; border: 1px solid white; flex-shrink: 0;"></span>
-                                                <div style="font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;" title="${item.nama}">${item.nama}</div>
-                                            </div>
-                                        `;
-                                    }
-                                    if (activeMarkers.length > maxVisible) {
-                                        html += `
-                                            <div style="font-size: 8px; font-style: italic; color: #555; font-weight: bold; margin-top: 2px; padding-left: 18px;">
-                                                ... dan ${activeMarkers.length - maxVisible} sekolah lainnya
-                                            </div>
-                                        `;
-                                    }
-                                    return html;
-                                })()}
+                            <div style="display: flex; justify-content: space-between; gap: 10px;">
+                                <div style="width: 49%; display: flex; flex-direction: column; gap: 5px;">
+                                    ${col1Html}
+                                </div>
+                                <div style="width: 49%; display: flex; flex-direction: column; gap: 5px;">
+                                    ${col2Html}
+                                </div>
                             </div>
                         </div>
 
@@ -1313,16 +1330,16 @@
             // Copy markers (using L.divIcon for html2canvas compatibility)
             const tempMarkerLayer = L.layerGroup().addTo(exportMap);
             const bounds = [];
-            activeMarkers.forEach((item) => {
+            activeMarkers.forEach((item, i) => {
                 const lat = Number(item.latitude);
                 const lng = Number(item.longitude);
                 if (Number.isFinite(lat) && Number.isFinite(lng)) {
                     L.marker([lat, lng], {
                         icon: L.divIcon({
                             className: 'custom-export-pin',
-                            html: `<div style="width: 14px; height: 14px; background-color: ${getMarkerColor(item.survey_klasifikasi_kerusakan)}; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.6);"></div>`,
-                            iconSize: [14, 14],
-                            iconAnchor: [7, 7]
+                            html: `<div style="width: 20px; height: 20px; background-color: ${getMarkerColor(item.survey_klasifikasi_kerusakan)}; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; color: white; font-family: Arial; font-size: 10px; font-weight: bold;">${i + 1}</div>`,
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
                         })
                     }).addTo(tempMarkerLayer);
                     bounds.push([lat, lng]);
