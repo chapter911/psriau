@@ -1061,12 +1061,14 @@
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Peta_Lahan_${schoolName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+            
+            const blobUrl = pdf.output('bloburl');
+            window.open(blobUrl, '_blank');
 
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil',
-                text: 'Peta topografi berhasil diexport ke PDF.',
+                text: 'Peta berhasil dibuka di tab baru.',
                 timer: 2000,
                 showConfirmButton: false
             });
@@ -1357,12 +1359,14 @@
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Peta_Sebaran_Sekolah_Rakyat_Riau.pdf`);
+            
+            const blobUrl = pdf.output('bloburl');
+            window.open(blobUrl, '_blank');
 
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil',
-                text: 'Peta sebaran berhasil diexport ke PDF.',
+                text: 'Peta sebaran berhasil dibuka di tab baru.',
                 timer: 2000,
                 showConfirmButton: false
             });
