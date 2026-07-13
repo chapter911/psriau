@@ -24,15 +24,64 @@ class MasterSekolah extends BaseController
         }
 
         $db = db_connect();
-        $items = $db->table('mst_sekolah s')
+        $builder = $db->table('mst_sekolah s')
             ->select('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude, s.paket_id, mp.nama_paket AS paket_names')
-            ->join('mst_paket mp', 'mp.id = s.paket_id', 'left')
-            ->orderBy('s.nama', 'ASC')
+            ->join('mst_paket mp', 'mp.id = s.paket_id', 'left');
+
+        // Apply filters
+        $filterPaketId = $this->request->getGet('paket_id');
+        if ($filterPaketId !== null && $filterPaketId !== '' && $filterPaketId !== '*') {
+            $builder->where('s.paket_id', (int)$filterPaketId);
+        }
+
+        $filterKabupaten = $this->request->getGet('kabupaten');
+        if ($filterKabupaten !== null && $filterKabupaten !== '' && $filterKabupaten !== '*') {
+            $builder->where('s.kabupaten', $filterKabupaten);
+        }
+
+        $filterKecamatan = $this->request->getGet('kecamatan');
+        if ($filterKecamatan !== null && $filterKecamatan !== '' && $filterKecamatan !== '*') {
+            $builder->where('s.kecamatan', $filterKecamatan);
+        }
+
+        $items = $builder->orderBy('s.nama', 'ASC')
             ->get()
             ->getResultArray();
 
         $paketModel = new MstPaketModel();
         $pakets = $paketModel->where('is_active', 1)->orderBy('nama_paket', 'ASC')->findAll();
+
+        // Get unique kabupaten and kecamatan from mst_sekolah for dropdown options
+        $kabupatensRows = $db->table('mst_sekolah')
+            ->select('kabupaten')
+            ->where('kabupaten IS NOT NULL', null, false)
+            ->where('kabupaten !=', '')
+            ->groupBy('kabupaten')
+            ->orderBy('kabupaten', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $kecamatansRows = [];
+        if ($filterKabupaten !== null && $filterKabupaten !== '' && $filterKabupaten !== '*') {
+            $kecamatansRows = $db->table('mst_sekolah')
+                ->select('kecamatan')
+                ->where('kabupaten', $filterKabupaten)
+                ->where('kecamatan IS NOT NULL', null, false)
+                ->where('kecamatan !=', '')
+                ->groupBy('kecamatan')
+                ->orderBy('kecamatan', 'ASC')
+                ->get()
+                ->getResultArray();
+        } else {
+            $kecamatansRows = $db->table('mst_sekolah')
+                ->select('kecamatan')
+                ->where('kecamatan IS NOT NULL', null, false)
+                ->where('kecamatan !=', '')
+                ->groupBy('kecamatan')
+                ->orderBy('kecamatan', 'ASC')
+                ->get()
+                ->getResultArray();
+        }
 
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
         $mapTypes = $this->getMapTypes();
@@ -45,6 +94,11 @@ class MasterSekolah extends BaseController
             'mapTypes' => $mapTypes,
             'mapDefaultId' => (int) ($mapTypes[0]['id'] ?? 1),
             'pakets' => $pakets,
+            'kabupatens' => array_column($kabupatensRows, 'kabupaten'),
+            'kecamatans' => array_column($kecamatansRows, 'kecamatan'),
+            'filter_paket_id' => $filterPaketId,
+            'filter_kabupaten' => $filterKabupaten,
+            'filter_kecamatan' => $filterKecamatan,
             'can_add' => $canManage && (bool) ($menuPermissions['add'] ?? false),
             'can_edit' => $canManage && (bool) ($menuPermissions['edit'] ?? false),
             'can_export' => (bool) ($menuPermissions['export'] ?? false),
@@ -64,10 +118,27 @@ class MasterSekolah extends BaseController
         }
 
         $db = db_connect();
-        $items = $db->table('mst_sekolah s')
+        $builder = $db->table('mst_sekolah s')
             ->select('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude, mp.nama_paket AS paket_names')
-            ->join('mst_paket mp', 'mp.id = s.paket_id', 'left')
-            ->orderBy('s.nama', 'ASC')
+            ->join('mst_paket mp', 'mp.id = s.paket_id', 'left');
+
+        // Apply filters
+        $filterPaketId = $this->request->getGet('paket_id');
+        if ($filterPaketId !== null && $filterPaketId !== '' && $filterPaketId !== '*') {
+            $builder->where('s.paket_id', (int)$filterPaketId);
+        }
+
+        $filterKabupaten = $this->request->getGet('kabupaten');
+        if ($filterKabupaten !== null && $filterKabupaten !== '' && $filterKabupaten !== '*') {
+            $builder->where('s.kabupaten', $filterKabupaten);
+        }
+
+        $filterKecamatan = $this->request->getGet('kecamatan');
+        if ($filterKecamatan !== null && $filterKecamatan !== '' && $filterKecamatan !== '*') {
+            $builder->where('s.kecamatan', $filterKecamatan);
+        }
+
+        $items = $builder->orderBy('s.nama', 'ASC')
             ->get()
             ->getResultArray();
 
