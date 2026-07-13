@@ -1071,9 +1071,30 @@
                 zoomAnimation: false
             }).setView([-0.51544, 101.44415], 6);
 
-            L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
                 maxZoom: 20
             }).addTo(insetMap);
+
+            // Draw Riau boundaries on the inset map
+            fetch('<?= esc(media_url('geojson/provinsi_riau.json')); ?>')
+                .then(res => res.json())
+                .then(geojson => {
+                    if (geojson && Array.isArray(geojson.features)) {
+                        const features = geojson.features.filter(f => {
+                            const props = f && f.properties ? f.properties : {};
+                            return String(props.WADMPR || '').trim().toLowerCase() === 'riau';
+                        });
+                        L.geoJSON({ type: 'FeatureCollection', features: features.length > 0 ? features : geojson.features }, {
+                            style: {
+                                color: 'red',
+                                weight: 1.5,
+                                fillColor: 'red',
+                                fillOpacity: 0.25
+                            }
+                        }).addTo(insetMap);
+                    }
+                })
+                .catch(err => console.error(err));
 
             // Draw a red circle marker for the school location
             L.circleMarker([lat, lng], {
