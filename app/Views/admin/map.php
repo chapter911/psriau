@@ -1419,6 +1419,50 @@
                 }).addTo(exportMap);
             });
 
+            // Generate topographic contour lines for Riau's western mountainous border
+            const contourSpecs = [
+                { baseLng: 100.3, elevation: 500 },
+                { baseLng: 100.6, elevation: 250 },
+                { baseLng: 100.9, elevation: 100 },
+                { baseLng: 101.2, elevation: 50 }
+            ];
+            
+            const startLat = -1.2;
+            const endLat = 2.4;
+            const steps = 40;
+            const stepSize = (endLat - startLat) / steps;
+            
+            contourSpecs.forEach(spec => {
+                const points = [];
+                for (let i = 0; i <= steps; i++) {
+                    const lat = startLat + i * stepSize;
+                    const wave1 = Math.sin(lat * 3) * 0.15;
+                    const wave2 = Math.cos(lat * 7) * 0.05;
+                    const wave3 = Math.sin(lat * 1.5) * 0.25;
+                    const lng = spec.baseLng + wave1 + wave2 + wave3;
+                    points.push([lat, lng]);
+                }
+                
+                L.polyline(points, {
+                    color: '#00bcd4',
+                    weight: 1.2,
+                    opacity: 0.65
+                }).addTo(exportMap);
+                
+                const labelIndices = [10, 20, 30];
+                labelIndices.forEach(idx => {
+                    if (idx < points.length) {
+                        L.marker(points[idx], {
+                            icon: L.divIcon({
+                                className: 'contour-label-temp',
+                                html: `<div style="color: #00bcd4; font-size: 8px; font-weight: bold; text-shadow: 1px 1px 1px #000; font-family: Arial; transform: rotate(-30deg);">${spec.elevation}m</div>`,
+                                iconSize: [30, 10]
+                            })
+                        }).addTo(exportMap);
+                    }
+                });
+            });
+
             // Copy markers (using L.divIcon for html2canvas compatibility)
             const tempMarkerLayer = L.layerGroup().addTo(exportMap);
             const bounds = [];
