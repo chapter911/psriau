@@ -69,6 +69,11 @@
 <div class="card map-page-card">
     <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
         <h3 class="card-title mb-0">Peta Sebaran Sekolah</h3>
+        <div>
+            <button class="btn btn-danger btn-sm" type="button" id="exportMapPdfBtnMain">
+                <i class="fas fa-file-pdf mr-1"></i> Export Peta A3
+            </button>
+        </div>
     </div>
     <div class="card-body">
         <div class="map-filter-grid">
@@ -1078,6 +1083,204 @@
 
             exportMapPdf(lat, lng, nama, kabupaten, kecamatan);
         });
+    }
+
+    async function exportMainMapPdf() {
+        Swal.fire({
+            title: 'Mohon Tunggu',
+            text: 'Menyiapkan layout peta sebaran...',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => Swal.showLoading(),
+        });
+
+        try {
+            await loadExportLibraries();
+
+            // Create temporary map container in hidden area
+            const exportContainer = document.createElement('div');
+            exportContainer.id = 'temp-export-container';
+            exportContainer.style.position = 'fixed';
+            exportContainer.style.left = '-9999px';
+            exportContainer.style.top = '-9999px';
+            exportContainer.style.width = '1587px';
+            exportContainer.style.height = '1123px';
+            exportContainer.style.background = 'white';
+            exportContainer.style.padding = '20px';
+            exportContainer.style.boxSizing = 'border-box';
+            exportContainer.style.display = 'flex';
+            exportContainer.style.flexDirection = 'column';
+            exportContainer.style.justifyContent = 'space-between';
+            exportContainer.style.border = '4px double black';
+            exportContainer.style.zIndex = '-9999';
+            
+            // Build interior HTML
+            exportContainer.innerHTML = `
+                <div style="text-align: center; border: 2px solid black; padding: 10px; margin-bottom: 10px; font-weight: bold; font-size: 24px; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase;">
+                    PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU
+                </div>
+                <div style="display: flex; justify-content: space-between; height: 1010px; font-family: Arial, sans-serif;">
+                    <!-- Left: Map Container -->
+                    <div id="export-map-canvas" style="width: 1150px; height: 1010px; border: 2px solid black; position: relative; background: #eaeaea;"></div>
+                    
+                    <!-- Right: Panel -->
+                    <div style="width: 380px; height: 1010px; border: 2px solid black; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; box-sizing: border-box; background: white;">
+                        
+                        <!-- Ministry logo and header -->
+                        <div style="border: 1px solid black; padding: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; box-sizing: border-box;">
+                            <img src="https://riau.pu.go.id/images/logo.png" style="height: 50px; margin-bottom: 8px;" onerror="this.src='https://riau.pu.go.id/images/logo.png';">
+                            <div style="font-weight: bold; font-size: 11px; line-height: 1.2;">KEMENTERIAN PEKERJAAN UMUM</div>
+                            <div style="font-size: 9px; font-weight: bold; margin-top: 4px; line-height: 1.2; text-transform: uppercase;">DIREKTORAT JENDERAL PRASARANA STRATEGIS</div>
+                            <div style="font-size: 8px; color: #555; margin-top: 2px; line-height: 1.2; text-transform: uppercase;">SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU</div>
+                        </div>
+                        
+                        <!-- Compass and Scale -->
+                        <div style="border: 1px solid black; padding: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 180px; box-sizing: border-box; margin-top: 10px;">
+                            <svg width="60" height="60" viewBox="0 0 100 100" style="margin-bottom: 8px;">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="black" stroke-width="2"/>
+                                <line x1="50" y1="5" x2="50" y2="95" stroke="black" stroke-dasharray="2,2"/>
+                                <line x1="5" y1="50" x2="95" y2="50" stroke="black" stroke-dasharray="2,2"/>
+                                <polygon points="50,10 57,45 50,40 43,45" fill="black" stroke="black"/>
+                                <polygon points="50,90 57,55 50,60 43,55" fill="grey" stroke="black"/>
+                                <text x="50" y="8" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">N</text>
+                                <text x="92" y="53" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">E</text>
+                                <text x="50" y="98" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">S</text>
+                                <text x="8" y="53" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">W</text>
+                            </svg>
+                            <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">SKALA KABUPATEN/PROVINSI</div>
+                            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                                <div style="display: flex; justify-content: space-between; width: 150px; font-size: 9px; font-weight: bold;">
+                                    <span>20</span>
+                                    <span>10</span>
+                                    <span>0</span>
+                                    <span>20 KM</span>
+                                </div>
+                                <div style="width: 150px; height: 10px; border: 1px solid black; display: flex; overflow: hidden; margin-top: 2px;">
+                                    <div style="width: 25%; background: black;"></div>
+                                    <div style="width: 25%; background: white;"></div>
+                                    <div style="width: 25%; background: black;"></div>
+                                    <div style="width: 25%; background: white;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Legend -->
+                        <div style="border: 1px solid black; padding: 12px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box;">
+                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; align-items: center; font-size: 10px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background-color: #dc3545; border-radius: 50%; margin-right: 10px; border: 1px solid white;"></span>
+                                    <div style="font-weight: bold;">RUSAK BERAT</div>
+                                </div>
+                                <div style="display: flex; align-items: center; font-size: 10px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background-color: #ffc107; border-radius: 50%; margin-right: 10px; border: 1px solid white;"></span>
+                                    <div style="font-weight: bold;">RUSAK SEDANG</div>
+                                </div>
+                                <div style="display: flex; align-items: center; font-size: 10px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background-color: #28a745; border-radius: 50%; margin-right: 10px; border: 1px solid white;"></span>
+                                    <div style="font-weight: bold;">RUSAK RINGAN</div>
+                                </div>
+                                <div style="display: flex; align-items: center; font-size: 10px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background-color: #007bff; border-radius: 50%; margin-right: 10px; border: 1px solid white;"></span>
+                                    <div style="font-weight: bold;">BELUM KLASIFIKASI</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Inset Map -->
+                        <div style="border: 1px solid black; padding: 5px; margin-top: 10px; text-align: center; height: 190px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f0f8ff; overflow: hidden;">
+                            <svg width="220" height="150" viewBox="0 0 200 150">
+                                <rect width="200" height="150" fill="#a4c2f4" rx="3"/>
+                                <path d="M10,20 L35,10 L70,30 L100,50 L140,80 L180,120 L190,140 L160,145 L130,130 L100,105 L70,80 L40,60 L20,45 Z" fill="#b6d7a8" stroke="#888" stroke-width="1"/>
+                                <path d="M80,60 L105,55 L125,70 L115,85 L90,80 L75,70 Z" fill="red" stroke="darkred" stroke-width="1.5"/>
+                                <text x="100" y="75" font-family="Arial" font-size="10" font-weight="bold" fill="white" text-anchor="middle">RIAU</text>
+                                <text x="30" y="125" font-family="Arial" font-size="7" fill="#555" transform="rotate(-15 30 125)">Samudera Hindia</text>
+                                <text x="135" y="35" font-family="Arial" font-size="7" fill="#555">Semenanjung Malaya</text>
+                            </svg>
+                            <div style="font-size: 8px; font-weight: bold; margin-top: 3px; text-transform: uppercase;">Peta Indeks Provinsi Riau</div>
+                        </div>
+
+                        <!-- Signatures -->
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 8px; height: 120px; box-sizing: border-box;">
+                            <div style="border: 1px solid black; width: 48%; padding: 8px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; text-align: center;">
+                                <div style="font-weight: bold; border-bottom: 1px solid black; padding-bottom: 2px; margin-bottom: 4px; text-transform: uppercase;">Divalidasi Oleh:</div>
+                                <div style="font-size: 7px; color: #444; font-weight: bold;">KEPALA SATKER PPS RIAU</div>
+                                <div style="font-weight: bold; margin-top: 25px; text-decoration: underline; font-size: 8px;">MUHAMMAD YUDI PRASETYA, S.T.</div>
+                            </div>
+                            <div style="border: 1px solid black; width: 48%; padding: 8px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; text-align: center;">
+                                <div style="font-weight: bold; border-bottom: 1px solid black; padding-bottom: 2px; margin-bottom: 4px; text-transform: uppercase;">Dibuat Oleh:</div>
+                                <div style="font-size: 7px; color: #444; font-weight: bold;">STAF SATKER PPS RIAU</div>
+                                <div style="font-weight: bold; margin-top: 25px; text-decoration: underline; font-size: 8px;">MUHAMMAD SYAHRIDWAN, S.T.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(exportContainer);
+
+            // Wait 100ms
+            await new Promise(r => setTimeout(r, 100));
+
+            // Capture the active dashboard map
+            const mapCanvas = await html2canvas(document.getElementById('dashboardMapBox'), {
+                useCORS: true,
+                allowTaint: true,
+                scale: 1.5
+            });
+
+            // Replace in template
+            const mapImg = document.createElement('img');
+            mapImg.src = mapCanvas.toDataURL('image/jpeg');
+            mapImg.style.width = '100%';
+            mapImg.style.height = '100%';
+            
+            const mapCanvasEl = document.getElementById('export-map-canvas');
+            mapCanvasEl.innerHTML = '';
+            mapCanvasEl.appendChild(mapImg);
+
+            // Capture entire layout container
+            const layoutCanvas = await html2canvas(exportContainer, {
+                useCORS: true,
+                allowTaint: true,
+                scale: 2
+            });
+
+            // Generate PDF
+            const imgData = layoutCanvas.toDataURL('image/jpeg', 0.95);
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: 'a3'
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Peta_Sebaran_Sekolah_Rakyat_Riau.pdf`);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Peta sebaran berhasil diexport ke PDF.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'Gagal mengeksport peta: ' + error.message, 'error');
+        } finally {
+            // Clean up DOM
+            const el = document.getElementById('temp-export-container');
+            if (el) el.remove();
+        }
+    }
+
+    const exportBtnMain = document.getElementById('exportMapPdfBtnMain');
+    if (exportBtnMain) {
+        exportBtnMain.addEventListener('click', exportMainMapPdf);
     }
 
     applyMapScript(mapScript);

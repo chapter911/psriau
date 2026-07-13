@@ -103,6 +103,18 @@
                                     data-kabupaten="<?= esc((string) ($item['kabupaten'] ?? ''), 'attr'); ?>"
                                     data-kecamatan="<?= esc((string) ($item['kecamatan'] ?? ''), 'attr'); ?>"
                                 >Lihat Peta</button>
+                                <button
+                                    type="button"
+                                    class="btn btn-danger btn-sm js-export-map-direct"
+                                    data-nama="<?= esc((string) ($item['nama'] ?? ''), 'attr'); ?>"
+                                    data-npsn="<?= esc((string) ($item['npsn'] ?? ''), 'attr'); ?>"
+                                    data-latitude="<?= esc($latitude, 'attr'); ?>"
+                                    data-longitude="<?= esc($longitude, 'attr'); ?>"
+                                    data-kabupaten="<?= esc((string) ($item['kabupaten'] ?? ''), 'attr'); ?>"
+                                    data-kecamatan="<?= esc((string) ($item['kecamatan'] ?? ''), 'attr'); ?>"
+                                >
+                                    <i class="fas fa-file-pdf"></i> Export Peta
+                                </button>
                             <?php else: ?>
                                 <span class="badge badge-light border">Belum ada koordinat</span>
                             <?php endif; ?>
@@ -1200,5 +1212,17 @@
             }
         });
     }
+
+    // Direct export from table row (handles AJAX reloads)
+    $(document).on('click', '.js-export-map-direct', function(e) {
+        e.preventDefault();
+        const lat = Number(this.getAttribute('data-latitude'));
+        const lng = Number(this.getAttribute('data-longitude'));
+        const nama = this.getAttribute('data-nama') || 'Sekolah';
+        const kabupaten = this.getAttribute('data-kabupaten') || 'Bengkalis';
+        const kecamatan = this.getAttribute('data-kecamatan') || 'Bengkalis';
+
+        exportMapPdf(lat, lng, nama, kabupaten, kecamatan);
+    });
 </script>
 <?= $this->endSection(); ?>
