@@ -1088,9 +1088,10 @@
                 zoomAnimation: false
             }).setView([lat, lng], 17);
 
-            // Satellite base layer
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                maxZoom: 19
+            // Satellite base layer — Google Hybrid (works with html2canvas, no CORS block)
+            L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                crossOrigin: true
             }).addTo(exportMap);
 
             // Initialize mini inset map using Google Maps styling
@@ -1185,8 +1186,18 @@
             // Inject dynamic scale bar
             document.getElementById('export-scale-container').innerHTML = getScaleBarHtml(exportMap);
 
-            // Wait for tiles to load
-            await new Promise(r => setTimeout(r, 2000));
+            // Wait for tiles to load — listen for tileload events with a max 6s cap
+            await new Promise(resolve => {
+                let tilesLoading = 0;
+                const maxWait = setTimeout(resolve, 6000);
+                exportMap.on('tileloadstart', () => { tilesLoading++; });
+                exportMap.on('tileload tileerror', () => {
+                    tilesLoading = Math.max(0, tilesLoading - 1);
+                    if (tilesLoading === 0) { clearTimeout(maxWait); setTimeout(resolve, 300); }
+                });
+                setTimeout(() => { if (tilesLoading === 0) { clearTimeout(maxWait); resolve(); } }, 800);
+            });
+
 
             // Capture Leaflet map canvas
             const mapCanvas = await html2canvas(document.getElementById('export-map-canvas'), {
