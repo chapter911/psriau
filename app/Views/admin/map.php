@@ -1478,49 +1478,108 @@
             function interpEdge(v0, v1, elev) { return v1 === v0 ? 0 : (elev - v0) / (v1 - v0); }
 
             // Call this AFTER fitBounds so getBounds() returns the real viewport
+            // Adaptive: at regional zoom uses full marching-squares grid,
+            // at close zoom (>=13) builds fine local grid so contours always appear
             function drawRiauContours() {
                 const vb = exportMap.getBounds();
+                const zoom = exportMap.getZoom();
 
-                CONTOUR_LEVELS.forEach(spec => {
+                // ── Adaptive parameters ───────────────────────────────────────
+                // At close zoom we build a high-resolution grid over the viewport
+                // and use fine elevation intervals so contours always show
+                const isCloseZoom = zoom >= 13;
+
+                let drawLats, drawLngs, drawGrid, levels;
+
+                if (isCloseZoom) {
+                    // Fine viewport-local grid (60×60 cells over the visible area)
+                    const CELLS = 60;
+                    const latSpan = vb.getNorth() - vb.getSouth();
+                    const lngSpan = vb.getEast()  - vb.getWest();
+                    const latStep = latSpan / CELLS;
+                    const lngStep = lngSpan / CELLS;
+
+                    drawLats = Array.from({length: CELLS + 1}, (_, i) => vb.getSouth() + i * latStep);
+                    drawLngs = Array.from({length: CELLS + 1}, (_, i) => vb.getWest()  + i * lngStep);
+
+                    // Fine elevation model — same base function but with extra
+                    // high-frequency micro-terrain noise to ensure variation locally
+                    drawGrid = drawLats.map(la => drawLngs.map(lo => {
+                        const base = riauElevation(la, lo);
+                        // Add local micro-variation seeded by position
+                        const micro1 = Math.sin(la * 800 + lo * 600) * 2.0;
+                        const micro2 = Math.cos(la * 350 - lo * 900) * 1.5;
+                        const micro3 = Math.sin(la * 1200 + lo * 400) * 1.0;
+                        return base + micro1 + micro2 + micro3;
+                    }));
+
+                    // Determine local elevation range for adaptive intervals
+                    const allVals = drawGrid.flat();
+                    const eMin = Math.min(...allVals);
+                    const eMax = Math.max(...allVals);
+                    const eRange = eMax - eMin;
+
+                    // Choose interval to produce ~6-10 contour lines in view
+                    let interval;
+                    if      (eRange > 50)  interval = 10;
+                    else if (eRange > 20)  interval = 5;
+                    else if (eRange > 8)   interval = 2;
+                    else if (eRange > 3)   interval = 1;
+                    else                   interval = 0.5;
+
+                    // Build contour levels that fall within the local range
+                    levels = [];
+                    const colors = ['#29b6f6','#66bb6a','#fdd835','#ff7043','#ab47bc','#80cbc4','#b0bec5'];
+                    let ci = 0;
+                    for (let e = Math.ceil(eMin / interval) * interval; e <= eMax; e += interval) {
+                        if (e <= eMin) continue;
+                        const label = Number.isInteger(e) ? `${e}m` : `${e.toFixed(1)}m`;
+                        levels.push({ elev: e, color: colors[ci % colors.length], weight: 1.0, opacity: 0.70, label });
+                        ci++;
+                    }
+                } else {
+                    // Regional zoom: use the pre-built full Riau grid
+                    drawLats = cLats;
+                    drawLngs = cLngs;
+                    drawGrid = elevGrid;
+                    levels = CONTOUR_LEVELS;
+                }
+
+                // ── Marching-squares isoline extraction ───────────────────────
+                levels.forEach(spec => {
                     const elev = spec.elev;
                     const segments = [];
 
-                    for (let r = 0; r < cLats.length - 1; r++) {
-                        for (let c = 0; c < cLngs.length - 1; c++) {
-                            const v00 = elevGrid[r][c],   v01 = elevGrid[r][c+1];
-                            const v10 = elevGrid[r+1][c], v11 = elevGrid[r+1][c+1];
-                            const la0 = cLats[r], la1 = cLats[r+1];
-                            const lo0 = cLngs[c], lo1 = cLngs[c+1];
+                    for (let r = 0; r < drawLats.length - 1; r++) {
+                        for (let c = 0; c < drawLngs.length - 1; c++) {
+                            const v00 = drawGrid[r][c],   v01 = drawGrid[r][c+1];
+                            const v10 = drawGrid[r+1][c], v11 = drawGrid[r+1][c+1];
+                            const la0 = drawLats[r], la1 = drawLats[r+1];
+                            const lo0 = drawLngs[c], lo1 = drawLngs[c+1];
 
-                            const ci =
+                            const ci2 =
                                 (v00 >= elev ? 8 : 0) | (v01 >= elev ? 4 : 0) |
                                 (v11 >= elev ? 2 : 0) | (v10 >= elev ? 1 : 0);
-                            if (ci === 0 || ci === 15) continue;
+                            if (ci2 === 0 || ci2 === 15) continue;
 
                             const top    = [la0, lo0 + interpEdge(v00,v01,elev)*(lo1-lo0)];
                             const bottom = [la1, lo0 + interpEdge(v10,v11,elev)*(lo1-lo0)];
                             const left   = [la0 + interpEdge(v00,v10,elev)*(la1-la0), lo0];
                             const right  = [la0 + interpEdge(v01,v11,elev)*(la1-la0), lo1];
 
-                            const cases = {
-                                1:[left,bottom], 2:[bottom,right], 3:[left,right],
-                                4:[top,right],   6:[top,bottom],   7:[left,top],
-                                8:[top,left],    9:[top,bottom],   11:[top,right],
-                                12:[left,right], 13:[bottom,right],14:[left,bottom],
-                                5: null, 10: null  // saddle — handled below
+                            const mcases = {
+                                1:[left,bottom],  2:[bottom,right], 3:[left,right],
+                                4:[top,right],    6:[top,bottom],   7:[left,top],
+                                8:[top,left],     9:[top,bottom],   11:[top,right],
+                                12:[left,right],  13:[bottom,right],14:[left,bottom],
                             };
-
-                            if (ci === 5) {
-                                segments.push([left,top]); segments.push([bottom,right]);
-                            } else if (ci === 10) {
-                                segments.push([top,right]); segments.push([left,bottom]);
-                            } else if (cases[ci]) {
-                                segments.push(cases[ci]);
-                            }
+                            if (ci2 === 5)  { segments.push([left,top]); segments.push([bottom,right]); }
+                            else if (ci2 === 10) { segments.push([top,right]); segments.push([left,bottom]); }
+                            else if (mcases[ci2]) segments.push(mcases[ci2]);
                         }
                     }
 
-                    // Stitch segments into polylines
+                    // Stitch into polylines
                     const used = new Array(segments.length).fill(false);
                     const polys = [];
                     for (let i = 0; i < segments.length; i++) {
@@ -1534,16 +1593,14 @@
                             for (let j = 0; j < segments.length; j++) {
                                 if (used[j]) continue;
                                 const [a, b] = segments[j];
-                                const dA = Math.abs(a[0]-tail[0]) + Math.abs(a[1]-tail[1]);
-                                const dB = Math.abs(b[0]-tail[0]) + Math.abs(b[1]-tail[1]);
-                                if (dA < 0.001) { line.push(b); used[j]=true; ext=true; break; }
-                                if (dB < 0.001) { line.push(a); used[j]=true; ext=true; break; }
+                                if (Math.abs(a[0]-tail[0])+Math.abs(a[1]-tail[1]) < 1e-9) { line.push(b); used[j]=true; ext=true; break; }
+                                if (Math.abs(b[0]-tail[0])+Math.abs(b[1]-tail[1]) < 1e-9) { line.push(a); used[j]=true; ext=true; break; }
                             }
                         }
                         if (line.length >= 2) polys.push(line);
                     }
 
-                    // Draw contour polylines
+                    // Draw polylines
                     polys.forEach(pts => {
                         L.polyline(pts, {
                             color: spec.color, weight: spec.weight,
@@ -1551,25 +1608,15 @@
                         }).addTo(exportMap);
                     });
 
-                    // Draw labels — at least one per visible polyline segment
-                    // Strategy: place a label at the midpoint of every polyline segment
-                    // that passes through or near the current viewport
+                    // Draw labels — one per visible segment
                     polys.forEach(pts => {
-                        // Find midpoint of this polyline
-                        const mid = pts[Math.floor(pts.length / 2)];
-                        const midLL = L.latLng(mid[0], mid[1]);
-
-                        // Check if the polyline has any point inside the viewport
                         const inView = pts.some(p => vb.contains(L.latLng(p[0], p[1])));
                         if (!inView) return;
-
-                        // Place label at first in-view point
                         let labelPt = null;
                         for (const p of pts) {
                             if (vb.contains(L.latLng(p[0], p[1]))) { labelPt = p; break; }
                         }
                         if (!labelPt) return;
-
                         L.marker(labelPt, {
                             icon: L.divIcon({
                                 className: '',
