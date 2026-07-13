@@ -957,6 +957,7 @@
 
             // Initialize temp Leaflet map
             const exportMap = L.map('export-map-canvas', {
+                preferCanvas: true,
                 zoomControl: false,
                 attributionControl: false,
                 fadeAnimation: false,
@@ -970,6 +971,7 @@
 
             // Initialize mini inset map using Google Maps styling
             const insetMap = L.map('export-inset-canvas', {
+                preferCanvas: true,
                 zoomControl: false,
                 attributionControl: false,
                 dragging: false,
@@ -1337,6 +1339,7 @@
 
             // Initialize temp Leaflet map for main map export
             const exportMap = L.map('export-map-canvas', {
+                preferCanvas: true,
                 zoomControl: false,
                 attributionControl: false,
                 fadeAnimation: false,
@@ -1352,6 +1355,7 @@
 
             // Initialize mini inset map using Google Maps styling
             const insetMap = L.map('export-inset-canvas', {
+                preferCanvas: true,
                 zoomControl: false,
                 attributionControl: false,
                 dragging: false,
