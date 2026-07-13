@@ -439,10 +439,10 @@
 
                 const layer = L.geoJSON({ type: 'FeatureCollection', features }, {
                     style: {
-                        color: '#2563eb',
-                        weight: 1.8,
-                        fillColor: '#93c5fd',
-                        fillOpacity: 0.08,
+                        color: '#ff3d00',
+                        weight: 2,
+                        dashArray: '5,5',
+                        fillOpacity: 0,
                     },
                     onEachFeature: (feature, featureLayer) => {
                         const props = feature && feature.properties ? feature.properties : {};
