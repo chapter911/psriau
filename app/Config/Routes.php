@@ -239,6 +239,11 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('laporan/rekap-mingguan/(:num)/hapus', 'Admin\RekapMingguan::delete/$1');
 	$routes->post('laporan/rekap-mingguan/import', 'Admin\RekapMingguan::import');
 
+	// Laporan Lapangan (Mobile API submissions)
+	$routes->get('laporan/lapangan', 'Admin\LaporanLapangan::index');
+	$routes->get('laporan/lapangan/detail/(:segment)/(:num)', 'Admin\LaporanLapangan::detail/$1/$2');
+	$routes->get('laporan/lapangan/(:num)', 'Admin\LaporanLapangan::detailLegacy/$1');
+
 	// Surat Routes - Perjalanan Dinas (alias dari Laporan)
 	$routes->get('surat/perjalanan-dinas', 'Admin\\Laporan::perjalananDinas');
 	$routes->get('surat/perjalanan-dinas/cetak-periode', 'Admin\\Laporan::perjalananDinasCetakPeriode');
@@ -310,6 +315,10 @@ $routes->group('api', static function ($routes): void {
             $routes->get('subkategori', 'Api\RabGedung::subkategori');
             $routes->get('uraian', 'Api\RabGedung::uraian');
         });
+
+        // Laporan Harian (Mobile) API
+        $routes->post('laporan-harian/proyek', 'Api\LaporanHarian::proyek');
+        $routes->post('laporan-harian/pekerjaan', 'Api\LaporanHarian::pekerjaan');
     });
 });
 
