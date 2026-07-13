@@ -824,20 +824,6 @@
         });
     }
 
-    function createContourLine(center, radius, pointsCount, waveAmplitude) {
-        const coordinates = [];
-        for (let i = 0; i < pointsCount; i++) {
-            const angle = (i / pointsCount) * 2 * Math.PI;
-            const offset = Math.sin(angle * 5) * waveAmplitude;
-            const r = radius + offset;
-            const latOffset = (r * Math.cos(angle)) / 111320;
-            const lngOffset = (r * Math.sin(angle)) / (111320 * Math.cos(center[0] * Math.PI / 180));
-            coordinates.push([center[0] + latOffset, center[1] + lngOffset]);
-        }
-        coordinates.push(coordinates[0]);
-        return coordinates;
-    }
-
     async function exportMapPdf(lat, lng, schoolName, kabupaten = 'Bengkalis', kecamatan = 'Bengkalis') {
         if (!lat || !lng) {
             Swal.fire('Gagal', 'Koordinat sekolah tidak valid.', 'error');
@@ -914,23 +900,13 @@
                         </div>
 
                         <!-- Legend -->
-                        <div style="border: 1px solid black; padding: 10px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box; overflow: hidden;">
-                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
-                            <div style="display: flex; flex-direction: column; gap: 6px;">
-                                <div style="display: flex; align-items: center; font-size: 9px;">
-                                    <div style="width: 28px; height: 13px; border: 2.5px solid red; background: rgba(255,0,0,0.05); margin-right: 8px; flex-shrink: 0;"></div>
-                                    <div style="font-weight: bold; color: red; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px;" title="${schoolName}">${schoolName}</div>
+                        <div style="border: 1px solid black; padding: 12px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box;">
+                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; align-items: center; font-size: 10px;">
+                                    <div style="width: 30px; height: 15px; border: 2.5px solid red; background: rgba(255,0,0,0.05); margin-right: 10px;"></div>
+                                    <div style="font-weight: bold; color: red; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;" title="${schoolName}">${schoolName}</div>
                                 </div>
-                                <div style="font-size: 8px; font-weight: bold; color: #333; margin-top: 4px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px;">Kontur Topografi</div>
-                                <div style="display: flex; align-items: center; font-size: 8px; gap: 6px;">
-                                    <div style="width: 26px; height: 2px; background: #ffff00; flex-shrink: 0; border: 0.5px solid #000;"></div>
-                                    <span>Garis Kontur</span>
-                                </div>
-                                <div style="display: flex; align-items: center; font-size: 8px; gap: 6px;">
-                                    <div style="width: 26px; height: 3px; background: #ff3d00; flex-shrink: 0; border: 0.5px solid #000;"></div>
-                                    <span>Kontur Indeks</span>
-                                </div>
-                                <div style="font-size: 7px; color: #777; margin-top: 4px; line-height: 1.4;">Sumber: OpenTopoMap<br>Data: SRTM NASA</div>
                             </div>
                         </div>
 
@@ -1032,31 +1008,7 @@
             exportMap.invalidateSize(false);
             exportMap.setView([lat, lng], 17);
 
-            // Draw simulated contours
-            const contours = [
-                { radius: 60, elevation: 45, isIndex: false },
-                { radius: 120, elevation: 40, isIndex: true },
-                { radius: 180, elevation: 35, isIndex: false },
-                { radius: 240, elevation: 30, isIndex: true }
-            ];
-            contours.forEach(c => {
-                const coords = createContourLine([lat, lng], c.radius, 32, 8);
-                const color = c.isIndex ? '#4e342e' : '#795548';
-                const weight = c.isIndex ? 3.0 : 1.8;
-                const opacity = c.isIndex ? 0.85 : 0.65;
-                L.polyline(coords, { color: color, weight: weight, opacity: opacity }).addTo(exportMap);
-                
-                // Add label
-                const midPoint = coords[8];
-                L.marker(midPoint, {
-                    icon: L.divIcon({
-                        className: 'contour-label-temp',
-                        html: `<div style="color: ${color}; font-size: 8px; font-weight: bold; background-color: rgba(255,255,255,0.75); border: 1px solid ${color}; border-radius: 2px; padding: 1px 2.5px; white-space: nowrap; pointer-events: none; text-shadow: 0 0 2px #fff;">${c.elevation}m</div>`,
-                        iconSize: [35, 12],
-                        iconAnchor: [17, 6]
-                    })
-                }).addTo(exportMap);
-            });
+
 
             // Draw school land boundary (red tilted polygon)
             const schoolCoords = [
@@ -1319,30 +1271,14 @@
                         </div>
 
                         <!-- Legend -->
-                        <div style="border: 1px solid black; padding: 10px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box; overflow: hidden;">
-                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
-                            <div style="display: flex; gap: 8px; flex: 1; overflow: hidden;">
-                                <!-- School markers columns -->
-                                <div style="flex: 1; display: flex; gap: 6px; overflow: hidden;">
-                                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; overflow: hidden;">
-                                        ${col1Html}
-                                    </div>
-                                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; overflow: hidden;">
-                                        ${col2Html}
-                                    </div>
+                        <div style="border: 1px solid black; padding: 12px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box;">
+                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
+                            <div style="display: flex; justify-content: space-between; gap: 10px;">
+                                <div style="width: 49%; display: flex; flex-direction: column; gap: 5px;">
+                                    ${col1Html}
                                 </div>
-                                <!-- Contour legend column -->
-                                <div style="width: 95px; flex-shrink: 0; border-left: 1px solid #ddd; padding-left: 8px; display: flex; flex-direction: column; gap: 5px;">
-                                    <div style="font-size: 7px; font-weight: bold; color: #333; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 2px;">Kontur Topografi</div>
-                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 22px; height: 2px; background: #ffff00; flex-shrink: 0; border: 0.5px solid #000;"></div>
-                                        <span>Garis Kontur</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 22px; height: 3px; background: #ff3d00; flex-shrink: 0; border: 0.5px solid #000;"></div>
-                                        <span>Kontur Indeks</span>
-                                    </div>
-                                    <div style="font-size: 6.5px; color: #777; margin-top: 4px; line-height: 1.4;">Sumber:<br>OpenTopoMap<br>Data: SRTM NASA</div>
+                                <div style="width: 49%; display: flex; flex-direction: column; gap: 5px;">
+                                    ${col2Html}
                                 </div>
                             </div>
                         </div>
@@ -1455,277 +1391,7 @@
                 }).addTo(exportMap);
             });
 
-            // ─────────────────────────────────────────────────────────────────
-            // TOPOGRAPHIC CONTOUR GENERATOR — Marching Squares Vector Renderer
-            // Generates and renders contours purely in client-side JS to bypass CORS blocks.
-            // Automatically adjusts resolution and grid bounds based on current zoom.
-            // ─────────────────────────────────────────────────────────────────
 
-            function riauElevation(lat, lng) {
-                // Coastline quadratic approximation fitting Bagansiapiapi coastline perfectly
-                const limitLng = 102.275 - 0.75 * lat + 0.15 * Math.pow(Math.max(0, 2.3 - lat), 2);
-                let isLand = lng <= limitLng;
-                
-                // Islands exception (Rupat, Bengkalis, Padang, Tebing Tinggi, Rangsang, Meranti)
-                if (!isLand) {
-                    // Rupat
-                    if (lat >= 1.8 && lat <= 2.2 && lng >= 101.5 && lng <= 101.95) isLand = true;
-                    // Bengkalis
-                    else if (lat >= 1.3 && lat <= 1.65 && lng >= 102.0 && lng <= 102.5) isLand = true;
-                    // Padang / Tebing Tinggi / Rangsang
-                    else if (lat >= 0.8 && lat <= 1.3 && lng >= 102.2 && lng <= 103.2) isLand = true;
-                    // Meranti / Mendol / Penyalai
-                    else if (lat >= 0.2 && lat <= 0.8 && lng >= 102.8 && lng <= 103.5) isLand = true;
-                }
-                
-                if (!isLand) {
-                    return 0; // Sea is flat 0m
-                }
-
-                // Highlands (Bukit Barisan) is in the southwest (lat < 1.0 and lng < 101.5)
-                const southBias = Math.max(0, (1.2 - lat) / 2.7); // 0 at north (lat=1.2), 1 at south (lat=-1.5)
-                const westBias = Math.max(0, (101.8 - lng) / 1.8);  // 0 at east, 1 at west
-                
-                // Mountain base height (up to 1600m in the southwest)
-                const base = southBias * westBias * westBias * 1600;
-                
-                // Ridges and valleys along the mountains
-                const ridge1 = Math.sin((lat + 1) * 3.5) * 120 * westBias * southBias;
-                const ridge2 = Math.cos(lng * 4.5) * 60 * westBias * southBias;
-                
-                // Lowland rolling hills (Siak, Kampar, Rokan)
-                const hills = Math.sin(lat * 12 + lng * 9) * 15 * (1 - westBias * southBias);
-                
-                // Micro-texture for close zoom
-                const micro = Math.sin(lat * 1500 + lng * 1200) * 1.5 + Math.cos(lat * 3000 - lng * 2500) * 1.0;
-                
-                // Land base elevation starts at 5m (coastal plains)
-                return Math.max(5, base + ridge1 + ridge2 + hills + micro);
-            }
-
-            // Call this AFTER fitBounds so the generator respects the active view bounds
-            function drawRiauContours() {
-                const vb = exportMap.getBounds();
-                const zoom = exportMap.getZoom();
-
-                // Determine grid bounds based on current view or full Riau
-                let minLat, maxLat, minLng, maxLng;
-                let latSteps = 45;
-                let lngSteps = 45;
-
-                if (zoom < 10) {
-                    minLat = -1.5;
-                    maxLat = 2.8;
-                    minLng = 100.0;
-                    maxLng = 104.5;
-                } else {
-                    const padLat = (vb.getNorth() - vb.getSouth()) * 0.15;
-                    const padLng = (vb.getEast() - vb.getWest()) * 0.15;
-                    minLat = vb.getSouth() - padLat;
-                    maxLat = vb.getNorth() + padLat;
-                    minLng = vb.getWest() - padLng;
-                    maxLng = vb.getEast() + padLng;
-                }
-
-                const latSpan = maxLat - minLat;
-                const lngSpan = maxLng - minLng;
-                const latStep = latSpan / latSteps;
-                const lngStep = lngSpan / lngSteps;
-
-                // 1. Build grid of elevations
-                const grid = [];
-                const lats = [];
-                const lngs = [];
-                for (let i = 0; i <= latSteps; i++) {
-                    const lat = minLat + i * latStep;
-                    lats.push(lat);
-                    const row = [];
-                    for (let j = 0; j <= lngSteps; j++) {
-                        const lng = minLng + j * lngStep;
-                        if (i === 0) {
-                            lngs.push(lng);
-                        }
-                        row.push(riauElevation(lat, lng));
-                    }
-                    grid.push(row);
-                }
-
-                // Determine elevation range inside the current view to select contour intervals
-                let viewElevations = [];
-                for (let i = 0; i <= latSteps; i++) {
-                    for (let j = 0; j <= lngSteps; j++) {
-                        const lat = lats[i];
-                        const lng = lngs[j];
-                        if (vb.contains(L.latLng(lat, lng))) {
-                            viewElevations.push(grid[i][j]);
-                        }
-                    }
-                }
-                if (viewElevations.length === 0) {
-                    viewElevations = grid.flat();
-                }
-
-                const minElev = Math.min(...viewElevations);
-                const maxElev = Math.max(...viewElevations);
-                const elevRange = maxElev - minElev;
-
-                // Choose contour interval dynamically to get a nice density (about 6 to 12 lines)
-                let interval = 100;
-                if (elevRange > 1000) {
-                    interval = 250;
-                } else if (elevRange > 500) {
-                    interval = 100;
-                } else if (elevRange > 200) {
-                    interval = 50;
-                } else if (elevRange > 100) {
-                    interval = 25;
-                } else if (elevRange > 40) {
-                    interval = 10;
-                } else if (elevRange > 15) {
-                    interval = 5;
-                } else if (elevRange > 6) {
-                    interval = 2;
-                } else if (elevRange > 2) {
-                    interval = 0.5;
-                } else {
-                    interval = 0.1;
-                }
-
-                // Generate contour levels
-                const levels = [];
-                const startElev = Math.ceil(minElev / interval) * interval;
-                for (let e = startElev; e <= maxElev; e += interval) {
-                    if (e <= minElev) continue;
-                    // Classify: Index contours are multiples of 5 * interval, thicker and darker
-                    const isIndex = (Math.round(e / interval) % 5 === 0);
-                    levels.push({
-                        elev: e,
-                        isIndex: isIndex,
-                        color: isIndex ? '#ff3d00' : '#ffff00', // Striking Neon Orange and Neon Yellow
-                        weight: isIndex ? 3.5 : 2.2,            // Thick, highly visible lines
-                        opacity: isIndex ? 0.90 : 0.75,
-                        label: Number.isInteger(e) ? `${e}m` : `${e.toFixed(1)}m`
-                    });
-                }
-
-                // Marching Squares helper
-                function interp(val0, val1, target) {
-                    if (val1 === val0) return 0.5;
-                    return (target - val0) / (val1 - val0);
-                }
-
-                levels.forEach(level => {
-                    const elev = level.elev;
-                    const segments = [];
-
-                    for (let r = 0; r < latSteps; r++) {
-                        for (let c = 0; c < lngSteps; c++) {
-                            const v00 = grid[r][c];
-                            const v01 = grid[r][c+1];
-                            const v10 = grid[r+1][c];
-                            const v11 = grid[r+1][c+1];
-
-                            const la0 = lats[r];
-                            const la1 = lats[r+1];
-                            const lo0 = lngs[c];
-                            const lo1 = lngs[c+1];
-
-                            let code = 0;
-                            if (v00 >= elev) code |= 8;
-                            if (v01 >= elev) code |= 4;
-                            if (v11 >= elev) code |= 2;
-                            if (v10 >= elev) code |= 1;
-
-                            if (code === 0 || code === 15) continue;
-
-                            const tPt = [la0, lo0 + interp(v00, v01, elev) * (lo1 - lo0)];
-                            const bPt = [la1, lo0 + interp(v10, v11, elev) * (lo1 - lo0)];
-                            const lPt = [la0 + interp(v00, v10, elev) * (la1 - la0), lo0];
-                            const rPt = [la0 + interp(v01, v11, elev) * (la1 - la0), lo1];
-
-                            switch (code) {
-                                case 1:  segments.push([lPt, bPt]); break;
-                                case 2:  segments.push([bPt, rPt]); break;
-                                case 3:  segments.push([lPt, rPt]); break;
-                                case 4:  segments.push([tPt, rPt]); break;
-                                case 5:  segments.push([lPt, tPt]); segments.push([bPt, rPt]); break;
-                                case 6:  segments.push([tPt, bPt]); break;
-                                case 7:  segments.push([lPt, tPt]); break;
-                                case 8:  segments.push([lPt, tPt]); break;
-                                case 9:  segments.push([tPt, bPt]); break;
-                                case 10: segments.push([tPt, rPt]); segments.push([lPt, bPt]); break;
-                                case 11: segments.push([tPt, rPt]); break;
-                                case 12: segments.push([lPt, rPt]); break;
-                                case 13: segments.push([bPt, rPt]); break;
-                                case 14: segments.push([lPt, bPt]); break;
-                            }
-                        }
-                    }
-
-                    // Stitch segments into continuous polylines
-                    const polylines = [];
-                    const used = new Array(segments.length).fill(false);
-
-                    for (let i = 0; i < segments.length; i++) {
-                        if (used[i]) continue;
-                        const poly = [segments[i][0], segments[i][1]];
-                        used[i] = true;
-
-                        let extended = true;
-                        while (extended) {
-                            extended = false;
-                            const tail = poly[poly.length - 1];
-                            for (let j = 0; j < segments.length; j++) {
-                                if (used[j]) continue;
-                                const [p0, p1] = segments[j];
-
-                                const d0 = Math.abs(p0[0] - tail[0]) + Math.abs(p0[1] - tail[1]);
-                                const d1 = Math.abs(p1[0] - tail[0]) + Math.abs(p1[1] - tail[1]);
-
-                                if (d0 < 1e-5) {
-                                    poly.push(p1);
-                                    used[j] = true;
-                                    extended = true;
-                                    break;
-                                } else if (d1 < 1e-5) {
-                                    poly.push(p0);
-                                    used[j] = true;
-                                    extended = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (poly.length >= 2) {
-                            polylines.push(poly);
-                        }
-                    }
-
-                    // Draw polylines and add labels
-                    polylines.forEach(poly => {
-                        L.polyline(poly, {
-                            color: level.color,
-                            weight: level.weight,
-                            opacity: level.opacity,
-                            smoothFactor: 1.2
-                        }).addTo(exportMap);
-
-                        if (poly.length > 3) {
-                            const midIdx = Math.floor(poly.length / 2);
-                            const midPt = poly[midIdx];
-                            if (vb.contains(L.latLng(midPt[0], midPt[1]))) {
-                                L.marker(midPt, {
-                                    icon: L.divIcon({
-                                        className: 'contour-label',
-                                        html: `<div style="font-family: Arial, sans-serif; font-size: 8px; font-weight: bold; color: ${level.color}; background-color: rgba(255,255,255,0.75); border: 1px solid ${level.color}; border-radius: 2px; padding: 1px 2.5px; white-space: nowrap; pointer-events: none; text-shadow: 0 0 2px #fff;">${level.label}</div>`,
-                                        iconSize: [35, 12],
-                                        iconAnchor: [17, 6]
-                                    })
-                                }).addTo(exportMap);
-                            }
-                        }
-                    });
-                });
-            }
 
 
             // Copy markers (using L.divIcon for html2canvas compatibility)
@@ -1768,8 +1434,7 @@
                 exportMap.setView([-0.51544, 101.44415], 8);
             }
 
-            // Draw contours AFTER fitBounds so viewport (getBounds) is correct
-            drawRiauContours();
+
 
             // Inject dynamic scale bar
             document.getElementById('export-scale-container').innerHTML = getScaleBarHtml(exportMap);

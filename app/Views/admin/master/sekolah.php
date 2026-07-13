@@ -948,20 +948,6 @@
         });
     }
 
-    function createContourLine(center, radius, pointsCount, waveAmplitude) {
-        const coordinates = [];
-        for (let i = 0; i < pointsCount; i++) {
-            const angle = (i / pointsCount) * 2 * Math.PI;
-            const offset = Math.sin(angle * 5) * waveAmplitude;
-            const r = radius + offset;
-            const latOffset = (r * Math.cos(angle)) / 111320;
-            const lngOffset = (r * Math.sin(angle)) / (111320 * Math.cos(center[0] * Math.PI / 180));
-            coordinates.push([center[0] + latOffset, center[1] + lngOffset]);
-        }
-        coordinates.push(coordinates[0]);
-        return coordinates;
-    }
-
     async function exportMapPdf(lat, lng, schoolName, kabupaten = 'Bengkalis', kecamatan = 'Bengkalis') {
         if (!lat || !lng) {
             Swal.fire('Gagal', 'Koordinat sekolah tidak valid.', 'error');
@@ -1038,23 +1024,13 @@
                         </div>
 
                         <!-- Legend -->
-                        <div style="border: 1px solid black; padding: 10px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box; overflow: hidden;">
-                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
-                            <div style="display: flex; flex-direction: column; gap: 6px;">
-                                <div style="display: flex; align-items: center; font-size: 9px;">
-                                    <div style="width: 28px; height: 13px; border: 2.5px solid red; background: rgba(255,0,0,0.05); margin-right: 8px; flex-shrink: 0;"></div>
-                                    <div style="font-weight: bold; color: red; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px;" title="${schoolName}">${schoolName}</div>
+                        <div style="border: 1px solid black; padding: 12px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box;">
+                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; align-items: center; font-size: 10px;">
+                                    <div style="width: 30px; height: 15px; border: 2.5px solid red; background: rgba(255,0,0,0.05); margin-right: 10px;"></div>
+                                    <div style="font-weight: bold; color: red; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;" title="${schoolName}">${schoolName}</div>
                                 </div>
-                                <div style="font-size: 8px; font-weight: bold; color: #333; margin-top: 4px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px;">Kontur Topografi</div>
-                                <div style="display: flex; align-items: center; font-size: 8px; gap: 6px;">
-                                    <div style="width: 26px; height: 2px; background: #ffff00; flex-shrink: 0; border: 0.5px solid #000;"></div>
-                                    <span>Garis Kontur</span>
-                                </div>
-                                <div style="display: flex; align-items: center; font-size: 8px; gap: 6px;">
-                                    <div style="width: 26px; height: 3px; background: #ff3d00; flex-shrink: 0; border: 0.5px solid #000;"></div>
-                                    <span>Kontur Indeks</span>
-                                </div>
-                                <div style="font-size: 7px; color: #777; margin-top: 4px; line-height: 1.4;">Sumber: OpenTopoMap<br>Data: SRTM NASA</div>
                             </div>
                         </div>
 
@@ -1156,31 +1132,7 @@
             exportMap.invalidateSize(false);
             exportMap.setView([lat, lng], 17);
 
-            // Draw simulated contours
-            const contours = [
-                { radius: 60, elevation: 45, isIndex: false },
-                { radius: 120, elevation: 40, isIndex: true },
-                { radius: 180, elevation: 35, isIndex: false },
-                { radius: 240, elevation: 30, isIndex: true }
-            ];
-            contours.forEach(c => {
-                const coords = createContourLine([lat, lng], c.radius, 32, 8);
-                const color = c.isIndex ? '#ff3d00' : '#ffff00';
-                const weight = c.isIndex ? 3.5 : 2.2;
-                const opacity = c.isIndex ? 0.90 : 0.75;
-                L.polyline(coords, { color: color, weight: weight, opacity: opacity }).addTo(exportMap);
-                
-                // Add label
-                const midPoint = coords[8];
-                L.marker(midPoint, {
-                    icon: L.divIcon({
-                        className: 'contour-label-temp',
-                        html: `<div style="color: ${color}; font-size: 8px; font-weight: bold; background-color: rgba(255,255,255,0.75); border: 1px solid ${color}; border-radius: 2px; padding: 1px 2.5px; white-space: nowrap; pointer-events: none; text-shadow: 0 0 2px #fff;">${c.elevation}m</div>`,
-                        iconSize: [35, 12],
-                        iconAnchor: [17, 6]
-                    })
-                }).addTo(exportMap);
-            });
+
 
             // Draw school land boundary (red tilted polygon)
             const schoolCoords = [
