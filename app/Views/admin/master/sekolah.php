@@ -22,7 +22,7 @@
             <div class="form-row align-items-end">
                 <div class="form-group col-md-4 mb-2">
                     <label class="small font-weight-bold text-muted">Filter Paket</label>
-                    <select name="paket_id" class="form-control js-filter-select">
+                    <select name="paket_id" id="filter_paket_id" class="form-control js-filter-select">
                         <option value="*">Semua Paket</option>
                         <?php foreach (($pakets ?? []) as $paket): ?>
                             <option value="<?= esc($paket['id']); ?>" <?= (string)($filter_paket_id ?? '') === (string)$paket['id'] ? 'selected' : ''; ?>><?= esc($paket['nama_paket']); ?></option>
@@ -668,7 +668,7 @@
     });
 
     function getFilterQueryString() {
-        const paketId = document.getElementsByName('paket_id')[0]?.value || '*';
+        const paketId = document.getElementById('filter_paket_id')?.value || '*';
         const kabupaten = document.getElementById('filter_kabupaten')?.value || '*';
         const kecamatan = document.getElementById('filter_kecamatan')?.value || '*';
 
