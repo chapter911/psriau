@@ -589,7 +589,7 @@ class AuthFilter implements FilterInterface
             return 'delete';
         }
 
-        if (strpos($normalized, '/tambah') !== false || strpos($normalized, '/create') !== false) {
+        if (strpos($normalized, '/tambah') !== false || strpos($normalized, '/create') !== false || strpos($normalized, '/buat') !== false) {
             return 'add';
         }
 
