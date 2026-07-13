@@ -87,6 +87,7 @@
                                     data-kecamatan="<?= esc((string) ($item['kecamatan'] ?? ''), 'attr'); ?>"
                                     data-latitude="<?= esc((string) ($item['latitude'] ?? ''), 'attr'); ?>"
                                     data-longitude="<?= esc((string) ($item['longitude'] ?? ''), 'attr'); ?>"
+                                    data-paket-id="<?= esc((string) ($item['paket_id'] ?? ''), 'attr'); ?>"
                                 >UBAH</button>
                             </td>
                         <?php endif; ?>
@@ -162,9 +163,20 @@
                             <input type="text" name="nsm" class="form-control">
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Nama Sekolah</label>
-                        <input type="text" name="nama" class="form-control" required>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Nama Sekolah</label>
+                            <input type="text" name="nama" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Paket</label>
+                            <select name="paket_id" class="form-control">
+                                <option value="">-- Pilih Paket --</option>
+                                <?php foreach ($pakets as $paket): ?>
+                                    <option value="<?= esc($paket['id']); ?>"><?= esc($paket['nama_paket']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
@@ -224,9 +236,20 @@
                             <input type="text" id="edit_nsm" name="nsm" class="form-control">
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Nama Sekolah</label>
-                        <input type="text" id="edit_nama" name="nama" class="form-control" required>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Nama Sekolah</label>
+                            <input type="text" id="edit_nama" name="nama" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Paket</label>
+                            <select id="edit_paket_id" name="paket_id" class="form-control">
+                                <option value="">-- Pilih Paket --</option>
+                                <?php foreach ($pakets as $paket): ?>
+                                    <option value="<?= esc($paket['id']); ?>"><?= esc($paket['nama_paket']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
@@ -281,6 +304,7 @@
             kecamatan: document.getElementById('edit_kecamatan'),
             latitude: document.getElementById('edit_latitude'),
             longitude: document.getElementById('edit_longitude'),
+            paket_id: document.getElementById('edit_paket_id'),
         };
 
         const applyEditData = (trigger) => {
@@ -298,6 +322,7 @@
             fields.kecamatan.value = trigger.getAttribute('data-kecamatan') || '';
             fields.latitude.value = trigger.getAttribute('data-latitude') || '';
             fields.longitude.value = trigger.getAttribute('data-longitude') || '';
+            fields.paket_id.value = trigger.getAttribute('data-paket-id') || '';
         };
 
         document.addEventListener('click', function (event) {

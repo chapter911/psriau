@@ -4,6 +4,7 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Models\MstSekolahModel;
+use App\Models\MstPaketModel;
 use CodeIgniter\HTTP\RedirectResponse;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -24,13 +25,14 @@ class MasterSekolah extends BaseController
 
         $db = db_connect();
         $items = $db->table('mst_sekolah s')
-            ->select('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude, GROUP_CONCAT(DISTINCT mp.nama_paket ORDER BY mp.nama_paket SEPARATOR ", ") AS paket_names')
-            ->join('trn_rab_gedung_detail r', 'r.sekolah_npsn = s.npsn', 'left')
-            ->join('mst_paket mp', 'mp.id = r.paket_id', 'left')
-            ->groupBy('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude')
+            ->select('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude, s.paket_id, mp.nama_paket AS paket_names')
+            ->join('mst_paket mp', 'mp.id = s.paket_id', 'left')
             ->orderBy('s.nama', 'ASC')
             ->get()
             ->getResultArray();
+
+        $paketModel = new MstPaketModel();
+        $pakets = $paketModel->where('is_active', 1)->orderBy('nama_paket', 'ASC')->findAll();
 
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
         $mapTypes = $this->getMapTypes();
@@ -42,6 +44,7 @@ class MasterSekolah extends BaseController
             'items' => $items,
             'mapTypes' => $mapTypes,
             'mapDefaultId' => (int) ($mapTypes[0]['id'] ?? 1),
+            'pakets' => $pakets,
             'can_add' => $canManage && (bool) ($menuPermissions['add'] ?? false),
             'can_edit' => $canManage && (bool) ($menuPermissions['edit'] ?? false),
             'can_export' => (bool) ($menuPermissions['export'] ?? false),
@@ -62,10 +65,8 @@ class MasterSekolah extends BaseController
 
         $db = db_connect();
         $items = $db->table('mst_sekolah s')
-            ->select('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude, GROUP_CONCAT(DISTINCT mp.nama_paket ORDER BY mp.nama_paket SEPARATOR ", ") AS paket_names')
-            ->join('trn_rab_gedung_detail r', 'r.sekolah_npsn = s.npsn', 'left')
-            ->join('mst_paket mp', 'mp.id = r.paket_id', 'left')
-            ->groupBy('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude')
+            ->select('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude, mp.nama_paket AS paket_names')
+            ->join('mst_paket mp', 'mp.id = s.paket_id', 'left')
             ->orderBy('s.nama', 'ASC')
             ->get()
             ->getResultArray();
@@ -220,6 +221,7 @@ class MasterSekolah extends BaseController
             'kecamatan' => 'permit_empty|max_length[255]',
             'latitude' => 'permit_empty|decimal',
             'longitude' => 'permit_empty|decimal',
+            'paket_id' => 'permit_empty|integer',
         ];
 
         if (! $this->validate($rules)) {
@@ -245,6 +247,7 @@ class MasterSekolah extends BaseController
             'kecamatan' => trim((string) $this->request->getPost('kecamatan')),
             'latitude' => $this->nullableFloat($this->request->getPost('latitude')),
             'longitude' => $this->nullableFloat($this->request->getPost('longitude')),
+            'paket_id' => $this->request->getPost('paket_id') !== '' && $this->request->getPost('paket_id') !== null ? (int) $this->request->getPost('paket_id') : null,
             'created_by' => $username,
             'created_date' => $now,
             'updated_by' => $username,
@@ -274,6 +277,7 @@ class MasterSekolah extends BaseController
             'kecamatan' => 'permit_empty|max_length[255]',
             'latitude' => 'permit_empty|decimal',
             'longitude' => 'permit_empty|decimal',
+            'paket_id' => 'permit_empty|integer',
         ];
 
         if (! $this->validate($rules)) {
@@ -293,9 +297,10 @@ class MasterSekolah extends BaseController
         }
 
         $username = (string) (session()->get('username') ?? 'system');
+        $paketId = $this->request->getPost('paket_id') !== '' && $this->request->getPost('paket_id') !== null ? (int) $this->request->getPost('paket_id') : null;
 
-        $builder = db_connect()->table('mst_sekolah');
-        $builder->where('npsn', $npsn)->update([
+        $db = db_connect();
+        $db->table('mst_sekolah')->where('npsn', $npsn)->update([
             'npsn' => $newNpsn,
             'nama' => trim((string) $this->request->getPost('nama')),
             'jenis' => trim((string) $this->request->getPost('jenis')),
@@ -304,9 +309,28 @@ class MasterSekolah extends BaseController
             'kecamatan' => trim((string) $this->request->getPost('kecamatan')),
             'latitude' => $this->nullableFloat($this->request->getPost('latitude')),
             'longitude' => $this->nullableFloat($this->request->getPost('longitude')),
+            'paket_id' => $paketId,
             'updated_by' => $username,
             'updated_date' => date('Y-m-d H:i:s'),
         ]);
+
+        if ($db->tableExists('trn_rab_gedung_detail')) {
+            $db->table('trn_rab_gedung_detail')
+                ->where('sekolah_npsn', $npsn)
+                ->update([
+                    'paket_id' => $paketId,
+                    'sekolah_npsn' => $newNpsn,
+                ]);
+        }
+
+        if ($db->tableExists('laporan_lapangan_proyek')) {
+            $db->table('laporan_lapangan_proyek')
+                ->where('sekolah_npsn', $npsn)
+                ->update([
+                    'paket_id' => $paketId,
+                    'sekolah_npsn' => $newNpsn,
+                ]);
+        }
 
         return redirect()->to('/admin/master/sekolah')->with('message', 'Data sekolah berhasil diperbarui.');
     }

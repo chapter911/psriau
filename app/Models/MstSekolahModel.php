@@ -11,7 +11,7 @@ class MstSekolahModel extends Model
     protected $returnType    = 'array';
     protected $allowedFields = [
         'npsn', 'nama', 'jenis', 'nsm', 'kabupaten', 'kecamatan',
-        'latitude', 'longitude', 'created_by', 'created_date', 'updated_by', 'updated_date',
+        'latitude', 'longitude', 'paket_id', 'created_by', 'created_date', 'updated_by', 'updated_date',
     ];
     protected $useTimestamps = false;
 }
