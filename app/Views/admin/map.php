@@ -1420,183 +1420,155 @@
             });
 
             // ─────────────────────────────────────────────────────────────────
-            // TOPOGRAPHIC CONTOUR LINES — Full Riau Province Coverage
-            // Elevation is simulated via a multi-frequency noise function that
-            // places high terrain along the western Bukit Barisan range and
-            // flattens toward the eastern coast — matching real Riau topography.
-            // Contours are drawn as closed-loop isolines using a marching-squares
-            // approach on a dense lat/lng grid so they appear correctly at ANY
-            // zoom level and in ANY filtered kabupaten view.
+            // TOPOGRAPHIC CONTOUR LINES — drawn AFTER fitBounds (see below)
             // ─────────────────────────────────────────────────────────────────
 
             function riauElevation(lat, lng) {
-                // Western highlands (Bukit Barisan) — peak elevation ~2000m
-                // Eastern lowlands/coast — ~0-30m
-                const westBias = Math.max(0, (101.5 - lng) / 1.5); // 0→1 from east to west
+                // Western highlands (Bukit Barisan) — peak ~2000m, flat coast east
+                const westBias = Math.max(0, (101.5 - lng) / 1.5);
                 const base = westBias * westBias * 1800;
-
-                // Ridge undulation along the mountain range
-                const ridge = Math.sin((lat + 1) * 1.8) * 220 * westBias;
-                // Secondary ridges
-                const ridge2 = Math.cos(lat * 3.5) * 80 * westBias;
-                // Noise for natural variation
+                const ridge  = Math.sin((lat + 1) * 1.8) * 220 * westBias;
+                const ridge2 = Math.cos(lat * 3.5)       * 80  * westBias;
                 const noise1 = Math.sin(lat * 7 + lng * 5) * 40;
                 const noise2 = Math.cos(lat * 4 - lng * 3) * 25;
-                // Rokan / Kampar river valleys dip
-                const rokanValley = lng > 100.8 && lng < 101.6 && lat > 1.5 && lat < 2.5
-                    ? -Math.max(0, 1 - Math.abs(lat - 2.0) * 3) * 150
-                    : 0;
-                const kamparValley = lng > 101.0 && lng < 102.5 && lat > -0.3 && lat < 0.6
-                    ? -Math.max(0, 1 - Math.abs(lat - 0.1) * 5) * 120
-                    : 0;
-                return Math.max(0, base + ridge + ridge2 + noise1 + noise2 + rokanValley + kamparValley);
+                // River valleys
+                const rokan  = (lng > 100.8 && lng < 101.6 && lat > 1.5 && lat < 2.5)
+                    ? -Math.max(0, 1 - Math.abs(lat - 2.0) * 3) * 150 : 0;
+                const kampar = (lng > 101.0 && lng < 102.5 && lat > -0.3 && lat < 0.6)
+                    ? -Math.max(0, 1 - Math.abs(lat - 0.1) * 5) * 120 : 0;
+                // Coastal/delta lowlands east of ~102.5
+                const coastDrop = Math.max(0, (lng - 102.0) / 2.0) * -35;
+                return Math.max(0, base + ridge + ridge2 + noise1 + noise2 + rokan + kampar + coastDrop);
             }
 
-            // Grid resolution — denser = smoother but heavier
-            const GRID_LAT_STEP = 0.06;
-            const GRID_LNG_STEP = 0.08;
-            const RIAU_LAT_MIN = -1.5;
-            const RIAU_LAT_MAX = 2.8;
-            const RIAU_LNG_MIN = 100.0;
-            const RIAU_LNG_MAX = 104.2;
+            const GRID_LAT_STEP = 0.05;
+            const GRID_LNG_STEP = 0.07;
+            const RIAU_LAT_MIN = -1.5, RIAU_LAT_MAX = 2.8;
+            const RIAU_LNG_MIN = 100.0, RIAU_LNG_MAX = 104.5;
 
-            // Contour levels: [elevation, color, weight, opacity, label]
             const CONTOUR_LEVELS = [
-                { elev: 1500, color: '#e53935', weight: 1.4, opacity: 0.75, label: '1500m' },
-                { elev: 1000, color: '#fb8c00', weight: 1.3, opacity: 0.70, label: '1000m' },
-                { elev:  500, color: '#fdd835', weight: 1.2, opacity: 0.65, label: '500m'  },
-                { elev:  250, color: '#66bb6a', weight: 1.1, opacity: 0.60, label: '250m'  },
-                { elev:  100, color: '#29b6f6', weight: 1.0, opacity: 0.58, label: '100m'  },
-                { elev:   50, color: '#ab47bc', weight: 0.9, opacity: 0.55, label: '50m'   },
+                { elev: 1500, color: '#e53935', weight: 1.5, opacity: 0.80, label: '1500m' },
+                { elev: 1000, color: '#ff7043', weight: 1.4, opacity: 0.75, label: '1000m' },
+                { elev:  500, color: '#fdd835', weight: 1.3, opacity: 0.70, label: '500m'  },
+                { elev:  250, color: '#66bb6a', weight: 1.2, opacity: 0.65, label: '250m'  },
+                { elev:  100, color: '#29b6f6', weight: 1.1, opacity: 0.62, label: '100m'  },
+                { elev:   50, color: '#ab47bc', weight: 1.0, opacity: 0.60, label: '50m'   },
+                { elev:   25, color: '#80cbc4', weight: 0.9, opacity: 0.55, label: '25m'   },
+                { elev:   10, color: '#b0bec5', weight: 0.8, opacity: 0.50, label: '10m'   },
             ];
 
-            // Build elevation grid
-            const lats = [];
-            for (let la = RIAU_LAT_MIN; la <= RIAU_LAT_MAX + 0.001; la += GRID_LAT_STEP) lats.push(la);
-            const lngs = [];
-            for (let lo = RIAU_LNG_MIN; lo <= RIAU_LNG_MAX + 0.001; lo += GRID_LNG_STEP) lngs.push(lo);
+            // Pre-build elevation grid once
+            const cLats = [], cLngs = [];
+            for (let la = RIAU_LAT_MIN; la <= RIAU_LAT_MAX + 0.001; la += GRID_LAT_STEP) cLats.push(la);
+            for (let lo = RIAU_LNG_MIN; lo <= RIAU_LNG_MAX + 0.001; lo += GRID_LNG_STEP) cLngs.push(lo);
+            const elevGrid = cLats.map(la => cLngs.map(lo => riauElevation(la, lo)));
 
-            const grid = lats.map(la => lngs.map(lo => riauElevation(la, lo)));
+            function interpEdge(v0, v1, elev) { return v1 === v0 ? 0 : (elev - v0) / (v1 - v0); }
 
-            // Marching-squares linear interpolation helper
-            function interp(v0, v1, elev) {
-                if (v1 === v0) return 0;
-                return (elev - v0) / (v1 - v0);
-            }
+            // Call this AFTER fitBounds so getBounds() returns the real viewport
+            function drawRiauContours() {
+                const vb = exportMap.getBounds();
 
-            CONTOUR_LEVELS.forEach(spec => {
-                const elev = spec.elev;
-                const segments = [];
+                CONTOUR_LEVELS.forEach(spec => {
+                    const elev = spec.elev;
+                    const segments = [];
 
-                for (let r = 0; r < lats.length - 1; r++) {
-                    for (let c = 0; c < lngs.length - 1; c++) {
-                        const v00 = grid[r][c];
-                        const v01 = grid[r][c + 1];
-                        const v10 = grid[r + 1][c];
-                        const v11 = grid[r + 1][c + 1];
+                    for (let r = 0; r < cLats.length - 1; r++) {
+                        for (let c = 0; c < cLngs.length - 1; c++) {
+                            const v00 = elevGrid[r][c],   v01 = elevGrid[r][c+1];
+                            const v10 = elevGrid[r+1][c], v11 = elevGrid[r+1][c+1];
+                            const la0 = cLats[r], la1 = cLats[r+1];
+                            const lo0 = cLngs[c], lo1 = cLngs[c+1];
 
-                        const la0 = lats[r], la1 = lats[r + 1];
-                        const lo0 = lngs[c], lo1 = lngs[c + 1];
+                            const ci =
+                                (v00 >= elev ? 8 : 0) | (v01 >= elev ? 4 : 0) |
+                                (v11 >= elev ? 2 : 0) | (v10 >= elev ? 1 : 0);
+                            if (ci === 0 || ci === 15) continue;
 
-                        const idx =
-                            (v00 >= elev ? 8 : 0) |
-                            (v01 >= elev ? 4 : 0) |
-                            (v11 >= elev ? 2 : 0) |
-                            (v10 >= elev ? 1 : 0);
+                            const top    = [la0, lo0 + interpEdge(v00,v01,elev)*(lo1-lo0)];
+                            const bottom = [la1, lo0 + interpEdge(v10,v11,elev)*(lo1-lo0)];
+                            const left   = [la0 + interpEdge(v00,v10,elev)*(la1-la0), lo0];
+                            const right  = [la0 + interpEdge(v01,v11,elev)*(la1-la0), lo1];
 
-                        if (idx === 0 || idx === 15) continue;
+                            const cases = {
+                                1:[left,bottom], 2:[bottom,right], 3:[left,right],
+                                4:[top,right],   6:[top,bottom],   7:[left,top],
+                                8:[top,left],    9:[top,bottom],   11:[top,right],
+                                12:[left,right], 13:[bottom,right],14:[left,bottom],
+                                5: null, 10: null  // saddle — handled below
+                            };
 
-                        // Edge midpoints via linear interpolation
-                        const top    = [la0, lo0 + interp(v00, v01, elev) * (lo1 - lo0)];
-                        const bottom = [la1, lo0 + interp(v10, v11, elev) * (lo1 - lo0)];
-                        const left   = [la0 + interp(v00, v10, elev) * (la1 - la0), lo0];
-                        const right  = [la0 + interp(v01, v11, elev) * (la1 - la0), lo1];
-
-                        // Map marching-squares case to edge pairs
-                        const cases = {
-                            1:  [left, bottom],
-                            2:  [bottom, right],
-                            3:  [left, right],
-                            4:  [top, right],
-                            5:  [left, top, bottom, right],
-                            6:  [top, bottom],
-                            7:  [left, top],
-                            8:  [top, left],
-                            9:  [top, bottom],
-                            10: [top, right, left, bottom],
-                            11: [top, right],
-                            12: [left, right],
-                            13: [bottom, right],
-                            14: [left, bottom],
-                        };
-
-                        const pts = cases[idx];
-                        if (pts) {
-                            if (pts.length === 2) {
-                                segments.push([pts[0], pts[1]]);
-                            } else {
-                                // Saddle case: two separate segments
-                                segments.push([pts[0], pts[1]]);
-                                segments.push([pts[2], pts[3]]);
+                            if (ci === 5) {
+                                segments.push([left,top]); segments.push([bottom,right]);
+                            } else if (ci === 10) {
+                                segments.push([top,right]); segments.push([left,bottom]);
+                            } else if (cases[ci]) {
+                                segments.push(cases[ci]);
                             }
                         }
                     }
-                }
 
-                // Merge collinear segments into polylines
-                const used = new Array(segments.length).fill(false);
-                const polylines = [];
-
-                for (let i = 0; i < segments.length; i++) {
-                    if (used[i]) continue;
-                    const line = [segments[i][0], segments[i][1]];
-                    used[i] = true;
-                    let extended = true;
-                    while (extended) {
-                        extended = false;
-                        const tail = line[line.length - 1];
-                        for (let j = 0; j < segments.length; j++) {
-                            if (used[j]) continue;
-                            const [a, b] = segments[j];
-                            const dA = Math.abs(a[0]-tail[0]) + Math.abs(a[1]-tail[1]);
-                            const dB = Math.abs(b[0]-tail[0]) + Math.abs(b[1]-tail[1]);
-                            if (dA < 0.001) { line.push(b); used[j] = true; extended = true; break; }
-                            if (dB < 0.001) { line.push(a); used[j] = true; extended = true; break; }
+                    // Stitch segments into polylines
+                    const used = new Array(segments.length).fill(false);
+                    const polys = [];
+                    for (let i = 0; i < segments.length; i++) {
+                        if (used[i]) continue;
+                        const line = [segments[i][0], segments[i][1]];
+                        used[i] = true;
+                        let ext = true;
+                        while (ext) {
+                            ext = false;
+                            const tail = line[line.length - 1];
+                            for (let j = 0; j < segments.length; j++) {
+                                if (used[j]) continue;
+                                const [a, b] = segments[j];
+                                const dA = Math.abs(a[0]-tail[0]) + Math.abs(a[1]-tail[1]);
+                                const dB = Math.abs(b[0]-tail[0]) + Math.abs(b[1]-tail[1]);
+                                if (dA < 0.001) { line.push(b); used[j]=true; ext=true; break; }
+                                if (dB < 0.001) { line.push(a); used[j]=true; ext=true; break; }
+                            }
                         }
+                        if (line.length >= 2) polys.push(line);
                     }
-                    if (line.length >= 2) polylines.push(line);
-                }
 
-                // Draw polylines
-                polylines.forEach(pts => {
-                    L.polyline(pts, {
-                        color: spec.color,
-                        weight: spec.weight,
-                        opacity: spec.opacity,
-                        smoothFactor: 1
-                    }).addTo(exportMap);
-                });
+                    // Draw contour polylines
+                    polys.forEach(pts => {
+                        L.polyline(pts, {
+                            color: spec.color, weight: spec.weight,
+                            opacity: spec.opacity, smoothFactor: 1
+                        }).addTo(exportMap);
+                    });
 
-                // Draw elevation labels — place them at intervals along each polyline,
-                // only within the current map bounds so they always appear in view
-                const mapBounds = exportMap.getBounds();
-                polylines.forEach(pts => {
-                    const step = Math.max(1, Math.floor(pts.length / 3));
-                    for (let i = step; i < pts.length; i += step) {
-                        const p = pts[i];
-                        if (mapBounds.contains(L.latLng(p[0], p[1]))) {
-                            L.marker(p, {
-                                icon: L.divIcon({
-                                    className: '',
-                                    html: `<div style="color:${spec.color};font-size:7px;font-weight:bold;font-family:Arial;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;">${spec.label}</div>`,
-                                    iconSize: [32, 10],
-                                    iconAnchor: [0, 5]
-                                })
-                            }).addTo(exportMap);
+                    // Draw labels — at least one per visible polyline segment
+                    // Strategy: place a label at the midpoint of every polyline segment
+                    // that passes through or near the current viewport
+                    polys.forEach(pts => {
+                        // Find midpoint of this polyline
+                        const mid = pts[Math.floor(pts.length / 2)];
+                        const midLL = L.latLng(mid[0], mid[1]);
+
+                        // Check if the polyline has any point inside the viewport
+                        const inView = pts.some(p => vb.contains(L.latLng(p[0], p[1])));
+                        if (!inView) return;
+
+                        // Place label at first in-view point
+                        let labelPt = null;
+                        for (const p of pts) {
+                            if (vb.contains(L.latLng(p[0], p[1]))) { labelPt = p; break; }
                         }
-                    }
+                        if (!labelPt) return;
+
+                        L.marker(labelPt, {
+                            icon: L.divIcon({
+                                className: '',
+                                html: `<div style="background:rgba(0,0,0,0.55);color:${spec.color};font-size:7px;font-weight:bold;font-family:Arial;padding:1px 3px;border-radius:2px;white-space:nowrap;pointer-events:none;border:1px solid ${spec.color}">${spec.label}</div>`,
+                                iconSize: [36, 12],
+                                iconAnchor: [0, 6]
+                            })
+                        }).addTo(exportMap);
+                    });
                 });
-            });
+            }
 
             // Copy markers (using L.divIcon for html2canvas compatibility)
             const tempMarkerLayer = L.layerGroup().addTo(exportMap);
@@ -1637,6 +1609,9 @@
             } else {
                 exportMap.setView([-0.51544, 101.44415], 8);
             }
+
+            // Draw contours AFTER fitBounds so viewport (getBounds) is correct
+            drawRiauContours();
 
             // Inject dynamic scale bar
             document.getElementById('export-scale-container').innerHTML = getScaleBarHtml(exportMap);
