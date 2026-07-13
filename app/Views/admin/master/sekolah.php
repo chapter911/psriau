@@ -18,38 +18,34 @@
     </div>
     <div class="card-body">
         <!-- Filter Form -->
-        <form method="get" action="<?= site_url('/admin/master/sekolah'); ?>" class="mb-4 bg-light p-3 rounded border">
+        <form id="filter-form" method="get" action="<?= site_url('/admin/master/sekolah'); ?>" class="mb-4 bg-light p-3 rounded border">
             <div class="form-row align-items-end">
-                <div class="form-group col-md-3 mb-2">
+                <div class="form-group col-md-4 mb-2">
                     <label class="small font-weight-bold text-muted">Filter Paket</label>
-                    <select name="paket_id" class="form-control">
+                    <select name="paket_id" class="form-control js-filter-select">
                         <option value="*">Semua Paket</option>
                         <?php foreach (($pakets ?? []) as $paket): ?>
                             <option value="<?= esc($paket['id']); ?>" <?= (string)($filter_paket_id ?? '') === (string)$paket['id'] ? 'selected' : ''; ?>><?= esc($paket['nama_paket']); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="form-group col-md-3 mb-2">
+                <div class="form-group col-md-4 mb-2">
                     <label class="small font-weight-bold text-muted">Filter Kabupaten</label>
-                    <select name="kabupaten" id="filter_kabupaten" class="form-control">
+                    <select name="kabupaten" id="filter_kabupaten" class="form-control js-filter-select">
                         <option value="*">Semua Kabupaten</option>
                         <?php foreach (($kabupatens ?? []) as $kab): ?>
                             <option value="<?= esc($kab); ?>" <?= ($filter_kabupaten ?? '') === $kab ? 'selected' : ''; ?>><?= esc($kab); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="form-group col-md-3 mb-2">
+                <div class="form-group col-md-4 mb-2">
                     <label class="small font-weight-bold text-muted">Filter Kecamatan</label>
-                    <select name="kecamatan" id="filter_kecamatan" class="form-control">
+                    <select name="kecamatan" id="filter_kecamatan" class="form-control js-filter-select">
                         <option value="*">Semua Kecamatan</option>
                         <?php foreach (($kecamatans ?? []) as $kec): ?>
                             <option value="<?= esc($kec); ?>" <?= ($filter_kecamatan ?? '') === $kec ? 'selected' : ''; ?>><?= esc($kec); ?></option>
                         <?php endforeach; ?>
                     </select>
-                </div>
-                <div class="form-group col-md-3 mb-2">
-                    <button type="submit" class="btn btn-primary mr-2">Filter</button>
-                    <a href="<?= site_url('/admin/master/sekolah'); ?>" class="btn btn-secondary">Reset</a>
                 </div>
             </div>
         </form>
@@ -655,31 +651,19 @@
     })();
 
     (function () {
-        const filterKabupaten = document.getElementById('filter_kabupaten');
-        const filterKecamatan = document.getElementById('filter_kecamatan');
-
-        if (filterKabupaten && filterKecamatan) {
-            filterKabupaten.addEventListener('change', async function() {
-                const kab = this.value;
-                filterKecamatan.innerHTML = '<option value="*">Semua Kecamatan</option>';
-                if (kab === '' || kab === '*') {
-                    return;
-                }
-
-                try {
-                    const response = await fetch('<?= site_url('admin/dashboard/map-kecamatan-options'); ?>?kabupaten=' + encodeURIComponent(kab));
-                    const data = await response.json();
-                    if (data.status === 'ok' && Array.isArray(data.kecamatan)) {
-                        data.kecamatan.forEach(kec => {
-                            const opt = document.createElement('option');
-                            opt.value = kec;
-                            opt.textContent = kec;
-                            filterKecamatan.appendChild(opt);
-                        });
+        const filterForm = document.getElementById('filter-form');
+        if (filterForm) {
+            document.querySelectorAll('.js-filter-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    // Reset kecamatan to all if kabupaten is changed
+                    if (this.id === 'filter_kabupaten') {
+                        const filterKecamatan = document.getElementById('filter_kecamatan');
+                        if (filterKecamatan) {
+                            filterKecamatan.value = '*';
+                        }
                     }
-                } catch (err) {
-                    console.error('Error fetching kecamatan:', err);
-                }
+                    filterForm.submit();
+                });
             });
         }
     })();
