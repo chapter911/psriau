@@ -1007,22 +1007,14 @@
                             <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
                                 <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <div style="width: 30px; height: 15px; border: 2px solid #555; background: rgba(0,0,0,0.05); margin-right: 10px;"></div>
-                                    <div style="font-weight: bold; text-transform: uppercase;">BATAS PROVINSI</div>
-                                </div>
-                                <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <div style="width: 30px; height: 15px; border: 2px dashed #999; background: none; margin-right: 10px;"></div>
-                                    <div style="font-weight: bold; text-transform: uppercase;">BATAS KABUPATEN</div>
+                                    <div style="width: 30px; height: 15px; border: 2.5px solid red; background: rgba(255,0,0,0.05); margin-right: 10px;"></div>
+                                    <div style="font-weight: bold; color: red; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;" title="${schoolName}">${schoolName}</div>
                                 </div>
                                 <div style="display: flex; align-items: center; font-size: 10px;">
                                     <div style="width: 30px; height: 4px; background: #00bcd4; margin-right: 10px; position: relative;">
                                         <span style="position: absolute; top: -7px; left: 0; right: 0; text-align: center; font-size: 7px; color: #00bcd4; font-weight: bold;">45</span>
                                     </div>
                                     <div style="font-weight: bold; text-transform: uppercase;">Kontur 5m</div>
-                                </div>
-                                <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <div style="width: 30px; height: 15px; border: 2px solid red; background: rgba(255,0,0,0.05); margin-right: 10px;"></div>
-                                    <div style="font-weight: bold; color: red; text-transform: uppercase;">Usulan SR</div>
                                 </div>
                             </div>
                         </div>

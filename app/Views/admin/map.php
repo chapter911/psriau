@@ -883,22 +883,14 @@
                             <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
                                 <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <div style="width: 30px; height: 15px; border: 2px solid #555; background: rgba(0,0,0,0.05); margin-right: 10px;"></div>
-                                    <div style="font-weight: bold; text-transform: uppercase;">BATAS PROVINSI</div>
-                                </div>
-                                <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <div style="width: 30px; height: 15px; border: 2px dashed #999; background: none; margin-right: 10px;"></div>
-                                    <div style="font-weight: bold; text-transform: uppercase;">BATAS KABUPATEN</div>
+                                    <div style="width: 30px; height: 15px; border: 2.5px solid red; background: rgba(255,0,0,0.05); margin-right: 10px;"></div>
+                                    <div style="font-weight: bold; color: red; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;" title="${schoolName}">${schoolName}</div>
                                 </div>
                                 <div style="display: flex; align-items: center; font-size: 10px;">
                                     <div style="width: 30px; height: 4px; background: #00bcd4; margin-right: 10px; position: relative;">
                                         <span style="position: absolute; top: -7px; left: 0; right: 0; text-align: center; font-size: 7px; color: #00bcd4; font-weight: bold;">45</span>
                                     </div>
                                     <div style="font-weight: bold; text-transform: uppercase;">Kontur 5m</div>
-                                </div>
-                                <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <div style="width: 30px; height: 15px; border: 2px solid red; background: rgba(255,0,0,0.05); margin-right: 10px;"></div>
-                                    <div style="font-weight: bold; color: red; text-transform: uppercase;">Usulan SR</div>
                                 </div>
                             </div>
                         </div>
@@ -1218,23 +1210,32 @@
                         <!-- Legend -->
                         <div style="border: 1px solid black; padding: 12px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box;">
                             <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
-                            <div style="display: flex; flex-direction: column; gap: 8px;">
-                                <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <span style="display: inline-block; width: 12px; height: 12px; background-color: #dc3545; border-radius: 50%; margin-right: 10px; border: 1px solid white;"></span>
-                                    <div style="font-weight: bold;">RUSAK BERAT</div>
-                                </div>
-                                <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <span style="display: inline-block; width: 12px; height: 12px; background-color: #ffc107; border-radius: 50%; margin-right: 10px; border: 1px solid white;"></span>
-                                    <div style="font-weight: bold;">RUSAK SEDANG</div>
-                                </div>
-                                <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <span style="display: inline-block; width: 12px; height: 12px; background-color: #28a745; border-radius: 50%; margin-right: 10px; border: 1px solid white;"></span>
-                                    <div style="font-weight: bold;">RUSAK RINGAN</div>
-                                </div>
-                                <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <span style="display: inline-block; width: 12px; height: 12px; background-color: #007bff; border-radius: 50%; margin-right: 10px; border: 1px solid white;"></span>
-                                    <div style="font-weight: bold;">BELUM KLASIFIKASI</div>
-                                </div>
+                            <div style="display: flex; flex-direction: column; gap: 5px; max-height: 170px; overflow: hidden;">
+                                ${(() => {
+                                    if (!activeMarkers || activeMarkers.length === 0) {
+                                        return '<div style="font-size: 9px; font-style: italic; color: #666;">Tidak ada data sekolah</div>';
+                                    }
+                                    const maxVisible = 7;
+                                    let html = '';
+                                    for (let i = 0; i < Math.min(activeMarkers.length, maxVisible); i++) {
+                                        const item = activeMarkers[i];
+                                        const color = getMarkerColor(item.survey_klasifikasi_kerusakan);
+                                        html += `
+                                            <div style="display: flex; align-items: center; font-size: 9px;">
+                                                <span style="display: inline-block; width: 10px; height: 10px; background-color: ${color}; border-radius: 50%; margin-right: 8px; border: 1px solid white; flex-shrink: 0;"></span>
+                                                <div style="font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;" title="${item.nama}">${item.nama}</div>
+                                            </div>
+                                        `;
+                                    }
+                                    if (activeMarkers.length > maxVisible) {
+                                        html += `
+                                            <div style="font-size: 8px; font-style: italic; color: #555; font-weight: bold; margin-top: 2px; padding-left: 18px;">
+                                                ... dan ${activeMarkers.length - maxVisible} sekolah lainnya
+                                            </div>
+                                        `;
+                                    }
+                                    return html;
+                                })()}
                             </div>
                         </div>
 
