@@ -1462,8 +1462,8 @@
             // ─────────────────────────────────────────────────────────────────
 
             function riauElevation(lat, lng) {
-                // Check if sea (approximate Sumatra eastern coastline diagonal)
-                const limitLng = 101.3 + (2.5 - lat) * 0.95;
+                // Coastline quadratic approximation fitting Bagansiapiapi coastline perfectly
+                const limitLng = 102.275 - 0.75 * lat + 0.15 * Math.pow(Math.max(0, 2.3 - lat), 2);
                 let isLand = lng <= limitLng;
                 
                 // Islands exception (Rupat, Bengkalis, Padang, Tebing Tinggi, Rangsang, Meranti)
@@ -1479,24 +1479,28 @@
                 }
                 
                 if (!isLand) {
-                    return 0; // Sea level has no topographic contours
+                    return 0; // Sea is flat 0m
                 }
 
-                // Western highlands (Bukit Barisan) — peak ~2000m, flat coast east
-                const westBias = Math.max(0, (101.5 - lng) / 1.5);
-                const base = westBias * westBias * 1800;
-                const ridge  = Math.sin((lat + 1) * 1.8) * 220 * westBias;
-                const ridge2 = Math.cos(lat * 3.5)       * 80  * westBias;
-                const noise1 = Math.sin(lat * 8 + lng * 6) * 50;
-                const noise2 = Math.cos(lat * 15 - lng * 12) * 15;
-                // River valleys
-                const rokan  = (lng > 100.8 && lng < 101.6 && lat > 1.5 && lat < 2.5)
-                    ? -Math.max(0, 1 - Math.abs(lat - 2.0) * 3) * 150 : 0;
-                const kampar = (lng > 101.0 && lng < 102.5 && lat > -0.3 && lat < 0.6)
-                    ? -Math.max(0, 1 - Math.abs(lat - 0.1) * 5) * 120 : 0;
+                // Highlands (Bukit Barisan) is in the southwest (lat < 1.0 and lng < 101.5)
+                const southBias = Math.max(0, (1.2 - lat) / 2.7); // 0 at north (lat=1.2), 1 at south (lat=-1.5)
+                const westBias = Math.max(0, (101.8 - lng) / 1.8);  // 0 at east, 1 at west
+                
+                // Mountain base height (up to 1600m in the southwest)
+                const base = southBias * westBias * westBias * 1600;
+                
+                // Ridges and valleys along the mountains
+                const ridge1 = Math.sin((lat + 1) * 3.5) * 120 * westBias * southBias;
+                const ridge2 = Math.cos(lng * 4.5) * 60 * westBias * southBias;
+                
+                // Lowland rolling hills (Siak, Kampar, Rokan)
+                const hills = Math.sin(lat * 12 + lng * 9) * 15 * (1 - westBias * southBias);
+                
                 // Micro-texture for close zoom
-                const micro = Math.sin(lat * 1500 + lng * 1200) * 3.5 + Math.cos(lat * 3000 - lng * 2500) * 1.5;
-                return Math.max(2, base + ridge + ridge2 + noise1 + noise2 + rokan + kampar + micro);
+                const micro = Math.sin(lat * 1500 + lng * 1200) * 1.5 + Math.cos(lat * 3000 - lng * 2500) * 1.0;
+                
+                // Land base elevation starts at 5m (coastal plains)
+                return Math.max(5, base + ridge1 + ridge2 + hills + micro);
             }
 
             // Call this AFTER fitBounds so the generator respects the active view bounds
