@@ -1052,6 +1052,8 @@
                 zoomAnimation: false
             }).setView([lat, lng], 17);
 
+            exportMap.invalidateSize(false);
+
             // Satellite base layer
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 maxZoom: 19
@@ -1070,6 +1072,8 @@
                 fadeAnimation: false,
                 zoomAnimation: false
             }).setView([-0.51544, 101.44415], 6);
+
+            insetMap.invalidateSize(false);
 
             L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
                 maxZoom: 20
