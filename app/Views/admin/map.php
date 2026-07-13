@@ -1386,9 +1386,21 @@
                     L.marker([lat, lng], {
                         icon: L.divIcon({
                             className: 'custom-export-pin',
-                            html: `<div style="width: 20px; height: 20px; background-color: ${getMarkerColor(item.survey_klasifikasi_kerusakan)}; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; color: white; font-family: Arial; font-size: 10px; font-weight: bold;">${i + 1}</div>`,
-                            iconSize: [20, 20],
-                            iconAnchor: [10, 10]
+                            html: `
+                                <div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 120px;">
+                                    <!-- The Pin Circle -->
+                                    <div style="width: 20px; height: 20px; background-color: ${getMarkerColor(item.survey_klasifikasi_kerusakan)}; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; color: white; font-family: Arial; font-size: 10px; font-weight: bold; flex-shrink: 0;">
+                                        ${i + 1}
+                                    </div>
+                                    <!-- The Label (Name & Coord) below the pin -->
+                                    <div style="margin-top: 3px; background: rgba(0,0,0,0.7); color: white; border-radius: 3px; padding: 2px 4px; font-family: Arial; font-size: 7px; line-height: 9px; font-weight: bold; max-width: 120px; word-wrap: break-word; text-shadow: 1px 1px 1px #000; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">${item.nama}</div>
+                                        <div style="font-size: 6px; color: #ccc; font-weight: normal;">${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
+                                    </div>
+                                </div>
+                            `,
+                            iconSize: [120, 60],
+                            iconAnchor: [60, 10]
                         })
                     }).addTo(tempMarkerLayer);
                     bounds.push([lat, lng]);
