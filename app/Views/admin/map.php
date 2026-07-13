@@ -914,18 +914,39 @@
                         </div>
 
                         <!-- Legend -->
-                        <div style="border: 1px solid black; padding: 12px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box;">
-                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
-                            <div style="display: flex; flex-direction: column; gap: 8px;">
-                                <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <div style="width: 30px; height: 15px; border: 2.5px solid red; background: rgba(255,0,0,0.05); margin-right: 10px;"></div>
-                                    <div style="font-weight: bold; color: red; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;" title="${schoolName}">${schoolName}</div>
+                        <div style="border: 1px solid black; padding: 10px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box; overflow: hidden;">
+                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
+                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                <div style="display: flex; align-items: center; font-size: 9px;">
+                                    <div style="width: 28px; height: 13px; border: 2.5px solid red; background: rgba(255,0,0,0.05); margin-right: 8px; flex-shrink: 0;"></div>
+                                    <div style="font-weight: bold; color: red; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px;" title="${schoolName}">${schoolName}</div>
                                 </div>
-                                <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <div style="width: 30px; height: 4px; background: #00bcd4; margin-right: 10px; position: relative;">
-                                        <span style="position: absolute; top: -7px; left: 0; right: 0; text-align: center; font-size: 7px; color: #00bcd4; font-weight: bold;">45</span>
+                                <div style="font-size: 8px; font-weight: bold; color: #333; margin-top: 3px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px;">Garis Kontur Topografi</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
+                                        <div style="width: 22px; height: 3px; background: #b0bec5; margin-right: 5px; flex-shrink: 0;"></div><span>10m</span>
                                     </div>
-                                    <div style="font-weight: bold; text-transform: uppercase;">Kontur 5m</div>
+                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
+                                        <div style="width: 22px; height: 3px; background: #80cbc4; margin-right: 5px; flex-shrink: 0;"></div><span>25m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
+                                        <div style="width: 22px; height: 3px; background: #ab47bc; margin-right: 5px; flex-shrink: 0;"></div><span>50m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
+                                        <div style="width: 22px; height: 3px; background: #29b6f6; margin-right: 5px; flex-shrink: 0;"></div><span>100m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
+                                        <div style="width: 22px; height: 3px; background: #66bb6a; margin-right: 5px; flex-shrink: 0;"></div><span>250m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
+                                        <div style="width: 22px; height: 3px; background: #fdd835; margin-right: 5px; flex-shrink: 0;"></div><span>500m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
+                                        <div style="width: 22px; height: 3px; background: #ff7043; margin-right: 5px; flex-shrink: 0;"></div><span>1000m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
+                                        <div style="width: 22px; height: 3px; background: #e53935; margin-right: 5px; flex-shrink: 0;"></div><span>1500m</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1311,14 +1332,45 @@
                         </div>
 
                         <!-- Legend -->
-                        <div style="border: 1px solid black; padding: 12px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box;">
-                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
-                            <div style="display: flex; justify-content: space-between; gap: 10px;">
-                                <div style="width: 49%; display: flex; flex-direction: column; gap: 5px;">
-                                    ${col1Html}
+                        <div style="border: 1px solid black; padding: 10px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box; overflow: hidden;">
+                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
+                            <div style="display: flex; gap: 8px; flex: 1; overflow: hidden;">
+                                <!-- School markers columns -->
+                                <div style="flex: 1; display: flex; gap: 6px; overflow: hidden;">
+                                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; overflow: hidden;">
+                                        ${col1Html}
+                                    </div>
+                                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; overflow: hidden;">
+                                        ${col2Html}
+                                    </div>
                                 </div>
-                                <div style="width: 49%; display: flex; flex-direction: column; gap: 5px;">
-                                    ${col2Html}
+                                <!-- Contour legend column -->
+                                <div style="width: 95px; flex-shrink: 0; border-left: 1px solid #ddd; padding-left: 8px; display: flex; flex-direction: column; gap: 3px;">
+                                    <div style="font-size: 7px; font-weight: bold; color: #333; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 2px; margin-bottom: 2px;">Kontur Topografi</div>
+                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
+                                        <div style="width: 20px; height: 3px; background: #b0bec5; flex-shrink: 0;"></div><span>10m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
+                                        <div style="width: 20px; height: 3px; background: #80cbc4; flex-shrink: 0;"></div><span>25m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
+                                        <div style="width: 20px; height: 3px; background: #ab47bc; flex-shrink: 0;"></div><span>50m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
+                                        <div style="width: 20px; height: 3px; background: #29b6f6; flex-shrink: 0;"></div><span>100m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
+                                        <div style="width: 20px; height: 3px; background: #66bb6a; flex-shrink: 0;"></div><span>250m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
+                                        <div style="width: 20px; height: 3px; background: #fdd835; flex-shrink: 0;"></div><span>500m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
+                                        <div style="width: 20px; height: 3px; background: #ff7043; flex-shrink: 0;"></div><span>1000m</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
+                                        <div style="width: 20px; height: 3px; background: #e53935; flex-shrink: 0;"></div><span>1500m</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1459,14 +1511,14 @@
             const RIAU_LNG_MIN = 100.0, RIAU_LNG_MAX = 104.5;
 
             const CONTOUR_LEVELS = [
-                { elev: 1500, color: '#e53935', weight: 1.5, opacity: 0.80, label: '1500m' },
-                { elev: 1000, color: '#ff7043', weight: 1.4, opacity: 0.75, label: '1000m' },
-                { elev:  500, color: '#fdd835', weight: 1.3, opacity: 0.70, label: '500m'  },
-                { elev:  250, color: '#66bb6a', weight: 1.2, opacity: 0.65, label: '250m'  },
-                { elev:  100, color: '#29b6f6', weight: 1.1, opacity: 0.62, label: '100m'  },
-                { elev:   50, color: '#ab47bc', weight: 1.0, opacity: 0.60, label: '50m'   },
-                { elev:   25, color: '#80cbc4', weight: 0.9, opacity: 0.55, label: '25m'   },
-                { elev:   10, color: '#b0bec5', weight: 0.8, opacity: 0.50, label: '10m'   },
+                { elev: 1500, color: '#e53935', weight: 2.5, opacity: 0.85, label: '1500m' },
+                { elev: 1000, color: '#ff7043', weight: 2.3, opacity: 0.82, label: '1000m' },
+                { elev:  500, color: '#fdd835', weight: 2.2, opacity: 0.80, label: '500m'  },
+                { elev:  250, color: '#66bb6a', weight: 2.0, opacity: 0.75, label: '250m'  },
+                { elev:  100, color: '#29b6f6', weight: 1.8, opacity: 0.72, label: '100m'  },
+                { elev:   50, color: '#ab47bc', weight: 1.7, opacity: 0.70, label: '50m'   },
+                { elev:   25, color: '#80cbc4', weight: 1.6, opacity: 0.65, label: '25m'   },
+                { elev:   10, color: '#b0bec5', weight: 1.5, opacity: 0.60, label: '10m'   },
             ];
 
             // Pre-build elevation grid once
@@ -1534,7 +1586,7 @@
                     for (let e = Math.ceil(eMin / interval) * interval; e <= eMax; e += interval) {
                         if (e <= eMin) continue;
                         const label = Number.isInteger(e) ? `${e}m` : `${e.toFixed(1)}m`;
-                        levels.push({ elev: e, color: colors[ci % colors.length], weight: 1.0, opacity: 0.70, label });
+                        levels.push({ elev: e, color: colors[ci % colors.length], weight: 2.0, opacity: 0.78, label });
                         ci++;
                     }
                 } else {
