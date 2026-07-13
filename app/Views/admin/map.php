@@ -63,6 +63,25 @@
             min-height: 340px;
             height: 52vh;
         }
+        
+        .map-overlay-contour-control {
+            top: 8px !important;
+            right: 8px !important;
+            width: 180px !important;
+        }
+    }
+
+    /* Custom contour tooltip styling */
+    .contour-tooltip {
+        background-color: rgba(30, 41, 59, 0.9) !important;
+        border: 1px solid #0f172a !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 11px !important;
+        padding: 4px 8px !important;
+        border-radius: 4px !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
+        border-left: 3px solid #cd853f !important;
     }
 </style>
 
@@ -148,7 +167,33 @@
             </div>
         </div>
 
-        <div id="dashboardMapBox" class="map-box"></div>
+        <div class="position-relative">
+            <div id="dashboardMapBox" class="map-box"></div>
+            <!-- Floating Overlay Control for Contours -->
+            <div class="map-overlay-contour-control" style="position: absolute; top: 12px; right: 12px; z-index: 999; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(220, 229, 242, 0.85); box-shadow: 0 4px 15px rgba(15, 22, 35, 0.12); font-family: inherit; width: 220px; transition: all 0.3s ease;">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="toggleContourLayer" style="cursor: pointer;">
+                    <label class="custom-control-label" for="toggleContourLayer" style="font-weight: 700; font-size: 0.82rem; color: #334155; cursor: pointer; user-select: none; display: flex; align-items: center; width: 100%;">
+                        <i class="fas fa-mountain mr-2 text-primary" style="font-size: 0.9rem;"></i> Kontur & Ketinggian
+                    </label>
+                </div>
+                <div id="contourLegend" style="display: none; margin-top: 8px; border-top: 1px solid #e8edf4; padding-top: 8px; font-size: 0.72rem; color: #475569;">
+                    <div style="font-weight: 700; margin-bottom: 5px; color: #1e293b; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.5px;">Ketinggian (mdpl):</div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span style="display: inline-block; width: 20px; height: 3px; background-color: #8b5a2b; border-radius: 1px; margin-right: 8px;"></span>
+                        <span style="font-weight: 600;">50.0 m</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span style="display: inline-block; width: 20px; height: 2px; background-color: #cd853f; border-radius: 1px; margin-right: 8px;"></span>
+                        <span style="font-weight: 600;">25.0 m</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span style="display: inline-block; width: 20px; height: 1.2px; background-color: #d2b48c; border-radius: 1px; margin-right: 8px;"></span>
+                        <span style="font-weight: 600;">12.5 m</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -314,6 +359,8 @@
     const map = L.map('dashboardMapBox').setView([-0.51544, 101.44415], 8);
     const markerLayer = L.layerGroup().addTo(map);
     const boundaryLayer = L.layerGroup().addTo(map);
+    const contourLayer = L.layerGroup().addTo(map);
+    let contourGeoJsonData = null;
     let mapScript = '';
     let activeMarkers = [];
     const markerIconCache = new Map();
@@ -790,6 +837,118 @@
         }
     });
 
+    const toggleContourEl = document.getElementById('toggleContourLayer');
+    const contourLegendEl = document.getElementById('contourLegend');
+
+    const getContourStyle = (elevation) => {
+        const elev = Number(elevation);
+        if (elev >= 50) {
+            return { color: '#8b5a2b', weight: 2.5, opacity: 0.85 };
+        } else if (elev >= 25) {
+            return { color: '#cd853f', weight: 1.8, opacity: 0.75 };
+        } else {
+            return { color: '#d2b48c', weight: 1.2, opacity: 0.65 };
+        }
+    };
+
+    const loadContourData = async () => {
+        if (contourGeoJsonData) {
+            return contourGeoJsonData;
+        }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Memuat Data Kontur',
+                text: 'Mengunduh file topografi Rokan Hilir...',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => Swal.showLoading(),
+            });
+        }
+
+        try {
+            const url = '<?= esc(media_url('geojson/rokan_hilir_kontur.json')); ?>';
+            const response = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+            if (!response.ok) {
+                throw new Error('Gagal mengambil file kontur.');
+            }
+            contourGeoJsonData = await response.json();
+            if (typeof Swal !== 'undefined') {
+                Swal.close();
+            }
+            return contourGeoJsonData;
+        } catch (error) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Memuat Kontur',
+                    text: error.message || 'Terjadi kesalahan saat memuat file GeoJSON kontur.',
+                });
+            }
+            throw error;
+        }
+    };
+
+    const updateContourVisibility = async () => {
+        if (!toggleContourEl) return;
+
+        if (toggleContourEl.checked) {
+            try {
+                const geojson = await loadContourData();
+                contourLayer.clearLayers();
+
+                const geoJsonLayer = L.geoJSON(geojson, {
+                    style: (feature) => {
+                        const elev = feature.properties ? feature.properties.elevation : 0;
+                        return getContourStyle(elev);
+                    },
+                    onEachFeature: (feature, layer) => {
+                        const elevation = feature.properties ? feature.properties.elevation : '';
+                        if (elevation) {
+                            layer.bindTooltip(`Ketinggian: ${elevation} m`, {
+                                sticky: true,
+                                className: 'contour-tooltip'
+                            });
+                        }
+                    }
+                });
+
+                geoJsonLayer.addTo(contourLayer);
+                
+                // Bring contour lines to back so markers stay on top
+                contourLayer.eachLayer((item) => {
+                    if (item && typeof item.bringToBack === 'function') {
+                        item.bringToBack();
+                    }
+                });
+
+                if (contourLegendEl) {
+                    contourLegendEl.style.display = 'block';
+                }
+
+                // Auto zoom-in/focus to the contour boundaries
+                const bounds = geoJsonLayer.getBounds();
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds, { padding: [30, 30] });
+                }
+            } catch (error) {
+                toggleContourEl.checked = false;
+                if (contourLegendEl) {
+                    contourLegendEl.style.display = 'none';
+                }
+            }
+        } else {
+            contourLayer.clearLayers();
+            if (contourLegendEl) {
+                contourLegendEl.style.display = 'none';
+            }
+        }
+    };
+
+    if (toggleContourEl) {
+        toggleContourEl.addEventListener('change', updateContourVisibility);
+    }
+
     // A3 Landscape PDF Topographic Map Exporter
     function loadExportLibraries() {
         return new Promise((resolve) => {
@@ -840,6 +999,27 @@
 
         try {
             await loadExportLibraries();
+
+            let contourLegendHtml = '';
+            if (toggleContourEl && toggleContourEl.checked) {
+                contourLegendHtml = `
+                    <div style="margin-top: 8px; border-top: 1px dashed black; padding-top: 6px; display: flex; flex-direction: column; gap: 4px;">
+                        <div style="font-size: 8px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Kontur & Ketinggian:</div>
+                        <div style="display: flex; align-items: center; font-size: 8px;">
+                            <div style="width: 25px; height: 3px; background: #8b5a2b; margin-right: 8px;"></div>
+                            <div>50 m (Tinggi)</div>
+                        </div>
+                        <div style="display: flex; align-items: center; font-size: 8px;">
+                            <div style="width: 25px; height: 2px; background: #cd853f; margin-right: 8px;"></div>
+                            <div>25 m (Sedang)</div>
+                        </div>
+                        <div style="display: flex; align-items: center; font-size: 8px;">
+                            <div style="width: 25px; height: 1px; background: #d2b48c; margin-right: 8px;"></div>
+                            <div>12.5 m (Rendah)</div>
+                        </div>
+                    </div>
+                `;
+            }
 
             // Create temporary map container in hidden area
             const exportContainer = document.createElement('div');
@@ -907,6 +1087,7 @@
                                     <div style="width: 30px; height: 15px; border: 2.5px solid red; background: rgba(255,0,0,0.05); margin-right: 10px;"></div>
                                     <div style="font-weight: bold; color: red; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;" title="${schoolName}">${schoolName}</div>
                                 </div>
+                                ${contourLegendHtml}
                             </div>
                         </div>
 
@@ -1018,6 +1199,15 @@
                 [lat - 0.0003, lng - 0.0003]
             ];
             L.polygon(schoolCoords, { color: 'red', fill: false, weight: 2.5 }).addTo(exportMap);
+
+            if (toggleContourEl && toggleContourEl.checked && contourGeoJsonData) {
+                L.geoJSON(contourGeoJsonData, {
+                    style: (feature) => {
+                        const elev = feature.properties ? feature.properties.elevation : 0;
+                        return getContourStyle(elev);
+                    }
+                }).addTo(exportMap);
+            }
 
             // Inject dynamic scale bar
             document.getElementById('export-scale-container').innerHTML = getScaleBarHtml(exportMap);
@@ -1177,7 +1367,7 @@
             await loadExportLibraries();
 
             // Compute dynamic 2-column legend content
-            const maxVisible = 14;
+            const maxVisible = (toggleContourEl && toggleContourEl.checked) ? 10 : 14;
             const showCount = Math.min(activeMarkers.length, maxVisible);
             const half = Math.ceil(showCount / 2);
             
@@ -1210,6 +1400,26 @@
                 `;
             } else if (activeMarkers.length === 0) {
                 col1Html = '<div style="font-size: 9px; font-style: italic; color: #666;">Tidak ada data sekolah</div>';
+            }
+
+            let contourLegendHtml = '';
+            if (toggleContourEl && toggleContourEl.checked) {
+                contourLegendHtml = `
+                    <div style="border-top: 1px dashed black; padding-top: 6px; margin-top: 6px; display: flex; gap: 12px; font-size: 8px;">
+                        <div style="display: flex; align-items: center; margin-right: 10px;">
+                            <div style="width: 15px; height: 3px; background: #8b5a2b; margin-right: 4px;"></div>
+                            <div style="font-weight: bold;">50 m</div>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-right: 10px;">
+                            <div style="width: 15px; height: 2px; background: #cd853f; margin-right: 4px;"></div>
+                            <div style="font-weight: bold;">25 m</div>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 15px; height: 1px; background: #d2b48c; margin-right: 4px;"></div>
+                            <div style="font-weight: bold;">12.5 m</div>
+                        </div>
+                    </div>
+                `;
             }
 
             // Create temporary map container in hidden area
@@ -1281,6 +1491,7 @@
                                     ${col2Html}
                                 </div>
                             </div>
+                            ${contourLegendHtml}
                         </div>
 
                         <!-- Inset Map -->
@@ -1390,6 +1601,15 @@
                     }
                 }).addTo(exportMap);
             });
+
+            if (toggleContourEl && toggleContourEl.checked && contourGeoJsonData) {
+                L.geoJSON(contourGeoJsonData, {
+                    style: (feature) => {
+                        const elev = feature.properties ? feature.properties.elevation : 0;
+                        return getContourStyle(elev);
+                    }
+                }).addTo(exportMap);
+            }
 
 
 
