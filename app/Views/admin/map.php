@@ -141,11 +141,19 @@
             </div>
         </div>
 
-        <div class="map-legend">
-            <span class="badge badge-danger">Rusak Berat</span>
-            <span class="badge badge-warning">Rusak Sedang</span>
-            <span class="badge badge-success">Rusak Ringan</span>
-            <span class="badge badge-primary">Belum Klasifikasi</span>
+        <div class="map-legend d-flex flex-wrap align-items-center justify-content-between">
+            <div class="d-flex flex-wrap gap-1">
+                <span class="badge badge-danger">Rusak Berat</span>
+                <span class="badge badge-warning">Rusak Sedang</span>
+                <span class="badge badge-success">Rusak Ringan</span>
+                <span class="badge badge-primary">Belum Klasifikasi</span>
+            </div>
+            <div class="custom-control custom-checkbox ml-md-auto mb-1">
+                <input type="checkbox" class="custom-control-input" id="toggleContourRokanHilir">
+                <label class="custom-control-label font-weight-bold text-dark" style="font-size: .88rem; cursor: pointer;" for="toggleContourRokanHilir">
+                    <i class="fas fa-layer-group text-primary mr-1"></i> Kontur Rokan Hilir
+                </label>
+            </div>
         </div>
 
         <div id="dashboardMapBox" class="map-box"></div>
@@ -314,6 +322,7 @@
     const map = L.map('dashboardMapBox').setView([-0.51544, 101.44415], 8);
     const markerLayer = L.layerGroup().addTo(map);
     const boundaryLayer = L.layerGroup().addTo(map);
+    const contourLayerGroup = L.layerGroup().addTo(map);
     let mapScript = '';
     let activeMarkers = [];
     const markerIconCache = new Map();
@@ -1391,6 +1400,27 @@
                 }).addTo(exportMap);
             });
 
+            // Copy Rokan Hilir contours from main map contourLayerGroup to exportMap if checked
+            const toggleContourCheckbox = document.getElementById('toggleContourRokanHilir');
+            if (toggleContourCheckbox && toggleContourCheckbox.checked) {
+                contourLayerGroup.eachLayer((layer) => {
+                    L.geoJSON(layer.toGeoJSON(), {
+                        style: (feature) => {
+                            const elevation = feature.properties.elevation || 0;
+                            let color = '#10b981';
+                            if (elevation >= 75) color = '#ef4444';
+                            else if (elevation >= 50) color = '#f97316';
+                            else if (elevation >= 25) color = '#eab308';
+                            return {
+                                color: color,
+                                weight: 1.2,
+                                opacity: 0.85
+                            };
+                        }
+                    }).addTo(exportMap);
+                });
+            }
+
 
 
 
@@ -1575,6 +1605,89 @@
     const exportBtnMain = document.getElementById('exportMapPdfBtnMain');
     if (exportBtnMain) {
         exportBtnMain.addEventListener('click', exportMainMapPdf);
+    }
+
+    let cachedContourData = null;
+    const loadAndRenderContours = async () => {
+        const toggleContourCheckbox = document.getElementById('toggleContourRokanHilir');
+        if (!toggleContourCheckbox) return;
+
+        if (!toggleContourCheckbox.checked) {
+            contourLayerGroup.clearLayers();
+            return;
+        }
+
+        if (cachedContourData) {
+            renderContours(cachedContourData);
+            return;
+        }
+
+        try {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Mohon Tunggu',
+                    text: 'Memuat data kontur Rokan Hilir...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => Swal.showLoading(),
+                });
+            }
+
+            const response = await fetch('<?= esc(media_url('geojson/rokan_hilir_kontur.json')); ?>');
+            if (!response.ok) {
+                throw new Error('Gagal mengunduh file kontur.');
+            }
+            cachedContourData = await response.json();
+            renderContours(cachedContourData);
+
+            if (typeof Swal !== 'undefined') {
+                Swal.close();
+            }
+        } catch (error) {
+            toggleContourCheckbox.checked = false;
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Error', 'Gagal memuat data kontur: ' + error.message, 'error');
+            }
+        }
+    };
+
+    const renderContours = (geojson) => {
+        contourLayerGroup.clearLayers();
+        
+        const layer = L.geoJSON(geojson, {
+            style: (feature) => {
+                const elevation = feature.properties.elevation || 0;
+                let color = '#10b981';
+                if (elevation >= 75) {
+                    color = '#ef4444';
+                } else if (elevation >= 50) {
+                    color = '#f97316';
+                } else if (elevation >= 25) {
+                    color = '#eab308';
+                }
+                
+                return {
+                    color: color,
+                    weight: 1.2,
+                    opacity: 0.85
+                };
+            },
+            onEachFeature: (feature, featureLayer) => {
+                const elevation = feature.properties.elevation || 0;
+                featureLayer.bindTooltip('Elevasi: ' + elevation + ' m', { sticky: true });
+            }
+        });
+        
+        contourLayerGroup.addLayer(layer);
+        
+        if (layer.getBounds().isValid()) {
+            map.fitBounds(layer.getBounds());
+        }
+    };
+
+    const toggleContourCheckbox = document.getElementById('toggleContourRokanHilir');
+    if (toggleContourCheckbox) {
+        toggleContourCheckbox.addEventListener('change', loadAndRenderContours);
     }
 
     applyMapScript(mapScript);
