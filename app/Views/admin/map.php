@@ -315,6 +315,7 @@
     const markerLayer = L.layerGroup().addTo(map);
     const boundaryLayer = L.layerGroup().addTo(map);
     let mapScript = '';
+    let activeMarkers = [];
     const markerIconCache = new Map();
 
     const clearTileLayers = () => {
@@ -696,7 +697,8 @@
 
             mapScript = payload.map_type && payload.map_type.map_script ? payload.map_type.map_script : mapScript;
             applyMapScript(mapScript);
-            renderMarkers(payload.markers || []);
+            activeMarkers = payload.markers || [];
+            renderMarkers(activeMarkers);
             inputs.total.textContent = String(payload.total || 0);
 
             if (typeof Swal !== 'undefined') {
@@ -1229,17 +1231,63 @@
 
             document.body.appendChild(exportContainer);
 
-            // Wait 100ms
-            await new Promise(r => setTimeout(r, 100));
+            // Initialize temp Leaflet map for main map export
+            const exportMap = L.map('export-map-canvas', {
+                zoomControl: false,
+                attributionControl: false,
+                fadeAnimation: false,
+                zoomAnimation: false
+            });
 
-            // Capture the active dashboard map
-            const mapCanvas = await html2canvas(document.getElementById('dashboardMapBox'), {
+            // Satellite base layer
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19
+            }).addTo(exportMap);
+
+            // Copy boundaries from main map boundaryLayer
+            boundaryLayer.eachLayer((layer) => {
+                L.geoJSON(layer.toGeoJSON(), {
+                    style: {
+                        color: '#2563eb',
+                        weight: 1.8,
+                        fillColor: '#93c5fd',
+                        fillOpacity: 0.08
+                    }
+                }).addTo(exportMap);
+            });
+
+            // Copy markers
+            const tempMarkerLayer = L.layerGroup().addTo(exportMap);
+            const bounds = [];
+            activeMarkers.forEach((item) => {
+                const lat = Number(item.latitude);
+                const lng = Number(item.longitude);
+                if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                    L.marker([lat, lng], {
+                        icon: getMarkerIcon(getMarkerColor(item.survey_klasifikasi_kerusakan))
+                    }).addTo(tempMarkerLayer);
+                    bounds.push([lat, lng]);
+                }
+            });
+
+            // Focus on markers or default Riau center
+            if (bounds.length > 0) {
+                exportMap.fitBounds(bounds, { padding: [50, 50] });
+            } else {
+                exportMap.setView([-0.51544, 101.44415], 8);
+            }
+
+            // Wait for tiles to load
+            await new Promise(r => setTimeout(r, 2000));
+
+            // Capture Leaflet map canvas
+            const mapCanvas = await html2canvas(document.getElementById('export-map-canvas'), {
                 useCORS: true,
                 allowTaint: true,
                 scale: 1.5
             });
 
-            // Replace in template
+            // Replace Leaflet map in template with captured image
             const mapImg = document.createElement('img');
             mapImg.src = mapCanvas.toDataURL('image/jpeg');
             mapImg.style.width = '100%';
@@ -1248,6 +1296,50 @@
             const mapCanvasEl = document.getElementById('export-map-canvas');
             mapCanvasEl.innerHTML = '';
             mapCanvasEl.appendChild(mapImg);
+
+            // Add coordinates grid labels overlays to the map img container
+            const gridOverlay = document.createElement('div');
+            gridOverlay.style.position = 'absolute';
+            gridOverlay.style.top = '0';
+            gridOverlay.style.left = '0';
+            gridOverlay.style.width = '100%';
+            gridOverlay.style.height = '100%';
+            gridOverlay.style.pointerEvents = 'none';
+            gridOverlay.style.border = '1px solid black';
+            gridOverlay.style.boxSizing = 'border-box';
+            
+            const center = exportMap.getCenter();
+            const mapLat = center.lat;
+            const mapLng = center.lng;
+            
+            const latStr25 = (mapLat + 0.4).toFixed(4);
+            const latStr50 = mapLat.toFixed(4);
+            const latStr75 = (mapLat - 0.4).toFixed(4);
+            
+            const lngStr25 = (mapLng - 0.4).toFixed(4);
+            const lngStr50 = mapLng.toFixed(4);
+            const lngStr75 = (mapLng + 0.4).toFixed(4);
+
+            gridOverlay.innerHTML = `
+                <!-- Horizontal Grid lines -->
+                <div style="position: absolute; left: 0; top: 25%; width: 100%; border-top: 1px dashed rgba(255,255,255,0.4);"></div>
+                <div style="position: absolute; left: 0; top: 50%; width: 100%; border-top: 1px dashed rgba(255,255,255,0.4);"></div>
+                <div style="position: absolute; left: 0; top: 75%; width: 100%; border-top: 1px dashed rgba(255,255,255,0.4);"></div>
+                <!-- Vertical Grid lines -->
+                <div style="position: absolute; top: 0; left: 25%; height: 100%; border-left: 1px dashed rgba(255,255,255,0.4);"></div>
+                <div style="position: absolute; top: 0; left: 50%; height: 100%; border-left: 1px dashed rgba(255,255,255,0.4);"></div>
+                <div style="position: absolute; top: 0; left: 75%; height: 100%; border-left: 1px dashed rgba(255,255,255,0.4);"></div>
+                
+                <!-- Grid Labels (approximate lat/lng labels) -->
+                <div style="position: absolute; top: 5px; left: 25%; font-size: 9px; transform: translateX(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${lngStr25}°E</div>
+                <div style="position: absolute; top: 5px; left: 50%; font-size: 9px; transform: translateX(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${lngStr50}°E</div>
+                <div style="position: absolute; top: 5px; left: 75%; font-size: 9px; transform: translateX(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${lngStr75}°E</div>
+                
+                <div style="position: absolute; left: 5px; top: 25%; font-size: 9px; transform: translateY(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${latStr25}°N</div>
+                <div style="position: absolute; left: 5px; top: 50%; font-size: 9px; transform: translateY(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${latStr50}°N</div>
+                <div style="position: absolute; left: 5px; top: 75%; font-size: 9px; transform: translateY(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${latStr75}°N</div>
+            `;
+            mapCanvasEl.appendChild(gridOverlay);
 
             // Capture entire layout container
             const layoutCanvas = await html2canvas(exportContainer, {
