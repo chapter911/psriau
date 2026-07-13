@@ -1419,46 +1419,181 @@
                 }).addTo(exportMap);
             });
 
-            // Generate topographic contour lines for Riau's western mountainous border
-            const contourSpecs = [
-                { baseLng: 100.3, elevation: 500 },
-                { baseLng: 100.6, elevation: 250 },
-                { baseLng: 100.9, elevation: 100 },
-                { baseLng: 101.2, elevation: 50 }
+            // ─────────────────────────────────────────────────────────────────
+            // TOPOGRAPHIC CONTOUR LINES — Full Riau Province Coverage
+            // Elevation is simulated via a multi-frequency noise function that
+            // places high terrain along the western Bukit Barisan range and
+            // flattens toward the eastern coast — matching real Riau topography.
+            // Contours are drawn as closed-loop isolines using a marching-squares
+            // approach on a dense lat/lng grid so they appear correctly at ANY
+            // zoom level and in ANY filtered kabupaten view.
+            // ─────────────────────────────────────────────────────────────────
+
+            function riauElevation(lat, lng) {
+                // Western highlands (Bukit Barisan) — peak elevation ~2000m
+                // Eastern lowlands/coast — ~0-30m
+                const westBias = Math.max(0, (101.5 - lng) / 1.5); // 0→1 from east to west
+                const base = westBias * westBias * 1800;
+
+                // Ridge undulation along the mountain range
+                const ridge = Math.sin((lat + 1) * 1.8) * 220 * westBias;
+                // Secondary ridges
+                const ridge2 = Math.cos(lat * 3.5) * 80 * westBias;
+                // Noise for natural variation
+                const noise1 = Math.sin(lat * 7 + lng * 5) * 40;
+                const noise2 = Math.cos(lat * 4 - lng * 3) * 25;
+                // Rokan / Kampar river valleys dip
+                const rokanValley = lng > 100.8 && lng < 101.6 && lat > 1.5 && lat < 2.5
+                    ? -Math.max(0, 1 - Math.abs(lat - 2.0) * 3) * 150
+                    : 0;
+                const kamparValley = lng > 101.0 && lng < 102.5 && lat > -0.3 && lat < 0.6
+                    ? -Math.max(0, 1 - Math.abs(lat - 0.1) * 5) * 120
+                    : 0;
+                return Math.max(0, base + ridge + ridge2 + noise1 + noise2 + rokanValley + kamparValley);
+            }
+
+            // Grid resolution — denser = smoother but heavier
+            const GRID_LAT_STEP = 0.06;
+            const GRID_LNG_STEP = 0.08;
+            const RIAU_LAT_MIN = -1.5;
+            const RIAU_LAT_MAX = 2.8;
+            const RIAU_LNG_MIN = 100.0;
+            const RIAU_LNG_MAX = 104.2;
+
+            // Contour levels: [elevation, color, weight, opacity, label]
+            const CONTOUR_LEVELS = [
+                { elev: 1500, color: '#e53935', weight: 1.4, opacity: 0.75, label: '1500m' },
+                { elev: 1000, color: '#fb8c00', weight: 1.3, opacity: 0.70, label: '1000m' },
+                { elev:  500, color: '#fdd835', weight: 1.2, opacity: 0.65, label: '500m'  },
+                { elev:  250, color: '#66bb6a', weight: 1.1, opacity: 0.60, label: '250m'  },
+                { elev:  100, color: '#29b6f6', weight: 1.0, opacity: 0.58, label: '100m'  },
+                { elev:   50, color: '#ab47bc', weight: 0.9, opacity: 0.55, label: '50m'   },
             ];
-            
-            const startLat = -1.2;
-            const endLat = 2.4;
-            const steps = 40;
-            const stepSize = (endLat - startLat) / steps;
-            
-            contourSpecs.forEach(spec => {
-                const points = [];
-                for (let i = 0; i <= steps; i++) {
-                    const lat = startLat + i * stepSize;
-                    const wave1 = Math.sin(lat * 3) * 0.15;
-                    const wave2 = Math.cos(lat * 7) * 0.05;
-                    const wave3 = Math.sin(lat * 1.5) * 0.25;
-                    const lng = spec.baseLng + wave1 + wave2 + wave3;
-                    points.push([lat, lng]);
+
+            // Build elevation grid
+            const lats = [];
+            for (let la = RIAU_LAT_MIN; la <= RIAU_LAT_MAX + 0.001; la += GRID_LAT_STEP) lats.push(la);
+            const lngs = [];
+            for (let lo = RIAU_LNG_MIN; lo <= RIAU_LNG_MAX + 0.001; lo += GRID_LNG_STEP) lngs.push(lo);
+
+            const grid = lats.map(la => lngs.map(lo => riauElevation(la, lo)));
+
+            // Marching-squares linear interpolation helper
+            function interp(v0, v1, elev) {
+                if (v1 === v0) return 0;
+                return (elev - v0) / (v1 - v0);
+            }
+
+            CONTOUR_LEVELS.forEach(spec => {
+                const elev = spec.elev;
+                const segments = [];
+
+                for (let r = 0; r < lats.length - 1; r++) {
+                    for (let c = 0; c < lngs.length - 1; c++) {
+                        const v00 = grid[r][c];
+                        const v01 = grid[r][c + 1];
+                        const v10 = grid[r + 1][c];
+                        const v11 = grid[r + 1][c + 1];
+
+                        const la0 = lats[r], la1 = lats[r + 1];
+                        const lo0 = lngs[c], lo1 = lngs[c + 1];
+
+                        const idx =
+                            (v00 >= elev ? 8 : 0) |
+                            (v01 >= elev ? 4 : 0) |
+                            (v11 >= elev ? 2 : 0) |
+                            (v10 >= elev ? 1 : 0);
+
+                        if (idx === 0 || idx === 15) continue;
+
+                        // Edge midpoints via linear interpolation
+                        const top    = [la0, lo0 + interp(v00, v01, elev) * (lo1 - lo0)];
+                        const bottom = [la1, lo0 + interp(v10, v11, elev) * (lo1 - lo0)];
+                        const left   = [la0 + interp(v00, v10, elev) * (la1 - la0), lo0];
+                        const right  = [la0 + interp(v01, v11, elev) * (la1 - la0), lo1];
+
+                        // Map marching-squares case to edge pairs
+                        const cases = {
+                            1:  [left, bottom],
+                            2:  [bottom, right],
+                            3:  [left, right],
+                            4:  [top, right],
+                            5:  [left, top, bottom, right],
+                            6:  [top, bottom],
+                            7:  [left, top],
+                            8:  [top, left],
+                            9:  [top, bottom],
+                            10: [top, right, left, bottom],
+                            11: [top, right],
+                            12: [left, right],
+                            13: [bottom, right],
+                            14: [left, bottom],
+                        };
+
+                        const pts = cases[idx];
+                        if (pts) {
+                            if (pts.length === 2) {
+                                segments.push([pts[0], pts[1]]);
+                            } else {
+                                // Saddle case: two separate segments
+                                segments.push([pts[0], pts[1]]);
+                                segments.push([pts[2], pts[3]]);
+                            }
+                        }
+                    }
                 }
-                
-                L.polyline(points, {
-                    color: '#00bcd4',
-                    weight: 1.2,
-                    opacity: 0.65
-                }).addTo(exportMap);
-                
-                const labelIndices = [10, 20, 30];
-                labelIndices.forEach(idx => {
-                    if (idx < points.length) {
-                        L.marker(points[idx], {
-                            icon: L.divIcon({
-                                className: 'contour-label-temp',
-                                html: `<div style="color: #00bcd4; font-size: 8px; font-weight: bold; text-shadow: 1px 1px 1px #000; font-family: Arial; transform: rotate(-30deg);">${spec.elevation}m</div>`,
-                                iconSize: [30, 10]
-                            })
-                        }).addTo(exportMap);
+
+                // Merge collinear segments into polylines
+                const used = new Array(segments.length).fill(false);
+                const polylines = [];
+
+                for (let i = 0; i < segments.length; i++) {
+                    if (used[i]) continue;
+                    const line = [segments[i][0], segments[i][1]];
+                    used[i] = true;
+                    let extended = true;
+                    while (extended) {
+                        extended = false;
+                        const tail = line[line.length - 1];
+                        for (let j = 0; j < segments.length; j++) {
+                            if (used[j]) continue;
+                            const [a, b] = segments[j];
+                            const dA = Math.abs(a[0]-tail[0]) + Math.abs(a[1]-tail[1]);
+                            const dB = Math.abs(b[0]-tail[0]) + Math.abs(b[1]-tail[1]);
+                            if (dA < 0.001) { line.push(b); used[j] = true; extended = true; break; }
+                            if (dB < 0.001) { line.push(a); used[j] = true; extended = true; break; }
+                        }
+                    }
+                    if (line.length >= 2) polylines.push(line);
+                }
+
+                // Draw polylines
+                polylines.forEach(pts => {
+                    L.polyline(pts, {
+                        color: spec.color,
+                        weight: spec.weight,
+                        opacity: spec.opacity,
+                        smoothFactor: 1
+                    }).addTo(exportMap);
+                });
+
+                // Draw elevation labels — place them at intervals along each polyline,
+                // only within the current map bounds so they always appear in view
+                const mapBounds = exportMap.getBounds();
+                polylines.forEach(pts => {
+                    const step = Math.max(1, Math.floor(pts.length / 3));
+                    for (let i = step; i < pts.length; i += step) {
+                        const p = pts[i];
+                        if (mapBounds.contains(L.latLng(p[0], p[1]))) {
+                            L.marker(p, {
+                                icon: L.divIcon({
+                                    className: '',
+                                    html: `<div style="color:${spec.color};font-size:7px;font-weight:bold;font-family:Arial;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;">${spec.label}</div>`,
+                                    iconSize: [32, 10],
+                                    iconAnchor: [0, 5]
+                                })
+                            }).addTo(exportMap);
+                        }
                     }
                 });
             });
