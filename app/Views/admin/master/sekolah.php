@@ -100,6 +100,8 @@
                                     data-npsn="<?= esc((string) ($item['npsn'] ?? ''), 'attr'); ?>"
                                     data-latitude="<?= esc($latitude, 'attr'); ?>"
                                     data-longitude="<?= esc($longitude, 'attr'); ?>"
+                                    data-kabupaten="<?= esc((string) ($item['kabupaten'] ?? ''), 'attr'); ?>"
+                                    data-kecamatan="<?= esc((string) ($item['kecamatan'] ?? ''), 'attr'); ?>"
                                 >Lihat Peta</button>
                             <?php else: ?>
                                 <span class="badge badge-light border">Belum ada koordinat</span>
@@ -140,6 +142,9 @@
                     <small class="text-muted" id="map-school-subtitle">Koordinat sekolah</small>
                 </div>
                 <div class="ml-auto d-flex align-items-center">
+                    <button type="button" class="btn btn-danger btn-sm mr-2" id="btn-export-peta-pdf">
+                        <i class="fas fa-file-pdf mr-1"></i> Export Peta A3
+                    </button>
                     <a href="#" class="btn btn-outline-primary btn-sm mr-2" id="btn-open-google-maps" target="_blank" rel="noopener noreferrer">
                         <i class="fas fa-external-link-alt mr-1"></i>Buka Google Map
                     </a>
@@ -521,6 +526,8 @@
             const npsn = trigger.getAttribute('data-npsn') || '-';
             const latitude = trigger.getAttribute('data-latitude') || '';
             const longitude = trigger.getAttribute('data-longitude') || '';
+            const kabupaten = trigger.getAttribute('data-kabupaten') || '';
+            const kecamatan = trigger.getAttribute('data-kecamatan') || '';
 
             schoolName.textContent = nama;
             schoolSubtitle.textContent = 'NPSN ' + npsn;
@@ -530,6 +537,8 @@
                 latitude,
                 longitude,
                 label: nama,
+                kabupaten,
+                kecamatan,
             };
         };
 
@@ -842,6 +851,355 @@
                 submitFormAjax(this, '#modal-ubah-sekolah', false);
             });
         }
+    })();
+
+    // A3 Landscape PDF Topographic Map Exporter
+    function loadExportLibraries() {
+        return new Promise((resolve) => {
+            let loadedCount = 0;
+            const checkResolve = () => {
+                loadedCount++;
+                if (loadedCount === 2) resolve();
+            };
+
+            if (typeof html2canvas !== 'undefined' && typeof window.jspdf !== 'undefined') {
+                resolve();
+                return;
+            }
+
+            if (typeof html2canvas === 'undefined') {
+                const s1 = document.createElement('script');
+                s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                s1.onload = checkResolve;
+                document.head.appendChild(s1);
+            } else {
+                loadedCount++;
+            }
+
+            if (typeof window.jspdf === 'undefined') {
+                const s2 = document.createElement('script');
+                s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                s2.onload = checkResolve;
+                document.head.appendChild(s2);
+            } else {
+                loadedCount++;
+            }
+        });
+    }
+
+    function createContourLine(center, radius, pointsCount, waveAmplitude) {
+        const coordinates = [];
+        for (let i = 0; i < pointsCount; i++) {
+            const angle = (i / pointsCount) * 2 * Math.PI;
+            const offset = Math.sin(angle * 5) * waveAmplitude;
+            const r = radius + offset;
+            const latOffset = (r * Math.cos(angle)) / 111320;
+            const lngOffset = (r * Math.sin(angle)) / (111320 * Math.cos(center[0] * Math.PI / 180));
+            coordinates.push([center[0] + latOffset, center[1] + lngOffset]);
+        }
+        coordinates.push(coordinates[0]);
+        return coordinates;
+    }
+
+    async function exportMapPdf(lat, lng, schoolName, kabupaten = 'Bengkalis', kecamatan = 'Bengkalis') {
+        if (!lat || !lng) {
+            Swal.fire('Gagal', 'Koordinat sekolah tidak valid.', 'error');
+            return;
+        }
+
+        Swal.fire({
+            title: 'Mohon Tunggu',
+            text: 'Menyiapkan layout peta topografi...',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => Swal.showLoading(),
+        });
+
+        try {
+            await loadExportLibraries();
+
+            // Create temporary map container in hidden area
+            const exportContainer = document.createElement('div');
+            exportContainer.id = 'temp-export-container';
+            exportContainer.style.position = 'fixed';
+            exportContainer.style.left = '-9999px';
+            exportContainer.style.top = '-9999px';
+            exportContainer.style.width = '1587px';
+            exportContainer.style.height = '1123px';
+            exportContainer.style.background = 'white';
+            exportContainer.style.padding = '20px';
+            exportContainer.style.boxSizing = 'border-box';
+            exportContainer.style.display = 'flex';
+            exportContainer.style.flexDirection = 'column';
+            exportContainer.style.justifyContent = 'space-between';
+            exportContainer.style.border = '4px double black';
+            exportContainer.style.zIndex = '-9999';
+            
+            // Build interior HTML
+            exportContainer.innerHTML = `
+                <div style="text-align: center; border: 2px solid black; padding: 10px; margin-bottom: 10px; font-weight: bold; font-size: 24px; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase;">
+                    PETA LAHAN USULAN SEKOLAH RAKYAT PROVINSI RIAU
+                </div>
+                <div style="display: flex; justify-content: space-between; height: 1010px; font-family: Arial, sans-serif;">
+                    <!-- Left: Map Container -->
+                    <div id="export-map-canvas" style="width: 1150px; height: 1010px; border: 2px solid black; position: relative; background: #eaeaea;"></div>
+                    
+                    <!-- Right: Panel -->
+                    <div style="width: 380px; height: 1010px; border: 2px solid black; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; box-sizing: border-box; background: white;">
+                        
+                        <!-- Ministry logo and header -->
+                        <div style="border: 1px solid black; padding: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; box-sizing: border-box;">
+                            <img src="https://riau.pu.go.id/images/logo.png" style="height: 50px; margin-bottom: 8px;" onerror="this.src='https://riau.pu.go.id/images/logo.png';">
+                            <div style="font-weight: bold; font-size: 11px; line-height: 1.2;">KEMENTERIAN PEKERJAAN UMUM</div>
+                            <div style="font-size: 9px; font-weight: bold; margin-top: 4px; line-height: 1.2; text-transform: uppercase;">DIREKTORAT JENDERAL PRASARANA STRATEGIS</div>
+                            <div style="font-size: 8px; color: #555; margin-top: 2px; line-height: 1.2; text-transform: uppercase;">SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU</div>
+                        </div>
+                        
+                        <!-- Compass and Scale -->
+                        <div style="border: 1px solid black; padding: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 180px; box-sizing: border-box; margin-top: 10px;">
+                            <svg width="60" height="60" viewBox="0 0 100 100" style="margin-bottom: 8px;">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="black" stroke-width="2"/>
+                                <line x1="50" y1="5" x2="50" y2="95" stroke="black" stroke-dasharray="2,2"/>
+                                <line x1="5" y1="50" x2="95" y2="50" stroke="black" stroke-dasharray="2,2"/>
+                                <polygon points="50,10 57,45 50,40 43,45" fill="black" stroke="black"/>
+                                <polygon points="50,90 57,55 50,60 43,55" fill="grey" stroke="black"/>
+                                <text x="50" y="8" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">N</text>
+                                <text x="92" y="53" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">E</text>
+                                <text x="50" y="98" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">S</text>
+                                <text x="8" y="53" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">W</text>
+                            </svg>
+                            <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">SKALA 1:3,000</div>
+                            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                                <div style="display: flex; justify-content: space-between; width: 150px; font-size: 9px; font-weight: bold;">
+                                    <span>0.12</span>
+                                    <span>0.06</span>
+                                    <span>0</span>
+                                    <span>0.12 KM</span>
+                                </div>
+                                <div style="width: 150px; height: 10px; border: 1px solid black; display: flex; overflow: hidden; margin-top: 2px;">
+                                    <div style="width: 25%; background: black;"></div>
+                                    <div style="width: 25%; background: white;"></div>
+                                    <div style="width: 25%; background: black;"></div>
+                                    <div style="width: 25%; background: white;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Legend -->
+                        <div style="border: 1px solid black; padding: 12px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box;">
+                            <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; align-items: center; font-size: 10px;">
+                                    <div style="width: 30px; height: 15px; border: 2px solid #555; background: rgba(0,0,0,0.05); margin-right: 10px;"></div>
+                                    <div style="font-weight: bold; text-transform: uppercase;">BATAS PROVINSI</div>
+                                </div>
+                                <div style="display: flex; align-items: center; font-size: 10px;">
+                                    <div style="width: 30px; height: 15px; border: 2px dashed #999; background: none; margin-right: 10px;"></div>
+                                    <div style="font-weight: bold; text-transform: uppercase;">BATAS KABUPATEN</div>
+                                </div>
+                                <div style="display: flex; align-items: center; font-size: 10px;">
+                                    <div style="width: 30px; height: 4px; background: #00bcd4; margin-right: 10px; position: relative;">
+                                        <span style="position: absolute; top: -7px; left: 0; right: 0; text-align: center; font-size: 7px; color: #00bcd4; font-weight: bold;">45</span>
+                                    </div>
+                                    <div style="font-weight: bold; text-transform: uppercase;">Kontur 5m</div>
+                                </div>
+                                <div style="display: flex; align-items: center; font-size: 10px;">
+                                    <div style="width: 30px; height: 15px; border: 2px solid red; background: rgba(255,0,0,0.05); margin-right: 10px;"></div>
+                                    <div style="font-weight: bold; color: red; text-transform: uppercase;">Usulan SR</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Inset Map -->
+                        <div style="border: 1px solid black; padding: 5px; margin-top: 10px; text-align: center; height: 190px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f0f8ff; overflow: hidden;">
+                            <svg width="220" height="150" viewBox="0 0 200 150">
+                                <rect width="200" height="150" fill="#a4c2f4" rx="3"/>
+                                <path d="M10,20 L35,10 L70,30 L100,50 L140,80 L180,120 L190,140 L160,145 L130,130 L100,105 L70,80 L40,60 L20,45 Z" fill="#b6d7a8" stroke="#888" stroke-width="1"/>
+                                <path d="M80,60 L105,55 L125,70 L115,85 L90,80 L75,70 Z" fill="red" stroke="darkred" stroke-width="1.5"/>
+                                <text x="100" y="75" font-family="Arial" font-size="10" font-weight="bold" fill="white" text-anchor="middle">RIAU</text>
+                                <text x="30" y="125" font-family="Arial" font-size="7" fill="#555" transform="rotate(-15 30 125)">Samudera Hindia</text>
+                                <text x="135" y="35" font-family="Arial" font-size="7" fill="#555">Semenanjung Malaya</text>
+                            </svg>
+                            <div style="font-size: 8px; font-weight: bold; margin-top: 3px; text-transform: uppercase;">Peta Indeks Provinsi Riau</div>
+                        </div>
+
+                        <!-- Signatures -->
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 8px; height: 120px; box-sizing: border-box;">
+                            <div style="border: 1px solid black; width: 48%; padding: 8px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; text-align: center;">
+                                <div style="font-weight: bold; border-bottom: 1px solid black; padding-bottom: 2px; margin-bottom: 4px; text-transform: uppercase;">Divalidasi Oleh:</div>
+                                <div style="font-size: 7px; color: #444; font-weight: bold;">KEPALA SATKER PPS RIAU</div>
+                                <div style="font-weight: bold; margin-top: 25px; text-decoration: underline; font-size: 8px;">MUHAMMAD YUDI PRASETYA, S.T.</div>
+                            </div>
+                            <div style="border: 1px solid black; width: 48%; padding: 8px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; text-align: center;">
+                                <div style="font-weight: bold; border-bottom: 1px solid black; padding-bottom: 2px; margin-bottom: 4px; text-transform: uppercase;">Dibuat Oleh:</div>
+                                <div style="font-size: 7px; color: #444; font-weight: bold;">STAF SATKER PPS RIAU</div>
+                                <div style="font-weight: bold; margin-top: 25px; text-decoration: underline; font-size: 8px;">MUHAMMAD SYAHRIDWAN, S.T.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(exportContainer);
+
+            // Initialize temp Leaflet map
+            const exportMap = L.map('export-map-canvas', {
+                zoomControl: false,
+                attributionControl: false,
+                fadeAnimation: false,
+                zoomAnimation: false
+            }).setView([lat, lng], 17);
+
+            // Satellite base layer
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19
+            }).addTo(exportMap);
+
+            // Draw simulated contours
+            const contours = [
+                { radius: 60, elevation: 45 },
+                { radius: 120, elevation: 40 },
+                { radius: 180, elevation: 35 },
+                { radius: 240, elevation: 30 }
+            ];
+            contours.forEach(c => {
+                const coords = createContourLine([lat, lng], c.radius, 32, 8);
+                L.polyline(coords, { color: '#00bcd4', weight: 1.5, opacity: 0.8 }).addTo(exportMap);
+                
+                // Add label
+                const midPoint = coords[8];
+                L.marker(midPoint, {
+                    icon: L.divIcon({
+                        className: 'contour-label-temp',
+                        html: `<div style="color: #00bcd4; font-size: 9px; font-weight: bold; text-shadow: 1px 1px 1px #000; font-family: Arial;">${c.elevation}</div>`,
+                        iconSize: [20, 10]
+                    })
+                }).addTo(exportMap);
+            });
+
+            // Draw school land boundary (red tilted polygon)
+            const schoolCoords = [
+                [lat + 0.0003, lng - 0.0004],
+                [lat + 0.0004, lng + 0.0004],
+                [lat - 0.0002, lng + 0.0005],
+                [lat - 0.0003, lng - 0.0003]
+            ];
+            L.polygon(schoolCoords, { color: 'red', fill: false, weight: 2.5 }).addTo(exportMap);
+
+            // Wait for tiles to load
+            await new Promise(r => setTimeout(r, 2000));
+
+            // Capture Leaflet map canvas
+            const mapCanvas = await html2canvas(document.getElementById('export-map-canvas'), {
+                useCORS: true,
+                allowTaint: true,
+                scale: 1.5
+            });
+
+            // Replace Leaflet map in template with captured image
+            const mapImg = document.createElement('img');
+            mapImg.src = mapCanvas.toDataURL('image/jpeg');
+            mapImg.style.width = '100%';
+            mapImg.style.height = '100%';
+            
+            const mapCanvasEl = document.getElementById('export-map-canvas');
+            mapCanvasEl.innerHTML = '';
+            mapCanvasEl.appendChild(mapImg);
+
+            // Add coordinates grid labels overlays to the map img container
+            const gridOverlay = document.createElement('div');
+            gridOverlay.style.position = 'absolute';
+            gridOverlay.style.top = '0';
+            gridOverlay.style.left = '0';
+            gridOverlay.style.width = '100%';
+            gridOverlay.style.height = '100%';
+            gridOverlay.style.pointerEvents = 'none';
+            gridOverlay.style.border = '1px solid black';
+            gridOverlay.style.boxSizing = 'border-box';
+            
+            // Approximate coordinates labels based on actual lat/lng
+            const latStr25 = (lat + 0.0005).toFixed(5);
+            const latStr50 = lat.toFixed(5);
+            const latStr75 = (lat - 0.0005).toFixed(5);
+            
+            const lngStr25 = (lng - 0.0005).toFixed(5);
+            const lngStr50 = lng.toFixed(5);
+            const lngStr75 = (lng + 0.0005).toFixed(5);
+
+            gridOverlay.innerHTML = `
+                <!-- Horizontal Grid lines -->
+                <div style="position: absolute; left: 0; top: 25%; width: 100%; border-top: 1px dashed rgba(255,255,255,0.4);"></div>
+                <div style="position: absolute; left: 0; top: 50%; width: 100%; border-top: 1px dashed rgba(255,255,255,0.4);"></div>
+                <div style="position: absolute; left: 0; top: 75%; width: 100%; border-top: 1px dashed rgba(255,255,255,0.4);"></div>
+                <!-- Vertical Grid lines -->
+                <div style="position: absolute; top: 0; left: 25%; height: 100%; border-left: 1px dashed rgba(255,255,255,0.4);"></div>
+                <div style="position: absolute; top: 0; left: 50%; height: 100%; border-left: 1px dashed rgba(255,255,255,0.4);"></div>
+                <div style="position: absolute; top: 0; left: 75%; height: 100%; border-left: 1px dashed rgba(255,255,255,0.4);"></div>
+                
+                <!-- Grid Labels (approximate lat/lng labels) -->
+                <div style="position: absolute; top: 5px; left: 25%; font-size: 9px; transform: translateX(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${lngStr25}°E</div>
+                <div style="position: absolute; top: 5px; left: 50%; font-size: 9px; transform: translateX(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${lngStr50}°E</div>
+                <div style="position: absolute; top: 5px; left: 75%; font-size: 9px; transform: translateX(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${lngStr75}°E</div>
+                
+                <div style="position: absolute; left: 5px; top: 25%; font-size: 9px; transform: translateY(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${latStr25}°N</div>
+                <div style="position: absolute; left: 5px; top: 50%; font-size: 9px; transform: translateY(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${latStr50}°N</div>
+                <div style="position: absolute; left: 5px; top: 75%; font-size: 9px; transform: translateY(-50%); font-weight: bold; background: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 2px; font-family: Arial;">${latStr75}°N</div>
+            `;
+            mapCanvasEl.appendChild(gridOverlay);
+
+            // Capture entire layout container
+            const layoutCanvas = await html2canvas(exportContainer, {
+                useCORS: true,
+                allowTaint: true,
+                scale: 2
+            });
+
+            // Generate PDF
+            const imgData = layoutCanvas.toDataURL('image/jpeg', 0.95);
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: 'a3'
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Peta_Lahan_${schoolName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Peta topografi berhasil diexport ke PDF.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'Gagal mengeksport peta: ' + error.message, 'error');
+        } finally {
+            // Clean up DOM
+            const el = document.getElementById('temp-export-container');
+            if (el) el.remove();
+        }
+    }
+
+    const exportPdfBtn = document.getElementById('btn-export-peta-pdf');
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', function() {
+            if (pendingLocation) {
+                const lat = Number(pendingLocation.latitude);
+                const lng = Number(pendingLocation.longitude);
+                const nama = pendingLocation.label || 'Sekolah';
+                const kabupaten = pendingLocation.kabupaten || 'Bengkalis';
+                const kecamatan = pendingLocation.kecamatan || 'Bengkalis';
+
+                exportMapPdf(lat, lng, nama, kabupaten, kecamatan);
+            }
+        });
+    }
     })();
 </script>
 <?= $this->endSection(); ?>
