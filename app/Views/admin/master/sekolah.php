@@ -650,37 +650,70 @@
         });
     })();
 
-    (function () {
-        const filterForm = document.getElementById('filter-form');
-        if (filterForm) {
-            document.querySelectorAll('.js-filter-select').forEach(select => {
-                select.addEventListener('change', function() {
-                    // Reset kecamatan to all if kabupaten is changed
-                    if (this.id === 'filter_kabupaten') {
-                        const filterKecamatan = document.getElementById('filter_kecamatan');
-                        if (filterKecamatan) {
-                            filterKecamatan.value = '*';
-                        }
-                    }
-                    filterForm.submit();
-                });
-            });
+    // Event delegation for filter dropdowns change to trigger AJAX filter updates
+    document.addEventListener('change', function(event) {
+        const select = event.target.closest('.js-filter-select');
+        if (!select) {
+            return;
         }
-    })();
+
+        if (select.id === 'filter_kabupaten') {
+            const filterKecamatan = document.getElementById('filter_kecamatan');
+            if (filterKecamatan) {
+                filterKecamatan.value = '*';
+            }
+        }
+
+        applyFilters();
+    });
+
+    function getFilterQueryString() {
+        const paketId = document.getElementsByName('paket_id')[0]?.value || '*';
+        const kabupaten = document.getElementById('filter_kabupaten')?.value || '*';
+        const kecamatan = document.getElementById('filter_kecamatan')?.value || '*';
+
+        const params = new URLSearchParams();
+        if (paketId !== '*') params.set('paket_id', paketId);
+        if (kabupaten !== '*') params.set('kabupaten', kabupaten);
+        if (kecamatan !== '*') params.set('kecamatan', kecamatan);
+
+        return params.toString();
+    }
+
+    function applyFilters() {
+        const queryString = getFilterQueryString();
+        const baseUrl = '<?= site_url('/admin/master/sekolah'); ?>';
+        const newUrl = queryString ? (baseUrl + '?' + queryString) : baseUrl;
+
+        // Update URL in browser history without reloading
+        window.history.pushState({ path: newUrl }, '', newUrl);
+
+        // Update the Export Excel button's href dynamically
+        const exportBtn = document.querySelector('a[href*="/sekolah/export"]');
+        if (exportBtn) {
+            exportBtn.href = '<?= site_url('/admin/master/sekolah/export'); ?>' + (queryString ? '?' + queryString : '');
+        }
+
+        // Refresh DataTable resetting page and search
+        refreshTable(true);
+    }
 
     // AJAX Form Submission and DataTable reloading
-    function refreshTable() {
+    function refreshTable(resetState = false) {
         const tableElement = $('.js-datatable');
         let currentPage = 0;
         let currentSearch = '';
         let currentOrder = [];
 
-        if ($.fn.DataTable.isDataTable(tableElement)) {
+        if (!resetState && $.fn.DataTable.isDataTable(tableElement)) {
             const dt = tableElement.DataTable();
             currentPage = dt.page();
             currentSearch = dt.search();
             currentOrder = dt.order();
-            dt.destroy();
+        }
+
+        if ($.fn.DataTable.isDataTable(tableElement)) {
+            tableElement.DataTable().destroy();
         }
 
         $.ajax({
@@ -689,6 +722,11 @@
             success: function (html) {
                 const newTableHtml = $(html).find('.js-datatable').html();
                 tableElement.html(newTableHtml);
+
+                const newFormHtml = $(html).find('#filter-form').html();
+                if (newFormHtml) {
+                    $('#filter-form').html(newFormHtml);
+                }
 
                 const newDt = tableElement.DataTable({
                     responsive: false,
@@ -710,14 +748,15 @@
                     }
                 });
 
-                if (currentOrder && currentOrder.length > 0) {
-                    newDt.order(currentOrder);
+                if (!resetState) {
+                    if (currentOrder && currentOrder.length > 0) {
+                        newDt.order(currentOrder);
+                    }
+                    if (currentSearch) {
+                        newDt.search(currentSearch);
+                    }
+                    newDt.page(currentPage).draw(false);
                 }
-                if (currentSearch) {
-                    newDt.search(currentSearch);
-                }
-
-                newDt.page(currentPage).draw(false);
             },
             error: function () {
                 Swal.fire('Error', 'Gagal memuat ulang data tabel.', 'error');
