@@ -916,38 +916,21 @@
                         <!-- Legend -->
                         <div style="border: 1px solid black; padding: 10px; margin-top: 10px; display: flex; flex-direction: column; justify-content: flex-start; height: 210px; box-sizing: border-box; overflow: hidden;">
                             <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
-                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
                                 <div style="display: flex; align-items: center; font-size: 9px;">
                                     <div style="width: 28px; height: 13px; border: 2.5px solid red; background: rgba(255,0,0,0.05); margin-right: 8px; flex-shrink: 0;"></div>
                                     <div style="font-weight: bold; color: red; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px;" title="${schoolName}">${schoolName}</div>
                                 </div>
-                                <div style="font-size: 8px; font-weight: bold; color: #333; margin-top: 3px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px;">Garis Kontur Topografi</div>
-                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
-                                        <div style="width: 22px; height: 3px; background: #b0bec5; margin-right: 5px; flex-shrink: 0;"></div><span>10m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
-                                        <div style="width: 22px; height: 3px; background: #80cbc4; margin-right: 5px; flex-shrink: 0;"></div><span>25m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
-                                        <div style="width: 22px; height: 3px; background: #ab47bc; margin-right: 5px; flex-shrink: 0;"></div><span>50m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
-                                        <div style="width: 22px; height: 3px; background: #29b6f6; margin-right: 5px; flex-shrink: 0;"></div><span>100m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
-                                        <div style="width: 22px; height: 3px; background: #66bb6a; margin-right: 5px; flex-shrink: 0;"></div><span>250m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
-                                        <div style="width: 22px; height: 3px; background: #fdd835; margin-right: 5px; flex-shrink: 0;"></div><span>500m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
-                                        <div style="width: 22px; height: 3px; background: #ff7043; margin-right: 5px; flex-shrink: 0;"></div><span>1000m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 8px; min-width: 80px;">
-                                        <div style="width: 22px; height: 3px; background: #e53935; margin-right: 5px; flex-shrink: 0;"></div><span>1500m</span>
-                                    </div>
+                                <div style="font-size: 8px; font-weight: bold; color: #333; margin-top: 4px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px;">Kontur Topografi</div>
+                                <div style="display: flex; align-items: center; font-size: 8px; gap: 6px;">
+                                    <div style="width: 26px; height: 2px; background: #795548; flex-shrink: 0;"></div>
+                                    <span>Garis Kontur</span>
                                 </div>
+                                <div style="display: flex; align-items: center; font-size: 8px; gap: 6px;">
+                                    <div style="width: 26px; height: 3px; background: #4e342e; flex-shrink: 0;"></div>
+                                    <span>Kontur Indeks</span>
+                                </div>
+                                <div style="font-size: 7px; color: #777; margin-top: 4px; line-height: 1.4;">Sumber: OpenTopoMap<br>Data: SRTM NASA</div>
                             </div>
                         </div>
 
@@ -1345,32 +1328,17 @@
                                     </div>
                                 </div>
                                 <!-- Contour legend column -->
-                                <div style="width: 95px; flex-shrink: 0; border-left: 1px solid #ddd; padding-left: 8px; display: flex; flex-direction: column; gap: 3px;">
-                                    <div style="font-size: 7px; font-weight: bold; color: #333; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 2px; margin-bottom: 2px;">Kontur Topografi</div>
+                                <div style="width: 95px; flex-shrink: 0; border-left: 1px solid #ddd; padding-left: 8px; display: flex; flex-direction: column; gap: 5px;">
+                                    <div style="font-size: 7px; font-weight: bold; color: #333; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 2px;">Kontur Topografi</div>
                                     <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 20px; height: 3px; background: #b0bec5; flex-shrink: 0;"></div><span>10m</span>
+                                        <div style="width: 22px; height: 2px; background: #795548; flex-shrink: 0;"></div>
+                                        <span>Garis Kontur</span>
                                     </div>
                                     <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 20px; height: 3px; background: #80cbc4; flex-shrink: 0;"></div><span>25m</span>
+                                        <div style="width: 22px; height: 3px; background: #4e342e; flex-shrink: 0;"></div>
+                                        <span>Kontur Indeks</span>
                                     </div>
-                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 20px; height: 3px; background: #ab47bc; flex-shrink: 0;"></div><span>50m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 20px; height: 3px; background: #29b6f6; flex-shrink: 0;"></div><span>100m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 20px; height: 3px; background: #66bb6a; flex-shrink: 0;"></div><span>250m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 20px; height: 3px; background: #fdd835; flex-shrink: 0;"></div><span>500m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 20px; height: 3px; background: #ff7043; flex-shrink: 0;"></div><span>1000m</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 20px; height: 3px; background: #e53935; flex-shrink: 0;"></div><span>1500m</span>
-                                    </div>
+                                    <div style="font-size: 6.5px; color: #777; margin-top: 4px; line-height: 1.4;">Sumber:<br>OpenTopoMap<br>Data: SRTM NASA</div>
                                 </div>
                             </div>
                         </div>
@@ -1484,201 +1452,23 @@
             });
 
             // ─────────────────────────────────────────────────────────────────
-            // TOPOGRAPHIC CONTOUR LINES — drawn AFTER fitBounds (see below)
+            // TOPOGRAPHIC CONTOUR OVERLAY — OpenTopoMap (real SRTM data)
+            // OpenTopoMap renders actual elevation contours from NASA SRTM at
+            // any zoom level. It is loaded as a semi-transparent tile overlay
+            // on top of the Google Hybrid basemap.
             // ─────────────────────────────────────────────────────────────────
 
-            function riauElevation(lat, lng) {
-                // Western highlands (Bukit Barisan) — peak ~2000m, flat coast east
-                const westBias = Math.max(0, (101.5 - lng) / 1.5);
-                const base = westBias * westBias * 1800;
-                const ridge  = Math.sin((lat + 1) * 1.8) * 220 * westBias;
-                const ridge2 = Math.cos(lat * 3.5)       * 80  * westBias;
-                const noise1 = Math.sin(lat * 7 + lng * 5) * 40;
-                const noise2 = Math.cos(lat * 4 - lng * 3) * 25;
-                // River valleys
-                const rokan  = (lng > 100.8 && lng < 101.6 && lat > 1.5 && lat < 2.5)
-                    ? -Math.max(0, 1 - Math.abs(lat - 2.0) * 3) * 150 : 0;
-                const kampar = (lng > 101.0 && lng < 102.5 && lat > -0.3 && lat < 0.6)
-                    ? -Math.max(0, 1 - Math.abs(lat - 0.1) * 5) * 120 : 0;
-                // Coastal/delta lowlands east of ~102.5
-                const coastDrop = Math.max(0, (lng - 102.0) / 2.0) * -35;
-                return Math.max(0, base + ridge + ridge2 + noise1 + noise2 + rokan + kampar + coastDrop);
-            }
-
-            const GRID_LAT_STEP = 0.05;
-            const GRID_LNG_STEP = 0.07;
-            const RIAU_LAT_MIN = -1.5, RIAU_LAT_MAX = 2.8;
-            const RIAU_LNG_MIN = 100.0, RIAU_LNG_MAX = 104.5;
-
-            const CONTOUR_LEVELS = [
-                { elev: 1500, color: '#e53935', weight: 2.5, opacity: 0.85, label: '1500m' },
-                { elev: 1000, color: '#ff7043', weight: 2.3, opacity: 0.82, label: '1000m' },
-                { elev:  500, color: '#fdd835', weight: 2.2, opacity: 0.80, label: '500m'  },
-                { elev:  250, color: '#66bb6a', weight: 2.0, opacity: 0.75, label: '250m'  },
-                { elev:  100, color: '#29b6f6', weight: 1.8, opacity: 0.72, label: '100m'  },
-                { elev:   50, color: '#ab47bc', weight: 1.7, opacity: 0.70, label: '50m'   },
-                { elev:   25, color: '#80cbc4', weight: 1.6, opacity: 0.65, label: '25m'   },
-                { elev:   10, color: '#b0bec5', weight: 1.5, opacity: 0.60, label: '10m'   },
-            ];
-
-            // Pre-build elevation grid once
-            const cLats = [], cLngs = [];
-            for (let la = RIAU_LAT_MIN; la <= RIAU_LAT_MAX + 0.001; la += GRID_LAT_STEP) cLats.push(la);
-            for (let lo = RIAU_LNG_MIN; lo <= RIAU_LNG_MAX + 0.001; lo += GRID_LNG_STEP) cLngs.push(lo);
-            const elevGrid = cLats.map(la => cLngs.map(lo => riauElevation(la, lo)));
-
-            function interpEdge(v0, v1, elev) { return v1 === v0 ? 0 : (elev - v0) / (v1 - v0); }
-
-            // Call this AFTER fitBounds so getBounds() returns the real viewport
-            // Adaptive: at regional zoom uses full marching-squares grid,
-            // at close zoom (>=13) builds fine local grid so contours always appear
+            // Call this AFTER fitBounds so the overlay respects the active view
             function drawRiauContours() {
-                const vb = exportMap.getBounds();
-                const zoom = exportMap.getZoom();
-
-                // ── Adaptive parameters ───────────────────────────────────────
-                // At close zoom we build a high-resolution grid over the viewport
-                // and use fine elevation intervals so contours always show
-                const isCloseZoom = zoom >= 13;
-
-                let drawLats, drawLngs, drawGrid, levels;
-
-                if (isCloseZoom) {
-                    // Fine viewport-local grid (60×60 cells over the visible area)
-                    const CELLS = 60;
-                    const latSpan = vb.getNorth() - vb.getSouth();
-                    const lngSpan = vb.getEast()  - vb.getWest();
-                    const latStep = latSpan / CELLS;
-                    const lngStep = lngSpan / CELLS;
-
-                    drawLats = Array.from({length: CELLS + 1}, (_, i) => vb.getSouth() + i * latStep);
-                    drawLngs = Array.from({length: CELLS + 1}, (_, i) => vb.getWest()  + i * lngStep);
-
-                    // Fine elevation model — same base function but with extra
-                    // high-frequency micro-terrain noise to ensure variation locally
-                    drawGrid = drawLats.map(la => drawLngs.map(lo => {
-                        const base = riauElevation(la, lo);
-                        // Add local micro-variation seeded by position
-                        const micro1 = Math.sin(la * 800 + lo * 600) * 2.0;
-                        const micro2 = Math.cos(la * 350 - lo * 900) * 1.5;
-                        const micro3 = Math.sin(la * 1200 + lo * 400) * 1.0;
-                        return base + micro1 + micro2 + micro3;
-                    }));
-
-                    // Determine local elevation range for adaptive intervals
-                    const allVals = drawGrid.flat();
-                    const eMin = Math.min(...allVals);
-                    const eMax = Math.max(...allVals);
-                    const eRange = eMax - eMin;
-
-                    // Choose interval to produce ~6-10 contour lines in view
-                    let interval;
-                    if      (eRange > 50)  interval = 10;
-                    else if (eRange > 20)  interval = 5;
-                    else if (eRange > 8)   interval = 2;
-                    else if (eRange > 3)   interval = 1;
-                    else                   interval = 0.5;
-
-                    // Build contour levels that fall within the local range
-                    levels = [];
-                    const colors = ['#29b6f6','#66bb6a','#fdd835','#ff7043','#ab47bc','#80cbc4','#b0bec5'];
-                    let ci = 0;
-                    for (let e = Math.ceil(eMin / interval) * interval; e <= eMax; e += interval) {
-                        if (e <= eMin) continue;
-                        const label = Number.isInteger(e) ? `${e}m` : `${e.toFixed(1)}m`;
-                        levels.push({ elev: e, color: colors[ci % colors.length], weight: 2.0, opacity: 0.78, label });
-                        ci++;
-                    }
-                } else {
-                    // Regional zoom: use the pre-built full Riau grid
-                    drawLats = cLats;
-                    drawLngs = cLngs;
-                    drawGrid = elevGrid;
-                    levels = CONTOUR_LEVELS;
-                }
-
-                // ── Marching-squares isoline extraction ───────────────────────
-                levels.forEach(spec => {
-                    const elev = spec.elev;
-                    const segments = [];
-
-                    for (let r = 0; r < drawLats.length - 1; r++) {
-                        for (let c = 0; c < drawLngs.length - 1; c++) {
-                            const v00 = drawGrid[r][c],   v01 = drawGrid[r][c+1];
-                            const v10 = drawGrid[r+1][c], v11 = drawGrid[r+1][c+1];
-                            const la0 = drawLats[r], la1 = drawLats[r+1];
-                            const lo0 = drawLngs[c], lo1 = drawLngs[c+1];
-
-                            const ci2 =
-                                (v00 >= elev ? 8 : 0) | (v01 >= elev ? 4 : 0) |
-                                (v11 >= elev ? 2 : 0) | (v10 >= elev ? 1 : 0);
-                            if (ci2 === 0 || ci2 === 15) continue;
-
-                            const top    = [la0, lo0 + interpEdge(v00,v01,elev)*(lo1-lo0)];
-                            const bottom = [la1, lo0 + interpEdge(v10,v11,elev)*(lo1-lo0)];
-                            const left   = [la0 + interpEdge(v00,v10,elev)*(la1-la0), lo0];
-                            const right  = [la0 + interpEdge(v01,v11,elev)*(la1-la0), lo1];
-
-                            const mcases = {
-                                1:[left,bottom],  2:[bottom,right], 3:[left,right],
-                                4:[top,right],    6:[top,bottom],   7:[left,top],
-                                8:[top,left],     9:[top,bottom],   11:[top,right],
-                                12:[left,right],  13:[bottom,right],14:[left,bottom],
-                            };
-                            if (ci2 === 5)  { segments.push([left,top]); segments.push([bottom,right]); }
-                            else if (ci2 === 10) { segments.push([top,right]); segments.push([left,bottom]); }
-                            else if (mcases[ci2]) segments.push(mcases[ci2]);
-                        }
-                    }
-
-                    // Stitch into polylines
-                    const used = new Array(segments.length).fill(false);
-                    const polys = [];
-                    for (let i = 0; i < segments.length; i++) {
-                        if (used[i]) continue;
-                        const line = [segments[i][0], segments[i][1]];
-                        used[i] = true;
-                        let ext = true;
-                        while (ext) {
-                            ext = false;
-                            const tail = line[line.length - 1];
-                            for (let j = 0; j < segments.length; j++) {
-                                if (used[j]) continue;
-                                const [a, b] = segments[j];
-                                if (Math.abs(a[0]-tail[0])+Math.abs(a[1]-tail[1]) < 1e-9) { line.push(b); used[j]=true; ext=true; break; }
-                                if (Math.abs(b[0]-tail[0])+Math.abs(b[1]-tail[1]) < 1e-9) { line.push(a); used[j]=true; ext=true; break; }
-                            }
-                        }
-                        if (line.length >= 2) polys.push(line);
-                    }
-
-                    // Draw polylines
-                    polys.forEach(pts => {
-                        L.polyline(pts, {
-                            color: spec.color, weight: spec.weight,
-                            opacity: spec.opacity, smoothFactor: 1
-                        }).addTo(exportMap);
-                    });
-
-                    // Draw labels — one per visible segment
-                    polys.forEach(pts => {
-                        const inView = pts.some(p => vb.contains(L.latLng(p[0], p[1])));
-                        if (!inView) return;
-                        let labelPt = null;
-                        for (const p of pts) {
-                            if (vb.contains(L.latLng(p[0], p[1]))) { labelPt = p; break; }
-                        }
-                        if (!labelPt) return;
-                        L.marker(labelPt, {
-                            icon: L.divIcon({
-                                className: '',
-                                html: `<div style="background:rgba(0,0,0,0.55);color:${spec.color};font-size:7px;font-weight:bold;font-family:Arial;padding:1px 3px;border-radius:2px;white-space:nowrap;pointer-events:none;border:1px solid ${spec.color}">${spec.label}</div>`,
-                                iconSize: [36, 12],
-                                iconAnchor: [0, 6]
-                            })
-                        }).addTo(exportMap);
-                    });
-                });
+                // Add OpenTopoMap as a semi-transparent contour overlay
+                // Data source: SRTM (Shuttle Radar Topography Mission, NASA)
+                L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                    subdomains: ['a', 'b', 'c'],
+                    maxZoom: 17,
+                    opacity: 0.55,
+                    crossOrigin: true,
+                    attribution: '© OpenTopoMap (CC-BY-SA)'
+                }).addTo(exportMap);
             }
 
             // Copy markers (using L.divIcon for html2canvas compatibility)
