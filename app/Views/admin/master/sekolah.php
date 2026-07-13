@@ -26,6 +26,7 @@
                     <th class="text-center">JENIS</th>
                     <th class="text-center">KABUPATEN</th>
                     <th class="text-center">KECAMATAN</th>
+                    <th class="text-center">PAKET</th>
                     <th class="text-right">LATITUDE</th>
                     <th class="text-right">LONGITUDE</th>
                     <th class="text-center">PETA</th>
@@ -43,6 +44,7 @@
                         <td><?= esc((string) ($item['jenis'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['kabupaten'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['kecamatan'] ?? '-')); ?></td>
+                        <td><?= esc((string) ($item['paket_names'] ?? '-')); ?></td>
                         <?php
                             $latVal = $item['latitude'] ?? null;
                             $lngVal = $item['longitude'] ?? null;

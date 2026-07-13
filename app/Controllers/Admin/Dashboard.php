@@ -541,6 +541,16 @@ class Dashboard extends BaseController
             $builder->where('mst_sekolah.kecamatan', $kecamatan);
         }
 
+        $paketId = (int) $this->request->getGet('paket_id');
+        if ($paketId > 0) {
+            if ($db->tableExists('trn_rab_gedung_detail')) {
+                $builder
+                    ->distinct()
+                    ->join('trn_rab_gedung_detail r', 'r.sekolah_npsn = mst_sekolah.npsn', 'inner')
+                    ->where('r.paket_id', $paketId);
+            }
+        }
+
         if ($hasSurveyTable && $klasifikasi !== '' && $klasifikasi !== '*') {
             if ($klasifikasi === 'non_klasifikasi') {
                 $builder

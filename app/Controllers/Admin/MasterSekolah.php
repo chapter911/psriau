@@ -22,9 +22,15 @@ class MasterSekolah extends BaseController
             return $forbidden;
         }
 
-        $items = (new MstSekolahModel())
-            ->orderBy('nama', 'ASC')
-            ->findAll();
+        $db = db_connect();
+        $items = $db->table('mst_sekolah s')
+            ->select('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude, GROUP_CONCAT(DISTINCT mp.nama_paket ORDER BY mp.nama_paket SEPARATOR ", ") AS paket_names')
+            ->join('trn_rab_gedung_detail r', 'r.sekolah_npsn = s.npsn', 'left')
+            ->join('mst_paket mp', 'mp.id = r.paket_id', 'left')
+            ->groupBy('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude')
+            ->orderBy('s.nama', 'ASC')
+            ->get()
+            ->getResultArray();
 
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
         $mapTypes = $this->getMapTypes();
@@ -54,9 +60,15 @@ class MasterSekolah extends BaseController
             return redirect()->to('/admin/master/sekolah')->with('error', 'Anda tidak memiliki izin export pada menu Sekolah.');
         }
 
-        $items = (new MstSekolahModel())
-            ->orderBy('nama', 'ASC')
-            ->findAll();
+        $db = db_connect();
+        $items = $db->table('mst_sekolah s')
+            ->select('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude, GROUP_CONCAT(DISTINCT mp.nama_paket ORDER BY mp.nama_paket SEPARATOR ", ") AS paket_names')
+            ->join('trn_rab_gedung_detail r', 'r.sekolah_npsn = s.npsn', 'left')
+            ->join('mst_paket mp', 'mp.id = r.paket_id', 'left')
+            ->groupBy('s.npsn, s.nama, s.jenis, s.nsm, s.kabupaten, s.kecamatan, s.latitude, s.longitude')
+            ->orderBy('s.nama', 'ASC')
+            ->get()
+            ->getResultArray();
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -79,18 +91,19 @@ class MasterSekolah extends BaseController
         $sheet->setCellValue('E6', 'NSM');
         $sheet->setCellValue('F6', 'KABUPATEN');
         $sheet->setCellValue('G6', 'KECAMATAN');
-        $sheet->setCellValue('H6', 'LATITUDE');
-        $sheet->setCellValue('I6', 'LONGITUDE');
+        $sheet->setCellValue('H6', 'PAKET');
+        $sheet->setCellValue('I6', 'LATITUDE');
+        $sheet->setCellValue('J6', 'LONGITUDE');
 
         // Style the headers
         $sheet->getStyle('A1:I4')->getFont()->setBold(true)->setSize(12);
         $sheet->getStyle('A1:I4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('A1:I4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
-        $sheet->getStyle('A6:I6')->getFont()->setBold(true);
-        $sheet->getStyle('A6:I6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A6:I6')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A6:I6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE2E8F0');
+        $sheet->getStyle('A6:J6')->getFont()->setBold(true);
+        $sheet->getStyle('A6:J6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A6:J6')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A6:J6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE2E8F0');
 
         $sheet->getColumnDimension('A')->setWidth(6);
         $sheet->getColumnDimension('B')->setWidth(18);
@@ -99,8 +112,9 @@ class MasterSekolah extends BaseController
         $sheet->getColumnDimension('E')->setWidth(18);
         $sheet->getColumnDimension('F')->setWidth(25);
         $sheet->getColumnDimension('G')->setWidth(25);
-        $sheet->getColumnDimension('H')->setWidth(18);
+        $sheet->getColumnDimension('H')->setWidth(35);
         $sheet->getColumnDimension('I')->setWidth(18);
+        $sheet->getColumnDimension('J')->setWidth(18);
 
         $row = 7;
         $no = 1;
@@ -112,18 +126,19 @@ class MasterSekolah extends BaseController
             $sheet->setCellValueExplicit('E' . $row, (string) ($item['nsm'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('F' . $row, (string) ($item['kabupaten'] ?? ''));
             $sheet->setCellValue('G' . $row, (string) ($item['kecamatan'] ?? ''));
+            $sheet->setCellValue('H' . $row, (string) ($item['paket_names'] ?? '-'));
             if ($item['latitude'] !== null && $item['latitude'] !== '') {
-                $sheet->setCellValue('H' . $row, (float) $item['latitude']);
-                $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('0.000000');
-            } else {
-                $sheet->setCellValue('H' . $row, '-');
-            }
-
-            if ($item['longitude'] !== null && $item['longitude'] !== '') {
-                $sheet->setCellValue('I' . $row, (float) $item['longitude']);
+                $sheet->setCellValue('I' . $row, (float) $item['latitude']);
                 $sheet->getStyle('I' . $row)->getNumberFormat()->setFormatCode('0.000000');
             } else {
                 $sheet->setCellValue('I' . $row, '-');
+            }
+
+            if ($item['longitude'] !== null && $item['longitude'] !== '') {
+                $sheet->setCellValue('J' . $row, (float) $item['longitude']);
+                $sheet->getStyle('J' . $row)->getNumberFormat()->setFormatCode('0.000000');
+            } else {
+                $sheet->setCellValue('J' . $row, '-');
             }
 
             $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -138,7 +153,7 @@ class MasterSekolah extends BaseController
 
         $lastRow = $row - 1;
         // Apply borders
-        $sheet->getStyle('A6:I' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyle('A6:J' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
         $tmpFile = tempnam(sys_get_temp_dir(), 'sekolah_export_');
         if ($tmpFile === false) {

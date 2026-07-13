@@ -100,6 +100,15 @@
                 </select>
             </div>
             <div>
+                <label class="mb-1">Paket</label>
+                <select class="form-control" id="dashboardPaket">
+                    <option value="*">Semua Paket</option>
+                    <?php foreach (($paketOptions ?? []) as $paket): ?>
+                        <option value="<?= esc((string) ($paket['id'] ?? ''), 'attr'); ?>"><?= esc((string) ($paket['nama_paket'] ?? '-')); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
                 <label class="mb-1">Kecamatan</label>
                 <select class="form-control" id="dashboardKecamatan" disabled>
                     <option value="*">Pilih kabupaten terlebih dahulu</option>
@@ -264,6 +273,7 @@
         npsn: document.getElementById('dashboardNpsn'),
         nama: document.getElementById('dashboardNama'),
         kabupaten: document.getElementById('dashboardKabupaten'),
+        paket: document.getElementById('dashboardPaket'),
         kecamatan: document.getElementById('dashboardKecamatan'),
         klasifikasi: document.getElementById('dashboardKlasifikasi'),
         total: document.getElementById('dashboardMapTotal'),
@@ -649,6 +659,7 @@
         params.set('npsn', inputs.npsn.value || '');
         params.set('nama', inputs.nama.value || '');
         params.set('kabupaten', inputs.kabupaten.value || '*');
+        params.set('paket_id', inputs.paket.value || '*');
         params.set('kecamatan', inputs.kecamatan.value || '*');
         params.set('klasifikasi', inputs.klasifikasi.value || '*');
         return params.toString();
@@ -704,6 +715,7 @@
         await loadKecamatanOptions(inputs.kabupaten.value, '*');
         await loadMapData();
     });
+    inputs.paket.addEventListener('change', loadMapData);
     inputs.kecamatan.addEventListener('change', loadMapData);
     inputs.klasifikasi.addEventListener('change', loadMapData);
     inputs.npsn.addEventListener('keydown', (event) => {
