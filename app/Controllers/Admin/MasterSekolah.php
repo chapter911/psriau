@@ -296,6 +296,13 @@ class MasterSekolah extends BaseController
         ];
 
         if (! $this->validate($rules)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data sekolah belum valid. Silakan periksa kembali inputan Anda.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/sekolah')->withInput()->with('error', 'Data sekolah belum valid.');
         }
 
@@ -303,6 +310,13 @@ class MasterSekolah extends BaseController
         $npsn = (string) $this->request->getPost('npsn');
 
         if ($model->where('npsn', $npsn)->countAllResults() > 0) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'NPSN sudah terdaftar.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/sekolah')->withInput()->with('error', 'NPSN sudah terdaftar.');
         }
 
@@ -324,6 +338,14 @@ class MasterSekolah extends BaseController
             'updated_by' => $username,
             'updated_date' => $now,
         ]);
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Data sekolah berhasil ditambahkan.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
 
         return redirect()->to('/admin/master/sekolah')->with('message', 'Data sekolah berhasil ditambahkan.');
     }
@@ -352,6 +374,13 @@ class MasterSekolah extends BaseController
         ];
 
         if (! $this->validate($rules)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data sekolah belum valid. Silakan periksa kembali inputan Anda.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/sekolah')->withInput()->with('error', 'Data sekolah belum valid.');
         }
 
@@ -359,11 +388,25 @@ class MasterSekolah extends BaseController
         $existing = $model->where('npsn', $npsn)->first();
 
         if (! is_array($existing)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data sekolah tidak ditemukan.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/sekolah')->with('error', 'Data sekolah tidak ditemukan.');
         }
 
         $newNpsn = (string) $this->request->getPost('npsn');
         if ($newNpsn !== $npsn && $model->where('npsn', $newNpsn)->countAllResults() > 0) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'NPSN sudah digunakan oleh data lain.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
             return redirect()->to('/admin/master/sekolah')->withInput()->with('error', 'NPSN sudah digunakan oleh data lain.');
         }
 
@@ -401,6 +444,14 @@ class MasterSekolah extends BaseController
                     'paket_id' => $paketId,
                     'sekolah_npsn' => $newNpsn,
                 ]);
+        }
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Data sekolah berhasil diperbarui.',
+                'csrf_hash' => csrf_hash(),
+            ]);
         }
 
         return redirect()->to('/admin/master/sekolah')->with('message', 'Data sekolah berhasil diperbarui.');

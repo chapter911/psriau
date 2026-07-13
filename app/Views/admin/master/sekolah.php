@@ -187,7 +187,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="<?= site_url('/admin/master/sekolah/tambah'); ?>" method="post">
+            <form id="form-tambah-sekolah" action="<?= site_url('/admin/master/sekolah/tambah'); ?>" method="post">
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <div class="form-row">
@@ -680,6 +680,141 @@
                 } catch (err) {
                     console.error('Error fetching kecamatan:', err);
                 }
+            });
+        }
+    })();
+
+    // AJAX Form Submission and DataTable reloading
+    function refreshTable() {
+        const tableElement = $('.js-datatable');
+        let currentPage = 0;
+        let currentSearch = '';
+        let currentOrder = [];
+
+        if ($.fn.DataTable.isDataTable(tableElement)) {
+            const dt = tableElement.DataTable();
+            currentPage = dt.page();
+            currentSearch = dt.search();
+            currentOrder = dt.order();
+            dt.destroy();
+        }
+
+        $.ajax({
+            url: window.location.href,
+            method: 'GET',
+            success: function (html) {
+                const newTableHtml = $(html).find('.js-datatable').html();
+                tableElement.html(newTableHtml);
+
+                const newDt = tableElement.DataTable({
+                    responsive: false,
+                    autoWidth: false,
+                    scrollX: true,
+                    scrollCollapse: true,
+                    language: {
+                        search: 'Cari:',
+                        lengthMenu: 'Tampilkan _MENU_ data',
+                        info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+                        infoEmpty: 'Tidak ada data',
+                        zeroRecords: 'Data tidak ditemukan',
+                        paginate: {
+                            first: 'Awal',
+                            last: 'Akhir',
+                            next: 'Berikutnya',
+                            previous: 'Sebelumnya'
+                        }
+                    }
+                });
+
+                if (currentOrder && currentOrder.length > 0) {
+                    newDt.order(currentOrder);
+                }
+                if (currentSearch) {
+                    newDt.search(currentSearch);
+                }
+
+                newDt.page(currentPage).draw(false);
+            },
+            error: function () {
+                Swal.fire('Error', 'Gagal memuat ulang data tabel.', 'error');
+            }
+        });
+    }
+
+    function submitFormAjax(form, modalSelector = null, isCreate = false) {
+        const submitBtn = $(form).find('button[type="submit"]');
+        const originalBtnText = submitBtn.html();
+        const formData = new FormData(form);
+
+        $.ajax({
+            url: $(form).attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'JSON',
+            beforeSend: function () {
+                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Menyimpan...');
+            },
+            success: function (response) {
+                submitBtn.prop('disabled', false).html(originalBtnText);
+
+                if (response.csrf_hash) {
+                    $('input[name="<?= csrf_token(); ?>"]').val(response.csrf_hash);
+                }
+
+                if (response.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: response.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+
+                    if (modalSelector) {
+                        $(modalSelector).modal('hide');
+                    }
+
+                    if (isCreate) {
+                        form.reset();
+                    }
+
+                    refreshTable();
+                } else {
+                    Swal.fire('Gagal', response.message || 'Terjadi kesalahan.', 'error');
+                }
+            },
+            error: function (xhr) {
+                submitBtn.prop('disabled', false).html(originalBtnText);
+
+                if (xhr.responseJSON && xhr.responseJSON.csrf_hash) {
+                    $('input[name="<?= csrf_token(); ?>"]').val(xhr.responseJSON.csrf_hash);
+                }
+
+                const errorMsg = xhr.responseJSON && xhr.responseJSON.message 
+                    ? xhr.responseJSON.message 
+                    : 'Terjadi kesalahan server.';
+                Swal.fire('Gagal', errorMsg, 'error');
+            }
+        });
+    }
+
+    (function () {
+        const formTambah = document.getElementById('form-tambah-sekolah');
+        const formUbah = document.getElementById('form-ubah-sekolah');
+
+        if (formTambah) {
+            formTambah.addEventListener('submit', function (e) {
+                e.preventDefault();
+                submitFormAjax(this, '#modal-tambah-sekolah', true);
+            });
+        }
+
+        if (formUbah) {
+            formUbah.addEventListener('submit', function (e) {
+                e.preventDefault();
+                submitFormAjax(this, '#modal-ubah-sekolah', false);
             });
         }
     })();
