@@ -421,10 +421,18 @@ class Dashboard extends BaseController
         $paketModel = new MstPaketModel();
         $paketOptions = $paketModel->where('is_active', 1)->orderBy('nama_paket', 'ASC')->findAll();
 
+        $defaultMapTypeId = 1;
+        foreach ($mapTypes as $mapType) {
+            if (stripos((string) ($mapType['map_name'] ?? ''), 'hybrid') !== false) {
+                $defaultMapTypeId = (int) ($mapType['id'] ?? 1);
+                break;
+            }
+        }
+
         return view('admin/map', [
             'pageTitle' => 'Map',
             'mapTypes' => $mapTypes,
-            'mapDefaultId' => (int) ($mapTypes[0]['id'] ?? 1),
+            'mapDefaultId' => $defaultMapTypeId,
             'kabupatenOptions' => $kabupatenOptions,
             'kecamatanOptions' => $kecamatanOptions,
             'klasifikasiOptions' => $klasifikasiOptions,
@@ -491,7 +499,14 @@ class Dashboard extends BaseController
         $mapTypes = $this->getMapTypes($db);
         $selectedMapTypeId = (int) $this->request->getGet('map_type');
         if ($selectedMapTypeId <= 0) {
-            $selectedMapTypeId = (int) ($mapTypes[0]['id'] ?? 1);
+            $defaultMapTypeId = 1;
+            foreach ($mapTypes as $mapType) {
+                if (stripos((string) ($mapType['map_name'] ?? ''), 'hybrid') !== false) {
+                    $defaultMapTypeId = (int) ($mapType['id'] ?? 1);
+                    break;
+                }
+            }
+            $selectedMapTypeId = $defaultMapTypeId;
         }
 
         $selectedMapType = $mapTypes[0] ?? ['id' => 1, 'map_name' => 'Leaflet Map', 'map_script' => ''];
