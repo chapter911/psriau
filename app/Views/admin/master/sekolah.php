@@ -1031,11 +1031,13 @@
                         <div style="border: 1px solid black; padding: 5px; margin-top: 10px; text-align: center; height: 190px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f0f8ff; overflow: hidden;">
                             <svg width="220" height="150" viewBox="0 0 200 150">
                                 <rect width="200" height="150" fill="#a4c2f4" rx="3"/>
-                                <path d="M10,20 L35,10 L70,30 L100,50 L140,80 L180,120 L190,140 L160,145 L130,130 L100,105 L70,80 L40,60 L20,45 Z" fill="#b6d7a8" stroke="#888" stroke-width="1"/>
-                                <path d="M80,60 L105,55 L125,70 L115,85 L90,80 L75,70 Z" fill="red" stroke="darkred" stroke-width="1.5"/>
-                                <text x="100" y="75" font-family="Arial" font-size="10" font-weight="bold" fill="white" text-anchor="middle">RIAU</text>
-                                <text x="30" y="125" font-family="Arial" font-size="7" fill="#555" transform="rotate(-15 30 125)">Samudera Hindia</text>
-                                <text x="135" y="35" font-family="Arial" font-size="7" fill="#555">Semenanjung Malaya</text>
+                                <!-- Sumatra Island Silhouette -->
+                                <path d="M 20,10 C 30,8 45,18 60,30 C 70,38 85,50 100,65 C 115,80 135,95 155,115 C 165,125 175,135 180,140 L 165,142 C 150,142 135,130 120,118 C 105,105 90,92 75,80 C 60,68 45,55 35,45 C 25,35 15,25 10,15 Z" fill="#b6d7a8" stroke="#769365" stroke-width="1"/>
+                                <!-- Riau Province Highlighted in Red -->
+                                <path d="M 75,55 C 80,52 90,52 95,58 C 100,62 105,68 100,75 C 95,78 88,78 82,75 C 78,72 73,65 75,55 Z" fill="#ff4d4d" stroke="#cc0000" stroke-width="1.5"/>
+                                <text x="96" y="70" font-family="Arial" font-size="9" font-weight="bold" fill="white" text-anchor="middle">RIAU</text>
+                                <text x="35" y="115" font-family="Arial" font-size="7" fill="#555" transform="rotate(-30 35 115)">Samudera Hindia</text>
+                                <text x="125" y="45" font-family="Arial" font-size="7" fill="#555" transform="rotate(30 125 45)">Selat Malaka</text>
                             </svg>
                             <div style="font-size: 8px; font-weight: bold; margin-top: 3px; text-transform: uppercase;">Peta Indeks Provinsi Riau</div>
                         </div>
