@@ -1200,6 +1200,5 @@
             }
         });
     }
-    })();
 </script>
 <?= $this->endSection(); ?>
