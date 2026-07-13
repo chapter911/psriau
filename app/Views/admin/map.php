@@ -67,9 +67,9 @@
 </style>
 
 <div class="card map-page-card">
-    <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+    <div class="card-header d-flex align-items-center">
         <h3 class="card-title mb-0">Peta Sebaran Sekolah</h3>
-        <div>
+        <div class="card-tools ml-auto">
             <button class="btn btn-danger btn-sm" type="button" id="exportMapPdfBtnMain">
                 <i class="fas fa-file-pdf mr-1"></i> Export Peta A3
             </button>
@@ -134,18 +134,18 @@
                     <i class="fas fa-search mr-1"></i> Cari
                 </button>
             </div>
-            <div class="d-flex align-items-end justify-content-end">
-                <div class="map-total w-100">
-                    Total Sekolah di Peta: <span id="dashboardMapTotal">0</span>
-                </div>
-            </div>
         </div>
 
-        <div class="map-legend">
-            <span class="badge badge-danger">Rusak Berat</span>
-            <span class="badge badge-warning">Rusak Sedang</span>
-            <span class="badge badge-success">Rusak Ringan</span>
-            <span class="badge badge-primary">Belum Klasifikasi</span>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <div class="map-legend mb-0">
+                <span class="badge badge-danger">Rusak Berat</span>
+                <span class="badge badge-warning">Rusak Sedang</span>
+                <span class="badge badge-success">Rusak Ringan</span>
+                <span class="badge badge-primary">Belum Klasifikasi</span>
+            </div>
+            <div class="map-total">
+                Total Sekolah di Peta: <span id="dashboardMapTotal">0</span>
+            </div>
         </div>
 
         <div id="dashboardMapBox" class="map-box"></div>
