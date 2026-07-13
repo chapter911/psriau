@@ -1047,11 +1047,11 @@
                                 </div>
                                 <div style="font-size: 8px; font-weight: bold; color: #333; margin-top: 4px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px;">Kontur Topografi</div>
                                 <div style="display: flex; align-items: center; font-size: 8px; gap: 6px;">
-                                    <div style="width: 26px; height: 2px; background: #795548; flex-shrink: 0;"></div>
+                                    <div style="width: 26px; height: 2px; background: #ffff00; flex-shrink: 0; border: 0.5px solid #000;"></div>
                                     <span>Garis Kontur</span>
                                 </div>
                                 <div style="display: flex; align-items: center; font-size: 8px; gap: 6px;">
-                                    <div style="width: 26px; height: 3px; background: #4e342e; flex-shrink: 0;"></div>
+                                    <div style="width: 26px; height: 3px; background: #ff3d00; flex-shrink: 0; border: 0.5px solid #000;"></div>
                                     <span>Kontur Indeks</span>
                                 </div>
                                 <div style="font-size: 7px; color: #777; margin-top: 4px; line-height: 1.4;">Sumber: OpenTopoMap<br>Data: SRTM NASA</div>
@@ -1165,9 +1165,9 @@
             ];
             contours.forEach(c => {
                 const coords = createContourLine([lat, lng], c.radius, 32, 8);
-                const color = c.isIndex ? '#4e342e' : '#795548';
-                const weight = c.isIndex ? 3.0 : 1.8;
-                const opacity = c.isIndex ? 0.85 : 0.65;
+                const color = c.isIndex ? '#ff3d00' : '#ffff00';
+                const weight = c.isIndex ? 3.5 : 2.2;
+                const opacity = c.isIndex ? 0.90 : 0.75;
                 L.polyline(coords, { color: color, weight: weight, opacity: opacity }).addTo(exportMap);
                 
                 // Add label

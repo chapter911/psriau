@@ -923,11 +923,11 @@
                                 </div>
                                 <div style="font-size: 8px; font-weight: bold; color: #333; margin-top: 4px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px;">Kontur Topografi</div>
                                 <div style="display: flex; align-items: center; font-size: 8px; gap: 6px;">
-                                    <div style="width: 26px; height: 2px; background: #795548; flex-shrink: 0;"></div>
+                                    <div style="width: 26px; height: 2px; background: #ffff00; flex-shrink: 0; border: 0.5px solid #000;"></div>
                                     <span>Garis Kontur</span>
                                 </div>
                                 <div style="display: flex; align-items: center; font-size: 8px; gap: 6px;">
-                                    <div style="width: 26px; height: 3px; background: #4e342e; flex-shrink: 0;"></div>
+                                    <div style="width: 26px; height: 3px; background: #ff3d00; flex-shrink: 0; border: 0.5px solid #000;"></div>
                                     <span>Kontur Indeks</span>
                                 </div>
                                 <div style="font-size: 7px; color: #777; margin-top: 4px; line-height: 1.4;">Sumber: OpenTopoMap<br>Data: SRTM NASA</div>
@@ -1335,11 +1335,11 @@
                                 <div style="width: 95px; flex-shrink: 0; border-left: 1px solid #ddd; padding-left: 8px; display: flex; flex-direction: column; gap: 5px;">
                                     <div style="font-size: 7px; font-weight: bold; color: #333; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 2px;">Kontur Topografi</div>
                                     <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 22px; height: 2px; background: #795548; flex-shrink: 0;"></div>
+                                        <div style="width: 22px; height: 2px; background: #ffff00; flex-shrink: 0; border: 0.5px solid #000;"></div>
                                         <span>Garis Kontur</span>
                                     </div>
                                     <div style="display: flex; align-items: center; font-size: 7px; gap: 4px;">
-                                        <div style="width: 22px; height: 3px; background: #4e342e; flex-shrink: 0;"></div>
+                                        <div style="width: 22px; height: 3px; background: #ff3d00; flex-shrink: 0; border: 0.5px solid #000;"></div>
                                         <span>Kontur Indeks</span>
                                     </div>
                                     <div style="font-size: 6.5px; color: #777; margin-top: 4px; line-height: 1.4;">Sumber:<br>OpenTopoMap<br>Data: SRTM NASA</div>
@@ -1462,6 +1462,26 @@
             // ─────────────────────────────────────────────────────────────────
 
             function riauElevation(lat, lng) {
+                // Check if sea (approximate Sumatra eastern coastline diagonal)
+                const limitLng = 101.3 + (2.5 - lat) * 0.95;
+                let isLand = lng <= limitLng;
+                
+                // Islands exception (Rupat, Bengkalis, Padang, Tebing Tinggi, Rangsang, Meranti)
+                if (!isLand) {
+                    // Rupat
+                    if (lat >= 1.8 && lat <= 2.2 && lng >= 101.5 && lng <= 101.95) isLand = true;
+                    // Bengkalis
+                    else if (lat >= 1.3 && lat <= 1.65 && lng >= 102.0 && lng <= 102.5) isLand = true;
+                    // Padang / Tebing Tinggi / Rangsang
+                    else if (lat >= 0.8 && lat <= 1.3 && lng >= 102.2 && lng <= 103.2) isLand = true;
+                    // Meranti / Mendol / Penyalai
+                    else if (lat >= 0.2 && lat <= 0.8 && lng >= 102.8 && lng <= 103.5) isLand = true;
+                }
+                
+                if (!isLand) {
+                    return 0; // Sea level has no topographic contours
+                }
+
                 // Western highlands (Bukit Barisan) — peak ~2000m, flat coast east
                 const westBias = Math.max(0, (101.5 - lng) / 1.5);
                 const base = westBias * westBias * 1800;
@@ -1577,9 +1597,9 @@
                     levels.push({
                         elev: e,
                         isIndex: isIndex,
-                        color: isIndex ? '#4e342e' : '#795548', // Classic brown topographic contour colors
-                        weight: isIndex ? 3.0 : 1.8,            // Thicker lines as requested
-                        opacity: isIndex ? 0.85 : 0.65,
+                        color: isIndex ? '#ff3d00' : '#ffff00', // Striking Neon Orange and Neon Yellow
+                        weight: isIndex ? 3.5 : 2.2,            // Thick, highly visible lines
+                        opacity: isIndex ? 0.90 : 0.75,
                         label: Number.isInteger(e) ? `${e}m` : `${e.toFixed(1)}m`
                     });
                 }
