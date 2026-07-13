@@ -1036,20 +1036,20 @@
             const schoolPinIcon = L.divIcon({
                 className: 'custom-export-pin',
                 html: `
-                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 120px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 180px;">
                         <!-- The Pin Circle -->
-                        <div style="width: 20px; height: 20px; background-color: red; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; color: white; font-family: Arial; font-size: 10px; font-weight: bold; flex-shrink: 0;">
+                        <div style="width: 36px; height: 36px; background-color: red; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; color: white; font-family: Arial; font-size: 18px; font-weight: bold; flex-shrink: 0;">
                             1
                         </div>
                         <!-- The Label (Name & Coord) below the pin -->
-                        <div style="margin-top: 3px; background: rgba(0,0,0,0.7); color: white; border-radius: 3px; padding: 2px 4px; font-family: Arial; font-size: 7px; line-height: 9px; font-weight: bold; max-width: 120px; word-wrap: break-word; text-shadow: 1px 1px 1px #000; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
-                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">${schoolName}</div>
-                            <div style="font-size: 6px; color: #ccc; font-weight: normal;">${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
+                        <div style="margin-top: 5px; background: rgba(0,0,0,0.75); color: white; border-radius: 4px; padding: 4px 8px; font-family: Arial; font-size: 11px; line-height: 14px; font-weight: bold; max-width: 180px; word-wrap: break-word; text-shadow: 1px 1px 1px #000; box-shadow: 0 1px 4px rgba(0,0,0,0.4);">
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 164px;">${schoolName}</div>
+                            <div style="font-size: 9px; color: #ccc; font-weight: normal; margin-top: 1px;">${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
                         </div>
                     </div>
                 `,
-                iconSize: [120, 60],
-                iconAnchor: [60, 10]
+                iconSize: [180, 100],
+                iconAnchor: [90, 18]
             });
             L.marker([lat, lng], { icon: schoolPinIcon }).addTo(exportMap);
 
