@@ -8,6 +8,7 @@ use App\Models\EventModel;
 use App\Models\HomeSlideModel;
 use App\Models\AuditHistoryModel;
 use App\Models\LoginHistoryModel;
+use App\Models\MstPaketModel;
 
 class Dashboard extends BaseController
 {
@@ -417,6 +418,9 @@ class Dashboard extends BaseController
             $klasifikasiOptions = array_values(array_map(static fn (array $row): string => (string) ($row['survey_klasifikasi_kerusakan'] ?? ''), $klasifikasiRows));
         }
 
+        $paketModel = new MstPaketModel();
+        $paketOptions = $paketModel->where('is_active', 1)->orderBy('nama_paket', 'ASC')->findAll();
+
         return view('admin/map', [
             'pageTitle' => 'Map',
             'mapTypes' => $mapTypes,
@@ -424,6 +428,7 @@ class Dashboard extends BaseController
             'kabupatenOptions' => $kabupatenOptions,
             'kecamatanOptions' => $kecamatanOptions,
             'klasifikasiOptions' => $klasifikasiOptions,
+            'paketOptions' => $paketOptions,
         ]);
     }
 
@@ -543,12 +548,7 @@ class Dashboard extends BaseController
 
         $paketId = (int) $this->request->getGet('paket_id');
         if ($paketId > 0) {
-            if ($db->tableExists('trn_rab_gedung_detail')) {
-                $builder
-                    ->distinct()
-                    ->join('trn_rab_gedung_detail r', 'r.sekolah_npsn = mst_sekolah.npsn', 'inner')
-                    ->where('r.paket_id', $paketId);
-            }
+            $builder->where('mst_sekolah.paket_id', $paketId);
         }
 
         if ($hasSurveyTable && $klasifikasi !== '' && $klasifikasi !== '*') {
