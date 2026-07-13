@@ -904,7 +904,12 @@
                             <div style="font-weight: bold; font-size: 12px; border-bottom: 2px solid black; padding-bottom: 4px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Legenda</div>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
                                 <div style="display: flex; align-items: center; font-size: 10px;">
-                                    <div style="width: 30px; height: 15px; border: 2.5px solid red; background: rgba(255,0,0,0.05); margin-right: 10px;"></div>
+                                    <div style="width: 30px; display: flex; justify-content: center; align-items: center; margin-right: 10px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 48" style="width: 14px; height: 21px;">
+                                            <path fill="red" stroke="#7f1d1d" stroke-width="1.2" d="M16 1C8.27 1 2 7.27 2 15c0 10.37 11.67 25.72 13.12 27.57a1.1 1.1 0 0 0 1.76 0C18.33 40.72 30 25.37 30 15 30 7.27 23.73 1 16 1z"/>
+                                            <circle cx="16" cy="15" r="6" fill="#fff"/>
+                                        </svg>
+                                    </div>
                                     <div style="font-weight: bold; color: red; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;" title="${schoolName}">${schoolName}</div>
                                 </div>
                             </div>
@@ -1010,14 +1015,15 @@
 
 
 
-            // Draw school land boundary (red tilted polygon)
-            const schoolCoords = [
-                [lat + 0.0003, lng - 0.0004],
-                [lat + 0.0004, lng + 0.0004],
-                [lat - 0.0002, lng + 0.0005],
-                [lat - 0.0003, lng - 0.0003]
-            ];
-            L.polygon(schoolCoords, { color: 'red', fill: false, weight: 2.5 }).addTo(exportMap);
+            // Draw school location pin
+            const redPinSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 48"><path fill="red" stroke="#7f1d1d" stroke-width="1.2" d="M16 1C8.27 1 2 7.27 2 15c0 10.37 11.67 25.72 13.12 27.57a1.1 1.1 0 0 0 1.76 0C18.33 40.72 30 25.37 30 15 30 7.27 23.73 1 16 1z"/><circle cx="16" cy="15" r="6" fill="#fff"/></svg>`;
+            const redPinIcon = L.icon({
+                iconUrl: 'data:image/svg+xml;base64,' + btoa(redPinSvg),
+                iconSize: [28, 42],
+                iconAnchor: [14, 42],
+                popupAnchor: [0, -36]
+            });
+            L.marker([lat, lng], { icon: redPinIcon }).addTo(exportMap);
 
             // Inject dynamic scale bar
             document.getElementById('export-scale-container').innerHTML = getScaleBarHtml(exportMap);
