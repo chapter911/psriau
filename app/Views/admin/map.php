@@ -1400,6 +1400,18 @@
                 }
             });
 
+            // Copy kabupaten boundaries from main map boundaryLayer to exportMap (thin grey dashed lines)
+            boundaryLayer.eachLayer((layer) => {
+                L.geoJSON(layer.toGeoJSON(), {
+                    style: {
+                        color: '#555555',
+                        weight: 1,
+                        dashArray: '4,4',
+                        fillOpacity: 0
+                    }
+                }).addTo(exportMap);
+            });
+
             // Copy markers (using L.divIcon for html2canvas compatibility)
             const tempMarkerLayer = L.layerGroup().addTo(exportMap);
             const bounds = [];
