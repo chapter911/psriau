@@ -341,6 +341,55 @@
 <script src="<?= esc(media_url('assets/leaflet/leaflet.js')); ?>"></script>
 <script>
     (function () {
+        function getScaleBarHtml(exportMap) {
+            const bounds = exportMap.getBounds();
+            const west = bounds.getWest();
+            const east = bounds.getEast();
+            const centerLat = exportMap.getCenter().lat;
+            
+            const leftPoint = L.latLng(centerLat, west);
+            const rightPoint = L.latLng(centerLat, east);
+            const totalDistanceMeters = leftPoint.distanceTo(rightPoint);
+            
+            const D_meters = totalDistanceMeters * (75 / 1150);
+            const D_km = D_meters / 1000;
+            
+            let leftLabel, midLeftLabel, rightLabel;
+            
+            if (D_km >= 0.1) {
+                leftLabel = D_km.toFixed(1);
+                midLeftLabel = (D_km / 2).toFixed(1);
+                rightLabel = D_km.toFixed(1) + " KM";
+            } else {
+                const D_meters_rounded = Math.round(D_meters);
+                leftLabel = D_meters_rounded;
+                midLeftLabel = Math.round(D_meters_rounded / 2);
+                rightLabel = D_meters_rounded + " M";
+            }
+            
+            const scaleRatio = Math.round(totalDistanceMeters / 0.3024);
+            const scaleRatioRounded = Math.round(scaleRatio / 100) * 100;
+            const rfScaleText = "SKALA 1:" + scaleRatioRounded.toLocaleString('id-ID');
+            
+            return `
+                <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px; text-transform: uppercase;">${rfScaleText}</div>
+                <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                    <div style="display: flex; justify-content: space-between; width: 150px; font-size: 9px; font-weight: bold;">
+                        <span>${leftLabel}</span>
+                        <span>${midLeftLabel}</span>
+                        <span>0</span>
+                        <span>${rightLabel}</span>
+                    </div>
+                    <div style="width: 150px; height: 10px; border: 1px solid black; display: flex; overflow: hidden; margin-top: 2px;">
+                        <div style="width: 25%; background: black;"></div>
+                        <div style="width: 25%; background: white;"></div>
+                        <div style="width: 25%; background: black;"></div>
+                        <div style="width: 25%; background: white;"></div>
+                    </div>
+                </div>
+            `;
+        }
+
         const modalEdit = document.getElementById('modal-ubah-sekolah');
         if (!modalEdit) return;
 
@@ -985,21 +1034,7 @@
                                 <text x="50" y="98" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">S</text>
                                 <text x="8" y="53" font-family="Arial" font-size="10" font-weight="bold" text-anchor="middle">W</text>
                             </svg>
-                            <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">SKALA 1:3,000</div>
-                            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-                                <div style="display: flex; justify-content: space-between; width: 150px; font-size: 9px; font-weight: bold;">
-                                    <span>0.12</span>
-                                    <span>0.06</span>
-                                    <span>0</span>
-                                    <span>0.12 KM</span>
-                                </div>
-                                <div style="width: 150px; height: 10px; border: 1px solid black; display: flex; overflow: hidden; margin-top: 2px;">
-                                    <div style="width: 25%; background: black;"></div>
-                                    <div style="width: 25%; background: white;"></div>
-                                    <div style="width: 25%; background: black;"></div>
-                                    <div style="width: 25%; background: white;"></div>
-                                </div>
-                            </div>
+                            <div id="export-scale-container" style="display: flex; flex-direction: column; align-items: center; width: 100%;"></div>
                         </div>
 
                         <!-- Legend -->
@@ -1142,6 +1177,9 @@
                 [lat - 0.0003, lng - 0.0003]
             ];
             L.polygon(schoolCoords, { color: 'red', fill: false, weight: 2.5 }).addTo(exportMap);
+
+            // Inject dynamic scale bar
+            document.getElementById('export-scale-container').innerHTML = getScaleBarHtml(exportMap);
 
             // Wait for tiles to load
             await new Promise(r => setTimeout(r, 2000));
