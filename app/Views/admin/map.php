@@ -500,6 +500,10 @@
         const values = Array.isArray(items) ? items : [];
         const normalizedSelected = String(selectedValue || '*');
 
+        if (typeof $ !== 'undefined' && $(inputs.kecamatan).data('select2')) {
+            $(inputs.kecamatan).select2('destroy');
+        }
+
         inputs.kecamatan.innerHTML = '';
 
         if (values.length === 0) {
@@ -509,6 +513,14 @@
             option.textContent = inputs.kabupaten.value && inputs.kabupaten.value !== '*' ? 'Semua Kecamatan' : 'Pilih kabupaten terlebih dahulu';
             option.selected = true;
             inputs.kecamatan.appendChild(option);
+
+            if (typeof $ !== 'undefined') {
+                $(inputs.kecamatan).select2({
+                    theme: 'bootstrap4',
+                    width: '100%',
+                    allowClear: false
+                });
+            }
             return;
         }
 
@@ -533,6 +545,14 @@
             }
             inputs.kecamatan.appendChild(option);
         });
+
+        if (typeof $ !== 'undefined') {
+            $(inputs.kecamatan).select2({
+                theme: 'bootstrap4',
+                width: '100%',
+                allowClear: true
+            });
+        }
     };
 
     const loadKecamatanOptions = async (selectedKabupaten, selectedKecamatan = '*') => {
@@ -769,14 +789,14 @@
     };
 
     inputs.search.addEventListener('click', loadMapData);
-    inputs.mapType.addEventListener('change', loadMapData);
-    inputs.kabupaten.addEventListener('change', async () => {
+    $(inputs.mapType).on('change', loadMapData);
+    $(inputs.kabupaten).on('change', async () => {
         await loadKecamatanOptions(inputs.kabupaten.value, '*');
         await loadMapData();
     });
-    inputs.paket.addEventListener('change', loadMapData);
-    inputs.kecamatan.addEventListener('change', loadMapData);
-    inputs.klasifikasi.addEventListener('change', loadMapData);
+    $(inputs.paket).on('change', loadMapData);
+    $(inputs.kecamatan).on('change', loadMapData);
+    $(inputs.klasifikasi).on('change', loadMapData);
     inputs.npsn.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
