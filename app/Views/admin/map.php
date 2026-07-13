@@ -64,6 +64,17 @@
             height: 52vh;
         }
     }
+
+    .contour-tooltip {
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 1.5px solid #8b5a2b;
+        color: #5c3a21;
+        font-weight: 700;
+        font-size: .76rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        padding: 3px 6px;
+        border-radius: 4px;
+    }
 </style>
 
 <div class="card map-page-card">
@@ -137,11 +148,18 @@
         </div>
 
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-            <div class="map-legend mb-0">
-                <span class="badge badge-danger">Rusak Berat</span>
-                <span class="badge badge-warning">Rusak Sedang</span>
-                <span class="badge badge-success">Rusak Ringan</span>
-                <span class="badge badge-primary">Belum Klasifikasi</span>
+            <div class="map-legend mb-0 d-flex align-items-center flex-wrap">
+                <span class="badge badge-danger mr-1">Rusak Berat</span>
+                <span class="badge badge-warning mr-1">Rusak Sedang</span>
+                <span class="badge badge-success mr-1">Rusak Ringan</span>
+                <span class="badge badge-primary mr-3">Belum Klasifikasi</span>
+                
+                <div class="custom-control custom-checkbox d-flex align-items-center ml-md-3" style="min-height: auto;">
+                    <input type="checkbox" class="custom-control-input" id="toggleContoursCheckbox" style="cursor: pointer;">
+                    <label class="custom-control-label font-weight-bold text-dark mb-0" for="toggleContoursCheckbox" style="font-size: .82rem; cursor: pointer; user-select: none; line-height: 1.2;">
+                        <i class="fas fa-mountain text-secondary mr-1"></i> Tampilkan Kontur (Rokan Hilir)
+                    </label>
+                </div>
             </div>
             <div class="map-total">
                 Total Sekolah di Peta: <span id="dashboardMapTotal">0</span>
@@ -314,6 +332,7 @@
     const map = L.map('dashboardMapBox').setView([-0.51544, 101.44415], 8);
     const markerLayer = L.layerGroup().addTo(map);
     const boundaryLayer = L.layerGroup().addTo(map);
+    const contourLayer = L.layerGroup().addTo(map);
     let mapScript = '';
     let activeMarkers = [];
     const markerIconCache = new Map();
@@ -701,7 +720,12 @@
             });
 
             marker.bindPopup('<strong>' + (item.nama || '-') + '</strong><br>NPSN: ' + (item.npsn || '-') + '<br>' + (item.kecamatan || '-') + ', ' + (item.kabupaten || '-'));
-            marker.on('click', () => openDetailModal(item));
+            marker.on('click', (e) => {
+                if (e && e.originalEvent) {
+                    L.DomEvent.stopPropagation(e);
+                }
+                openDetailModal(item);
+            });
             marker.addTo(markerLayer);
             bounds.push([lat, lng]);
         });
@@ -767,6 +791,135 @@
             }
         }
     };
+
+    // Load/unload contour lines from generated GeoJSON
+    const toggleContoursCheckbox = document.getElementById('toggleContoursCheckbox');
+    const loadContourData = async () => {
+        if (!toggleContoursCheckbox || !toggleContoursCheckbox.checked) {
+            contourLayer.clearLayers();
+            return;
+        }
+
+        try {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Mohon Tunggu',
+                    text: 'Memuat data kontur wilayah Rokan Hilir...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => Swal.showLoading(),
+                });
+            }
+
+            const url = '<?= esc(media_url('geojson/rokan_hilir_kontur.json')); ?>';
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Gagal memuat data kontur.');
+            }
+            const geojson = await response.json();
+
+            const layer = L.geoJSON(geojson, {
+                style: (feature) => {
+                    const elev = feature.properties.elevation;
+                    const isIndex = elev % 25 === 0;
+                    return {
+                        color: '#8b5a2b', // Earthy brown
+                        weight: isIndex ? 1.8 : 0.8,
+                        opacity: isIndex ? 0.75 : 0.4,
+                    };
+                },
+                onEachFeature: (feature, featureLayer) => {
+                    const elev = feature.properties.elevation;
+                    featureLayer.bindTooltip(`Ketinggian: ${elev} m`, {
+                        sticky: true,
+                        className: 'contour-tooltip'
+                    });
+                }
+            });
+
+            contourLayer.clearLayers();
+            layer.addTo(contourLayer);
+
+            if (geojson.features && geojson.features.length > 0) {
+                map.fitBounds(layer.getBounds(), { padding: [30, 30] });
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.close();
+            }
+        } catch (error) {
+            if (toggleContoursCheckbox) {
+                toggleContoursCheckbox.checked = false;
+            }
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: error && error.message ? error.message : 'Gagal memuat data kontur.',
+                });
+            }
+        }
+    };
+
+    if (toggleContoursCheckbox) {
+        toggleContoursCheckbox.addEventListener('change', loadContourData);
+    }
+
+    // Interactive elevation lookup on map click
+    map.on('click', async (e) => {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        const popup = L.popup()
+            .setLatLng(e.latlng)
+            .setContent(`
+                <div style="font-family: sans-serif; font-size: 11px; min-width: 140px; padding: 2px;">
+                    <div style="font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid #ddd; padding-bottom: 2px;">📍 Lokasi Peta</div>
+                    <div>Latitude: <strong>${lat.toFixed(5)}</strong></div>
+                    <div>Longitude: <strong>${lng.toFixed(5)}</strong></div>
+                    <div id="elevation-loader" style="margin-top: 5px; color: #666; font-style: italic;">
+                        <i class="fas fa-spinner fa-spin mr-1"></i> Mengambil ketinggian...
+                    </div>
+                </div>
+            `)
+            .openOn(map);
+
+        try {
+            const response = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`);
+            if (!response.ok) {
+                throw new Error('Gagal mengambil data ketinggian.');
+            }
+            const data = await response.json();
+            const elev = data.elevation && data.elevation[0] !== undefined ? data.elevation[0] : null;
+
+            const loaderEl = document.getElementById('elevation-loader');
+            if (loaderEl) {
+                if (elev !== null) {
+                    loaderEl.outerHTML = `
+                        <div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed #ccc; display: flex; align-items: center; font-size: 12px; color: #1e3a8a;">
+                            <i class="fas fa-mountain text-primary mr-1" style="font-size: 14px;"></i> 
+                            Ketinggian: <strong style="font-size: 13px; color: #0f172a; margin-left: 3px;">${elev.toFixed(1)} meter</strong>
+                        </div>
+                    `;
+                } else {
+                    loaderEl.outerHTML = `
+                        <div style="margin-top: 6px; color: #dc2626; font-size: 11px;">
+                            Ketinggian tidak tersedia.
+                        </div>
+                    `;
+                }
+            }
+        } catch (err) {
+            const loaderEl = document.getElementById('elevation-loader');
+            if (loaderEl) {
+                loaderEl.outerHTML = `
+                    <div style="margin-top: 6px; color: #dc2626; font-size: 11px;">
+                        Gagal memuat ketinggian.
+                    </div>
+                `;
+            }
+        }
+    });
 
     inputs.search.addEventListener('click', loadMapData);
     inputs.mapType.addEventListener('change', loadMapData);
