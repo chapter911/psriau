@@ -1029,16 +1029,7 @@
 
                         <!-- Inset Map -->
                         <div style="border: 1px solid black; padding: 5px; margin-top: 10px; text-align: center; height: 190px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f0f8ff; overflow: hidden;">
-                            <svg width="220" height="150" viewBox="0 0 200 150">
-                                <rect width="200" height="150" fill="#a4c2f4" rx="3"/>
-                                <!-- Sumatra Island Silhouette -->
-                                <path d="M 20,10 C 30,8 45,18 60,30 C 70,38 85,50 100,65 C 115,80 135,95 155,115 C 165,125 175,135 180,140 L 165,142 C 150,142 135,130 120,118 C 105,105 90,92 75,80 C 60,68 45,55 35,45 C 25,35 15,25 10,15 Z" fill="#b6d7a8" stroke="#769365" stroke-width="1"/>
-                                <!-- Riau Province Highlighted in Red -->
-                                <path d="M 75,55 C 80,52 90,52 95,58 C 100,62 105,68 100,75 C 95,78 88,78 82,75 C 78,72 73,65 75,55 Z" fill="#ff4d4d" stroke="#cc0000" stroke-width="1.5"/>
-                                <text x="96" y="70" font-family="Arial" font-size="9" font-weight="bold" fill="white" text-anchor="middle">RIAU</text>
-                                <text x="35" y="115" font-family="Arial" font-size="7" fill="#555" transform="rotate(-30 35 115)">Samudera Hindia</text>
-                                <text x="125" y="45" font-family="Arial" font-size="7" fill="#555" transform="rotate(30 125 45)">Selat Malaka</text>
-                            </svg>
+                            <div id="export-inset-canvas" style="width: 220px; height: 150px; border: 1px solid black; background: #eaeaea; position: relative;"></div>
                             <div style="font-size: 8px; font-weight: bold; margin-top: 3px; text-transform: uppercase;">Peta Indeks Provinsi Riau</div>
                         </div>
 
@@ -1073,6 +1064,33 @@
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 maxZoom: 19
             }).addTo(exportMap);
+
+            // Initialize mini inset map using Google Maps styling
+            const insetMap = L.map('export-inset-canvas', {
+                zoomControl: false,
+                attributionControl: false,
+                dragging: false,
+                touchZoom: false,
+                doubleClickZoom: false,
+                scrollWheelZoom: false,
+                boxZoom: false,
+                keyboard: false,
+                fadeAnimation: false,
+                zoomAnimation: false
+            }).setView([-0.51544, 101.44415], 6);
+
+            L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxZoom: 20
+            }).addTo(insetMap);
+
+            // Draw a red circle marker for the school location
+            L.circleMarker([lat, lng], {
+                color: 'red',
+                fillColor: 'red',
+                fillOpacity: 1,
+                radius: 5,
+                weight: 2
+            }).addTo(insetMap);
 
             // Draw simulated contours
             const contours = [
@@ -1114,6 +1132,23 @@
                 allowTaint: true,
                 scale: 1.5
             });
+
+            // Capture Inset Map canvas
+            const insetCanvas = await html2canvas(document.getElementById('export-inset-canvas'), {
+                useCORS: true,
+                allowTaint: true,
+                scale: 1.5
+            });
+
+            // Replace Leaflet Inset map with captured image
+            const insetImg = document.createElement('img');
+            insetImg.src = insetCanvas.toDataURL('image/jpeg');
+            insetImg.style.width = '100%';
+            insetImg.style.height = '100%';
+            
+            const insetCanvasEl = document.getElementById('export-inset-canvas');
+            insetCanvasEl.innerHTML = '';
+            insetCanvasEl.appendChild(insetImg);
 
             // Replace Leaflet map in template with captured image
             const mapImg = document.createElement('img');
