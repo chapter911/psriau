@@ -960,7 +960,7 @@
                             const props = f && f.properties ? f.properties : {};
                             return String(props.WADMPR || '').trim().toLowerCase() === 'riau';
                         });
-                        L.geoJSON({ type: 'FeatureCollection', features: features.length > 0 ? features : geojson.features }, {
+                        const riauLayer = L.geoJSON({ type: 'FeatureCollection', features: features.length > 0 ? features : geojson.features }, {
                             style: {
                                 color: 'red',
                                 weight: 1.5,
@@ -968,6 +968,9 @@
                                 fillOpacity: 0.25
                             }
                         }).addTo(insetMap);
+                        
+                        // Fit bounds to show Riau fully
+                        insetMap.fitBounds(riauLayer.getBounds(), { padding: [5, 5] });
                     }
                 })
                 .catch(err => console.error(err));
@@ -1334,6 +1337,7 @@
             }).addTo(insetMap);
 
             // Copy/draw Riau boundaries from main map boundaryLayer to insetMap (shading Riau)
+            const tempBoundaryGroup = L.featureGroup().addTo(insetMap);
             boundaryLayer.eachLayer((layer) => {
                 L.geoJSON(layer.toGeoJSON(), {
                     style: {
@@ -1342,8 +1346,12 @@
                         fillColor: 'red',
                         fillOpacity: 0.25
                     }
-                }).addTo(insetMap);
+                }).addTo(tempBoundaryGroup);
             });
+
+            if (tempBoundaryGroup.getLayers().length > 0) {
+                insetMap.fitBounds(tempBoundaryGroup.getBounds(), { padding: [5, 5] });
+            }
 
             // Draw a red circle marker for each active school location on the inset map
             activeMarkers.forEach((item) => {

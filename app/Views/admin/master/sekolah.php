@@ -1084,7 +1084,7 @@
                             const props = f && f.properties ? f.properties : {};
                             return String(props.WADMPR || '').trim().toLowerCase() === 'riau';
                         });
-                        L.geoJSON({ type: 'FeatureCollection', features: features.length > 0 ? features : geojson.features }, {
+                        const riauLayer = L.geoJSON({ type: 'FeatureCollection', features: features.length > 0 ? features : geojson.features }, {
                             style: {
                                 color: 'red',
                                 weight: 1.5,
@@ -1092,6 +1092,9 @@
                                 fillOpacity: 0.25
                             }
                         }).addTo(insetMap);
+                        
+                        // Fit bounds to show Riau fully
+                        insetMap.fitBounds(riauLayer.getBounds(), { padding: [5, 5] });
                     }
                 })
                 .catch(err => console.error(err));
