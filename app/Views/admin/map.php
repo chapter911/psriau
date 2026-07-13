@@ -1384,6 +1384,7 @@
             });
 
             if (tempBoundaryGroup.getLayers().length > 0) {
+                insetMap.invalidateSize(false);
                 insetMap.fitBounds(tempBoundaryGroup.getBounds(), { padding: [5, 5] });
             }
 
@@ -1402,13 +1403,13 @@
                 }
             });
 
-            // Copy kabupaten boundaries from main map boundaryLayer to exportMap (thin grey dashed lines)
+            // Copy kabupaten boundaries from main map boundaryLayer to exportMap (striking orange-red dashed lines)
             boundaryLayer.eachLayer((layer) => {
                 L.geoJSON(layer.toGeoJSON(), {
                     style: {
-                        color: '#555555',
-                        weight: 1,
-                        dashArray: '4,4',
+                        color: '#ff3d00',
+                        weight: 2,
+                        dashArray: '5,5',
                         fillOpacity: 0
                     }
                 }).addTo(exportMap);
@@ -1444,6 +1445,8 @@
                     bounds.push([lat, lng]);
                 }
             });
+
+            exportMap.invalidateSize(false);
 
             // Focus on markers or default Riau center
             if (bounds.length > 0) {
