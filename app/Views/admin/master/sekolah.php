@@ -1085,9 +1085,7 @@
                 attributionControl: false,
                 fadeAnimation: false,
                 zoomAnimation: false
-            }).setView([lat, lng], 17);
-
-            exportMap.invalidateSize(false);
+            });
 
             // Satellite base layer
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -1133,6 +1131,7 @@
                         }).addTo(insetMap);
                         
                         // Fit bounds to show Riau fully
+                        insetMap.invalidateSize(false);
                         insetMap.fitBounds(riauLayer.getBounds(), { padding: [5, 5] });
                     }
                 })
@@ -1146,6 +1145,9 @@
                 radius: 5,
                 weight: 2
             }).addTo(insetMap);
+
+            exportMap.invalidateSize(false);
+            exportMap.setView([lat, lng], 17);
 
             // Draw simulated contours
             const contours = [
