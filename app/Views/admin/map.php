@@ -78,6 +78,12 @@
         font-size: 9.5px;
         padding: 0 !important;
         text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;
+        display: none;
+    }
+
+    .map-zoom-detailed .contour-label,
+    #temp-export-container .contour-label {
+        display: block !important;
     }
 
     @media (max-width: 768px) {
@@ -553,7 +559,18 @@
                 },
                 onEachFeature: (feature, featureLayer) => {
                     const contour = feature.properties ? feature.properties.Contour : null;
-                    if (contour !== null) {
+                    const coords = feature.geometry ? feature.geometry.coordinates : [];
+                    let isLongLine = false;
+                    if (Array.isArray(coords)) {
+                        if (Array.isArray(coords[0]) && typeof coords[0][0] === 'number') {
+                            isLongLine = coords.length >= 25;
+                        } else if (Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
+                            let pts = 0;
+                            coords.forEach(sub => { pts += sub.length; });
+                            isLongLine = pts >= 25;
+                        }
+                    }
+                    if (contour !== null && isLongLine) {
                         featureLayer.bindTooltip(`${contour} m`, {
                             permanent: true,
                             direction: 'center',
@@ -1184,7 +1201,18 @@
                     },
                     onEachFeature: (feature, featureLayer) => {
                         const contour = feature.properties ? feature.properties.Contour : null;
-                        if (contour !== null) {
+                        const coords = feature.geometry ? feature.geometry.coordinates : [];
+                        let isLongLine = false;
+                        if (Array.isArray(coords)) {
+                            if (Array.isArray(coords[0]) && typeof coords[0][0] === 'number') {
+                                isLongLine = coords.length >= 25;
+                            } else if (Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
+                                let pts = 0;
+                                coords.forEach(sub => { pts += sub.length; });
+                                isLongLine = pts >= 25;
+                            }
+                        }
+                        if (contour !== null && isLongLine) {
                             featureLayer.bindTooltip(`${contour} m`, {
                                 permanent: true,
                                 direction: 'center',
@@ -1581,7 +1609,18 @@
                     },
                     onEachFeature: (feature, featureLayer) => {
                         const contour = feature.properties ? feature.properties.Contour : null;
-                        if (contour !== null) {
+                        const coords = feature.geometry ? feature.geometry.coordinates : [];
+                        let isLongLine = false;
+                        if (Array.isArray(coords)) {
+                            if (Array.isArray(coords[0]) && typeof coords[0][0] === 'number') {
+                                isLongLine = coords.length >= 25;
+                            } else if (Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
+                                let pts = 0;
+                                coords.forEach(sub => { pts += sub.length; });
+                                isLongLine = pts >= 25;
+                            }
+                        }
+                        if (contour !== null && isLongLine) {
                             featureLayer.bindTooltip(`${contour} m`, {
                                 permanent: true,
                                 direction: 'center',
@@ -1777,6 +1816,17 @@
     if (exportBtnMain) {
         exportBtnMain.addEventListener('click', exportMainMapPdf);
     }
+
+    const updateContourLabelsVisibility = () => {
+        const zoom = map.getZoom();
+        if (zoom >= 13) {
+            mapElement.classList.add('map-zoom-detailed');
+        } else {
+            mapElement.classList.remove('map-zoom-detailed');
+        }
+    };
+    map.on('zoomend', updateContourLabelsVisibility);
+    updateContourLabelsVisibility();
 
     applyMapScript(mapScript);
     loadRiauBoundary();
