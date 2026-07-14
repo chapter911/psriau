@@ -548,7 +548,7 @@
 
             const layer = L.geoJSON(geojson, {
                 style: (feature) => {
-                    const contour = feature.properties ? feature.properties.Contour : 0;
+                    const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
                     const isMajor = contour % 100 === 0;
                     return {
                         color: isMajor ? '#d84315' : '#ff8f00', // Striking dark orange-red (major) and orange-amber (minor)
@@ -558,7 +558,7 @@
                     };
                 },
                 onEachFeature: (feature, featureLayer) => {
-                    const contour = feature.properties ? feature.properties.Contour : null;
+                    const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : null;
                     const coords = feature.geometry ? feature.geometry.coordinates : [];
                     let isLongLine = false;
                     if (Array.isArray(coords)) {
@@ -1191,7 +1191,7 @@
             contourLayer.eachLayer((layer) => {
                 L.geoJSON(layer.toGeoJSON(), {
                     style: (feature) => {
-                        const contour = feature.properties ? feature.properties.Contour : 0;
+                        const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
                         const isMajor = contour % 100 === 0;
                         return {
                             color: isMajor ? '#d84315' : '#ff8f00',
@@ -1200,7 +1200,7 @@
                         };
                     },
                     onEachFeature: (feature, featureLayer) => {
-                        const contour = feature.properties ? feature.properties.Contour : null;
+                        const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : null;
                         const coords = feature.geometry ? feature.geometry.coordinates : [];
                         let isLongLine = false;
                         if (Array.isArray(coords)) {
@@ -1599,7 +1599,7 @@
             contourLayer.eachLayer((layer) => {
                 L.geoJSON(layer.toGeoJSON(), {
                     style: (feature) => {
-                        const contour = feature.properties ? feature.properties.Contour : 0;
+                        const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
                         const isMajor = contour % 100 === 0;
                         return {
                             color: isMajor ? '#d84315' : '#ff8f00',
@@ -1608,7 +1608,7 @@
                         };
                     },
                     onEachFeature: (feature, featureLayer) => {
-                        const contour = feature.properties ? feature.properties.Contour : null;
+                        const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : null;
                         const coords = feature.geometry ? feature.geometry.coordinates : [];
                         let isLongLine = false;
                         if (Array.isArray(coords)) {
