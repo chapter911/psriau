@@ -537,6 +537,7 @@
                         color: isMajor ? '#5d4037' : '#8d6e63',
                         weight: isMajor ? 1.5 : 0.8,
                         opacity: 0.7,
+                        fill: false,
                     };
                 },
                 onEachFeature: (feature, featureLayer) => {
@@ -551,6 +552,10 @@
             });
 
             layer.addTo(contourLayer);
+
+            if (layer.getLayers().length > 0) {
+                map.fitBounds(layer.getBounds());
+            }
             
             if (typeof Swal !== 'undefined') {
                 Swal.close();
