@@ -69,6 +69,17 @@
         box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
 
+    .contour-label {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #d84315 !important;
+        font-weight: 800;
+        font-size: 9.5px;
+        padding: 0 !important;
+        text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;
+    }
+
     @media (max-width: 768px) {
         .map-filter-grid {
             grid-template-columns: 1fr;
@@ -543,9 +554,10 @@
                 onEachFeature: (feature, featureLayer) => {
                     const contour = feature.properties ? feature.properties.Contour : null;
                     if (contour !== null) {
-                        featureLayer.bindTooltip(`Elevasi: ${contour} m`, {
-                            sticky: true,
-                            className: 'contour-tooltip'
+                        featureLayer.bindTooltip(`${contour} m`, {
+                            permanent: true,
+                            direction: 'center',
+                            className: 'contour-label'
                         });
                     }
                 }
@@ -1169,6 +1181,16 @@
                             weight: isMajor ? 2.2 : 1.2,
                             opacity: 0.85
                         };
+                    },
+                    onEachFeature: (feature, featureLayer) => {
+                        const contour = feature.properties ? feature.properties.Contour : null;
+                        if (contour !== null) {
+                            featureLayer.bindTooltip(`${contour} m`, {
+                                permanent: true,
+                                direction: 'center',
+                                className: 'contour-label'
+                            });
+                        }
                     }
                 }).addTo(exportMap);
             });
@@ -1556,6 +1578,16 @@
                             weight: isMajor ? 2.2 : 1.2,
                             opacity: 0.85
                         };
+                    },
+                    onEachFeature: (feature, featureLayer) => {
+                        const contour = feature.properties ? feature.properties.Contour : null;
+                        if (contour !== null) {
+                            featureLayer.bindTooltip(`${contour} m`, {
+                                permanent: true,
+                                direction: 'center',
+                                className: 'contour-label'
+                            });
+                        }
                     }
                 }).addTo(exportMap);
             });
