@@ -571,11 +571,17 @@
                         }
                     }
                     if (contour !== null && isLongLine) {
-                        featureLayer.bindTooltip(`${contour} m`, {
-                            permanent: true,
-                            direction: 'center',
-                            className: 'contour-label'
+                        const center = featureLayer.getBounds().getCenter();
+                        const labelMarker = L.marker(center, {
+                            icon: L.divIcon({
+                                className: 'contour-label-icon',
+                                html: `<div class="contour-label">${contour} m</div>`,
+                                iconSize: [45, 15],
+                                iconAnchor: [22.5, 7.5]
+                            }),
+                            interactive: false
                         });
+                        labelMarker.addTo(contourLayer);
                     }
                 }
             });
@@ -1189,38 +1195,24 @@
 
             // Copy contour lines from main map contourLayer to exportMap
             contourLayer.eachLayer((layer) => {
-                L.geoJSON(layer.toGeoJSON(), {
-                    style: (feature) => {
-                        const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
-                        const isMajor = contour % 100 === 0;
-                        return {
-                            color: isMajor ? '#d84315' : '#ff8f00',
-                            weight: isMajor ? 2.2 : 1.2,
-                            opacity: 0.85
-                        };
-                    },
-                    onEachFeature: (feature, featureLayer) => {
-                        const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : null;
-                        const coords = feature.geometry ? feature.geometry.coordinates : [];
-                        let isLongLine = false;
-                        if (Array.isArray(coords)) {
-                            if (Array.isArray(coords[0]) && typeof coords[0][0] === 'number') {
-                                isLongLine = coords.length >= 25;
-                            } else if (Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
-                                let pts = 0;
-                                coords.forEach(sub => { pts += sub.length; });
-                                isLongLine = pts >= 25;
-                            }
+                if (layer instanceof L.Marker) {
+                    L.marker(layer.getLatLng(), {
+                        icon: layer.getIcon(),
+                        interactive: false
+                    }).addTo(exportMap);
+                } else {
+                    L.geoJSON(layer.toGeoJSON(), {
+                        style: (feature) => {
+                            const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
+                            const isMajor = contour % 100 === 0;
+                            return {
+                                color: isMajor ? '#d84315' : '#ff8f00',
+                                weight: isMajor ? 2.2 : 1.2,
+                                opacity: 0.85
+                            };
                         }
-                        if (contour !== null && isLongLine) {
-                            featureLayer.bindTooltip(`${contour} m`, {
-                                permanent: true,
-                                direction: 'center',
-                                className: 'contour-label'
-                            });
-                        }
-                    }
-                }).addTo(exportMap);
+                    }).addTo(exportMap);
+                }
             });
 
             // Inject dynamic scale bar
@@ -1597,38 +1589,24 @@
 
             // Copy contour lines from main map contourLayer to exportMap
             contourLayer.eachLayer((layer) => {
-                L.geoJSON(layer.toGeoJSON(), {
-                    style: (feature) => {
-                        const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
-                        const isMajor = contour % 100 === 0;
-                        return {
-                            color: isMajor ? '#d84315' : '#ff8f00',
-                            weight: isMajor ? 2.2 : 1.2,
-                            opacity: 0.85
-                        };
-                    },
-                    onEachFeature: (feature, featureLayer) => {
-                        const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : null;
-                        const coords = feature.geometry ? feature.geometry.coordinates : [];
-                        let isLongLine = false;
-                        if (Array.isArray(coords)) {
-                            if (Array.isArray(coords[0]) && typeof coords[0][0] === 'number') {
-                                isLongLine = coords.length >= 25;
-                            } else if (Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
-                                let pts = 0;
-                                coords.forEach(sub => { pts += sub.length; });
-                                isLongLine = pts >= 25;
-                            }
+                if (layer instanceof L.Marker) {
+                    L.marker(layer.getLatLng(), {
+                        icon: layer.getIcon(),
+                        interactive: false
+                    }).addTo(exportMap);
+                } else {
+                    L.geoJSON(layer.toGeoJSON(), {
+                        style: (feature) => {
+                            const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
+                            const isMajor = contour % 100 === 0;
+                            return {
+                                color: isMajor ? '#d84315' : '#ff8f00',
+                                weight: isMajor ? 2.2 : 1.2,
+                                opacity: 0.85
+                            };
                         }
-                        if (contour !== null && isLongLine) {
-                            featureLayer.bindTooltip(`${contour} m`, {
-                                permanent: true,
-                                direction: 'center',
-                                className: 'contour-label'
-                            });
-                        }
-                    }
-                }).addTo(exportMap);
+                    }).addTo(exportMap);
+                }
             });
 
 
