@@ -534,9 +534,9 @@
                     const contour = feature.properties ? feature.properties.Contour : 0;
                     const isMajor = contour % 100 === 0;
                     return {
-                        color: isMajor ? '#5d4037' : '#8d6e63',
-                        weight: isMajor ? 1.5 : 0.8,
-                        opacity: 0.7,
+                        color: isMajor ? '#d84315' : '#ff8f00', // Striking dark orange-red (major) and orange-amber (minor)
+                        weight: isMajor ? 2.2 : 1.2,
+                        opacity: 0.85,
                         fill: false,
                     };
                 },
@@ -1165,9 +1165,9 @@
                         const contour = feature.properties ? feature.properties.Contour : 0;
                         const isMajor = contour % 100 === 0;
                         return {
-                            color: isMajor ? '#5d4037' : '#8d6e63',
-                            weight: isMajor ? 1.5 : 0.8,
-                            opacity: 0.7
+                            color: isMajor ? '#d84315' : '#ff8f00',
+                            weight: isMajor ? 2.2 : 1.2,
+                            opacity: 0.85
                         };
                     }
                 }).addTo(exportMap);
@@ -1552,9 +1552,9 @@
                         const contour = feature.properties ? feature.properties.Contour : 0;
                         const isMajor = contour % 100 === 0;
                         return {
-                            color: isMajor ? '#5d4037' : '#8d6e63',
-                            weight: isMajor ? 1.5 : 0.8,
-                            opacity: 0.7
+                            color: isMajor ? '#d84315' : '#ff8f00',
+                            weight: isMajor ? 2.2 : 1.2,
+                            opacity: 0.85
                         };
                     }
                 }).addTo(exportMap);
