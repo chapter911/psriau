@@ -470,16 +470,9 @@
 
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="text-muted">
-                        <?php if ($isEdit): ?>
-                            Simpan perubahan data laporan perjalanan dinas.
-                        <?php else: ?>
-                            Pilih simpan: <strong>Draft</strong> menyimpan sementara, <strong>Final</strong> menyimpan data final.
-                        <?php endif; ?>
+                        Simpan data laporan pelaksanaan perjalanan dinas.
                     </div>
                     <div>
-                        <?php if (! $isEdit): ?>
-                            <button type="submit" name="save_mode" value="draft" class="btn btn-secondary">Simpan Draft</button>
-                        <?php endif; ?>
                         <button type="submit" name="save_mode" value="final" class="btn btn-primary"><?= esc($submitLabelPrimary); ?></button>
                     </div>
                 </div>

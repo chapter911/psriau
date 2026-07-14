@@ -443,5 +443,32 @@
             hideBySelector('a[href*="/approval"], a[href*="/approve"], form[action*="/approval"], form[action*="/approve"], button[id*="approval"], button[id*="Approval"], button[class*="approval"], button[class*="Approval"]');
         }
     })();
+
+    // Auto-trigger native calendar/time pickers on click/focus globally
+    (() => {
+        const triggerPicker = (el) => {
+            if (el && typeof el.showPicker === 'function') {
+                try {
+                    el.showPicker();
+                } catch (e) {
+                    // Suppress or log error
+                }
+            }
+        };
+
+        document.body.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target && target.tagName === 'INPUT' && ['date', 'month', 'week', 'time', 'datetime-local'].includes(target.type)) {
+                triggerPicker(target);
+            }
+        });
+
+        document.body.addEventListener('focusin', (e) => {
+            const target = e.target;
+            if (target && target.tagName === 'INPUT' && ['date', 'month', 'week', 'time', 'datetime-local'].includes(target.type)) {
+                triggerPicker(target);
+            }
+        });
+    })();
 </script>
 <?= $this->renderSection('pageScripts'); ?>

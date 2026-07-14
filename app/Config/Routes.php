@@ -143,10 +143,16 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/kop-surat/(:num)/hapus', 'Admin\\KopSurat::delete/$1');
 
 	// Master Dasar SPT
-	$routes->get('master/dasar-spt', 'Admin\\DasarSpt::index');
-	$routes->post('master/dasar-spt/tambah', 'Admin\\DasarSpt::create');
-	$routes->post('master/dasar-spt/(:num)/ubah', 'Admin\\DasarSpt::edit/$1');
-	$routes->post('master/dasar-spt/(:num)/hapus', 'Admin\\DasarSpt::delete/$1');
+	$routes->get('master/dasar-spt', 'Admin\DasarSpt::index');
+	$routes->post('master/dasar-spt/tambah', 'Admin\DasarSpt::create');
+	$routes->post('master/dasar-spt/(:num)/ubah', 'Admin\DasarSpt::edit/$1');
+	$routes->post('master/dasar-spt/(:num)/hapus', 'Admin\DasarSpt::delete/$1');
+
+	// Master Transportasi Routes
+	$routes->get('master/transportasi', 'Admin\Transportasi::index');
+	$routes->post('master/transportasi/tambah', 'Admin\Transportasi::create');
+	$routes->post('master/transportasi/(:num)/ubah', 'Admin\Transportasi::edit/$1');
+	$routes->post('master/transportasi/(:num)/hapus', 'Admin\Transportasi::delete/$1');
 	$routes->get('master/sekolah', 'Admin\\MasterSekolah::index');
 	$routes->get('master/sekolah/export', 'Admin\\MasterSekolah::export');
 	$routes->post('master/sekolah/tambah', 'Admin\\MasterSekolah::create');
@@ -263,6 +269,13 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('surat/lupa-absen/(:num)/hapus', 'Admin\\LupaAbsen::hapus/$1');
 	$routes->get('surat/lupa-absen/(:num)/approve', 'Admin\\LupaAbsen::approve/$1');
 	$routes->get('surat/lupa-absen/(:num)/reject', 'Admin\\LupaAbsen::reject/$1');
+
+	// Surat Routes - Disposisi Perjalanan Dinas
+	$routes->get('surat/perjalanan-dinas/disposisi', 'Admin\\DisposisiPerjalananDinas::index');
+	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/disposisi/buat', 'Admin\\DisposisiPerjalananDinas::buat');
+	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/disposisi/(:num)/ubah', 'Admin\\DisposisiPerjalananDinas::ubah/$1');
+	$routes->get('surat/perjalanan-dinas/disposisi/(:num)/pdf', 'Admin\\DisposisiPerjalananDinas::pdf/$1');
+	$routes->get('surat/perjalanan-dinas/disposisi/(:num)/hapus', 'Admin\\DisposisiPerjalananDinas::hapus/$1');
 
 	$routes->get('kontrak/export/(:any)/(:num)', 'Admin\\Kontrak::exportDocument/$1/$2');
 	$routes->post('slide/tambah', 'Admin\\HomeSetting::createSlide');

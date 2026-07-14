@@ -336,14 +336,20 @@ class Laporan extends BaseController
         $role = strtolower((string) session()->get('role'));
         $canUploadVerified = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
         $dasarSptOptions = (new \App\Models\MstDasarSptModel())->orderBy('id', 'ASC')->findAll();
+        $pegawaiRows = $this->loadPegawaiOptions();
+        $currentPegawai = $this->resolveCurrentPegawai(
+            (string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name')), 
+            $pegawaiRows
+        );
+        $currentPegawaiId = $currentPegawai ? (int) $currentPegawai['id'] : 0;
 
         return view('admin/laporan/perjalanan_dinas', [
             'title' => 'Laporan Perjalanan Dinas',
             'can_edit' => $this->canManageLaporan(),
             'can_upload_verified' => $canUploadVerified,
-            'can_verify' => $this->canVerifyLaporan(),
+            'can_verify' => $this->canVerifyLaporan() || ($currentPegawaiId > 0),
             'kabupaten_options' => $this->loadKabupatenOptions(),
-            'pegawai_options' => $this->loadPegawaiOptions(),
+            'pegawai_options' => $pegawaiRows,
             'dasar_spt_options' => $dasarSptOptions,
         ]);
     }
@@ -352,8 +358,15 @@ class Laporan extends BaseController
     {
         $canEdit = $this->canManageLaporan();
         $role = strtolower((string) session()->get('role'));
+        $isSuperAdmin = in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
         $canUploadVerified = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
-        $canVerify = $this->canVerifyLaporan();
+        
+        $pegawaiRows = $this->loadPegawaiOptions();
+        $currentPegawai = $this->resolveCurrentPegawai(
+            (string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name')), 
+            $pegawaiRows
+        );
+        $currentPegawaiId = $currentPegawai ? (int) $currentPegawai['id'] : 0;
         
         return $this->respondPerjalananDinasDataTable(
             fn () => db_connect()->table('laporan_perjalanan_dinas'),
@@ -389,7 +402,22 @@ class Laporan extends BaseController
                 5 => 'id',
                 6 => 'id',
             ],
-            function (array $row) use ($canEdit, $canUploadVerified, $canVerify): array {
+            function (array $row) use ($canEdit, $canUploadVerified, $isSuperAdmin, $currentPegawaiId): array {
+                $canVerifyRow = $isSuperAdmin;
+                if (! $canVerifyRow && $currentPegawaiId > 0 && ! empty($row['disposisi_id'])) {
+                    $disposisi = db_connect()->table('disposisi_perjalanan_dinas')
+                        ->select('menyetujui_pegawai_id, diketahui_pegawai_id')
+                        ->where('id', $row['disposisi_id'])
+                        ->get()
+                        ->getRowArray();
+                    if ($disposisi) {
+                        $ppkId = (int) ($disposisi['menyetujui_pegawai_id'] ?? 0);
+                        $satkerId = (int) ($disposisi['diketahui_pegawai_id'] ?? 0);
+                        if ($currentPegawaiId === $ppkId || $currentPegawaiId === $satkerId) {
+                            $canVerifyRow = true;
+                        }
+                    }
+                }
                 $pelaksanaRows = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true);
                 if (! is_array($pelaksanaRows)) {
                     $pelaksanaRows = [];
@@ -412,59 +440,66 @@ class Laporan extends BaseController
                 $row['periode'] = $periodeLabel;
                 $row['pelaksana_names_label'] = implode(', ', $pelaksanaNames) ?: '-';
 
+                $isFinal = (int) ($row['is_final'] ?? 0);
+                $row['is_final'] = $isFinal;
+
                 // Differentiate Laporan Perjadin (dynamic PDF), Verified SPT, and Dokumen Pendukung
                 $dokumenHtml = '<div class="doc-btn-group">';
-                $dokumenHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-danger" title="Laporan Perjadin (PDF)" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i></a>';
-                
-                if (! empty($row['verified_spt_path'])) {
-                    $verifiedUrl = media_url($row['verified_spt_path']);
-                    $ext = strtolower(pathinfo((string) $row['verified_spt_path'], PATHINFO_EXTENSION));
-                    $icon = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'fa-file-image' : 'fa-file-signature';
-                    $btnClass = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'btn-warning text-white' : 'btn-success';
-                    $titleLabel = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'Lihat Foto Verified SPT/Perjadin' : 'Unduh Verified SPT (PDF)';
-                    $dokumenHtml .= '<a href="' . $verifiedUrl . '" class="btn ' . $btnClass . '" title="' . $titleLabel . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
-                }
+                if ($isFinal === 1) {
+                    $dokumenHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-danger" title="Laporan Perjadin (PDF)" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i></a>';
+                    
+                    if (! empty($row['verified_spt_path'])) {
+                        $verifiedUrl = media_url($row['verified_spt_path']);
+                        $ext = strtolower(pathinfo((string) $row['verified_spt_path'], PATHINFO_EXTENSION));
+                        $icon = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'fa-file-image' : 'fa-file-signature';
+                        $btnClass = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'btn-warning text-white' : 'btn-success';
+                        $titleLabel = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'Lihat Foto Verified SPT/Perjadin' : 'Unduh Verified SPT (PDF)';
+                        $dokumenHtml .= '<a href="' . $verifiedUrl . '" class="btn ' . $btnClass . '" title="' . $titleLabel . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
+                    }
 
-                $docs = json_decode((string) ($row['dokumen_pendukung_json'] ?? '[]'), true);
-                if (is_array($docs) && $docs !== []) {
-                    foreach ($docs as $doc) {
-                        $filePath = trim((string) ($doc['file_path'] ?? ''));
-                        $fileName = trim((string) ($doc['name'] ?? 'File'));
-                        if ($filePath !== '') {
-                            $docUrl = media_url($filePath);
-                            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-                            
-                            $icon = 'fa-paperclip';
-                            $btnClass = 'btn-info';
-                            if ($ext === 'pdf') {
-                                $icon = 'fa-file-pdf';
-                                $btnClass = 'btn-danger';
-                            } elseif (in_array($ext, ['doc', 'docx'], true)) {
-                                $icon = 'fa-file-word';
-                                $btnClass = 'btn-primary';
-                            } elseif (in_array($ext, ['xls', 'xlsx'], true)) {
-                                $icon = 'fa-file-excel';
-                                $btnClass = 'btn-success';
-                            } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'], true)) {
-                                $icon = 'fa-file-image';
-                                $btnClass = 'btn-warning text-white';
+                    $docs = json_decode((string) ($row['dokumen_pendukung_json'] ?? '[]'), true);
+                    if (is_array($docs) && $docs !== []) {
+                        foreach ($docs as $doc) {
+                            $filePath = trim((string) ($doc['file_path'] ?? ''));
+                            $fileName = trim((string) ($doc['name'] ?? 'File'));
+                            if ($filePath !== '') {
+                                $docUrl = media_url($filePath);
+                                $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+                                
+                                $icon = 'fa-paperclip';
+                                $btnClass = 'btn-info';
+                                if ($ext === 'pdf') {
+                                    $icon = 'fa-file-pdf';
+                                    $btnClass = 'btn-danger';
+                                } elseif (in_array($ext, ['doc', 'docx'], true)) {
+                                    $icon = 'fa-file-word';
+                                    $btnClass = 'btn-primary';
+                                } elseif (in_array($ext, ['xls', 'xlsx'], true)) {
+                                    $icon = 'fa-file-excel';
+                                    $btnClass = 'btn-success';
+                                } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'], true)) {
+                                    $icon = 'fa-file-image';
+                                    $btnClass = 'btn-warning text-white';
+                                }
+                                
+                                 $keterangan = trim((string) ($doc['keterangan'] ?? ''));
+                                 $titleLabel = 'File Pendukung: ' . $fileName;
+                                 if ($keterangan !== '') {
+                                     $titleLabel .= ' - ' . $keterangan;
+                                 }
+                                 $dokumenHtml .= '<a href="' . $docUrl . '" class="btn ' . $btnClass . '" title="' . esc($titleLabel, 'attr') . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
                             }
-                            
-                             $keterangan = trim((string) ($doc['keterangan'] ?? ''));
-                             $titleLabel = 'File Pendukung: ' . $fileName;
-                             if ($keterangan !== '') {
-                                 $titleLabel .= ' - ' . $keterangan;
-                             }
-                             $dokumenHtml .= '<a href="' . $docUrl . '" class="btn ' . $btnClass . '" title="' . esc($titleLabel, 'attr') . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
                         }
                     }
+                } else {
+                    $dokumenHtml .= '<span class="badge badge-warning py-1 px-2 font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-hourglass-start mr-1"></i> Belum Selesai</span>';
                 }
                 $dokumenHtml .= '</div>';
                 
                 $row['dokumen_html'] = $dokumenHtml;
                 
                 // Add conditional Upload Verified cell
-                if ($canUploadVerified) {
+                if ($canUploadVerified && $isFinal === 1) {
                     $existingFile = ! empty($row['verified_spt_path']) ? esc((string) $row['verified_spt_path'], 'attr') : '';
                     $nomorSurat = esc((string) ($row['nomor_surat_tugas'] ?? '-'), 'attr');
                     if ($existingFile !== '') {
@@ -473,7 +508,7 @@ class Laporan extends BaseController
                         $row['upload_verified_html'] = '<button type="button" class="btn btn-sm btn-primary btn-upload-verified" data-id="' . (int) ($row['id'] ?? 0) . '" data-nomor="' . $nomorSurat . '" data-existing="" title="Upload Verified Perjadin & SPT"><i class="fas fa-upload"></i> Upload</button>';
                     }
                 } else {
-                    $row['upload_verified_html'] = '';
+                    $row['upload_verified_html'] = '<span class="text-muted">-</span>';
                 }
                 
                 if ($canEdit) {
@@ -492,7 +527,9 @@ class Laporan extends BaseController
                 $nomorSurat = trim((string) ($row['nomor_surat_tugas'] ?? ''));
 
                 $verificationStatusHtml = '';
-                if ($isVerified === 1) {
+                if ($isFinal === 0) {
+                    $verificationStatusHtml = '<span class="text-muted">-</span>';
+                } elseif ($isVerified === 1) {
                     $formattedTtd = $tglTtd !== '' ? tanggal_indonesia($tglTtd) : '-';
                     $badgeTitle = "Nomor: " . esc($nomorSurat) . "\nTanggal: " . $formattedTtd;
                     
@@ -502,7 +539,7 @@ class Laporan extends BaseController
                     // Button to print single Surat Tugas
                     $verificationStatusHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-spt') . '" class="btn btn-xs btn-outline-danger px-2 font-weight-bold" title="Cetak Surat Tugas (PDF)" target="_blank"><i class="fas fa-file-pdf"></i> SPT</a>';
                     
-                    if ($canVerify) {
+                    if ($canVerifyRow) {
                         // Button to edit verification
                         $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarSptIds), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
                     }
@@ -510,7 +547,7 @@ class Laporan extends BaseController
                     $verificationStatusHtml .= '</div>';
                 } else {
                     $verificationStatusHtml .= '<span class="badge badge-warning px-2 py-1 shadow-sm text-dark" style="font-size:0.78rem;"><i class="fas fa-clock mr-1"></i> Belum Verifikasi</span>';
-                    if ($canVerify) {
+                    if ($canVerifyRow) {
                         $verificationStatusHtml .= '<div class="mt-1">';
                         $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-primary px-3 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
                         $verificationStatusHtml .= '</div>';
@@ -526,14 +563,40 @@ class Laporan extends BaseController
 
     public function perjalananDinasVerify(int $id)
     {
-        if (! $this->canVerifyLaporan()) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi laporan perjalanan dinas.');
-        }
-
         $model = new LaporanPerjalananDinasModel();
         $row = $model->find($id);
         if (! is_array($row)) {
             return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+        }
+
+        $role = strtolower((string) session()->get('role'));
+        $isSuperAdmin = in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        
+        $pegawaiRows = $this->loadPegawaiOptions();
+        $currentPegawai = $this->resolveCurrentPegawai(
+            (string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name')), 
+            $pegawaiRows
+        );
+        $currentPegawaiId = $currentPegawai ? (int) $currentPegawai['id'] : 0;
+
+        $canVerifyRow = $isSuperAdmin;
+        if (! $canVerifyRow && $currentPegawaiId > 0 && ! empty($row['disposisi_id'])) {
+            $disposisi = db_connect()->table('disposisi_perjalanan_dinas')
+                ->select('menyetujui_pegawai_id, diketahui_pegawai_id')
+                ->where('id', $row['disposisi_id'])
+                ->get()
+                ->getRowArray();
+            if ($disposisi) {
+                $ppkId = (int) ($disposisi['menyetujui_pegawai_id'] ?? 0);
+                $satkerId = (int) ($disposisi['diketahui_pegawai_id'] ?? 0);
+                if ($currentPegawaiId === $ppkId || $currentPegawaiId === $satkerId) {
+                    $canVerifyRow = true;
+                }
+            }
+        }
+
+        if (! $canVerifyRow) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi laporan perjalanan dinas.');
         }
 
         $nomorSurat = trim((string) $this->request->getPost('nomor_surat_tugas'));
@@ -762,6 +825,10 @@ class Laporan extends BaseController
             if ($paths !== []) {
                 $this->deleteStoredFiles($paths);
             }
+        }
+
+        if (! empty($row['disposisi_id'])) {
+            $db->table('disposisi_perjalanan_dinas')->where('id', $row['disposisi_id'])->delete();
         }
 
         $db->table('laporan_perjalanan_dinas')->where('id', $id)->delete();

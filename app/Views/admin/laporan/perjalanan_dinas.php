@@ -293,10 +293,14 @@
             },
             { 
                 data: 'tujuan',
-                render: function (data) {
+                render: function (data, type, row) {
                     if (!data) return '-';
                     const escaped = $('<div/>').text(data).html();
-                    return '<div class="text-tujuan" title="' + escaped + '">' + escaped + '</div>';
+                    let html = '<div class="text-tujuan" title="' + escaped + '">' + escaped + '</div>';
+                    if (row.is_final == 0) {
+                        html += '<span class="badge badge-warning mt-1"><i class="fas fa-clock mr-1"></i> Belum Selesai</span>';
+                    }
+                    return html;
                 }
             },
             { 
