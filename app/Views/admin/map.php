@@ -54,6 +54,21 @@
         color: #334155;
     }
 
+    .search-btn-wrapper {
+        grid-column: span 4;
+    }
+
+    .contour-tooltip {
+        background: rgba(93, 64, 55, 0.9) !important;
+        border: 1px solid #3e2723 !important;
+        color: #fff !important;
+        font-weight: bold;
+        font-size: 11px;
+        border-radius: 4px;
+        padding: 2px 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
     @media (max-width: 768px) {
         .map-filter-grid {
             grid-template-columns: 1fr;
@@ -62,6 +77,10 @@
         .map-box {
             min-height: 340px;
             height: 52vh;
+        }
+
+        .search-btn-wrapper {
+            grid-column: span 1;
         }
     }
 </style>
@@ -129,7 +148,15 @@
                     <option value="non_klasifikasi">Belum Klasifikasi</option>
                 </select>
             </div>
-            <div class="d-flex align-items-end">
+            <div>
+                <label class="mb-1">Kontur Lahan</label>
+                <select class="form-control" id="dashboardKontur">
+                    <option value="*">Tidak Aktif</option>
+                    <option value="50m">Kontur Ringan (Interval 50m)</option>
+                    <option value="25m">Kontur Detail (Interval 25m)</option>
+                </select>
+            </div>
+            <div class="d-flex align-items-end search-btn-wrapper">
                 <button class="btn btn-primary btn-block" type="button" id="dashboardMapSearchBtn">
                     <i class="fas fa-search mr-1"></i> Cari
                 </button>
@@ -284,6 +311,7 @@
         paket: document.getElementById('dashboardPaket'),
         kecamatan: document.getElementById('dashboardKecamatan'),
         klasifikasi: document.getElementById('dashboardKlasifikasi'),
+        kontur: document.getElementById('dashboardKontur'),
         total: document.getElementById('dashboardMapTotal'),
         search: document.getElementById('dashboardMapSearchBtn'),
     };
@@ -314,6 +342,7 @@
     const map = L.map('dashboardMapBox').setView([-0.51544, 101.44415], 8);
     const markerLayer = L.layerGroup().addTo(map);
     const boundaryLayer = L.layerGroup().addTo(map);
+    const contourLayer = L.layerGroup().addTo(map);
     let mapScript = '';
     let activeMarkers = [];
     const markerIconCache = new Map();
@@ -463,6 +492,76 @@
                 return;
             } catch (error) {
                 // Try next candidate source.
+            }
+        }
+    };
+
+    const loadContourData = async () => {
+        contourLayer.clearLayers();
+        const selected = inputs.kontur.value;
+        if (selected === '' || selected === '*') {
+            return;
+        }
+
+        let fileUrl = '';
+        if (selected === '50m') {
+            fileUrl = '<?= esc(media_url('geojson/kontur_riau_50m.json')); ?>';
+        } else if (selected === '25m') {
+            fileUrl = '<?= esc(media_url('geojson/kontur_riau_25m.json')); ?>';
+        }
+
+        if (!fileUrl) return;
+
+        try {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Mohon Tunggu',
+                    text: 'Memuat data kontur lahan...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => Swal.showLoading(),
+                });
+            }
+
+            const response = await fetch(fileUrl);
+            if (!response.ok) {
+                throw new Error('Gagal memuat berkas kontur.');
+            }
+            const geojson = await response.json();
+
+            const layer = L.geoJSON(geojson, {
+                style: (feature) => {
+                    const contour = feature.properties ? feature.properties.Contour : 0;
+                    const isMajor = contour % 100 === 0;
+                    return {
+                        color: isMajor ? '#5d4037' : '#8d6e63',
+                        weight: isMajor ? 1.5 : 0.8,
+                        opacity: 0.7,
+                    };
+                },
+                onEachFeature: (feature, featureLayer) => {
+                    const contour = feature.properties ? feature.properties.Contour : null;
+                    if (contour !== null) {
+                        featureLayer.bindTooltip(`Elevasi: ${contour} m`, {
+                            sticky: true,
+                            className: 'contour-tooltip'
+                        });
+                    }
+                }
+            });
+
+            layer.addTo(contourLayer);
+            
+            if (typeof Swal !== 'undefined') {
+                Swal.close();
+            }
+        } catch (error) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: error.message || 'Gagal memuat kontur lahan.',
+                });
             }
         }
     };
@@ -797,6 +896,7 @@
     $(inputs.paket).on('change', loadMapData);
     $(inputs.kecamatan).on('change', loadMapData);
     $(inputs.klasifikasi).on('change', loadMapData);
+    $(inputs.kontur).on('change', loadContourData);
     inputs.npsn.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -1052,6 +1152,21 @@
                 iconAnchor: [90, 18]
             });
             L.marker([lat, lng], { icon: schoolPinIcon }).addTo(exportMap);
+
+            // Copy contour lines from main map contourLayer to exportMap
+            contourLayer.eachLayer((layer) => {
+                L.geoJSON(layer.toGeoJSON(), {
+                    style: (feature) => {
+                        const contour = feature.properties ? feature.properties.Contour : 0;
+                        const isMajor = contour % 100 === 0;
+                        return {
+                            color: isMajor ? '#5d4037' : '#8d6e63',
+                            weight: isMajor ? 1.5 : 0.8,
+                            opacity: 0.7
+                        };
+                    }
+                }).addTo(exportMap);
+            });
 
             // Inject dynamic scale bar
             document.getElementById('export-scale-container').innerHTML = getScaleBarHtml(exportMap);
@@ -1421,6 +1536,21 @@
                         weight: 2,
                         dashArray: '5,5',
                         fillOpacity: 0
+                    }
+                }).addTo(exportMap);
+            });
+
+            // Copy contour lines from main map contourLayer to exportMap
+            contourLayer.eachLayer((layer) => {
+                L.geoJSON(layer.toGeoJSON(), {
+                    style: (feature) => {
+                        const contour = feature.properties ? feature.properties.Contour : 0;
+                        const isMajor = contour % 100 === 0;
+                        return {
+                            color: isMajor ? '#5d4037' : '#8d6e63',
+                            weight: isMajor ? 1.5 : 0.8,
+                            opacity: 0.7
+                        };
                     }
                 }).addTo(exportMap);
             });
