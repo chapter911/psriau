@@ -84,11 +84,12 @@
                     <tr>
                         <th style="width:60px;" class="text-center">No</th>
                         <th style="width:280px;">Tujuan</th>
-                        <th style="width:200px;">Kota Tujuan</th>
-                        <th style="width:200px;">Periode</th>
+                        <th style="width:180px;">Kota Tujuan</th>
+                        <th style="width:180px;">Periode</th>
                         <th>Nama Pelaksana</th>
-                        <th style="width:160px;" class="text-center">Verifikasi SPT</th>
-                        <th style="width:90px;" class="text-center">Aksi</th>
+                        <th style="width:150px;" class="text-center">Status Verifikasi</th>
+                        <th style="width:130px;" class="text-center">File SPT</th>
+                        <th style="width:110px;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -227,13 +228,19 @@
                 }
             },
             {
-                data: 'verification_status_html',
+                data: 'status_verifikasi_html',
                 orderable: false,
                 searchable: false,
                 className: 'text-center'
             },
             {
-                data: 'action_html',
+                data: 'file_spt_html',
+                orderable: false,
+                searchable: false,
+                className: 'text-center'
+            },
+            {
+                data: 'aksi_spt_html',
                 orderable: false,
                 searchable: false,
                 className: 'text-center'

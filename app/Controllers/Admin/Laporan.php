@@ -587,33 +587,46 @@ class Laporan extends BaseController
                     }
                 }
 
-                $verificationStatusHtml = '';
+                $statusVerifikasiHtml = '';
                 if ($isFinal === 0) {
-                    $verificationStatusHtml .= '<span class="badge badge-secondary px-2 py-1 shadow-sm" style="font-size:0.78rem;"><i class="fas fa-hourglass-start mr-1"></i> Belum Selesai</span>';
+                    $statusVerifikasiHtml = '<span class="badge badge-secondary px-2 py-1 shadow-sm" style="font-size:0.78rem;"><i class="fas fa-hourglass-start mr-1"></i> Belum Selesai</span>';
                 } elseif ($isVerified === 1) {
                     $formattedTtd = $tglTtd !== '' ? tanggal_indonesia($tglTtd) : '-';
                     $badgeTitle = "Nomor: " . esc($nomorSurat) . "\nTanggal: " . $formattedTtd;
-                    $verificationStatusHtml .= '<span class="badge badge-success px-2 py-1 shadow-sm" style="font-size:0.78rem; cursor:pointer;" title="' . esc($badgeTitle, 'attr') . '"><i class="fas fa-check-circle mr-1"></i> Terverifikasi</span>';
+                    $statusVerifikasiHtml = '<span class="badge badge-success px-2 py-1 shadow-sm" style="font-size:0.78rem; cursor:pointer;" title="' . esc($badgeTitle, 'attr') . '"><i class="fas fa-check-circle mr-1"></i> Terverifikasi</span>';
                 } else {
-                    $verificationStatusHtml .= '<span class="badge badge-warning px-2 py-1 shadow-sm text-dark" style="font-size:0.78rem;"><i class="fas fa-clock mr-1"></i> Belum Verifikasi</span>';
+                    $statusVerifikasiHtml = '<span class="badge badge-warning px-2 py-1 shadow-sm text-dark" style="font-size:0.78rem;"><i class="fas fa-clock mr-1"></i> Belum Verifikasi</span>';
                 }
 
-                $verificationStatusHtml .= '<div class="mt-1 d-flex justify-content-center align-items-center" style="gap: 4px;">';
-                // Button to print single Surat Tugas (available for all states)
-                $verificationStatusHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-spt') . '" class="btn btn-xs btn-outline-danger px-2 font-weight-bold" title="Cetak Surat Tugas (PDF)" target="_blank"><i class="fas fa-file-pdf"></i> SPT</a>';
+                $fileSptHtml = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-spt') . '" class="btn btn-xs btn-outline-danger px-2 font-weight-bold" title="Cetak Surat Tugas (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak SPT</a>';
 
+                $aksiSptHtml = '';
                 if ($canVerifyRow) {
                     if ($isVerified === 1) {
                         // Button to edit verification
-                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
+                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" title="Ubah Verifikasi"><i class="fas fa-edit mr-1"></i> Edit</button>';
                     } else {
                         // Button to perform verification
+                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
+                    }
+                } else {
+                    $aksiSptHtml = '<span class="text-muted" style="font-size:0.8rem;"><i class="fas fa-lock mr-1"></i> No Access</span>';
+                }
+
+                $verificationStatusHtml = $statusVerifikasiHtml . '<div class="mt-1 d-flex justify-content-center align-items-center" style="gap: 4px;">' . $fileSptHtml;
+                if ($canVerifyRow) {
+                    if ($isVerified === 1) {
+                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
+                    } else {
                         $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
                     }
                 }
                 $verificationStatusHtml .= '</div>';
 
                 $row['verification_status_html'] = $verificationStatusHtml;
+                $row['status_verifikasi_html'] = $statusVerifikasiHtml;
+                $row['file_spt_html'] = $fileSptHtml;
+                $row['aksi_spt_html'] = $aksiSptHtml;
 
                 return $row;
             }
