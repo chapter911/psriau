@@ -252,6 +252,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 
 	// Surat Routes - Perjalanan Dinas (alias dari Laporan)
 	$routes->get('surat/perjalanan-dinas', 'Admin\\Laporan::perjalananDinas');
+	$routes->get('surat/perjalanan-dinas/surat-tugas', 'Admin\\Laporan::suratTugas');
 	$routes->get('surat/perjalanan-dinas/cetak-periode', 'Admin\\Laporan::perjalananDinasCetakPeriode');
 	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/buat', 'Admin\\Laporan::perjalananDinasBuat');
 	$routes->get('surat/perjalanan-dinas/(:num)/dokumen', 'Admin\\Laporan::perjalananDinasDokumen/$1');

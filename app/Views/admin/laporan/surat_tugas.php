@@ -2,119 +2,65 @@
 
 <?= $this->section('content'); ?>
 <?php
-    $reports = $reports ?? [];
     $canEdit = (bool) ($can_edit ?? false);
+    $canVerify = (bool) ($can_verify ?? false);
 ?>
 <style>
-    /* Table styling improvements */
-    #tablePerjalananDinas thead th {
-        vertical-align: middle !important;
-        text-align: center;
-        padding: 8px 10px !important;
-        font-size: 13.5px;
-        line-height: 1.3;
-        font-weight: 600;
-    }
-    
-    #tablePerjalananDinas tbody td {
-        vertical-align: middle !important;
-        padding: 8px 10px !important;
-        font-size: 13.5px;
-    }
-    
-    /* Make document action buttons larger and cleaner (icon only) */
-    .doc-btn-group {
-        display: inline-flex;
-        flex-wrap: nowrap;
-        gap: 6px;
-        justify-content: center;
-        align-items: center;
-        white-space: nowrap;
-    }
-    
-    .doc-btn-group .btn {
-        width: 32px;
-        height: 32px;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        font-size: 14px;
-        transition: all 0.2s ease-in-out;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    
-    .doc-btn-group .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-    }
-    
-    /* Align custom table sorting icons in AdminLTE/Bootstrap4 DataTables */
-    table.dataTable thead .sorting::before, 
-    table.dataTable thead .sorting_asc::before, 
-    table.dataTable thead .sorting_desc::before, 
-    table.dataTable thead .sorting_asc_disabled::before, 
-    table.dataTable thead .sorting_desc_disabled::before,
-    table.dataTable thead .sorting::after, 
-    table.dataTable thead .sorting_asc::after, 
-    table.dataTable thead .sorting_desc::after, 
-    table.dataTable thead .sorting_asc_disabled::after, 
-    table.dataTable thead .sorting_desc_disabled::after {
-        bottom: 50% !important;
-        transform: translateY(50%) !important;
-    }
-    
-    /* Text styling for Tujuan column */
     .text-tujuan {
-        max-width: 280px;
-        font-size: 12.5px;
-        line-height: 1.4;
         white-space: normal;
-        word-break: break-word;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        word-wrap: break-word;
+        max-width: 280px;
     }
 </style>
 
-<div class="card">
+<!-- Flash Messages -->
+<?php if (session()->getFlashdata('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle mr-1"></i> <?= session()->getFlashdata('success'); ?>
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+<?php endif; ?>
+
+<?php if (session()->getFlashdata('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle mr-1"></i> <?= session()->getFlashdata('error'); ?>
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+<?php endif; ?>
+
+<div class="card card-outline card-primary">
     <div class="card-header d-flex align-items-center">
-        <h3 class="card-title mb-0">Laporan Perjalanan Dinas</h3>
-        <div class="card-tools ml-auto">
-            <a href="<?= site_url('admin/surat/perjalanan-dinas/buat'); ?>" class="btn btn-primary btn-sm">Buat Laporan</a>
-        </div>
+        <h3 class="card-title mb-0 font-weight-bold">Daftar Surat Tugas (SPT)</h3>
     </div>
     <div class="card-body">
-
-        <div class="card card-outline card-secondary mb-3">
-            <div class="card-header py-2">
-                <h3 class="card-title mb-0">Filter Laporan Perjalanan Dinas</h3>
+        
+        <!-- Filter Card -->
+        <div class="card card-outline card-secondary mb-4 shadow-sm">
+            <div class="card-header py-2 bg-light">
+                <h3 class="card-title mb-0 font-weight-bold text-secondary" style="font-size:0.95rem;"><i class="fas fa-filter mr-1"></i> Filter Data</h3>
             </div>
-            <div class="card-body">
+            <div class="card-body py-3">
                 <div class="form-row">
-                    <div class="form-group col-md-3">
-                        <label for="filter_start_date" class="font-weight-bold mb-1">Tanggal Mulai</label>
+                    <div class="form-group col-md-3 mb-2 mb-md-0">
+                        <label for="filter_start_date" class="font-weight-bold mb-1" style="font-size:0.85rem;">Tanggal Mulai</label>
                         <input type="date" class="form-control form-control-sm" id="filter_start_date" value="<?= date('Y-m-01'); ?>">
                     </div>
-                    <div class="form-group col-md-3">
-                        <label for="filter_end_date" class="font-weight-bold mb-1">Tanggal Selesai</label>
+                    <div class="form-group col-md-3 mb-2 mb-md-0">
+                        <label for="filter_end_date" class="font-weight-bold mb-1" style="font-size:0.85rem;">Tanggal Selesai</label>
                         <input type="date" class="form-control form-control-sm" id="filter_end_date" value="<?= date('Y-m-t'); ?>">
                     </div>
-                    <div class="form-group col-md-3">
-                        <label for="filter_kota" class="font-weight-bold mb-1">Kota Tujuan</label>
-                        <select class="form-control form-control-sm" id="filter_kota" data-placeholder="Semua Kota/Kabupaten">
+                    <div class="form-group col-md-3 mb-2 mb-md-0">
+                        <label for="filter_kota" class="font-weight-bold mb-1" style="font-size:0.85rem;">Kota Tujuan</label>
+                        <select class="form-control form-control-sm select2-filter" id="filter_kota" data-placeholder="Semua Kota/Kabupaten" style="width: 100%;">
                             <option value=""></option>
                             <?php foreach ($kabupaten_options ?? [] as $kota): ?>
                                 <option value="<?= esc($kota); ?>"><?= esc($kota); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group col-md-3">
-                        <label for="filter_pelaksana" class="font-weight-bold mb-1">Pelaksana</label>
-                        <select class="form-control form-control-sm" id="filter_pelaksana" data-placeholder="Semua Pelaksana">
+                    <div class="form-group col-md-3 mb-2 mb-md-0">
+                        <label for="filter_pelaksana" class="font-weight-bold mb-1" style="font-size:0.85rem;">Pelaksana</label>
+                        <select class="form-control form-control-sm select2-filter" id="filter_pelaksana" data-placeholder="Semua Pelaksana" style="width: 100%;">
                             <option value=""></option>
                             <?php foreach ($pegawai_options ?? [] as $peg): ?>
                                 <option value="<?= (int) ($peg['id'] ?? 0); ?>"><?= esc($peg['nama'] ?? ''); ?><?= !empty($peg['nip']) ? ' - NIP ' . esc($peg['nip']) : ''; ?></option>
@@ -122,8 +68,8 @@
                         </select>
                     </div>
                 </div>
-                <div class="d-flex justify-content-between align-items-center mt-2">
-                    <small class="text-muted">Data akan diperbarui secara otomatis saat filter diubah.</small>
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-2" style="border-top:1px solid #f0f2f5;">
+                    <small class="text-muted"><i class="fas fa-info-circle mr-1"></i> Data diperbarui secara otomatis saat filter diubah.</small>
                     <div class="d-flex align-items-center" style="gap:10px;">
                         <button type="button" class="btn btn-danger btn-sm" id="btn-cetak-periode"><i class="fas fa-file-pdf mr-1"></i> Cetak Surat Tugas (Periode)</button>
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-reset-filter">Reset Filter</button>
@@ -133,18 +79,15 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table table-bordered table-striped w-100" id="tablePerjalananDinas">
+            <table class="table table-bordered table-striped w-100" id="tableSuratTugas">
                 <thead>
                     <tr>
                         <th style="width:60px;" class="text-center">No</th>
                         <th style="width:280px;">Tujuan</th>
-                        <th style="width:220px;">Kota Tujuan</th>
-                        <th style="width:220px;">Periode</th>
+                        <th style="width:200px;">Kota Tujuan</th>
+                        <th style="width:200px;">Periode</th>
                         <th>Nama Pelaksana</th>
-                        <th style="width:110px;" class="text-center">Lihat Dokumen</th>
-                        <?php if ($can_upload_verified ?? false): ?>
-                            <th style="width:130px;" class="text-center">Upload Verified</th>
-                        <?php endif; ?>
+                        <th style="width:160px;" class="text-center">Verifikasi SPT</th>
                         <th style="width:90px;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -154,39 +97,46 @@
         </div>
 </div>
 
-<?php if ($can_upload_verified ?? false): ?>
-<div class="modal fade" id="modal-upload-verified" tabindex="-1" role="dialog" aria-labelledby="modalUploadVerifiedTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalUploadVerifiedTitle">Upload Verified Perjadin & SPT</h5>
+<?php if ($can_verify ?? false): ?>
+<!-- Modal Verifikasi SPT -->
+<div class="modal fade" id="modal-verify-spt" role="dialog" aria-labelledby="modalVerifyTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <div class="modal-header bg-light py-3" style="border-bottom: 1px solid #e9eef5;">
+                <h5 class="modal-title font-weight-bold text-dark" id="modalVerifyTitle">
+                    <i class="fas fa-check-double text-success mr-2"></i>Verifikasi Laporan Perjadin & SPT
+                </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="form-upload-verified" action="" method="post" enctype="multipart/form-data">
+            <form id="form-verify-spt" method="post" action="">
                 <?= csrf_field(); ?>
-                <div class="modal-body">
+                <div class="modal-body py-4">
                     <div class="form-group">
-                        <label class="font-weight-bold mb-1">Nomor Surat Tugas</label>
-                        <p id="upload_nomor_label" class="form-control-plaintext text-secondary font-weight-bold py-0">-</p>
+                        <label for="verify_nomor_surat" class="font-weight-bold mb-1">Nomor Surat Tugas <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="verify_nomor_surat" name="nomor_surat_tugas" required placeholder="Contoh: 132/SPT/Gs7/2026">
                     </div>
                     <div class="form-group">
-                        <label for="verified_spt_file" class="font-weight-bold mb-1">File Laporan & SPT Terverifikasi <span class="text-danger">*</span></label>
-                        <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="verified_spt_file" name="verified_spt" accept=".pdf,.jpg,.jpeg,.png" required>
-                            <label class="custom-file-label" for="verified_spt_file">Pilih file (PDF, JPG, JPEG, PNG)</label>
+                        <label class="font-weight-bold mb-1">Dasar SPT (Legal Basis) <span class="text-danger">*</span></label>
+                        <div id="dasar-spt-container">
+                            <!-- Dynamic inputs will be inserted here -->
                         </div>
-                        <small class="form-text text-muted mt-2">Maksimal ukuran file: 10MB. Mengupload file baru akan menimpa file terverifikasi sebelumnya jika ada.</small>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-success font-weight-bold" id="btn-add-dasar">
+                                <i class="fas fa-plus mr-1"></i> Tambah Dasar SPT
+                            </button>
+                        </div>
+                        <small class="text-muted mt-1 d-block">Masukkan dasar hukum/dasar tugas SPT secara manual. Gunakan tombol + untuk menambah.</small>
                     </div>
-                    <div id="existing_verified_file_container" class="alert alert-info py-2 px-3 mt-3 d-none">
-                        <i class="fas fa-info-circle mr-1"></i> File terverifikasi saat ini: 
-                        <a href="" id="existing_verified_file_link" target="_blank" class="font-weight-bold text-white text-underline" style="text-decoration: underline;">Lihat File</a>
+                    <div class="form-group mb-0">
+                        <label for="verify_tanggal_ttd" class="font-weight-bold mb-1">Tanggal Tanda Tangan <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="verify_tanggal_ttd" name="tanggal_tanda_tangan" required onfocus="this.showPicker()">
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer bg-light py-2" style="border-top: 1px solid #e9eef5;">
                     <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary btn-sm">Upload & Simpan</button>
+                    <button type="submit" class="btn btn-success btn-sm font-weight-bold" id="btn-save-verify">Simpan Verifikasi</button>
                 </div>
             </form>
         </div>
@@ -206,7 +156,7 @@
                 <p>Apakah Anda yakin ingin menghapus data perjalanan dinas ini?</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                 <a id="btnConfirmDelete" href="#" class="btn btn-danger btn-sm">Hapus</a>
             </div>
         </div>
@@ -222,15 +172,14 @@
             return;
         }
 
-        const $table = $('#tablePerjalananDinas');
+        const $table = $('#tableSuratTugas');
         if (! $table.length || $.fn.dataTable.isDataTable($table)) {
             return;
         }
 
         const canEdit = <?= json_encode($canEdit, JSON_UNESCAPED_UNICODE); ?>;
-        const canUploadVerified = <?= json_encode($can_upload_verified ?? false, JSON_UNESCAPED_UNICODE); ?>;
-        const canVerify = <?= json_encode($can_verify ?? false, JSON_UNESCAPED_UNICODE); ?>;
-        const dataUrl = <?= json_encode(site_url('admin/surat/perjalanan-dinas'), JSON_UNESCAPED_UNICODE); ?>;
+        const canVerify = <?= json_encode($canVerify, JSON_UNESCAPED_UNICODE); ?>;
+        const dataUrl = <?= json_encode(site_url('admin/surat/perjalanan-dinas/surat-tugas'), JSON_UNESCAPED_UNICODE); ?>;
 
         const $filterStartDate = $('#filter_start_date');
         const $filterEndDate = $('#filter_end_date');
@@ -278,28 +227,18 @@
                 }
             },
             {
-                data: 'dokumen_html',
+                data: 'verification_status_html',
+                orderable: false,
+                searchable: false,
+                className: 'text-center'
+            },
+            {
+                data: 'action_html',
                 orderable: false,
                 searchable: false,
                 className: 'text-center'
             }
         ];
-
-        if (canUploadVerified) {
-            columns.push({
-                data: 'upload_verified_html',
-                orderable: false,
-                searchable: false,
-                className: 'text-center'
-            });
-        }
-
-        columns.push({
-            data: 'action_html',
-            orderable: false,
-            searchable: false,
-            className: 'text-center'
-        });
 
         const dt = $table.DataTable({
             processing: true,
@@ -361,54 +300,78 @@
             dt.ajax.reload();
         });
 
-        if (canUploadVerified) {
-            // Handle click on upload verified button (using delegation)
-            $table.on('click', '.btn-upload-verified', function () {
-                const $btn = $(this);
-                const id = $btn.data('id');
-                const nomor = $btn.data('nomor');
-                const existing = $btn.data('existing');
-
-                const $modal = $('#modal-upload-verified');
-                const $form = $('#form-upload-verified');
-                
-                // Set action dynamically
-                $form.attr('action', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/upload-verified');
-                
-                // Set label nomor
-                $('#upload_nomor_label').text(nomor);
-                
-                // Reset file input label
-                $modal.find('.custom-file-input').val('');
-                $modal.find('.custom-file-label').html('Pilih file (PDF, JPG, JPEG, PNG)');
-
-                // Handle existing file preview
-                const $container = $('#existing_verified_file_container');
-                const $link = $('#existing_verified_file_link');
-                if (existing && existing !== '') {
-                    $link.attr('href', '<?= media_url(""); ?>' + '/' + existing);
-                    $container.removeClass('d-none');
-                } else {
-                    $link.attr('href', '#');
-                    $container.addClass('d-none');
-                }
-
-                $modal.modal('show');
-            });
-
-            // Update file label on file selection
-            $(document).on('change', '.custom-file-input', function (e) {
-                let fileName = e.target.files[0] ? e.target.files[0].name : 'Pilih file (PDF, JPG, JPEG, PNG)';
-                $(this).next('.custom-file-label').html(fileName);
-            });
-        }
-
         // Delete button handler
         $table.on('click', '.btn-delete', function () {
             const id = $(this).data('id');
             $('#btnConfirmDelete').attr('href', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/hapus');
             $('#deleteModal').modal('show');
         });
+
+        // Verification button handler (delegated)
+        if (canVerify) {
+            const $modalVerify = $('#modal-verify-spt');
+            const $formVerify = $('#form-verify-spt');
+
+            function addDasarInputRow(value = '') {
+                const container = $('#dasar-spt-container');
+                const rowHtml = `
+                    <div class="input-group mb-2 dasar-spt-row">
+                        <input type="text" class="form-control" name="dasar_spt[]" required value="${$('<div>').text(value).html()}" placeholder="Contoh: Undang-Undang Nomor 17 Tahun 2003...">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-outline-danger btn-remove-dasar" title="Hapus"><i class="fas fa-minus"></i></button>
+                        </div>
+                    </div>
+                `;
+                container.append(rowHtml);
+            }
+
+            // Add Dasar row
+            $('#btn-add-dasar').off('click').on('click', function() {
+                addDasarInputRow('');
+            });
+
+            // Remove Dasar row
+            $('#dasar-spt-container').off('click', '.btn-remove-dasar').on('click', '.btn-remove-dasar', function() {
+                const rowsCount = $('#dasar-spt-container .dasar-spt-row').length;
+                if (rowsCount > 1) {
+                    $(this).closest('.dasar-spt-row').remove();
+                } else {
+                    $('#dasar-spt-container .dasar-spt-row input').val('');
+                }
+            });
+
+            $table.on('click', '.btn-verify-spt', function () {
+                const $btn = $(this);
+                const id = $btn.data('id');
+                const nomor = $btn.data('nomor') || '';
+                const dasarStr = $btn.attr('data-dasar') || '[]';
+                const tgl = $btn.data('tgl') || '';
+
+                $formVerify.attr('action', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/verify');
+                $('#verify_nomor_surat').val(nomor);
+                $('#verify_tanggal_ttd').val(tgl !== '' ? tgl : new Date().toISOString().split('T')[0]);
+
+                let dasarTexts = [];
+                try {
+                    dasarTexts = JSON.parse(dasarStr);
+                } catch (e) {
+                    dasarTexts = [];
+                }
+
+                const container = $('#dasar-spt-container');
+                container.empty();
+
+                if (dasarTexts.length === 0) {
+                    addDasarInputRow('');
+                } else {
+                    dasarTexts.forEach(function(text) {
+                        addDasarInputRow(text);
+                    });
+                }
+
+                $modalVerify.modal('show');
+            });
+        }
 
         // Cetak Berdasarkan Periode handler
         $('#btn-cetak-periode').on('click', function () {

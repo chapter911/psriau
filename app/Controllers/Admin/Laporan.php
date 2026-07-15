@@ -354,6 +354,40 @@ class Laporan extends BaseController
         ]);
     }
 
+    public function suratTugas()
+    {
+        if (! $this->canViewLaporan()) {
+            if ($this->request->isAJAX() || $this->isDataTableRequest()) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Akses ditolak.',
+                ]);
+            }
+            return redirect()->to(site_url('/admin'));
+        }
+
+        if ($this->request->isAJAX() || $this->isDataTableRequest()) {
+            return $this->perjalananDinasDataTable();
+        }
+
+        $dasarSptOptions = (new \App\Models\MstDasarSptModel())->orderBy('id', 'ASC')->findAll();
+        $pegawaiRows = $this->loadPegawaiOptions();
+        $currentPegawai = $this->resolveCurrentPegawai(
+            (string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name')), 
+            $pegawaiRows
+        );
+        $currentPegawaiId = $currentPegawai ? (int) $currentPegawai['id'] : 0;
+
+        return view('admin/laporan/surat_tugas', [
+            'title' => 'Surat Tugas (SPT)',
+            'can_edit' => $this->canManageLaporan(),
+            'can_verify' => $this->canVerifyLaporan() || ($currentPegawaiId > 0),
+            'kabupaten_options' => $this->loadKabupatenOptions(),
+            'pegawai_options' => $pegawaiRows,
+            'dasar_spt_options' => $dasarSptOptions,
+        ]);
+    }
+
     private function perjalananDinasDataTable()
     {
         $canEdit = $this->canManageLaporan();
