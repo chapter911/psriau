@@ -721,16 +721,15 @@ class Laporan extends BaseController
         }
 
         $model = new LaporanPerjalananDinasModel();
-        $builder = $model->where('is_verified', 1);
-        $builder->where('periode_mulai >=', $startDate);
+        $builder = $model->where('periode_mulai >=', $startDate);
         $builder->where('periode_selesai <=', $endDate);
         
-        $rows = $builder->orderBy('tanggal_tanda_tangan', 'ASC')
-                        ->orderBy('periode_mulai', 'ASC')
+        $rows = $builder->orderBy('periode_mulai', 'ASC')
+                        ->orderBy('id', 'ASC')
                         ->findAll();
 
         if ($rows === []) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Tidak ada data perjalanan dinas terverifikasi dalam periode tersebut.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Tidak ada data perjalanan dinas dalam periode tersebut.');
         }
 
         $dasarSptModel = new \App\Models\MstDasarSptModel();
