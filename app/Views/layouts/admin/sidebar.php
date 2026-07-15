@@ -44,6 +44,14 @@
                             return true;
                         }
 
+                        // Specific exclusion for sibling submenus under perjalanan-dinas
+                        if ($prefix === 'admin/surat/perjalanan-dinas') {
+                            if (strpos($currentPath, 'admin/surat/perjalanan-dinas/disposisi') === 0 || 
+                                strpos($currentPath, 'admin/surat/perjalanan-dinas/surat-tugas') === 0) {
+                                return false;
+                            }
+                        }
+
                         return strpos($currentPath, $prefix . '/') === 0;
                     }
 
