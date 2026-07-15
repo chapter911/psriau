@@ -175,14 +175,29 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="kota_tujuan_select">Kota/Kab. Tujuan Perjalanan Dinas <span class="text-danger">*</span></label>
-                        <select class="form-control select2-kabupaten" name="kota_tujuan" id="kota_tujuan_select" required style="width: 100%;">
-                            <option value="">-- Pilih Kota / Kabupaten --</option>
-                            <?php foreach ($kabupatenOptions as $kab): ?>
-                                <option value="<?= esc($kab); ?>"><?= esc($kab); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="kota_tujuan_select">Kota/Kab. Tujuan Perjalanan Dinas <span class="text-danger">*</span></label>
+                                <select class="form-control select2-kabupaten" name="kota_tujuan" id="kota_tujuan_select" required style="width: 100%;">
+                                    <option value="">-- Pilih Kota / Kabupaten --</option>
+                                    <?php foreach ($kabupatenOptions as $kab): ?>
+                                        <option value="<?= esc($kab); ?>"><?= esc($kab); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="transportasi_select">Transportasi <span class="text-danger">*</span></label>
+                                <select class="form-control" name="transportasi[]" id="transportasi_select" multiple="multiple" required style="width: 100%;">
+                                    <?php foreach ($transportasiOptions as $t): ?>
+                                        <option value="<?= esc($t['nama_transportasi']); ?>"><?= esc($t['nama_transportasi']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted">Pilih satu atau beberapa moda transportasi.</small>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="row">
@@ -194,20 +209,10 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="transportasi_select">Transportasi <span class="text-danger">*</span></label>
-                                <select class="form-control" name="transportasi[]" id="transportasi_select" multiple="multiple" required style="width: 100%;">
-                                    <?php foreach ($transportasiOptions as $t): ?>
-                                        <option value="<?= esc($t['nama_transportasi']); ?>"><?= esc($t['nama_transportasi']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <small class="text-muted">Pilih satu atau beberapa moda transportasi yang digunakan.</small>
+                                <label for="perihal">Perihal <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="perihal" id="perihal" rows="3" placeholder="Contoh: Menghadiri Rapat Koordinasi..." required></textarea>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="perihal">Perihal <span class="text-danger">*</span></label>
-                        <textarea class="form-control" name="perihal" id="perihal" rows="3" placeholder="Contoh: Menghadiri Rapat Koordinasi..." required></textarea>
                     </div>
 
                     <!-- Signatures Group -->
@@ -216,26 +221,29 @@
                             <h6 class="card-title mb-0 text-bold"><i class="fas fa-file-signature mr-1"></i> Tanda Tangan Dokumen</h6>
                         </div>
                         <div class="card-body py-3">
-                            <div class="form-group mb-2">
-                                <label for="menyetujui_pegawai_id" class="mb-1">Menyetujui (Pejabat Pembuat Komitmen) <span class="text-danger">*</span></label>
-                                <select class="form-control select2-pegawai" name="menyetujui_pegawai_id" id="menyetujui_pegawai_id" required style="width: 100%;">
-                                    <option value="">-- Pilih Pejabat PPK --</option>
-                                    <?php foreach ($pegawaiOptions as $p): ?>
-                                        <!-- Default select Nurhidayat Nugroho (ID 2) -->
-                                        <option value="<?= $p['id']; ?>" <?= ($p['id'] == 2) ? 'selected' : ''; ?>><?= esc($p['display_label']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group mb-0">
-                                <label for="diketahui_pegawai_id" class="mb-1">Diketahui (Kepala Satuan Kerja) <span class="text-danger">*</span></label>
-                                <select class="form-control select2-pegawai" name="diketahui_pegawai_id" id="diketahui_pegawai_id" required style="width: 100%;">
-                                    <option value="">-- Pilih Kepala Satker --</option>
-                                    <?php foreach ($pegawaiOptions as $p): ?>
-                                        <!-- Default select Muhammad Yudi Prasetya (ID 1) -->
-                                        <option value="<?= $p['id']; ?>" <?= ($p['id'] == 1) ? 'selected' : ''; ?>><?= esc($p['display_label']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3 mb-md-0">
+                                        <label for="menyetujui_pegawai_id" class="mb-1">Menyetujui (Pejabat Pembuat Komitmen) <span class="text-danger">*</span></label>
+                                        <select class="form-control select2-pegawai" name="menyetujui_pegawai_id" id="menyetujui_pegawai_id" required style="width: 100%;">
+                                            <option value="">-- Pilih Pejabat PPK --</option>
+                                            <?php foreach ($pegawaiOptions as $p): ?>
+                                                <option value="<?= $p['id']; ?>" <?= ($p['id'] == 2) ? 'selected' : ''; ?>><?= esc($p['display_label']); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-0">
+                                        <label for="diketahui_pegawai_id" class="mb-1">Diketahui (Kepala Satuan Kerja) <span class="text-danger">*</span></label>
+                                        <select class="form-control select2-pegawai" name="diketahui_pegawai_id" id="diketahui_pegawai_id" required style="width: 100%;">
+                                            <option value="">-- Pilih Kepala Satker --</option>
+                                            <?php foreach ($pegawaiOptions as $p): ?>
+                                                <option value="<?= $p['id']; ?>" <?= ($p['id'] == 1) ? 'selected' : ''; ?>><?= esc($p['display_label']); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
