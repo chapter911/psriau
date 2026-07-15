@@ -215,13 +215,16 @@
                         <input type="text" class="form-control" id="verify_nomor_surat" name="nomor_surat_tugas" required placeholder="Contoh: 132/SPT/Gs7/2026">
                     </div>
                     <div class="form-group">
-                        <label for="verify_dasar_spt" class="font-weight-bold mb-1">Dasar SPT (Legal Basis) <span class="text-danger">*</span></label>
-                        <select class="form-control select2" id="verify_dasar_spt" name="dasar_spt_ids[]" multiple="multiple" data-placeholder="Pilih Dasar SPT" style="width: 100%;" required>
-                            <?php foreach ($dasar_spt_options ?? [] as $ds): ?>
-                                <option value="<?= (int) ($ds['id'] ?? 0); ?>"><?= esc(strip_tags((string) ($ds['uraian'] ?? ''))); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <small class="text-muted mt-1 d-block">Pilih satu atau lebih legal basis yang relevan.</small>
+                        <label class="font-weight-bold mb-1">Dasar SPT (Legal Basis) <span class="text-danger">*</span></label>
+                        <div id="dasar-spt-container">
+                            <!-- Dynamic inputs will be inserted here -->
+                        </div>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-success font-weight-bold" id="btn-add-dasar">
+                                <i class="fas fa-plus mr-1"></i> Tambah Dasar SPT
+                            </button>
+                        </div>
+                        <small class="text-muted mt-1 d-block">Masukkan dasar hukum/dasar tugas SPT secara manual. Gunakan tombol + untuk menambah.</small>
                     </div>
                     <div class="form-group mb-0">
                         <label for="verify_tanggal_ttd" class="font-weight-bold mb-1">Tanggal Tanda Tangan <span class="text-danger">*</span></label>
@@ -465,17 +468,34 @@
         if (canVerify) {
             const $modalVerify = $('#modal-verify-spt');
             const $formVerify = $('#form-verify-spt');
-            const $selectVerify = $('#verify_dasar_spt');
 
-            // Initialize select2 if available
-            if ($.fn.select2) {
-                $selectVerify.select2({
-                    theme: 'bootstrap4',
-                    placeholder: 'Pilih Dasar SPT',
-                    dropdownParent: $modalVerify,
-                    closeOnSelect: true
-                });
+            function addDasarInputRow(value = '') {
+                const container = $('#dasar-spt-container');
+                const rowHtml = `
+                    <div class="input-group mb-2 dasar-spt-row">
+                        <input type="text" class="form-control" name="dasar_spt[]" required value="${$('<div>').text(value).html()}" placeholder="Contoh: Undang-Undang Nomor 17 Tahun 2003...">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-outline-danger btn-remove-dasar" title="Hapus"><i class="fas fa-minus"></i></button>
+                        </div>
+                    </div>
+                `;
+                container.append(rowHtml);
             }
+
+            // Add Dasar row
+            $('#btn-add-dasar').off('click').on('click', function() {
+                addDasarInputRow('');
+            });
+
+            // Remove Dasar row
+            $('#dasar-spt-container').off('click', '.btn-remove-dasar').on('click', '.btn-remove-dasar', function() {
+                const rowsCount = $('#dasar-spt-container .dasar-spt-row').length;
+                if (rowsCount > 1) {
+                    $(this).closest('.dasar-spt-row').remove();
+                } else {
+                    $('#dasar-spt-container .dasar-spt-row input').val('');
+                }
+            });
 
             $table.on('click', '.btn-verify-spt', function () {
                 const $btn = $(this);
@@ -488,17 +508,22 @@
                 $('#verify_nomor_surat').val(nomor);
                 $('#verify_tanggal_ttd').val(tgl !== '' ? tgl : new Date().toISOString().split('T')[0]);
 
-                let dasarIds = [];
+                let dasarTexts = [];
                 try {
-                    dasarIds = JSON.parse(dasarStr);
+                    dasarTexts = JSON.parse(dasarStr);
                 } catch (e) {
-                    dasarIds = [];
+                    dasarTexts = [];
                 }
 
-                if ($.fn.select2) {
-                    $selectVerify.val(dasarIds).trigger('change');
+                const container = $('#dasar-spt-container');
+                container.empty();
+
+                if (dasarTexts.length === 0) {
+                    addDasarInputRow('');
                 } else {
-                    $selectVerify.val(dasarIds);
+                    dasarTexts.forEach(function(text) {
+                        addDasarInputRow(text);
+                    });
                 }
 
                 $modalVerify.modal('show');

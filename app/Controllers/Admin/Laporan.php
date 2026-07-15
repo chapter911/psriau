@@ -526,6 +526,33 @@ class Laporan extends BaseController
                 $tglTtd = trim((string) ($row['tanggal_tanda_tangan'] ?? ''));
                 $nomorSurat = trim((string) ($row['nomor_surat_tugas'] ?? ''));
 
+                $dasarTexts = [];
+                if ($dasarSptIds !== []) {
+                    $numericIds = [];
+                    $customTexts = [];
+                    foreach ($dasarSptIds as $val) {
+                        if (is_numeric($val)) {
+                            $numericIds[] = (int) $val;
+                        } else {
+                            $customTexts[] = (string) $val;
+                        }
+                    }
+
+                    if ($numericIds !== []) {
+                        $dbDasar = (new \App\Models\MstDasarSptModel())
+                            ->whereIn('id', $numericIds)
+                            ->orderBy('id', 'ASC')
+                            ->findAll();
+                        foreach ($dbDasar as $dbD) {
+                            $dasarTexts[] = $dbD['uraian'];
+                        }
+                    }
+
+                    foreach ($customTexts as $textVal) {
+                        $dasarTexts[] = $textVal;
+                    }
+                }
+
                 $verificationStatusHtml = '';
                 if ($isFinal === 0) {
                     $verificationStatusHtml .= '<span class="badge badge-secondary px-2 py-1 shadow-sm" style="font-size:0.78rem;"><i class="fas fa-hourglass-start mr-1"></i> Belum Selesai</span>';
@@ -544,7 +571,7 @@ class Laporan extends BaseController
                 if ($canVerifyRow) {
                     if ($isVerified === 1) {
                         // Button to edit verification
-                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarSptIds), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
+                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
                     } else {
                         // Button to perform verification
                         $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
@@ -598,7 +625,12 @@ class Laporan extends BaseController
         }
 
         $nomorSurat = trim((string) $this->request->getPost('nomor_surat_tugas'));
-        $dasarIds = $this->request->getPost('dasar_spt_ids') ?: [];
+        $dasarInputs = $this->request->getPost('dasar_spt') ?: [];
+        if (is_array($dasarInputs)) {
+            $dasarInputs = array_values(array_filter(array_map('trim', $dasarInputs), static fn($val) => $val !== ''));
+        } else {
+            $dasarInputs = [];
+        }
         $tglTtd = trim((string) $this->request->getPost('tanggal_tanda_tangan'));
 
         if ($nomorSurat === '') {
@@ -611,7 +643,7 @@ class Laporan extends BaseController
 
         $model->update($id, [
             'nomor_surat_tugas' => $nomorSurat,
-            'dasar_spt_ids_json' => json_encode(array_map('intval', (array) $dasarIds)),
+            'dasar_spt_ids_json' => json_encode($dasarInputs, JSON_UNESCAPED_UNICODE),
             'tanggal_tanda_tangan' => $tglTtd,
             'is_verified' => 1,
         ]);
@@ -633,10 +665,29 @@ class Laporan extends BaseController
         $dasarIds = json_decode((string) ($row['dasar_spt_ids_json'] ?? '[]'), true) ?: [];
         $dasarRows = [];
         if ($dasarIds !== []) {
-            $dasarRows = (new \App\Models\MstDasarSptModel())
-                ->whereIn('id', $dasarIds)
-                ->orderBy('id', 'ASC')
-                ->findAll();
+            $numericIds = [];
+            $customTexts = [];
+            foreach ($dasarIds as $val) {
+                if (is_numeric($val)) {
+                    $numericIds[] = (int) $val;
+                } else {
+                    $customTexts[] = (string) $val;
+                }
+            }
+
+            if ($numericIds !== []) {
+                $dasarRows = (new \App\Models\MstDasarSptModel())
+                    ->whereIn('id', $numericIds)
+                    ->orderBy('id', 'ASC')
+                    ->findAll();
+            }
+
+            foreach ($customTexts as $textVal) {
+                $dasarRows[] = [
+                    'id' => 0,
+                    'uraian' => $textVal
+                ];
+            }
         }
 
         $html = $this->renderSuratTugasHtml($row, $dasarRows);
@@ -694,8 +745,15 @@ class Laporan extends BaseController
             $dasarIds = json_decode((string) ($row['dasar_spt_ids_json'] ?? '[]'), true) ?: [];
             $dasarRows = [];
             foreach ($dasarIds as $dId) {
-                if (isset($dasarLookup[(int) $dId])) {
-                    $dasarRows[] = $dasarLookup[(int) $dId];
+                if (is_numeric($dId)) {
+                    if (isset($dasarLookup[(int) $dId])) {
+                        $dasarRows[] = $dasarLookup[(int) $dId];
+                    }
+                } else {
+                    $dasarRows[] = [
+                        'id' => 0,
+                        'uraian' => (string) $dId
+                    ];
                 }
             }
 
