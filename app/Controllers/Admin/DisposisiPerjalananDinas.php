@@ -19,7 +19,7 @@ class DisposisiPerjalananDinas extends BaseController
         $isAjax = $this->request->isAJAX();
         $isDt = $this->isDataTableRequest();
         $logMsg = date('Y-m-d H:i:s') . " - Disposisi::index() - isAJAX: " . ($isAjax ? 'YES' : 'NO') . " - isDt: " . ($isDt ? 'YES' : 'NO') . " - GET: " . json_encode($this->request->getGet()) . "\n";
-        file_put_contents('/Users/agung_kesuma/psriau/writable/ajax_debug.log', $logMsg, FILE_APPEND);
+        file_put_contents(WRITEPATH . 'ajax_debug.log', $logMsg, FILE_APPEND);
 
         if ($isAjax || $isDt) {
             return $this->dataTable();
@@ -65,7 +65,7 @@ class DisposisiPerjalananDinas extends BaseController
         $pelaksanaId = (int) $this->request->getGet('filter_pelaksana');
 
         $logMsg = date('Y-m-d H:i:s') . " - dataTable() params - start_date: $startDate, end_date: $endDate, kota: $kota, pelaksana: $pelaksanaId\n";
-        file_put_contents('/Users/agung_kesuma/psriau/writable/ajax_debug.log', $logMsg, FILE_APPEND);
+        file_put_contents(WRITEPATH . 'ajax_debug.log', $logMsg, FILE_APPEND);
 
         if ($startDate !== '') {
             $builder->where('periode_mulai >=', $startDate);
