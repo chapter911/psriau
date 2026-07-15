@@ -122,7 +122,10 @@
     <!-- Pelaksana SPPD -->
     <div class="section-title">Pelaksana SPPD</div>
     <table class="form-table">
-        <?php for ($i = 0; $i < 5; $i++): ?>
+        <?php 
+        $limit = max(5, count($pelaksana));
+        for ($i = 0; $i < $limit; $i++): 
+        ?>
             <tr>
                 <td class="num"><?= $i + 1; ?>)</td>
                 <td class="dotted-border">

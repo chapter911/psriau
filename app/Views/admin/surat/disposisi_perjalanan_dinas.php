@@ -144,7 +144,7 @@
                     <!-- Pelaksana SPPD Group -->
                     <div class="card card-outline card-secondary mb-3">
                         <div class="card-header py-2">
-                            <h6 class="card-title mb-0 text-bold"><i class="fas fa-users mr-1"></i> Pelaksana SPPD (Maksimal 5 Orang)</h6>
+                            <h6 class="card-title mb-0 text-bold"><i class="fas fa-users mr-1"></i> Pelaksana SPPD</h6>
                         </div>
                         <div class="card-body py-3">
                             <div class="form-group mb-0">
@@ -154,7 +154,7 @@
                                         <option value="<?= $p['id']; ?>"><?= esc($p['display_label']); ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <small class="text-muted">Pilih satu atau beberapa pegawai pelaksana SPPD (maksimal 5 orang).</small>
+                                <small class="text-muted">Pilih satu atau beberapa pegawai pelaksana SPPD.</small>
                             </div>
                         </div>
                     </div>
@@ -367,8 +367,7 @@ $(document).ready(function() {
     $('#pelaksana_ids').select2({
         theme: 'bootstrap4',
         dropdownParent: $('#modalDisposisi'),
-        placeholder: '-- Pilih Pelaksana SPPD --',
-        maximumSelectionLength: 5
+        placeholder: '-- Pilih Pelaksana SPPD --'
     });
 
     $('#kota_tujuan_select').select2({
