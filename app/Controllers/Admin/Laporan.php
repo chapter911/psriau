@@ -528,32 +528,30 @@ class Laporan extends BaseController
 
                 $verificationStatusHtml = '';
                 if ($isFinal === 0) {
-                    $verificationStatusHtml = '<span class="text-muted">-</span>';
+                    $verificationStatusHtml .= '<span class="badge badge-secondary px-2 py-1 shadow-sm" style="font-size:0.78rem;"><i class="fas fa-hourglass-start mr-1"></i> Belum Selesai</span>';
                 } elseif ($isVerified === 1) {
                     $formattedTtd = $tglTtd !== '' ? tanggal_indonesia($tglTtd) : '-';
                     $badgeTitle = "Nomor: " . esc($nomorSurat) . "\nTanggal: " . $formattedTtd;
-                    
                     $verificationStatusHtml .= '<span class="badge badge-success px-2 py-1 shadow-sm" style="font-size:0.78rem; cursor:pointer;" title="' . esc($badgeTitle, 'attr') . '"><i class="fas fa-check-circle mr-1"></i> Terverifikasi</span>';
-                    $verificationStatusHtml .= '<div class="mt-1 d-flex justify-content-center align-items-center" style="gap: 4px;">';
-                    
-                    // Button to print single Surat Tugas
-                    $verificationStatusHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-spt') . '" class="btn btn-xs btn-outline-danger px-2 font-weight-bold" title="Cetak Surat Tugas (PDF)" target="_blank"><i class="fas fa-file-pdf"></i> SPT</a>';
-                    
-                    if ($canVerifyRow) {
-                        // Button to edit verification
-                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarSptIds), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
-                    }
-                    
-                    $verificationStatusHtml .= '</div>';
                 } else {
                     $verificationStatusHtml .= '<span class="badge badge-warning px-2 py-1 shadow-sm text-dark" style="font-size:0.78rem;"><i class="fas fa-clock mr-1"></i> Belum Verifikasi</span>';
-                    if ($canVerifyRow) {
-                        $verificationStatusHtml .= '<div class="mt-1">';
-                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-primary px-3 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
-                        $verificationStatusHtml .= '</div>';
+                }
+
+                $verificationStatusHtml .= '<div class="mt-1 d-flex justify-content-center align-items-center" style="gap: 4px;">';
+                // Button to print single Surat Tugas (available for all states)
+                $verificationStatusHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-spt') . '" class="btn btn-xs btn-outline-danger px-2 font-weight-bold" title="Cetak Surat Tugas (PDF)" target="_blank"><i class="fas fa-file-pdf"></i> SPT</a>';
+
+                if ($canVerifyRow) {
+                    if ($isVerified === 1) {
+                        // Button to edit verification
+                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarSptIds), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
+                    } else {
+                        // Button to perform verification
+                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
                     }
                 }
-                
+                $verificationStatusHtml .= '</div>';
+
                 $row['verification_status_html'] = $verificationStatusHtml;
 
                 return $row;
@@ -630,10 +628,6 @@ class Laporan extends BaseController
         $row = (new LaporanPerjalananDinasModel())->find($id);
         if (! is_array($row)) {
             return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
-        }
-
-        if ((int) ($row['is_verified'] ?? 0) !== 1) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Laporan perjalanan dinas belum diverifikasi.');
         }
 
         $dasarIds = json_decode((string) ($row['dasar_spt_ids_json'] ?? '[]'), true) ?: [];
