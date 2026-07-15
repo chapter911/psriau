@@ -357,8 +357,8 @@ class Laporan extends BaseController
     private function perjalananDinasDataTable()
     {
         $canEdit = $this->canManageLaporan();
+        $canVerifyLaporan = $this->canVerifyLaporan();
         $role = strtolower((string) session()->get('role'));
-        $isSuperAdmin = in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
         $canUploadVerified = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
         
         $pegawaiRows = $this->loadPegawaiOptions();
@@ -402,8 +402,8 @@ class Laporan extends BaseController
                 5 => 'id',
                 6 => 'id',
             ],
-            function (array $row) use ($canEdit, $canUploadVerified, $isSuperAdmin, $currentPegawaiId): array {
-                $canVerifyRow = $isSuperAdmin;
+            function (array $row) use ($canEdit, $canUploadVerified, $canVerifyLaporan, $currentPegawaiId): array {
+                $canVerifyRow = $canVerifyLaporan;
                 if (! $canVerifyRow && $currentPegawaiId > 0 && ! empty($row['disposisi_id'])) {
                     $disposisi = db_connect()->table('disposisi_perjalanan_dinas')
                         ->select('menyetujui_pegawai_id, diketahui_pegawai_id')
@@ -604,7 +604,7 @@ class Laporan extends BaseController
         );
         $currentPegawaiId = $currentPegawai ? (int) $currentPegawai['id'] : 0;
 
-        $canVerifyRow = $isSuperAdmin;
+        $canVerifyRow = $this->canVerifyLaporan();
         if (! $canVerifyRow && $currentPegawaiId > 0 && ! empty($row['disposisi_id'])) {
             $disposisi = db_connect()->table('disposisi_perjalanan_dinas')
                 ->select('menyetujui_pegawai_id, diketahui_pegawai_id')
