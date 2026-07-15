@@ -5,7 +5,7 @@
     <title>Disposisi Perjalanan Dinas</title>
     <style>
         @page {
-            margin: 2.0cm 2.0cm 2.0cm 2.0cm;
+            margin: 1.2cm 1.5cm 1.2cm 1.5cm;
         }
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -17,7 +17,7 @@
         }
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
         }
         .header h1 {
             font-size: 16px;
@@ -98,6 +98,21 @@
             $year = date('Y', strtotime($data['periode_mulai']));
         }
     ?>
+
+    <!-- Header / Kop Surat -->
+    <div style="text-align: center; margin-bottom: 15px;">
+        <?php if (function_exists('kop_surat_img_tag') && kop_surat_img_tag('', '', 'Kop Surat') !== ''): ?>
+            <?= kop_surat_img_tag('', 'width: 100%; max-height: 110px; object-fit: contain;', 'Kop Surat'); ?>
+        <?php else: ?>
+            <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase;">
+                KEMENTERIAN PEKERJAAN UMUM
+            </div>
+            <div style="font-size: 12pt; font-weight: bold;">
+                Satuan Kerja Prasarana Strategis Riau
+            </div>
+            <div style="border-bottom: 3px double #000; margin: 5px 0 15px;"></div>
+        <?php endif; ?>
+    </div>
 
     <div class="header">
         <h1>DISPOSISI PERJALANAN DINAS</h1>
