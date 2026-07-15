@@ -193,6 +193,9 @@ class DisposisiPerjalananDinas extends BaseController
         if ($periodeSelesai === '') {
             $errors[] = 'Periode Selesai Perjalanan Dinas wajib diisi.';
         }
+        if ($periodeMulai !== '' && $periodeSelesai !== '' && $periodeSelesai < $periodeMulai) {
+            $errors[] = 'Periode Selesai tidak boleh kurang dari Periode Mulai.';
+        }
         if ($kotaTujuan === '') {
             $errors[] = 'Kota/Kab. Tujuan Perjalanan Dinas wajib diisi.';
         }
@@ -313,6 +316,9 @@ class DisposisiPerjalananDinas extends BaseController
         }
         if ($periodeSelesai === '') {
             $errors[] = 'Periode Selesai Perjalanan Dinas wajib diisi.';
+        }
+        if ($periodeMulai !== '' && $periodeSelesai !== '' && $periodeSelesai < $periodeMulai) {
+            $errors[] = 'Periode Selesai tidak boleh kurang dari Periode Mulai.';
         }
         if ($kotaTujuan === '') {
             $errors[] = 'Kota/Kab. Tujuan Perjalanan Dinas wajib diisi.';

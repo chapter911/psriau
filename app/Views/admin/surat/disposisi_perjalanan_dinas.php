@@ -295,6 +295,9 @@ function openCreateModal() {
     $('#kota_tujuan_select').val(null).trigger('change');
     $('#transportasi_select').val(null).trigger('change');
     document.getElementById('tujuan_textarea').value = '';
+
+    // Clear min attribute for date inputs
+    $('#periode_selesai').removeAttr('min');
     
     // Show Modal
     $('#modalDisposisi').modal('show');
@@ -318,6 +321,9 @@ function openEditModal(data) {
     $('#kota_tujuan_select').val(data.kota_tujuan).trigger('change');
     document.getElementById('tujuan_textarea').value = data.tujuan;
     document.getElementById('perihal').value = data.perihal;
+    
+    // Set min attribute based on start date
+    $('#periode_selesai').attr('min', data.periode_mulai);
     
     // Populate Transportasi multiselect
     var transportModes = [];
@@ -345,6 +351,25 @@ function openEditModal(data) {
 }
 
 $(document).ready(function() {
+    // Sync start and end date logic
+    $('#periode_mulai').on('change', function() {
+        var startVal = $(this).val();
+        $('#periode_selesai').attr('min', startVal);
+        
+        var endVal = $('#periode_selesai').val();
+        if (!endVal || endVal < startVal) {
+            $('#periode_selesai').val(startVal);
+        }
+    });
+
+    $('#periode_selesai').on('change', function() {
+        var startVal = $('#periode_mulai').val();
+        var endVal = $(this).val();
+        if (startVal && endVal && endVal < startVal) {
+            $(this).val(startVal);
+        }
+    });
+
     // Initialize Select2 for employee options
     $('#pelaksana_ids').select2({
         dropdownParent: $('#modalDisposisi'),
@@ -362,6 +387,7 @@ $(document).ready(function() {
         placeholder: '-- Pilih Transportasi --'
     });
 
+    // Initialize select2 for signatures
     $('#menyetujui_pegawai_id, #diketahui_pegawai_id').select2({
         dropdownParent: $('#modalDisposisi')
     });
