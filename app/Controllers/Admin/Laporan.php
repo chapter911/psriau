@@ -378,6 +378,12 @@ class Laporan extends BaseController
         );
         $currentPegawaiId = $currentPegawai ? (int) $currentPegawai['id'] : 0;
 
+        $kopSuratList = [];
+        $db = db_connect();
+        if ($db->tableExists('kop_surat')) {
+            $kopSuratList = $db->table('kop_surat')->orderBy('is_active', 'DESC')->orderBy('id', 'DESC')->get()->getResultArray();
+        }
+
         return view('admin/laporan/surat_tugas', [
             'title' => 'Surat Tugas (SPT)',
             'can_edit' => $this->canManageLaporan(),
@@ -385,6 +391,7 @@ class Laporan extends BaseController
             'kabupaten_options' => $this->loadKabupatenOptions(),
             'pegawai_options' => $pegawaiRows,
             'dasar_spt_options' => $dasarSptOptions,
+            'kop_surat_list' => $kopSuratList,
         ]);
     }
 
@@ -830,6 +837,7 @@ class Laporan extends BaseController
                 'tanggal_tanda_tangan' => (string) ($row['tanggal_tanda_tangan'] ?? ''),
                 'diketahui_oleh' => $this->decodeJsonObject((string) ($row['diketahui_oleh_json'] ?? '{}')),
                 'dasar_spt' => $dasarRows,
+                'kop_surat_id' => isset($row['kop_surat_id']) ? (int) $row['kop_surat_id'] : null,
             ];
         }
 

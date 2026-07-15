@@ -130,6 +130,18 @@
                         </div>
                         <small class="text-muted mt-1 d-block">Masukkan dasar hukum/dasar tugas SPT secara manual. Gunakan tombol + untuk menambah.</small>
                     </div>
+                    <div class="form-group">
+                        <label for="verify_kop_surat" class="font-weight-bold mb-1">Kop Surat <span class="text-danger">*</span></label>
+                        <select class="form-control" id="verify_kop_surat" name="kop_surat_id" required>
+                            <option value="">-- Pilih Kop Surat --</option>
+                            <?php foreach ($kop_surat_list ?? [] as $ks): ?>
+                                <option value="<?= (int) $ks['id']; ?>" <?= (int) ($ks['is_active'] ?? 0) === 1 ? 'data-default="1"' : ''; ?>>
+                                    <?= esc($ks['title']); ?> <?= (int) ($ks['is_active'] ?? 0) === 1 ? '(Aktif)' : ''; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="text-muted mt-1 d-block">Pilih kop surat yang akan digunakan untuk SPT ini.</small>
+                    </div>
                     <div class="form-group mb-0">
                         <label for="verify_tanggal_ttd" class="font-weight-bold mb-1">Tanggal Tanda Tangan <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="verify_tanggal_ttd" name="tanggal_tanda_tangan" required onfocus="this.showPicker()">
@@ -349,10 +361,22 @@
                 const nomor = $btn.data('nomor') || '';
                 const dasarStr = $btn.attr('data-dasar') || '[]';
                 const tgl = $btn.data('tgl') || '';
+                const kopSuratId = String($btn.attr('data-kop-surat-id') || '0');
 
                 $formVerify.attr('action', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/verify');
                 $('#verify_nomor_surat').val(nomor);
                 $('#verify_tanggal_ttd').val(tgl !== '' ? tgl : new Date().toISOString().split('T')[0]);
+
+                if (kopSuratId !== '0') {
+                    $('#verify_kop_surat').val(kopSuratId);
+                } else {
+                    const defaultOpt = $('#verify_kop_surat option[data-default="1"]');
+                    if (defaultOpt.length) {
+                        $('#verify_kop_surat').val(defaultOpt.val());
+                    } else {
+                        $('#verify_kop_surat').val('');
+                    }
+                }
 
                 let dasarTexts = [];
                 try {

@@ -136,7 +136,7 @@ $getSignatureJabatan = function($person): string {
 <body>
 
     <div class="center">
-        <?= kop_surat_img_tag('', 'width:100%; max-height:120px; object-fit:contain;', 'Kop Surat'); ?>
+        <?= kop_surat_img_tag('', 'width:100%; max-height:120px; object-fit:contain;', 'Kop Surat', isset($data['kop_surat_id']) ? (int) $data['kop_surat_id'] : null); ?>
     </div>
 
     <div class="center title-block">
