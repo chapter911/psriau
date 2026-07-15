@@ -416,6 +416,8 @@ class AuthFilter implements FilterInterface
             'admin/slide' => ['table' => 'home_slides', 'pk' => 'id'],
             'admin/pengaturan-home' => ['table' => 'home_settings', 'pk' => 'id'],
             'admin/pengaturan/application' => ['table' => 'app_settings', 'pk' => 'id'],
+            'admin/master/biaya/transportasi' => ['table' => 'mst_biaya_transportasi', 'pk' => 'id'],
+            'admin/master/biaya/penginapan' => ['table' => 'mst_biaya_penginapan', 'pk' => 'id'],
             'admin/pengaturan/menus' => ['table' => 'menu_dynamic', 'pk' => 'id'],
         ];
 

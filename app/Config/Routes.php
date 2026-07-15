@@ -153,6 +153,18 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/transportasi/tambah', 'Admin\Transportasi::create');
 	$routes->post('master/transportasi/(:num)/ubah', 'Admin\Transportasi::edit/$1');
 	$routes->post('master/transportasi/(:num)/hapus', 'Admin\Transportasi::delete/$1');
+
+	// Master Biaya Transportasi Routes
+	$routes->get('master/biaya/transportasi', 'Admin\BiayaTransportasi::index');
+	$routes->post('master/biaya/transportasi/tambah', 'Admin\BiayaTransportasi::create');
+	$routes->post('master/biaya/transportasi/(:num)/ubah', 'Admin\BiayaTransportasi::edit/$1');
+	$routes->post('master/biaya/transportasi/(:num)/hapus', 'Admin\BiayaTransportasi::delete/$1');
+
+	// Master Biaya Penginapan Routes
+	$routes->get('master/biaya/penginapan', 'Admin\BiayaPenginapan::index');
+	$routes->post('master/biaya/penginapan/tambah', 'Admin\BiayaPenginapan::create');
+	$routes->post('master/biaya/penginapan/(:num)/ubah', 'Admin\BiayaPenginapan::edit/$1');
+	$routes->post('master/biaya/penginapan/(:num)/hapus', 'Admin\BiayaPenginapan::delete/$1');
 	$routes->get('master/sekolah', 'Admin\\MasterSekolah::index');
 	$routes->get('master/sekolah/export', 'Admin\\MasterSekolah::export');
 	$routes->post('master/sekolah/tambah', 'Admin\\MasterSekolah::create');
