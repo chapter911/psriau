@@ -8,25 +8,42 @@ class AlterMasterBiayaAddValiditas extends Migration
 {
     public function up()
     {
+        $tables = [
+            'mst_biaya_transportasi',
+            'mst_biaya_penginapan',
+            'mst_biaya_harian'
+        ];
+
+        // Ensure provinsi_kode exists (in case production had malformed tables before this migration)
+        foreach ($tables as $table) {
+            if ($this->db->tableExists($table) && !$this->db->fieldExists('provinsi_kode', $table)) {
+                $this->forge->addColumn($table, [
+                    'provinsi_kode' => [
+                        'type'       => 'VARCHAR',
+                        'constraint' => 10,
+                        'null'       => false,
+                        'after'      => 'id',
+                    ],
+                ]);
+            }
+        }
+
         $fields = [
             'berlaku_mulai'  => [
                 'type'       => 'DATE',
                 'null'       => false,
                 'default'    => '2024-01-01',
-                'after'      => 'provinsi_kode',
             ],
             'berlaku_hingga' => [
                 'type'       => 'DATE',
                 'null'       => true,
                 'default'    => null,
-                'after'      => 'berlaku_mulai',
             ],
             'is_active'      => [
                 'type'       => 'TINYINT',
                 'constraint' => 1,
                 'null'       => false,
                 'default'    => 1,
-                'after'      => 'berlaku_hingga',
             ],
         ];
 
