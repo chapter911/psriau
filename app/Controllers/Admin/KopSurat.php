@@ -146,11 +146,15 @@ class KopSurat extends BaseController
 
         $rules = [
             'title' => 'required|min_length[3]',
-            'image_file' => $id === null
-                ? 'uploaded[image_file]|is_image[image_file]|max_size[image_file,4096]|mime_in[image_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]'
-                : 'if_exist|is_image[image_file]|max_size[image_file,4096]|mime_in[image_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]',
             'description' => 'permit_empty|max_length[255]',
         ];
+
+        $file = $this->request->getFile('image_file');
+        $isFileUploaded = $file && $file->getError() !== UPLOAD_ERR_NO_FILE;
+
+        if ($isFileUploaded || $id === null) {
+            $rules['image_file'] = ($id === null ? 'uploaded[image_file]|' : '') . 'is_image[image_file]|max_size[image_file,4096]|mime_in[image_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]';
+        }
 
         if (! $this->validate($rules)) {
             $errors = $this->validator->getErrors();

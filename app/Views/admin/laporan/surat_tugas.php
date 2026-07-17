@@ -89,6 +89,9 @@
                         <th>Nama Pelaksana</th>
                         <th style="width:150px;" class="text-center">Status Verifikasi</th>
                         <th style="width:130px;" class="text-center">File SPT</th>
+                        <th style="width:130px;" class="text-center">Daftar Nominatif</th>
+                        <th style="width:130px;" class="text-center">SPPD</th>
+                        <th style="width:130px;" class="text-center">Kwitansi</th>
                         <th style="width:110px;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -243,6 +246,24 @@
             },
             {
                 data: 'file_spt_html',
+                orderable: false,
+                searchable: false,
+                className: 'text-center'
+            },
+            {
+                data: 'daftar_nominatif_html',
+                orderable: false,
+                searchable: false,
+                className: 'text-center'
+            },
+            {
+                data: 'sppd_html',
+                orderable: false,
+                searchable: false,
+                className: 'text-center'
+            },
+            {
+                data: 'kwitansi_html',
                 orderable: false,
                 searchable: false,
                 className: 'text-center'

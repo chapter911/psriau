@@ -154,17 +154,20 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/transportasi/(:num)/ubah', 'Admin\Transportasi::edit/$1');
 	$routes->post('master/transportasi/(:num)/hapus', 'Admin\Transportasi::delete/$1');
 
-	// Master Biaya Transportasi Routes
-	$routes->get('master/biaya/transportasi', 'Admin\BiayaTransportasi::index');
-	$routes->post('master/biaya/transportasi/tambah', 'Admin\BiayaTransportasi::create');
-	$routes->post('master/biaya/transportasi/(:num)/ubah', 'Admin\BiayaTransportasi::edit/$1');
-	$routes->post('master/biaya/transportasi/(:num)/hapus', 'Admin\BiayaTransportasi::delete/$1');
+	// Master Biaya Routes (Transportasi, Penginapan, Harian Personel)
+	$routes->get('master/biaya/transportasi', 'Admin\\MasterBiaya::transportasiIndex');
+	$routes->post('master/biaya/transportasi/tambah', 'Admin\\MasterBiaya::transportasiCreate');
+	$routes->post('master/biaya/transportasi/(:num)/ubah', 'Admin\\MasterBiaya::transportasiEdit/$1');
+	$routes->post('master/biaya/transportasi/(:num)/hapus', 'Admin\\MasterBiaya::transportasiDelete/$1');
+	$routes->get('master/biaya/penginapan', 'Admin\\MasterBiaya::penginapanIndex');
+	$routes->post('master/biaya/penginapan/tambah', 'Admin\\MasterBiaya::penginapanCreate');
+	$routes->post('master/biaya/penginapan/(:num)/ubah', 'Admin\\MasterBiaya::penginapanEdit/$1');
+	$routes->post('master/biaya/penginapan/(:num)/hapus', 'Admin\\MasterBiaya::penginapanDelete/$1');
+	$routes->get('master/biaya/harian', 'Admin\\MasterBiaya::harianIndex');
+	$routes->post('master/biaya/harian/tambah', 'Admin\\MasterBiaya::harianCreate');
+	$routes->post('master/biaya/harian/(:num)/ubah', 'Admin\\MasterBiaya::harianEdit/$1');
+	$routes->post('master/biaya/harian/(:num)/hapus', 'Admin\\MasterBiaya::harianDelete/$1');
 
-	// Master Biaya Penginapan Routes
-	$routes->get('master/biaya/penginapan', 'Admin\BiayaPenginapan::index');
-	$routes->post('master/biaya/penginapan/tambah', 'Admin\BiayaPenginapan::create');
-	$routes->post('master/biaya/penginapan/(:num)/ubah', 'Admin\BiayaPenginapan::edit/$1');
-	$routes->post('master/biaya/penginapan/(:num)/hapus', 'Admin\BiayaPenginapan::delete/$1');
 	$routes->get('master/sekolah', 'Admin\\MasterSekolah::index');
 	$routes->get('master/sekolah/export', 'Admin\\MasterSekolah::export');
 	$routes->post('master/sekolah/tambah', 'Admin\\MasterSekolah::create');
@@ -271,8 +274,11 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('surat/perjalanan-dinas/(:num)/upload-verified', 'Admin\\Laporan::perjalananDinasUploadVerified/$1');
 	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/(:num)/ubah', 'Admin\\Laporan::perjalananDinasEdit/$1');
 	$routes->get('surat/perjalanan-dinas/(:num)/hapus', 'Admin\\Laporan::perjalananDinasHapus/$1');
-	$routes->post('surat/perjalanan-dinas/(:num)/verify', 'Admin\\Laporan::perjalananDinasVerify/$1');
-	$routes->get('surat/perjalanan-dinas/(:num)/cetak-spt', 'Admin\\Laporan::perjalananDinasCetakSpt/$1');
+	$routes->post('surat/perjalanan-dinas/(:num)/verify', 'Admin\Laporan::perjalananDinasVerify/$1');
+	$routes->get('surat/perjalanan-dinas/(:num)/cetak-spt', 'Admin\Laporan::perjalananDinasCetakSpt/$1');
+	$routes->get('surat/perjalanan-dinas/(:num)/cetak-daftar-nominatif', 'Admin\Laporan::perjalananDinasCetakDaftarNominatif/$1');
+	$routes->get('surat/perjalanan-dinas/(:num)/cetak-sppd', 'Admin\Laporan::perjalananDinasCetakSppd/$1');
+	$routes->get('surat/perjalanan-dinas/(:num)/cetak-kwitansi', 'Admin\Laporan::perjalananDinasCetakKwitansi/$1');
 
 	// Surat Routes - Lupa Absen
 	$routes->get('surat/lupa-absen', 'Admin\\LupaAbsen::index');

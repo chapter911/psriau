@@ -20,8 +20,8 @@
             <div class="card shadow-sm" style="border: 1px solid #e9eef5; border-radius: 12px; overflow: hidden;">
                 <div class="card-header bg-white py-3" style="border-bottom: 1px solid #e9eef5;">
                     <h3 class="card-title mb-0 font-weight-bold text-dark" style="font-size: 1.15rem; line-height: 1.8;">
-                        <i class="fas fa-hotel text-primary mr-2"></i>
-                        Satuan Biaya Penginapan Perjalanan Dinas Dalam Negeri
+                        <i class="fas fa-user-clock text-primary mr-2"></i>
+                        Satuan Biaya Uang Harian &amp; Uang Representasi Perjalanan Dinas Dalam Negeri
                     </h3>
                     <?php if (! empty($can_add)): ?>
                         <div class="card-tools float-right">
@@ -33,13 +33,15 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table id="tbl-penginapan" class="table table-hover table-bordered table-striped w-100 mb-0" style="font-size: 0.85rem;">
+                        <table id="tbl-harian" class="table table-hover table-bordered table-striped w-100 mb-0" style="font-size: 0.88rem;">
                             <thead class="thead-light">
                                 <tr>
                                     <th class="text-center align-middle" rowspan="2" style="width: 5%; vertical-align: middle;">NO.</th>
                                     <th class="text-center align-middle" rowspan="2" style="width: 15%; vertical-align: middle;">PROVINSI</th>
                                     <th class="text-center align-middle" rowspan="2" style="width: 5%; vertical-align: middle;">SATUAN</th>
-                                    <th class="text-center" colspan="4" style="background-color: #f0f4f8; border-bottom: 1px solid #dee2e6;">TARIF HOTEL</th>
+                                    <th class="text-center align-middle" style="width: 15%; background-color: #f0f4f8;">LUAR KOTA</th>
+                                    <th class="text-center align-middle" style="width: 25%; background-color: #f0f4f8; font-size: 0.78rem;">DALAM KOTA<br>LEBIH DARI 8 (DELAPAN) JAM</th>
+                                    <th class="text-center align-middle" style="width: 15%; background-color: #f0f4f8;">DIKLAT</th>
                                     <th class="text-center align-middle" rowspan="2" style="width: 10%; vertical-align: middle;">PERIODE AWAL</th>
                                     <th class="text-center align-middle" rowspan="2" style="width: 10%; vertical-align: middle;">PERIODE AKHIR</th>
                                     <th class="text-center align-middle" rowspan="2" style="width: 5%; vertical-align: middle;">STATUS</th>
@@ -48,10 +50,9 @@
                                     <?php endif; ?>
                                 </tr>
                                 <tr>
-                                    <th class="text-center align-middle" style="width: 12.5%; font-size: 0.78rem; background-color: #f0f4f8;">Pejabat Negara/<br>Wakil Menteri/<br>Pejabat Eselon I</th>
-                                    <th class="text-center align-middle" style="width: 12.5%; font-size: 0.78rem; background-color: #f0f4f8;">Pejabat Negara Lainnya/<br>Pejabat Eselon II</th>
-                                    <th class="text-center align-middle" style="width: 12.5%; font-size: 0.78rem; background-color: #f0f4f8;">Pejabat Eselon III/<br>Golongan IV</th>
-                                    <th class="text-center align-middle" style="width: 12.5%; font-size: 0.78rem; background-color: #f0f4f8;">Pejabat Eselon IV/<br>Golongan III/II/I</th>
+                                    <th class="text-center" style="font-size: 0.78rem; background-color: #e8eef5;">(Rp)</th>
+                                    <th class="text-center" style="font-size: 0.78rem; background-color: #e8eef5;">(Rp)</th>
+                                    <th class="text-center" style="font-size: 0.78rem; background-color: #e8eef5;">(Rp)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -60,10 +61,9 @@
                                         <td class="text-center align-middle"><?= esc((string) $i++); ?></td>
                                         <td class="align-middle font-weight-500"><?= esc((string) ($item['nama_provinsi'] ?? $item['provinsi_kode'] ?? '-')); ?></td>
                                         <td class="text-center align-middle"><?= esc((string) ($item['satuan'] ?? 'OH')); ?></td>
-                                        <td class="text-right align-middle">Rp <?= number_format((int) ($item['tarif_eselon1'] ?? 0), 0, ',', '.'); ?></td>
-                                        <td class="text-right align-middle">Rp <?= number_format((int) ($item['tarif_eselon2'] ?? 0), 0, ',', '.'); ?></td>
-                                        <td class="text-right align-middle">Rp <?= number_format((int) ($item['tarif_eselon3'] ?? 0), 0, ',', '.'); ?></td>
-                                        <td class="text-right align-middle">Rp <?= number_format((int) ($item['tarif_eselon4'] ?? 0), 0, ',', '.'); ?></td>
+                                        <td class="text-right align-middle font-weight-bold">Rp <?= number_format((int) ($item['luar_kota'] ?? 0), 0, ',', '.'); ?></td>
+                                        <td class="text-right align-middle">Rp <?= number_format((int) ($item['dalam_kota'] ?? 0), 0, ',', '.'); ?></td>
+                                        <td class="text-right align-middle">Rp <?= number_format((int) ($item['diklat'] ?? 0), 0, ',', '.'); ?></td>
                                         <td class="text-center align-middle">
                                             <?= date('d M Y', strtotime($item['berlaku_mulai'] ?? '2024-01-01')); ?>
                                         </td>
@@ -88,10 +88,9 @@
                                                             data-id="<?= esc((string) ($item['id'] ?? ''), 'attr'); ?>"
                                                             data-provinsi="<?= esc((string) ($item['provinsi_kode'] ?? ''), 'attr'); ?>"
                                                             data-satuan="<?= esc((string) ($item['satuan'] ?? 'OH'), 'attr'); ?>"
-                                                            data-eselon1="<?= esc((string) ($item['tarif_eselon1'] ?? '0'), 'attr'); ?>"
-                                                            data-eselon2="<?= esc((string) ($item['tarif_eselon2'] ?? '0'), 'attr'); ?>"
-                                                            data-eselon3="<?= esc((string) ($item['tarif_eselon3'] ?? '0'), 'attr'); ?>"
-                                                            data-eselon4="<?= esc((string) ($item['tarif_eselon4'] ?? '0'), 'attr'); ?>"
+                                                            data-luar-kota="<?= esc((string) ($item['luar_kota'] ?? '0'), 'attr'); ?>"
+                                                            data-dalam-kota="<?= esc((string) ($item['dalam_kota'] ?? '0'), 'attr'); ?>"
+                                                            data-diklat="<?= esc((string) ($item['diklat'] ?? '0'), 'attr'); ?>"
                                                             data-mulai="<?= esc((string) ($item['berlaku_mulai'] ?? '2024-01-01'), 'attr'); ?>"
                                                             data-hingga="<?= esc((string) ($item['berlaku_hingga'] ?? ''), 'attr'); ?>"
                                                             data-status="<?= esc((string) ($item['is_active'] ?? '1'), 'attr'); ?>"
@@ -121,11 +120,11 @@
         <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <div class="modal-header bg-light py-3" style="border-bottom: 1px solid #e9eef5;">
                 <h5 class="modal-title font-weight-bold text-dark" style="font-size: 1.05rem;">
-                    <i class="fas fa-plus-circle text-primary mr-2"></i>Tambah Biaya Penginapan
+                    <i class="fas fa-plus-circle text-primary mr-2"></i>Tambah Biaya Harian Personel
                 </h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
-            <form action="<?= site_url('/admin/master/biaya/penginapan/tambah'); ?>" method="post">
+            <form action="<?= site_url('/admin/master/biaya/harian/tambah'); ?>" method="post">
                 <?= csrf_field(); ?>
                 <div class="modal-body py-4">
                     <div class="row">
@@ -173,30 +172,24 @@
                         </div>
                     </div>
                     <hr class="my-2">
-                    <p class="font-weight-bold text-secondary mb-2" style="font-size: 0.875rem;"><i class="fas fa-hotel mr-1"></i> Tarif Hotel (Rp)</p>
+                    <p class="font-weight-bold text-secondary mb-2" style="font-size: 0.875rem;"><i class="fas fa-money-bill-wave mr-1"></i> Uang Harian (Rp)</p>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Pejabat Negara/Wakil Menteri/Eselon I <span class="text-danger">*</span></label>
-                                <input type="text" name="tarif_eselon1" class="form-control input-ribuan" required style="border-radius: 6px;">
+                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Luar Kota <span class="text-danger">*</span></label>
+                                <input type="text" name="luar_kota" class="form-control input-ribuan" required style="border-radius: 6px;">
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Pejabat Negara Lainnya/Eselon II <span class="text-danger">*</span></label>
-                                <input type="text" name="tarif_eselon2" class="form-control input-ribuan" required style="border-radius: 6px;">
+                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Dalam Kota > 8 Jam <span class="text-danger">*</span></label>
+                                <input type="text" name="dalam_kota" class="form-control input-ribuan" required style="border-radius: 6px;">
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-0">
-                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Pejabat Eselon III/Golongan IV <span class="text-danger">*</span></label>
-                                <input type="text" name="tarif_eselon3" class="form-control input-ribuan" required style="border-radius: 6px;">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-0">
-                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Pejabat Eselon IV/Golongan III/II/I <span class="text-danger">*</span></label>
-                                <input type="text" name="tarif_eselon4" class="form-control input-ribuan" required style="border-radius: 6px;">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Diklat <span class="text-danger">*</span></label>
+                                <input type="text" name="diklat" class="form-control input-ribuan" required style="border-radius: 6px;">
                             </div>
                         </div>
                     </div>
@@ -218,7 +211,7 @@
         <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <div class="modal-header bg-light py-3" style="border-bottom: 1px solid #e9eef5;">
                 <h5 class="modal-title font-weight-bold text-dark" style="font-size: 1.05rem;">
-                    <i class="fas fa-pen-fancy text-primary mr-2"></i>Ubah Biaya Penginapan
+                    <i class="fas fa-pen-fancy text-primary mr-2"></i>Ubah Biaya Harian Personel
                 </h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
@@ -270,30 +263,25 @@
                         </div>
                     </div>
                     <hr class="my-2">
-                    <p class="font-weight-bold text-secondary mb-2" style="font-size: 0.875rem;"><i class="fas fa-hotel mr-1"></i> Tarif Hotel (Rp)</p>
+                    <p class="font-weight-bold text-secondary mb-2" style="font-size: 0.875rem;"><i class="fas fa-money-bill-wave mr-1"></i> Uang Harian (Rp)</p>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Pejabat Negara/Wakil Menteri/Eselon I <span class="text-danger">*</span></label>
-                                <input type="text" id="ubah-eselon1" name="tarif_eselon1" class="form-control input-ribuan" required style="border-radius: 6px;">
+                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.8rem;">Luar Kota <span class="text-danger">*</span></label>
+                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Luar Kota <span class="text-danger">*</span></label>
+                                <input type="text" id="ubah-luar-kota" name="luar_kota" class="form-control input-ribuan" required style="border-radius: 6px;">
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Pejabat Negara Lainnya/Eselon II <span class="text-danger">*</span></label>
-                                <input type="text" id="ubah-eselon2" name="tarif_eselon2" class="form-control input-ribuan" required style="border-radius: 6px;">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-0">
-                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Pejabat Eselon III/Golongan IV <span class="text-danger">*</span></label>
-                                <input type="text" id="ubah-eselon3" name="tarif_eselon3" class="form-control input-ribuan" required style="border-radius: 6px;">
+                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Dalam Kota > 8 Jam <span class="text-danger">*</span></label>
+                                <input type="text" id="ubah-dalam-kota" name="dalam_kota" class="form-control input-ribuan" required style="border-radius: 6px;">
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-0">
-                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Pejabat Eselon IV/Golongan III/II/I <span class="text-danger">*</span></label>
-                                <input type="text" id="ubah-eselon4" name="tarif_eselon4" class="form-control input-ribuan" required style="border-radius: 6px;">
+                                <label class="font-weight-bold text-secondary mb-1" style="font-size: 0.875rem;">Diklat <span class="text-danger">*</span></label>
+                                <input type="text" id="ubah-diklat" name="diklat" class="form-control input-ribuan" required style="border-radius: 6px;">
                             </div>
                         </div>
                     </div>
@@ -310,7 +298,7 @@
 
 <script>
 $(document).ready(function () {
-    $('#tbl-penginapan').DataTable({
+    $('#tbl-harian').DataTable({
         responsive: true,
         pageLength: 25,
         order: [[1, 'asc']],
@@ -353,11 +341,10 @@ function fillEditModal(el) {
     
     $('#ubah-status').val(btn.attr('data-status')).trigger('change');
     $('#ubah-satuan').val(btn.attr('data-satuan'));
-    $('#ubah-eselon1').val(formatRibuan(btn.attr('data-eselon1') || ''));
-    $('#ubah-eselon2').val(formatRibuan(btn.attr('data-eselon2') || ''));
-    $('#ubah-eselon3').val(formatRibuan(btn.attr('data-eselon3') || ''));
-    $('#ubah-eselon4').val(formatRibuan(btn.attr('data-eselon4') || ''));
-    $('#form-ubah').attr('action', '<?= site_url('/admin/master/biaya/penginapan'); ?>/' + btn.attr('data-id') + '/ubah');
+    $('#ubah-luar-kota').val(formatRibuan(btn.attr('data-luar-kota') || ''));
+    $('#ubah-dalam-kota').val(formatRibuan(btn.attr('data-dalam-kota') || ''));
+    $('#ubah-diklat').val(formatRibuan(btn.attr('data-diklat') || ''));
+    $('#form-ubah').attr('action', '<?= site_url('/admin/master/biaya/harian'); ?>/' + btn.attr('data-id') + '/ubah');
 }
 </script>
 <?= $this->endSection(); ?>

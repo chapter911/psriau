@@ -4,9 +4,9 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MstBiayaTransportasiModel extends Model
+class MstBiayaHarianModel extends Model
 {
-    protected $table            = 'mst_biaya_transportasi';
+    protected $table            = 'mst_biaya_harian';
     protected $primaryKey       = 'id';
     protected $returnType       = 'array';
     protected $useAutoIncrement = true;
@@ -16,7 +16,9 @@ class MstBiayaTransportasiModel extends Model
         'berlaku_hingga',
         'is_active',
         'satuan',
-        'besaran',
+        'luar_kota',
+        'dalam_kota',
+        'diklat',
         'created_by',
         'created_date',
         'updated_by',

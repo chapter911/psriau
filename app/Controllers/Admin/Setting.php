@@ -25,20 +25,28 @@ class Setting extends BaseController
 
         if ($this->request->getMethod() === 'POST') {
             $rules = [
-                'app_name'            => 'required|min_length[3]|max_length[190]',
+                'app_name'            => 'required|min_length[3]',
                 'primary_color'       => 'required|regex_match[/^#[0-9A-Fa-f]{6}$/]',
                 'sidebar_bg_color'    => 'required|regex_match[/^#[0-9A-Fa-f]{6}$/]',
                 'sidebar_text_color'  => 'required|regex_match[/^#[0-9A-Fa-f]{6}$/]',
                 'sidebar_active_bg_color' => 'required|regex_match[/^#[0-9A-Fa-f]{6}$/]',
                 'sidebar_active_text_color' => 'required|regex_match[/^#[0-9A-Fa-f]{6}$/]',
-                'app_logo_file'       => 'if_exist|is_image[app_logo_file]|max_size[app_logo_file,2048]|mime_in[app_logo_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]',
-                'login_bg_file'       => 'if_exist|is_image[login_bg_file]|max_size[login_bg_file,4096]|mime_in[login_bg_file,image/jpg,image/jpeg,image/png,image/webp]',
                 'simak_upload_tutorial_url' => 'permit_empty|valid_url_strict[https]',
                 'simak_max_upload_mb' => 'required|integer|greater_than_equal_to[0]|less_than_equal_to[1000]',
                 'auto_logout_minutes' => 'required|integer|greater_than_equal_to[1]|less_than_equal_to[1440]',
                 'preloader_duration_ms' => 'required|integer|greater_than_equal_to[0]|less_than_equal_to[10000]',
                 'maintenance_mode' => 'permit_empty|in_list[0,1]',
             ];
+
+            $appLogoFile = $this->request->getFile('app_logo_file');
+            if ($appLogoFile && $appLogoFile->getError() !== UPLOAD_ERR_NO_FILE) {
+                $rules['app_logo_file'] = 'is_image[app_logo_file]|max_size[app_logo_file,2048]|mime_in[app_logo_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]';
+            }
+
+            $loginBgFile = $this->request->getFile('login_bg_file');
+            if ($loginBgFile && $loginBgFile->getError() !== UPLOAD_ERR_NO_FILE) {
+                $rules['login_bg_file'] = 'is_image[login_bg_file]|max_size[login_bg_file,4096]|mime_in[login_bg_file,image/jpg,image/jpeg,image/png,image/webp]';
+            }
 
             if (! $this->validate($rules)) {
                 return redirect()->back()->withInput()->with('error', 'Data pengaturan aplikasi belum valid.');

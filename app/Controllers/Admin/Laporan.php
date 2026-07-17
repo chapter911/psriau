@@ -554,8 +554,7 @@ class Laporan extends BaseController
                 
                 if ($canEdit) {
                     $row['action_html'] = '<div class="d-flex justify-content-center align-items-center" style="gap: 5px; white-space: nowrap;">';
-                    $row['action_html'] .= '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/ubah') . '" class="btn btn-sm btn-outline-primary" title="Ubah Data"><i class="fas fa-pen"></i></a>';
-                    $row['action_html'] .= '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' . (int) ($row['id'] ?? 0) . '" title="Hapus"><i class="fas fa-trash"></i></button>';
+                    $row['action_html'] .= '<a href="javascript:void(0)" onclick="openEditModal(\'' . site_url('admin/surat/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/ubah') . '?modal=1\')" class="btn btn-sm btn-outline-primary" title="Ubah Data"><i class="fas fa-pen"></i></a>';
                     $row['action_html'] .= '</div>';
                 } else {
                     $row['action_html'] = '<span class="text-muted">-</span>';
@@ -633,6 +632,13 @@ class Laporan extends BaseController
                 $row['verification_status_html'] = $verificationStatusHtml;
                 $row['status_verifikasi_html'] = $statusVerifikasiHtml;
                 $row['file_spt_html'] = $fileSptHtml;
+                
+                $row['daftar_nominatif_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-daftar-nominatif') . '" class="btn btn-xs btn-outline-success px-2 font-weight-bold" title="Cetak Daftar Nominatif (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak Nominatif</a>';
+                
+                $row['sppd_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-sppd') . '" class="btn btn-xs btn-outline-primary px-2 font-weight-bold" title="Cetak SPPD (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak SPPD</a>';
+                
+                $row['kwitansi_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-kwitansi') . '" class="btn btn-xs btn-outline-info px-2 font-weight-bold" title="Cetak Kwitansi (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak Kwitansi</a>';
+                
                 $row['aksi_spt_html'] = $aksiSptHtml;
 
                 return $row;
@@ -758,6 +764,188 @@ class Laporan extends BaseController
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
             ->setHeader('Content-Disposition', 'inline; filename="surat_tugas_' . $id . '.pdf"')
+            ->setBody($dompdf->output());
+    }
+
+    public function perjalananDinasCetakDaftarNominatif(int $id)
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $row = (new LaporanPerjalananDinasModel())->find($id);
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+        }
+
+        $pelaksana = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: [];
+
+        $kotaTujuan = $row['kota_tujuan'] ?? '';
+        $biayaMaster = [
+            'harian' => 0,
+            'penginapan_e1' => 0,
+            'penginapan_e2' => 0,
+            'penginapan_e3' => 0,
+            'penginapan_e4' => 0,
+        ];
+
+        $db = \Config\Database::connect();
+        $kabupaten = $db->table('mst_kabupaten')->where('nama_kabupaten', $kotaTujuan)->get()->getRowArray();
+        if ($kabupaten) {
+            $provCode = $kabupaten['kode_provinsi'];
+            $mstHarian = $db->table('mst_biaya_harian')->where('provinsi_kode', $provCode)->where('is_active', 1)->get()->getRowArray();
+            if ($mstHarian) {
+                $biayaMaster['harian'] = (int) $mstHarian['luar_kota'];
+            }
+            
+            $mstPenginapan = $db->table('mst_biaya_penginapan')->where('provinsi_kode', $provCode)->where('is_active', 1)->get()->getRowArray();
+            if ($mstPenginapan) {
+                $biayaMaster['penginapan_e1'] = (int) $mstPenginapan['tarif_eselon1'];
+                $biayaMaster['penginapan_e2'] = (int) $mstPenginapan['tarif_eselon2'];
+                $biayaMaster['penginapan_e3'] = (int) $mstPenginapan['tarif_eselon3'];
+                $biayaMaster['penginapan_e4'] = (int) $mstPenginapan['tarif_eselon4'];
+            }
+        }
+
+        $html = view('admin/laporan/cetak_daftar_nominatif', [
+            'row' => $row,
+            'pelaksana' => $pelaksana,
+            'biaya_master' => $biayaMaster,
+        ]);
+
+        $dompdfOptions = new \Dompdf\Options();
+        $dompdfOptions->set('isRemoteEnabled', true);
+        $dompdfOptions->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($dompdfOptions);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="daftar_nominatif_' . $id . '.pdf"')
+            ->setBody($dompdf->output());
+    }
+
+    public function perjalananDinasCetakSppd(int $id)
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $row = (new LaporanPerjalananDinasModel())->find($id);
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+        }
+
+        $pelaksana = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: [];
+        $tujuan = $row['tujuan'] ?? '';
+        $kotaTujuan = $row['kota_tujuan'] ?? '';
+        $periodeMulai = $row['periode_mulai'] ?? '';
+        $periodeSelesai = $row['periode_selesai'] ?? '';
+
+        // Fetch kop_surat
+        $db = \Config\Database::connect();
+        $kopSuratId = (int) ($row['kop_surat_id'] ?? 0);
+        $kopSurat = null;
+        if ($kopSuratId > 0 && $db->tableExists('kop_surat')) {
+            $kopSurat = $db->table('kop_surat')->where('id', $kopSuratId)->get()->getRowArray();
+        }
+        if (!$kopSurat && $db->tableExists('kop_surat')) {
+            $kopSurat = $db->table('kop_surat')->where('is_active', 1)->orderBy('id', 'DESC')->get()->getRowArray();
+        }
+
+        $html = view('admin/laporan/cetak_sppd', [
+            'row' => $row,
+            'pelaksana' => $pelaksana,
+            'kop_surat' => $kopSurat,
+        ]);
+
+        $dompdfOptions = new \Dompdf\Options();
+        $dompdfOptions->set('isRemoteEnabled', true);
+        $dompdfOptions->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($dompdfOptions);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="sppd_' . $id . '.pdf"')
+            ->setBody($dompdf->output());
+    }
+
+    public function perjalananDinasCetakKwitansi(int $id)
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $row = (new LaporanPerjalananDinasModel())->find($id);
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+        }
+
+        $pelaksana = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: [];
+        $kotaTujuan = $row['kota_tujuan'] ?? '';
+
+        // Fetch kop_surat
+        $db = \Config\Database::connect();
+        $kopSuratId = (int) ($row['kop_surat_id'] ?? 0);
+        $kopSurat = null;
+        if ($kopSuratId > 0 && $db->tableExists('kop_surat')) {
+            $kopSurat = $db->table('kop_surat')->where('id', $kopSuratId)->get()->getRowArray();
+        }
+        if (!$kopSurat && $db->tableExists('kop_surat')) {
+            $kopSurat = $db->table('kop_surat')->where('is_active', 1)->orderBy('id', 'DESC')->get()->getRowArray();
+        }
+
+        $biayaMaster = [
+            'harian' => 0,
+            'penginapan_e1' => 0,
+            'penginapan_e2' => 0,
+            'penginapan_e3' => 0,
+            'penginapan_e4' => 0,
+        ];
+
+        $kabupaten = $db->table('mst_kabupaten')->where('nama_kabupaten', $kotaTujuan)->get()->getRowArray();
+        if ($kabupaten) {
+            $provCode = $kabupaten['kode_provinsi'];
+            $mstHarian = $db->table('mst_biaya_harian')->where('provinsi_kode', $provCode)->where('is_active', 1)->get()->getRowArray();
+            if ($mstHarian) {
+                $biayaMaster['harian'] = (int) $mstHarian['luar_kota'];
+            }
+            
+            $mstPenginapan = $db->table('mst_biaya_penginapan')->where('provinsi_kode', $provCode)->where('is_active', 1)->get()->getRowArray();
+            if ($mstPenginapan) {
+                $biayaMaster['penginapan_e1'] = (int) $mstPenginapan['tarif_eselon1'];
+                $biayaMaster['penginapan_e2'] = (int) $mstPenginapan['tarif_eselon2'];
+                $biayaMaster['penginapan_e3'] = (int) $mstPenginapan['tarif_eselon3'];
+                $biayaMaster['penginapan_e4'] = (int) $mstPenginapan['tarif_eselon4'];
+            }
+        }
+
+        $html = view('admin/laporan/cetak_kwitansi', [
+            'row' => $row,
+            'pelaksana' => $pelaksana,
+            'kop_surat' => $kopSurat,
+            'biaya_master' => $biayaMaster,
+        ]);
+
+        $dompdfOptions = new \Dompdf\Options();
+        $dompdfOptions->set('isRemoteEnabled', true);
+        $dompdfOptions->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($dompdfOptions);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="kwitansi_' . $id . '.pdf"')
             ->setBody($dompdf->output());
     }
 
@@ -1257,9 +1445,10 @@ class Laporan extends BaseController
                 'creator_pegawai' => $creatorPegawai,
                 'current_input' => $currentInput,
                 'form_error' => null,
-                'form_action' => site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah'),
+                'form_action' => site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah') . ($this->request->getGet('modal') == 1 ? '?modal=1' : ''),
                 'is_edit' => true,
-                'submit_label_primary' => 'Simpan Perubahan',
+                'is_modal' => $this->request->getGet('modal') == 1,
+                'submit_label_primary' => 'Simpan',
                 'existing_foto_dokumentasi' => $existingPhotos,
                 'existing_dokumen_pendukung' => $existingDocs,
             ]);
@@ -1284,7 +1473,7 @@ class Laporan extends BaseController
         ];
 
         $errors = [];
-        foreach (['nomor_surat_tugas', 'periode_mulai', 'periode_selesai', 'kota_tujuan', 'tujuan', 'sasaran', 'laporan_hasil'] as $requiredField) {
+        foreach (['periode_mulai', 'periode_selesai', 'kota_tujuan', 'tujuan', 'sasaran', 'laporan_hasil'] as $requiredField) {
             if ($currentInput[$requiredField] === '') {
                 $errors[] = ucfirst(str_replace('_', ' ', $requiredField)) . ' wajib diisi.';
             }
@@ -1325,10 +1514,14 @@ class Laporan extends BaseController
 
         // Map existing document descriptions (using original indices)
         $existingDocKeterangan = $this->request->getPost('existing_dokumen_keterangan');
+        $existingDocTransportasi = $this->request->getPost('existing_dokumen_transportasi');
         if (is_array($existingDocKeterangan)) {
             foreach ($existingDocs as $idx => &$doc) {
                 if (is_array($doc)) {
                     $doc['keterangan'] = isset($existingDocKeterangan[$idx]) ? trim((string) $existingDocKeterangan[$idx]) : ($doc['keterangan'] ?? '');
+                    if (is_array($existingDocTransportasi) && isset($existingDocTransportasi[$idx])) {
+                        $doc['transportasi'] = trim((string) $existingDocTransportasi[$idx]);
+                    }
                 }
             }
             unset($doc);
@@ -1399,9 +1592,10 @@ class Laporan extends BaseController
                 'creator_pegawai' => $creatorPegawai,
                 'current_input' => $currentInput,
                 'form_error' => implode(' ', $errors),
-                'form_action' => site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah'),
+                'form_action' => site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah') . ($this->request->getGet('modal') == 1 ? '?modal=1' : ''),
                 'is_edit' => true,
-                'submit_label_primary' => 'Simpan Perubahan',
+                'is_modal' => $this->request->getGet('modal') == 1,
+                'submit_label_primary' => 'Simpan',
                 'existing_foto_dokumentasi' => $photos,
                 'existing_dokumen_pendukung' => $docs,
             ]);
@@ -1459,6 +1653,7 @@ class Laporan extends BaseController
                 'default_approver_label' => $defaultApprover['label'] ?? '',
                 'creator_name' => trim((string) ($draftData['creator_name'] ?? session()->get('fullName') ?: session()->get('username') ?: session()->get('name') ?: 'system')),
                 'creator_pegawai' => $draftData['creator_pegawai'] ?? $creatorPegawai,
+                'is_modal' => $this->request->getGet('modal') == 1,
                 'current_input' => [
                     'nomor_surat_tugas' => (string) ($draftData['nomor_surat_tugas'] ?? ''),
                     'periode_mulai' => (string) ($draftData['periode_mulai'] ?? ''),
@@ -1494,7 +1689,7 @@ class Laporan extends BaseController
         ];
 
         $errors = [];
-        foreach (['nomor_surat_tugas', 'periode_mulai', 'periode_selesai', 'kota_tujuan', 'tujuan', 'sasaran', 'laporan_hasil'] as $requiredField) {
+        foreach (['periode_mulai', 'periode_selesai', 'kota_tujuan', 'tujuan', 'sasaran', 'laporan_hasil'] as $requiredField) {
             if ($currentInput[$requiredField] === '') {
                 $errors[] = ucfirst(str_replace('_', ' ', $requiredField)) . ' wajib diisi.';
             }
@@ -1558,12 +1753,16 @@ class Laporan extends BaseController
         // Draft dokumen pendukung (dari sesi sebelumnya) — filter yang dihapus user
         $draftFiles = array_values(array_filter((array) ($draftData['dokumen_pendukung'] ?? []), 'is_array'));
 
-        // Map draft/existing document descriptions (using original indices)
+        // Map existing document descriptions (using original indices)
         $existingDocKeterangan = $this->request->getPost('existing_dokumen_keterangan');
+        $existingDocTransportasi = $this->request->getPost('existing_dokumen_transportasi');
         if (is_array($existingDocKeterangan)) {
             foreach ($draftFiles as $idx => &$doc) {
                 if (is_array($doc)) {
                     $doc['keterangan'] = isset($existingDocKeterangan[$idx]) ? trim((string) $existingDocKeterangan[$idx]) : ($doc['keterangan'] ?? '');
+                    if (is_array($existingDocTransportasi) && isset($existingDocTransportasi[$idx])) {
+                        $doc['transportasi'] = trim((string) $existingDocTransportasi[$idx]);
+                    }
                 }
             }
             unset($doc);
@@ -2239,6 +2438,7 @@ class Laporan extends BaseController
         $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'zip', 'rar'];
         $result = [];
         $newKeterangan = (array) $this->request->getPost('dokumen_keterangan');
+        $newTransportasi = (array) $this->request->getPost('dokumen_transportasi');
         $keteranganIndex = 0;
 
         foreach ($flatFiles as $file) {
@@ -2249,6 +2449,10 @@ class Laporan extends BaseController
             $desc = '';
             if (isset($newKeterangan[$keteranganIndex])) {
                 $desc = trim((string) $newKeterangan[$keteranganIndex]);
+            }
+            $trans = '';
+            if (isset($newTransportasi[$keteranganIndex])) {
+                $trans = trim((string) $newTransportasi[$keteranganIndex]);
             }
             $keteranganIndex++;
 
@@ -2292,6 +2496,7 @@ class Laporan extends BaseController
                 'file_path'  => '/uploads/laporan/perjalanan_dinas_files/' . $newName,
                 'name'       => $file->getClientName(),
                 'keterangan' => $desc,
+                'transportasi' => $trans,
             ];
         }
 

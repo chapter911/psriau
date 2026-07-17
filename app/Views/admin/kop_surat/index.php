@@ -261,31 +261,33 @@ $canEditAction = $canEditBase && $canEditFeature;
         const editCurrentImage = document.getElementById('edit_current_image');
         const editImageFile = document.getElementById('edit_image_file');
 
-        modalEdit.addEventListener('show.bs.modal', function (event) {
-            const trigger = event.relatedTarget;
-            if (!trigger) return;
+        if (window.jQuery) {
+            $('#modal-ubah-kop-surat').on('show.bs.modal', function (event) {
+                const trigger = event.relatedTarget;
+                if (!trigger) return;
 
-            const id = trigger.getAttribute('data-id') || '';
-            const title = trigger.getAttribute('data-title') || '';
-            const description = trigger.getAttribute('data-description') || '';
-            const imageUrl = trigger.getAttribute('data-image-url') || '';
-            const isActive = trigger.getAttribute('data-is-active') === '1';
+                const id = trigger.getAttribute('data-id') || '';
+                const title = trigger.getAttribute('data-title') || '';
+                const description = trigger.getAttribute('data-description') || '';
+                const imageUrl = trigger.getAttribute('data-image-url') || '';
+                const isActive = trigger.getAttribute('data-is-active') === '1';
 
-            editForm.setAttribute('action', '<?= site_url('/admin/master/kop-surat'); ?>/' + id + '/ubah');
-            editTitle.value = title;
-            editDescription.value = description;
-            editIsActive.checked = isActive;
+                editForm.setAttribute('action', '<?= site_url('/admin/master/kop-surat'); ?>/' + id + '/ubah');
+                editTitle.value = title;
+                editDescription.value = description;
+                editIsActive.checked = isActive;
 
-            if (imageUrl) {
-                editCurrentImage.src = imageUrl;
-                editCurrentImageWrap.style.display = 'block';
-            } else {
-                editCurrentImage.src = '';
-                editCurrentImageWrap.style.display = 'none';
-            }
+                if (imageUrl) {
+                    editCurrentImage.src = imageUrl;
+                    editCurrentImageWrap.style.display = 'block';
+                } else {
+                    editCurrentImage.src = '';
+                    editCurrentImageWrap.style.display = 'none';
+                }
 
-            editImageFile.value = '';
-        });
+                editImageFile.value = '';
+            });
+        }
     })();
 </script>
 <?= $this->endSection(); ?>

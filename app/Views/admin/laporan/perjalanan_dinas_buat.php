@@ -1,4 +1,4 @@
-<?= $this->extend('layouts/admin'); ?>
+<?= $this->extend(($is_modal ?? false) ? 'layouts/modal_iframe' : 'layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
 <?php
@@ -220,17 +220,93 @@
         background: #fecaca !important;
         color: #dc2626 !important;
     }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        color: #0A66C2 !important;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #0A66C2 !important;
+        border-bottom: 3px solid #0A66C2;
+        background: transparent;
+    }
+    
+    /* Custom vertical nav pills styles */
+    .nav-pills-custom .nav-link {
+        color: #475569;
+        font-weight: 600;
+        padding: 14px 20px;
+        border-radius: 0;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s ease;
+        text-align: left;
+    }
+    .nav-pills-custom .nav-link:hover {
+        background-color: #f8fafc;
+        color: #0A66C2;
+    }
+    .nav-pills-custom .nav-link.active {
+        background-color: #0A66C2 !important;
+        color: #ffffff !important;
+        border-radius: 4px;
+        border-bottom: none;
+        box-shadow: 0 4px 6px -1px rgba(10, 102, 194, 0.2);
+    }
+    .w-20px {
+        width: 24px;
+        display: inline-block;
+    }
+    
+    /* Card headers in tab content */
+    .tab-pane .trip-section-title {
+        font-size: 1.25rem;
+        margin-bottom: 1.5rem !important;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        color: #1e293b;
+    }
+    
+    .trip-section-title {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem !important;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .card.border {
+        border-color: #f1f5f9 !important;
+        border-radius: 12px;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+    }
+    
+    .form-control:focus {
+        border-color: #0A66C2;
+        box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.1);
+    }
 </style>
 
 <div class="trip-form-wrap">
-    <div class="card trip-card">
-        <div class="card-header d-flex align-items-center">
-            <h3 class="card-title mb-0 trip-headline">Buat Laporan Perjalanan Dinas</h3>
+    <div class="card trip-card <?= ($is_modal ?? false) ? 'border-0 shadow-none' : ''; ?>">
+        <?php if (!($is_modal ?? false)): ?>
+        <div class="card-header d-flex align-items-center bg-white border-bottom-0 pt-4 pb-0">
+            <h3 class="card-title mb-0 trip-headline" style="font-size: 1.5rem; color: #1e293b;"><?= $isEdit ? 'Ubah' : 'Buat'; ?> Laporan Perjalanan Dinas</h3>
             <div class="card-tools ml-auto">
                 <a href="<?= site_url('admin/surat/perjalanan-dinas'); ?>" class="btn btn-secondary btn-sm">Kembali</a>
             </div>
         </div>
-        <div class="card-body">
+        <?php endif; ?>
+        <div class="card-body <?= ($is_modal ?? false) ? 'p-0' : ''; ?>">
             <?php if (! empty($form_error)): ?>
                 <div class="alert alert-danger"><?= esc($form_error); ?></div>
             <?php endif; ?>
@@ -238,7 +314,28 @@
             <form id="perjalananDinasForm" action="<?= esc($formAction, 'attr'); ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
 
-                <div class="card border shadow-none mb-3">
+                <div class="row">
+                    <!-- Left Sidebar Tabs -->
+                    <div class="col-md-3 mb-4">
+                        <div class="nav flex-column nav-pills nav-pills-custom" id="perjalananDinasTab" role="tablist" aria-orientation="vertical" style="position: sticky; top: 20px; z-index: 10;">
+                            <a class="nav-link active" id="umum-tab" data-toggle="pill" href="#umum" role="tab" aria-controls="umum" aria-selected="true">
+                                <i class="fas fa-info-circle mr-2 w-20px text-center"></i> Umum
+                            </a>
+                            <a class="nav-link" id="dokumentasi-tab" data-toggle="pill" href="#dokumentasi" role="tab" aria-controls="dokumentasi" aria-selected="false">
+                                <i class="fas fa-camera mr-2 w-20px text-center"></i> Dokumentasi Kegiatan
+                            </a>
+                            <a class="nav-link" id="dokumen-tab" data-toggle="pill" href="#dokumen" role="tab" aria-controls="dokumen" aria-selected="false">
+                                <i class="fas fa-file-alt mr-2 w-20px text-center"></i> Dokumentasi Tiket & Pendukung
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Content Area -->
+                    <div class="col-md-9">
+                        <div class="tab-content" id="perjalananDinasTabContent">
+                    <!-- TAB UMUM -->
+                    <div class="tab-pane fade show active" id="umum" role="tabpanel" aria-labelledby="umum-tab">
+                        <div class="card border shadow-none mb-3">
                     <div class="card-body">
                         <div class="trip-section-title mb-2">Penanggung Jawab dan Pelaksana</div>
                         <div class="form-row">
@@ -274,13 +371,6 @@
                 <div class="card border shadow-none mb-3">
                     <div class="card-body">
                         <div class="trip-section-title mb-2">Informasi Dasar Perjalanan</div>
-                        <div class="form-row">
-                            <div class="form-group col-12">
-                                <label>Nomor Surat Tugas</label>
-                                <input type="text" name="nomor_surat_tugas" class="form-control" value="<?= esc((string) ($input['nomor_surat_tugas'] ?? '')); ?>" required>
-                            </div>
-                        </div>
-
                         <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label>Periode Mulai</label>
@@ -337,7 +427,12 @@
                     </div>
                 </div>
 
-                <div class="card border shadow-none mb-3">
+                    </div>
+                    <!-- END TAB UMUM -->
+
+                    <!-- TAB DOKUMENTASI KEGIATAN -->
+                    <div class="tab-pane fade" id="dokumentasi" role="tabpanel" aria-labelledby="dokumentasi-tab">
+                        <div class="card border shadow-none mb-3">
                     <div class="card-body">
                         <div class="trip-section-title mb-2">Foto Dokumentasi</div>
                         <input type="file" id="fotoDokumentasi" name="foto_dokumentasi[]" accept="image/*" multiple class="d-none">
@@ -388,7 +483,12 @@
                     </div>
                 </div>
 
-                <div class="card border shadow-none mb-3">
+                    </div>
+                    <!-- END TAB DOKUMENTASI KEGIATAN -->
+
+                    <!-- TAB DOKUMEN PENDUKUNG -->
+                    <div class="tab-pane fade" id="dokumen" role="tabpanel" aria-labelledby="dokumen-tab">
+                        <div class="card border shadow-none mb-3">
                     <div class="card-body">
                         <div class="trip-section-title mb-2">Dokumen Pendukung</div>
                         <input type="file" id="dokumenPendukung" name="dokumen_pendukung[]" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar" multiple class="d-none">
@@ -442,7 +542,12 @@
                                                     <div class="selected-photo-card__name" title="<?= esc($fileName); ?>"><?= esc($fileName); ?></div>
                                                     <div class="selected-photo-card__size"><?= esc(strtoupper($ext)); ?> File</div>
                                                     <div class="selected-photo-card__input-wrapper">
-                                                        <input type="text" name="existing_dokumen_keterangan[<?= (int) $fIdx; ?>]" class="form-control form-control-sm" placeholder="Keterangan dokumen..." value="<?= esc($doc['keterangan'] ?? ''); ?>">
+                                                        <select name="existing_dokumen_transportasi[<?= (int) $fIdx; ?>]" class="form-control form-control-sm mb-1">
+                                                            <option value="">-- Pilih Transportasi (Opsional) --</option>
+                                                            <?php foreach (['Pesawat', 'Kereta Api', 'Kapal Laut', 'Bus / Travel', 'Lainnya'] as $tOption): ?>
+                                                                <option value="<?= $tOption; ?>" <?= ($doc['transportasi'] ?? '') === $tOption ? 'selected' : ''; ?>><?= $tOption; ?></option>
+                                                            <?php endforeach; ?>
+                                                        </select>
                                                     </div>
                                                 </div>
                                                 <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-left: 8px;">
@@ -457,8 +562,11 @@
                         <?php endif; ?>
                         </div>
                         <small class="text-muted d-block mt-2">Format dokumen didukung: PDF, gambar (JPG, PNG), Word (DOC, DOCX), Excel (XLS, XLSX), TXT, ZIP, RAR.</small>
+                        </div>
                     </div>
+                    <!-- END TAB DOKUMEN PENDUKUNG -->
                 </div>
+                </div> <!-- End row for tabs -->
 
                 <div class="form-group">
                     <label>Dibuat Oleh</label>
@@ -779,7 +887,14 @@
                     '<div class="selected-photo-card__name" title="' + item.name + '">' + item.name + '</div>' +
                     '<div class="selected-photo-card__size">' + item.sizeLabel + '</div>' +
                     '<div class="selected-photo-card__input-wrapper">' +
-                        '<input type="text" name="dokumen_keterangan[]" class="form-control form-control-sm selected-doc-desc" placeholder="Keterangan dokumen..." value="' + (item.keterangan || '') + '">' +
+                        '<select name="dokumen_transportasi[]" class="form-control form-control-sm mb-1 selected-doc-transport">' +
+                            '<option value="">-- Pilih Transportasi (Opsional) --</option>' +
+                            '<option value="Pesawat" ' + (item.transportasi === "Pesawat" ? "selected" : "") + '>Pesawat</option>' +
+                            '<option value="Kereta Api" ' + (item.transportasi === "Kereta Api" ? "selected" : "") + '>Kereta Api</option>' +
+                            '<option value="Kapal Laut" ' + (item.transportasi === "Kapal Laut" ? "selected" : "") + '>Kapal Laut</option>' +
+                            '<option value="Bus / Travel" ' + (item.transportasi === "Bus / Travel" ? "selected" : "") + '>Bus / Travel</option>' +
+                            '<option value="Lainnya" ' + (item.transportasi === "Lainnya" ? "selected" : "") + '>Lainnya</option>' +
+                        '</select>' +
                     '</div>' +
                 '</div>' +
                 '<div class="selected-photo-card__remove-wrapper">' +
@@ -797,10 +912,12 @@
                 });
             }
 
-            var descInput = card.querySelector('.selected-doc-desc');
-            if (descInput) {
-                descInput.addEventListener('input', function () {
-                    item.keterangan = this.value;
+
+
+            var transInput = card.querySelector('.selected-doc-transport');
+            if (transInput) {
+                transInput.addEventListener('change', function () {
+                    item.transportasi = this.value;
                 });
             }
 

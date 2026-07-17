@@ -83,9 +83,6 @@
 <div class="card">
     <div class="card-header d-flex align-items-center">
         <h3 class="card-title mb-0">Laporan Perjalanan Dinas</h3>
-        <div class="card-tools ml-auto">
-            <a href="<?= site_url('admin/surat/perjalanan-dinas/buat'); ?>" class="btn btn-primary btn-sm">Buat Laporan</a>
-        </div>
     </div>
     <div class="card-body">
 
@@ -208,6 +205,23 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
                 <a id="btnConfirmDelete" href="#" class="btn btn-danger btn-sm">Hapus</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Iframe -->
+<div class="modal fade" id="modalEditLaporan" tabindex="-1" role="dialog" aria-labelledby="modalEditLaporanTitle" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditLaporanTitle">Ubah Laporan Perjalanan Dinas</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="iframeEditLaporan" src="" style="width: 100%; height: 80vh; border: none;"></iframe>
             </div>
         </div>
     </div>
@@ -423,6 +437,22 @@
             const url = '<?= site_url("admin/surat/perjalanan-dinas/cetak-periode"); ?>?start_date=' + encodeURIComponent(start) + '&end_date=' + encodeURIComponent(end);
             window.open(url, '_blank');
         });
+        window.openEditModal = function(url) {
+            $('#iframeEditLaporan').attr('src', url);
+            $('#modalEditLaporan').modal('show');
+        };
+
+        window.closeModalAndReload = function() {
+            $('#modalEditLaporan').modal('hide');
+            $('#iframeEditLaporan').attr('src', '');
+            dt.ajax.reload(null, false);
+        };
+        
+        // Bersihkan iframe saat modal ditutup
+        $('#modalEditLaporan').on('hidden.bs.modal', function () {
+            $('#iframeEditLaporan').attr('src', '');
+        });
+
     })();
 </script>
 <?= $this->endSection(); ?>

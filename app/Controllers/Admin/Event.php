@@ -67,8 +67,12 @@ class Event extends BaseController
             'summary'    => 'required|min_length[10]',
             'content'    => 'required|min_length[20]',
             'event_date' => 'permit_empty|valid_date',
-            'image_file' => 'if_exist|is_image[image_file]|max_size[image_file,4096]|mime_in[image_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]',
         ];
+
+        $imageFile = $this->request->getFile('image_file');
+        if ($imageFile && $imageFile->getError() !== UPLOAD_ERR_NO_FILE) {
+            $rules['image_file'] = 'is_image[image_file]|max_size[image_file,4096]|mime_in[image_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]';
+        }
 
         if (! $this->validate($rules)) {
             return redirect()->back()->withInput()->with('error', 'Data acara belum valid.');

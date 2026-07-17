@@ -11,14 +11,19 @@ class MstBiayaPenginapanModel extends Model
     protected $returnType       = 'array';
     protected $useAutoIncrement = true;
     protected $allowedFields    = [
-        'kode_provinsi',
-        'nama_provinsi',
-        'level_pejabat',
-        'tarif',
+        'provinsi_kode',
+        'berlaku_mulai',
+        'berlaku_hingga',
+        'is_active',
+        'satuan',
+        'tarif_eselon1',
+        'tarif_eselon2',
+        'tarif_eselon3',
+        'tarif_eselon4',
         'created_by',
         'created_date',
         'updated_by',
         'updated_date',
     ];
-    protected $useTimestamps    = false;
+    protected $useTimestamps = false;
 }

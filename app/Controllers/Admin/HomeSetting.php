@@ -42,13 +42,25 @@ class HomeSetting extends BaseController
                 'hero_subtitle' => 'required|min_length[10]',
                 'about_intro'   => 'required|min_length[20]',
                 'official_name' => 'required|min_length[5]',
-                'logo_file' => 'if_exist|is_image[logo_file]|max_size[logo_file,4096]|mime_in[logo_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]',
                 'contact_email' => 'permit_empty|valid_email',
                 'contact_map_url' => 'permit_empty|valid_url_strict',
                 'instagram_profile_url' => 'permit_empty|valid_url_strict',
-                'default_event_image_file' => 'if_exist|is_image[default_event_image_file]|max_size[default_event_image_file,4096]|mime_in[default_event_image_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]',
-                'default_article_image_file' => 'if_exist|is_image[default_article_image_file]|max_size[default_article_image_file,4096]|mime_in[default_article_image_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]',
             ];
+
+            $logoFile = $this->request->getFile('logo_file');
+            if ($logoFile && $logoFile->getError() !== UPLOAD_ERR_NO_FILE) {
+                $rules['logo_file'] = 'is_image[logo_file]|max_size[logo_file,4096]|mime_in[logo_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]';
+            }
+
+            $defaultEventFile = $this->request->getFile('default_event_image_file');
+            if ($defaultEventFile && $defaultEventFile->getError() !== UPLOAD_ERR_NO_FILE) {
+                $rules['default_event_image_file'] = 'is_image[default_event_image_file]|max_size[default_event_image_file,4096]|mime_in[default_event_image_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]';
+            }
+
+            $defaultArticleFile = $this->request->getFile('default_article_image_file');
+            if ($defaultArticleFile && $defaultArticleFile->getError() !== UPLOAD_ERR_NO_FILE) {
+                $rules['default_article_image_file'] = 'is_image[default_article_image_file]|max_size[default_article_image_file,4096]|mime_in[default_article_image_file,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]';
+            }
 
             if (! $this->validate($rules)) {
                 return redirect()->back()->withInput()->with('error', 'Data pengaturan home belum valid.');
@@ -136,9 +148,13 @@ class HomeSetting extends BaseController
 
         $rules = [
             'title'      => 'required|min_length[3]',
-            'slide_image'  => 'if_exist|is_image[slide_image]|max_size[slide_image,4096]|mime_in[slide_image,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]',
             'sort_order' => 'required|integer',
         ];
+
+        $slideFile = $this->request->getFile('slide_image');
+        if ($slideFile && $slideFile->getError() !== UPLOAD_ERR_NO_FILE) {
+            $rules['slide_image'] = 'is_image[slide_image]|max_size[slide_image,4096]|mime_in[slide_image,image/jpg,image/jpeg,image/png,image/webp,image/svg+xml]';
+        }
 
         if (! $this->validate($rules)) {
             return redirect()->back()->withInput()->with('error', 'Data slide tidak valid.');
