@@ -1964,10 +1964,6 @@ class Kontrak extends BaseController
             return '';
         }
 
-        if (! empty($doc['is_google_drive_link']) && ! empty($doc['google_drive_source_url'])) {
-            return trim((string) $doc['google_drive_source_url']);
-        }
-
         $relativePath = trim((string) ($doc['file_relative_path'] ?? ''));
         if ($relativePath === '') {
             return '';
@@ -4160,13 +4156,8 @@ class Kontrak extends BaseController
                 log_message('error', 'sharedUploadSimakDokumen - Google Drive upload failed (' . $gdriveLink . ') for: ' . $originalName);
                 return redirect()->to(site_url('simak/share/' . $token))->with('error', 'Upload dokumen gagal: Google Drive tidak tersedia. Silakan coba lagi atau hubungi admin.');
             } elseif ($gdriveLink !== null) {
-                $uniqueHash = substr(md5(uniqid('', true)), 0, 8);
-                $storedName = 'simak_' . $simakId . '_' . $rowNo . '_' . $uniqueHash . '.' . $ext;
-                $relativePath = 'uploads/simak/' . $sharedType . '/' . $simakId . '/' . $storedName;
-                
-                $uploadMethod = 'drive';
-                $googleDriveLink = $gdriveLink;
-
+                $relativePath = $gdriveLink;
+                $storedName = '';
                 log_message('info', 'sharedUploadSimakDokumen - Google Drive upload SUCCESS: ' . $originalName . ' -> ' . $gdriveLink);
             } else {
                 // Fallback: tidak ada penyimpanan lokal, upload gagal
