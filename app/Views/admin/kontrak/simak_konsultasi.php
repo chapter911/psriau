@@ -330,7 +330,6 @@
                     <div class="input-group input-group-sm">
                         <input type="text" class="form-control" id="shareCurrentLinkInput" readonly>
                         <div class="input-group-append">
-                            <button type="button" class="btn btn-outline-success" id="btnOpenCurrentShareLink">Buka Tautan</button>
                             <button type="button" class="btn btn-outline-primary" id="btnCopyCurrentShareLink">Salin</button>
                         </div>
                     </div>
@@ -343,6 +342,7 @@
                     Nonaktifkan Link
                 </button>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-success d-none" id="btnOpenCurrentShareLink">Buka Tautan</button>
                 <button type="button" class="btn btn-primary" id="btnGenerateShareLink">
                     Buat Link Bagikan
                 </button>
@@ -1207,7 +1207,13 @@
             }
 
             if (btnOpenCurrentShareLink) {
-                btnOpenCurrentShareLink.disabled = currentShareUrl === '';
+                if (currentShareUrl !== '') {
+                    btnOpenCurrentShareLink.classList.remove('d-none');
+                    if (btnGenerateShareLink) btnGenerateShareLink.classList.add('d-none');
+                } else {
+                    btnOpenCurrentShareLink.classList.add('d-none');
+                    if (btnGenerateShareLink) btnGenerateShareLink.classList.remove('d-none');
+                }
             }
 
             if (btnDeactivateShareLink) {
