@@ -86,7 +86,6 @@
                         <th class="text-center">#</th>
                         <th>Nomor Kontrak</th>
                         <th>Paket</th>
-                        <th>Nama Paket</th>
                         <th>Tahun Anggaran</th>
                         <th>PPK</th>
 
@@ -130,7 +129,13 @@
                             data-kelengkapan-belum-ada="<?= esc((string) $statusBelumAda); ?>"
                         >
                             <td class="text-center"><?= esc((string) $i++); ?></td>
-                            <td><?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?></td>
+                            <td>
+                                <div class="font-weight-bold"><?= esc((string) ($item['nomor_kontrak'] ?? '-')); ?></div>
+                                <?php $namaPaketDesc = $item['nama_paket'] ?? ''; ?>
+                                <?php if ($namaPaketDesc): ?>
+                                    <small class="text-muted d-block mt-1" style="white-space: normal; min-width: 250px;"><?= esc($namaPaketDesc); ?></small>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <?php
                                     $paketNama = $item['paket_nama'] ?? '';
@@ -140,7 +145,6 @@
                                         -
                                     <?php endif; ?>
                             </td>
-                            <td><?= esc((string) ($item['nama_paket'] ?? '-')); ?></td>
                             <td><?= esc((string) ($item['tahun_anggaran'] ?? '-')); ?></td>
                             <td>
                                 <div class="font-weight-bold"><?= esc((string) ($item['ppk_nama'] ?? '-')); ?></div>
