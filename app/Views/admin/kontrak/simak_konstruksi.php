@@ -241,16 +241,7 @@
                     </div>
                 </div>
 
-                <div id="shareDurationSection">
-                    <div class="custom-control custom-radio mb-2">
-                        <input type="radio" id="shareDuration1Week" name="shareDuration" class="custom-control-input" value="1week" checked>
-                        <label class="custom-control-label" for="shareDuration1Week">1 minggu</label>
-                    </div>
-                    <div class="custom-control custom-radio mb-2">
-                        <input type="radio" id="shareDuration30Days" name="shareDuration" class="custom-control-input" value="30days">
-                        <label class="custom-control-label" for="shareDuration30Days">30 hari</label>
-                    </div>
-                </div>
+                <!-- Duration section removed for manual activation -->
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-danger mr-auto d-none" id="btnDeactivateShareLink">
@@ -1050,9 +1041,7 @@
                 return;
             }
 
-            var selectedDurationInput = document.querySelector('input[name="shareDuration"]:checked');
-            var duration = selectedDurationInput ? selectedDurationInput.value : '1week';
-
+            // Duration removed, will be ignored by backend
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Membuat link...',
@@ -1070,7 +1059,6 @@
                 method: 'POST',
                 dataType: 'json',
                 data: {
-                    duration: duration,
                     [csrfTokenName]: csrfTokenValue,
                 },
             }).done(function (response) {

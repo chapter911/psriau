@@ -2023,22 +2023,8 @@ class Kontrak extends BaseController
             return $respondError('Data SIMAK tidak ditemukan.', 404);
         }
 
-        $durationInput = $this->request->getPost('share_duration');
-        if ($durationInput === null || trim((string) $durationInput) === '') {
-            $durationInput = $this->request->getPost('duration');
-        }
-        $duration = strtolower(trim((string) $durationInput));
-        $durationMap = [
-            '1week' => '+1 week',
-            '30days' => '+30 days',
-        ];
-
-        if (! array_key_exists($duration, $durationMap)) {
-            return $respondError('Durasi link share tidak valid. Pilih 1 minggu atau 30 hari.', 422);
-        }
-
-        $expiresAtDate = date('Y-m-d', strtotime($durationMap[$duration]));
-        $expiresAt = $expiresAtDate . ' 23:59:59';
+        // Menghilangkan durasi, aktif sampai dinonaktifkan manual
+        $expiresAt = null;
 
         $token = $this->generateSimakShareToken();
         if ($token === null) {
@@ -2087,7 +2073,7 @@ class Kontrak extends BaseController
         }
 
         $shareUrl = site_url('simak/share/' . $token);
-        $successMessage = 'Link share SIMAK berhasil dibuat. Berlaku sampai ' . $expiresAtDate . '.';
+        $successMessage = 'Link share SIMAK berhasil dibuat.';
 
         if ($isAjax) {
             return $this->response->setJSON([
@@ -7445,22 +7431,8 @@ class Kontrak extends BaseController
             return $respondError('Data SIMAK Konsultasi tidak ditemukan.', 404);
         }
 
-        $durationInput = $this->request->getPost('share_duration');
-        if ($durationInput === null || trim((string) $durationInput) === '') {
-            $durationInput = $this->request->getPost('duration');
-        }
-        $duration = strtolower(trim((string) $durationInput));
-        $durationMap = [
-            '1week' => '+1 week',
-            '30days' => '+30 days',
-        ];
-
-        if (! array_key_exists($duration, $durationMap)) {
-            return $respondError('Durasi link share tidak valid. Pilih 1 minggu atau 30 hari.', 422);
-        }
-
-        $expiresAtDate = date('Y-m-d', strtotime($durationMap[$duration]));
-        $expiresAt = $expiresAtDate . ' 23:59:59';
+        // Menghilangkan durasi, aktif sampai dinonaktifkan manual
+        $expiresAt = null;
 
         $token = $this->generateSimakShareToken();
         if ($token === null) {
@@ -7509,7 +7481,7 @@ class Kontrak extends BaseController
         }
 
         $shareUrl = site_url('simak/share/' . $token);
-        $successMessage = 'Link share SIMAK Konsultasi berhasil dibuat. Berlaku sampai ' . $expiresAtDate . '.';
+        $successMessage = 'Link share SIMAK Konsultasi berhasil dibuat.';
 
         if ($isAjax) {
             return $this->response->setJSON([
