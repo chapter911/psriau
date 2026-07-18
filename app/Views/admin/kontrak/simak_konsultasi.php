@@ -324,7 +324,6 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Berapa lama durasi dokumen ini akan dibagikan?</p>
                 <p class="small text-muted mb-3" id="shareSimakNomorKontrak">-</p>
 
                 <div class="alert alert-info py-2 px-3 d-none" id="shareActiveInfo"></div>

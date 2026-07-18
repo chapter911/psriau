@@ -5261,9 +5261,9 @@ class Kontrak extends BaseController
                 continue;
             }
 
-            if ($shareHasExpiresCol && ! $this->isSimakShareActiveByDate($expiresAt)) {
-                continue;
-            }
+            // if ($shareHasExpiresCol && ! $this->isSimakShareActiveByDate($expiresAt)) {
+            //     continue;
+            // }
 
             $result[$simakId] = site_url('simak/share/' . $token);
         }
@@ -5394,10 +5394,10 @@ class Kontrak extends BaseController
                 continue;
             }
 
-            $expiresAt = trim((string) ($share['expires_at'] ?? ''));
-            if ($shareHasExpiresCol && ! $this->isSimakShareActiveByDate($expiresAt)) {
-                continue;
-            }
+            // $expiresAt = trim((string) ($share['expires_at'] ?? ''));
+            // if ($shareHasExpiresCol && ! $this->isSimakShareActiveByDate($expiresAt)) {
+            //     continue;
+            // }
 
             $shareSimakId = (int) ($share['simak_id'] ?? 0);
             if ($shareSimakId <= 0) {
