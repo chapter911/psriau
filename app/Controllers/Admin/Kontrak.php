@@ -977,7 +977,7 @@ class Kontrak extends BaseController
 
         $builder = $db->table($tableMain . ' s')
             ->select('s.*, COALESCE(soa.nilai_add_on, 0) AS nilai_add_on, (s.nilai_kontrak + COALESCE(soa.nilai_add_on, 0)) AS total_kontrak, mp.nama_paket AS paket_nama, mp.singkatan_paket AS paket_singkatan')
-            ->orderBy('total_kontrak', 'ASC');
+            ->orderBy('s.paket_id', 'ASC');
 
         if ($db->tableExists($tableAddOn)) {
             $summaryBuilder = $db->table($tableAddOn)
