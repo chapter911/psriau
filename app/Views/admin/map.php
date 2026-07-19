@@ -374,40 +374,68 @@
         const rightPoint = L.latLng(centerLat, east);
         const totalDistanceMeters = leftPoint.distanceTo(rightPoint);
         
-        const D_meters = totalDistanceMeters * (75 / 1150);
-        const D_km = D_meters / 1000;
-        
-        let leftLabel, midLeftLabel, rightLabel;
-        
-        if (D_km >= 0.1) {
-            leftLabel = D_km.toFixed(1);
-            midLeftLabel = (D_km / 2).toFixed(1);
-            rightLabel = D_km.toFixed(1) + " KM";
-        } else {
-            const D_meters_rounded = Math.round(D_meters);
-            leftLabel = D_meters_rounded;
-            midLeftLabel = Math.round(D_meters_rounded / 2);
-            rightLabel = D_meters_rounded + " M";
-        }
-        
         const scaleRatio = Math.round(totalDistanceMeters / 0.3024);
         const scaleRatioRounded = Math.round(scaleRatio / 100) * 100;
         const rfScaleText = "SKALA 1:" + scaleRatioRounded.toLocaleString('id-ID');
         
+        const cmPerBlock = 1;
+        const numBlocks = 4;
+        const totalCm = cmPerBlock * numBlocks;
+        const pixelsPerCm = 1150 / 30.24; // 1150px width map printed on 30.24cm length paper
+        const blockWidthPx = pixelsPerCm * cmPerBlock;
+        const totalWidthPx = blockWidthPx * numBlocks;
+        
+        const metersPerCm = scaleRatioRounded / 100;
+        
+        let unit = 'M';
+        let divisor = 1;
+        if (metersPerCm * totalCm >= 1000) {
+            unit = 'Km';
+            divisor = 1000;
+        }
+        
+        let topLabels = '';
+        let bottomLabels = '';
+        let topBlocks = '';
+        let bottomBlocks = '';
+        
+        for (let i = 0; i <= numBlocks; i++) {
+            const isLast = (i === numBlocks);
+            const cmVal = i * cmPerBlock;
+            const mVal = (cmVal * metersPerCm) / divisor;
+            
+            const mValStr = Number.isInteger(mVal) ? mVal.toString() : mVal.toFixed(1);
+            
+            topLabels += `<div style="position: absolute; left: ${i * blockWidthPx}px; transform: translateX(-50%); font-size: 10px; font-weight: bold; bottom: 0;">${cmVal}${isLast ? ' Cm' : ''}</div>`;
+            bottomLabels += `<div style="position: absolute; left: ${i * blockWidthPx}px; transform: translateX(-50%); font-size: 10px; font-weight: bold; top: 0;">${mValStr}${isLast ? ' ' + unit : ''}</div>`;
+            
+            if (i < numBlocks) {
+                const topColor = i % 2 === 0 ? 'black' : 'white';
+                const bottomColor = i % 2 === 0 ? 'white' : 'black';
+                topBlocks += `<div style="width: ${blockWidthPx}px; height: 6px; background: ${topColor}; border-right: 1px solid black; box-sizing: border-box;"></div>`;
+                bottomBlocks += `<div style="width: ${blockWidthPx}px; height: 6px; background: ${bottomColor}; border-right: 1px solid black; box-sizing: border-box;"></div>`;
+            }
+        }
+        
         return `
-            <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px; text-transform: uppercase;">${rfScaleText}</div>
-            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-                <div style="display: flex; justify-content: space-between; width: 150px; font-size: 9px; font-weight: bold;">
-                    <span>${leftLabel}</span>
-                    <span>${midLeftLabel}</span>
-                    <span>0</span>
-                    <span>${rightLabel}</span>
+            <div style="font-weight: bold; font-size: 11px; margin-bottom: 8px; text-transform: uppercase;">${rfScaleText}</div>
+            <div style="position: relative; width: ${totalWidthPx}px;">
+                <!-- Top Labels -->
+                <div style="position: relative; height: 14px; width: 100%;">
+                    ${topLabels}
                 </div>
-                <div style="width: 150px; height: 10px; border: 1px solid black; display: flex; overflow: hidden; margin-top: 2px;">
-                    <div style="width: 25%; background: black;"></div>
-                    <div style="width: 25%; background: white;"></div>
-                    <div style="width: 25%; background: black;"></div>
-                    <div style="width: 25%; background: white;"></div>
+                <!-- Double Bar -->
+                <div style="width: ${totalWidthPx}px; border: 1px solid black; border-right: none; display: flex; flex-direction: column;">
+                    <div style="display: flex; width: 100%; border-bottom: 1px solid black;">
+                        ${topBlocks}
+                    </div>
+                    <div style="display: flex; width: 100%;">
+                        ${bottomBlocks}
+                    </div>
+                </div>
+                <!-- Bottom Labels -->
+                <div style="position: relative; height: 14px; width: 100%; margin-top: 2px;">
+                    ${bottomLabels}
                 </div>
             </div>
         `;
