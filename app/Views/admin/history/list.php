@@ -26,20 +26,22 @@ $isDeleteHistory = $type === 'delete';
                             <th style="width:170px;">Path</th>
                             <th style="width:120px;">Tabel</th>
                             <th style="width:90px;">Record ID</th>
-                            <th>Request</th>
+                            <th class="text-center" style="width:100px;">Request</th>
                             <?php if ($isEditHistory || $isDeleteHistory): ?>
-                                <th style="width:110px;">Before</th>
+                                <th class="text-center" style="width:110px;">Before</th>
                             <?php endif; ?>
                             <?php if ($isEditHistory): ?>
-                                <th style="width:110px;">After</th>
+                                <th class="text-center" style="width:110px;">After</th>
                             <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($rows as $row): ?>
                             <?php
+                            $requestJson = (string) ($row['request_data_json'] ?? '');
                             $beforeJson = (string) ($row['before_data_json'] ?? '');
                             $afterJson = (string) ($row['after_data_json'] ?? '');
+                            $isEmpty = fn($json) => in_array(trim($json), ['', 'null', '[]', '{}'], true);
                             ?>
                             <tr>
                                 <td><?= esc((string) ($row['happened_at'] ?? '-')); ?></td>
@@ -48,15 +50,29 @@ $isDeleteHistory = $type === 'delete';
                                 <td><small><?= esc((string) ($row['module_path'] ?? '-')); ?></small></td>
                                 <td><?= esc((string) ($row['table_name'] ?? '-')); ?></td>
                                 <td><?= esc((string) ($row['record_id'] ?? '-')); ?></td>
-                                <td><pre class="mb-0" style="white-space:pre-wrap; max-width:420px;"><?= esc((string) ($row['request_data_json'] ?? '')); ?></pre></td>
+                                <td class="text-center">
+                                    <?php if ($isEmpty($requestJson)): ?>
+                                        -
+                                    <?php else: ?>
+                                        <button type="button" class="btn btn-sm btn-primary js-open-json-modal" data-title="Request Data" data-json="<?= esc($requestJson, 'attr'); ?>">Lihat</button>
+                                    <?php endif; ?>
+                                </td>
                                 <?php if ($isEditHistory || $isDeleteHistory): ?>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-info js-open-json-modal" data-title="Before Data" data-json="<?= esc($beforeJson !== '' ? $beforeJson : '-', 'attr'); ?>">Lihat</button>
+                                        <?php if ($isEmpty($beforeJson)): ?>
+                                            -
+                                        <?php else: ?>
+                                            <button type="button" class="btn btn-sm btn-info js-open-json-modal" data-title="Before Data" data-json="<?= esc($beforeJson, 'attr'); ?>">Lihat</button>
+                                        <?php endif; ?>
                                     </td>
                                 <?php endif; ?>
                                 <?php if ($isEditHistory): ?>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-secondary js-open-json-modal" data-title="After Data" data-json="<?= esc($afterJson !== '' ? $afterJson : '-', 'attr'); ?>">Lihat</button>
+                                        <?php if ($isEmpty($afterJson)): ?>
+                                            -
+                                        <?php else: ?>
+                                            <button type="button" class="btn btn-sm btn-secondary js-open-json-modal" data-title="After Data" data-json="<?= esc($afterJson, 'attr'); ?>">Lihat</button>
+                                        <?php endif; ?>
                                     </td>
                                 <?php endif; ?>
                             </tr>
@@ -104,7 +120,13 @@ $isDeleteHistory = $type === 'delete';
 
     const openModal = (title, content) => {
         titleEl.textContent = title || 'Detail Data';
-        bodyEl.textContent = content || '-';
+        
+        try {
+            const parsed = JSON.parse(content);
+            bodyEl.textContent = JSON.stringify(parsed, null, 4);
+        } catch (e) {
+            bodyEl.textContent = content || '-';
+        }
 
         if (window.jQuery && window.jQuery.fn && window.jQuery.fn.modal) {
             window.jQuery('#jsonHistoryModal').modal('show');
