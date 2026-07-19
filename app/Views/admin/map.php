@@ -1126,7 +1126,10 @@
                 fadeAnimation: false,
                 zoomAnimation: false,
                 zoomSnap: 0
-            }).setView([-0.51544, 101.44415], 6);
+            });
+            
+            // Set bounds to show all of Sumatera immediately
+            insetMap.fitBounds([[-6.2, 95.0], [6.0, 106.5]]);
 
             insetMap.invalidateSize(false);
 
@@ -1151,10 +1154,6 @@
                                 fillOpacity: 0.25
                             }
                         }).addTo(insetMap);
-                        
-                        // Fit bounds to show Seluruh Sumatera
-                        insetMap.invalidateSize(false);
-                        insetMap.fitBounds([[-6.2, 95.0], [6.0, 106.5]], { padding: [5, 5] });
                     }
                 })
                 .catch(err => console.error(err));
@@ -1536,7 +1535,10 @@
                 fadeAnimation: false,
                 zoomAnimation: false,
                 zoomSnap: 0
-            }).setView([-0.51544, 101.44415], 6);
+            });
+            
+            // Set bounds to show all of Sumatera immediately
+            insetMap.fitBounds([[-6.2, 95.0], [6.0, 106.5]]);
 
             insetMap.invalidateSize(false);
 
@@ -1559,8 +1561,6 @@
 
             if (tempBoundaryGroup.getLayers().length > 0) {
                 insetMap.invalidateSize(false);
-                // Fit bounds to show Seluruh Sumatera
-                insetMap.fitBounds([[-6.2, 95.0], [6.0, 106.5]], { padding: [5, 5] });
             }
 
             // Draw a red circle marker for each active school location on the inset map
