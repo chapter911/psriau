@@ -531,7 +531,9 @@ class Dashboard extends BaseController
         }
 
         $builder = $db->table('mst_sekolah')
-            ->select('mst_sekolah.npsn, mst_sekolah.nama, mst_sekolah.jenis, mst_sekolah.nsm, mst_sekolah.kabupaten, mst_sekolah.kecamatan, mst_sekolah.latitude, mst_sekolah.longitude');
+            ->select('mst_sekolah.npsn, mst_sekolah.nama, mst_sekolah.jenis, mst_sekolah.nsm, mst_sekolah.kabupaten, mst_sekolah.kecamatan, mst_sekolah.latitude, mst_sekolah.longitude')
+            ->where('mst_sekolah.paket_id >', 0)
+            ->where('mst_sekolah.paket_id IS NOT NULL', null, false);
 
         if ($hasSurveyTable) {
             $latestSurveySubQuery = "SELECT t1.npsn, t1.periode, t1.survey_klasifikasi_kerusakan, t1.survey_tingat_kerusakan, t1.status_lahan, t1.status_penanganan, t1.ekspos_status\n                FROM trn_survey_sekolah t1\n                INNER JOIN (\n                    SELECT npsn, MAX(periode) AS max_periode\n                    FROM trn_survey_sekolah\n                    GROUP BY npsn\n\n                ) latest ON latest.npsn = t1.npsn AND latest.max_periode = t1.periode";
