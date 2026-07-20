@@ -1020,7 +1020,14 @@ class Dokumentasi extends BaseController
         if ($foto === null || ! $foto->isValid()) {
             return $this->response->setStatusCode(422)->setJSON([
                 'status' => 'error',
-                'message' => 'Foto wajib diupload.',
+                'message' => 'Foto wajib diupload atau ukurannya melebihi batas server.',
+            ]);
+        }
+
+        if ($foto->getSize() > 15 * 1024 * 1024) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'message' => 'Ukuran foto maksimal adalah 15MB.',
             ]);
         }
 

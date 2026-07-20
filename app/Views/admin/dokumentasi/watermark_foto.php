@@ -17,7 +17,7 @@
                                 <label class="custom-file-label" for="foto">Pilih file...</label>
                             </div>
                         </div>
-                        <small class="text-muted">Format: JPG, PNG, WebP. Maks: 10MB</small>
+                        <small class="text-muted">Format: JPG, PNG, WebP. Maks: 15MB</small>
                     </div>
 
                     <div class="form-group">
@@ -96,6 +96,21 @@ $(function() {
         e.preventDefault();
 
         var formData = new FormData(this);
+
+        var fileInput = document.getElementById('foto');
+        if (fileInput.files.length > 0) {
+            var fileSize = fileInput.files[0].size;
+            var maxSize = 15 * 1024 * 1024; // 15MB
+            if (fileSize > maxSize) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: 'Ukuran foto maksimal adalah 15MB.'
+                });
+                return;
+            }
+        }
+
         var $btn = $('#btnProses');
         var originalText = $btn.html();
 
