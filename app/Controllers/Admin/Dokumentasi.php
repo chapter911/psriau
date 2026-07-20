@@ -1016,68 +1016,53 @@ class Dokumentasi extends BaseController
         $tanggal = trim((string) $this->request->getPost('tanggal'));
         $lokasi = trim((string) $this->request->getPost('lokasi'));
 
+        $sendError = function (int $code, string $message) {
+            return $this->response->setStatusCode($code)->setJSON([
+                'status' => 'error',
+                'message' => $message,
+                'csrf_token' => csrf_token(),
+                'csrf_hash' => csrf_hash(),
+            ]);
+        };
+
         // Validasi foto
         if ($foto === null || ! $foto->isValid()) {
-            return $this->response->setStatusCode(422)->setJSON([
-                'status' => 'error',
-                'message' => 'Foto wajib diupload atau ukurannya melebihi batas server.',
-            ]);
+            return $sendError(422, 'Foto wajib diupload atau ukurannya melebihi batas server.');
         }
 
         if ($foto->getSize() > 15 * 1024 * 1024) {
-            return $this->response->setStatusCode(422)->setJSON([
-                'status' => 'error',
-                'message' => 'Ukuran foto maksimal adalah 15MB.',
-            ]);
+            return $sendError(422, 'Ukuran foto maksimal adalah 15MB.');
         }
 
         $mimeType = strtolower((string) $foto->getMimeType());
         if (! str_starts_with($mimeType, 'image/')) {
-            return $this->response->setStatusCode(422)->setJSON([
-                'status' => 'error',
-                'message' => 'File yang diupload harus berupa gambar.',
-            ]);
+            return $sendError(422, 'File yang diupload harus berupa gambar.');
         }
 
         $extension = strtolower((string) $foto->getClientExtension());
         if (! in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true)) {
-            return $this->response->setStatusCode(422)->setJSON([
-                'status' => 'error',
-                'message' => 'Format foto tidak didukung. Gunakan JPG, PNG, atau WebP.',
-            ]);
+            return $sendError(422, 'Format foto tidak didukung. Gunakan JPG, PNG, atau WebP.');
         }
 
         // Validasi jam
         if ($jam === '') {
-            return $this->response->setStatusCode(422)->setJSON([
-                'status' => 'error',
-                'message' => 'Jam wajib diisi.',
-            ]);
+            return $sendError(422, 'Jam wajib diisi.');
         }
 
         // Validasi tanggal
         if ($tanggal === '') {
-            return $this->response->setStatusCode(422)->setJSON([
-                'status' => 'error',
-                'message' => 'Tanggal wajib diisi.',
-            ]);
+            return $sendError(422, 'Tanggal wajib diisi.');
         }
 
         // Validasi lokasi
         if ($lokasi === '') {
-            return $this->response->setStatusCode(422)->setJSON([
-                'status' => 'error',
-                'message' => 'Lokasi wajib diisi.',
-            ]);
+            return $sendError(422, 'Lokasi wajib diisi.');
         }
 
         // Simpan file sementara
         $tempDir = WRITEPATH . 'temp_watermark';
         if (! is_dir($tempDir) && ! @mkdir($tempDir, 0775, true) && ! is_dir($tempDir)) {
-            return $this->response->setStatusCode(500)->setJSON([
-                'status' => 'error',
-                'message' => 'Gagal membuat folder sementara.',
-            ]);
+            return $sendError(500, 'Gagal membuat folder sementara.');
         }
 
         try {
@@ -1085,10 +1070,7 @@ class Dokumentasi extends BaseController
             $fotoPath = $tempDir . DIRECTORY_SEPARATOR . $fotoName;
             $foto->move($tempDir, $fotoName);
         } catch (\Throwable $e) {
-            return $this->response->setStatusCode(500)->setJSON([
-                'status' => 'error',
-                'message' => 'Gagal menyimpan foto sementara.',
-            ]);
+            return $sendError(500, 'Gagal menyimpan foto sementara.');
         }
 
         // Proses watermark
@@ -1098,10 +1080,7 @@ class Dokumentasi extends BaseController
         @unlink($fotoPath);
 
         if ($result['error'] !== null) {
-            return $this->response->setStatusCode(500)->setJSON([
-                'status' => 'error',
-                'message' => $result['error'],
-            ]);
+            return $sendError(500, $result['error']);
         }
 
         return $this->response->setJSON([
@@ -1141,6 +1120,24 @@ class Dokumentasi extends BaseController
 
         if ($sourceImage === false) {
             return ['data' => null, 'error' => 'Gagal memuat gambar.'];
+        }
+
+        // --- Fix Image Orientation based on EXIF ---
+        if ($mimeType === 'image/jpeg' || $mimeType === 'image/jpg') {
+            $exif = @exif_read_data($imagePath);
+            if (!empty($exif['Orientation'])) {
+                switch ($exif['Orientation']) {
+                    case 3:
+                        $sourceImage = imagerotate($sourceImage, 180, 0);
+                        break;
+                    case 6:
+                        $sourceImage = imagerotate($sourceImage, -90, 0);
+                        break;
+                    case 8:
+                        $sourceImage = imagerotate($sourceImage, 90, 0);
+                        break;
+                }
+            }
         }
 
         $width = imagesx($sourceImage);

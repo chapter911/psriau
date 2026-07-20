@@ -9,6 +9,7 @@
         <div class="row">
             <div class="col-md-6">
                 <form id="watermarkForm" enctype="multipart/form-data">
+                    <?= csrf_field() ?>
                     <div class="form-group">
                         <label for="foto">Upload Foto <span class="text-danger">*</span></label>
                         <div class="input-group">
@@ -150,11 +151,26 @@ $(function() {
                 }
             },
             error: function(xhr) {
+                if (xhr.status === 403) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Sesi Habis',
+                        text: 'Token keamanan tidak valid. Halaman akan dimuat ulang.'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                    return;
+                }
+
                 var message = 'Terjadi kesalahan saat memproses.';
                 try {
                     var response = JSON.parse(xhr.responseText);
                     if (response.message) {
                         message = response.message;
+                    }
+                    // Update CSRF token on validation error
+                    if (response.csrf_hash) {
+                        $('input[name="<?= csrf_token() ?>"]').val(response.csrf_hash);
                     }
                 } catch(e) {}
                 Swal.fire({
