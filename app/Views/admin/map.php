@@ -141,28 +141,18 @@
                 </select>
             </div>
             <div>
-                <label class="mb-1">Paket</label>
-                <select class="form-control" id="dashboardPaket">
-                    <option value="*">Semua Paket</option>
-                    <?php foreach (($paketOptions ?? []) as $paket): ?>
-                        <option value="<?= esc((string) ($paket['id'] ?? ''), 'attr'); ?>"><?= esc((string) ($paket['nama_paket'] ?? '-')); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div>
                 <label class="mb-1">Kecamatan</label>
                 <select class="form-control" id="dashboardKecamatan" disabled>
                     <option value="*">Pilih kabupaten terlebih dahulu</option>
                 </select>
             </div>
             <div>
-                <label class="mb-1">Klasifikasi Kerusakan</label>
-                <select class="form-control" id="dashboardKlasifikasi">
-                    <option value="*">Semua Klasifikasi</option>
-                    <?php foreach (($klasifikasiOptions ?? []) as $klasifikasi): ?>
-                        <option value="<?= esc($klasifikasi); ?>"><?= esc($klasifikasi); ?></option>
+                <label class="mb-1">Paket</label>
+                <select class="form-control" id="dashboardPaket">
+                    <option value="*">Semua Paket</option>
+                    <?php foreach (($paketOptions ?? []) as $paket): ?>
+                        <option value="<?= esc((string) ($paket['id'] ?? ''), 'attr'); ?>"><?= esc((string) ($paket['nama_paket'] ?? '-')); ?></option>
                     <?php endforeach; ?>
-                    <option value="non_klasifikasi">Belum Klasifikasi</option>
                 </select>
             </div>
             <div>
@@ -173,8 +163,11 @@
                     <option value="25m">Kontur Detail (Interval 25m)</option>
                 </select>
             </div>
-            <div class="d-flex align-items-end search-btn-wrapper">
-                <button class="btn btn-primary btn-block" type="button" id="dashboardMapSearchBtn">
+            <div class="d-flex align-items-end search-btn-wrapper gap-2">
+                <button class="btn btn-secondary flex-grow-1 mr-2" type="button" id="dashboardMapResetBtn">
+                    <i class="fas fa-undo mr-1"></i> Reset
+                </button>
+                <button class="btn btn-primary flex-grow-1" type="button" id="dashboardMapSearchBtn">
                     <i class="fas fa-search mr-1"></i> Cari
                 </button>
             </div>
@@ -325,12 +318,12 @@
         npsn: document.getElementById('dashboardNpsn'),
         nama: document.getElementById('dashboardNama'),
         kabupaten: document.getElementById('dashboardKabupaten'),
-        paket: document.getElementById('dashboardPaket'),
         kecamatan: document.getElementById('dashboardKecamatan'),
-        klasifikasi: document.getElementById('dashboardKlasifikasi'),
+        paket: document.getElementById('dashboardPaket'),
         kontur: document.getElementById('dashboardKontur'),
         total: document.getElementById('dashboardMapTotal'),
         search: document.getElementById('dashboardMapSearchBtn'),
+        reset: document.getElementById('dashboardMapResetBtn'),
     };
 
     const modalEl = document.getElementById('dashboardMapDetailModal');
@@ -607,11 +600,7 @@
     };
 
     const getMarkerColor = (klasifikasi) => {
-        const text = String(klasifikasi || '').toLowerCase();
-        if (text === 'rusak berat') return '#ef4444';
-        if (text === 'rusak sedang') return '#f59e0b';
-        if (text === 'rusak ringan') return '#10b981';
-        return '#2563eb';
+        return '#ef4444';
     };
 
     const getMarkerIcon = (color) => {
@@ -878,7 +867,6 @@
         params.set('kabupaten', inputs.kabupaten.value || '*');
         params.set('paket_id', inputs.paket.value || '*');
         params.set('kecamatan', inputs.kecamatan.value || '*');
-        params.set('klasifikasi', inputs.klasifikasi.value || '*');
         return params.toString();
     };
 
@@ -928,6 +916,20 @@
     };
 
     inputs.search.addEventListener('click', loadMapData);
+    if (inputs.reset) {
+        inputs.reset.addEventListener('click', () => {
+            inputs.npsn.value = '';
+            inputs.nama.value = '';
+            $(inputs.kabupaten).val('*');
+            $(inputs.paket).val('*');
+            $(inputs.kontur).val('*');
+            $(inputs.kecamatan).empty().append('<option value="*">Pilih kabupaten terlebih dahulu</option>').prop('disabled', true);
+            if (typeof contourLayer !== 'undefined' && contourLayer) {
+                contourLayer.clearLayers();
+            }
+            loadMapData();
+        });
+    }
     $(inputs.mapType).on('change', loadMapData);
     $(inputs.kabupaten).on('change', async () => {
         await loadKecamatanOptions(inputs.kabupaten.value, '*');
@@ -935,7 +937,6 @@
     });
     $(inputs.paket).on('change', loadMapData);
     $(inputs.kecamatan).on('change', loadMapData);
-    $(inputs.klasifikasi).on('change', loadMapData);
     $(inputs.kontur).on('change', loadContourData);
     inputs.npsn.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
