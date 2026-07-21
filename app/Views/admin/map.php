@@ -1846,15 +1846,26 @@
             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             
             const blobUrl = pdf.output('bloburl');
-            window.open(blobUrl, '_blank');
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil',
-                text: 'Peta berhasil dibuka di tab baru.',
-                timer: 2000,
-                showConfirmButton: false
-            });
+            const newTab = window.open(blobUrl, '_blank');
+            
+            if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
+                pdf.save('Peta_PS_Riau.pdf');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Peta berhasil diunduh.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Peta berhasil dibuka di tab baru.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
 
         } catch (error) {
             console.error(error);
@@ -2311,15 +2322,26 @@
             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             
             const blobUrl = pdf.output('bloburl');
-            window.open(blobUrl, '_blank');
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil',
-                text: 'Peta sebaran berhasil dibuka di tab baru.',
-                timer: 2000,
-                showConfirmButton: false
-            });
+            const newTab = window.open(blobUrl, '_blank');
+            
+            if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
+                pdf.save('Peta_Sebaran_PS_Riau.pdf');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Peta sebaran berhasil diunduh.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Peta sebaran berhasil dibuka di tab baru.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
 
         } catch (error) {
             console.error(error);
