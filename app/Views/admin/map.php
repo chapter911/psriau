@@ -183,7 +183,7 @@
                 <label class="mb-1">Kontur Lahan</label>
                 <select class="form-control" id="dashboardKontur">
                     <option value="*">Tidak Aktif</option>
-                    <option value="db_adaptive">Kontur Adaptif (Database)</option>
+                    <option value="db_adaptive" selected>Kontur Adaptif (Database)</option>
                 </select>
             </div>
             <div>
@@ -566,7 +566,11 @@
             position: 'topleft'
         },
         onAdd: function (map) {
-            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            const wrapper = L.DomUtil.create('div');
+            wrapper.style.position = 'relative';
+            wrapper.style.marginBottom = '10px';
+
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control-custom');
             container.style.backgroundColor = 'white';
             container.style.width = '34px';
             container.style.height = '34px';
@@ -578,10 +582,10 @@
             container.style.color = '#333';
             container.title = 'Current Zoom Level';
             container.style.cursor = 'default';
-            container.style.position = 'relative';
             container.id = 'zoomLevelIndicatorBox';
             
             container.innerHTML = 'z' + map.getZoom();
+            wrapper.appendChild(container);
             
             const loadingText = document.createElement('div');
             loadingText.id = 'contourLoadingText';
@@ -600,14 +604,13 @@
             loadingText.innerText = 'Sedang merender kontur...';
             loadingText.style.color = '#ea580c';
             
-            container.appendChild(loadingText);
+            wrapper.appendChild(loadingText);
 
             map.on('zoomend', function() {
-                // Keep the text element, update the text node child which is the first one
-                container.childNodes[0].textContent = 'z' + map.getZoom();
+                container.textContent = 'z' + map.getZoom();
             });
 
-            return container;
+            return wrapper;
         }
     });
     map.addControl(new L.Control.ZoomLevel());
@@ -2292,7 +2295,10 @@
 
     applyMapScript(mapScript);
     loadRiauBoundary();
-    loadKecamatanOptions(inputs.kabupaten.value, '*').then(loadMapData);
+    loadKecamatanOptions(inputs.kabupaten.value, '*').then(() => {
+        loadMapData();
+        loadContourData();
+    });
 })();
 </script>
 <?= $this->endSection(); ?>
