@@ -1744,16 +1744,24 @@
         try {
             await loadExportLibraries();
 
-            // Compute dynamic 2-column legend content
+            // Filter activeMarkers to only those currently visible in the main map viewport
+            const currentBounds = map.getBounds();
+            const visibleMarkers = activeMarkers.filter((item) => {
+                const lat = Number(item.latitude);
+                const lng = Number(item.longitude);
+                return Number.isFinite(lat) && Number.isFinite(lng) && currentBounds.contains([lat, lng]);
+            });
+
+            // Compute dynamic 2-column legend content based on visible markers
             const maxVisible = 14;
-            const showCount = Math.min(activeMarkers.length, maxVisible);
+            const showCount = Math.min(visibleMarkers.length, maxVisible);
             const half = Math.ceil(showCount / 2);
             
             let col1Html = '';
             let col2Html = '';
             
             for (let i = 0; i < showCount; i++) {
-                const item = activeMarkers[i];
+                const item = visibleMarkers[i];
                 const color = getMarkerColor(item.survey_klasifikasi_kerusakan);
                 const itemHtml = `
                     <div style="display: flex; align-items: center; font-size: 8.5px; margin-bottom: 2px;">
@@ -1770,14 +1778,14 @@
                 }
             }
             
-            if (activeMarkers.length > maxVisible) {
+            if (visibleMarkers.length > maxVisible) {
                 col2Html += `
                     <div style="font-size: 8px; font-style: italic; color: #555; font-weight: bold; margin-top: 2px; padding-left: 20px;">
-                        ... dan ${activeMarkers.length - maxVisible} lainnya
+                        ... dan ${visibleMarkers.length - maxVisible} lainnya
                     </div>
                 `;
-            } else if (activeMarkers.length === 0) {
-                col1Html = '<div style="font-size: 9px; font-style: italic; color: #666;">Tidak ada data sekolah</div>';
+            } else if (visibleMarkers.length === 0) {
+                col1Html = '<div style="font-size: 9px; font-style: italic; color: #666;">Tidak ada data sekolah pada area ini</div>';
             }
 
             // Create temporary map container in hidden area
@@ -1971,9 +1979,10 @@
 
 
             // Copy markers (using L.divIcon for html2canvas compatibility)
+            // Use visibleMarkers computed for the legend so indices match!
             const tempMarkerLayer = L.layerGroup().addTo(exportMap);
             const bounds = [];
-            activeMarkers.forEach((item, i) => {
+            visibleMarkers.forEach((item, i) => {
                 const lat = Number(item.latitude);
                 const lng = Number(item.longitude);
                 if (Number.isFinite(lat) && Number.isFinite(lng)) {
@@ -1981,20 +1990,20 @@
                         icon: L.divIcon({
                             className: 'custom-export-pin',
                             html: `
-                                <div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 120px;">
+                                <div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 180px;">
                                     <!-- The Pin Circle -->
-                                    <div style="width: 20px; height: 20px; background-color: ${getMarkerColor(item.survey_klasifikasi_kerusakan)}; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; color: white; font-family: Arial; font-size: 10px; font-weight: bold; flex-shrink: 0;">
+                                    <div style="width: 28px; height: 28px; background-color: ${getMarkerColor(item.survey_klasifikasi_kerusakan)}; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; color: white; font-family: Arial; font-size: 15px; font-weight: bold; flex-shrink: 0;">
                                         ${i + 1}
                                     </div>
                                     <!-- The Label (Name & Coord) below the pin -->
-                                    <div style="margin-top: 3px; background: rgba(0,0,0,0.7); color: white; border-radius: 3px; padding: 2px 4px; font-family: Arial; font-size: 7px; line-height: 9px; font-weight: bold; max-width: 120px; word-wrap: break-word; text-shadow: 1px 1px 1px #000; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
-                                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">${item.nama}</div>
-                                        <div style="font-size: 6px; color: #ccc; font-weight: normal;">${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
+                                    <div style="margin-top: 5px; background: rgba(0,0,0,0.75); color: white; border-radius: 4px; padding: 3px 6px; font-family: Arial; font-size: 11px; line-height: 13px; font-weight: bold; max-width: 170px; word-wrap: break-word; text-shadow: 1px 1px 1px #000; box-shadow: 0 1px 4px rgba(0,0,0,0.4);">
+                                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">${item.nama}</div>
+                                        <div style="font-size: 9px; color: #ddd; font-weight: normal; margin-top: 1px;">${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
                                     </div>
                                 </div>
                             `,
-                            iconSize: [120, 60],
-                            iconAnchor: [60, 10]
+                            iconSize: [180, 80],
+                            iconAnchor: [90, 14]
                         }),
                         zIndexOffset: 10000
                     }).addTo(tempMarkerLayer);
