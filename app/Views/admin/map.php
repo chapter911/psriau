@@ -363,7 +363,7 @@
         eksposStatus: document.getElementById('dtl_ekspos_status'),
     };
 
-    const map = L.map('dashboardMapBox', { zoomControl: false }).setView([-0.51544, 101.44415], 8);
+    const map = L.map('dashboardMapBox', { zoomControl: false, attributionControl: false }).setView([-0.51544, 101.44415], 8);
     
     // Custom Fullscreen Filters Control
     L.Control.FullscreenFilters = L.Control.extend({
@@ -537,6 +537,36 @@
         }
     });
     map.addControl(new L.Control.Fullscreen());
+    
+    // Custom Zoom Level Indicator Control
+    L.Control.ZoomLevel = L.Control.extend({
+        options: {
+            position: 'topleft'
+        },
+        onAdd: function (map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            container.style.backgroundColor = 'white';
+            container.style.width = '34px';
+            container.style.height = '34px';
+            container.style.display = 'flex';
+            container.style.justifyContent = 'center';
+            container.style.alignItems = 'center';
+            container.style.fontSize = '12px';
+            container.style.fontWeight = 'bold';
+            container.style.color = '#333';
+            container.title = 'Current Zoom Level';
+            container.style.cursor = 'default';
+            
+            container.innerHTML = 'z' + map.getZoom();
+
+            map.on('zoomend', function() {
+                container.innerHTML = 'z' + map.getZoom();
+            });
+
+            return container;
+        }
+    });
+    map.addControl(new L.Control.ZoomLevel());
     const markerLayer = L.layerGroup().addTo(map);
     const boundaryLayer = L.layerGroup().addTo(map);
     const contourLayer = L.layerGroup().addTo(map);
