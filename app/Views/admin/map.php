@@ -356,33 +356,33 @@
     // Custom Fullscreen Filters Control
     L.Control.FullscreenFilters = L.Control.extend({
         options: {
-            position: 'topright'
+            position: 'topleft'
         },
         onAdd: function (map) {
             const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
             container.id = 'fullscreenFiltersControl';
             container.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-            container.style.padding = '10px';
+            container.style.padding = '5px 15px';
             container.style.borderRadius = '5px';
             container.style.display = 'none'; // Hidden by default
-            container.style.flexDirection = 'column';
-            container.style.gap = '8px';
-            container.style.minWidth = '220px';
+            container.style.flexDirection = 'row';
+            container.style.alignItems = 'center';
+            container.style.gap = '15px';
             container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
             
             const paketOriginal = document.getElementById('dashboardPaket');
             const konturOriginal = document.getElementById('dashboardKontur');
             
             container.innerHTML = `
-                <div>
-                    <label style="font-size: 11px; font-weight: bold; margin-bottom: 2px; display: block;">Filter Paket</label>
-                    <select id="fsPaket" class="form-control form-control-sm" style="width: 100%; height: 30px; font-size: 12px; padding: 2px 5px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 12px; font-weight: bold; margin: 0; white-space: nowrap;">Paket:</label>
+                    <select id="fsPaket" class="form-control form-control-sm" style="min-width: 150px; height: 30px; font-size: 12px;">
                         ${paketOriginal ? paketOriginal.innerHTML : ''}
                     </select>
                 </div>
-                <div>
-                    <label style="font-size: 11px; font-weight: bold; margin-bottom: 2px; display: block;">Kontur Lahan</label>
-                    <select id="fsKontur" class="form-control form-control-sm" style="width: 100%; height: 30px; font-size: 12px; padding: 2px 5px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 12px; font-weight: bold; margin: 0; white-space: nowrap;">Kontur:</label>
+                    <select id="fsKontur" class="form-control form-control-sm" style="min-width: 150px; height: 30px; font-size: 12px;">
                         ${konturOriginal ? konturOriginal.innerHTML : ''}
                     </select>
                 </div>
@@ -472,14 +472,49 @@
                     container.title = 'Exit Full Screen';
                     if (fsFilters) {
                         fsFilters.style.display = 'flex';
+                        
+                        // Destroy select2 if already initialized to reset state
+                        if (typeof $ !== 'undefined') {
+                            if ($('#fsPaket').data('select2')) $('#fsPaket').select2('destroy');
+                            if ($('#fsKontur').data('select2')) $('#fsKontur').select2('destroy');
+                        }
+                        
                         document.getElementById('fsPaket').value = inputs.paket.value;
                         document.getElementById('fsKontur').value = inputs.kontur.value;
+                        
+                        // Initialize Select2 with dropdownParent to fix fullscreen visibility issue
+                        if (typeof $ !== 'undefined') {
+                            $('#fsPaket').select2({
+                                theme: 'bootstrap4',
+                                width: '200px',
+                                dropdownParent: $('#dashboardMapBox')
+                            });
+                            $('#fsKontur').select2({
+                                theme: 'bootstrap4',
+                                width: '220px',
+                                dropdownParent: $('#dashboardMapBox')
+                            });
+                            
+                            // Re-bind change events since select2 modifies the DOM
+                            $('#fsPaket').off('change').on('change', function() {
+                                inputs.paket.value = this.value;
+                                $(inputs.paket).trigger('change');
+                            });
+                            $('#fsKontur').off('change').on('change', function() {
+                                inputs.kontur.value = this.value;
+                                $(inputs.kontur).trigger('change');
+                            });
+                        }
                     }
                 } else {
                     container.innerHTML = '<i class="fas fa-expand" style="font-size: 1.2rem; color: #333;"></i>';
                     container.title = 'Full Screen';
                     if (fsFilters) {
                         fsFilters.style.display = 'none';
+                        if (typeof $ !== 'undefined') {
+                            if ($('#fsPaket').data('select2')) $('#fsPaket').select2('destroy');
+                            if ($('#fsKontur').data('select2')) $('#fsKontur').select2('destroy');
+                        }
                     }
                 }
                 setTimeout(() => map.invalidateSize(), 200);
