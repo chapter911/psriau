@@ -1275,7 +1275,7 @@
     const fetchContourForExport = async (targetMap) => {
         const bounds = targetMap.getBounds();
         const zoom = targetMap.getZoom();
-        const params = \`zoom=\${zoom}&south=\${bounds.getSouth().toFixed(6)}&west=\${bounds.getWest().toFixed(6)}&north=\${bounds.getNorth().toFixed(6)}&east=\${bounds.getEast().toFixed(6)}\`;
+        const params = `zoom=${zoom}&south=${bounds.getSouth().toFixed(6)}&west=${bounds.getWest().toFixed(6)}&north=${bounds.getNorth().toFixed(6)}&east=${bounds.getEast().toFixed(6)}`;
 
         try {
             const url = '<?= site_url('admin/dashboard/map-contour-data'); ?>?' + params;
