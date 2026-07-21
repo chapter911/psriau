@@ -35,16 +35,19 @@
         overflow: hidden;
     }
 
+    #dashboardMapBox,
     #dashboardMapBox:focus,
     #dashboardMapBox:-webkit-full-screen,
-    #dashboardMapBox:-ms-fullscreen,
     #dashboardMapBox:fullscreen,
+    .leaflet-container,
     .leaflet-container:focus,
-    .leaflet-container svg:focus,
-    .leaflet-container path:focus,
-    .leaflet-interactive:focus,
-    .leaflet-container svg {
+    .leaflet-map-pane *,
+    .leaflet-overlay-pane *,
+    .leaflet-marker-pane *,
+    .leaflet-interactive,
+    .leaflet-interactive:focus {
         outline: none !important;
+        -webkit-tap-highlight-color: transparent;
     }
 
     .map-legend {
