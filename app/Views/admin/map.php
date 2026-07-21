@@ -867,13 +867,27 @@
     };
 
     if (inputs.minZoomKontur) {
-        inputs.minZoomKontur.value = sessionStorage.getItem('minContourZoom') || '16';
-        inputs.minZoomKontur.addEventListener('change', function() {
-            sessionStorage.setItem('minContourZoom', this.value);
-            if (inputs.kontur.value === 'db_adaptive') {
-                loadContourFromDb();
-            }
-        });
+        const defaultZoom = sessionStorage.getItem('minContourZoom') || '16';
+        inputs.minZoomKontur.value = defaultZoom;
+        
+        if (typeof $ !== 'undefined') {
+            // Select2 UI update
+            $(inputs.minZoomKontur).val(defaultZoom).trigger('change.select2');
+            
+            $(inputs.minZoomKontur).on('change', function() {
+                sessionStorage.setItem('minContourZoom', this.value);
+                if (inputs.kontur.value === 'db_adaptive') {
+                    loadContourFromDb();
+                }
+            });
+        } else {
+            inputs.minZoomKontur.addEventListener('change', function() {
+                sessionStorage.setItem('minContourZoom', this.value);
+                if (inputs.kontur.value === 'db_adaptive') {
+                    loadContourFromDb();
+                }
+            });
+        }
     }
 
     const loadContourData = async () => {
