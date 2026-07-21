@@ -1282,14 +1282,30 @@
         }
 
         const swalResult = await Swal.fire({
-            title: 'Sertakan Kontur?',
-            text: 'Apakah Anda ingin menampilkan garis kontur pada hasil export?',
-            icon: 'question',
-            showDenyButton: true,
-            showCancelButton: true,
-            confirmButtonText: 'Ya, Sertakan',
-            denyButtonText: 'Tidak',
-            cancelButtonText: 'Batal'
+            title: 'Opsi Peta',
+            html: `
+                <div style="font-size: 14px; margin-bottom: 20px;">Pilih format tampilan peta yang akan diekspor:</div>
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button id="btnWithContour1" class="swal2-confirm swal2-styled" style="width: 150px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #28a745; margin: 0; gap: 10px;">
+                        <i class="fas fa-layer-group" style="font-size: 32px;"></i>
+                        <span style="font-size: 13px; font-weight: bold;">Dengan Kontur</span>
+                    </button>
+                    <button id="btnNoContour1" class="swal2-deny swal2-styled" style="width: 150px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #6c757d; margin: 0; gap: 10px;">
+                        <i class="fas fa-map" style="font-size: 32px;"></i>
+                        <span style="font-size: 13px; font-weight: bold;">Tanpa Kontur</span>
+                    </button>
+                </div>
+            `,
+            showConfirmButton: false,
+            showDenyButton: false,
+            showCancelButton: false,
+            allowOutsideClick: true,
+            didOpen: () => {
+                const b1 = document.getElementById('btnWithContour1');
+                const b2 = document.getElementById('btnNoContour1');
+                if(b1) b1.addEventListener('click', () => Swal.clickConfirm());
+                if(b2) b2.addEventListener('click', () => Swal.clickDeny());
+            }
         });
 
         if (!swalResult.isConfirmed && !swalResult.isDenied) {
@@ -1547,6 +1563,8 @@
                 setTimeout(() => { if (tilesLoading === 0) { clearTimeout(maxWait); resolve(); } }, 800);
             });
 
+            // Wait a bit more for Leaflet preferCanvas renderer to finish drawing vectors
+            await new Promise(resolve => setTimeout(resolve, 1500));
 
             // Capture Leaflet map canvas
             const mapCanvas = await html2canvas(document.getElementById('export-map-canvas'), {
@@ -1679,14 +1697,30 @@
 
     async function exportMainMapPdf() {
         const swalResult = await Swal.fire({
-            title: 'Sertakan Kontur?',
-            text: 'Apakah Anda ingin menampilkan garis kontur pada hasil export?',
-            icon: 'question',
-            showDenyButton: true,
-            showCancelButton: true,
-            confirmButtonText: 'Ya, Sertakan',
-            denyButtonText: 'Tidak',
-            cancelButtonText: 'Batal'
+            title: 'Opsi Peta',
+            html: `
+                <div style="font-size: 14px; margin-bottom: 20px;">Pilih format tampilan peta yang akan diekspor:</div>
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button id="btnWithContour" class="swal2-confirm swal2-styled" style="width: 150px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #28a745; margin: 0; gap: 10px;">
+                        <i class="fas fa-layer-group" style="font-size: 32px;"></i>
+                        <span style="font-size: 13px; font-weight: bold;">Dengan Kontur</span>
+                    </button>
+                    <button id="btnNoContour" class="swal2-deny swal2-styled" style="width: 150px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #6c757d; margin: 0; gap: 10px;">
+                        <i class="fas fa-map" style="font-size: 32px;"></i>
+                        <span style="font-size: 13px; font-weight: bold;">Tanpa Kontur</span>
+                    </button>
+                </div>
+            `,
+            showConfirmButton: false,
+            showDenyButton: false,
+            showCancelButton: false,
+            allowOutsideClick: true,
+            didOpen: () => {
+                const b1 = document.getElementById('btnWithContour');
+                const b2 = document.getElementById('btnNoContour');
+                if(b1) b1.addEventListener('click', () => Swal.clickConfirm());
+                if(b2) b2.addEventListener('click', () => Swal.clickDeny());
+            }
         });
 
         if (!swalResult.isConfirmed && !swalResult.isDenied) {
@@ -2016,6 +2050,9 @@
                 // If no tiles are requested within 800ms, assume already loaded
                 setTimeout(() => { if (tilesLoading === 0) { clearTimeout(maxWait); resolve(); } }, 800);
             });
+
+            // Wait a bit more for Leaflet preferCanvas renderer to finish drawing vectors
+            await new Promise(resolve => setTimeout(resolve, 1500));
 
 
             // Capture Leaflet map canvas
