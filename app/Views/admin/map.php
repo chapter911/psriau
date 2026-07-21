@@ -35,6 +35,14 @@
         overflow: hidden;
     }
 
+    #dashboardMapBox:focus,
+    #dashboardMapBox:-webkit-full-screen,
+    #dashboardMapBox:-ms-fullscreen,
+    #dashboardMapBox:fullscreen,
+    .leaflet-container:focus {
+        outline: none !important;
+    }
+
     .map-legend {
         display: flex;
         flex-wrap: wrap;
