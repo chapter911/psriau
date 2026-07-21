@@ -782,7 +782,7 @@
         const zoom = map.getZoom();
         
         // Disable contour on zoomed out view to reduce load
-        if (zoom < 10) {
+        if (zoom < 15) {
             const tileLayers = [];
             contourLayer.eachLayer((layer) => {
                 if (layer instanceof L.TileLayer) tileLayers.push(layer);
