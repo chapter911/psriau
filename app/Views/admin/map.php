@@ -1281,6 +1281,22 @@
             return;
         }
 
+        const swalResult = await Swal.fire({
+            title: 'Sertakan Kontur?',
+            text: 'Apakah Anda ingin menampilkan garis kontur pada hasil export?',
+            icon: 'question',
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Sertakan',
+            denyButtonText: 'Tidak',
+            cancelButtonText: 'Batal'
+        });
+
+        if (!swalResult.isConfirmed && !swalResult.isDenied) {
+            return;
+        }
+        const useContour = swalResult.isConfirmed;
+
         Swal.fire({
             title: 'Mohon Tunggu',
             text: 'Menyiapkan layout peta topografi...',
@@ -1485,34 +1501,36 @@
             L.marker([lat, lng], { icon: schoolPinIcon }).addTo(exportMap);
 
             // Copy contour lines from main map contourLayer to exportMap
-            contourLayer.eachLayer((layer) => {
-                if (layer instanceof L.Marker) {
-                    if (layer.options && layer.options.icon && layer.options.icon.options && layer.options.icon.options.className === 'contour-label-icon') {
-                        return; // Skip existing labels to prevent duplicates
-                    }
-                    L.marker(layer.getLatLng(), {
-                        icon: layer.getIcon(),
-                        interactive: false
-                    }).addTo(exportMap);
-                } else if (layer instanceof L.TileLayer) {
-                    L.tileLayer(layer._url, layer.options).addTo(exportMap);
-                } else if (typeof layer.toGeoJSON === 'function') {
-                    const newGeoLayer = L.geoJSON(layer.toGeoJSON(), {
-                        style: (feature) => {
-                            const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
-                            const isMajor = contour % 100 === 0;
-                            return {
-                                color: isMajor ? '#b91c1c' : '#ea580c',
-                                weight: isMajor ? 3.0 : 1.8,
-                                opacity: 1
-                            };
+            if (useContour) {
+                contourLayer.eachLayer((layer) => {
+                    if (layer instanceof L.Marker) {
+                        if (layer.options && layer.options.icon && layer.options.icon.options && layer.options.icon.options.className === 'contour-label-icon') {
+                            return; // Skip existing labels to prevent duplicates
                         }
-                    }).addTo(exportMap);
-                    
-                    // Add labels specifically for this export map
-                    addContourLabels(newGeoLayer, exportMap, true);
-                }
-            });
+                        L.marker(layer.getLatLng(), {
+                            icon: layer.getIcon(),
+                            interactive: false
+                        }).addTo(exportMap);
+                    } else if (layer instanceof L.TileLayer) {
+                        L.tileLayer(layer._url, layer.options).addTo(exportMap);
+                    } else if (typeof layer.toGeoJSON === 'function') {
+                        const newGeoLayer = L.geoJSON(layer.toGeoJSON(), {
+                            style: (feature) => {
+                                const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
+                                const isMajor = contour % 100 === 0;
+                                return {
+                                    color: isMajor ? '#b91c1c' : '#ea580c',
+                                    weight: isMajor ? 3.0 : 1.8,
+                                    opacity: 1
+                                };
+                            }
+                        }).addTo(exportMap);
+                        
+                        // Add labels specifically for this export map
+                        addContourLabels(newGeoLayer, exportMap, true);
+                    }
+                });
+            }
 
             // Inject dynamic scale bar
             document.getElementById('export-scale-container').innerHTML = getScaleBarHtml(exportMap);
@@ -1660,6 +1678,22 @@
     }
 
     async function exportMainMapPdf() {
+        const swalResult = await Swal.fire({
+            title: 'Sertakan Kontur?',
+            text: 'Apakah Anda ingin menampilkan garis kontur pada hasil export?',
+            icon: 'question',
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Sertakan',
+            denyButtonText: 'Tidak',
+            cancelButtonText: 'Batal'
+        });
+
+        if (!swalResult.isConfirmed && !swalResult.isDenied) {
+            return;
+        }
+        const useContour = swalResult.isConfirmed;
+
         Swal.fire({
             title: 'Mohon Tunggu',
             text: 'Menyiapkan layout peta sebaran...',
@@ -1890,34 +1924,36 @@
             });
 
             // Copy contour lines from main map contourLayer to exportMap
-            contourLayer.eachLayer((layer) => {
-                if (layer instanceof L.Marker) {
-                    if (layer.options && layer.options.icon && layer.options.icon.options && layer.options.icon.options.className === 'contour-label-icon') {
-                        return; // Skip existing labels to prevent duplicates
-                    }
-                    L.marker(layer.getLatLng(), {
-                        icon: layer.getIcon(),
-                        interactive: false
-                    }).addTo(exportMap);
-                } else if (layer instanceof L.TileLayer) {
-                    L.tileLayer(layer._url, layer.options).addTo(exportMap);
-                } else if (typeof layer.toGeoJSON === 'function') {
-                    const newGeoLayer = L.geoJSON(layer.toGeoJSON(), {
-                        style: (feature) => {
-                            const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
-                            const isMajor = contour % 100 === 0;
-                            return {
-                                color: isMajor ? '#b91c1c' : '#ea580c',
-                                weight: isMajor ? 3.0 : 1.8,
-                                opacity: 1
-                            };
+            if (useContour) {
+                contourLayer.eachLayer((layer) => {
+                    if (layer instanceof L.Marker) {
+                        if (layer.options && layer.options.icon && layer.options.icon.options && layer.options.icon.options.className === 'contour-label-icon') {
+                            return; // Skip existing labels to prevent duplicates
                         }
-                    }).addTo(exportMap);
-                    
-                    // Add labels specifically for this export map
-                    addContourLabels(newGeoLayer, exportMap, true);
-                }
-            });
+                        L.marker(layer.getLatLng(), {
+                            icon: layer.getIcon(),
+                            interactive: false
+                        }).addTo(exportMap);
+                    } else if (layer instanceof L.TileLayer) {
+                        L.tileLayer(layer._url, layer.options).addTo(exportMap);
+                    } else if (typeof layer.toGeoJSON === 'function') {
+                        const newGeoLayer = L.geoJSON(layer.toGeoJSON(), {
+                            style: (feature) => {
+                                const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
+                                const isMajor = contour % 100 === 0;
+                                return {
+                                    color: isMajor ? '#b91c1c' : '#ea580c',
+                                    weight: isMajor ? 3.0 : 1.8,
+                                    opacity: 1
+                                };
+                            }
+                        }).addTo(exportMap);
+                        
+                        // Add labels specifically for this export map
+                        addContourLabels(newGeoLayer, exportMap, true);
+                    }
+                });
+            }
 
 
 
