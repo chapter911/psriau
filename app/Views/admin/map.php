@@ -406,6 +406,7 @@
             
             const paketOriginal = document.getElementById('dashboardPaket');
             const konturOriginal = document.getElementById('dashboardKontur');
+            const minZoomOriginal = document.getElementById('dashboardMinZoomKontur');
             
             container.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -418,6 +419,12 @@
                     <label style="font-size: 12px; font-weight: bold; margin: 0; white-space: nowrap;">Kontur:</label>
                     <select id="fsKontur" class="form-control form-control-sm" style="min-width: 150px; height: 30px; font-size: 12px;">
                         ${konturOriginal ? konturOriginal.innerHTML : ''}
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 12px; font-weight: bold; margin: 0; white-space: nowrap;">Min. Zoom:</label>
+                    <select id="fsMinZoom" class="form-control form-control-sm" style="min-width: 120px; height: 30px; font-size: 12px;">
+                        ${minZoomOriginal ? minZoomOriginal.innerHTML : ''}
                     </select>
                 </div>
             `;
@@ -435,6 +442,8 @@
     setTimeout(() => {
         const fsPaket = document.getElementById('fsPaket');
         const fsKontur = document.getElementById('fsKontur');
+        const fsMinZoom = document.getElementById('fsMinZoom');
+
         if (fsPaket && inputs.paket) {
             fsPaket.addEventListener('change', function() {
                 inputs.paket.value = this.value;
@@ -452,6 +461,18 @@
                     $(inputs.kontur).trigger('change');
                 } else {
                     inputs.kontur.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+        if (fsMinZoom && inputs.minZoomKontur) {
+            // Set initial value for fsMinZoom based on main input
+            fsMinZoom.value = inputs.minZoomKontur.value;
+            fsMinZoom.addEventListener('change', function() {
+                inputs.minZoomKontur.value = this.value;
+                if (typeof $ !== 'undefined') {
+                    $(inputs.minZoomKontur).trigger('change');
+                } else {
+                    inputs.minZoomKontur.dispatchEvent(new Event('change'));
                 }
             });
         }
@@ -512,23 +533,19 @@
                         if (typeof $ !== 'undefined') {
                             if ($('#fsPaket').data('select2')) $('#fsPaket').select2('destroy');
                             if ($('#fsKontur').data('select2')) $('#fsKontur').select2('destroy');
+                            if ($('#fsMinZoom').data('select2')) $('#fsMinZoom').select2('destroy');
                         }
                         
-                        document.getElementById('fsPaket').value = inputs.paket.value;
-                        document.getElementById('fsKontur').value = inputs.kontur.value;
+                        // Sync current values before initializing select2
+                        if (inputs.paket) $('#fsPaket').val(inputs.paket.value);
+                        if (inputs.kontur) $('#fsKontur').val(inputs.kontur.value);
+                        if (inputs.minZoomKontur) $('#fsMinZoom').val(inputs.minZoomKontur.value);
                         
                         // Initialize Select2 with dropdownParent to fix fullscreen visibility issue
                         if (typeof $ !== 'undefined') {
-                            $('#fsPaket').select2({
-                                theme: 'bootstrap4',
-                                width: '200px',
-                                dropdownParent: $('#dashboardMapBox')
-                            });
-                            $('#fsKontur').select2({
-                                theme: 'bootstrap4',
-                                width: '220px',
-                                dropdownParent: $('#dashboardMapBox')
-                            });
+                            $('#fsPaket').select2({ theme: 'bootstrap4', width: '200px', dropdownParent: $('#dashboardMapBox') });
+                            $('#fsKontur').select2({ theme: 'bootstrap4', width: '220px', dropdownParent: $('#dashboardMapBox') });
+                            $('#fsMinZoom').select2({ theme: 'bootstrap4', width: '120px', dropdownParent: $('#dashboardMapBox') });
                             
                             // Re-bind change events since select2 modifies the DOM
                             $('#fsPaket').off('change').on('change', function() {
@@ -538,6 +555,10 @@
                             $('#fsKontur').off('change').on('change', function() {
                                 inputs.kontur.value = this.value;
                                 $(inputs.kontur).trigger('change');
+                            });
+                            $('#fsMinZoom').off('change').on('change', function() {
+                                inputs.minZoomKontur.value = this.value;
+                                $(inputs.minZoomKontur).trigger('change');
                             });
                         }
                     }
@@ -549,6 +570,7 @@
                         if (typeof $ !== 'undefined') {
                             if ($('#fsPaket').data('select2')) $('#fsPaket').select2('destroy');
                             if ($('#fsKontur').data('select2')) $('#fsKontur').select2('destroy');
+                            if ($('#fsMinZoom').data('select2')) $('#fsMinZoom').select2('destroy');
                         }
                     }
                 }
@@ -926,7 +948,12 @@
             }
         } finally {
             if (zoomBox) zoomBox.classList.remove('spinning-zoom');
-            if (loadingText) loadingText.style.display = 'none';        }
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    if (loadingText) loadingText.style.display = 'none';
+                });
+            });
+        }
     };
 
     const debouncedLoadContour = () => {
