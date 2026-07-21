@@ -587,6 +587,32 @@
             container.innerHTML = 'z' + map.getZoom();
             wrapper.appendChild(container);
             
+            const reloadBtn = document.createElement('a');
+            reloadBtn.href = '#';
+            reloadBtn.title = 'Muat ulang kontur';
+            reloadBtn.className = 'leaflet-bar leaflet-control-custom';
+            reloadBtn.style.backgroundColor = 'white';
+            reloadBtn.style.width = '34px';
+            reloadBtn.style.height = '34px';
+            reloadBtn.style.display = 'flex';
+            reloadBtn.style.justifyContent = 'center';
+            reloadBtn.style.alignItems = 'center';
+            reloadBtn.style.color = '#333';
+            reloadBtn.style.marginTop = '4px';
+            reloadBtn.style.textDecoration = 'none';
+            reloadBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            
+            reloadBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof loadContourFromDb === 'function') {
+                    lastContourParams = '';
+                    loadContourFromDb();
+                }
+            };
+            
+            wrapper.appendChild(reloadBtn);
+            
             const loadingText = document.createElement('div');
             loadingText.id = 'contourLoadingText';
             loadingText.style.position = 'absolute';
