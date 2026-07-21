@@ -177,6 +177,18 @@
                     <option value="db_adaptive">Kontur Adaptif (Database)</option>
                 </select>
             </div>
+            <div>
+                <label class="mb-1">Min. Zoom Kontur</label>
+                <select class="form-control" id="dashboardMinZoomKontur">
+                    <option value="12">12 (Provinsi)</option>
+                    <option value="13">13 (Kota/Kab)</option>
+                    <option value="14">14 (Kecamatan)</option>
+                    <option value="15">15 (Desa)</option>
+                    <option value="16">16 (Lingkungan)</option>
+                    <option value="17">17 (Blok)</option>
+                    <option value="18">18 (Detail)</option>
+                </select>
+            </div>
             <div class="d-flex align-items-end search-btn-wrapper gap-2">
                 <button class="btn btn-secondary flex-grow-1 mr-2" type="button" id="dashboardMapResetBtn">
                     <i class="fas fa-undo mr-1"></i> Reset
@@ -335,6 +347,7 @@
         kecamatan: document.getElementById('dashboardKecamatan'),
         paket: document.getElementById('dashboardPaket'),
         kontur: document.getElementById('dashboardKontur'),
+        minZoomKontur: document.getElementById('dashboardMinZoomKontur'),
         total: document.getElementById('dashboardMapTotal'),
         search: document.getElementById('dashboardMapSearchBtn'),
         reset: document.getElementById('dashboardMapResetBtn'),
@@ -780,9 +793,10 @@
     const loadContourFromDb = async () => {
         const bounds = map.getBounds();
         const zoom = map.getZoom();
+        const minZoom = parseInt(sessionStorage.getItem('minContourZoom') || '16', 10);
         
         // Disable contour on zoomed out view to reduce load
-        if (zoom < 17) {
+        if (zoom < minZoom) {
             const tileLayers = [];
             contourLayer.eachLayer((layer) => {
                 if (layer instanceof L.TileLayer) tileLayers.push(layer);
@@ -851,6 +865,16 @@
         if (contourDebounceTimer) clearTimeout(contourDebounceTimer);
         contourDebounceTimer = setTimeout(loadContourFromDb, 400);
     };
+
+    if (inputs.minZoomKontur) {
+        inputs.minZoomKontur.value = sessionStorage.getItem('minContourZoom') || '16';
+        inputs.minZoomKontur.addEventListener('change', function() {
+            sessionStorage.setItem('minContourZoom', this.value);
+            if (inputs.kontur.value === 'db_adaptive') {
+                loadContourFromDb();
+            }
+        });
+    }
 
     const loadContourData = async () => {
         contourLayer.clearLayers();
@@ -1318,9 +1342,10 @@
     const fetchContourForExport = async (targetMap) => {
         const bounds = targetMap.getBounds();
         const zoom = targetMap.getZoom();
+        const minZoom = parseInt(sessionStorage.getItem('minContourZoom') || '16', 10);
         
         // Disable contour on zoomed out view to reduce load for export
-        if (zoom < 13) {
+        if (zoom < minZoom) {
             return;
         }
 
@@ -1487,7 +1512,7 @@
                             <div style="border: 1px solid black; width: 48%; padding: 8px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; text-align: center;">
                                 <div style="font-weight: bold; border-bottom: 1px solid black; padding-bottom: 2px; margin-bottom: 4px; text-transform: uppercase;">Dibuat Oleh:</div>
                                 <div style="font-size: 7px; color: #444; font-weight: bold;">STAF SATKER PPS RIAU</div>
-                                <div style="font-weight: bold; margin-top: 25px; text-decoration: underline; font-size: 8px;">MUHAMMAD SYAHRIDWAN, S.T.</div>
+                                <div style="font-weight: bold; margin-top: 25px; text-decoration: underline; font-size: 8px;"><?= esc(strtoupper((string) (session()->get('fullName') ?: 'STAF SATKER PPS RIAU'))); ?></div>
                             </div>
                         </div>
                     </div>
@@ -1914,7 +1939,7 @@
                             <div style="border: 1px solid black; width: 48%; padding: 8px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; text-align: center;">
                                 <div style="font-weight: bold; border-bottom: 1px solid black; padding-bottom: 2px; margin-bottom: 4px; text-transform: uppercase;">Dibuat Oleh:</div>
                                 <div style="font-size: 7px; color: #444; font-weight: bold;">STAF SATKER PPS RIAU</div>
-                                <div style="font-weight: bold; margin-top: 25px; text-decoration: underline; font-size: 8px;">MUHAMMAD SYAHRIDWAN, S.T.</div>
+                                <div style="font-weight: bold; margin-top: 25px; text-decoration: underline; font-size: 8px;"><?= esc(strtoupper((string) (session()->get('fullName') ?: 'STAF SATKER PPS RIAU'))); ?></div>
                             </div>
                         </div>
                     </div>
