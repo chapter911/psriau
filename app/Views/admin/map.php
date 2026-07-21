@@ -958,7 +958,8 @@
 
     const debouncedLoadContour = () => {
         if (contourDebounceTimer) clearTimeout(contourDebounceTimer);
-        contourDebounceTimer = setTimeout(loadContourFromDb, 400);
+        // Menggunakan 1.5 detik (1500ms) agar terasa responsif namun tetap ringan
+        contourDebounceTimer = setTimeout(loadContourFromDb, 1500);
     };
 
     if (inputs.minZoomKontur) {
