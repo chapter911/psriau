@@ -1883,7 +1883,7 @@
                 attributionControl: false,
                 fadeAnimation: false,
                 zoomAnimation: false
-            }).setView([-0.51544, 101.44415], 8);
+            }).setView(map.getCenter(), map.getZoom());
 
             exportMap.invalidateSize(false);
 
@@ -2004,12 +2004,8 @@
 
             exportMap.invalidateSize(false);
 
-            // Focus on markers or default Riau center
-            if (bounds.length > 0) {
-                exportMap.fitBounds(bounds, { padding: [50, 50] });
-            } else {
-                exportMap.setView([-0.51544, 101.44415], 8);
-            }
+            // We want the export to exactly match what the user currently sees on the screen,
+            // so we do not fitBounds here. The map was already initialized to map.getCenter() and map.getZoom().
 
 
 
