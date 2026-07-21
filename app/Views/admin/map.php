@@ -351,7 +351,7 @@
         eksposStatus: document.getElementById('dtl_ekspos_status'),
     };
 
-    const map = L.map('dashboardMapBox').setView([-0.51544, 101.44415], 8);
+    const map = L.map('dashboardMapBox', { zoomControl: false }).setView([-0.51544, 101.44415], 8);
     
     // Custom Fullscreen Filters Control
     L.Control.FullscreenFilters = L.Control.extend({
@@ -395,6 +395,7 @@
         }
     });
     map.addControl(new L.Control.FullscreenFilters());
+    L.control.zoom({ position: 'topleft' }).addTo(map);
 
     // Attach events for fullscreen filters
     setTimeout(() => {
