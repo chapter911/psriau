@@ -159,8 +159,10 @@
                 <label class="mb-1">Kontur Lahan</label>
                 <select class="form-control" id="dashboardKontur">
                     <option value="*">Tidak Aktif</option>
-                    <option value="50m">Kontur Ringan (Interval 50m)</option>
-                    <option value="25m">Kontur Detail (Interval 25m)</option>
+                    <option value="db_adaptive">Kontur Adaptif (Database)</option>
+                    <option value="opentopomap">OpenTopoMap (Garis Bawaan Peta)</option>
+                    <option value="opentopo_50m">OpenTopoMap + GeoJSON Anda (50m)</option>
+                    <option value="opentopo_25m">OpenTopoMap + GeoJSON Anda (25m)</option>
                 </select>
             </div>
             <div class="d-flex align-items-end search-btn-wrapper gap-2">
@@ -506,17 +508,156 @@
         }
     };
 
+    let contourDebounceTimer = null;
+    let lastContourParams = '';
+    let contourAbortController = null;
+
+    const getContourStyle = (feature) => {
+        const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
+        const isMajor = contour % 100 === 0;
+        const isMid = contour % 50 === 0;
+        
+        const z = map.getZoom();
+        const baseWeight = z < 13 ? 2.0 : 1.0;
+        const opacity = z < 13 ? 1.0 : (isMajor ? 0.95 : 0.75);
+
+        return {
+            color: isMajor ? '#d84315' : (isMid ? '#e65100' : '#ff8f00'),
+            weight: isMajor ? (baseWeight + 1.5) : (isMid ? (baseWeight + 0.8) : baseWeight),
+            opacity: opacity,
+            fill: false,
+        };
+    };
+
+    const addContourLabels = (geojsonLayer, targetMap = map, isExport = false) => {
+        geojsonLayer.eachLayer((featureLayer) => {
+            const feature = featureLayer.feature;
+            const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : null;
+            if (contour === null) return;
+
+            const z = targetMap.getZoom();
+            if (!isExport) {
+                // Sembunyikan label jika zoom < 14 untuk menghindari peta penuh
+                if (z < 14) return;
+                // Pada zoom 14-15, hanya tampilkan kelipatan 10m atau 50m
+                if (z >= 14 && z < 16 && contour % 10 !== 0) return;
+            } else {
+                // Untuk export A3, resolusi tinggi jadi bisa tampilkan kelipatan 50m di zoom < 13
+                if (z < 13 && contour % 50 !== 0) return;
+                if (z >= 13 && z < 15 && contour % 10 !== 0) return;
+            }
+
+            const center = featureLayer.getBounds().getCenter();
+            const labelMarker = L.marker(center, {
+                icon: L.divIcon({
+                    className: 'contour-label-icon',
+                    html: `<div style="background: rgba(255,255,255,0.75); padding: 1px 4px; border-radius: 4px; font-weight: bold; font-size: ${isExport ? '12px' : '10px'}; color: #d84315; text-shadow: 1px 1px 0 #fff; white-space: nowrap; border: 1px solid rgba(216,67,21,0.3);">${contour} m</div>`,
+                    iconSize: [40, 16],
+                    iconAnchor: [20, 8]
+                }),
+                interactive: false
+            });
+            labelMarker.addTo(isExport ? targetMap : contourLayer);
+        });
+    };
+
+    const loadContourFromDb = async () => {
+        const bounds = map.getBounds();
+        const zoom = map.getZoom();
+        const params = `zoom=${zoom}&south=${bounds.getSouth().toFixed(6)}&west=${bounds.getWest().toFixed(6)}&north=${bounds.getNorth().toFixed(6)}&east=${bounds.getEast().toFixed(6)}`;
+
+        // Don't reload if same params
+        if (params === lastContourParams) return;
+        lastContourParams = params;
+
+        // Abort previous request
+        if (contourAbortController) {
+            contourAbortController.abort();
+        }
+        contourAbortController = new AbortController();
+
+        try {
+            const url = '<?= site_url('admin/dashboard/map-contour-data'); ?>?' + params;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+                signal: contourAbortController.signal
+            });
+
+            if (!response.ok) throw new Error('Gagal memuat kontur.');
+            const payload = await response.json();
+
+            if (payload.status !== 'ok') throw new Error(payload.meta?.message || 'Gagal');
+
+            // Clear existing contour layers (but keep tile layers)
+            const tileLayers = [];
+            contourLayer.eachLayer((layer) => {
+                if (layer instanceof L.TileLayer) tileLayers.push(layer);
+            });
+            contourLayer.clearLayers();
+            tileLayers.forEach(tl => tl.addTo(contourLayer));
+
+            if (payload.geojson && payload.geojson.features && payload.geojson.features.length > 0) {
+                const geoLayer = L.geoJSON(payload.geojson, {
+                    style: getContourStyle
+                });
+                geoLayer.addTo(contourLayer);
+                addContourLabels(geoLayer);
+            }
+
+        } catch (error) {
+            if (error.name === 'AbortError') return; // Cancelled, ignore
+            console.error('Error loading contour from DB:', error);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: 'Gagal memuat kontur dari server: ' + (error.message || error),
+                });
+            }
+        }
+    };
+
+    const debouncedLoadContour = () => {
+        if (contourDebounceTimer) clearTimeout(contourDebounceTimer);
+        contourDebounceTimer = setTimeout(loadContourFromDb, 400);
+    };
+
     const loadContourData = async () => {
         contourLayer.clearLayers();
+        lastContourParams = '';
         const selected = inputs.kontur.value;
         if (selected === '' || selected === '*') {
+            // Remove map move listeners for contour
+            map.off('moveend', debouncedLoadContour);
+            map.off('zoomend', debouncedLoadContour);
             return;
         }
 
+        // 1. Add OpenTopoMap as background if selected
+        if (selected.startsWith('opentopo')) {
+            const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                maxZoom: 17,
+                attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | <a href="https://opentopomap.org">OpenTopoMap</a>',
+                opacity: 0.35
+            });
+            topoLayer.addTo(contourLayer);
+        }
+
+        // 2. DB Adaptive mode
+        if (selected === 'db_adaptive') {
+            map.on('moveend', debouncedLoadContour);
+            map.on('zoomend', debouncedLoadContour);
+            // Initial load
+            await loadContourFromDb();
+            return;
+        }
+
+        // 3. Static GeoJSON files (legacy)
         let fileUrl = '';
-        if (selected === '50m') {
+        if (selected === 'opentopo_50m') {
             fileUrl = '<?= esc(media_url('geojson/kontur_riau_50m.json')); ?>';
-        } else if (selected === '25m') {
+        } else if (selected === 'opentopo_25m') {
             fileUrl = '<?= esc(media_url('geojson/kontur_riau_25m.json')); ?>';
         }
 
@@ -534,67 +675,24 @@
             }
 
             const response = await fetch(fileUrl);
-            if (!response.ok) {
-                throw new Error('Gagal memuat berkas kontur.');
-            }
+            if (!response.ok) throw new Error('Gagal memuat berkas kontur.');
             const geojson = await response.json();
 
             const layer = L.geoJSON(geojson, {
-                style: (feature) => {
-                    const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
-                    const isMajor = contour % 100 === 0;
-                    return {
-                        color: isMajor ? '#d84315' : '#ff8f00', // Striking dark orange-red (major) and orange-amber (minor)
-                        weight: isMajor ? 2.2 : 1.2,
-                        opacity: 0.85,
-                        fill: false,
-                    };
-                },
-                onEachFeature: (feature, featureLayer) => {
-                    const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : null;
-                    const coords = feature.geometry ? feature.geometry.coordinates : [];
-                    let isLongLine = false;
-                    if (Array.isArray(coords)) {
-                        if (Array.isArray(coords[0]) && typeof coords[0][0] === 'number') {
-                            isLongLine = coords.length >= 25;
-                        } else if (Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
-                            let pts = 0;
-                            coords.forEach(sub => { pts += sub.length; });
-                            isLongLine = pts >= 25;
-                        }
-                    }
-                    if (contour !== null && isLongLine) {
-                        const center = featureLayer.getBounds().getCenter();
-                        const labelMarker = L.marker(center, {
-                            icon: L.divIcon({
-                                className: 'contour-label-icon',
-                                html: `<div class="contour-label">${contour} m</div>`,
-                                iconSize: [45, 15],
-                                iconAnchor: [22.5, 7.5]
-                            }),
-                            interactive: false
-                        });
-                        labelMarker.addTo(contourLayer);
-                    }
-                }
+                style: getContourStyle,
             });
-
             layer.addTo(contourLayer);
+            addContourLabels(layer);
 
             if (layer.getLayers().length > 0) {
                 map.fitBounds(layer.getBounds());
             }
-            
-            if (typeof Swal !== 'undefined') {
-                Swal.close();
-            }
+
+            if (typeof Swal !== 'undefined') Swal.close();
         } catch (error) {
+            console.error('Error loading contour:', error);
             if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal',
-                    text: error.message || 'Gagal memuat kontur lahan.',
-                });
+                Swal.fire({ icon: 'error', title: 'Gagal', text: error.message || 'Gagal memuat kontur lahan.' });
             }
         }
     };
@@ -924,6 +1022,9 @@
             $(inputs.paket).val('*');
             $(inputs.kontur).val('*');
             $(inputs.kecamatan).empty().append('<option value="*">Pilih kabupaten terlebih dahulu</option>').prop('disabled', true);
+            map.off('moveend', debouncedLoadContour);
+            map.off('zoomend', debouncedLoadContour);
+            lastContourParams = '';
             if (typeof contourLayer !== 'undefined' && contourLayer) {
                 contourLayer.clearLayers();
             }
@@ -1197,22 +1298,30 @@
             // Copy contour lines from main map contourLayer to exportMap
             contourLayer.eachLayer((layer) => {
                 if (layer instanceof L.Marker) {
+                    if (layer.options && layer.options.icon && layer.options.icon.options && layer.options.icon.options.className === 'contour-label-icon') {
+                        return; // Skip existing labels to prevent duplicates
+                    }
                     L.marker(layer.getLatLng(), {
                         icon: layer.getIcon(),
                         interactive: false
                     }).addTo(exportMap);
-                } else {
-                    L.geoJSON(layer.toGeoJSON(), {
+                } else if (layer instanceof L.TileLayer) {
+                    L.tileLayer(layer._url, layer.options).addTo(exportMap);
+                } else if (typeof layer.toGeoJSON === 'function') {
+                    const newGeoLayer = L.geoJSON(layer.toGeoJSON(), {
                         style: (feature) => {
                             const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
                             const isMajor = contour % 100 === 0;
                             return {
-                                color: isMajor ? '#d84315' : '#ff8f00',
-                                weight: isMajor ? 2.2 : 1.2,
-                                opacity: 0.85
+                                color: isMajor ? '#b91c1c' : '#ea580c',
+                                weight: isMajor ? 3.0 : 1.8,
+                                opacity: 1
                             };
                         }
                     }).addTo(exportMap);
+                    
+                    // Add labels specifically for this export map
+                    addContourLabels(newGeoLayer, exportMap, true);
                 }
             });
 
@@ -1594,22 +1703,30 @@
             // Copy contour lines from main map contourLayer to exportMap
             contourLayer.eachLayer((layer) => {
                 if (layer instanceof L.Marker) {
+                    if (layer.options && layer.options.icon && layer.options.icon.options && layer.options.icon.options.className === 'contour-label-icon') {
+                        return; // Skip existing labels to prevent duplicates
+                    }
                     L.marker(layer.getLatLng(), {
                         icon: layer.getIcon(),
                         interactive: false
                     }).addTo(exportMap);
-                } else {
-                    L.geoJSON(layer.toGeoJSON(), {
+                } else if (layer instanceof L.TileLayer) {
+                    L.tileLayer(layer._url, layer.options).addTo(exportMap);
+                } else if (typeof layer.toGeoJSON === 'function') {
+                    const newGeoLayer = L.geoJSON(layer.toGeoJSON(), {
                         style: (feature) => {
                             const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
                             const isMajor = contour % 100 === 0;
                             return {
-                                color: isMajor ? '#d84315' : '#ff8f00',
-                                weight: isMajor ? 2.2 : 1.2,
-                                opacity: 0.85
+                                color: isMajor ? '#b91c1c' : '#ea580c',
+                                weight: isMajor ? 3.0 : 1.8,
+                                opacity: 1
                             };
                         }
                     }).addTo(exportMap);
+                    
+                    // Add labels specifically for this export map
+                    addContourLabels(newGeoLayer, exportMap, true);
                 }
             });
 
