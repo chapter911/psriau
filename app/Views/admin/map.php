@@ -175,9 +175,6 @@
                 <select class="form-control" id="dashboardKontur">
                     <option value="*">Tidak Aktif</option>
                     <option value="db_adaptive">Kontur Adaptif (Database)</option>
-                    <option value="opentopomap">OpenTopoMap (Garis Bawaan Peta)</option>
-                    <option value="opentopo_50m">OpenTopoMap + GeoJSON Anda (50m)</option>
-                    <option value="opentopo_25m">OpenTopoMap + GeoJSON Anda (25m)</option>
                 </select>
             </div>
             <div class="d-flex align-items-end search-btn-wrapper gap-2">
@@ -1275,6 +1272,41 @@
         });
     }
 
+    const fetchContourForExport = async (targetMap) => {
+        const bounds = targetMap.getBounds();
+        const zoom = targetMap.getZoom();
+        const params = \`zoom=\${zoom}&south=\${bounds.getSouth().toFixed(6)}&west=\${bounds.getWest().toFixed(6)}&north=\${bounds.getNorth().toFixed(6)}&east=\${bounds.getEast().toFixed(6)}\`;
+
+        try {
+            const url = '<?= site_url('admin/dashboard/map-contour-data'); ?>?' + params;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error('Gagal memuat kontur.');
+            const payload = await response.json();
+
+            if (payload.status === 'ok' && payload.geojson && payload.geojson.features && payload.geojson.features.length > 0) {
+                const geoLayer = L.geoJSON(payload.geojson, {
+                    style: (feature) => {
+                        const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
+                        const isMajor = contour % 100 === 0;
+                        return {
+                            color: isMajor ? '#b91c1c' : '#ea580c',
+                            weight: isMajor ? 3.0 : 1.8,
+                            opacity: 1
+                        };
+                    }
+                });
+                geoLayer.addTo(targetMap);
+                addContourLabels(geoLayer, targetMap, true);
+            }
+        } catch (error) {
+            console.error('Error loading export contour:', error);
+        }
+    };
+
     async function exportMapPdf(lat, lng, schoolName, kabupaten = 'Bengkalis', kecamatan = 'Bengkalis') {
         if (!lat || !lng) {
             Swal.fire('Gagal', 'Koordinat sekolah tidak valid.', 'error');
@@ -1516,36 +1548,9 @@
             });
             L.marker([lat, lng], { icon: schoolPinIcon }).addTo(exportMap);
 
-            // Copy contour lines from main map contourLayer to exportMap
+            // Fetch adaptive contour specifically for this export map bounds
             if (useContour) {
-                contourLayer.eachLayer((layer) => {
-                    if (layer instanceof L.Marker) {
-                        if (layer.options && layer.options.icon && layer.options.icon.options && layer.options.icon.options.className === 'contour-label-icon') {
-                            return; // Skip existing labels to prevent duplicates
-                        }
-                        L.marker(layer.getLatLng(), {
-                            icon: layer.getIcon(),
-                            interactive: false
-                        }).addTo(exportMap);
-                    } else if (layer instanceof L.TileLayer) {
-                        L.tileLayer(layer._url, layer.options).addTo(exportMap);
-                    } else if (typeof layer.toGeoJSON === 'function') {
-                        const newGeoLayer = L.geoJSON(layer.toGeoJSON(), {
-                            style: (feature) => {
-                                const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
-                                const isMajor = contour % 100 === 0;
-                                return {
-                                    color: isMajor ? '#b91c1c' : '#ea580c',
-                                    weight: isMajor ? 3.0 : 1.8,
-                                    opacity: 1
-                                };
-                            }
-                        }).addTo(exportMap);
-                        
-                        // Add labels specifically for this export map
-                        addContourLabels(newGeoLayer, exportMap, true);
-                    }
-                });
+                await fetchContourForExport(exportMap);
             }
 
             // Inject dynamic scale bar
@@ -1957,36 +1962,9 @@
                 }).addTo(exportMap);
             });
 
-            // Copy contour lines from main map contourLayer to exportMap
+            // Fetch adaptive contour specifically for this export map bounds
             if (useContour) {
-                contourLayer.eachLayer((layer) => {
-                    if (layer instanceof L.Marker) {
-                        if (layer.options && layer.options.icon && layer.options.icon.options && layer.options.icon.options.className === 'contour-label-icon') {
-                            return; // Skip existing labels to prevent duplicates
-                        }
-                        L.marker(layer.getLatLng(), {
-                            icon: layer.getIcon(),
-                            interactive: false
-                        }).addTo(exportMap);
-                    } else if (layer instanceof L.TileLayer) {
-                        L.tileLayer(layer._url, layer.options).addTo(exportMap);
-                    } else if (typeof layer.toGeoJSON === 'function') {
-                        const newGeoLayer = L.geoJSON(layer.toGeoJSON(), {
-                            style: (feature) => {
-                                const contour = feature.properties ? (feature.properties.VALKNT != null ? feature.properties.VALKNT : feature.properties.Contour) : 0;
-                                const isMajor = contour % 100 === 0;
-                                return {
-                                    color: isMajor ? '#b91c1c' : '#ea580c',
-                                    weight: isMajor ? 3.0 : 1.8,
-                                    opacity: 1
-                                };
-                            }
-                        }).addTo(exportMap);
-                        
-                        // Add labels specifically for this export map
-                        addContourLabels(newGeoLayer, exportMap, true);
-                    }
-                });
+                await fetchContourForExport(exportMap);
             }
 
 
