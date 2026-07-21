@@ -353,6 +353,75 @@
 
     const map = L.map('dashboardMapBox').setView([-0.51544, 101.44415], 8);
     
+    // Custom Fullscreen Filters Control
+    L.Control.FullscreenFilters = L.Control.extend({
+        options: {
+            position: 'topright'
+        },
+        onAdd: function (map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            container.id = 'fullscreenFiltersControl';
+            container.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+            container.style.padding = '10px';
+            container.style.borderRadius = '5px';
+            container.style.display = 'none'; // Hidden by default
+            container.style.flexDirection = 'column';
+            container.style.gap = '8px';
+            container.style.minWidth = '220px';
+            container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
+            
+            const paketOriginal = document.getElementById('dashboardPaket');
+            const konturOriginal = document.getElementById('dashboardKontur');
+            
+            container.innerHTML = `
+                <div>
+                    <label style="font-size: 11px; font-weight: bold; margin-bottom: 2px; display: block;">Filter Paket</label>
+                    <select id="fsPaket" class="form-control form-control-sm" style="width: 100%; height: 30px; font-size: 12px; padding: 2px 5px;">
+                        ${paketOriginal ? paketOriginal.innerHTML : ''}
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 11px; font-weight: bold; margin-bottom: 2px; display: block;">Kontur Lahan</label>
+                    <select id="fsKontur" class="form-control form-control-sm" style="width: 100%; height: 30px; font-size: 12px; padding: 2px 5px;">
+                        ${konturOriginal ? konturOriginal.innerHTML : ''}
+                    </select>
+                </div>
+            `;
+            
+            L.DomEvent.disableClickPropagation(container);
+            L.DomEvent.disableScrollPropagation(container);
+
+            return container;
+        }
+    });
+    map.addControl(new L.Control.FullscreenFilters());
+
+    // Attach events for fullscreen filters
+    setTimeout(() => {
+        const fsPaket = document.getElementById('fsPaket');
+        const fsKontur = document.getElementById('fsKontur');
+        if (fsPaket && inputs.paket) {
+            fsPaket.addEventListener('change', function() {
+                inputs.paket.value = this.value;
+                if (typeof $ !== 'undefined') {
+                    $(inputs.paket).trigger('change');
+                } else {
+                    inputs.paket.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+        if (fsKontur && inputs.kontur) {
+            fsKontur.addEventListener('change', function() {
+                inputs.kontur.value = this.value;
+                if (typeof $ !== 'undefined') {
+                    $(inputs.kontur).trigger('change');
+                } else {
+                    inputs.kontur.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+    }, 100);
+
     // Custom Fullscreen Control
     L.Control.Fullscreen = L.Control.extend({
         options: {
@@ -397,12 +466,21 @@
             
             // Listen to fullscreen changes to update icon and invalidate map size
             document.addEventListener('fullscreenchange', function() {
+                const fsFilters = document.getElementById('fullscreenFiltersControl');
                 if (document.fullscreenElement) {
                     container.innerHTML = '<i class="fas fa-compress" style="font-size: 1.2rem; color: #333;"></i>';
                     container.title = 'Exit Full Screen';
+                    if (fsFilters) {
+                        fsFilters.style.display = 'flex';
+                        document.getElementById('fsPaket').value = inputs.paket.value;
+                        document.getElementById('fsKontur').value = inputs.kontur.value;
+                    }
                 } else {
                     container.innerHTML = '<i class="fas fa-expand" style="font-size: 1.2rem; color: #333;"></i>';
                     container.title = 'Full Screen';
+                    if (fsFilters) {
+                        fsFilters.style.display = 'none';
+                    }
                 }
                 setTimeout(() => map.invalidateSize(), 200);
             });
