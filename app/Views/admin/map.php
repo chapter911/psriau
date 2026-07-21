@@ -352,6 +352,65 @@
     };
 
     const map = L.map('dashboardMapBox').setView([-0.51544, 101.44415], 8);
+    
+    // Custom Fullscreen Control
+    L.Control.Fullscreen = L.Control.extend({
+        options: {
+            position: 'topleft'
+        },
+        onAdd: function (map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            container.style.backgroundColor = 'white';
+            container.style.width = '34px';
+            container.style.height = '34px';
+            container.style.cursor = 'pointer';
+            container.style.display = 'flex';
+            container.style.justifyContent = 'center';
+            container.style.alignItems = 'center';
+            container.title = 'Full Screen';
+            
+            // Menggunakan icon font awesome
+            container.innerHTML = '<i class="fas fa-expand" style="font-size: 1.2rem; color: #333;"></i>';
+
+            container.onclick = function(e){
+                e.stopPropagation();
+                e.preventDefault();
+                const mapContainer = document.getElementById('dashboardMapBox');
+                if (!document.fullscreenElement) {
+                    if (mapContainer.requestFullscreen) {
+                        mapContainer.requestFullscreen();
+                    } else if (mapContainer.webkitRequestFullscreen) {
+                        mapContainer.webkitRequestFullscreen();
+                    } else if (mapContainer.msRequestFullscreen) {
+                        mapContainer.msRequestFullscreen();
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                }
+            }
+            
+            // Listen to fullscreen changes to update icon and invalidate map size
+            document.addEventListener('fullscreenchange', function() {
+                if (document.fullscreenElement) {
+                    container.innerHTML = '<i class="fas fa-compress" style="font-size: 1.2rem; color: #333;"></i>';
+                    container.title = 'Exit Full Screen';
+                } else {
+                    container.innerHTML = '<i class="fas fa-expand" style="font-size: 1.2rem; color: #333;"></i>';
+                    container.title = 'Full Screen';
+                }
+                setTimeout(() => map.invalidateSize(), 200);
+            });
+
+            return container;
+        }
+    });
+    map.addControl(new L.Control.Fullscreen());
     const markerLayer = L.layerGroup().addTo(map);
     const boundaryLayer = L.layerGroup().addTo(map);
     const contourLayer = L.layerGroup().addTo(map);
@@ -555,7 +614,8 @@
                     iconSize: [40, 16],
                     iconAnchor: [20, 8]
                 }),
-                interactive: false
+                interactive: false,
+                zIndexOffset: -1000
             });
             labelMarker.addTo(isExport ? targetMap : contourLayer);
         });
@@ -1758,7 +1818,8 @@
                             `,
                             iconSize: [120, 60],
                             iconAnchor: [60, 10]
-                        })
+                        }),
+                        zIndexOffset: 10000
                     }).addTo(tempMarkerLayer);
                     bounds.push([lat, lng]);
                 }
