@@ -722,21 +722,20 @@
 
             const z = targetMap.getZoom();
             if (!isExport) {
-                // Sembunyikan label jika zoom < 14 untuk menghindari peta penuh
-                if (z < 14) return;
-                // Pada zoom 14-15, hanya tampilkan kelipatan 10m atau 50m
-                if (z >= 14 && z < 16 && contour % 10 !== 0) return;
+                if (z < 15) return;
+                if (z >= 15 && z < 17 && contour % 50 !== 0) return;
+                if (z >= 17 && contour % 10 !== 0) return;
             } else {
-                // Untuk export A3, resolusi tinggi jadi bisa tampilkan kelipatan 50m di zoom < 13
-                if (z < 13 && contour % 50 !== 0) return;
-                if (z >= 13 && z < 15 && contour % 10 !== 0) return;
+                if (z < 15 && contour % 100 !== 0) return;
+                if (z >= 15 && z < 17 && contour % 50 !== 0) return;
+                if (z >= 17 && contour % 25 !== 0) return;
             }
 
             const center = featureLayer.getBounds().getCenter();
             const labelMarker = L.marker(center, {
                 icon: L.divIcon({
                     className: 'contour-label-icon',
-                    html: `<div style="background: rgba(255,255,255,0.75); padding: 1px 4px; border-radius: 4px; font-weight: bold; font-size: ${isExport ? '12px' : '10px'}; color: #d84315; text-shadow: 1px 1px 0 #fff; white-space: nowrap; border: 1px solid rgba(216,67,21,0.3);">${contour} m</div>`,
+                    html: `<div style="background: rgba(255,255,255,0.7); padding: 1px 3px; border-radius: 3px; font-weight: bold; font-size: ${isExport ? '8.5px' : '9px'}; color: #c62828; text-shadow: 1px 1px 0 #fff; white-space: nowrap; border: 1px solid rgba(198,40,40,0.3);">${contour}m</div>`,
                     iconSize: [40, 16],
                     iconAnchor: [20, 8]
                 }),
