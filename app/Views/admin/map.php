@@ -39,7 +39,11 @@
     #dashboardMapBox:-webkit-full-screen,
     #dashboardMapBox:-ms-fullscreen,
     #dashboardMapBox:fullscreen,
-    .leaflet-container:focus {
+    .leaflet-container:focus,
+    .leaflet-container svg:focus,
+    .leaflet-container path:focus,
+    .leaflet-interactive:focus,
+    .leaflet-container svg {
         outline: none !important;
     }
 
