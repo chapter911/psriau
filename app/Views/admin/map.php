@@ -1387,12 +1387,7 @@
                         
                         <!-- Ministry logo and header -->
                         <div style="border: 1px solid black; padding: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; box-sizing: border-box;">
-                            <svg width="45" height="45" viewBox="0 0 100 100" style="margin-bottom: 6px;">
-                                <circle cx="50" cy="50" r="45" fill="#FFD700" stroke="#003399" stroke-width="2"/>
-                                <circle cx="50" cy="50" r="28" fill="none" stroke="#003399" stroke-width="6"/>
-                                <circle cx="50" cy="50" r="10" fill="#FFD700" stroke="#003399" stroke-width="6"/>
-                                <path d="M 50,15 L 50,35 M 50,65 L 50,85 M 15,50 L 35,50 M 65,50 L 85,50 M 25,25 L 39,39 M 61,61 L 75,75 M 25,75 L 39,61 M 61,39 L 75,25" stroke="#003399" stroke-width="6" stroke-linecap="round"/>
-                            </svg>
+                            <img src="<?= esc($appLogo ?? ($globalSetting['logo_url'] ?? '')); ?>" alt="Logo Aplikasi" style="height: 45px; margin-bottom: 6px; object-fit: contain;">
                             <div style="font-weight: bold; font-size: 11px; line-height: 1.2;">KEMENTERIAN PEKERJAAN UMUM</div>
                             <div style="font-size: 9px; font-weight: bold; margin-top: 4px; line-height: 1.2; text-transform: uppercase;">DIREKTORAT JENDERAL PRASARANA STRATEGIS</div>
                             <div style="font-size: 8px; color: #555; margin-top: 2px; line-height: 1.2; text-transform: uppercase;">SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU</div>
@@ -1819,12 +1814,7 @@
                         
                         <!-- Ministry logo and header -->
                         <div style="border: 1px solid black; padding: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; box-sizing: border-box;">
-                            <svg width="45" height="45" viewBox="0 0 100 100" style="margin-bottom: 6px;">
-                                <circle cx="50" cy="50" r="45" fill="#FFD700" stroke="#003399" stroke-width="2"/>
-                                <circle cx="50" cy="50" r="28" fill="none" stroke="#003399" stroke-width="6"/>
-                                <circle cx="50" cy="50" r="10" fill="#FFD700" stroke="#003399" stroke-width="6"/>
-                                <path d="M 50,15 L 50,35 M 50,65 L 50,85 M 15,50 L 35,50 M 65,50 L 85,50 M 25,25 L 39,39 M 61,61 L 75,75 M 25,75 L 39,61 M 61,39 L 75,25" stroke="#003399" stroke-width="6" stroke-linecap="round"/>
-                            </svg>
+                            <img src="<?= esc($appLogo ?? ($globalSetting['logo_url'] ?? '')); ?>" alt="Logo Aplikasi" style="height: 45px; margin-bottom: 6px; object-fit: contain;">
                             <div style="font-weight: bold; font-size: 11px; line-height: 1.2;">KEMENTERIAN PEKERJAAN UMUM</div>
                             <div style="font-size: 9px; font-weight: bold; margin-top: 4px; line-height: 1.2; text-transform: uppercase;">DIREKTORAT JENDERAL PRASARANA STRATEGIS</div>
                             <div style="font-size: 8px; color: #555; margin-top: 2px; line-height: 1.2; text-transform: uppercase;">SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU</div>
