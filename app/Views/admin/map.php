@@ -750,6 +750,19 @@
     const loadContourFromDb = async () => {
         const bounds = map.getBounds();
         const zoom = map.getZoom();
+        
+        // Disable contour on zoomed out view to reduce load
+        if (zoom < 13) {
+            const tileLayers = [];
+            contourLayer.eachLayer((layer) => {
+                if (layer instanceof L.TileLayer) tileLayers.push(layer);
+            });
+            contourLayer.clearLayers();
+            tileLayers.forEach(tl => tl.addTo(contourLayer));
+            lastContourParams = '';
+            return;
+        }
+
         const params = `zoom=${zoom}&south=${bounds.getSouth().toFixed(6)}&west=${bounds.getWest().toFixed(6)}&north=${bounds.getNorth().toFixed(6)}&east=${bounds.getEast().toFixed(6)}`;
 
         // Don't reload if same params
@@ -1275,6 +1288,12 @@
     const fetchContourForExport = async (targetMap) => {
         const bounds = targetMap.getBounds();
         const zoom = targetMap.getZoom();
+        
+        // Disable contour on zoomed out view to reduce load for export
+        if (zoom < 13) {
+            return;
+        }
+
         const params = `zoom=${zoom}&south=${bounds.getSouth().toFixed(6)}&west=${bounds.getWest().toFixed(6)}&north=${bounds.getNorth().toFixed(6)}&east=${bounds.getEast().toFixed(6)}`;
 
         try {
