@@ -101,6 +101,15 @@
         display: block !important;
     }
 
+    @keyframes spinZoomBox {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .spinning-zoom {
+        animation: spinZoomBox 1.2s linear infinite;
+        border: 2px solid #ea580c !important;
+    }
+
     @media (max-width: 768px) {
         .map-filter-grid {
             grid-template-columns: 1fr;
@@ -569,11 +578,33 @@
             container.style.color = '#333';
             container.title = 'Current Zoom Level';
             container.style.cursor = 'default';
+            container.style.position = 'relative';
+            container.id = 'zoomLevelIndicatorBox';
             
             container.innerHTML = 'z' + map.getZoom();
+            
+            const loadingText = document.createElement('div');
+            loadingText.id = 'contourLoadingText';
+            loadingText.style.position = 'absolute';
+            loadingText.style.top = '100%';
+            loadingText.style.left = '0';
+            loadingText.style.marginTop = '4px';
+            loadingText.style.whiteSpace = 'nowrap';
+            loadingText.style.fontSize = '10px';
+            loadingText.style.backgroundColor = 'rgba(255,255,255,0.95)';
+            loadingText.style.padding = '3px 6px';
+            loadingText.style.borderRadius = '4px';
+            loadingText.style.border = '1px solid #ddd';
+            loadingText.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
+            loadingText.style.display = 'none';
+            loadingText.innerText = 'Sedang merender kontur...';
+            loadingText.style.color = '#ea580c';
+            
+            container.appendChild(loadingText);
 
             map.on('zoomend', function() {
-                container.innerHTML = 'z' + map.getZoom();
+                // Keep the text element, update the text node child which is the first one
+                container.childNodes[0].textContent = 'z' + map.getZoom();
             });
 
             return container;
@@ -819,7 +850,13 @@
         }
         contourAbortController = new AbortController();
 
+        const zoomBox = document.getElementById('zoomLevelIndicatorBox');
+        const loadingText = document.getElementById('contourLoadingText');
+
         try {
+            if (zoomBox) zoomBox.classList.add('spinning-zoom');
+            if (loadingText) loadingText.style.display = 'block';
+
             const url = '<?= site_url('admin/dashboard/map-contour-data'); ?>?' + params;
             const response = await fetch(url, {
                 method: 'GET',
@@ -858,7 +895,9 @@
                     text: 'Gagal memuat kontur dari server: ' + (error.message || error),
                 });
             }
-        }
+        } finally {
+            if (zoomBox) zoomBox.classList.remove('spinning-zoom');
+            if (loadingText) loadingText.style.display = 'none';        }
     };
 
     const debouncedLoadContour = () => {
