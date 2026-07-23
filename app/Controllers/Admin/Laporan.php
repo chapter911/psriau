@@ -410,7 +410,10 @@ class Laporan extends BaseController
         $currentPegawaiId = $currentPegawai ? (int) $currentPegawai['id'] : 0;
         
         return $this->respondPerjalananDinasDataTable(
-            fn () => db_connect()->table('laporan_perjalanan_dinas'),
+            fn () => db_connect()->table('laporan_perjalanan_dinas')
+                ->select('laporan_perjalanan_dinas.*')
+                ->join('disposisi_perjalanan_dinas', 'disposisi_perjalanan_dinas.id = laporan_perjalanan_dinas.disposisi_id')
+                ->where('disposisi_perjalanan_dinas.status', 'disetujui'),
             function ($builder): void {
                 $startDate = trim((string) $this->request->getGet('filter_start_date'));
                 $endDate = trim((string) $this->request->getGet('filter_end_date'));

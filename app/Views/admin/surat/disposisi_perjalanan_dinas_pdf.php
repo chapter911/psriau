@@ -114,20 +114,6 @@
 
     <!-- Header / Kop Surat -->
     <div style="position: relative; text-align: center; margin-bottom: 15px;">
-        <?php if (($data['status'] ?? '') === 'disetujui'): ?>
-            <?php
-                $docPdfUrl = site_url('admin/surat/perjalanan-dinas/disposisi/' . $data['id'] . '/pdf');
-                $docQr = $getQrUri($docPdfUrl, 90);
-            ?>
-            <div style="position: absolute; top: 0; right: 0; text-align: center; border: 1px solid #16a34a; background: #f0fdf4; padding: 4px 6px; border-radius: 6px; z-index: 100;">
-                <img src="<?= $docQr; ?>" style="width: 50px; height: 50px;" alt="QR Verification"><br>
-                <span style="font-size: 7px; font-weight: bold; color: #16a34a; text-transform: uppercase;">DISETUJUI (VERIFIED)</span>
-            </div>
-        <?php elseif (($data['status'] ?? '') === 'ditolak'): ?>
-            <div style="position: absolute; top: 0; right: 0; border: 2px double #dc2626; color: #dc2626; padding: 4px 10px; text-align: center; font-weight: bold; font-size: 11px; text-transform: uppercase; background: #fef2f2; z-index: 100; border-radius: 6px;">
-                ✕ DITOLAK
-            </div>
-        <?php endif; ?>
 
         <?php if (function_exists('kop_surat_img_tag') && kop_surat_img_tag('', '', 'Kop Surat') !== ''): ?>
             <?= kop_surat_img_tag('', 'width: 100%; max-height: 110px; object-fit: contain;', 'Kop Surat'); ?>
@@ -230,11 +216,11 @@
                     ?>
                     <div style="margin: 4px auto 6px auto; text-align: center;">
                         <img src="<?= $qrM; ?>" style="width: 75px; height: 75px; border: 1px solid #16a34a; padding: 2px; background: #fff;" alt="QR Approved PPK"><br>
-                        <span style="font-size: 7.5px; font-weight: bold; color: #15803d; text-transform: uppercase;">✓ Signed Digital (PPK)</span>
+                        <span style="font-size: 7.5px; font-weight: bold; color: #15803d; text-transform: uppercase;">SIGNED DIGITAL (PPK)</span>
                     </div>
                 <?php elseif (($data['status_menyetujui'] ?? '') === 'ditolak'): ?>
                     <div style="margin: 8px auto 10px auto; width: 130px; border: 2px solid #dc2626; color: #dc2626; font-weight: bold; padding: 4px; text-align: center; font-size: 10px; text-transform: uppercase; border-radius: 4px; background: #fef2f2;">
-                        ✕ REJECTED
+                        DITOLAK / REJECTED
                     </div>
                 <?php else: ?>
                     <br><br><br><br><br>
@@ -253,7 +239,7 @@
                     ?>
                     <div style="margin: 4px auto 6px auto; text-align: center;">
                         <img src="<?= $qrD; ?>" style="width: 75px; height: 75px; border: 1px solid #16a34a; padding: 2px; background: #fff;" alt="QR Approved Kasatker"><br>
-                        <span style="font-size: 7.5px; font-weight: bold; color: #15803d; text-transform: uppercase;">✓ Signed Digital (Kasatker)</span>
+                        <span style="font-size: 7.5px; font-weight: bold; color: #15803d; text-transform: uppercase;">SIGNED DIGITAL (KASATKER)</span>
                     </div>
                 <?php elseif (($data['status_diketahui'] ?? '') === 'ditolak'): ?>
                     <div style="margin: 8px auto 10px auto; width: 130px; border: 2px solid #dc2626; color: #dc2626; font-weight: bold; padding: 4px; text-align: center; font-size: 10px; text-transform: uppercase; border-radius: 4px; background: #fef2f2;">
