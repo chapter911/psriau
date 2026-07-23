@@ -72,9 +72,14 @@ $totalKurang  = $total_kurang ?? 0;
         <h3 class="card-title mb-0 font-weight-bold text-primary">
             <i class="fas fa-list-alt mr-1"></i> Detail Seluruh Data RAB Gedung
         </h3>
-        <button type="button" class="btn btn-outline-secondary btn-sm ml-auto" id="btnResetAllFilters" title="Reset Semua Filter">
-            <i class="fas fa-undo mr-1"></i> Reset Semua Filter
-        </button>
+        <div class="ml-auto d-flex align-items-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnResetAllFilters" title="Reset Semua Filter">
+                <i class="fas fa-undo mr-1"></i> Reset Filter
+            </button>
+            <a href="#" class="btn btn-success btn-sm ml-2" id="btnExportExcel" title="Export Data RAB ke File Excel">
+                <i class="fas fa-file-excel mr-1"></i> Export Excel
+            </a>
+        </div>
     </div>
     <div class="card-body py-3">
         <!-- Multi-Select Checklist Filters Row -->
@@ -449,6 +454,22 @@ $(document).ready(function() {
     // Filter triggers reload
     $('#filterSekolah, #filterPaket, #filterGedung, #filterKategori, #filterSubKategori, #filterUraian').on('change', function() {
         table.ajax.reload();
+    });
+
+    // Export Excel with active filters & search term
+    $('#btnExportExcel').on('click', function(e) {
+        e.preventDefault();
+        var params = {
+            sekolah_npsn: $('#filterSekolah').val(),
+            paket_id: $('#filterPaket').val(),
+            gedung: $('#filterGedung').val(),
+            kategori_1: $('#filterKategori').val(),
+            kategori_2: $('#filterSubKategori').val(),
+            uraian: $('#filterUraian').val(),
+            search_value: table.search()
+        };
+        var url = '<?= site_url('admin/laporan/rab-gedung/export-excel'); ?>?' + $.param(params);
+        window.location.href = url;
     });
 });
 </script>

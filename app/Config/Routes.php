@@ -243,6 +243,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	// RAB Per Gedung Routes
 	$routes->get('laporan/rab-gedung', 'Admin\RabGedung::index');
 	$routes->get('laporan/rab-gedung/detail-semua', 'Admin\RabGedung::detailSemua');
+	$routes->get('laporan/rab-gedung/export-excel', 'Admin\RabGedung::exportExcel');
 	$routes->get('laporan/rab-gedung/detail/(:num)', 'Admin\RabGedung::detail/$1');
 	$routes->get('laporan/rab-gedung/data', 'Admin\RabGedung::data');
 	$routes->post('laporan/rab-gedung/tambah', 'Admin\RabGedung::create');

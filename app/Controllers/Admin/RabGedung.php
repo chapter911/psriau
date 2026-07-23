@@ -382,6 +382,368 @@ class RabGedung extends BaseController
         ]);
     }
 
+    // 4. Export Excel Method: Exports filtered RAB data to professional XLSX spreadsheet
+    public function exportExcel()
+    {
+        if (!$this->hasMenuAccess('admin/laporan/rab-gedung')) {
+            return redirect()->back()->with('error', 'Akses ditolak.');
+        }
+
+        if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+            return redirect()->back()->with('error', 'Library PhpSpreadsheet tidak tersedia.');
+        }
+
+        $db = db_connect();
+
+        $builder = $db->table('trn_rab_gedung_detail')
+            ->select('trn_rab_gedung_detail.*, 
+                      s.nama as sekolah_nama_db,
+                      s.nsm as sekolah_nsm,
+                      s.kecamatan as sekolah_kecamatan,
+                      s.kabupaten as sekolah_kabupaten,
+                      mp.nama_paket')
+            ->join('mst_sekolah s', 's.npsn = trn_rab_gedung_detail.sekolah_npsn', 'left')
+            ->join('mst_paket mp', 'mp.id = trn_rab_gedung_detail.paket_id OR (trn_rab_gedung_detail.paket_id IS NULL AND mp.id = s.paket_id)', 'left', false);
+
+        // Apply filters
+        $npsn = $this->request->getGet('sekolah_npsn');
+        $gedung = $this->request->getGet('gedung');
+        $paketId = $this->request->getGet('paket_id');
+        $kategori1 = $this->request->getGet('kategori_1');
+        $kategori2 = $this->request->getGet('kategori_2');
+        $uraian = $this->request->getGet('uraian');
+
+        if ($npsn !== null && $npsn !== '' && $npsn !== 'all') {
+            if (is_array($npsn)) {
+                $npsnList = array_values(array_filter($npsn, fn($v) => $v !== null && $v !== '' && $v !== 'all'));
+                if ($npsnList !== []) {
+                    $builder->whereIn('trn_rab_gedung_detail.sekolah_npsn', $npsnList);
+                }
+            } else {
+                $builder->where('trn_rab_gedung_detail.sekolah_npsn', $npsn);
+            }
+        }
+
+        if ($gedung !== null && $gedung !== '' && $gedung !== 'all') {
+            if (is_array($gedung)) {
+                $gedungList = array_values(array_filter($gedung, fn($v) => $v !== null && $v !== '' && $v !== 'all'));
+                if ($gedungList !== []) {
+                    $builder->whereIn('trn_rab_gedung_detail.gedung', $gedungList);
+                }
+            } else {
+                $builder->where('trn_rab_gedung_detail.gedung', $gedung);
+            }
+        }
+
+        if ($paketId !== null && $paketId !== '' && $paketId !== 'all') {
+            if (is_array($paketId)) {
+                $paketList = array_values(array_map('intval', array_filter($paketId, fn($v) => $v !== null && $v !== '' && $v !== 'all')));
+                if ($paketList !== []) {
+                    $builder->whereIn('COALESCE(trn_rab_gedung_detail.paket_id, s.paket_id)', $paketList, false);
+                }
+            } else {
+                $builder->where('COALESCE(trn_rab_gedung_detail.paket_id, s.paket_id) = ' . (int)$paketId, null, false);
+            }
+        }
+
+        if ($kategori1 !== null && $kategori1 !== '' && $kategori1 !== 'all') {
+            if (is_array($kategori1)) {
+                $kat1List = array_values(array_filter($kategori1, fn($v) => $v !== null && $v !== '' && $v !== 'all'));
+                if ($kat1List !== []) {
+                    $builder->whereIn('trn_rab_gedung_detail.kategori_1', $kat1List);
+                }
+            } else {
+                $builder->where('trn_rab_gedung_detail.kategori_1', $kategori1);
+            }
+        }
+
+        if ($kategori2 !== null && $kategori2 !== '' && $kategori2 !== 'all') {
+            if (is_array($kategori2)) {
+                $kat2List = array_values(array_filter($kategori2, fn($v) => $v !== null && $v !== '' && $v !== 'all'));
+                if ($kat2List !== []) {
+                    $builder->whereIn('trn_rab_gedung_detail.kategori_2', $kat2List);
+                }
+            } else {
+                $builder->where('trn_rab_gedung_detail.kategori_2', $kategori2);
+            }
+        }
+
+        if ($uraian !== null && $uraian !== '' && $uraian !== 'all') {
+            if (is_array($uraian)) {
+                $uraianList = array_values(array_filter($uraian, fn($v) => $v !== null && $v !== '' && $v !== 'all'));
+                if ($uraianList !== []) {
+                    $builder->whereIn('trn_rab_gedung_detail.uraian', $uraianList);
+                }
+            } else {
+                $builder->where('trn_rab_gedung_detail.uraian', $uraian);
+            }
+        }
+
+        // Apply DataTables search term if provided
+        $searchTerm = trim((string)$this->request->getGet('search_value'));
+        if ($searchTerm !== '') {
+            $searchColumns = [
+                's.nama',
+                'trn_rab_gedung_detail.nama_sekolah',
+                'trn_rab_gedung_detail.sekolah_npsn',
+                's.nsm',
+                's.kecamatan',
+                's.kabupaten',
+                'trn_rab_gedung_detail.gedung',
+                'trn_rab_gedung_detail.kategori_1',
+                'trn_rab_gedung_detail.kategori_2',
+                'trn_rab_gedung_detail.no_urut',
+                'trn_rab_gedung_detail.uraian',
+                'trn_rab_gedung_detail.satuan',
+                'mp.nama_paket'
+            ];
+            $this->applyDataTableSearch($builder, $searchColumns, $searchTerm);
+        }
+
+        $rows = $builder->orderBy('COALESCE(s.nama, trn_rab_gedung_detail.nama_sekolah)', 'ASC', false)
+            ->orderBy('trn_rab_gedung_detail.gedung', 'ASC')
+            ->orderBy('trn_rab_gedung_detail.kategori_1', 'ASC')
+            ->orderBy('trn_rab_gedung_detail.kategori_2', 'ASC')
+            ->orderBy('trn_rab_gedung_detail.id', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Detail RAB');
+
+        // Document Title
+        $sheet->setCellValue('A1', 'LAPORAN RINCIAN RAB PER GEDUNG');
+        $sheet->mergeCells('A1:T1');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('1F4E78'));
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A2', 'SATKER PPS PROVINSI RIAU');
+        $sheet->mergeCells('A2:T2');
+        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(11);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A3', 'Tanggal Export: ' . date('d-m-Y H:i:s'));
+        $sheet->mergeCells('A3:T3');
+        $sheet->getStyle('A3')->getFont()->setItalic(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('555555'));
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Header Row 1 (Row 5)
+        $headersRow1 = [
+            'A5' => 'No',
+            'B5' => 'Nama Sekolah',
+            'C5' => 'NPSN / NSM',
+            'D5' => 'Kecamatan',
+            'E5' => 'Kabupaten',
+            'F5' => 'Paket',
+            'G5' => 'Pekerjaan',
+            'H5' => 'Kategori',
+            'I5' => 'Sub-Kategori',
+            'J5' => 'Uraian Pekerjaan',
+            'K5' => 'Satuan',
+            'L5' => 'KONTRAK',
+            'O5' => 'MC NOL (100%)',
+            'Q5' => 'TAMBAH',
+            'S5' => 'KURANG',
+        ];
+
+        foreach ($headersRow1 as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+
+        $sheet->mergeCells('A5:A6');
+        $sheet->mergeCells('B5:B6');
+        $sheet->mergeCells('C5:C6');
+        $sheet->mergeCells('D5:D6');
+        $sheet->mergeCells('E5:E6');
+        $sheet->mergeCells('F5:F6');
+        $sheet->mergeCells('G5:G6');
+        $sheet->mergeCells('H5:H6');
+        $sheet->mergeCells('I5:I6');
+        $sheet->mergeCells('J5:J6');
+        $sheet->mergeCells('K5:K6');
+        $sheet->mergeCells('L5:N5');
+        $sheet->mergeCells('O5:P5');
+        $sheet->mergeCells('Q5:R5');
+        $sheet->mergeCells('S5:T5');
+
+        // Header Row 2 (Row 6)
+        $sheet->setCellValue('L6', 'Vol');
+        $sheet->setCellValue('M6', 'Harga Satuan');
+        $sheet->setCellValue('N6', 'Total Harga');
+        $sheet->setCellValue('O6', 'Vol');
+        $sheet->setCellValue('P6', 'Total Harga');
+        $sheet->setCellValue('Q6', 'Vol');
+        $sheet->setCellValue('R6', 'Total Harga');
+        $sheet->setCellValue('S6', 'Vol');
+        $sheet->setCellValue('T6', 'Total Harga');
+
+        // Header Styling
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 10,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '1F4E78'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'FFFFFF'],
+                ],
+            ],
+        ];
+
+        $sheet->getStyle('A5:T6')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(5)->setRowHeight(22);
+        $sheet->getRowDimension(6)->setRowHeight(20);
+
+        // Data Rows
+        $rowNum = 7;
+        $no = 1;
+        $numFormatCurrency = 'Rp #,##0';
+        $numFormatVol = '#,##0.00';
+
+        foreach ($rows as $item) {
+            $sekolahNama = !empty($item['sekolah_nama_db']) ? $item['sekolah_nama_db'] : ($item['nama_sekolah'] ?? '-');
+            $npsnStr = (string)($item['sekolah_npsn'] ?? '');
+            $nsmStr = !empty($item['sekolah_nsm']) ? ' / ' . $item['sekolah_nsm'] : '';
+            $npsnNsm = $npsnStr . $nsmStr;
+
+            $sheet->setCellValue('A' . $rowNum, $no++);
+            $sheet->setCellValue('B' . $rowNum, $sekolahNama);
+            $sheet->setCellValueExplicit('C' . $rowNum, $npsnNsm, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('D' . $rowNum, $item['sekolah_kecamatan'] ?? '-');
+            $sheet->setCellValue('E' . $rowNum, $item['sekolah_kabupaten'] ?? '-');
+            $sheet->setCellValue('F' . $rowNum, $item['nama_paket'] ?? '-');
+            $sheet->setCellValue('G' . $rowNum, $item['gedung'] ?? '');
+            $sheet->setCellValue('H' . $rowNum, $item['kategori_1'] ?? '');
+            $sheet->setCellValue('I' . $rowNum, $item['kategori_2'] ?? '');
+            $sheet->setCellValue('J' . $rowNum, $item['uraian'] ?? '');
+            $sheet->setCellValue('K' . $rowNum, $item['satuan'] ?? '');
+
+            // Values
+            $kontrakVol = $item['kontrak_volume'] !== null ? (float)$item['kontrak_volume'] : 0;
+            $kontrakHarga = $item['kontrak_harga_satuan'] !== null ? (float)$item['kontrak_harga_satuan'] : 0;
+            $kontrakTotal = $item['kontrak_jumlah_harga'] !== null ? (float)$item['kontrak_jumlah_harga'] : 0;
+            $mcVol = $item['mc_nol_volume'] !== null ? (float)$item['mc_nol_volume'] : 0;
+            $mcTotal = $item['mc_nol_jumlah_harga'] !== null ? (float)$item['mc_nol_jumlah_harga'] : 0;
+            $tambahVol = $item['tambah_volume'] !== null ? (float)$item['tambah_volume'] : 0;
+            $tambahTotal = $item['tambah_jumlah_harga'] !== null ? (float)$item['tambah_jumlah_harga'] : 0;
+            $kurangVol = $item['kurang_volume'] !== null ? (float)$item['kurang_volume'] : 0;
+            $kurangTotal = $item['kurang_jumlah_harga'] !== null ? (float)$item['kurang_jumlah_harga'] : 0;
+
+            $sheet->setCellValue('L' . $rowNum, $kontrakVol);
+            $sheet->setCellValue('M' . $rowNum, $kontrakHarga);
+            $sheet->setCellValue('N' . $rowNum, $kontrakTotal);
+            $sheet->setCellValue('O' . $rowNum, $mcVol);
+            $sheet->setCellValue('P' . $rowNum, $mcTotal);
+            $sheet->setCellValue('Q' . $rowNum, $tambahVol);
+            $sheet->setCellValue('R' . $rowNum, $tambahTotal);
+            $sheet->setCellValue('S' . $rowNum, $kurangVol);
+            $sheet->setCellValue('T' . $rowNum, $kurangTotal);
+
+            // Formatting
+            $sheet->getStyle('A' . $rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('C' . $rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('F' . $rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('K' . $rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            $sheet->getStyle('L' . $rowNum)->getNumberFormat()->setFormatCode($numFormatVol);
+            $sheet->getStyle('M' . $rowNum)->getNumberFormat()->setFormatCode($numFormatCurrency);
+            $sheet->getStyle('N' . $rowNum)->getNumberFormat()->setFormatCode($numFormatCurrency);
+            $sheet->getStyle('O' . $rowNum)->getNumberFormat()->setFormatCode($numFormatVol);
+            $sheet->getStyle('P' . $rowNum)->getNumberFormat()->setFormatCode($numFormatCurrency);
+            $sheet->getStyle('Q' . $rowNum)->getNumberFormat()->setFormatCode($numFormatVol);
+            $sheet->getStyle('R' . $rowNum)->getNumberFormat()->setFormatCode($numFormatCurrency);
+            $sheet->getStyle('S' . $rowNum)->getNumberFormat()->setFormatCode($numFormatVol);
+            $sheet->getStyle('T' . $rowNum)->getNumberFormat()->setFormatCode($numFormatCurrency);
+
+            $rowNum++;
+        }
+
+        // Add Total Row
+        $totalRow = $rowNum;
+        $lastDataRow = $rowNum - 1;
+
+        $sheet->setCellValue('A' . $totalRow, 'TOTAL');
+        $sheet->mergeCells('A' . $totalRow . ':K' . $totalRow);
+
+        if ($lastDataRow >= 7) {
+            $sheet->setCellValue('L' . $totalRow, '=SUM(L7:L' . $lastDataRow . ')');
+            $sheet->setCellValue('M' . $totalRow, '-');
+            $sheet->setCellValue('N' . $totalRow, '=SUM(N7:N' . $lastDataRow . ')');
+            $sheet->setCellValue('O' . $totalRow, '=SUM(O7:O' . $lastDataRow . ')');
+            $sheet->setCellValue('P' . $totalRow, '=SUM(P7:P' . $lastDataRow . ')');
+            $sheet->setCellValue('Q' . $totalRow, '=SUM(Q7:Q' . $lastDataRow . ')');
+            $sheet->setCellValue('R' . $totalRow, '=SUM(R7:R' . $lastDataRow . ')');
+            $sheet->setCellValue('S' . $totalRow, '=SUM(S7:S' . $lastDataRow . ')');
+            $sheet->setCellValue('T' . $totalRow, '=SUM(T7:T' . $lastDataRow . ')');
+        }
+
+        // Total Row Styling
+        $totalStyle = [
+            'font' => [
+                'bold' => true,
+                'size' => 10,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'E9ECEF'],
+            ],
+            'alignment' => [
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+        ];
+
+        $sheet->getStyle('A' . $totalRow . ':T' . $totalRow)->applyFromArray($totalStyle);
+        $sheet->getStyle('A' . $totalRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('M' . $totalRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $sheet->getStyle('L' . $totalRow)->getNumberFormat()->setFormatCode($numFormatVol);
+        $sheet->getStyle('N' . $totalRow)->getNumberFormat()->setFormatCode($numFormatCurrency);
+        $sheet->getStyle('O' . $totalRow)->getNumberFormat()->setFormatCode($numFormatVol);
+        $sheet->getStyle('P' . $totalRow)->getNumberFormat()->setFormatCode($numFormatCurrency);
+        $sheet->getStyle('Q' . $totalRow)->getNumberFormat()->setFormatCode($numFormatVol);
+        $sheet->getStyle('R' . $totalRow)->getNumberFormat()->setFormatCode($numFormatCurrency);
+        $sheet->getStyle('S' . $totalRow)->getNumberFormat()->setFormatCode($numFormatVol);
+        $sheet->getStyle('T' . $totalRow)->getNumberFormat()->setFormatCode($numFormatCurrency);
+
+        // Borders for table data
+        $borderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'D0D0D0'],
+                ],
+            ],
+        ];
+        $sheet->getStyle('A7:T' . $totalRow)->applyFromArray($borderStyle);
+
+        // Auto-fit column widths
+        foreach (range('A', 'T') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Export headers
+        $fileName = 'Laporan_RAB_Gedung_' . date('Ymd_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
+
     public function data()
     {
         if (!$this->hasMenuAccess('admin/laporan/rab-gedung')) {

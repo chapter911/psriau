@@ -63,7 +63,9 @@ $totalKurang = $total_kurang ?? 0;
             <i class="fas fa-school mr-1"></i> <?= esc($sekolah['nama']); ?>
         </h3>
         <div class="card-tools ml-auto">
-            
+            <a href="#" id="btnExportExcel" class="btn btn-success btn-sm" title="Export Data RAB Sekolah ke File Excel">
+                <i class="fas fa-file-excel mr-1"></i> Export Excel
+            </a>
         </div>
     </div>
     <div class="card-body py-3">
@@ -420,6 +422,21 @@ $(document).ready(function() {
     // Filter triggers reload
     $('#filterGedung, #filterKategori, #filterSubKategori, #filterUraian').on('change', function() {
         table.ajax.reload();
+    });
+
+    // Export Excel with active filters & search term
+    $('#btnExportExcel').on('click', function(e) {
+        e.preventDefault();
+        var params = {
+            sekolah_npsn: '<?= $sekolah['npsn']; ?>',
+            gedung: $('#filterGedung').val(),
+            kategori_1: $('#filterKategori').val(),
+            kategori_2: $('#filterSubKategori').val(),
+            uraian: $('#filterUraian').val(),
+            search_value: table.search()
+        };
+        var url = '<?= site_url('admin/laporan/rab-gedung/export-excel'); ?>?' + $.param(params);
+        window.location.href = url;
     });
 });
 </script>
