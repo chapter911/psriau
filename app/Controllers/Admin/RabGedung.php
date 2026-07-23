@@ -292,8 +292,9 @@ class RabGedung extends BaseController
 
         // Get list of distinct schools with RAB data
         $sekolahs = $db->table('trn_rab_gedung_detail r')
-            ->select('DISTINCT r.sekolah_npsn as npsn, COALESCE(s.nama, r.nama_sekolah) as nama')
+            ->select('r.sekolah_npsn as npsn, COALESCE(s.nama, r.nama_sekolah) as nama', false)
             ->join('mst_sekolah s', 's.npsn = r.sekolah_npsn', 'left')
+            ->groupBy('r.sekolah_npsn, s.nama, r.nama_sekolah')
             ->orderBy('nama', 'ASC')
             ->get()
             ->getResultArray();
@@ -382,7 +383,7 @@ class RabGedung extends BaseController
                                   mp.nama_paket');
             }
             return $builder->join('mst_sekolah s', 's.npsn = trn_rab_gedung_detail.sekolah_npsn', 'left')
-                           ->join('mst_paket mp', 'mp.id = COALESCE(trn_rab_gedung_detail.paket_id, s.paket_id)', 'left');
+                           ->join('mst_paket mp', 'mp.id = trn_rab_gedung_detail.paket_id OR (trn_rab_gedung_detail.paket_id IS NULL AND mp.id = s.paket_id)', 'left', false);
         };
 
         $filterApplier = function($builder) {
@@ -398,7 +399,7 @@ class RabGedung extends BaseController
                 $builder->where('trn_rab_gedung_detail.gedung', $gedung);
             }
             if ($paketId !== null && $paketId !== '' && $paketId !== 'all') {
-                $builder->where('COALESCE(trn_rab_gedung_detail.paket_id, s.paket_id)', $paketId);
+                $builder->where('COALESCE(trn_rab_gedung_detail.paket_id, s.paket_id) = ' . (int)$paketId, null, false);
             }
             if ($kategori1 !== null && $kategori1 !== '' && $kategori1 !== 'all') {
                 $builder->where('trn_rab_gedung_detail.kategori_1', $kategori1);
@@ -910,7 +911,8 @@ class RabGedung extends BaseController
             }
 
             if ($orderColumn !== '') {
-                $filteredBuilder->orderBy($orderColumn, $orderDirection);
+                $isRaw = str_contains($orderColumn, '(') || str_contains($orderColumn, ' ');
+                $filteredBuilder->orderBy($orderColumn, $orderDirection, $isRaw ? false : null);
             }
 
             $rows = $filteredBuilder->limit($length, $start)->get()->getResultArray();
