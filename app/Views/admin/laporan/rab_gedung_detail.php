@@ -95,9 +95,14 @@ $totalKurang = $total_kurang ?? 0;
         <div class="row align-items-center">
             <div class="col-md-4">
                 <div class="form-group mb-0">
-                    <label for="filterGedung" class="mb-1 text-muted small font-weight-bold"><i class="fas fa-building mr-1"></i>Filter Pekerjaan</label>
-                    <select id="filterGedung" class="form-control form-control-sm">
-                        <option value="">- semua pekerjaan -</option>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="filterGedung" class="mb-0 text-muted small font-weight-bold"><i class="fas fa-building mr-1"></i>Filter Pekerjaan</label>
+                        <span class="small">
+                            <a href="#" class="btn-select-all filter-quick-action text-primary mr-1" data-target="#filterGedung">[Pilih Semua]</a>
+                            <a href="#" class="btn-reset-filter filter-quick-action text-danger" data-target="#filterGedung">[Reset]</a>
+                        </span>
+                    </div>
+                    <select id="filterGedung" class="form-control select2-filter" multiple="multiple" data-placeholder="Semua Pekerjaan...">
                         <?php foreach ($gedungs as $gedung): ?>
                             <option value="<?= esc($gedung); ?>"><?= esc($gedung); ?></option>
                         <?php endforeach; ?>
@@ -106,9 +111,14 @@ $totalKurang = $total_kurang ?? 0;
             </div>
             <div class="col-md-4">
                 <div class="form-group mb-0">
-                    <label for="filterKategori" class="mb-1 text-muted small font-weight-bold"><i class="fas fa-folder mr-1"></i>Filter Kategori</label>
-                    <select id="filterKategori" class="form-control form-control-sm">
-                        <option value="all">- semua kategori -</option>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="filterKategori" class="mb-0 text-muted small font-weight-bold"><i class="fas fa-folder mr-1"></i>Filter Kategori</label>
+                        <span class="small">
+                            <a href="#" class="btn-select-all filter-quick-action text-primary mr-1" data-target="#filterKategori">[Pilih Semua]</a>
+                            <a href="#" class="btn-reset-filter filter-quick-action text-danger" data-target="#filterKategori">[Reset]</a>
+                        </span>
+                    </div>
+                    <select id="filterKategori" class="form-control select2-filter" multiple="multiple" data-placeholder="Semua Kategori...">
                         <?php foreach ($kategori_1s as $kat): ?>
                             <option value="<?= esc($kat); ?>"><?= esc($kat); ?></option>
                         <?php endforeach; ?>
@@ -117,9 +127,14 @@ $totalKurang = $total_kurang ?? 0;
             </div>
             <div class="col-md-4">
                 <div class="form-group mb-0">
-                    <label for="filterSubKategori" class="mb-1 text-muted small font-weight-bold"><i class="fas fa-folder-open mr-1"></i>Filter Sub-Kategori</label>
-                    <select id="filterSubKategori" class="form-control form-control-sm">
-                        <option value="all">- semua sub-kategori -</option>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="filterSubKategori" class="mb-0 text-muted small font-weight-bold"><i class="fas fa-folder-open mr-1"></i>Filter Sub-Kategori</label>
+                        <span class="small">
+                            <a href="#" class="btn-select-all filter-quick-action text-primary mr-1" data-target="#filterSubKategori">[Pilih Semua]</a>
+                            <a href="#" class="btn-reset-filter filter-quick-action text-danger" data-target="#filterSubKategori">[Reset]</a>
+                        </span>
+                    </div>
+                    <select id="filterSubKategori" class="form-control select2-filter" multiple="multiple" data-placeholder="Semua Sub-Kategori...">
                         <?php foreach ($kategori_2s as $sub): ?>
                             <option value="<?= esc($sub); ?>"><?= esc($sub); ?></option>
                         <?php endforeach; ?>
@@ -360,12 +375,35 @@ $(document).ready(function() {
         }
     });
 
+    // Initialize Select2 Multi-select for filters
+    if ($.fn.select2) {
+        $('.select2-filter').select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            allowClear: true,
+            closeOnSelect: false
+        });
+    }
+
+    // Quick action: Select All options for a target filter
+    $('.btn-select-all').on('click', function(e) {
+        e.preventDefault();
+        var target = $(this).data('target');
+        $(target + ' option').prop('selected', true);
+        $(target).trigger('change');
+    });
+
+    // Quick action: Reset/Clear target filter
+    $('.btn-reset-filter').on('click', function(e) {
+        e.preventDefault();
+        var target = $(this).data('target');
+        $(target).val(null).trigger('change');
+    });
+
     // Filter triggers reload
     $('#filterGedung, #filterKategori, #filterSubKategori').on('change', function() {
         table.ajax.reload();
     });
-
-
 });
 </script>
 <?= $this->endSection(); ?>

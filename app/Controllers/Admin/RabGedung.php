@@ -392,20 +392,65 @@ class RabGedung extends BaseController
             $paketId = $this->request->getGet('paket_id');
             $kategori1 = $this->request->getGet('kategori_1');
             $kategori2 = $this->request->getGet('kategori_2');
+
+            // 1. Sekolah NPSN Filter (Array or Single)
             if ($npsn !== null && $npsn !== '' && $npsn !== 'all') {
-                $builder->where('trn_rab_gedung_detail.sekolah_npsn', $npsn);
+                if (is_array($npsn)) {
+                    $npsnList = array_values(array_filter($npsn, fn($v) => $v !== null && $v !== '' && $v !== 'all'));
+                    if ($npsnList !== []) {
+                        $builder->whereIn('trn_rab_gedung_detail.sekolah_npsn', $npsnList);
+                    }
+                } else {
+                    $builder->where('trn_rab_gedung_detail.sekolah_npsn', $npsn);
+                }
             }
+
+            // 2. Gedung / Pekerjaan Filter (Array or Single)
             if ($gedung !== null && $gedung !== '' && $gedung !== 'all') {
-                $builder->where('trn_rab_gedung_detail.gedung', $gedung);
+                if (is_array($gedung)) {
+                    $gedungList = array_values(array_filter($gedung, fn($v) => $v !== null && $v !== '' && $v !== 'all'));
+                    if ($gedungList !== []) {
+                        $builder->whereIn('trn_rab_gedung_detail.gedung', $gedungList);
+                    }
+                } else {
+                    $builder->where('trn_rab_gedung_detail.gedung', $gedung);
+                }
             }
+
+            // 3. Paket ID Filter (Array or Single)
             if ($paketId !== null && $paketId !== '' && $paketId !== 'all') {
-                $builder->where('COALESCE(trn_rab_gedung_detail.paket_id, s.paket_id) = ' . (int)$paketId, null, false);
+                if (is_array($paketId)) {
+                    $paketList = array_values(array_map('intval', array_filter($paketId, fn($v) => $v !== null && $v !== '' && $v !== 'all')));
+                    if ($paketList !== []) {
+                        $builder->whereIn('COALESCE(trn_rab_gedung_detail.paket_id, s.paket_id)', $paketList, false);
+                    }
+                } else {
+                    $builder->where('COALESCE(trn_rab_gedung_detail.paket_id, s.paket_id) = ' . (int)$paketId, null, false);
+                }
             }
+
+            // 4. Kategori 1 Filter (Array or Single)
             if ($kategori1 !== null && $kategori1 !== '' && $kategori1 !== 'all') {
-                $builder->where('trn_rab_gedung_detail.kategori_1', $kategori1);
+                if (is_array($kategori1)) {
+                    $kat1List = array_values(array_filter($kategori1, fn($v) => $v !== null && $v !== '' && $v !== 'all'));
+                    if ($kat1List !== []) {
+                        $builder->whereIn('trn_rab_gedung_detail.kategori_1', $kat1List);
+                    }
+                } else {
+                    $builder->where('trn_rab_gedung_detail.kategori_1', $kategori1);
+                }
             }
+
+            // 5. Kategori 2 Filter (Array or Single)
             if ($kategori2 !== null && $kategori2 !== '' && $kategori2 !== 'all') {
-                $builder->where('trn_rab_gedung_detail.kategori_2', $kategori2);
+                if (is_array($kategori2)) {
+                    $kat2List = array_values(array_filter($kategori2, fn($v) => $v !== null && $v !== '' && $v !== 'all'));
+                    if ($kat2List !== []) {
+                        $builder->whereIn('trn_rab_gedung_detail.kategori_2', $kat2List);
+                    }
+                } else {
+                    $builder->where('trn_rab_gedung_detail.kategori_2', $kategori2);
+                }
             }
         };
 
