@@ -147,32 +147,28 @@ class DisposisiPerjalananDinas extends BaseController
 
             $statusBadge = '<div class="text-center" style="white-space:nowrap;">' . $badgeM . ' ' . $badgeD . '<br>' . $badgeOverall . '</div>';
 
-            $menyetujuiData = $this->getPegawaiSignatureData((int) ($row['menyetujui_pegawai_id'] ?? 0));
-            $diketahuiData = $this->getPegawaiSignatureData((int) ($row['diketahui_pegawai_id'] ?? 0));
-
-            $isPendingOverall = $statusOverall === 'pending';
+            // Approval Column HTML (Single Approval Action)
+            if ($statusOverall === 'pending') {
+                $approvalHtml = '<div class="btn-group btn-group-sm" role="group">' .
+                    '<button type="button" class="btn btn-success btn-single-approve" data-id="' . $row['id'] . '" title="Setujui Disposisi"><i class="fas fa-check"></i> Setujui</button>' .
+                    '<button type="button" class="btn btn-danger btn-single-reject ml-1" data-id="' . $row['id'] . '" title="Tolak Disposisi"><i class="fas fa-times"></i> Tolak</button>' .
+                    '</div>';
+            } elseif ($statusOverall === 'disetujui') {
+                $approvalHtml = '<span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle"></i> Disetujui</span>';
+            } else {
+                $approvalHtml = '<span class="badge badge-danger px-2 py-1" title="' . esc($row['catatan_penolakan'] ?? '') . '"><i class="fas fa-times-circle"></i> Ditolak</span>';
+            }
 
             // Action Buttons
             $actionHtml = '<div class="doc-btn-group">';
             $actionHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/pdf') . '" class="btn btn-sm btn-danger btn-pdf" title="Cetak Disposisi (PDF)" target="_blank"><i class="fas fa-file-pdf"></i> Cetak</a>';
 
-            if ($isPendingOverall) {
-                $actionHtml .= '<button type="button" class="btn btn-sm btn-success btn-approval ml-1" ' .
-                    'data-id="' . $row['id'] . '" ' .
-                    'data-ppk-nama="' . esc($menyetujuiData['nama']) . '" ' .
-                    'data-ppk-status="' . $statusM . '" ' .
-                    'data-ppk-token="' . esc($row['token_menyetujui'] ?? '') . '" ' .
-                    'data-kasatker-nama="' . esc($diketahuiData['nama']) . '" ' .
-                    'data-kasatker-status="' . $statusD . '" ' .
-                    'data-kasatker-token="' . esc($row['token_diketahui'] ?? '') . '" ' .
-                    'title="Persetujuan / Approval Disposisi"><i class="fas fa-check-square"></i> Approval</button>';
+            if ($statusOverall === 'pending') {
                 $actionHtml .= '<button type="button" class="btn btn-sm btn-info btn-edit ml-1" data-id="' . $row['id'] . '" title="Ubah"><i class="fas fa-edit"></i> Ubah</button>';
             } else {
-                $actionHtml .= '<button type="button" class="btn btn-sm btn-secondary ml-1" disabled title="Keputusan disposisi sudah final (' . strtoupper($statusOverall) . ')"><i class="fas fa-lock"></i> Approval</button>';
                 $actionHtml .= '<button type="button" class="btn btn-sm btn-secondary ml-1" disabled title="Disposisi yang sudah disetujui/ditolak tidak dapat diubah"><i class="fas fa-lock"></i> Ubah</button>';
             }
 
-            $actionHtml .= '<button type="button" class="btn btn-sm btn-danger btn-delete ml-1" data-id="' . $row['id'] . '" title="Hapus"><i class="fas fa-trash"></i> Hapus</button>';
             $actionHtml .= '</div>';
 
             $data[] = [
@@ -190,6 +186,7 @@ class DisposisiPerjalananDinas extends BaseController
                 'diketahui_id'    => $row['diketahui_pegawai_id'],
                 'status'          => $statusOverall,
                 'status_badge'    => $statusBadge,
+                'approval_html'   => $approvalHtml,
                 'action_html'     => $actionHtml,
             ];
         }
@@ -681,20 +678,13 @@ class DisposisiPerjalananDinas extends BaseController
 
     public function setujui(int $id)
     {
-        $role = trim((string) $this->request->getGet('role'));
-        if (! in_array($role, ['menyetujui', 'diketahui'], true)) {
-            return view('admin/surat/disposisi_approval_response', [
-                'title'   => 'Role Tidak Valid',
-                'status'  => 'error',
-                'message' => 'Parameter peran persetujuan (role) tidak valid.',
-            ]);
-        }
-
-        $token = trim((string) $this->request->getGet('token'));
         $model = new DisposisiPerjalananDinasModel();
         $disposisi = $model->find($id);
 
         if (! is_array($disposisi)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Data tidak ditemukan.']);
+            }
             return view('admin/surat/disposisi_approval_response', [
                 'title'   => 'Data Tidak Ditemukan',
                 'status'  => 'error',
@@ -702,115 +692,57 @@ class DisposisiPerjalananDinas extends BaseController
             ]);
         }
 
-        $tokenField = 'token_' . $role;
-        $expectedToken = trim((string) ($disposisi[$tokenField] ?? ''));
-
-        if ($token === '' || $expectedToken === '' || ! hash_equals($expectedToken, $token)) {
-            return view('admin/surat/disposisi_approval_response', [
-                'title'     => 'Token Tidak Valid',
-                'status'    => 'error',
-                'message'   => 'Token persetujuan tidak valid atau sudah kedaluwarsa. Silakan periksa kembali link pada email Anda.',
-                'disposisi' => $disposisi,
-            ]);
-        }
-
-        $statusField = 'status_' . $role;
-        $roleLabel = $role === 'menyetujui' ? 'Pejabat Pembuat Komitmen (Menyetujui)' : 'Kepala Satuan Kerja (Diketahui)';
-        $currentRoleStatus = trim((string) ($disposisi[$statusField] ?? 'pending'));
         $currentOverallStatus = trim((string) ($disposisi['status'] ?? 'pending'));
 
         if ($currentOverallStatus === 'disetujui' || $currentOverallStatus === 'ditolak') {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Disposisi ini sudah memiliki keputusan akhir (' . strtoupper($currentOverallStatus) . ') dan tidak dapat diubah kembali.']);
+            }
             return view('admin/surat/disposisi_approval_response', [
                 'title'     => 'Keputusan Sudah Final',
                 'status'    => $currentOverallStatus,
-                'message'   => 'Disposisi Perjalanan Dinas ini sudah memiliki keputusan akhir (' . strtoupper($currentOverallStatus) . ') dan tidak dapat diubah kembali. Silakan buat pengajuan disposisi baru.',
-                'role'      => $role,
+                'message'   => 'Disposisi Perjalanan Dinas ini sudah memiliki keputusan akhir (' . strtoupper($currentOverallStatus) . ') dan tidak dapat diubah kembali.',
                 'disposisi' => $disposisi,
             ]);
-        }
-
-        if ($currentRoleStatus === 'disetujui') {
-            return view('admin/surat/disposisi_approval_response', [
-                'title'     => 'Persetujuan Sudah Diproses',
-                'status'    => 'info',
-                'message'   => 'Anda (' . $roleLabel . ') sudah menyetujui disposisi ini sebelumnya dan keputusan tidak dapat diubah kembali.',
-                'role'      => $role,
-                'disposisi' => $disposisi,
-            ]);
-        }
-
-        if ($currentRoleStatus === 'ditolak') {
-            return view('admin/surat/disposisi_approval_response', [
-                'title'     => 'Status Sudah Ditolak',
-                'status'    => 'ditolak',
-                'message'   => 'Persetujuan oleh ' . $roleLabel . ' sudah bernilai DITOLAK dan tidak dapat diubah kembali.',
-                'role'      => $role,
-                'disposisi' => $disposisi,
-            ]);
-        }
-
-        $disposisi[$statusField] = 'disetujui';
-
-        $s1 = $disposisi['status_menyetujui'] ?? 'pending';
-        $s2 = $disposisi['status_diketahui'] ?? 'pending';
-
-        if ($s1 === 'disetujui' && $s2 === 'disetujui') {
-            $newStatus = 'disetujui';
-        } elseif ($s1 === 'ditolak' || $s2 === 'ditolak') {
-            $newStatus = 'ditolak';
-        } else {
-            $newStatus = 'pending';
         }
 
         $model->update($id, [
-            $statusField => 'disetujui',
-            'status'     => $newStatus,
-            'updated_at' => date('Y-m-d H:i:s'),
+            'status_menyetujui' => 'disetujui',
+            'status_diketahui'  => 'disetujui',
+            'status'            => 'disetujui',
+            'updated_at'        => date('Y-m-d H:i:s'),
         ]);
 
-        $disposisi['status'] = $newStatus;
+        $disposisi['status_menyetujui'] = 'disetujui';
+        $disposisi['status_diketahui'] = 'disetujui';
+        $disposisi['status'] = 'disetujui';
 
         if ($this->request->isAJAX()) {
             return $this->response->setJSON([
                 'status'  => 'success',
-                'message' => 'Disposisi berhasil disetujui sebagai ' . $roleLabel . '.',
+                'message' => 'Disposisi Perjalanan Dinas #' . $id . ' berhasil disetujui.',
             ]);
         }
 
-        $msg = 'Disposisi #' . $id . ' telah disetujui oleh ' . $roleLabel . '.';
-        if ($newStatus === 'disetujui') {
-            $msg .= ' Kedua pejabat (PPK & Kasatker) telah memberikan persetujuan lengkap!';
-        } else {
-            $msg .= ' Menunggu persetujuan dari pejabat yang belum menyetujui.';
-        }
-
         return view('admin/surat/disposisi_approval_response', [
-            'title'     => 'Persetujuan Diberikan',
-            'status'    => $newStatus === 'disetujui' ? 'disetujui' : 'info',
-            'message'   => $msg,
-            'role'      => $role,
+            'title'     => 'Disposisi Disetujui Lengkap',
+            'status'    => 'disetujui',
+            'message'   => 'Disposisi Perjalanan Dinas #' . $id . ' telah berhasil disetujui.',
             'disposisi' => $disposisi,
         ]);
     }
 
     public function tolak(int $id)
     {
-        $role = trim((string) $this->request->getGet('role'));
-        if (! in_array($role, ['menyetujui', 'diketahui'], true)) {
-            return view('admin/surat/disposisi_approval_response', [
-                'title'   => 'Role Tidak Valid',
-                'status'  => 'error',
-                'message' => 'Parameter peran persetujuan (role) tidak valid.',
-            ]);
-        }
-
-        $token = trim((string) $this->request->getGet('token'));
         $catatan = trim((string) ($this->request->getPost('catatan') ?: $this->request->getGet('catatan')));
 
         $model = new DisposisiPerjalananDinasModel();
         $disposisi = $model->find($id);
 
         if (! is_array($disposisi)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Data tidak ditemukan.']);
+            }
             return view('admin/surat/disposisi_approval_response', [
                 'title'   => 'Data Tidak Ditemukan',
                 'status'  => 'error',
@@ -818,39 +750,16 @@ class DisposisiPerjalananDinas extends BaseController
             ]);
         }
 
-        $tokenField = 'token_' . $role;
-        $expectedToken = trim((string) ($disposisi[$tokenField] ?? ''));
-
-        if ($token === '' || $expectedToken === '' || ! hash_equals($expectedToken, $token)) {
-            return view('admin/surat/disposisi_approval_response', [
-                'title'     => 'Token Tidak Valid',
-                'status'    => 'error',
-                'message'   => 'Token persetujuan tidak valid atau sudah kedaluwarsa. Silakan periksa kembali link pada email Anda.',
-                'disposisi' => $disposisi,
-            ]);
-        }
-
-        $statusField = 'status_' . $role;
-        $roleLabel = $role === 'menyetujui' ? 'Pejabat Pembuat Komitmen (Menyetujui)' : 'Kepala Satuan Kerja (Diketahui)';
-        $currentRoleStatus = trim((string) ($disposisi[$statusField] ?? 'pending'));
         $currentOverallStatus = trim((string) ($disposisi['status'] ?? 'pending'));
 
         if ($currentOverallStatus === 'disetujui' || $currentOverallStatus === 'ditolak') {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Disposisi ini sudah memiliki keputusan akhir (' . strtoupper($currentOverallStatus) . ') dan tidak dapat diubah kembali.']);
+            }
             return view('admin/surat/disposisi_approval_response', [
                 'title'     => 'Keputusan Sudah Final',
                 'status'    => $currentOverallStatus,
-                'message'   => 'Disposisi Perjalanan Dinas ini sudah memiliki keputusan akhir (' . strtoupper($currentOverallStatus) . ') dan tidak dapat diubah kembali. Silakan buat pengajuan disposisi baru.',
-                'role'      => $role,
-                'disposisi' => $disposisi,
-            ]);
-        }
-
-        if ($currentRoleStatus === 'disetujui' || $currentRoleStatus === 'ditolak') {
-            return view('admin/surat/disposisi_approval_response', [
-                'title'     => 'Keputusan Sudah Diproses',
-                'status'    => $currentRoleStatus === 'disetujui' ? 'info' : 'ditolak',
-                'message'   => 'Keputusan persetujuan oleh ' . $roleLabel . ' sudah bernilai ' . strtoupper($currentRoleStatus) . ' dan tidak dapat diubah kembali.',
-                'role'      => $role,
+                'message'   => 'Disposisi Perjalanan Dinas ini sudah memiliki keputusan akhir (' . strtoupper($currentOverallStatus) . ') dan tidak dapat diubah kembali.',
                 'disposisi' => $disposisi,
             ]);
         }
@@ -858,28 +767,29 @@ class DisposisiPerjalananDinas extends BaseController
         $reason = $catatan !== '' ? $catatan : null;
 
         $model->update($id, [
-            $statusField        => 'ditolak',
+            'status_menyetujui' => 'ditolak',
+            'status_diketahui'  => 'ditolak',
             'status'            => 'ditolak',
             'catatan_penolakan' => $reason,
             'updated_at'        => date('Y-m-d H:i:s'),
         ]);
 
-        $disposisi[$statusField] = 'ditolak';
+        $disposisi['status_menyetujui'] = 'ditolak';
+        $disposisi['status_diketahui'] = 'ditolak';
         $disposisi['status'] = 'ditolak';
         $disposisi['catatan_penolakan'] = $reason;
 
         if ($this->request->isAJAX()) {
             return $this->response->setJSON([
                 'status'  => 'success',
-                'message' => 'Disposisi Perjalanan Dinas telah ditolak.',
+                'message' => 'Disposisi Perjalanan Dinas #' . $id . ' telah ditolak.',
             ]);
         }
 
         return view('admin/surat/disposisi_approval_response', [
             'title'     => 'Disposisi Ditolak',
             'status'    => 'ditolak',
-            'message'   => 'Pengajuan Disposisi Perjalanan Dinas #' . $id . ' telah ditolak oleh ' . $roleLabel . '.',
-            'role'      => $role,
+            'message'   => 'Disposisi Perjalanan Dinas #' . $id . ' telah ditolak.',
             'disposisi' => $disposisi,
         ]);
     }

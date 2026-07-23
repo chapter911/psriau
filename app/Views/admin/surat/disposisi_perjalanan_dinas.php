@@ -106,7 +106,8 @@
                         <th>Transportasi</th>
                         <th>Perihal</th>
                         <th style="width: 100px;">Status</th>
-                        <th style="width: 250px;">Aksi</th>
+                        <th style="width: 150px;">Approval</th>
+                        <th style="width: 150px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -434,6 +435,7 @@ $(document).ready(function() {
             { data: 'transportasi', className: 'text-center' },
             { data: 'perihal' },
             { data: 'status_badge', className: 'text-center', sortable: false, searchable: false },
+            { data: 'approval_html', className: 'text-center', sortable: false, searchable: false },
             { data: 'action_html', className: 'text-center', sortable: false, searchable: false }
         ],
         order: [[0, 'desc']],
@@ -462,68 +464,90 @@ $(document).ready(function() {
         }
     });
 
-    // Handle Approval Button Click with Interactive SweetAlert2 Action Options
-    $(document).on('click', '.btn-approval', function(e) {
+    // Handle Direct Single Approval Click
+    $(document).on('click', '.btn-single-approve', function(e) {
         e.preventDefault();
         var id = $(this).data('id');
-        var ppkNama = $(this).data('ppk-nama') || '-';
-        var ppkStatus = $(this).data('ppk-status') || 'pending';
-        var ppkToken = $(this).data('ppk-token') || '';
-
-        var kasatkerNama = $(this).data('kasatker-nama') || '-';
-        var kasatkerStatus = $(this).data('kasatker-status') || 'pending';
-        var kasatkerToken = $(this).data('kasatker-token') || '';
-
-        var statusBadgeHtml = function(st) {
-            if (st === 'disetujui') return '<span class="badge badge-success px-2 py-1"><i class="fas fa-check"></i> Disetujui</span>';
-            if (st === 'ditolak') return '<span class="badge badge-danger px-2 py-1"><i class="fas fa-times"></i> Ditolak</span>';
-            return '<span class="badge badge-warning px-2 py-1"><i class="fas fa-clock"></i> Pending</span>';
-        };
-
-        var setujuiPpkUrl = '<?= site_url('admin/surat/perjalanan-dinas/disposisi'); ?>/' + id + '/setujui?role=menyetujui&token=' + ppkToken;
-        var tolakPpkUrl = '<?= site_url('admin/surat/perjalanan-dinas/disposisi'); ?>/' + id + '/tolak?role=menyetujui&token=' + ppkToken;
-        var setujuiKasatkerUrl = '<?= site_url('admin/surat/perjalanan-dinas/disposisi'); ?>/' + id + '/setujui?role=diketahui&token=' + kasatkerToken;
-        var tolakKasatkerUrl = '<?= site_url('admin/surat/perjalanan-dinas/disposisi'); ?>/' + id + '/tolak?role=diketahui&token=' + kasatkerToken;
-
-        var htmlContent = '<div class="text-left mt-2" style="font-size: 0.95rem; line-height: 1.6;">' +
-            '<p class="mb-3 text-secondary text-center">Pilih persetujuan atau penolakan pejabat untuk Disposisi #' + id + ':</p>' +
-            '<div class="p-3 mb-3 rounded" style="background: #f8fafc; border: 1px solid #cbd5e1;">' +
-                '<div class="d-flex justify-content-between align-items-center mb-2">' +
-                    '<div><strong style="color: #1e293b;"><i class="fas fa-user-check text-primary mr-1"></i> PPK (Menyetujui):</strong><br><span class="text-dark font-weight-bold">' + ppkNama + '</span></div>' +
-                    '<div>' + statusBadgeHtml(ppkStatus) + '</div>' +
-                '</div>' +
-                (ppkStatus === 'pending' ? 
-                    '<div class="mt-2 text-right">' +
-                        '<a href="' + setujuiPpkUrl + '" class="btn btn-sm btn-success mr-1"><i class="fas fa-check mr-1"></i> Setujui PPK</a>' +
-                        '<a href="' + tolakPpkUrl + '" class="btn btn-sm btn-danger"><i class="fas fa-times mr-1"></i> Tolak PPK</a>' +
-                    '</div>' : '') +
-            '</div>' +
-            '<div class="p-3 rounded" style="background: #f8fafc; border: 1px solid #cbd5e1;">' +
-                '<div class="d-flex justify-content-between align-items-center mb-2">' +
-                    '<div><strong style="color: #1e293b;"><i class="fas fa-user-shield text-info mr-1"></i> Kasatker (Diketahui):</strong><br><span class="text-dark font-weight-bold">' + kasatkerNama + '</span></div>' +
-                    '<div>' + statusBadgeHtml(kasatkerStatus) + '</div>' +
-                '</div>' +
-                (kasatkerStatus === 'pending' ? 
-                    '<div class="mt-2 text-right">' +
-                        '<a href="' + setujuiKasatkerUrl + '" class="btn btn-sm btn-success mr-1"><i class="fas fa-check mr-1"></i> Setujui Kasatker</a>' +
-                        '<a href="' + tolakKasatkerUrl + '" class="btn btn-sm btn-danger"><i class="fas fa-times mr-1"></i> Tolak Kasatker</a>' +
-                    '</div>' : '') +
-            '</div>' +
-            '</div>';
+        var url = '<?= site_url('admin/surat/perjalanan-dinas/disposisi'); ?>/' + id + '/setujui';
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
-                title: 'Form Approval Disposisi #' + id,
-                html: htmlContent,
-                icon: 'info',
-                showConfirmButton: false,
+                title: 'Setujui Disposisi #' + id + '?',
+                text: 'Disposisi akan langsung disetujui.',
+                icon: 'question',
                 showCancelButton: true,
-                cancelButtonText: 'Tutup',
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-check mr-1"></i> Ya, Setujui',
+                cancelButtonText: 'Batal',
                 customClass: {
-                    cancelButton: 'btn btn-secondary px-4 py-2 mt-2'
+                    confirmButton: 'btn btn-success font-weight-bold px-3 py-2 mr-2',
+                    cancelButton: 'btn btn-secondary px-3 py-2'
                 },
                 buttonsStyling: false
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    $.get(url, function(res) {
+                        if (res.status === 'success') {
+                            Swal.fire('Berhasil!', res.message, 'success');
+                            table.ajax.reload();
+                        } else {
+                            Swal.fire('Gagal!', res.message || 'Gagal menyetujui.', 'error');
+                        }
+                    }).fail(function() {
+                        Swal.fire('Error!', 'Terjadi kesalahan sistem.', 'error');
+                    });
+                }
             });
+        } else {
+            if (confirm('Setujui Disposisi #' + id + '?')) {
+                window.location.href = url;
+            }
+        }
+    });
+
+    // Handle Direct Single Reject Click
+    $(document).on('click', '.btn-single-reject', function(e) {
+        e.preventDefault();
+        var id = $(this).data('id');
+        var url = '<?= site_url('admin/surat/perjalanan-dinas/disposisi'); ?>/' + id + '/tolak';
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Tolak Disposisi #' + id + '?',
+                text: 'Masukkan alasan penolakan (opsional):',
+                input: 'textarea',
+                inputPlaceholder: 'Catatan penolakan...',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-times mr-1"></i> Tolak Disposisi',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    confirmButton: 'btn btn-danger font-weight-bold px-3 py-2 mr-2',
+                    cancelButton: 'btn btn-secondary px-3 py-2'
+                },
+                buttonsStyling: false
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    var catatan = result.value || '';
+                    $.get(url, { catatan: catatan }, function(res) {
+                        if (res.status === 'success') {
+                            Swal.fire('Berhasil!', res.message, 'success');
+                            table.ajax.reload();
+                        } else {
+                            Swal.fire('Gagal!', res.message || 'Gagal menolak.', 'error');
+                        }
+                    }).fail(function() {
+                        Swal.fire('Error!', 'Terjadi kesalahan sistem.', 'error');
+                    });
+                }
+            });
+        } else {
+            if (confirm('Tolak Disposisi #' + id + '?')) {
+                window.location.href = url;
+            }
         }
     });
 
