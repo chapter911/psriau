@@ -280,6 +280,85 @@ class RabGedung extends BaseController
         ]);
     }
 
+    // 3. All Schools Detail Page: Shows detailed DataTable for all schools with extra columns & filters
+    public function detailSemua()
+    {
+        $deny = $this->denyIfNoMenuAccess('admin/laporan/rab-gedung');
+        if ($deny !== null) {
+            return $deny;
+        }
+
+        $db = db_connect();
+
+        // Get list of distinct schools with RAB data
+        $sekolahs = $db->table('trn_rab_gedung_detail r')
+            ->select('DISTINCT r.sekolah_npsn as npsn, COALESCE(s.nama, r.nama_sekolah) as nama')
+            ->join('mst_sekolah s', 's.npsn = r.sekolah_npsn', 'left')
+            ->orderBy('nama', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // Get list of distinct gedungs
+        $gedungRows = $db->table('trn_rab_gedung_detail')
+            ->select('gedung')
+            ->distinct()
+            ->where('gedung IS NOT NULL')
+            ->where('gedung !=', '')
+            ->orderBy('gedung', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // Get list of distinct kategori_1
+        $kategori1Rows = $db->table('trn_rab_gedung_detail')
+            ->select('kategori_1')
+            ->distinct()
+            ->where('kategori_1 IS NOT NULL')
+            ->where('kategori_1 !=', '')
+            ->orderBy('kategori_1', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // Get list of distinct kategori_2
+        $kategori2Rows = $db->table('trn_rab_gedung_detail')
+            ->select('kategori_2')
+            ->distinct()
+            ->where('kategori_2 IS NOT NULL')
+            ->where('kategori_2 !=', '')
+            ->orderBy('kategori_2', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // Calculate summary totals across all RAB items
+        $sums = $db->table('trn_rab_gedung_detail')
+            ->select('SUM(kontrak_jumlah_harga) as total_kontrak, 
+                      SUM(mc_nol_jumlah_harga) as total_mcnol, 
+                      SUM(tambah_jumlah_harga) as total_tambah, 
+                      SUM(kurang_jumlah_harga) as total_kurang')
+            ->get()
+            ->getRowArray();
+
+        $paketModel = new MstPaketModel();
+        $pakets = $paketModel->where('is_active', 1)->orderBy('nama_paket', 'ASC')->findAll();
+
+        $permissions = $this->resolveMenuPermissions('admin/laporan/rab-gedung');
+
+        return view('admin/laporan/rab_gedung_detail_semua', [
+            'sekolahs'      => $sekolahs,
+            'gedungs'       => array_column($gedungRows, 'gedung'),
+            'kategori_1s'   => array_column($kategori1Rows, 'kategori_1'),
+            'kategori_2s'   => array_column($kategori2Rows, 'kategori_2'),
+            'total_kontrak' => (float)($sums['total_kontrak'] ?? 0),
+            'total_mcnol'   => (float)($sums['total_mcnol'] ?? 0),
+            'total_tambah'  => (float)($sums['total_tambah'] ?? 0),
+            'total_kurang'  => (float)($sums['total_kurang'] ?? 0),
+            'can_add'       => $permissions['add'],
+            'can_edit'      => $permissions['edit'],
+            'can_delete'    => $permissions['delete'],
+            'can_import'    => $permissions['import'],
+            'pakets'        => $pakets,
+        ]);
+    }
+
     public function data()
     {
         if (!$this->hasMenuAccess('admin/laporan/rab-gedung')) {
@@ -295,9 +374,15 @@ class RabGedung extends BaseController
         $queryFactory = function(bool $forSums = false) {
             $builder = db_connect()->table('trn_rab_gedung_detail');
             if (!$forSums) {
-                $builder->select('trn_rab_gedung_detail.*, mst_paket.nama_paket');
+                $builder->select('trn_rab_gedung_detail.*, 
+                                  s.nama as sekolah_nama_db,
+                                  s.nsm as sekolah_nsm,
+                                  s.kecamatan as sekolah_kecamatan,
+                                  s.kabupaten as sekolah_kabupaten,
+                                  mp.nama_paket');
             }
-            return $builder->join('mst_paket', 'mst_paket.id = trn_rab_gedung_detail.paket_id', 'left');
+            return $builder->join('mst_sekolah s', 's.npsn = trn_rab_gedung_detail.sekolah_npsn', 'left')
+                           ->join('mst_paket mp', 'mp.id = COALESCE(trn_rab_gedung_detail.paket_id, s.paket_id)', 'left');
         };
 
         $filterApplier = function($builder) {
@@ -306,14 +391,14 @@ class RabGedung extends BaseController
             $paketId = $this->request->getGet('paket_id');
             $kategori1 = $this->request->getGet('kategori_1');
             $kategori2 = $this->request->getGet('kategori_2');
-            if ($npsn !== null && $npsn !== '') {
+            if ($npsn !== null && $npsn !== '' && $npsn !== 'all') {
                 $builder->where('trn_rab_gedung_detail.sekolah_npsn', $npsn);
             }
-            if ($gedung !== null && $gedung !== '') {
+            if ($gedung !== null && $gedung !== '' && $gedung !== 'all') {
                 $builder->where('trn_rab_gedung_detail.gedung', $gedung);
             }
             if ($paketId !== null && $paketId !== '' && $paketId !== 'all') {
-                $builder->where('trn_rab_gedung_detail.paket_id', $paketId);
+                $builder->where('COALESCE(trn_rab_gedung_detail.paket_id, s.paket_id)', $paketId);
             }
             if ($kategori1 !== null && $kategori1 !== '' && $kategori1 !== 'all') {
                 $builder->where('trn_rab_gedung_detail.kategori_1', $kategori1);
@@ -323,23 +408,37 @@ class RabGedung extends BaseController
             }
         };
 
-        $searchColumns = ['nama_sekolah', 'gedung', 'kategori_1', 'kategori_2', 'no_urut', 'uraian', 'satuan', 'mst_paket.nama_paket'];
+        $searchColumns = [
+            's.nama',
+            'trn_rab_gedung_detail.nama_sekolah',
+            'trn_rab_gedung_detail.sekolah_npsn',
+            's.nsm',
+            's.kecamatan',
+            's.kabupaten',
+            'trn_rab_gedung_detail.gedung',
+            'trn_rab_gedung_detail.kategori_1',
+            'trn_rab_gedung_detail.kategori_2',
+            'trn_rab_gedung_detail.no_urut',
+            'trn_rab_gedung_detail.uraian',
+            'trn_rab_gedung_detail.satuan',
+            'mp.nama_paket'
+        ];
         $orderColumns = [
-            'id',
-            'gedung',
-            'kategori_1',
-            'kategori_2',
-            'uraian',
-            'satuan',
-            'kontrak_volume',
-            'kontrak_harga_satuan',
-            'kontrak_jumlah_harga',
-            'mc_nol_volume',
-            'mc_nol_jumlah_harga',
-            'tambah_volume',
-            'tambah_jumlah_harga',
-            'kurang_volume',
-            'kurang_jumlah_harga'
+            'trn_rab_gedung_detail.id',
+            'trn_rab_gedung_detail.gedung',
+            'trn_rab_gedung_detail.kategori_1',
+            'trn_rab_gedung_detail.kategori_2',
+            'trn_rab_gedung_detail.uraian',
+            'trn_rab_gedung_detail.satuan',
+            'trn_rab_gedung_detail.kontrak_volume',
+            'trn_rab_gedung_detail.kontrak_harga_satuan',
+            'trn_rab_gedung_detail.kontrak_jumlah_harga',
+            'trn_rab_gedung_detail.mc_nol_volume',
+            'trn_rab_gedung_detail.mc_nol_jumlah_harga',
+            'trn_rab_gedung_detail.tambah_volume',
+            'trn_rab_gedung_detail.tambah_jumlah_harga',
+            'trn_rab_gedung_detail.kurang_volume',
+            'trn_rab_gedung_detail.kurang_jumlah_harga'
         ];
 
         $rowMapper = function($row) {
@@ -358,10 +457,17 @@ class RabGedung extends BaseController
             
             $row['bobot_persen_formatted'] = $row['bobot_persen'] !== null ? number_format($row['bobot_persen'], 4, ',', '.') . '%' : '-';
             
-            $row['uraian_escaped'] = esc($row['uraian']);
-            $row['gedung_escaped'] = esc($row['gedung']);
-            $row['kategori_1_escaped'] = esc($row['kategori_1']);
-            $row['kategori_2_escaped'] = esc($row['kategori_2']);
+            $sekolahNama = !empty($row['sekolah_nama_db']) ? $row['sekolah_nama_db'] : ($row['nama_sekolah'] ?? '-');
+            $row['nama_sekolah_escaped'] = esc($sekolahNama);
+            $row['sekolah_npsn_escaped'] = esc((string)($row['sekolah_npsn'] ?? '-'));
+            $nsmStr = !empty($row['sekolah_nsm']) ? ' / ' . esc($row['sekolah_nsm']) : '';
+            $row['npsn_nsm_escaped'] = esc((string)($row['sekolah_npsn'] ?? '-')) . $nsmStr;
+            $row['kecamatan_escaped'] = esc($row['sekolah_kecamatan'] ?? '-');
+            $row['kabupaten_escaped'] = esc($row['sekolah_kabupaten'] ?? '-');
+            $row['uraian_escaped'] = esc($row['uraian'] ?? '');
+            $row['gedung_escaped'] = esc($row['gedung'] ?? '');
+            $row['kategori_1_escaped'] = esc($row['kategori_1'] ?? '');
+            $row['kategori_2_escaped'] = esc($row['kategori_2'] ?? '');
             $row['nama_paket_escaped'] = esc($row['nama_paket'] ?? '');
             
             return $row;
@@ -774,7 +880,35 @@ class RabGedung extends BaseController
             $this->applyDataTableSearch($filteredBuilder, $searchColumns, $search);
             $recordsFiltered = (int) $filteredBuilder->countAllResults(false);
 
-            $orderColumn = $orderColumns[$orderIndex] ?? $orderColumns[0] ?? '';
+            $colData = $this->getDataTableOrderColumnData();
+            $columnDataMap = [
+                'nama_sekolah_escaped'          => 'COALESCE(s.nama, trn_rab_gedung_detail.nama_sekolah)',
+                'npsn_nsm_escaped'              => 'trn_rab_gedung_detail.sekolah_npsn',
+                'kecamatan_escaped'             => 's.kecamatan',
+                'kabupaten_escaped'             => 's.kabupaten',
+                'nama_paket_escaped'            => 'mp.nama_paket',
+                'gedung_escaped'                => 'trn_rab_gedung_detail.gedung',
+                'kategori_1_escaped'            => 'trn_rab_gedung_detail.kategori_1',
+                'kategori_2_escaped'            => 'trn_rab_gedung_detail.kategori_2',
+                'uraian_escaped'                => 'trn_rab_gedung_detail.uraian',
+                'satuan'                        => 'trn_rab_gedung_detail.satuan',
+                'kontrak_volume_formatted'       => 'trn_rab_gedung_detail.kontrak_volume',
+                'kontrak_harga_satuan_formatted'  => 'trn_rab_gedung_detail.kontrak_harga_satuan',
+                'kontrak_jumlah_harga_formatted'  => 'trn_rab_gedung_detail.kontrak_jumlah_harga',
+                'mc_nol_volume_formatted'        => 'trn_rab_gedung_detail.mc_nol_volume',
+                'mc_nol_jumlah_harga_formatted'   => 'trn_rab_gedung_detail.mc_nol_jumlah_harga',
+                'tambah_volume_formatted'        => 'trn_rab_gedung_detail.tambah_volume',
+                'tambah_jumlah_harga_formatted'   => 'trn_rab_gedung_detail.tambah_jumlah_harga',
+                'kurang_volume_formatted'        => 'trn_rab_gedung_detail.kurang_volume',
+                'kurang_jumlah_harga_formatted'   => 'trn_rab_gedung_detail.kurang_jumlah_harga',
+            ];
+
+            if ($colData !== '' && isset($columnDataMap[$colData])) {
+                $orderColumn = $columnDataMap[$colData];
+            } else {
+                $orderColumn = $orderColumns[$orderIndex] ?? $orderColumns[0] ?? '';
+            }
+
             if ($orderColumn !== '') {
                 $filteredBuilder->orderBy($orderColumn, $orderDirection);
             }
@@ -789,14 +923,14 @@ class RabGedung extends BaseController
             $sumsBuilder = $queryFactory(true);
             $filterApplier($sumsBuilder);
             $this->applyDataTableSearch($sumsBuilder, $searchColumns, $search);
-            $sums = $sumsBuilder->select('SUM(kontrak_jumlah_harga) as sum_kontrak,
-                                         SUM(mc_nol_jumlah_harga) as sum_mcnol,
-                                         SUM(tambah_jumlah_harga) as sum_tambah,
-                                         SUM(kurang_jumlah_harga) as sum_kurang,
-                                         SUM(kontrak_volume) as sum_kontrak_vol,
-                                         SUM(mc_nol_volume) as sum_mcnol_vol,
-                                         SUM(tambah_volume) as sum_tambah_vol,
-                                         SUM(kurang_volume) as sum_kurang_vol')
+            $sums = $sumsBuilder->select('SUM(trn_rab_gedung_detail.kontrak_jumlah_harga) as sum_kontrak,
+                                         SUM(trn_rab_gedung_detail.mc_nol_jumlah_harga) as sum_mcnol,
+                                         SUM(trn_rab_gedung_detail.tambah_jumlah_harga) as sum_tambah,
+                                         SUM(trn_rab_gedung_detail.kurang_jumlah_harga) as sum_kurang,
+                                         SUM(trn_rab_gedung_detail.kontrak_volume) as sum_kontrak_vol,
+                                         SUM(trn_rab_gedung_detail.mc_nol_volume) as sum_mcnol_vol,
+                                         SUM(trn_rab_gedung_detail.tambah_volume) as sum_tambah_vol,
+                                         SUM(trn_rab_gedung_detail.kurang_volume) as sum_kurang_vol')
                                 ->get()
                                 ->getRowArray();
 
@@ -848,6 +982,27 @@ class RabGedung extends BaseController
             $builder->orLike($column, $searchTerm);
         }
         $builder->groupEnd();
+    }
+
+    private function getDataTableOrderColumnData(): string
+    {
+        $order = $this->request->getGet('order');
+        if (! is_array($order) || $order === []) {
+            return '';
+        }
+
+        $first = $order[0] ?? [];
+        if (! is_array($first)) {
+            return '';
+        }
+
+        $colIdx = (int) ($first['column'] ?? 0);
+        $columns = $this->request->getGet('columns');
+        if (! is_array($columns) || ! isset($columns[$colIdx])) {
+            return '';
+        }
+
+        return (string) ($columns[$colIdx]['data'] ?? '');
     }
 
     private function getDataTableDraw(): int

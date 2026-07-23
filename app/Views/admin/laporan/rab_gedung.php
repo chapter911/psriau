@@ -30,6 +30,9 @@ $pakets = $pakets ?? [];
     <div class="card-header d-flex align-items-center">
         <h3 class="card-title mb-0"><i class="fas fa-school mr-1"></i> Daftar Sekolah - RAB</h3>
         <div class="card-tools ml-auto">
+            <a href="<?= site_url('admin/laporan/rab-gedung/detail-semua'); ?>" class="btn btn-info btn-sm mr-1">
+                <i class="fas fa-list-alt mr-1"></i> Lihat Seluruh Data Detail
+            </a>
             <?php if ($canImport): ?>
                 <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#modalImport">
                     <i class="fas fa-file-import mr-1"></i> Import Excel RAB
