@@ -232,6 +232,16 @@ class RabGedung extends BaseController
             ->get()
             ->getResultArray();
 
+        $uraianRows = $db->table('trn_rab_gedung_detail')
+            ->select('uraian')
+            ->distinct()
+            ->where('sekolah_npsn', $npsn)
+            ->where('uraian IS NOT NULL')
+            ->where('uraian !=', '')
+            ->orderBy('uraian', 'ASC')
+            ->get()
+            ->getResultArray();
+
         // Also fetch all schools for the add/edit dropdown just in case,
         // but default it to this school.
         $allSekolahs = $sekolahModel->orderBy('nama', 'ASC')->findAll();
@@ -267,6 +277,7 @@ class RabGedung extends BaseController
             'gedungs' => array_column($gedungRows, 'gedung'),
             'kategori_1s' => array_column($kategori1Rows, 'kategori_1'),
             'kategori_2s' => array_column($kategori2Rows, 'kategori_2'),
+            'uraians' => array_column($uraianRows, 'uraian'),
             'total_kontrak' => (float)($sums['total_kontrak'] ?? 0),
             'total_mcnol' => (float)($sums['total_mcnol'] ?? 0),
             'total_tambah' => (float)($sums['total_tambah'] ?? 0),
@@ -329,6 +340,16 @@ class RabGedung extends BaseController
             ->get()
             ->getResultArray();
 
+        // Get list of distinct uraians
+        $uraianRows = $db->table('trn_rab_gedung_detail')
+            ->select('uraian')
+            ->distinct()
+            ->where('uraian IS NOT NULL')
+            ->where('uraian !=', '')
+            ->orderBy('uraian', 'ASC')
+            ->get()
+            ->getResultArray();
+
         // Calculate summary totals across all RAB items
         $sums = $db->table('trn_rab_gedung_detail')
             ->select('SUM(kontrak_jumlah_harga) as total_kontrak, 
@@ -348,6 +369,7 @@ class RabGedung extends BaseController
             'gedungs'       => array_column($gedungRows, 'gedung'),
             'kategori_1s'   => array_column($kategori1Rows, 'kategori_1'),
             'kategori_2s'   => array_column($kategori2Rows, 'kategori_2'),
+            'uraians'       => array_column($uraianRows, 'uraian'),
             'total_kontrak' => (float)($sums['total_kontrak'] ?? 0),
             'total_mcnol'   => (float)($sums['total_mcnol'] ?? 0),
             'total_tambah'  => (float)($sums['total_tambah'] ?? 0),
@@ -392,6 +414,7 @@ class RabGedung extends BaseController
             $paketId = $this->request->getGet('paket_id');
             $kategori1 = $this->request->getGet('kategori_1');
             $kategori2 = $this->request->getGet('kategori_2');
+            $uraian = $this->request->getGet('uraian');
 
             // 1. Sekolah NPSN Filter (Array or Single)
             if ($npsn !== null && $npsn !== '' && $npsn !== 'all') {
@@ -450,6 +473,18 @@ class RabGedung extends BaseController
                     }
                 } else {
                     $builder->where('trn_rab_gedung_detail.kategori_2', $kategori2);
+                }
+            }
+
+            // 6. Uraian Pekerjaan Filter (Array or Single)
+            if ($uraian !== null && $uraian !== '' && $uraian !== 'all') {
+                if (is_array($uraian)) {
+                    $uraianList = array_values(array_filter($uraian, fn($v) => $v !== null && $v !== '' && $v !== 'all'));
+                    if ($uraianList !== []) {
+                        $builder->whereIn('trn_rab_gedung_detail.uraian', $uraianList);
+                    }
+                } else {
+                    $builder->where('trn_rab_gedung_detail.uraian', $uraian);
                 }
             }
         };

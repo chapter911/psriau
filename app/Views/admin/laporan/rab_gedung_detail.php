@@ -93,12 +93,12 @@ $totalKurang = $total_kurang ?? 0;
 
         <!-- Filters Row -->
         <div class="row align-items-center">
-            <div class="col-md-4">
+            <div class="col-md-3 mb-2 mb-md-0">
                 <div class="form-group mb-0">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <label for="filterGedung" class="mb-0 text-muted small font-weight-bold"><i class="fas fa-building mr-1"></i>Filter Pekerjaan</label>
                         <span class="small">
-                            <a href="#" class="btn-select-all filter-quick-action text-primary mr-1" data-target="#filterGedung">[Pilih Semua]</a>
+                            <a href="#" class="btn-select-all filter-quick-action text-primary mr-1" data-target="#filterGedung">[Pilih]</a>
                             <a href="#" class="btn-reset-filter filter-quick-action text-danger" data-target="#filterGedung">[Reset]</a>
                         </span>
                     </div>
@@ -109,12 +109,12 @@ $totalKurang = $total_kurang ?? 0;
                     </select>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3 mb-2 mb-md-0">
                 <div class="form-group mb-0">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <label for="filterKategori" class="mb-0 text-muted small font-weight-bold"><i class="fas fa-folder mr-1"></i>Filter Kategori</label>
                         <span class="small">
-                            <a href="#" class="btn-select-all filter-quick-action text-primary mr-1" data-target="#filterKategori">[Pilih Semua]</a>
+                            <a href="#" class="btn-select-all filter-quick-action text-primary mr-1" data-target="#filterKategori">[Pilih]</a>
                             <a href="#" class="btn-reset-filter filter-quick-action text-danger" data-target="#filterKategori">[Reset]</a>
                         </span>
                     </div>
@@ -125,18 +125,34 @@ $totalKurang = $total_kurang ?? 0;
                     </select>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3 mb-2 mb-md-0">
                 <div class="form-group mb-0">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <label for="filterSubKategori" class="mb-0 text-muted small font-weight-bold"><i class="fas fa-folder-open mr-1"></i>Filter Sub-Kategori</label>
                         <span class="small">
-                            <a href="#" class="btn-select-all filter-quick-action text-primary mr-1" data-target="#filterSubKategori">[Pilih Semua]</a>
+                            <a href="#" class="btn-select-all filter-quick-action text-primary mr-1" data-target="#filterSubKategori">[Pilih]</a>
                             <a href="#" class="btn-reset-filter filter-quick-action text-danger" data-target="#filterSubKategori">[Reset]</a>
                         </span>
                     </div>
                     <select id="filterSubKategori" class="form-control select2-filter" multiple="multiple" data-placeholder="Semua Sub-Kategori...">
                         <?php foreach ($kategori_2s as $sub): ?>
                             <option value="<?= esc($sub); ?>"><?= esc($sub); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3 mb-2 mb-md-0">
+                <div class="form-group mb-0">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="filterUraian" class="mb-0 text-muted small font-weight-bold"><i class="fas fa-tasks mr-1"></i>Filter Uraian</label>
+                        <span class="small">
+                            <a href="#" class="btn-select-all filter-quick-action text-primary mr-1" data-target="#filterUraian">[Pilih]</a>
+                            <a href="#" class="btn-reset-filter filter-quick-action text-danger" data-target="#filterUraian">[Reset]</a>
+                        </span>
+                    </div>
+                    <select id="filterUraian" class="form-control select2-filter" multiple="multiple" data-placeholder="Semua Uraian...">
+                        <?php foreach ($uraians as $ur): ?>
+                            <option value="<?= esc($ur); ?>"><?= esc($ur); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -305,6 +321,7 @@ $(document).ready(function() {
                 d.gedung = $('#filterGedung').val();
                 d.kategori_1 = $('#filterKategori').val();
                 d.kategori_2 = $('#filterSubKategori').val();
+                d.uraian = $('#filterUraian').val();
             }
         },
         columns: [
@@ -401,7 +418,7 @@ $(document).ready(function() {
     });
 
     // Filter triggers reload
-    $('#filterGedung, #filterKategori, #filterSubKategori').on('change', function() {
+    $('#filterGedung, #filterKategori, #filterSubKategori, #filterUraian').on('change', function() {
         table.ajax.reload();
     });
 });

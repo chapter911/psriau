@@ -134,7 +134,7 @@ $totalKurang  = $total_kurang ?? 0;
             </div>
 
             <!-- Filter Kategori -->
-            <div class="col-lg-6 col-md-6 mb-3">
+            <div class="col-lg-4 col-md-6 mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <label for="filterKategori" class="mb-0 text-muted small font-weight-bold">
                         <i class="fas fa-folder mr-1"></i>Kategori (Multi-Select)
@@ -152,7 +152,7 @@ $totalKurang  = $total_kurang ?? 0;
             </div>
 
             <!-- Filter Sub-Kategori -->
-            <div class="col-lg-6 col-md-12 mb-3">
+            <div class="col-lg-4 col-md-6 mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <label for="filterSubKategori" class="mb-0 text-muted small font-weight-bold">
                         <i class="fas fa-folder-open mr-1"></i>Sub-Kategori (Multi-Select)
@@ -165,6 +165,24 @@ $totalKurang  = $total_kurang ?? 0;
                 <select id="filterSubKategori" class="form-control select2-filter" multiple="multiple" data-placeholder="Semua Sub-Kategori...">
                     <?php foreach ($kategori_2s as $sub): ?>
                         <option value="<?= esc($sub); ?>"><?= esc($sub); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <!-- Filter Uraian Pekerjaan -->
+            <div class="col-lg-4 col-md-12 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="filterUraian" class="mb-0 text-muted small font-weight-bold">
+                        <i class="fas fa-tasks mr-1"></i>Uraian Pekerjaan (Multi-Select)
+                    </label>
+                    <span class="small">
+                        <a href="#" class="btn-select-all filter-quick-action text-primary mr-1" data-target="#filterUraian">[Pilih Semua]</a>
+                        <a href="#" class="btn-reset-filter filter-quick-action text-danger" data-target="#filterUraian">[Reset]</a>
+                    </span>
+                </div>
+                <select id="filterUraian" class="form-control select2-filter" multiple="multiple" data-placeholder="Semua Uraian Pekerjaan...">
+                    <?php foreach ($uraians as $ur): ?>
+                        <option value="<?= esc($ur); ?>"><?= esc($ur); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -337,6 +355,7 @@ $(document).ready(function() {
                 d.gedung        = $('#filterGedung').val();
                 d.kategori_1    = $('#filterKategori').val();
                 d.kategori_2    = $('#filterSubKategori').val();
+                d.uraian        = $('#filterUraian').val();
             }
         },
         columns: [
@@ -428,7 +447,7 @@ $(document).ready(function() {
     });
 
     // Filter triggers reload
-    $('#filterSekolah, #filterPaket, #filterGedung, #filterKategori, #filterSubKategori').on('change', function() {
+    $('#filterSekolah, #filterPaket, #filterGedung, #filterKategori, #filterSubKategori, #filterUraian').on('change', function() {
         table.ajax.reload();
     });
 });
