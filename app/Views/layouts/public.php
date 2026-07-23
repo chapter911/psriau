@@ -195,14 +195,13 @@
 </script>
 
 <main>
-    <?php $message = session()->getFlashdata('message'); ?>
+    <?php $message = session()->getFlashdata('message') ?: session()->getFlashdata('success'); ?>
     <?php $error = session()->getFlashdata('error'); ?>
     <?php if ($message || $error): ?>
         <div class="container flash-wrap">
             <?php if ($message): ?>
                 <div class="flash success"><?= esc($message); ?></div>
-            <?php endif; ?>
-            <?php if ($error): ?>
+            <?php elseif ($error): ?>
                 <div class="flash error"><?= esc($error); ?></div>
             <?php endif; ?>
         </div>

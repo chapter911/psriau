@@ -327,10 +327,10 @@
             <p>Gunakan akun yang telah terdaftar (username / nip)</p>
         </div>
 
-        <?php if (session()->getFlashdata('message')): ?>
-            <div class="alert alert-success">✓ <?= esc(session()->getFlashdata('message')); ?></div>
-        <?php endif; ?>
-        <?php if (session()->getFlashdata('error')): ?>
+        <?php $loginMessage = session()->getFlashdata('message') ?: session()->getFlashdata('success'); ?>
+        <?php if ($loginMessage): ?>
+            <div class="alert alert-success">✓ <?= esc($loginMessage); ?></div>
+        <?php elseif (session()->getFlashdata('error')): ?>
             <div class="alert alert-danger">✕ <?= esc(session()->getFlashdata('error')); ?></div>
         <?php endif; ?>
 

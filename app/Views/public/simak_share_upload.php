@@ -635,22 +635,14 @@
             <h2 class="share-intro-title">Halaman ini membutuhkan kode OTP verifikasi</h2>
             <p class="share-intro-text">Klik tombol kirim kode verifikasi untuk mengirim 6 digit kode ke email responden yang tersimpan. Setelah kode diterima, masukkan kode tersebut untuk membuka akses halaman ini. Kode hanya berlaku selama 5 menit.</p>
 
-            <?php if (session()->getFlashdata('success')): ?>
-                <div class="alert alert-success"><?= esc((string) session()->getFlashdata('success')); ?></div>
-            <?php endif; ?>
-
-            <?php $querySuccess = trim((string) service('request')->getGet('success')); ?>
-            <?php if ($querySuccess !== ''): ?>
-                <div class="alert alert-success"><?= esc($querySuccess); ?></div>
-            <?php endif; ?>
-
-            <?php if (session()->getFlashdata('error')): ?>
-                <div class="alert alert-danger"><?= esc((string) session()->getFlashdata('error')); ?></div>
-            <?php endif; ?>
-
-            <?php $queryError = trim((string) service('request')->getGet('error')); ?>
-            <?php if ($queryError !== ''): ?>
-                <div class="alert alert-danger"><?= esc($queryError); ?></div>
+            <?php
+                $otpSuccessMsg = session()->getFlashdata('message') ?: session()->getFlashdata('success') ?: service('request')->getGet('success');
+                $otpErrorMsg = session()->getFlashdata('error') ?: service('request')->getGet('error');
+            ?>
+            <?php if (! empty($otpSuccessMsg)): ?>
+                <div class="alert alert-success"><?= esc((string) $otpSuccessMsg); ?></div>
+            <?php elseif (! empty($otpErrorMsg)): ?>
+                <div class="alert alert-danger"><?= esc((string) $otpErrorMsg); ?></div>
             <?php endif; ?>
 
             <div class="otp-gate-actions">
