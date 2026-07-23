@@ -462,11 +462,79 @@ $(document).ready(function() {
         }
     });
 
+    // Handle Send Email Button Click with SweetAlert2 Confirmation
+    $(document).on('click', '.btn-send-email', function(e) {
+        e.preventDefault();
+        var url = $(this).data('url');
+        var ppkNama = $(this).data('ppk-nama') || '-';
+        var ppkEmail = $(this).data('ppk-email') || '';
+        var kasatkerNama = $(this).data('kasatker-nama') || '-';
+        var kasatkerEmail = $(this).data('kasatker-email') || '';
+
+        var ppkBadge = ppkEmail 
+            ? '<span class="badge badge-success px-2 py-1" style="font-size: 0.9em;"><i class="fas fa-envelope mr-1"></i>' + ppkEmail + '</span>' 
+            : '<span class="badge badge-danger px-2 py-1" style="font-size: 0.9em;"><i class="fas fa-exclamation-triangle mr-1"></i> Email Belum Diisi</span>';
+
+        var kasatkerBadge = kasatkerEmail 
+            ? '<span class="badge badge-success px-2 py-1" style="font-size: 0.9em;"><i class="fas fa-envelope mr-1"></i>' + kasatkerEmail + '</span>' 
+            : '<span class="badge badge-danger px-2 py-1" style="font-size: 0.9em;"><i class="fas fa-exclamation-triangle mr-1"></i> Email Belum Diisi</span>';
+
+        var htmlContent = '<div class="text-left mt-2" style="font-size: 0.95rem; line-height: 1.6;">' +
+            '<p class="mb-3 text-secondary text-center">Email persetujuan akan dikirimkan kepada 2 pejabat berikut:</p>' +
+            '<div class="p-3 mb-2 rounded" style="background: #f8fafc; border: 1px solid #cbd5e1;">' +
+                '<strong style="color: #1e293b;"><i class="fas fa-user-check text-primary mr-1"></i> PPK (Menyetujui):</strong><br>' +
+                '<span class="text-dark font-weight-bold mr-2">' + ppkNama + '</span>' + ppkBadge +
+            '</div>' +
+            '<div class="p-3 rounded" style="background: #f8fafc; border: 1px solid #cbd5e1;">' +
+                '<strong style="color: #1e293b;"><i class="fas fa-user-shield text-info mr-1"></i> Kasatker (Diketahui):</strong><br>' +
+                '<span class="text-dark font-weight-bold mr-2">' + kasatkerNama + '</span>' + kasatkerBadge +
+            '</div>' +
+            '</div>';
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Kirim Email Persetujuan?',
+                html: htmlContent,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-paper-plane mr-1"></i> Kirim Email',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    confirmButton: 'btn btn-warning text-dark font-weight-bold px-3 py-2 mr-2',
+                    cancelButton: 'btn btn-secondary px-3 py-2'
+                },
+                buttonsStyling: false
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        } else if (typeof swal !== 'undefined') {
+            swal({
+                title: "Kirim Email Persetujuan?",
+                text: "Kirim email persetujuan ke PPK (" + ppkNama + ": " + (ppkEmail || 'Belum diisi') + ") dan Kasatker (" + kasatkerNama + ": " + (kasatkerEmail || 'Belum diisi') + ")",
+                icon: "info",
+                buttons: ["Batal", "Kirim Email"],
+            }).then(function(willSend) {
+                if (willSend) {
+                    window.location.href = url;
+                }
+            });
+        } else {
+            if (confirm("Kirim Email Persetujuan?\n\n1. PPK (Menyetujui): " + ppkNama + " (" + (ppkEmail || 'Belum diisi') + ")\n2. Kasatker (Diketahui): " + kasatkerNama + " (" + (kasatkerEmail || 'Belum diisi') + ")")) {
+                window.location.href = url;
+            }
+        }
+    });
+
     // Handle Delete Button Click
     $(document).on('click', '.btn-delete', function() {
         var id = $(this).data('id');
         $('#btnConfirmDelete').attr('href', '<?= site_url('admin/surat/perjalanan-dinas/disposisi'); ?>/' + id + '/hapus');
         $('#deleteModal').modal('show');
+        table.ajax.reload();
     });
 
     $filterStartDate.on('change', function () { table.ajax.reload(); });

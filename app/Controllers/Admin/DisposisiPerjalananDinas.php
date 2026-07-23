@@ -147,10 +147,20 @@ class DisposisiPerjalananDinas extends BaseController
 
             $statusBadge = '<div class="text-center" style="white-space:nowrap;">' . $badgeM . ' ' . $badgeD . '<br>' . $badgeOverall . '</div>';
 
+            $menyetujuiData = $this->getPegawaiSignatureData((int) ($row['menyetujui_pegawai_id'] ?? 0));
+            $diketahuiData = $this->getPegawaiSignatureData((int) ($row['diketahui_pegawai_id'] ?? 0));
+
             // Action Buttons
             $actionHtml = '<div class="doc-btn-group">';
             $actionHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/pdf') . '" class="btn btn-sm btn-danger btn-pdf" title="Cetak Disposisi (PDF)" target="_blank"><i class="fas fa-file-pdf"></i> Cetak</a>';
-            $actionHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/kirim-email') . '" class="btn btn-sm btn-warning ml-1" title="Kirim Ulang 2 Email Persetujuan"><i class="fas fa-envelope"></i> Email</a>';
+            $actionHtml .= '<button type="button" class="btn btn-sm btn-warning btn-send-email ml-1" ' .
+                'data-id="' . $row['id'] . '" ' .
+                'data-url="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/kirim-email') . '" ' .
+                'data-ppk-nama="' . esc($menyetujuiData['nama']) . '" ' .
+                'data-ppk-email="' . esc($menyetujuiData['email']) . '" ' .
+                'data-kasatker-nama="' . esc($diketahuiData['nama']) . '" ' .
+                'data-kasatker-email="' . esc($diketahuiData['email']) . '" ' .
+                'title="Kirim Ulang 2 Email Persetujuan"><i class="fas fa-envelope"></i> Email</button>';
             $actionHtml .= '<button type="button" class="btn btn-sm btn-info btn-edit ml-1" data-id="' . $row['id'] . '" title="Ubah"><i class="fas fa-edit"></i> Ubah</button>';
             $actionHtml .= '<button type="button" class="btn btn-sm btn-danger btn-delete ml-1" data-id="' . $row['id'] . '" title="Hapus"><i class="fas fa-trash"></i> Hapus</button>';
             $actionHtml .= '</div>';
