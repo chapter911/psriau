@@ -43,6 +43,10 @@ $routes->post('masuk', 'Auth::login');
 $routes->get('keluar', 'Auth::logout');
 $routes->get('forbidden', 'Home::forbidden');
 
+// Public Approval Routes for Disposisi Perjalanan Dinas (Token Secured - No Login Required)
+$routes->match(['get', 'post'], 'admin/surat/perjalanan-dinas/disposisi/(:num)/setujui', 'Admin\DisposisiPerjalananDinas::setujui/$1');
+$routes->match(['get', 'post'], 'admin/surat/perjalanan-dinas/disposisi/(:num)/tolak', 'Admin\DisposisiPerjalananDinas::tolak/$1');
+
 $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($routes): void {
 	$routes->get('/', 'Admin\\Dashboard::index');
 	$routes->get('map', 'Admin\\Dashboard::map');

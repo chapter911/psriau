@@ -680,16 +680,28 @@ class DisposisiPerjalananDinas extends BaseController
             ]);
         }
 
+        $isLoggedIn = $this->canAccess();
         $tokenField = 'token_' . $role;
         $expectedToken = trim((string) ($disposisi[$tokenField] ?? ''));
 
-        if ($token !== '' && $expectedToken !== '' && ! hash_equals($expectedToken, $token)) {
-            return view('admin/surat/disposisi_approval_response', [
-                'title'     => 'Token Tidak Valid',
-                'status'    => 'error',
-                'message'   => 'Token persetujuan tidak valid atau sudah kedaluwarsa.',
-                'disposisi' => $disposisi,
-            ]);
+        if (! $isLoggedIn) {
+            if ($token === '' || $expectedToken === '' || ! hash_equals($expectedToken, $token)) {
+                return view('admin/surat/disposisi_approval_response', [
+                    'title'     => 'Token Tidak Valid',
+                    'status'    => 'error',
+                    'message'   => 'Token persetujuan tidak valid atau sudah kedaluwarsa. Silakan periksa kembali link pada email Anda.',
+                    'disposisi' => $disposisi,
+                ]);
+            }
+        } else {
+            if ($token !== '' && $expectedToken !== '' && ! hash_equals($expectedToken, $token)) {
+                return view('admin/surat/disposisi_approval_response', [
+                    'title'     => 'Token Tidak Valid',
+                    'status'    => 'error',
+                    'message'   => 'Token persetujuan tidak valid atau sudah kedaluwarsa.',
+                    'disposisi' => $disposisi,
+                ]);
+            }
         }
 
         $statusField = 'status_' . $role;
@@ -760,16 +772,28 @@ class DisposisiPerjalananDinas extends BaseController
             ]);
         }
 
+        $isLoggedIn = $this->canAccess();
         $tokenField = 'token_' . $role;
         $expectedToken = trim((string) ($disposisi[$tokenField] ?? ''));
 
-        if ($token !== '' && $expectedToken !== '' && ! hash_equals($expectedToken, $token)) {
-            return view('admin/surat/disposisi_approval_response', [
-                'title'     => 'Token Tidak Valid',
-                'status'    => 'error',
-                'message'   => 'Token persetujuan tidak valid atau sudah kedaluwarsa.',
-                'disposisi' => $disposisi,
-            ]);
+        if (! $isLoggedIn) {
+            if ($token === '' || $expectedToken === '' || ! hash_equals($expectedToken, $token)) {
+                return view('admin/surat/disposisi_approval_response', [
+                    'title'     => 'Token Tidak Valid',
+                    'status'    => 'error',
+                    'message'   => 'Token persetujuan tidak valid atau sudah kedaluwarsa. Silakan periksa kembali link pada email Anda.',
+                    'disposisi' => $disposisi,
+                ]);
+            }
+        } else {
+            if ($token !== '' && $expectedToken !== '' && ! hash_equals($expectedToken, $token)) {
+                return view('admin/surat/disposisi_approval_response', [
+                    'title'     => 'Token Tidak Valid',
+                    'status'    => 'error',
+                    'message'   => 'Token persetujuan tidak valid atau sudah kedaluwarsa.',
+                    'disposisi' => $disposisi,
+                ]);
+            }
         }
 
         $statusField = 'status_' . $role;
