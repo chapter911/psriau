@@ -313,9 +313,9 @@ class DisposisiPerjalananDinas extends BaseController
 
         $successMsg = 'Disposisi Perjalanan Dinas berhasil disimpan.';
         if ($res1['success'] && $res2['success']) {
-            $successMsg .= ' 2 Email persetujuan (PPK & Kasatker) telah dikirim ke agung.justik@gmail.com.';
+            $successMsg .= ' 2 Email persetujuan telah dikirim ke masing-masing pejabat (PPK: ' . $res1['recipient'] . ', Kasatker: ' . $res2['recipient'] . ').';
         } else {
-            $successMsg .= ' (Pengiriman email: PPK=' . ($res1['success'] ? 'OK' : $res1['message']) . ', Kasatker=' . ($res2['success'] ? 'OK' : $res2['message']) . ')';
+            $successMsg .= ' (Pengiriman email: PPK=' . ($res1['success'] ? $res1['recipient'] : $res1['message']) . ', Kasatker=' . ($res2['success'] ? $res2['recipient'] : $res2['message']) . ')';
         }
 
         return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('success', $successMsg);
@@ -604,11 +604,11 @@ class DisposisiPerjalananDinas extends BaseController
     private function getPegawaiSignatureData(int $id): array
     {
         if ($id <= 0) {
-            return ['nama' => '', 'nip' => '', 'jabatan' => ''];
+            return ['nama' => '', 'nip' => '', 'jabatan' => '', 'email' => ''];
         }
         $db = db_connect();
         $row = $db->table('mst_pegawai')
-            ->select('mst_pegawai.nama, mst_pegawai.nip, ju.jabatan AS jabatan_label')
+            ->select('mst_pegawai.nama, mst_pegawai.nip, mst_pegawai.email, ju.jabatan AS jabatan_label')
             ->join('mst_jabatan ju', 'ju.id = mst_pegawai.jabatan_utama_id', 'left')
             ->where('mst_pegawai.id', $id)
             ->get()
@@ -617,7 +617,8 @@ class DisposisiPerjalananDinas extends BaseController
             'nama'    => (string) ($row['nama'] ?? ''),
             'nip'     => (string) ($row['nip'] ?? ''),
             'jabatan' => (string) ($row['jabatan_label'] ?? ''),
-        ] : ['nama' => '', 'nip' => '', 'jabatan' => ''];
+            'email'   => trim((string) ($row['email'] ?? '')),
+        ] : ['nama' => '', 'nip' => '', 'jabatan' => '', 'email' => ''];
     }
 
     private function loadKabupatenOptions(): array
@@ -837,7 +838,7 @@ class DisposisiPerjalananDinas extends BaseController
         $res2 = $this->sendApprovalEmail($id, 'diketahui');
 
         if ($res1['success'] || $res2['success']) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('success', '2 Email persetujuan (PPK & Kasatker) berhasil dikirim ke agung.justik@gmail.com.');
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('success', 'Email persetujuan berhasil dikirim ke masing-masing pejabat (PPK: ' . $res1['recipient'] . ', Kasatker: ' . $res2['recipient'] . ').');
         }
 
         return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('error', 'Gagal mengirim email: ' . $res1['message'] . ' / ' . $res2['message']);
@@ -859,8 +860,6 @@ class DisposisiPerjalananDinas extends BaseController
             $disposisi[$tokenField] = $token;
         }
 
-        $recipientEmail = 'agung.justik@gmail.com';
-
         $menyetujui = $this->getPegawaiSignatureData((int) $disposisi['menyetujui_pegawai_id']);
         $diketahui = $this->getPegawaiSignatureData((int) $disposisi['diketahui_pegawai_id']);
 
@@ -869,11 +868,21 @@ class DisposisiPerjalananDinas extends BaseController
             $roleLabel = 'Pejabat Pembuat Komitmen (Menyetujui)';
             $officialName = $menyetujui['nama'] ?: 'Pejabat Pembuat Komitmen';
             $officialJabatan = $menyetujui['jabatan'] ?: 'PPK';
+            $recipientEmail = trim((string) ($menyetujui['email'] ?? ''));
         } else {
             $subjectRole = '[Persetujuan Kepala Satker]';
             $roleLabel = 'Kepala Satuan Kerja (Diketahui)';
             $officialName = $diketahui['nama'] ?: 'Kepala Satuan Kerja';
             $officialJabatan = $diketahui['jabatan'] ?: 'Kasatker';
+            $recipientEmail = trim((string) ($diketahui['email'] ?? ''));
+        }
+
+        if ($recipientEmail === '') {
+            return [
+                'success'   => false,
+                'message'   => 'Email untuk ' . $roleLabel . ' (' . $officialName . ') belum diisi pada Master Pegawai.',
+                'recipient' => '',
+            ];
         }
 
         $pelaksanaList = json_decode((string) ($disposisi['pelaksana_json'] ?? '[]'), true);
