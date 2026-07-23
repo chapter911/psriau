@@ -16,6 +16,8 @@ class DisposisiPerjalananDinas extends BaseController
             return redirect()->to(site_url('/admin'));
         }
 
+        $this->ensureTableSchema();
+
         $isAjax = $this->request->isAJAX();
         $isDt = $this->isDataTableRequest();
         $logMsg = date('Y-m-d H:i:s') . " - Disposisi::index() - isAJAX: " . ($isAjax ? 'YES' : 'NO') . " - isDt: " . ($isDt ? 'YES' : 'NO') . " - GET: " . json_encode($this->request->getGet()) . "\n";
@@ -40,6 +42,7 @@ class DisposisiPerjalananDinas extends BaseController
 
     private function dataTable()
     {
+        $this->ensureTableSchema();
         $draw = $this->getDataTableDraw();
         $start = $this->getDataTableStart();
         $length = $this->getDataTableLength();
@@ -184,6 +187,8 @@ class DisposisiPerjalananDinas extends BaseController
         if (! $this->canAccess()) {
             return redirect()->to(site_url('/admin'));
         }
+
+        $this->ensureTableSchema();
 
         if (strtolower((string) $this->request->getMethod()) !== 'post') {
             return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'));
@@ -966,6 +971,83 @@ class DisposisiPerjalananDinas extends BaseController
         } catch (\Throwable $e) {
             log_message('error', 'Exception sending ' . $role . ' approval email: ' . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage(), 'recipient' => $recipientEmail];
+        }
+    }
+
+    private function ensureTableSchema(): void
+    {
+        $db = db_connect();
+        if (! $db->tableExists('disposisi_perjalanan_dinas')) {
+            return;
+        }
+
+        $fields = [];
+
+        if (! $db->fieldExists('status_menyetujui', 'disposisi_perjalanan_dinas')) {
+            $fields['status_menyetujui'] = [
+                'type'       => 'ENUM',
+                'constraint' => ['pending', 'disetujui', 'ditolak'],
+                'default'    => 'pending',
+                'after'      => 'diketahui_pegawai_id',
+            ];
+        }
+
+        if (! $db->fieldExists('status_diketahui', 'disposisi_perjalanan_dinas')) {
+            $fields['status_diketahui'] = [
+                'type'       => 'ENUM',
+                'constraint' => ['pending', 'disetujui', 'ditolak'],
+                'default'    => 'pending',
+                'after'      => 'status_menyetujui',
+            ];
+        }
+
+        if (! $db->fieldExists('token_menyetujui', 'disposisi_perjalanan_dinas')) {
+            $fields['token_menyetujui'] = [
+                'type'       => 'VARCHAR',
+                'constraint' => 64,
+                'null'       => true,
+                'after'      => 'status_diketahui',
+            ];
+        }
+
+        if (! $db->fieldExists('token_diketahui', 'disposisi_perjalanan_dinas')) {
+            $fields['token_diketahui'] = [
+                'type'       => 'VARCHAR',
+                'constraint' => 64,
+                'null'       => true,
+                'after'      => 'token_menyetujui',
+            ];
+        }
+
+        if (! $db->fieldExists('catatan_penolakan', 'disposisi_perjalanan_dinas')) {
+            $fields['catatan_penolakan'] = [
+                'type'  => 'TEXT',
+                'null'  => true,
+                'after' => 'token_diketahui',
+            ];
+        }
+
+        if (! $db->fieldExists('status', 'disposisi_perjalanan_dinas')) {
+            $fields['status'] = [
+                'type'       => 'ENUM',
+                'constraint' => ['pending', 'disetujui', 'ditolak'],
+                'default'    => 'pending',
+                'after'      => 'catatan_penolakan',
+            ];
+        }
+
+        if (! $db->fieldExists('approval_token', 'disposisi_perjalanan_dinas')) {
+            $fields['approval_token'] = [
+                'type'       => 'VARCHAR',
+                'constraint' => 64,
+                'null'       => true,
+                'after'      => 'status',
+            ];
+        }
+
+        if ($fields !== []) {
+            $forge = \Config\Database::forge();
+            $forge->addColumn('disposisi_perjalanan_dinas', $fields);
         }
     }
 }
