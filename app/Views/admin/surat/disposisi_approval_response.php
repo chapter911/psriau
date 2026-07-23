@@ -58,18 +58,20 @@
     <?php
         $statusType = match ($status ?? '') {
             'disetujui' => 'success',
-            'ditolak' => 'danger',
+            'ditolak', 'error' => 'danger',
             default => 'info',
         };
         $statusIcon = match ($status ?? '') {
-            'disetujui' => 'fa-check-circle',
-            'ditolak' => 'fa-times-circle',
-            default => 'fa-info-circle',
+            'disetujui' => 'fa-check-double',
+            'ditolak'   => 'fa-times-circle',
+            'error'     => 'fa-exclamation-triangle',
+            default     => 'fa-check-circle',
         };
         $statusTitle = match ($status ?? '') {
             'disetujui' => 'Disposisi Disetujui Lengkap!',
-            'ditolak' => 'Disposisi Ditolak',
-            default => 'Persetujuan Diberikan',
+            'ditolak'   => 'Disposisi Ditolak',
+            'error'     => !empty($title) ? $title : 'Gagal Memproses',
+            default     => !empty($title) ? $title : 'Persetujuan Berhasil Disimpan',
         };
     ?>
     
