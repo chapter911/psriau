@@ -293,11 +293,14 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('surat/lupa-absen/(:num)/reject', 'Admin\\LupaAbsen::reject/$1');
 
 	// Surat Routes - Disposisi Perjalanan Dinas
-	$routes->get('surat/perjalanan-dinas/disposisi', 'Admin\\DisposisiPerjalananDinas::index');
-	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/disposisi/buat', 'Admin\\DisposisiPerjalananDinas::buat');
-	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/disposisi/(:num)/ubah', 'Admin\\DisposisiPerjalananDinas::ubah/$1');
-	$routes->get('surat/perjalanan-dinas/disposisi/(:num)/pdf', 'Admin\\DisposisiPerjalananDinas::pdf/$1');
-	$routes->get('surat/perjalanan-dinas/disposisi/(:num)/hapus', 'Admin\\DisposisiPerjalananDinas::hapus/$1');
+	$routes->get('surat/perjalanan-dinas/disposisi', 'Admin\DisposisiPerjalananDinas::index');
+	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/disposisi/buat', 'Admin\DisposisiPerjalananDinas::buat');
+	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/disposisi/(:num)/ubah', 'Admin\DisposisiPerjalananDinas::ubah/$1');
+	$routes->get('surat/perjalanan-dinas/disposisi/(:num)/pdf', 'Admin\DisposisiPerjalananDinas::pdf/$1');
+	$routes->get('surat/perjalanan-dinas/disposisi/(:num)/hapus', 'Admin\DisposisiPerjalananDinas::hapus/$1');
+	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/disposisi/(:num)/setujui', 'Admin\DisposisiPerjalananDinas::setujui/$1');
+	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/disposisi/(:num)/tolak', 'Admin\DisposisiPerjalananDinas::tolak/$1');
+	$routes->get('surat/perjalanan-dinas/disposisi/(:num)/kirim-email', 'Admin\DisposisiPerjalananDinas::kirimEmail/$1');
 
 	$routes->get('kontrak/export/(:any)/(:num)', 'Admin\\Kontrak::exportDocument/$1/$2');
 	$routes->post('slide/tambah', 'Admin\\HomeSetting::createSlide');

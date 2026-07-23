@@ -119,7 +119,8 @@
                         <th>Tujuan</th>
                         <th>Transportasi</th>
                         <th>Perihal</th>
-                        <th style="width: 220px;">Aksi</th>
+                        <th style="width: 100px;">Status</th>
+                        <th style="width: 250px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -446,6 +447,7 @@ $(document).ready(function() {
             },
             { data: 'transportasi', className: 'text-center' },
             { data: 'perihal' },
+            { data: 'status_badge', className: 'text-center', sortable: false, searchable: false },
             { data: 'action_html', className: 'text-center', sortable: false, searchable: false }
         ],
         order: [[0, 'desc']],

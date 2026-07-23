@@ -119,9 +119,22 @@ class DisposisiPerjalananDinas extends BaseController
             $tglSelesai = $row['periode_selesai'] ? date('d-m-Y', strtotime($row['periode_selesai'])) : '-';
             $periodeHtml = $tglMulai === $tglSelesai ? $tglMulai : $tglMulai . ' s/d ' . $tglSelesai;
 
+            // Format Status Badge
+            $status = trim((string) ($row['status'] ?? 'pending'));
+            $statusBadge = match ($status) {
+                'disetujui' => '<span class="badge badge-success px-2 py-1"><i class="fas fa-check"></i> Disetujui</span>',
+                'ditolak'   => '<span class="badge badge-danger px-2 py-1" title="' . esc($row['catatan_penolakan'] ?? '') . '"><i class="fas fa-times"></i> Ditolak</span>',
+                default     => '<span class="badge badge-warning px-2 py-1"><i class="fas fa-clock"></i> Pending</span>',
+            };
+
             // Action Buttons
             $actionHtml = '<div class="doc-btn-group">';
             $actionHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/pdf') . '" class="btn btn-sm btn-danger btn-pdf" title="Cetak Disposisi (PDF)" target="_blank"><i class="fas fa-file-pdf"></i> Cetak</a>';
+            $actionHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/kirim-email') . '" class="btn btn-sm btn-warning ml-1" title="Kirim Ulang Email Persetujuan"><i class="fas fa-envelope"></i> Email</a>';
+            if ($status === 'pending') {
+                $actionHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/setujui') . '" class="btn btn-sm btn-success ml-1" title="Setujui Disposisi" onclick="return confirm(\'Apakah Anda yakin ingin menyetujui disposisi ini?\')"><i class="fas fa-check"></i></a>';
+                $actionHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/tolak') . '" class="btn btn-sm btn-danger ml-1" title="Tolak Disposisi" onclick="return confirm(\'Apakah Anda yakin ingin menolak disposisi ini?\')"><i class="fas fa-times"></i></a>';
+            }
             $actionHtml .= '<button type="button" class="btn btn-sm btn-info btn-edit ml-1" data-id="' . $row['id'] . '" title="Ubah"><i class="fas fa-edit"></i> Ubah</button>';
             $actionHtml .= '<button type="button" class="btn btn-sm btn-danger btn-delete ml-1" data-id="' . $row['id'] . '" title="Hapus"><i class="fas fa-trash"></i> Hapus</button>';
             $actionHtml .= '</div>';
@@ -139,6 +152,8 @@ class DisposisiPerjalananDinas extends BaseController
                 'perihal'         => $row['perihal'],
                 'menyetujui_id'   => $row['menyetujui_pegawai_id'],
                 'diketahui_id'    => $row['diketahui_pegawai_id'],
+                'status'          => $status,
+                'status_badge'    => $statusBadge,
                 'action_html'     => $actionHtml,
             ];
         }
@@ -222,6 +237,7 @@ class DisposisiPerjalananDinas extends BaseController
         $pegawaiOptions = $this->loadPegawaiOptions();
         $pelaksanaRows = $this->buildPegawaiRowsByIds($pegawaiOptions, $pelaksanaIds);
         $username = trim((string) session()->get('username'));
+        $approvalToken = bin2hex(random_bytes(16));
 
         $model = new DisposisiPerjalananDinasModel();
         $data = [
@@ -234,6 +250,8 @@ class DisposisiPerjalananDinas extends BaseController
             'perihal'               => $perihal,
             'menyetujui_pegawai_id' => $menyetujuiId,
             'diketahui_pegawai_id'  => $diketahuiId,
+            'status'                => 'pending',
+            'approval_token'        => $approvalToken,
             'created_by'            => $username,
             'created_at'            => date('Y-m-d H:i:s'),
             'updated_at'            => date('Y-m-d H:i:s'),
@@ -266,7 +284,16 @@ class DisposisiPerjalananDinas extends BaseController
             'created_at'             => date('Y-m-d H:i:s'),
         ]);
 
-        return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('success', 'Disposisi Perjalanan Dinas berhasil disimpan.');
+        // Send Email for Approval
+        $emailResult = $this->sendApprovalEmail((int) $insertId);
+        $successMsg = 'Disposisi Perjalanan Dinas berhasil disimpan.';
+        if ($emailResult['success']) {
+            $successMsg .= ' Email persetujuan telah dikirim ke ' . $emailResult['recipient'] . '.';
+        } else {
+            $successMsg .= ' (Catatan email: ' . $emailResult['message'] . ')';
+        }
+
+        return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('success', $successMsg);
     }
 
     public function ubah(int $id)
@@ -607,5 +634,254 @@ class DisposisiPerjalananDinas extends BaseController
         return array_values(array_filter(array_map(static function (array $row): string {
             return trim((string) ($row['kabupaten'] ?? ''));
         }, $rows), static fn (string $value): bool => $value !== ''));
+    }
+
+    public function setujui(int $id)
+    {
+        $token = trim((string) $this->request->getGet('token'));
+        $model = new DisposisiPerjalananDinasModel();
+        $disposisi = $model->find($id);
+
+        if (! is_array($disposisi)) {
+            return view('admin/surat/disposisi_approval_response', [
+                'title'   => 'Data Tidak Ditemukan',
+                'status'  => 'error',
+                'message' => 'Data Disposisi Perjalanan Dinas tidak ditemukan.',
+            ]);
+        }
+
+        if ($token !== '' && ! empty($disposisi['approval_token']) && ! hash_equals($disposisi['approval_token'], $token)) {
+            return view('admin/surat/disposisi_approval_response', [
+                'title'     => 'Token Tidak Valid',
+                'status'    => 'error',
+                'message'   => 'Token persetujuan tidak valid atau sudah kedaluwarsa.',
+                'disposisi' => $disposisi,
+            ]);
+        }
+
+        $model->update($id, [
+            'status'     => 'disetujui',
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $disposisi['status'] = 'disetujui';
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status'  => 'success',
+                'message' => 'Disposisi Perjalanan Dinas berhasil disetujui.',
+            ]);
+        }
+
+        return view('admin/surat/disposisi_approval_response', [
+            'title'     => 'Disposisi Disetujui',
+            'status'    => 'disetujui',
+            'message'   => 'Terima kasih, pengajuan Disposisi Perjalanan Dinas #' . $id . ' telah disetujui.',
+            'disposisi' => $disposisi,
+        ]);
+    }
+
+    public function tolak(int $id)
+    {
+        $token = trim((string) $this->request->getGet('token'));
+        $catatan = trim((string) ($this->request->getPost('catatan') ?: $this->request->getGet('catatan')));
+
+        $model = new DisposisiPerjalananDinasModel();
+        $disposisi = $model->find($id);
+
+        if (! is_array($disposisi)) {
+            return view('admin/surat/disposisi_approval_response', [
+                'title'   => 'Data Tidak Ditemukan',
+                'status'  => 'error',
+                'message' => 'Data Disposisi Perjalanan Dinas tidak ditemukan.',
+            ]);
+        }
+
+        if ($token !== '' && ! empty($disposisi['approval_token']) && ! hash_equals($disposisi['approval_token'], $token)) {
+            return view('admin/surat/disposisi_approval_response', [
+                'title'     => 'Token Tidak Valid',
+                'status'    => 'error',
+                'message'   => 'Token persetujuan tidak valid atau sudah kedaluwarsa.',
+                'disposisi' => $disposisi,
+            ]);
+        }
+
+        $model->update($id, [
+            'status'            => 'ditolak',
+            'catatan_penolakan' => $catatan !== '' ? $catatan : 'Ditolak oleh Pejabat/Penerima Email',
+            'updated_at'        => date('Y-m-d H:i:s'),
+        ]);
+
+        $disposisi['status'] = 'ditolak';
+        $disposisi['catatan_penolakan'] = $catatan !== '' ? $catatan : 'Ditolak oleh Pejabat/Penerima Email';
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status'  => 'success',
+                'message' => 'Disposisi Perjalanan Dinas telah ditolak.',
+            ]);
+        }
+
+        return view('admin/surat/disposisi_approval_response', [
+            'title'     => 'Disposisi Ditolak',
+            'status'    => 'ditolak',
+            'message'   => 'Pengajuan Disposisi Perjalanan Dinas #' . $id . ' telah ditolak.',
+            'disposisi' => $disposisi,
+        ]);
+    }
+
+    public function kirimEmail(int $id)
+    {
+        if (! $this->canAccess()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $res = $this->sendApprovalEmail($id);
+        if ($res['success']) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('success', 'Email persetujuan berhasil dikirim ke ' . $res['recipient'] . '.');
+        }
+
+        return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('error', 'Gagal mengirim email: ' . $res['message']);
+    }
+
+    private function sendApprovalEmail(int $id): array
+    {
+        $model = new DisposisiPerjalananDinasModel();
+        $disposisi = $model->find($id);
+        if (! is_array($disposisi)) {
+            return ['success' => false, 'message' => 'Data tidak ditemukan.', 'recipient' => ''];
+        }
+
+        $token = trim((string) ($disposisi['approval_token'] ?? ''));
+        if ($token === '') {
+            $token = bin2hex(random_bytes(16));
+            $model->update($id, ['approval_token' => $token]);
+            $disposisi['approval_token'] = $token;
+        }
+
+        $recipientEmail = 'agung.justik@gmail.com';
+
+        $menyetujui = $this->getPegawaiSignatureData((int) $disposisi['menyetujui_pegawai_id']);
+        $diketahui = $this->getPegawaiSignatureData((int) $disposisi['diketahui_pegawai_id']);
+
+        $pelaksanaList = json_decode((string) ($disposisi['pelaksana_json'] ?? '[]'), true);
+        $pelaksanaNames = [];
+        foreach ($pelaksanaList as $p) {
+            $pelaksanaNames[] = esc($p['nama'] ?? '') . (!empty($p['nip']) ? ' (NIP ' . esc($p['nip']) . ')' : '');
+        }
+        $pelaksanaStr = !empty($pelaksanaNames) ? implode('<br>', $pelaksanaNames) : '-';
+
+        $tglMulai = $disposisi['periode_mulai'] ? date('d-m-Y', strtotime($disposisi['periode_mulai'])) : '-';
+        $tglSelesai = $disposisi['periode_selesai'] ? date('d-m-Y', strtotime($disposisi['periode_selesai'])) : '-';
+        $periodeStr = $tglMulai === $tglSelesai ? $tglMulai : $tglMulai . ' s/d ' . $tglSelesai;
+
+        $approveUrl = site_url('admin/surat/perjalanan-dinas/disposisi/' . $id . '/setujui?token=' . $token);
+        $rejectUrl = site_url('admin/surat/perjalanan-dinas/disposisi/' . $id . '/tolak?token=' . $token);
+
+        $htmlBody = '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f6f9; margin: 0; padding: 20px; }
+                .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; }
+                .header { background-color: #1e3a8a; color: #ffffff; padding: 20px; text-align: center; }
+                .header h2 { margin: 0; font-size: 20px; }
+                .content { padding: 24px; }
+                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+                .info-table td { padding: 8px 12px; border-bottom: 1px solid #edf2f7; vertical-align: top; }
+                .info-table td.label { font-weight: bold; width: 35%; color: #4a5568; background-color: #f8fafc; }
+                .btn-group { text-align: center; margin-top: 30px; margin-bottom: 20px; }
+                .btn { display: inline-block; padding: 12px 28px; margin: 0 8px; font-weight: bold; text-decoration: none; border-radius: 6px; font-size: 15px; text-align: center; }
+                .btn-approve { background-color: #16a34a; color: #ffffff !important; }
+                .btn-reject { background-color: #dc2626; color: #ffffff !important; }
+                .footer { background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>SATKER PPS RIAU</h2>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Permohonan Persetujuan Disposisi Perjalanan Dinas</p>
+                </div>
+                <div class="content">
+                    <p>Yth. Bapak/Ibu,</p>
+                    <p>Terdapat pengajuan <strong>Disposisi Perjalanan Dinas</strong> baru yang memerlukan persetujuan Anda:</p>
+                    
+                    <table class="info-table">
+                        <tr>
+                            <td class="label">Perihal</td>
+                            <td><strong>' . esc($disposisi['perihal']) . '</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="label">Kota/Kab. Tujuan</td>
+                            <td>' . esc($disposisi['kota_tujuan']) . ' (' . esc($disposisi['tujuan']) . ')</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Periode</td>
+                            <td>' . $periodeStr . '</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Transportasi</td>
+                            <td>' . esc($disposisi['transportasi']) . '</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Pelaksana SPPD</td>
+                            <td>' . $pelaksanaStr . '</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Pejabat Menyetujui</td>
+                            <td>' . esc($menyetujui['nama']) . ' (' . esc($menyetujui['jabatan']) . ')</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Kepala Satker</td>
+                            <td>' . esc($diketahui['nama']) . ' (' . esc($diketahui['jabatan']) . ')</td>
+                        </tr>
+                    </table>
+
+                    <p style="text-align: center; font-weight: bold; margin-top: 20px;">Silakan pilih tindakan persetujuan di bawah ini:</p>
+
+                    <div class="btn-group">
+                        <a href="' . $approveUrl . '" class="btn btn-approve">✓ SETUJUI</a>
+                        <a href="' . $rejectUrl . '" class="btn btn-reject">✕ TOLAK</a>
+                    </div>
+                </div>
+                <div class="footer">
+                    Email ini dikirim otomatis oleh Sistem Informasi Administrasi SATKER PPS Riau.<br>
+                    Harap tidak membalas email ini secara langsung.
+                </div>
+            </div>
+        </body>
+        </html>';
+
+        try {
+            $email = \Config\Services::email();
+            $emailConfig = config('Email');
+            $fromEmail = trim((string) ($emailConfig->fromEmail ?? ''));
+            $fromName = trim((string) ($emailConfig->fromName ?? 'SATKER PPS Riau'));
+
+            if ($fromEmail === '') {
+                $fromEmail = 'no-reply@psriau.com';
+            }
+
+            $email->clear(true);
+            $email->setFrom($fromEmail, $fromName);
+            $email->setTo($recipientEmail);
+            $email->setSubject('[Persetujuan Disposisi] ' . $disposisi['perihal']);
+            $email->setMessage($htmlBody);
+            $email->setMailType('html');
+
+            if (! $email->send()) {
+                $debugRaw = (string) $email->printDebugger(['headers', 'subject', 'body']);
+                log_message('error', 'Failed sending disposisi approval email to ' . $recipientEmail . ': ' . $debugRaw);
+                return ['success' => false, 'message' => 'Mail server error: ' . strip_tags($debugRaw), 'recipient' => $recipientEmail];
+            }
+
+            return ['success' => true, 'message' => 'Email terkirim', 'recipient' => $recipientEmail];
+        } catch (\Throwable $e) {
+            log_message('error', 'Exception sending disposisi approval email: ' . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage(), 'recipient' => $recipientEmail];
+        }
     }
 }
