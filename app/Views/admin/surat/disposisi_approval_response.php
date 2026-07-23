@@ -17,7 +17,7 @@
             padding: 20px;
         }
         .response-card {
-            max-width: 600px;
+            max-width: 620px;
             width: 100%;
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.08);
@@ -46,7 +46,7 @@
             margin-bottom: 15px;
         }
         .detail-table th {
-            width: 35%;
+            width: 40%;
             color: #6c757d;
             font-weight: 600;
         }
@@ -67,9 +67,9 @@
             default => 'fa-info-circle',
         };
         $statusTitle = match ($status ?? '') {
-            'disetujui' => 'Disposisi Disetujui!',
+            'disetujui' => 'Disposisi Disetujui Lengkap!',
             'ditolak' => 'Disposisi Ditolak',
-            default => 'Informasi Disposisi',
+            default => 'Persetujuan Diberikan',
         };
     ?>
     
@@ -82,8 +82,34 @@
     <div class="card-body p-4">
         <?php if (!empty($disposisi)): ?>
             <h6 class="font-weight-bold text-secondary mb-3 border-bottom pb-2">
-                <i class="fas fa-file-alt mr-1"></i> Rincian Disposisi Perjalanan Dinas
+                <i class="fas fa-file-alt mr-1"></i> Status Persetujuan & Rincian Disposisi
             </h6>
+            
+            <div class="card card-body bg-light mb-3 p-3">
+                <div class="row align-items-center">
+                    <div class="col-6 text-center border-right">
+                        <small class="text-muted d-block font-weight-bold">Pejabat Menyetujui (PPK)</small>
+                        <?php if (($disposisi['status_menyetujui'] ?? '') === 'disetujui'): ?>
+                            <span class="badge badge-success px-2 py-1 mt-1"><i class="fas fa-check"></i> Disetujui</span>
+                        <?php elseif (($disposisi['status_menyetujui'] ?? '') === 'ditolak'): ?>
+                            <span class="badge badge-danger px-2 py-1 mt-1"><i class="fas fa-times"></i> Ditolak</span>
+                        <?php else: ?>
+                            <span class="badge badge-secondary px-2 py-1 mt-1"><i class="fas fa-clock"></i> Pending</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-6 text-center">
+                        <small class="text-muted d-block font-weight-bold">Kepala Satker (Diketahui)</small>
+                        <?php if (($disposisi['status_diketahui'] ?? '') === 'disetujui'): ?>
+                            <span class="badge badge-success px-2 py-1 mt-1"><i class="fas fa-check"></i> Disetujui</span>
+                        <?php elseif (($disposisi['status_diketahui'] ?? '') === 'ditolak'): ?>
+                            <span class="badge badge-danger px-2 py-1 mt-1"><i class="fas fa-times"></i> Ditolak</span>
+                        <?php else: ?>
+                            <span class="badge badge-secondary px-2 py-1 mt-1"><i class="fas fa-clock"></i> Pending</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
             <table class="table table-sm table-borderless detail-table">
                 <tr>
                     <th>Perihal</th>
@@ -99,7 +125,7 @@
                         <?php
                             $tgl1 = !empty($disposisi['periode_mulai']) ? date('d-m-Y', strtotime($disposisi['periode_mulai'])) : '-';
                             $tgl2 = !empty($disposisi['periode_selesai']) ? date('d-m-Y', strtotime($disposisi['periode_selesai'])) : '-';
-                            echo $tgl1 === $tgl2 ? $tgl1 : $tgl1 . ' s/d ' . $tgl2;
+                            echo $tgl1 === $tgl2 ? $tgl1 : $tgl1 . ' s/d ' . $tglSelesai;
                         ?>
                     </td>
                 </tr>
@@ -122,20 +148,20 @@
                     </td>
                 </tr>
                 <tr>
-                    <th>Status Disposisi</th>
+                    <th>Status Disposisi Akhir</th>
                     <td>: 
                         <?php if (($disposisi['status'] ?? '') === 'disetujui'): ?>
-                            <span class="badge badge-success px-2 py-1"><i class="fas fa-check"></i> Disetujui</span>
+                            <span class="badge badge-success px-2 py-1"><i class="fas fa-check-double"></i> Disetujui Lengkap</span>
                         <?php elseif (($disposisi['status'] ?? '') === 'ditolak'): ?>
                             <span class="badge badge-danger px-2 py-1"><i class="fas fa-times"></i> Ditolak</span>
                         <?php else: ?>
-                            <span class="badge badge-warning px-2 py-1"><i class="fas fa-clock"></i> Pending</span>
+                            <span class="badge badge-warning px-2 py-1"><i class="fas fa-hourglass-half"></i> Pending (Menunggu Persetujuan Lengkap)</span>
                         <?php endif; ?>
                     </td>
                 </tr>
                 <?php if (!empty($disposisi['catatan_penolakan'])): ?>
                     <tr>
-                        <th>Catatan</th>
+                        <th>Catatan Penolakan</th>
                         <td class="text-danger">: <?= esc($disposisi['catatan_penolakan']); ?></td>
                     </tr>
                 <?php endif; ?>
