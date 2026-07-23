@@ -100,7 +100,17 @@
     ?>
 
     <!-- Header / Kop Surat -->
-    <div style="text-align: center; margin-bottom: 15px;">
+    <div style="position: relative; text-align: center; margin-bottom: 15px;">
+        <?php if (($data['status'] ?? '') === 'disetujui'): ?>
+            <div style="position: absolute; top: 0; right: 0; border: 3px double #16a34a; color: #16a34a; padding: 4px 12px; text-align: center; font-weight: bold; font-size: 12px; text-transform: uppercase; background: #f0fdf4; border-radius: 6px; z-index: 100;">
+                ✓ DISETUJUI / APPROVED
+            </div>
+        <?php elseif (($data['status'] ?? '') === 'ditolak'): ?>
+            <div style="position: absolute; top: 0; right: 0; border: 3px double #dc2626; color: #dc2626; padding: 4px 12px; text-align: center; font-weight: bold; font-size: 12px; text-transform: uppercase; background: #fef2f2; border-radius: 6px; z-index: 100;">
+                ✕ DITOLAK / REJECTED
+            </div>
+        <?php endif; ?>
+
         <?php if (function_exists('kop_surat_img_tag') && kop_surat_img_tag('', '', 'Kop Surat') !== ''): ?>
             <?= kop_surat_img_tag('', 'width: 100%; max-height: 110px; object-fit: contain;', 'Kop Surat'); ?>
         <?php else: ?>
@@ -194,14 +204,40 @@
             <td>
                 Menyetujui,<br>
                 Pejabat Pembuat Komitmen
-                <br><br><br><br><br>
+                <br>
+                <?php if (($data['status_menyetujui'] ?? '') === 'disetujui'): ?>
+                    <div style="margin: 8px auto 10px auto; width: 140px; border: 2px solid #16a34a; color: #16a34a; font-weight: bold; padding: 4px; text-align: center; font-size: 11px; text-transform: uppercase; border-radius: 4px; background: #f0fdf4;">
+                        ✓ APPROVED<br>
+                        <span style="font-size: 8px; font-weight: normal; color: #15803d; text-transform: none;">Verifikasi Digital SPPD</span>
+                    </div>
+                <?php elseif (($data['status_menyetujui'] ?? '') === 'ditolak'): ?>
+                    <div style="margin: 8px auto 10px auto; width: 140px; border: 2px solid #dc2626; color: #dc2626; font-weight: bold; padding: 4px; text-align: center; font-size: 11px; text-transform: uppercase; border-radius: 4px; background: #fef2f2;">
+                        ✕ REJECTED<br>
+                        <span style="font-size: 8px; font-weight: normal; color: #b91c1c; text-transform: none;">Penolakan Digital SPPD</span>
+                    </div>
+                <?php else: ?>
+                    <br><br><br><br><br>
+                <?php endif; ?>
                 <span class="signature-name"><?= esc($menyetujui['nama'] ?? ''); ?></span><br>
                 NIP. <?= esc($menyetujuiNip); ?>
             </td>
             <td>
                 Diketahui,<br>
                 Kepala Satuan Kerja PPS Riau
-                <br><br><br><br><br>
+                <br>
+                <?php if (($data['status_diketahui'] ?? '') === 'disetujui'): ?>
+                    <div style="margin: 8px auto 10px auto; width: 140px; border: 2px solid #16a34a; color: #16a34a; font-weight: bold; padding: 4px; text-align: center; font-size: 11px; text-transform: uppercase; border-radius: 4px; background: #f0fdf4;">
+                        ✓ APPROVED<br>
+                        <span style="font-size: 8px; font-weight: normal; color: #15803d; text-transform: none;">Verifikasi Digital SPPD</span>
+                    </div>
+                <?php elseif (($data['status_diketahui'] ?? '') === 'ditolak'): ?>
+                    <div style="margin: 8px auto 10px auto; width: 140px; border: 2px solid #dc2626; color: #dc2626; font-weight: bold; padding: 4px; text-align: center; font-size: 11px; text-transform: uppercase; border-radius: 4px; background: #fef2f2;">
+                        ✕ REJECTED<br>
+                        <span style="font-size: 8px; font-weight: normal; color: #b91c1c; text-transform: none;">Penolakan Digital SPPD</span>
+                    </div>
+                <?php else: ?>
+                    <br><br><br><br><br>
+                <?php endif; ?>
                 <span class="signature-name"><?= esc($diketahui['nama'] ?? ''); ?></span><br>
                 NIP. <?= esc($diketahuiNip); ?>
             </td>
