@@ -97,17 +97,35 @@
         if (! empty($data['periode_mulai'])) {
             $year = date('Y', strtotime($data['periode_mulai']));
         }
+
+        // Helper QR Code generator (returns Data URI)
+        $getQrUri = static function (string $text, int $size = 100): string {
+            $apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size . '&data=' . urlencode($text);
+            try {
+                $ctx = stream_context_create(['http' => ['timeout' => 3]]);
+                $content = @file_get_contents($apiUrl, false, $ctx);
+                if ($content !== false && strlen($content) > 0) {
+                    return 'data:image/png;base64,' . base64_encode($content);
+                }
+            } catch (\Throwable $e) {}
+            return $apiUrl;
+        };
     ?>
 
     <!-- Header / Kop Surat -->
     <div style="position: relative; text-align: center; margin-bottom: 15px;">
         <?php if (($data['status'] ?? '') === 'disetujui'): ?>
-            <div style="position: absolute; top: 0; right: 0; border: 3px double #16a34a; color: #16a34a; padding: 4px 12px; text-align: center; font-weight: bold; font-size: 12px; text-transform: uppercase; background: #f0fdf4; border-radius: 6px; z-index: 100;">
-                ✓ DISETUJUI / APPROVED
+            <?php
+                $docPdfUrl = site_url('admin/surat/perjalanan-dinas/disposisi/' . $data['id'] . '/pdf');
+                $docQr = $getQrUri($docPdfUrl, 90);
+            ?>
+            <div style="position: absolute; top: 0; right: 0; text-align: center; border: 1px solid #16a34a; background: #f0fdf4; padding: 4px 6px; border-radius: 6px; z-index: 100;">
+                <img src="<?= $docQr; ?>" style="width: 50px; height: 50px;" alt="QR Verification"><br>
+                <span style="font-size: 7px; font-weight: bold; color: #16a34a; text-transform: uppercase;">DISETUJUI (VERIFIED)</span>
             </div>
         <?php elseif (($data['status'] ?? '') === 'ditolak'): ?>
-            <div style="position: absolute; top: 0; right: 0; border: 3px double #dc2626; color: #dc2626; padding: 4px 12px; text-align: center; font-weight: bold; font-size: 12px; text-transform: uppercase; background: #fef2f2; border-radius: 6px; z-index: 100;">
-                ✕ DITOLAK / REJECTED
+            <div style="position: absolute; top: 0; right: 0; border: 2px double #dc2626; color: #dc2626; padding: 4px 10px; text-align: center; font-weight: bold; font-size: 11px; text-transform: uppercase; background: #fef2f2; z-index: 100; border-radius: 6px;">
+                ✕ DITOLAK
             </div>
         <?php endif; ?>
 
@@ -206,14 +224,17 @@
                 Pejabat Pembuat Komitmen
                 <br>
                 <?php if (($data['status_menyetujui'] ?? '') === 'disetujui'): ?>
-                    <div style="margin: 8px auto 10px auto; width: 140px; border: 2px solid #16a34a; color: #16a34a; font-weight: bold; padding: 4px; text-align: center; font-size: 11px; text-transform: uppercase; border-radius: 4px; background: #f0fdf4;">
-                        ✓ APPROVED<br>
-                        <span style="font-size: 8px; font-weight: normal; color: #15803d; text-transform: none;">Verifikasi Digital SPPD</span>
+                    <?php
+                        $verifyUrlM = site_url('admin/surat/perjalanan-dinas/disposisi/' . $data['id'] . '/setujui?role=menyetujui&token=' . ($data['token_menyetujui'] ?? ''));
+                        $qrM = $getQrUri($verifyUrlM, 110);
+                    ?>
+                    <div style="margin: 4px auto 6px auto; text-align: center;">
+                        <img src="<?= $qrM; ?>" style="width: 75px; height: 75px; border: 1px solid #16a34a; padding: 2px; background: #fff;" alt="QR Approved PPK"><br>
+                        <span style="font-size: 7.5px; font-weight: bold; color: #15803d; text-transform: uppercase;">✓ Signed Digital (PPK)</span>
                     </div>
                 <?php elseif (($data['status_menyetujui'] ?? '') === 'ditolak'): ?>
-                    <div style="margin: 8px auto 10px auto; width: 140px; border: 2px solid #dc2626; color: #dc2626; font-weight: bold; padding: 4px; text-align: center; font-size: 11px; text-transform: uppercase; border-radius: 4px; background: #fef2f2;">
-                        ✕ REJECTED<br>
-                        <span style="font-size: 8px; font-weight: normal; color: #b91c1c; text-transform: none;">Penolakan Digital SPPD</span>
+                    <div style="margin: 8px auto 10px auto; width: 130px; border: 2px solid #dc2626; color: #dc2626; font-weight: bold; padding: 4px; text-align: center; font-size: 10px; text-transform: uppercase; border-radius: 4px; background: #fef2f2;">
+                        ✕ REJECTED
                     </div>
                 <?php else: ?>
                     <br><br><br><br><br>
@@ -226,14 +247,17 @@
                 Kepala Satuan Kerja PPS Riau
                 <br>
                 <?php if (($data['status_diketahui'] ?? '') === 'disetujui'): ?>
-                    <div style="margin: 8px auto 10px auto; width: 140px; border: 2px solid #16a34a; color: #16a34a; font-weight: bold; padding: 4px; text-align: center; font-size: 11px; text-transform: uppercase; border-radius: 4px; background: #f0fdf4;">
-                        ✓ APPROVED<br>
-                        <span style="font-size: 8px; font-weight: normal; color: #15803d; text-transform: none;">Verifikasi Digital SPPD</span>
+                    <?php
+                        $verifyUrlD = site_url('admin/surat/perjalanan-dinas/disposisi/' . $data['id'] . '/setujui?role=diketahui&token=' . ($data['token_diketahui'] ?? ''));
+                        $qrD = $getQrUri($verifyUrlD, 110);
+                    ?>
+                    <div style="margin: 4px auto 6px auto; text-align: center;">
+                        <img src="<?= $qrD; ?>" style="width: 75px; height: 75px; border: 1px solid #16a34a; padding: 2px; background: #fff;" alt="QR Approved Kasatker"><br>
+                        <span style="font-size: 7.5px; font-weight: bold; color: #15803d; text-transform: uppercase;">✓ Signed Digital (Kasatker)</span>
                     </div>
                 <?php elseif (($data['status_diketahui'] ?? '') === 'ditolak'): ?>
-                    <div style="margin: 8px auto 10px auto; width: 140px; border: 2px solid #dc2626; color: #dc2626; font-weight: bold; padding: 4px; text-align: center; font-size: 11px; text-transform: uppercase; border-radius: 4px; background: #fef2f2;">
-                        ✕ REJECTED<br>
-                        <span style="font-size: 8px; font-weight: normal; color: #b91c1c; text-transform: none;">Penolakan Digital SPPD</span>
+                    <div style="margin: 8px auto 10px auto; width: 130px; border: 2px solid #dc2626; color: #dc2626; font-weight: bold; padding: 4px; text-align: center; font-size: 10px; text-transform: uppercase; border-radius: 4px; background: #fef2f2;">
+                        ✕ REJECTED
                     </div>
                 <?php else: ?>
                     <br><br><br><br><br>
