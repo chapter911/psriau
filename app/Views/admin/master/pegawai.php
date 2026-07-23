@@ -32,6 +32,7 @@
                     <th class="text-center">FOTO</th>
                     <th class="text-center">NIP</th>
                     <th class="text-center">NAMA</th>
+                    <th class="text-center">EMAIL</th>
                     <th class="text-center" style="width: 160px; min-width: 160px; max-width: 180px; white-space: normal;">JABATAN (FUNGSIONAL/PELAKSANA)</th>
                     <th class="text-center" style="width: 160px; min-width: 160px; max-width: 180px; white-space: normal;">JABATAN (PERBENDAHARAAN)</th>
                     <th class="text-center">JENIS PEGAWAI</th>
@@ -73,6 +74,7 @@
                                     data-id="<?= esc((string) ($item['id'] ?? ''), 'attr'); ?>"
                                     data-nip="<?= esc((string) ($item['nip'] ?? ''), 'attr'); ?>"
                                     data-nama="<?= esc((string) ($item['nama'] ?? ''), 'attr'); ?>"
+                                    data-email="<?= esc((string) ($item['email'] ?? ''), 'attr'); ?>"
                                     data-foto-url=""
                                     data-jabatan_utama_id="<?= esc((string) ($item['jabatan_utama_id'] ?? ''), 'attr'); ?>"
                                     data-jabatan_perbendaharaan_id="<?= esc((string) ($item['jabatan_perbendaharaan_id'] ?? ''), 'attr'); ?>"
@@ -92,6 +94,7 @@
                         </td>
                         <td><?= esc((string) ($item['nip'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['nama'] ?? '-')); ?></td>
+                        <td><?= esc((string) ($item['email'] ?? '-')); ?></td>
                         <td style="white-space: normal;"><?= esc((string) ($item['jabatan_utama_label'] ?? '-')); ?></td>
                         <td style="white-space: normal;"><?= esc((string) ($item['jabatan_perbendaharaan_label'] ?? '-')); ?></td>
                         <td class="text-center text-uppercase"><?= esc((string) ($item['jenis_pegawai'] ?? 'pns')); ?></td>
@@ -115,6 +118,7 @@
                                     data-id="<?= esc((string) ($item['id'] ?? ''), 'attr'); ?>"
                                     data-nip="<?= esc((string) ($item['nip'] ?? ''), 'attr'); ?>"
                                     data-nama="<?= esc((string) ($item['nama'] ?? ''), 'attr'); ?>"
+                                    data-email="<?= esc((string) ($item['email'] ?? ''), 'attr'); ?>"
                                     data-foto-url="<?= esc($fotoUrl, 'attr'); ?>"
                                     data-jabatan_utama_id="<?= esc((string) ($item['jabatan_utama_id'] ?? ''), 'attr'); ?>"
                                     data-jabatan_perbendaharaan_id="<?= esc((string) ($item['jabatan_perbendaharaan_id'] ?? ''), 'attr'); ?>"
@@ -156,7 +160,7 @@
                 <div class="modal-body">
                     <div class="alert alert-info mb-3">
                         Kolom wajib: <strong>nip</strong>, <strong>nama</strong>, <strong>jabatan_utama</strong>, <strong>jenis_pegawai</strong> (cpns/pns/konsultan/pppk).<br>
-                        Kolom opsional: <strong>jabatan_perbendaharaan</strong>, <strong>eselon</strong>, <strong>golongan</strong>, <strong>masa_kerja</strong>, <strong>status</strong>.
+                        Kolom opsional: <strong>email</strong>, <strong>jabatan_perbendaharaan</strong>, <strong>eselon</strong>, <strong>golongan</strong>, <strong>masa_kerja</strong>, <strong>status</strong>.
                     </div>
                     <div class="mb-3">
                         <a href="<?= site_url('/admin/master/pegawai/template'); ?>" class="btn btn-success btn-sm">
@@ -193,13 +197,17 @@
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <div class="form-row">
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>NIP</label>
                             <input type="text" name="nip" class="form-control" required maxlength="30">
                         </div>
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>Nama</label>
                             <input type="text" name="nama" class="form-control" required maxlength="150">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Email</label>
+                            <input type="email" name="email" class="form-control" maxlength="255" placeholder="contoh@domain.com">
                         </div>
                     </div>
                     <div class="form-row">
@@ -282,13 +290,17 @@
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <div class="form-row">
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>NIP</label>
                             <input type="text" id="edit_nip" name="nip" class="form-control" required maxlength="30">
                         </div>
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>Nama</label>
                             <input type="text" id="edit_nama" name="nama" class="form-control" required maxlength="150">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Email</label>
+                            <input type="email" id="edit_email" name="email" class="form-control" maxlength="255" placeholder="contoh@domain.com">
                         </div>
                     </div>
                     <div class="form-row">
@@ -466,6 +478,7 @@
         const form = document.getElementById('form-ubah-pegawai');
         const fieldNip = document.getElementById('edit_nip');
         const fieldNama = document.getElementById('edit_nama');
+        const fieldEmail = document.getElementById('edit_email');
         const fieldJabatanUtama = document.getElementById('edit_jabatan_utama_id');
         const fieldJabatanPerbend = document.getElementById('edit_jabatan_perbendaharaan_id');
         const fieldJenisPegawai = document.getElementById('edit_jenis_pegawai');
@@ -485,6 +498,7 @@
             form.action = '<?= site_url('/admin/master/pegawai'); ?>/' + encodeURIComponent(id) + '/ubah';
             fieldNip.value = trigger.getAttribute('data-nip') || '';
             fieldNama.value = trigger.getAttribute('data-nama') || '';
+            if (fieldEmail) fieldEmail.value = trigger.getAttribute('data-email') || '';
             fieldJabatanUtama.value = trigger.getAttribute('data-jabatan_utama_id') || '';
             fieldJabatanPerbend.value = trigger.getAttribute('data-jabatan_perbendaharaan_id') || '';
             fieldJenisPegawai.value = (trigger.getAttribute('data-jenis_pegawai') || 'pns').toLowerCase();
