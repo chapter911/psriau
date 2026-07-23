@@ -150,24 +150,25 @@ class DisposisiPerjalananDinas extends BaseController
             $menyetujuiData = $this->getPegawaiSignatureData((int) ($row['menyetujui_pegawai_id'] ?? 0));
             $diketahuiData = $this->getPegawaiSignatureData((int) ($row['diketahui_pegawai_id'] ?? 0));
 
-            $isPending = $statusOverall === 'pending' && $statusM === 'pending' && $statusD === 'pending';
+            $isPendingOverall = $statusOverall === 'pending';
 
             // Action Buttons
             $actionHtml = '<div class="doc-btn-group">';
             $actionHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/pdf') . '" class="btn btn-sm btn-danger btn-pdf" title="Cetak Disposisi (PDF)" target="_blank"><i class="fas fa-file-pdf"></i> Cetak</a>';
 
-            if ($isPending) {
-                $actionHtml .= '<button type="button" class="btn btn-sm btn-warning btn-send-email ml-1" ' .
+            if ($isPendingOverall) {
+                $actionHtml .= '<button type="button" class="btn btn-sm btn-success btn-approval ml-1" ' .
                     'data-id="' . $row['id'] . '" ' .
-                    'data-url="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/kirim-email') . '" ' .
                     'data-ppk-nama="' . esc($menyetujuiData['nama']) . '" ' .
-                    'data-ppk-email="' . esc($menyetujuiData['email']) . '" ' .
+                    'data-ppk-status="' . $statusM . '" ' .
+                    'data-ppk-token="' . esc($row['token_menyetujui'] ?? '') . '" ' .
                     'data-kasatker-nama="' . esc($diketahuiData['nama']) . '" ' .
-                    'data-kasatker-email="' . esc($diketahuiData['email']) . '" ' .
-                    'title="Kirim Ulang 2 Email Persetujuan"><i class="fas fa-envelope"></i> Email</button>';
+                    'data-kasatker-status="' . $statusD . '" ' .
+                    'data-kasatker-token="' . esc($row['token_diketahui'] ?? '') . '" ' .
+                    'title="Persetujuan / Approval Disposisi"><i class="fas fa-check-square"></i> Approval</button>';
                 $actionHtml .= '<button type="button" class="btn btn-sm btn-info btn-edit ml-1" data-id="' . $row['id'] . '" title="Ubah"><i class="fas fa-edit"></i> Ubah</button>';
             } else {
-                $actionHtml .= '<button type="button" class="btn btn-sm btn-secondary ml-1" disabled title="Email tidak dapat dikirim untuk disposisi final/proses"><i class="fas fa-lock"></i> Email</button>';
+                $actionHtml .= '<button type="button" class="btn btn-sm btn-secondary ml-1" disabled title="Keputusan disposisi sudah final (' . strtoupper($statusOverall) . ')"><i class="fas fa-lock"></i> Approval</button>';
                 $actionHtml .= '<button type="button" class="btn btn-sm btn-secondary ml-1" disabled title="Disposisi yang sudah disetujui/ditolak tidak dapat diubah"><i class="fas fa-lock"></i> Ubah</button>';
             }
 
@@ -326,17 +327,7 @@ class DisposisiPerjalananDinas extends BaseController
             'created_at'             => date('Y-m-d H:i:s'),
         ]);
 
-        // Send 2 Emails for Approval (PPK & Kasatker)
-        $res1 = $this->sendApprovalEmail((int) $insertId, 'menyetujui');
-        $res2 = $this->sendApprovalEmail((int) $insertId, 'diketahui');
-
         $successMsg = 'Disposisi Perjalanan Dinas berhasil disimpan.';
-        if ($res1['success'] && $res2['success']) {
-            $successMsg .= ' 2 Email persetujuan telah dikirim ke masing-masing pejabat (PPK: ' . $res1['recipient'] . ', Kasatker: ' . $res2['recipient'] . ').';
-        } else {
-            $successMsg .= ' (Pengiriman email: PPK=' . ($res1['success'] ? $res1['recipient'] : $res1['message']) . ', Kasatker=' . ($res2['success'] ? $res2['recipient'] : $res2['message']) . ')';
-        }
-
         return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('success', $successMsg);
     }
 
