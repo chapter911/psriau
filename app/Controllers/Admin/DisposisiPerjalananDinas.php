@@ -150,18 +150,27 @@ class DisposisiPerjalananDinas extends BaseController
             $menyetujuiData = $this->getPegawaiSignatureData((int) ($row['menyetujui_pegawai_id'] ?? 0));
             $diketahuiData = $this->getPegawaiSignatureData((int) ($row['diketahui_pegawai_id'] ?? 0));
 
+            $isPending = $statusOverall === 'pending' && $statusM === 'pending' && $statusD === 'pending';
+
             // Action Buttons
             $actionHtml = '<div class="doc-btn-group">';
             $actionHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/pdf') . '" class="btn btn-sm btn-danger btn-pdf" title="Cetak Disposisi (PDF)" target="_blank"><i class="fas fa-file-pdf"></i> Cetak</a>';
-            $actionHtml .= '<button type="button" class="btn btn-sm btn-warning btn-send-email ml-1" ' .
-                'data-id="' . $row['id'] . '" ' .
-                'data-url="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/kirim-email') . '" ' .
-                'data-ppk-nama="' . esc($menyetujuiData['nama']) . '" ' .
-                'data-ppk-email="' . esc($menyetujuiData['email']) . '" ' .
-                'data-kasatker-nama="' . esc($diketahuiData['nama']) . '" ' .
-                'data-kasatker-email="' . esc($diketahuiData['email']) . '" ' .
-                'title="Kirim Ulang 2 Email Persetujuan"><i class="fas fa-envelope"></i> Email</button>';
-            $actionHtml .= '<button type="button" class="btn btn-sm btn-info btn-edit ml-1" data-id="' . $row['id'] . '" title="Ubah"><i class="fas fa-edit"></i> Ubah</button>';
+
+            if ($isPending) {
+                $actionHtml .= '<button type="button" class="btn btn-sm btn-warning btn-send-email ml-1" ' .
+                    'data-id="' . $row['id'] . '" ' .
+                    'data-url="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/kirim-email') . '" ' .
+                    'data-ppk-nama="' . esc($menyetujuiData['nama']) . '" ' .
+                    'data-ppk-email="' . esc($menyetujuiData['email']) . '" ' .
+                    'data-kasatker-nama="' . esc($diketahuiData['nama']) . '" ' .
+                    'data-kasatker-email="' . esc($diketahuiData['email']) . '" ' .
+                    'title="Kirim Ulang 2 Email Persetujuan"><i class="fas fa-envelope"></i> Email</button>';
+                $actionHtml .= '<button type="button" class="btn btn-sm btn-info btn-edit ml-1" data-id="' . $row['id'] . '" title="Ubah"><i class="fas fa-edit"></i> Ubah</button>';
+            } else {
+                $actionHtml .= '<button type="button" class="btn btn-sm btn-secondary ml-1" disabled title="Email tidak dapat dikirim untuk disposisi final/proses"><i class="fas fa-lock"></i> Email</button>';
+                $actionHtml .= '<button type="button" class="btn btn-sm btn-secondary ml-1" disabled title="Disposisi yang sudah disetujui/ditolak tidak dapat diubah"><i class="fas fa-lock"></i> Ubah</button>';
+            }
+
             $actionHtml .= '<button type="button" class="btn btn-sm btn-danger btn-delete ml-1" data-id="' . $row['id'] . '" title="Hapus"><i class="fas fa-trash"></i> Hapus</button>';
             $actionHtml .= '</div>';
 
@@ -341,6 +350,13 @@ class DisposisiPerjalananDinas extends BaseController
         $existing = $model->find($id);
         if (! is_array($existing)) {
             return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('error', 'Data tidak ditemukan.');
+        }
+
+        $sOverall = trim((string) ($existing['status'] ?? 'pending'));
+        $sM = trim((string) ($existing['status_menyetujui'] ?? 'pending'));
+        $sD = trim((string) ($existing['status_diketahui'] ?? 'pending'));
+        if ($sOverall !== 'pending' || $sM !== 'pending' || $sD !== 'pending') {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('error', 'Disposisi yang sudah disetujui atau ditolak tidak dapat diubah kembali. Silakan buat pengajuan disposisi baru.');
         }
 
         if (strtolower((string) $this->request->getMethod()) !== 'post') {
@@ -709,6 +725,38 @@ class DisposisiPerjalananDinas extends BaseController
 
         $statusField = 'status_' . $role;
         $roleLabel = $role === 'menyetujui' ? 'Pejabat Pembuat Komitmen (Menyetujui)' : 'Kepala Satuan Kerja (Diketahui)';
+        $currentRoleStatus = trim((string) ($disposisi[$statusField] ?? 'pending'));
+        $currentOverallStatus = trim((string) ($disposisi['status'] ?? 'pending'));
+
+        if ($currentOverallStatus === 'disetujui' || $currentOverallStatus === 'ditolak') {
+            return view('admin/surat/disposisi_approval_response', [
+                'title'     => 'Keputusan Sudah Final',
+                'status'    => $currentOverallStatus,
+                'message'   => 'Disposisi Perjalanan Dinas ini sudah memiliki keputusan akhir (' . strtoupper($currentOverallStatus) . ') dan tidak dapat diubah kembali. Silakan buat pengajuan disposisi baru.',
+                'role'      => $role,
+                'disposisi' => $disposisi,
+            ]);
+        }
+
+        if ($currentRoleStatus === 'disetujui') {
+            return view('admin/surat/disposisi_approval_response', [
+                'title'     => 'Persetujuan Sudah Diproses',
+                'status'    => 'info',
+                'message'   => 'Anda (' . $roleLabel . ') sudah menyetujui disposisi ini sebelumnya dan keputusan tidak dapat diubah kembali.',
+                'role'      => $role,
+                'disposisi' => $disposisi,
+            ]);
+        }
+
+        if ($currentRoleStatus === 'ditolak') {
+            return view('admin/surat/disposisi_approval_response', [
+                'title'     => 'Status Sudah Ditolak',
+                'status'    => 'ditolak',
+                'message'   => 'Persetujuan oleh ' . $roleLabel . ' sudah bernilai DITOLAK dan tidak dapat diubah kembali.',
+                'role'      => $role,
+                'disposisi' => $disposisi,
+            ]);
+        }
 
         $disposisi[$statusField] = 'disetujui';
 
@@ -793,6 +841,29 @@ class DisposisiPerjalananDinas extends BaseController
 
         $statusField = 'status_' . $role;
         $roleLabel = $role === 'menyetujui' ? 'Pejabat Pembuat Komitmen (Menyetujui)' : 'Kepala Satuan Kerja (Diketahui)';
+        $currentRoleStatus = trim((string) ($disposisi[$statusField] ?? 'pending'));
+        $currentOverallStatus = trim((string) ($disposisi['status'] ?? 'pending'));
+
+        if ($currentOverallStatus === 'disetujui' || $currentOverallStatus === 'ditolak') {
+            return view('admin/surat/disposisi_approval_response', [
+                'title'     => 'Keputusan Sudah Final',
+                'status'    => $currentOverallStatus,
+                'message'   => 'Disposisi Perjalanan Dinas ini sudah memiliki keputusan akhir (' . strtoupper($currentOverallStatus) . ') dan tidak dapat diubah kembali. Silakan buat pengajuan disposisi baru.',
+                'role'      => $role,
+                'disposisi' => $disposisi,
+            ]);
+        }
+
+        if ($currentRoleStatus === 'disetujui' || $currentRoleStatus === 'ditolak') {
+            return view('admin/surat/disposisi_approval_response', [
+                'title'     => 'Keputusan Sudah Diproses',
+                'status'    => $currentRoleStatus === 'disetujui' ? 'info' : 'ditolak',
+                'message'   => 'Keputusan persetujuan oleh ' . $roleLabel . ' sudah bernilai ' . strtoupper($currentRoleStatus) . ' dan tidak dapat diubah kembali.',
+                'role'      => $role,
+                'disposisi' => $disposisi,
+            ]);
+        }
+
         $reason = $catatan !== '' ? $catatan : null;
 
         $model->update($id, [
@@ -826,6 +897,17 @@ class DisposisiPerjalananDinas extends BaseController
     {
         if (! $this->canAccess()) {
             return redirect()->to(site_url('/admin'));
+        }
+
+        $model = new DisposisiPerjalananDinasModel();
+        $disposisi = $model->find($id);
+        if (! is_array($disposisi)) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('error', 'Data tidak ditemukan.');
+        }
+
+        $sOverall = trim((string) ($disposisi['status'] ?? 'pending'));
+        if ($sOverall !== 'pending') {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('error', 'Email persetujuan tidak dapat dikirim ulang untuk disposisi yang sudah memiliki keputusan akhir (' . strtoupper($sOverall) . ').');
         }
 
         $res1 = $this->sendApprovalEmail($id, 'menyetujui');
