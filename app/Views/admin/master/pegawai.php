@@ -7,6 +7,29 @@
     </div>
 <?php endif; ?>
 
+<style>
+    .jabatan-col {
+        width: 220px;
+        min-width: 180px;
+        max-width: 240px;
+    }
+    .jabatan-text-clamp {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+        word-break: break-word;
+        cursor: pointer;
+        line-height: 1.35;
+        transition: color 0.15s ease-in-out;
+    }
+    .jabatan-text-clamp:hover {
+        color: #0056b3;
+    }
+</style>
+
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Daftar Pegawai</h3>
@@ -33,8 +56,8 @@
                     <th class="text-center">NIP</th>
                     <th class="text-center">NAMA</th>
                     <th class="text-center">EMAIL</th>
-                    <th class="text-center" style="width: 160px; min-width: 160px; max-width: 180px; white-space: normal;">JABATAN (FUNGSIONAL/PELAKSANA)</th>
-                    <th class="text-center" style="width: 160px; min-width: 160px; max-width: 180px; white-space: normal;">JABATAN (PERBENDAHARAAN)</th>
+                    <th class="text-center jabatan-col">JABATAN (FUNGSIONAL/PELAKSANA)</th>
+                    <th class="text-center jabatan-col">JABATAN (PERBENDAHARAAN)</th>
                     <th class="text-center">JENIS PEGAWAI</th>
                     <th class="text-center">ESELON</th>
                     <th class="text-center">GOLONGAN</th>
@@ -95,8 +118,18 @@
                         <td><?= esc((string) ($item['nip'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['nama'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['email'] ?? '-')); ?></td>
-                        <td style="white-space: normal;"><?= esc((string) ($item['jabatan_utama_label'] ?? '-')); ?></td>
-                        <td style="white-space: normal;"><?= esc((string) ($item['jabatan_perbendaharaan_label'] ?? '-')); ?></td>
+                        <td class="jabatan-col">
+                            <?php $jabatanUtama = trim((string) ($item['jabatan_utama_label'] ?? '-')); ?>
+                            <div class="jabatan-text-clamp" title="<?= esc($jabatanUtama !== '' ? $jabatanUtama : '-', 'attr'); ?>" data-toggle="tooltip" data-placement="top">
+                                <?= esc($jabatanUtama !== '' ? $jabatanUtama : '-'); ?>
+                            </div>
+                        </td>
+                        <td class="jabatan-col">
+                            <?php $jabatanPerbend = trim((string) ($item['jabatan_perbendaharaan_label'] ?? '-')); ?>
+                            <div class="jabatan-text-clamp" title="<?= esc($jabatanPerbend !== '' ? $jabatanPerbend : '-', 'attr'); ?>" data-toggle="tooltip" data-placement="top">
+                                <?= esc($jabatanPerbend !== '' ? $jabatanPerbend : '-'); ?>
+                            </div>
+                        </td>
                         <td class="text-center text-uppercase"><?= esc((string) ($item['jenis_pegawai'] ?? 'pns')); ?></td>
                         <td><?= esc((string) ($item['eselon'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['golongan'] ?? '-')); ?></td>

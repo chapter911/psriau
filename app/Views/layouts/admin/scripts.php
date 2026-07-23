@@ -273,6 +273,16 @@
     })();
 
     (() => {
+        if (typeof $ === 'undefined' || ! $.fn.tooltip) return;
+
+        $('body').tooltip({
+            selector: '[data-toggle="tooltip"]',
+            trigger: 'hover',
+            container: 'body'
+        });
+    })();
+
+    (() => {
         if (typeof $ === 'undefined' || ! $.fn.DataTable) return;
 
         $('.js-datatable').each(function () {
