@@ -161,7 +161,7 @@
                         <?php endif; ?>
                     </td>
                 </tr>
-                <?php if (!empty($disposisi['catatan_penolakan'])): ?>
+                <?php if (!empty($disposisi['catatan_penolakan']) && strpos((string) $disposisi['catatan_penolakan'], 'Ditolak oleh') !== 0): ?>
                     <tr>
                         <th>Catatan Penolakan</th>
                         <td class="text-danger">: <?= esc($disposisi['catatan_penolakan']); ?></td>

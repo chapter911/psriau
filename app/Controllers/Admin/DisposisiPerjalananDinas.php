@@ -809,7 +809,7 @@ class DisposisiPerjalananDinas extends BaseController
 
         $statusField = 'status_' . $role;
         $roleLabel = $role === 'menyetujui' ? 'Pejabat Pembuat Komitmen (Menyetujui)' : 'Kepala Satuan Kerja (Diketahui)';
-        $reason = $catatan !== '' ? $catatan : 'Ditolak oleh ' . $roleLabel;
+        $reason = $catatan !== '' ? $catatan : null;
 
         $model->update($id, [
             $statusField        => 'ditolak',
