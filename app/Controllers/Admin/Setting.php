@@ -383,14 +383,19 @@ class Setting extends BaseController
         $outputLines = [];
 
         foreach ($lines as $line) {
-            // Process DDL column definition lines containing invalid zero dates '0000-00-00...'
-            if (preg_match("/'0000-00-00(?:\s+00:00:00)?'/i", $line)) {
-                // If column type is DATE (explicitly excluding DATETIME)
+            // 1. Sanitize conditional comment SQL_MODE overrides from mariadb-dump / mysqldump
+            if (strpos($line, 'SET @OLD_SQL_MODE=@@SQL_MODE') !== false) {
+                $line = preg_replace("/SQL_MODE='[^']*'/i", "SQL_MODE='NO_AUTO_VALUE_ON_ZERO,NO_ENGINE_SUBSTITUTION'", $line);
+            }
+
+            // 2. Process column definitions for DATE vs DATETIME / TIMESTAMP columns
+            if (preg_match("/'0000-00-00(?:\s+00:00:00)?'|current_timestamp(?:\(\))?/i", $line)) {
+                // If column type is DATE (strictly excluding DATETIME)
                 if (preg_match("/\`?\w+\`?\s+date\b/i", $line)) {
                     if (preg_match("/NOT\s+NULL/i", $line)) {
-                        $line = preg_replace("/DEFAULT\s+'0000-00-00(?:\s+00:00:00)?'/i", "DEFAULT '1970-01-01'", $line);
+                        $line = preg_replace("/DEFAULT\s+(?:current_timestamp(?:\(\))?|'0000-00-00(?:\s+00:00:00)?')/i", "DEFAULT '1970-01-01'", $line);
                     } else {
-                        $line = preg_replace("/DEFAULT\s+'0000-00-00(?:\s+00:00:00)?'/i", "DEFAULT NULL", $line);
+                        $line = preg_replace("/DEFAULT\s+(?:current_timestamp(?:\(\))?|'0000-00-00(?:\s+00:00:00)?')/i", "DEFAULT NULL", $line);
                     }
                 }
                 // If column type is DATETIME or TIMESTAMP
@@ -402,7 +407,7 @@ class Setting extends BaseController
                     }
                 }
                 // Fallback for any other column type with 0000-00-00 default
-                else {
+                elseif (preg_match("/'0000-00-00(?:\s+00:00:00)?'/i", $line)) {
                     if (preg_match("/NOT\s+NULL/i", $line)) {
                         $line = preg_replace("/DEFAULT\s+'0000-00-00(?:\s+00:00:00)?'/i", "DEFAULT '1970-01-01'", $line);
                     } else {
@@ -411,7 +416,7 @@ class Setting extends BaseController
                 }
             }
 
-            // Fix zero dates inside INSERT row values
+            // 3. Fix zero dates inside INSERT row values
             if (strpos($line, 'INSERT INTO') !== false || strpos($line, '(') !== false) {
                 $line = str_replace("'0000-00-00 00:00:00'", "'1970-01-01 00:00:00'", $line);
                 $line = str_replace("'0000-00-00'", "'1970-01-01'", $line);
