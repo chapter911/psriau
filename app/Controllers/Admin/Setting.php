@@ -372,8 +372,12 @@ class Setting extends BaseController
         fwrite($handle, "-- Database: {$databaseName}\n");
         fwrite($handle, "-- Date: {$now}\n");
         fwrite($handle, "-- ========================================================\n\n");
-        fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n");
-        fwrite($handle, "SET SQL_MODE=\"NO_AUTO_VALUE_ON_ZERO\";\n");
+        fwrite($handle, "SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT;\n");
+        fwrite($handle, "SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS;\n");
+        fwrite($handle, "SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION;\n");
+        fwrite($handle, "SET NAMES utf8mb4;\n");
+        fwrite($handle, "SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;\n");
+        fwrite($handle, "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO,ALLOW_INVALID_DATES';\n");
         fwrite($handle, "SET time_zone = \"+00:00\";\n\n");
 
         $allTables = $db->listTables();
@@ -541,7 +545,8 @@ class Setting extends BaseController
             }
         }
 
-        fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
+        fwrite($handle, "SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1);\n");
+        fwrite($handle, "SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '');\n");
         fclose($handle);
     }
 
