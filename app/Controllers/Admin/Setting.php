@@ -212,13 +212,16 @@ class Setting extends BaseController
 
         $dumpedViaShell = false;
 
-        if ($this->hasShellCommand('mysqldump')) {
+        $mysqldumpCmd = $this->resolveMysqldumpCommand();
+        if ($mysqldumpCmd !== null) {
+            $passParam = $password !== '' ? '--password=' . escapeshellarg((string) $password) : '';
             $cmd = sprintf(
-                'mysqldump --host=%s --port=%s --user=%s --password=%s %s > %s 2>&1',
+                '%s --host=%s --port=%s --user=%s %s %s > %s 2>&1',
+                $mysqldumpCmd,
                 escapeshellarg((string) $hostname),
                 escapeshellarg((string) $port),
                 escapeshellarg((string) $username),
-                escapeshellarg((string) $password),
+                $passParam,
                 escapeshellarg((string) $databaseName),
                 escapeshellarg((string) $filePath)
             );
@@ -242,6 +245,18 @@ class Setting extends BaseController
         }
 
         return $this->response->download($filePath, null)->setFileName('database_backup_' . date('Y-m-d_H-i-s') . '.sql');
+    }
+
+    private function resolveMysqldumpCommand(): ?string
+    {
+        $candidates = ['mysqldump', '/usr/bin/mysqldump', '/usr/local/bin/mysqldump', '/usr/mysql/bin/mysqldump', '/opt/homebrew/bin/mysqldump'];
+        foreach ($candidates as $cmd) {
+            if ($this->hasShellCommand($cmd)) {
+                return $cmd;
+            }
+        }
+
+        return null;
     }
 
     private function generatePhpDatabaseDump($db, string $filePath): void
@@ -306,10 +321,9 @@ class Setting extends BaseController
             }
 
             if ($mysqli) {
-                // Stream rows with zero buffering on PHP side
+                // Direct stream write row-by-row into handle to avoid implode/array memory allocation
                 $result = $mysqli->query("SELECT * FROM {$safeTable}", MYSQLI_USE_RESULT);
                 if ($result) {
-                    $insertBuffer = [];
                     $bufferCount = 0;
                     $hasWrittenHeader = false;
 
@@ -319,29 +333,43 @@ class Setting extends BaseController
                             $hasWrittenHeader = true;
                         }
 
-                        $values = [];
-                        foreach ($row as $value) {
-                            if ($value === null) {
-                                $values[] = 'NULL';
-                            } elseif (is_int($value) || is_float($value)) {
-                                $values[] = $value;
-                            } else {
-                                $values[] = "'" . $mysqli->real_escape_string($value) . "'";
-                            }
+                        if ($bufferCount === 0) {
+                            fwrite($handle, "INSERT INTO {$safeTable} VALUES \n");
+                        } else {
+                            fwrite($handle, ",\n");
                         }
 
-                        $insertBuffer[] = '(' . implode(', ', $values) . ')';
+                        fwrite($handle, '(');
+                        $isFirstCol = true;
+                        foreach ($row as $value) {
+                            if (! $isFirstCol) {
+                                fwrite($handle, ', ');
+                            }
+                            $isFirstCol = false;
+
+                            if ($value === null) {
+                                fwrite($handle, 'NULL');
+                            } elseif (is_int($value) || is_float($value)) {
+                                fwrite($handle, (string) $value);
+                            } else {
+                                fwrite($handle, "'");
+                                fwrite($handle, $mysqli->real_escape_string((string) $value));
+                                fwrite($handle, "'");
+                            }
+                        }
+                        fwrite($handle, ')');
+
                         $bufferCount++;
 
                         if ($bufferCount >= 50) {
-                            fwrite($handle, "INSERT INTO {$safeTable} VALUES \n" . implode(",\n", $insertBuffer) . ";\n");
-                            $insertBuffer = [];
+                            fwrite($handle, ";\n");
                             $bufferCount = 0;
                         }
                     }
 
                     if ($bufferCount > 0) {
-                        fwrite($handle, "INSERT INTO {$safeTable} VALUES \n" . implode(",\n", $insertBuffer) . ";\n");
+                        fwrite($handle, ";\n");
+                        $bufferCount = 0;
                     }
 
                     if ($hasWrittenHeader) {
@@ -350,7 +378,6 @@ class Setting extends BaseController
 
                     $result->free();
 
-                    // Consume any extra result sets if multi-query was involved
                     while ($mysqli->more_results()) {
                         $mysqli->next_result();
                         if ($extraRes = $mysqli->store_result()) {
@@ -359,10 +386,9 @@ class Setting extends BaseController
                     }
                 }
             } else {
-                // Fallback for non-mysqli connections
+                // Fallback direct stream write for non-mysqli driver
                 $query = $db->query("SELECT * FROM {$safeTable}");
                 if ($query) {
-                    $insertBuffer = [];
                     $bufferCount = 0;
                     $hasWrittenHeader = false;
 
@@ -372,29 +398,41 @@ class Setting extends BaseController
                             $hasWrittenHeader = true;
                         }
 
-                        $values = [];
-                        foreach ($row as $value) {
-                            if ($value === null) {
-                                $values[] = 'NULL';
-                            } elseif (is_int($value) || is_float($value)) {
-                                $values[] = $value;
-                            } else {
-                                $values[] = $db->escape($value);
-                            }
+                        if ($bufferCount === 0) {
+                            fwrite($handle, "INSERT INTO {$safeTable} VALUES \n");
+                        } else {
+                            fwrite($handle, ",\n");
                         }
 
-                        $insertBuffer[] = '(' . implode(', ', $values) . ')';
+                        fwrite($handle, '(');
+                        $isFirstCol = true;
+                        foreach ($row as $value) {
+                            if (! $isFirstCol) {
+                                fwrite($handle, ', ');
+                            }
+                            $isFirstCol = false;
+
+                            if ($value === null) {
+                                fwrite($handle, 'NULL');
+                            } elseif (is_int($value) || is_float($value)) {
+                                fwrite($handle, (string) $value);
+                            } else {
+                                fwrite($handle, $db->escape($value));
+                            }
+                        }
+                        fwrite($handle, ')');
+
                         $bufferCount++;
 
                         if ($bufferCount >= 50) {
-                            fwrite($handle, "INSERT INTO {$safeTable} VALUES \n" . implode(",\n", $insertBuffer) . ";\n");
-                            $insertBuffer = [];
+                            fwrite($handle, ";\n");
                             $bufferCount = 0;
                         }
                     }
 
                     if ($bufferCount > 0) {
-                        fwrite($handle, "INSERT INTO {$safeTable} VALUES \n" . implode(",\n", $insertBuffer) . ";\n");
+                        fwrite($handle, ";\n");
+                        $bufferCount = 0;
                     }
 
                     if ($hasWrittenHeader) {
