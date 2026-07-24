@@ -379,43 +379,48 @@ class Setting extends BaseController
 
     private function sanitizeSqlDumpForCompatibility(string $sql): string
     {
-        // 1. DATETIME/TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' -> DEFAULT CURRENT_TIMESTAMP
-        $sql = preg_replace(
-            "/(datetime|timestamp)\s+NOT\s+NULL\s+DEFAULT\s+'0000-00-00\s+00:00:00'/i",
-            "$1 NOT NULL DEFAULT CURRENT_TIMESTAMP",
-            $sql
-        );
+        $lines = explode("\n", $sql);
+        $outputLines = [];
 
-        // 2. DATETIME/TIMESTAMP DEFAULT '0000-00-00 00:00:00' -> DEFAULT NULL
-        $sql = preg_replace(
-            "/(datetime|timestamp)\s+DEFAULT\s+'0000-00-00\s+00:00:00'/i",
-            "$1 DEFAULT NULL",
-            $sql
-        );
+        foreach ($lines as $line) {
+            // Process DDL column definition lines containing invalid zero dates '0000-00-00...'
+            if (preg_match("/'0000-00-00(?:\s+00:00:00)?'/i", $line)) {
+                // If column type is DATE (explicitly excluding DATETIME)
+                if (preg_match("/\`?\w+\`?\s+date\b/i", $line)) {
+                    if (preg_match("/NOT\s+NULL/i", $line)) {
+                        $line = preg_replace("/DEFAULT\s+'0000-00-00(?:\s+00:00:00)?'/i", "DEFAULT '1970-01-01'", $line);
+                    } else {
+                        $line = preg_replace("/DEFAULT\s+'0000-00-00(?:\s+00:00:00)?'/i", "DEFAULT NULL", $line);
+                    }
+                }
+                // If column type is DATETIME or TIMESTAMP
+                elseif (preg_match("/\`?\w+\`?\s+(datetime|timestamp)\b/i", $line)) {
+                    if (preg_match("/NOT\s+NULL/i", $line)) {
+                        $line = preg_replace("/DEFAULT\s+'0000-00-00(?:\s+00:00:00)?'/i", "DEFAULT CURRENT_TIMESTAMP", $line);
+                    } else {
+                        $line = preg_replace("/DEFAULT\s+'0000-00-00(?:\s+00:00:00)?'/i", "DEFAULT NULL", $line);
+                    }
+                }
+                // Fallback for any other column type with 0000-00-00 default
+                else {
+                    if (preg_match("/NOT\s+NULL/i", $line)) {
+                        $line = preg_replace("/DEFAULT\s+'0000-00-00(?:\s+00:00:00)?'/i", "DEFAULT '1970-01-01'", $line);
+                    } else {
+                        $line = preg_replace("/DEFAULT\s+'0000-00-00(?:\s+00:00:00)?'/i", "DEFAULT NULL", $line);
+                    }
+                }
+            }
 
-        // 3. DATE NOT NULL DEFAULT '0000-00-00' -> DEFAULT '1970-01-01'
-        $sql = preg_replace(
-            "/date\s+NOT\s+NULL\s+DEFAULT\s+'0000-00-00'/i",
-            "date NOT NULL DEFAULT '1970-01-01'",
-            $sql
-        );
+            // Fix zero dates inside INSERT row values
+            if (strpos($line, 'INSERT INTO') !== false || strpos($line, '(') !== false) {
+                $line = str_replace("'0000-00-00 00:00:00'", "'1970-01-01 00:00:00'", $line);
+                $line = str_replace("'0000-00-00'", "'1970-01-01'", $line);
+            }
 
-        // 4. DATE DEFAULT '0000-00-00' -> DEFAULT NULL
-        $sql = preg_replace(
-            "/date\s+DEFAULT\s+'0000-00-00'/i",
-            "date DEFAULT NULL",
-            $sql
-        );
+            $outputLines[] = $line;
+        }
 
-        // 5. General fallback for any remaining DEFAULT '0000-00-00 00:00:00' or '0000-00-00'
-        $sql = preg_replace("/DEFAULT\s+'0000-00-00\s+00:00:00'/i", "DEFAULT CURRENT_TIMESTAMP", $sql);
-        $sql = preg_replace("/DEFAULT\s+'0000-00-00'/i", "DEFAULT NULL", $sql);
-
-        // 6. Fix row data values in INSERT statements for MySQL strict mode
-        $sql = str_replace("'0000-00-00 00:00:00'", "'1970-01-01 00:00:00'", $sql);
-        $sql = str_replace("'0000-00-00'", "'1970-01-01'", $sql);
-
-        return $sql;
+        return implode("\n", $outputLines);
     }
 
     private function resolveMysqldumpCommand(): ?string
