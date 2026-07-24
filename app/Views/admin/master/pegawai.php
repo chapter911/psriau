@@ -48,7 +48,69 @@
         <?php endif; ?>
     </div>
     <div class="card-body">
-        <table class="table table-bordered table-striped w-100 nowrap js-datatable">
+        <!-- Filter Panel -->
+        <div class="card card-outline card-info mb-3">
+            <div class="card-header py-2">
+                <h3 class="card-title font-weight-bold text-dark" style="font-size: 0.95rem;">
+                    <i class="fas fa-filter text-info mr-1"></i> Filter Data Pegawai
+                    <span id="active-filter-badge" class="badge badge-info ml-2" style="display: none;">0 Filter Aktif</span>
+                </h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool text-danger font-weight-bold" id="btn-reset-filter" style="display: none;" title="Reset Filter">
+                        <i class="fas fa-redo-alt mr-1"></i> Reset Filter
+                    </button>
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body py-2">
+                <div class="row">
+                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                        <label class="small font-weight-bold text-muted mb-1">JENIS PEGAWAI</label>
+                        <select id="filter-jenis-pegawai" class="form-control form-control-sm custom-select custom-select-sm">
+                            <option value="">Semua Jenis Pegawai</option>
+                            <option value="pns">PNS</option>
+                            <option value="pppk">PPPK</option>
+                            <option value="ppnpn">PPNPN</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                        <label class="small font-weight-bold text-muted mb-1">ESELON</label>
+                        <select id="filter-eselon" class="form-control form-control-sm custom-select custom-select-sm">
+                            <option value="">Semua Eselon</option>
+                            <option value="Eselon I">Eselon I</option>
+                            <option value="Eselon II">Eselon II</option>
+                            <option value="Eselon III">Eselon III</option>
+                            <option value="Eselon IV">Eselon IV</option>
+                            <option value="Non Eselon">Non Eselon</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                        <label class="small font-weight-bold text-muted mb-1">GOLONGAN</label>
+                        <select id="filter-golongan" class="form-control form-control-sm custom-select custom-select-sm">
+                            <option value="">Semua Golongan</option>
+                            <?php
+                                $golOptions = ['I/a','I/b','I/c','I/d','II/a','II/b','II/c','II/d','III/a','III/b','III/c','III/d','IV/a','IV/b','IV/c','IV/d','IV/e'];
+                                foreach ($golOptions as $g) {
+                                    echo '<option value="' . esc($g) . '">' . esc($g) . '</option>';
+                                }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                        <label class="small font-weight-bold text-muted mb-1">STATUS</label>
+                        <select id="filter-status" class="form-control form-control-sm custom-select custom-select-sm">
+                            <option value="">Semua Status</option>
+                            <option value="Aktif">Aktif</option>
+                            <option value="Nonaktif">Nonaktif</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <table class="table table-bordered table-striped w-100 nowrap js-datatable js-pegawai-table">
             <thead>
                 <tr style="white-space: nowrap;">
                     <th class="text-center">#</th>
@@ -741,6 +803,78 @@
                 }
             });
         });
+    });
+
+    // Custom DataTables Filter for Pegawai
+    if (typeof $ !== 'undefined' && $.fn && $.fn.dataTable) {
+        $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+            if (!$(settings.nTable).hasClass('js-pegawai-table')) {
+                return true;
+            }
+
+            const filterJenis = $('#filter-jenis-pegawai').val().toLowerCase();
+            const filterEselon = $('#filter-eselon').val().toLowerCase();
+            const filterGolongan = $('#filter-golongan').val().toLowerCase();
+            const filterStatus = $('#filter-status').val().toLowerCase();
+
+            const rowJenis = (data[7] || '').trim().toLowerCase();
+            const rowEselon = (data[8] || '').trim().toLowerCase();
+            const rowGolongan = (data[9] || '').trim().toLowerCase();
+            const rowStatus = (data[11] || '').trim().toLowerCase();
+
+            if (filterJenis && rowJenis !== filterJenis) {
+                return false;
+            }
+            if (filterEselon && rowEselon !== filterEselon) {
+                return false;
+            }
+            if (filterGolongan && rowGolongan !== filterGolongan) {
+                return false;
+            }
+            if (filterStatus && rowStatus !== filterStatus) {
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    function updatePegawaiFilterIndicator() {
+        let activeCount = 0;
+        $('#filter-jenis-pegawai, #filter-eselon, #filter-golongan, #filter-status').each(function () {
+            if ($(this).val() !== '') {
+                activeCount++;
+                $(this).addClass('border-info text-info font-weight-bold');
+            } else {
+                $(this).removeClass('border-info text-info font-weight-bold');
+            }
+        });
+
+        if (activeCount > 0) {
+            $('#btn-reset-filter').show();
+            $('#active-filter-badge').text(activeCount + ' Filter Aktif').show();
+        } else {
+            $('#btn-reset-filter').hide();
+            $('#active-filter-badge').hide();
+        }
+    }
+
+    $(document).on('change', '#filter-jenis-pegawai, #filter-eselon, #filter-golongan, #filter-status', function () {
+        updatePegawaiFilterIndicator();
+        if ($.fn.DataTable.isDataTable('.js-pegawai-table')) {
+            $('.js-pegawai-table').DataTable().draw();
+        }
+    });
+
+    $(document).on('click', '#btn-reset-filter', function () {
+        $('#filter-jenis-pegawai').val('');
+        $('#filter-eselon').val('');
+        $('#filter-golongan').val('');
+        $('#filter-status').val('');
+        updatePegawaiFilterIndicator();
+        if ($.fn.DataTable.isDataTable('.js-pegawai-table')) {
+            $('.js-pegawai-table').DataTable().draw();
+        }
     });
 </script>
 <?= $this->endSection(); ?>

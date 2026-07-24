@@ -159,17 +159,18 @@
             ?>
             <?php foreach ($pelaksana as $p): ?>
                 <?php 
-                    // extract Jabatan and Golongan
-                    // example "III/d (Penata Tingkat I) / Eselon Non Eselon" -> "III/d" or "Penata Tingkat I"
+                    // Extract Golongan directly from Master Pegawai data or fallback
+                    $golongan = trim((string)($p['golongan'] ?? ''));
                     $jabatanStr = trim((string)($p['jabatan'] ?? ''));
-                    $golongan = '';
-                    $pangkat = '';
-                    
-                    if (preg_match('/^([^\(]+)\((.*?)\)/', $jabatanStr, $matches)) {
-                        $golongan = trim($matches[1]);
-                        $pangkat = trim($matches[2]);
-                    } else {
-                        $golongan = $jabatanStr;
+                    if ($golongan === '') {
+                        if (preg_match('/^([^\(]+)\((.*?)\)/', $jabatanStr, $matches)) {
+                            $golongan = trim($matches[1]);
+                        } else {
+                            $golongan = $jabatanStr;
+                        }
+                    }
+                    if (preg_match('/^([^\(\)]+)/', $golongan, $gMatches)) {
+                        $golongan = trim($gMatches[1]);
                     }
                     
                     // Determine Penginapan Tariff based on Jabatan
@@ -206,8 +207,7 @@
                         NIP. <?= esc($p['nip'] ?? '-'); ?>
                     </td>
                     <td class="text-center">
-                        <?= esc($pangkat); ?><br>
-                        (<?= esc($golongan); ?>)
+                        <?= esc($golongan !== '' ? $golongan : '-'); ?>
                     </td>
                     <td class="text-center"><?= $kotaTujuan; ?></td>
                     <td class="text-center"><?= $tglBerangkat; ?></td>

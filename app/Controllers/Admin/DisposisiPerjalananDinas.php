@@ -566,7 +566,7 @@ class DisposisiPerjalananDinas extends BaseController
         }
 
         $rows = (new MstPegawaiModel())
-            ->select('mst_pegawai.id, mst_pegawai.nip, mst_pegawai.nama, mst_pegawai.jabatan_utama_id, ju.jabatan AS jabatan_label, mst_pegawai.is_active')
+            ->select('mst_pegawai.id, mst_pegawai.nip, mst_pegawai.nama, mst_pegawai.golongan, mst_pegawai.jabatan_utama_id, ju.jabatan AS jabatan_label, mst_pegawai.is_active')
             ->join('mst_jabatan ju', 'ju.id = mst_pegawai.jabatan_utama_id', 'left')
             ->where('mst_pegawai.is_active', 1)
             ->orderBy('mst_pegawai.nama', 'ASC')
@@ -605,10 +605,11 @@ class DisposisiPerjalananDinas extends BaseController
 
             $row = $rowsById[(int) $id];
             $rows[] = [
-                'id'      => (int) ($row['id'] ?? 0),
-                'nama'    => (string) ($row['nama'] ?? ''),
-                'nip'     => (string) ($row['nip'] ?? ''),
-                'jabatan' => (string) ($row['jabatan_label'] ?? ''),
+                'id'       => (int) ($row['id'] ?? 0),
+                'nama'     => (string) ($row['nama'] ?? ''),
+                'nip'      => (string) ($row['nip'] ?? ''),
+                'jabatan'  => (string) ($row['jabatan_label'] ?? ''),
+                'golongan' => (string) ($row['golongan'] ?? ''),
             ];
         }
 

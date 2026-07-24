@@ -794,7 +794,27 @@ class Laporan extends BaseController
 
         $pelaksana = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: [];
 
-        $kotaTujuan = $row['kota_tujuan'] ?? '';
+        $db = \Config\Database::connect();
+        if (! empty($pelaksana) && $db->tableExists('mst_pegawai')) {
+            $pegawaiIds = array_filter(array_column($pelaksana, 'id'));
+            if (! empty($pegawaiIds)) {
+                $pegawaiDb = $db->table('mst_pegawai')
+                    ->select('id, golongan')
+                    ->whereIn('id', $pegawaiIds)
+                    ->get()->getResultArray();
+                $golMap = [];
+                foreach ($pegawaiDb as $pDb) {
+                    $golMap[(int) $pDb['id']] = (string) ($pDb['golongan'] ?? '');
+                }
+                foreach ($pelaksana as &$pItem) {
+                    $pid = (int) ($pItem['id'] ?? 0);
+                    if (isset($golMap[$pid]) && $golMap[$pid] !== '') {
+                        $pItem['golongan'] = $golMap[$pid];
+                    }
+                }
+                unset($pItem);
+            }
+        }
         $biayaMaster = [
             'harian' => 0,
             'penginapan_e1' => 0,
@@ -803,7 +823,7 @@ class Laporan extends BaseController
             'penginapan_e4' => 0,
         ];
 
-        $db = \Config\Database::connect();
+        $kotaTujuan = $row['kota_tujuan'] ?? '';
         $kabupaten = $db->table('mst_kabupaten')->where('nama_kabupaten', $kotaTujuan)->get()->getRowArray();
         if ($kabupaten) {
             $provCode = $kabupaten['kode_provinsi'];
@@ -1905,7 +1925,7 @@ class Laporan extends BaseController
         }
 
         $rows = (new MstPegawaiModel())
-            ->select('mst_pegawai.id, mst_pegawai.nip, mst_pegawai.nama, mst_pegawai.jabatan_utama_id, ju.jabatan AS jabatan_label, mst_pegawai.is_active')
+            ->select('mst_pegawai.id, mst_pegawai.nip, mst_pegawai.nama, mst_pegawai.golongan, mst_pegawai.jabatan_utama_id, ju.jabatan AS jabatan_label, mst_pegawai.is_active')
             ->join('mst_jabatan ju', 'ju.id = mst_pegawai.jabatan_utama_id', 'left')
             ->where('mst_pegawai.is_active', 1)
             ->orderBy('mst_pegawai.nama', 'ASC')
@@ -2082,10 +2102,11 @@ class Laporan extends BaseController
 
             $row = $rowsById[(int) $id];
             $rows[] = [
-                'id' => (int) ($row['id'] ?? 0),
-                'nama' => (string) ($row['nama'] ?? ''),
-                'nip' => (string) ($row['nip'] ?? ''),
-                'jabatan' => (string) ($row['jabatan_label'] ?? ''),
+                'id'       => (int) ($row['id'] ?? 0),
+                'nama'     => (string) ($row['nama'] ?? ''),
+                'nip'      => (string) ($row['nip'] ?? ''),
+                'jabatan'  => (string) ($row['jabatan_label'] ?? ''),
+                'golongan' => (string) ($row['golongan'] ?? ''),
             ];
         }
 
