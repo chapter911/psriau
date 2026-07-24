@@ -3081,18 +3081,59 @@ class Laporan extends BaseController
         $lastNumberRaw = trim((string) $this->request->getPost('last_number'));
         $lastNumber = (int) preg_replace('/\D/', '', $lastNumberRaw);
 
+        $this->resequenceAllReports($lastNumber);
+
+        $nextFormat = str_pad((string) ($lastNumber + 1), 3, '0', STR_PAD_LEFT);
+        return redirect()->back()->with('success', 'Nomor Terakhir SPPD/Kwitansi berhasil disimpan (' . $lastNumber . '). Seluruh data laporan dari yang paling awal telah diurutkan berurutan mulai dari nomor ' . $nextFormat . '.');
+    }
+
+    private function resequenceAllReports(int $lastNumberBefore): void
+    {
         $db = \Config\Database::connect();
+        if (! $db->tableExists('laporan_perjalanan_dinas')) {
+            return;
+        }
+
+        $reports = $db->table('laporan_perjalanan_dinas')
+            ->select('id, pelaksana_json')
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        if (empty($reports)) {
+            if ($db->tableExists('app_settings')) {
+                $existing = $db->table('app_settings')->get()->getRowArray();
+                if (is_array($existing)) {
+                    $db->table('app_settings')->update(['last_kode_nomor_sppd' => $lastNumberBefore]);
+                } else {
+                    $db->table('app_settings')->insert(['last_kode_nomor_sppd' => $lastNumberBefore]);
+                }
+            }
+            return;
+        }
+
+        $runningNum = $lastNumberBefore + 1;
+
+        foreach ($reports as $rep) {
+            $repId = (int) $rep['id'];
+            $pelaksanaList = json_decode((string) ($rep['pelaksana_json'] ?? '[]'), true) ?: [];
+            $totalPelaksana = max(1, count($pelaksanaList));
+
+            $formattedKode = str_pad((string) $runningNum, 3, '0', STR_PAD_LEFT);
+            $db->table('laporan_perjalanan_dinas')->where('id', $repId)->update(['kode_nomor' => $formattedKode]);
+
+            $runningNum += $totalPelaksana;
+        }
+
+        $finalLastNumber = $runningNum - 1;
         if ($db->tableExists('app_settings')) {
             $existing = $db->table('app_settings')->get()->getRowArray();
             if (is_array($existing)) {
-                $db->table('app_settings')->update(['last_kode_nomor_sppd' => $lastNumber]);
+                $db->table('app_settings')->update(['last_kode_nomor_sppd' => $finalLastNumber]);
             } else {
-                $db->table('app_settings')->insert(['last_kode_nomor_sppd' => $lastNumber]);
+                $db->table('app_settings')->insert(['last_kode_nomor_sppd' => $finalLastNumber]);
             }
         }
-
-        $nextFormat = str_pad((string) ($lastNumber + 1), 3, '0', STR_PAD_LEFT);
-        return redirect()->back()->with('success', 'Nomor Terakhir SPPD/Kwitansi berhasil disimpan (' . $lastNumber . '). Nomor otomatis berikutnya yang akan ter-generate adalah ' . $nextFormat . '.');
     }
 
     private function getLastKodeNomorSetting(): int
