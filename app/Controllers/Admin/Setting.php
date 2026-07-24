@@ -247,12 +247,15 @@ class Setting extends BaseController
     private function generatePhpDatabaseDump($db, string $filePath): void
     {
         @set_time_limit(0);
-        @ini_set('memory_limit', '512M');
+        @ini_set('memory_limit', '1024M');
 
         $handle = fopen($filePath, 'w');
         if (! $handle) {
             throw new \RuntimeException('Tidak dapat membuat file dump database.');
         }
+
+        /** @var \mysqli|null $mysqli */
+        $mysqli = $db->connID instanceof \mysqli ? $db->connID : null;
 
         $databaseName = $db->database;
         $now = date('Y-m-d H:i:s');
@@ -276,62 +279,130 @@ class Setting extends BaseController
             fwrite($handle, "-- --------------------------------------------------------\n");
             fwrite($handle, "DROP TABLE IF EXISTS {$safeTable};\n");
 
-            $createTableQuery = $db->query("SHOW CREATE TABLE {$safeTable}");
-            if ($createTableQuery) {
-                $createRow = $createTableQuery->getRowArray();
-                $createTableQuery->freeResult();
-
-                if ($createRow) {
-                    $createSql = $createRow['Create Table'] ?? array_values($createRow)[1] ?? null;
-                    if ($createSql) {
-                        fwrite($handle, $createSql . ";\n\n");
+            if ($mysqli) {
+                $res = $mysqli->query("SHOW CREATE TABLE {$safeTable}");
+                if ($res) {
+                    $row = $res->fetch_assoc();
+                    $res->free();
+                    if ($row) {
+                        $createSql = $row['Create Table'] ?? array_values($row)[1] ?? null;
+                        if ($createSql) {
+                            fwrite($handle, $createSql . ";\n\n");
+                        }
+                    }
+                }
+            } else {
+                $createTableQuery = $db->query("SHOW CREATE TABLE {$safeTable}");
+                if ($createTableQuery) {
+                    $createRow = $createTableQuery->getRowArray();
+                    $createTableQuery->freeResult();
+                    if ($createRow) {
+                        $createSql = $createRow['Create Table'] ?? array_values($createRow)[1] ?? null;
+                        if ($createSql) {
+                            fwrite($handle, $createSql . ";\n\n");
+                        }
                     }
                 }
             }
 
-            // Stream rows using unbuffered query to keep memory usage low
-            $query = $db->query("SELECT * FROM {$safeTable}");
-            if ($query) {
-                $insertBuffer = [];
-                $bufferCount = 0;
-                $hasWrittenHeader = false;
+            if ($mysqli) {
+                // Stream rows with zero buffering on PHP side
+                $result = $mysqli->query("SELECT * FROM {$safeTable}", MYSQLI_USE_RESULT);
+                if ($result) {
+                    $insertBuffer = [];
+                    $bufferCount = 0;
+                    $hasWrittenHeader = false;
 
-                while ($row = $query->getUnbufferedRow('array')) {
-                    if (! $hasWrittenHeader) {
-                        fwrite($handle, "-- Dumping data for table {$safeTable}\n");
-                        $hasWrittenHeader = true;
-                    }
+                    while ($row = $result->fetch_assoc()) {
+                        if (! $hasWrittenHeader) {
+                            fwrite($handle, "-- Dumping data for table {$safeTable}\n");
+                            $hasWrittenHeader = true;
+                        }
 
-                    $values = [];
-                    foreach ($row as $value) {
-                        if ($value === null) {
-                            $values[] = 'NULL';
-                        } elseif (is_int($value) || is_float($value)) {
-                            $values[] = $value;
-                        } else {
-                            $values[] = $db->escape($value);
+                        $values = [];
+                        foreach ($row as $value) {
+                            if ($value === null) {
+                                $values[] = 'NULL';
+                            } elseif (is_int($value) || is_float($value)) {
+                                $values[] = $value;
+                            } else {
+                                $values[] = "'" . $mysqli->real_escape_string($value) . "'";
+                            }
+                        }
+
+                        $insertBuffer[] = '(' . implode(', ', $values) . ')';
+                        $bufferCount++;
+
+                        if ($bufferCount >= 50) {
+                            fwrite($handle, "INSERT INTO {$safeTable} VALUES \n" . implode(",\n", $insertBuffer) . ";\n");
+                            $insertBuffer = [];
+                            $bufferCount = 0;
                         }
                     }
 
-                    $insertBuffer[] = '(' . implode(', ', $values) . ')';
-                    $bufferCount++;
-
-                    if ($bufferCount >= 100) {
+                    if ($bufferCount > 0) {
                         fwrite($handle, "INSERT INTO {$safeTable} VALUES \n" . implode(",\n", $insertBuffer) . ";\n");
-                        $insertBuffer = [];
-                        $bufferCount = 0;
+                    }
+
+                    if ($hasWrittenHeader) {
+                        fwrite($handle, "\n");
+                    }
+
+                    $result->free();
+
+                    // Consume any extra result sets if multi-query was involved
+                    while ($mysqli->more_results()) {
+                        $mysqli->next_result();
+                        if ($extraRes = $mysqli->store_result()) {
+                            $extraRes->free();
+                        }
                     }
                 }
+            } else {
+                // Fallback for non-mysqli connections
+                $query = $db->query("SELECT * FROM {$safeTable}");
+                if ($query) {
+                    $insertBuffer = [];
+                    $bufferCount = 0;
+                    $hasWrittenHeader = false;
 
-                if ($bufferCount > 0) {
-                    fwrite($handle, "INSERT INTO {$safeTable} VALUES \n" . implode(",\n", $insertBuffer) . ";\n");
+                    while ($row = $query->getUnbufferedRow('array')) {
+                        if (! $hasWrittenHeader) {
+                            fwrite($handle, "-- Dumping data for table {$safeTable}\n");
+                            $hasWrittenHeader = true;
+                        }
+
+                        $values = [];
+                        foreach ($row as $value) {
+                            if ($value === null) {
+                                $values[] = 'NULL';
+                            } elseif (is_int($value) || is_float($value)) {
+                                $values[] = $value;
+                            } else {
+                                $values[] = $db->escape($value);
+                            }
+                        }
+
+                        $insertBuffer[] = '(' . implode(', ', $values) . ')';
+                        $bufferCount++;
+
+                        if ($bufferCount >= 50) {
+                            fwrite($handle, "INSERT INTO {$safeTable} VALUES \n" . implode(",\n", $insertBuffer) . ";\n");
+                            $insertBuffer = [];
+                            $bufferCount = 0;
+                        }
+                    }
+
+                    if ($bufferCount > 0) {
+                        fwrite($handle, "INSERT INTO {$safeTable} VALUES \n" . implode(",\n", $insertBuffer) . ";\n");
+                    }
+
+                    if ($hasWrittenHeader) {
+                        fwrite($handle, "\n");
+                    }
+
+                    $query->freeResult();
                 }
-
-                if ($hasWrittenHeader) {
-                    fwrite($handle, "\n");
-                }
-
-                $query->freeResult();
             }
         }
 
