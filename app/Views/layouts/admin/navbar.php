@@ -28,6 +28,13 @@
                         <i class="fas fa-database mr-1"></i> Merge Database
                     </button>
                 </form>
+                <form action="<?= site_url('/admin/pengaturan/application/extract-database'); ?>" method="post" class="mr-1 mb-0" data-skip-confirm="1">
+                    <?= csrf_field(); ?>
+                    <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-file-export mr-1"></i> Ekstrak Database
+                    </button>
+                </form>
                 <button type="button" class="btn btn-sm btn-outline-warning mb-0" data-toggle="modal" data-target="#errorLogModalNavbar">
                     <i class="fas fa-triangle-exclamation mr-1"></i> Lihat Log Error
                 </button>
@@ -50,6 +57,13 @@
                         <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
                         <button type="submit" class="dropdown-item">
                             <i class="fas fa-database mr-2 text-primary"></i> Merge Database
+                        </button>
+                    </form>
+                    <form action="<?= site_url('/admin/pengaturan/application/extract-database'); ?>" method="post" class="mb-0" data-skip-confirm="1">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
+                        <button type="submit" class="dropdown-item">
+                            <i class="fas fa-file-export mr-2 text-primary"></i> Ekstrak Database
                         </button>
                     </form>
                     <button type="button" class="dropdown-item text-warning" data-toggle="modal" data-target="#errorLogModalNavbar">

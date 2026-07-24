@@ -421,30 +421,30 @@ class Laporan extends BaseController
                 $pelaksanaId = (int) $this->request->getGet('filter_pelaksana');
 
                 if ($startDate !== '') {
-                    $builder->where('periode_mulai >=', $startDate);
+                    $builder->where('laporan_perjalanan_dinas.periode_mulai >=', $startDate);
                 }
                 if ($endDate !== '') {
-                    $builder->where('periode_selesai <=', $endDate);
+                    $builder->where('laporan_perjalanan_dinas.periode_selesai <=', $endDate);
                 }
                 if ($kota !== '') {
-                    $builder->where('kota_tujuan', $kota);
+                    $builder->where('laporan_perjalanan_dinas.kota_tujuan', $kota);
                 }
                 if ($pelaksanaId > 0) {
                     $builder->groupStart()
-                        ->like('pelaksana_json', '"id":' . $pelaksanaId . ',')
-                        ->orLike('pelaksana_json', '"id":' . $pelaksanaId . '}')
+                        ->like('laporan_perjalanan_dinas.pelaksana_json', '"id":' . $pelaksanaId . ',')
+                        ->orLike('laporan_perjalanan_dinas.pelaksana_json', '"id":' . $pelaksanaId . '}')
                         ->groupEnd();
                 }
             },
-            ['nomor_surat_tugas', 'kota_tujuan', 'tujuan', 'sasaran', 'laporan_hasil', 'pelaksana_json', 'creator_name'],
+            ['laporan_perjalanan_dinas.nomor_surat_tugas', 'laporan_perjalanan_dinas.kota_tujuan', 'laporan_perjalanan_dinas.tujuan', 'laporan_perjalanan_dinas.sasaran', 'laporan_perjalanan_dinas.laporan_hasil', 'laporan_perjalanan_dinas.pelaksana_json', 'laporan_perjalanan_dinas.creator_name'],
             [
-                0 => 'id',
-                1 => 'tujuan',
-                2 => 'kota_tujuan',
-                3 => 'periode_mulai',
-                4 => 'id',
-                5 => 'id',
-                6 => 'id',
+                0 => 'laporan_perjalanan_dinas.id',
+                1 => 'laporan_perjalanan_dinas.tujuan',
+                2 => 'laporan_perjalanan_dinas.kota_tujuan',
+                3 => 'laporan_perjalanan_dinas.periode_mulai',
+                4 => 'laporan_perjalanan_dinas.id',
+                5 => 'laporan_perjalanan_dinas.id',
+                6 => 'laporan_perjalanan_dinas.id',
             ],
             function (array $row) use ($canEdit, $canUploadVerified, $canVerifyLaporan, $currentPegawaiId): array {
                 $canVerifyRow = $canVerifyLaporan;
@@ -542,18 +542,22 @@ class Laporan extends BaseController
                 
                 $row['dokumen_html'] = $dokumenHtml;
                 
-                // Add conditional Upload Verified cell
-                if ($canUploadVerified && $isFinal === 1) {
-                    $existingFile = ! empty($row['verified_spt_path']) ? esc((string) $row['verified_spt_path'], 'attr') : '';
-                    $nomorSurat = esc((string) ($row['nomor_surat_tugas'] ?? '-'), 'attr');
-                    if ($existingFile !== '') {
-                        $row['upload_verified_html'] = '<button type="button" class="btn btn-sm btn-success btn-upload-verified" data-id="' . (int) ($row['id'] ?? 0) . '" data-nomor="' . $nomorSurat . '" data-existing="' . $existingFile . '" title="Re-upload Verified Perjadin & SPT"><i class="fas fa-sync-alt"></i> Re-upload</button>';
-                    } else {
-                        $row['upload_verified_html'] = '<button type="button" class="btn btn-sm btn-primary btn-upload-verified" data-id="' . (int) ($row['id'] ?? 0) . '" data-nomor="' . $nomorSurat . '" data-existing="" title="Upload Verified Perjadin & SPT"><i class="fas fa-upload"></i> Upload</button>';
-                    }
+                // Upload SPT TTD (PDF) column rendering
+                $existingVerifiedFile = ! empty($row['verified_spt_path']) ? esc((string) $row['verified_spt_path'], 'attr') : '';
+                $nomorSuratAttr = esc((string) ($row['nomor_surat_tugas'] ?? '-'), 'attr');
+                $uploadVerifiedUrl = site_url('admin/surat/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/upload-verified');
+
+                if ($existingVerifiedFile !== '') {
+                    $verifiedUrl = media_url($row['verified_spt_path']);
+                    $uploadSptTtdHtml = '<div class="btn-group btn-group-sm" role="group">' .
+                        '<a href="' . $verifiedUrl . '" class="btn btn-xs btn-success" target="_blank" rel="noopener noreferrer" title="Lihat SPT TTD (PDF)"><i class="fas fa-file-pdf mr-1"></i> Lihat PDF</a>' .
+                        '<button type="button" class="btn btn-xs btn-outline-primary btn-upload-spt-pdf" data-url="' . $uploadVerifiedUrl . '" data-nomor="' . $nomorSuratAttr . '" title="Upload Ulang SPT TTD (PDF)"><i class="fas fa-sync-alt"></i></button>' .
+                        '</div>';
                 } else {
-                    $row['upload_verified_html'] = '<span class="text-muted">-</span>';
+                    $uploadSptTtdHtml = '<button type="button" class="btn btn-xs btn-primary btn-upload-spt-pdf" data-url="' . $uploadVerifiedUrl . '" data-nomor="' . $nomorSuratAttr . '" title="Upload SPT TTD (Wajib PDF)"><i class="fas fa-upload mr-1"></i> Upload PDF</button>';
                 }
+                $row['upload_spt_ttd_html'] = $uploadSptTtdHtml;
+                $row['upload_verified_html'] = $uploadSptTtdHtml;
                 
                 if ($canEdit) {
                     $row['action_html'] = '<div class="d-flex justify-content-center align-items-center" style="gap: 5px; white-space: nowrap;">';
@@ -609,14 +613,15 @@ class Laporan extends BaseController
 
                 $fileSptHtml = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-spt') . '" class="btn btn-xs btn-outline-danger px-2 font-weight-bold" title="Cetak Surat Tugas (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak SPT</a>';
 
+                $kopSuratIdAttr = (int) ($row['kop_surat_id'] ?? 0);
                 $aksiSptHtml = '';
                 if ($canVerifyRow) {
                     if ($isVerified === 1) {
                         // Button to edit verification
-                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" title="Ubah Verifikasi"><i class="fas fa-edit mr-1"></i> Edit</button>';
+                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" data-kop-surat-id="' . $kopSuratIdAttr . '" title="Ubah Verifikasi"><i class="fas fa-edit mr-1"></i> Edit</button>';
                     } else {
                         // Button to perform verification
-                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
+                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" data-kop-surat-id="' . $kopSuratIdAttr . '" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
                     }
                 } else {
                     $aksiSptHtml = '<span class="text-muted" style="font-size:0.8rem;"><i class="fas fa-lock mr-1"></i> No Access</span>';
@@ -625,9 +630,9 @@ class Laporan extends BaseController
                 $verificationStatusHtml = $statusVerifikasiHtml . '<div class="mt-1 d-flex justify-content-center align-items-center" style="gap: 4px;">' . $fileSptHtml;
                 if ($canVerifyRow) {
                     if ($isVerified === 1) {
-                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
+                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" data-kop-surat-id="' . $kopSuratIdAttr . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
                     } else {
-                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
+                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" data-kop-surat-id="' . $kopSuratIdAttr . '" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
                     }
                 }
                 $verificationStatusHtml .= '</div>';
@@ -654,7 +659,7 @@ class Laporan extends BaseController
         $model = new LaporanPerjalananDinasModel();
         $row = $model->find($id);
         if (! is_array($row)) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+            return redirect()->back()->with('error', 'Data laporan tidak ditemukan.');
         }
 
         $role = strtolower((string) session()->get('role'));
@@ -684,7 +689,7 @@ class Laporan extends BaseController
         }
 
         if (! $canVerifyRow) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi laporan perjalanan dinas.');
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi laporan perjalanan dinas.');
         }
 
         $nomorSurat = trim((string) $this->request->getPost('nomor_surat_tugas'));
@@ -695,23 +700,29 @@ class Laporan extends BaseController
             $dasarInputs = [];
         }
         $tglTtd = trim((string) $this->request->getPost('tanggal_tanda_tangan'));
+        $kopSuratId = (int) $this->request->getPost('kop_surat_id');
 
         if ($nomorSurat === '') {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Nomor Surat Tugas wajib diisi.');
+            return redirect()->back()->with('error', 'Nomor Surat Tugas wajib diisi.');
         }
 
         if ($tglTtd === '') {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Tanggal tanda tangan wajib diisi.');
+            return redirect()->back()->with('error', 'Tanggal tanda tangan wajib diisi.');
         }
 
-        $model->update($id, [
+        $updateData = [
             'nomor_surat_tugas' => $nomorSurat,
             'dasar_spt_ids_json' => json_encode($dasarInputs, JSON_UNESCAPED_UNICODE),
             'tanggal_tanda_tangan' => $tglTtd,
             'is_verified' => 1,
-        ]);
+        ];
+        if ($kopSuratId > 0) {
+            $updateData['kop_surat_id'] = $kopSuratId;
+        }
 
-        return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('success', 'Laporan perjalanan dinas berhasil diverifikasi.');
+        $model->update($id, $updateData);
+
+        return redirect()->back()->with('success', 'Surat Tugas (SPT) berhasil diverifikasi.');
     }
 
     public function perjalananDinasCetakSpt(int $id)
@@ -1287,34 +1298,28 @@ class Laporan extends BaseController
             return redirect()->to(site_url('/admin'));
         }
 
-        $role = strtolower((string) session()->get('role'));
-        $canUploadVerified = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
-        if (! $canUploadVerified) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Anda tidak memiliki hak akses untuk mengupload verified perjadin & SPT.');
-        }
-
         $model = new LaporanPerjalananDinasModel();
         $row = $model->find($id);
         if (! is_array($row)) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+            return redirect()->back()->with('error', 'Data laporan tidak ditemukan.');
         }
 
         $file = $this->request->getFile('verified_spt');
         if (! $file || $file->getError() === UPLOAD_ERR_NO_FILE) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Silakan pilih file terlebih dahulu.');
+            return redirect()->back()->with('error', 'Silakan pilih file terlebih dahulu.');
         }
 
         if (! $file->isValid()) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'File tidak valid: ' . $file->getErrorString());
+            return redirect()->back()->with('error', 'File tidak valid: ' . $file->getErrorString());
         }
 
         $ext = strtolower($file->getClientExtension());
-        if (! in_array($ext, ['pdf', 'jpg', 'jpeg', 'png'], true)) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Ekstensi file tidak diizinkan. Hanya menerima PDF, JPG, JPEG, PNG.');
+        if ($ext !== 'pdf') {
+            return redirect()->back()->with('error', 'Ekstensi file tidak diizinkan. File SPT yang sudah ditandatangani WAJIB dalam format PDF.');
         }
 
         if ($file->getSize() > 10 * 1024 * 1024) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Ukuran file maksimal adalah 10MB.');
+            return redirect()->back()->with('error', 'Ukuran file maksimal adalah 10MB.');
         }
 
         $uploadDir = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'verified_perjadin';
@@ -1336,10 +1341,10 @@ class Laporan extends BaseController
                 'verified_spt_path' => 'uploads/verified_perjadin/' . $newName
             ]);
 
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('success', 'File verified perjadin & SPT berhasil diupload.');
+            return redirect()->back()->with('success', 'File SPT yang sudah ditandatangani (PDF) berhasil diupload.');
         }
 
-        return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Gagal memindahkan file ke direktori upload.');
+        return redirect()->back()->with('error', 'Gagal memindahkan file ke direktori upload.');
     }
 
     public function perjalananDinasDokumen(int $id)

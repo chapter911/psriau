@@ -184,6 +184,144 @@ class Setting extends BaseController
             ]);
     }
 
+    public function extractDatabase()
+    {
+        $redirectTarget = $this->resolveOpsRedirectTarget();
+
+        if (! $this->canAccessProductionUtilities()) {
+            return redirect()->to($redirectTarget)->with('error', 'Akses ditolak. Fitur ini hanya untuk super administrator di production.');
+        }
+
+        $backupDir = WRITEPATH . 'backups';
+        if (! is_dir($backupDir)) {
+            @mkdir($backupDir, 0755, true);
+        }
+
+        $filename = 'db_extract_' . date('Ymd_His') . '_' . bin2hex(random_bytes(3)) . '.sql';
+        $filePath = $backupDir . DIRECTORY_SEPARATOR . $filename;
+
+        $db = \Config\Database::connect();
+        $databaseName = $db->database;
+        $hostname = $db->hostname;
+        $username = $db->username;
+        $password = $db->password;
+        $port = $db->port ?: 3306;
+
+        $dumpedViaShell = false;
+
+        if ($this->hasShellCommand('mysqldump')) {
+            $cmd = sprintf(
+                'mysqldump --host=%s --port=%s --user=%s --password=%s %s > %s 2>&1',
+                escapeshellarg((string) $hostname),
+                escapeshellarg((string) $port),
+                escapeshellarg((string) $username),
+                escapeshellarg((string) $password),
+                escapeshellarg((string) $databaseName),
+                escapeshellarg((string) $filePath)
+            );
+            [$success, $output] = $this->runShellCommand($cmd);
+            if ($success && file_exists($filePath) && filesize($filePath) > 0) {
+                $dumpedViaShell = true;
+            }
+        }
+
+        if (! $dumpedViaShell) {
+            try {
+                $this->generatePhpDatabaseDump($db, $filePath);
+            } catch (\Throwable $e) {
+                log_message('error', 'Failed to generate database extract dump: ' . $e->getMessage());
+                return redirect()->to($redirectTarget)->with('error', 'Gagal membuat ekstraksi database: ' . $e->getMessage());
+            }
+        }
+
+        if (! file_exists($filePath) || filesize($filePath) === 0) {
+            return redirect()->to($redirectTarget)->with('error', 'File ekstrak database gagal dibuat.');
+        }
+
+        return $this->response->download($filePath, null)->setFileName('database_backup_' . date('Y-m-d_H-i-s') . '.sql');
+    }
+
+    private function generatePhpDatabaseDump($db, string $filePath): void
+    {
+        $handle = fopen($filePath, 'w');
+        if (! $handle) {
+            throw new \RuntimeException('Tidak dapat membuat file dump database.');
+        }
+
+        $databaseName = $db->database;
+        $now = date('Y-m-d H:i:s');
+
+        fwrite($handle, "-- ========================================================\n");
+        fwrite($handle, "-- Database Extract Dump\n");
+        fwrite($handle, "-- Database: {$databaseName}\n");
+        fwrite($handle, "-- Date: {$now}\n");
+        fwrite($handle, "-- ========================================================\n\n");
+        fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n");
+        fwrite($handle, "SET SQL_MODE=\"NO_AUTO_VALUE_ON_ZERO\";\n");
+        fwrite($handle, "SET time_zone = \"+00:00\";\n\n");
+
+        $tables = $db->listTables();
+
+        foreach ($tables as $table) {
+            fwrite($handle, "-- --------------------------------------------------------\n");
+            fwrite($handle, "-- Table structure for table `{$table}`\n");
+            fwrite($handle, "-- --------------------------------------------------------\n");
+            fwrite($handle, "DROP TABLE IF EXISTS `{$table}`;\n");
+
+            $createTableQuery = $db->query("SHOW CREATE TABLE `" . $db->escapeLikeString($table) . "`")->getRowArray();
+            if ($createTableQuery) {
+                $createSql = $createTableQuery['Create Table'] ?? array_values($createTableQuery)[1] ?? null;
+                if ($createSql) {
+                    fwrite($handle, $createSql . ";\n\n");
+                }
+            }
+
+            $rowCountQuery = $db->query("SELECT COUNT(*) as total FROM `" . $db->escapeLikeString($table) . "`")->getRowArray();
+            $totalRows = (int) ($rowCountQuery['total'] ?? 0);
+
+            if ($totalRows > 0) {
+                fwrite($handle, "-- Dumping data for table `{$table}`\n");
+
+                $chunkSize = 250;
+                $offset = 0;
+
+                while ($offset < $totalRows) {
+                    $rows = $db->query("SELECT * FROM `" . $db->escapeLikeString($table) . "` LIMIT {$chunkSize} OFFSET {$offset}")->getResultArray();
+                    if (empty($rows)) {
+                        break;
+                    }
+
+                    $insertSql = "INSERT INTO `{$table}` VALUES \n";
+                    $valueLines = [];
+
+                    foreach ($rows as $row) {
+                        $values = [];
+                        foreach ($row as $value) {
+                            if ($value === null) {
+                                $values[] = 'NULL';
+                            } elseif (is_int($value) || is_float($value)) {
+                                $values[] = $value;
+                            } else {
+                                $values[] = $db->escape($value);
+                            }
+                        }
+                        $valueLines[] = '(' . implode(', ', $values) . ')';
+                    }
+
+                    $insertSql .= implode(",\n", $valueLines) . ";\n";
+                    fwrite($handle, $insertSql);
+
+                    $offset += $chunkSize;
+                }
+
+                fwrite($handle, "\n");
+            }
+        }
+
+        fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
+        fclose($handle);
+    }
+
     private function resolvePhpCliCommand(): string
     {
         // Prefer the "php" command from PATH because web SAPIs often point PHP_BINARY to fpm/cgi.

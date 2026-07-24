@@ -69,16 +69,17 @@
                 <thead>
                     <tr>
                         <th style="width:60px;" class="text-center">No</th>
-                        <th style="width:280px;">Tujuan</th>
-                        <th style="width:180px;">Kota Tujuan</th>
-                        <th style="width:180px;">Periode</th>
+                        <th style="width:250px;">Tujuan</th>
+                        <th style="width:150px;">Kota Tujuan</th>
+                        <th style="width:150px;">Periode</th>
                         <th>Nama Pelaksana</th>
-                        <th style="width:150px;" class="text-center">Status Verifikasi</th>
-                        <th style="width:130px;" class="text-center">File SPT</th>
+                        <th style="width:130px;" class="text-center">Status Laporan</th>
+                        <th style="width:110px;" class="text-center">Cetak SPT</th>
+                        <th style="width:140px;" class="text-center">Upload SPT (TTD)</th>
                         <th style="width:130px;" class="text-center">Daftar Nominatif</th>
-                        <th style="width:130px;" class="text-center">SPPD</th>
-                        <th style="width:130px;" class="text-center">Kwitansi</th>
-                        <th style="width:110px;" class="text-center">Aksi</th>
+                        <th style="width:100px;" class="text-center">SPPD</th>
+                        <th style="width:100px;" class="text-center">Kwitansi</th>
+                        <th style="width:80px;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -124,7 +125,7 @@
                         <select class="form-control" id="verify_kop_surat" name="kop_surat_id" required>
                             <option value="">-- Pilih Kop Surat --</option>
                             <?php foreach ($kop_surat_list ?? [] as $ks): ?>
-                                <option value="<?= (int) $ks['id']; ?>" <?= (int) ($ks['is_active'] ?? 0) === 1 ? 'data-default="1"' : ''; ?>>
+                                <option value="<?= (int) $ks['id']; ?>" <?= (int) ($ks['is_active'] ?? 0) === 1 ? 'selected data-default="1"' : ''; ?>>
                                     <?= esc($ks['title']); ?> <?= (int) ($ks['is_active'] ?? 0) === 1 ? '(Aktif)' : ''; ?>
                                 </option>
                             <?php endforeach; ?>
@@ -146,21 +147,34 @@
 </div>
 <?php endif; ?>
 
-<!-- Modal Konfirmasi Hapus -->
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Konfirmasi Hapus</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+<!-- Modal Upload SPT TTD (PDF) -->
+<div class="modal fade" id="modal-upload-spt-pdf" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title font-weight-bold" id="modalUploadSptTitle">
+                    <i class="fas fa-file-upload mr-2"></i>Upload SPT Sudah TTD (PDF)
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">&times;</button>
             </div>
-            <div class="modal-body">
-                <p>Apakah Anda yakin ingin menghapus data perjalanan dinas ini?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                <a id="btnConfirmDelete" href="#" class="btn btn-danger btn-sm">Hapus</a>
-            </div>
+            <form id="form-upload-spt-pdf" method="post" action="" enctype="multipart/form-data">
+                <?= csrf_field(); ?>
+                <div class="modal-body py-4">
+                    <p class="text-secondary mb-3">Upload file SPT yang telah ditandatangani untuk <strong id="upload-spt-nomor">-</strong>:</p>
+                    <div class="form-group mb-0">
+                        <label for="verified_spt" class="font-weight-bold">File SPT TTD <span class="text-danger">* (Wajib Format PDF)</span></label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="verified_spt" name="verified_spt" accept="application/pdf,.pdf" required>
+                            <label class="custom-file-label" for="verified_spt">Pilih file PDF...</label>
+                        </div>
+                        <small class="text-muted mt-2 d-block"><i class="fas fa-info-circle mr-1"></i> Ukuran maksimal 10MB. File <strong>wajib berkestensi .pdf</strong>.</small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm font-weight-bold"><i class="fas fa-upload mr-1"></i> Upload PDF</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -232,6 +246,12 @@
             },
             {
                 data: 'file_spt_html',
+                orderable: false,
+                searchable: false,
+                className: 'text-center'
+            },
+            {
+                data: 'upload_spt_ttd_html',
                 orderable: false,
                 searchable: false,
                 className: 'text-center'
@@ -320,6 +340,25 @@
             $filterPelaksana.on('change', function () { dt.ajax.reload(); });
             
             dt.ajax.reload();
+        });
+
+        // Upload SPT TTD (PDF) button handler
+        $table.on('click', '.btn-upload-spt-pdf', function (e) {
+            e.preventDefault();
+            const url = $(this).data('url');
+            const nomor = $(this).data('nomor') || '-';
+
+            $('#form-upload-spt-pdf').attr('action', url);
+            $('#upload-spt-nomor').text(nomor);
+            $('#verified_spt').val('');
+            $('#modal-upload-spt-pdf .custom-file-label').text('Pilih file PDF...');
+            $('#modal-upload-spt-pdf').modal('show');
+        });
+
+        // Update custom file input label on file selection
+        $('#verified_spt').on('change', function () {
+            const fileName = $(this).val().split('\\').pop() || 'Pilih file PDF...';
+            $(this).next('.custom-file-label').text(fileName);
         });
 
         // Delete button handler

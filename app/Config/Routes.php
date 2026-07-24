@@ -66,6 +66,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('pengaturan/application/test-email', 'Admin\\Setting::testEmail');
 	$routes->post('pengaturan/application/git-pull', 'Admin\\Setting::gitPull');
 	$routes->post('pengaturan/application/merge-database', 'Admin\\Setting::mergeDatabase');
+	$routes->post('pengaturan/application/extract-database', 'Admin\Setting::extractDatabase');
 	$routes->get('pengaturan/application/error-log-dates', 'Admin\\Setting::errorLogDates');
 	$routes->get('pengaturan/application/error-logs', 'Admin\\Setting::errorLogsByDate');
 	$routes->get('pengaturan/menus', 'Admin\\Setting::menus');
