@@ -263,12 +263,14 @@ class Setting extends BaseController
         $tables = $db->listTables();
 
         foreach ($tables as $table) {
-            fwrite($handle, "-- --------------------------------------------------------\n");
-            fwrite($handle, "-- Table structure for table `{$table}`\n");
-            fwrite($handle, "-- --------------------------------------------------------\n");
-            fwrite($handle, "DROP TABLE IF EXISTS `{$table}`;\n");
+            $safeTable = '`' . str_replace('`', '``', $table) . '`';
 
-            $createTableQuery = $db->query("SHOW CREATE TABLE `" . $db->escapeLikeString($table) . "`")->getRowArray();
+            fwrite($handle, "-- --------------------------------------------------------\n");
+            fwrite($handle, "-- Table structure for table {$safeTable}\n");
+            fwrite($handle, "-- --------------------------------------------------------\n");
+            fwrite($handle, "DROP TABLE IF EXISTS {$safeTable};\n");
+
+            $createTableQuery = $db->query("SHOW CREATE TABLE {$safeTable}")->getRowArray();
             if ($createTableQuery) {
                 $createSql = $createTableQuery['Create Table'] ?? array_values($createTableQuery)[1] ?? null;
                 if ($createSql) {
@@ -276,22 +278,22 @@ class Setting extends BaseController
                 }
             }
 
-            $rowCountQuery = $db->query("SELECT COUNT(*) as total FROM `" . $db->escapeLikeString($table) . "`")->getRowArray();
+            $rowCountQuery = $db->query("SELECT COUNT(*) as total FROM {$safeTable}")->getRowArray();
             $totalRows = (int) ($rowCountQuery['total'] ?? 0);
 
             if ($totalRows > 0) {
-                fwrite($handle, "-- Dumping data for table `{$table}`\n");
+                fwrite($handle, "-- Dumping data for table {$safeTable}\n");
 
                 $chunkSize = 250;
                 $offset = 0;
 
                 while ($offset < $totalRows) {
-                    $rows = $db->query("SELECT * FROM `" . $db->escapeLikeString($table) . "` LIMIT {$chunkSize} OFFSET {$offset}")->getResultArray();
+                    $rows = $db->query("SELECT * FROM {$safeTable} LIMIT {$chunkSize} OFFSET {$offset}")->getResultArray();
                     if (empty($rows)) {
                         break;
                     }
 
-                    $insertSql = "INSERT INTO `{$table}` VALUES \n";
+                    $insertSql = "INSERT INTO {$safeTable} VALUES \n";
                     $valueLines = [];
 
                     foreach ($rows as $row) {
