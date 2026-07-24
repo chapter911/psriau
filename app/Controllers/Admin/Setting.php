@@ -201,13 +201,13 @@ class Setting extends BaseController
 
             $infoMap = [];
             $infoQuery = $db->query("
-                SELECT TABLE_NAME as name, TABLE_ROWS as rows 
+                SELECT TABLE_NAME as name, TABLE_ROWS as total_rows 
                 FROM INFORMATION_SCHEMA.TABLES 
                 WHERE TABLE_SCHEMA = " . $db->escape($databaseName)
             );
             if ($infoQuery) {
                 foreach ($infoQuery->getResultArray() as $info) {
-                    $infoMap[$info['name']] = (int) ($info['rows'] ?? 0);
+                    $infoMap[$info['name']] = (int) ($info['total_rows'] ?? 0);
                 }
             }
 
