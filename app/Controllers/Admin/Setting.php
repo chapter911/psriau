@@ -273,6 +273,11 @@ class Setting extends BaseController
             }
         }
 
+        $targetEngine = strtolower((string) $this->request->getPost('target_engine'));
+        if (! in_array($targetEngine, ['mysql', 'mariadb'], true)) {
+            $targetEngine = 'mysql';
+        }
+
         @set_time_limit(0);
         @ini_set('memory_limit', '1024M');
 
@@ -281,7 +286,7 @@ class Setting extends BaseController
             @mkdir($backupDir, 0755, true);
         }
 
-        $filename = 'db_extract_' . date('Ymd_His') . '_' . bin2hex(random_bytes(3)) . '.sql';
+        $filename = 'db_extract_' . $targetEngine . '_' . date('Ymd_His') . '_' . bin2hex(random_bytes(3)) . '.sql';
         $filePath = $backupDir . DIRECTORY_SEPARATOR . $filename;
 
         $db = \Config\Database::connect();
@@ -333,14 +338,19 @@ class Setting extends BaseController
                 }
                 $content = implode("\n", $lines);
 
-                $content = $this->sanitizeSqlDumpForCompatibility($content);
+                if ($targetEngine === 'mysql') {
+                    $content = $this->sanitizeSqlDumpForCompatibility($content);
+                    $sqlModeHeader = "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO,NO_ENGINE_SUBSTITUTION';\n";
+                } else {
+                    $sqlModeHeader = "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO';\n";
+                }
 
                 $header = "SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT;\n"
                     . "SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS;\n"
                     . "SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION;\n"
                     . "SET NAMES utf8mb4;\n"
                     . "SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;\n"
-                    . "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO,NO_ENGINE_SUBSTITUTION';\n"
+                    . $sqlModeHeader
                     . "SET time_zone = \"+00:00\";\n\n";
 
                 file_put_contents($filePath, $header . $content);
@@ -349,7 +359,7 @@ class Setting extends BaseController
 
         if (! $dumpedViaShell) {
             try {
-                $this->generatePhpDatabaseDump($db, $filePath, $selectedTables);
+                $this->generatePhpDatabaseDump($db, $filePath, $selectedTables, $targetEngine);
             } catch (\Throwable $e) {
                 log_message('error', 'Failed to generate database extract dump: ' . $e->getMessage());
                 return redirect()->to($redirectTarget)->with('error', 'Gagal membuat ekstraksi database: ' . $e->getMessage());
@@ -361,8 +371,8 @@ class Setting extends BaseController
         }
 
         $downloadName = ! empty($selectedTables) && count($selectedTables) === 1
-            ? 'db_table_' . reset($selectedTables) . '_' . date('Y-m-d_H-i-s') . '.sql'
-            : 'database_backup_' . date('Y-m-d_H-i-s') . '.sql';
+            ? 'db_table_' . reset($selectedTables) . '_' . $targetEngine . '_' . date('Y-m-d_H-i-s') . '.sql'
+            : 'database_backup_' . $targetEngine . '_' . date('Y-m-d_H-i-s') . '.sql';
 
         return $this->response->download($filePath, null)->setFileName($downloadName);
     }
@@ -430,7 +440,7 @@ class Setting extends BaseController
         return null;
     }
 
-    private function generatePhpDatabaseDump($db, string $filePath, array $selectedTables = []): void
+    private function generatePhpDatabaseDump($db, string $filePath, array $selectedTables = [], string $targetEngine = 'mysql'): void
     {
         @set_time_limit(0);
         @ini_set('memory_limit', '1024M');
@@ -445,9 +455,12 @@ class Setting extends BaseController
 
         $databaseName = $db->database;
         $now = date('Y-m-d H:i:s');
+        $sqlModeHeader = $targetEngine === 'mysql'
+            ? "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO,NO_ENGINE_SUBSTITUTION';\n"
+            : "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO';\n";
 
         fwrite($handle, "-- ========================================================\n");
-        fwrite($handle, "-- Database Extract Dump\n");
+        fwrite($handle, "-- Database Extract Dump ({$targetEngine})\n");
         fwrite($handle, "-- Database: {$databaseName}\n");
         fwrite($handle, "-- Date: {$now}\n");
         fwrite($handle, "-- ========================================================\n\n");
@@ -456,7 +469,7 @@ class Setting extends BaseController
         fwrite($handle, "SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION;\n");
         fwrite($handle, "SET NAMES utf8mb4;\n");
         fwrite($handle, "SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;\n");
-        fwrite($handle, "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='';\n");
+        fwrite($handle, $sqlModeHeader);
         fwrite($handle, "SET time_zone = \"+00:00\";\n\n");
 
         $allTables = $db->listTables();
@@ -482,7 +495,9 @@ class Setting extends BaseController
                     if ($row) {
                         $createSql = $row['Create Table'] ?? array_values($row)[1] ?? null;
                         if ($createSql) {
-                            $createSql = $this->sanitizeSqlDumpForCompatibility($createSql);
+                            if ($targetEngine === 'mysql') {
+                                $createSql = $this->sanitizeSqlDumpForCompatibility($createSql);
+                            }
                             fwrite($handle, $createSql . ";\n\n");
                         }
                     }
@@ -495,7 +510,9 @@ class Setting extends BaseController
                     if ($createRow) {
                         $createSql = $createRow['Create Table'] ?? array_values($createRow)[1] ?? null;
                         if ($createSql) {
-                            $createSql = $this->sanitizeSqlDumpForCompatibility($createSql);
+                            if ($targetEngine === 'mysql') {
+                                $createSql = $this->sanitizeSqlDumpForCompatibility($createSql);
+                            }
                             fwrite($handle, $createSql . ";\n\n");
                         }
                     }

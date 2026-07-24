@@ -137,6 +137,26 @@
                 <?= csrf_field(); ?>
                 <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
                 <div class="modal-body">
+                    <div class="card card-outline card-primary mb-3 shadow-none border">
+                        <div class="card-body p-2 bg-light">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between">
+                                <label class="font-weight-bold text-dark mb-1 mb-md-0 small">
+                                    <i class="fas fa-server text-primary mr-1"></i> Target Database (Kompatibilitas):
+                                </label>
+                                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                    <label class="btn btn-xs btn-outline-primary active" style="cursor: pointer;">
+                                        <input type="radio" name="target_engine" id="target_engine_mysql" value="mysql" checked>
+                                        <i class="fab fa-docker mr-1"></i> MySQL (Local / Strict)
+                                    </label>
+                                    <label class="btn btn-xs btn-outline-primary" style="cursor: pointer;">
+                                        <input type="radio" name="target_engine" id="target_engine_mariadb" value="mariadb">
+                                        <i class="fas fa-database mr-1"></i> MariaDB (Original)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <small class="text-muted"><i class="fas fa-info-circle mr-1"></i> Klik pada header kolom untuk mengurutkan data (Nama, Ukuran, atau Jumlah Baris).</small>
                         <div>
