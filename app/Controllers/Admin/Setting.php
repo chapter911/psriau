@@ -333,15 +333,14 @@ class Setting extends BaseController
                 }
                 $content = implode("\n", $lines);
 
-                $content = preg_replace("/DEFAULT\s+'0000-00-00 00:00:00'/i", "DEFAULT NULL", $content);
-                $content = preg_replace("/DEFAULT\s+'0000-00-00'/i", "DEFAULT NULL", $content);
+                $content = $this->sanitizeSqlDumpForCompatibility($content);
 
                 $header = "SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT;\n"
                     . "SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS;\n"
                     . "SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION;\n"
                     . "SET NAMES utf8mb4;\n"
                     . "SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;\n"
-                    . "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='';\n"
+                    . "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO,NO_ENGINE_SUBSTITUTION';\n"
                     . "SET time_zone = \"+00:00\";\n\n";
 
                 file_put_contents($filePath, $header . $content);
@@ -366,6 +365,47 @@ class Setting extends BaseController
             : 'database_backup_' . date('Y-m-d_H-i-s') . '.sql';
 
         return $this->response->download($filePath, null)->setFileName($downloadName);
+    }
+
+    private function sanitizeSqlDumpForCompatibility(string $sql): string
+    {
+        // 1. DATETIME/TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00' -> DEFAULT CURRENT_TIMESTAMP
+        $sql = preg_replace(
+            "/(datetime|timestamp)\s+NOT\s+NULL\s+DEFAULT\s+'0000-00-00\s+00:00:00'/i",
+            "$1 NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            $sql
+        );
+
+        // 2. DATETIME/TIMESTAMP DEFAULT '0000-00-00 00:00:00' -> DEFAULT NULL
+        $sql = preg_replace(
+            "/(datetime|timestamp)\s+DEFAULT\s+'0000-00-00\s+00:00:00'/i",
+            "$1 DEFAULT NULL",
+            $sql
+        );
+
+        // 3. DATE NOT NULL DEFAULT '0000-00-00' -> DEFAULT '1970-01-01'
+        $sql = preg_replace(
+            "/date\s+NOT\s+NULL\s+DEFAULT\s+'0000-00-00'/i",
+            "date NOT NULL DEFAULT '1970-01-01'",
+            $sql
+        );
+
+        // 4. DATE DEFAULT '0000-00-00' -> DEFAULT NULL
+        $sql = preg_replace(
+            "/date\s+DEFAULT\s+'0000-00-00'/i",
+            "date DEFAULT NULL",
+            $sql
+        );
+
+        // 5. General fallback for any remaining DEFAULT '0000-00-00 00:00:00' or '0000-00-00'
+        $sql = preg_replace("/DEFAULT\s+'0000-00-00\s+00:00:00'/i", "DEFAULT CURRENT_TIMESTAMP", $sql);
+        $sql = preg_replace("/DEFAULT\s+'0000-00-00'/i", "DEFAULT NULL", $sql);
+
+        // 6. Fix row data values in INSERT statements for MySQL strict mode
+        $sql = str_replace("'0000-00-00 00:00:00'", "'1970-01-01 00:00:00'", $sql);
+        $sql = str_replace("'0000-00-00'", "'1970-01-01'", $sql);
+
+        return $sql;
     }
 
     private function resolveMysqldumpCommand(): ?string
@@ -442,8 +482,7 @@ class Setting extends BaseController
                     if ($row) {
                         $createSql = $row['Create Table'] ?? array_values($row)[1] ?? null;
                         if ($createSql) {
-                            $createSql = preg_replace("/DEFAULT\s+'0000-00-00 00:00:00'/i", "DEFAULT NULL", $createSql);
-                            $createSql = preg_replace("/DEFAULT\s+'0000-00-00'/i", "DEFAULT NULL", $createSql);
+                            $createSql = $this->sanitizeSqlDumpForCompatibility($createSql);
                             fwrite($handle, $createSql . ";\n\n");
                         }
                     }
@@ -456,8 +495,7 @@ class Setting extends BaseController
                     if ($createRow) {
                         $createSql = $createRow['Create Table'] ?? array_values($createRow)[1] ?? null;
                         if ($createSql) {
-                            $createSql = preg_replace("/DEFAULT\s+'0000-00-00 00:00:00'/i", "DEFAULT NULL", $createSql);
-                            $createSql = preg_replace("/DEFAULT\s+'0000-00-00'/i", "DEFAULT NULL", $createSql);
+                            $createSql = $this->sanitizeSqlDumpForCompatibility($createSql);
                             fwrite($handle, $createSql . ";\n\n");
                         }
                     }
