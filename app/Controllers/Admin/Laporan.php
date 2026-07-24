@@ -3083,8 +3083,8 @@ class Laporan extends BaseController
 
         $db = \Config\Database::connect();
         if ($db->tableExists('app_settings')) {
-            $existing = $db->table('app_settings')->first();
-            if ($existing) {
+            $existing = $db->table('app_settings')->get()->getRowArray();
+            if (is_array($existing)) {
                 $db->table('app_settings')->update(['last_kode_nomor_sppd' => $lastNumber]);
             } else {
                 $db->table('app_settings')->insert(['last_kode_nomor_sppd' => $lastNumber]);
@@ -3109,36 +3109,47 @@ class Laporan extends BaseController
 
     private function ensureKodeNomorAssigned(array &$row): void
     {
-        $existingKode = trim((string) ($row['kode_nomor'] ?? ''));
-        if ($existingKode !== '') {
-            return;
-        }
-
         $id = (int) ($row['id'] ?? 0);
         if ($id <= 0) {
             return;
         }
 
+        $pelaksanaList = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: [];
+        $totalPelaksana = max(1, count($pelaksanaList));
+
+        $existingKode = trim((string) ($row['kode_nomor'] ?? ''));
         $db = \Config\Database::connect();
-        
-        $lastSettingNumber = $this->getLastKodeNomorSetting();
-        $maxDbNumber = 0;
-        if ($db->tableExists('laporan_perjalanan_dinas')) {
-            $maxRow = $db->query("SELECT MAX(CAST(kode_nomor AS UNSIGNED)) AS max_num FROM laporan_perjalanan_dinas WHERE kode_nomor REGEXP '^[0-9]+$'")->getRowArray();
-            if (is_array($maxRow) && isset($maxRow['max_num'])) {
-                $maxDbNumber = (int) $maxRow['max_num'];
+
+        if ($existingKode === '') {
+            $lastSettingNumber = $this->getLastKodeNomorSetting();
+            $maxDbNumber = 0;
+            if ($db->tableExists('laporan_perjalanan_dinas')) {
+                $maxRow = $db->query("SELECT MAX(CAST(kode_nomor AS UNSIGNED)) AS max_num FROM laporan_perjalanan_dinas WHERE kode_nomor REGEXP '^[0-9]+$'")->getRowArray();
+                if (is_array($maxRow) && isset($maxRow['max_num'])) {
+                    $maxDbNumber = (int) $maxRow['max_num'];
+                }
+            }
+
+            $startNumber = max($lastSettingNumber, $maxDbNumber) + 1;
+            $formattedKode = str_pad((string) $startNumber, 3, '0', STR_PAD_LEFT);
+
+            $db->table('laporan_perjalanan_dinas')->where('id', $id)->update(['kode_nomor' => $formattedKode]);
+            
+            $endNumber = $startNumber + $totalPelaksana - 1;
+            if ($db->tableExists('app_settings')) {
+                $db->table('app_settings')->update(['last_kode_nomor_sppd' => $endNumber]);
+            }
+
+            $row['kode_nomor'] = $formattedKode;
+        } else {
+            if (preg_match('/^(\d+)/', $existingKode, $m)) {
+                $startNum = (int) $m[1];
+                $endNumber = $startNum + $totalPelaksana - 1;
+                $currentSetting = $this->getLastKodeNomorSetting();
+                if ($endNumber > $currentSetting && $db->tableExists('app_settings')) {
+                    $db->table('app_settings')->update(['last_kode_nomor_sppd' => $endNumber]);
+                }
             }
         }
-
-        $nextNumber = max($lastSettingNumber, $maxDbNumber) + 1;
-        $formattedKode = str_pad((string) $nextNumber, 3, '0', STR_PAD_LEFT);
-
-        $db->table('laporan_perjalanan_dinas')->where('id', $id)->update(['kode_nomor' => $formattedKode]);
-        
-        if ($db->tableExists('app_settings')) {
-            $db->table('app_settings')->update(['last_kode_nomor_sppd' => $nextNumber]);
-        }
-
-        $row['kode_nomor'] = $formattedKode;
     }
 }

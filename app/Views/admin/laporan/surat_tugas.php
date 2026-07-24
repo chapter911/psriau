@@ -33,13 +33,17 @@
 </style>
 
 
-<div class="card card-outline card-primary">
-    <div class="card-header d-flex align-items-center justify-content-between">
-        <h3 class="card-title mb-0 font-weight-bold">Daftar Surat Tugas (SPT)</h3>
+<div class="card card-outline card-primary shadow-sm" style="border-radius: 10px; overflow: hidden;">
+    <div class="card-header bg-white py-3">
+        <h3 class="card-title mb-0 font-weight-bold text-dark" style="font-size: 1.15rem; line-height: 1.8;">
+            <i class="fas fa-file-signature text-primary mr-2"></i>Daftar Surat Tugas (SPT)
+        </h3>
         <?php if ($can_verify ?? false): ?>
-            <button type="button" class="btn btn-dark btn-sm shadow-sm" data-toggle="modal" data-target="#modal-last-number">
-                <i class="fas fa-list-ol mr-1"></i> Setting Nomor Terakhir SPPD/Kwitansi
-            </button>
+            <div class="card-tools float-right">
+                <button type="button" class="btn btn-dark btn-sm px-3 shadow-sm font-weight-bold" data-toggle="modal" data-target="#modal-last-number" style="border-radius: 6px;">
+                    <i class="fas fa-list-ol mr-1"></i> Setting Nomor Terakhir SPPD/Kwitansi
+                </button>
+            </div>
         <?php endif; ?>
     </div>
     <div class="card-body">

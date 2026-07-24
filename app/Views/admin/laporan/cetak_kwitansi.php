@@ -262,6 +262,15 @@
         $calcHarian = ($biaya_master['harian'] ?? 0) * $days;
         $calcTotal = $calcHarian + $calcTransport + $calcPenginapan;
         $terbilangText = $terbilangHelper($calcTotal);
+        
+        $baseKodeStr = trim((string)($row['kode_nomor'] ?? '1'));
+        if (preg_match('/^(\d+)(.*)$/', $baseKodeStr, $m)) {
+            $numVal = (int) $m[1] + $index;
+            $padLen = max(3, strlen($m[1]));
+            $displayKodeNomor = str_pad((string) $numVal, $padLen, '0', STR_PAD_LEFT) . $m[2];
+        } else {
+            $displayKodeNomor = $baseKodeStr;
+        }
         ?>
 
         <!-- ======================= RINCI PAGE ======================= -->
@@ -386,7 +395,7 @@
             <tr>
                 <td>Nomor Bukti</td>
                 <td>:</td>
-                <td><?= esc($row['kode_nomor'] ?? '-'); ?></td>
+                <td><?= esc($displayKodeNomor); ?></td>
             </tr>
             <tr>
                 <td>Mata Anggaran</td>

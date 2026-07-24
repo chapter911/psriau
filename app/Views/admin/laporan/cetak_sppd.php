@@ -167,6 +167,14 @@
         } elseif (strpos($jabUpper, 'ESELON III') !== false) {
             $tingkatBiaya = 'b';
         }
+        $baseKodeStr = trim((string)($row['kode_nomor'] ?? '1'));
+        if (preg_match('/^(\d+)(.*)$/', $baseKodeStr, $m)) {
+            $numVal = (int) $m[1] + $index;
+            $padLen = max(3, strlen($m[1]));
+            $displayKodeNomor = str_pad((string) $numVal, $padLen, '0', STR_PAD_LEFT) . $m[2];
+        } else {
+            $displayKodeNomor = $baseKodeStr;
+        }
         ?>
 
         <?php if ($kopSuratImgUrl): ?>
@@ -186,7 +194,7 @@
                         <tr>
                             <td>Kode Nomor</td>
                             <td>:</td>
-                            <td><?= esc($row['kode_nomor'] ?? '-'); ?></td>
+                            <td><?= esc($displayKodeNomor); ?></td>
                         </tr>
                         <tr>
                             <td>Nomor</td>
