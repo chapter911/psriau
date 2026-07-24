@@ -319,6 +319,22 @@ class Setting extends BaseController
             }
         }
 
+        if ($dumpedViaShell && file_exists($filePath)) {
+            $content = file_get_contents($filePath);
+            if ($content !== false) {
+                $content = preg_replace("/DEFAULT\s+'0000-00-00 00:00:00'/i", "DEFAULT NULL", $content);
+                $content = preg_replace("/DEFAULT\s+'0000-00-00'/i", "DEFAULT NULL", $content);
+                $header = "SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT;\n"
+                    . "SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS;\n"
+                    . "SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION;\n"
+                    . "SET NAMES utf8mb4;\n"
+                    . "SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;\n"
+                    . "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='';\n"
+                    . "SET time_zone = \"+00:00\";\n\n";
+                file_put_contents($filePath, $header . $content);
+            }
+        }
+
         if (! $dumpedViaShell) {
             try {
                 $this->generatePhpDatabaseDump($db, $filePath, $selectedTables);
@@ -377,7 +393,7 @@ class Setting extends BaseController
         fwrite($handle, "SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION;\n");
         fwrite($handle, "SET NAMES utf8mb4;\n");
         fwrite($handle, "SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;\n");
-        fwrite($handle, "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO,ALLOW_INVALID_DATES';\n");
+        fwrite($handle, "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='';\n");
         fwrite($handle, "SET time_zone = \"+00:00\";\n\n");
 
         $allTables = $db->listTables();
@@ -403,6 +419,8 @@ class Setting extends BaseController
                     if ($row) {
                         $createSql = $row['Create Table'] ?? array_values($row)[1] ?? null;
                         if ($createSql) {
+                            $createSql = preg_replace("/DEFAULT\s+'0000-00-00 00:00:00'/i", "DEFAULT NULL", $createSql);
+                            $createSql = preg_replace("/DEFAULT\s+'0000-00-00'/i", "DEFAULT NULL", $createSql);
                             fwrite($handle, $createSql . ";\n\n");
                         }
                     }
@@ -415,6 +433,8 @@ class Setting extends BaseController
                     if ($createRow) {
                         $createSql = $createRow['Create Table'] ?? array_values($createRow)[1] ?? null;
                         if ($createSql) {
+                            $createSql = preg_replace("/DEFAULT\s+'0000-00-00 00:00:00'/i", "DEFAULT NULL", $createSql);
+                            $createSql = preg_replace("/DEFAULT\s+'0000-00-00'/i", "DEFAULT NULL", $createSql);
                             fwrite($handle, $createSql . ";\n\n");
                         }
                     }
