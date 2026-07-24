@@ -303,7 +303,7 @@ class Setting extends BaseController
             }
 
             $cmd = sprintf(
-                '%s --host=%s --port=%s --user=%s %s %s%s > %s 2>&1',
+                '%s --host=%s --port=%s --user=%s %s %s%s > %s 2>/dev/null',
                 $mysqldumpCmd,
                 escapeshellarg((string) $hostname),
                 escapeshellarg((string) $port),
@@ -322,8 +322,20 @@ class Setting extends BaseController
         if ($dumpedViaShell && file_exists($filePath)) {
             $content = file_get_contents($filePath);
             if ($content !== false) {
+                $lines = explode("\n", $content);
+                while (! empty($lines) && (
+                    strpos($lines[0], 'mysqldump:') !== false
+                    || strpos($lines[0], 'mariadb-dump:') !== false
+                    || strpos($lines[0], 'Warning:') !== false
+                    || strpos($lines[0], 'Deprecated') !== false
+                )) {
+                    array_shift($lines);
+                }
+                $content = implode("\n", $lines);
+
                 $content = preg_replace("/DEFAULT\s+'0000-00-00 00:00:00'/i", "DEFAULT NULL", $content);
                 $content = preg_replace("/DEFAULT\s+'0000-00-00'/i", "DEFAULT NULL", $content);
+
                 $header = "SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT;\n"
                     . "SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS;\n"
                     . "SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION;\n"
@@ -331,6 +343,7 @@ class Setting extends BaseController
                     . "SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;\n"
                     . "SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='';\n"
                     . "SET time_zone = \"+00:00\";\n\n";
+
                 file_put_contents($filePath, $header . $content);
             }
         }
@@ -357,7 +370,17 @@ class Setting extends BaseController
 
     private function resolveMysqldumpCommand(): ?string
     {
-        $candidates = ['mysqldump', '/usr/bin/mysqldump', '/usr/local/bin/mysqldump', '/usr/mysql/bin/mysqldump', '/opt/homebrew/bin/mysqldump'];
+        $candidates = [
+            'mariadb-dump',
+            '/usr/bin/mariadb-dump',
+            '/usr/local/bin/mariadb-dump',
+            '/opt/homebrew/bin/mariadb-dump',
+            'mysqldump',
+            '/usr/bin/mysqldump',
+            '/usr/local/bin/mysqldump',
+            '/usr/mysql/bin/mysqldump',
+            '/opt/homebrew/bin/mysqldump',
+        ];
         foreach ($candidates as $cmd) {
             if ($this->hasShellCommand($cmd)) {
                 return $cmd;
