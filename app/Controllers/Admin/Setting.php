@@ -192,6 +192,9 @@ class Setting extends BaseController
             return redirect()->to($redirectTarget)->with('error', 'Akses ditolak. Fitur ini hanya untuk super administrator di production.');
         }
 
+        @set_time_limit(0);
+        @ini_set('memory_limit', '512M');
+
         $backupDir = WRITEPATH . 'backups';
         if (! is_dir($backupDir)) {
             @mkdir($backupDir, 0755, true);
@@ -243,6 +246,9 @@ class Setting extends BaseController
 
     private function generatePhpDatabaseDump($db, string $filePath): void
     {
+        @set_time_limit(0);
+        @ini_set('memory_limit', '512M');
+
         $handle = fopen($filePath, 'w');
         if (! $handle) {
             throw new \RuntimeException('Tidak dapat membuat file dump database.');
@@ -270,53 +276,62 @@ class Setting extends BaseController
             fwrite($handle, "-- --------------------------------------------------------\n");
             fwrite($handle, "DROP TABLE IF EXISTS {$safeTable};\n");
 
-            $createTableQuery = $db->query("SHOW CREATE TABLE {$safeTable}")->getRowArray();
+            $createTableQuery = $db->query("SHOW CREATE TABLE {$safeTable}");
             if ($createTableQuery) {
-                $createSql = $createTableQuery['Create Table'] ?? array_values($createTableQuery)[1] ?? null;
-                if ($createSql) {
-                    fwrite($handle, $createSql . ";\n\n");
+                $createRow = $createTableQuery->getRowArray();
+                $createTableQuery->freeResult();
+
+                if ($createRow) {
+                    $createSql = $createRow['Create Table'] ?? array_values($createRow)[1] ?? null;
+                    if ($createSql) {
+                        fwrite($handle, $createSql . ";\n\n");
+                    }
                 }
             }
 
-            $rowCountQuery = $db->query("SELECT COUNT(*) as total FROM {$safeTable}")->getRowArray();
-            $totalRows = (int) ($rowCountQuery['total'] ?? 0);
+            // Stream rows using unbuffered query to keep memory usage low
+            $query = $db->query("SELECT * FROM {$safeTable}");
+            if ($query) {
+                $insertBuffer = [];
+                $bufferCount = 0;
+                $hasWrittenHeader = false;
 
-            if ($totalRows > 0) {
-                fwrite($handle, "-- Dumping data for table {$safeTable}\n");
-
-                $chunkSize = 250;
-                $offset = 0;
-
-                while ($offset < $totalRows) {
-                    $rows = $db->query("SELECT * FROM {$safeTable} LIMIT {$chunkSize} OFFSET {$offset}")->getResultArray();
-                    if (empty($rows)) {
-                        break;
+                while ($row = $query->getUnbufferedRow('array')) {
+                    if (! $hasWrittenHeader) {
+                        fwrite($handle, "-- Dumping data for table {$safeTable}\n");
+                        $hasWrittenHeader = true;
                     }
 
-                    $insertSql = "INSERT INTO {$safeTable} VALUES \n";
-                    $valueLines = [];
-
-                    foreach ($rows as $row) {
-                        $values = [];
-                        foreach ($row as $value) {
-                            if ($value === null) {
-                                $values[] = 'NULL';
-                            } elseif (is_int($value) || is_float($value)) {
-                                $values[] = $value;
-                            } else {
-                                $values[] = $db->escape($value);
-                            }
+                    $values = [];
+                    foreach ($row as $value) {
+                        if ($value === null) {
+                            $values[] = 'NULL';
+                        } elseif (is_int($value) || is_float($value)) {
+                            $values[] = $value;
+                        } else {
+                            $values[] = $db->escape($value);
                         }
-                        $valueLines[] = '(' . implode(', ', $values) . ')';
                     }
 
-                    $insertSql .= implode(",\n", $valueLines) . ";\n";
-                    fwrite($handle, $insertSql);
+                    $insertBuffer[] = '(' . implode(', ', $values) . ')';
+                    $bufferCount++;
 
-                    $offset += $chunkSize;
+                    if ($bufferCount >= 100) {
+                        fwrite($handle, "INSERT INTO {$safeTable} VALUES \n" . implode(",\n", $insertBuffer) . ";\n");
+                        $insertBuffer = [];
+                        $bufferCount = 0;
+                    }
                 }
 
-                fwrite($handle, "\n");
+                if ($bufferCount > 0) {
+                    fwrite($handle, "INSERT INTO {$safeTable} VALUES \n" . implode(",\n", $insertBuffer) . ";\n");
+                }
+
+                if ($hasWrittenHeader) {
+                    fwrite($handle, "\n");
+                }
+
+                $query->freeResult();
             }
         }
 
