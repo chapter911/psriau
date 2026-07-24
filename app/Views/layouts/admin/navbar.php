@@ -28,13 +28,9 @@
                         <i class="fas fa-database mr-1"></i> Merge Database
                     </button>
                 </form>
-                <form action="<?= site_url('/admin/pengaturan/application/extract-database'); ?>" method="post" class="mr-1 mb-0" data-skip-confirm="1">
-                    <?= csrf_field(); ?>
-                    <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
-                    <button type="submit" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-file-export mr-1"></i> Ekstrak Database
-                    </button>
-                </form>
+                <button type="button" class="btn btn-sm btn-outline-primary mr-1 mb-0" data-toggle="modal" data-target="#extractDatabaseModalNavbar">
+                    <i class="fas fa-file-export mr-1"></i> Ekstrak Database
+                </button>
                 <button type="button" class="btn btn-sm btn-outline-warning mb-0" data-toggle="modal" data-target="#errorLogModalNavbar">
                     <i class="fas fa-triangle-exclamation mr-1"></i> Lihat Log Error
                 </button>
@@ -59,13 +55,9 @@
                             <i class="fas fa-database mr-2 text-primary"></i> Merge Database
                         </button>
                     </form>
-                    <form action="<?= site_url('/admin/pengaturan/application/extract-database'); ?>" method="post" class="mb-0" data-skip-confirm="1">
-                        <?= csrf_field(); ?>
-                        <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
-                        <button type="submit" class="dropdown-item">
-                            <i class="fas fa-file-export mr-2 text-primary"></i> Ekstrak Database
-                        </button>
-                    </form>
+                    <button type="button" class="dropdown-item text-primary" data-toggle="modal" data-target="#extractDatabaseModalNavbar">
+                        <i class="fas fa-file-export mr-2 text-primary"></i> Ekstrak Database
+                    </button>
                     <button type="button" class="dropdown-item text-warning" data-toggle="modal" data-target="#errorLogModalNavbar">
                         <i class="fas fa-triangle-exclamation mr-2"></i> Lihat Log Error
                     </button>
@@ -132,6 +124,58 @@
 </div>
 
 <?php if ($canUseProductionUtilities): ?>
+<div class="modal fade" id="extractDatabaseModalNavbar" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title mb-0 font-weight-bold"><i class="fas fa-file-export mr-2"></i> Ekstrak Database / Tabel</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="<?= site_url('/admin/pengaturan/application/extract-database'); ?>" method="post" id="navbarExtractDbForm" data-skip-confirm="1">
+                <?= csrf_field(); ?>
+                <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
+                <div class="modal-body">
+                    <div class="row align-items-center mb-3">
+                        <div class="col-md-6 mb-2 mb-md-0">
+                            <div class="input-group input-group-sm">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                </div>
+                                <input type="text" id="navbarExtractSearchInput" class="form-control" placeholder="Cari nama tabel...">
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-md-right">
+                            <button type="button" class="btn btn-xs btn-outline-secondary mr-1" id="navbarExtractSelectAllBtn">
+                                <i class="fas fa-check-double mr-1"></i> Pilih Semua
+                            </button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" id="navbarExtractDeselectAllBtn">
+                                <i class="fas fa-times mr-1"></i> Hapus Pilihan
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="navbarExtractTableContainer" class="border rounded p-2" style="max-height: 45vh; overflow-y: auto; background: #fdfdfd;">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-spinner fa-spin mr-1"></i> Memuat daftar tabel database...
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer d-flex justify-content-between align-items-center">
+                    <span class="text-muted small font-weight-bold" id="navbarExtractCountBadge">0 tabel dipilih</span>
+                    <div>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary" id="navbarExtractSubmitBtn" disabled>
+                            <i class="fas fa-download mr-1"></i> Ekstrak Tabel Terpilih
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="errorLogModalNavbar" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
         <div class="modal-content">
@@ -480,6 +524,134 @@
             window.jQuery('#errorLogModalNavbar').on('hidden.bs.modal', () => {
                 dateSelect.innerHTML = '<option value="">- pilih file log -</option>';
                 resultBox.innerHTML = '<div class="text-muted">Belum ada data ditampilkan.</div>';
+            });
+
+            // Extract Database Modal Logic
+            const extractTableContainer = document.getElementById('navbarExtractTableContainer');
+            const extractSearchInput = document.getElementById('navbarExtractSearchInput');
+            const extractSelectAllBtn = document.getElementById('navbarExtractSelectAllBtn');
+            const extractDeselectAllBtn = document.getElementById('navbarExtractDeselectAllBtn');
+            const extractCountBadge = document.getElementById('navbarExtractCountBadge');
+            const extractSubmitBtn = document.getElementById('navbarExtractSubmitBtn');
+
+            const updateExtractCounter = () => {
+                if (!extractTableContainer || !extractCountBadge || !extractSubmitBtn) {
+                    return;
+                }
+
+                const checkedBoxes = extractTableContainer.querySelectorAll('.navbar-table-checkbox:checked');
+                const totalTables = extractTableContainer.querySelectorAll('.navbar-table-checkbox').length;
+                const count = checkedBoxes.length;
+
+                extractCountBadge.textContent = `${count} dari ${totalTables} tabel dipilih`;
+                extractSubmitBtn.disabled = count === 0;
+
+                if (count > 0) {
+                    extractSubmitBtn.innerHTML = count === totalTables
+                        ? '<i class="fas fa-download mr-1"></i> Ekstrak Seluruh Database'
+                        : `<i class="fas fa-download mr-1"></i> Ekstrak (${count}) Tabel Terpilih`;
+                } else {
+                    extractSubmitBtn.innerHTML = '<i class="fas fa-download mr-1"></i> Ekstrak Tabel Terpilih';
+                }
+            };
+
+            const renderExtractTables = (tables) => {
+                if (!extractTableContainer) {
+                    return;
+                }
+
+                if (!Array.isArray(tables) || tables.length === 0) {
+                    extractTableContainer.innerHTML = '<div class="alert alert-warning p-3 mb-0"><i class="fas fa-exclamation-triangle mr-1"></i> Tidak ada tabel ditemukan.</div>';
+                    updateExtractCounter();
+                    return;
+                }
+
+                extractTableContainer.innerHTML = tables.map((t, idx) => {
+                    const name = escapeHtml(t.name);
+                    const rows = Number(t.rows || 0);
+                    return `
+                        <div class="custom-control custom-checkbox py-1 px-2 border-bottom navbar-table-item" data-table-name="${name.toLowerCase()}">
+                            <input type="checkbox" class="custom-control-input navbar-table-checkbox" id="chk_tbl_${idx}" name="tables[]" value="${name}">
+                            <label class="custom-control-label d-flex justify-content-between align-items-center w-100 font-weight-normal text-dark" for="chk_tbl_${idx}" style="cursor:pointer;">
+                                <span><i class="fas fa-table text-secondary mr-2"></i> <strong>${name}</strong></span>
+                                <span class="badge badge-light border text-muted">~${rows.toLocaleString('id-ID')} baris</span>
+                            </label>
+                        </div>
+                    `;
+                }).join('');
+
+                const checkboxes = extractTableContainer.querySelectorAll('.navbar-table-checkbox');
+                checkboxes.forEach((cb) => cb.addEventListener('change', updateExtractCounter));
+                updateExtractCounter();
+            };
+
+            const loadExtractTables = async () => {
+                if (!extractTableContainer) {
+                    return;
+                }
+                extractTableContainer.innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-1"></i> Memuat daftar tabel database...</div>';
+
+                try {
+                    const response = await fetch('<?= site_url('/admin/pengaturan/application/database-tables'); ?>', {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+                    const payload = await response.json();
+                    if (!response.ok || payload.status !== 'ok') {
+                        throw new Error(payload.message || 'Gagal memuat tabel database.');
+                    }
+                    renderExtractTables(payload.data || []);
+                } catch (error) {
+                    console.error('Error loading extract tables:', error);
+                    extractTableContainer.innerHTML = `<div class="alert alert-danger p-3 mb-0"><i class="fas fa-exclamation-triangle mr-1"></i> ${escapeHtml(error.message || 'Gagal memuat daftar tabel.')}</div>`;
+                    updateExtractCounter();
+                }
+            };
+
+            if (extractSearchInput) {
+                extractSearchInput.addEventListener('input', (e) => {
+                    const query = String(e.target.value || '').trim().toLowerCase();
+                    const items = extractTableContainer ? extractTableContainer.querySelectorAll('.navbar-table-item') : [];
+                    items.forEach((item) => {
+                        const tableName = item.getAttribute('data-table-name') || '';
+                        if (!query || tableName.includes(query)) {
+                            item.classList.remove('d-none');
+                        } else {
+                            item.classList.add('d-none');
+                        }
+                    });
+                });
+            }
+
+            if (extractSelectAllBtn) {
+                extractSelectAllBtn.addEventListener('click', () => {
+                    if (!extractTableContainer) return;
+                    const items = extractTableContainer.querySelectorAll('.navbar-table-item');
+                    items.forEach((item) => {
+                        if (!item.classList.contains('d-none')) {
+                            const cb = item.querySelector('.navbar-table-checkbox');
+                            if (cb) cb.checked = true;
+                        }
+                    });
+                    updateExtractCounter();
+                });
+            }
+
+            if (extractDeselectAllBtn) {
+                extractDeselectAllBtn.addEventListener('click', () => {
+                    if (!extractTableContainer) return;
+                    const checkboxes = extractTableContainer.querySelectorAll('.navbar-table-checkbox');
+                    checkboxes.forEach((cb) => cb.checked = false);
+                    updateExtractCounter();
+                });
+            }
+
+            window.jQuery('#extractDatabaseModalNavbar').on('show.bs.modal', () => {
+                if (extractSearchInput) extractSearchInput.value = '';
+                loadExtractTables();
+            });
+
+            window.jQuery('#extractDatabaseModalNavbar').on('hide.bs.modal', () => {
+                blurActiveElementInModal('extractDatabaseModalNavbar');
             });
 
             <?php if (is_array($commandResult)): ?>

@@ -184,6 +184,55 @@ class Setting extends BaseController
             ]);
     }
 
+    public function databaseTables()
+    {
+        if (! $this->canAccessProductionUtilities()) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'status' => 'error',
+                'message' => 'Akses ditolak. Fitur ini hanya untuk super administrator di production.',
+            ]);
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            $databaseName = $db->database;
+
+            $tables = $db->listTables();
+
+            $infoMap = [];
+            $infoQuery = $db->query("
+                SELECT TABLE_NAME as name, TABLE_ROWS as rows 
+                FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_SCHEMA = " . $db->escape($databaseName)
+            );
+            if ($infoQuery) {
+                foreach ($infoQuery->getResultArray() as $info) {
+                    $infoMap[$info['name']] = (int) ($info['rows'] ?? 0);
+                }
+            }
+
+            $data = [];
+            foreach ($tables as $t) {
+                $data[] = [
+                    'name' => $t,
+                    'rows' => $infoMap[$t] ?? 0,
+                ];
+            }
+
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'data' => $data,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Error fetching database tables: ' . $e->getMessage());
+
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal memuat daftar tabel database: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
     public function extractDatabase()
     {
         $redirectTarget = $this->resolveOpsRedirectTarget();
@@ -192,8 +241,17 @@ class Setting extends BaseController
             return redirect()->to($redirectTarget)->with('error', 'Akses ditolak. Fitur ini hanya untuk super administrator di production.');
         }
 
+        $rawTables = $this->request->getPost('tables');
+        $selectedTables = [];
+        if (is_array($rawTables)) {
+            $selectedTables = array_values(array_filter(array_map('trim', $rawTables)));
+            if (empty($selectedTables)) {
+                return redirect()->to($redirectTarget)->with('error', 'Pilih setidaknya 1 tabel untuk diekstrak.');
+            }
+        }
+
         @set_time_limit(0);
-        @ini_set('memory_limit', '512M');
+        @ini_set('memory_limit', '1024M');
 
         $backupDir = WRITEPATH . 'backups';
         if (! is_dir($backupDir)) {
@@ -215,14 +273,21 @@ class Setting extends BaseController
         $mysqldumpCmd = $this->resolveMysqldumpCommand();
         if ($mysqldumpCmd !== null) {
             $passParam = $password !== '' ? '--password=' . escapeshellarg((string) $password) : '';
+            $tableArgs = '';
+            if (! empty($selectedTables)) {
+                $escapedTables = array_map(static fn($t) => escapeshellarg((string) $t), $selectedTables);
+                $tableArgs = ' ' . implode(' ', $escapedTables);
+            }
+
             $cmd = sprintf(
-                '%s --host=%s --port=%s --user=%s %s %s > %s 2>&1',
+                '%s --host=%s --port=%s --user=%s %s %s%s > %s 2>&1',
                 $mysqldumpCmd,
                 escapeshellarg((string) $hostname),
                 escapeshellarg((string) $port),
                 escapeshellarg((string) $username),
                 $passParam,
                 escapeshellarg((string) $databaseName),
+                $tableArgs,
                 escapeshellarg((string) $filePath)
             );
             [$success, $output] = $this->runShellCommand($cmd);
@@ -233,7 +298,7 @@ class Setting extends BaseController
 
         if (! $dumpedViaShell) {
             try {
-                $this->generatePhpDatabaseDump($db, $filePath);
+                $this->generatePhpDatabaseDump($db, $filePath, $selectedTables);
             } catch (\Throwable $e) {
                 log_message('error', 'Failed to generate database extract dump: ' . $e->getMessage());
                 return redirect()->to($redirectTarget)->with('error', 'Gagal membuat ekstraksi database: ' . $e->getMessage());
@@ -244,7 +309,11 @@ class Setting extends BaseController
             return redirect()->to($redirectTarget)->with('error', 'File ekstrak database gagal dibuat.');
         }
 
-        return $this->response->download($filePath, null)->setFileName('database_backup_' . date('Y-m-d_H-i-s') . '.sql');
+        $downloadName = ! empty($selectedTables) && count($selectedTables) === 1
+            ? 'db_table_' . reset($selectedTables) . '_' . date('Y-m-d_H-i-s') . '.sql'
+            : 'database_backup_' . date('Y-m-d_H-i-s') . '.sql';
+
+        return $this->response->download($filePath, null)->setFileName($downloadName);
     }
 
     private function resolveMysqldumpCommand(): ?string
@@ -259,7 +328,7 @@ class Setting extends BaseController
         return null;
     }
 
-    private function generatePhpDatabaseDump($db, string $filePath): void
+    private function generatePhpDatabaseDump($db, string $filePath, array $selectedTables = []): void
     {
         @set_time_limit(0);
         @ini_set('memory_limit', '1024M');
@@ -284,7 +353,12 @@ class Setting extends BaseController
         fwrite($handle, "SET SQL_MODE=\"NO_AUTO_VALUE_ON_ZERO\";\n");
         fwrite($handle, "SET time_zone = \"+00:00\";\n\n");
 
-        $tables = $db->listTables();
+        $allTables = $db->listTables();
+        if (! empty($selectedTables)) {
+            $tables = array_values(array_intersect($allTables, $selectedTables));
+        } else {
+            $tables = $allTables;
+        }
 
         foreach ($tables as $table) {
             $safeTable = '`' . str_replace('`', '``', $table) . '`';
