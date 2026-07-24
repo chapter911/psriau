@@ -301,7 +301,12 @@ if (! function_exists('kop_surat_img_tag')) {
             return '';
         }
 
-        $localPath = FCPATH . ltrim($url, '/');
+        $cleanUrl = ltrim($url, '/');
+        if (preg_match('#^https?://[^/]+/(.*)$#i', $url, $m)) {
+            $cleanUrl = ltrim($m[1], '/');
+        }
+
+        $localPath = FCPATH . str_replace('/', DIRECTORY_SEPARATOR, $cleanUrl);
         $src = '';
         if (is_file($localPath)) {
             $mime = 'image/png';
@@ -311,15 +316,14 @@ if (! function_exists('kop_surat_img_tag')) {
             }
 
             $binary = @file_get_contents($localPath);
-            if ($binary !== false) {
+            if ($binary !== false && $binary !== '') {
                 // Hindari request ke localhost saat render Dompdf.
                 $src = 'data:' . $mime . ';base64,' . base64_encode($binary);
             }
         }
 
         if ($src === '') {
-            // Fallback terakhir bila file lokal tidak ditemukan.
-            $src = media_url($url);
+            return '';
         }
 
         $attributes = [

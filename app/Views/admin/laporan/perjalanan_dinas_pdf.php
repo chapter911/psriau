@@ -63,41 +63,45 @@ if (!empty($pelaksana)) {
 $resolvePhotoSrc = static function ($photo): string {
     $candidates = [];
     if (is_array($photo)) {
-        // Format baru: file_path berupa URL relatif
-        $filePath = trim((string) ($photo['file_path'] ?? ''));
-        if ($filePath !== '') {
-            // Convert URL path ke file path absolut untuk dibaca sebagai base64
-            $safePath = ltrim($filePath, '/');
-            $absPath = rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $safePath);
-            if (is_file($absPath)) {
-                $bin = @file_get_contents($absPath);
-                if ($bin !== false && $bin !== '') {
-                    $mime = function_exists('mime_content_type') ? (@mime_content_type($absPath) ?: 'image/jpeg') : 'image/jpeg';
-                    return 'data:' . $mime . ';base64,' . base64_encode($bin);
-                }
-            }
-        }
-        // Fallback ke data_uri untuk data lama
-        foreach (['data_uri', 'src', 'url', 'path'] as $key) {
+        foreach (['file_path', 'data_uri', 'src', 'url', 'path'] as $key) {
             $value = trim((string) ($photo[$key] ?? ''));
-            if ($value !== '') $candidates[] = $value;
+            if ($value !== '') {
+                $candidates[] = $value;
+            }
         }
     } elseif (is_string($photo)) {
         $value = trim($photo);
-        if ($value !== '') $candidates[] = $value;
+        if ($value !== '') {
+            $candidates[] = $value;
+        }
     }
 
     foreach ($candidates as $candidate) {
-        if (preg_match('#^(data:|https?://|//)#i', $candidate)) return $candidate;
-        $trimmed = ltrim($candidate, '/\\');
-        $paths = [$candidate, $trimmed];
-        foreach (['FCPATH','WRITEPATH','ROOTPATH'] as $c) {
-            if (defined($c)) $paths[] = rtrim(constant($c), '/\\') . DIRECTORY_SEPARATOR . $trimmed;
+        if (str_starts_with($candidate, 'data:')) {
+            return $candidate;
         }
+
+        $cleanPath = $candidate;
+        if (preg_match('#^https?://[^/]+/(.*)$#i', $candidate, $m)) {
+            $cleanPath = $m[1];
+        }
+
+        $trimmed = ltrim($cleanPath, '/\\');
+        $paths = [$candidate, $cleanPath, $trimmed];
+        foreach (['FCPATH', 'WRITEPATH', 'ROOTPATH'] as $c) {
+            if (defined($c)) {
+                $paths[] = rtrim(constant($c), '/\\') . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $trimmed);
+            }
+        }
+
         foreach (array_unique($paths) as $p) {
-            if (!is_file($p)) continue;
+            if (! is_file($p)) {
+                continue;
+            }
             $bin = @file_get_contents($p);
-            if ($bin === false) continue;
+            if ($bin === false || $bin === '') {
+                continue;
+            }
             $mime = function_exists('mime_content_type') ? @mime_content_type($p) : '';
             if ($mime === '' && function_exists('finfo_open')) {
                 $f = @finfo_open(FILEINFO_MIME_TYPE);
@@ -106,10 +110,14 @@ $resolvePhotoSrc = static function ($photo): string {
                     @finfo_close($f);
                 }
             }
-            if ($mime === '') $mime = 'image/jpeg';
+            if ($mime === '') {
+                $mime = 'image/jpeg';
+            }
+
             return 'data:' . $mime . ';base64,' . base64_encode($bin);
         }
     }
+
     return '';
 };
 ?>

@@ -188,50 +188,85 @@
                     $rincianBiaya = json_decode((string)($row['rincian_biaya_json'] ?? '{}'), true) ?: [];
 
                     // 1. Transport Calculation:
-                    $transportStart = $rincianBiaya['transport_start_date'] ?? '';
-                    $transportEnd   = $rincianBiaya['transport_end_date'] ?? '';
-                    $transportNominal = (int) ($rincianBiaya['transport_nominal'] ?? 0);
-
-                    $transportDays = 0;
-                    if (!empty($transportStart) && !empty($transportEnd)) {
-                        try {
-                            $tsStart = new \DateTime($transportStart);
-                            $tsEnd   = new \DateTime($transportEnd);
-                            $transportDays = max(0, $tsStart->diff($tsEnd)->days + 1);
-                        } catch (\Throwable $e) {}
+                    $calcTransport = 0;
+                    $transportList = $rincianBiaya['transport'] ?? [];
+                    if (!is_array($transportList) && isset($rincianBiaya['transport_start_date'])) {
+                        $transportList = [[
+                            'tgl_mulai'   => $rincianBiaya['transport_start_date'] ?? '',
+                            'tgl_selesai' => $rincianBiaya['transport_end_date'] ?? '',
+                            'nominal'     => (int) ($rincianBiaya['transport_nominal'] ?? 0),
+                        ]];
                     }
-                    $calcTransport = $transportDays * $transportNominal;
+                    if (is_array($transportList) && count($transportList) > 0) {
+                        foreach ($transportList as $tItem) {
+                            $tStart = $tItem['tgl_mulai'] ?? '';
+                            $tEnd   = $tItem['tgl_selesai'] ?? '';
+                            $tNom   = (int) ($tItem['nominal'] ?? 0);
+                            $tDays  = 0;
+                            if (!empty($tStart) && !empty($tEnd)) {
+                                try {
+                                    $d1 = new \DateTime($tStart);
+                                    $d2 = new \DateTime($tEnd);
+                                    $tDays = $d1->diff($d2)->days + 1;
+                                } catch (\Throwable $e) {}
+                            }
+                            if ($tDays > 0 && $tNom > 0) {
+                                $calcTransport += ($tDays * $tNom);
+                            }
+                        }
+                    }
 
                     // 2. Penginapan Calculation:
-                    $penginapanStart = $rincianBiaya['penginapan_start_date'] ?? '';
-                    $penginapanEnd   = $rincianBiaya['penginapan_end_date'] ?? '';
-                    $hasCustomPenginapanNominal = isset($rincianBiaya['penginapan_nominal']) && $rincianBiaya['penginapan_nominal'] !== null && $rincianBiaya['penginapan_nominal'] !== '';
-                    $penginapanNominalInput = $hasCustomPenginapanNominal ? (int) $rincianBiaya['penginapan_nominal'] : null;
-
-                    $penginapanNights = 0;
-                    if (!empty($penginapanStart) && !empty($penginapanEnd)) {
+                    $calcPenginapan = 0;
+                    $penginapanList = $rincianBiaya['penginapan'] ?? [];
+                    if (!is_array($penginapanList) && isset($rincianBiaya['penginapan_start_date'])) {
+                        $penginapanList = [[
+                            'tgl_mulai'   => $rincianBiaya['penginapan_start_date'] ?? '',
+                            'tgl_selesai' => $rincianBiaya['penginapan_end_date'] ?? '',
+                            'nominal'     => $rincianBiaya['penginapan_nominal'] ?? null,
+                        ]];
+                    }
+                    if (is_array($penginapanList) && count($penginapanList) > 0) {
+                        foreach ($penginapanList as $pItem) {
+                            $pStart = $pItem['tgl_mulai'] ?? '';
+                            $pEnd   = $pItem['tgl_selesai'] ?? '';
+                            $pNom   = isset($pItem['nominal']) && $pItem['nominal'] !== null && $pItem['nominal'] !== '' ? (int) $pItem['nominal'] : $tarifPenginapan;
+                            $pNights = 0;
+                            if (!empty($pStart) && !empty($pEnd)) {
+                                try {
+                                    $d1 = new \DateTime($pStart);
+                                    $d2 = new \DateTime($pEnd);
+                                    $pNights = max(0, $d1->diff($d2)->days);
+                                } catch (\Throwable $e) {}
+                            }
+                            if ($pNights > 0 && $pNom > 0) {
+                                $calcPenginapan += ($pNights * $pNom);
+                            }
+                        }
+                    }
+                    if ($calcPenginapan === 0 && !empty($row['periode_mulai']) && !empty($row['periode_selesai'])) {
                         try {
-                            $pStart = new \DateTime($penginapanStart);
-                            $pEnd   = new \DateTime($penginapanEnd);
-                            $penginapanNights = max(0, $pStart->diff($pEnd)->days);
+                            $d1 = new \DateTime($row['periode_mulai']);
+                            $d2 = new \DateTime($row['periode_selesai']);
+                            $pNights = max(0, $d1->diff($d2)->days);
+                            if ($pNights > 0 && $tarifPenginapan > 0) {
+                                $calcPenginapan = $pNights * $tarifPenginapan;
+                            }
                         } catch (\Throwable $e) {}
-                    } else {
-                        $penginapanNights = max(0, $days - 1);
                     }
 
-                    if ($hasCustomPenginapanNominal && $penginapanNominalInput >= 0) {
-                        $calcPenginapan = $penginapanNights * $penginapanNominalInput;
-                    } else {
-                        $calcPenginapan = $penginapanNights * (int) ($tarifPenginapan * 0.3);
+                    // 3. Uang Harian Calculation:
+                    $harianTarif = (int) ($biaya_master['harian'] ?? 370000);
+                    if ($harianTarif <= 0) {
+                        $harianTarif = 370000;
                     }
+                    $calcHarian = $harianTarif * $days;
+                    $calcTotal  = $calcHarian + $calcTransport + $calcPenginapan;
 
-                    $calcHarian = ($biaya_master['harian'] ?? 0) * $days;
-                    $calcTotal = $calcHarian + $calcTransport + $calcPenginapan;
-                    
                     $totalSemuaUangHarian += $calcHarian;
-                    $totalSemuaTransport += $calcTransport;
+                    $totalSemuaTransport  += $calcTransport;
                     $totalSemuaPenginapan += $calcPenginapan;
-                    $totalSemuaTotal += $calcTotal;
+                    $totalSemuaTotal     += $calcTotal;
                 ?>
                 <tr>
                     <td class="text-center"><?= $no++; ?></td>

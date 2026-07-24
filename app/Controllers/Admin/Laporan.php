@@ -937,31 +937,8 @@ class Laporan extends BaseController
                 unset($pItem);
             }
         }
-        $biayaMaster = [
-            'harian' => 0,
-            'penginapan_e1' => 0,
-            'penginapan_e2' => 0,
-            'penginapan_e3' => 0,
-            'penginapan_e4' => 0,
-        ];
-
         $kotaTujuan = $row['kota_tujuan'] ?? '';
-        $kabupaten = $db->table('mst_kabupaten')->where('nama_kabupaten', $kotaTujuan)->get()->getRowArray();
-        if ($kabupaten) {
-            $provCode = $kabupaten['kode_provinsi'];
-            $mstHarian = $db->table('mst_biaya_harian')->where('provinsi_kode', $provCode)->where('is_active', 1)->get()->getRowArray();
-            if ($mstHarian) {
-                $biayaMaster['harian'] = (int) $mstHarian['luar_kota'];
-            }
-            
-            $mstPenginapan = $db->table('mst_biaya_penginapan')->where('provinsi_kode', $provCode)->where('is_active', 1)->get()->getRowArray();
-            if ($mstPenginapan) {
-                $biayaMaster['penginapan_e1'] = (int) $mstPenginapan['tarif_eselon1'];
-                $biayaMaster['penginapan_e2'] = (int) $mstPenginapan['tarif_eselon2'];
-                $biayaMaster['penginapan_e3'] = (int) $mstPenginapan['tarif_eselon3'];
-                $biayaMaster['penginapan_e4'] = (int) $mstPenginapan['tarif_eselon4'];
-            }
-        }
+        $biayaMaster = $this->getBiayaMasterForKota($kotaTujuan);
 
         $mataAnggaranText = $this->resolveMataAnggaran($row);
 
@@ -1068,30 +1045,7 @@ class Laporan extends BaseController
             $kopSurat = $db->table('kop_surat')->where('is_active', 1)->orderBy('id', 'DESC')->get()->getRowArray();
         }
 
-        $biayaMaster = [
-            'harian' => 0,
-            'penginapan_e1' => 0,
-            'penginapan_e2' => 0,
-            'penginapan_e3' => 0,
-            'penginapan_e4' => 0,
-        ];
-
-        $kabupaten = $db->table('mst_kabupaten')->where('nama_kabupaten', $kotaTujuan)->get()->getRowArray();
-        if ($kabupaten) {
-            $provCode = $kabupaten['kode_provinsi'];
-            $mstHarian = $db->table('mst_biaya_harian')->where('provinsi_kode', $provCode)->where('is_active', 1)->get()->getRowArray();
-            if ($mstHarian) {
-                $biayaMaster['harian'] = (int) $mstHarian['luar_kota'];
-            }
-            
-            $mstPenginapan = $db->table('mst_biaya_penginapan')->where('provinsi_kode', $provCode)->where('is_active', 1)->get()->getRowArray();
-            if ($mstPenginapan) {
-                $biayaMaster['penginapan_e1'] = (int) $mstPenginapan['tarif_eselon1'];
-                $biayaMaster['penginapan_e2'] = (int) $mstPenginapan['tarif_eselon2'];
-                $biayaMaster['penginapan_e3'] = (int) $mstPenginapan['tarif_eselon3'];
-                $biayaMaster['penginapan_e4'] = (int) $mstPenginapan['tarif_eselon4'];
-            }
-        }
+        $biayaMaster = $this->getBiayaMasterForKota($kotaTujuan);
 
         $mataAnggaranText = $this->resolveMataAnggaran($row);
 
@@ -3192,5 +3146,66 @@ class Laporan extends BaseController
                 }
             }
         }
+    }
+
+    private function getBiayaMasterForKota(string $kotaTujuan): array
+    {
+        $db = \Config\Database::connect();
+        $biayaMaster = [
+            'harian' => 0,
+            'penginapan_e1' => 0,
+            'penginapan_e2' => 0,
+            'penginapan_e3' => 0,
+            'penginapan_e4' => 0,
+        ];
+
+        $cleanCity = trim(preg_replace('/^(kota|kabupaten|kab\.)\s+/i', '', $kotaTujuan));
+
+        $kabupaten = null;
+        if ($db->tableExists('mst_kabupaten')) {
+            $kabupaten = $db->table('mst_kabupaten')->where('nama_kabupaten', $kotaTujuan)->get()->getRowArray();
+            if (! $kabupaten && $cleanCity !== '') {
+                $kabupaten = $db->table('mst_kabupaten')->like('nama_kabupaten', $cleanCity)->get()->getRowArray();
+            }
+        }
+
+        if ($kabupaten) {
+            $provCode = $kabupaten['kode_provinsi'];
+            if ($db->tableExists('mst_biaya_harian')) {
+                $mstHarian = $db->table('mst_biaya_harian')->where('provinsi_kode', $provCode)->where('is_active', 1)->get()->getRowArray();
+                if ($mstHarian) {
+                    $biayaMaster['harian'] = (int) $mstHarian['luar_kota'];
+                }
+            }
+            if ($db->tableExists('mst_biaya_penginapan')) {
+                $mstPenginapan = $db->table('mst_biaya_penginapan')->where('provinsi_kode', $provCode)->where('is_active', 1)->get()->getRowArray();
+                if ($mstPenginapan) {
+                    $biayaMaster['penginapan_e1'] = (int) $mstPenginapan['tarif_eselon1'];
+                    $biayaMaster['penginapan_e2'] = (int) $mstPenginapan['tarif_eselon2'];
+                    $biayaMaster['penginapan_e3'] = (int) $mstPenginapan['tarif_eselon3'];
+                    $biayaMaster['penginapan_e4'] = (int) $mstPenginapan['tarif_eselon4'];
+                }
+            }
+        }
+
+        if ($biayaMaster['harian'] <= 0 && $db->tableExists('mst_biaya_harian')) {
+            $defaultHarian = $db->table('mst_biaya_harian')->where('is_active', 1)->get()->getRowArray();
+            if ($defaultHarian) {
+                $biayaMaster['harian'] = (int) ($defaultHarian['luar_kota'] ?? 370000);
+            } else {
+                $biayaMaster['harian'] = 370000;
+            }
+        } elseif ($biayaMaster['harian'] <= 0) {
+            $biayaMaster['harian'] = 370000;
+        }
+
+        if ($biayaMaster['penginapan_e4'] <= 0) {
+            $biayaMaster['penginapan_e1'] = 4000000;
+            $biayaMaster['penginapan_e2'] = 1500000;
+            $biayaMaster['penginapan_e3'] = 800000;
+            $biayaMaster['penginapan_e4'] = 500000;
+        }
+
+        return $biayaMaster;
     }
 }

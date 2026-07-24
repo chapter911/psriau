@@ -102,13 +102,13 @@
         $getQrUri = static function (string $text, int $size = 100): string {
             $apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size . '&data=' . urlencode($text);
             try {
-                $ctx = stream_context_create(['http' => ['timeout' => 3]]);
+                $ctx = stream_context_create(['http' => ['timeout' => 2]]);
                 $content = @file_get_contents($apiUrl, false, $ctx);
                 if ($content !== false && strlen($content) > 0) {
                     return 'data:image/png;base64,' . base64_encode($content);
                 }
             } catch (\Throwable $e) {}
-            return $apiUrl;
+            return '';
         };
     ?>
 
