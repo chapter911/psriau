@@ -138,7 +138,7 @@
                 <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
                 <div class="modal-body">
                     <div class="row align-items-center mb-3">
-                        <div class="col-md-6 mb-2 mb-md-0">
+                        <div class="col-md-5 mb-2 mb-md-0">
                             <div class="input-group input-group-sm">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text"><i class="fas fa-search"></i></span>
@@ -146,12 +146,26 @@
                                 <input type="text" id="navbarExtractSearchInput" class="form-control" placeholder="Cari nama tabel...">
                             </div>
                         </div>
-                        <div class="col-md-6 text-md-right">
-                            <button type="button" class="btn btn-xs btn-outline-secondary mr-1" id="navbarExtractSelectAllBtn">
-                                <i class="fas fa-check-double mr-1"></i> Pilih Semua
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <div class="input-group input-group-sm">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"><i class="fas fa-sort-amount-down"></i></span>
+                                </div>
+                                <select id="navbarExtractSortSelect" class="form-control">
+                                    <option value="name_asc">Nama (A-Z)</option>
+                                    <option value="size_desc">Ukuran (Terbesar)</option>
+                                    <option value="size_asc">Ukuran (Terkecil)</option>
+                                    <option value="rows_desc">Baris (Terbanyak)</option>
+                                    <option value="rows_asc">Baris (Tersedikit)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-md-right">
+                            <button type="button" class="btn btn-xs btn-outline-secondary mr-1" id="navbarExtractSelectAllBtn" title="Pilih Semua">
+                                <i class="fas fa-check-double mr-1"></i> Semua
                             </button>
-                            <button type="button" class="btn btn-xs btn-outline-secondary" id="navbarExtractDeselectAllBtn">
-                                <i class="fas fa-times mr-1"></i> Hapus Pilihan
+                            <button type="button" class="btn btn-xs btn-outline-secondary" id="navbarExtractDeselectAllBtn" title="Hapus Pilihan">
+                                <i class="fas fa-times mr-1"></i> Reset
                             </button>
                         </div>
                     </div>
@@ -529,10 +543,12 @@
             // Extract Database Modal Logic
             const extractTableContainer = document.getElementById('navbarExtractTableContainer');
             const extractSearchInput = document.getElementById('navbarExtractSearchInput');
+            const extractSortSelect = document.getElementById('navbarExtractSortSelect');
             const extractSelectAllBtn = document.getElementById('navbarExtractSelectAllBtn');
             const extractDeselectAllBtn = document.getElementById('navbarExtractDeselectAllBtn');
             const extractCountBadge = document.getElementById('navbarExtractCountBadge');
             const extractSubmitBtn = document.getElementById('navbarExtractSubmitBtn');
+            let rawExtractTablesData = [];
 
             const updateExtractCounter = () => {
                 if (!extractTableContainer || !extractCountBadge || !extractSubmitBtn) {
@@ -555,6 +571,29 @@
                 }
             };
 
+            const sortExtractTablesData = (tables, sortKey) => {
+                const sorted = [...tables];
+                switch (sortKey) {
+                    case 'size_desc':
+                        sorted.sort((a, b) => (Number(b.bytes || 0) - Number(a.bytes || 0)));
+                        break;
+                    case 'size_asc':
+                        sorted.sort((a, b) => (Number(a.bytes || 0) - Number(b.bytes || 0)));
+                        break;
+                    case 'rows_desc':
+                        sorted.sort((a, b) => (Number(b.rows || 0) - Number(a.rows || 0)));
+                        break;
+                    case 'rows_asc':
+                        sorted.sort((a, b) => (Number(a.rows || 0) - Number(b.rows || 0)));
+                        break;
+                    case 'name_asc':
+                    default:
+                        sorted.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+                        break;
+                }
+                return sorted;
+            };
+
             const renderExtractTables = (tables) => {
                 if (!extractTableContainer) {
                     return;
@@ -566,14 +605,24 @@
                     return;
                 }
 
-                extractTableContainer.innerHTML = tables.map((t, idx) => {
+                // Preserve checked states across sorts
+                const checkedSet = new Set();
+                extractTableContainer.querySelectorAll('.navbar-table-checkbox:checked').forEach((cb) => {
+                    checkedSet.add(cb.value);
+                });
+
+                const sortKey = extractSortSelect ? extractSortSelect.value : 'name_asc';
+                const sortedTables = sortExtractTablesData(tables, sortKey);
+
+                extractTableContainer.innerHTML = sortedTables.map((t, idx) => {
                     const name = escapeHtml(t.name);
                     const rows = Number(t.rows || 0);
                     const size = escapeHtml(t.size_formatted || '0 B');
+                    const isChecked = checkedSet.has(t.name) ? 'checked' : '';
                     return `
                         <div class="d-flex align-items-center justify-content-between py-2 px-3 border-bottom navbar-table-item" data-table-name="${name.toLowerCase()}">
                             <div class="d-flex align-items-center" style="gap: 10px;">
-                                <input type="checkbox" class="navbar-table-checkbox" id="chk_tbl_${idx}" name="tables[]" value="${name}" style="width: 18px; height: 18px; cursor: pointer; accent-color: #007bff; flex-shrink: 0;">
+                                <input type="checkbox" class="navbar-table-checkbox" id="chk_tbl_${idx}" name="tables[]" value="${name}" ${isChecked} style="width: 18px; height: 18px; cursor: pointer; accent-color: #007bff; flex-shrink: 0;">
                                 <label for="chk_tbl_${idx}" class="mb-0 text-dark font-weight-bold" style="cursor: pointer; user-select: none;">
                                     <i class="fas fa-table text-secondary mr-1"></i> ${name}
                                 </label>
@@ -588,6 +637,21 @@
 
                 const checkboxes = extractTableContainer.querySelectorAll('.navbar-table-checkbox');
                 checkboxes.forEach((cb) => cb.addEventListener('change', updateExtractCounter));
+
+                // Re-apply search query filter if any
+                if (extractSearchInput && extractSearchInput.value.trim()) {
+                    const query = extractSearchInput.value.trim().toLowerCase();
+                    const items = extractTableContainer.querySelectorAll('.navbar-table-item');
+                    items.forEach((item) => {
+                        const tableName = item.getAttribute('data-table-name') || '';
+                        if (tableName.includes(query)) {
+                            item.classList.remove('d-none');
+                        } else {
+                            item.classList.add('d-none');
+                        }
+                    });
+                }
+
                 updateExtractCounter();
             };
 
@@ -605,7 +669,8 @@
                     if (!response.ok || payload.status !== 'ok') {
                         throw new Error(payload.message || 'Gagal memuat tabel database.');
                     }
-                    renderExtractTables(payload.data || []);
+                    rawExtractTablesData = payload.data || [];
+                    renderExtractTables(rawExtractTablesData);
                 } catch (error) {
                     console.error('Error loading extract tables:', error);
                     extractTableContainer.innerHTML = `<div class="alert alert-danger p-3 mb-0"><i class="fas fa-exclamation-triangle mr-1"></i> ${escapeHtml(error.message || 'Gagal memuat daftar tabel.')}</div>`;
@@ -625,6 +690,12 @@
                             item.classList.add('d-none');
                         }
                     });
+                });
+            }
+
+            if (extractSortSelect) {
+                extractSortSelect.addEventListener('change', () => {
+                    renderExtractTables(rawExtractTablesData);
                 });
             }
 
@@ -653,6 +724,7 @@
 
             window.jQuery('#extractDatabaseModalNavbar').on('show.bs.modal', () => {
                 if (extractSearchInput) extractSearchInput.value = '';
+                if (extractSortSelect) extractSortSelect.value = 'name_asc';
                 loadExtractTables();
             });
 
