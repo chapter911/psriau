@@ -569,13 +569,19 @@
                 extractTableContainer.innerHTML = tables.map((t, idx) => {
                     const name = escapeHtml(t.name);
                     const rows = Number(t.rows || 0);
+                    const size = escapeHtml(t.size_formatted || '0 B');
                     return `
-                        <div class="custom-control custom-checkbox py-1 px-2 border-bottom navbar-table-item" data-table-name="${name.toLowerCase()}">
-                            <input type="checkbox" class="custom-control-input navbar-table-checkbox" id="chk_tbl_${idx}" name="tables[]" value="${name}">
-                            <label class="custom-control-label d-flex justify-content-between align-items-center w-100 font-weight-normal text-dark" for="chk_tbl_${idx}" style="cursor:pointer;">
-                                <span><i class="fas fa-table text-secondary mr-2"></i> <strong>${name}</strong></span>
-                                <span class="badge badge-light border text-muted">~${rows.toLocaleString('id-ID')} baris</span>
-                            </label>
+                        <div class="d-flex align-items-center justify-content-between py-2 px-3 border-bottom navbar-table-item" data-table-name="${name.toLowerCase()}">
+                            <div class="d-flex align-items-center" style="gap: 10px;">
+                                <input type="checkbox" class="navbar-table-checkbox" id="chk_tbl_${idx}" name="tables[]" value="${name}" style="width: 18px; height: 18px; cursor: pointer; accent-color: #007bff; flex-shrink: 0;">
+                                <label for="chk_tbl_${idx}" class="mb-0 text-dark font-weight-bold" style="cursor: pointer; user-select: none;">
+                                    <i class="fas fa-table text-secondary mr-1"></i> ${name}
+                                </label>
+                            </div>
+                            <div class="d-flex align-items-center" style="gap: 6px;">
+                                <span class="badge badge-light border text-muted px-2 py-1"><i class="fas fa-hdd text-info mr-1"></i>${size}</span>
+                                <span class="badge badge-light border text-muted px-2 py-1">~${rows.toLocaleString('id-ID')} baris</span>
+                            </div>
                         </div>
                     `;
                 }).join('');

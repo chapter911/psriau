@@ -201,21 +201,30 @@ class Setting extends BaseController
 
             $infoMap = [];
             $infoQuery = $db->query("
-                SELECT TABLE_NAME as name, TABLE_ROWS as total_rows 
+                SELECT 
+                    TABLE_NAME as name, 
+                    TABLE_ROWS as total_rows,
+                    (COALESCE(DATA_LENGTH, 0) + COALESCE(INDEX_LENGTH, 0)) as total_bytes
                 FROM INFORMATION_SCHEMA.TABLES 
                 WHERE TABLE_SCHEMA = " . $db->escape($databaseName)
             );
             if ($infoQuery) {
                 foreach ($infoQuery->getResultArray() as $info) {
-                    $infoMap[$info['name']] = (int) ($info['total_rows'] ?? 0);
+                    $infoMap[$info['name']] = [
+                        'rows' => (int) ($info['total_rows'] ?? 0),
+                        'bytes' => (int) ($info['total_bytes'] ?? 0),
+                    ];
                 }
             }
 
             $data = [];
             foreach ($tables as $t) {
+                $bytes = (int) ($infoMap[$t]['bytes'] ?? 0);
                 $data[] = [
                     'name' => $t,
-                    'rows' => $infoMap[$t] ?? 0,
+                    'rows' => (int) ($infoMap[$t]['rows'] ?? 0),
+                    'bytes' => $bytes,
+                    'size_formatted' => $this->formatBytes($bytes),
                 ];
             }
 
@@ -231,6 +240,20 @@ class Setting extends BaseController
                 'message' => 'Gagal memuat daftar tabel database: ' . $e->getMessage(),
             ]);
         }
+    }
+
+    private function formatBytes(int $bytes, int $precision = 1): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $bytes = max($bytes, 0);
+        if ($bytes === 0) {
+            return '0 B';
+        }
+        $pow = (int) floor(log($bytes) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $value = $bytes / (1024 ** $pow);
+
+        return round($value, $precision) . ' ' . $units[$pow];
     }
 
     public function extractDatabase()
