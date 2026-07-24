@@ -137,43 +137,38 @@
                 <?= csrf_field(); ?>
                 <input type="hidden" name="redirect_to" value="<?= esc((string) current_url(true)); ?>">
                 <div class="modal-body">
-                    <div class="row align-items-center mb-3">
-                        <div class="col-md-5 mb-2 mb-md-0">
-                            <div class="input-group input-group-sm">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                </div>
-                                <input type="text" id="navbarExtractSearchInput" class="form-control" placeholder="Cari nama tabel...">
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-2 mb-md-0">
-                            <div class="input-group input-group-sm">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fas fa-sort-amount-down"></i></span>
-                                </div>
-                                <select id="navbarExtractSortSelect" class="form-control">
-                                    <option value="name_asc">Nama (A-Z)</option>
-                                    <option value="size_desc">Ukuran (Terbesar)</option>
-                                    <option value="size_asc">Ukuran (Terkecil)</option>
-                                    <option value="rows_desc">Baris (Terbanyak)</option>
-                                    <option value="rows_asc">Baris (Tersedikit)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3 text-md-right">
-                            <button type="button" class="btn btn-xs btn-outline-secondary mr-1" id="navbarExtractSelectAllBtn" title="Pilih Semua">
-                                <i class="fas fa-check-double mr-1"></i> Semua
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <small class="text-muted"><i class="fas fa-info-circle mr-1"></i> Klik pada header kolom untuk mengurutkan data (Nama, Ukuran, atau Jumlah Baris).</small>
+                        <div>
+                            <button type="button" class="btn btn-xs btn-outline-primary mr-1" id="navbarExtractSelectAllBtn" title="Pilih Semua">
+                                <i class="fas fa-check-double mr-1"></i> Pilih Semua
                             </button>
                             <button type="button" class="btn btn-xs btn-outline-secondary" id="navbarExtractDeselectAllBtn" title="Hapus Pilihan">
-                                <i class="fas fa-times mr-1"></i> Reset
+                                <i class="fas fa-times mr-1"></i> Hapus Pilihan
                             </button>
                         </div>
                     </div>
 
-                    <div id="navbarExtractTableContainer" class="border rounded p-2" style="max-height: 45vh; overflow-y: auto; background: #fdfdfd;">
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-spinner fa-spin mr-1"></i> Memuat daftar tabel database...
-                        </div>
+                    <div id="navbarExtractTableWrapper" class="border rounded p-2" style="background: #fdfdfd;">
+                        <table id="navbarExtractDataTable" class="table table-bordered table-striped table-hover w-100 mb-0">
+                            <thead>
+                                <tr>
+                                    <th width="40" class="text-center no-sort">
+                                        <input type="checkbox" id="navbarExtractCheckAllHeader" style="width: 18px; height: 18px; cursor: pointer; accent-color: #007bff;">
+                                    </th>
+                                    <th>Nama Tabel</th>
+                                    <th width="150" class="text-right">Ukuran Data</th>
+                                    <th width="150" class="text-right">Jumlah Baris</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin mr-1"></i> Memuat daftar tabel database...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <div class="modal-footer d-flex justify-content-between align-items-center">
@@ -540,24 +535,28 @@
                 resultBox.innerHTML = '<div class="text-muted">Belum ada data ditampilkan.</div>';
             });
 
-            // Extract Database Modal Logic
-            const extractTableContainer = document.getElementById('navbarExtractTableContainer');
-            const extractSearchInput = document.getElementById('navbarExtractSearchInput');
-            const extractSortSelect = document.getElementById('navbarExtractSortSelect');
-            const extractSelectAllBtn = document.getElementById('navbarExtractSelectAllBtn');
-            const extractDeselectAllBtn = document.getElementById('navbarExtractDeselectAllBtn');
+            // Extract Database Modal DataTable Logic
             const extractCountBadge = document.getElementById('navbarExtractCountBadge');
             const extractSubmitBtn = document.getElementById('navbarExtractSubmitBtn');
-            let rawExtractTablesData = [];
+            let navbarExtractDt = null;
 
             const updateExtractCounter = () => {
-                if (!extractTableContainer || !extractCountBadge || !extractSubmitBtn) {
+                if (!extractCountBadge || !extractSubmitBtn) {
                     return;
                 }
 
-                const checkedBoxes = extractTableContainer.querySelectorAll('.navbar-table-checkbox:checked');
-                const totalTables = extractTableContainer.querySelectorAll('.navbar-table-checkbox').length;
-                const count = checkedBoxes.length;
+                let count = 0;
+                let totalTables = 0;
+
+                if (window.jQuery && navbarExtractDt) {
+                    const nodes = navbarExtractDt.rows().nodes().to$();
+                    totalTables = nodes.length;
+                    count = nodes.find('.navbar-table-checkbox:checked').length;
+                } else {
+                    const checkboxes = document.querySelectorAll('#navbarExtractDataTable .navbar-table-checkbox');
+                    totalTables = checkboxes.length;
+                    count = document.querySelectorAll('#navbarExtractDataTable .navbar-table-checkbox:checked').length;
+                }
 
                 extractCountBadge.textContent = `${count} dari ${totalTables} tabel dipilih`;
                 extractSubmitBtn.disabled = count === 0;
@@ -571,95 +570,102 @@
                 }
             };
 
-            const sortExtractTablesData = (tables, sortKey) => {
-                const sorted = [...tables];
-                switch (sortKey) {
-                    case 'size_desc':
-                        sorted.sort((a, b) => (Number(b.bytes || 0) - Number(a.bytes || 0)));
-                        break;
-                    case 'size_asc':
-                        sorted.sort((a, b) => (Number(a.bytes || 0) - Number(b.bytes || 0)));
-                        break;
-                    case 'rows_desc':
-                        sorted.sort((a, b) => (Number(b.rows || 0) - Number(a.rows || 0)));
-                        break;
-                    case 'rows_asc':
-                        sorted.sort((a, b) => (Number(a.rows || 0) - Number(b.rows || 0)));
-                        break;
-                    case 'name_asc':
-                    default:
-                        sorted.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
-                        break;
-                }
-                return sorted;
-            };
-
-            const renderExtractTables = (tables) => {
-                if (!extractTableContainer) {
+            const initExtractDataTable = (tables) => {
+                if (!window.jQuery) {
                     return;
                 }
 
+                const $ = window.jQuery;
+                const $table = $('#navbarExtractDataTable');
+                if (!$table.length) {
+                    return;
+                }
+
+                if ($.fn.DataTable.isDataTable($table)) {
+                    $table.DataTable().destroy();
+                    navbarExtractDt = null;
+                }
+
+                const $tbody = $table.find('tbody');
+                $tbody.empty();
+
                 if (!Array.isArray(tables) || tables.length === 0) {
-                    extractTableContainer.innerHTML = '<div class="alert alert-warning p-3 mb-0"><i class="fas fa-exclamation-triangle mr-1"></i> Tidak ada tabel ditemukan.</div>';
+                    $tbody.append('<tr><td colspan="4" class="text-center text-muted py-4"><i class="fas fa-exclamation-triangle mr-1"></i> Tidak ada tabel ditemukan.</td></tr>');
                     updateExtractCounter();
                     return;
                 }
 
-                // Preserve checked states across sorts
-                const checkedSet = new Set();
-                extractTableContainer.querySelectorAll('.navbar-table-checkbox:checked').forEach((cb) => {
-                    checkedSet.add(cb.value);
-                });
-
-                const sortKey = extractSortSelect ? extractSortSelect.value : 'name_asc';
-                const sortedTables = sortExtractTablesData(tables, sortKey);
-
-                extractTableContainer.innerHTML = sortedTables.map((t, idx) => {
+                tables.forEach((t, idx) => {
                     const name = escapeHtml(t.name);
                     const rows = Number(t.rows || 0);
+                    const bytes = Number(t.bytes || 0);
                     const size = escapeHtml(t.size_formatted || '0 B');
-                    const isChecked = checkedSet.has(t.name) ? 'checked' : '';
-                    return `
-                        <div class="d-flex align-items-center justify-content-between py-2 px-3 border-bottom navbar-table-item" data-table-name="${name.toLowerCase()}">
-                            <div class="d-flex align-items-center" style="gap: 10px;">
-                                <input type="checkbox" class="navbar-table-checkbox" id="chk_tbl_${idx}" name="tables[]" value="${name}" ${isChecked} style="width: 18px; height: 18px; cursor: pointer; accent-color: #007bff; flex-shrink: 0;">
-                                <label for="chk_tbl_${idx}" class="mb-0 text-dark font-weight-bold" style="cursor: pointer; user-select: none;">
-                                    <i class="fas fa-table text-secondary mr-1"></i> ${name}
+
+                    $tbody.append(`
+                        <tr>
+                            <td class="text-center align-middle">
+                                <input type="checkbox" class="navbar-table-checkbox" id="chk_dt_${idx}" name="tables[]" value="${name}" style="width: 18px; height: 18px; cursor: pointer; accent-color: #007bff;">
+                            </td>
+                            <td class="align-middle font-weight-bold" data-order="${name}">
+                                <label for="chk_dt_${idx}" class="mb-0 text-dark font-weight-bold" style="cursor: pointer; user-select: none;">
+                                    <i class="fas fa-table text-secondary mr-2"></i> ${name}
                                 </label>
-                            </div>
-                            <div class="d-flex align-items-center" style="gap: 6px;">
+                            </td>
+                            <td class="text-right align-middle" data-order="${bytes}">
                                 <span class="badge badge-light border text-muted px-2 py-1"><i class="fas fa-hdd text-info mr-1"></i>${size}</span>
+                            </td>
+                            <td class="text-right align-middle" data-order="${rows}">
                                 <span class="badge badge-light border text-muted px-2 py-1">~${rows.toLocaleString('id-ID')} baris</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+                            </td>
+                        </tr>
+                    `);
+                });
 
-                const checkboxes = extractTableContainer.querySelectorAll('.navbar-table-checkbox');
-                checkboxes.forEach((cb) => cb.addEventListener('change', updateExtractCounter));
+                navbarExtractDt = $table.DataTable({
+                    paging: false,
+                    scrollY: '45vh',
+                    scrollCollapse: true,
+                    info: true,
+                    ordering: true,
+                    order: [[1, 'asc']],
+                    columnDefs: [
+                        { orderable: false, targets: 0 },
+                        { className: 'text-center', targets: 0 }
+                    ],
+                    language: {
+                        search: "_INPUT_",
+                        searchPlaceholder: "Cari nama tabel...",
+                        info: "Menampilkan _TOTAL_ tabel",
+                        infoEmpty: "Tidak ada tabel",
+                        infoFiltered: "(difilter dari _MAX_ total tabel)",
+                        zeroRecords: "Tidak ada tabel yang cocok"
+                    }
+                });
 
-                // Re-apply search query filter if any
-                if (extractSearchInput && extractSearchInput.value.trim()) {
-                    const query = extractSearchInput.value.trim().toLowerCase();
-                    const items = extractTableContainer.querySelectorAll('.navbar-table-item');
-                    items.forEach((item) => {
-                        const tableName = item.getAttribute('data-table-name') || '';
-                        if (tableName.includes(query)) {
-                            item.classList.remove('d-none');
-                        } else {
-                            item.classList.add('d-none');
-                        }
-                    });
-                }
+                $('#navbarExtractCheckAllHeader').prop('checked', false).off('change').on('change', function () {
+                    const isChecked = $(this).is(':checked');
+                    if (navbarExtractDt) {
+                        const visibleNodes = navbarExtractDt.rows({ filter: 'applied' }).nodes().to$();
+                        visibleNodes.find('.navbar-table-checkbox').prop('checked', isChecked);
+                    } else {
+                        $table.find('.navbar-table-checkbox').prop('checked', isChecked);
+                    }
+                    updateExtractCounter();
+                });
+
+                $table.off('change', '.navbar-table-checkbox').on('change', '.navbar-table-checkbox', function () {
+                    updateExtractCounter();
+                });
 
                 updateExtractCounter();
             };
 
             const loadExtractTables = async () => {
-                if (!extractTableContainer) {
-                    return;
+                const $ = window.jQuery;
+                const $tbody = $('#navbarExtractDataTable tbody');
+                if ($tbody.length) {
+                    $tbody.html('<tr><td colspan="4" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-1"></i> Memuat daftar tabel database...</td></tr>');
                 }
-                extractTableContainer.innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-1"></i> Memuat daftar tabel database...</div>';
 
                 try {
                     const response = await fetch('<?= site_url('/admin/pengaturan/application/database-tables'); ?>', {
@@ -669,68 +675,46 @@
                     if (!response.ok || payload.status !== 'ok') {
                         throw new Error(payload.message || 'Gagal memuat tabel database.');
                     }
-                    rawExtractTablesData = payload.data || [];
-                    renderExtractTables(rawExtractTablesData);
+                    initExtractDataTable(payload.data || []);
                 } catch (error) {
                     console.error('Error loading extract tables:', error);
-                    extractTableContainer.innerHTML = `<div class="alert alert-danger p-3 mb-0"><i class="fas fa-exclamation-triangle mr-1"></i> ${escapeHtml(error.message || 'Gagal memuat daftar tabel.')}</div>`;
+                    if ($tbody.length) {
+                        $tbody.html(`<tr><td colspan="4" class="text-center text-danger py-3"><i class="fas fa-exclamation-triangle mr-1"></i> ${escapeHtml(error.message || 'Gagal memuat daftar tabel.')}</td></tr>`);
+                    }
                     updateExtractCounter();
                 }
             };
 
-            if (extractSearchInput) {
-                extractSearchInput.addEventListener('input', (e) => {
-                    const query = String(e.target.value || '').trim().toLowerCase();
-                    const items = extractTableContainer ? extractTableContainer.querySelectorAll('.navbar-table-item') : [];
-                    items.forEach((item) => {
-                        const tableName = item.getAttribute('data-table-name') || '';
-                        if (!query || tableName.includes(query)) {
-                            item.classList.remove('d-none');
-                        } else {
-                            item.classList.add('d-none');
-                        }
-                    });
-                });
-            }
+            if (window.jQuery) {
+                const $ = window.jQuery;
 
-            if (extractSortSelect) {
-                extractSortSelect.addEventListener('change', () => {
-                    renderExtractTables(rawExtractTablesData);
-                });
-            }
-
-            if (extractSelectAllBtn) {
-                extractSelectAllBtn.addEventListener('click', () => {
-                    if (!extractTableContainer) return;
-                    const items = extractTableContainer.querySelectorAll('.navbar-table-item');
-                    items.forEach((item) => {
-                        if (!item.classList.contains('d-none')) {
-                            const cb = item.querySelector('.navbar-table-checkbox');
-                            if (cb) cb.checked = true;
-                        }
-                    });
+                $('#navbarExtractSelectAllBtn').on('click', function () {
+                    if (!navbarExtractDt) return;
+                    navbarExtractDt.rows({ filter: 'applied' }).nodes().to$().find('.navbar-table-checkbox').prop('checked', true);
                     updateExtractCounter();
                 });
-            }
 
-            if (extractDeselectAllBtn) {
-                extractDeselectAllBtn.addEventListener('click', () => {
-                    if (!extractTableContainer) return;
-                    const checkboxes = extractTableContainer.querySelectorAll('.navbar-table-checkbox');
-                    checkboxes.forEach((cb) => cb.checked = false);
+                $('#navbarExtractDeselectAllBtn').on('click', function () {
+                    if (!navbarExtractDt) return;
+                    navbarExtractDt.rows().nodes().to$().find('.navbar-table-checkbox').prop('checked', false);
+                    $('#navbarExtractCheckAllHeader').prop('checked', false);
                     updateExtractCounter();
                 });
+
+                $('#extractDatabaseModalNavbar').on('show.bs.modal', function () {
+                    loadExtractTables();
+                });
+
+                $('#extractDatabaseModalNavbar').on('shown.bs.modal', function () {
+                    if (navbarExtractDt) {
+                        navbarExtractDt.columns.adjust().draw();
+                    }
+                });
+
+                $('#extractDatabaseModalNavbar').on('hide.bs.modal', function () {
+                    blurActiveElementInModal('extractDatabaseModalNavbar');
+                });
             }
-
-            window.jQuery('#extractDatabaseModalNavbar').on('show.bs.modal', () => {
-                if (extractSearchInput) extractSearchInput.value = '';
-                if (extractSortSelect) extractSortSelect.value = 'name_asc';
-                loadExtractTables();
-            });
-
-            window.jQuery('#extractDatabaseModalNavbar').on('hide.bs.modal', () => {
-                blurActiveElementInModal('extractDatabaseModalNavbar');
-            });
 
             <?php if (is_array($commandResult)): ?>
             window.jQuery('#navbarCommandResultModal').on('hide.bs.modal', () => {
