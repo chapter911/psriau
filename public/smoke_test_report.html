@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smoke Test Report — Perjalanan Dinas</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 40px 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #818cf8, #a78bfa, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+        .header p { color: #94a3b8; font-size: 14px; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: #1e293b; border-radius: 16px; padding: 24px; text-align: center; border: 1px solid #334155; }
+        .stat-card .value { font-size: 36px; font-weight: 800; }
+        .stat-card .label { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+        .card { background: #1e293b; border-radius: 16px; padding: 24px; margin-bottom: 32px; border: 1px solid #334155; overflow-x: auto; }
+        .card h2 { font-size: 20px; font-weight: 700; margin-bottom: 16px; color: #f1f5f9; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #334155; color: #e2e8f0; padding: 12px 8px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        th:first-child { border-radius: 8px 0 0 0; }
+        th:last-child { border-radius: 0 8px 0 0; }
+        td { color: #cbd5e1; font-size: 13px; }
+        .flowchart-section { margin-bottom: 32px; }
+        .flowchart-section h2 { font-size: 20px; font-weight: 700; margin-bottom: 16px; color: #f1f5f9; }
+        .flow-container { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 30px 20px; }
+        .flow-node { padding: 14px 28px; border-radius: 12px; font-size: 13px; font-weight: 600; text-align: center; min-width: 260px; max-width: 400px; position: relative; }
+        .flow-start { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-radius: 50px; }
+        .flow-process { background: #1e40af; color: #e0e7ff; border: 1px solid #3b82f6; }
+        .flow-decision { background: #7c3aed; color: #ede9fe; transform: rotate(0deg); border: 1px solid #a78bfa; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); padding: 28px 40px; }
+        .flow-end { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; border-radius: 50px; }
+        .flow-arrow { color: #64748b; font-size: 20px; line-height: 1; }
+        .flow-label { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+        .flow-row { display: flex; align-items: center; gap: 24px; }
+        .flow-branch { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        @media (max-width: 768px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🔥 Smoke Test Report</h1>
+        <p>Modul Perjalanan Dinas — Generated 2026-07-24 16:45:54</p>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="value" style="color:#818cf8;">90</div>
+            <div class="label">Total Tests</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" style="color:#10b981;">89</div>
+            <div class="label">Passed</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" style="color:#ef4444;">1</div>
+            <div class="label">Failed</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" style="color:#fbbf24;">98.9%</div>
+            <div class="label">Pass Rate</div>
+        </div>
+    </div>
+
+    <div style="text-align:center;margin-bottom:32px;">
+        <div style="display:inline-block;background:#ef4444;color:#fff;padding:12px 32px;border-radius:50px;font-weight:700;font-size:16px;">1 TEST(S) FAILED ❌</div>
+    </div>
+
+    
+    <div style='background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:20px 24px;margin-bottom:32px;'>
+        <h3 style='color:#dc2626;margin:0 0 12px;'>⚠️ Errors Found (1)</h3>
+        <ul style='margin:0;padding-left:20px;'><li style='margin-bottom:8px;color:#dc2626;'>Test #55: Login as admin — HTTP 404</li></ul>
+    </div>
+
+    <!-- FLOWCHART -->
+    <div class="card flowchart-section">
+        <h2>📊 Flowchart Alur Pengujian</h2>
+        <div class="flow-container">
+            <div class="flow-node flow-start">🚀 START: Setup & Truncate Data</div>
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-node flow-process">📋 Load Master Data (Pegawai, Kabupaten, Dasar SPT, Mata Anggaran)</div>
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-node flow-process" style="background:#0369a1;border-color:#0ea5e9;">
+                <strong>PHASE 1: Insert 25 Disposisi</strong><br>
+                <span style="font-size:11px;font-weight:400;">• Variasi 1-5 pelaksana per entry<br>
+                • Variasi kota tujuan (12+ kota)<br>
+                • Variasi transportasi<br>
+                • Status: 23 disetujui, 1 pending, 1 ditolak</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-node" style="background:#7c3aed;color:#ede9fe;border:1px solid #a78bfa;padding:20px 30px;">
+                ✅ Verify: 25 Disposisi records inserted?
+            </div>
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-node flow-process" style="background:#b45309;border-color:#f59e0b;">
+                <strong>PHASE 2: Insert 25 Laporan Perjalanan Dinas</strong><br>
+                <span style="font-size:11px;font-weight:400;">• Linked to disposisi via disposisi_id<br>
+                • Variasi rincian biaya (transport + penginapan)<br>
+                • Kode nomor auto-increment<br>
+                • Variasi is_final (23 final, 2 draft) & is_verified (20 verified, 5 not)</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-node" style="background:#7c3aed;color:#ede9fe;border:1px solid #a78bfa;padding:20px 30px;">
+                ✅ Verify: 25 Laporan records inserted?
+            </div>
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-node flow-process" style="background:#166534;border-color:#22c55e;">
+                <strong>PHASE 3: HTTP Endpoint Verification</strong><br>
+                <span style="font-size:11px;font-weight:400;">• Login → session cookie<br>
+                • 3 listing pages (Disposisi, Surat Tugas, Perjalanan Dinas)<br>
+                • 5 records × 5 cetak endpoints (SPT, Nominatif, SPPD, Kwitansi, Dokumen)</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-node flow-process" style="background:#7f1d1d;border-color:#ef4444;">
+                <strong>PHASE 4: Data Integrity Checks</strong><br>
+                <span style="font-size:11px;font-weight:400;">• Total record counts = 25<br>
+                • Status distribution variety<br>
+                • Pelaksana count variation (1-5)<br>
+                • Kode nomor sequence validity<br>
+                • last_kode_nomor_sppd sync</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-node flow-end">🏁 END: Generate HTML Report</div>
+        </div>
+    </div>
+
+    <!-- RESULTS TABLE -->
+    <div class="card">
+        <h2>📝 Detailed Test Results</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:50px;text-align:center;">#</th>
+                    <th style="width:130px;">Phase</th>
+                    <th>Description</th>
+                    <th style="width:80px;text-align:center;">Result</th>
+                    <th style="width:250px;">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>1</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>SETUP</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Load Master Pegawai</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>Found 20 pegawai</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>2</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>SETUP</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Load Master Kabupaten</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>Found 30 kabupaten</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>3</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>SETUP</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Clean existing data (truncate)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>Tables truncated successfully</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>4</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #1: 1 pelaksana, Aceh Barat, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=1</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>5</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #2: 2 pelaksana, Aceh Barat Daya, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=2</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>6</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #3: 3 pelaksana, Aceh Besar, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=3</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>7</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #4: 4 pelaksana, Aceh Jaya, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=4</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>8</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #5: 5 pelaksana, Aceh Selatan, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=5</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>9</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #6: 1 pelaksana, Aceh Singkil, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=6</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>10</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #7: 2 pelaksana, Aceh Tamiang, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=7</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>11</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #8: 3 pelaksana, Aceh Tengah, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=8</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>12</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #9: 4 pelaksana, Aceh Tenggara, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=9</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>13</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #10: 5 pelaksana, Aceh Timur, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=10</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>14</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #11: 1 pelaksana, Aceh Utara, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=11</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>15</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #12: 2 pelaksana, Agam, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=12</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>16</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #13: 3 pelaksana, Alor, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=13</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>17</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #14: 4 pelaksana, Asahan, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=14</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>18</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #15: 5 pelaksana, Asmat, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=15</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>19</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #16: 1 pelaksana, Badung, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=16</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>20</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #17: 2 pelaksana, Balangan, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=17</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>21</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #18: 3 pelaksana, Bandung, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=18</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>22</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #19: 4 pelaksana, Bandung Barat, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=19</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>23</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #20: 5 pelaksana, Banggai, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=20</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>24</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #21: 1 pelaksana, Banggai Kepulauan, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=21</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>25</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #22: 2 pelaksana, Banggai Laut, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=22</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>26</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #23: 3 pelaksana, Bangka, status=disetujui</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=23</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>27</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #24: 4 pelaksana, Bangka Barat, status=pending</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=24</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>28</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Disposisi #25: 5 pelaksana, Bangka Selatan, status=ditolak</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=25</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>29</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #1: 1 pelaksana, kode=001, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=1</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>30</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #2: 2 pelaksana, kode=002, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=2</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>31</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #3: 3 pelaksana, kode=004, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=3</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>32</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #4: 4 pelaksana, kode=007, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=4</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>33</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #5: 5 pelaksana, kode=011, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=5</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>34</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #6: 1 pelaksana, kode=016, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=6</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>35</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #7: 2 pelaksana, kode=017, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=7</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>36</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #8: 3 pelaksana, kode=019, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=8</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>37</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #9: 4 pelaksana, kode=022, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=9</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>38</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #10: 5 pelaksana, kode=026, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=10</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>39</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #11: 1 pelaksana, kode=031, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=11</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>40</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #12: 2 pelaksana, kode=032, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=12</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>41</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #13: 3 pelaksana, kode=034, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=13</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>42</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #14: 4 pelaksana, kode=037, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=14</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>43</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #15: 5 pelaksana, kode=041, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=15</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>44</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #16: 1 pelaksana, kode=046, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=16</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>45</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #17: 2 pelaksana, kode=047, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=17</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>46</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #18: 3 pelaksana, kode=049, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=18</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>47</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #19: 4 pelaksana, kode=052, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=19</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>48</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #20: 5 pelaksana, kode=056, final=1, verified=1</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=20</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>49</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #21: 1 pelaksana, kode=061, final=1, verified=0</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=21</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>50</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #22: 2 pelaksana, kode=062, final=1, verified=0</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=22</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>51</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #23: 3 pelaksana, kode=064, final=1, verified=0</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=23</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>52</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #24: 4 pelaksana, kode=067, final=0, verified=0</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=24</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>53</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>LAPORAN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Insert Laporan #25: 5 pelaksana, kode=071, final=0, verified=0</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>ID=25</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>54</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>SETUP</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Update last_kode_nomor_sppd to 75</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'></td>
+    </tr>
+<tr style="background:#fef2f2;">
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>55</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>AUTH</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Login as admin</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#ef4444;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">FAIL</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 404</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>56</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DISPOSISI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Disposisi listing page</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>57</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>SURAT_TUGAS</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Surat Tugas listing page</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>58</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>PERJALANAN_DINAS</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Perjalanan Dinas listing page</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>59</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DOKUMEN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Dokumen page laporan #1 (ID=1)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>60</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_SPT</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak SPT laporan #1 (ID=1)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>61</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_NOMINATIF</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak Daftar Nominatif #1 (ID=1)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>62</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_SPPD</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak SPPD #1 (ID=1)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>63</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_KWITANSI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak Kwitansi #1 (ID=1)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>64</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DOKUMEN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Dokumen page laporan #2 (ID=2)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>65</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_SPT</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak SPT laporan #2 (ID=2)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>66</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_NOMINATIF</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak Daftar Nominatif #2 (ID=2)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>67</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_SPPD</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak SPPD #2 (ID=2)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>68</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_KWITANSI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak Kwitansi #2 (ID=2)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>69</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DOKUMEN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Dokumen page laporan #3 (ID=3)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>70</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_SPT</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak SPT laporan #3 (ID=3)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>71</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_NOMINATIF</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak Daftar Nominatif #3 (ID=3)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>72</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_SPPD</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak SPPD #3 (ID=3)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>73</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_KWITANSI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak Kwitansi #3 (ID=3)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>74</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DOKUMEN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Dokumen page laporan #4 (ID=4)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>75</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_SPT</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak SPT laporan #4 (ID=4)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>76</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_NOMINATIF</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak Daftar Nominatif #4 (ID=4)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>77</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_SPPD</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak SPPD #4 (ID=4)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>78</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_KWITANSI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak Kwitansi #4 (ID=4)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>79</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>DOKUMEN</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Dokumen page laporan #5 (ID=5)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>80</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_SPT</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak SPT laporan #5 (ID=5)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>81</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_NOMINATIF</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak Daftar Nominatif #5 (ID=5)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>82</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_SPPD</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak SPPD #5 (ID=5)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>83</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>CETAK_KWITANSI</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Cetak Kwitansi #5 (ID=5)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>HTTP 200, size=38789</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>84</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>INTEGRITY</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Total Disposisi records = 25</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>Found: 25</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>85</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>INTEGRITY</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Total Laporan records = 25</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>Found: 25</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>86</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>INTEGRITY</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Disposisi status distribution varied</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>{"pending":1,"disetujui":23,"ditolak":1}</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>87</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>INTEGRITY</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Laporan has varied final/verified statuses</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>final=0,verified=0: 2 | final=1,verified=0: 3 | final=1,verified=1: 20</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>88</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>INTEGRITY</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Pelaksana counts varied (1-5)</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>Unique counts: 1, 2, 3, 4, 5</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>89</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>INTEGRITY</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>Kode Nomor sequence populated</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>Codes: 001, 002, 004, 007, 011, 016, 017, 019, 022, 026, 031, 032, 034, 037, 041, 046, 047, 049, 052, 056, 061, 062, 064, 067, 071</td>
+    </tr>
+<tr>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'>90</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#6366f1;'>INTEGRITY</td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;'>last_kode_nomor_sppd = 75</td>
+        <td style='text-align:center;padding:10px 8px;border-bottom:1px solid #e5e7eb;'><span style="background:#10b981;color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">PASS</span></td>
+        <td style='padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;'>DB value: 75</td>
+    </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+    <div style="text-align:center;color:#64748b;font-size:12px;margin-top:40px;">
+        Generated by Smoke Test Runner — 2026-07-24 16:45:54
+    </div>
+</div>
+</body>
+</html>
