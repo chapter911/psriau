@@ -155,6 +155,13 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/dasar-spt/(:num)/ubah', 'Admin\DasarSpt::edit/$1');
 	$routes->post('master/dasar-spt/(:num)/hapus', 'Admin\DasarSpt::delete/$1');
 
+	// Master Mata Anggaran Routes
+	$routes->get('master/mata-anggaran', 'Admin\MataAnggaran::index');
+	$routes->post('master/mata-anggaran/tambah', 'Admin\MataAnggaran::create');
+	$routes->post('master/mata-anggaran/(:num)/ubah', 'Admin\MataAnggaran::edit/$1');
+	$routes->post('master/mata-anggaran/(:num)/status', 'Admin\MataAnggaran::updateStatus/$1');
+	$routes->post('master/mata-anggaran/(:num)/hapus', 'Admin\MataAnggaran::delete/$1');
+
 	// Master Transportasi Routes
 	$routes->get('master/transportasi', 'Admin\Transportasi::index');
 	$routes->post('master/transportasi/tambah', 'Admin\Transportasi::create');

@@ -384,6 +384,11 @@ class Laporan extends BaseController
             $kopSuratList = $db->table('kop_surat')->orderBy('is_active', 'DESC')->orderBy('id', 'DESC')->get()->getResultArray();
         }
 
+        $mataAnggaranList = [];
+        if ($db->tableExists('mst_mata_anggaran')) {
+            $mataAnggaranList = $db->table('mst_mata_anggaran')->orderBy('status', 'ASC')->orderBy('id', 'DESC')->get()->getResultArray();
+        }
+
         return view('admin/laporan/surat_tugas', [
             'title' => 'Surat Tugas (SPT)',
             'can_edit' => $this->canManageLaporan(),
@@ -392,6 +397,7 @@ class Laporan extends BaseController
             'pegawai_options' => $pegawaiRows,
             'dasar_spt_options' => $dasarSptOptions,
             'kop_surat_list' => $kopSuratList,
+            'mata_anggaran_list' => $mataAnggaranList,
         ]);
     }
 
@@ -614,14 +620,15 @@ class Laporan extends BaseController
                 $fileSptHtml = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-spt') . '" class="btn btn-xs btn-outline-danger px-2 font-weight-bold" title="Cetak Surat Tugas (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak SPT</a>';
 
                 $kopSuratIdAttr = (int) ($row['kop_surat_id'] ?? 0);
+                $mataAnggaranIdAttr = (int) ($row['mata_anggaran_id'] ?? 0);
                 $aksiSptHtml = '';
                 if ($canVerifyRow) {
                     if ($isVerified === 1) {
                         // Button to edit verification
-                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" data-kop-surat-id="' . $kopSuratIdAttr . '" title="Ubah Verifikasi"><i class="fas fa-edit mr-1"></i> Edit</button>';
+                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" title="Ubah Verifikasi"><i class="fas fa-edit mr-1"></i> Edit</button>';
                     } else {
                         // Button to perform verification
-                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" data-kop-surat-id="' . $kopSuratIdAttr . '" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
+                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
                     }
                 } else {
                     $aksiSptHtml = '<span class="text-muted" style="font-size:0.8rem;"><i class="fas fa-lock mr-1"></i> No Access</span>';
@@ -630,9 +637,9 @@ class Laporan extends BaseController
                 $verificationStatusHtml = $statusVerifikasiHtml . '<div class="mt-1 d-flex justify-content-center align-items-center" style="gap: 4px;">' . $fileSptHtml;
                 if ($canVerifyRow) {
                     if ($isVerified === 1) {
-                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" data-kop-surat-id="' . $kopSuratIdAttr . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
+                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
                     } else {
-                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" data-kop-surat-id="' . $kopSuratIdAttr . '" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
+                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
                     }
                 }
                 $verificationStatusHtml .= '</div>';
@@ -701,6 +708,7 @@ class Laporan extends BaseController
         }
         $tglTtd = trim((string) $this->request->getPost('tanggal_tanda_tangan'));
         $kopSuratId = (int) $this->request->getPost('kop_surat_id');
+        $mataAnggaranId = (int) $this->request->getPost('mata_anggaran_id');
 
         if ($nomorSurat === '') {
             return redirect()->back()->with('error', 'Nomor Surat Tugas wajib diisi.');
@@ -718,6 +726,9 @@ class Laporan extends BaseController
         ];
         if ($kopSuratId > 0) {
             $updateData['kop_surat_id'] = $kopSuratId;
+        }
+        if ($mataAnggaranId > 0) {
+            $updateData['mata_anggaran_id'] = $mataAnggaranId;
         }
 
         $model->update($id, $updateData);
@@ -841,10 +852,13 @@ class Laporan extends BaseController
             }
         }
 
+        $mataAnggaranText = $this->resolveMataAnggaran($row);
+
         $html = view('admin/laporan/cetak_daftar_nominatif', [
             'row' => $row,
             'pelaksana' => $pelaksana,
             'biaya_master' => $biayaMaster,
+            'mata_anggaran' => $mataAnggaranText,
         ]);
 
         $dompdfOptions = new \Dompdf\Options();
@@ -890,10 +904,13 @@ class Laporan extends BaseController
             $kopSurat = $db->table('kop_surat')->where('is_active', 1)->orderBy('id', 'DESC')->get()->getRowArray();
         }
 
+        $mataAnggaranText = $this->resolveMataAnggaran($row);
+
         $html = view('admin/laporan/cetak_sppd', [
             'row' => $row,
             'pelaksana' => $pelaksana,
             'kop_surat' => $kopSurat,
+            'mata_anggaran' => $mataAnggaranText,
         ]);
 
         $dompdfOptions = new \Dompdf\Options();
@@ -961,11 +978,14 @@ class Laporan extends BaseController
             }
         }
 
+        $mataAnggaranText = $this->resolveMataAnggaran($row);
+
         $html = view('admin/laporan/cetak_kwitansi', [
             'row' => $row,
             'pelaksana' => $pelaksana,
             'kop_surat' => $kopSurat,
             'biaya_master' => $biayaMaster,
+            'mata_anggaran' => $mataAnggaranText,
         ]);
 
         $dompdfOptions = new \Dompdf\Options();
@@ -2913,7 +2933,31 @@ class Laporan extends BaseController
             UPLOAD_ERR_NO_TMP_DIR => 'Folder temporary upload tidak ditemukan.',
             UPLOAD_ERR_CANT_WRITE => 'Gagal menulis file ke disk.',
             UPLOAD_ERR_EXTENSION => 'Upload dihentikan oleh ekstensi PHP.',
-            default => 'Error upload tidak dikenal (code: ' . $errorCode . ').',
+            default => 'Terjadi kesalahan saat unggah file.',
         };
+    }
+
+    private function resolveMataAnggaran(array $row): string
+    {
+        $db = db_connect();
+        if (! $db->tableExists('mst_mata_anggaran')) {
+            return '7717.RBI.004.900.A.524111';
+        }
+
+        $mataAnggaranId = (int) ($row['mata_anggaran_id'] ?? 0);
+        if ($mataAnggaranId > 0) {
+            $ma = $db->table('mst_mata_anggaran')->where('id', $mataAnggaranId)->get()->getRowArray();
+            if (is_array($ma) && ! empty($ma['mata_anggaran'])) {
+                return (string) $ma['mata_anggaran'];
+            }
+        }
+
+        // Fallback to active Mata Anggaran
+        $activeMa = $db->table('mst_mata_anggaran')->where('status', 'aktif')->orderBy('id', 'DESC')->get()->getRowArray();
+        if (is_array($activeMa) && ! empty($activeMa['mata_anggaran'])) {
+            return (string) $activeMa['mata_anggaran'];
+        }
+
+        return '7717.RBI.004.900.A.524111';
     }
 }

@@ -78,7 +78,7 @@
         <tr>
             <td>MAK</td>
             <td>:</td>
-            <td>7717.RBI.004.900.A.524111</td>
+            <td><?= esc($mata_anggaran ?? '7717.RBI.004.900.A.524111'); ?></td>
         </tr>
         <tr>
             <td>URAIAN</td>

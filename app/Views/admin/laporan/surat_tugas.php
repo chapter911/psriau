@@ -132,6 +132,18 @@
                         </select>
                         <small class="text-muted mt-1 d-block">Pilih kop surat yang akan digunakan untuk SPT ini.</small>
                     </div>
+                    <div class="form-group">
+                        <label for="verify_mata_anggaran" class="font-weight-bold mb-1">Mata Anggaran (MAK) <span class="text-danger">*</span></label>
+                        <select class="form-control" id="verify_mata_anggaran" name="mata_anggaran_id" required>
+                            <option value="">-- Pilih Mata Anggaran --</option>
+                            <?php foreach ($mata_anggaran_list ?? [] as $ma): ?>
+                                <option value="<?= (int) $ma['id']; ?>" <?= strtolower((string) ($ma['status'] ?? '')) === 'aktif' ? 'selected data-default="1"' : ''; ?>>
+                                    <?= esc($ma['mata_anggaran']); ?> <?= strtolower((string) ($ma['status'] ?? '')) === 'aktif' ? '(Aktif)' : ''; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="text-muted mt-1 d-block">Pilih mata anggaran (MAK) yang digunakan untuk perjalanan dinas ini.</small>
+                    </div>
                     <div class="form-group mb-0">
                         <label for="verify_tanggal_ttd" class="font-weight-bold mb-1">Tanggal Tanda Tangan <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="verify_tanggal_ttd" name="tanggal_tanda_tangan" required onfocus="this.showPicker()">
@@ -408,6 +420,7 @@
                 const dasarStr = $btn.attr('data-dasar') || '[]';
                 const tgl = $btn.data('tgl') || '';
                 const kopSuratId = String($btn.attr('data-kop-surat-id') || '0');
+                const mataAnggaranId = String($btn.attr('data-mata-anggaran-id') || '0');
 
                 $formVerify.attr('action', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/verify');
                 $('#verify_nomor_surat').val(nomor);
@@ -421,6 +434,17 @@
                         $('#verify_kop_surat').val(defaultOpt.val());
                     } else {
                         $('#verify_kop_surat').val('');
+                    }
+                }
+
+                if (mataAnggaranId !== '0') {
+                    $('#verify_mata_anggaran').val(mataAnggaranId);
+                } else {
+                    const defaultMaOpt = $('#verify_mata_anggaran option[data-default="1"]');
+                    if (defaultMaOpt.length) {
+                        $('#verify_mata_anggaran').val(defaultMaOpt.val());
+                    } else {
+                        $('#verify_mata_anggaran').val('');
                     }
                 }
 
