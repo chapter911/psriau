@@ -480,6 +480,17 @@ class Laporan extends BaseController
                     return trim((string) ($item['nama'] ?? ''));
                 }, $pelaksanaRows), static fn (string $name): bool => $name !== ''));
 
+                if ($pelaksanaNames !== []) {
+                    $items = [];
+                    foreach ($pelaksanaNames as $idx => $pName) {
+                        $num = $idx + 1;
+                        $items[] = '<div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; font-size: 0.88rem; line-height: 1.6;" title="' . esc($pName, 'attr') . '">' . $num . '. ' . esc($pName) . '</div>';
+                    }
+                    $row['pelaksana_names_html'] = '<div class="pelaksana-list">' . implode('', $items) . '</div>';
+                } else {
+                    $row['pelaksana_names_html'] = '-';
+                }
+
                 $periodeMulai = trim((string) ($row['periode_mulai'] ?? ''));
                 $periodeSelesai = trim((string) ($row['periode_selesai'] ?? ''));
                 $periodeLabel = trim($periodeMulai . ' s.d ' . $periodeSelesai);
@@ -555,12 +566,12 @@ class Laporan extends BaseController
 
                 if ($existingVerifiedFile !== '') {
                     $verifiedUrl = media_url($row['verified_spt_path']);
-                    $uploadSptTtdHtml = '<div class="btn-group btn-group-sm" role="group">' .
-                        '<a href="' . $verifiedUrl . '" class="btn btn-xs btn-success" target="_blank" rel="noopener noreferrer" title="Lihat SPT TTD (PDF)"><i class="fas fa-file-pdf mr-1"></i> Lihat PDF</a>' .
-                        '<button type="button" class="btn btn-xs btn-outline-primary btn-upload-spt-pdf" data-url="' . $uploadVerifiedUrl . '" data-nomor="' . $nomorSuratAttr . '" title="Upload Ulang SPT TTD (PDF)"><i class="fas fa-sync-alt"></i></button>' .
+                    $uploadSptTtdHtml = '<div class="btn-group btn-group-sm d-inline-flex" role="group">' .
+                        '<a href="' . $verifiedUrl . '" class="btn btn-xs btn-success text-white btn-table-action shadow-sm" target="_blank" rel="noopener noreferrer" title="Lihat SPT TTD (PDF)"><i class="fas fa-file-pdf mr-1"></i> Lihat PDF</a>' .
+                        '<button type="button" class="btn btn-xs btn-outline-primary btn-upload-spt-pdf" data-url="' . $uploadVerifiedUrl . '" data-nomor="' . $nomorSuratAttr . '" title="Upload Ulang SPT TTD (PDF)" style="height:38px;"><i class="fas fa-sync-alt"></i></button>' .
                         '</div>';
                 } else {
-                    $uploadSptTtdHtml = '<button type="button" class="btn btn-xs btn-primary btn-upload-spt-pdf" data-url="' . $uploadVerifiedUrl . '" data-nomor="' . $nomorSuratAttr . '" title="Upload SPT TTD (Wajib PDF)"><i class="fas fa-upload mr-1"></i> Upload PDF</button>';
+                    $uploadSptTtdHtml = '<button type="button" class="btn btn-xs btn-primary btn-upload-spt-pdf btn-table-action shadow-sm" data-url="' . $uploadVerifiedUrl . '" data-nomor="' . $nomorSuratAttr . '" title="Upload SPT TTD (Wajib PDF)"><i class="fas fa-upload mr-1"></i> Upload PDF</button>';
                 }
                 $row['upload_spt_ttd_html'] = $uploadSptTtdHtml;
                 $row['upload_verified_html'] = $uploadSptTtdHtml;
@@ -617,30 +628,25 @@ class Laporan extends BaseController
                     $statusVerifikasiHtml = '<span class="badge badge-warning px-2 py-1 shadow-sm text-dark" style="font-size:0.78rem;"><i class="fas fa-clock mr-1"></i> Belum Verifikasi</span>';
                 }
 
-                $fileSptHtml = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-spt') . '" class="btn btn-xs btn-outline-danger px-2 font-weight-bold" title="Cetak Surat Tugas (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak SPT</a>';
+                $fileSptHtml = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-spt') . '" class="btn btn-xs btn-danger text-white btn-table-action shadow-sm" title="Cetak Surat Tugas (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak SPT</a>';
 
                 $kopSuratIdAttr = (int) ($row['kop_surat_id'] ?? 0);
                 $mataAnggaranIdAttr = (int) ($row['mata_anggaran_id'] ?? 0);
+                $rincianBiayaAttr = esc((string) ($row['rincian_biaya_json'] ?? '{}'), 'attr');
                 $aksiSptHtml = '';
                 if ($canVerifyRow) {
-                    if ($isVerified === 1) {
-                        // Button to edit verification
-                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" title="Ubah Verifikasi"><i class="fas fa-edit mr-1"></i> Edit</button>';
-                    } else {
-                        // Button to perform verification
-                        $aksiSptHtml = '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt font-weight-bold" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
-                    }
+                    $dasarAttr = $isVerified === 1 ? esc(json_encode($dasarTexts), 'attr') : '[]';
+                    $tglAttr = $isVerified === 1 ? esc($tglTtd, 'attr') : '';
+                    $aksiSptHtml = '<button type="button" class="btn btn-xs btn-warning text-dark btn-verify-spt btn-table-action shadow-sm" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . $dasarAttr . '" data-tgl="' . $tglAttr . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" data-rincian-biaya="' . $rincianBiayaAttr . '" title="Update Verifikasi"><i class="fas fa-edit mr-1"></i> Update</button>';
                 } else {
                     $aksiSptHtml = '<span class="text-muted" style="font-size:0.8rem;"><i class="fas fa-lock mr-1"></i> No Access</span>';
                 }
 
                 $verificationStatusHtml = $statusVerifikasiHtml . '<div class="mt-1 d-flex justify-content-center align-items-center" style="gap: 4px;">' . $fileSptHtml;
                 if ($canVerifyRow) {
-                    if ($isVerified === 1) {
-                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-outline-warning px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . esc(json_encode($dasarTexts), 'attr') . '" data-tgl="' . esc($tglTtd, 'attr') . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" title="Ubah Verifikasi"><i class="fas fa-edit"></i> Edit</button>';
-                    } else {
-                        $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-primary px-2 btn-verify-spt" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="[]" data-tgl="" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" title="Lakukan Verifikasi"><i class="fas fa-check-double mr-1"></i> Verifikasi</button>';
-                    }
+                    $dasarAttr = $isVerified === 1 ? esc(json_encode($dasarTexts), 'attr') : '[]';
+                    $tglAttr = $isVerified === 1 ? esc($tglTtd, 'attr') : '';
+                    $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-warning text-dark btn-verify-spt btn-table-action shadow-sm" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . $dasarAttr . '" data-tgl="' . $tglAttr . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" data-rincian-biaya="' . $rincianBiayaAttr . '" title="Update Verifikasi"><i class="fas fa-edit mr-1"></i> Update</button>';
                 }
                 $verificationStatusHtml .= '</div>';
 
@@ -648,11 +654,11 @@ class Laporan extends BaseController
                 $row['status_verifikasi_html'] = $statusVerifikasiHtml;
                 $row['file_spt_html'] = $fileSptHtml;
                 
-                $row['daftar_nominatif_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-daftar-nominatif') . '" class="btn btn-xs btn-outline-success px-2 font-weight-bold" title="Cetak Daftar Nominatif (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak Nominatif</a>';
+                $row['daftar_nominatif_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-daftar-nominatif') . '" class="btn btn-xs btn-success text-white btn-table-action shadow-sm" title="Cetak Daftar Nominatif (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak Nominatif</a>';
                 
-                $row['sppd_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-sppd') . '" class="btn btn-xs btn-outline-primary px-2 font-weight-bold" title="Cetak SPPD (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak SPPD</a>';
+                $row['sppd_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-sppd') . '" class="btn btn-xs btn-primary text-white btn-table-action shadow-sm" title="Cetak SPPD (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak SPPD</a>';
                 
-                $row['kwitansi_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-kwitansi') . '" class="btn btn-xs btn-outline-info px-2 font-weight-bold" title="Cetak Kwitansi (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak Kwitansi</a>';
+                $row['kwitansi_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-kwitansi') . '" class="btn btn-xs btn-info text-white btn-table-action shadow-sm" title="Cetak Kwitansi (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak Kwitansi</a>';
                 
                 $row['aksi_spt_html'] = $aksiSptHtml;
 
@@ -718,11 +724,65 @@ class Laporan extends BaseController
             return redirect()->back()->with('error', 'Tanggal tanda tangan wajib diisi.');
         }
 
+        $transportStarts   = $this->request->getPost('transport_start_date') ?: [];
+        $transportEnds     = $this->request->getPost('transport_end_date') ?: [];
+        $transportNominals = $this->request->getPost('transport_nominal') ?: [];
+        $transportKets     = $this->request->getPost('transport_ket') ?: [];
+
+        $transportList = [];
+        if (is_array($transportStarts)) {
+            foreach ($transportStarts as $idx => $tStart) {
+                $tStart = trim((string) $tStart);
+                $tEnd   = trim((string) ($transportEnds[$idx] ?? ''));
+                $tNomRaw = preg_replace('/\D/', '', (string) ($transportNominals[$idx] ?? ''));
+                $tNom   = $tNomRaw !== '' ? (int) $tNomRaw : 0;
+                $tKet   = trim((string) ($transportKets[$idx] ?? ''));
+                if ($tStart !== '' || $tEnd !== '' || $tNom > 0 || $tKet !== '') {
+                    $transportList[] = [
+                        'tgl_mulai'   => $tStart,
+                        'tgl_selesai' => $tEnd,
+                        'nominal'     => $tNom,
+                        'keterangan'  => $tKet,
+                    ];
+                }
+            }
+        }
+
+        $penginapanStarts   = $this->request->getPost('penginapan_start_date') ?: [];
+        $penginapanEnds     = $this->request->getPost('penginapan_end_date') ?: [];
+        $penginapanNominals = $this->request->getPost('penginapan_nominal') ?: [];
+        $penginapanKets     = $this->request->getPost('penginapan_ket') ?: [];
+
+        $penginapanList = [];
+        if (is_array($penginapanStarts)) {
+            foreach ($penginapanStarts as $idx => $pStart) {
+                $pStart = trim((string) $pStart);
+                $pEnd   = trim((string) ($penginapanEnds[$idx] ?? ''));
+                $pNomRaw = isset($penginapanNominals[$idx]) ? preg_replace('/\D/', '', (string) $penginapanNominals[$idx]) : '';
+                $pNomVal = $pNomRaw !== '' ? (int) $pNomRaw : null;
+                $pKet   = trim((string) ($penginapanKets[$idx] ?? ''));
+                if ($pStart !== '' || $pEnd !== '' || $pNomVal !== null || $pKet !== '') {
+                    $penginapanList[] = [
+                        'tgl_mulai'   => $pStart,
+                        'tgl_selesai' => $pEnd,
+                        'nominal'     => $pNomVal,
+                        'keterangan'  => $pKet,
+                    ];
+                }
+            }
+        }
+
+        $rincianBiaya = [
+            'transport'  => $transportList,
+            'penginapan' => $penginapanList,
+        ];
+
         $updateData = [
             'nomor_surat_tugas' => $nomorSurat,
             'dasar_spt_ids_json' => json_encode($dasarInputs, JSON_UNESCAPED_UNICODE),
             'tanggal_tanda_tangan' => $tglTtd,
             'is_verified' => 1,
+            'rincian_biaya_json' => json_encode($rincianBiaya, JSON_UNESCAPED_UNICODE),
         ];
         if ($kopSuratId > 0) {
             $updateData['kop_surat_id'] = $kopSuratId;
@@ -1080,6 +1140,7 @@ class Laporan extends BaseController
                 'diketahui_oleh' => $this->decodeJsonObject((string) ($row['diketahui_oleh_json'] ?? '{}')),
                 'dasar_spt' => $dasarRows,
                 'kop_surat_id' => isset($row['kop_surat_id']) ? (int) $row['kop_surat_id'] : null,
+                'mata_anggaran' => $this->resolveMataAnggaran($row),
             ];
         }
 
@@ -1131,6 +1192,7 @@ class Laporan extends BaseController
             'tanggal_tanda_tangan' => (string) ($row['tanggal_tanda_tangan'] ?? ''),
             'diketahui_oleh' => $this->decodeJsonObject((string) ($row['diketahui_oleh_json'] ?? '{}')),
             'dasar_spt' => $dasarRows,
+            'mata_anggaran' => $this->resolveMataAnggaran($row),
         ];
 
         return view('admin/laporan/surat_tugas_pdf', [
@@ -2941,7 +3003,7 @@ class Laporan extends BaseController
     {
         $db = db_connect();
         if (! $db->tableExists('mst_mata_anggaran')) {
-            return '7717.RBI.004.900.A.524111';
+            return '';
         }
 
         $mataAnggaranId = (int) ($row['mata_anggaran_id'] ?? 0);
@@ -2952,12 +3014,6 @@ class Laporan extends BaseController
             }
         }
 
-        // Fallback to active Mata Anggaran
-        $activeMa = $db->table('mst_mata_anggaran')->where('status', 'aktif')->orderBy('id', 'DESC')->get()->getRowArray();
-        if (is_array($activeMa) && ! empty($activeMa['mata_anggaran'])) {
-            return (string) $activeMa['mata_anggaran'];
-        }
-
-        return '7717.RBI.004.900.A.524111';
+        return '';
     }
 }

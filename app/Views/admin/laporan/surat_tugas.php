@@ -11,6 +11,25 @@
         word-wrap: break-word;
         max-width: 280px;
     }
+    .btn-table-action {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 105px !important;
+        min-width: 105px !important;
+        max-width: 105px !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+        padding: 2px 4px !important;
+        box-sizing: border-box !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+    }
 </style>
 
 
@@ -103,50 +122,107 @@
             </div>
             <form id="form-verify-spt" method="post" action="">
                 <?= csrf_field(); ?>
-                <div class="modal-body py-4">
-                    <div class="form-group">
-                        <label for="verify_nomor_surat" class="font-weight-bold mb-1">Nomor Surat Tugas <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="verify_nomor_surat" name="nomor_surat_tugas" required placeholder="Contoh: 132/SPT/Gs7/2026">
-                    </div>
-                    <div class="form-group">
-                        <label class="font-weight-bold mb-1">Dasar SPT (Legal Basis) <span class="text-danger">*</span></label>
-                        <div id="dasar-spt-container">
-                            <!-- Dynamic inputs will be inserted here -->
+                <div class="modal-body py-3">
+                    <ul class="nav nav-tabs font-weight-bold" id="verifyTab" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="verifikasi-tab" data-toggle="tab" href="#tab-verifikasi" role="tab" aria-controls="tab-verifikasi" aria-selected="true">
+                                <i class="fas fa-file-alt mr-1"></i> Data Verifikasi & SPT
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-primary" id="biaya-tab" data-toggle="tab" href="#tab-biaya" role="tab" aria-controls="tab-biaya" aria-selected="false">
+                                <i class="fas fa-calculator mr-1"></i> Rincian Biaya (Transport & Penginapan)
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content pt-3" id="verifyTabContent">
+                        <!-- TAB 1: DATA VERIFIKASI & SPT -->
+                        <div class="tab-pane fade show active" id="tab-verifikasi" role="tabpanel" aria-labelledby="verifikasi-tab">
+                            <div class="form-group">
+                                <label for="verify_nomor_surat" class="font-weight-bold mb-1">Nomor Surat Tugas <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="verify_nomor_surat" name="nomor_surat_tugas" required placeholder="Contoh: 132/SPT/Gs7/2026">
+                            </div>
+                            <div class="form-group">
+                                <label class="font-weight-bold mb-1">Dasar SPT (Legal Basis) <span class="text-danger">*</span></label>
+                                <div id="dasar-spt-container">
+                                    <!-- Dynamic inputs inserted here -->
+                                </div>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-success font-weight-bold" id="btn-add-dasar">
+                                        <i class="fas fa-plus mr-1"></i> Tambah Dasar SPT
+                                    </button>
+                                </div>
+                                <small class="text-muted mt-1 d-block">Masukkan dasar hukum/dasar tugas SPT secara manual.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="verify_kop_surat" class="font-weight-bold mb-1">Kop Surat <span class="text-danger">*</span></label>
+                                <select class="form-control" id="verify_kop_surat" name="kop_surat_id" required>
+                                    <option value="">-- Pilih Kop Surat --</option>
+                                    <?php foreach ($kop_surat_list ?? [] as $ks): ?>
+                                        <option value="<?= (int) $ks['id']; ?>" <?= (int) ($ks['is_active'] ?? 0) === 1 ? 'selected data-default="1"' : ''; ?>>
+                                            <?= esc($ks['title']); ?> <?= (int) ($ks['is_active'] ?? 0) === 1 ? '(Aktif)' : ''; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted mt-1 d-block">Pilih kop surat yang akan digunakan untuk SPT ini.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="verify_mata_anggaran" class="font-weight-bold mb-1">Mata Anggaran (MAK) <span class="text-danger">*</span></label>
+                                <select class="form-control" id="verify_mata_anggaran" name="mata_anggaran_id" required>
+                                    <option value="">-- Pilih Mata Anggaran --</option>
+                                    <?php foreach ($mata_anggaran_list ?? [] as $ma): ?>
+                                        <option value="<?= (int) $ma['id']; ?>" <?= strtolower((string) ($ma['status'] ?? '')) === 'aktif' ? 'selected data-default="1"' : ''; ?>>
+                                            <?= esc($ma['mata_anggaran']); ?> <?= strtolower((string) ($ma['status'] ?? '')) === 'aktif' ? '(Aktif)' : ''; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted mt-1 d-block">Pilih mata anggaran (MAK) yang digunakan untuk perjalanan dinas ini.</small>
+                            </div>
+                            <div class="form-group mb-0">
+                                <label for="verify_tanggal_ttd" class="font-weight-bold mb-1">Tanggal Tanda Tangan <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="verify_tanggal_ttd" name="tanggal_tanda_tangan" required onfocus="this.showPicker()">
+                            </div>
                         </div>
-                        <div class="mt-2">
-                            <button type="button" class="btn btn-sm btn-outline-success font-weight-bold" id="btn-add-dasar">
-                                <i class="fas fa-plus mr-1"></i> Tambah Dasar SPT
-                            </button>
+
+                        <!-- TAB 2: RINCIAN BIAYA (TRANSPORT & PENGINAPAN) -->
+                        <div class="tab-pane fade" id="tab-biaya" role="tabpanel" aria-labelledby="biaya-tab">
+                            <!-- CARD BIAYA TRANSPORT -->
+                            <div class="card card-outline card-info mb-3 shadow-sm">
+                                <div class="card-header py-2 bg-light">
+                                    <h6 class="card-title mb-0 font-weight-bold text-info"><i class="fas fa-car mr-1"></i> Biaya Transport / Sewa Kendaraan</h6>
+                                </div>
+                                <div class="card-body py-3">
+                                    <div id="transport-container">
+                                        <!-- Dynamic transport rows will be added here -->
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-success font-weight-bold" id="btn-add-transport">
+                                            <i class="fas fa-plus mr-1"></i> Tambah Biaya Transport
+                                        </button>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle mr-1"></i> Tambahkan baris baru jika terdapat perbedaan tanggal/tarif transport.</small>
+                                </div>
+                            </div>
+
+                            <!-- CARD BIAYA PENGINAPAN -->
+                            <div class="card card-outline card-purple mb-2 shadow-sm" style="border-top-color: #6f42c1;">
+                                <div class="card-header py-2 bg-light">
+                                    <h6 class="card-title mb-0 font-weight-bold" style="color: #6f42c1;"><i class="fas fa-hotel mr-1"></i> Biaya Penginapan</h6>
+                                </div>
+                                <div class="card-body py-3">
+                                    <div id="penginapan-container">
+                                        <!-- Dynamic penginapan rows will be added here -->
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-success font-weight-bold" id="btn-add-penginapan">
+                                            <i class="fas fa-plus mr-1"></i> Tambah Biaya Penginapan
+                                        </button>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle mr-1"></i> Tambahkan baris baru jika terdapat perbedaan tanggal/tarif hotel. Kosongkan jika menggunakan tarif master.</small>
+                                </div>
+                            </div>
                         </div>
-                        <small class="text-muted mt-1 d-block">Masukkan dasar hukum/dasar tugas SPT secara manual. Gunakan tombol + untuk menambah.</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="verify_kop_surat" class="font-weight-bold mb-1">Kop Surat <span class="text-danger">*</span></label>
-                        <select class="form-control" id="verify_kop_surat" name="kop_surat_id" required>
-                            <option value="">-- Pilih Kop Surat --</option>
-                            <?php foreach ($kop_surat_list ?? [] as $ks): ?>
-                                <option value="<?= (int) $ks['id']; ?>" <?= (int) ($ks['is_active'] ?? 0) === 1 ? 'selected data-default="1"' : ''; ?>>
-                                    <?= esc($ks['title']); ?> <?= (int) ($ks['is_active'] ?? 0) === 1 ? '(Aktif)' : ''; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <small class="text-muted mt-1 d-block">Pilih kop surat yang akan digunakan untuk SPT ini.</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="verify_mata_anggaran" class="font-weight-bold mb-1">Mata Anggaran (MAK) <span class="text-danger">*</span></label>
-                        <select class="form-control" id="verify_mata_anggaran" name="mata_anggaran_id" required>
-                            <option value="">-- Pilih Mata Anggaran --</option>
-                            <?php foreach ($mata_anggaran_list ?? [] as $ma): ?>
-                                <option value="<?= (int) $ma['id']; ?>" <?= strtolower((string) ($ma['status'] ?? '')) === 'aktif' ? 'selected data-default="1"' : ''; ?>>
-                                    <?= esc($ma['mata_anggaran']); ?> <?= strtolower((string) ($ma['status'] ?? '')) === 'aktif' ? '(Aktif)' : ''; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <small class="text-muted mt-1 d-block">Pilih mata anggaran (MAK) yang digunakan untuk perjalanan dinas ini.</small>
-                    </div>
-                    <div class="form-group mb-0">
-                        <label for="verify_tanggal_ttd" class="font-weight-bold mb-1">Tanggal Tanda Tangan <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="verify_tanggal_ttd" name="tanggal_tanda_tangan" required onfocus="this.showPicker()">
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-2" style="border-top: 1px solid #e9eef5;">
@@ -245,9 +321,9 @@
                 }
             },
             { 
-                data: 'pelaksana_names_label',
+                data: 'pelaksana_names_html',
                 render: function (data) {
-                    return data ? $('<div/>').text(data).html() : '-';
+                    return data ? data : '-';
                 }
             },
             {
@@ -413,6 +489,105 @@
                 }
             });
 
+            function formatRibuan(val) {
+                if (val === undefined || val === null || val === '') return '';
+                const raw = String(val).replace(/\D/g, '');
+                if (raw === '') return '';
+                return new Intl.NumberFormat('id-ID').format(raw);
+            }
+
+            $(document).on('input', '.input-currency', function () {
+                this.value = formatRibuan(this.value);
+            });
+
+            // Transport dynamic rows
+            function addTransportInputRow(data) {
+                data = data || {};
+                const tStart = data.tgl_mulai || '';
+                const tEnd = data.tgl_selesai || '';
+                const tNom = data.nominal !== undefined && data.nominal !== null ? data.nominal : '';
+
+                const rowHtml = `
+                    <div class="transport-row p-2 mb-2 bg-light border rounded">
+                        <div class="form-row align-items-center">
+                            <div class="col-md-4 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Mulai Tgl</label>
+                                <input type="date" class="form-control form-control-sm" name="transport_start_date[]" value="${$('<div/>').text(tStart).html()}" onfocus="this.showPicker()">
+                            </div>
+                            <div class="col-md-4 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Selesai Tgl</label>
+                                <input type="date" class="form-control form-control-sm" name="transport_end_date[]" value="${$('<div/>').text(tEnd).html()}" onfocus="this.showPicker()">
+                            </div>
+                            <div class="col-md-3 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Tarif / Hari (Rp)</label>
+                                <input type="text" class="form-control form-control-sm input-currency" name="transport_nominal[]" placeholder="Rp per hari" value="${$('<div/>').text(formatRibuan(tNom)).html()}">
+                            </div>
+                            <div class="col-md-1 mb-0 text-center pt-3">
+                                <button type="button" class="btn btn-xs btn-outline-danger btn-remove-transport" title="Hapus Baris"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $('#transport-container').append(rowHtml);
+            }
+
+            // Penginapan dynamic rows
+            function addPenginapanInputRow(data) {
+                data = data || {};
+                const pStart = data.tgl_mulai || '';
+                const pEnd = data.tgl_selesai || '';
+                const pNom = data.nominal !== undefined && data.nominal !== null ? data.nominal : '';
+
+                const rowHtml = `
+                    <div class="penginapan-row p-2 mb-2 bg-light border rounded">
+                        <div class="form-row align-items-center">
+                            <div class="col-md-4 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Mulai Tgl</label>
+                                <input type="date" class="form-control form-control-sm" name="penginapan_start_date[]" value="${$('<div/>').text(pStart).html()}" onfocus="this.showPicker()">
+                            </div>
+                            <div class="col-md-4 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Selesai Tgl</label>
+                                <input type="date" class="form-control form-control-sm" name="penginapan_end_date[]" value="${$('<div/>').text(pEnd).html()}" onfocus="this.showPicker()">
+                            </div>
+                            <div class="col-md-3 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Tarif / Malam (Rp)</label>
+                                <input type="text" class="form-control form-control-sm input-currency" name="penginapan_nominal[]" placeholder="Kosongkan utk master" value="${$('<div/>').text(formatRibuan(pNom)).html()}">
+                            </div>
+                            <div class="col-md-1 mb-0 text-center pt-3">
+                                <button type="button" class="btn btn-xs btn-outline-danger btn-remove-penginapan" title="Hapus Baris"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $('#penginapan-container').append(rowHtml);
+            }
+
+            // Transport Add & Remove handlers
+            $('#btn-add-transport').off('click').on('click', function() {
+                addTransportInputRow({});
+            });
+            $('#transport-container').off('click', '.btn-remove-transport').on('click', '.btn-remove-transport', function() {
+                const rowsCount = $('#transport-container .transport-row').length;
+                if (rowsCount > 1) {
+                    $(this).closest('.transport-row').remove();
+                } else {
+                    $('#transport-container .transport-row input').val('');
+                }
+            });
+
+            // Penginapan Add & Remove handlers
+            $('#btn-add-penginapan').off('click').on('click', function() {
+                addPenginapanInputRow({});
+            });
+            $('#penginapan-container').off('click', '.btn-remove-penginapan').on('click', '.btn-remove-penginapan', function() {
+                const rowsCount = $('#penginapan-container .penginapan-row').length;
+                if (rowsCount > 1) {
+                    $(this).closest('.penginapan-row').remove();
+                } else {
+                    $('#penginapan-container .penginapan-row input').val('');
+                }
+            });
+
             $table.on('click', '.btn-verify-spt', function () {
                 const $btn = $(this);
                 const id = $btn.data('id');
@@ -421,6 +596,13 @@
                 const tgl = $btn.data('tgl') || '';
                 const kopSuratId = String($btn.attr('data-kop-surat-id') || '0');
                 const mataAnggaranId = String($btn.attr('data-mata-anggaran-id') || '0');
+                const rincianBiayaStr = $btn.attr('data-rincian-biaya') || '{}';
+                let rincian = {};
+                try {
+                    rincian = JSON.parse(rincianBiayaStr);
+                } catch (e) {
+                    rincian = {};
+                }
 
                 $formVerify.attr('action', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/verify');
                 $('#verify_nomor_surat').val(nomor);
@@ -448,6 +630,46 @@
                     }
                 }
 
+                // Populate Dynamic Transport Rows
+                const transportContainer = $('#transport-container');
+                transportContainer.empty();
+                let transportList = rincian.transport || [];
+                if (!Array.isArray(transportList) && rincian.transport_start_date) {
+                    transportList = [{
+                        tgl_mulai: rincian.transport_start_date,
+                        tgl_selesai: rincian.transport_end_date,
+                        nominal: rincian.transport_nominal,
+                        keterangan: ''
+                    }];
+                }
+                if (transportList.length === 0) {
+                    addTransportInputRow({});
+                } else {
+                    transportList.forEach(function(tItem) {
+                        addTransportInputRow(tItem);
+                    });
+                }
+
+                // Populate Dynamic Penginapan Rows
+                const penginapanContainer = $('#penginapan-container');
+                penginapanContainer.empty();
+                let penginapanList = rincian.penginapan || [];
+                if (!Array.isArray(penginapanList) && rincian.penginapan_start_date) {
+                    penginapanList = [{
+                        tgl_mulai: rincian.penginapan_start_date,
+                        tgl_selesai: rincian.penginapan_end_date,
+                        nominal: rincian.penginapan_nominal,
+                        keterangan: ''
+                    }];
+                }
+                if (penginapanList.length === 0) {
+                    addPenginapanInputRow({});
+                } else {
+                    penginapanList.forEach(function(pItem) {
+                        addPenginapanInputRow(pItem);
+                    });
+                }
+
                 let dasarTexts = [];
                 try {
                     dasarTexts = JSON.parse(dasarStr);
@@ -465,6 +687,9 @@
                         addDasarInputRow(text);
                     });
                 }
+
+                // Reset active tab to Tab 1
+                $('#verifikasi-tab').tab('show');
 
                 $modalVerify.modal('show');
             });

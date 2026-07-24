@@ -340,16 +340,39 @@
                         <div class="trip-section-title mb-2">Penanggung Jawab dan Pelaksana</div>
                         <div class="form-row">
                             <div class="form-group col-lg-12 col-md-12">
-                                <label>Nama Pelaksana (Bisa pilih lebih dari satu)</label>
-                                <select id="pelaksanaSelect" name="pelaksana_id[]" class="form-control" multiple required>
-                                    <?php foreach ($pegawaiOptions as $pegawai): ?>
-                                        <?php $pegawaiId = (int) ($pegawai['id'] ?? 0); ?>
-                                        <option value="<?= esc((string) $pegawaiId, 'attr'); ?>" <?= in_array($pegawaiId, $selectedPelaksana, true) ? 'selected' : ''; ?>>
-                                            <?= esc($formatPegawaiLabel((array) $pegawai)); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <small class="text-muted">Gunakan Ctrl/Cmd + klik untuk memilih lebih dari satu nama.</small>
+                                <label class="font-weight-bold">Nama Pelaksana <span class="text-danger">*</span></label>
+                                <?php if (!empty($selectedPelaksana)): ?>
+                                    <div class="pelaksana-readonly-wrapper">
+                                        <?php foreach ($selectedPelaksana as $pId): ?>
+                                            <?php 
+                                            $pegawaiMatch = null;
+                                            foreach ($pegawaiOptions as $peg) {
+                                                if ((int)($peg['id'] ?? 0) === (int)$pId) {
+                                                    $pegawaiMatch = $peg;
+                                                    break;
+                                                }
+                                            }
+                                            ?>
+                                            <?php if ($pegawaiMatch): ?>
+                                                <div class="form-control mb-2 bg-light font-weight-bold" style="height: auto; padding: 10px 14px; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                                    <i class="fas fa-user-check text-success mr-2"></i>
+                                                    <?= esc($formatPegawaiLabel((array) $pegawaiMatch)); ?>
+                                                </div>
+                                                <input type="hidden" name="pelaksana_id[]" value="<?= (int) $pId; ?>">
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block"><i class="fas fa-lock mr-1"></i> Daftar pelaksana bersifat tetap (tidak dapat diubah).</small>
+                                <?php else: ?>
+                                    <select id="pelaksanaSelect" name="pelaksana_id[]" class="form-control select2" multiple required data-placeholder="Pilih Nama Pelaksana...">
+                                        <?php foreach ($pegawaiOptions as $pegawai): ?>
+                                            <?php $pegawaiId = (int) ($pegawai['id'] ?? 0); ?>
+                                            <option value="<?= esc((string) $pegawaiId, 'attr'); ?>">
+                                                <?= esc($formatPegawaiLabel((array) $pegawai)); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                <?php endif; ?>
                             </div>
                             <div class="form-group col-lg-12 col-md-12">
                                 <label>Diketahui Oleh</label>
@@ -542,12 +565,7 @@
                                                     <div class="selected-photo-card__name" title="<?= esc($fileName); ?>"><?= esc($fileName); ?></div>
                                                     <div class="selected-photo-card__size"><?= esc(strtoupper($ext)); ?> File</div>
                                                     <div class="selected-photo-card__input-wrapper">
-                                                        <select name="existing_dokumen_transportasi[<?= (int) $fIdx; ?>]" class="form-control form-control-sm mb-1">
-                                                            <option value="">-- Pilih Transportasi (Opsional) --</option>
-                                                            <?php foreach (['Pesawat', 'Kereta Api', 'Kapal Laut', 'Bus / Travel', 'Lainnya'] as $tOption): ?>
-                                                                <option value="<?= $tOption; ?>" <?= ($doc['transportasi'] ?? '') === $tOption ? 'selected' : ''; ?>><?= $tOption; ?></option>
-                                                            <?php endforeach; ?>
-                                                        </select>
+                                                        <input type="text" name="existing_dokumen_transportasi[<?= (int) $fIdx; ?>]" class="form-control form-control-sm mb-1" placeholder="Keterangan / Transportasi (Opsional)..." value="<?= esc($doc['transportasi'] ?? ''); ?>">
                                                     </div>
                                                 </div>
                                                 <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-left: 8px;">
@@ -887,14 +905,7 @@
                     '<div class="selected-photo-card__name" title="' + item.name + '">' + item.name + '</div>' +
                     '<div class="selected-photo-card__size">' + item.sizeLabel + '</div>' +
                     '<div class="selected-photo-card__input-wrapper">' +
-                        '<select name="dokumen_transportasi[]" class="form-control form-control-sm mb-1 selected-doc-transport">' +
-                            '<option value="">-- Pilih Transportasi (Opsional) --</option>' +
-                            '<option value="Pesawat" ' + (item.transportasi === "Pesawat" ? "selected" : "") + '>Pesawat</option>' +
-                            '<option value="Kereta Api" ' + (item.transportasi === "Kereta Api" ? "selected" : "") + '>Kereta Api</option>' +
-                            '<option value="Kapal Laut" ' + (item.transportasi === "Kapal Laut" ? "selected" : "") + '>Kapal Laut</option>' +
-                            '<option value="Bus / Travel" ' + (item.transportasi === "Bus / Travel" ? "selected" : "") + '>Bus / Travel</option>' +
-                            '<option value="Lainnya" ' + (item.transportasi === "Lainnya" ? "selected" : "") + '>Lainnya</option>' +
-                        '</select>' +
+                        '<input type="text" name="dokumen_transportasi[]" class="form-control form-control-sm mb-1 selected-doc-transport" placeholder="Keterangan / Transportasi (Opsional)..." value="' + (item.transportasi ? $('<div/>').text(item.transportasi).html() : '') + '">' +
                     '</div>' +
                 '</div>' +
                 '<div class="selected-photo-card__remove-wrapper">' +
@@ -912,11 +923,9 @@
                 });
             }
 
-
-
             var transInput = card.querySelector('.selected-doc-transport');
             if (transInput) {
-                transInput.addEventListener('change', function () {
+                transInput.addEventListener('input', function () {
                     item.transportasi = this.value;
                 });
             }
@@ -989,6 +998,17 @@
     }
 
     updateCounter();
+})();
+</script>
+<script>
+(function() {
+    if (window.jQuery && $.fn.select2) {
+        $('#pelaksanaSelect').select2({
+            placeholder: 'Pilih Nama Pelaksana...',
+            allowClear: true,
+            width: '100%'
+        });
+    }
 })();
 </script>
 <script>

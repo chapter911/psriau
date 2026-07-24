@@ -78,7 +78,7 @@
         <tr>
             <td>MAK</td>
             <td>:</td>
-            <td><?= esc($mata_anggaran ?? '7717.RBI.004.900.A.524111'); ?></td>
+            <td><?= esc($mata_anggaran ?? ''); ?></td>
         </tr>
         <tr>
             <td>URAIAN</td>
@@ -154,6 +154,7 @@
             
             $kotaTujuan = esc($row['kota_tujuan'] ?? '-');
             $totalSemuaUangHarian = 0;
+            $totalSemuaTransport = 0;
             $totalSemuaPenginapan = 0;
             $totalSemuaTotal = 0;
             ?>
@@ -184,19 +185,51 @@
                         $tarifPenginapan = $biaya_master['penginapan_e3'] ?? 0;
                     }
                     
-                    // Calculations
-                    $nights = max(0, $days - 1);
+                    $rincianBiaya = json_decode((string)($row['rincian_biaya_json'] ?? '{}'), true) ?: [];
+
+                    // 1. Transport Calculation:
+                    $transportStart = $rincianBiaya['transport_start_date'] ?? '';
+                    $transportEnd   = $rincianBiaya['transport_end_date'] ?? '';
+                    $transportNominal = (int) ($rincianBiaya['transport_nominal'] ?? 0);
+
+                    $transportDays = 0;
+                    if (!empty($transportStart) && !empty($transportEnd)) {
+                        try {
+                            $tsStart = new \DateTime($transportStart);
+                            $tsEnd   = new \DateTime($transportEnd);
+                            $transportDays = max(0, $tsStart->diff($tsEnd)->days + 1);
+                        } catch (\Throwable $e) {}
+                    }
+                    $calcTransport = $transportDays * $transportNominal;
+
+                    // 2. Penginapan Calculation:
+                    $penginapanStart = $rincianBiaya['penginapan_start_date'] ?? '';
+                    $penginapanEnd   = $rincianBiaya['penginapan_end_date'] ?? '';
+                    $hasCustomPenginapanNominal = isset($rincianBiaya['penginapan_nominal']) && $rincianBiaya['penginapan_nominal'] !== null && $rincianBiaya['penginapan_nominal'] !== '';
+                    $penginapanNominalInput = $hasCustomPenginapanNominal ? (int) $rincianBiaya['penginapan_nominal'] : null;
+
+                    $penginapanNights = 0;
+                    if (!empty($penginapanStart) && !empty($penginapanEnd)) {
+                        try {
+                            $pStart = new \DateTime($penginapanStart);
+                            $pEnd   = new \DateTime($penginapanEnd);
+                            $penginapanNights = max(0, $pStart->diff($pEnd)->days);
+                        } catch (\Throwable $e) {}
+                    } else {
+                        $penginapanNights = max(0, $days - 1);
+                    }
+
+                    if ($hasCustomPenginapanNominal && $penginapanNominalInput >= 0) {
+                        $calcPenginapan = $penginapanNights * $penginapanNominalInput;
+                    } else {
+                        $calcPenginapan = $penginapanNights * (int) ($tarifPenginapan * 0.3);
+                    }
+
                     $calcHarian = ($biaya_master['harian'] ?? 0) * $days;
-                    
-                    // 30% of tariff if using 30% non-receipt rate? Or full rate? 
-                    // We'll use a fixed 30% calculation based on typical 30% rate since standard PMK for no receipt is 30%
-                    // However, wait... in the provided Excel, it was 75k per night. Let's just output standard tarif_eselon4 for now to show it's connected, or we can use exactly what they asked (just connect it). Let's use the full tariff for now. 
-                    // If they want 30%, they can adjust later. Actually, the Excel says Rp 1,425,000 (which might be 30% of something, or just an arbitrary allowance). Let's use 30% of the eselon tariff because it is very common for 'Penginapan tanpa bukti' (30% dari tarif hotel).
-                    $calcPenginapan = $tarifPenginapan * $nights * 0.3; // 30% rule for now as default approximation.
-                    
-                    $calcTotal = $calcHarian + $calcPenginapan;
+                    $calcTotal = $calcHarian + $calcTransport + $calcPenginapan;
                     
                     $totalSemuaUangHarian += $calcHarian;
+                    $totalSemuaTransport += $calcTransport;
                     $totalSemuaPenginapan += $calcPenginapan;
                     $totalSemuaTotal += $calcTotal;
                 ?>
@@ -214,7 +247,7 @@
                     <td class="text-center"><?= $tglKembali; ?></td>
                     <td class="text-center"><?= $lamaPerjalanan; ?></td>
                     <td class="text-center">Rp <?= number_format($calcHarian, 0, ',', '.'); ?></td>
-                    <td class="text-center">Rp -</td>
+                    <td class="text-center"><?= $calcTransport > 0 ? 'Rp ' . number_format($calcTransport, 0, ',', '.') : 'Rp -'; ?></td>
                     <td class="text-center">Rp <?= number_format($calcPenginapan, 0, ',', '.'); ?></td>
                     <td class="text-center">Rp <?= number_format($calcTotal, 0, ',', '.'); ?></td>
                 </tr>
@@ -230,7 +263,7 @@
             <tr>
                 <td colspan="7" class="text-right font-weight-bold">JUMLAH</td>
                 <td class="text-center font-weight-bold">Rp <?= number_format($totalSemuaUangHarian, 0, ',', '.'); ?></td>
-                <td class="text-center font-weight-bold">Rp -</td>
+                <td class="text-center font-weight-bold"><?= $totalSemuaTransport > 0 ? 'Rp ' . number_format($totalSemuaTransport, 0, ',', '.') : 'Rp -'; ?></td>
                 <td class="text-center font-weight-bold">Rp <?= number_format($totalSemuaPenginapan, 0, ',', '.'); ?></td>
                 <td class="text-center font-weight-bold">Rp <?= number_format($totalSemuaTotal, 0, ',', '.'); ?></td>
             </tr>

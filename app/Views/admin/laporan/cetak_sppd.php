@@ -302,7 +302,7 @@
                     <br>
                     <table style="width:100%; border:none; margin:0; padding:0;">
                         <tr><td style="border:none; padding:0; width:5%;">a.</td><td style="border:none; padding:0;">DIPA Satker Pelaksanaan Prasarana Strategis Riau</td></tr>
-                        <tr><td style="border:none; padding:0;">b.</td><td style="border:none; padding:0;"><?= esc($mata_anggaran ?? '7717.RBI.004.900.A.524111'); ?></td></tr>
+                        <tr><td style="border:none; padding:0;">b.</td><td style="border:none; padding:0;"><?= esc($mata_anggaran ?? ''); ?></td></tr>
                     </table>
                 </td>
             </tr>

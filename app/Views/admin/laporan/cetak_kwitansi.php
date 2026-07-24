@@ -161,11 +161,106 @@
             $tarifPenginapan = $biaya_master['penginapan_e3'] ?? 0;
         }
         
-        $nights = max(0, $days - 1);
+        $rincianBiaya = json_decode((string)($row['rincian_biaya_json'] ?? '{}'), true) ?: [];
+
+        // 1. Transport Calculation (Multi-row):
+        $transportList = $rincianBiaya['transport'] ?? [];
+        if (!is_array($transportList) && isset($rincianBiaya['transport_start_date'])) {
+            $transportList = [[
+                'tgl_mulai'   => $rincianBiaya['transport_start_date'] ?? '',
+                'tgl_selesai' => $rincianBiaya['transport_end_date'] ?? '',
+                'nominal'     => (int) ($rincianBiaya['transport_nominal'] ?? 0),
+                'keterangan'  => '',
+            ]];
+        }
+
+        $calcTransport = 0;
+        $transportDetails = [];
+        if (is_array($transportList) && count($transportList) > 0) {
+            foreach ($transportList as $tItem) {
+                $tStart = $tItem['tgl_mulai'] ?? '';
+                $tEnd   = $tItem['tgl_selesai'] ?? '';
+                $tNom   = (int) ($tItem['nominal'] ?? 0);
+                $tKet   = trim((string) ($tItem['keterangan'] ?? ''));
+
+                $tDays = 0;
+                if (!empty($tStart) && !empty($tEnd)) {
+                    try {
+                        $d1 = new \DateTime($tStart);
+                        $d2 = new \DateTime($tEnd);
+                        $tDays = max(0, $d1->diff($d2)->days + 1);
+                    } catch (\Throwable $e) {}
+                }
+                $sub = $tDays * $tNom;
+                $calcTransport += $sub;
+
+                if ($tDays > 0 || $tNom > 0) {
+                    $labelStr = $tDays . ' hari x Rp ' . number_format($tNom, 0, ',', '.');
+                    if ($tKet !== '') {
+                        $labelStr .= ' (' . esc($tKet) . ')';
+                    }
+                    $transportDetails[] = $labelStr;
+                }
+            }
+        }
+
+        // 2. Penginapan Calculation (Multi-row):
+        $penginapanList = $rincianBiaya['penginapan'] ?? [];
+        if (!is_array($penginapanList) && isset($rincianBiaya['penginapan_start_date'])) {
+            $penginapanList = [[
+                'tgl_mulai'   => $rincianBiaya['penginapan_start_date'] ?? '',
+                'tgl_selesai' => $rincianBiaya['penginapan_end_date'] ?? '',
+                'nominal'     => isset($rincianBiaya['penginapan_nominal']) ? (int) $rincianBiaya['penginapan_nominal'] : null,
+                'keterangan'  => '',
+            ]];
+        }
+
+        $calcPenginapan = 0;
+        $penginapanDetails = [];
+        if (is_array($penginapanList) && count($penginapanList) > 0) {
+            foreach ($penginapanList as $pItem) {
+                $pStart = $pItem['tgl_mulai'] ?? '';
+                $pEnd   = $pItem['tgl_selesai'] ?? '';
+                $pNomInput = isset($pItem['nominal']) && $pItem['nominal'] !== null && $pItem['nominal'] !== '' ? (int) $pItem['nominal'] : null;
+                $pKet   = trim((string) ($pItem['keterangan'] ?? ''));
+
+                $pNights = 0;
+                if (!empty($pStart) && !empty($pEnd)) {
+                    try {
+                        $d1 = new \DateTime($pStart);
+                        $d2 = new \DateTime($pEnd);
+                        $pNights = max(0, $d1->diff($d2)->days);
+                    } catch (\Throwable $e) {}
+                } else {
+                    $pNights = max(0, $days - 1);
+                }
+
+                if ($pNomInput !== null && $pNomInput >= 0) {
+                    $rate = $pNomInput;
+                } else {
+                    $rate = (int) ($tarifPenginapan * 0.3);
+                }
+
+                $sub = $pNights * $rate;
+                $calcPenginapan += $sub;
+
+                if ($pNights > 0 || $rate > 0) {
+                    $labelStr = $pNights . ' malam x Rp ' . number_format($rate, 0, ',', '.');
+                    if ($pKet !== '') {
+                        $labelStr .= ' (' . esc($pKet) . ')';
+                    }
+                    $penginapanDetails[] = $labelStr;
+                }
+            }
+        } else {
+            $pNights = max(0, $days - 1);
+            $rate = (int) ($tarifPenginapan * 0.3);
+            $calcPenginapan = $pNights * $rate;
+            $penginapanDetails[] = $pNights . ' malam x Rp ' . number_format($rate, 0, ',', '.');
+        }
+
         $calcHarian = ($biaya_master['harian'] ?? 0) * $days;
-        $calcPenginapan = $tarifPenginapan * $nights * 0.3; 
-        
-        $calcTotal = $calcHarian + $calcPenginapan;
+        $calcTotal = $calcHarian + $calcTransport + $calcPenginapan;
         $terbilangText = $terbilangHelper($calcTotal);
         ?>
 
@@ -195,11 +290,17 @@
                     <td>
                         BIAYA TRANSPORT :<br>
                         Sewa Kendaraan<br>
-                        0 hari x Rp 0
+                        <?php if (!empty($transportDetails)): ?>
+                            <?php foreach ($transportDetails as $td): ?>
+                                <?= $td; ?><br>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            0 hari x Rp 0
+                        <?php endif; ?>
                     </td>
                     <td class="text-right">
                         <br><br>
-                        Rp 0
+                        Rp <?= number_format($calcTransport, 0, ',', '.'); ?>
                     </td>
                     <td></td>
                 </tr>
@@ -221,7 +322,9 @@
                     <td>
                         UANG PENGINAPAN<br>
                         Uang penginapan selama :<br>
-                        <?= $nights; ?> malam x Rp <?= number_format($tarifPenginapan * 0.3, 0, ',', '.'); ?>
+                        <?php foreach ($penginapanDetails as $pd): ?>
+                            <?= $pd; ?><br>
+                        <?php endforeach; ?>
                     </td>
                     <td class="text-right">
                         <br><br>
@@ -260,7 +363,7 @@
                     Rp <?= number_format($calcTotal, 0, ',', '.'); ?><br><br>
                     Yang Menerima :<br>
                     <div style="height: 60px;"></div>
-                    <strong><?= esc($utama['nama']); ?></strong><br>
+                    <strong><?= strtoupper(esc($utama['nama'])); ?></strong><br>
                     NIP. <?= esc($utama['nip']); ?>
                 </td>
             </tr>
@@ -288,7 +391,7 @@
             <tr>
                 <td>Mata Anggaran</td>
                 <td>:</td>
-                <td><?= esc($mata_anggaran ?? '7717.RBI.004.900.A.524111'); ?></td>
+                <td><?= esc($mata_anggaran ?? ''); ?></td>
             </tr>
         </table>
 
@@ -357,13 +460,13 @@
                 </td>
                 <td>
                     Pekanbaru, <?= $tanggalTtd; ?><br>
-                    Pejabat Pembuat Komitmen<br>
-                    Pelaksanaan Prasarana Strategis Riau
+                    Yang Menerima,<br>
+                    <br>
                     
                     <div style="height: 60px;"></div>
                     
-                    <span style="text-decoration: underline;" class="font-weight-bold">NURHIDAYAT NUGROHO, S.Ars.</span><br>
-                    NIP. 19901221 201802 1 001
+                    <span style="text-decoration: underline;" class="font-weight-bold"><?= strtoupper(esc($utama['nama'])); ?></span><br>
+                    <?= !empty($utama['nip']) ? 'NIP. ' . esc($utama['nip']) : 'NIP. -'; ?>
                 </td>
             </tr>
         </table>
