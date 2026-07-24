@@ -186,7 +186,7 @@
                         <tr>
                             <td>Kode Nomor</td>
                             <td>:</td>
-                            <td></td>
+                            <td><?= esc($row['kode_nomor'] ?? '-'); ?></td>
                         </tr>
                         <tr>
                             <td>Nomor</td>

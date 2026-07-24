@@ -386,7 +386,7 @@
             <tr>
                 <td>Nomor Bukti</td>
                 <td>:</td>
-                <td></td>
+                <td><?= esc($row['kode_nomor'] ?? '-'); ?></td>
             </tr>
             <tr>
                 <td>Mata Anggaran</td>

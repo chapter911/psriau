@@ -23,6 +23,7 @@ class AppSettingModel extends Model
         'auto_logout_minutes',
         'preloader_duration_ms',
         'maintenance_mode',
+        'last_kode_nomor_sppd',
         'updated_at',
         'updated_by',
     ];

@@ -398,6 +398,7 @@ class Laporan extends BaseController
             'dasar_spt_options' => $dasarSptOptions,
             'kop_surat_list' => $kopSuratList,
             'mata_anggaran_list' => $mataAnggaranList,
+            'last_kode_nomor' => $this->getLastKodeNomorSetting(),
         ]);
     }
 
@@ -407,12 +408,14 @@ class Laporan extends BaseController
         $canVerifyLaporan = $this->canVerifyLaporan();
         $role = strtolower((string) session()->get('role'));
         $canUploadVerified = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        $isFullAccessRole = in_array($role, ['keuangan', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
         
         $pegawaiRows = $this->loadPegawaiOptions();
-        $currentPegawai = $this->resolveCurrentPegawai(
-            (string) (session()->get('fullName') ?: session()->get('username') ?: session()->get('name')), 
-            $pegawaiRows
-        );
+        $sessionUsername = trim((string) session()->get('username'));
+        $sessionFullName = trim((string) (session()->get('fullName') ?: session()->get('name')));
+
+        $currentPegawai = $this->resolveCurrentPegawai($sessionFullName, $pegawaiRows) 
+                       ?? $this->resolveCurrentPegawai($sessionUsername, $pegawaiRows);
         $currentPegawaiId = $currentPegawai ? (int) $currentPegawai['id'] : 0;
         
         return $this->respondPerjalananDinasDataTable(
@@ -420,7 +423,39 @@ class Laporan extends BaseController
                 ->select('laporan_perjalanan_dinas.*')
                 ->join('disposisi_perjalanan_dinas', 'disposisi_perjalanan_dinas.id = laporan_perjalanan_dinas.disposisi_id')
                 ->where('disposisi_perjalanan_dinas.status', 'disetujui'),
-            function ($builder): void {
+            function ($builder) use ($isFullAccessRole, $currentPegawaiId, $currentPegawai, $sessionUsername, $sessionFullName): void {
+                // If user is not Keuangan or Super Administrator, limit visibility to own data (where user is pelaksana or creator)
+                if (! $isFullAccessRole) {
+                    $builder->groupStart();
+                    $hasCondition = false;
+                    
+                    if ($currentPegawaiId > 0) {
+                        $builder->like('laporan_perjalanan_dinas.pelaksana_json', '"id":' . $currentPegawaiId . ',')
+                                ->orLike('laporan_perjalanan_dinas.pelaksana_json', '"id":' . $currentPegawaiId . '}')
+                                ->orLike('laporan_perjalanan_dinas.pelaksana_json', '"id":"' . $currentPegawaiId . '"');
+                        $hasCondition = true;
+                    }
+                    if ($currentPegawai && ! empty($currentPegawai['nip'])) {
+                        $builder->orLike('laporan_perjalanan_dinas.pelaksana_json', '"nip":"' . $currentPegawai['nip'] . '"')
+                                ->orLike('laporan_perjalanan_dinas.pelaksana_json', $currentPegawai['nip']);
+                        $hasCondition = true;
+                    }
+                    if ($sessionUsername !== '') {
+                        $builder->orWhere('laporan_perjalanan_dinas.creator_name', $sessionUsername);
+                        $hasCondition = true;
+                    }
+                    if ($sessionFullName !== '') {
+                        $builder->orWhere('laporan_perjalanan_dinas.creator_name', $sessionFullName);
+                        $hasCondition = true;
+                    }
+
+                    if (! $hasCondition) {
+                        // Fallback if no matching pegawai or session identity found: return no data
+                        $builder->where('1 = 0');
+                    }
+                    $builder->groupEnd();
+                }
+
                 $startDate = trim((string) $this->request->getGet('filter_start_date'));
                 $endDate = trim((string) $this->request->getGet('filter_end_date'));
                 $kota = trim((string) $this->request->getGet('filter_kota'));
@@ -506,53 +541,59 @@ class Laporan extends BaseController
 
                 // Differentiate Laporan Perjadin (dynamic PDF), Verified SPT, and Dokumen Pendukung
                 $dokumenHtml = '<div class="doc-btn-group">';
+
+                // 1. Uploaded Signed SPT / Verified File (always show if uploaded)
+                if (! empty($row['verified_spt_path'])) {
+                    $verifiedUrl = media_url($row['verified_spt_path']);
+                    $ext = strtolower(pathinfo((string) $row['verified_spt_path'], PATHINFO_EXTENSION));
+                    $icon = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'fa-file-image' : 'fa-file-signature';
+                    $btnClass = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'btn-warning text-white' : 'btn-success';
+                    $titleLabel = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'Lihat Foto Verified SPT/Perjadin' : 'Unduh Verified SPT (PDF)';
+                    $dokumenHtml .= '<a href="' . $verifiedUrl . '" class="btn ' . $btnClass . '" title="' . $titleLabel . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
+                }
+
+                // 2. Dynamic Laporan Perjadin PDF (if final)
                 if ($isFinal === 1) {
                     $dokumenHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/dokumen') . '" class="btn btn-danger" title="Laporan Perjadin (PDF)" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i></a>';
-                    
-                    if (! empty($row['verified_spt_path'])) {
-                        $verifiedUrl = media_url($row['verified_spt_path']);
-                        $ext = strtolower(pathinfo((string) $row['verified_spt_path'], PATHINFO_EXTENSION));
-                        $icon = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'fa-file-image' : 'fa-file-signature';
-                        $btnClass = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'btn-warning text-white' : 'btn-success';
-                        $titleLabel = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'Lihat Foto Verified SPT/Perjadin' : 'Unduh Verified SPT (PDF)';
-                        $dokumenHtml .= '<a href="' . $verifiedUrl . '" class="btn ' . $btnClass . '" title="' . $titleLabel . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
-                    }
+                }
 
-                    $docs = json_decode((string) ($row['dokumen_pendukung_json'] ?? '[]'), true);
-                    if (is_array($docs) && $docs !== []) {
-                        foreach ($docs as $doc) {
-                            $filePath = trim((string) ($doc['file_path'] ?? ''));
-                            $fileName = trim((string) ($doc['name'] ?? 'File'));
-                            if ($filePath !== '') {
-                                $docUrl = media_url($filePath);
-                                $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-                                
-                                $icon = 'fa-paperclip';
-                                $btnClass = 'btn-info';
-                                if ($ext === 'pdf') {
-                                    $icon = 'fa-file-pdf';
-                                    $btnClass = 'btn-danger';
-                                } elseif (in_array($ext, ['doc', 'docx'], true)) {
-                                    $icon = 'fa-file-word';
-                                    $btnClass = 'btn-primary';
-                                } elseif (in_array($ext, ['xls', 'xlsx'], true)) {
-                                    $icon = 'fa-file-excel';
-                                    $btnClass = 'btn-success';
-                                } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'], true)) {
-                                    $icon = 'fa-file-image';
-                                    $btnClass = 'btn-warning text-white';
-                                }
-                                
-                                 $keterangan = trim((string) ($doc['keterangan'] ?? ''));
-                                 $titleLabel = 'File Pendukung: ' . $fileName;
-                                 if ($keterangan !== '') {
-                                     $titleLabel .= ' - ' . $keterangan;
-                                 }
-                                 $dokumenHtml .= '<a href="' . $docUrl . '" class="btn ' . $btnClass . '" title="' . esc($titleLabel, 'attr') . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
+                // 3. Supporting Documents (dokumen_pendukung_json)
+                $docs = json_decode((string) ($row['dokumen_pendukung_json'] ?? '[]'), true);
+                if (is_array($docs) && $docs !== []) {
+                    foreach ($docs as $doc) {
+                        $filePath = trim((string) ($doc['file_path'] ?? ''));
+                        $fileName = trim((string) ($doc['name'] ?? 'File'));
+                        if ($filePath !== '') {
+                            $docUrl = media_url($filePath);
+                            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+                            $icon = 'fa-paperclip';
+                            $btnClass = 'btn-info';
+                            if ($ext === 'pdf') {
+                                $icon = 'fa-file-pdf';
+                                $btnClass = 'btn-danger';
+                            } elseif (in_array($ext, ['doc', 'docx'], true)) {
+                                $icon = 'fa-file-word';
+                                $btnClass = 'btn-primary';
+                            } elseif (in_array($ext, ['xls', 'xlsx'], true)) {
+                                $icon = 'fa-file-excel';
+                                $btnClass = 'btn-success';
+                            } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'], true)) {
+                                $icon = 'fa-file-image';
+                                $btnClass = 'btn-warning text-white';
                             }
+
+                            $keterangan = trim((string) ($doc['keterangan'] ?? ''));
+                            $titleLabel = 'File Pendukung: ' . $fileName;
+                            if ($keterangan !== '') {
+                                $titleLabel .= ' - ' . $keterangan;
+                            }
+                            $dokumenHtml .= '<a href="' . $docUrl . '" class="btn ' . $btnClass . '" title="' . esc($titleLabel, 'attr') . '" target="_blank" rel="noopener noreferrer"><i class="fas ' . $icon . '"></i></a>';
                         }
                     }
-                } else {
+                }
+
+                if (empty($row['verified_spt_path']) && $isFinal === 0 && (empty($docs) || ! is_array($docs))) {
                     $dokumenHtml .= '<span class="badge badge-warning py-1 px-2 font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-hourglass-start mr-1"></i> Belum Selesai</span>';
                 }
                 $dokumenHtml .= '</div>';
@@ -633,11 +674,12 @@ class Laporan extends BaseController
                 $kopSuratIdAttr = (int) ($row['kop_surat_id'] ?? 0);
                 $mataAnggaranIdAttr = (int) ($row['mata_anggaran_id'] ?? 0);
                 $rincianBiayaAttr = esc((string) ($row['rincian_biaya_json'] ?? '{}'), 'attr');
+                $kodeNomorAttr = esc((string) ($row['kode_nomor'] ?? ''), 'attr');
                 $aksiSptHtml = '';
                 if ($canVerifyRow) {
                     $dasarAttr = $isVerified === 1 ? esc(json_encode($dasarTexts), 'attr') : '[]';
                     $tglAttr = $isVerified === 1 ? esc($tglTtd, 'attr') : '';
-                    $aksiSptHtml = '<button type="button" class="btn btn-xs btn-warning text-dark btn-verify-spt btn-table-action shadow-sm" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . $dasarAttr . '" data-tgl="' . $tglAttr . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" data-rincian-biaya="' . $rincianBiayaAttr . '" title="Update Verifikasi"><i class="fas fa-edit mr-1"></i> Update</button>';
+                    $aksiSptHtml = '<button type="button" class="btn btn-xs btn-warning text-dark btn-verify-spt btn-table-action shadow-sm" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-kode-nomor="' . $kodeNomorAttr . '" data-dasar="' . $dasarAttr . '" data-tgl="' . $tglAttr . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" data-rincian-biaya="' . $rincianBiayaAttr . '" title="Update Verifikasi"><i class="fas fa-edit mr-1"></i> Update</button>';
                 } else {
                     $aksiSptHtml = '<span class="text-muted" style="font-size:0.8rem;"><i class="fas fa-lock mr-1"></i> No Access</span>';
                 }
@@ -646,7 +688,7 @@ class Laporan extends BaseController
                 if ($canVerifyRow) {
                     $dasarAttr = $isVerified === 1 ? esc(json_encode($dasarTexts), 'attr') : '[]';
                     $tglAttr = $isVerified === 1 ? esc($tglTtd, 'attr') : '';
-                    $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-warning text-dark btn-verify-spt btn-table-action shadow-sm" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-dasar="' . $dasarAttr . '" data-tgl="' . $tglAttr . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" data-rincian-biaya="' . $rincianBiayaAttr . '" title="Update Verifikasi"><i class="fas fa-edit mr-1"></i> Update</button>';
+                    $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-warning text-dark btn-verify-spt btn-table-action shadow-sm" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-kode-nomor="' . $kodeNomorAttr . '" data-dasar="' . $dasarAttr . '" data-tgl="' . $tglAttr . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" data-rincian-biaya="' . $rincianBiayaAttr . '" title="Update Verifikasi"><i class="fas fa-edit mr-1"></i> Update</button>';
                 }
                 $verificationStatusHtml .= '</div>';
 
@@ -777,6 +819,8 @@ class Laporan extends BaseController
             'penginapan' => $penginapanList,
         ];
 
+        $kodeNomorInput = trim((string) $this->request->getPost('kode_nomor'));
+
         $updateData = [
             'nomor_surat_tugas' => $nomorSurat,
             'dasar_spt_ids_json' => json_encode($dasarInputs, JSON_UNESCAPED_UNICODE),
@@ -789,6 +833,13 @@ class Laporan extends BaseController
         }
         if ($mataAnggaranId > 0) {
             $updateData['mata_anggaran_id'] = $mataAnggaranId;
+        }
+
+        if ($kodeNomorInput !== '') {
+            $updateData['kode_nomor'] = $kodeNomorInput;
+        } else {
+            $this->ensureKodeNomorAssigned($row);
+            $updateData['kode_nomor'] = $row['kode_nomor'];
         }
 
         $model->update($id, $updateData);
@@ -947,6 +998,8 @@ class Laporan extends BaseController
             return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
         }
 
+        $this->ensureKodeNomorAssigned($row);
+
         $pelaksana = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: [];
         $tujuan = $row['tujuan'] ?? '';
         $kotaTujuan = $row['kota_tujuan'] ?? '';
@@ -998,6 +1051,8 @@ class Laporan extends BaseController
         if (! is_array($row)) {
             return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
         }
+
+        $this->ensureKodeNomorAssigned($row);
 
         $pelaksana = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: [];
         $kotaTujuan = $row['kota_tujuan'] ?? '';
@@ -3015,5 +3070,75 @@ class Laporan extends BaseController
         }
 
         return '';
+    }
+
+    public function setLastKodeNomor()
+    {
+        if (! $this->canVerifyLaporan()) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mengatur nomor terakhir.');
+        }
+
+        $lastNumberRaw = trim((string) $this->request->getPost('last_number'));
+        $lastNumber = (int) preg_replace('/\D/', '', $lastNumberRaw);
+
+        $db = \Config\Database::connect();
+        if ($db->tableExists('app_settings')) {
+            $existing = $db->table('app_settings')->first();
+            if ($existing) {
+                $db->table('app_settings')->update(['last_kode_nomor_sppd' => $lastNumber]);
+            } else {
+                $db->table('app_settings')->insert(['last_kode_nomor_sppd' => $lastNumber]);
+            }
+        }
+
+        $nextFormat = str_pad((string) ($lastNumber + 1), 3, '0', STR_PAD_LEFT);
+        return redirect()->back()->with('success', 'Nomor Terakhir SPPD/Kwitansi berhasil disimpan (' . $lastNumber . '). Nomor otomatis berikutnya yang akan ter-generate adalah ' . $nextFormat . '.');
+    }
+
+    private function getLastKodeNomorSetting(): int
+    {
+        $db = \Config\Database::connect();
+        if ($db->tableExists('app_settings')) {
+            $settingRow = $db->table('app_settings')->select('last_kode_nomor_sppd')->get()->getRowArray();
+            if (is_array($settingRow) && isset($settingRow['last_kode_nomor_sppd'])) {
+                return (int) $settingRow['last_kode_nomor_sppd'];
+            }
+        }
+        return 0;
+    }
+
+    private function ensureKodeNomorAssigned(array &$row): void
+    {
+        $existingKode = trim((string) ($row['kode_nomor'] ?? ''));
+        if ($existingKode !== '') {
+            return;
+        }
+
+        $id = (int) ($row['id'] ?? 0);
+        if ($id <= 0) {
+            return;
+        }
+
+        $db = \Config\Database::connect();
+        
+        $lastSettingNumber = $this->getLastKodeNomorSetting();
+        $maxDbNumber = 0;
+        if ($db->tableExists('laporan_perjalanan_dinas')) {
+            $maxRow = $db->query("SELECT MAX(CAST(kode_nomor AS UNSIGNED)) AS max_num FROM laporan_perjalanan_dinas WHERE kode_nomor REGEXP '^[0-9]+$'")->getRowArray();
+            if (is_array($maxRow) && isset($maxRow['max_num'])) {
+                $maxDbNumber = (int) $maxRow['max_num'];
+            }
+        }
+
+        $nextNumber = max($lastSettingNumber, $maxDbNumber) + 1;
+        $formattedKode = str_pad((string) $nextNumber, 3, '0', STR_PAD_LEFT);
+
+        $db->table('laporan_perjalanan_dinas')->where('id', $id)->update(['kode_nomor' => $formattedKode]);
+        
+        if ($db->tableExists('app_settings')) {
+            $db->table('app_settings')->update(['last_kode_nomor_sppd' => $nextNumber]);
+        }
+
+        $row['kode_nomor'] = $formattedKode;
     }
 }

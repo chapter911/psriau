@@ -34,8 +34,13 @@
 
 
 <div class="card card-outline card-primary">
-    <div class="card-header d-flex align-items-center">
+    <div class="card-header d-flex align-items-center justify-content-between">
         <h3 class="card-title mb-0 font-weight-bold">Daftar Surat Tugas (SPT)</h3>
+        <?php if ($can_verify ?? false): ?>
+            <button type="button" class="btn btn-dark btn-sm shadow-sm" data-toggle="modal" data-target="#modal-last-number">
+                <i class="fas fa-list-ol mr-1"></i> Setting Nomor Terakhir SPPD/Kwitansi
+            </button>
+        <?php endif; ?>
     </div>
     <div class="card-body">
         
@@ -142,6 +147,11 @@
                             <div class="form-group">
                                 <label for="verify_nomor_surat" class="font-weight-bold mb-1">Nomor Surat Tugas <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="verify_nomor_surat" name="nomor_surat_tugas" required placeholder="Contoh: 132/SPT/Gs7/2026">
+                            </div>
+                            <div class="form-group">
+                                <label for="verify_kode_nomor" class="font-weight-bold mb-1">Kode Nomor (SPPD) & Nomor Bukti (Kwitansi)</label>
+                                <input type="text" class="form-control" id="verify_kode_nomor" name="kode_nomor" placeholder="Otomatis (atau isi manual jika kustom, contoh: 016)">
+                                <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle mr-1 text-info"></i> Kosongkan untuk meng-generate nomor auto-increment secara otomatis.</small>
                             </div>
                             <div class="form-group">
                                 <label class="font-weight-bold mb-1">Dasar SPT (Legal Basis) <span class="text-danger">*</span></label>
@@ -266,6 +276,38 @@
         </div>
     </div>
 </div>
+
+<?php if ($can_verify ?? false): ?>
+<!-- Modal Setting Nomor Terakhir SPPD & Kwitansi -->
+<div class="modal fade" id="modal-last-number" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <div class="modal-header bg-dark text-white py-3">
+                <h5 class="modal-title font-weight-bold">
+                    <i class="fas fa-list-ol mr-2"></i>Setting Nomor Terakhir SPPD / Kwitansi
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">&times;</button>
+            </div>
+            <form method="post" action="<?= site_url('admin/surat/perjalanan-dinas/set-last-number'); ?>">
+                <?= csrf_field(); ?>
+                <div class="modal-body py-4">
+                    <div class="form-group mb-3">
+                        <label for="last_number_input" class="font-weight-bold">Nomor Terakhir Terpakai</label>
+                        <input type="number" class="form-control form-control-lg text-center font-weight-bold" id="last_number_input" name="last_number" value="<?= (int) ($last_kode_nomor ?? 0); ?>" required min="0" placeholder="Contoh: 15">
+                        <small class="text-muted mt-2 d-block">
+                            <i class="fas fa-info-circle mr-1 text-info"></i> Masukkan nomor terakhir yang sudah pernah dipakai. Nomor berikutnya yang akan ter-generate otomatis adalah <strong>[Nomor Terakhir + 1]</strong> (misal: jika diisi <code>15</code>, maka nomor berikutnya adalah <code>016</code>).
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm font-weight-bold"><i class="fas fa-save mr-1"></i> Simpan Nomor Terakhir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?= $this->endSection(); ?>
 
@@ -592,6 +634,7 @@
                 const $btn = $(this);
                 const id = $btn.data('id');
                 const nomor = $btn.data('nomor') || '';
+                const kodeNomor = $btn.attr('data-kode-nomor') || '';
                 const dasarStr = $btn.attr('data-dasar') || '[]';
                 const tgl = $btn.data('tgl') || '';
                 const kopSuratId = String($btn.attr('data-kop-surat-id') || '0');
@@ -606,6 +649,7 @@
 
                 $formVerify.attr('action', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/verify');
                 $('#verify_nomor_surat').val(nomor);
+                $('#verify_kode_nomor').val(kodeNomor);
                 $('#verify_tanggal_ttd').val(tgl !== '' ? tgl : new Date().toISOString().split('T')[0]);
 
                 if (kopSuratId !== '0') {

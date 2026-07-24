@@ -522,13 +522,62 @@ class Utility extends BaseController
 
     private function getAssignableUserRoleOptions(): array
     {
-        $options = [
+        $optionsMap = [];
+
+        // 1. Default system roles
+        $defaults = [
             ['value' => 'editor', 'label' => 'Editor'],
             ['value' => 'admin', 'label' => 'Admin'],
+            ['value' => 'super_administrator', 'label' => 'Super Administrator'],
         ];
+        foreach ($defaults as $def) {
+            $optionsMap[$def['value']] = $def['label'];
+        }
 
-        if ($this->isSuperAdministratorSession()) {
-            $options[] = ['value' => 'super_administrator', 'label' => 'Super Administrator'];
+        $db = db_connect();
+
+        // 2. Fetch roles from access_roles table if available
+        if ($db->tableExists('access_roles')) {
+            $rows = $db->table('access_roles')
+                ->select('role_key, label')
+                ->where('is_active', 1)
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            foreach ($rows as $row) {
+                $rKey = strtolower(trim((string) ($row['role_key'] ?? '')));
+                $rLabel = trim((string) ($row['label'] ?? ''));
+                if ($rKey !== '' && $rLabel !== '') {
+                    $optionsMap[$rKey] = $rLabel;
+                }
+            }
+        }
+
+        // 3. Fetch any distinct roles from users table
+        if ($db->tableExists('users')) {
+            $userRoles = $db->table('users')
+                ->select('DISTINCT(role) AS role')
+                ->where('role IS NOT NULL', null, false)
+                ->where('role !=', '')
+                ->get()
+                ->getResultArray();
+
+            foreach ($userRoles as $uRole) {
+                $rKey = strtolower(trim((string) ($uRole['role'] ?? '')));
+                if ($rKey !== '' && ! isset($optionsMap[$rKey])) {
+                    $optionsMap[$rKey] = ucwords(str_replace(['_', '-'], ' ', $rKey));
+                }
+            }
+        }
+
+        // Build array of options
+        $options = [];
+        foreach ($optionsMap as $val => $lbl) {
+            $options[] = [
+                'value' => $val,
+                'label' => $lbl,
+            ];
         }
 
         return $options;

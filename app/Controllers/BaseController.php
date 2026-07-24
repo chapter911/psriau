@@ -274,6 +274,13 @@ abstract class BaseController extends Controller
                         ],
                     ],
                 ],
+                [
+                    'label'          => 'Tutorial / Flowchart',
+                    'url'            => '/admin/tutorial',
+                    'icon'           => 'fas fa-sitemap',
+                    'active_pattern' => 'admin/tutorial*',
+                    'children'       => [],
+                ],
             ];
         }
 
