@@ -341,13 +341,14 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Jabatan (Fungsional/Pelaksana)</label>
-                        <select name="jabatan_utama_id" class="form-control" required>
-                            <option value="">Pilih jabatan</option>
+                        <label>Jabatan (Fungsional/Pelaksana/Opsional)</label>
+                        <select name="jabatan_utama_id" class="form-control">
+                            <option value="">Kosongkan jika tidak ada (Tanpa Jabatan)</option>
                             <?php foreach (($jabatan_utama_options ?? []) as $option): ?>
                                 <option value="<?= esc((string) ($option['id'] ?? '')); ?>"><?= esc((string) ($option['label'] ?? '')); ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <small class="text-muted">Kosongkan untuk Konsultan, Security, CS, PPNPN, atau Non-ASN yang tidak memiliki jabatan.</small>
                     </div>
                     <div class="form-group">
                         <label>Jabatan (Perbendaharaan/Opsional)</label>
@@ -443,13 +444,14 @@
                         <img id="edit_foto_preview" src="" alt="Preview Foto" style="display:none;width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid #dee2e6;">
                     </div>
                     <div class="form-group">
-                        <label>Jabatan (Fungsional/Pelaksana)</label>
-                        <select id="edit_jabatan_utama_id" name="jabatan_utama_id" class="form-control" required>
-                            <option value="">Pilih jabatan</option>
+                        <label>Jabatan (Fungsional/Pelaksana/Opsional)</label>
+                        <select id="edit_jabatan_utama_id" name="jabatan_utama_id" class="form-control">
+                            <option value="">Kosongkan jika tidak ada (Tanpa Jabatan)</option>
                             <?php foreach (($jabatan_utama_options ?? []) as $option): ?>
                                 <option value="<?= esc((string) ($option['id'] ?? '')); ?>"><?= esc((string) ($option['label'] ?? '')); ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <small class="text-muted">Kosongkan untuk Konsultan, Security, CS, PPNPN, atau Non-ASN yang tidak memiliki jabatan.</small>
                     </div>
                     <div class="form-group">
                         <label>Jabatan (Perbendaharaan/Opsional)</label>
@@ -595,6 +597,21 @@
 
         initNipAutoFill('input[name="nip"]');
         initNipAutoFill('#edit_nip');
+
+        // Auto-clear Jabatan when Non-PNS type is selected
+        document.querySelectorAll('select[name="jenis_pegawai"], #edit_jenis_pegawai').forEach(selectEl => {
+            selectEl.addEventListener('change', function() {
+                const val = this.value;
+                if (['konsultan', 'security', 'cleaning_service', 'lainnya'].includes(val)) {
+                    const targetJabatan = this.id === 'edit_jenis_pegawai' 
+                        ? document.getElementById('edit_jabatan_utama_id') 
+                        : (this.form ? this.form.querySelector('select[name="jabatan_utama_id"]') : null);
+                    if (targetJabatan) {
+                        targetJabatan.value = '';
+                    }
+                }
+            });
+        });
     })();
 
     (function () {

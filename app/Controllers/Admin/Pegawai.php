@@ -380,7 +380,7 @@ class Pegawai extends BaseController
             'nama' => 'required|max_length[150]',
             'email' => 'permit_empty|valid_email|max_length[255]',
             'jenis_pegawai' => 'required|in_list[cpns,pns,pppk,ppnpn,konsultan,security,cleaning_service,lainnya]',
-            'jabatan_utama_id' => 'required|integer',
+            'jabatan_utama_id' => 'permit_empty|integer',
             'jabatan_perbendaharaan_id' => 'permit_empty|integer',
             'eselon' => 'permit_empty|max_length[50]',
             'golongan' => 'permit_empty|max_length[50]',
@@ -421,10 +421,11 @@ class Pegawai extends BaseController
         }
 
         $jabatanOptions = $this->resolveJabatanOptions();
-        $jabatanUtamaId = (int) $this->request->getPost('jabatan_utama_id');
+        $jabatanUtamaRaw = $this->request->getPost('jabatan_utama_id');
+        $jabatanUtamaId = ($jabatanUtamaRaw !== null && $jabatanUtamaRaw !== '' && (int) $jabatanUtamaRaw > 0) ? (int) $jabatanUtamaRaw : null;
         $jabatanPerbendaharaanId = (int) ($this->request->getPost('jabatan_perbendaharaan_id') ?: 0);
 
-        if (! isset($jabatanOptions['utama_lookup'][$jabatanUtamaId])) {
+        if ($jabatanUtamaId !== null && ! isset($jabatanOptions['utama_lookup'][$jabatanUtamaId])) {
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON([
                     'status' => 'error',
@@ -521,7 +522,7 @@ class Pegawai extends BaseController
             'nama' => 'required|max_length[150]',
             'email' => 'permit_empty|valid_email|max_length[255]',
             'jenis_pegawai' => 'required|in_list[cpns,pns,pppk,ppnpn,konsultan,security,cleaning_service,lainnya]',
-            'jabatan_utama_id' => 'required|integer',
+            'jabatan_utama_id' => 'permit_empty|integer',
             'jabatan_perbendaharaan_id' => 'permit_empty|integer',
             'eselon' => 'permit_empty|max_length[50]',
             'golongan' => 'permit_empty|max_length[50]',
@@ -575,10 +576,11 @@ class Pegawai extends BaseController
         }
 
         $jabatanOptions = $this->resolveJabatanOptions();
-        $jabatanUtamaId = (int) $this->request->getPost('jabatan_utama_id');
+        $jabatanUtamaRaw = $this->request->getPost('jabatan_utama_id');
+        $jabatanUtamaId = ($jabatanUtamaRaw !== null && $jabatanUtamaRaw !== '' && (int) $jabatanUtamaRaw > 0) ? (int) $jabatanUtamaRaw : null;
         $jabatanPerbendaharaanId = (int) ($this->request->getPost('jabatan_perbendaharaan_id') ?: 0);
 
-        if (! isset($jabatanOptions['utama_lookup'][$jabatanUtamaId])) {
+        if ($jabatanUtamaId !== null && ! isset($jabatanOptions['utama_lookup'][$jabatanUtamaId])) {
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON([
                     'status' => 'error',
@@ -855,7 +857,7 @@ class Pegawai extends BaseController
                 default => $rawJenis,
             };
 
-            if ($nip === '' || $nama === '' || $jabatanUtamaName === '') {
+            if ($nip === '' || $nama === '') {
                 $skipped++;
                 continue;
             }
@@ -865,10 +867,9 @@ class Pegawai extends BaseController
                 continue;
             }
 
-            $jabatanUtamaId = $this->resolveOrCreateJabatanId($jabatanUtamaName, $jabatanByName, $username, $now);
-            if ($jabatanUtamaId === null) {
-                $skipped++;
-                continue;
+            $jabatanUtamaId = null;
+            if ($jabatanUtamaName !== '') {
+                $jabatanUtamaId = $this->resolveOrCreateJabatanId($jabatanUtamaName, $jabatanByName, $username, $now);
             }
 
             $jabatanPerbendId = null;
