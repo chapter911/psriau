@@ -278,7 +278,7 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A[Kelola Master Data: Pegawai, Struktur Organisasi, MAK, Dasar SPT] --> B[Kelola Paket Pekerjaan SIMAK Fisik & Konsultasi]
+    A["Kelola Master Data: Pegawai (PNS/CPNS/PPPK/PPNPN/Konsultan/Security/CS), Struktur Organisasi, MAK, Dasar SPT"] --> B[Kelola Paket Pekerjaan SIMAK Fisik & Konsultasi]
     B --> C[Kelola RAB Gedung Strategis]
     C --> D[Pantau Rekap Mingguan & Dokumentasi Lapangan]
                 </pre>
@@ -420,6 +420,15 @@ graph TD
             </div>
             <div class="card-body bg-light">
                 <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-id-card mr-1"></i> Master Data Pegawai</h6>
+                                <p class="small text-muted mb-2"><code>/admin/master/pegawai</code></p>
+                                <p class="small mb-0">Pengelolaan data seluruh personil kantor Satker PPS Riau mencakup PNS, CPNS, PPPK, PPNPN, <strong>Konsultan Individual</strong>, <strong>Security (Tenaga Keamanan)</strong>, <strong>Cleaning Service (Tenaga Kebersihan)</strong>, dan Non-ASN Lainnya. Dilengkapi fitur filter Jenis Pegawai/Eselon/Golongan/Status, penambahan data NIP/NIK/ID Kontrak, unggah foto profil, serta fitur Import & Export Excel.</p>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-md-6 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">

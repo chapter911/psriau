@@ -71,8 +71,13 @@
                         <select id="filter-jenis-pegawai" class="form-control form-control-sm custom-select custom-select-sm">
                             <option value="">Semua Jenis Pegawai</option>
                             <option value="pns">PNS</option>
+                            <option value="cpns">CPNS</option>
                             <option value="pppk">PPPK</option>
                             <option value="ppnpn">PPNPN</option>
+                            <option value="konsultan">Konsultan Individual</option>
+                            <option value="security">Security (Keamanan)</option>
+                            <option value="cleaning_service">Cleaning Service (Kebersihan)</option>
+                            <option value="lainnya">Lainnya (Non-ASN)</option>
                         </select>
                     </div>
                     <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
@@ -192,7 +197,23 @@
                                 <?= esc($jabatanPerbend !== '' ? $jabatanPerbend : '-'); ?>
                             </div>
                         </td>
-                        <td class="text-center text-uppercase"><?= esc((string) ($item['jenis_pegawai'] ?? 'pns')); ?></td>
+                        <?php $jpVal = strtolower(trim((string) ($item['jenis_pegawai'] ?? 'pns'))); ?>
+                        <td class="text-center" data-filter="<?= esc($jpVal, 'attr'); ?>">
+                            <?php
+                                $jpBadge = match ($jpVal) {
+                                    'pns' => '<span class="badge badge-primary">PNS</span>',
+                                    'cpns' => '<span class="badge badge-info">CPNS</span>',
+                                    'pppk' => '<span class="badge badge-info">PPPK</span>',
+                                    'ppnpn' => '<span class="badge badge-secondary">PPNPN</span>',
+                                    'konsultan' => '<span class="badge badge-success">Konsultan Individual</span>',
+                                    'security' => '<span class="badge badge-warning">Security</span>',
+                                    'cleaning_service' => '<span class="badge badge-dark">Cleaning Service</span>',
+                                    'lainnya' => '<span class="badge badge-light border">Lainnya</span>',
+                                    default => '<span class="badge badge-secondary">' . esc(strtoupper($jpVal)) . '</span>',
+                                };
+                                echo $jpBadge;
+                            ?>
+                        </td>
                         <td><?= esc((string) ($item['eselon'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['golongan'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['masa_kerja'] ?? '-')); ?></td>
@@ -254,7 +275,7 @@
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <div class="alert alert-info mb-3">
-                        Kolom wajib: <strong>nip</strong>, <strong>nama</strong>, <strong>jabatan_utama</strong>, <strong>jenis_pegawai</strong> (cpns/pns/konsultan/pppk).<br>
+                        Kolom wajib: <strong>nip</strong>, <strong>nama</strong>, <strong>jabatan_utama</strong>, <strong>jenis_pegawai</strong> (pns/cpns/pppk/ppnpn/konsultan/security/cleaning_service/lainnya).<br>
                         Kolom opsional: <strong>email</strong>, <strong>jabatan_perbendaharaan</strong>, <strong>eselon</strong>, <strong>golongan</strong>, <strong>masa_kerja</strong>, <strong>status</strong>.
                     </div>
                     <div class="mb-3">
@@ -293,8 +314,9 @@
                 <div class="modal-body">
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label>NIP</label>
-                            <input type="text" name="nip" class="form-control" required maxlength="30">
+                            <label>NIP / NIK / ID Kontrak</label>
+                            <input type="text" name="nip" class="form-control" required maxlength="30" placeholder="NIP / NIK / ID Kontrak">
+                            <small class="text-muted">Isi NIK/ID Kontrak untuk Non-PNS</small>
                         </div>
                         <div class="form-group col-md-4">
                             <label>Nama</label>
@@ -342,7 +364,11 @@
                             <option value="pns">PNS</option>
                             <option value="cpns">CPNS</option>
                             <option value="pppk">PPPK</option>
-                            <option value="konsultan">Konsultan</option>
+                            <option value="ppnpn">PPNPN</option>
+                            <option value="konsultan">Konsultan Individual</option>
+                            <option value="security">Security (Tenaga Keamanan)</option>
+                            <option value="cleaning_service">Cleaning Service (Tenaga Kebersihan)</option>
+                            <option value="lainnya">Lainnya (Non-ASN)</option>
                         </select>
                     </div>
                     <div class="form-row">
@@ -386,8 +412,9 @@
                 <div class="modal-body">
                     <div class="form-row">
                         <div class="form-group col-md-4">
-                            <label>NIP</label>
-                            <input type="text" id="edit_nip" name="nip" class="form-control" required maxlength="30">
+                            <label>NIP / NIK / ID Kontrak</label>
+                            <input type="text" id="edit_nip" name="nip" class="form-control" required maxlength="30" placeholder="NIP / NIK / ID Kontrak">
+                            <small class="text-muted">Isi NIK/ID Kontrak untuk Non-PNS</small>
                         </div>
                         <div class="form-group col-md-4">
                             <label>Nama</label>
@@ -439,7 +466,11 @@
                             <option value="pns">PNS</option>
                             <option value="cpns">CPNS</option>
                             <option value="pppk">PPPK</option>
-                            <option value="konsultan">Konsultan</option>
+                            <option value="ppnpn">PPNPN</option>
+                            <option value="konsultan">Konsultan Individual</option>
+                            <option value="security">Security (Tenaga Keamanan)</option>
+                            <option value="cleaning_service">Cleaning Service (Tenaga Kebersihan)</option>
+                            <option value="lainnya">Lainnya (Non-ASN)</option>
                         </select>
                     </div>
                     <div class="form-row">
@@ -822,8 +853,13 @@
             const rowGolongan = (data[9] || '').trim().toLowerCase();
             const rowStatus = (data[11] || '').trim().toLowerCase();
 
-            if (filterJenis && rowJenis !== filterJenis) {
-                return false;
+            if (filterJenis) {
+                const fj = filterJenis.toLowerCase();
+                const rj = rowJenis.toLowerCase();
+                if (fj === 'konsultan' && !rj.includes('konsultan')) return false;
+                else if (fj === 'security' && !rj.includes('security')) return false;
+                else if (fj === 'cleaning_service' && !rj.includes('cleaning')) return false;
+                else if (fj !== 'konsultan' && fj !== 'security' && fj !== 'cleaning_service' && rj !== fj) return false;
             }
             if (filterEselon && rowEselon !== filterEselon) {
                 return false;

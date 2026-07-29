@@ -1286,7 +1286,7 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
 
         // Kepegawaian
         document.getElementById('detail_sumber_data').innerHTML = node.pegawai_id ? '<span class="badge badge-primary"><i class="fas fa-database mr-1"></i> Master Pegawai</span>' : '<span class="badge badge-success"><i class="fas fa-user-edit mr-1"></i> Input Manual</span>';
-        document.getElementById('detail_jenis_pegawai').textContent = (node.jenis_pegawai || 'Pejabat / Staf Satker').toUpperCase();
+        document.getElementById('detail_jenis_pegawai').textContent = (node.jenis_pegawai || 'Pejabat / Staf Satker').replace(/_/g, ' ').toUpperCase();
         document.getElementById('detail_jabatan_master').textContent = node.nama_jabatan_master || node.jabatan_bagian || '-';
         document.getElementById('detail_golongan_eselon').textContent = `${node.golongan || '-'} / ${node.eselon || '-'}`;
 

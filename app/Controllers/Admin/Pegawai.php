@@ -179,7 +179,18 @@ class Pegawai extends BaseController
             $sheet->setCellValue('H' . $row, (string) ($item['eselon'] ?? ''));
             $sheet->setCellValue('I' . $row, (string) ($item['golongan'] ?? ''));
             $sheet->setCellValue('J' . $row, (string) ($item['masa_kerja'] ?? ''));
-            $sheet->setCellValue('K' . $row, strtoupper((string) ($item['jenis_pegawai'] ?? 'PNS')));
+            $jpRaw = strtolower(trim((string) ($item['jenis_pegawai'] ?? 'pns')));
+            $jpLabel = match ($jpRaw) {
+                'konsultan' => 'KONSULTAN INDIVIDUAL',
+                'security' => 'SECURITY',
+                'cleaning_service' => 'CLEANING SERVICE',
+                'ppnpn' => 'PPNPN',
+                'pppk' => 'PPPK',
+                'cpns' => 'CPNS',
+                'lainnya' => 'LAINNYA',
+                default => strtoupper($jpRaw),
+            };
+            $sheet->setCellValue('K' . $row, $jpLabel);
             $sheet->setCellValue('L' . $row, (int) ($item['is_active'] ?? 1) === 1 ? 'AKTIF' : 'NONAKTIF');
 
             $sheet->getRowDimension($row)->setRowHeight(82);
@@ -368,7 +379,7 @@ class Pegawai extends BaseController
             'nip' => 'required|max_length[30]',
             'nama' => 'required|max_length[150]',
             'email' => 'permit_empty|valid_email|max_length[255]',
-            'jenis_pegawai' => 'required|in_list[cpns,pns,konsultan,pppk]',
+            'jenis_pegawai' => 'required|in_list[cpns,pns,pppk,ppnpn,konsultan,security,cleaning_service,lainnya]',
             'jabatan_utama_id' => 'required|integer',
             'jabatan_perbendaharaan_id' => 'permit_empty|integer',
             'eselon' => 'permit_empty|max_length[50]',
@@ -509,7 +520,7 @@ class Pegawai extends BaseController
             'nip' => 'required|max_length[30]',
             'nama' => 'required|max_length[150]',
             'email' => 'permit_empty|valid_email|max_length[255]',
-            'jenis_pegawai' => 'required|in_list[cpns,pns,konsultan,pppk]',
+            'jenis_pegawai' => 'required|in_list[cpns,pns,pppk,ppnpn,konsultan,security,cleaning_service,lainnya]',
             'jabatan_utama_id' => 'required|integer',
             'jabatan_perbendaharaan_id' => 'permit_empty|integer',
             'eselon' => 'permit_empty|max_length[50]',
@@ -831,14 +842,25 @@ class Pegawai extends BaseController
             $nama = trim((string) ($rowData['nama'] ?? ''));
             $jabatanUtamaName = trim((string) ($rowData['jabatan_utama'] ?? ''));
             $jabatanPerbendName = trim((string) ($rowData['jabatan_perbendaharaan'] ?? ''));
-            $jenisPegawai = strtolower(trim((string) ($rowData['jenis_pegawai'] ?? '')));
+            $rawJenis = strtolower(trim((string) ($rowData['jenis_pegawai'] ?? '')));
+            $jenisPegawai = match ($rawJenis) {
+                'konsultan', 'konsultan individual', 'ki' => 'konsultan',
+                'security', 'satpam', 'tenaga keamanan' => 'security',
+                'cleaning service', 'cleaning_service', 'cs', 'tenaga kebersihan' => 'cleaning_service',
+                'ppnpn', 'honor', 'honorer', 'non pns', 'non-pns' => 'ppnpn',
+                'pns' => 'pns',
+                'cpns' => 'cpns',
+                'pppk' => 'pppk',
+                'lainnya', 'other', 'non-asn', 'non asn' => 'lainnya',
+                default => $rawJenis,
+            };
 
             if ($nip === '' || $nama === '' || $jabatanUtamaName === '') {
                 $skipped++;
                 continue;
             }
 
-            if (! in_array($jenisPegawai, ['cpns', 'pns', 'konsultan', 'pppk'], true)) {
+            if (! in_array($jenisPegawai, ['cpns', 'pns', 'pppk', 'ppnpn', 'konsultan', 'security', 'cleaning_service', 'lainnya'], true)) {
                 $skipped++;
                 continue;
             }
