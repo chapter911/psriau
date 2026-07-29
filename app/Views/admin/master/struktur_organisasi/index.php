@@ -583,6 +583,16 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
     }
 
+    /* Pushed level for Group Block alongside Structural Cards to align horizontally with Level 5 */
+    .org-node-item-pushed-level {
+        margin-top: 259px; /* Card height 235px + stem padding 24px */
+    }
+
+    .org-node-item-pushed-level::before,
+    .org-node-item-pushed-level::after {
+        height: 283px !important; /* Long stem extending down to Level 5 */
+    }
+
     .org-card.level-1 {
         width: 260px;
         height: 245px;
@@ -1105,7 +1115,8 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
 
             // 2. Render direct leaf team members grouped in a single GROUP BLOCK PANEL alongside sub-nodes
             if (leafMembers.length > 0) {
-                nodeHtml += buildGroupBlockHtml(node, leafMembers);
+                const hasMainSubNodes = mainSubNodes.length > 0;
+                nodeHtml += buildGroupBlockHtml(node, leafMembers, hasMainSubNodes);
             }
 
             nodeHtml += '</div>';
@@ -1116,9 +1127,10 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
         return nodeHtml;
     }
 
-    function buildGroupBlockHtml(parentNode, leafMembers) {
+    function buildGroupBlockHtml(parentNode, leafMembers, hasMainSubNodes = false) {
         const teknisMembers = [];
         const pendukungMembers = [];
+        const itemClass = hasMainSubNodes ? 'org-node-item org-node-item-pushed-level' : 'org-node-item';
 
         leafMembers.forEach(m => {
             const titleLower = (m.jabatan_bagian || '').toLowerCase();
@@ -1151,7 +1163,7 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
         // 1. If BOTH Teknis & Pendukung members exist: render 2 separate Block Cards connected by vertical tree stem
         if (teknisMembers.length > 0 && pendukungMembers.length > 0) {
             return `
-                <div class="org-node-item">
+                <div class="${itemClass}">
                     <!-- Block 1: Tim Teknis & Staf -->
                     <div class="org-card org-group-block shadow-sm">
                         <div class="org-group-header">
@@ -1192,7 +1204,7 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
         // 2. If ONLY Pendukung members exist
         if (pendukungMembers.length > 0) {
             return `
-                <div class="org-node-item">
+                <div class="${itemClass}">
                     <div class="org-card org-group-block org-group-block-pendukung shadow-sm">
                         <div class="org-group-header bg-dark text-warning border-bottom border-warning">
                             <span><i class="fas fa-shield-alt text-warning mr-2"></i> TIM PENDUKUNG OPERASIONAL (${pendukungMembers.length})</span>
@@ -1208,9 +1220,8 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
             `;
         }
 
-        // 3. If ONLY Teknis members exist
         return `
-            <div class="org-node-item">
+            <div class="${itemClass}">
                 <div class="org-card org-group-block shadow-sm">
                     <div class="org-group-header">
                         <span><i class="fas fa-users mr-2"></i> ANGGOTA / TIM PELAKSANA (${teknisMembers.length})</span>

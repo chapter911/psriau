@@ -187,6 +187,16 @@
             padding: 14px 8px 0 8px;
         }
 
+        /* Pushed level for Group Block alongside Structural Cards to align horizontally with Level 5 in PDF Poster */
+        .org-node-item-pushed-level {
+            margin-top: 204px; /* Card height 190px + stem padding 14px */
+        }
+
+        .org-node-item-pushed-level::before,
+        .org-node-item-pushed-level::after {
+            height: 218px !important; /* Long stem extending down to Level 5 */
+        }
+
         .org-node-tree > .org-node-item {
             padding-top: 0;
         }
@@ -639,7 +649,8 @@
             });
 
             if (leafMembers.length > 0) {
-                nodeHtml += buildGroupBlockHtml(node, leafMembers);
+                const hasMainSubNodes = mainSubNodes.length > 0;
+                nodeHtml += buildGroupBlockHtml(node, leafMembers, hasMainSubNodes);
             }
 
             nodeHtml += '</div>';
@@ -650,9 +661,10 @@
         return nodeHtml;
     }
 
-    function buildGroupBlockHtml(parentNode, leafMembers) {
+    function buildGroupBlockHtml(parentNode, leafMembers, hasMainSubNodes = false) {
         const teknisMembers = [];
         const pendukungMembers = [];
+        const itemClass = hasMainSubNodes ? 'org-node-item org-node-item-pushed-level' : 'org-node-item';
 
         leafMembers.forEach(m => {
             const titleLower = (m.jabatan_bagian || '').toLowerCase();
@@ -684,7 +696,7 @@
 
         if (teknisMembers.length > 0 && pendukungMembers.length > 0) {
             return `
-                <div class="org-node-item">
+                <div class="${itemClass}">
                     <div class="org-card org-group-block">
                         <div class="org-group-header">
                             <span><i class="fas fa-user-gear mr-2"></i> TIM TEKNIS & STAF PELAKSANA (${teknisMembers.length})</span>
@@ -719,7 +731,7 @@
 
         if (pendukungMembers.length > 0) {
             return `
-                <div class="org-node-item">
+                <div class="${itemClass}">
                     <div class="org-card org-group-block org-group-block-pendukung">
                         <div class="org-group-header bg-dark text-warning border-bottom border-warning">
                             <span><i class="fas fa-shield-alt text-warning mr-2"></i> TIM PENDUKUNG OPERASIONAL (${pendukungMembers.length})</span>
@@ -735,7 +747,7 @@
         }
 
         return `
-            <div class="org-node-item">
+            <div class="${itemClass}">
                 <div class="org-card org-group-block">
                     <div class="org-group-header">
                         <span><i class="fas fa-users mr-2"></i> ANGGOTA / TIM PELAKSANA (${teknisMembers.length})</span>
