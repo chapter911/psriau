@@ -600,30 +600,22 @@ class Laporan extends BaseController
                 
                 $row['dokumen_html'] = $dokumenHtml;
                 
-                // Dokumen SPT / Upload SPT TTD (PDF) column rendering
+                // Upload SPT TTD (PDF) column rendering
                 $existingVerifiedFile = ! empty($row['verified_spt_path']) ? esc((string) $row['verified_spt_path'], 'attr') : '';
                 $nomorSuratAttr = esc((string) ($row['nomor_surat_tugas'] ?? '-'), 'attr');
                 $uploadVerifiedUrl = site_url('admin/surat/perjalanan-dinas/' . (int) ($row['id'] ?? 0) . '/upload-verified');
 
                 if ($existingVerifiedFile !== '') {
                     $verifiedUrl = media_url($row['verified_spt_path']);
-                    $dokumenSptHtml = '<div class="btn-group btn-group-sm d-inline-flex" role="group">' .
+                    $uploadSptTtdHtml = '<div class="btn-group btn-group-sm d-inline-flex" role="group">' .
                         '<a href="' . $verifiedUrl . '" class="btn btn-xs btn-success text-white btn-table-action shadow-sm" target="_blank" rel="noopener noreferrer" title="Lihat SPT TTD (PDF)"><i class="fas fa-file-pdf mr-1"></i> Lihat PDF</a>' .
-                        ($canUploadVerified ? '<button type="button" class="btn btn-xs btn-outline-primary btn-upload-spt-pdf" data-url="' . $uploadVerifiedUrl . '" data-nomor="' . $nomorSuratAttr . '" title="Upload Ulang SPT TTD (PDF)" style="height:38px;"><i class="fas fa-sync-alt"></i></button>' : '') .
+                        '<button type="button" class="btn btn-xs btn-outline-primary btn-upload-spt-pdf" data-url="' . $uploadVerifiedUrl . '" data-nomor="' . $nomorSuratAttr . '" title="Upload Ulang SPT TTD (PDF)" style="height:38px;"><i class="fas fa-sync-alt"></i></button>' .
                         '</div>';
                 } else {
-                    if ($canUploadVerified) {
-                        $dokumenSptHtml = '<div class="d-flex flex-column align-items-center">' .
-                            '<button type="button" class="btn btn-xs btn-primary btn-upload-spt-pdf btn-table-action shadow-sm mb-1" data-url="' . $uploadVerifiedUrl . '" data-nomor="' . $nomorSuratAttr . '" title="Upload SPT TTD (Wajib PDF)"><i class="fas fa-upload mr-1"></i> Upload PDF</button>' .
-                            '<span class="text-muted small"><i class="fas fa-exclamation-circle text-warning mr-1"></i> Belum ada file</span>' .
-                            '</div>';
-                    } else {
-                        $dokumenSptHtml = '<span class="badge badge-secondary py-1 px-2 font-weight-bold" style="font-size:0.78rem;"><i class="fas fa-exclamation-circle text-warning mr-1"></i> Belum ada file</span>';
-                    }
+                    $uploadSptTtdHtml = '<button type="button" class="btn btn-xs btn-primary btn-upload-spt-pdf btn-table-action shadow-sm" data-url="' . $uploadVerifiedUrl . '" data-nomor="' . $nomorSuratAttr . '" title="Upload SPT TTD (Wajib PDF)"><i class="fas fa-upload mr-1"></i> Upload PDF</button>';
                 }
-                $row['dokumen_spt_html'] = $dokumenSptHtml;
-                $row['upload_spt_ttd_html'] = $dokumenSptHtml;
-                $row['upload_verified_html'] = $dokumenSptHtml;
+                $row['upload_spt_ttd_html'] = $uploadSptTtdHtml;
+                $row['upload_verified_html'] = $uploadSptTtdHtml;
                 
                 if ($canEdit) {
                     $row['action_html'] = '<div class="d-flex justify-content-center align-items-center" style="gap: 5px; white-space: nowrap;">';

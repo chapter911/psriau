@@ -138,7 +138,6 @@
                         <th style="width:220px;">Kota Tujuan</th>
                         <th style="width:220px;">Periode</th>
                         <th>Nama Pelaksana</th>
-                        <th style="width:140px;" class="text-center">Dokumen SPT</th>
                         <th style="width:110px;" class="text-center">Lihat Dokumen</th>
                         <?php if ($can_upload_verified ?? false): ?>
                             <th style="width:130px;" class="text-center">Upload Verified</th>
@@ -291,12 +290,6 @@
                 render: function (data) {
                     return data ? $('<div/>').text(data).html() : '-';
                 }
-            },
-            {
-                data: 'dokumen_spt_html',
-                orderable: false,
-                searchable: false,
-                className: 'text-center'
             },
             {
                 data: 'dokumen_html',
