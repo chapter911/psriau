@@ -353,6 +353,7 @@ graph TD
                                     <li>Isi Tujuan, Sasaran, dan Hasil Perjadinya.</li>
                                     <li>Unggah foto di tab <strong>Dokumentasi Kegiatan</strong> & tiket/nota di tab <strong>Dokumentasi Tiket</strong> (input teks bebas).</li>
                                     <li>Klik <strong>Simpan Final</strong> untuk mengunci laporan.</li>
+                                    <li>Pantau status dan akses file PDF <strong>Dokumen SPT</strong> (dengan status "Belum ada file" jika berkas TTD belum diunggah) serta dokumen laporan hasil pada tabel utama.</li>
                                 </ol>
                             </div>
                         </div>
