@@ -64,6 +64,64 @@
             font-weight: bold;
             text-decoration: underline;
         }
+        .stamp-approved {
+            margin: 6px auto 8px auto;
+            width: 145px;
+            border: 3px double #15803d;
+            color: #15803d;
+            padding: 5px 6px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-radius: 5px;
+            background-color: #f0fdf4;
+            line-height: 1.3;
+        }
+        .stamp-approved .stamp-title {
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #15803d;
+        }
+        .stamp-approved .stamp-sub {
+            font-size: 7.5px;
+            font-weight: bold;
+            color: #166534;
+            border-top: 1px dashed #15803d;
+            margin-top: 3px;
+            padding-top: 2px;
+            letter-spacing: 0.5px;
+        }
+        .stamp-rejected {
+            margin: 6px auto 8px auto;
+            width: 145px;
+            border: 3px double #dc2626;
+            color: #dc2626;
+            padding: 5px 6px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-radius: 5px;
+            background-color: #fef2f2;
+            line-height: 1.3;
+        }
+        .stamp-rejected .stamp-title {
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #dc2626;
+        }
+        .stamp-rejected .stamp-sub {
+            font-size: 7.5px;
+            font-weight: bold;
+            color: #991b1b;
+            border-top: 1px dashed #dc2626;
+            margin-top: 3px;
+            padding-top: 2px;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
@@ -97,19 +155,6 @@
         if (! empty($data['periode_mulai'])) {
             $year = date('Y', strtotime($data['periode_mulai']));
         }
-
-        // Helper QR Code generator (returns Data URI)
-        $getQrUri = static function (string $text, int $size = 100): string {
-            $apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size . '&data=' . urlencode($text);
-            try {
-                $ctx = stream_context_create(['http' => ['timeout' => 2]]);
-                $content = @file_get_contents($apiUrl, false, $ctx);
-                if ($content !== false && strlen($content) > 0) {
-                    return 'data:image/png;base64,' . base64_encode($content);
-                }
-            } catch (\Throwable $e) {}
-            return '';
-        };
     ?>
 
     <!-- Header / Kop Surat -->
@@ -210,17 +255,14 @@
                 Pejabat Pembuat Komitmen
                 <br>
                 <?php if (($data['status_menyetujui'] ?? '') === 'disetujui'): ?>
-                    <?php
-                        $verifyUrlM = site_url('admin/surat/perjalanan-dinas/disposisi/' . $data['id'] . '/setujui?role=menyetujui&token=' . ($data['token_menyetujui'] ?? ''));
-                        $qrM = $getQrUri($verifyUrlM, 110);
-                    ?>
-                    <div style="margin: 4px auto 6px auto; text-align: center;">
-                        <img src="<?= $qrM; ?>" style="width: 75px; height: 75px; border: 1px solid #16a34a; padding: 2px; background: #fff;" alt="QR Approved PPK"><br>
-                        <span style="font-size: 7.5px; font-weight: bold; color: #15803d; text-transform: uppercase;">SIGNED DIGITAL (PPK)</span>
+                    <div class="stamp-approved">
+                        <div class="stamp-title">&#10003; APPROVED</div>
+                        <div class="stamp-sub">DISPOSED &amp; VERIFIED (PPK)</div>
                     </div>
                 <?php elseif (($data['status_menyetujui'] ?? '') === 'ditolak'): ?>
-                    <div style="margin: 8px auto 10px auto; width: 130px; border: 2px solid #dc2626; color: #dc2626; font-weight: bold; padding: 4px; text-align: center; font-size: 10px; text-transform: uppercase; border-radius: 4px; background: #fef2f2;">
-                        DITOLAK / REJECTED
+                    <div class="stamp-rejected">
+                        <div class="stamp-title">&#10007; REJECTED</div>
+                        <div class="stamp-sub">DITOLAK / REJECTED</div>
                     </div>
                 <?php else: ?>
                     <br><br><br><br><br>
@@ -233,17 +275,14 @@
                 Kepala Satuan Kerja PPS Riau
                 <br>
                 <?php if (($data['status_diketahui'] ?? '') === 'disetujui'): ?>
-                    <?php
-                        $verifyUrlD = site_url('admin/surat/perjalanan-dinas/disposisi/' . $data['id'] . '/setujui?role=diketahui&token=' . ($data['token_diketahui'] ?? ''));
-                        $qrD = $getQrUri($verifyUrlD, 110);
-                    ?>
-                    <div style="margin: 4px auto 6px auto; text-align: center;">
-                        <img src="<?= $qrD; ?>" style="width: 75px; height: 75px; border: 1px solid #16a34a; padding: 2px; background: #fff;" alt="QR Approved Kasatker"><br>
-                        <span style="font-size: 7.5px; font-weight: bold; color: #15803d; text-transform: uppercase;">SIGNED DIGITAL (KASATKER)</span>
+                    <div class="stamp-approved">
+                        <div class="stamp-title">&#10003; APPROVED</div>
+                        <div class="stamp-sub">DISPOSED &amp; VERIFIED (KASATKER)</div>
                     </div>
                 <?php elseif (($data['status_diketahui'] ?? '') === 'ditolak'): ?>
-                    <div style="margin: 8px auto 10px auto; width: 130px; border: 2px solid #dc2626; color: #dc2626; font-weight: bold; padding: 4px; text-align: center; font-size: 10px; text-transform: uppercase; border-radius: 4px; background: #fef2f2;">
-                        ✕ REJECTED
+                    <div class="stamp-rejected">
+                        <div class="stamp-title">&#10007; REJECTED</div>
+                        <div class="stamp-sub">DITOLAK / REJECTED</div>
                     </div>
                 <?php else: ?>
                     <br><br><br><br><br>

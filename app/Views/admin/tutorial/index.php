@@ -228,7 +228,7 @@ graph TD
     B --> C{Keputusan Approval}
     C -->|Tolak| D[Klik Tombol Tolak + Isi Alasan Penolakan]
     C -->|Setujui| E[Klik Tombol Setujui]
-    E --> F[Disposisi Disetujui: Notifikasi Terkirim ke Pengaju & Keuangan]
+    E --> F[Disposisi Disetujui: Notifikasi Terkirim &amp; PDF Dilengkapi Stempel Approved]
                 </pre>
             </div>
         </div>
@@ -337,6 +337,7 @@ graph TD
                                     <li>Pilih Pegawai Pelaksana, Kasatker, dan PPK Penandatangan.</li>
                                     <li>Isi Kota Tujuan, Tanggal Mulai/Selesai, dan Maksud Perjadin.</li>
                                     <li>Sistem mengirimkan email approval ke Pejabat Penandatangan.</li>
+                                    <li>Klik tombol merah <strong>Cetak</strong> pada tabel untuk mengunduh PDF Disposisi resmi yang dilengkapi <strong>Stempel Approved</strong>.</li>
                                 </ol>
                             </div>
                         </div>
@@ -377,6 +378,7 @@ graph TD
                             <li>Buka email notifikasi atau masuk ke menu Disposisi Perjadin.</li>
                             <li>Periksa detail kota tujuan, periode tanggal, dan daftar pegawai pelaksana.</li>
                             <li>Klik tombol hijau <strong>Setujui</strong> atau tombol merah <strong>Tolak</strong>.</li>
+                            <li>Setelah disetujui, PDF Disposisi akan tersemat <strong>Stempel Approved</strong> dari PPK &amp; Kasatker.</li>
                         </ul>
                     </div>
                 </div>
