@@ -169,6 +169,7 @@ class DisposisiPerjalananDinas extends BaseController
                 $actionHtml .= '<button type="button" class="btn btn-sm btn-secondary ml-1" disabled title="Disposisi yang sudah disetujui/ditolak tidak dapat diubah"><i class="fas fa-lock"></i> Ubah</button>';
             }
 
+            $actionHtml .= '<button type="button" class="btn btn-sm btn-danger btn-delete ml-1" data-id="' . $row['id'] . '" title="Hapus Disposisi"><i class="fas fa-trash"></i> Hapus</button>';
             $actionHtml .= '</div>';
 
             $data[] = [
@@ -471,17 +472,70 @@ class DisposisiPerjalananDinas extends BaseController
             return redirect()->to(site_url('/admin'));
         }
 
-        $model = new DisposisiPerjalananDinasModel();
+        $db = db_connect();
 
-        // Delete linked laporan draft before deleting disposisi
-        $laporanModel = new LaporanPerjalananDinasModel();
-        $laporanModel->where('disposisi_id', $id)->delete();
+        // 1. Fetch all linked laporan_perjalanan_dinas entries for total cleanup
+        if ($db->tableExists('laporan_perjalanan_dinas')) {
+            $laporanRows = $db->table('laporan_perjalanan_dinas')
+                ->where('disposisi_id', $id)
+                ->get()
+                ->getResultArray();
 
-        if ($model->delete($id) === false) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('error', 'Gagal menghapus data.');
+            foreach ($laporanRows as $laporanRow) {
+                // Delete verified_spt_path if set
+                if (! empty($laporanRow['verified_spt_path'])) {
+                    $this->deleteStoredFile((string) $laporanRow['verified_spt_path']);
+                }
+
+                // Delete dokumen_pendukung_json files
+                $docs = json_decode((string) ($laporanRow['dokumen_pendukung_json'] ?? '[]'), true);
+                if (is_array($docs)) {
+                    foreach ($docs as $doc) {
+                        if (is_array($doc) && ! empty($doc['file_path'])) {
+                            $this->deleteStoredFile((string) $doc['file_path']);
+                        } elseif (is_string($doc)) {
+                            $this->deleteStoredFile($doc);
+                        }
+                    }
+                }
+
+                // Delete foto_dokumentasi_json files
+                $photos = json_decode((string) ($laporanRow['foto_dokumentasi_json'] ?? '[]'), true);
+                if (is_array($photos)) {
+                    foreach ($photos as $photo) {
+                        if (is_array($photo) && ! empty($photo['file_path'])) {
+                            $this->deleteStoredFile((string) $photo['file_path']);
+                        } elseif (is_string($photo)) {
+                            $this->deleteStoredFile($photo);
+                        }
+                    }
+                }
+
+                // Delete database row from laporan_perjalanan_dinas
+                $db->table('laporan_perjalanan_dinas')->where('id', $laporanRow['id'])->delete();
+            }
         }
 
-        return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('success', 'Data Disposisi Perjalanan Dinas berhasil dihapus.');
+        // 2. Delete disposisi_perjalanan_dinas database entry
+        $model = new DisposisiPerjalananDinasModel();
+        if ($model->delete($id) === false) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('error', 'Gagal menghapus data disposisi.');
+        }
+
+        return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('success', 'Data Disposisi Perjalanan Dinas dan seluruh dokumen/laporan terkait berhasil dihapus.');
+    }
+
+    private function deleteStoredFile(string $path): void
+    {
+        $path = trim($path);
+        if ($path === '' || strpos($path, '/uploads/') !== 0) {
+            return;
+        }
+
+        $filePath = FCPATH . ltrim($path, '/');
+        if (is_file($filePath)) {
+            @unlink($filePath);
+        }
     }
 
     public function pdf(int $id)

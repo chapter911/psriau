@@ -552,11 +552,35 @@ $(document).ready(function() {
     });
 
     // Handle Delete Button Click
-    $(document).on('click', '.btn-delete', function() {
+    $(document).on('click', '.btn-delete', function(e) {
+        e.preventDefault();
         var id = $(this).data('id');
-        $('#btnConfirmDelete').attr('href', '<?= site_url('admin/surat/perjalanan-dinas/disposisi'); ?>/' + id + '/hapus');
-        $('#deleteModal').modal('show');
-        table.ajax.reload();
+        var deleteUrl = '<?= site_url('admin/surat/perjalanan-dinas/disposisi'); ?>/' + id + '/hapus';
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Hapus Disposisi Perjalanan Dinas?',
+                text: 'Data disposisi beserta seluruh dokumen dan laporan terkait akan dihapus secara bersih.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-trash mr-1"></i> Ya, Hapus bersih',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    confirmButton: 'btn btn-danger font-weight-bold px-3 py-2 mr-2',
+                    cancelButton: 'btn btn-secondary px-3 py-2'
+                },
+                buttonsStyling: false
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    window.location.href = deleteUrl;
+                }
+            });
+        } else {
+            $('#btnConfirmDelete').attr('href', deleteUrl);
+            $('#deleteModal').modal('show');
+        }
     });
 
     $filterStartDate.on('change', function () { table.ajax.reload(); });
