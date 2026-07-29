@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= esc($title); ?> - Export PDF</title>
+    <title><?= esc($title); ?> - Export PDF Poster</title>
     
     <!-- FontAwesome & Bootstrap CSS for Crisp Typography -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -44,22 +44,23 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            padding: 16px 20px;
+            padding: 12px 16px;
             position: relative;
+            box-sizing: border-box;
         }
 
         /* Printable Official Header Banner */
         .poster-header {
             text-align: center;
-            padding-bottom: 10px;
-            border-bottom: 2.5px solid rgba(56, 189, 248, 0.5);
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(56, 189, 248, 0.5);
             flex-shrink: 0;
+            width: 100%;
         }
 
         .poster-dept-title {
             color: #94a3b8;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             letter-spacing: 1.5px;
             font-weight: 700;
             line-height: 1.2;
@@ -68,41 +69,44 @@
 
         .poster-satker-title {
             color: #38bdf8;
-            font-size: 1.35rem;
+            font-size: 1.25rem;
             letter-spacing: 2px;
             font-weight: 800;
             line-height: 1.2;
             text-transform: uppercase;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+            text-shadow: 0 2px 6px rgba(0,0,0,0.6);
         }
 
         .poster-year-badge {
             background: #f59e0b;
             color: #0f172a;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 800;
-            padding: 3px 14px;
+            padding: 2px 14px;
             border-radius: 20px;
             letter-spacing: 1px;
             display: inline-block;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
 
-        /* Org Tree Canvas Wrapper */
+        /* Org Tree Canvas Wrapper (Aligned Top-Center) */
         .poster-canvas {
             flex-grow: 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             position: relative;
             overflow: hidden;
+            padding-top: 10px;
+            width: 100%;
         }
 
         .org-tree-wrapper {
             display: inline-flex;
             justify-content: center;
             transform-origin: top center;
-            transform: scale(var(--print-scale, 0.58));
+            transition: transform 0.1s ease-out;
         }
 
         .org-node-tree {
@@ -117,7 +121,7 @@
             flex-direction: column;
             align-items: center;
             position: relative;
-            padding-top: 24px;
+            padding-top: 18px;
         }
 
         .org-node-children-wrapper::before {
@@ -127,14 +131,14 @@
             left: 50%;
             border-left: 2.5px solid #38bdf8;
             width: 0;
-            height: 24px;
+            height: 18px;
         }
 
         .org-node-children {
             display: flex;
             justify-content: center;
             position: relative;
-            padding-top: 24px;
+            padding-top: 18px;
         }
 
         .org-node-children::before {
@@ -144,21 +148,21 @@
             left: 50%;
             border-left: 2.5px solid #38bdf8;
             width: 0;
-            height: 24px;
+            height: 18px;
         }
 
         .org-node-children-row + .org-node-children-row {
-            margin-top: 14px;
+            margin-top: 10px;
         }
 
         .org-node-children-row + .org-node-children-row::before {
             content: '';
             position: absolute;
-            top: -14px;
+            top: -10px;
             left: 50%;
             border-left: 2.5px solid #38bdf8;
             width: 0;
-            height: 38px;
+            height: 28px;
         }
 
         .org-node-item {
@@ -166,7 +170,7 @@
             flex-direction: column;
             align-items: center;
             position: relative;
-            padding: 24px 14px 0 14px;
+            padding: 18px 10px 0 10px;
         }
 
         .org-node-tree > .org-node-item {
@@ -177,7 +181,7 @@
             content: '';
             position: absolute;
             top: 0;
-            height: 24px;
+            height: 18px;
         }
 
         .org-node-item::before {
@@ -203,12 +207,12 @@
 
         /* Card Styling for Poster Export */
         .org-card {
-            width: 230px;
-            height: 235px;
+            width: 220px;
+            height: 215px;
             background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-            border: 2.5px solid #38bdf8;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border: 2px solid #38bdf8;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -217,29 +221,29 @@
         }
 
         .org-card.level-1 {
-            width: 260px;
-            height: 245px;
+            width: 240px;
+            height: 225px;
             border: 2.5px solid #f59e0b !important;
             background: linear-gradient(180deg, #ffffff 0%, #fffdf5 100%);
         }
 
         .org-card.level-2, .org-card.level-3 {
-            width: 240px;
-            height: 235px;
+            width: 230px;
+            height: 215px;
             border-color: #38bdf8;
         }
 
         .org-card-header {
             background: #0056b3;
             color: #ffffff;
-            padding: 6px 10px;
+            padding: 5px 8px;
             text-align: center;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 700;
             text-uppercase: uppercase;
             line-height: 1.2;
             letter-spacing: 0.5px;
-            height: 48px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -256,7 +260,7 @@
         }
 
         .org-card-body {
-            padding: 8px 10px;
+            padding: 6px 8px;
             text-align: center;
             flex-grow: 1;
             display: flex;
@@ -266,13 +270,13 @@
         }
 
         .org-avatar-frame {
-            width: 68px;
-            height: 68px;
-            margin: 0 auto 6px auto;
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 4px auto;
             border-radius: 50%;
             overflow: hidden;
-            border: 3px solid #0056b3;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            border: 2.5px solid #0056b3;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
             background: #e9ecef;
             display: flex;
             align-items: center;
@@ -281,8 +285,8 @@
         }
 
         .level-1 .org-avatar-frame {
-            width: 80px;
-            height: 80px;
+            width: 72px;
+            height: 72px;
             border-color: #d4af37;
         }
 
@@ -293,7 +297,7 @@
         }
 
         .org-pegawai-nama {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             font-weight: 700;
             color: #0f172a;
             margin-bottom: 2px;
@@ -301,21 +305,21 @@
         }
 
         .org-pegawai-nip {
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             color: #475569;
             margin-bottom: 2px;
         }
 
         /* Group Block Cards */
         .org-card.org-group-block {
-            width: 620px;
+            width: 580px;
             max-width: 100%;
             height: auto !important;
-            min-height: 140px;
+            min-height: 130px;
             border: 2.5px solid #38bdf8;
             background: #f8fafc;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
             overflow: hidden !important;
             display: flex;
             flex-direction: column;
@@ -330,52 +334,52 @@
         .org-group-header {
             background: linear-gradient(135deg, #1e3c72, #2a5298);
             color: #ffffff;
-            padding: 8px 14px;
+            padding: 6px 12px;
             font-weight: 700;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             letter-spacing: 0.5px;
             text-uppercase: uppercase;
-            height: 44px;
+            height: 40px;
             flex-shrink: 0;
         }
 
         .org-group-body {
-            padding: 14px;
+            padding: 10px;
             flex-grow: 1;
         }
 
         .org-group-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
+            gap: 10px;
             width: 100%;
         }
 
         .org-member-card {
             background: #ffffff;
             border: 1.5px solid #cbd5e1;
-            border-radius: 10px;
-            padding: 8px 12px;
-            height: 60px;
+            border-radius: 8px;
+            padding: 6px 10px;
+            height: 56px;
             display: flex;
             align-items: center;
             position: relative;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
             width: 100%;
             overflow: hidden;
             color: #0f172a;
         }
 
         .org-member-avatar {
-            width: 42px;
-            height: 42px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             overflow: hidden;
             border: 2px solid #d4af37;
-            margin-right: 10px;
+            margin-right: 8px;
             flex-shrink: 0;
             display: flex;
             align-items: center;
@@ -396,7 +400,7 @@
 
         .org-member-nama {
             font-weight: 700;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             color: #1e293b;
             white-space: nowrap;
             overflow: hidden;
@@ -405,15 +409,11 @@
         }
 
         .org-member-title {
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             color: #64748b;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-
-        @media print {
-            .no-print { display: none !important; }
         }
     </style>
 </head>
@@ -425,7 +425,7 @@
         <div class="poster-header">
             <div class="d-flex align-items-center justify-content-center">
                 <?php if (! empty($appLogoUrl)): ?>
-                    <img src="<?= esc($appLogoUrl); ?>" alt="Logo Aplikasi" height="64" class="mr-4" style="object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));" onerror="this.style.display='none';">
+                    <img src="<?= esc($appLogoUrl); ?>" alt="Logo Aplikasi" height="56" class="mr-3" style="object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));" onerror="this.style.display='none';">
                 <?php endif; ?>
                 <div class="text-left">
                     <h6 class="poster-dept-title mb-0">
@@ -444,7 +444,7 @@
         </div>
 
         <!-- Poster Org Tree Canvas -->
-        <div class="poster-canvas">
+        <div class="poster-canvas" id="poster-canvas">
             <div class="org-tree-wrapper" id="org-tree-wrapper">
                 <!-- Tree rendered via JS -->
             </div>
@@ -461,28 +461,32 @@
         autoFitScale();
         setTimeout(function () {
             window.print();
-        }, 300);
+        }, 350);
     };
 
     function autoFitScale() {
         const wrapper = document.getElementById('org-tree-wrapper');
-        if (!wrapper) return;
+        const canvas = document.getElementById('poster-canvas');
+        if (!wrapper || !canvas) return;
 
-        const treeWidth = wrapper.scrollWidth || wrapper.offsetWidth || 1400;
-        const treeHeight = wrapper.scrollHeight || wrapper.offsetHeight || 900;
+        // Reset to 1 to measure exact unscaled dimensions
+        wrapper.style.transform = 'scale(1)';
 
-        const targetWidth = isPortrait ? 760 : 1080;
-        const targetHeight = isPortrait ? 980 : 660;
+        const treeWidth = wrapper.scrollWidth || wrapper.offsetWidth || 1200;
+        const treeHeight = wrapper.scrollHeight || wrapper.offsetHeight || 800;
 
-        const scaleX = targetWidth / treeWidth;
-        const scaleY = targetHeight / treeHeight;
+        const availWidth = canvas.clientWidth || (isPortrait ? 760 : 1080);
+        const availHeight = canvas.clientHeight || (isPortrait ? 960 : 660);
+
+        const scaleX = (availWidth - 20) / treeWidth;
+        const scaleY = (availHeight - 20) / treeHeight;
         let autoScale = Math.min(scaleX, scaleY);
 
-        const minBound = isPortrait ? 0.28 : 0.35;
-        const maxBound = isPortrait ? 0.65 : 0.72;
+        const minBound = isPortrait ? 0.30 : 0.38;
+        const maxBound = isPortrait ? 0.75 : 0.85;
         autoScale = Math.min(Math.max(autoScale, minBound), maxBound);
 
-        document.documentElement.style.setProperty('--print-scale', autoScale.toFixed(3));
+        wrapper.style.transform = `scale(${autoScale.toFixed(3)})`;
     }
 
     function renderOrgChart() {
