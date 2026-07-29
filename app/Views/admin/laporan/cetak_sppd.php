@@ -146,17 +146,27 @@
 
     <?php foreach ($pelaksana as $index => $utama): ?>
         <?php
-        // Jabatan & Pangkat
+        // Jabatan & Golongan
         $jabatanStr = trim((string)($utama['jabatan'] ?? ''));
-        $golongan = '';
-        $pangkat = '';
+        $golonganCode = trim((string)($utama['golongan'] ?? ''));
         
-        if (preg_match('/^([^\(]+)\((.*?)\)/', $jabatanStr, $matches)) {
-            $golongan = trim($matches[1]);
-            $pangkat = trim($matches[2]);
-        } else {
-            $golongan = $jabatanStr;
+        if ($golonganCode === '') {
+            if (preg_match('/^([^\(]+)\((.*?)\)/', $jabatanStr, $matches)) {
+                $golonganCode = trim($matches[1]);
+            }
         }
+        
+        if ($golonganCode !== '' && $golonganCode !== '-') {
+            if (preg_match('/(I{1,3}|IV)\/[a-e]/i', $golonganCode, $gMatch)) {
+                $golonganDisplay = strtoupper($gMatch[0]);
+            } else {
+                $golonganDisplay = $golonganCode;
+            }
+        } else {
+            $golonganDisplay = '-';
+        }
+
+        $jabatanDisplay = $jabatanStr !== '' ? $jabatanStr : 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
 
         $tingkatBiaya = 'c'; // Default to c for non-eselon
         $jabUpper = strtoupper($jabatanStr);
@@ -233,9 +243,9 @@
                 </td>
                 <td class="col-value">
                     <table style="width:100%; border:none; margin:0; padding:0;">
-                        <tr><td style="border:none; padding:0; width:5%;">a.</td><td style="border:none; padding:0;"><?= esc($pangkat); ?> (<?= esc($golongan); ?>)</td></tr>
-                        <tr><td style="border:none; padding:0;">b.</td><td style="border:none; padding:0;">Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis Riau</td></tr>
-                        <tr><td style="border:none; padding:0;">c.</td><td style="border:none; padding:0;"><?= $tingkatBiaya; ?></td></tr>
+                        <tr><td style="border:none; padding:0; width:5%;">a.</td><td style="border:none; padding:0;"><?= esc($golonganDisplay); ?></td></tr>
+                        <tr><td style="border:none; padding:0;">b.</td><td style="border:none; padding:0;"><?= esc($jabatanDisplay); ?></td></tr>
+                        <tr><td style="border:none; padding:0;">c.</td><td style="border:none; padding:0;"><?= esc($tingkatBiaya); ?></td></tr>
                     </table>
                 </td>
             </tr>

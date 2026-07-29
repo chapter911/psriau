@@ -405,7 +405,7 @@ graph TD
                             <li>Gunakan tombol <strong>Setting Nomor Terakhir SPPD/Kwitansi</strong> untuk mengatur nomor awal auto-increment jika ingin melanjutkan dari penomoran sebelumnya (misal: isi <code>15</code> untuk memulai dari <code>016</code>).</li>
                             <li>Klik tombol kuning <strong>Update Verifikasi</strong> pada baris laporan untuk menentukan KOP Surat, MAK, Dasar SPT, Kode Nomor, dan memasukkan tarif Transport & Penginapan per periode.</li>
                             <li>Upload file PDF <strong>SPT TTD</strong> yang telah disahkan.</li>
-                            <li>Cetak dokumen resmi: <strong>Surat Tugas (SPT)</strong>, <strong>SPPD (2 Halaman)</strong>, <strong>Kwitansi & Rincian Biaya</strong> (dengan "Kode Nomor" SPPD & "Nomor Bukti" Kwitansi yang saling terhubung otomatis dan nama penerima kapital), serta <strong>Daftar Nominatif</strong> (NIP otomatis hanya ditampilkan untuk personil berstatus PNS, CPNS, atau PPPK).</li>
+                            <li>Cetak dokumen resmi: <strong>Surat Tugas (SPT)</strong>, <strong>SPPD (2 Halaman)</strong> (dengan format ringkas Golongan pada bagian 3.a seperti <code>III/a</code> dan Jabatan pelaksana), <strong>Kwitansi & Rincian Biaya</strong> (dengan "Kode Nomor" SPPD & "Nomor Bukti" Kwitansi terhubung otomatis dan nama penerima kapital), serta <strong>Daftar Nominatif</strong> (NIP otomatis hanya ditampilkan untuk personil berstatus PNS, CPNS, atau PPPK).</li>
                         </ol>
                     </div>
                 </div>

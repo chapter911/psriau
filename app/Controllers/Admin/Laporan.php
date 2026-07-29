@@ -983,6 +983,33 @@ class Laporan extends BaseController
         $periodeMulai = $row['periode_mulai'] ?? '';
         $periodeSelesai = $row['periode_selesai'] ?? '';
 
+        $db = \Config\Database::connect();
+        if (! empty($pelaksana) && $db->tableExists('mst_pegawai')) {
+            $pegawaiIds = array_filter(array_column($pelaksana, 'id'));
+            if (! empty($pegawaiIds)) {
+                $pegawaiDb = $db->table('mst_pegawai')
+                    ->select('id, golongan, jenis_pegawai')
+                    ->whereIn('id', $pegawaiIds)
+                    ->get()->getResultArray();
+                $pegMap = [];
+                foreach ($pegawaiDb as $pDb) {
+                    $pegMap[(int) $pDb['id']] = $pDb;
+                }
+                foreach ($pelaksana as &$pItem) {
+                    $pid = (int) ($pItem['id'] ?? 0);
+                    if (isset($pegMap[$pid])) {
+                        if (empty($pItem['golongan']) && ! empty($pegMap[$pid]['golongan'])) {
+                            $pItem['golongan'] = $pegMap[$pid]['golongan'];
+                        }
+                        if (empty($pItem['jenis_pegawai']) && ! empty($pegMap[$pid]['jenis_pegawai'])) {
+                            $pItem['jenis_pegawai'] = $pegMap[$pid]['jenis_pegawai'];
+                        }
+                    }
+                }
+                unset($pItem);
+            }
+        }
+
         // Fetch kop_surat
         $db = \Config\Database::connect();
         $kopSuratId = (int) ($row['kop_surat_id'] ?? 0);
