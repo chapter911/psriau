@@ -44,10 +44,10 @@
                     </button>
                     <div class="dropdown-menu dropdown-menu-right">
                         <a class="dropdown-item" href="javascript:void(0)" onclick="printChart()">
-                            <i class="fas fa-print text-secondary mr-2"></i> Cetak / Save PDF
+                            <i class="fas fa-file-pdf text-danger mr-2"></i> Cetak / Export PDF (1 Halaman)
                         </a>
                         <a class="dropdown-item" href="javascript:void(0)" onclick="exportChartImage()">
-                            <i class="fas fa-file-image text-info mr-2"></i> Download Gambar (PNG)
+                            <i class="fas fa-file-image text-info mr-2"></i> Download Gambar / PDF Landscape
                         </a>
                     </div>
                 </div>
@@ -60,8 +60,8 @@
 <section class="content">
     <div class="container-fluid">
 
-        <!-- Top Banner Header for Chart -->
-        <div class="card shadow-sm border-0 mb-4 overflow-hidden" style="background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); border-radius: 12px;">
+        <!-- Top Banner Header for Web View -->
+        <div class="card shadow-sm border-0 mb-4 overflow-hidden top-web-banner" style="background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); border-radius: 12px;">
             <div class="card-body p-4 text-center text-white position-relative">
                 <div class="d-flex align-items-center justify-content-center mb-2">
                     <i class="fas fa-shield-alt text-warning fa-2x mr-3"></i>
@@ -75,6 +75,29 @@
                     </div>
                 </div>
                 <p class="small text-white-50 mb-0">Integrasi Data Master Pegawai & Penunjukan Pejabat Struktur Organisasi Satker PPS. (Klik & tahan mouse untuk menggeser 2D grab canvas)</p>
+            </div>
+        </div>
+
+        <!-- Official Printable Header Banner (Only Visible on Print/PDF Export) -->
+        <div class="print-official-banner d-none">
+            <div class="text-center py-2 border-bottom border-dark mb-2">
+                <div class="d-flex align-items-center justify-content-center">
+                    <svg width="44" height="44" viewBox="0 0 100 100" class="mr-3" style="flex-shrink:0;">
+                        <circle cx="50" cy="50" r="46" fill="#1b2a4a" stroke="#d4af37" stroke-width="4"/>
+                        <polygon points="50,15 62,38 87,38 67,53 74,78 50,62 26,78 33,53 13,38 38,38" fill="#d4af37"/>
+                    </svg>
+                    <div>
+                        <h6 class="font-weight-bold text-uppercase mb-0 text-dark" style="letter-spacing: 1px; font-size: 0.82rem; line-height: 1.2;">
+                            KEMENTERIAN PEKERJAAN UMUM — DIREKTORAT JENDERAL PRASARANA STRATEGIS
+                        </h6>
+                        <h5 class="font-weight-bold text-uppercase mb-0 text-primary" style="letter-spacing: 1.2px; font-size: 1.05rem; line-height: 1.2;">
+                            SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU
+                        </h5>
+                        <div class="font-weight-bold text-dark small text-uppercase" style="letter-spacing: 1px; font-size: 0.75rem;">
+                            BAGAN STRUKTUR ORGANISASI SATKER TAHUN ANGGARAN <?= date('Y'); ?>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -103,6 +126,22 @@
                         <!-- Tree rendered via JS -->
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Official Printable Signature Block (Only Visible on Print/PDF Export) -->
+        <div class="print-signature-block d-none mt-2">
+            <div class="text-left small text-muted">
+                <div>Dokumen Resmi Sistem Informasi Perjalanan Dinas & Operasional</div>
+                <div>Satuan Kerja Pelaksanaan Prasarana Strategis Riau TA <?= date('Y'); ?></div>
+            </div>
+            <div class="text-center small">
+                <div>Ditetapkan di: Pekanbaru</div>
+                <div>Pada Tanggal: <?= date('d F Y'); ?></div>
+                <div class="font-weight-bold mt-1">Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau</div>
+                <div style="height: 40px;"></div>
+                <div class="font-weight-bold text-underline"><u>MUHAMMAD YUDI PRASETYA, ST</u></div>
+                <div>NIP. 198002142014121002</div>
             </div>
         </div>
 
@@ -273,12 +312,11 @@
                         <div class="col-md-6 form-group mb-3">
                             <label for="batch_kategori" class="font-weight-bold text-dark small">Kelompok / Pilar</label>
                             <select class="form-control" id="batch_kategori" name="kategori_kelompok">
-                                <option value="staf" selected>Tim Teknis / Staf Pelaksana (Dalam Blok Tim)</option>
-                                <option value="pendukung">Tim Pendukung Operasional (Security, Cleaning Service, Driver) — Paling Bawah</option>
-                                <option value="subbag">Kasubbag TU</option>
-                                <option value="ppk1">PPK I</option>
-                                <option value="ppk2">PPK II</option>
-                                <option value="ppk3">PPK III</option>
+                                <option value="staf" selected>Tim Teknis / Staf Pelaksana (Masuk Blok Tim)</option>
+                                <option value="pendukung">Tim Pendukung Operasional (Security, Cleaning Service, Driver) (Masuk Blok Tim)</option>
+                                <option value="ppk">PPK (Kartu Posisi Struktural)</option>
+                                <option value="bendahara">Bendahara / SPM (Kartu Posisi Struktural)</option>
+                                <option value="subbag">Kasubbag TU (Kartu Posisi Struktural)</option>
                             </select>
                         </div>
                     </div>
@@ -825,10 +863,10 @@
         flex-shrink: 0;
     }
 
-    /* Page orientation and print optimization */
+    /* Page orientation and print optimization for EXACT 1 PAGE A4 Landscape */
     @page {
         size: A4 landscape;
-        margin: 6mm 8mm;
+        margin: 4mm 6mm;
     }
 
     @media print {
@@ -837,10 +875,23 @@
             color: #000000 !important;
             margin: 0 !important;
             padding: 0 !important;
-            width: 100% !important;
-            height: auto !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            overflow: hidden !important;
+            page-break-after: avoid !important;
+            page-break-before: avoid !important;
+            page-break-inside: avoid !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+        }
+
+        .print-official-banner {
+            display: block !important;
+        }
+
+        .print-signature-block {
+            display: flex !important;
         }
 
         /* Hide non-printable UI components */
@@ -854,7 +905,9 @@
         .badge, 
         .org-chart-floating-zoom,
         .modal,
-        .modal-backdrop {
+        .modal-backdrop,
+        .card-header,
+        .top-web-banner {
             display: none !important;
         }
 
@@ -874,7 +927,7 @@
 
         #printable-org-chart-area {
             height: auto !important;
-            max-height: none !important;
+            max-height: 560px !important;
             min-height: 0 !important;
             overflow: visible !important;
             background: #ffffff !important;
@@ -889,14 +942,14 @@
         }
 
         .org-tree-wrapper {
-            transform: scale(0.68) !important;
+            transform: scale(var(--print-scale, 0.58)) !important;
             transform-origin: top center !important;
             margin: 0 auto !important;
         }
 
         /* Ensure cards print with crisp borders and colors */
         .org-card {
-            break-inside: avoid;
+            break-inside: avoid !important;
             box-shadow: none !important;
             border: 2px solid #0056b3 !important;
             background-color: #ffffff !important;
@@ -905,7 +958,7 @@
         }
 
         .org-group-block {
-            break-inside: avoid;
+            break-inside: avoid !important;
             box-shadow: none !important;
             border: 2px solid #1e3c72 !important;
             background-color: #f8fafc !important;
@@ -1103,7 +1156,6 @@
 
     function buildNodeHtml(node) {
         const hasChildren = node.children && node.children.length > 0;
-        const fotoUrl = node.foto_pegawai ? '<?= site_url('/'); ?>' + node.foto_pegawai : '';
         const levelClass = 'level-' + (node.level || 1);
 
         let avatarHtml = '';
@@ -1696,6 +1748,28 @@
     function printChart() {
         const oldZoom = currentZoom;
         zoomReset();
+
+        const wrapper = document.getElementById('org-tree-wrapper');
+        if (wrapper) {
+            // Measure natural width and height
+            const treeWidth = wrapper.scrollWidth || wrapper.offsetWidth || 1400;
+            const treeHeight = wrapper.scrollHeight || wrapper.offsetHeight || 900;
+
+            // Target dimensions for A4 Landscape print area (in px at 96 DPI)
+            // A4 Landscape: ~ 1040px width x 560px max printable height for 1 page
+            const targetWidth = 1040;
+            const targetHeight = 560;
+
+            const scaleX = targetWidth / treeWidth;
+            const scaleY = targetHeight / treeHeight;
+            let autoScale = Math.min(scaleX, scaleY);
+            
+            // Clamp scale between 0.35 and 0.72 for optimal 1-page fit
+            autoScale = Math.min(Math.max(autoScale, 0.35), 0.72);
+
+            document.documentElement.style.setProperty('--print-scale', autoScale.toFixed(3));
+        }
+
         setTimeout(() => {
             window.print();
             setTimeout(() => {
