@@ -189,12 +189,12 @@
 
         /* Pushed level for Group Block alongside Structural Cards to align horizontally with Level 5 in PDF Poster */
         .org-node-item-pushed-level {
-            margin-top: 204px; /* Card height 190px + stem padding 14px */
+            padding-top: 204px !important; /* Push card down to Level 5 while keeping top horizontal connector line intact */
         }
 
         .org-node-item-pushed-level::before,
         .org-node-item-pushed-level::after {
-            height: 218px !important; /* Long stem extending down to Level 5 */
+            height: 204px !important; /* Vertical stem line extending seamlessly from Level 4 down to Level 5 card */
         }
 
         .org-node-tree > .org-node-item {
