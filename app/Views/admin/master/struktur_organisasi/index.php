@@ -1,6 +1,11 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
+<?php
+$appLogoRaw = $globalSetting['logo_url'] ?? $appSetting['app_logo_url'] ?? '';
+$appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url('assets/img/logo.png');
+?>
+
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2 align-items-center">
@@ -40,14 +45,14 @@
                 <!-- Export/Print Dropdown -->
                 <div class="btn-group btn-group-sm shadow-sm">
                     <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-download mr-1"></i> Export / Cetak
+                        <i class="fas fa-download mr-1"></i> Export / Cetak PDF
                     </button>
                     <div class="dropdown-menu dropdown-menu-right">
-                        <a class="dropdown-item" href="javascript:void(0)" onclick="printChart()">
-                            <i class="fas fa-file-pdf text-danger mr-2"></i> Cetak / Export PDF (1 Halaman)
+                        <a class="dropdown-item font-weight-bold" href="javascript:void(0)" onclick="printChart('landscape')">
+                            <i class="fas fa-file-pdf text-danger mr-2"></i> Cetak PDF (Landscape - 1 Halaman)
                         </a>
-                        <a class="dropdown-item" href="javascript:void(0)" onclick="exportChartImage()">
-                            <i class="fas fa-file-image text-info mr-2"></i> Download Gambar / PDF Landscape
+                        <a class="dropdown-item font-weight-bold" href="javascript:void(0)" onclick="printChart('portrait')">
+                            <i class="fas fa-file-pdf text-primary mr-2"></i> Cetak PDF (Portrait - 1 Halaman)
                         </a>
                     </div>
                 </div>
@@ -64,7 +69,12 @@
         <div class="card shadow-sm border-0 mb-4 overflow-hidden top-web-banner" style="background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); border-radius: 12px;">
             <div class="card-body p-4 text-center text-white position-relative">
                 <div class="d-flex align-items-center justify-content-center mb-2">
-                    <i class="fas fa-shield-alt text-warning fa-2x mr-3"></i>
+                    <?php if (! empty($appLogoUrl)): ?>
+                        <img src="<?= esc($appLogoUrl); ?>" alt="Logo Aplikasi" height="52" class="mr-3" style="object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                        <i class="fas fa-shield-alt text-warning fa-2x mr-3 d-none"></i>
+                    <?php else: ?>
+                        <i class="fas fa-shield-alt text-warning fa-2x mr-3"></i>
+                    <?php endif; ?>
                     <div>
                         <h4 class="font-weight-bold text-uppercase mb-0 tracking-wide" style="letter-spacing: 1.5px; color: #f8f9fa;">
                             SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU
@@ -78,14 +88,16 @@
             </div>
         </div>
 
-        <!-- Official Printable Header Banner (Only Visible on Print/PDF Export) -->
+        <!-- Official Printable Header Banner with Application Logo (Only Visible on Print/PDF Export) -->
         <div class="print-official-banner d-none">
-            <div class="text-center py-2 border-bottom border-dark mb-2">
+            <div class="text-center py-2 mb-3" style="border-bottom: 2px solid #1e3c72;">
                 <div class="d-flex align-items-center justify-content-center">
-                    <svg width="44" height="44" viewBox="0 0 100 100" class="mr-3" style="flex-shrink:0;">
-                        <circle cx="50" cy="50" r="46" fill="#1b2a4a" stroke="#d4af37" stroke-width="4"/>
-                        <polygon points="50,15 62,38 87,38 67,53 74,78 50,62 26,78 33,53 13,38 38,38" fill="#d4af37"/>
-                    </svg>
+                    <?php if (! empty($appLogoUrl)): ?>
+                        <img src="<?= esc($appLogoUrl); ?>" alt="Logo Aplikasi" height="50" class="mr-3" style="object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                        <i class="fas fa-sitemap text-primary fa-2x mr-3 d-none"></i>
+                    <?php else: ?>
+                        <i class="fas fa-sitemap text-primary fa-2x mr-3"></i>
+                    <?php endif; ?>
                     <div>
                         <h6 class="font-weight-bold text-uppercase mb-0 text-dark" style="letter-spacing: 1px; font-size: 0.82rem; line-height: 1.2;">
                             KEMENTERIAN PEKERJAAN UMUM — DIREKTORAT JENDERAL PRASARANA STRATEGIS
@@ -119,29 +131,13 @@
                 </button>
             </div>
 
-            <!-- Chart Canvas with Grab-Pan Support -->
-            <div class="card-body p-0 bg-light overflow-auto position-relative" id="printable-org-chart-area" style="min-height: 600px;">
+            <!-- Chart Canvas with Grab-Pan Support & Rich Executive Background -->
+            <div class="card-body p-0 overflow-auto position-relative" id="printable-org-chart-area" style="min-height: 600px;">
                 <div class="org-tree-outer-container">
                     <div class="org-tree-wrapper" id="org-tree-wrapper">
                         <!-- Tree rendered via JS -->
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Official Printable Signature Block (Only Visible on Print/PDF Export) -->
-        <div class="print-signature-block d-none mt-2">
-            <div class="text-left small text-muted">
-                <div>Dokumen Resmi Sistem Informasi Perjalanan Dinas & Operasional</div>
-                <div>Satuan Kerja Pelaksanaan Prasarana Strategis Riau TA <?= date('Y'); ?></div>
-            </div>
-            <div class="text-center small">
-                <div>Ditetapkan di: Pekanbaru</div>
-                <div>Pada Tanggal: <?= date('d F Y'); ?></div>
-                <div class="font-weight-bold mt-1">Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau</div>
-                <div style="height: 40px;"></div>
-                <div class="font-weight-bold text-underline"><u>MUHAMMAD YUDI PRASETYA, ST</u></div>
-                <div>NIP. 198002142014121002</div>
             </div>
         </div>
 
@@ -454,7 +450,7 @@
 </div>
 
 <style>
-    /* Chart Canvas & 2D Grab/Pan Area */
+    /* Chart Canvas & 2D Grab/Pan Area with Rich Executive Background */
     #printable-org-chart-area {
         cursor: grab;
         user-select: none;
@@ -463,8 +459,9 @@
         height: 75vh;
         min-height: 580px;
         max-height: 850px;
-        background: #f8fafc;
+        background: linear-gradient(180deg, #f8fafc 0%, #edf2f7 50%, #e2e8f0 100%);
         border-radius: 8px;
+        border: 1px solid #cbd5e1;
     }
 
     #printable-org-chart-area.is-grabbing {
@@ -890,10 +887,6 @@
             display: block !important;
         }
 
-        .print-signature-block {
-            display: flex !important;
-        }
-
         /* Hide non-printable UI components */
         .main-sidebar, 
         .main-header, 
@@ -911,7 +904,7 @@
             display: none !important;
         }
 
-        /* Expand wrapper to full printable page */
+        /* Expand wrapper to full printable page with executive background gradient */
         .content-wrapper, 
         .content, 
         .container-fluid, 
@@ -927,11 +920,15 @@
 
         #printable-org-chart-area {
             height: auto !important;
-            max-height: 560px !important;
+            max-height: 660px !important;
             min-height: 0 !important;
             overflow: visible !important;
-            background: #ffffff !important;
-            padding: 0 !important;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 60%, #f1f5f9 100%) !important;
+            border: 2px solid #1e3c72 !important;
+            border-radius: 12px !important;
+            padding: 10px !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
         .org-tree-outer-container {
@@ -947,7 +944,7 @@
             margin: 0 auto !important;
         }
 
-        /* Ensure cards print with crisp borders and colors */
+        /* Ensure cards print with crisp borders and rich colors */
         .org-card {
             break-inside: avoid !important;
             box-shadow: none !important;
@@ -1745,27 +1742,38 @@
         });
     }
 
-    function printChart() {
+    function printChart(orientation = 'landscape') {
         const oldZoom = currentZoom;
         zoomReset();
 
+        // Inject orientation dynamic CSS
+        let dynamicStyle = document.getElementById('dynamic-print-style');
+        if (!dynamicStyle) {
+            dynamicStyle = document.createElement('style');
+            dynamicStyle.id = 'dynamic-print-style';
+            document.head.appendChild(dynamicStyle);
+        }
+
+        const isPortrait = orientation === 'portrait';
+        dynamicStyle.innerHTML = isPortrait ? 
+            '@page { size: A4 portrait; margin: 4mm 6mm; }' : 
+            '@page { size: A4 landscape; margin: 4mm 6mm; }';
+
         const wrapper = document.getElementById('org-tree-wrapper');
         if (wrapper) {
-            // Measure natural width and height
             const treeWidth = wrapper.scrollWidth || wrapper.offsetWidth || 1400;
             const treeHeight = wrapper.scrollHeight || wrapper.offsetHeight || 900;
 
-            // Target dimensions for A4 Landscape print area (in px at 96 DPI)
-            // A4 Landscape: ~ 1040px width x 560px max printable height for 1 page
-            const targetWidth = 1040;
-            const targetHeight = 560;
+            const targetWidth = isPortrait ? 740 : 1040;
+            const targetHeight = isPortrait ? 960 : 620;
 
             const scaleX = targetWidth / treeWidth;
             const scaleY = targetHeight / treeHeight;
             let autoScale = Math.min(scaleX, scaleY);
             
-            // Clamp scale between 0.35 and 0.72 for optimal 1-page fit
-            autoScale = Math.min(Math.max(autoScale, 0.35), 0.72);
+            const minBound = isPortrait ? 0.28 : 0.35;
+            const maxBound = isPortrait ? 0.65 : 0.72;
+            autoScale = Math.min(Math.max(autoScale, minBound), maxBound);
 
             document.documentElement.style.setProperty('--print-scale', autoScale.toFixed(3));
         }
@@ -1780,7 +1788,7 @@
     }
 
     function exportChartImage() {
-        printChart();
+        printChart('landscape');
     }
 
     function escapeHtml(str) {
