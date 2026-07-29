@@ -80,13 +80,19 @@ $laporan = (string) ($data['laporan_hasil'] ?? '');
   <div style="margin-top:12px">
     <div style="float:left; width:50%; text-align:center">
       <div style="height:80px"></div>
-      <div class="bold"><?= esc($data['pelaksana'][0]['nama'] ?? ($data['creator_pegawai']['nama'] ?? '-')); ?></div>
-      <div>NIP. <?= esc($data['pelaksana'][0]['nip'] ?? ($data['creator_pegawai']['nip'] ?? '-')); ?></div>
+      <?php $pel = $data['pelaksana'][0] ?? ($data['creator_pegawai'] ?? []); ?>
+      <div class="bold"><?= esc($pel['nama'] ?? '-'); ?></div>
+      <?php if (should_show_nip($pel) && !empty($pel['nip'])): ?>
+        <div>NIP. <?= esc($pel['nip']); ?></div>
+      <?php endif; ?>
     </div>
     <div style="float:right; width:50%; text-align:center">
       <div style="height:80px"></div>
-      <div class="bold"><?= esc($data['diketahui_oleh']['nama'] ?? '-'); ?></div>
-      <div>NIP. <?= esc($data['diketahui_oleh']['nip'] ?? '-'); ?></div>
+      <?php $dik = $data['diketahui_oleh'] ?? []; ?>
+      <div class="bold"><?= esc($dik['nama'] ?? '-'); ?></div>
+      <?php if (should_show_nip($dik) && !empty($dik['nip'])): ?>
+        <div>NIP. <?= esc($dik['nip']); ?></div>
+      <?php endif; ?>
     </div>
     <div style="clear:both"></div>
   </div>

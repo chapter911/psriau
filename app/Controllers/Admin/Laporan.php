@@ -2193,11 +2193,12 @@ class Laporan extends BaseController
 
             $row = $rowsById[(int) $id];
             $rows[] = [
-                'id'       => (int) ($row['id'] ?? 0),
-                'nama'     => (string) ($row['nama'] ?? ''),
-                'nip'      => (string) ($row['nip'] ?? ''),
-                'jabatan'  => (string) ($row['jabatan_label'] ?? ''),
-                'golongan' => (string) ($row['golongan'] ?? ''),
+                'id'            => (int) ($row['id'] ?? 0),
+                'nama'          => (string) ($row['nama'] ?? ''),
+                'nip'           => (string) ($row['nip'] ?? ''),
+                'jabatan'       => (string) ($row['jabatan_label'] ?? ''),
+                'golongan'      => (string) ($row['golongan'] ?? ''),
+                'jenis_pegawai' => strtolower(trim((string) ($row['jenis_pegawai'] ?? 'pns'))),
             ];
         }
 
@@ -2209,10 +2210,11 @@ class Laporan extends BaseController
         foreach ($pegawaiRows as $row) {
             if ((int) ($row['id'] ?? 0) === $id) {
                 return [
-                    'id' => (int) ($row['id'] ?? 0),
-                    'nama' => (string) ($row['nama'] ?? ''),
-                    'nip' => (string) ($row['nip'] ?? ''),
-                    'jabatan' => (string) ($row['jabatan_label'] ?? ''),
+                    'id'            => (int) ($row['id'] ?? 0),
+                    'nama'          => (string) ($row['nama'] ?? ''),
+                    'nip'           => (string) ($row['nip'] ?? ''),
+                    'jabatan'       => (string) ($row['jabatan_label'] ?? ''),
+                    'jenis_pegawai' => strtolower(trim((string) ($row['jenis_pegawai'] ?? 'pns'))),
                 ];
             }
         }

@@ -217,7 +217,12 @@
             <tr>
                 <td class="col-no">2.</td>
                 <td class="col-label">Nama/NIP Pegawai yang melaksanakan perjalanan dinas</td>
-                <td class="col-value"><?= esc($utama['nama']); ?><br>NIP. <?= esc($utama['nip']); ?></td>
+                <td class="col-value">
+                    <?= esc($utama['nama']); ?>
+                    <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
+                        <br>NIP. <?= esc($utama['nip']); ?>
+                    <?php endif; ?>
+                </td>
             </tr>
             <tr>
                 <td class="col-no">3.</td>
@@ -342,8 +347,10 @@
                 
                 <div style="height: 50px;"></div>
                 
-                <span class="font-weight-bold" style="text-decoration: underline;">NURHIDAYAT NUGROHO, S.Ars.</span><br>
-                NIP. 19901221 201802 1 001
+                <span class="font-weight-bold" style="text-decoration: underline;">NURHIDAYAT NUGROHO, S.Ars.</span>
+                <?php if (should_show_nip(['nip' => '19901221 201802 1 001'])): ?>
+                    <br>NIP. 19901221 201802 1 001
+                <?php endif; ?>
             </div>
         </div>
         <div class="clear"></div>

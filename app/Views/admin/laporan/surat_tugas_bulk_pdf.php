@@ -195,7 +195,7 @@ $getSignatureJabatan = function($person): string {
                                     <td style="width: 25px; padding: 0 0 6px 0; vertical-align: top;"><?= $idx + 1; ?>.</td>
                                     <td style="padding: 0 0 6px 0; vertical-align: top;">
                                         <strong><?= esc($p['nama'] ?? '-'); ?></strong>
-                                        <?php if (!empty($p['nip'])): ?>
+                                        <?php if (should_show_nip($p) && !empty($p['nip'])): ?>
                                             <br/>NIP. <?= esc($p['nip']); ?>
                                         <?php endif; ?>
                                     </td>
@@ -235,10 +235,8 @@ $getSignatureJabatan = function($person): string {
                         <div>
                             <?php 
                                 $nipVal = trim((string) ($diketahuiOleh['nip'] ?? ''));
-                                if ($nipVal !== '') {
+                                if (should_show_nip($diketahuiOleh) && $nipVal !== '') {
                                     echo 'NIP. ' . $nipVal;
-                                } else {
-                                    echo 'NIP. -';
                                 }
                             ?>
                         </div>

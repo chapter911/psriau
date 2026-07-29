@@ -372,8 +372,10 @@
                     Rp <?= number_format($calcTotal, 0, ',', '.'); ?><br><br>
                     Yang Menerima :<br>
                     <div style="height: 60px;"></div>
-                    <strong><?= strtoupper(esc($utama['nama'])); ?></strong><br>
-                    NIP. <?= esc($utama['nip']); ?>
+                    <strong><?= strtoupper(esc($utama['nama'])); ?></strong>
+                    <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
+                        <br>NIP. <?= esc($utama['nip']); ?>
+                    <?php endif; ?>
                 </td>
             </tr>
         </table>
@@ -464,8 +466,10 @@
                     
                     <div style="height: 60px;"></div>
                     
-                    <span style="text-decoration: underline;" class="font-weight-bold">NURHIDAYAT NUGROHO, S.Ars.</span><br>
-                    NIP. 19901221 201802 1 001
+                    <span style="text-decoration: underline;" class="font-weight-bold">NURHIDAYAT NUGROHO, S.Ars.</span>
+                    <?php if (should_show_nip(['nip' => '19901221 201802 1 001'])): ?>
+                        <br>NIP. 19901221 201802 1 001
+                    <?php endif; ?>
                 </td>
                 <td>
                     Pekanbaru, <?= $tanggalTtd; ?><br>
@@ -474,8 +478,10 @@
                     
                     <div style="height: 60px;"></div>
                     
-                    <span style="text-decoration: underline;" class="font-weight-bold"><?= strtoupper(esc($utama['nama'])); ?></span><br>
-                    <?= !empty($utama['nip']) ? 'NIP. ' . esc($utama['nip']) : 'NIP. -'; ?>
+                    <span style="text-decoration: underline;" class="font-weight-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
+                    <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
+                        <br>NIP. <?= esc($utama['nip']); ?>
+                    <?php endif; ?>
                 </td>
             </tr>
         </table>

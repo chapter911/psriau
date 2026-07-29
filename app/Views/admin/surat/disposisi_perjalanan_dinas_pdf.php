@@ -190,7 +190,7 @@
                 <td class="dotted-border">
                     <?php if (isset($pelaksana[$i])): ?>
                         <?= esc($pelaksana[$i]['nama']); ?>
-                        <?php if (! empty($pelaksana[$i]['nip'])): ?>
+                        <?php if (should_show_nip($pelaksana[$i]) && ! empty($pelaksana[$i]['nip'])): ?>
                              - NIP. <?= esc($formatNip($pelaksana[$i]['nip'])); ?>
                         <?php endif; ?>
                     <?php else: ?>
@@ -267,8 +267,10 @@
                 <?php else: ?>
                     <br><br><br><br><br>
                 <?php endif; ?>
-                <span class="signature-name"><?= esc($menyetujui['nama'] ?? ''); ?></span><br>
-                NIP. <?= esc($menyetujuiNip); ?>
+                <span class="signature-name"><?= esc($menyetujui['nama'] ?? ''); ?></span>
+                <?php if (should_show_nip($menyetujui)): ?>
+                    <br>NIP. <?= esc($menyetujuiNip); ?>
+                <?php endif; ?>
             </td>
             <td>
                 Diketahui,<br>
@@ -287,8 +289,10 @@
                 <?php else: ?>
                     <br><br><br><br><br>
                 <?php endif; ?>
-                <span class="signature-name"><?= esc($diketahui['nama'] ?? ''); ?></span><br>
-                NIP. <?= esc($diketahuiNip); ?>
+                <span class="signature-name"><?= esc($diketahui['nama'] ?? ''); ?></span>
+                <?php if (should_show_nip($diketahui)): ?>
+                    <br>NIP. <?= esc($diketahuiNip); ?>
+                <?php endif; ?>
             </td>
         </tr>
     </table>

@@ -408,7 +408,9 @@ $resolvePhotoSrc = static function ($photo): string {
                 ?>
                 <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
                     <div class="bold" style="text-decoration:underline;"><?= esc((string) ($person['nama'] ?? '-')); ?></div>
-                    <div><?= esc($nipLabel); ?></div>
+                    <?php if (should_show_nip($person)): ?>
+                        <div><?= esc($nipLabel); ?></div>
+                    <?php endif; ?>
                 </td>
                 <?php endforeach; ?>
             </tr>
@@ -457,7 +459,9 @@ $resolvePhotoSrc = static function ($photo): string {
                     ?>
                     <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
                         <div class="bold" style="text-decoration:underline;"><?= esc((string) ($person['nama'] ?? '-')); ?></div>
-                        <div><?= esc($nipLabel); ?></div>
+                        <?php if (should_show_nip($person)): ?>
+                            <div><?= esc($nipLabel); ?></div>
+                        <?php endif; ?>
                     </td>
                     <?php endforeach; ?>
                 </tr>

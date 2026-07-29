@@ -500,3 +500,80 @@ if (! function_exists('sanitizeFolderName')) {
     }
 }
 
+if (! function_exists('should_show_nip')) {
+    /**
+     * Menentukan apakah NIP pegawai boleh ditampilkan pada export/cetak.
+     * NIP hanya ditampilkan untuk PNS, CPNS, atau PPPK.
+     *
+     * @param array|string|int|null $person Array data pegawai atau NIP / ID pegawai.
+     * @return bool
+     */
+    function should_show_nip($person): bool
+    {
+        if (empty($person)) {
+            return false;
+        }
+
+        static $cacheMap = [];
+
+        $jenisPegawai = null;
+        $id = null;
+        $nip = null;
+
+        if (is_array($person)) {
+            if (isset($person['jenis_pegawai']) && trim((string) $person['jenis_pegawai']) !== '') {
+                $jenisPegawai = strtolower(trim((string) $person['jenis_pegawai']));
+            }
+            if (isset($person['id']) && is_numeric($person['id']) && (int) $person['id'] > 0) {
+                $id = (int) $person['id'];
+            }
+            if (isset($person['nip']) && trim((string) $person['nip']) !== '') {
+                $nip = trim((string) $person['nip']);
+            }
+        } elseif (is_numeric($person) && (int) $person > 0) {
+            $id = (int) $person;
+        } elseif (is_string($person) && trim($person) !== '') {
+            $nip = trim($person);
+        }
+
+        if ($jenisPegawai !== null) {
+            return in_array($jenisPegawai, ['pns', 'cpns', 'pppk'], true);
+        }
+
+        $cacheKey = $id ? 'id_' . $id : ($nip ? 'nip_' . $nip : null);
+        if ($cacheKey !== null && isset($cacheMap[$cacheKey])) {
+            return $cacheMap[$cacheKey];
+        }
+
+        if ($cacheKey !== null) {
+            try {
+                $db = db_connect();
+                if ($db->tableExists('mst_pegawai')) {
+                    $builder = $db->table('mst_pegawai')->select('jenis_pegawai');
+                    if ($id !== null) {
+                        $builder->where('id', $id);
+                    } else {
+                        $builder->where('nip', $nip);
+                    }
+                    $row = $builder->get()->getRowArray();
+                    if (is_array($row) && isset($row['jenis_pegawai'])) {
+                        $jp = strtolower(trim((string) $row['jenis_pegawai']));
+                        $isAsn = in_array($jp, ['pns', 'cpns', 'pppk'], true);
+                        $cacheMap[$cacheKey] = $isAsn;
+                        return $isAsn;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Ignore DB error
+            }
+        }
+
+        if ($cacheKey !== null) {
+            $cacheMap[$cacheKey] = false;
+        }
+
+        return false;
+    }
+}
+
+

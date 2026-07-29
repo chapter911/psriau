@@ -271,8 +271,10 @@
                 <tr>
                     <td class="text-center"><?= $no++; ?></td>
                     <td>
-                        <?= esc($p['nama'] ?? '-'); ?><br>
-                        NIP. <?= esc($p['nip'] ?? '-'); ?>
+                        <?= esc($p['nama'] ?? '-'); ?>
+                        <?php if (should_show_nip($p) && !empty($p['nip'])): ?>
+                            <br>NIP. <?= esc($p['nip']); ?>
+                        <?php endif; ?>
                     </td>
                     <td class="text-center">
                         <?= esc($golongan !== '' ? $golongan : '-'); ?>
@@ -316,8 +318,10 @@
                 Pejabat Pembuat Komitmen<br>
                 Pelaksanaan Prasarana Strategis<br>
                 <div class="signature-box"></div>
-                <span class="font-weight-bold">NURHIDAYAT NUGROHO, S.Ars.</span><br>
-                NIP. 19901221 201802 1 001
+                <span class="font-weight-bold">NURHIDAYAT NUGROHO, S.Ars.</span>
+                <?php if (should_show_nip(['nip' => '19901221 201802 1 001'])): ?>
+                    <br>NIP. 19901221 201802 1 001
+                <?php endif; ?>
             </td>
         </tr>
     </table>
