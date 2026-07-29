@@ -194,12 +194,19 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/pegawai/import', 'Admin\\Pegawai::import');
 	$routes->post('master/pegawai/(:num)/ubah', 'Admin\\Pegawai::edit/$1');
 	$routes->post('master/pegawai/(:num)/status', 'Admin\\Pegawai::updateStatus/$1');
-	$routes->get('master/jabatan', 'Admin\\Jabatan::index');
-	$routes->get('master/jabatan/template', 'Admin\\Jabatan::downloadTemplate');
-	$routes->post('master/jabatan/tambah', 'Admin\\Jabatan::create');
-	$routes->post('master/jabatan/import', 'Admin\\Jabatan::import');
-	$routes->post('master/jabatan/(:num)/ubah', 'Admin\\Jabatan::edit/$1');
-	$routes->post('master/jabatan/(:num)/status', 'Admin\\Jabatan::updateStatus/$1');
+	$routes->get('master/jabatan', 'Admin\Jabatan::index');
+	$routes->get('master/jabatan/template', 'Admin\Jabatan::downloadTemplate');
+	$routes->post('master/jabatan/tambah', 'Admin\Jabatan::create');
+	$routes->post('master/jabatan/import', 'Admin\Jabatan::import');
+	$routes->post('master/jabatan/(:num)/ubah', 'Admin\Jabatan::edit/$1');
+	$routes->post('master/jabatan/(:num)/status', 'Admin\Jabatan::updateStatus/$1');
+	// Master Struktur Organisasi Routes
+	$routes->get('master/struktur-organisasi', 'Admin\StrukturOrganisasi::index');
+	$routes->get('master/struktur-organisasi/get-chart-data', 'Admin\StrukturOrganisasi::getChartData');
+	$routes->post('master/struktur-organisasi/simpan', 'Admin\StrukturOrganisasi::saveNode');
+	$routes->post('master/struktur-organisasi/simpan-batch', 'Admin\StrukturOrganisasi::saveBatchNodes');
+	$routes->post('master/struktur-organisasi/(:num)/hapus', 'Admin\StrukturOrganisasi::deleteNode/$1');
+	$routes->post('master/struktur-organisasi/hapus', 'Admin\StrukturOrganisasi::deleteNode');
 	$routes->get('master/paket', 'Admin\\Paket::index');
 	$routes->post('master/paket/tambah', 'Admin\\Paket::create');
 	$routes->post('master/paket/(:num)/ubah', 'Admin\\Paket::edit/$1');

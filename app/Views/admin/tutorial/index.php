@@ -278,7 +278,7 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A[Kelola Master Data: Pegawai, MAK, Dasar SPT, Kop Surat] --> B[Kelola Paket Pekerjaan SIMAK Fisik & Konsultasi]
+    A[Kelola Master Data: Pegawai, Struktur Organisasi, MAK, Dasar SPT] --> B[Kelola Paket Pekerjaan SIMAK Fisik & Konsultasi]
     B --> C[Kelola RAB Gedung Strategis]
     C --> D[Pantau Rekap Mingguan & Dokumentasi Lapangan]
                 </pre>
@@ -420,6 +420,15 @@ graph TD
             </div>
             <div class="card-body bg-light">
                 <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-sitemap mr-1"></i> Struktur Organisasi Satker</h6>
+                                <p class="small text-muted mb-2"><code>/admin/master/struktur-organisasi</code></p>
+                                <p class="small mb-0">Pemetaan hirarki bagan piramida / vertikal Top-Down pejabat Satker PPS Riau terintegrasi langsung dengan Master Pegawai, dilengkapi fitur <strong>Grab/Drag to Pan</strong> (navigasi kanvas dengan klik & geser mouse agar bagan sisi kiri/kanan tidak terpotong), perbesaran Zoom In/Out/Reset & Wheel, penambahan anggota sekaligus (*Blok Tim*), mode preview/edit & cetak/export PDF.</p>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-md-6 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
