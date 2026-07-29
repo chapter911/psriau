@@ -34,17 +34,15 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            /* Full page executive radial luxury gradient background */
             background: radial-gradient(circle at 50% 15%, #1e3a8a 0%, #0f172a 55%, #020617 100%) !important;
             color: #ffffff;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
-        /* Gold Decorative Border Frame */
         .poster-frame-outer {
             width: 100vw;
             height: 100vh;
-            padding: 10px;
+            padding: 8px;
             box-sizing: border-box;
         }
 
@@ -53,53 +51,53 @@
             height: 100%;
             display: flex;
             flex-direction: column;
-            padding: 12px 18px;
+            padding: 10px 14px;
             position: relative;
             box-sizing: border-box;
-            border: 2.5px solid #d4af37;
-            border-radius: 12px;
+            border: 2px solid #d4af37;
+            border-radius: 10px;
             background: rgba(15, 23, 42, 0.4);
-            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
         }
 
         /* Printable Official Header Banner */
         .poster-header {
             text-align: center;
-            padding-bottom: 10px;
-            border-bottom: 2px solid rgba(212, 175, 55, 0.6);
+            padding-bottom: 6px;
+            border-bottom: 1.5px solid rgba(212, 175, 55, 0.6);
             flex-shrink: 0;
             width: 100%;
         }
 
         .poster-dept-title {
             color: #cbd5e1;
-            font-size: 0.8rem;
-            letter-spacing: 1.5px;
+            font-size: 0.76rem;
+            letter-spacing: 1.2px;
             font-weight: 700;
-            line-height: 1.2;
+            line-height: 1.15;
             text-transform: uppercase;
         }
 
         .poster-satker-title {
             color: #38bdf8;
-            font-size: 1.3rem;
-            letter-spacing: 2px;
+            font-size: 1.18rem;
+            letter-spacing: 1.8px;
             font-weight: 800;
-            line-height: 1.2;
+            line-height: 1.15;
             text-transform: uppercase;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            text-shadow: 0 2px 6px rgba(0,0,0,0.8);
         }
 
         .poster-year-badge {
             background: linear-gradient(135deg, #d4af37, #f59e0b);
             color: #0f172a;
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             font-weight: 800;
-            padding: 3px 16px;
-            border-radius: 20px;
-            letter-spacing: 1.2px;
+            padding: 2px 14px;
+            border-radius: 16px;
+            letter-spacing: 1px;
             display: inline-block;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
         }
 
         /* Org Tree Canvas Wrapper (Aligned Top-Center) */
@@ -111,7 +109,7 @@
             justify-content: flex-start;
             position: relative;
             overflow: hidden;
-            padding-top: 10px;
+            padding-top: 6px;
             width: 100%;
         }
 
@@ -128,13 +126,13 @@
             align-items: center;
         }
 
-        /* Tree Connections (Glowing Cyan/Gold Stems) */
+        /* Tree Connections (Compact Glowing Stems) */
         .org-node-children-wrapper {
             display: flex;
             flex-direction: column;
             align-items: center;
             position: relative;
-            padding-top: 18px;
+            padding-top: 14px;
         }
 
         .org-node-children-wrapper::before {
@@ -142,17 +140,17 @@
             position: absolute;
             top: 0;
             left: 50%;
-            border-left: 2.5px solid #38bdf8;
+            border-left: 2px solid #38bdf8;
             width: 0;
-            height: 18px;
-            filter: drop-shadow(0 0 3px #0284c7);
+            height: 14px;
+            filter: drop-shadow(0 0 2px #0284c7);
         }
 
         .org-node-children {
             display: flex;
             justify-content: center;
             position: relative;
-            padding-top: 18px;
+            padding-top: 14px;
         }
 
         .org-node-children::before {
@@ -160,25 +158,25 @@
             position: absolute;
             top: 0;
             left: 50%;
-            border-left: 2.5px solid #38bdf8;
+            border-left: 2px solid #38bdf8;
             width: 0;
-            height: 18px;
-            filter: drop-shadow(0 0 3px #0284c7);
+            height: 14px;
+            filter: drop-shadow(0 0 2px #0284c7);
         }
 
         .org-node-children-row + .org-node-children-row {
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         .org-node-children-row + .org-node-children-row::before {
             content: '';
             position: absolute;
-            top: -10px;
+            top: -8px;
             left: 50%;
-            border-left: 2.5px solid #38bdf8;
+            border-left: 2px solid #38bdf8;
             width: 0;
-            height: 28px;
-            filter: drop-shadow(0 0 3px #0284c7);
+            height: 22px;
+            filter: drop-shadow(0 0 2px #0284c7);
         }
 
         .org-node-item {
@@ -186,7 +184,7 @@
             flex-direction: column;
             align-items: center;
             position: relative;
-            padding: 18px 10px 0 10px;
+            padding: 14px 8px 0 8px;
         }
 
         .org-node-tree > .org-node-item {
@@ -197,22 +195,22 @@
             content: '';
             position: absolute;
             top: 0;
-            height: 18px;
+            height: 14px;
         }
 
         .org-node-item::before {
             right: 50%;
             width: 50%;
-            border-top: 2.5px solid #38bdf8;
-            filter: drop-shadow(0 0 3px #0284c7);
+            border-top: 2px solid #38bdf8;
+            filter: drop-shadow(0 0 2px #0284c7);
         }
 
         .org-node-item::after {
             left: 50%;
             width: 50%;
-            border-top: 2.5px solid #38bdf8;
-            border-left: 2.5px solid #38bdf8;
-            filter: drop-shadow(0 0 3px #0284c7);
+            border-top: 2px solid #38bdf8;
+            border-left: 2px solid #38bdf8;
+            filter: drop-shadow(0 0 2px #0284c7);
         }
 
         .org-node-item:first-child::before { border-top: none; }
@@ -220,17 +218,17 @@
         .org-node-item:only-child::before { border-top: none; }
         .org-node-item:only-child::after {
             border-top: none;
-            border-left: 2.5px solid #38bdf8;
+            border-left: 2px solid #38bdf8;
         }
 
-        /* Card Styling for Executive Poster Export */
+        /* Compact Card Styling for 1-Page Poster Guarantee */
         .org-card {
-            width: 220px;
-            height: 215px;
+            width: 200px;
+            height: 190px;
             background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
-            border: 2.5px solid #38bdf8;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+            border: 2px solid #38bdf8;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -239,31 +237,31 @@
         }
 
         .org-card.level-1 {
-            width: 245px;
-            height: 225px;
-            border: 3px solid #f59e0b !important;
+            width: 220px;
+            height: 200px;
+            border: 2.5px solid #f59e0b !important;
             background: linear-gradient(180deg, #ffffff 0%, #fffdf5 100%);
-            box-shadow: 0 12px 30px rgba(245, 158, 11, 0.35) !important;
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.35) !important;
         }
 
         .org-card.level-2, .org-card.level-3 {
-            width: 230px;
-            height: 215px;
+            width: 205px;
+            height: 190px;
             border-color: #38bdf8;
-            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.25) !important;
+            box-shadow: 0 8px 20px rgba(56, 189, 248, 0.25) !important;
         }
 
         .org-card-header {
             background: linear-gradient(135deg, #1e3c72, #2a5298);
             color: #ffffff;
-            padding: 5px 8px;
+            padding: 4px 6px;
             text-align: center;
-            font-size: 0.76rem;
+            font-size: 0.72rem;
             font-weight: 700;
             text-uppercase: uppercase;
-            line-height: 1.2;
-            letter-spacing: 0.5px;
-            height: 44px;
+            line-height: 1.15;
+            letter-spacing: 0.4px;
+            height: 38px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -273,11 +271,11 @@
         .level-1 .org-card-header {
             background: linear-gradient(135deg, #78350f, #b45309);
             color: #fef08a;
-            border-bottom: 2px solid #f59e0b;
+            border-bottom: 1.5px solid #f59e0b;
         }
 
         .org-card-body {
-            padding: 6px 8px;
+            padding: 5px 6px;
             text-align: center;
             flex-grow: 1;
             display: flex;
@@ -287,13 +285,13 @@
         }
 
         .org-avatar-frame {
-            width: 62px;
-            height: 62px;
-            margin: 0 auto 4px auto;
+            width: 54px;
+            height: 54px;
+            margin: 0 auto 3px auto;
             border-radius: 50%;
             overflow: hidden;
-            border: 2.5px solid #0284c7;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            border: 2px solid #0284c7;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
             background: #e9ecef;
             display: flex;
             align-items: center;
@@ -302,10 +300,10 @@
         }
 
         .level-1 .org-avatar-frame {
-            width: 74px;
-            height: 74px;
-            border: 3px solid #f59e0b;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+            width: 64px;
+            height: 64px;
+            border: 2.5px solid #f59e0b;
+            box-shadow: 0 3px 10px rgba(245, 158, 11, 0.4);
         }
 
         .org-avatar-frame img {
@@ -315,29 +313,29 @@
         }
 
         .org-pegawai-nama {
-            font-size: 0.8rem;
+            font-size: 0.76rem;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 2px;
-            line-height: 1.2;
+            margin-bottom: 1px;
+            line-height: 1.15;
         }
 
         .org-pegawai-nip {
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             color: #475569;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
 
         /* Group Block Cards */
         .org-card.org-group-block {
-            width: 580px;
+            width: 520px;
             max-width: 100%;
             height: auto !important;
-            min-height: 130px;
-            border: 2.5px solid #38bdf8;
+            min-height: 110px;
+            border: 2px solid #38bdf8;
             background: #f8fafc;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
             overflow: hidden !important;
             display: flex;
             flex-direction: column;
@@ -352,52 +350,52 @@
         .org-group-header {
             background: linear-gradient(135deg, #0f172a, #1e3a8a);
             color: #ffffff;
-            padding: 6px 12px;
+            padding: 4px 10px;
             font-weight: 700;
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
             text-uppercase: uppercase;
-            height: 40px;
+            height: 34px;
             flex-shrink: 0;
         }
 
         .org-group-body {
-            padding: 10px;
+            padding: 8px;
             flex-grow: 1;
         }
 
         .org-group-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
+            gap: 8px;
             width: 100%;
         }
 
         .org-member-card {
             background: #ffffff;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 8px;
-            padding: 6px 10px;
-            height: 56px;
+            border: 1.2px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 4px 8px;
+            height: 48px;
             display: flex;
             align-items: center;
             position: relative;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
             width: 100%;
             overflow: hidden;
             color: #0f172a;
         }
 
         .org-member-avatar {
-            width: 38px;
-            height: 38px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             overflow: hidden;
-            border: 2px solid #d4af37;
-            margin-right: 8px;
+            border: 1.5px solid #d4af37;
+            margin-right: 6px;
             flex-shrink: 0;
             display: flex;
             align-items: center;
@@ -418,16 +416,16 @@
 
         .org-member-nama {
             font-weight: 700;
-            font-size: 0.76rem;
+            font-size: 0.72rem;
             color: #1e293b;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            line-height: 1.2;
+            line-height: 1.15;
         }
 
         .org-member-title {
-            font-size: 0.68rem;
+            font-size: 0.64rem;
             color: #64748b;
             white-space: nowrap;
             overflow: hidden;
@@ -436,10 +434,10 @@
 
         .poster-footer {
             text-align: center;
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             color: #94a3b8;
-            padding-top: 4px;
-            letter-spacing: 0.5px;
+            padding-top: 2px;
+            letter-spacing: 0.4px;
             flex-shrink: 0;
         }
     </style>
@@ -453,7 +451,7 @@
             <div class="poster-header">
                 <div class="d-flex align-items-center justify-content-center">
                     <?php if (! empty($appLogoUrl)): ?>
-                        <img src="<?= esc($appLogoUrl); ?>" alt="Logo Aplikasi" height="58" class="mr-4" style="object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));" onerror="this.style.display='none';">
+                        <img src="<?= esc($appLogoUrl); ?>" alt="Logo Aplikasi" height="48" class="mr-3" style="object-fit: contain; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.6));" onerror="this.style.display='none';">
                     <?php endif; ?>
                     <div class="text-left">
                         <h6 class="poster-dept-title mb-0">
@@ -506,19 +504,20 @@
         // Reset to 1 to measure exact unscaled dimensions
         wrapper.style.transform = 'scale(1)';
 
-        const treeWidth = wrapper.scrollWidth || wrapper.offsetWidth || 1200;
-        const treeHeight = wrapper.scrollHeight || wrapper.offsetHeight || 800;
+        const treeWidth = wrapper.offsetWidth || wrapper.scrollWidth || 1100;
+        const treeHeight = wrapper.offsetHeight || wrapper.scrollHeight || 750;
 
-        const availWidth = canvas.clientWidth || (isPortrait ? 760 : 1080);
-        const availHeight = canvas.clientHeight || (isPortrait ? 960 : 660);
+        const availWidth = canvas.clientWidth - 20;
+        const availHeight = canvas.clientHeight - 10;
 
-        const scaleX = (availWidth - 20) / treeWidth;
-        const scaleY = (availHeight - 20) / treeHeight;
+        const scaleX = availWidth / treeWidth;
+        const scaleY = availHeight / treeHeight;
+        
+        // Exact mathematical scale to guarantee 0% overflow cutoff
         let autoScale = Math.min(scaleX, scaleY);
 
-        const minBound = isPortrait ? 0.30 : 0.38;
-        const maxBound = isPortrait ? 0.75 : 0.85;
-        autoScale = Math.min(Math.max(autoScale, minBound), maxBound);
+        // Safe bounds: allows shrinking smoothly down to 0.15 without minimum clamping cutoff!
+        autoScale = Math.min(Math.max(autoScale, 0.15), 0.95);
 
         wrapper.style.transform = `scale(${autoScale.toFixed(3)})`;
     }
