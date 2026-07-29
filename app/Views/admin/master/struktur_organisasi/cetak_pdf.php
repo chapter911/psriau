@@ -34,32 +34,45 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background: linear-gradient(135deg, #0b172a 0%, #1e293b 50%, #0f172a 100%) !important;
+            /* Full page executive radial luxury gradient background */
+            background: radial-gradient(circle at 50% 15%, #1e3a8a 0%, #0f172a 55%, #020617 100%) !important;
             color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Gold Decorative Border Frame */
+        .poster-frame-outer {
+            width: 100vw;
+            height: 100vh;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         .poster-container {
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            padding: 12px 16px;
+            padding: 12px 18px;
             position: relative;
             box-sizing: border-box;
+            border: 2.5px solid #d4af37;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.4);
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
         }
 
         /* Printable Official Header Banner */
         .poster-header {
             text-align: center;
-            padding-bottom: 8px;
-            border-bottom: 2px solid rgba(56, 189, 248, 0.5);
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.6);
             flex-shrink: 0;
             width: 100%;
         }
 
         .poster-dept-title {
-            color: #94a3b8;
+            color: #cbd5e1;
             font-size: 0.8rem;
             letter-spacing: 1.5px;
             font-weight: 700;
@@ -69,24 +82,24 @@
 
         .poster-satker-title {
             color: #38bdf8;
-            font-size: 1.25rem;
+            font-size: 1.3rem;
             letter-spacing: 2px;
             font-weight: 800;
             line-height: 1.2;
             text-transform: uppercase;
-            text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
 
         .poster-year-badge {
-            background: #f59e0b;
+            background: linear-gradient(135deg, #d4af37, #f59e0b);
             color: #0f172a;
             font-size: 0.78rem;
             font-weight: 800;
-            padding: 2px 14px;
+            padding: 3px 16px;
             border-radius: 20px;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
             display: inline-block;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
         }
 
         /* Org Tree Canvas Wrapper (Aligned Top-Center) */
@@ -115,7 +128,7 @@
             align-items: center;
         }
 
-        /* Tree Connections (Glowing Cyan Stems) */
+        /* Tree Connections (Glowing Cyan/Gold Stems) */
         .org-node-children-wrapper {
             display: flex;
             flex-direction: column;
@@ -132,6 +145,7 @@
             border-left: 2.5px solid #38bdf8;
             width: 0;
             height: 18px;
+            filter: drop-shadow(0 0 3px #0284c7);
         }
 
         .org-node-children {
@@ -149,6 +163,7 @@
             border-left: 2.5px solid #38bdf8;
             width: 0;
             height: 18px;
+            filter: drop-shadow(0 0 3px #0284c7);
         }
 
         .org-node-children-row + .org-node-children-row {
@@ -163,6 +178,7 @@
             border-left: 2.5px solid #38bdf8;
             width: 0;
             height: 28px;
+            filter: drop-shadow(0 0 3px #0284c7);
         }
 
         .org-node-item {
@@ -188,6 +204,7 @@
             right: 50%;
             width: 50%;
             border-top: 2.5px solid #38bdf8;
+            filter: drop-shadow(0 0 3px #0284c7);
         }
 
         .org-node-item::after {
@@ -195,6 +212,7 @@
             width: 50%;
             border-top: 2.5px solid #38bdf8;
             border-left: 2.5px solid #38bdf8;
+            filter: drop-shadow(0 0 3px #0284c7);
         }
 
         .org-node-item:first-child::before { border-top: none; }
@@ -205,14 +223,14 @@
             border-left: 2.5px solid #38bdf8;
         }
 
-        /* Card Styling for Poster Export */
+        /* Card Styling for Executive Poster Export */
         .org-card {
             width: 220px;
             height: 215px;
             background: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-            border: 2px solid #38bdf8;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+            border: 2.5px solid #38bdf8;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -221,20 +239,22 @@
         }
 
         .org-card.level-1 {
-            width: 240px;
+            width: 245px;
             height: 225px;
-            border: 2.5px solid #f59e0b !important;
+            border: 3px solid #f59e0b !important;
             background: linear-gradient(180deg, #ffffff 0%, #fffdf5 100%);
+            box-shadow: 0 12px 30px rgba(245, 158, 11, 0.35) !important;
         }
 
         .org-card.level-2, .org-card.level-3 {
             width: 230px;
             height: 215px;
             border-color: #38bdf8;
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.25) !important;
         }
 
         .org-card-header {
-            background: #0056b3;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
             color: #ffffff;
             padding: 5px 8px;
             text-align: center;
@@ -251,12 +271,9 @@
         }
 
         .level-1 .org-card-header {
-            background: linear-gradient(135deg, #1b2a4a, #2c3e50);
-            color: #f1c40f;
-        }
-
-        .level-2 .org-card-header {
-            background: #1e3c72;
+            background: linear-gradient(135deg, #78350f, #b45309);
+            color: #fef08a;
+            border-bottom: 2px solid #f59e0b;
         }
 
         .org-card-body {
@@ -270,13 +287,13 @@
         }
 
         .org-avatar-frame {
-            width: 60px;
-            height: 60px;
+            width: 62px;
+            height: 62px;
             margin: 0 auto 4px auto;
             border-radius: 50%;
             overflow: hidden;
-            border: 2.5px solid #0056b3;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            border: 2.5px solid #0284c7;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             background: #e9ecef;
             display: flex;
             align-items: center;
@@ -285,9 +302,10 @@
         }
 
         .level-1 .org-avatar-frame {
-            width: 72px;
-            height: 72px;
-            border-color: #d4af37;
+            width: 74px;
+            height: 74px;
+            border: 3px solid #f59e0b;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
         }
 
         .org-avatar-frame img {
@@ -318,8 +336,8 @@
             min-height: 130px;
             border: 2.5px solid #38bdf8;
             background: #f8fafc;
-            border-radius: 10px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
             overflow: hidden !important;
             display: flex;
             flex-direction: column;
@@ -332,7 +350,7 @@
         }
 
         .org-group-header {
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
             color: #ffffff;
             padding: 6px 12px;
             font-weight: 700;
@@ -415,41 +433,57 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        .poster-footer {
+            text-align: center;
+            font-size: 0.68rem;
+            color: #94a3b8;
+            padding-top: 4px;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
 
-    <div class="poster-container">
-        
-        <!-- Official Poster Header Banner -->
-        <div class="poster-header">
-            <div class="d-flex align-items-center justify-content-center">
-                <?php if (! empty($appLogoUrl)): ?>
-                    <img src="<?= esc($appLogoUrl); ?>" alt="Logo Aplikasi" height="56" class="mr-3" style="object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));" onerror="this.style.display='none';">
-                <?php endif; ?>
-                <div class="text-left">
-                    <h6 class="poster-dept-title mb-0">
-                        KEMENTERIAN PEKERJAAN UMUM — DIREKTORAT JENDERAL PRASARANA STRATEGIS
-                    </h6>
-                    <h4 class="poster-satker-title mb-1">
-                        SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU
-                    </h4>
-                    <div>
-                        <span class="poster-year-badge">
-                            BAGAN STRUKTUR ORGANISASI SATKER TA <?= date('Y'); ?>
-                        </span>
+    <div class="poster-frame-outer">
+        <div class="poster-container">
+            
+            <!-- Official Executive Poster Header Banner -->
+            <div class="poster-header">
+                <div class="d-flex align-items-center justify-content-center">
+                    <?php if (! empty($appLogoUrl)): ?>
+                        <img src="<?= esc($appLogoUrl); ?>" alt="Logo Aplikasi" height="58" class="mr-4" style="object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));" onerror="this.style.display='none';">
+                    <?php endif; ?>
+                    <div class="text-left">
+                        <h6 class="poster-dept-title mb-0">
+                            KEMENTERIAN PEKERJAAN UMUM — DIREKTORAT JENDERAL PRASARANA STRATEGIS
+                        </h6>
+                        <h4 class="poster-satker-title mb-1">
+                            SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU
+                        </h4>
+                        <div>
+                            <span class="poster-year-badge">
+                                BAGAN STRUKTUR ORGANISASI RESMI TA <?= date('Y'); ?>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Poster Org Tree Canvas -->
-        <div class="poster-canvas" id="poster-canvas">
-            <div class="org-tree-wrapper" id="org-tree-wrapper">
-                <!-- Tree rendered via JS -->
+            <!-- Poster Org Tree Canvas -->
+            <div class="poster-canvas" id="poster-canvas">
+                <div class="org-tree-wrapper" id="org-tree-wrapper">
+                    <!-- Tree rendered via JS -->
+                </div>
             </div>
-        </div>
 
+            <!-- Footer Tagline -->
+            <div class="poster-footer">
+                <i class="fas fa-shield-alt text-warning mr-1"></i> Dokumen Resmi Bagan Struktur Organisasi • Satuan Kerja Pelaksanaan Prasarana Strategis Riau
+            </div>
+
+        </div>
     </div>
 
 <script>
