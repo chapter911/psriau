@@ -599,6 +599,18 @@ class Laporan extends BaseController
                 $dokumenHtml .= '</div>';
                 
                 $row['dokumen_html'] = $dokumenHtml;
+
+                // Dokumen SPT (Upload SPT TTD file from Surat Tugas)
+                if (! empty($row['verified_spt_path'])) {
+                    $verifiedUrl = media_url($row['verified_spt_path']);
+                    $ext = strtolower(pathinfo((string) $row['verified_spt_path'], PATHINFO_EXTENSION));
+                    $icon = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'fa-file-image' : 'fa-file-pdf';
+                    $btnClass = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'btn-warning text-white' : 'btn-success text-white';
+                    $dokumenSptHtml = '<a href="' . $verifiedUrl . '" class="btn btn-sm ' . $btnClass . ' shadow-sm font-weight-bold" target="_blank" rel="noopener noreferrer" title="Unduh / Lihat Dokumen SPT (TTD)"><i class="fas ' . $icon . ' mr-1"></i> Unduh SPT</a>';
+                } else {
+                    $dokumenSptHtml = '<span class="badge badge-light text-muted border px-2 py-1" style="font-size: 0.8rem; font-weight: normal;"><i class="fas fa-minus mr-1"></i> Belum Upload</span>';
+                }
+                $row['dokumen_spt_html'] = $dokumenSptHtml;
                 
                 // Upload SPT TTD (PDF) column rendering
                 $existingVerifiedFile = ! empty($row['verified_spt_path']) ? esc((string) $row['verified_spt_path'], 'attr') : '';

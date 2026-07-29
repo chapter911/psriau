@@ -353,6 +353,7 @@ graph TD
                                     <li>Isi Tujuan, Sasaran, dan Hasil Perjadinya.</li>
                                     <li>Unggah foto di tab <strong>Dokumentasi Kegiatan</strong> & tiket/nota di tab <strong>Dokumentasi Tiket</strong> (input teks bebas).</li>
                                     <li>Klik <strong>Simpan Final</strong> untuk mengunci laporan.</li>
+                                    <li>Gunakan kolom <strong>Dokumen SPT</strong> pada tabel Laporan Perjalanan Dinas (`/admin/surat/perjalanan-dinas`) untuk mengunduh/melihat berkas SPT TTD terverifikasi.</li>
                                 </ol>
                             </div>
                         </div>
