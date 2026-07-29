@@ -204,13 +204,13 @@
                         <div class="col-md-6 form-group mb-3">
                             <label for="node_kategori" class="font-weight-bold text-dark small">Kelompok / Pilar</label>
                             <select class="form-control" id="node_kategori" name="kategori_kelompok">
-                                <option value="pimpinan">Pimpinan Utama</option>
-                                <option value="subbag">Kasubbag Umum & TU</option>
-                                <option value="ppk1">PPK Prasarana I</option>
-                                <option value="ppk2">PPK Prasarana II</option>
-                                <option value="ppk3">PPK Prasarana III</option>
-                                <option value="staf">Tim Teknis / Staf Pelaksana (Dalam Blok Tim)</option>
-                                <option value="pendukung">Tim Pendukung Operasional (Security, Cleaning Service, Driver) — Paling Bawah</option>
+                                <option value="pimpinan">Pimpinan Utama / Dirjen / Menteri (Kartu Posisi Struktural)</option>
+                                <option value="kasatker">Kasatker / Kepala Satker (Kartu Posisi Struktural)</option>
+                                <option value="subbag">Kasubbag Umum & TU (Kartu Posisi Struktural)</option>
+                                <option value="ppk">PPK Prasarana I / II / III (Kartu Posisi Struktural)</option>
+                                <option value="bendahara">Bendahara & Pejabat Penguji SPM (Kartu Posisi Struktural)</option>
+                                <option value="staf">Tim Teknis / Staf Pelaksana (Masuk Blok Tim)</option>
+                                <option value="pendukung">Tim Pendukung Operasional (Security, Cleaning Service, Driver) (Masuk Blok Tim)</option>
                             </select>
                         </div>
                         <!-- Urutan Horizontal -->
@@ -1171,15 +1171,34 @@
                 const katLower = (child.kategori_kelompok || '').toLowerCase();
                 const childHasChildren = child.children && child.children.length > 0;
 
-                const isStructuralHead = childHasChildren || (
-                    (katLower === 'pimpinan' || katLower === 'subbag' || katLower.startsWith('ppk')) &&
-                    (titleLower.includes('ppk') || titleLower.includes('kasatker') || titleLower.includes('kasubbag') || titleLower.includes('dirjen') || titleLower.includes('menteri') || titleLower.includes('kabag') || titleLower.includes('penguji'))
-                );
+                const isTeamCategory = katLower === 'staf' || katLower === 'pendukung';
+                const isTeamTitle = titleLower.startsWith('anggota') ||
+                                    titleLower.includes('security') ||
+                                    titleLower.includes('satpam') ||
+                                    titleLower.includes('cleaning') ||
+                                    titleLower.includes('driver') ||
+                                    titleLower.includes('sopir') ||
+                                    titleLower.includes('ob ');
 
-                if (!isStructuralHead) {
-                    leafMembers.push(child);
-                } else {
+                const isStructuralKeyword = titleLower.includes('ppk') ||
+                                            titleLower.includes('bendahara') ||
+                                            titleLower.includes('spm') ||
+                                            titleLower.includes('penguji') ||
+                                            titleLower.includes('kasatker') ||
+                                            titleLower.includes('kasubbag') ||
+                                            titleLower.includes('direktur') ||
+                                            titleLower.includes('dirjen') ||
+                                            titleLower.includes('menteri') ||
+                                            titleLower.includes('kabag') ||
+                                            titleLower.includes('kepala');
+
+                // Structural Head Card if it has sub-children, OR has structural keyword, OR is not a team category/title
+                const isStructuralHead = childHasChildren || isStructuralKeyword || (!isTeamCategory && !isTeamTitle);
+
+                if (isStructuralHead) {
                     mainSubNodes.push(child);
+                } else {
+                    leafMembers.push(child);
                 }
             });
 
