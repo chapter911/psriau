@@ -243,6 +243,39 @@ class StrukturOrganisasi extends BaseController
         ]);
     }
 
+    public function updateGroupTitle(): ResponseInterface
+    {
+        $nodeIds = $this->request->getPost('node_ids');
+        $judulBaru = trim((string) $this->request->getPost('judul_baru'));
+
+        if (empty($nodeIds) || ! is_array($nodeIds)) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Daftar ID anggota tidak valid.',
+            ]);
+        }
+
+        if ($judulBaru === '') {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Judul kelompok tidak boleh kosong.',
+            ]);
+        }
+
+        $db = db_connect();
+        $builder = $db->table('tb_struktur_organisasi');
+        $builder->whereIn('id', array_map('intval', $nodeIds));
+        $builder->update([
+            'jabatan_bagian' => $judulBaru,
+            'updated_at'     => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'message' => 'Judul kelompok tim berhasil diperbarui.',
+        ]);
+    }
+
     public function deleteNode($id = null): ResponseInterface
     {
         $db = db_connect();

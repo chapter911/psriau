@@ -206,6 +206,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('master/struktur-organisasi/get-chart-data', 'Admin\StrukturOrganisasi::getChartData');
 	$routes->post('master/struktur-organisasi/simpan', 'Admin\StrukturOrganisasi::saveNode');
 	$routes->post('master/struktur-organisasi/simpan-batch', 'Admin\StrukturOrganisasi::saveBatchNodes');
+	$routes->post('master/struktur-organisasi/update-judul-kelompok', 'Admin\StrukturOrganisasi::updateGroupTitle');
 	$routes->post('master/struktur-organisasi/(:num)/hapus', 'Admin\StrukturOrganisasi::deleteNode/$1');
 	$routes->post('master/struktur-organisasi/hapus', 'Admin\StrukturOrganisasi::deleteNode');
 	$routes->get('master/paket', 'Admin\\Paket::index');

@@ -1127,6 +1127,77 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
         return nodeHtml;
     }
 
+    function getGroupBlockTitle(members, defaultTitle) {
+        if (!members || members.length === 0) return defaultTitle;
+        const titles = members.map(m => (m.jabatan_bagian || '').trim()).filter(t => t !== '');
+        if (titles.length === 0) return defaultTitle;
+
+        const uniqueTitles = [...new Set(titles)];
+        if (uniqueTitles.length === 1 && uniqueTitles[0].toLowerCase() !== 'anggota') {
+            return uniqueTitles[0];
+        }
+        return defaultTitle;
+    }
+
+    function promptEditGroupTitle(nodeIdsStr, currentTitle) {
+        if (!nodeIdsStr) return;
+        const nodeIds = String(nodeIdsStr).split(',').map(n => parseInt(n.trim())).filter(n => n > 0);
+        if (nodeIds.length === 0) return;
+
+        Swal.fire({
+            title: 'Edit Judul Kelompok Tim',
+            input: 'text',
+            inputValue: currentTitle,
+            inputLabel: 'Ubah nama/judul untuk kelompok tim ini:',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-save mr-1"></i> Simpan Judul',
+            cancelButtonText: 'Batal',
+            inputValidator: (value) => {
+                if (!value || !value.trim()) {
+                    return 'Judul kelompok tidak boleh kosong!';
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                const formData = new FormData();
+                nodeIds.forEach(id => formData.append('node_ids[]', id));
+                formData.append('judul_baru', result.value.trim());
+
+                fetch('<?= site_url('admin/master/struktur-organisasi/update-judul-kelompok'); ?>', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: data.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        reloadChartData();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: data.message || 'Gagal mengubah judul kelompok.'
+                        });
+                    }
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Koneksi server terputus.'
+                    });
+                });
+            }
+        });
+    }
+
     function buildGroupBlockHtml(parentNode, leafMembers, hasMainSubNodes = false) {
         const teknisMembers = [];
         const pendukungMembers = [];
@@ -1160,6 +1231,11 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
             }
         });
 
+        const teknisTitle = getGroupBlockTitle(teknisMembers, 'TIM TEKNIS & STAF PELAKSANA');
+        const pendukungTitle = getGroupBlockTitle(pendukungMembers, 'TIM PENDUKUNG OPERASIONAL');
+        const teknisIds = teknisMembers.map(m => m.id).join(',');
+        const pendukungIds = pendukungMembers.map(m => m.id).join(',');
+
         // 1. If BOTH Teknis & Pendukung members exist: render 2 separate Block Cards connected by vertical tree stem
         if (teknisMembers.length > 0 && pendukungMembers.length > 0) {
             return `
@@ -1167,7 +1243,10 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
                     <!-- Block 1: Tim Teknis & Staf -->
                     <div class="org-card org-group-block shadow-sm">
                         <div class="org-group-header">
-                            <span><i class="fas fa-user-gear mr-2"></i> TIM TEKNIS & STAF PELAKSANA (${teknisMembers.length})</span>
+                            <span>
+                                <i class="fas fa-user-gear mr-2"></i> ${escapeHtml(teknisTitle)} (${teknisMembers.length})
+                                ${isEditMode ? `<button type="button" class="btn btn-xs btn-outline-light font-weight-bold px-2 ml-2" onclick="event.stopPropagation(); promptEditGroupTitle('${teknisIds}', '${escapeHtml(teknisTitle)}')"><i class="fas fa-pen mr-1"></i> Edit Judul</button>` : ''}
+                            </span>
                             ${isEditMode ? `<button type="button" class="btn btn-xs btn-light text-primary font-weight-bold px-2" onclick="event.stopPropagation(); openAddBatchModal(${parentNode.id})"><i class="fas fa-plus mr-1"></i> Tambah Anggota</button>` : ''}
                         </div>
                         <div class="org-group-body">
@@ -1184,7 +1263,10 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
                                 <!-- Block 2: Tim Pendukung Operasional (Security, Cleaning Service, Driver) -->
                                 <div class="org-card org-group-block org-group-block-pendukung shadow-sm">
                                     <div class="org-group-header bg-dark text-warning border-bottom border-warning">
-                                        <span><i class="fas fa-shield-alt text-warning mr-2"></i> TIM PENDUKUNG OPERASIONAL (${pendukungMembers.length})</span>
+                                        <span>
+                                            <i class="fas fa-shield-alt text-warning mr-2"></i> ${escapeHtml(pendukungTitle)} (${pendukungMembers.length})
+                                            ${isEditMode ? `<button type="button" class="btn btn-xs btn-outline-warning font-weight-bold px-2 ml-2" onclick="event.stopPropagation(); promptEditGroupTitle('${pendukungIds}', '${escapeHtml(pendukungTitle)}')"><i class="fas fa-pen mr-1"></i> Edit Judul</button>` : ''}
+                                        </span>
                                         ${isEditMode ? `<button type="button" class="btn btn-xs btn-outline-warning font-weight-bold px-2" onclick="event.stopPropagation(); openAddBatchModal(${parentNode.id})"><i class="fas fa-plus mr-1"></i> Tambah Anggota</button>` : ''}
                                     </div>
                                     <div class="org-group-body">
@@ -1207,7 +1289,10 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
                 <div class="${itemClass}">
                     <div class="org-card org-group-block org-group-block-pendukung shadow-sm">
                         <div class="org-group-header bg-dark text-warning border-bottom border-warning">
-                            <span><i class="fas fa-shield-alt text-warning mr-2"></i> TIM PENDUKUNG OPERASIONAL (${pendukungMembers.length})</span>
+                            <span>
+                                <i class="fas fa-shield-alt text-warning mr-2"></i> ${escapeHtml(pendukungTitle)} (${pendukungMembers.length})
+                                ${isEditMode ? `<button type="button" class="btn btn-xs btn-outline-warning font-weight-bold px-2 ml-2" onclick="event.stopPropagation(); promptEditGroupTitle('${pendukungIds}', '${escapeHtml(pendukungTitle)}')"><i class="fas fa-pen mr-1"></i> Edit Judul</button>` : ''}
+                            </span>
                             ${isEditMode ? `<button type="button" class="btn btn-xs btn-outline-warning font-weight-bold px-2" onclick="event.stopPropagation(); openAddBatchModal(${parentNode.id})"><i class="fas fa-plus mr-1"></i> Tambah Anggota</button>` : ''}
                         </div>
                         <div class="org-group-body">
@@ -1224,7 +1309,10 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
             <div class="${itemClass}">
                 <div class="org-card org-group-block shadow-sm">
                     <div class="org-group-header">
-                        <span><i class="fas fa-users mr-2"></i> ANGGOTA / TIM PELAKSANA (${teknisMembers.length})</span>
+                        <span>
+                            <i class="fas fa-users mr-2"></i> ${escapeHtml(teknisTitle)} (${teknisMembers.length})
+                            ${isEditMode ? `<button type="button" class="btn btn-xs btn-outline-light font-weight-bold px-2 ml-2" onclick="event.stopPropagation(); promptEditGroupTitle('${teknisIds}', '${escapeHtml(teknisTitle)}')"><i class="fas fa-pen mr-1"></i> Edit Judul</button>` : ''}
+                        </span>
                         ${isEditMode ? `<button type="button" class="btn btn-xs btn-light text-primary font-weight-bold px-2" onclick="event.stopPropagation(); openAddBatchModal(${parentNode.id})"><i class="fas fa-plus mr-1"></i> Tambah Anggota</button>` : ''}
                     </div>
                     <div class="org-group-body">

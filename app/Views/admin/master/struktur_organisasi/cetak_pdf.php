@@ -661,6 +661,18 @@
         return nodeHtml;
     }
 
+    function getGroupBlockTitle(members, defaultTitle) {
+        if (!members || members.length === 0) return defaultTitle;
+        const titles = members.map(m => (m.jabatan_bagian || '').trim()).filter(t => t !== '');
+        if (titles.length === 0) return defaultTitle;
+
+        const uniqueTitles = [...new Set(titles)];
+        if (uniqueTitles.length === 1 && uniqueTitles[0].toLowerCase() !== 'anggota') {
+            return uniqueTitles[0];
+        }
+        return defaultTitle;
+    }
+
     function buildGroupBlockHtml(parentNode, leafMembers, hasMainSubNodes = false) {
         const teknisMembers = [];
         const pendukungMembers = [];
@@ -694,12 +706,15 @@
             }
         });
 
+        const teknisTitle = getGroupBlockTitle(teknisMembers, 'TIM TEKNIS & STAF PELAKSANA');
+        const pendukungTitle = getGroupBlockTitle(pendukungMembers, 'TIM PENDUKUNG OPERASIONAL');
+
         if (teknisMembers.length > 0 && pendukungMembers.length > 0) {
             return `
                 <div class="${itemClass}">
                     <div class="org-card org-group-block">
                         <div class="org-group-header">
-                            <span><i class="fas fa-user-gear mr-2"></i> TIM TEKNIS & STAF PELAKSANA (${teknisMembers.length})</span>
+                            <span><i class="fas fa-user-gear mr-2"></i> ${escapeHtml(teknisTitle)} (${teknisMembers.length})</span>
                         </div>
                         <div class="org-group-body">
                             <div class="org-group-grid">
@@ -713,7 +728,7 @@
                             <div class="org-node-item">
                                 <div class="org-card org-group-block org-group-block-pendukung">
                                     <div class="org-group-header bg-dark text-warning border-bottom border-warning">
-                                        <span><i class="fas fa-shield-alt text-warning mr-2"></i> TIM PENDUKUNG OPERASIONAL (${pendukungMembers.length})</span>
+                                        <span><i class="fas fa-shield-alt text-warning mr-2"></i> ${escapeHtml(pendukungTitle)} (${pendukungMembers.length})</span>
                                     </div>
                                     <div class="org-group-body">
                                         <div class="org-group-grid">
@@ -734,7 +749,7 @@
                 <div class="${itemClass}">
                     <div class="org-card org-group-block org-group-block-pendukung">
                         <div class="org-group-header bg-dark text-warning border-bottom border-warning">
-                            <span><i class="fas fa-shield-alt text-warning mr-2"></i> TIM PENDUKUNG OPERASIONAL (${pendukungMembers.length})</span>
+                            <span><i class="fas fa-shield-alt text-warning mr-2"></i> ${escapeHtml(pendukungTitle)} (${pendukungMembers.length})</span>
                         </div>
                         <div class="org-group-body">
                             <div class="org-group-grid">
@@ -750,7 +765,7 @@
             <div class="${itemClass}">
                 <div class="org-card org-group-block">
                     <div class="org-group-header">
-                        <span><i class="fas fa-users mr-2"></i> ANGGOTA / TIM PELAKSANA (${teknisMembers.length})</span>
+                        <span><i class="fas fa-users mr-2"></i> ${escapeHtml(teknisTitle)} (${teknisMembers.length})</span>
                     </div>
                     <div class="org-group-body">
                         <div class="org-group-grid">
