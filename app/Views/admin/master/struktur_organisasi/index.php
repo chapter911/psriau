@@ -42,20 +42,9 @@ $appLogoUrl = ! empty($appLogoRaw) ? media_url((string) $appLogoRaw) : site_url(
                     <i class="fas fa-eye mr-1"></i> <span id="mode-text">Mode Preview</span>
                 </button>
 
-                <!-- Dedicated Export/Print Dropdown (Opens Separate PDF Poster View) -->
-                <div class="btn-group btn-group-sm shadow-sm">
-                    <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-download mr-1"></i> Export / Cetak PDF
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right">
-                        <a class="dropdown-item font-weight-bold" href="<?= site_url('admin/master/struktur-organisasi/cetak-pdf?orientation=landscape'); ?>" target="_blank">
-                            <i class="fas fa-file-pdf text-danger mr-2"></i> Cetak PDF Poster (Landscape - 1 Halaman)
-                        </a>
-                        <a class="dropdown-item font-weight-bold" href="<?= site_url('admin/master/struktur-organisasi/cetak-pdf?orientation=portrait'); ?>" target="_blank">
-                            <i class="fas fa-file-pdf text-primary mr-2"></i> Cetak PDF Poster (Portrait - 1 Halaman)
-                        </a>
-                    </div>
-                </div>
+                <a href="<?= site_url('admin/master/struktur-organisasi/cetak-pdf'); ?>" target="_blank" class="btn btn-success btn-sm shadow-sm font-weight-bold">
+                    <i class="fas fa-file-pdf mr-1"></i> Export / Cetak PDF Poster
+                </a>
 
             </div>
         </div>
