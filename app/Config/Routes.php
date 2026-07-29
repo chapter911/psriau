@@ -202,6 +202,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/jabatan/(:num)/status', 'Admin\Jabatan::updateStatus/$1');
 	// Master Struktur Organisasi Routes
 	$routes->get('master/struktur-organisasi', 'Admin\StrukturOrganisasi::index');
+	$routes->get('master/struktur-organisasi/cetak-pdf', 'Admin\StrukturOrganisasi::cetakPdf');
 	$routes->get('master/struktur-organisasi/get-chart-data', 'Admin\StrukturOrganisasi::getChartData');
 	$routes->post('master/struktur-organisasi/simpan', 'Admin\StrukturOrganisasi::saveNode');
 	$routes->post('master/struktur-organisasi/simpan-batch', 'Admin\StrukturOrganisasi::saveBatchNodes');

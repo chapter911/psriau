@@ -45,6 +45,29 @@ class StrukturOrganisasi extends BaseController
         return view('admin/master/struktur_organisasi/index', $data);
     }
 
+    public function cetakPdf()
+    {
+        $db = db_connect();
+
+        $treeNodes = [];
+        if ($db->tableExists('tb_struktur_organisasi')) {
+            $treeNodes = $this->strukturModel->getTreeNodes();
+        }
+
+        $orientation = strtolower((string) ($this->request->getGet('orientation') ?? 'landscape'));
+        if (! in_array($orientation, ['landscape', 'portrait'], true)) {
+            $orientation = 'landscape';
+        }
+
+        $data = [
+            'title'       => 'Bagan Struktur Organisasi Satker PPS Riau',
+            'treeNodes'   => $treeNodes,
+            'orientation' => $orientation,
+        ];
+
+        return view('admin/master/struktur_organisasi/cetak_pdf', $data);
+    }
+
     public function getChartData(): ResponseInterface
     {
         $db = db_connect();
