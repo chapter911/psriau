@@ -581,7 +581,7 @@ class SuratCuti extends BaseController
                 // Sisa Cuti N
                 $r4_cells = $xpath->query('.//w:tc', $rows5->item(3));
                 if ($r4_cells->length >= 3) {
-                    $setCellText($r4_cells->item(0), 'N (' . $currentYear . ')');
+                    $setCellText($r4_cells->item(0), (string) $currentYear);
                     $setCellText($r4_cells->item(1), (string) ($data['catatan_cuti_n'] ?? 0));
                     $setCellText($r4_cells->item(2), $data['catatan_cuti_keterangan'] ?? '');
                 }

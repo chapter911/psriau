@@ -59,18 +59,18 @@
         .check-box {
             font-family: DejaVu Sans, Symbola, sans-serif;
             font-weight: bold;
-            font-size: 9.5pt;
-        }
-        .notes-list {
-            margin-top: 4px;
-            font-size: 7pt;
-            line-height: 1.1;
+            font-size: 11pt;
         }
         .signature-box {
             text-align: center;
             vertical-align: top;
             padding-top: 4px;
             height: 48px;
+        }
+        .check-cell {
+            height: 28px;
+            vertical-align: middle;
+            text-align: center;
         }
     </style>
 </head>
@@ -162,7 +162,7 @@
             <td>III. ALASAN CUTI</td>
         </tr>
         <tr>
-            <td style="min-height: 25px; vertical-align: top;">
+            <td style="min-height: 40px; height: 40px; vertical-align: top; padding: 4px 6px;">
                 <?= nl2br(esc($data['alasan_cuti'])); ?>
             </td>
         </tr>
@@ -202,7 +202,7 @@
             <td class="text-center"></td>
         </tr>
         <tr>
-            <td>N (<?= $currentYear; ?>)</td>
+            <td><?= $currentYear; ?></td>
             <td><?= (int) ($data['catatan_cuti_n'] ?? 0); ?> Hari</td>
             <td><?= esc($data['catatan_cuti_keterangan'] ?? ''); ?></td>
             <td>4. CUTI MELAHIRKAN</td>
@@ -226,7 +226,7 @@
             <td colspan="3">VI. ALAMAT SELAMA MENJALANKAN CUTI</td>
         </tr>
         <tr>
-            <td width="50%" rowspan="2" style="vertical-align: top;">
+            <td width="50%" rowspan="2" style="vertical-align: top; text-align: center; padding-top: 6px;">
                 <?= nl2br(esc($data['alamat_selama_cuti'])); ?>
             </td>
             <td width="10%">TELP</td>
@@ -253,11 +253,11 @@
             <td width="25%">DITANGGUHKAN****</td>
             <td width="25%">TIDAK DISETUJUI****</td>
         </tr>
-        <tr class="text-center" style="height: 18px;">
-            <td><span class="check-box"><?= ($pertimbangan === 'disetujui' || $pertimbangan === 'setuju') ? '&#10003;' : ''; ?></span></td>
-            <td><span class="check-box"><?= ($pertimbangan === 'perubahan') ? '&#10003;' : ''; ?></span></td>
-            <td><span class="check-box"><?= ($pertimbangan === 'ditangguhkan') ? '&#10003;' : ''; ?></span></td>
-            <td><span class="check-box"><?= ($pertimbangan === 'tidak disetujui' || $pertimbangan === 'ditolak') ? '&#10003;' : ''; ?></span></td>
+        <tr>
+            <td width="25%" class="check-cell"><span class="check-box"><?= ($pertimbangan === 'disetujui' || $pertimbangan === 'setuju') ? '&#10003;' : ''; ?></span></td>
+            <td width="25%" class="check-cell"><span class="check-box"><?= ($pertimbangan === 'perubahan') ? '&#10003;' : ''; ?></span></td>
+            <td width="25%" class="check-cell"><span class="check-box"><?= ($pertimbangan === 'ditangguhkan') ? '&#10003;' : ''; ?></span></td>
+            <td width="25%" class="check-cell"><span class="check-box"><?= ($pertimbangan === 'tidak disetujui' || $pertimbangan === 'ditolak') ? '&#10003;' : ''; ?></span></td>
         </tr>
         <tr>
             <td colspan="3"></td>
@@ -281,14 +281,19 @@
             <td width="25%">DITANGGUHKAN****</td>
             <td width="25%">TIDAK DISETUJUI****</td>
         </tr>
-        <tr class="text-center" style="height: 18px;">
-            <td><span class="check-box"><?= ($keputusan === 'disetujui' || $keputusan === 'setuju') ? '&#10003;' : ''; ?></span></td>
-            <td><span class="check-box"><?= ($keputusan === 'perubahan') ? '&#10003;' : ''; ?></span></td>
-            <td><span class="check-box"><?= ($keputusan === 'ditangguhkan') ? '&#10003;' : ''; ?></span></td>
-            <td><span class="check-box"><?= ($keputusan === 'tidak disetujui' || $keputusan === 'ditolak') ? '&#10003;' : ''; ?></span></td>
+        <tr>
+            <td width="25%" class="check-cell"><span class="check-box"><?= ($keputusan === 'disetujui' || $keputusan === 'setuju') ? '&#10003;' : ''; ?></span></td>
+            <td width="25%" class="check-cell"><span class="check-box"><?= ($keputusan === 'perubahan') ? '&#10003;' : ''; ?></span></td>
+            <td width="25%" class="check-cell"><span class="check-box"><?= ($keputusan === 'ditangguhkan') ? '&#10003;' : ''; ?></span></td>
+            <td width="25%" class="check-cell"><span class="check-box"><?= ($keputusan === 'tidak disetujui' || $keputusan === 'ditolak') ? '&#10003;' : ''; ?></span></td>
         </tr>
         <tr>
-            <td colspan="3"></td>
+            <td colspan="3" style="vertical-align: top; padding: 4px 6px; font-size: 7.5pt; line-height: 1.25;">
+                * Coret yang tidak perlu<br>
+                ** Pilih salah satu dengan memberi tanda centang (√)<br>
+                *** Diisi oleh pejabat yang menangani bidang kepegawaian sebelum PNS menjalankan cuti<br>
+                **** Diberi tanda centang (√) dan alasannya
+            </td>
             <td class="signature-box">
                 <?= esc($data['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis'); ?>,<br><br><br>
                 <strong><u><?= esc($data['pejabat_nama'] ?? 'Ir. Agung Hari Prabowo, M.T'); ?></u></strong><br>
@@ -296,11 +301,6 @@
             </td>
         </tr>
     </table>
-
-    <div class="notes-list">
-        * Coret yang tidak perlu &nbsp;&nbsp;&nbsp; ** Pilih salah satu dengan memberi tanda centang (√)<br>
-        *** Diisi oleh pejabat kepegawaian sebelum PNS menjalankan cuti &nbsp;&nbsp;&nbsp; **** Diberi tanda centang (√) dan alasannya
-    </div>
 
 </body>
 </html>
