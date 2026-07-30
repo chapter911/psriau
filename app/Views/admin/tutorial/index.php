@@ -214,7 +214,7 @@ graph TD
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="font-weight-bold mb-1 text-primary"><i class="far fa-calendar-alt mr-2"></i> Alur Kerja Pengajuan & Approval Cuti Pegawai</h5>
-                <small class="text-muted">Proses pengajuan cuti melalui modal, tanggal pengajuan otomatis terkunci, hingga ekspor dokumen (DOCX & PDF).</small>
+                <small class="text-muted">Proses pengajuan cuti melalui modal, tanggal pengajuan otomatis terkunci, hingga ekspor dokumen PDF.</small>
             </div>
             <div>
                 <span class="badge badge-primary">Staf & Admin</span>
@@ -230,7 +230,7 @@ graph TD
     D --> E[Isi Alamat & Kontak Selama Cuti]
     E --> F[Klik Simpan Pengajuan Cuti]
     F --> G{Persetujuan Atasan / Admin}
-    G -->|Disetujui| H[Ekspor Dokumen Resmi: DOCX Template form Surat Cuti.docx / PDF]
+    G -->|Disetujui| H[Ekspor Dokumen Resmi: PDF Form Surat Cuti]
                 </pre>
             </div>
         </div>
@@ -414,7 +414,7 @@ graph TD
                                     <li>Pilih <strong>Jenis Cuti</strong> (Tahunan, Besar, Sakit, Melahirkan, Alasan Penting, atau Luar Tanggungan).</li>
                                     <li>Isi Alasan, Periode Tanggal Cuti, Alamat & Telepon selama cuti.</li>
                                     <li>Klik <strong>Simpan Pengajuan Cuti</strong>.</li>
-                                    <li>Gunakan tombol <strong>DOCX</strong> atau <strong>PDF</strong> pada tabel untuk mengekspor dokumen Formulir Permintaan dan Pemberian Cuti resmi.</li>
+                                    <li>Gunakan tombol <strong>PDF</strong> pada tabel untuk mengekspor dokumen Formulir Permintaan dan Pemberian Cuti resmi.</li>
                                 </ol>
                             </div>
                         </div>
