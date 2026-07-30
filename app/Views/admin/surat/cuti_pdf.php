@@ -6,42 +6,51 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+            margin: 0.6cm 1.0cm 0.6cm 1.0cm;
         }
         body {
             font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-            font-size: 10pt;
-            line-height: 1.3;
+            font-size: 8.5pt;
+            line-height: 1.15;
             color: #000000;
         }
-        .header-date {
-            text-align: right;
-            margin-bottom: 10px;
+        .header-container {
+            width: 100%;
+            margin-bottom: 6px;
         }
-        .header-destination {
-            margin-bottom: 15px;
+        .header-right {
+            float: right;
+            width: 48%;
+            text-align: left;
+            font-size: 8.5pt;
+        }
+        .clear {
+            clear: both;
         }
         .title {
             text-align: center;
             font-weight: bold;
-            font-size: 11pt;
-            margin-bottom: 15px;
+            font-size: 9.5pt;
+            margin-top: 4px;
+            margin-bottom: 6px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 12px;
+            margin-bottom: 4px;
             page-break-inside: avoid;
         }
         th, td {
             border: 1px solid #000000;
-            padding: 4px 6px;
+            padding: 2px 4px;
             vertical-align: top;
         }
         .section-header {
             background-color: #f2f2f2;
             font-weight: bold;
+            font-size: 8.5pt;
             text-transform: uppercase;
         }
         .text-center {
@@ -50,12 +59,18 @@
         .check-box {
             font-family: DejaVu Sans, Symbola, sans-serif;
             font-weight: bold;
-            font-size: 11pt;
+            font-size: 9.5pt;
         }
         .notes-list {
-            margin-top: 10px;
-            font-size: 8pt;
-            line-height: 1.2;
+            margin-top: 4px;
+            font-size: 7pt;
+            line-height: 1.1;
+        }
+        .signature-box {
+            text-align: center;
+            vertical-align: top;
+            padding-top: 4px;
+            height: 48px;
         }
     </style>
 </head>
@@ -68,16 +83,25 @@
             $tglPengajuan = str_replace($en, $idMonth, $tglPengajuan);
         }
         $jenisKey = strtolower(trim((string) ($data['jenis_cuti'] ?? '')));
+
+        // Helper to format Jabatan until the first comma
+        $formatJabatan = static function (?string $j): string {
+            if (empty($j)) return '';
+            $parts = explode(',', $j);
+            return trim($parts[0]);
+        };
+
+        $jabatanClean = $formatJabatan($data['jabatan']);
     ?>
 
-    <div class="header-date">
-        Pekanbaru, <?= esc($tglPengajuan); ?>
-    </div>
-
-    <div class="header-destination">
-        Kepada Yth.<br>
-        <strong><?= esc($data['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis'); ?></strong><br>
-        di Jakarta
+    <div class="header-container">
+        <div class="header-right">
+            Pekanbaru, <?= esc($tglPengajuan); ?><br><br>
+            Kepada Yth.<br>
+            <strong><?= esc($data['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis'); ?></strong><br>
+            di Jakarta
+        </div>
+        <div class="clear"></div>
     </div>
 
     <div class="title">
@@ -97,7 +121,7 @@
         </tr>
         <tr>
             <td>Jabatan</td>
-            <td><?= esc($data['jabatan']); ?></td>
+            <td><?= esc($jabatanClean); ?></td>
             <td>Masa Kerja</td>
             <td><?= esc($data['masa_kerja']); ?></td>
         </tr>
@@ -138,7 +162,7 @@
             <td>III. ALASAN CUTI</td>
         </tr>
         <tr>
-            <td style="min-height: 40px; height: 40px; vertical-align: top;">
+            <td style="min-height: 25px; vertical-align: top;">
                 <?= nl2br(esc($data['alasan_cuti'])); ?>
             </td>
         </tr>
@@ -178,23 +202,19 @@
             <td class="text-center"></td>
         </tr>
         <tr>
-            <td>N-2 (<?= $currentYear - 2; ?>)</td>
-            <td><?= (int) ($data['catatan_cuti_n2'] ?? 0); ?></td>
+            <td>N (<?= $currentYear; ?>)</td>
+            <td><?= (int) ($data['catatan_cuti_n'] ?? 0); ?> Hari</td>
             <td><?= esc($data['catatan_cuti_keterangan'] ?? ''); ?></td>
             <td>4. CUTI MELAHIRKAN</td>
             <td class="text-center"></td>
         </tr>
         <tr>
-            <td>N-1 (<?= $currentYear - 1; ?>)</td>
-            <td><?= (int) ($data['catatan_cuti_n1'] ?? 0); ?></td>
-            <td></td>
+            <td colspan="3"></td>
             <td>5. CUTI KARENA ALASAN PENTING</td>
             <td class="text-center"></td>
         </tr>
         <tr>
-            <td>N (<?= $currentYear; ?>)</td>
-            <td><?= (int) ($data['catatan_cuti_n'] ?? 0); ?></td>
-            <td></td>
+            <td colspan="3"></td>
             <td>6. CUTI DI LUAR TANGGUNGAN NEGARA</td>
             <td class="text-center"></td>
         </tr>
@@ -213,8 +233,8 @@
             <td width="40%"><?= esc($data['telepon']); ?></td>
         </tr>
         <tr>
-            <td colspan="2" class="text-center" style="vertical-align: top; padding-top: 10px; height: 80px;">
-                Hormat saya,<br><br><br><br>
+            <td colspan="2" class="signature-box">
+                Hormat saya,<br><br><br>
                 <strong><u><?= esc($data['nama']); ?></u></strong><br>
                 NIP. <?= esc($data['nip']); ?>
             </td>
@@ -233,7 +253,7 @@
             <td width="25%">DITANGGUHKAN****</td>
             <td width="25%">TIDAK DISETUJUI****</td>
         </tr>
-        <tr class="text-center" style="height: 25px;">
+        <tr class="text-center" style="height: 18px;">
             <td><span class="check-box"><?= ($pertimbangan === 'disetujui' || $pertimbangan === 'setuju') ? '&#10003;' : ''; ?></span></td>
             <td><span class="check-box"><?= ($pertimbangan === 'perubahan') ? '&#10003;' : ''; ?></span></td>
             <td><span class="check-box"><?= ($pertimbangan === 'ditangguhkan') ? '&#10003;' : ''; ?></span></td>
@@ -241,8 +261,8 @@
         </tr>
         <tr>
             <td colspan="3"></td>
-            <td class="text-center" style="vertical-align: top; padding-top: 10px; height: 90px;">
-                <?= esc($data['atasan_jabatan'] ?? 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau'); ?>,<br><br><br><br>
+            <td class="signature-box">
+                <?= esc($data['atasan_jabatan'] ?? 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau'); ?>,<br><br><br>
                 <strong><u><?= esc($data['atasan_nama'] ?? 'Muhammad Yudi Prasetya, ST'); ?></u></strong><br>
                 NIP. <?= esc($data['atasan_nip'] ?? '198002142014121002'); ?>
             </td>
@@ -261,7 +281,7 @@
             <td width="25%">DITANGGUHKAN****</td>
             <td width="25%">TIDAK DISETUJUI****</td>
         </tr>
-        <tr class="text-center" style="height: 25px;">
+        <tr class="text-center" style="height: 18px;">
             <td><span class="check-box"><?= ($keputusan === 'disetujui' || $keputusan === 'setuju') ? '&#10003;' : ''; ?></span></td>
             <td><span class="check-box"><?= ($keputusan === 'perubahan') ? '&#10003;' : ''; ?></span></td>
             <td><span class="check-box"><?= ($keputusan === 'ditangguhkan') ? '&#10003;' : ''; ?></span></td>
@@ -269,8 +289,8 @@
         </tr>
         <tr>
             <td colspan="3"></td>
-            <td class="text-center" style="vertical-align: top; padding-top: 10px; height: 90px;">
-                <?= esc($data['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis'); ?>,<br><br><br><br>
+            <td class="signature-box">
+                <?= esc($data['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis'); ?>,<br><br><br>
                 <strong><u><?= esc($data['pejabat_nama'] ?? 'Ir. Agung Hari Prabowo, M.T'); ?></u></strong><br>
                 NIP. <?= esc($data['pejabat_nip'] ?? '196910301998031005'); ?>
             </td>
@@ -278,10 +298,8 @@
     </table>
 
     <div class="notes-list">
-        * Coret yang tidak perlu<br>
-        ** Pilih salah satu dengan memberi tanda centang (√)<br>
-        *** Diisi oleh pejabat yang menangani bidang kepegawaian sebelum PNS menjalankan cuti<br>
-        **** Diberi tanda centang (√) dan alasannya
+        * Coret yang tidak perlu &nbsp;&nbsp;&nbsp; ** Pilih salah satu dengan memberi tanda centang (√)<br>
+        *** Diisi oleh pejabat kepegawaian sebelum PNS menjalankan cuti &nbsp;&nbsp;&nbsp; **** Diberi tanda centang (√) dan alasannya
     </div>
 
 </body>

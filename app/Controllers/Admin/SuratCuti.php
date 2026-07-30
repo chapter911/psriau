@@ -505,7 +505,8 @@ class SuratCuti extends BaseController
                 }
                 $r3_cells = $xpath->query('.//w:tc', $rows1->item(2));
                 if ($r3_cells->length >= 4) {
-                    $setCellText($r3_cells->item(1), $data['jabatan'] ?? '');
+                    $jabatanVal = trim(explode(',', (string) ($data['jabatan'] ?? ''))[0]);
+                    $setCellText($r3_cells->item(1), $jabatanVal);
                     $setCellText($r3_cells->item(3), $data['masa_kerja'] ?? '');
                 }
                 $r4_cells = $xpath->query('.//w:tc', $rows1->item(3));
@@ -572,31 +573,17 @@ class SuratCuti extends BaseController
             // TABLE 5: CATATAN CUTI
             // R3: Tahun | Sisa | Keterangan | 3. CUTI SAKIT | [val]
             // R4: [val] | [val] | [val] | 4. CUTI MELAHIRKAN | [val]
-            // R5: [val] | [val] | [val] | 5. CUTI KARENA ALASAN PENTING | [val]
-            // R6: [val] | [val] | [val] | CUTI DI LUAR TANGGUNGAN NEGARA | [val]
             $tbl5 = $tables->item(4);
             $rows5 = $xpath->query('.//w:tr', $tbl5);
 
             $currentYear = (int) date('Y');
-            if ($rows5->length >= 6) {
-                // R4: N-2
+            if ($rows5->length >= 4) {
+                // Sisa Cuti N
                 $r4_cells = $xpath->query('.//w:tc', $rows5->item(3));
                 if ($r4_cells->length >= 3) {
-                    $setCellText($r4_cells->item(0), 'N-2 (' . ($currentYear - 2) . ')');
-                    $setCellText($r4_cells->item(1), (string) ($data['catatan_cuti_n2'] ?? 0));
+                    $setCellText($r4_cells->item(0), 'N (' . $currentYear . ')');
+                    $setCellText($r4_cells->item(1), (string) ($data['catatan_cuti_n'] ?? 0));
                     $setCellText($r4_cells->item(2), $data['catatan_cuti_keterangan'] ?? '');
-                }
-                // R5: N-1
-                $r5_cells = $xpath->query('.//w:tc', $rows5->item(4));
-                if ($r5_cells->length >= 3) {
-                    $setCellText($r5_cells->item(0), 'N-1 (' . ($currentYear - 1) . ')');
-                    $setCellText($r5_cells->item(1), (string) ($data['catatan_cuti_n1'] ?? 0));
-                }
-                // R6: N
-                $r6_cells = $xpath->query('.//w:tc', $rows5->item(5));
-                if ($r6_cells->length >= 3) {
-                    $setCellText($r6_cells->item(0), 'N (' . $currentYear . ')');
-                    $setCellText($r6_cells->item(1), (string) ($data['catatan_cuti_n'] ?? 0));
                 }
             }
 
