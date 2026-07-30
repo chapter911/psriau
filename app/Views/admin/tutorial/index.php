@@ -410,7 +410,7 @@ graph TD
                                 <ol class="pl-3 small mb-0">
                                     <li>Klik tombol <strong>Ajukan Cuti</strong>.</li>
                                     <li><strong>Tanggal Pengajuan</strong> otomatis terkunci pada tanggal hari ini.</li>
-                                    <li>Data pegawai (Nama, NIP, Jabatan, Masa Kerja) terisi secara otomatis.</li>
+                                    <li>Data pegawai (Nama, NIP, Jabatan, dan kalkulasi Masa Kerja real-time dari NIP TMT CPNS) terisi secara otomatis.</li>
                                     <li>Pilih <strong>Jenis Cuti</strong> (Tahunan, Besar, Sakit, Melahirkan, Alasan Penting, atau Luar Tanggungan).</li>
                                     <li>Isi Alasan, Periode Tanggal Cuti, Alamat & Telepon selama cuti.</li>
                                     <li>Klik <strong>Simpan Pengajuan Cuti</strong>.</li>

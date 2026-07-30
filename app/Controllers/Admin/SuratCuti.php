@@ -36,6 +36,13 @@ class SuratCuti extends BaseController
             $builder->where('mst_pegawai.is_active', 1);
             $builder->orderBy('mst_pegawai.nama', 'ASC');
             $pegawaiList = $builder->get()->getResultArray();
+            foreach ($pegawaiList as &$p) {
+                $computed = $this->resolveMasaKerjaFromNip((string) ($p['nip'] ?? ''));
+                if ($computed !== null) {
+                    $p['masa_kerja'] = $computed;
+                }
+            }
+            unset($p);
         }
 
         return view('admin/surat/cuti', [
@@ -162,6 +169,10 @@ class SuratCuti extends BaseController
         $nip = trim((string) $this->request->getPost('nip'));
         $jabatan = trim((string) $this->request->getPost('jabatan'));
         $masaKerja = trim((string) $this->request->getPost('masa_kerja'));
+        $computedMasaKerja = $this->resolveMasaKerjaFromNip($nip);
+        if ($computedMasaKerja !== null) {
+            $masaKerja = $computedMasaKerja;
+        }
         $unitKerja = trim((string) $this->request->getPost('unit_kerja')) ?: 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
         $jenisCuti = trim((string) $this->request->getPost('jenis_cuti'));
         $alasanCuti = trim((string) $this->request->getPost('alasan_cuti'));
@@ -286,6 +297,10 @@ class SuratCuti extends BaseController
         $nip = trim((string) $this->request->getPost('nip'));
         $jabatan = trim((string) $this->request->getPost('jabatan'));
         $masaKerja = trim((string) $this->request->getPost('masa_kerja'));
+        $computedMasaKerja = $this->resolveMasaKerjaFromNip($nip);
+        if ($computedMasaKerja !== null) {
+            $masaKerja = $computedMasaKerja;
+        }
         $unitKerja = trim((string) $this->request->getPost('unit_kerja')) ?: 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
         $jenisCuti = trim((string) $this->request->getPost('jenis_cuti'));
         $alasanCuti = trim((string) $this->request->getPost('alasan_cuti'));
@@ -727,11 +742,14 @@ class SuratCuti extends BaseController
             ];
         }
 
+        $nipVal = trim((string) ($pegawai['nip'] ?? ''));
+        $computedMasaKerja = $this->resolveMasaKerjaFromNip($nipVal);
+
         return [
             'nama' => trim((string) ($pegawai['nama'] ?? '')),
-            'nip' => trim((string) ($pegawai['nip'] ?? '')),
+            'nip' => $nipVal,
             'jabatan' => trim((string) ($pegawai['jabatan_label'] ?? '')),
-            'masa_kerja' => trim((string) ($pegawai['masa_kerja'] ?? '')),
+            'masa_kerja' => $computedMasaKerja ?? trim((string) ($pegawai['masa_kerja'] ?? '')),
             'unit_kerja' => trim((string) ($pegawai['unit_kerja'] ?? '')) ?: 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau',
         ];
     }
@@ -798,5 +816,48 @@ class SuratCuti extends BaseController
             return 'DESC';
         }
         return strtolower((string) ($first['dir'] ?? 'desc')) === 'asc' ? 'ASC' : 'DESC';
+    }
+
+    private function resolveMasaKerjaFromNip(string $nip): ?string
+    {
+        $digits = preg_replace('/\D+/', '', $nip) ?? '';
+        if (strlen($digits) < 14) {
+            return null;
+        }
+
+        $yearPart = substr($digits, 8, 4);
+        $monthPart = substr($digits, 12, 2);
+
+        $year = (int) $yearPart;
+        $month = (int) $monthPart;
+
+        if ($year < 1950 || $year > (int) date('Y') || $month < 1 || $month > 12) {
+            return null;
+        }
+
+        $tmtDate = \DateTimeImmutable::createFromFormat('Y-m-d', sprintf('%04d-%02d-01', $year, $month));
+        if (! $tmtDate || $tmtDate->format('Y-m-d') !== sprintf('%04d-%02d-01', $year, $month)) {
+            return null;
+        }
+
+        $today = new \DateTimeImmutable('today');
+        if ($tmtDate > $today) {
+            return null;
+        }
+
+        $diff = $tmtDate->diff($today);
+        $parts = [];
+        if ($diff->y > 0) {
+            $parts[] = $diff->y . ' Tahun';
+        }
+        if ($diff->m > 0) {
+            $parts[] = $diff->m . ' Bulan';
+        }
+
+        if ($parts === []) {
+            $parts[] = '0 Bulan';
+        }
+
+        return implode(' ', $parts);
     }
 }

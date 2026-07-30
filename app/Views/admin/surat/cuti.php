@@ -340,6 +340,61 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    const computeMasaKerjaFromNip = (nip) => {
+        const digits = (nip || '').replace(/\D+/g, '');
+        if (digits.length < 14) {
+            return '';
+        }
+
+        const year = Number(digits.slice(8, 12));
+        const month = Number(digits.slice(12, 14));
+        if (!year || !month || month < 1 || month > 12 || year < 1950) {
+            return '';
+        }
+
+        const currentYear = new Date().getFullYear();
+        if (year > currentYear) {
+            return '';
+        }
+
+        const tmtDate = new Date(year, month - 1, 1);
+        if (Number.isNaN(tmtDate.getTime())) {
+            return '';
+        }
+
+        const today = new Date();
+        if (tmtDate > today) {
+            return '';
+        }
+
+        let years = today.getFullYear() - tmtDate.getFullYear();
+        let months = today.getMonth() - tmtDate.getMonth();
+        if (today.getDate() < tmtDate.getDate()) {
+            months -= 1;
+        }
+        if (months < 0) {
+            years -= 1;
+            months += 12;
+        }
+
+        const parts = [];
+        if (years > 0) {
+            parts.push(years + ' Tahun');
+        }
+        if (months > 0) {
+            parts.push(months + ' Bulan');
+        }
+
+        return parts.length > 0 ? parts.join(' ') : '0 Bulan';
+    };
+
+    $('#nip').on('input', function () {
+        const computed = computeMasaKerjaFromNip($(this).val());
+        if (computed) {
+            $('#masa_kerja').val(computed);
+        }
+    });
+
     // Select2 integration for employee list selection if present
     if (typeof $.fn.select2 !== 'undefined' && $('#selectPegawai').length > 0) {
         $('#selectPegawai').select2({
@@ -351,7 +406,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 $('#nama').val(selectedOpt.data('nama') || '');
                 $('#nip').val(selectedOpt.data('nip') || '');
                 $('#jabatan').val(selectedOpt.data('jabatan') || '');
-                $('#masa_kerja').val(selectedOpt.data('masakerja') || '');
+                const computed = computeMasaKerjaFromNip(selectedOpt.data('nip') || '');
+                $('#masa_kerja').val(computed || selectedOpt.data('masakerja') || '');
                 $('#pegawai_id').val(selectedOpt.val());
             }
         });
