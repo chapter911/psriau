@@ -2108,7 +2108,7 @@ class Laporan extends BaseController
         if ($db->tableExists('tb_struktur_organisasi')) {
             $builder->select('so.level AS so_level, so.urutan AS so_urutan, so.id AS so_id')
                 ->join('tb_struktur_organisasi so', 'so.pegawai_id = mst_pegawai.id AND so.is_active = 1', 'left')
-                ->orderBy('CASE WHEN so.id IS NOT NULL THEN 0 ELSE 1 END', 'ASC')
+                ->orderBy('CASE WHEN so.id IS NOT NULL THEN 0 ELSE 1 END', 'ASC', false)
                 ->orderBy('so.level', 'ASC')
                 ->orderBy('so.urutan', 'ASC')
                 ->orderBy('so.id', 'ASC');
