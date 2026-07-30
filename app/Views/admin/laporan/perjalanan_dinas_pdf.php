@@ -376,25 +376,38 @@ $resolvePhotoSrc = static function ($photo): string {
         <?php if (!empty($executorsSignList)): ?>
         <?php
         $executorsCount = count($executorsSignList);
-        $colWidth = 100 / $executorsCount;
+        $perRow = 3;
+        if ($executorsCount === 4) {
+            $perRow = 2;
+        } elseif ($executorsCount > 4) {
+            $perRow = 3;
+        } else {
+            $perRow = $executorsCount;
+        }
+        $executorChunks = array_chunk($executorsSignList, $perRow);
         ?>
-        <table style="width:100%; border-collapse:collapse; margin-top:12px;">
+        <?php foreach ($executorChunks as $chunkIdx => $rowPersons): ?>
+        <?php
+        $itemsInThisRow = count($rowPersons);
+        $colWidth = 100 / $itemsInThisRow;
+        ?>
+        <table style="width:100%; border-collapse:collapse; margin-top:<?= $chunkIdx === 0 ? '12px' : '20px'; ?>;">
             <tr>
-                <?php foreach ($executorsSignList as $person): ?>
-                <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
+                <?php foreach ($rowPersons as $person): ?>
+                <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 8px; border:none;">
                     <div class="bold"><?= $getSignatureJabatan($person); ?></div>
                 </td>
                 <?php endforeach; ?>
             </tr>
             <tr>
-                <?php foreach ($executorsSignList as $person): ?>
-                <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
-                    <div style="height:60px;"></div>
+                <?php foreach ($rowPersons as $person): ?>
+                <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 8px; border:none;">
+                    <div style="height:55px;"></div>
                 </td>
                 <?php endforeach; ?>
             </tr>
             <tr>
-                <?php foreach ($executorsSignList as $person): ?>
+                <?php foreach ($rowPersons as $person): ?>
                 <?php 
                     $nipVal = trim((string) ($person['nip'] ?? ''));
                     $nipLabel = 'NIP. ' . $nipVal;
@@ -406,7 +419,7 @@ $resolvePhotoSrc = static function ($photo): string {
                         $nipLabel = 'NIP. -';
                     }
                 ?>
-                <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 6px; border:none;">
+                <td style="width:<?= $colWidth ?>%; text-align:center; vertical-align:top; padding:0 8px; border:none;">
                     <div class="bold" style="text-decoration:underline;"><?= esc((string) ($person['nama'] ?? '-')); ?></div>
                     <?php if (should_show_nip($person)): ?>
                         <div><?= esc($nipLabel); ?></div>
@@ -415,6 +428,7 @@ $resolvePhotoSrc = static function ($photo): string {
                 <?php endforeach; ?>
             </tr>
         </table>
+        <?php endforeach; ?>
         <?php endif; ?>
 
         <!-- DIKETAHUI OLEH SECTION -->

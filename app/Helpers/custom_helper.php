@@ -503,7 +503,7 @@ if (! function_exists('sanitizeFolderName')) {
 if (! function_exists('should_show_nip')) {
     /**
      * Menentukan apakah NIP pegawai boleh ditampilkan pada export/cetak.
-     * NIP hanya ditampilkan untuk PNS, CPNS, atau PPPK.
+     * NIP hanya ditampilkan untuk PNS, CPNS, atau PPPK yang memiliki NIP angka valid.
      *
      * @param array|string|int|null $person Array data pegawai atau NIP / ID pegawai.
      * @return bool
@@ -536,6 +536,14 @@ if (! function_exists('should_show_nip')) {
             $nip = trim($person);
         }
 
+        // Check if NIP is non-numeric placeholder (e.g. NIPFAZLAN, NON PNS, -, N/A)
+        if ($nip !== null) {
+            $cleanNip = preg_replace('/[\s\.\-]+/', '', $nip);
+            if (! preg_match('/^\d{8,20}$/', $cleanNip)) {
+                return false;
+            }
+        }
+
         if ($jenisPegawai !== null) {
             return in_array($jenisPegawai, ['pns', 'cpns', 'pppk'], true);
         }
@@ -549,18 +557,28 @@ if (! function_exists('should_show_nip')) {
             try {
                 $db = db_connect();
                 if ($db->tableExists('mst_pegawai')) {
-                    $builder = $db->table('mst_pegawai')->select('jenis_pegawai');
+                    $builder = $db->table('mst_pegawai')->select('jenis_pegawai, nip');
                     if ($id !== null) {
                         $builder->where('id', $id);
                     } else {
                         $builder->where('nip', $nip);
                     }
                     $row = $builder->get()->getRowArray();
-                    if (is_array($row) && isset($row['jenis_pegawai'])) {
-                        $jp = strtolower(trim((string) $row['jenis_pegawai']));
-                        $isAsn = in_array($jp, ['pns', 'cpns', 'pppk'], true);
-                        $cacheMap[$cacheKey] = $isAsn;
-                        return $isAsn;
+                    if (is_array($row)) {
+                        $dbNip = trim((string) ($row['nip'] ?? ''));
+                        if ($dbNip !== '') {
+                            $cleanDbNip = preg_replace('/[\s\.\-]+/', '', $dbNip);
+                            if (! preg_match('/^\d{8,20}$/', $cleanDbNip)) {
+                                $cacheMap[$cacheKey] = false;
+                                return false;
+                            }
+                        }
+                        if (isset($row['jenis_pegawai']) && trim((string) $row['jenis_pegawai']) !== '') {
+                            $jp = strtolower(trim((string) $row['jenis_pegawai']));
+                            $isAsn = in_array($jp, ['pns', 'cpns', 'pppk'], true);
+                            $cacheMap[$cacheKey] = $isAsn;
+                            return $isAsn;
+                        }
                     }
                 }
             } catch (\Throwable $e) {
