@@ -525,39 +525,34 @@
 
         const computeMasaKerjaFromNip = (nip) => {
             const digits = (nip || '').replace(/\D+/g, '');
-            if (digits.length < 16) {
+            if (digits.length < 14) {
                 return '';
             }
 
             const year = Number(digits.slice(8, 12));
             const month = Number(digits.slice(12, 14));
-            const day = Number(digits.slice(14, 16));
-            if (!year || !month || !day) {
+            if (!year || !month || month < 1 || month > 12 || year < 1950) {
                 return '';
             }
 
-            const birthDate = new Date(year, month - 1, day);
-            if (Number.isNaN(birthDate.getTime())) {
+            const currentYear = new Date().getFullYear();
+            if (year > currentYear) {
                 return '';
             }
 
-            const checkDate = new Date(year, month - 1, day);
-            if (
-                checkDate.getFullYear() !== year ||
-                checkDate.getMonth() !== month - 1 ||
-                checkDate.getDate() !== day
-            ) {
+            const tmtDate = new Date(year, month - 1, 1);
+            if (Number.isNaN(tmtDate.getTime())) {
                 return '';
             }
 
             const today = new Date();
-            if (birthDate > today) {
+            if (tmtDate > today) {
                 return '';
             }
 
-            let years = today.getFullYear() - birthDate.getFullYear();
-            let months = today.getMonth() - birthDate.getMonth();
-            if (today.getDate() < birthDate.getDate()) {
+            let years = today.getFullYear() - tmtDate.getFullYear();
+            let months = today.getMonth() - tmtDate.getMonth();
+            if (today.getDate() < tmtDate.getDate()) {
                 months -= 1;
             }
             if (months < 0) {
@@ -581,6 +576,11 @@
             const nextValue = computed || fallbackValue || '';
             masaKerjaInputs.forEach((input) => {
                 input.value = nextValue;
+                if (computed) {
+                    input.readOnly = true;
+                } else {
+                    input.readOnly = false;
+                }
             });
         };
 

@@ -999,7 +999,7 @@ class Pegawai extends BaseController
             }
 
             $computedMasaKerja = $this->resolveMasaKerjaFromNip((string) ($item['nip'] ?? ''));
-            if ($computedMasaKerja !== null && trim((string) ($item['masa_kerja'] ?? '')) === '') {
+            if ($computedMasaKerja !== null) {
                 $item['masa_kerja'] = $computedMasaKerja;
             }
         }
@@ -1010,22 +1010,31 @@ class Pegawai extends BaseController
     private function resolveMasaKerjaFromNip(string $nip): ?string
     {
         $digits = preg_replace('/\D+/', '', $nip) ?? '';
-        if (strlen($digits) < 16) {
+        if (strlen($digits) < 14) {
             return null;
         }
 
-        $datePart = substr($digits, 8, 8);
-        $birthDate = \DateTimeImmutable::createFromFormat('Ymd', $datePart);
-        if (! $birthDate || $birthDate->format('Ymd') !== $datePart) {
+        $yearPart = substr($digits, 8, 4);
+        $monthPart = substr($digits, 12, 2);
+
+        $year = (int) $yearPart;
+        $month = (int) $monthPart;
+
+        if ($year < 1950 || $year > (int) date('Y') || $month < 1 || $month > 12) {
+            return null;
+        }
+
+        $tmtDate = \DateTimeImmutable::createFromFormat('Y-m-d', sprintf('%04d-%02d-01', $year, $month));
+        if (! $tmtDate || $tmtDate->format('Y-m-d') !== sprintf('%04d-%02d-01', $year, $month)) {
             return null;
         }
 
         $today = new \DateTimeImmutable('today');
-        if ($birthDate > $today) {
+        if ($tmtDate > $today) {
             return null;
         }
 
-        $diff = $birthDate->diff($today);
+        $diff = $tmtDate->diff($today);
         $parts = [];
         if ($diff->y > 0) {
             $parts[] = $diff->y . ' Tahun';
