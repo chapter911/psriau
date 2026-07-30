@@ -1777,6 +1777,7 @@ class Laporan extends BaseController
             'updated_at' => date('Y-m-d H:i:s'),
         ];
 
+        $ok = $model->update($id, $payload);
         $isModal = ($this->request->getGet('modal') == 1 || $this->request->getPost('is_modal') == 1);
         if (! $ok) {
             $errUrl = site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah') . ($isModal ? '?modal=1' : '');
