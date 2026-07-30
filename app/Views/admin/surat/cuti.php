@@ -270,21 +270,13 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-3 form-group">
-                            <label class="font-weight-bold small">Sisa N-2 (2 Thn Lalu)</label>
-                            <input type="number" class="form-control form-control-sm" id="catatan_cuti_n2" name="catatan_cuti_n2" min="0" value="0">
+                        <div class="col-md-6 form-group">
+                            <label class="font-weight-bold">Jumlah Sisa Cuti (Hari)</label>
+                            <input type="number" class="form-control" id="catatan_cuti_n" name="catatan_cuti_n" min="0" value="0" placeholder="Masukkan jumlah sisa cuti">
                         </div>
-                        <div class="col-md-3 form-group">
-                            <label class="font-weight-bold small">Sisa N-1 (1 Thn Lalu)</label>
-                            <input type="number" class="form-control form-control-sm" id="catatan_cuti_n1" name="catatan_cuti_n1" min="0" value="0">
-                        </div>
-                        <div class="col-md-3 form-group">
-                            <label class="font-weight-bold small">Sisa N (Tahun Ini)</label>
-                            <input type="number" class="form-control form-control-sm" id="catatan_cuti_n" name="catatan_cuti_n" min="0" value="0">
-                        </div>
-                        <div class="col-md-3 form-group">
-                            <label class="font-weight-bold small">Keterangan Catatan</label>
-                            <input type="text" class="form-control form-control-sm" id="catatan_cuti_keterangan" name="catatan_cuti_keterangan" placeholder="Keterangan tambahan">
+                        <div class="col-md-6 form-group">
+                            <label class="font-weight-bold">Keterangan Catatan</label>
+                            <input type="text" class="form-control" id="catatan_cuti_keterangan" name="catatan_cuti_keterangan" placeholder="Keterangan tambahan (opsional)">
                         </div>
                     </div>
 
@@ -434,8 +426,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     $('#tanggal_selesai').val(data.tanggal_selesai);
                     $('#alamat_selama_cuti').val(data.alamat_selama_cuti);
                     $('#telepon').val(data.telepon);
-                    $('#catatan_cuti_n2').val(data.catatan_cuti_n2);
-                    $('#catatan_cuti_n1').val(data.catatan_cuti_n1);
                     $('#catatan_cuti_n').val(data.catatan_cuti_n);
                     $('#catatan_cuti_keterangan').val(data.catatan_cuti_keterangan);
                     $('#atasan_nama').val(data.atasan_nama);
