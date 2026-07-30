@@ -64,8 +64,9 @@
         .signature-box {
             text-align: center;
             vertical-align: top;
-            padding-top: 4px;
-            height: 48px;
+            padding-top: 6px;
+            padding-bottom: 6px;
+            height: 68px;
         }
         .check-cell {
             height: 28px;
@@ -235,7 +236,7 @@
             <td colspan="3">VI. ALAMAT SELAMA MENJALANKAN CUTI</td>
         </tr>
         <tr>
-            <td width="50%" rowspan="2" style="vertical-align: top; text-align: center; padding-top: 6px;">
+            <td width="50%" rowspan="2" style="vertical-align: middle; text-align: center; padding: 6px;">
                 <?= nl2br(esc($data['alamat_selama_cuti'])); ?>
             </td>
             <td width="10%">TELP</td>
@@ -243,7 +244,7 @@
         </tr>
         <tr>
             <td colspan="2" class="signature-box">
-                Hormat saya,<br><br><br>
+                Hormat saya,<br><br><br><br>
                 <strong><u><?= esc($data['nama']); ?></u></strong><br>
                 NIP. <?= esc($data['nip']); ?>
             </td>
@@ -271,7 +272,7 @@
         <tr>
             <td colspan="3"></td>
             <td class="signature-box">
-                <?= esc($data['atasan_jabatan'] ?? 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau'); ?>,<br><br><br>
+                <?= esc($data['atasan_jabatan'] ?? 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau'); ?>,<br><br><br><br>
                 <strong><u><?= esc($data['atasan_nama'] ?? 'Muhammad Yudi Prasetya, ST'); ?></u></strong><br>
                 NIP. <?= esc($data['atasan_nip'] ?? '198002142014121002'); ?>
             </td>
@@ -310,7 +311,7 @@
                 </table>
             </td>
             <td class="signature-box">
-                <?= esc($data['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis'); ?>,<br><br><br>
+                <?= esc($data['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis'); ?>,<br><br><br><br>
                 <strong><u><?= esc($data['pejabat_nama'] ?? 'Ir. Agung Hari Prabowo, M.T'); ?></u></strong><br>
                 NIP. <?= esc($data['pejabat_nip'] ?? '196910301998031005'); ?>
             </td>
