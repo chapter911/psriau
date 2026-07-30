@@ -462,7 +462,7 @@ graph TD
                             <div class="card-body">
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-users mr-1"></i> Manajemen User & Hak Akses Role</h6>
                                 <p class="small text-muted mb-2"><code>/admin/utility/user</code> & <code>/admin/utility/user-group</code></p>
-                                <p class="small mb-0">Tambah/edit user dari master pegawai. Pengaturan hak akses menu per role secara dinamis (Akses, Add, Edit, Delete, Export, Import, Approval).</p>
+                                <p class="small mb-0">Tambah, edit, dan perbarui data user serta perubahan role secara dinamis dari master pegawai maupun input manual. Dilengkapi validasi role terintegrasi dan pengaturan hak akses menu per role (Akses, Add, Edit, Delete, Export, Import, Approval).</p>
                             </div>
                         </div>
                     </div>

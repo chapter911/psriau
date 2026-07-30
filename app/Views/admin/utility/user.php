@@ -238,7 +238,17 @@ document.addEventListener('DOMContentLoaded', function () {
         roleLockedHint.classList.add('d-none');
 
         if (selected !== '') {
-            role.value = selected;
+            let matched = false;
+            for (let i = 0; i < role.options.length; i++) {
+                if (normalizeRoleValue(role.options[i].value) === selected) {
+                    role.options[i].selected = true;
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                role.value = selectedRole;
+            }
         }
     }
 

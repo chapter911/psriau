@@ -316,32 +316,6 @@ class Utility extends BaseController
             ]);
         }
 
-        $allowedRoleOptions = $this->getAssignableUserRoleOptions();
-        $allowedRoleValues = array_map(static fn (array $role): string => (string) ($role['value'] ?? ''), $allowedRoleOptions);
-        $allowedRoleValues = array_values(array_filter(array_map('trim', $allowedRoleValues), static fn (string $value): bool => $value !== ''));
-
-        $existingRole = trim((string) ($existing['role'] ?? ''));
-        $existingRoleAllowed = in_array($this->normalizeRoleKey($existingRole), array_map([$this, 'normalizeRoleKey'], $allowedRoleValues), true);
-
-        $rules = [
-            'full_name' => 'required|min_length[3]|max_length[150]',
-            'password' => 'permit_empty|min_length[6]|max_length[72]',
-        ];
-
-        if ($existingRoleAllowed) {
-            $rules['role'] = 'required|in_list[' . implode(',', $allowedRoleValues) . ']';
-        } else {
-            $rules['role'] = 'permit_empty|in_list[' . implode(',', $allowedRoleValues) . ']';
-        }
-
-        if (! $this->validate($rules)) {
-            return $this->response->setStatusCode(422)->setJSON([
-                'status' => 'error',
-                'errors' => $this->validator->getErrors(),
-                'csrfHash' => csrf_hash(),
-            ]);
-        }
-
         $model = new UserModel();
         $existing = $model->find($id);
         if (! is_array($existing)) {
@@ -352,11 +326,43 @@ class Utility extends BaseController
             ]);
         }
 
+        $allowedRoleOptions = $this->getAssignableUserRoleOptions();
+        $allowedRoleValues = array_map(static fn (array $role): string => (string) ($role['value'] ?? ''), $allowedRoleOptions);
+        $allowedRoleValues = array_values(array_filter(array_map('trim', $allowedRoleValues), static fn (string $value): bool => $value !== ''));
+
+        $existingRole = trim((string) ($existing['role'] ?? ''));
+        $normalizedAllowed = array_map([$this, 'normalizeRoleKey'], $allowedRoleValues);
+        $existingRoleAllowed = in_array($this->normalizeRoleKey($existingRole), $normalizedAllowed, true);
+
+        $postedRole = trim((string) $this->request->getPost('role'));
+
+        $rules = [
+            'full_name' => 'required|min_length[3]|max_length[150]',
+            'password' => 'permit_empty|min_length[6]|max_length[72]',
+        ];
+
+        if ($postedRole !== '') {
+            $rules['role'] = 'required|in_list[' . implode(',', $allowedRoleValues) . ']';
+        } elseif ($existingRoleAllowed) {
+            $rules['role'] = 'required|in_list[' . implode(',', $allowedRoleValues) . ']';
+        } else {
+            $rules['role'] = 'permit_empty';
+        }
+
+        if (! $this->validate($rules)) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'errors' => $this->validator->getErrors(),
+                'csrfHash' => csrf_hash(),
+            ]);
+        }
+
         $fullName = trim((string) $this->request->getPost('full_name'));
-        $role = trim((string) $this->request->getPost('role'));
         $password = (string) $this->request->getPost('password');
 
-        if (! $existingRoleAllowed) {
+        if ($postedRole !== '') {
+            $role = $postedRole;
+        } else {
             $role = $existingRole;
         }
 
