@@ -45,6 +45,20 @@
         background: #e0f2fe;
         box-shadow: 0 0 0 2px rgba(10, 102, 194, 0.2);
     }
+    #modalCuti .modal-dialog {
+        max-height: calc(100vh - 40px);
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    #modalCuti form.modal-content {
+        max-height: calc(100vh - 40px);
+        display: flex;
+        flex-direction: column;
+    }
+    #modalCuti .modal-body {
+        overflow-y: auto !important;
+        max-height: calc(100vh - 180px) !important;
+    }
 </style>
 
 <div class="container-fluid">
@@ -86,7 +100,11 @@
 <!-- Modal Form Pengajuan Cuti -->
 <div class="modal fade" id="modalCuti" tabindex="-1" role="dialog" aria-labelledby="modalCutiLabel" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+        <form id="formCuti" action="<?= site_url('admin/surat/cuti/buat'); ?>" method="post" class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+            <?= csrf_field(); ?>
+            <input type="hidden" id="cuti_id" name="id" value="">
+            <input type="hidden" id="pegawai_id" name="pegawai_id" value="<?= esc($current_pegawai['pegawai_id'] ?? ''); ?>">
+
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title font-weight-bold" id="modalCutiLabel">
                     <i class="far fa-paper-plane mr-2"></i> Formulir Permintaan dan Pemberian Cuti
@@ -95,12 +113,8 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="formCuti" action="<?= site_url('admin/surat/cuti/buat'); ?>" method="post">
-                <?= csrf_field(); ?>
-                <input type="hidden" id="cuti_id" name="id" value="">
-                <input type="hidden" id="pegawai_id" name="pegawai_id" value="<?= esc($current_pegawai['pegawai_id'] ?? ''); ?>">
 
-                <div class="modal-body p-4">
+            <div class="modal-body p-4">
 
                     <!-- Section: Tanggal Pengajuan (READONLY / LOCKED) -->
                     <div class="alert alert-secondary d-flex align-items-center mb-3">
@@ -321,7 +335,6 @@
             </form>
         </div>
     </div>
-</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
