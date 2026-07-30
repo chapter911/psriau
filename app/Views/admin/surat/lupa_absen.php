@@ -132,7 +132,7 @@
                             <option value="Lupa Absen Masuk">Lupa Absen Masuk</option>
                             <option value="Lupa Absen Pulang">Lupa Absen Pulang</option>
                             <option value="Terlambat Masuk">Terlambat Masuk</option>
-                            <option value="Terlambat Pulang">Terlambat Pulang</option>
+                            <option value="Pulang Sebelum Waktunya">Pulang Sebelum Waktunya</option>
                             <option value="__custom__">Ketik Manual...</option>
                         </select>
                         <input type="text" class="form-control mt-2" id="alasan_custom" name="alasan_detail" placeholder="Ketik alasan di sini..." style="display: none;">
@@ -212,7 +212,7 @@ function openEditModal(data) {
     
     // Populate alasan
     var alasan = data.alasan_detail;
-    var templates = ['Lupa Absen Masuk', 'Lupa Absen Pulang', 'Terlambat Masuk', 'Terlambat Pulang'];
+    var templates = ['Lupa Absen Masuk', 'Lupa Absen Pulang', 'Terlambat Masuk', 'Pulang Sebelum Waktunya'];
     var select = document.getElementById('alasan_select');
     var customInput = document.getElementById('alasan_custom');
     

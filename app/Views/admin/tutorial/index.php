@@ -322,12 +322,12 @@ graph TD
         <div class="card menu-tutorial-card mb-3 role-section" data-roles="staf_pelaksana,all">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 font-weight-bold text-info">
-                    <i class="fas fa-envelope-open-text mr-2"></i> Modul Staf / Pelaksana: Disposisi, Laporan Perjadin & Dokumentasi
+                    <i class="fas fa-envelope-open-text mr-2"></i> Modul Staf / Pelaksana: Disposisi, Laporan Perjadin & Lupa Absen
                 </h5>
             </div>
             <div class="card-body bg-light">
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-paper-plane mr-1"></i> Disposisi Perjalanan Dinas</h6>
@@ -343,7 +343,7 @@ graph TD
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-file-invoice mr-1"></i> Laporan Perjalanan Dinas</h6>
@@ -354,6 +354,21 @@ graph TD
                                     <li>Unggah foto di tab <strong>Dokumentasi Kegiatan</strong> & tiket/nota di tab <strong>Dokumentasi Tiket</strong> (input teks bebas).</li>
                                     <li>Klik <strong>Simpan Final</strong> untuk mengunci laporan.</li>
                                     <li>Gunakan kolom <strong>Dokumen SPT</strong> pada tabel Laporan Perjalanan Dinas (`/admin/surat/perjalanan-dinas`) untuk mengunduh/melihat berkas SPT TTD terverifikasi.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-user-clock mr-1"></i> Pengajuan Lupa Absen</h6>
+                                <p class="small text-muted mb-2"><code>/admin/surat/lupa-absen</code></p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Klik <strong>Ajukan Lupa Absen</strong>.</li>
+                                    <li>Pilih Tanggal Absen, Jenis Absen (Masuk/Pulang), dan KOP Surat.</li>
+                                    <li>Pilih Template Alasan: <strong>Lupa Absen Masuk</strong>, <strong>Lupa Absen Pulang</strong>, <strong>Terlambat Masuk</strong>, atau <strong>Pulang Sebelum Waktunya</strong> (atau Ketik Manual).</li>
+                                    <li>Klik <strong>Ajukan</strong> untuk menyimpan.</li>
+                                    <li>Unduh PDF Surat Pernyataan resmi melalui tombol icon PDF.</li>
                                 </ol>
                             </div>
                         </div>
