@@ -69,9 +69,43 @@ class StrukturOrganisasiModel extends Model
         $builder->where('s.is_active', 1);
         $builder->orderBy('s.level', 'ASC');
         $builder->orderBy('s.urutan', 'ASC');
-        $builder->orderBy('s.id', 'ASC');
+        $allNodes = $builder->get()->getResultArray();
+        if (empty($allNodes)) {
+            return [];
+        }
 
-        return $builder->get()->getResultArray();
+        $childrenMap = [];
+        foreach ($allNodes as $n) {
+            $pId = ! empty($n['parent_id']) ? (int) $n['parent_id'] : 0;
+            if (! isset($childrenMap[$pId])) {
+                $childrenMap[$pId] = [];
+            }
+            $childrenMap[$pId][] = $n;
+        }
+
+        $orderedNodes = [];
+        $walk = static function ($pId) use (&$walk, &$childrenMap, &$orderedNodes) {
+            if (! isset($childrenMap[$pId])) {
+                return;
+            }
+            foreach ($childrenMap[$pId] as $child) {
+                $orderedNodes[] = $child;
+                $walk((int) $child['id']);
+            }
+        };
+
+        $walk(0);
+
+        if (count($orderedNodes) < count($allNodes)) {
+            $visitedIds = array_flip(array_column($orderedNodes, 'id'));
+            foreach ($allNodes as $n) {
+                if (! isset($visitedIds[$n['id']])) {
+                    $orderedNodes[] = $n;
+                }
+            }
+        }
+
+        return $orderedNodes;
     }
 
     /**

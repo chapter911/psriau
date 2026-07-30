@@ -2099,24 +2099,13 @@ class Laporan extends BaseController
             return [];
         }
 
-        $db = db_connect();
-        $builder = (new MstPegawaiModel())
+        $rows = (new MstPegawaiModel())
             ->select('mst_pegawai.id, mst_pegawai.nip, mst_pegawai.nama, mst_pegawai.golongan, mst_pegawai.jabatan_utama_id, ju.jabatan AS jabatan_label, mst_pegawai.is_active')
             ->join('mst_jabatan ju', 'ju.id = mst_pegawai.jabatan_utama_id', 'left')
-            ->where('mst_pegawai.is_active', 1);
-
-        if ($db->tableExists('tb_struktur_organisasi')) {
-            $builder->select('so.level AS so_level, so.urutan AS so_urutan, so.id AS so_id')
-                ->join('tb_struktur_organisasi so', 'so.pegawai_id = mst_pegawai.id AND so.is_active = 1', 'left')
-                ->orderBy('CASE WHEN so.id IS NOT NULL THEN 0 ELSE 1 END', 'ASC', false)
-                ->orderBy('so.level', 'ASC')
-                ->orderBy('so.urutan', 'ASC')
-                ->orderBy('so.id', 'ASC');
-        }
-
-        $rows = $builder->orderBy('mst_pegawai.nama', 'ASC')
-            ->orderBy('mst_pegawai.nip', 'ASC')
+            ->where('mst_pegawai.is_active', 1)
             ->findAll();
+
+        $rows = $this->sortPelaksanaByStrukturOrganisasi($rows);
 
         return array_map(static function (array $row): array {
             $display = trim((string) ($row['nama'] ?? 'Pegawai'));
