@@ -308,13 +308,24 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('surat/perjalanan-dinas/set-last-number', 'Admin\Laporan::setLastKodeNomor');
 
 	// Surat Routes - Lupa Absen
-	$routes->get('surat/lupa-absen', 'Admin\\LupaAbsen::index');
-	$routes->match(['get', 'post'], 'surat/lupa-absen/buat', 'Admin\\LupaAbsen::buat');
-	$routes->match(['get', 'post'], 'surat/lupa-absen/(:num)/ubah', 'Admin\\LupaAbsen::ubah/$1');
-	$routes->get('surat/lupa-absen/(:num)/pdf', 'Admin\\LupaAbsen::pdf/$1');
-	$routes->get('surat/lupa-absen/(:num)/hapus', 'Admin\\LupaAbsen::hapus/$1');
-	$routes->get('surat/lupa-absen/(:num)/approve', 'Admin\\LupaAbsen::approve/$1');
-	$routes->get('surat/lupa-absen/(:num)/reject', 'Admin\\LupaAbsen::reject/$1');
+	$routes->get('surat/lupa-absen', 'Admin\LupaAbsen::index');
+	$routes->match(['get', 'post'], 'surat/lupa-absen/buat', 'Admin\LupaAbsen::buat');
+	$routes->match(['get', 'post'], 'surat/lupa-absen/(:num)/ubah', 'Admin\LupaAbsen::ubah/$1');
+	$routes->get('surat/lupa-absen/(:num)/pdf', 'Admin\LupaAbsen::pdf/$1');
+	$routes->get('surat/lupa-absen/(:num)/hapus', 'Admin\LupaAbsen::hapus/$1');
+	$routes->get('surat/lupa-absen/(:num)/approve', 'Admin\LupaAbsen::approve/$1');
+	$routes->get('surat/lupa-absen/(:num)/reject', 'Admin\LupaAbsen::reject/$1');
+
+	// Surat Routes - Cuti
+	$routes->get('surat/cuti', 'Admin\SuratCuti::index');
+	$routes->match(['get', 'post'], 'surat/cuti/buat', 'Admin\SuratCuti::buat');
+	$routes->get('surat/cuti/(:num)/detail', 'Admin\SuratCuti::detail/$1');
+	$routes->match(['get', 'post'], 'surat/cuti/(:num)/ubah', 'Admin\SuratCuti::ubah/$1');
+	$routes->match(['get', 'post'], 'surat/cuti/(:num)/hapus', 'Admin\SuratCuti::hapus/$1');
+	$routes->match(['get', 'post'], 'surat/cuti/(:num)/setujui', 'Admin\SuratCuti::setujui/$1');
+	$routes->match(['get', 'post'], 'surat/cuti/(:num)/tolak', 'Admin\SuratCuti::tolak/$1');
+	$routes->get('surat/cuti/(:num)/export-docx', 'Admin\SuratCuti::exportDocx/$1');
+	$routes->get('surat/cuti/(:num)/export-pdf', 'Admin\SuratCuti::exportPdf/$1');
 
 	// Surat Routes - Disposisi Perjalanan Dinas
 	$routes->get('surat/perjalanan-dinas/disposisi', 'Admin\DisposisiPerjalananDinas::index');

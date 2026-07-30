@@ -208,6 +208,35 @@ graph TD
     </div>
     <?php endif; ?>
 
+    <!-- FLOWCHART 1B: PENGAJUAN CUTI PEGAWAI -->
+    <?php if ($canRenderForUser(['staf_pelaksana', 'admin'])): ?>
+    <div class="flowchart-card role-section" data-roles="staf_pelaksana,admin,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="far fa-calendar-alt mr-2"></i> Alur Kerja Pengajuan & Approval Cuti Pegawai</h5>
+                <small class="text-muted">Proses pengajuan cuti melalui modal, tanggal pengajuan otomatis terkunci, hingga ekspor dokumen (DOCX & PDF).</small>
+            </div>
+            <div>
+                <span class="badge badge-primary">Staf & Admin</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A[Buka Menu Surat-Surat -> Cuti] --> B[Klik Tombol Ajukan Cuti]
+    B --> C[Sistem Otomatis Mengisi Tanggal Pengajuan Terkunci & Data Pegawai]
+    C --> D[Pilih Jenis Cuti, Alasan, Lamanya Cuti & Tanggal Mulai-Selesai]
+    D --> E[Isi Alamat & Kontak Selama Cuti]
+    E --> F[Klik Simpan Pengajuan Cuti]
+    F --> G{Persetujuan Atasan / Admin}
+    G -->|Disetujui| H[Ekspor Dokumen Resmi: DOCX Template form Surat Cuti.docx / PDF]
+                </pre>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- FLOWCHART 2: PPK & KASATKER - APPROVAL DISPOSISI & PENGESAHAN -->
     <?php if ($canRenderForUser(['ppk_kasatker'])): ?>
     <div class="flowchart-card role-section" data-roles="ppk_kasatker,all">
@@ -322,12 +351,12 @@ graph TD
         <div class="card menu-tutorial-card mb-3 role-section" data-roles="staf_pelaksana,all">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 font-weight-bold text-info">
-                    <i class="fas fa-envelope-open-text mr-2"></i> Modul Staf / Pelaksana: Disposisi, Laporan Perjadin & Lupa Absen
+                    <i class="fas fa-envelope-open-text mr-2"></i> Modul Staf / Pelaksana: Disposisi, Laporan Perjadin, Lupa Absen & Pengajuan Cuti
                 </h5>
             </div>
             <div class="card-body bg-light">
                 <div class="row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-paper-plane mr-1"></i> Disposisi Perjalanan Dinas</h6>
@@ -343,7 +372,7 @@ graph TD
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-file-invoice mr-1"></i> Laporan Perjalanan Dinas</h6>
@@ -358,7 +387,7 @@ graph TD
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-user-clock mr-1"></i> Pengajuan Lupa Absen</h6>
@@ -369,6 +398,23 @@ graph TD
                                     <li>Pilih Template Alasan: <strong>Lupa Absen Masuk</strong>, <strong>Lupa Absen Pulang</strong>, <strong>Terlambat Masuk</strong>, atau <strong>Pulang Sebelum Waktunya</strong> (atau Ketik Manual).</li>
                                     <li>Klik <strong>Ajukan</strong> untuk menyimpan.</li>
                                     <li>Unduh PDF Surat Pernyataan resmi melalui tombol icon PDF.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="far fa-calendar-alt mr-1"></i> Pengajuan Cuti</h6>
+                                <p class="small text-muted mb-2"><code>/admin/surat/cuti</code></p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Klik tombol <strong>Ajukan Cuti</strong>.</li>
+                                    <li><strong>Tanggal Pengajuan</strong> otomatis terkunci pada tanggal hari ini.</li>
+                                    <li>Data pegawai (Nama, NIP, Jabatan, Masa Kerja) terisi secara otomatis.</li>
+                                    <li>Pilih <strong>Jenis Cuti</strong> (Tahunan, Besar, Sakit, Melahirkan, Alasan Penting, atau Luar Tanggungan).</li>
+                                    <li>Isi Alasan, Periode Tanggal Cuti, Alamat & Telepon selama cuti.</li>
+                                    <li>Klik <strong>Simpan Pengajuan Cuti</strong>.</li>
+                                    <li>Gunakan tombol <strong>DOCX</strong> atau <strong>PDF</strong> pada tabel untuk mengekspor dokumen Formulir Permintaan dan Pemberian Cuti resmi.</li>
                                 </ol>
                             </div>
                         </div>
