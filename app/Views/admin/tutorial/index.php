@@ -379,8 +379,8 @@ graph TD
                                 <p class="small text-muted mb-2"><code>/admin/surat/perjalanan-dinas</code></p>
                                 <ol class="pl-3 small mb-0">
                                     <li>Pilih Disposisi yang sudah disetujui, klik <strong>Buat Laporan</strong>.</li>
-                                    <li>Isi Tujuan, Sasaran, dan Hasil Perjadinya.</li>
-                                    <li>Unggah foto di tab <strong>Dokumentasi Kegiatan</strong> & tiket/nota di tab <strong>Dokumentasi Tiket</strong> (input teks bebas).</li>
+                                    <li>Isi Tujuan, Sasaran, dan Hasil Perjadinya pada tab <strong>Umum</strong> (jika ada kolom wajib yang belum terisi saat submit, sistem otomatis mengarahkan ke tab Umum &amp; menampilkan notifikasi kesalahan).</li>
+                                    <li>Unggah foto di tab <strong>Dokumentasi Kegiatan</strong> &amp; tiket/nota di tab <strong>Dokumentasi Tiket</strong> (input teks bebas).</li>
                                     <li>Klik <strong>Simpan Final</strong> untuk mengunci laporan.</li>
                                     <li>Gunakan kolom <strong>Dokumen SPT</strong> pada tabel Laporan Perjalanan Dinas (`/admin/surat/perjalanan-dinas`) untuk mengunduh/melihat berkas SPT TTD terverifikasi.</li>
                                 </ol>

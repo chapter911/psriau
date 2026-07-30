@@ -311,7 +311,7 @@
                 <div class="alert alert-danger"><?= esc($form_error); ?></div>
             <?php endif; ?>
 
-            <form id="perjalananDinasForm" action="<?= esc($formAction, 'attr'); ?>" method="post" enctype="multipart/form-data">
+            <form id="perjalananDinasForm" action="<?= esc($formAction, 'attr'); ?>" method="post" enctype="multipart/form-data" novalidate>
                 <?= csrf_field(); ?>
 
                 <div class="row">
@@ -434,18 +434,18 @@
                         <div class="trip-section-title mb-2">Isi Laporan</div>
 
                         <div class="form-group">
-                            <label>Tujuan Perjalanan Dinas</label>
-                            <textarea name="tujuan" class="form-control" rows="4" required><?= esc((string) ($input['tujuan'] ?? '')); ?></textarea>
+                            <label>Tujuan Perjalanan Dinas <span class="text-danger">*</span></label>
+                            <textarea name="tujuan" class="form-control" rows="4"><?= esc((string) ($input['tujuan'] ?? '')); ?></textarea>
                         </div>
 
                         <div class="form-group">
-                            <label>Sasaran Perjalanan Dinas</label>
-                            <textarea name="sasaran" class="form-control" rows="4" required><?= esc((string) ($input['sasaran'] ?? '')); ?></textarea>
+                            <label>Sasaran Perjalanan Dinas <span class="text-danger">*</span></label>
+                            <textarea name="sasaran" class="form-control" rows="4"><?= esc((string) ($input['sasaran'] ?? '')); ?></textarea>
                         </div>
 
                         <div class="form-group mb-0">
-                            <label>Laporan Hasil Perjalanan Dinas</label>
-                            <textarea id="laporanHasil" name="laporan_hasil" class="form-control summernote" rows="6" required><?= esc((string) ($input['laporan_hasil'] ?? '')); ?></textarea>
+                            <label>Laporan Hasil Perjalanan Dinas <span class="text-danger">*</span></label>
+                            <textarea id="laporanHasil" name="laporan_hasil" class="form-control summernote" rows="6"><?= esc((string) ($input['laporan_hasil'] ?? '')); ?></textarea>
                         </div>
                     </div>
                 </div>
@@ -1012,7 +1012,7 @@
 })();
 </script>
 <script>
-// Initialize Summernote and ensure summernote content is submitted
+// Initialize Summernote and ensure summernote content is submitted with validation
 (function () {
     var form = document.getElementById('perjalananDinasForm');
 
@@ -1045,14 +1045,115 @@
             }
 
             // Sync summernote content to hidden textarea before submit
-            try {
-                if (window.jQuery && typeof $.fn.summernote === 'function') {
+            if (window.jQuery && typeof $.fn.summernote === 'function') {
+                try {
                     var code = $('#laporanHasil').summernote('code');
                     var ta = form.querySelector('textarea[name="laporan_hasil"]');
                     if (ta) ta.value = code;
+                } catch (e) {
+                    // ignore
                 }
-            } catch (e) {
-                // ignore
+            }
+
+            // Perform JavaScript validation for form fields
+            var pelaksanaSelect = form.querySelector('select[name="pelaksana_id[]"]');
+            var pelaksanaHidden = form.querySelectorAll('input[name="pelaksana_id[]"]');
+            var hasPelaksana = (pelaksanaHidden && pelaksanaHidden.length > 0) || (pelaksanaSelect && window.jQuery && $(pelaksanaSelect).val() && $(pelaksanaSelect).val().length > 0);
+
+            var diketahuiOleh = form.querySelector('select[name="diketahui_oleh_id"]');
+            var periodeMulai = form.querySelector('input[name="periode_mulai"]');
+            var periodeSelesai = form.querySelector('input[name="periode_selesai"]');
+            var kotaTujuan = form.querySelector('select[name="kota_tujuan"]');
+            var tujuan = form.querySelector('textarea[name="tujuan"]');
+            var sasaran = form.querySelector('textarea[name="sasaran"]');
+            var laporanHasilTa = form.querySelector('textarea[name="laporan_hasil"]');
+
+            var errors = [];
+            var firstInvalidField = null;
+
+            if (!hasPelaksana) {
+                errors.push('Nama Pelaksana wajib dipilih.');
+                if (!firstInvalidField) firstInvalidField = pelaksanaSelect;
+            }
+            if (diketahuiOleh && !diketahuiOleh.value) {
+                errors.push('Diketahui Oleh wajib dipilih.');
+                if (!firstInvalidField) firstInvalidField = diketahuiOleh;
+            }
+            if (periodeMulai && !periodeMulai.value) {
+                errors.push('Periode Mulai wajib diisi.');
+                if (!firstInvalidField) firstInvalidField = periodeMulai;
+            }
+            if (periodeSelesai && !periodeSelesai.value) {
+                errors.push('Periode Selesai wajib diisi.');
+                if (!firstInvalidField) firstInvalidField = periodeSelesai;
+            }
+            if (periodeMulai && periodeSelesai && periodeMulai.value && periodeSelesai.value && periodeMulai.value > periodeSelesai.value) {
+                errors.push('Periode mulai tidak boleh lebih besar dari periode selesai.');
+                if (!firstInvalidField) firstInvalidField = periodeSelesai;
+            }
+            if (kotaTujuan && !kotaTujuan.value) {
+                errors.push('Kota/Kab. Tujuan Perjalanan Dinas wajib dipilih.');
+                if (!firstInvalidField) firstInvalidField = kotaTujuan;
+            }
+            if (tujuan && !tujuan.value.trim()) {
+                errors.push('Tujuan Perjalanan Dinas wajib diisi.');
+                if (!firstInvalidField) firstInvalidField = tujuan;
+            }
+            if (sasaran && !sasaran.value.trim()) {
+                errors.push('Sasaran Perjalanan Dinas wajib diisi.');
+                if (!firstInvalidField) firstInvalidField = sasaran;
+            }
+
+            var laporanCode = laporanHasilTa ? laporanHasilTa.value : '';
+            var stripText = laporanCode.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+            if (!stripText) {
+                errors.push('Laporan Hasil Perjalanan Dinas wajib diisi.');
+                if (!firstInvalidField) firstInvalidField = laporanHasilTa;
+            }
+
+            var alertContainer = form.querySelector('.js-form-validation-alert');
+
+            if (errors.length > 0) {
+                ev.preventDefault();
+
+                // Switch to tab "Umum" if the invalid field is located inside it
+                if (firstInvalidField && firstInvalidField.closest('#umum')) {
+                    if (window.jQuery && typeof $.fn.tab === 'function') {
+                        $('#umum-tab').tab('show');
+                    }
+                }
+
+                // Show a single alert container (ensures no duplicate notifications)
+                if (!alertContainer) {
+                    alertContainer = document.createElement('div');
+                    alertContainer.className = 'alert alert-danger js-form-validation-alert mb-3';
+                    form.insertBefore(alertContainer, form.firstChild);
+                }
+                alertContainer.innerHTML = '<strong><i class="fas fa-exclamation-triangle mr-1"></i> Harap perbaiki kesalahan berikut:</strong><ul class="mb-0 mt-1 pl-3">' +
+                    errors.map(function(err) { return '<li>' + err + '</li>'; }).join('') +
+                    '</ul>';
+
+                alertContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                if (firstInvalidField) {
+                    setTimeout(function() {
+                        try {
+                            if (window.jQuery && $(firstInvalidField).hasClass('select2-hidden-accessible')) {
+                                $(firstInvalidField).select2('open');
+                            } else if (firstInvalidField === laporanHasilTa && window.jQuery) {
+                                $('#laporanHasil').summernote('focus');
+                            } else {
+                                firstInvalidField.focus();
+                            }
+                        } catch (e) {}
+                    }, 200);
+                }
+
+                return false;
+            } else {
+                if (alertContainer) {
+                    alertContainer.remove();
+                }
             }
         });
     }
