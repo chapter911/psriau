@@ -196,8 +196,8 @@ graph TD
     C --> D[Kirim Disposisi ke PPK/Kasatker]
     D --> E{Tunggu Approval Pejabat}
     E -->|Approved| F[Buka Menu Laporan Perjadin]
-    F --> G[Isi Tujuan, Sasaran & Laporan Hasil]
-    G --> H[Unggah Foto Kegiatan & Dokumentasi Tiket/Nota]
+    F --> G[Isi Seluruh Data Tab Umum Terlebih Dahulu]
+    G --> H[Unggah Foto Kegiatan & Dokumentasi Tiket/Nota di Tab Berikutnya]
     H --> I[Klik Simpan Final untuk Kunci Laporan]
                 </pre>
             </div>
@@ -379,8 +379,8 @@ graph TD
                                 <p class="small text-muted mb-2"><code>/admin/surat/perjalanan-dinas</code></p>
                                 <ol class="pl-3 small mb-0">
                                     <li>Pilih Disposisi yang sudah disetujui, klik <strong>Buat Laporan</strong>.</li>
-                                    <li>Isi Tujuan, Sasaran, dan Hasil Perjadinya pada tab <strong>Umum</strong> (jika ada kolom wajib yang belum terisi saat submit, sistem otomatis mengarahkan ke tab Umum &amp; menampilkan notifikasi kesalahan).</li>
-                                    <li>Unggah foto di tab <strong>Dokumentasi Kegiatan</strong> &amp; tiket/nota di tab <strong>Dokumentasi Tiket</strong> (input teks bebas).</li>
+                                    <li>Wajib mengisi seluruh data pada <strong>Tab Umum</strong> terlebih dahulu (Pelaksana, Diketahui Oleh, Periode, Tujuan, Sasaran, & Hasil Perjadin).</li>
+                                    <li>Setelah Tab Umum lengkap, buka tab <strong>Dokumentasi Kegiatan</strong> (foto kegiatan) & tab <strong>Dokumentasi Tiket & Pendukung</strong> (tiket/nota).</li>
                                     <li>Klik <strong>Simpan Final</strong> untuk mengunci laporan.</li>
                                     <li>Gunakan kolom <strong>Dokumen SPT</strong> pada tabel Laporan Perjalanan Dinas (`/admin/surat/perjalanan-dinas`) untuk mengunduh/melihat berkas SPT TTD terverifikasi.</li>
                                 </ol>

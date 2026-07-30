@@ -259,6 +259,10 @@
         border-bottom: none;
         box-shadow: 0 4px 6px -1px rgba(10, 102, 194, 0.2);
     }
+    .nav-pills-custom .nav-link.tab-locked {
+        opacity: 0.75;
+        cursor: not-allowed;
+    }
     .w-20px {
         width: 24px;
         display: inline-block;
@@ -311,7 +315,7 @@
                 <div class="alert alert-danger"><?= esc($form_error); ?></div>
             <?php endif; ?>
 
-            <form id="perjalananDinasForm" action="<?= esc($formAction, 'attr'); ?>" method="post" enctype="multipart/form-data" novalidate>
+            <form id="perjalananDinasForm" action="<?= esc($formAction, 'attr'); ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
 
                 <div class="row">
@@ -434,18 +438,18 @@
                         <div class="trip-section-title mb-2">Isi Laporan</div>
 
                         <div class="form-group">
-                            <label>Tujuan Perjalanan Dinas <span class="text-danger">*</span></label>
-                            <textarea name="tujuan" class="form-control" rows="4"><?= esc((string) ($input['tujuan'] ?? '')); ?></textarea>
+                            <label>Tujuan Perjalanan Dinas</label>
+                            <textarea name="tujuan" class="form-control" rows="4" required><?= esc((string) ($input['tujuan'] ?? '')); ?></textarea>
                         </div>
 
                         <div class="form-group">
-                            <label>Sasaran Perjalanan Dinas <span class="text-danger">*</span></label>
-                            <textarea name="sasaran" class="form-control" rows="4"><?= esc((string) ($input['sasaran'] ?? '')); ?></textarea>
+                            <label>Sasaran Perjalanan Dinas</label>
+                            <textarea name="sasaran" class="form-control" rows="4" required><?= esc((string) ($input['sasaran'] ?? '')); ?></textarea>
                         </div>
 
                         <div class="form-group mb-0">
-                            <label>Laporan Hasil Perjalanan Dinas <span class="text-danger">*</span></label>
-                            <textarea id="laporanHasil" name="laporan_hasil" class="form-control summernote" rows="6"><?= esc((string) ($input['laporan_hasil'] ?? '')); ?></textarea>
+                            <label>Laporan Hasil Perjalanan Dinas</label>
+                            <textarea id="laporanHasil" name="laporan_hasil" class="form-control summernote" rows="6" required><?= esc((string) ($input['laporan_hasil'] ?? '')); ?></textarea>
                         </div>
                     </div>
                 </div>
@@ -1012,9 +1016,111 @@
 })();
 </script>
 <script>
-// Initialize Summernote and ensure summernote content is submitted with validation
+// Initialize Summernote, Tab Umum enforcement, and form submit handling
 (function () {
     var form = document.getElementById('perjalananDinasForm');
+    var isNotifying = false;
+
+    function getFirstInvalidUmumField() {
+        // 1. Nama Pelaksana
+        var pelaksanaSelect = document.getElementById('pelaksanaSelect');
+        var hiddenPelaksana = document.querySelectorAll('input[name="pelaksana_id[]"]');
+        if (pelaksanaSelect) {
+            var val = window.jQuery ? $(pelaksanaSelect).val() : pelaksanaSelect.value;
+            if (!val || (Array.isArray(val) && val.length === 0)) {
+                return { element: pelaksanaSelect, label: 'Nama Pelaksana' };
+            }
+        } else if (!hiddenPelaksana || hiddenPelaksana.length === 0) {
+            return { element: null, label: 'Nama Pelaksana' };
+        }
+
+        // 2. Diketahui Oleh
+        var diketahuiSelect = document.querySelector('select[name="diketahui_oleh_id"]');
+        if (!diketahuiSelect || !diketahuiSelect.value) {
+            return { element: diketahuiSelect, label: 'Diketahui Oleh' };
+        }
+
+        // 3. Periode Mulai
+        var periodeMulai = document.getElementById('periodeMulai');
+        if (!periodeMulai || !periodeMulai.value.trim()) {
+            return { element: periodeMulai, label: 'Periode Mulai' };
+        }
+
+        // 4. Periode Selesai
+        var periodeSelesai = document.getElementById('periodeSelesai');
+        if (!periodeSelesai || !periodeSelesai.value.trim()) {
+            return { element: periodeSelesai, label: 'Periode Selesai' };
+        }
+
+        // 5. Kota / Kabupaten Tujuan
+        var kotaTujuan = document.getElementById('kotaTujuanSelect');
+        if (!kotaTujuan || !kotaTujuan.value) {
+            return { element: kotaTujuan, label: 'Kota/Kab. Tujuan Perjalanan Dinas' };
+        }
+
+        // 6. Tujuan Perjalanan Dinas
+        var tujuanInput = document.querySelector('textarea[name="tujuan"]');
+        if (!tujuanInput || !tujuanInput.value.trim()) {
+            return { element: tujuanInput, label: 'Tujuan Perjalanan Dinas' };
+        }
+
+        // 7. Sasaran Perjalanan Dinas
+        var sasaranInput = document.querySelector('textarea[name="sasaran"]');
+        if (!sasaranInput || !sasaranInput.value.trim()) {
+            return { element: sasaranInput, label: 'Sasaran Perjalanan Dinas' };
+        }
+
+        // 8. Laporan Hasil Perjalanan Dinas
+        var laporanHasil = document.getElementById('laporanHasil');
+        if (laporanHasil) {
+            var isSummernoteEmpty = false;
+            if (window.jQuery && typeof $.fn.summernote === 'function' && $(laporanHasil).data('summernote')) {
+                isSummernoteEmpty = $(laporanHasil).summernote('isEmpty');
+            } else {
+                isSummernoteEmpty = !laporanHasil.value.trim();
+            }
+            if (isSummernoteEmpty) {
+                return { element: laporanHasil, label: 'Laporan Hasil Perjalanan Dinas' };
+            }
+        }
+
+        return null;
+    }
+
+    function notifyCompleteUmumTabFirst(label) {
+        if (isNotifying) return;
+        isNotifying = true;
+        
+        var textMsg = label 
+            ? 'Harap lengkapi "' + label + '" pada Tab Umum terlebih dahulu.' 
+            : 'Harap lengkapi semua bidang pada Tab Umum terlebih dahulu.';
+
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            window.Swal.fire({
+                icon: 'warning',
+                title: 'Tab Umum Belum Lengkap',
+                text: textMsg,
+                confirmButtonText: 'Lengkapi Data',
+                confirmButtonColor: '#0A66C2'
+            }).then(function() {
+                isNotifying = false;
+            });
+        } else {
+            alert(textMsg);
+            isNotifying = false;
+        }
+    }
+
+    function updateTabStatusUI() {
+        if (!window.jQuery) return;
+        var invalidInfo = getFirstInvalidUmumField();
+        var $otherTabs = $('#dokumentasi-tab, #dokumen-tab');
+        if (invalidInfo) {
+            $otherTabs.addClass('tab-locked');
+        } else {
+            $otherTabs.removeClass('tab-locked');
+        }
+    }
 
     if (window.jQuery && typeof $.fn.summernote === 'function') {
         try {
@@ -1024,8 +1130,72 @@
         }
     }
 
+    if (window.jQuery) {
+        $(document).ready(function() {
+            // Intercept tab switching if Tab Umum is incomplete
+            $('#perjalananDinasTab a[data-toggle="pill"]').on('show.bs.tab', function(e) {
+                var targetHref = $(e.target).attr('href');
+                if (targetHref !== '#umum') {
+                    var invalidInfo = getFirstInvalidUmumField();
+                    if (invalidInfo) {
+                        e.preventDefault();
+                        notifyCompleteUmumTabFirst(invalidInfo.label);
+
+                        if (invalidInfo.element) {
+                            setTimeout(function() {
+                                if ($(invalidInfo.element).hasClass('select2-hidden-accessible')) {
+                                    $(invalidInfo.element).select2('open');
+                                } else if ($(invalidInfo.element).attr('id') === 'laporanHasil' && typeof $.fn.summernote === 'function') {
+                                    $('#laporanHasil').summernote('focus');
+                                } else {
+                                    invalidInfo.element.focus();
+                                }
+                            }, 300);
+                        }
+                        return false;
+                    }
+                }
+            });
+
+            // Update tab UI status on input changes
+            $('#umum').on('input change', 'input, select, textarea', function() {
+                updateTabStatusUI();
+            });
+
+            if (typeof $.fn.summernote === 'function') {
+                $('#laporanHasil').on('summernote.change', function() {
+                    updateTabStatusUI();
+                });
+            }
+
+            updateTabStatusUI();
+        });
+    }
+
     if (form) {
         form.addEventListener('submit', function (ev) {
+            var invalidInfo = getFirstInvalidUmumField();
+            if (invalidInfo) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (window.jQuery) {
+                    $('#umum-tab').tab('show');
+                }
+                notifyCompleteUmumTabFirst(invalidInfo.label);
+                if (invalidInfo.element) {
+                    setTimeout(function() {
+                        if (window.jQuery && $(invalidInfo.element).hasClass('select2-hidden-accessible')) {
+                            $(invalidInfo.element).select2('open');
+                        } else if ($(invalidInfo.element).attr('id') === 'laporanHasil' && window.jQuery && typeof $.fn.summernote === 'function') {
+                            $('#laporanHasil').summernote('focus');
+                        } else {
+                            invalidInfo.element.focus();
+                        }
+                    }, 300);
+                }
+                return false;
+            }
+
             // Ensure file input contains the selected items before submit
             try {
                 if (typeof window.syncPhotoFileInput === 'function') {
@@ -1045,115 +1215,14 @@
             }
 
             // Sync summernote content to hidden textarea before submit
-            if (window.jQuery && typeof $.fn.summernote === 'function') {
-                try {
+            try {
+                if (window.jQuery && typeof $.fn.summernote === 'function') {
                     var code = $('#laporanHasil').summernote('code');
                     var ta = form.querySelector('textarea[name="laporan_hasil"]');
                     if (ta) ta.value = code;
-                } catch (e) {
-                    // ignore
                 }
-            }
-
-            // Perform JavaScript validation for form fields
-            var pelaksanaSelect = form.querySelector('select[name="pelaksana_id[]"]');
-            var pelaksanaHidden = form.querySelectorAll('input[name="pelaksana_id[]"]');
-            var hasPelaksana = (pelaksanaHidden && pelaksanaHidden.length > 0) || (pelaksanaSelect && window.jQuery && $(pelaksanaSelect).val() && $(pelaksanaSelect).val().length > 0);
-
-            var diketahuiOleh = form.querySelector('select[name="diketahui_oleh_id"]');
-            var periodeMulai = form.querySelector('input[name="periode_mulai"]');
-            var periodeSelesai = form.querySelector('input[name="periode_selesai"]');
-            var kotaTujuan = form.querySelector('select[name="kota_tujuan"]');
-            var tujuan = form.querySelector('textarea[name="tujuan"]');
-            var sasaran = form.querySelector('textarea[name="sasaran"]');
-            var laporanHasilTa = form.querySelector('textarea[name="laporan_hasil"]');
-
-            var errors = [];
-            var firstInvalidField = null;
-
-            if (!hasPelaksana) {
-                errors.push('Nama Pelaksana wajib dipilih.');
-                if (!firstInvalidField) firstInvalidField = pelaksanaSelect;
-            }
-            if (diketahuiOleh && !diketahuiOleh.value) {
-                errors.push('Diketahui Oleh wajib dipilih.');
-                if (!firstInvalidField) firstInvalidField = diketahuiOleh;
-            }
-            if (periodeMulai && !periodeMulai.value) {
-                errors.push('Periode Mulai wajib diisi.');
-                if (!firstInvalidField) firstInvalidField = periodeMulai;
-            }
-            if (periodeSelesai && !periodeSelesai.value) {
-                errors.push('Periode Selesai wajib diisi.');
-                if (!firstInvalidField) firstInvalidField = periodeSelesai;
-            }
-            if (periodeMulai && periodeSelesai && periodeMulai.value && periodeSelesai.value && periodeMulai.value > periodeSelesai.value) {
-                errors.push('Periode mulai tidak boleh lebih besar dari periode selesai.');
-                if (!firstInvalidField) firstInvalidField = periodeSelesai;
-            }
-            if (kotaTujuan && !kotaTujuan.value) {
-                errors.push('Kota/Kab. Tujuan Perjalanan Dinas wajib dipilih.');
-                if (!firstInvalidField) firstInvalidField = kotaTujuan;
-            }
-            if (tujuan && !tujuan.value.trim()) {
-                errors.push('Tujuan Perjalanan Dinas wajib diisi.');
-                if (!firstInvalidField) firstInvalidField = tujuan;
-            }
-            if (sasaran && !sasaran.value.trim()) {
-                errors.push('Sasaran Perjalanan Dinas wajib diisi.');
-                if (!firstInvalidField) firstInvalidField = sasaran;
-            }
-
-            var laporanCode = laporanHasilTa ? laporanHasilTa.value : '';
-            var stripText = laporanCode.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
-            if (!stripText) {
-                errors.push('Laporan Hasil Perjalanan Dinas wajib diisi.');
-                if (!firstInvalidField) firstInvalidField = laporanHasilTa;
-            }
-
-            var alertContainer = form.querySelector('.js-form-validation-alert');
-
-            if (errors.length > 0) {
-                ev.preventDefault();
-
-                // Switch to tab "Umum" if the invalid field is located inside it
-                if (firstInvalidField && firstInvalidField.closest('#umum')) {
-                    if (window.jQuery && typeof $.fn.tab === 'function') {
-                        $('#umum-tab').tab('show');
-                    }
-                }
-
-                // Show a single alert container (ensures no duplicate notifications)
-                if (!alertContainer) {
-                    alertContainer = document.createElement('div');
-                    alertContainer.className = 'alert alert-danger js-form-validation-alert mb-3';
-                    form.insertBefore(alertContainer, form.firstChild);
-                }
-                alertContainer.innerHTML = '<strong><i class="fas fa-exclamation-triangle mr-1"></i> Harap perbaiki kesalahan berikut:</strong><ul class="mb-0 mt-1 pl-3">' +
-                    errors.map(function(err) { return '<li>' + err + '</li>'; }).join('') +
-                    '</ul>';
-
-                alertContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                if (firstInvalidField) {
-                    setTimeout(function() {
-                        try {
-                            if (window.jQuery && $(firstInvalidField).hasClass('select2-hidden-accessible')) {
-                                $(firstInvalidField).select2('open');
-                            } else if (firstInvalidField === laporanHasilTa && window.jQuery) {
-                                $('#laporanHasil').summernote('focus');
-                            } else {
-                                firstInvalidField.focus();
-                            }
-                        } catch (e) {}
-                    }, 200);
-                }
-
-                return false;
-            } else {
-                if (alertContainer) {
-                    alertContainer.remove();
-                }
+            } catch (e) {
+                // ignore
             }
         });
     }
