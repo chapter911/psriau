@@ -1777,9 +1777,14 @@ class Laporan extends BaseController
             'updated_at' => date('Y-m-d H:i:s'),
         ];
 
-        $ok = $model->update($id, $payload);
+        $isModal = ($this->request->getGet('modal') == 1 || $this->request->getPost('is_modal') == 1);
         if (! $ok) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah'))->with('error', 'Gagal memperbarui laporan.');
+            $errUrl = site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah') . ($isModal ? '?modal=1' : '');
+            return redirect()->to($errUrl)->with('error', 'Gagal memperbarui laporan.');
+        }
+
+        if ($isModal) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas/' . $id . '/ubah?modal=1&saved=1'))->with('success', 'Laporan berhasil diperbarui.');
         }
 
         return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('success', 'Laporan berhasil diperbarui.');
@@ -2040,6 +2045,11 @@ class Laporan extends BaseController
             }
 
             session()->remove('laporan_perjalanan_dinas_draft');
+
+            $isModal = ($this->request->getGet('modal') == 1 || $this->request->getPost('is_modal') == 1);
+            if ($isModal) {
+                return redirect()->to(site_url('admin/surat/perjalanan-dinas/buat?modal=1&saved=1'))->with('success', 'Laporan berhasil disimpan.');
+            }
 
             return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('success', 'Laporan berhasil disimpan.');
         }

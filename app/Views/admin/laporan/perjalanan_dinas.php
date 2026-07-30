@@ -449,10 +449,23 @@
             $('#modalEditLaporan').modal('show');
         };
 
-        window.closeModalAndReload = function() {
+        window.closeModalAndReload = function(msg) {
             $('#modalEditLaporan').modal('hide');
             $('#iframeEditLaporan').attr('src', '');
-            dt.ajax.reload(null, false);
+            if (typeof dt !== 'undefined' && dt && typeof dt.ajax.reload === 'function') {
+                dt.ajax.reload(null, false);
+            }
+            if (msg && window.Swal && typeof window.Swal.fire === 'function') {
+                window.Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: msg,
+                    timer: 2500,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            }
         };
         
         // Bersihkan iframe saat modal ditutup

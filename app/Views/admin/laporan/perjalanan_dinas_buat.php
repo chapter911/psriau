@@ -311,6 +311,25 @@
         </div>
         <?php endif; ?>
         <div class="card-body <?= ($is_modal ?? false) ? 'p-0' : ''; ?>">
+            <?php 
+                $flashSuccessMsg = session()->getFlashdata('message') ?: session()->getFlashdata('success');
+                $isSavedInModal = ($is_modal ?? false) && ($flashSuccessMsg || (isset($_GET['saved']) && $_GET['saved'] == '1'));
+            ?>
+            <?php if ($isSavedInModal): ?>
+                <script>
+                    (function() {
+                        var msg = <?= json_encode($flashSuccessMsg ?: ($isEdit ? 'Laporan berhasil diperbarui.' : 'Laporan berhasil disimpan.')); ?>;
+                        if (window.parent && typeof window.parent.closeModalAndReload === 'function') {
+                            window.parent.closeModalAndReload(msg);
+                        } else if (window.parent && window.parent.jQuery && window.parent.jQuery('#modalEditLaporan').length) {
+                            window.parent.jQuery('#modalEditLaporan').modal('hide');
+                            if (window.parent.location) {
+                                window.parent.location.reload();
+                            }
+                        }
+                    })();
+                </script>
+            <?php endif; ?>
             <?php if (! empty($form_error)): ?>
                 <div class="alert alert-danger"><?= esc($form_error); ?></div>
             <?php endif; ?>
