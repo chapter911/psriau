@@ -554,6 +554,9 @@ class DisposisiPerjalananDinas extends BaseController
         $menyetujui = $this->getPegawaiSignatureData((int) $data['menyetujui_pegawai_id']);
         $diketahui = $this->getPegawaiSignatureData((int) $data['diketahui_pegawai_id']);
 
+        $pelaksanaList = json_decode((string) ($data['pelaksana_json'] ?? '[]'), true) ?: [];
+        $data['pelaksana_json'] = json_encode($this->sortPelaksanaByStrukturOrganisasi($pelaksanaList), JSON_UNESCAPED_UNICODE);
+
         $html = view('admin/surat/disposisi_perjalanan_dinas_pdf', [
             'data'       => $data,
             'menyetujui' => $menyetujui,
@@ -613,17 +616,62 @@ class DisposisiPerjalananDinas extends BaseController
         return trim((string) ($search['value'] ?? ''));
     }
 
+    private function sortPelaksanaByStrukturOrganisasi(array $pelaksanaList): array
+    {
+        if (empty($pelaksanaList)) {
+            return [];
+        }
+
+        $orderMap = (new \App\Models\StrukturOrganisasiModel())->getPegawaiOrderMap();
+        $idMap = $orderMap['id_map'] ?? [];
+        $nipMap = $orderMap['nip_map'] ?? [];
+        $namaMap = $orderMap['nama_map'] ?? [];
+
+        usort($pelaksanaList, static function ($a, $b) use ($idMap, $nipMap, $namaMap) {
+            $idA = (int) ($a['id'] ?? 0);
+            $idB = (int) ($b['id'] ?? 0);
+
+            $nipA = trim((string) ($a['nip'] ?? ''));
+            $nipB = trim((string) ($b['nip'] ?? ''));
+
+            $namaA = strtolower(trim((string) ($a['nama'] ?? '')));
+            $namaB = strtolower(trim((string) ($b['nama'] ?? '')));
+
+            $rankA = $idMap[$idA] ?? ($nipA !== '' ? ($nipMap[$nipA] ?? null) : null) ?? ($namaA !== '' ? ($namaMap[$namaA] ?? null) : null) ?? 999999;
+            $rankB = $idMap[$idB] ?? ($nipB !== '' ? ($nipMap[$nipB] ?? null) : null) ?? ($namaB !== '' ? ($namaMap[$namaB] ?? null) : null) ?? 999999;
+
+            if ($rankA !== $rankB) {
+                return $rankA <=> $rankB;
+            }
+
+            return strcmp($namaA, $namaB);
+        });
+
+        return array_values($pelaksanaList);
+    }
+
     private function loadPegawaiOptions(): array
     {
         if (! db_connect()->tableExists('mst_pegawai')) {
             return [];
         }
 
-        $rows = (new MstPegawaiModel())
+        $db = db_connect();
+        $builder = (new MstPegawaiModel())
             ->select('mst_pegawai.id, mst_pegawai.nip, mst_pegawai.nama, mst_pegawai.golongan, mst_pegawai.jabatan_utama_id, ju.jabatan AS jabatan_label, mst_pegawai.is_active')
             ->join('mst_jabatan ju', 'ju.id = mst_pegawai.jabatan_utama_id', 'left')
-            ->where('mst_pegawai.is_active', 1)
-            ->orderBy('mst_pegawai.nama', 'ASC')
+            ->where('mst_pegawai.is_active', 1);
+
+        if ($db->tableExists('tb_struktur_organisasi')) {
+            $builder->select('so.level AS so_level, so.urutan AS so_urutan, so.id AS so_id')
+                ->join('tb_struktur_organisasi so', 'so.pegawai_id = mst_pegawai.id AND so.is_active = 1', 'left')
+                ->orderBy('CASE WHEN so.id IS NOT NULL THEN 0 ELSE 1 END', 'ASC')
+                ->orderBy('so.level', 'ASC')
+                ->orderBy('so.urutan', 'ASC')
+                ->orderBy('so.id', 'ASC');
+        }
+
+        $rows = $builder->orderBy('mst_pegawai.nama', 'ASC')
             ->orderBy('mst_pegawai.nip', 'ASC')
             ->findAll();
 
@@ -667,7 +715,7 @@ class DisposisiPerjalananDinas extends BaseController
             ];
         }
 
-        return $rows;
+        return $this->sortPelaksanaByStrukturOrganisasi($rows);
     }
 
     private function getPegawaiSignatureData(int $id): array

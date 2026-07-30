@@ -926,7 +926,7 @@ class Laporan extends BaseController
             return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
         }
 
-        $pelaksana = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: [];
+        $pelaksana = $this->sortPelaksanaByStrukturOrganisasi(json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: []);
 
         $db = \Config\Database::connect();
         if (! empty($pelaksana) && $db->tableExists('mst_pegawai')) {
@@ -989,7 +989,7 @@ class Laporan extends BaseController
 
         $this->ensureKodeNomorAssigned($row);
 
-        $pelaksana = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: [];
+        $pelaksana = $this->sortPelaksanaByStrukturOrganisasi(json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: []);
         $tujuan = $row['tujuan'] ?? '';
         $kotaTujuan = $row['kota_tujuan'] ?? '';
         $periodeMulai = $row['periode_mulai'] ?? '';
@@ -1070,7 +1070,7 @@ class Laporan extends BaseController
 
         $this->ensureKodeNomorAssigned($row);
 
-        $pelaksana = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: [];
+        $pelaksana = $this->sortPelaksanaByStrukturOrganisasi(json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: []);
         $kotaTujuan = $row['kota_tujuan'] ?? '';
 
         // Fetch kop_surat
@@ -1183,7 +1183,7 @@ class Laporan extends BaseController
                 'kota_tujuan' => (string) ($row['kota_tujuan'] ?? ''),
                 'tujuan' => (string) ($row['tujuan'] ?? ''),
                 'sasaran' => (string) ($row['sasaran'] ?? ''),
-                'pelaksana' => $this->decodeJsonArray((string) ($row['pelaksana_json'] ?? '[]')),
+                'pelaksana' => $this->sortPelaksanaByStrukturOrganisasi($this->decodeJsonArray((string) ($row['pelaksana_json'] ?? '[]'))),
                 'tanggal_tanda_tangan' => (string) ($row['tanggal_tanda_tangan'] ?? ''),
                 'diketahui_oleh' => $this->decodeJsonObject((string) ($row['diketahui_oleh_json'] ?? '{}')),
                 'dasar_spt' => $dasarRows,
@@ -1236,7 +1236,7 @@ class Laporan extends BaseController
             'kota_tujuan' => (string) ($row['kota_tujuan'] ?? ''),
             'tujuan' => (string) ($row['tujuan'] ?? ''),
             'sasaran' => (string) ($row['sasaran'] ?? ''),
-            'pelaksana' => $this->decodeJsonArray((string) ($row['pelaksana_json'] ?? '[]')),
+            'pelaksana' => $this->sortPelaksanaByStrukturOrganisasi($this->decodeJsonArray((string) ($row['pelaksana_json'] ?? '[]'))),
             'tanggal_tanda_tangan' => (string) ($row['tanggal_tanda_tangan'] ?? ''),
             'diketahui_oleh' => $this->decodeJsonObject((string) ($row['diketahui_oleh_json'] ?? '{}')),
             'dasar_spt' => $dasarRows,
@@ -1520,7 +1520,7 @@ class Laporan extends BaseController
             'tujuan' => (string) ($row['tujuan'] ?? ''),
             'sasaran' => (string) ($row['sasaran'] ?? ''),
             'laporan_hasil' => (string) ($row['laporan_hasil'] ?? ''),
-            'pelaksana' => $this->decodeJsonArray((string) ($row['pelaksana_json'] ?? '[]')),
+            'pelaksana' => $this->sortPelaksanaByStrukturOrganisasi($this->decodeJsonArray((string) ($row['pelaksana_json'] ?? '[]'))),
             'foto_dokumentasi' => $this->decodeJsonArray((string) ($row['foto_dokumentasi_json'] ?? '[]')),
             'creator_name' => (string) ($row['creator_name'] ?? ''),
             'creator_pegawai' => $this->decodeJsonObject((string) ($row['creator_pegawai_json'] ?? '{}')),
@@ -2059,17 +2059,62 @@ class Laporan extends BaseController
         return redirect()->to(site_url('admin/surat/perjalanan-dinas/buat'))->with('error', 'Aksi simpan tidak valid.');
     }
 
+    private function sortPelaksanaByStrukturOrganisasi(array $pelaksanaList): array
+    {
+        if (empty($pelaksanaList)) {
+            return [];
+        }
+
+        $orderMap = (new \App\Models\StrukturOrganisasiModel())->getPegawaiOrderMap();
+        $idMap = $orderMap['id_map'] ?? [];
+        $nipMap = $orderMap['nip_map'] ?? [];
+        $namaMap = $orderMap['nama_map'] ?? [];
+
+        usort($pelaksanaList, static function ($a, $b) use ($idMap, $nipMap, $namaMap) {
+            $idA = (int) ($a['id'] ?? 0);
+            $idB = (int) ($b['id'] ?? 0);
+
+            $nipA = trim((string) ($a['nip'] ?? ''));
+            $nipB = trim((string) ($b['nip'] ?? ''));
+
+            $namaA = strtolower(trim((string) ($a['nama'] ?? '')));
+            $namaB = strtolower(trim((string) ($b['nama'] ?? '')));
+
+            $rankA = $idMap[$idA] ?? ($nipA !== '' ? ($nipMap[$nipA] ?? null) : null) ?? ($namaA !== '' ? ($namaMap[$namaA] ?? null) : null) ?? 999999;
+            $rankB = $idMap[$idB] ?? ($nipB !== '' ? ($nipMap[$nipB] ?? null) : null) ?? ($namaB !== '' ? ($namaMap[$namaB] ?? null) : null) ?? 999999;
+
+            if ($rankA !== $rankB) {
+                return $rankA <=> $rankB;
+            }
+
+            return strcmp($namaA, $namaB);
+        });
+
+        return array_values($pelaksanaList);
+    }
+
     private function loadPegawaiOptions(): array
     {
         if (! db_connect()->tableExists('mst_pegawai')) {
             return [];
         }
 
-        $rows = (new MstPegawaiModel())
+        $db = db_connect();
+        $builder = (new MstPegawaiModel())
             ->select('mst_pegawai.id, mst_pegawai.nip, mst_pegawai.nama, mst_pegawai.golongan, mst_pegawai.jabatan_utama_id, ju.jabatan AS jabatan_label, mst_pegawai.is_active')
             ->join('mst_jabatan ju', 'ju.id = mst_pegawai.jabatan_utama_id', 'left')
-            ->where('mst_pegawai.is_active', 1)
-            ->orderBy('mst_pegawai.nama', 'ASC')
+            ->where('mst_pegawai.is_active', 1);
+
+        if ($db->tableExists('tb_struktur_organisasi')) {
+            $builder->select('so.level AS so_level, so.urutan AS so_urutan, so.id AS so_id')
+                ->join('tb_struktur_organisasi so', 'so.pegawai_id = mst_pegawai.id AND so.is_active = 1', 'left')
+                ->orderBy('CASE WHEN so.id IS NOT NULL THEN 0 ELSE 1 END', 'ASC')
+                ->orderBy('so.level', 'ASC')
+                ->orderBy('so.urutan', 'ASC')
+                ->orderBy('so.id', 'ASC');
+        }
+
+        $rows = $builder->orderBy('mst_pegawai.nama', 'ASC')
             ->orderBy('mst_pegawai.nip', 'ASC')
             ->findAll();
 
@@ -2252,7 +2297,7 @@ class Laporan extends BaseController
             ];
         }
 
-        return $rows;
+        return $this->sortPelaksanaByStrukturOrganisasi($rows);
     }
 
     private function findPegawaiById(array $pegawaiRows, int $id): ?array

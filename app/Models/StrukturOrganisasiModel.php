@@ -73,4 +73,46 @@ class StrukturOrganisasiModel extends Model
 
         return $builder->get()->getResultArray();
     }
+
+    /**
+     * Get rank order mapping for pegawai based on Struktur Organisasi hierarchy
+     * Returns array containing id_map, nip_map, and nama_map
+     */
+    public function getPegawaiOrderMap(): array
+    {
+        if (! $this->db->tableExists($this->table)) {
+            return ['id_map' => [], 'nip_map' => [], 'nama_map' => []];
+        }
+
+        $nodes = $this->getTreeNodes();
+        $idMap = [];
+        $nipMap = [];
+        $namaMap = [];
+        $rank = 0;
+
+        foreach ($nodes as $node) {
+            $rank++;
+            $pegawaiId = (int) ($node['pegawai_id'] ?? 0);
+            if ($pegawaiId > 0 && ! isset($idMap[$pegawaiId])) {
+                $idMap[$pegawaiId] = $rank;
+            }
+
+            $nip = trim((string) ($node['nip_pegawai'] ?? $node['nip_manual'] ?? ''));
+            if ($nip !== '' && ! isset($nipMap[$nip])) {
+                $nipMap[$nip] = $rank;
+            }
+
+            $nama = strtolower(trim((string) ($node['nama_pegawai'] ?? $node['nama_manual'] ?? '')));
+            if ($nama !== '' && ! isset($namaMap[$nama])) {
+                $namaMap[$nama] = $rank;
+            }
+        }
+
+        return [
+            'id_map'   => $idMap,
+            'nip_map'  => $nipMap,
+            'nama_map' => $namaMap,
+        ];
+    }
 }
+

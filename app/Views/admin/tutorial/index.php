@@ -379,7 +379,7 @@ graph TD
                                 <p class="small text-muted mb-2"><code>/admin/surat/perjalanan-dinas</code></p>
                                 <ol class="pl-3 small mb-0">
                                     <li>Pilih Disposisi yang sudah disetujui, klik <strong>Buat Laporan</strong>.</li>
-                                    <li>Wajib mengisi seluruh data pada <strong>Tab Umum</strong> terlebih dahulu (Pelaksana, Diketahui Oleh, Periode, Tujuan, Sasaran, & Hasil Perjadin).</li>
+                                    <li>Wajib mengisi seluruh data pada <strong>Tab Umum</strong> terlebih dahulu (Pelaksana, Diketahui Oleh, Periode, Tujuan, Sasaran, & Hasil Perjadin). Urutan Pelaksana Perjalanan Dinas secara otomatis tersinkronisasi dengan hirarki <strong>Struktur Organisasi</strong> (`/admin/master/struktur-organisasi`).</li>
                                     <li>Setelah Tab Umum lengkap, buka tab <strong>Dokumentasi Kegiatan</strong> (foto kegiatan) & tab <strong>Dokumentasi Tiket & Pendukung</strong> (tiket/nota).</li>
                                     <li>Klik <strong>Simpan Final</strong> untuk mengunci laporan.</li>
                                     <li>Gunakan kolom <strong>Dokumen SPT</strong> pada tabel Laporan Perjalanan Dinas (`/admin/surat/perjalanan-dinas`) untuk mengunduh/melihat berkas SPT TTD terverifikasi.</li>
