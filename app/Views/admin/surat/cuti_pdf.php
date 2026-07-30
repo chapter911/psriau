@@ -77,11 +77,20 @@
 <body>
 
     <?php
-        $tglPengajuan = !empty($data['tanggal_pengajuan']) ? date('d F Y', strtotime($data['tanggal_pengajuan'])) : date('d F Y');
         $months = ['January'=>'Januari','February'=>'Februari','March'=>'Maret','April'=>'April','May'=>'Mei','June'=>'Juni','July'=>'Juli','August'=>'Agustus','September'=>'September','October'=>'Oktober','November'=>'November','December'=>'Desember'];
-        foreach ($months as $en => $idMonth) {
-            $tglPengajuan = str_replace($en, $idMonth, $tglPengajuan);
-        }
+
+        $formatIndoDate = static function (?string $dateStr) use ($months): string {
+            if (empty($dateStr)) return '-';
+            $time = strtotime($dateStr);
+            if (! $time) return '-';
+            $d = date('j F Y', $time);
+            foreach ($months as $en => $idMonth) {
+                $d = str_replace($en, $idMonth, $d);
+            }
+            return $d;
+        };
+
+        $tglPengajuan = $formatIndoDate($data['tanggal_pengajuan'] ?? date('Y-m-d'));
         $jenisKey = strtolower(trim((string) ($data['jenis_cuti'] ?? '')));
 
         // Helper to format Jabatan until the first comma
@@ -177,9 +186,9 @@
             <td width="12%">Selama</td>
             <td width="20%"><?= (int) ($data['lama_cuti_jumlah'] ?? 1); ?> <?= esc($data['lama_cuti_satuan'] ?? 'Hari'); ?></td>
             <td width="15%">Mulai tanggal</td>
-            <td width="20%"><?= !empty($data['tanggal_mulai']) ? date('d/m/Y', strtotime($data['tanggal_mulai'])) : '-'; ?></td>
+            <td width="20%"><?= esc($formatIndoDate($data['tanggal_mulai'])); ?></td>
             <td width="8%" class="text-center">s/d</td>
-            <td width="25%"><?= !empty($data['tanggal_selesai']) ? date('d/m/Y', strtotime($data['tanggal_selesai'])) : '-'; ?></td>
+            <td width="25%"><?= esc($formatIndoDate($data['tanggal_selesai'])); ?></td>
         </tr>
     </table>
 
@@ -288,11 +297,17 @@
             <td width="25%" class="check-cell"><span class="check-box"><?= ($keputusan === 'tidak disetujui' || $keputusan === 'ditolak') ? '&#10003;' : ''; ?></span></td>
         </tr>
         <tr>
-            <td colspan="3" style="vertical-align: top; padding: 4px 6px; font-size: 7.5pt; line-height: 1.25;">
-                * Coret yang tidak perlu<br>
-                ** Pilih salah satu dengan memberi tanda centang (√)<br>
-                *** Diisi oleh pejabat yang menangani bidang kepegawaian sebelum PNS menjalankan cuti<br>
-                **** Diberi tanda centang (√) dan alasannya
+            <td colspan="3" style="vertical-align: top; padding: 4px 6px; font-size: 7pt; line-height: 1.2;">
+                <strong>Catatan:</strong>
+                <table style="width: 100%; border: none; margin: 2px 0 0 0; font-size: 7pt; line-height: 1.15;">
+                    <tr><td style="width: 8%; border: none; padding: 0; vertical-align: top;">*</td><td style="border: none; padding: 0;">Coret yang tidak perlu</td></tr>
+                    <tr><td style="border: none; padding: 0; vertical-align: top;">**</td><td style="border: none; padding: 0;">Pilih salah satu dengan memberi tanda centang (√)</td></tr>
+                    <tr><td style="border: none; padding: 0; vertical-align: top;">***</td><td style="border: none; padding: 0;">Diisi oleh pejabat yang menangani bidang kepegawaian sebelum PNS menjalankan cuti</td></tr>
+                    <tr><td style="border: none; padding: 0; vertical-align: top;">****</td><td style="border: none; padding: 0;">Diberi tanda centang (√) dan alasannya</td></tr>
+                    <tr><td style="border: none; padding: 0; vertical-align: top;">N</td><td style="border: none; padding: 0;">Cuti Tahunan</td></tr>
+                    <tr><td style="border: none; padding: 0; vertical-align: top;">N-1</td><td style="border: none; padding: 0;">Sisa cuti 1 tahun sebelumnya</td></tr>
+                    <tr><td style="border: none; padding: 0; vertical-align: top;">N-2</td><td style="border: none; padding: 0;">Sisa cuti 2 tahun sebelumnya</td></tr>
+                </table>
             </td>
             <td class="signature-box">
                 <?= esc($data['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis'); ?>,<br><br><br>

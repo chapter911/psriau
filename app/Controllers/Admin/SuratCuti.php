@@ -561,8 +561,18 @@ class SuratCuti extends BaseController
                 $r2_cells = $xpath->query('.//w:tc', $rows4->item(1));
                 if ($r2_cells->length >= 6) {
                     $lamaStr = ((int) ($data['lama_cuti_jumlah'] ?? 1)) . ' ' . ($data['lama_cuti_satuan'] ?? 'Hari');
-                    $tglMulai = !empty($data['tanggal_mulai']) ? date('d/m/Y', strtotime($data['tanggal_mulai'])) : '';
-                    $tglSelesai = !empty($data['tanggal_selesai']) ? date('d/m/Y', strtotime($data['tanggal_selesai'])) : '';
+                    $formatIndoDate = static function (?string $dateStr) use ($months): string {
+                        if (empty($dateStr)) return '';
+                        $time = strtotime($dateStr);
+                        if (! $time) return '';
+                        $d = date('j F Y', $time);
+                        foreach ($months as $en => $idMonth) {
+                            $d = str_replace($en, $idMonth, $d);
+                        }
+                        return $d;
+                    };
+                    $tglMulai = $formatIndoDate($data['tanggal_mulai'] ?? null);
+                    $tglSelesai = $formatIndoDate($data['tanggal_selesai'] ?? null);
 
                     $setCellText($r2_cells->item(1), $lamaStr);
                     $setCellText($r2_cells->item(3), $tglMulai);
