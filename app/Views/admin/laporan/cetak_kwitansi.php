@@ -495,7 +495,7 @@
                                 <?php foreach ($transportGroups as $gLabel => $grp): ?>
                                 <!-- Group header — plain text, no space before colon -->
                                 <tr>
-                                    <td colspan="3" style="padding-top:2px !important;"><?= esc($gLabel); ?>:</td>
+                                    <td colspan="4" style="padding-top:2px !important;"><?= esc($gLabel); ?>:</td>
                                 </tr>
                                 <?php
                                     $grpRows    = $grp['rows'];
@@ -510,25 +510,27 @@
                                     $ulCls   = $isLast ? 'underline-td' : '';
                                 ?>
                                 <tr>
-                                    <td style="width:44%; padding-left:6px !important;"><?= $dest; ?></td>
-                                    <td class="<?= $ulCls; ?>" style="width:12%;">Rp.</td>
-                                    <td class="<?= $ulCls; ?>" style="width:44%; text-align:right;"><?= number_format($ti['sub'], 0, ',', '.'); ?></td>
+                                    <td style="width:45%; padding-left:6px !important;"><?= $dest; ?></td>
+                                    <td class="<?= $ulCls; ?>" style="width:10%;">Rp.</td>
+                                    <td class="<?= $ulCls; ?>" style="width:25%; text-align:right;"><?= number_format($ti['sub'], 0, ',', '.'); ?></td>
+                                    <td style="width:20%;"></td>
                                 </tr>
                                 <?php endforeach; ?>
-                                <!-- Exact subtotal row (plain, right-aligned) -->
+                                <!-- Exact subtotal row (plain, right-aligned under nominals) -->
                                 <tr>
                                     <td colspan="2"></td>
-                                    <td style="width:44%; text-align:right; padding-top:1px !important;"><?= number_format($exactTotal, 0, ',', '.'); ?></td>
+                                    <td style="width:25%; text-align:right; padding-top:1px !important;"><?= number_format($exactTotal, 0, ',', '.'); ?></td>
+                                    <td style="width:20%;"></td>
                                 </tr>
                                 <?php if ($hasRnd): ?>
-                                <!-- Rounded official subtotal (bold, center of RINCIAN BIAYA col) -->
+                                <!-- Rounded official subtotal (bold, far right edge) -->
                                 <tr>
-                                    <td style="width:44%;"></td>
-                                    <td colspan="2" style="text-align:right; font-weight:bold; padding-bottom:4px !important;"><?= number_format($rndTotal, 0, ',', '.'); ?></td>
+                                    <td colspan="3"></td>
+                                    <td style="width:20%; text-align:right; font-weight:bold; padding-bottom:4px !important;"><?= number_format($rndTotal, 0, ',', '.'); ?></td>
                                 </tr>
                                 <?php else: ?>
                                 <!-- No rounding needed, just spacing -->
-                                <tr><td colspan="3" style="padding-bottom:3px !important;"></td></tr>
+                                <tr><td colspan="4" style="padding-bottom:3px !important;"></td></tr>
                                 <?php endif; ?>
                                 <?php endforeach; ?>
                             </table>
