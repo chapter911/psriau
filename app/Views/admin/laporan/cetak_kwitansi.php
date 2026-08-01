@@ -6,10 +6,10 @@
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 12px;
+            font-size: 11.5px;
             margin: 0;
-            padding: 20px;
-            line-height: 1.4;
+            padding: 18px 20px;
+            line-height: 1.35;
         }
         .text-center { text-align: center; }
         .text-left   { text-align: left; }
@@ -31,28 +31,33 @@
            RINCI TABLE
         ============================ */
         .rinci-header {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             text-align: center;
         }
         .rinci-header strong {
-            font-size: 14px;
+            font-size: 13.5px;
         }
 
         .rinci-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .rinci-table th,
         .rinci-table td {
             border: 1px solid #000;
-            padding: 5px 6px;
+            padding: 4px 5px;
             vertical-align: top;
         }
         .rinci-table th {
             text-align: center;
             font-weight: bold;
             background: transparent;
+        }
+        /* No border on outer rinci-table so inner table can control borders */
+        .rinci-table .no-border-outer {
+            border-top: none;
+            border-bottom: none;
         }
 
         /* Nested tables inside rinci TD — no borders */
@@ -65,14 +70,12 @@
             padding: 1px 2px !important;
             vertical-align: top;
         }
-        .nested-table .underline-row td {
+        /* Underline on specific cells for last item in transport group */
+        .nested-table td.underline-td {
             border-bottom: 1px solid #000 !important;
         }
 
         /* JUMLAH column — two-column mini table */
-        .jumlah-cell {
-            white-space: nowrap;
-        }
         .jumlah-inner {
             width: 100%;
             border-collapse: collapse;
@@ -87,7 +90,7 @@
         .rinci-footer-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 8px;
+            margin-top: 6px;
         }
         .rinci-footer-table td {
             border: none;
@@ -98,14 +101,14 @@
         /* RAMPUNG section */
         .rampung-separator {
             border-top: 2px solid #000;
-            margin: 12px 0 8px 0;
+            margin: 10px 0 6px 0;
         }
         .rampung-title {
             text-align: center;
             font-weight: bold;
             text-decoration: underline;
             letter-spacing: 3px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-size: 11px;
         }
         .rampung-table {
@@ -121,16 +124,6 @@
         /* ============================
            KWITANSI PAGE
         ============================ */
-        .kop-separator-outer {
-            border-top: 2px solid #000;
-            border-bottom: 1px solid #000;
-            height: 0;
-            margin: 0;
-        }
-        .kop-separator-inner {
-            border-top: 1px solid #000;
-            margin: 2px 0 0 0;
-        }
 
         /* Box wrapping the kwitansi content */
         .kwitansi-box {
@@ -158,12 +151,12 @@
         /* Title */
         .kwitansi-title {
             text-align: center;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             text-decoration: underline;
             letter-spacing: 3px;
             margin-top: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             clear: both;
         }
 
@@ -211,6 +204,15 @@
         return date('d', $ts) . ' ' . $months[(int)date('n', $ts)] . ' ' . date('Y', $ts);
     };
 
+    // Format NIP with proper spacing: 8-6-1-3 format
+    $formatNip = function($nip) {
+        $nip = preg_replace('/\s+/', '', (string)$nip); // strip existing spaces
+        if (strlen($nip) === 18) {
+            return substr($nip,0,8).' '.substr($nip,8,6).' '.substr($nip,14,1).' '.substr($nip,15,3);
+        }
+        return $nip;
+    };
+
     $tglBerangkat = $formatDate($row['periode_mulai'] ?? '');
     $tglKembali   = $formatDate($row['periode_selesai'] ?? '');
 
@@ -250,33 +252,6 @@
         }
         return '- Rupiah,-';
     };
-
-    // Helper: group transport items by their 'jenis' field
-    // Returns array of groups: [ ['label'=>'Pesawat Udara', 'items'=>[...], 'subtotal'=>0], ... ]
-    // Items without a clear jenis are placed in their own group
-    $groupTransport = function(array $items) {
-        $groups = [];
-        foreach ($items as $item) {
-            $jenis = trim((string)($item['jenis'] ?? ''));
-            $ket   = trim((string)($item['keterangan'] ?? ''));
-
-            // Determine group label
-            $jenisLower = strtolower($jenis);
-            if (strpos($jenisLower, 'pesawat') !== false) {
-                $groupKey = 'Pesawat Udara';
-            } elseif (strpos($jenisLower, 'taksi') !== false || strpos($jenisLower, 'taxi') !== false) {
-                $groupKey = 'Taxi';
-            } elseif ($jenis !== '') {
-                $groupKey = $jenis;
-            } else {
-                // Use keterangan as group key or generic
-                $groupKey = $ket !== '' ? $ket : 'Transport';
-            }
-
-            $groups[$groupKey][] = $item;
-        }
-        return $groups;
-    };
     ?>
 
     <?php foreach ($pelaksana as $index => $utama): ?>
@@ -307,7 +282,7 @@
         }
 
         $calcTransport  = 0;
-        $transportItems = []; // flat list with computed sub
+        $transportItems = [];
         if (is_array($transportList) && count($transportList) > 0) {
             foreach ($transportList as $tItem) {
                 $tStart     = $tItem['tgl_mulai'] ?? '';
@@ -327,20 +302,16 @@
                 }
 
                 $rate = $tNom;
-                if ($tIsLumpsum) {
-                    $sub = $rate;
-                } else {
-                    $sub = ($tDays > 0) ? ($tDays * $rate) : $rate;
-                }
+                $sub  = $tIsLumpsum ? $rate : (($tDays > 0) ? ($tDays * $rate) : $rate);
                 $calcTransport += $sub;
 
                 if ($tDays > 0 || $rate > 0 || $tIsLumpsum) {
                     $transportItems[] = [
-                        'jenis' => $tJenis,
-                        'ket'   => $tKet,
-                        'days'  => $tDays,
-                        'rate'  => $rate,
-                        'sub'   => $sub,
+                        'jenis'   => $tJenis,
+                        'ket'     => $tKet,
+                        'days'    => $tDays,
+                        'rate'    => $rate,
+                        'sub'     => $sub,
                         'lumpsum' => $tIsLumpsum,
                     ];
                 }
@@ -348,10 +319,10 @@
         }
 
         // Group transport by jenis
-        $transportGroups = []; // [ ['label'=>'', 'rows'=>[], 'subtotal'=>0], ... ]
+        $transportGroups = [];
         foreach ($transportItems as $ti) {
-            $jenis     = $ti['jenis'];
-            $jenisLow  = strtolower($jenis);
+            $jenis    = $ti['jenis'];
+            $jenisLow = strtolower($jenis);
             if (strpos($jenisLow, 'pesawat') !== false) {
                 $gKey = 'Pesawat Udara';
             } elseif (strpos($jenisLow, 'taksi') !== false || strpos($jenisLow, 'taxi') !== false) {
@@ -370,10 +341,10 @@
         $multiGroup = count($transportGroups) > 1;
 
         // 2. Uang Harian
-        $harianList = $rincianBiaya['uang_harian'] ?? [];
+        $harianList   = $rincianBiaya['uang_harian'] ?? [];
         if (!is_array($harianList)) $harianList = [];
 
-        $calcHarian   = 0;
+        $calcHarian    = 0;
         $harianDetails = [];
         if (is_array($harianList) && count($harianList) > 0) {
             foreach ($harianList as $hItem) {
@@ -419,11 +390,11 @@
         $penginapanDetails = [];
         if (is_array($penginapanList) && count($penginapanList) > 0) {
             foreach ($penginapanList as $pItem) {
-                $pStart     = $pItem['tgl_mulai'] ?? '';
-                $pEnd       = $pItem['tgl_selesai'] ?? '';
-                $pNomInput  = isset($pItem['nominal']) && $pItem['nominal'] !== null && $pItem['nominal'] !== '' ? (int)$pItem['nominal'] : null;
-                $pKet       = trim((string)($pItem['keterangan'] ?? ''));
-                $pNights    = 0;
+                $pStart    = $pItem['tgl_mulai'] ?? '';
+                $pEnd      = $pItem['tgl_selesai'] ?? '';
+                $pNomInput = isset($pItem['nominal']) && $pItem['nominal'] !== null && $pItem['nominal'] !== '' ? (int)$pItem['nominal'] : null;
+                $pKet      = trim((string)($pItem['keterangan'] ?? ''));
+                $pNights   = 0;
                 if (!empty($pStart) && !empty($pEnd)) {
                     try {
                         $d1      = new \DateTime($pStart);
@@ -453,12 +424,14 @@
 
         $baseKodeStr = trim((string)($row['kode_nomor'] ?? '1'));
         if (preg_match('/^(\d+)(.*)$/', $baseKodeStr, $m)) {
-            $numVal          = (int)$m[1] + $index;
-            $padLen          = max(3, strlen($m[1]));
+            $numVal           = (int)$m[1] + $index;
+            $padLen           = max(3, strlen($m[1]));
             $displayKodeNomor = str_pad((string)$numVal, $padLen, '0', STR_PAD_LEFT) . $m[2];
         } else {
             $displayKodeNomor = $baseKodeStr;
         }
+
+        $nipUtama = $formatNip($utama['nip'] ?? '');
         ?>
 
         <!-- ========================= RINCI PAGE ========================= -->
@@ -473,66 +446,74 @@
             <thead>
                 <tr>
                     <th style="width:5%;">No</th>
-                    <th style="width:50%;">RINCIAN BIAYA</th>
-                    <th style="width:25%;">JUMLAH</th>
-                    <th style="width:20%;">KETERANGAN</th>
+                    <th style="width:53%;">RINCIAN BIAYA</th>
+                    <th style="width:24%;">JUMLAH</th>
+                    <th style="width:18%;">KETERANGAN</th>
                 </tr>
             </thead>
             <tbody>
 
                 <!-- 1. BIAYA TRANSPORT -->
                 <tr>
-                    <td class="text-center">1</td>
+                    <td class="text-center" style="font-weight:bold;">1</td>
                     <td>
                         <strong>BIAYA TRANSPORT :</strong><br>
                         <?php if (empty($transportGroups)): ?>
                             <br>
                         <?php elseif (!$multiGroup): ?>
-                            <!--  Single group: flat listing without group header -->
+                            <!-- Single group: flat listing without group header -->
                             <?php $onlyGroup = reset($transportGroups); ?>
+                            <?php $onlyRows  = $onlyGroup['rows']; ?>
                             <table class="nested-table">
-                                <?php foreach ($onlyGroup['rows'] as $ti): ?>
+                                <?php foreach ($onlyRows as $ri => $ti): ?>
                                 <?php
-                                    $desc = $ti['ket'] !== '' ? esc($ti['ket']) : ($ti['lumpsum'] ? 'Transport (PP)' : ($ti['days'] > 0 ? $ti['days'] . ' hari x Rp ' . number_format($ti['rate'], 0, ',', '.') : 'Transport'));
+                                    $isLast = ($ri === count($onlyRows) - 1);
+                                    $desc   = $ti['ket'] !== '' ? esc($ti['ket']) : ($ti['lumpsum'] ? 'Transport (PP)' : ($ti['days'] > 0 ? $ti['days'] . ' hari x Rp ' . number_format($ti['rate'], 0, ',', '.') : 'Transport'));
+                                    $ulCls = $isLast ? 'underline-td' : '';
                                 ?>
                                 <tr>
-                                    <td style="width:55%;"><?= $desc; ?></td>
-                                    <td style="width:15%;">Rp.</td>
-                                    <td style="width:30%; text-align:right;"><?= number_format($ti['sub'], 0, ',', '.'); ?></td>
+                                    <td style="width:48%;"><?= $desc; ?></td>
+                                    <td class="<?= $ulCls; ?>" style="width:12%;">Rp.</td>
+                                    <td class="<?= $ulCls; ?>" style="width:40%; text-align:right;"><?= number_format($ti['sub'], 0, ',', '.'); ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </table>
                         <?php else: ?>
-                            <!-- Multi-group: show group headers with subtotals, matching sample -->
+                            <!-- Multi-group: group headers (NOT bold), items, underline on last, then subtotal -->
                             <table class="nested-table">
                                 <?php foreach ($transportGroups as $gLabel => $grp): ?>
+                                <!-- Group header — plain text, not bold -->
                                 <tr>
-                                    <td colspan="3"><strong><?= esc($gLabel); ?> :</strong></td>
+                                    <td colspan="3" style="padding-top:2px !important;"><?= esc($gLabel); ?> :</td>
                                 </tr>
-                                <?php foreach ($grp['rows'] as $ri => $ti): ?>
+                                <?php $grpRows = $grp['rows']; $grpTotal = $grp['subtotal']; ?>
+                                <?php foreach ($grpRows as $ri => $ti): ?>
                                 <?php
-                                    $dest = $ti['ket'] !== '' ? esc($ti['ket']) : '';
-                                    $isLast = ($ri === count($grp['rows']) - 1);
+                                    $dest    = $ti['ket'] !== '' ? esc($ti['ket']) : '';
+                                    $isLast  = ($ri === count($grpRows) - 1);
+                                    $ulCls   = $isLast ? 'underline-td' : '';
                                 ?>
-                                <tr class="<?= $isLast ? 'underline-row' : ''; ?>">
-                                    <td style="width:45%; padding-left:8px !important;"><?= $dest; ?></td>
-                                    <td style="width:15%;">Rp.</td>
-                                    <td style="width:40%; text-align:right;"><?= number_format($ti['sub'], 0, ',', '.'); ?></td>
+                                <tr>
+                                    <td style="width:44%; padding-left:6px !important;"><?= $dest; ?></td>
+                                    <td class="<?= $ulCls; ?>" style="width:12%;">Rp.</td>
+                                    <td class="<?= $ulCls; ?>" style="width:44%; text-align:right;"><?= number_format($ti['sub'], 0, ',', '.'); ?></td>
                                 </tr>
                                 <?php endforeach; ?>
+                                <!-- Subtotal row: right-aligned, bold -->
                                 <tr>
                                     <td colspan="2"></td>
-                                    <td style="width:40%; text-align:right; font-weight:bold;"><?= number_format($grp['subtotal'], 0, ',', '.'); ?></td>
+                                    <td style="width:44%; text-align:right; font-weight:bold; padding-top:1px !important; padding-bottom:4px !important;"><?= number_format($grpTotal, 0, ',', '.'); ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </table>
                         <?php endif; ?>
                     </td>
+                    <!-- JUMLAH column: Rp. left, amount right -->
                     <td style="vertical-align:top;">
                         <table class="jumlah-inner">
                             <tr>
-                                <td style="width:30%;">Rp.</td>
-                                <td style="width:70%; text-align:right;"><?= number_format($calcTransport, 0, ',', '.'); ?></td>
+                                <td style="width:22%;">Rp.</td>
+                                <td style="width:78%; text-align:right;"><?= number_format($calcTransport, 0, ',', '.'); ?></td>
                             </tr>
                         </table>
                     </td>
@@ -541,7 +522,7 @@
 
                 <!-- 2. UANG HARIAN -->
                 <tr>
-                    <td class="text-center">2</td>
+                    <td class="text-center" style="font-weight:bold;">2</td>
                     <td>
                         <strong>UANG HARIAN</strong><br>
                         Uang Makan, Uang Transport Lokal, Uang Saku selama :<br>
@@ -551,13 +532,13 @@
                             <table class="nested-table">
                                 <?php foreach ($harianDetails as $hd): ?>
                                 <tr>
-                                    <td style="width:12%;"><?= $hd['days']; ?></td>
-                                    <td style="width:10%;">hari</td>
+                                    <td style="width:10%;"><?= $hd['days']; ?></td>
+                                    <td style="width:8%;">hari</td>
                                     <td style="width:5%;">x</td>
+                                    <td style="width:7%;">Rp</td>
+                                    <td style="width:32%; text-align:right;"><?= number_format($hd['rate'], 0, ',', '.'); ?></td>
                                     <td style="width:8%;">Rp</td>
-                                    <td style="width:30%; text-align:right;"><?= number_format($hd['rate'], 0, ',', '.'); ?></td>
-                                    <td style="width:10%;">Rp</td>
-                                    <td style="width:25%; text-align:right;"><?= number_format($hd['sub'], 0, ',', '.'); ?></td>
+                                    <td style="width:30%; text-align:right;"><?= number_format($hd['sub'], 0, ',', '.'); ?></td>
                                 </tr>
                                 <?php if ($hd['ket'] !== ''): ?>
                                 <tr>
@@ -571,8 +552,8 @@
                     <td style="vertical-align:top;">
                         <table class="jumlah-inner">
                             <tr>
-                                <td style="width:30%;">Rp.</td>
-                                <td style="width:70%; text-align:right;"><?= number_format($calcHarian, 0, ',', '.'); ?></td>
+                                <td style="width:22%;">Rp.</td>
+                                <td style="width:78%; text-align:right;"><?= number_format($calcHarian, 0, ',', '.'); ?></td>
                             </tr>
                         </table>
                     </td>
@@ -581,7 +562,7 @@
 
                 <!-- 3. UANG PENGINAPAN -->
                 <tr>
-                    <td class="text-center">3</td>
+                    <td class="text-center" style="font-weight:bold;">3</td>
                     <td>
                         <strong>UANG PENGINAPAN</strong><br>
                         Uang penginapan selama :<br>
@@ -591,13 +572,13 @@
                             <table class="nested-table">
                                 <?php foreach ($penginapanDetails as $pd): ?>
                                 <tr>
-                                    <td style="width:12%;"><?= $pd['nights']; ?></td>
-                                    <td style="width:10%;">malam</td>
+                                    <td style="width:10%;"><?= $pd['nights']; ?></td>
+                                    <td style="width:8%;">malam</td>
                                     <td style="width:5%;">x</td>
+                                    <td style="width:7%;">Rp</td>
+                                    <td style="width:32%; text-align:right;"><?= number_format($pd['rate'], 0, ',', '.'); ?></td>
                                     <td style="width:8%;">Rp</td>
-                                    <td style="width:30%; text-align:right;"><?= number_format($pd['rate'], 0, ',', '.'); ?></td>
-                                    <td style="width:10%;">Rp</td>
-                                    <td style="width:25%; text-align:right;"><?= number_format($pd['sub'], 0, ',', '.'); ?></td>
+                                    <td style="width:30%; text-align:right;"><?= number_format($pd['sub'], 0, ',', '.'); ?></td>
                                 </tr>
                                 <?php if ($pd['ket'] !== ''): ?>
                                 <tr>
@@ -611,29 +592,31 @@
                     <td style="vertical-align:top;">
                         <table class="jumlah-inner">
                             <tr>
-                                <td style="width:30%;">Rp.</td>
-                                <td style="width:70%; text-align:right;"><?= number_format($calcPenginapan, 0, ',', '.'); ?></td>
+                                <td style="width:22%;">Rp.</td>
+                                <td style="width:78%; text-align:right;"><?= number_format($calcPenginapan, 0, ',', '.'); ?></td>
                             </tr>
                         </table>
                     </td>
                     <td></td>
                 </tr>
 
-                <!-- JUMLAH & TERBILANG -->
+                <!-- JUMLAH row -->
                 <tr>
                     <td colspan="2" class="font-bold">JUMLAH :</td>
-                    <td class="font-bold">
-                        <table class="jumlah-inner">
+                    <td style="border-bottom: 2px solid #000;">
+                        <table class="jumlah-inner" style="font-weight:bold;">
                             <tr>
-                                <td style="width:30%;">Rp.</td>
-                                <td style="width:70%; text-align:right; border-bottom:1px solid #000 !important;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
+                                <td style="width:22%;">Rp.</td>
+                                <td style="width:78%; text-align:right;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
                             </tr>
                         </table>
                     </td>
                     <td></td>
                 </tr>
+
+                <!-- TERBILANG row -->
                 <tr>
-                    <td colspan="3">
+                    <td colspan="3" style="font-size:11px;">
                         <strong>TERBILANG :</strong>&nbsp;&nbsp; <?= $terbilangText; ?>
                     </td>
                     <td></td>
@@ -646,38 +629,26 @@
         <table class="rinci-footer-table">
             <tr>
                 <!-- LEFT: Bendahara -->
-                <td style="width:50%; vertical-align:top;">
+                <td style="width:48%; vertical-align:top;">
                     Telah dibayar uang sebesar<br><br>
-                    <table style="width:100%; border:none; border-collapse:collapse;">
-                        <tr>
-                            <td style="width:12%; padding:0; border:none;">Rp.</td>
-                            <td style="padding:0; border:none;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
-                        </tr>
-                    </table>
-                    <br>
-                    Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
+                    Rp.&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?><br><br>
+                    Pekanbaru, &nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
                     Bendahara Pengeluaran,<br>
-                    <div style="height:70px;"></div>
+                    <div style="height:65px;"></div>
                     <span style="text-decoration:underline;" class="font-bold">KH. SRI HANDAYANI, S.Si., M.T.</span><br>
                     NIP. 19820402 201412 2 002
                 </td>
 
                 <!-- RIGHT: Yang Menerima -->
-                <td style="width:50%; vertical-align:top; text-align:center;">
-                    Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
+                <td style="width:52%; vertical-align:top; text-align:left; padding-left:30px;">
+                    Pekanbaru, &nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
                     Telah terima sejumlah uang sebesar:<br><br>
-                    <table style="width:100%; border:none; border-collapse:collapse;">
-                        <tr>
-                            <td style="width:20%; text-align:right; padding:0; border:none;">Rp.</td>
-                            <td style="padding:0; padding-left:15px; border:none;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
-                        </tr>
-                    </table>
-                    <br>
+                    Rp.&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?><br><br>
                     Yang Menerima :<br>
-                    <div style="height:70px;"></div>
+                    <div style="height:65px;"></div>
                     <span style="text-decoration:underline;" class="font-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
                     <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
-                        <br>NIP. <?= esc($utama['nip']); ?>
+                        <br>NIP. <?= $nipUtama; ?>
                     <?php endif; ?>
                 </td>
             </tr>
@@ -692,27 +663,27 @@
         <!-- RAMPUNG Body -->
         <table class="rampung-table">
             <tr>
-                <td style="width:56%;">
+                <td style="width:60%;">
                     <table style="width:100%; border:none; border-collapse:collapse;">
                         <tr>
-                            <td style="border:none; padding:1px 0;">Ditetapkan Sejumlah</td>
-                            <td style="border:none; padding:1px 0; letter-spacing:-0.5px;">…………………………………………………</td>
+                            <td style="border:none; padding:1px 0; white-space:nowrap;">Ditetapkan Sejumlah</td>
+                            <td style="border:none; padding:1px 4px;">………………………………………………………………………</td>
                         </tr>
                         <tr>
-                            <td style="border:none; padding:1px 0;">Yang dibayar semula</td>
-                            <td style="border:none; padding:1px 0; letter-spacing:-0.5px;">…………………………………………………</td>
+                            <td style="border:none; padding:1px 0; white-space:nowrap;">Yang dibayar semula</td>
+                            <td style="border:none; padding:1px 4px;">………………………………………………………………………</td>
                         </tr>
                         <tr>
-                            <td style="border:none; padding:1px 0;">Sisa kurang / Lebih</td>
-                            <td style="border:none; padding:1px 0; letter-spacing:-0.5px;">…………………………………………………</td>
+                            <td style="border:none; padding:1px 0; white-space:nowrap;">Sisa kurang / Lebih</td>
+                            <td style="border:none; padding:1px 4px;">………………………………………………………………………</td>
                         </tr>
                     </table>
                 </td>
-                <td style="width:44%; vertical-align:top;">
+                <td style="width:40%; vertical-align:top;">
                     <table style="width:100%; border:none; border-collapse:collapse;">
                         <tr>
-                            <td style="width:20%; padding:1px 4px; border:none;">Rp</td>
-                            <td style="width:80%; text-align:right; padding:1px 4px; border:none;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
+                            <td style="width:15%; padding:1px 4px; border:none;">Rp</td>
+                            <td style="width:85%; text-align:right; padding:1px 4px; border:none;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
                         </tr>
                         <tr>
                             <td style="padding:1px 4px; border:none;">Rp</td>
@@ -728,13 +699,13 @@
         </table>
 
         <!-- RAMPUNG TTD: PPK only (right side) -->
-        <table class="rampung-table" style="margin-top:25px;">
+        <table class="rampung-table" style="margin-top:20px;">
             <tr>
                 <td style="width:50%;"></td>
                 <td style="width:50%; text-align:center;">
                     Pejabat Pembuat Komitmen<br>
                     Pelaksanaan Prasarana Strategis<br>
-                    <div style="height:65px;"></div>
+                    <div style="height:62px;"></div>
                     <span style="text-decoration:underline;" class="font-bold">NURHIDAYAT NUGROHO, S.Ars.</span><br>
                     NIP. 19901221 201802 1 001
                 </td>
@@ -802,7 +773,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="3" style="padding-top:6px; padding-bottom:2px; font-weight:normal;">Berdasarkan SPD</td>
+                    <td colspan="3" style="padding-top:6px; padding-bottom:2px;">Berdasarkan SPD</td>
                 </tr>
                 <tr>
                     <td class="label-col" style="padding-left:8px;">Nomor</td>
@@ -846,7 +817,7 @@
                         <div style="height:65px;"></div>
                         <span style="text-decoration:underline;" class="font-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
                         <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
-                            <br>NIP. <?= esc($utama['nip']); ?>
+                            <br>NIP. <?= $nipUtama; ?>
                         <?php endif; ?>
                     </td>
                 </tr>
