@@ -742,6 +742,10 @@
                 const tujuan = $btn.attr('data-tujuan') || '-';
                 const periode = $btn.attr('data-periode') || '-';
                 const pelaksana = $btn.attr('data-pelaksana') || '-';
+                const tglMulai = $btn.attr('data-tgl-mulai') || '';
+                const tglSelesai = $btn.attr('data-tgl-selesai') || '';
+                const defHarian = $btn.attr('data-def-harian') || '';
+                const defPenginapan = $btn.attr('data-def-penginapan') || '';
                 
                 let rincian = {};
                 try {
@@ -798,7 +802,7 @@
                     }];
                 }
                 if (uangHarianList.length === 0) {
-                    addUangHarianInputRow({});
+                    addUangHarianInputRow({ tgl_mulai: tglMulai, tgl_selesai: tglSelesai, nominal: defHarian });
                 } else {
                     uangHarianList.forEach(function(uItem) {
                         addUangHarianInputRow(uItem);
@@ -818,7 +822,7 @@
                     }];
                 }
                 if (transportList.length === 0) {
-                    addTransportInputRow({});
+                    addTransportInputRow({ tgl_mulai: tglMulai, tgl_selesai: tglSelesai });
                 } else {
                     transportList.forEach(function(tItem) {
                         addTransportInputRow(tItem);
@@ -838,7 +842,7 @@
                     }];
                 }
                 if (penginapanList.length === 0) {
-                    addPenginapanInputRow({});
+                    addPenginapanInputRow({ tgl_mulai: tglMulai, tgl_selesai: tglSelesai, nominal: defPenginapan });
                 } else {
                     penginapanList.forEach(function(pItem) {
                         addPenginapanInputRow(pItem);

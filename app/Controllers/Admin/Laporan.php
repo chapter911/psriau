@@ -695,8 +695,13 @@ class Laporan extends BaseController
                     $kotaTujuanAttr = esc((string) ($row['kota_tujuan'] ?? ''), 'attr');
                     $tujuanAttr = esc((string) ($row['tujuan'] ?? ''), 'attr');
                     $periodeAttr = esc((string) ($row['periode'] ?? ''), 'attr');
+                    $tglMulaiAttr = esc((string) ($row['periode_mulai'] ?? ''), 'attr');
+                    $tglSelesaiAttr = esc((string) ($row['periode_selesai'] ?? ''), 'attr');
+                    $biayaMasterRow = $this->getBiayaMasterForKota($row['kota_tujuan'] ?? '');
+                    $defHarian = $biayaMasterRow['harian'] ?? 0;
+                    $defPenginapan = (int)(($biayaMasterRow['penginapan_e4'] ?? 0) * 0.3);
                     $pelaksanaAttr = esc((string) ($row['pelaksana_names_label'] ?? ''), 'attr');
-                    $updateButtonHtml = '<button type="button" class="btn btn-xs btn-warning text-dark btn-verify-spt btn-table-action shadow-sm" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-kode-nomor="' . $kodeNomorAttr . '" data-dasar="' . $dasarAttr . '" data-tgl="' . $tglAttr . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" data-rincian-biaya="' . $rincianBiayaAttr . '" data-kota="' . $kotaTujuanAttr . '" data-tujuan="' . $tujuanAttr . '" data-periode="' . $periodeAttr . '" data-pelaksana="' . $pelaksanaAttr . '" title="Update Verifikasi"><i class="fas fa-edit mr-1"></i> Update</button>';
+                    $updateButtonHtml = '<button type="button" class="btn btn-xs btn-warning text-dark btn-verify-spt btn-table-action shadow-sm" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-kode-nomor="' . $kodeNomorAttr . '" data-dasar="' . $dasarAttr . '" data-tgl="' . $tglAttr . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" data-rincian-biaya="' . $rincianBiayaAttr . '" data-kota="' . $kotaTujuanAttr . '" data-tujuan="' . $tujuanAttr . '" data-periode="' . $periodeAttr . '" data-tgl-mulai="' . $tglMulaiAttr . '" data-tgl-selesai="' . $tglSelesaiAttr . '" data-def-harian="' . $defHarian . '" data-def-penginapan="' . $defPenginapan . '" data-pelaksana="' . $pelaksanaAttr . '" title="Update Verifikasi"><i class="fas fa-edit mr-1"></i> Update</button>';
                     
                     $aksiSptHtml = $updateButtonHtml;
                 } else {
