@@ -2,184 +2,288 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Rincian & Kwitansi Perjalanan Dinas</title>
+    <title>Rincian &amp; Kwitansi Perjalanan Dinas</title>
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 11px;
+            font-size: 12px;
             margin: 0;
-            padding: 0;
-            line-height: 1.3;
+            padding: 20px;
+            line-height: 1.4;
         }
         .text-center { text-align: center; }
-        .text-left { text-align: left; }
-        .text-right { text-align: right; }
-        .font-weight-bold { font-weight: bold; }
-        
+        .text-left   { text-align: left; }
+        .text-right  { text-align: right; }
+        .font-bold   { font-weight: bold; }
+
         .page-break { page-break-after: always; }
-        
+
         /* Kop Surat */
         .kop-surat-img {
             width: 100%;
-            max-height: 120px;
+            max-height: 150px;
             object-fit: contain;
-            margin-bottom: 10px;
+            margin-bottom: 0;
+            display: block;
         }
 
-        /* RINCI Table */
+        /* ============================
+           RINCI TABLE
+        ============================ */
         .rinci-header {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            text-align: center;
         }
+        .rinci-header strong {
+            font-size: 14px;
+        }
+
         .rinci-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
-        .rinci-table th, .rinci-table td {
-            border: 1.5px solid #000;
-            padding: 3px 4px;
+        .rinci-table th,
+        .rinci-table td {
+            border: 1px solid #000;
+            padding: 5px 6px;
             vertical-align: top;
         }
         .rinci-table th {
             text-align: center;
             font-weight: bold;
-        }
-        .rinci-footer-table {
-            width: 100%;
-            border: none;
-            margin-top: 10px;
-        }
-        .rinci-footer-table td {
-            vertical-align: top;
-            padding: 2px;
-        }
-        
-        .rampung-table {
-            width: 100%;
-            border: none;
-            margin-top: 20px;
-        }
-        .rampung-table td {
-            vertical-align: top;
-            padding: 2px;
+            background: transparent;
         }
 
-        /* Nested table inside TD without borders */
+        /* Nested tables inside rinci TD — no borders */
         .nested-table {
             width: 100%;
             border-collapse: collapse;
-            border: none;
         }
         .nested-table td {
             border: none !important;
-            padding: 1px 0 !important;
+            padding: 1px 2px !important;
+            vertical-align: top;
+        }
+        .nested-table .underline-row td {
+            border-bottom: 1px solid #000 !important;
         }
 
-        /* KWITANSI styles */
-        .kwitansi-header-table {
-            width: 45%;
-            margin-bottom: 15px;
-            float: right;
+        /* JUMLAH column — two-column mini table */
+        .jumlah-cell {
+            white-space: nowrap;
+        }
+        .jumlah-inner {
+            width: 100%;
             border-collapse: collapse;
         }
-        .kwitansi-header-table td {
-            border: 1.5px solid #000;
+        .jumlah-inner td {
+            border: none !important;
+            padding: 1px 2px !important;
+            vertical-align: top;
+        }
+
+        /* Footer signature area */
+        .rinci-footer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+        .rinci-footer-table td {
+            border: none;
+            vertical-align: top;
             padding: 2px 4px;
         }
+
+        /* RAMPUNG section */
+        .rampung-separator {
+            border-top: 2px solid #000;
+            margin: 12px 0 8px 0;
+        }
+        .rampung-title {
+            text-align: center;
+            font-weight: bold;
+            text-decoration: underline;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+            font-size: 11px;
+        }
+        .rampung-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .rampung-table td {
+            border: none;
+            padding: 1px 4px;
+            vertical-align: top;
+        }
+
+        /* ============================
+           KWITANSI PAGE
+        ============================ */
+        .kop-separator-outer {
+            border-top: 2px solid #000;
+            border-bottom: 1px solid #000;
+            height: 0;
+            margin: 0;
+        }
+        .kop-separator-inner {
+            border-top: 1px solid #000;
+            margin: 2px 0 0 0;
+        }
+
+        /* Box wrapping the kwitansi content */
+        .kwitansi-box {
+            border: 1px solid #000;
+            border-top: none;
+            padding: 15px 20px;
+            min-height: 700px;
+            position: relative;
+        }
+
+        /* Info table top-right (Tahun Anggaran etc.) */
+        .kwitansi-info-table {
+            width: 44%;
+            float: right;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .kwitansi-info-table td {
+            border: 1px solid #000;
+            padding: 3px 5px;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        /* Title */
         .kwitansi-title {
             text-align: center;
             font-size: 16px;
             font-weight: bold;
             text-decoration: underline;
-            margin-top: 60px;
+            letter-spacing: 3px;
+            margin-top: 10px;
             margin-bottom: 20px;
-            letter-spacing: 2px;
             clear: both;
         }
+
+        /* Body rows */
         .kwitansi-body-table {
             width: 100%;
-            margin-bottom: 20px;
+            border-collapse: collapse;
+            margin-bottom: 15px;
         }
         .kwitansi-body-table td {
             vertical-align: top;
-            padding: 4px;
+            padding: 4px 4px;
         }
+        .kwitansi-body-table .label-col {
+            white-space: nowrap;
+        }
+
+        /* TTD table */
         .kwitansi-ttd-table {
             width: 100%;
-            margin-top: 30px;
+            border-collapse: collapse;
+            margin-top: 25px;
         }
         .kwitansi-ttd-table td {
             vertical-align: top;
             text-align: center;
             width: 50%;
+            padding: 2px 4px;
         }
     </style>
 </head>
 <body>
 
     <?php 
-    // Format Date Function
+    // ─── Helpers ─────────────────────────────────────────────────────────────
     $formatDate = function($dateStr) {
         if (empty($dateStr)) return '-';
         $ts = strtotime($dateStr);
         if (!$ts) return $dateStr;
-        
         $months = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
-            4 => 'April', 5 => 'Mei', 6 => 'Juni',
-            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
-            10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',
+            5=>'Mei',6=>'Juni',7=>'Juli',8=>'Agustus',
+            9=>'September',10=>'Oktober',11=>'November',12=>'Desember'
         ];
-        
         return date('d', $ts) . ' ' . $months[(int)date('n', $ts)] . ' ' . date('Y', $ts);
     };
-    
+
     $tglBerangkat = $formatDate($row['periode_mulai'] ?? '');
-    $tglKembali = $formatDate($row['periode_selesai'] ?? '');
-    
-    // Days calc
+    $tglKembali   = $formatDate($row['periode_selesai'] ?? '');
+
     $days = 0;
     if (!empty($row['periode_mulai']) && !empty($row['periode_selesai'])) {
         $start = new \DateTime($row['periode_mulai']);
-        $end = new \DateTime($row['periode_selesai']);
-        $days = $start->diff($end)->days + 1;
+        $end   = new \DateTime($row['periode_selesai']);
+        $days  = $start->diff($end)->days + 1;
     }
-    
-    $nomorSurat = esc($row['nomor_surat_tugas'] ?? '-');
-    $nomorSPD = str_replace('SPT', 'SPD', $nomorSurat);
-    $kotaTujuan = esc($row['kota_tujuan'] ?? '-');
+
+    $nomorSurat  = esc($row['nomor_surat_tugas'] ?? '-');
+    $nomorSPD    = str_replace('SPT', 'SPD', $nomorSurat);
+    $kotaTujuan  = esc($row['kota_tujuan'] ?? '-');
     $tujuanMaksud = esc($row['tujuan'] ?? '-');
-    $tanggalTtd = $formatDate($row['tanggal_tanda_tangan'] ?? date('Y-m-d'));
-    
+    $tanggalTtd  = $formatDate($row['tanggal_tanda_tangan'] ?? date('Y-m-d'));
+
+    // Kop Surat base64
     $kopSuratImgUrl = '';
     if (!empty($kop_surat['image_url'])) {
         $path = FCPATH . ltrim($kop_surat['image_url'], '/');
         if (file_exists($path)) {
-            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+            $ext  = strtolower(pathinfo($path, PATHINFO_EXTENSION));
             $data = file_get_contents($path);
             $kopSuratImgUrl = 'data:image/' . $ext . ';base64,' . base64_encode($data);
         }
     }
-    
+
     $totalPelaksana = count($pelaksana);
     if ($totalPelaksana === 0) {
-        $pelaksana[] = ['nama' => '-', 'nip' => '-', 'jabatan' => '-'];
+        $pelaksana[]    = ['nama' => '-', 'nip' => '-', 'jabatan' => '-'];
         $totalPelaksana = 1;
     }
-    
+
     $terbilangHelper = function($angka) {
         if (function_exists('terbilang_angka')) {
             return ucwords(terbilang_angka($angka)) . ' Rupiah,-';
         }
         return '- Rupiah,-';
     };
+
+    // Helper: group transport items by their 'jenis' field
+    // Returns array of groups: [ ['label'=>'Pesawat Udara', 'items'=>[...], 'subtotal'=>0], ... ]
+    // Items without a clear jenis are placed in their own group
+    $groupTransport = function(array $items) {
+        $groups = [];
+        foreach ($items as $item) {
+            $jenis = trim((string)($item['jenis'] ?? ''));
+            $ket   = trim((string)($item['keterangan'] ?? ''));
+
+            // Determine group label
+            $jenisLower = strtolower($jenis);
+            if (strpos($jenisLower, 'pesawat') !== false) {
+                $groupKey = 'Pesawat Udara';
+            } elseif (strpos($jenisLower, 'taksi') !== false || strpos($jenisLower, 'taxi') !== false) {
+                $groupKey = 'Taxi';
+            } elseif ($jenis !== '') {
+                $groupKey = $jenis;
+            } else {
+                // Use keterangan as group key or generic
+                $groupKey = $ket !== '' ? $ket : 'Transport';
+            }
+
+            $groups[$groupKey][] = $item;
+        }
+        return $groups;
+    };
     ?>
 
     <?php foreach ($pelaksana as $index => $utama): ?>
         <?php
-        // Cost calc
-        $jabatanStr = trim((string)($utama['jabatan'] ?? ''));
-        $jabUpper = strtoupper($jabatanStr);
+        // ─── Cost Calculations ────────────────────────────────────────────────
+        $jabatanStr     = trim((string)($utama['jabatan'] ?? ''));
+        $jabUpper       = strtoupper($jabatanStr);
         $tarifPenginapan = $biaya_master['penginapan_e4'] ?? 0;
         if (strpos($jabUpper, 'ESELON I') !== false && strpos($jabUpper, 'ESELON II') === false && strpos($jabUpper, 'ESELON III') === false) {
             $tarifPenginapan = $biaya_master['penginapan_e1'] ?? 0;
@@ -188,211 +292,179 @@
         } elseif (strpos($jabUpper, 'ESELON III') !== false) {
             $tarifPenginapan = $biaya_master['penginapan_e3'] ?? 0;
         }
-        
+
         $rincianBiaya = json_decode((string)($row['rincian_biaya_json'] ?? '{}'), true) ?: [];
 
-        // 1. Transport Calculation (Multi-row):
+        // 1. Transport
         $transportList = $rincianBiaya['transport'] ?? [];
         if (!is_array($transportList) && isset($rincianBiaya['transport_start_date'])) {
             $transportList = [[
                 'tgl_mulai'   => $rincianBiaya['transport_start_date'] ?? '',
                 'tgl_selesai' => $rincianBiaya['transport_end_date'] ?? '',
-                'nominal'     => (int) ($rincianBiaya['transport_nominal'] ?? 0),
+                'nominal'     => (int)($rincianBiaya['transport_nominal'] ?? 0),
                 'keterangan'  => '',
             ]];
         }
 
-        $calcTransport = 0;
-        $transportDetails = [];
+        $calcTransport  = 0;
+        $transportItems = []; // flat list with computed sub
         if (is_array($transportList) && count($transportList) > 0) {
             foreach ($transportList as $tItem) {
-                $tStart = $tItem['tgl_mulai'] ?? '';
-                $tEnd   = $tItem['tgl_selesai'] ?? '';
-                $tNom   = (int) ($tItem['nominal'] ?? 0);
-                $tKet   = trim((string) ($tItem['keterangan'] ?? ''));
-                $tJenis = trim((string) ($tItem['jenis'] ?? ''));
+                $tStart     = $tItem['tgl_mulai'] ?? '';
+                $tEnd       = $tItem['tgl_selesai'] ?? '';
+                $tNom       = (int)($tItem['nominal'] ?? 0);
+                $tKet       = trim((string)($tItem['keterangan'] ?? ''));
+                $tJenis     = trim((string)($tItem['jenis'] ?? ''));
                 $tIsLumpsum = !empty($tItem['is_lumpsum']);
 
                 $tDays = 0;
                 if (!empty($tStart) && !empty($tEnd)) {
                     try {
-                        $d1 = new \DateTime($tStart);
-                        $d2 = new \DateTime($tEnd);
+                        $d1    = new \DateTime($tStart);
+                        $d2    = new \DateTime($tEnd);
                         $tDays = max(0, $d1->diff($d2)->days + 1);
                     } catch (\Throwable $e) {}
                 }
-                
+
                 $rate = $tNom;
-                
                 if ($tIsLumpsum) {
                     $sub = $rate;
                 } else {
                     $sub = ($tDays > 0) ? ($tDays * $rate) : $rate;
                 }
-                
                 $calcTransport += $sub;
 
                 if ($tDays > 0 || $rate > 0 || $tIsLumpsum) {
-                    $descParts = [];
-                    if ($tJenis !== '') {
-                        $descParts[] = $tJenis;
-                    }
-                    if ($tKet !== '') {
-                        $descParts[] = $tKet;
-                    }
-                    
-                    if (!empty($descParts)) {
-                        $desc = esc(implode(' - ', $descParts));
-                    } else {
-                        if ($tIsLumpsum) {
-                            $desc = 'Transport (PP)';
-                        } elseif ($tDays > 0) {
-                            $desc = $tDays . ' hari x Rp ' . number_format($rate, 0, ',', '.');
-                        } else {
-                            $desc = 'Transport';
-                        }
-                    }
-                    $transportDetails[] = [
-                        'desc' => $desc,
-                        'sub' => $sub
+                    $transportItems[] = [
+                        'jenis' => $tJenis,
+                        'ket'   => $tKet,
+                        'days'  => $tDays,
+                        'rate'  => $rate,
+                        'sub'   => $sub,
+                        'lumpsum' => $tIsLumpsum,
                     ];
                 }
             }
         }
 
-        // 2. Uang Harian Calculation (Multi-row):
-        $harianList = $rincianBiaya['uang_harian'] ?? [];
-        if (!is_array($harianList)) {
-            $harianList = [];
+        // Group transport by jenis
+        $transportGroups = []; // [ ['label'=>'', 'rows'=>[], 'subtotal'=>0], ... ]
+        foreach ($transportItems as $ti) {
+            $jenis     = $ti['jenis'];
+            $jenisLow  = strtolower($jenis);
+            if (strpos($jenisLow, 'pesawat') !== false) {
+                $gKey = 'Pesawat Udara';
+            } elseif (strpos($jenisLow, 'taksi') !== false || strpos($jenisLow, 'taxi') !== false) {
+                $gKey = 'Taxi';
+            } elseif ($jenis !== '') {
+                $gKey = $jenis;
+            } else {
+                $gKey = $ti['ket'] !== '' ? $ti['ket'] : 'Transport';
+            }
+            if (!isset($transportGroups[$gKey])) {
+                $transportGroups[$gKey] = ['label' => $gKey, 'rows' => [], 'subtotal' => 0];
+            }
+            $transportGroups[$gKey]['rows'][]   = $ti;
+            $transportGroups[$gKey]['subtotal'] += $ti['sub'];
         }
+        $multiGroup = count($transportGroups) > 1;
 
-        $calcHarian = 0;
+        // 2. Uang Harian
+        $harianList = $rincianBiaya['uang_harian'] ?? [];
+        if (!is_array($harianList)) $harianList = [];
+
+        $calcHarian   = 0;
         $harianDetails = [];
         if (is_array($harianList) && count($harianList) > 0) {
             foreach ($harianList as $hItem) {
                 $hStart = $hItem['tgl_mulai'] ?? '';
                 $hEnd   = $hItem['tgl_selesai'] ?? '';
-                $hNom   = isset($hItem['nominal']) ? (int) $hItem['nominal'] : 0;
-                $hKet   = trim((string) ($hItem['keterangan'] ?? ''));
-
-                $hDays = 0;
+                $hNom   = isset($hItem['nominal']) ? (int)$hItem['nominal'] : 0;
+                $hKet   = trim((string)($hItem['keterangan'] ?? ''));
+                $hDays  = 0;
                 if (!empty($hStart) && !empty($hEnd)) {
                     try {
-                        $d1 = new \DateTime($hStart);
-                        $d2 = new \DateTime($hEnd);
+                        $d1    = new \DateTime($hStart);
+                        $d2    = new \DateTime($hEnd);
                         $hDays = max(0, $d1->diff($d2)->days + 1);
                     } catch (\Throwable $e) {}
                 }
-                
-                $rate = $hNom > 0 ? $hNom : (int) ($biaya_master['harian'] ?? 0);
-                // Assume 1 day if not set but nominal is set
+                $rate   = $hNom > 0 ? $hNom : (int)($biaya_master['harian'] ?? 0);
                 if ($hDays == 0 && $rate > 0) $hDays = 1;
-                $sub = $hDays * $rate;
+                $sub    = $hDays * $rate;
                 $calcHarian += $sub;
-
                 if ($hDays > 0 || $rate > 0) {
-                    $harianDetails[] = [
-                        'days' => $hDays,
-                        'rate' => $rate,
-                        'sub' => $sub,
-                        'ket' => esc($hKet)
-                    ];
+                    $harianDetails[] = ['days' => $hDays, 'rate' => $rate, 'sub' => $sub, 'ket' => esc($hKet)];
                 }
             }
         } else {
             $hDays = max(0, $days);
-            $rate = (int) ($biaya_master['harian'] ?? 0);
+            $rate  = (int)($biaya_master['harian'] ?? 0);
             $calcHarian = $hDays * $rate;
-            $harianDetails[] = [
-                'days' => $hDays,
-                'rate' => $rate,
-                'sub' => $calcHarian,
-                'ket' => ''
-            ];
+            $harianDetails[] = ['days' => $hDays, 'rate' => $rate, 'sub' => $calcHarian, 'ket' => ''];
         }
 
-        // 3. Penginapan Calculation (Multi-row):
+        // 3. Penginapan
         $penginapanList = $rincianBiaya['penginapan'] ?? [];
         if (!is_array($penginapanList) && isset($rincianBiaya['penginapan_start_date'])) {
             $penginapanList = [[
                 'tgl_mulai'   => $rincianBiaya['penginapan_start_date'] ?? '',
                 'tgl_selesai' => $rincianBiaya['penginapan_end_date'] ?? '',
-                'nominal'     => isset($rincianBiaya['penginapan_nominal']) ? (int) $rincianBiaya['penginapan_nominal'] : null,
+                'nominal'     => isset($rincianBiaya['penginapan_nominal']) ? (int)$rincianBiaya['penginapan_nominal'] : null,
                 'keterangan'  => '',
             ]];
         }
 
-        $calcPenginapan = 0;
+        $calcPenginapan    = 0;
         $penginapanDetails = [];
         if (is_array($penginapanList) && count($penginapanList) > 0) {
             foreach ($penginapanList as $pItem) {
-                $pStart = $pItem['tgl_mulai'] ?? '';
-                $pEnd   = $pItem['tgl_selesai'] ?? '';
-                $pNomInput = isset($pItem['nominal']) && $pItem['nominal'] !== null && $pItem['nominal'] !== '' ? (int) $pItem['nominal'] : null;
-                $pKet   = trim((string) ($pItem['keterangan'] ?? ''));
-
-                $pNights = 0;
+                $pStart     = $pItem['tgl_mulai'] ?? '';
+                $pEnd       = $pItem['tgl_selesai'] ?? '';
+                $pNomInput  = isset($pItem['nominal']) && $pItem['nominal'] !== null && $pItem['nominal'] !== '' ? (int)$pItem['nominal'] : null;
+                $pKet       = trim((string)($pItem['keterangan'] ?? ''));
+                $pNights    = 0;
                 if (!empty($pStart) && !empty($pEnd)) {
                     try {
-                        $d1 = new \DateTime($pStart);
-                        $d2 = new \DateTime($pEnd);
+                        $d1      = new \DateTime($pStart);
+                        $d2      = new \DateTime($pEnd);
                         $pNights = max(0, $d1->diff($d2)->days);
                     } catch (\Throwable $e) {}
                 } else {
                     $pNights = max(0, $days - 1);
                 }
-
-                if ($pNomInput !== null && $pNomInput >= 0) {
-                    $rate = $pNomInput;
-                } else {
-                    $rate = (int) ($tarifPenginapan * 0.3);
-                }
-                
-                // fallback to 1 night if nights=0 but rate>0
+                $rate = $pNomInput !== null && $pNomInput >= 0 ? $pNomInput : (int)($tarifPenginapan * 0.3);
                 if ($pNights == 0 && $rate > 0) $pNights = 1;
-
                 $sub = $pNights * $rate;
                 $calcPenginapan += $sub;
-
                 if ($pNights > 0 || $rate > 0) {
-                    $penginapanDetails[] = [
-                        'nights' => $pNights,
-                        'rate' => $rate,
-                        'sub' => $sub,
-                        'ket' => esc($pKet)
-                    ];
+                    $penginapanDetails[] = ['nights' => $pNights, 'rate' => $rate, 'sub' => $sub, 'ket' => esc($pKet)];
                 }
             }
         } else {
             $pNights = max(0, $days - 1);
-            $rate = (int) ($tarifPenginapan * 0.3);
+            $rate    = (int)($tarifPenginapan * 0.3);
             $calcPenginapan = $pNights * $rate;
-            $penginapanDetails[] = [
-                'nights' => $pNights,
-                'rate' => $rate,
-                'sub' => $calcPenginapan,
-                'ket' => ''
-            ];
+            $penginapanDetails[] = ['nights' => $pNights, 'rate' => $rate, 'sub' => $calcPenginapan, 'ket' => ''];
         }
 
-        $calcTotal = $calcHarian + $calcTransport + $calcPenginapan;
+        $calcTotal     = $calcHarian + $calcTransport + $calcPenginapan;
         $terbilangText = $terbilangHelper($calcTotal);
-        
+
         $baseKodeStr = trim((string)($row['kode_nomor'] ?? '1'));
         if (preg_match('/^(\d+)(.*)$/', $baseKodeStr, $m)) {
-            $numVal = (int) $m[1] + $index;
-            $padLen = max(3, strlen($m[1]));
-            $displayKodeNomor = str_pad((string) $numVal, $padLen, '0', STR_PAD_LEFT) . $m[2];
+            $numVal          = (int)$m[1] + $index;
+            $padLen          = max(3, strlen($m[1]));
+            $displayKodeNomor = str_pad((string)$numVal, $padLen, '0', STR_PAD_LEFT) . $m[2];
         } else {
             $displayKodeNomor = $baseKodeStr;
         }
         ?>
 
-        <!-- ======================= RINCI PAGE ======================= -->
-        
-        <!-- Note: Header without Kop Surat to match PDF -->
-        <div class="rinci-header text-center">
-            <strong style="font-size: 14px;">RINCIAN BIAYA PERJALANAN DINAS</strong><br>
+        <!-- ========================= RINCI PAGE ========================= -->
+
+        <div class="rinci-header">
+            <strong>RINCIAN BIAYA PERJALANAN DINAS</strong><br>
             LAMPIRAN SPD NOMOR : <?= $nomorSPD; ?><br>
             TANGGAL : <?= strtoupper($tanggalTtd); ?>
         </div>
@@ -400,36 +472,69 @@
         <table class="rinci-table">
             <thead>
                 <tr>
-                    <th style="width: 5%;">No</th>
-                    <th style="width: 50%;">RINCIAN BIAYA</th>
-                    <th style="width: 25%;">JUMLAH</th>
-                    <th style="width: 20%;">KETERANGAN</th>
+                    <th style="width:5%;">No</th>
+                    <th style="width:50%;">RINCIAN BIAYA</th>
+                    <th style="width:25%;">JUMLAH</th>
+                    <th style="width:20%;">KETERANGAN</th>
                 </tr>
             </thead>
             <tbody>
+
                 <!-- 1. BIAYA TRANSPORT -->
                 <tr>
                     <td class="text-center">1</td>
                     <td>
                         <strong>BIAYA TRANSPORT :</strong><br>
-                        <?php if (empty($transportDetails)): ?>
+                        <?php if (empty($transportGroups)): ?>
                             <br>
-                        <?php else: ?>
+                        <?php elseif (!$multiGroup): ?>
+                            <!--  Single group: flat listing without group header -->
+                            <?php $onlyGroup = reset($transportGroups); ?>
                             <table class="nested-table">
-                                <?php foreach ($transportDetails as $td): ?>
+                                <?php foreach ($onlyGroup['rows'] as $ti): ?>
+                                <?php
+                                    $desc = $ti['ket'] !== '' ? esc($ti['ket']) : ($ti['lumpsum'] ? 'Transport (PP)' : ($ti['days'] > 0 ? $ti['days'] . ' hari x Rp ' . number_format($ti['rate'], 0, ',', '.') : 'Transport'));
+                                ?>
                                 <tr>
-                                    <td style="width: 50%;"><?= $td['desc']; ?></td>
-                                    <td style="width: 15%;">Rp.</td>
-                                    <td style="width: 35%; text-align: right;"><?= number_format($td['sub'], 0, ',', '.'); ?></td>
+                                    <td style="width:55%;"><?= $desc; ?></td>
+                                    <td style="width:15%;">Rp.</td>
+                                    <td style="width:30%; text-align:right;"><?= number_format($ti['sub'], 0, ',', '.'); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </table>
+                        <?php else: ?>
+                            <!-- Multi-group: show group headers with subtotals, matching sample -->
+                            <table class="nested-table">
+                                <?php foreach ($transportGroups as $gLabel => $grp): ?>
+                                <tr>
+                                    <td colspan="3"><strong><?= esc($gLabel); ?> :</strong></td>
+                                </tr>
+                                <?php foreach ($grp['rows'] as $ri => $ti): ?>
+                                <?php
+                                    $dest = $ti['ket'] !== '' ? esc($ti['ket']) : '';
+                                    $isLast = ($ri === count($grp['rows']) - 1);
+                                ?>
+                                <tr class="<?= $isLast ? 'underline-row' : ''; ?>">
+                                    <td style="width:45%; padding-left:8px !important;"><?= $dest; ?></td>
+                                    <td style="width:15%;">Rp.</td>
+                                    <td style="width:40%; text-align:right;"><?= number_format($ti['sub'], 0, ',', '.'); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <tr>
+                                    <td colspan="2"></td>
+                                    <td style="width:40%; text-align:right; font-weight:bold;"><?= number_format($grp['subtotal'], 0, ',', '.'); ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </table>
                         <?php endif; ?>
                     </td>
-                    <td style="vertical-align: top;">
-                        <div style="float: left;">Rp.</div>
-                        <div style="float: right;"><?= number_format($calcTransport, 0, ',', '.'); ?></div>
-                        <div style="clear: both;"></div>
+                    <td style="vertical-align:top;">
+                        <table class="jumlah-inner">
+                            <tr>
+                                <td style="width:30%;">Rp.</td>
+                                <td style="width:70%; text-align:right;"><?= number_format($calcTransport, 0, ',', '.'); ?></td>
+                            </tr>
+                        </table>
                     </td>
                     <td></td>
                 </tr>
@@ -446,26 +551,30 @@
                             <table class="nested-table">
                                 <?php foreach ($harianDetails as $hd): ?>
                                 <tr>
-                                    <td style="width: 15%;">&nbsp; <?= $hd['days']; ?> hari</td>
-                                    <td style="width: 5%;">x</td>
-                                    <td style="width: 10%;">Rp</td>
-                                    <td style="width: 25%; text-align: right;"><?= number_format($hd['rate'], 0, ',', '.'); ?></td>
-                                    <td style="width: 10%; text-align: center;">Rp</td>
-                                    <td style="width: 35%; text-align: right;"><?= number_format($hd['sub'], 0, ',', '.'); ?></td>
+                                    <td style="width:12%;"><?= $hd['days']; ?></td>
+                                    <td style="width:10%;">hari</td>
+                                    <td style="width:5%;">x</td>
+                                    <td style="width:8%;">Rp</td>
+                                    <td style="width:30%; text-align:right;"><?= number_format($hd['rate'], 0, ',', '.'); ?></td>
+                                    <td style="width:10%;">Rp</td>
+                                    <td style="width:25%; text-align:right;"><?= number_format($hd['sub'], 0, ',', '.'); ?></td>
                                 </tr>
                                 <?php if ($hd['ket'] !== ''): ?>
                                 <tr>
-                                    <td colspan="6" style="padding-left: 10px !important; font-style: italic; color: #555;">(<?= $hd['ket']; ?>)</td>
+                                    <td colspan="7" style="padding-left:12px !important; font-style:italic; color:#555;">(<?= $hd['ket']; ?>)</td>
                                 </tr>
                                 <?php endif; ?>
                                 <?php endforeach; ?>
                             </table>
                         <?php endif; ?>
                     </td>
-                    <td style="vertical-align: top;">
-                        <div style="float: left;">Rp.</div>
-                        <div style="float: right;"><?= number_format($calcHarian, 0, ',', '.'); ?></div>
-                        <div style="clear: both;"></div>
+                    <td style="vertical-align:top;">
+                        <table class="jumlah-inner">
+                            <tr>
+                                <td style="width:30%;">Rp.</td>
+                                <td style="width:70%; text-align:right;"><?= number_format($calcHarian, 0, ',', '.'); ?></td>
+                            </tr>
+                        </table>
                     </td>
                     <td></td>
                 </tr>
@@ -482,72 +591,91 @@
                             <table class="nested-table">
                                 <?php foreach ($penginapanDetails as $pd): ?>
                                 <tr>
-                                    <td style="width: 15%;">&nbsp; <?= $pd['nights']; ?> malam</td>
-                                    <td style="width: 5%;">x</td>
-                                    <td style="width: 10%;">Rp</td>
-                                    <td style="width: 25%; text-align: right;"><?= number_format($pd['rate'], 0, ',', '.'); ?></td>
-                                    <td style="width: 10%; text-align: center;">Rp</td>
-                                    <td style="width: 35%; text-align: right;"><?= number_format($pd['sub'], 0, ',', '.'); ?></td>
+                                    <td style="width:12%;"><?= $pd['nights']; ?></td>
+                                    <td style="width:10%;">malam</td>
+                                    <td style="width:5%;">x</td>
+                                    <td style="width:8%;">Rp</td>
+                                    <td style="width:30%; text-align:right;"><?= number_format($pd['rate'], 0, ',', '.'); ?></td>
+                                    <td style="width:10%;">Rp</td>
+                                    <td style="width:25%; text-align:right;"><?= number_format($pd['sub'], 0, ',', '.'); ?></td>
                                 </tr>
                                 <?php if ($pd['ket'] !== ''): ?>
                                 <tr>
-                                    <td colspan="6" style="padding-left: 10px !important; font-style: italic; color: #555;">(<?= $pd['ket']; ?>)</td>
+                                    <td colspan="7" style="padding-left:12px !important; font-style:italic; color:#555;">(<?= $pd['ket']; ?>)</td>
                                 </tr>
                                 <?php endif; ?>
                                 <?php endforeach; ?>
                             </table>
                         <?php endif; ?>
                     </td>
-                    <td style="vertical-align: top;">
-                        <div style="float: left;">Rp.</div>
-                        <div style="float: right;"><?= number_format($calcPenginapan, 0, ',', '.'); ?></div>
-                        <div style="clear: both;"></div>
+                    <td style="vertical-align:top;">
+                        <table class="jumlah-inner">
+                            <tr>
+                                <td style="width:30%;">Rp.</td>
+                                <td style="width:70%; text-align:right;"><?= number_format($calcPenginapan, 0, ',', '.'); ?></td>
+                            </tr>
+                        </table>
                     </td>
                     <td></td>
                 </tr>
 
                 <!-- JUMLAH & TERBILANG -->
                 <tr>
-                    <td colspan="2"><strong>JUMLAH :</strong></td>
-                    <td class="font-weight-bold" style="border-bottom: 1.5px solid #000;">
-                        <div style="float: left;">Rp.</div>
-                        <div style="float: right;"><?= number_format($calcTotal, 0, ',', '.'); ?></div>
-                        <div style="clear: both;"></div>
+                    <td colspan="2" class="font-bold">JUMLAH :</td>
+                    <td class="font-bold">
+                        <table class="jumlah-inner">
+                            <tr>
+                                <td style="width:30%;">Rp.</td>
+                                <td style="width:70%; text-align:right; border-bottom:1px solid #000 !important;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
+                            </tr>
+                        </table>
                     </td>
                     <td></td>
                 </tr>
                 <tr>
                     <td colspan="3">
-                        <strong>TERBILANG :</strong> &nbsp;&nbsp;&nbsp; <?= $terbilangText; ?>
+                        <strong>TERBILANG :</strong>&nbsp;&nbsp; <?= $terbilangText; ?>
                     </td>
-                    <td style="background-color: #d3d3d3; -webkit-print-color-adjust: exact;"></td>
+                    <td></td>
                 </tr>
+
             </tbody>
         </table>
 
-        <!-- Signatures Table 1 -->
+        <!-- Signatures: Bendahara (left) & Yang Menerima (right) -->
         <table class="rinci-footer-table">
             <tr>
-                <td style="width: 50%;">
+                <!-- LEFT: Bendahara -->
+                <td style="width:50%; vertical-align:top;">
                     Telah dibayar uang sebesar<br><br>
-                    <table style="width: 100%; border: none; margin: 0; padding: 0;">
-                        <tr><td style="width: 10%; padding: 0;">Rp.</td><td style="width: 90%; text-align: left; padding: 0;"><?= number_format($calcTotal, 0, ',', '.'); ?></td></tr>
-                    </table><br><br>
-                    Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
+                    <table style="width:100%; border:none; border-collapse:collapse;">
+                        <tr>
+                            <td style="width:12%; padding:0; border:none;">Rp.</td>
+                            <td style="padding:0; border:none;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
+                        </tr>
+                    </table>
+                    <br>
+                    Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
                     Bendahara Pengeluaran,<br>
-                    <div style="height: 60px;"></div>
-                    <span style="text-decoration: underline;" class="font-weight-bold">KH. SRI HANDAYANI, S.Si., M.T.</span><br>
+                    <div style="height:70px;"></div>
+                    <span style="text-decoration:underline;" class="font-bold">KH. SRI HANDAYANI, S.Si., M.T.</span><br>
                     NIP. 19820402 201412 2 002
                 </td>
-                <td style="width: 50%; text-align: center;">
-                    Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
+
+                <!-- RIGHT: Yang Menerima -->
+                <td style="width:50%; vertical-align:top; text-align:center;">
+                    Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
                     Telah terima sejumlah uang sebesar:<br><br>
-                    <table style="width: 100%; border: none; margin: 0; padding: 0;">
-                        <tr><td style="width: 25%; text-align: right; padding: 0;">Rp.</td><td style="width: 75%; text-align: left; padding: 0; padding-left: 20px;"><?= number_format($calcTotal, 0, ',', '.'); ?></td></tr>
-                    </table><br><br>
+                    <table style="width:100%; border:none; border-collapse:collapse;">
+                        <tr>
+                            <td style="width:20%; text-align:right; padding:0; border:none;">Rp.</td>
+                            <td style="padding:0; padding-left:15px; border:none;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
+                        </tr>
+                    </table>
+                    <br>
                     Yang Menerima :<br>
-                    <div style="height: 60px;"></div>
-                    <span style="text-decoration: underline;" class="font-weight-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
+                    <div style="height:70px;"></div>
+                    <span style="text-decoration:underline;" class="font-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
                     <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
                         <br>NIP. <?= esc($utama['nip']); ?>
                     <?php endif; ?>
@@ -555,45 +683,59 @@
             </tr>
         </table>
 
-        <div style="border-top: 2px solid #000; margin: 20px 0 10px 0;"></div>
+        <!-- RAMPUNG Separator -->
+        <div class="rampung-separator"></div>
 
-        <!-- RAMPUNG Table -->
-        <div class="text-center font-weight-bold" style="letter-spacing: 2px; text-decoration: underline; margin-bottom: 15px;">
-            P E R H I T U N G A N   S P D   R A M P U N G
-        </div>
+        <!-- RAMPUNG Title -->
+        <div class="rampung-title">P E R H I T U N G A N &nbsp; S P D &nbsp; R A M P U N G</div>
+
+        <!-- RAMPUNG Body -->
         <table class="rampung-table">
             <tr>
-                <td style="width: 60%;">
-                    Ditetapkan Sejumlah...................................................................<br>
-                    Yang dibayar semula ..................................................................<br>
-                    Sisa kurang / Lebih ..................................................................
+                <td style="width:56%;">
+                    <table style="width:100%; border:none; border-collapse:collapse;">
+                        <tr>
+                            <td style="border:none; padding:1px 0;">Ditetapkan Sejumlah</td>
+                            <td style="border:none; padding:1px 0; letter-spacing:-0.5px;">…………………………………………………</td>
+                        </tr>
+                        <tr>
+                            <td style="border:none; padding:1px 0;">Yang dibayar semula</td>
+                            <td style="border:none; padding:1px 0; letter-spacing:-0.5px;">…………………………………………………</td>
+                        </tr>
+                        <tr>
+                            <td style="border:none; padding:1px 0;">Sisa kurang / Lebih</td>
+                            <td style="border:none; padding:1px 0; letter-spacing:-0.5px;">…………………………………………………</td>
+                        </tr>
+                    </table>
                 </td>
-                <td style="width: 40%;">
-                    <table style="width: 100%; border: none;">
+                <td style="width:44%; vertical-align:top;">
+                    <table style="width:100%; border:none; border-collapse:collapse;">
                         <tr>
-                            <td style="width: 20%; padding: 0;">Rp</td>
-                            <td style="width: 80%; text-align: right; padding: 0;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
+                            <td style="width:20%; padding:1px 4px; border:none;">Rp</td>
+                            <td style="width:80%; text-align:right; padding:1px 4px; border:none;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
                         </tr>
                         <tr>
-                            <td style="padding: 0;">Rp</td>
-                            <td style="text-align: right; border-bottom: 1px solid #000; padding: 0;">-</td>
+                            <td style="padding:1px 4px; border:none;">Rp</td>
+                            <td style="text-align:right; border-bottom:1px solid #000 !important; padding:1px 4px;">-</td>
                         </tr>
                         <tr>
-                            <td style="padding: 0;">Rp</td>
-                            <td style="text-align: right; padding: 0;">-</td>
+                            <td style="padding:1px 4px; border:none;">Rp</td>
+                            <td style="text-align:right; padding:1px 4px; border:none;">-</td>
                         </tr>
                     </table>
                 </td>
             </tr>
         </table>
-        <table class="rampung-table" style="margin-top: 30px;">
+
+        <!-- RAMPUNG TTD: PPK only (right side) -->
+        <table class="rampung-table" style="margin-top:25px;">
             <tr>
-                <td style="width: 50%;"></td>
-                <td style="width: 50%; text-align: center;">
+                <td style="width:50%;"></td>
+                <td style="width:50%; text-align:center;">
                     Pejabat Pembuat Komitmen<br>
                     Pelaksanaan Prasarana Strategis<br>
-                    <div style="height: 60px;"></div>
-                    <span style="text-decoration: underline;" class="font-weight-bold">NURHIDAYAT NUGROHO, S.Ars.</span><br>
+                    <div style="height:65px;"></div>
+                    <span style="text-decoration:underline;" class="font-bold">NURHIDAYAT NUGROHO, S.Ars.</span><br>
                     NIP. 19901221 201802 1 001
                 </td>
             </tr>
@@ -601,115 +743,117 @@
 
         <div class="page-break"></div>
 
-        <!-- ======================= KWITANSI PAGE ======================= -->
-        
+        <!-- ========================= KWITANSI PAGE ========================= -->
+
         <?php if ($kopSuratImgUrl): ?>
             <img src="<?= $kopSuratImgUrl; ?>" class="kop-surat-img" alt="Kop Surat">
         <?php endif; ?>
 
-        <div style="border-top: 1px solid #000; border-bottom: 2px solid #000; height: 1px;"></div>
-<div style="border-left: 1.5px solid #000; border-right: 1.5px solid #000; border-bottom: 1.5px solid #000; padding: 15px; margin-top: 0; min-height: 800px; position: relative;">
+        <!-- Double border separator below kop -->
+        <div style="border-top:2px solid #000; margin:0;"></div>
+        <div style="border-top:1px solid #000; margin:3px 0 0 0;"></div>
 
-        <table class="kwitansi-header-table">
-            <tr>
-                <td style="width: 35%;">Tahun Anggaran</td>
-                <td style="width: 65%;">2026</td>
-            </tr>
-            <tr>
-                <td>Nomor Bukti</td>
-                <td><?= esc($displayKodeNomor); ?></td>
-            </tr>
-            <tr>
-                <td>Mata Anggaran</td>
-                <td><?= esc($mata_anggaran ?? ''); ?></td>
-            </tr>
-        </table>
+        <!-- Box wrapping kuitansi body -->
+        <div class="kwitansi-box">
 
-        <div class="kwitansi-title" style="margin-top: 40px; margin-bottom: 25px;">K U I T A N S I</div>
+            <!-- Info table: top right -->
+            <table class="kwitansi-info-table">
+                <tr>
+                    <td style="width:40%;">Tahun Anggaran</td>
+                    <td style="width:60%;"><?= date('Y'); ?></td>
+                </tr>
+                <tr>
+                    <td>Nomor Bukti</td>
+                    <td><?= esc($displayKodeNomor); ?></td>
+                </tr>
+                <tr>
+                    <td>Mata Anggaran</td>
+                    <td><?= esc($mata_anggaran ?? ''); ?></td>
+                </tr>
+            </table>
 
-        <table class="kwitansi-body-table">
-            <tr>
-                <td style="width: 25%; padding-bottom: 8px;">Sudah di terima dari</td>
-                <td style="width: 3%; padding-bottom: 8px;">:</td>
-                <td style="width: 72%; padding-bottom: 8px;">PEJABAT PEMBUAT KOMITMEN PELAKSANAAN PRASARANA STRATEGIS</td>
-            </tr>
-            <tr>
-                <td style="padding-bottom: 8px;">Jumlah Uang</td>
-                <td style="padding-bottom: 8px;">:</td>
-                <td class="font-weight-bold" style="padding-bottom: 8px;">
-                    <span style="display: inline-block; width: 30px;">Rp.</span> 
-                    <?= number_format($calcTotal, 0, ',', '.'); ?>
-                </td>
-            </tr>
-            <tr>
-                <td style="padding-bottom: 8px;">Terbilang</td>
-                <td style="padding-bottom: 8px;">:</td>
-                <td style="padding-bottom: 8px;"><span style="font-style: italic; font-weight: bold;"><?= $terbilangText; ?></span></td>
-            </tr>
-            <tr>
-                <td>Untuk Pembayaran</td>
-                <td>:</td>
-                <td style="text-align: justify; line-height: 1.5;">
-                    Perjalanan Dinas a.n. <?= esc($utama['nama']); ?> <?= esc($utama['jabatan']); ?> dalam rangka <?= $tujuanMaksud; ?> Lokasi <?= $kotaTujuan; ?>, sesuai dengan Peraturan Menteri Keuangan RI Nomor 119 Tahun 2023 Tanggal 15 November 2023, sebagaimana daftar perincian terlampir.
-                </td>
-            </tr>
-            <tr>
-                <td colspan="3"><br>Berdasarkan SPD</td>
-            </tr>
-            <tr>
-                <td>Nomor</td>
-                <td>:</td>
-                <td><?= $nomorSPD; ?></td>
-            </tr>
-            <tr>
-                <td>Tanggal</td>
-                <td>:</td>
-                <td><?= strtoupper($tanggalTtd); ?></td>
-            </tr>
-            <tr>
-                <td>Untuk perjalanan dinas dari</td>
-                <td>:</td>
-                <td>Pekanbaru - <?= $kotaTujuan; ?></td>
-            </tr>
-            <tr>
-                <td>Berangkat dari tanggal</td>
-                <td>:</td>
-                <td><?= $tglBerangkat; ?> s/d <?= $tglKembali; ?></td>
-            </tr>
-        </table>
+            <!-- Title -->
+            <div class="kwitansi-title">K U I T A N S I</div>
 
-        <br>
-        <table class="kwitansi-ttd-table">
-            <tr>
-                <td>
-                    An. Kuasa Pengguna Anggaran<br>
-                    Pejabat Pembuat Komitmen<br>
-                    Pelaksanaan Prasarana Strategis
-                    
-                    <div style="height: 60px;"></div>
-                    
-                    <span style="text-decoration: underline;" class="font-weight-bold">NURHIDAYAT NUGROHO, S.Ars.</span>
-                    <?php if (should_show_nip(['nip' => '19901221 201802 1 001'])): ?>
-                        <br>NIP. 19901221 201802 1 001
-                    <?php endif; ?>
-                </td>
-                <td>
-                    Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
-                    Kepala Satuan Kerja<br>
-                    Pelaksanaan Prasarana Strategis Riau
-                    
-                    <div style="height: 60px;"></div>
-                    
-                    <span style="text-decoration: underline;" class="font-weight-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
-                    <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
-                        <br>NIP. <?= esc($utama['nip']); ?>
-                    <?php endif; ?>
-                </td>
-            </tr>
-        </table>
-        
-        </div> <!-- End of kwitansi-wrapper -->
-        
+            <!-- Body rows -->
+            <table class="kwitansi-body-table">
+                <tr>
+                    <td class="label-col" style="width:25%; padding-bottom:10px;">Sudah di terima dari</td>
+                    <td style="width:3%; padding-bottom:10px;">:</td>
+                    <td style="width:72%; padding-bottom:10px; font-weight:bold;">PEJABAT PEMBUAT KOMITMEN PELAKSANAAN PRASARANA STRATEGIS</td>
+                </tr>
+                <tr>
+                    <td class="label-col" style="padding-bottom:10px;">Jumlah Uang</td>
+                    <td style="padding-bottom:10px;">:</td>
+                    <td style="padding-bottom:10px;" class="font-bold">
+                        Rp.&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label-col" style="padding-bottom:12px;">Terbilang</td>
+                    <td style="padding-bottom:12px;">:</td>
+                    <td style="padding-bottom:12px;"><span style="font-style:italic; font-weight:bold;"><?= $terbilangText; ?></span></td>
+                </tr>
+                <tr>
+                    <td class="label-col" style="padding-bottom:12px; vertical-align:top;">Untuk Pembayaran</td>
+                    <td style="padding-bottom:12px; vertical-align:top;">:</td>
+                    <td style="padding-bottom:12px; text-align:justify; line-height:1.6;">
+                        Perjalanan Dinas a.n. <?= esc($utama['nama']); ?> <?= esc($utama['jabatan']); ?> dalam rangka <?= $tujuanMaksud; ?> Lokasi <?= $kotaTujuan; ?>, sesuai dengan Peraturan Menteri Keuangan RI Nomor 119 Tahun 2023 Tanggal 15 November 2023, sebagaimana daftar perincian terlampir.
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="padding-top:6px; padding-bottom:2px; font-weight:normal;">Berdasarkan SPD</td>
+                </tr>
+                <tr>
+                    <td class="label-col" style="padding-left:8px;">Nomor</td>
+                    <td>:</td>
+                    <td><?= $nomorSPD; ?></td>
+                </tr>
+                <tr>
+                    <td class="label-col" style="padding-left:8px; padding-bottom:3px;">Tanggal</td>
+                    <td style="padding-bottom:3px;">:</td>
+                    <td style="padding-bottom:3px;"><?= strtoupper($tanggalTtd); ?></td>
+                </tr>
+                <tr>
+                    <td class="label-col" style="padding-left:8px; padding-bottom:3px;">Untuk perjalanan dinas dari</td>
+                    <td style="padding-bottom:3px;">:</td>
+                    <td style="padding-bottom:3px;">Pekanbaru - <?= $kotaTujuan; ?></td>
+                </tr>
+                <tr>
+                    <td class="label-col" style="padding-left:8px;">Berangkat dari tanggal</td>
+                    <td>:</td>
+                    <td><?= $tglBerangkat; ?> s/d <?= $tglKembali; ?></td>
+                </tr>
+            </table>
+
+            <!-- TTD -->
+            <table class="kwitansi-ttd-table">
+                <tr>
+                    <!-- LEFT: PPK -->
+                    <td style="text-align:center;">
+                        An. Kuasa Pengguna Anggaran<br>
+                        Pejabat Pembuat Komitmen<br>
+                        Pelaksanaan Prasarana Strategis
+                        <div style="height:65px;"></div>
+                        <span style="text-decoration:underline;" class="font-bold">NURHIDAYAT NUGROHO, S.Ars.</span><br>
+                        NIP. 19901221 201802 1 001
+                    </td>
+                    <!-- RIGHT: Kepala Satker -->
+                    <td style="text-align:center;">
+                        Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
+                        Kepala Satuan Kerja<br>
+                        Pelaksanaan Prasarana Strategis Riau
+                        <div style="height:65px;"></div>
+                        <span style="text-decoration:underline;" class="font-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
+                        <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
+                            <br>NIP. <?= esc($utama['nip']); ?>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            </table>
+
+        </div><!-- /.kwitansi-box -->
+
         <?php if ($index < $totalPelaksana - 1): ?>
             <div class="page-break"></div>
         <?php endif; ?>
