@@ -5,8 +5,8 @@
     <title>Rincian &amp; Kwitansi Perjalanan Dinas</title>
     <style>
         body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 12px;
+            font-family: Tahoma, sans-serif;
+            font-size: 11.5px;
             margin: 0;
             padding: 18px 20px;
             line-height: 1.4;
@@ -33,9 +33,10 @@
         .rinci-header {
             margin-bottom: 10px;
             text-align: center;
+            font-size: 13px;
         }
         .rinci-header strong {
-            font-size: 14px;
+            font-size: 17px;
         }
 
         .rinci-table {
