@@ -616,8 +616,9 @@
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Keterangan</label>
                                 <input type="text" class="form-control form-control-sm" name="uang_harian_ket[]" placeholder="Keterangan..." value="${$('<div/>').text(uKet).html()}">
                             </div>
-                            <div class="col-md-1 mb-0 text-center pt-3">
-                                <button type="button" class="btn btn-xs btn-outline-danger btn-remove-uang-harian" title="Hapus Baris"><i class="fas fa-trash"></i></button>
+                            <div class="col-md-1 mb-1 mb-md-0 text-center">
+                                <label class="d-block mb-0" style="font-size:0.75rem;">&nbsp;</label>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-uang-harian" title="Hapus Baris"><i class="fas fa-trash"></i></button>
                             </div>
                         </div>
                     </div>
@@ -669,7 +670,7 @@
                             </div>
                             <div class="col-md-2 mb-1 mb-md-0" style="padding-right: 5px; padding-left: 5px;">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Jenis Transp.</label>
-                                <select class="form-control form-control-sm" name="transport_jenis[]">${selectOptionsHtml}</select>
+                                <select class="custom-select custom-select-sm" name="transport_jenis[]">${selectOptionsHtml}</select>
                             </div>
                             <div class="col-md-2 mb-1 mb-md-0" style="padding-right: 5px; padding-left: 5px;">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Rute</label>
@@ -680,12 +681,15 @@
                                 <input type="text" class="form-control form-control-sm input-currency" name="transport_nominal[]" placeholder="Rp" value="${$('<div/>').text(formatRibuan(tNom)).html()}">
                             </div>
                             <div class="col-md-1 mb-1 mb-md-0 text-center" style="padding-right: 5px; padding-left: 5px;">
-                                <label class="font-weight-bold mb-0 text-muted d-block" style="font-size:0.70rem;" for="${rowId}" title="Ceklis jika tarif ini untuk 1 kali bayar (Pulang-Pergi / Lumpsum) dan BUKAN tarif per hari.">Lumpsum/PP</label>
+                                <label class="font-weight-bold mb-0 text-muted d-block" style="font-size:0.70rem;" for="${rowId}" title="Ceklis jika tarif ini untuk 1 kali bayar (Pulang-Pergi / Lumpsum) dan BUKAN tarif per hari.">Lumpsum</label>
                                 <input type="hidden" name="transport_is_lumpsum[]" value="${tIsLumpsumVal}" class="hidden-lumpsum">
-                                <input type="checkbox" id="${rowId}" ${tIsLumpsum} style="transform: scale(1.2); margin-top: 5px; cursor:pointer;" title="Ceklis jika tarif ini untuk 1 kali bayar (Pulang-Pergi / Lumpsum) dan BUKAN tarif per hari." onchange="$(this).siblings('.hidden-lumpsum').val(this.checked ? '1' : '0')">
+                                <div class="d-flex align-items-center justify-content-center" style="height: calc(1.5em + 0.5rem + 2px);">
+                                    <input type="checkbox" id="${rowId}" ${tIsLumpsum} style="transform: scale(1.3); cursor:pointer;" title="Ceklis jika tarif ini untuk 1 kali bayar (Pulang-Pergi / Lumpsum) dan BUKAN tarif per hari." onchange="$(this).siblings('.hidden-lumpsum').val(this.checked ? '1' : '0')">
+                                </div>
                             </div>
-                            <div class="col-md-1 mb-0 text-center pt-3">
-                                <button type="button" class="btn btn-xs btn-outline-danger btn-remove-transport" title="Hapus Baris"><i class="fas fa-trash"></i></button>
+                            <div class="col-md-1 mb-1 mb-md-0 text-center">
+                                <label class="d-block mb-0" style="font-size:0.75rem;">&nbsp;</label>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-transport" title="Hapus Baris"><i class="fas fa-trash"></i></button>
                             </div>
                         </div>
                     </div>
@@ -720,8 +724,9 @@
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Keterangan</label>
                                 <input type="text" class="form-control form-control-sm" name="penginapan_ket[]" placeholder="Keterangan..." value="${$('<div/>').text(pKet).html()}">
                             </div>
-                            <div class="col-md-1 mb-0 text-center pt-3">
-                                <button type="button" class="btn btn-xs btn-outline-danger btn-remove-penginapan" title="Hapus Baris"><i class="fas fa-trash"></i></button>
+                            <div class="col-md-1 mb-1 mb-md-0 text-center">
+                                <label class="d-block mb-0" style="font-size:0.75rem;">&nbsp;</label>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-penginapan" title="Hapus Baris"><i class="fas fa-trash"></i></button>
                             </div>
                         </div>
                     </div>
