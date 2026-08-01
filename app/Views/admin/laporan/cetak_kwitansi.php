@@ -210,6 +210,8 @@
                 $tEnd   = $tItem['tgl_selesai'] ?? '';
                 $tNom   = (int) ($tItem['nominal'] ?? 0);
                 $tKet   = trim((string) ($tItem['keterangan'] ?? ''));
+                $tJenis = trim((string) ($tItem['jenis'] ?? ''));
+                $tIsLumpsum = !empty($tItem['is_lumpsum']);
 
                 $tDays = 0;
                 if (!empty($tStart) && !empty($tEnd)) {
@@ -221,16 +223,30 @@
                 }
                 
                 $rate = $tNom;
-                // If user didn't enter days but entered rate, assume sub = rate
-                $sub = ($tDays > 0) ? ($tDays * $rate) : $rate;
+                
+                if ($tIsLumpsum) {
+                    $sub = $rate;
+                } else {
+                    $sub = ($tDays > 0) ? ($tDays * $rate) : $rate;
+                }
+                
                 $calcTransport += $sub;
 
-                if ($tDays > 0 || $rate > 0) {
-                    $desc = '';
+                if ($tDays > 0 || $rate > 0 || $tIsLumpsum) {
+                    $descParts = [];
+                    if ($tJenis !== '') {
+                        $descParts[] = $tJenis;
+                    }
                     if ($tKet !== '') {
-                        $desc = esc($tKet);
+                        $descParts[] = $tKet;
+                    }
+                    
+                    if (!empty($descParts)) {
+                        $desc = esc(implode(' - ', $descParts));
                     } else {
-                        if ($tDays > 0) {
+                        if ($tIsLumpsum) {
+                            $desc = 'Transport (PP)';
+                        } elseif ($tDays > 0) {
                             $desc = $tDays . ' hari x Rp ' . number_format($rate, 0, ',', '.');
                         } else {
                             $desc = 'Transport';
