@@ -340,6 +340,13 @@
 
 <?= $this->endSection(); ?>
 
+    <!-- Datalist for Transportasi -->
+    <datalist id="transportasi-master-list">
+        <?php foreach ($transportasi_list ?? [] as $t): ?>
+            <option value="<?= esc($t['nama_transportasi']) ?>"></option>
+        <?php endforeach; ?>
+    </datalist>
+
 <?= $this->section('pageScripts'); ?>
 <script>
     (function () {
@@ -593,11 +600,11 @@
                         <div class="form-row align-items-center">
                             <div class="col-md-3 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Mulai Tgl</label>
-                                <input type="date" class="form-control form-control-sm" name="uang_harian_start_date[]" value="${$('<div/>').text(uStart).html()}" onfocus="this.showPicker()">
+                                <input type="date" class="form-control form-control-sm" name="uang_harian_start_date[]" value="${$('<div/>').text(uStart).html()}" min="${globalTglMulai}" max="${globalTglSelesai}" onfocus="this.showPicker()">
                             </div>
                             <div class="col-md-3 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Selesai Tgl</label>
-                                <input type="date" class="form-control form-control-sm" name="uang_harian_end_date[]" value="${$('<div/>').text(uEnd).html()}" onfocus="this.showPicker()">
+                                <input type="date" class="form-control form-control-sm" name="uang_harian_end_date[]" value="${$('<div/>').text(uEnd).html()}" min="${globalTglMulai}" max="${globalTglSelesai}" onfocus="this.showPicker()">
                             </div>
                             <div class="col-md-2 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Tarif (Rp)</label>
@@ -629,11 +636,11 @@
                         <div class="form-row align-items-center">
                             <div class="col-md-3 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Mulai Tgl</label>
-                                <input type="date" class="form-control form-control-sm" name="transport_start_date[]" value="${$('<div/>').text(tStart).html()}" onfocus="this.showPicker()">
+                                <input type="date" class="form-control form-control-sm" name="transport_start_date[]" value="${$('<div/>').text(tStart).html()}" min="${globalTglMulai}" max="${globalTglSelesai}" onfocus="this.showPicker()">
                             </div>
                             <div class="col-md-3 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Selesai Tgl</label>
-                                <input type="date" class="form-control form-control-sm" name="transport_end_date[]" value="${$('<div/>').text(tEnd).html()}" onfocus="this.showPicker()">
+                                <input type="date" class="form-control form-control-sm" name="transport_end_date[]" value="${$('<div/>').text(tEnd).html()}" min="${globalTglMulai}" max="${globalTglSelesai}" onfocus="this.showPicker()">
                             </div>
                             <div class="col-md-2 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Tarif (Rp)</label>
@@ -641,7 +648,7 @@
                             </div>
                             <div class="col-md-3 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Keterangan</label>
-                                <input type="text" class="form-control form-control-sm" name="transport_ket[]" placeholder="Keterangan..." value="${$('<div/>').text(tKet).html()}">
+                                <input type="text" list="transportasi-master-list" class="form-control form-control-sm" name="transport_ket[]" placeholder="Moda transportasi..." value="${$('<div/>').text(tKet).html()}">
                             </div>
                             <div class="col-md-1 mb-0 text-center pt-3">
                                 <button type="button" class="btn btn-xs btn-outline-danger btn-remove-transport" title="Hapus Baris"><i class="fas fa-trash"></i></button>
@@ -665,11 +672,11 @@
                         <div class="form-row align-items-center">
                             <div class="col-md-3 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Mulai Tgl</label>
-                                <input type="date" class="form-control form-control-sm" name="penginapan_start_date[]" value="${$('<div/>').text(pStart).html()}" onfocus="this.showPicker()">
+                                <input type="date" class="form-control form-control-sm" name="penginapan_start_date[]" value="${$('<div/>').text(pStart).html()}" min="${globalTglMulai}" max="${globalTglSelesai}" onfocus="this.showPicker()">
                             </div>
                             <div class="col-md-3 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Selesai Tgl</label>
-                                <input type="date" class="form-control form-control-sm" name="penginapan_end_date[]" value="${$('<div/>').text(pEnd).html()}" onfocus="this.showPicker()">
+                                <input type="date" class="form-control form-control-sm" name="penginapan_end_date[]" value="${$('<div/>').text(pEnd).html()}" min="${globalTglMulai}" max="${globalTglSelesai}" onfocus="this.showPicker()">
                             </div>
                             <div class="col-md-2 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Tarif (Rp)</label>
@@ -744,6 +751,8 @@
                 const pelaksana = $btn.attr('data-pelaksana') || '-';
                 const tglMulai = $btn.attr('data-tgl-mulai') || '';
                 const tglSelesai = $btn.attr('data-tgl-selesai') || '';
+                globalTglMulai = tglMulai;
+                globalTglSelesai = tglSelesai;
                 const defHarian = $btn.attr('data-def-harian') || '';
                 const defPenginapan = $btn.attr('data-def-penginapan') || '';
                 
