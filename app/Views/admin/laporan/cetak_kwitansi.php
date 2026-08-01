@@ -4,9 +4,22 @@
     <meta charset="UTF-8">
     <title>Rincian &amp; Kwitansi Perjalanan Dinas</title>
     <style>
+        @font-face {
+            font-family: 'Tahoma';
+            font-style: normal;
+            font-weight: normal;
+            src: url('<?= base_url('assets/fonts/tahoma/Tahoma.ttf') ?>') format('truetype');
+        }
+        @font-face {
+            font-family: 'Tahoma';
+            font-style: normal;
+            font-weight: bold;
+            src: url('<?= base_url('assets/fonts/tahoma/Tahoma-Bold.ttf') ?>') format('truetype');
+        }
+
         body {
-            font-family: Tahoma, sans-serif;
-            font-size: 11.5px;
+            font-family: 'Tahoma', sans-serif;
+            font-size: 11.7px; /* -> 8.76pt */
             margin: 0;
             padding: 18px 20px;
             line-height: 1.4;
@@ -33,10 +46,10 @@
         .rinci-header {
             margin-bottom: 10px;
             text-align: center;
-            font-size: 13px;
+            font-size: 12.8px; /* -> 9.60pt */
         }
         .rinci-header strong {
-            font-size: 17px;
+            font-size: 17.1px; /* -> 12.84pt */
         }
 
         .rinci-table {
