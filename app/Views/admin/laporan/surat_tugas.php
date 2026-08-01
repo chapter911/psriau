@@ -351,6 +351,7 @@
 <?= $this->section('pageScripts'); ?>
 <script>
     (function () {
+    const transportOptionsList = <?= json_encode(array_column($transportasi_list ?? [], 'nama_transportasi')) ?>;
         if (typeof $ === 'undefined' || ! $.fn.DataTable) {
             return;
         }
