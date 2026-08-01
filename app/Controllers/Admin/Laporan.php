@@ -742,7 +742,10 @@ class Laporan extends BaseController
         $model = new LaporanPerjalananDinasModel();
         $row = $model->find($id);
         if (! is_array($row)) {
-            return redirect()->back()->with('error', 'Data laporan tidak ditemukan.');
+            if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Data laporan tidak ditemukan.']);
+        }
+        return redirect()->back()->with('error', 'Data laporan tidak ditemukan.');
         }
 
         $role = strtolower((string) session()->get('role'));
@@ -772,7 +775,10 @@ class Laporan extends BaseController
         }
 
         if (! $canVerifyRow) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi laporan perjalanan dinas.');
+            if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk memverifikasi laporan perjalanan dinas.']);
+        }
+        return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi laporan perjalanan dinas.');
         }
 
         $nomorSurat = trim((string) $this->request->getPost('nomor_surat_tugas'));
@@ -799,12 +805,18 @@ class Laporan extends BaseController
             $mataAnggaranId = $db->insertID();
         }
 
-        if ($nomorSurat === '') {
-            return redirect()->back()->with('error', 'Nomor Surat Tugas wajib diisi.');
+        if ($nomorSurat === '' && ($this->request->getPost('tab_action') === 'all' || $this->request->getPost('tab_action') === 'tab1')) {
+            if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Nomor Surat Tugas wajib diisi.']);
+        }
+        return redirect()->back()->with('error', 'Nomor Surat Tugas wajib diisi.');
         }
 
-        if ($tglTtd === '') {
-            return redirect()->back()->with('error', 'Tanggal tanda tangan wajib diisi.');
+        if ($tglTtd === '' && ($this->request->getPost('tab_action') === 'all' || $this->request->getPost('tab_action') === 'tab1')) {
+            if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Tanggal tanda tangan wajib diisi.']);
+        }
+        return redirect()->back()->with('error', 'Tanggal tanda tangan wajib diisi.');
         }
 
         $uangHarianStarts   = $this->request->getPost('uang_harian_start_date') ?: [];
@@ -887,13 +899,21 @@ class Laporan extends BaseController
 
         $kodeNomorInput = trim((string) $this->request->getPost('kode_nomor'));
 
-        $updateData = [
-            'nomor_surat_tugas' => $nomorSurat,
-            'dasar_spt_ids_json' => json_encode($dasarInputs, JSON_UNESCAPED_UNICODE),
-            'tanggal_tanda_tangan' => $tglTtd,
-            'is_verified' => 1,
-            'rincian_biaya_json' => json_encode($rincianBiaya, JSON_UNESCAPED_UNICODE),
-        ];
+        $updateData = ['is_verified' => 1];
+        $targetTab = $this->request->getPost('tab_action') ?: 'all';
+        
+        if ($targetTab === 'all' || $targetTab === 'tab1') {
+            $updateData['nomor_surat_tugas'] = $nomorSurat;
+            $updateData['dasar_spt_ids_json'] = json_encode($dasarInputs, JSON_UNESCAPED_UNICODE);
+            $updateData['tanggal_tanda_tangan'] = $tglTtd;
+            
+            
+        }
+        
+        if ($targetTab === 'all' || $targetTab === 'tab2') {
+            $updateData['rincian_biaya_json'] = json_encode($rincianBiaya, JSON_UNESCAPED_UNICODE);
+            
+        }
         if ($kopSuratId > 0) {
             $updateData['kop_surat_id'] = $kopSuratId;
         }
@@ -910,6 +930,9 @@ class Laporan extends BaseController
 
         $model->update($id, $updateData);
 
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'success', 'message' => 'Surat Tugas (SPT) berhasil diverifikasi.']);
+        }
         return redirect()->back()->with('success', 'Surat Tugas (SPT) berhasil diverifikasi.');
     }
 
@@ -1505,12 +1528,18 @@ class Laporan extends BaseController
         $model = new LaporanPerjalananDinasModel();
         $row = $model->find($id);
         if (! is_array($row)) {
-            return redirect()->back()->with('error', 'Data laporan tidak ditemukan.');
+            if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Data laporan tidak ditemukan.']);
+        }
+        return redirect()->back()->with('error', 'Data laporan tidak ditemukan.');
         }
 
         $file = $this->request->getFile('verified_spt');
         if (! $file || $file->getError() === UPLOAD_ERR_NO_FILE) {
-            return redirect()->back()->with('error', 'Silakan pilih file terlebih dahulu.');
+            if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Silakan pilih file terlebih dahulu.']);
+        }
+        return redirect()->back()->with('error', 'Silakan pilih file terlebih dahulu.');
         }
 
         if (! $file->isValid()) {
@@ -1519,11 +1548,17 @@ class Laporan extends BaseController
 
         $ext = strtolower($file->getClientExtension());
         if ($ext !== 'pdf') {
-            return redirect()->back()->with('error', 'Ekstensi file tidak diizinkan. File SPT yang sudah ditandatangani WAJIB dalam format PDF.');
+            if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Ekstensi file tidak diizinkan. File SPT yang sudah ditandatangani WAJIB dalam format PDF.']);
+        }
+        return redirect()->back()->with('error', 'Ekstensi file tidak diizinkan. File SPT yang sudah ditandatangani WAJIB dalam format PDF.');
         }
 
         if ($file->getSize() > 10 * 1024 * 1024) {
-            return redirect()->back()->with('error', 'Ukuran file maksimal adalah 10MB.');
+            if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Ukuran file maksimal adalah 10MB.']);
+        }
+        return redirect()->back()->with('error', 'Ukuran file maksimal adalah 10MB.');
         }
 
         $uploadDir = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'verified_perjadin';
@@ -1545,9 +1580,15 @@ class Laporan extends BaseController
                 'verified_spt_path' => 'uploads/verified_perjadin/' . $newName
             ]);
 
-            return redirect()->back()->with('success', 'File SPT yang sudah ditandatangani (PDF) berhasil diupload.');
+            if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'success', 'message' => 'File SPT yang sudah ditandatangani (PDF) berhasil diupload.']);
+        }
+        return redirect()->back()->with('success', 'File SPT yang sudah ditandatangani (PDF) berhasil diupload.');
         }
 
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Gagal memindahkan file ke direktori upload.']);
+        }
         return redirect()->back()->with('error', 'Gagal memindahkan file ke direktori upload.');
     }
 
@@ -3169,7 +3210,10 @@ class Laporan extends BaseController
     public function setLastKodeNomor()
     {
         if (! $this->canVerifyLaporan()) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mengatur nomor terakhir.');
+            if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk mengatur nomor terakhir.']);
+        }
+        return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mengatur nomor terakhir.');
         }
 
         $lastNumberRaw = trim((string) $this->request->getPost('last_number'));
