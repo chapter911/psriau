@@ -2,10 +2,23 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Rincian & Kwitansi Perjalanan Dinas</title>
+    <title>Rincian &amp; Kwitansi Perjalanan Dinas</title>
     <style>
+        @font-face {
+            font-family: 'Tahoma';
+            font-style: normal;
+            font-weight: normal;
+            src: url('<?= base_url('assets/fonts/tahoma/Tahoma.ttf') ?>') format('truetype');
+        }
+        @font-face {
+            font-family: 'Tahoma';
+            font-style: normal;
+            font-weight: bold;
+            src: url('<?= base_url('assets/fonts/tahoma/Tahoma-Bold.ttf') ?>') format('truetype');
+        }
+
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Tahoma', sans-serif;
             font-size: 11.7px; /* -> 8.76pt */
             margin: 0;
             padding: 18px 20px;
