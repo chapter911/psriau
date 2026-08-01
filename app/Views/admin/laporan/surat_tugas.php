@@ -204,6 +204,10 @@
                                 <label for="verify_tanggal_ttd" class="font-weight-bold mb-1">Tanggal Tanda Tangan <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="verify_tanggal_ttd" name="tanggal_tanda_tangan" required onfocus="this.showPicker()">
                             </div>
+                            <div class="mt-4 pt-3 border-top text-right">
+                                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                                <button type="button" class="btn btn-success btn-sm font-weight-bold btn-save-tab" data-tab="tab1"><i class="fas fa-save mr-1"></i> Simpan SPT</button>
+                            </div>
                         </div>
 
                         <!-- TAB 2: RINCIAN BIAYA (TRANSPORT & PENGINAPAN) -->
