@@ -120,7 +120,7 @@
 <!-- Modal Verifikasi SPT -->
 <div class="modal fade" id="modal-verify-spt" role="dialog" aria-labelledby="modalVerifyTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl" role="document">
-        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+        <form id="form-verify-spt" method="post" action="" class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
             <div class="modal-header bg-light py-3" style="border-bottom: 1px solid #e9eef5;">
                 <h5 class="modal-title font-weight-bold text-dark" id="modalVerifyTitle">
                     <i class="fas fa-check-double text-success mr-2"></i>Verifikasi Laporan Perjadin & SPT
@@ -129,7 +129,6 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="form-verify-spt" method="post" action="">
                 <?= csrf_field(); ?>
                 <div class="modal-body py-3">
                     <!-- Info Banner -->
@@ -270,8 +269,7 @@
                     <button type="button" class="btn btn-success btn-sm font-weight-bold btn-save-tab" data-tab="tab1" id="btn-save-tab1"><i class="fas fa-save mr-1"></i> Simpan SPT</button>
                     <button type="button" class="btn btn-primary btn-sm font-weight-bold btn-save-tab" data-tab="tab2" id="btn-save-tab2" style="display:none;"><i class="fas fa-save mr-1"></i> Simpan Rincian Biaya</button>
                 </div>
-            </form>
-        </div>
+        </form>
     </div>
 </div>
 <?php endif; ?>
