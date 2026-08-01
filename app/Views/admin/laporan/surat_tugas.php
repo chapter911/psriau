@@ -119,7 +119,7 @@
 <?php if ($can_verify ?? false): ?>
 <!-- Modal Verifikasi SPT -->
 <div class="modal fade" id="modal-verify-spt" role="dialog" aria-labelledby="modalVerifyTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl" role="document">
         <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
             <div class="modal-header bg-light py-3" style="border-bottom: 1px solid #e9eef5;">
                 <h5 class="modal-title font-weight-bold text-dark" id="modalVerifyTitle">
@@ -204,10 +204,7 @@
                                 <label for="verify_tanggal_ttd" class="font-weight-bold mb-1">Tanggal Tanda Tangan <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="verify_tanggal_ttd" name="tanggal_tanda_tangan" required onfocus="this.showPicker()">
                             </div>
-                            <div class="mt-4 pt-3 border-top text-right">
-                                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
-                                <button type="button" class="btn btn-success btn-sm font-weight-bold btn-save-tab" data-tab="tab1"><i class="fas fa-save mr-1"></i> Simpan SPT</button>
-                            </div>
+
                         </div>
 
                         <!-- TAB 2: RINCIAN BIAYA (TRANSPORT & PENGINAPAN) -->
@@ -265,14 +262,14 @@
                                     <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle mr-1"></i> Tambahkan baris baru jika terdapat perbedaan tanggal/tarif hotel. Kosongkan jika menggunakan tarif master.</small>
                                 </div>
                             </div>
-                            <div class="mt-4 pt-3 border-top text-right">
-                                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
-                                <button type="button" class="btn btn-primary btn-sm font-weight-bold btn-save-tab" data-tab="tab2"><i class="fas fa-save mr-1"></i> Simpan Rincian Biaya</button>
-                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- modal footer removed since buttons are inside tabs -->
+                <div class="modal-footer bg-light py-2" style="border-top: 1px solid #e9eef5;">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success btn-sm font-weight-bold btn-save-tab" data-tab="tab1" id="btn-save-tab1"><i class="fas fa-save mr-1"></i> Simpan SPT</button>
+                    <button type="button" class="btn btn-primary btn-sm font-weight-bold btn-save-tab" data-tab="tab2" id="btn-save-tab2" style="display:none;"><i class="fas fa-save mr-1"></i> Simpan Rincian Biaya</button>
+                </div>
             </form>
         </div>
     </div>
@@ -927,6 +924,19 @@
         }
 
         
+
+        // Toggle save buttons based on active tab
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            const target = $(e.target).attr("href");
+            if (target === '#tab-verifikasi') {
+                $('#btn-save-tab1').show();
+                $('#btn-save-tab2').hide();
+            } else if (target === '#tab-biaya') {
+                $('#btn-save-tab1').hide();
+                $('#btn-save-tab2').show();
+            }
+        });
+
         // Handle AJAX submit per tab
         $('.btn-save-tab').on('click', function(e) {
             e.preventDefault();
