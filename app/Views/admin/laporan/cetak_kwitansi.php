@@ -6,10 +6,10 @@
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 11.5px;
+            font-size: 12px;
             margin: 0;
             padding: 18px 20px;
-            line-height: 1.35;
+            line-height: 1.4;
         }
         .text-center { text-align: center; }
         .text-left   { text-align: left; }
@@ -35,7 +35,7 @@
             text-align: center;
         }
         .rinci-header strong {
-            font-size: 13.5px;
+            font-size: 14px;
         }
 
         .rinci-table {
@@ -333,10 +333,21 @@
                 $gKey = $ti['ket'] !== '' ? $ti['ket'] : 'Transport';
             }
             if (!isset($transportGroups[$gKey])) {
-                $transportGroups[$gKey] = ['label' => $gKey, 'rows' => [], 'subtotal' => 0];
+                $transportGroups[$gKey] = ['label' => $gKey, 'rows' => [], 'exact_subtotal' => 0];
             }
-            $transportGroups[$gKey]['rows'][]   = $ti;
-            $transportGroups[$gKey]['subtotal'] += $ti['sub'];
+            $transportGroups[$gKey]['rows'][]         = $ti;
+            $transportGroups[$gKey]['exact_subtotal'] += $ti['sub'];
+        }
+        // Compute rounded_subtotal per group (floor to nearest 100)
+        // and recalculate calcTransport using rounded values
+        $calcTransport = 0;
+        foreach ($transportGroups as $gKey => $grp) {
+            $exact   = $grp['exact_subtotal'];
+            $rounded = (int)(floor($exact / 100) * 100);
+            $transportGroups[$gKey]['rounded_subtotal'] = $rounded;
+            // If exact equals rounded, only show one row; use exact as-is
+            $transportGroups[$gKey]['has_rounded'] = ($rounded !== $exact);
+            $calcTransport += $rounded;
         }
         $multiGroup = count($transportGroups) > 1;
 
@@ -479,14 +490,19 @@
                                 <?php endforeach; ?>
                             </table>
                         <?php else: ?>
-                            <!-- Multi-group: group headers (NOT bold), items, underline on last, then subtotal -->
+                            <!-- Multi-group: group headers (NOT bold), items, underline on last, then exact+rounded subtotals -->
                             <table class="nested-table">
                                 <?php foreach ($transportGroups as $gLabel => $grp): ?>
-                                <!-- Group header — plain text, not bold -->
+                                <!-- Group header — plain text, no space before colon -->
                                 <tr>
-                                    <td colspan="3" style="padding-top:2px !important;"><?= esc($gLabel); ?> :</td>
+                                    <td colspan="3" style="padding-top:2px !important;"><?= esc($gLabel); ?>:</td>
                                 </tr>
-                                <?php $grpRows = $grp['rows']; $grpTotal = $grp['subtotal']; ?>
+                                <?php
+                                    $grpRows    = $grp['rows'];
+                                    $exactTotal = $grp['exact_subtotal'];
+                                    $rndTotal   = $grp['rounded_subtotal'];
+                                    $hasRnd     = $grp['has_rounded'];
+                                ?>
                                 <?php foreach ($grpRows as $ri => $ti): ?>
                                 <?php
                                     $dest    = $ti['ket'] !== '' ? esc($ti['ket']) : '';
@@ -499,11 +515,21 @@
                                     <td class="<?= $ulCls; ?>" style="width:44%; text-align:right;"><?= number_format($ti['sub'], 0, ',', '.'); ?></td>
                                 </tr>
                                 <?php endforeach; ?>
-                                <!-- Subtotal row: right-aligned, bold -->
+                                <!-- Exact subtotal row (plain, right-aligned) -->
                                 <tr>
                                     <td colspan="2"></td>
-                                    <td style="width:44%; text-align:right; font-weight:bold; padding-top:1px !important; padding-bottom:4px !important;"><?= number_format($grpTotal, 0, ',', '.'); ?></td>
+                                    <td style="width:44%; text-align:right; padding-top:1px !important;"><?= number_format($exactTotal, 0, ',', '.'); ?></td>
                                 </tr>
+                                <?php if ($hasRnd): ?>
+                                <!-- Rounded official subtotal (bold, center of RINCIAN BIAYA col) -->
+                                <tr>
+                                    <td style="width:44%;"></td>
+                                    <td colspan="2" style="text-align:right; font-weight:bold; padding-bottom:4px !important;"><?= number_format($rndTotal, 0, ',', '.'); ?></td>
+                                </tr>
+                                <?php else: ?>
+                                <!-- No rounding needed, just spacing -->
+                                <tr><td colspan="3" style="padding-bottom:3px !important;"></td></tr>
+                                <?php endif; ?>
                                 <?php endforeach; ?>
                             </table>
                         <?php endif; ?>
