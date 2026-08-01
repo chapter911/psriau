@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 12px;
+            font-size: 11px;
             margin: 0;
             padding: 0;
             line-height: 1.3;
@@ -36,8 +36,8 @@
             margin-bottom: 15px;
         }
         .rinci-table th, .rinci-table td {
-            border: 1px solid #000;
-            padding: 5px;
+            border: 1.5px solid #000;
+            padding: 3px 4px;
             vertical-align: top;
         }
         .rinci-table th {
@@ -77,14 +77,14 @@
 
         /* KWITANSI styles */
         .kwitansi-header-table {
-            width: 50%;
+            width: 45%;
             margin-bottom: 15px;
             float: right;
             border-collapse: collapse;
         }
         .kwitansi-header-table td {
-            border: 1px solid #000;
-            padding: 4px;
+            border: 1.5px solid #000;
+            padding: 2px 4px;
         }
         .kwitansi-title {
             text-align: center;
@@ -169,9 +169,9 @@
     
     $terbilangHelper = function($angka) {
         if (function_exists('terbilang_angka')) {
-            return ucwords(terbilang_angka($angka)) . ' Rupiah';
+            return ucwords(terbilang_angka($angka)) . ' Rupiah,-';
         }
-        return '- Rupiah';
+        return '- Rupiah,-';
     };
     ?>
 
@@ -410,8 +410,10 @@
                             </table>
                         <?php endif; ?>
                     </td>
-                    <td class="text-right" style="vertical-align: middle;">
-                        Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTransport, 0, ',', '.'); ?>
+                    <td style="vertical-align: top;">
+                        <div style="float: left;">Rp.</div>
+                        <div style="float: right;"><?= number_format($calcTransport, 0, ',', '.'); ?></div>
+                        <div style="clear: both;"></div>
                     </td>
                     <td></td>
                 </tr>
@@ -444,8 +446,10 @@
                             </table>
                         <?php endif; ?>
                     </td>
-                    <td class="text-right" style="vertical-align: middle;">
-                        Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcHarian, 0, ',', '.'); ?>
+                    <td style="vertical-align: top;">
+                        <div style="float: left;">Rp.</div>
+                        <div style="float: right;"><?= number_format($calcHarian, 0, ',', '.'); ?></div>
+                        <div style="clear: both;"></div>
                     </td>
                     <td></td>
                 </tr>
@@ -478,8 +482,10 @@
                             </table>
                         <?php endif; ?>
                     </td>
-                    <td class="text-right" style="vertical-align: middle;">
-                        Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcPenginapan, 0, ',', '.'); ?>
+                    <td style="vertical-align: top;">
+                        <div style="float: left;">Rp.</div>
+                        <div style="float: right;"><?= number_format($calcPenginapan, 0, ',', '.'); ?></div>
+                        <div style="clear: both;"></div>
                     </td>
                     <td></td>
                 </tr>
@@ -487,15 +493,18 @@
                 <!-- JUMLAH & TERBILANG -->
                 <tr>
                     <td colspan="2"><strong>JUMLAH :</strong></td>
-                    <td class="font-weight-bold" style="border-bottom: 2px solid #000;">
-                        Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?>
+                    <td class="font-weight-bold" style="border-bottom: 1.5px solid #000;">
+                        <div style="float: left;">Rp.</div>
+                        <div style="float: right;"><?= number_format($calcTotal, 0, ',', '.'); ?></div>
+                        <div style="clear: both;"></div>
                     </td>
                     <td></td>
                 </tr>
                 <tr>
-                    <td colspan="4">
-                        <strong>TERBILANG :</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= $terbilangText; ?>
+                    <td colspan="3">
+                        <strong>TERBILANG :</strong> &nbsp;&nbsp;&nbsp; <?= $terbilangText; ?>
                     </td>
+                    <td style="background-color: #d3d3d3; -webkit-print-color-adjust: exact;"></td>
                 </tr>
             </tbody>
         </table>
@@ -505,7 +514,10 @@
             <tr>
                 <td style="width: 50%;">
                     Telah dibayar uang sebesar<br><br>
-                    Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?><br><br><br>
+                    <table style="width: 100%; border: none; margin: 0; padding: 0;">
+                        <tr><td style="width: 10%; padding: 0;">Rp.</td><td style="width: 90%; text-align: left; padding: 0;"><?= number_format($calcTotal, 0, ',', '.'); ?></td></tr>
+                    </table><br><br>
+                    Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
                     Bendahara Pengeluaran,<br>
                     <div style="height: 60px;"></div>
                     <span style="text-decoration: underline;" class="font-weight-bold">KH. SRI HANDAYANI, S.Si., M.T.</span><br>
@@ -514,7 +526,9 @@
                 <td style="width: 50%; text-align: center;">
                     Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
                     Telah terima sejumlah uang sebesar:<br><br>
-                    Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?><br><br><br>
+                    <table style="width: 100%; border: none; margin: 0; padding: 0;">
+                        <tr><td style="width: 25%; text-align: right; padding: 0;">Rp.</td><td style="width: 75%; text-align: left; padding: 0; padding-left: 20px;"><?= number_format($calcTotal, 0, ',', '.'); ?></td></tr>
+                    </table><br><br>
                     Yang Menerima :<br>
                     <div style="height: 60px;"></div>
                     <span style="text-decoration: underline;" class="font-weight-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
@@ -541,16 +555,16 @@
                 <td style="width: 40%;">
                     <table style="width: 100%; border: none;">
                         <tr>
-                            <td style="width: 15%;">Rp</td>
-                            <td style="width: 40%; text-align: right;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
+                            <td style="width: 20%; padding: 0;">Rp</td>
+                            <td style="width: 80%; text-align: right; padding: 0;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
                         </tr>
                         <tr>
-                            <td>Rp</td>
-                            <td style="text-align: right; border-bottom: 1px solid #000;">-</td>
+                            <td style="padding: 0;">Rp</td>
+                            <td style="text-align: right; border-bottom: 1px solid #000; padding: 0;">-</td>
                         </tr>
                         <tr>
-                            <td>Rp</td>
-                            <td style="text-align: right;">-</td>
+                            <td style="padding: 0;">Rp</td>
+                            <td style="text-align: right; padding: 0;">-</td>
                         </tr>
                     </table>
                 </td>
@@ -577,7 +591,8 @@
             <img src="<?= $kopSuratImgUrl; ?>" class="kop-surat-img" alt="Kop Surat">
         <?php endif; ?>
 
-        <div style="border-top: 1px solid #000; border-bottom: 2px solid #000; height: 1px; margin-bottom: 10px;"></div>
+        <div style="border-top: 1px solid #000; border-bottom: 2px solid #000; height: 1px;"></div>
+<div style="border-left: 1.5px solid #000; border-right: 1.5px solid #000; border-bottom: 1.5px solid #000; padding: 15px; margin-top: 0; min-height: 800px; position: relative;">
 
         <table class="kwitansi-header-table">
             <tr>
@@ -594,23 +609,26 @@
             </tr>
         </table>
 
-        <div class="kwitansi-title">K U I T A N S I</div>
+        <div class="kwitansi-title" style="margin-top: 40px; margin-bottom: 25px;">K U I T A N S I</div>
 
         <table class="kwitansi-body-table">
             <tr>
-                <td style="width: 25%;">Sudah di terima dari</td>
-                <td style="width: 3%;">:</td>
-                <td style="width: 72%;">PEJABAT PEMBUAT KOMITMEN PELAKSANAAN PRASARANA STRATEGIS</td>
+                <td style="width: 25%; padding-bottom: 8px;">Sudah di terima dari</td>
+                <td style="width: 3%; padding-bottom: 8px;">:</td>
+                <td style="width: 72%; padding-bottom: 8px;">PEJABAT PEMBUAT KOMITMEN PELAKSANAAN PRASARANA STRATEGIS</td>
             </tr>
             <tr>
-                <td>Jumlah Uang</td>
-                <td>:</td>
-                <td class="font-weight-bold">Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?></td>
+                <td style="padding-bottom: 8px;">Jumlah Uang</td>
+                <td style="padding-bottom: 8px;">:</td>
+                <td class="font-weight-bold" style="padding-bottom: 8px;">
+                    <span style="display: inline-block; width: 30px;">Rp.</span> 
+                    <?= number_format($calcTotal, 0, ',', '.'); ?>
+                </td>
             </tr>
             <tr>
-                <td>Terbilang</td>
-                <td>:</td>
-                <td><span style="font-style: italic; font-weight: bold;"><?= $terbilangText; ?></span></td>
+                <td style="padding-bottom: 8px;">Terbilang</td>
+                <td style="padding-bottom: 8px;">:</td>
+                <td style="padding-bottom: 8px;"><span style="font-style: italic; font-weight: bold;"><?= $terbilangText; ?></span></td>
             </tr>
             <tr>
                 <td>Untuk Pembayaran</td>
@@ -620,7 +638,7 @@
                 </td>
             </tr>
             <tr>
-                <td colspan="3"><br><br>Berdasarkan SPD</td>
+                <td colspan="3"><br>Berdasarkan SPD</td>
             </tr>
             <tr>
                 <td>Nomor</td>
@@ -673,6 +691,8 @@
                 </td>
             </tr>
         </table>
+        
+        </div> <!-- End of kwitansi-wrapper -->
         
         <?php if ($index < $totalPelaksana - 1): ?>
             <div class="page-break"></div>
