@@ -172,8 +172,8 @@
                     <div class="form-group">
                         <label for="verified_spt_file" class="font-weight-bold mb-1">File Laporan & SPT Terverifikasi <span class="text-danger">*</span></label>
                         <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="verified_spt_file" name="verified_spt" accept=".pdf,.jpg,.jpeg,.png" required>
-                            <label class="custom-file-label" for="verified_spt_file">Pilih file (PDF, JPG, JPEG, PNG)</label>
+                            <input type="file" class="custom-file-input" id="verified_spt_file" name="verified_spt" accept=".pdf" required>
+                            <label class="custom-file-label" for="verified_spt_file">Pilih file PDF...</label>
                         </div>
                         <small class="form-text text-muted mt-2">Maksimal ukuran file: 10MB. Mengupload file baru akan menimpa file terverifikasi sebelumnya jika ada.</small>
                     </div>
@@ -401,7 +401,7 @@
                 
                 // Reset file input label
                 $modal.find('.custom-file-input').val('');
-                $modal.find('.custom-file-label').html('Pilih file (PDF, JPG, JPEG, PNG)');
+                $modal.find('.custom-file-label').html('Pilih file PDF...');
 
                 // Handle existing file preview
                 const $container = $('#existing_verified_file_container');

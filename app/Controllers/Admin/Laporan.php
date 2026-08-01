@@ -688,19 +688,24 @@ class Laporan extends BaseController
                 $rincianBiayaAttr = esc((string) ($row['rincian_biaya_json'] ?? '{}'), 'attr');
                 $kodeNomorAttr = esc((string) ($row['kode_nomor'] ?? ''), 'attr');
                 $aksiSptHtml = '';
+                $updateButtonHtml = '';
                 if ($canVerifyRow) {
                     $dasarAttr = $isVerified === 1 ? esc(json_encode($dasarTexts), 'attr') : '[]';
                     $tglAttr = $isVerified === 1 ? esc($tglTtd, 'attr') : '';
-                    $aksiSptHtml = '<button type="button" class="btn btn-xs btn-warning text-dark btn-verify-spt btn-table-action shadow-sm" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-kode-nomor="' . $kodeNomorAttr . '" data-dasar="' . $dasarAttr . '" data-tgl="' . $tglAttr . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" data-rincian-biaya="' . $rincianBiayaAttr . '" title="Update Verifikasi"><i class="fas fa-edit mr-1"></i> Update</button>';
+                    $kotaTujuanAttr = esc((string) ($row['kota_tujuan'] ?? ''), 'attr');
+                    $tujuanAttr = esc((string) ($row['tujuan'] ?? ''), 'attr');
+                    $periodeAttr = esc((string) ($row['periode'] ?? ''), 'attr');
+                    $pelaksanaAttr = esc((string) ($row['pelaksana_names_label'] ?? ''), 'attr');
+                    $updateButtonHtml = '<button type="button" class="btn btn-xs btn-warning text-dark btn-verify-spt btn-table-action shadow-sm" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-kode-nomor="' . $kodeNomorAttr . '" data-dasar="' . $dasarAttr . '" data-tgl="' . $tglAttr . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" data-rincian-biaya="' . $rincianBiayaAttr . '" data-kota="' . $kotaTujuanAttr . '" data-tujuan="' . $tujuanAttr . '" data-periode="' . $periodeAttr . '" data-pelaksana="' . $pelaksanaAttr . '" title="Update Verifikasi"><i class="fas fa-edit mr-1"></i> Update</button>';
+                    
+                    $aksiSptHtml = $updateButtonHtml;
                 } else {
                     $aksiSptHtml = '<span class="text-muted" style="font-size:0.8rem;"><i class="fas fa-lock mr-1"></i> No Access</span>';
                 }
 
                 $verificationStatusHtml = $statusVerifikasiHtml . '<div class="mt-1 d-flex justify-content-center align-items-center" style="gap: 4px;">' . $fileSptHtml;
                 if ($canVerifyRow) {
-                    $dasarAttr = $isVerified === 1 ? esc(json_encode($dasarTexts), 'attr') : '[]';
-                    $tglAttr = $isVerified === 1 ? esc($tglTtd, 'attr') : '';
-                    $verificationStatusHtml .= '<button type="button" class="btn btn-xs btn-warning text-dark btn-verify-spt btn-table-action shadow-sm" data-id="' . (int) $row['id'] . '" data-nomor="' . esc($nomorSurat, 'attr') . '" data-kode-nomor="' . $kodeNomorAttr . '" data-dasar="' . $dasarAttr . '" data-tgl="' . $tglAttr . '" data-kop-surat-id="' . $kopSuratIdAttr . '" data-mata-anggaran-id="' . $mataAnggaranIdAttr . '" data-rincian-biaya="' . $rincianBiayaAttr . '" title="Update Verifikasi"><i class="fas fa-edit mr-1"></i> Update</button>';
+                    $verificationStatusHtml .= $updateButtonHtml;
                 }
                 $verificationStatusHtml .= '</div>';
 
@@ -768,7 +773,20 @@ class Laporan extends BaseController
         }
         $tglTtd = trim((string) $this->request->getPost('tanggal_tanda_tangan'));
         $kopSuratId = (int) $this->request->getPost('kop_surat_id');
-        $mataAnggaranId = (int) $this->request->getPost('mata_anggaran_id');
+        
+        $mataAnggaranInput = trim((string) $this->request->getPost('mata_anggaran_id'));
+        $mataAnggaranId = (int) $mataAnggaranInput;
+
+        if ($mataAnggaranInput !== '' && (string) $mataAnggaranId !== $mataAnggaranInput) {
+            $db = db_connect();
+            $db->table('mst_mata_anggaran')->insert([
+                'mata_anggaran' => $mataAnggaranInput,
+                'status'        => 'Aktif',
+                'created_by'    => (string) (session()->get('username') ?: 'admin'),
+                'created_date'  => date('Y-m-d H:i:s'),
+            ]);
+            $mataAnggaranId = $db->insertID();
+        }
 
         if ($nomorSurat === '') {
             return redirect()->back()->with('error', 'Nomor Surat Tugas wajib diisi.');
@@ -776,6 +794,30 @@ class Laporan extends BaseController
 
         if ($tglTtd === '') {
             return redirect()->back()->with('error', 'Tanggal tanda tangan wajib diisi.');
+        }
+
+        $uangHarianStarts   = $this->request->getPost('uang_harian_start_date') ?: [];
+        $uangHarianEnds     = $this->request->getPost('uang_harian_end_date') ?: [];
+        $uangHarianNominals = $this->request->getPost('uang_harian_nominal') ?: [];
+        $uangHarianKets     = $this->request->getPost('uang_harian_ket') ?: [];
+
+        $uangHarianList = [];
+        if (is_array($uangHarianStarts)) {
+            foreach ($uangHarianStarts as $idx => $uStart) {
+                $uStart = trim((string) $uStart);
+                $uEnd   = trim((string) ($uangHarianEnds[$idx] ?? ''));
+                $uNomRaw = preg_replace('/\D/', '', (string) ($uangHarianNominals[$idx] ?? ''));
+                $uNom   = $uNomRaw !== '' ? (int) $uNomRaw : 0;
+                $uKet   = trim((string) ($uangHarianKets[$idx] ?? ''));
+                if ($uStart !== '' || $uEnd !== '' || $uNom > 0 || $uKet !== '') {
+                    $uangHarianList[] = [
+                        'tgl_mulai'   => $uStart,
+                        'tgl_selesai' => $uEnd,
+                        'nominal'     => $uNom,
+                        'keterangan'  => $uKet,
+                    ];
+                }
+            }
         }
 
         $transportStarts   = $this->request->getPost('transport_start_date') ?: [];
@@ -827,8 +869,9 @@ class Laporan extends BaseController
         }
 
         $rincianBiaya = [
-            'transport'  => $transportList,
-            'penginapan' => $penginapanList,
+            'uang_harian' => $uangHarianList,
+            'transport'   => $transportList,
+            'penginapan'  => $penginapanList,
         ];
 
         $kodeNomorInput = trim((string) $this->request->getPost('kode_nomor'));

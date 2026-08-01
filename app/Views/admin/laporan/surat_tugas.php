@@ -119,7 +119,7 @@
 <?php if ($can_verify ?? false): ?>
 <!-- Modal Verifikasi SPT -->
 <div class="modal fade" id="modal-verify-spt" role="dialog" aria-labelledby="modalVerifyTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
         <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
             <div class="modal-header bg-light py-3" style="border-bottom: 1px solid #e9eef5;">
                 <h5 class="modal-title font-weight-bold text-dark" id="modalVerifyTitle">
@@ -132,6 +132,13 @@
             <form id="form-verify-spt" method="post" action="">
                 <?= csrf_field(); ?>
                 <div class="modal-body py-3">
+                    <!-- Info Banner -->
+                    <div class="bg-light border rounded p-3 mb-3 shadow-sm" style="font-size: 0.95rem; border-left: 4px solid #17a2b8 !important;">
+                        <div class="mb-2"><strong class="text-info"><i class="fas fa-map-marker-alt mr-2"></i> Tujuan:</strong> <span id="info-verify-tujuan" class="text-dark font-weight-bold"></span> <span class="text-muted">(<span id="info-verify-kota"></span>)</span></div>
+                        <div class="mb-2"><strong class="text-info"><i class="far fa-calendar-alt mr-2"></i> Periode:</strong> <span id="info-verify-periode" class="text-dark font-weight-bold"></span></div>
+                        <div class="mb-0"><strong class="text-info"><i class="fas fa-users mr-2"></i> Pelaksana:</strong> <span id="info-verify-pelaksana" class="text-dark font-weight-bold"></span></div>
+                    </div>
+
                     <ul class="nav nav-tabs font-weight-bold" id="verifyTab" role="tablist">
                         <li class="nav-item">
                             <a class="nav-link active" id="verifikasi-tab" data-toggle="tab" href="#tab-verifikasi" role="tab" aria-controls="tab-verifikasi" aria-selected="true">
@@ -183,10 +190,10 @@
                             </div>
                             <div class="form-group">
                                 <label for="verify_mata_anggaran" class="font-weight-bold mb-1">Mata Anggaran (MAK) <span class="text-danger">*</span></label>
-                                <select class="form-control" id="verify_mata_anggaran" name="mata_anggaran_id" required>
-                                    <option value="">-- Pilih Mata Anggaran --</option>
+                                <select class="form-control" id="verify_mata_anggaran" name="mata_anggaran_id" required style="width: 100%;">
+                                    <option value="">-- PILIH --</option>
                                     <?php foreach ($mata_anggaran_list ?? [] as $ma): ?>
-                                        <option value="<?= (int) $ma['id']; ?>" <?= strtolower((string) ($ma['status'] ?? '')) === 'aktif' ? 'selected data-default="1"' : ''; ?>>
+                                        <option value="<?= (int) $ma['id']; ?>">
                                             <?= esc($ma['mata_anggaran']); ?> <?= strtolower((string) ($ma['status'] ?? '')) === 'aktif' ? '(Aktif)' : ''; ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -201,6 +208,24 @@
 
                         <!-- TAB 2: RINCIAN BIAYA (TRANSPORT & PENGINAPAN) -->
                         <div class="tab-pane fade" id="tab-biaya" role="tabpanel" aria-labelledby="biaya-tab">
+                            <!-- CARD UANG HARIAN -->
+                            <div class="card card-outline card-success mb-3 shadow-sm" style="border-top-color: #28a745;">
+                                <div class="card-header py-2 bg-light">
+                                    <h6 class="card-title mb-0 font-weight-bold text-success"><i class="fas fa-money-bill-wave mr-1"></i> Uang Harian</h6>
+                                </div>
+                                <div class="card-body py-3">
+                                    <div id="uang-harian-container">
+                                        <!-- Dynamic uang harian rows will be added here -->
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-success font-weight-bold" id="btn-add-uang-harian">
+                                            <i class="fas fa-plus mr-1"></i> Tambah Uang Harian
+                                        </button>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle mr-1"></i> Dalam provinsi: Rp 370.000 atau Rp 222.000. Luar provinsi sesuai SBM. Bisa diinput manual.</small>
+                                </div>
+                            </div>
+
                             <!-- CARD BIAYA TRANSPORT -->
                             <div class="card card-outline card-info mb-3 shadow-sm">
                                 <div class="card-header py-2 bg-light">
@@ -325,6 +350,15 @@
         const $table = $('#tableSuratTugas');
         if (! $table.length || $.fn.dataTable.isDataTable($table)) {
             return;
+        }
+
+        // Initialize select2 for mata anggaran with tags enabled
+        if ($.fn.select2) {
+            $('#verify_mata_anggaran').select2({
+                tags: true,
+                dropdownParent: $('#modal-verify-spt'),
+                placeholder: '-- PILIH --'
+            });
         }
 
         const canEdit = <?= json_encode($canEdit, JSON_UNESCAPED_UNICODE); ?>;
@@ -546,27 +580,68 @@
                 this.value = formatRibuan(this.value);
             });
 
+            // Uang Harian dynamic rows
+            function addUangHarianInputRow(data) {
+                data = data || {};
+                const uStart = data.tgl_mulai || '';
+                const uEnd = data.tgl_selesai || '';
+                const uNom = data.nominal !== undefined && data.nominal !== null ? data.nominal : '';
+                const uKet = data.keterangan || '';
+
+                const rowHtml = `
+                    <div class="uang-harian-row p-2 mb-2 bg-light border rounded">
+                        <div class="form-row align-items-center">
+                            <div class="col-md-3 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Mulai Tgl</label>
+                                <input type="date" class="form-control form-control-sm" name="uang_harian_start_date[]" value="${$('<div/>').text(uStart).html()}" onfocus="this.showPicker()">
+                            </div>
+                            <div class="col-md-3 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Selesai Tgl</label>
+                                <input type="date" class="form-control form-control-sm" name="uang_harian_end_date[]" value="${$('<div/>').text(uEnd).html()}" onfocus="this.showPicker()">
+                            </div>
+                            <div class="col-md-2 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Tarif (Rp)</label>
+                                <input type="text" class="form-control form-control-sm input-currency" name="uang_harian_nominal[]" placeholder="Rp" value="${$('<div/>').text(formatRibuan(uNom)).html()}">
+                            </div>
+                            <div class="col-md-3 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Keterangan</label>
+                                <input type="text" class="form-control form-control-sm" name="uang_harian_ket[]" placeholder="Keterangan..." value="${$('<div/>').text(uKet).html()}">
+                            </div>
+                            <div class="col-md-1 mb-0 text-center pt-3">
+                                <button type="button" class="btn btn-xs btn-outline-danger btn-remove-uang-harian" title="Hapus Baris"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $('#uang-harian-container').append(rowHtml);
+            }
+
             // Transport dynamic rows
             function addTransportInputRow(data) {
                 data = data || {};
                 const tStart = data.tgl_mulai || '';
                 const tEnd = data.tgl_selesai || '';
                 const tNom = data.nominal !== undefined && data.nominal !== null ? data.nominal : '';
+                const tKet = data.keterangan || '';
 
                 const rowHtml = `
                     <div class="transport-row p-2 mb-2 bg-light border rounded">
                         <div class="form-row align-items-center">
-                            <div class="col-md-4 mb-1 mb-md-0">
+                            <div class="col-md-3 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Mulai Tgl</label>
                                 <input type="date" class="form-control form-control-sm" name="transport_start_date[]" value="${$('<div/>').text(tStart).html()}" onfocus="this.showPicker()">
                             </div>
-                            <div class="col-md-4 mb-1 mb-md-0">
+                            <div class="col-md-3 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Selesai Tgl</label>
                                 <input type="date" class="form-control form-control-sm" name="transport_end_date[]" value="${$('<div/>').text(tEnd).html()}" onfocus="this.showPicker()">
                             </div>
+                            <div class="col-md-2 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Tarif (Rp)</label>
+                                <input type="text" class="form-control form-control-sm input-currency" name="transport_nominal[]" placeholder="Rp" value="${$('<div/>').text(formatRibuan(tNom)).html()}">
+                            </div>
                             <div class="col-md-3 mb-1 mb-md-0">
-                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Tarif / Hari (Rp)</label>
-                                <input type="text" class="form-control form-control-sm input-currency" name="transport_nominal[]" placeholder="Rp per hari" value="${$('<div/>').text(formatRibuan(tNom)).html()}">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Keterangan</label>
+                                <input type="text" class="form-control form-control-sm" name="transport_ket[]" placeholder="Keterangan..." value="${$('<div/>').text(tKet).html()}">
                             </div>
                             <div class="col-md-1 mb-0 text-center pt-3">
                                 <button type="button" class="btn btn-xs btn-outline-danger btn-remove-transport" title="Hapus Baris"><i class="fas fa-trash"></i></button>
@@ -583,21 +658,26 @@
                 const pStart = data.tgl_mulai || '';
                 const pEnd = data.tgl_selesai || '';
                 const pNom = data.nominal !== undefined && data.nominal !== null ? data.nominal : '';
+                const pKet = data.keterangan || '';
 
                 const rowHtml = `
                     <div class="penginapan-row p-2 mb-2 bg-light border rounded">
                         <div class="form-row align-items-center">
-                            <div class="col-md-4 mb-1 mb-md-0">
+                            <div class="col-md-3 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Mulai Tgl</label>
                                 <input type="date" class="form-control form-control-sm" name="penginapan_start_date[]" value="${$('<div/>').text(pStart).html()}" onfocus="this.showPicker()">
                             </div>
-                            <div class="col-md-4 mb-1 mb-md-0">
+                            <div class="col-md-3 mb-1 mb-md-0">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Selesai Tgl</label>
                                 <input type="date" class="form-control form-control-sm" name="penginapan_end_date[]" value="${$('<div/>').text(pEnd).html()}" onfocus="this.showPicker()">
                             </div>
+                            <div class="col-md-2 mb-1 mb-md-0">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Tarif (Rp)</label>
+                                <input type="text" class="form-control form-control-sm input-currency" name="penginapan_nominal[]" placeholder="Kosongkan..." value="${$('<div/>').text(formatRibuan(pNom)).html()}">
+                            </div>
                             <div class="col-md-3 mb-1 mb-md-0">
-                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Tarif / Malam (Rp)</label>
-                                <input type="text" class="form-control form-control-sm input-currency" name="penginapan_nominal[]" placeholder="Kosongkan utk master" value="${$('<div/>').text(formatRibuan(pNom)).html()}">
+                                <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Keterangan</label>
+                                <input type="text" class="form-control form-control-sm" name="penginapan_ket[]" placeholder="Keterangan..." value="${$('<div/>').text(pKet).html()}">
                             </div>
                             <div class="col-md-1 mb-0 text-center pt-3">
                                 <button type="button" class="btn btn-xs btn-outline-danger btn-remove-penginapan" title="Hapus Baris"><i class="fas fa-trash"></i></button>
@@ -607,6 +687,19 @@
                 `;
                 $('#penginapan-container').append(rowHtml);
             }
+
+            // Uang Harian Add & Remove handlers
+            $('#btn-add-uang-harian').off('click').on('click', function() {
+                addUangHarianInputRow({});
+            });
+            $('#uang-harian-container').off('click', '.btn-remove-uang-harian').on('click', '.btn-remove-uang-harian', function() {
+                const rowsCount = $('#uang-harian-container .uang-harian-row').length;
+                if (rowsCount > 1) {
+                    $(this).closest('.uang-harian-row').remove();
+                } else {
+                    $('#uang-harian-container .uang-harian-row input').val('');
+                }
+            });
 
             // Transport Add & Remove handlers
             $('#btn-add-transport').off('click').on('click', function() {
@@ -644,6 +737,12 @@
                 const kopSuratId = String($btn.attr('data-kop-surat-id') || '0');
                 const mataAnggaranId = String($btn.attr('data-mata-anggaran-id') || '0');
                 const rincianBiayaStr = $btn.attr('data-rincian-biaya') || '{}';
+                
+                const kotaTujuan = $btn.attr('data-kota') || '-';
+                const tujuan = $btn.attr('data-tujuan') || '-';
+                const periode = $btn.attr('data-periode') || '-';
+                const pelaksana = $btn.attr('data-pelaksana') || '-';
+                
                 let rincian = {};
                 try {
                     rincian = JSON.parse(rincianBiayaStr);
@@ -652,6 +751,13 @@
                 }
 
                 $formVerify.attr('action', '<?= site_url("admin/surat/perjalanan-dinas"); ?>/' + id + '/verify');
+                
+                // Populate Info Banner
+                $('#info-verify-tujuan').text(tujuan);
+                $('#info-verify-kota').text(kotaTujuan);
+                $('#info-verify-periode').text(periode);
+                $('#info-verify-pelaksana').text(pelaksana);
+
                 $('#verify_nomor_surat').val(nomor);
                 $('#verify_kode_nomor').val(kodeNomor);
                 $('#verify_tanggal_ttd').val(tgl !== '' ? tgl : new Date().toISOString().split('T')[0]);
@@ -668,14 +774,35 @@
                 }
 
                 if (mataAnggaranId !== '0') {
-                    $('#verify_mata_anggaran').val(mataAnggaranId);
-                } else {
-                    const defaultMaOpt = $('#verify_mata_anggaran option[data-default="1"]');
-                    if (defaultMaOpt.length) {
-                        $('#verify_mata_anggaran').val(defaultMaOpt.val());
+                    // Check if value exists, if not, it means it's a new tag, append it
+                    if ($('#verify_mata_anggaran').find("option[value='" + mataAnggaranId + "']").length) {
+                        $('#verify_mata_anggaran').val(mataAnggaranId).trigger('change');
                     } else {
-                        $('#verify_mata_anggaran').val('');
+                        const newOption = new Option(mataAnggaranId, mataAnggaranId, true, true);
+                        $('#verify_mata_anggaran').append(newOption).trigger('change');
                     }
+                } else {
+                    $('#verify_mata_anggaran').val('').trigger('change');
+                }
+
+                // Populate Dynamic Uang Harian Rows
+                const uangHarianContainer = $('#uang-harian-container');
+                uangHarianContainer.empty();
+                let uangHarianList = rincian.uang_harian || [];
+                if (!Array.isArray(uangHarianList) && rincian.uang_harian_start_date) {
+                    uangHarianList = [{
+                        tgl_mulai: rincian.uang_harian_start_date,
+                        tgl_selesai: rincian.uang_harian_end_date,
+                        nominal: rincian.uang_harian_nominal,
+                        keterangan: ''
+                    }];
+                }
+                if (uangHarianList.length === 0) {
+                    addUangHarianInputRow({});
+                } else {
+                    uangHarianList.forEach(function(uItem) {
+                        addUangHarianInputRow(uItem);
+                    });
                 }
 
                 // Populate Dynamic Transport Rows

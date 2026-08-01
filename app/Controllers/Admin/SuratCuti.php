@@ -114,9 +114,12 @@ class SuratCuti extends BaseController
             $lama = (int) ($row['lama_cuti_jumlah'] ?? 1) . ' ' . esc($row['lama_cuti_satuan'] ?? 'Hari');
             $row['periode_formatted'] = $tglMulai . ' s/d ' . $tglSelesai . '<br><small class="text-muted">(' . $lama . ')</small>';
 
-            // Dokumen Export button (PDF)
+            // Dokumen Export buttons (Word & PDF)
             $id = (int) ($row['id'] ?? 0);
-            $row['dokumen_html'] = '<a href="' . site_url('admin/surat/cuti/' . $id . '/export-pdf') . '" class="btn btn-sm btn-outline-danger" title="Export PDF" target="_blank"><i class="fas fa-file-pdf mr-1"></i> PDF</a>';
+            $row['dokumen_html'] = '<div class="btn-group btn-group-sm" role="group">' .
+                                    '<a href="' . site_url('admin/surat/cuti/' . $id . '/export-word') . '" class="btn btn-primary" title="Export Word (.docx)" target="_blank"><i class="fas fa-file-word mr-1"></i> Word</a>' .
+                                    '<a href="' . site_url('admin/surat/cuti/' . $id . '/export-pdf') . '" class="btn btn-outline-danger" title="Export PDF" target="_blank"><i class="fas fa-file-pdf mr-1"></i> PDF</a>' .
+                                    '</div>';
 
             $actions = '';
             if ($canEdit || $canApprove) {
@@ -581,5 +584,105 @@ class SuratCuti extends BaseController
         }
 
         return implode(' ', $parts);
+    }
+
+    public function exportWord(int $id)
+    {
+        helper(['url', 'form']);
+        if (! $this->canAccess()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $model = new SuratCutiModel();
+        $row = $model->find($id);
+
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Data tidak ditemukan.');
+        }
+
+        $templateFile = APPPATH . 'Views/admin/surat/form_surat_cuti_template.docx';
+        if (! file_exists($templateFile)) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Template Surat Cuti (.docx) tidak ditemukan.');
+        }
+
+        $months = ['January'=>'Januari','February'=>'Februari','March'=>'Maret','April'=>'April','May'=>'Mei','June'=>'Juni','July'=>'Juli','August'=>'Agustus','September'=>'September','October'=>'Oktober','November'=>'November','December'=>'Desember'];
+
+        $formatIndoDate = static function (?string $dateStr) use ($months): string {
+            if (empty($dateStr)) return '-';
+            $time = strtotime($dateStr);
+            if (! $time) return '-';
+            $d = date('j F Y', $time);
+            foreach ($months as $en => $idMonth) {
+                $d = str_replace($en, $idMonth, $d);
+            }
+            return $d;
+        };
+
+        $processor = new \PhpOffice\PhpWord\TemplateProcessor($templateFile);
+
+        $jenisKey = strtolower(trim((string) ($row['jenis_cuti'] ?? '')));
+        $pertimbangan = strtolower(trim((string) ($row['pertimbangan_atasan'] ?? '')));
+        $keputusan = strtolower(trim((string) ($row['keputusan_pejabat'] ?? '')));
+
+        $checkSymbol = 'V';
+
+        $processor->setValue('tgl_pengajuan', $formatIndoDate($row['tanggal_pengajuan'] ?? date('Y-m-d')));
+        $processor->setValue('pejabat_jabatan_tujuan', $row['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis');
+        $processor->setValue('nama', $row['nama'] ?? '');
+        $processor->setValue('nip', $row['nip'] ?? '');
+
+        $partsJabatan = explode(',', $row['jabatan'] ?? '');
+        $jabatanClean = trim($partsJabatan[0] ?? '');
+
+        $processor->setValue('jabatan', $jabatanClean);
+        $processor->setValue('masa_kerja', $row['masa_kerja'] ?? '');
+        $processor->setValue('unit_kerja', $row['unit_kerja'] ?? '');
+
+        $processor->setValue('v_ct', $jenisKey === 'cuti tahunan' ? $checkSymbol : '');
+        $processor->setValue('v_cb', $jenisKey === 'cuti besar' ? $checkSymbol : '');
+        $processor->setValue('v_cs', $jenisKey === 'cuti sakit' ? $checkSymbol : '');
+        $processor->setValue('v_cm', $jenisKey === 'cuti melahirkan' ? $checkSymbol : '');
+        $processor->setValue('v_cap', $jenisKey === 'cuti karena alasan penting' ? $checkSymbol : '');
+        $processor->setValue('v_cltn', $jenisKey === 'cuti di luar tanggungan negara' ? $checkSymbol : '');
+
+        $processor->setValue('alasan_cuti', $row['alasan_cuti'] ?? '');
+        $processor->setValue('lama_cuti', ((int)($row['lama_cuti_jumlah'] ?? 1)) . ' ' . ($row['lama_cuti_satuan'] ?? 'Hari'));
+        $processor->setValue('tanggal_mulai', $formatIndoDate($row['tanggal_mulai']));
+        $processor->setValue('tanggal_selesai', $formatIndoDate($row['tanggal_selesai']));
+
+        $processor->setValue('catatan_tahun', date('Y'));
+        $processor->setValue('catatan_cuti_n', ((int)($row['catatan_cuti_n'] ?? 0)) . ' Hari');
+        $processor->setValue('catatan_cuti_keterangan', $row['catatan_cuti_keterangan'] ?? '');
+
+        $processor->setValue('alamat_selama_cuti', $row['alamat_selama_cuti'] ?? '');
+        $processor->setValue('telepon', $row['telepon'] ?? '');
+
+        $processor->setValue('v_atasan_setuju', ($pertimbangan === 'disetujui' || $pertimbangan === 'setuju') ? $checkSymbol : '');
+        $processor->setValue('v_atasan_ubah', ($pertimbangan === 'perubahan') ? $checkSymbol : '');
+        $processor->setValue('v_atasan_tangguh', ($pertimbangan === 'ditangguhkan') ? $checkSymbol : '');
+        $processor->setValue('v_atasan_tolak', ($pertimbangan === 'tidak disetujui' || $pertimbangan === 'ditolak') ? $checkSymbol : '');
+        $processor->setValue('atasan_jabatan', $row['atasan_jabatan'] ?? 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau');
+        $processor->setValue('atasan_nama', $row['atasan_nama'] ?? 'Muhammad Yudi Prasetya, ST');
+        $processor->setValue('atasan_nip', $row['atasan_nip'] ?? '198002142014121002');
+
+        $processor->setValue('v_pejabat_setuju', ($keputusan === 'disetujui' || $keputusan === 'setuju') ? $checkSymbol : '');
+        $processor->setValue('v_pejabat_ubah', ($keputusan === 'perubahan') ? $checkSymbol : '');
+        $processor->setValue('v_pejabat_tangguh', ($keputusan === 'ditangguhkan') ? $checkSymbol : '');
+        $processor->setValue('v_pejabat_tolak', ($keputusan === 'tidak disetujui' || $keputusan === 'ditolak') ? $checkSymbol : '');
+        $processor->setValue('pejabat_jabatan', $row['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis');
+        $processor->setValue('pejabat_nama', $row['pejabat_nama'] ?? 'Ir. Agung Hari Prabowo, M.T');
+        $processor->setValue('pejabat_nip', $row['pejabat_nip'] ?? '196910301998031005');
+
+        $filename = 'Form_Cuti_' . preg_replace('/[^a-zA-Z0-9]/', '_', $row['nama']) . '.docx';
+        $tempPath = WRITEPATH . 'uploads/' . $filename;
+        $processor->saveAs($tempPath);
+
+        $fileContent = file_get_contents($tempPath);
+        @unlink($tempPath);
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($fileContent);
     }
 }

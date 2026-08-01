@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 11.5px;
+            font-size: 12px;
             margin: 0;
             padding: 0;
             line-height: 1.3;
@@ -47,27 +47,54 @@
         .rinci-footer-table {
             width: 100%;
             border: none;
+            margin-top: 10px;
         }
         .rinci-footer-table td {
             vertical-align: top;
-            padding: 5px;
+            padding: 2px;
+        }
+        
+        .rampung-table {
+            width: 100%;
+            border: none;
+            margin-top: 20px;
+        }
+        .rampung-table td {
+            vertical-align: top;
+            padding: 2px;
+        }
+
+        /* Nested table inside TD without borders */
+        .nested-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
+        }
+        .nested-table td {
+            border: none !important;
+            padding: 1px 0 !important;
         }
 
         /* KWITANSI styles */
         .kwitansi-header-table {
             width: 50%;
             margin-bottom: 15px;
+            float: right;
+            border-collapse: collapse;
         }
         .kwitansi-header-table td {
-            padding: 2px;
+            border: 1px solid #000;
+            padding: 4px;
         }
         .kwitansi-title {
             text-align: center;
             font-size: 16px;
             font-weight: bold;
             text-decoration: underline;
+            margin-top: 60px;
             margin-bottom: 20px;
             letter-spacing: 2px;
+            clear: both;
         }
         .kwitansi-body-table {
             width: 100%;
@@ -79,6 +106,7 @@
         }
         .kwitansi-ttd-table {
             width: 100%;
+            margin-top: 30px;
         }
         .kwitansi-ttd-table td {
             vertical-align: top;
@@ -191,20 +219,83 @@
                         $tDays = max(0, $d1->diff($d2)->days + 1);
                     } catch (\Throwable $e) {}
                 }
-                $sub = $tDays * $tNom;
+                
+                $rate = $tNom;
+                // If user didn't enter days but entered rate, assume sub = rate
+                $sub = ($tDays > 0) ? ($tDays * $rate) : $rate;
                 $calcTransport += $sub;
 
-                if ($tDays > 0 || $tNom > 0) {
-                    $labelStr = $tDays . ' hari x Rp ' . number_format($tNom, 0, ',', '.');
+                if ($tDays > 0 || $rate > 0) {
+                    $desc = '';
                     if ($tKet !== '') {
-                        $labelStr .= ' (' . esc($tKet) . ')';
+                        $desc = esc($tKet);
+                    } else {
+                        if ($tDays > 0) {
+                            $desc = $tDays . ' hari x Rp ' . number_format($rate, 0, ',', '.');
+                        } else {
+                            $desc = 'Transport';
+                        }
                     }
-                    $transportDetails[] = $labelStr;
+                    $transportDetails[] = [
+                        'desc' => $desc,
+                        'sub' => $sub
+                    ];
                 }
             }
         }
 
-        // 2. Penginapan Calculation (Multi-row):
+        // 2. Uang Harian Calculation (Multi-row):
+        $harianList = $rincianBiaya['uang_harian'] ?? [];
+        if (!is_array($harianList)) {
+            $harianList = [];
+        }
+
+        $calcHarian = 0;
+        $harianDetails = [];
+        if (is_array($harianList) && count($harianList) > 0) {
+            foreach ($harianList as $hItem) {
+                $hStart = $hItem['tgl_mulai'] ?? '';
+                $hEnd   = $hItem['tgl_selesai'] ?? '';
+                $hNom   = isset($hItem['nominal']) ? (int) $hItem['nominal'] : 0;
+                $hKet   = trim((string) ($hItem['keterangan'] ?? ''));
+
+                $hDays = 0;
+                if (!empty($hStart) && !empty($hEnd)) {
+                    try {
+                        $d1 = new \DateTime($hStart);
+                        $d2 = new \DateTime($hEnd);
+                        $hDays = max(0, $d1->diff($d2)->days + 1);
+                    } catch (\Throwable $e) {}
+                }
+                
+                $rate = $hNom > 0 ? $hNom : (int) ($biaya_master['harian'] ?? 0);
+                // Assume 1 day if not set but nominal is set
+                if ($hDays == 0 && $rate > 0) $hDays = 1;
+                $sub = $hDays * $rate;
+                $calcHarian += $sub;
+
+                if ($hDays > 0 || $rate > 0) {
+                    $harianDetails[] = [
+                        'days' => $hDays,
+                        'rate' => $rate,
+                        'sub' => $sub,
+                        'ket' => esc($hKet)
+                    ];
+                }
+            }
+        } else {
+            $hDays = max(0, $days);
+            $rate = (int) ($biaya_master['harian'] ?? 0);
+            $calcHarian = $hDays * $rate;
+            $harianDetails[] = [
+                'days' => $hDays,
+                'rate' => $rate,
+                'sub' => $calcHarian,
+                'ket' => ''
+            ];
+        }
+
+        // 3. Penginapan Calculation (Multi-row):
         $penginapanList = $rincianBiaya['penginapan'] ?? [];
         if (!is_array($penginapanList) && isset($rincianBiaya['penginapan_start_date'])) {
             $penginapanList = [[
@@ -240,26 +331,34 @@
                 } else {
                     $rate = (int) ($tarifPenginapan * 0.3);
                 }
+                
+                // fallback to 1 night if nights=0 but rate>0
+                if ($pNights == 0 && $rate > 0) $pNights = 1;
 
                 $sub = $pNights * $rate;
                 $calcPenginapan += $sub;
 
                 if ($pNights > 0 || $rate > 0) {
-                    $labelStr = $pNights . ' malam x Rp ' . number_format($rate, 0, ',', '.');
-                    if ($pKet !== '') {
-                        $labelStr .= ' (' . esc($pKet) . ')';
-                    }
-                    $penginapanDetails[] = $labelStr;
+                    $penginapanDetails[] = [
+                        'nights' => $pNights,
+                        'rate' => $rate,
+                        'sub' => $sub,
+                        'ket' => esc($pKet)
+                    ];
                 }
             }
         } else {
             $pNights = max(0, $days - 1);
             $rate = (int) ($tarifPenginapan * 0.3);
             $calcPenginapan = $pNights * $rate;
-            $penginapanDetails[] = $pNights . ' malam x Rp ' . number_format($rate, 0, ',', '.');
+            $penginapanDetails[] = [
+                'nights' => $pNights,
+                'rate' => $rate,
+                'sub' => $calcPenginapan,
+                'ket' => ''
+            ];
         }
 
-        $calcHarian = ($biaya_master['harian'] ?? 0) * $days;
         $calcTotal = $calcHarian + $calcTransport + $calcPenginapan;
         $terbilangText = $terbilangHelper($calcTotal);
         
@@ -274,12 +373,10 @@
         ?>
 
         <!-- ======================= RINCI PAGE ======================= -->
-        <?php if ($kopSuratImgUrl): ?>
-            <img src="<?= $kopSuratImgUrl; ?>" class="kop-surat-img" alt="Kop Surat">
-        <?php endif; ?>
-
-        <div class="rinci-header">
-            <span style="text-decoration: underline;" class="font-weight-bold">RINCIAN BIAYA PERJALANAN DINAS</span><br>
+        
+        <!-- Note: Header without Kop Surat to match PDF -->
+        <div class="rinci-header text-center">
+            <strong style="font-size: 14px;">RINCIAN BIAYA PERJALANAN DINAS</strong><br>
             LAMPIRAN SPD NOMOR : <?= $nomorSPD; ?><br>
             TANGGAL : <?= strtoupper($tanggalTtd); ?>
         </div>
@@ -294,88 +391,180 @@
                 </tr>
             </thead>
             <tbody>
+                <!-- 1. BIAYA TRANSPORT -->
                 <tr>
                     <td class="text-center">1</td>
                     <td>
-                        BIAYA TRANSPORT :<br>
-                        Sewa Kendaraan<br>
-                        <?php if (!empty($transportDetails)): ?>
-                            <?php foreach ($transportDetails as $td): ?>
-                                <?= $td; ?><br>
-                            <?php endforeach; ?>
+                        <strong>BIAYA TRANSPORT :</strong><br>
+                        <?php if (empty($transportDetails)): ?>
+                            <br>
                         <?php else: ?>
-                            0 hari x Rp 0
+                            <table class="nested-table">
+                                <?php foreach ($transportDetails as $td): ?>
+                                <tr>
+                                    <td style="width: 50%;"><?= $td['desc']; ?></td>
+                                    <td style="width: 15%;">Rp.</td>
+                                    <td style="width: 35%; text-align: right;"><?= number_format($td['sub'], 0, ',', '.'); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </table>
                         <?php endif; ?>
                     </td>
-                    <td class="text-right">
-                        <br><br>
-                        Rp <?= number_format($calcTransport, 0, ',', '.'); ?>
+                    <td class="text-right" style="vertical-align: middle;">
+                        Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTransport, 0, ',', '.'); ?>
                     </td>
                     <td></td>
                 </tr>
+
+                <!-- 2. UANG HARIAN -->
                 <tr>
                     <td class="text-center">2</td>
                     <td>
-                        UANG HARIAN<br>
+                        <strong>UANG HARIAN</strong><br>
                         Uang Makan, Uang Transport Lokal, Uang Saku selama :<br>
-                        <?= $days; ?> hari x Rp <?= number_format($biaya_master['harian'] ?? 0, 0, ',', '.'); ?>
+                        <?php if (empty($harianDetails)): ?>
+                            <br>
+                        <?php else: ?>
+                            <table class="nested-table">
+                                <?php foreach ($harianDetails as $hd): ?>
+                                <tr>
+                                    <td style="width: 15%;">&nbsp; <?= $hd['days']; ?> hari</td>
+                                    <td style="width: 5%;">x</td>
+                                    <td style="width: 10%;">Rp</td>
+                                    <td style="width: 25%; text-align: right;"><?= number_format($hd['rate'], 0, ',', '.'); ?></td>
+                                    <td style="width: 10%; text-align: center;">Rp</td>
+                                    <td style="width: 35%; text-align: right;"><?= number_format($hd['sub'], 0, ',', '.'); ?></td>
+                                </tr>
+                                <?php if ($hd['ket'] !== ''): ?>
+                                <tr>
+                                    <td colspan="6" style="padding-left: 10px !important; font-style: italic; color: #555;">(<?= $hd['ket']; ?>)</td>
+                                </tr>
+                                <?php endif; ?>
+                                <?php endforeach; ?>
+                            </table>
+                        <?php endif; ?>
                     </td>
-                    <td class="text-right">
-                        <br><br>
-                        Rp <?= number_format($calcHarian, 0, ',', '.'); ?>
+                    <td class="text-right" style="vertical-align: middle;">
+                        Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcHarian, 0, ',', '.'); ?>
                     </td>
                     <td></td>
                 </tr>
+
+                <!-- 3. UANG PENGINAPAN -->
                 <tr>
                     <td class="text-center">3</td>
                     <td>
-                        UANG PENGINAPAN<br>
+                        <strong>UANG PENGINAPAN</strong><br>
                         Uang penginapan selama :<br>
-                        <?php foreach ($penginapanDetails as $pd): ?>
-                            <?= $pd; ?><br>
-                        <?php endforeach; ?>
+                        <?php if (empty($penginapanDetails)): ?>
+                            <br>
+                        <?php else: ?>
+                            <table class="nested-table">
+                                <?php foreach ($penginapanDetails as $pd): ?>
+                                <tr>
+                                    <td style="width: 15%;">&nbsp; <?= $pd['nights']; ?> malam</td>
+                                    <td style="width: 5%;">x</td>
+                                    <td style="width: 10%;">Rp</td>
+                                    <td style="width: 25%; text-align: right;"><?= number_format($pd['rate'], 0, ',', '.'); ?></td>
+                                    <td style="width: 10%; text-align: center;">Rp</td>
+                                    <td style="width: 35%; text-align: right;"><?= number_format($pd['sub'], 0, ',', '.'); ?></td>
+                                </tr>
+                                <?php if ($pd['ket'] !== ''): ?>
+                                <tr>
+                                    <td colspan="6" style="padding-left: 10px !important; font-style: italic; color: #555;">(<?= $pd['ket']; ?>)</td>
+                                </tr>
+                                <?php endif; ?>
+                                <?php endforeach; ?>
+                            </table>
+                        <?php endif; ?>
                     </td>
-                    <td class="text-right">
-                        <br><br>
-                        Rp <?= number_format($calcPenginapan, 0, ',', '.'); ?>
+                    <td class="text-right" style="vertical-align: middle;">
+                        Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcPenginapan, 0, ',', '.'); ?>
                     </td>
                     <td></td>
                 </tr>
+
+                <!-- JUMLAH & TERBILANG -->
                 <tr>
-                    <td colspan="2" class="text-right font-weight-bold">JUMLAH :</td>
-                    <td class="text-right font-weight-bold">Rp <?= number_format($calcTotal, 0, ',', '.'); ?></td>
+                    <td colspan="2"><strong>JUMLAH :</strong></td>
+                    <td class="font-weight-bold" style="border-bottom: 2px solid #000;">
+                        Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?>
+                    </td>
                     <td></td>
                 </tr>
                 <tr>
                     <td colspan="4">
-                        <div style="padding: 10px 0;">
-                            <strong>TERBILANG :</strong> <span style="font-style: italic;"><?= $terbilangText; ?></span>
-                        </div>
+                        <strong>TERBILANG :</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= $terbilangText; ?>
                     </td>
                 </tr>
             </tbody>
         </table>
 
+        <!-- Signatures Table 1 -->
         <table class="rinci-footer-table">
             <tr>
                 <td style="width: 50%;">
-                    Telah dibayar uang sebesar<br>
-                    Rp <?= number_format($calcTotal, 0, ',', '.'); ?><br><br><br>
+                    Telah dibayar uang sebesar<br><br>
+                    Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?><br><br><br>
                     Bendahara Pengeluaran,<br>
                     <div style="height: 60px;"></div>
-                    <strong>................................................</strong><br>
-                    NIP.
+                    <span style="text-decoration: underline;" class="font-weight-bold">KH. SRI HANDAYANI, S.Si., M.T.</span><br>
+                    NIP. 19820402 201412 2 002
                 </td>
-                <td style="width: 50%;">
-                    Pekanbaru, <?= $tanggalTtd; ?><br>
-                    Telah terima sejumlah uang sebesar:<br>
-                    Rp <?= number_format($calcTotal, 0, ',', '.'); ?><br><br>
+                <td style="width: 50%; text-align: center;">
+                    Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
+                    Telah terima sejumlah uang sebesar:<br><br>
+                    Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?><br><br><br>
                     Yang Menerima :<br>
                     <div style="height: 60px;"></div>
-                    <strong><?= strtoupper(esc($utama['nama'])); ?></strong>
+                    <span style="text-decoration: underline;" class="font-weight-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
                     <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
                         <br>NIP. <?= esc($utama['nip']); ?>
                     <?php endif; ?>
+                </td>
+            </tr>
+        </table>
+
+        <div style="border-top: 2px solid #000; margin: 20px 0 10px 0;"></div>
+
+        <!-- RAMPUNG Table -->
+        <div class="text-center font-weight-bold" style="letter-spacing: 2px; text-decoration: underline; margin-bottom: 15px;">
+            P E R H I T U N G A N   S P D   R A M P U N G
+        </div>
+        <table class="rampung-table">
+            <tr>
+                <td style="width: 60%;">
+                    Ditetapkan Sejumlah...................................................................<br>
+                    Yang dibayar semula ..................................................................<br>
+                    Sisa kurang / Lebih ..................................................................
+                </td>
+                <td style="width: 40%;">
+                    <table style="width: 100%; border: none;">
+                        <tr>
+                            <td style="width: 15%;">Rp</td>
+                            <td style="width: 40%; text-align: right;"><?= number_format($calcTotal, 0, ',', '.'); ?></td>
+                        </tr>
+                        <tr>
+                            <td>Rp</td>
+                            <td style="text-align: right; border-bottom: 1px solid #000;">-</td>
+                        </tr>
+                        <tr>
+                            <td>Rp</td>
+                            <td style="text-align: right;">-</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <table class="rampung-table" style="margin-top: 30px;">
+            <tr>
+                <td style="width: 50%;"></td>
+                <td style="width: 50%; text-align: center;">
+                    Pejabat Pembuat Komitmen<br>
+                    Pelaksanaan Prasarana Strategis<br>
+                    <div style="height: 60px;"></div>
+                    <span style="text-decoration: underline;" class="font-weight-bold">NURHIDAYAT NUGROHO, S.Ars.</span><br>
+                    NIP. 19901221 201802 1 001
                 </td>
             </tr>
         </table>
@@ -388,20 +577,19 @@
             <img src="<?= $kopSuratImgUrl; ?>" class="kop-surat-img" alt="Kop Surat">
         <?php endif; ?>
 
+        <div style="border-top: 1px solid #000; border-bottom: 2px solid #000; height: 1px; margin-bottom: 10px;"></div>
+
         <table class="kwitansi-header-table">
             <tr>
-                <td style="width: 40%;">Tahun Anggaran</td>
-                <td style="width: 5%;">:</td>
-                <td style="width: 55%;">2026</td>
+                <td style="width: 35%;">Tahun Anggaran</td>
+                <td style="width: 65%;">2026</td>
             </tr>
             <tr>
                 <td>Nomor Bukti</td>
-                <td>:</td>
                 <td><?= esc($displayKodeNomor); ?></td>
             </tr>
             <tr>
                 <td>Mata Anggaran</td>
-                <td>:</td>
                 <td><?= esc($mata_anggaran ?? ''); ?></td>
             </tr>
         </table>
@@ -417,12 +605,12 @@
             <tr>
                 <td>Jumlah Uang</td>
                 <td>:</td>
-                <td class="font-weight-bold">Rp. <?= number_format($calcTotal, 0, ',', '.'); ?></td>
+                <td class="font-weight-bold">Rp. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?></td>
             </tr>
             <tr>
                 <td>Terbilang</td>
                 <td>:</td>
-                <td style="font-style: italic;"><?= $terbilangText; ?></td>
+                <td><span style="font-style: italic; font-weight: bold;"><?= $terbilangText; ?></span></td>
             </tr>
             <tr>
                 <td>Untuk Pembayaran</td>
@@ -432,7 +620,7 @@
                 </td>
             </tr>
             <tr>
-                <td colspan="3"><br><span class="font-weight-bold">Berdasarkan SPD</span></td>
+                <td colspan="3"><br><br>Berdasarkan SPD</td>
             </tr>
             <tr>
                 <td>Nomor</td>
@@ -472,9 +660,9 @@
                     <?php endif; ?>
                 </td>
                 <td>
-                    Pekanbaru, <?= $tanggalTtd; ?><br>
-                    Yang Menerima,<br>
-                    <br>
+                    Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
+                    Kepala Satuan Kerja<br>
+                    Pelaksanaan Prasarana Strategis Riau
                     
                     <div style="height: 60px;"></div>
                     
