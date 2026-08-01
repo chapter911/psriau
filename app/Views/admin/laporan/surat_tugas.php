@@ -640,6 +640,17 @@
                     tKet = '';
                 }
 
+                let selectOptionsHtml = '<option value="">-- Pilih --</option>';
+                transportOptionsList.forEach(opt => {
+                    const isSelected = (opt === defaultJenis) ? 'selected' : '';
+                    selectOptionsHtml += `<option value="${$('<div/>').text(opt).html()}" ${isSelected}>${$('<div/>').text(opt).html()}</option>`;
+                });
+                
+                // If the defaultJenis is not in the list (e.g. legacy), add it as an option
+                if (defaultJenis && !transportOptionsList.includes(defaultJenis)) {
+                    selectOptionsHtml += `<option value="${$('<div/>').text(defaultJenis).html()}" selected>${$('<div/>').text(defaultJenis).html()}</option>`;
+                }
+
                 const tIsLumpsum = data.is_lumpsum ? 'checked' : '';
                 const tIsLumpsumVal = data.is_lumpsum ? '1' : '0';
                 const rowId = 'lumpsum_' + Math.random().toString(36).substr(2, 9);
@@ -657,7 +668,7 @@
                             </div>
                             <div class="col-md-2 mb-1 mb-md-0" style="padding-right: 5px; padding-left: 5px;">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Jenis Transp.</label>
-                                <input type="text" list="transportasi-master-list" class="form-control form-control-sm" name="transport_jenis[]" placeholder="Cth: Pesawat" value="${$('<div/>').text(defaultJenis).html()}">
+                                <select class="form-control form-control-sm" name="transport_jenis[]">${selectOptionsHtml}</select>
                             </div>
                             <div class="col-md-2 mb-1 mb-md-0" style="padding-right: 5px; padding-left: 5px;">
                                 <label class="font-weight-bold mb-0 text-muted" style="font-size:0.75rem;">Rute</label>
