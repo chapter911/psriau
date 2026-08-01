@@ -384,6 +384,11 @@ class Laporan extends BaseController
             $kopSuratList = $db->table('kop_surat')->orderBy('is_active', 'DESC')->orderBy('id', 'DESC')->get()->getResultArray();
         }
 
+        $transportasiList = [];
+        if ($db->tableExists('mst_transportasi')) {
+            $transportasiList = $db->table('mst_transportasi')->orderBy('nama_transportasi', 'ASC')->get()->getResultArray();
+        }
+
         $mataAnggaranList = [];
         if ($db->tableExists('mst_mata_anggaran')) {
             $mataAnggaranList = $db->table('mst_mata_anggaran')->orderBy('status', 'ASC')->orderBy('id', 'DESC')->get()->getResultArray();
@@ -398,6 +403,7 @@ class Laporan extends BaseController
             'dasar_spt_options' => $dasarSptOptions,
             'kop_surat_list' => $kopSuratList,
             'mata_anggaran_list' => $mataAnggaranList,
+            'transportasi_list' => $transportasiList,
             'last_kode_nomor' => $this->getLastKodeNomorSetting(),
         ]);
     }
