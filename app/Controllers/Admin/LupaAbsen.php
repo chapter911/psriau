@@ -397,10 +397,8 @@ class LupaAbsen extends BaseController
     private function generateNomorSurat(int $id): string
     {
         $year = date('Y');
-        $month = date('m');
 
-        // Use the ID for numbering
-        return sprintf('%03d/LOA-%s%s', $id, $month, substr($year, -2));
+        return sprintf('KP0602/B/Gs7/%s/', $year);
     }
 
     public function hapus(int $id): RedirectResponse

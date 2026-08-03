@@ -397,7 +397,7 @@ graph TD
                                     <li>Pilih Tanggal Absen, Jenis Absen (Masuk/Pulang), dan KOP Surat.</li>
                                     <li>Pilih Template Alasan: <strong>Lupa Absen Masuk</strong>, <strong>Lupa Absen Pulang</strong>, <strong>Terlambat Masuk</strong>, atau <strong>Pulang Sebelum Waktunya</strong> (atau Ketik Manual).</li>
                                     <li>Klik <strong>Ajukan</strong> untuk menyimpan.</li>
-                                    <li>Unduh PDF Surat Pernyataan resmi melalui tombol icon PDF.</li>
+                                    <li>Unduh PDF Surat Pernyataan resmi melalui tombol icon PDF (Format Nomor Surat: <code>KP0602/B/Gs7/{Tahun}/</code>).</li>
                                 </ol>
                             </div>
                         </div>
