@@ -3,18 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <title>Rincian &amp; Kwitansi Perjalanan Dinas</title>
+    <?php
+    $tahomaRegPath = FCPATH . 'assets/fonts/tahoma/Tahoma.ttf';
+    $tahomaBoldPath = FCPATH . 'assets/fonts/tahoma/Tahoma-Bold.ttf';
+    $tahomaRegBase64 = file_exists($tahomaRegPath) ? 'data:font/truetype;charset=utf-8;base64,' . base64_encode(file_get_contents($tahomaRegPath)) : '';
+    $tahomaBoldBase64 = file_exists($tahomaBoldPath) ? 'data:font/truetype;charset=utf-8;base64,' . base64_encode(file_get_contents($tahomaBoldPath)) : '';
+    ?>
     <style>
         @font-face {
             font-family: 'Tahoma';
             font-style: normal;
             font-weight: normal;
-            src: url('<?= base_url('assets/fonts/tahoma/Tahoma.ttf') ?>') format('truetype');
+            src: url('<?= $tahomaRegBase64 ?>') format('truetype');
         }
         @font-face {
             font-family: 'Tahoma';
             font-style: normal;
             font-weight: bold;
-            src: url('<?= base_url('assets/fonts/tahoma/Tahoma-Bold.ttf') ?>') format('truetype');
+            src: url('<?= $tahomaBoldBase64 ?>') format('truetype');
         }
 
         body {
