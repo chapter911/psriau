@@ -1148,78 +1148,7 @@ class Laporan extends BaseController
 
     public function perjalananDinasCetakKwitansi(int $id)
     {
-        if (! $this->canViewLaporan()) {
-            return redirect()->to(site_url('/admin'));
-        }
-
-        $row = (new LaporanPerjalananDinasModel())->find($id);
-        if (! is_array($row)) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
-        }
-
-        $this->ensureKodeNomorAssigned($row);
-
-        $pelaksana = $this->sortPelaksanaByStrukturOrganisasi(json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: []);
-        $kotaTujuan = $row['kota_tujuan'] ?? '';
-
-        // Fetch kop_surat
-        $db = \Config\Database::connect();
-        $kopSuratId = (int) ($row['kop_surat_id'] ?? 0);
-        $kopSurat = null;
-        if ($kopSuratId > 0 && $db->tableExists('kop_surat')) {
-            $kopSurat = $db->table('kop_surat')->where('id', $kopSuratId)->get()->getRowArray();
-        }
-        if (!$kopSurat && $db->tableExists('kop_surat')) {
-            $kopSurat = $db->table('kop_surat')->where('is_active', 1)->orderBy('id', 'DESC')->get()->getRowArray();
-        }
-
-        $biayaMaster = $this->getBiayaMasterForKota($kotaTujuan);
-
-        $mataAnggaranText = $this->resolveMataAnggaran($row);
-
-        $html = view('admin/laporan/cetak_kwitansi', [
-            'row' => $row,
-            'pelaksana' => $pelaksana,
-            'kop_surat' => $kopSurat,
-            'biaya_master' => $biayaMaster,
-            'mata_anggaran' => $mataAnggaranText,
-        ]);
-
-        $dompdfOptions = new \Dompdf\Options();
-        $dompdfOptions->set('isRemoteEnabled', false);
-        $dompdfOptions->set('isHtml5ParserEnabled', true);
-        // Point DomPDF font dir to its own lib/fonts where Tahoma cache already exists
-        $dompdfFontDir = rtrim(ROOTPATH, '/') . '/vendor/dompdf/dompdf/lib/fonts';
-        if (is_dir($dompdfFontDir)) {
-            $dompdfOptions->set('fontDir', $dompdfFontDir);
-            $dompdfOptions->set('fontCache', $dompdfFontDir);
-        }
-
-        $dompdf = new \Dompdf\Dompdf($dompdfOptions);
-
-        // Register Tahoma font directly from the cached TTF files.
-        // This bypasses the @font-face HTTP download and ensures the correct
-        // glyph rendering (including "j") that matches the reference document.
-        $tahomaNormalCached = $dompdfFontDir . '/tahoma_normal_d1481a15cdcaefa3e14fc0f834ca8d71';
-        $tahomaBoldCached   = $dompdfFontDir . '/tahoma_bold_2add7f1e1972a0016de745fcd4834a1d';
-        if (file_exists($tahomaNormalCached . '.ttf') && file_exists($tahomaBoldCached . '.ttf')) {
-            $fontMetrics = $dompdf->getFontMetrics();
-            $fontMetrics->setFontFamily('tahoma', [
-                'normal'      => $tahomaNormalCached,
-                'bold'        => $tahomaBoldCached,
-                'italic'      => $tahomaNormalCached,
-                'bold_italic' => $tahomaBoldCached,
-            ]);
-        }
-
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        return $this->response
-            ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', 'inline; filename="kwitansi_' . $id . '.pdf"')
-            ->setBody($dompdf->output());
+        return $this->perjalananDinasCetakKwitansiExcelPdf($id);
     }
 
     /**
