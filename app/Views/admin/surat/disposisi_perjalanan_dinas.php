@@ -61,11 +61,11 @@
                 <div class="form-row">
                     <div class="form-group col-md-3">
                         <label for="filter_start_date" class="font-weight-bold mb-1">Tanggal Mulai</label>
-                        <input type="date" class="form-control form-control-sm" id="filter_start_date" value="<?= date('Y-01-01'); ?>">
+                        <input type="date" class="form-control form-control-sm" id="filter_start_date" value="<?= date('Y-m-01'); ?>">
                     </div>
                     <div class="form-group col-md-3">
                         <label for="filter_end_date" class="font-weight-bold mb-1">Tanggal Selesai</label>
-                        <input type="date" class="form-control form-control-sm" id="filter_end_date" value="<?= date('Y-12-31'); ?>">
+                        <input type="date" class="form-control form-control-sm" id="filter_end_date" value="<?= date('Y-m-t'); ?>">
                     </div>
                     <div class="form-group col-md-3">
                         <label for="filter_kota" class="font-weight-bold mb-1">Kota Tujuan</label>
@@ -589,8 +589,8 @@ $(document).ready(function() {
     $filterPelaksana.on('change', function () { table.ajax.reload(); });
 
     $('#btn-reset-filter').on('click', function () {
-        $filterStartDate.val('<?= date('Y-01-01'); ?>');
-        $filterEndDate.val('<?= date('Y-12-31'); ?>');
+        $filterStartDate.val('<?= date('Y-m-01'); ?>');
+        $filterEndDate.val('<?= date('Y-m-t'); ?>');
         $filterKota.val(null).trigger('change');
         $filterPelaksana.val(null).trigger('change');
         table.ajax.reload();

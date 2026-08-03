@@ -728,12 +728,7 @@ class Laporan extends BaseController
                 
                 $row['sppd_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-sppd') . '" class="btn btn-xs btn-primary text-white btn-table-action shadow-sm" title="Cetak SPPD (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak SPPD</a>';
                 
-                $baseUrl = site_url('admin/surat/perjalanan-dinas/' . (int) $row['id']);
-                $row['kwitansi_html'] = '
-                    <div class="btn-group" role="group">
-                        <a href="' . $baseUrl . '/cetak-kwitansi-excel-pdf" class="btn btn-xs btn-info text-white btn-table-action shadow-sm" title="Cetak Kwitansi PDF (dari template Excel — identik dengan asli)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Kwitansi PDF</a>
-                        <a href="' . $baseUrl . '/cetak-kwitansi-xlsx" class="btn btn-xs btn-success text-white btn-table-action shadow-sm" title="Download Kwitansi Excel (XLSX)" target="_blank"><i class="fas fa-file-excel mr-1"></i> Kwitansi Excel</a>
-                    </div>';
+                $row['kwitansi_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-kwitansi') . '" class="btn btn-xs btn-info text-white btn-table-action shadow-sm" title="Cetak Kwitansi (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak Kwitansi</a>';
                 
                 $row['aksi_spt_html'] = $aksiSptHtml;
 
@@ -1148,14 +1143,6 @@ class Laporan extends BaseController
 
     public function perjalananDinasCetakKwitansi(int $id)
     {
-        return $this->perjalananDinasCetakKwitansiExcelPdf($id);
-    }
-
-    /**
-     * Download kwitansi sebagai file XLSX (Excel) menggunakan template asli.
-     */
-    public function perjalananDinasCetakKwitansiXlsx(int $id)
-    {
         if (! $this->canViewLaporan()) {
             return redirect()->to(site_url('/admin'));
         }
@@ -1166,11 +1153,14 @@ class Laporan extends BaseController
         }
 
         $this->ensureKodeNomorAssigned($row);
-        $pelaksana = $this->sortPelaksanaByStrukturOrganisasi(json_decode((string)($row['pelaksana_json'] ?? '[]'), true) ?: []);
 
+        $pelaksana = $this->sortPelaksanaByStrukturOrganisasi(json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: []);
+        $kotaTujuan = $row['kota_tujuan'] ?? '';
+
+        // Fetch kop_surat
         $db = \Config\Database::connect();
-        $kopSuratId = (int)($row['kop_surat_id'] ?? 0);
-        $kopSurat   = null;
+        $kopSuratId = (int) ($row['kop_surat_id'] ?? 0);
+        $kopSurat = null;
         if ($kopSuratId > 0 && $db->tableExists('kop_surat')) {
             $kopSurat = $db->table('kop_surat')->where('id', $kopSuratId)->get()->getRowArray();
         }
@@ -1178,60 +1168,31 @@ class Laporan extends BaseController
             $kopSurat = $db->table('kop_surat')->where('is_active', 1)->orderBy('id', 'DESC')->get()->getRowArray();
         }
 
-        $biayaMaster    = $this->getBiayaMasterForKota($row['kota_tujuan'] ?? '');
-        $mataAnggaran   = $this->resolveMataAnggaran($row);
+        $biayaMaster = $this->getBiayaMasterForKota($kotaTujuan);
 
-        $generator  = new \App\Libraries\KwitansiExcelGenerator();
-        $xlsxBytes  = $generator->generateXlsx($row, $pelaksana, $kopSurat, $biayaMaster, $mataAnggaran);
+        $mataAnggaranText = $this->resolveMataAnggaran($row);
 
-        $filename = 'kwitansi_' . ($row['nip'] ?? $id) . '_' . date('Ymd') . '.xlsx';
+        $html = view('admin/laporan/cetak_kwitansi', [
+            'row' => $row,
+            'pelaksana' => $pelaksana,
+            'kop_surat' => $kopSurat,
+            'biaya_master' => $biayaMaster,
+            'mata_anggaran' => $mataAnggaranText,
+        ]);
 
-        return $this->response
-            ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
-            ->setBody($xlsxBytes);
-    }
+        $dompdfOptions = new \Dompdf\Options();
+        $dompdfOptions->set('isRemoteEnabled', true);
+        $dompdfOptions->set('isHtml5ParserEnabled', true);
 
-    /**
-     * Generate kwitansi PDF langsung dari template Excel (pixel-perfect).
-     * Menggunakan PhpSpreadsheet + Dompdf writer — tanpa HTML intermediate.
-     */
-    public function perjalananDinasCetakKwitansiExcelPdf(int $id)
-    {
-        if (! $this->canViewLaporan()) {
-            return redirect()->to(site_url('/admin'));
-        }
-
-        $row = (new LaporanPerjalananDinasModel())->find($id);
-        if (! is_array($row)) {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
-        }
-
-        $this->ensureKodeNomorAssigned($row);
-        $pelaksana = $this->sortPelaksanaByStrukturOrganisasi(json_decode((string)($row['pelaksana_json'] ?? '[]'), true) ?: []);
-
-        $db = \Config\Database::connect();
-        $kopSuratId = (int)($row['kop_surat_id'] ?? 0);
-        $kopSurat   = null;
-        if ($kopSuratId > 0 && $db->tableExists('kop_surat')) {
-            $kopSurat = $db->table('kop_surat')->where('id', $kopSuratId)->get()->getRowArray();
-        }
-        if (!$kopSurat && $db->tableExists('kop_surat')) {
-            $kopSurat = $db->table('kop_surat')->where('is_active', 1)->orderBy('id', 'DESC')->get()->getRowArray();
-        }
-
-        $biayaMaster    = $this->getBiayaMasterForKota($row['kota_tujuan'] ?? '');
-        $mataAnggaran   = $this->resolveMataAnggaran($row);
-
-        $generator = new \App\Libraries\KwitansiExcelGenerator();
-        $pdfBytes  = $generator->generatePdf($row, $pelaksana, $kopSurat, $biayaMaster, $mataAnggaran);
-
-        $filename = 'kwitansi_' . ($row['nip'] ?? $id) . '_' . date('Ymd') . '.pdf';
+        $dompdf = new \Dompdf\Dompdf($dompdfOptions);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
 
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
-            ->setBody($pdfBytes);
+            ->setHeader('Content-Disposition', 'inline; filename="kwitansi_' . $id . '.pdf"')
+            ->setBody($dompdf->output());
     }
 
     public function perjalananDinasCetakPeriode()

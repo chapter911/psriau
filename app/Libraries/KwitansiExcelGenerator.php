@@ -27,10 +27,7 @@ class KwitansiExcelGenerator
     {
         $this->templatePath = APPPATH . 'ThirdParty/kwitansi_template.xls';
         if (!function_exists('terbilang_angka')) {
-            $helperPath = APPPATH . 'Helpers/custom_helper.php';
-            if (file_exists($helperPath)) {
-                require_once $helperPath;
-            }
+            helper('custom_helper');
         }
     }
 
@@ -41,7 +38,9 @@ class KwitansiExcelGenerator
         $spreadsheet = $this->buildSpreadsheet($row, $pelaksana, $kopSurat, $biayaMaster, $mataAnggaran, $idx);
         $spreadsheet->setActiveSheetIndexByName('KWITANSI');
 
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Pdf\Dompdf($spreadsheet);
+        \PhpOffice\PhpSpreadsheet\Settings::setPdfRendererName(\PhpOffice\PhpSpreadsheet\Settings::PDF_RENDERER_DOMPDF);
+
+        $writer = IOFactory::createWriter($spreadsheet, 'Pdf');
         $writer->setSheetIndex($spreadsheet->getActiveSheetIndex());
 
         ob_start();
@@ -83,58 +82,43 @@ class KwitansiExcelGenerator
     {
         $nomorSPD   = str_replace('SPT', 'SPD', $row['nomor_surat_tugas'] ?? '-');
         $tanggalTtd  = $this->formatDate($row['tanggal_tanda_tangan'] ?? date('Y-m-d'));
+        $terbilang   = $this->terbilang($costs['total']) . ' Rupiah,-';
 
         $s->setCellValue('C2', 'LAMPIRAN SPD NOMOR : ' . $nomorSPD);
         $s->setCellValue('C3', 'TANGGAL : ' . strtoupper($tanggalTtd));
 
-        if (empty($costs['is_custom_real_data'])) {
-            // Keep original template default values matching Lampiran 1
-            $s->setCellValue('G28', 'Delapan Juta Lima Ratus Tiga Belas Ribu Empat Ratus Rupiah,-');
-            $s->setCellValue('L30', 'Pekanbaru,        ' . $this->formatMonthYear($row['tanggal_tanda_tangan'] ?? date('Y-m-d')));
-            $s->setCellValue('K39', strtoupper($utama['nama']));
-            $s->setCellValue('K40', 'NIP. ' . $this->formatNip($utama['nip'] ?? ''));
-            return;
+        $pesawatRnd = $this->fillRinciTransport($s, $costs['transportGroups']);
+
+        // Set rounded subtotal for Pesawat row K12
+        if ($pesawatRnd > 0) {
+            $s->setCellValue('K12', $pesawatRnd);
         }
 
-        $terbilang = $this->terbilang($costs['total']) . ' Rupiah,-';
+        // Set total transport in M7
+        $s->setCellValue('M7', $costs['transport']);
 
-        // Transport
-        if ($costs['transport'] > 0) {
-            $pesawatRnd = $this->fillRinciTransport($s, $costs['transportGroups']);
-            if ($pesawatRnd > 0) {
-                $s->setCellValue('K12', $pesawatRnd);
-            }
-            $s->setCellValue('M7', $costs['transport']);
-        }
-
-        // Uang harian
+        // Uang harian (rows 20 area)
         if (!empty($costs['harianDetails'])) {
             $hd = $costs['harianDetails'][0];
             $s->setCellValue('D20', $hd['days']);
             $s->setCellValue('H20', $hd['rate']);
             $s->setCellValue('J20', $hd['sub']);
-            $s->setCellValue('M18', $costs['harian']);
         }
+        $s->setCellValue('M18', $costs['harian']);
 
-        // Penginapan
-        $pDetails = $costs['penginapanDetails'];
-        if (!empty($pDetails)) {
-            $pd0 = $pDetails[0];
-            $s->setCellValue('D24', $pd0['nights']);
-            $s->setCellValue('H24', $pd0['rate']);
-            $s->setCellValue('J24', $pd0['sub']);
-
-            if (count($pDetails) >= 2) {
-                $pd1 = $pDetails[1];
-                $s->setCellValue('D25', $pd1['nights']);
-                $s->setCellValue('H25', $pd1['rate']);
-                $s->setCellValue('J25', $pd1['sub']);
-            }
-            $s->setCellValue('M22', $costs['penginapan']);
+        // Penginapan (rows 24-25 area)
+        foreach (array_slice($costs['penginapanDetails'], 0, 2) as $i => $pd) {
+            $r = 24 + $i;
+            $s->setCellValue('D'.$r, $pd['nights']);
+            $s->setCellValue('H'.$r, $pd['rate']);
+            $s->setCellValue('J'.$r, $pd['sub']);
         }
+        $s->setCellValue('M22', $costs['penginapan']);
 
         // Total M27 & Terbilang G28
         $s->setCellValue('M27', $costs['total']);
+        $s->setCellValue('G28', '=TERBILANG(M27) &" Rupiah,-"');
+        // Also write value to G28 directly so non-VBA renders it
         $s->setCellValue('G28', $terbilang);
 
         $s->setCellValue('E32', $costs['total']);
@@ -196,31 +180,19 @@ class KwitansiExcelGenerator
         $tanggalTtd   = $this->formatDate($row['tanggal_tanda_tangan'] ?? date('Y-m-d'));
         $tglBerangkat = $this->formatDate($row['periode_mulai'] ?? '');
         $tglKembali   = $this->formatDate($row['periode_selesai'] ?? '');
-
-        // Resolve Tahun Anggaran
-        $tglRaw = !empty($row['tanggal_tanda_tangan']) && $row['tanggal_tanda_tangan'] !== '0000-00-00'
-            ? $row['tanggal_tanda_tangan']
-            : (!empty($row['periode_mulai']) ? $row['periode_mulai'] : 'now');
-        $tahunAnggaran = date('Y', strtotime($tglRaw) ?: time());
-
-        $terbilang    = empty($costs['is_custom_real_data'])
-                        ? 'Delapan Juta Lima Ratus Tiga Belas Ribu Empat Ratus Rupiah,-'
-                        : ($this->terbilang($costs['total']) . ' Rupiah,-');
+        $tahunAnggaran= date('Y', strtotime($row['tanggal_tanda_tangan'] ?? 'now'));
+        $terbilang    = $this->terbilang($costs['total']) . ' Rupiah,-';
         $kodeNomor    = $row['kode_nomor'] ?? '';
 
-        // Info table top-right: P10 = Tahun Anggaran, P11 = Kode Nomor, P12 = Mata Anggaran
-        $s->setCellValue('K10', 'Tahun Anggaran');
-        $s->mergeCells('P10:T10');
-        $s->setCellValue('P10', (string)$tahunAnggaran);
+        // Info table top-right
+        $s->setCellValue('P10', $tahunAnggaran);
         if (!empty($kodeNomor)) {
-            $s->mergeCells('P11:T11');
-            $s->setCellValue('P11', (string)$kodeNomor);
+            $s->setCellValue('P11', $kodeNomor);
         }
-        $s->mergeCells('P12:T12');
-        $s->setCellValue('P12', (string)$mataAnggaran);
+        $s->setCellValue('P12', $mataAnggaran);
 
-        // Override formula cells
-        $s->setCellValue('H20', empty($costs['is_custom_real_data']) ? 8513400 : $costs['total']);
+        // Override formula cells with plain calculated values
+        $s->setCellValue('H20', $costs['total']);
         $s->setCellValue('G22', $terbilang);
 
         // Untuk Pembayaran
@@ -242,30 +214,27 @@ class KwitansiExcelGenerator
         $s->setCellValue('L41', strtoupper($utama['nama']));
         $s->setCellValue('M42', 'NIP. ' . $this->formatNip($utama['nip'] ?? ''));
 
-        // Stretch Kop Surat image to full header width (columns B to T = 1380px width at B2)
-        try {
-            $drawings = $s->getDrawingCollection();
-            for ($i = count($drawings) - 1; $i >= 0; $i--) {
-                $drawings->offsetUnset($i);
-            }
-
-            $imgPath = !empty($kopSurat['image_url']) && file_exists(FCPATH . ltrim($kopSurat['image_url'], '/'))
-                ? FCPATH . ltrim($kopSurat['image_url'], '/')
-                : APPPATH . 'ThirdParty/kop_template.png';
-
+        // Kop surat image replacement if custom image is present
+        if (!empty($kopSurat['image_url'])) {
+            $imgPath = FCPATH . ltrim($kopSurat['image_url'], '/');
             if (file_exists($imgPath)) {
-                $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
-                $drawing->setName('Kop Surat');
-                $drawing->setPath($imgPath);
-                $drawing->setCoordinates('B2');
-                $drawing->setOffsetX(0);
-                $drawing->setOffsetY(0);
-                $drawing->setResizeProportional(false);
-                $drawing->setWidth(1110);
-                $drawing->setHeight(152);
-                $drawing->setWorksheet($s);
+                try {
+                    // Clear existing drawings if any
+                    $drawings = $s->getDrawingCollection();
+                    foreach ($drawings as $i => $d) {
+                        $drawings->offsetUnset($i);
+                    }
+
+                    $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+                    $drawing->setName('Kop Surat');
+                    $drawing->setPath($imgPath);
+                    $drawing->setCoordinates('C2');
+                    $drawing->setWidth(960);
+                    $drawing->setHeight(152);
+                    $drawing->setWorksheet($s);
+                } catch (\Throwable) {}
             }
-        } catch (\Throwable) {}
+        }
     }
 
     // ── Cost calculations ───────────────────────────────────────────────────
@@ -291,58 +260,7 @@ class KwitansiExcelGenerator
 
         $rincian = json_decode((string)($row['rincian_biaya_json'] ?? '{}'), true) ?: [];
 
-        // Format B: Indexed list of items [{keterangan, jumlah, harga_satuan, total}, ...]
-        if (is_array($rincian) && isset($rincian[0]) && is_array($rincian[0])) {
-            $calcT = 0; $calcH = 0; $calcP = 0;
-            $tGroups = []; $hDetails = []; $pDetails = [];
-
-            foreach ($rincian as $item) {
-                $ket = trim((string)($item['keterangan'] ?? ''));
-                $ketLow = strtolower($ket);
-                $satuanLow = strtolower(trim((string)($item['satuan'] ?? '')));
-                $jumlah = (int)($item['jumlah'] ?? 1);
-                $rate = (int)($item['harga_satuan'] ?? 0);
-                $sub = isset($item['total']) ? (int)$item['total'] : ($jumlah * $rate);
-
-                if (str_contains($ketLow, 'harian') || $satuanLow === 'hari') {
-                    $hDetails[] = ['days' => $jumlah, 'rate' => $rate, 'sub' => $sub, 'ket' => $ket];
-                    $calcH += $sub;
-                } elseif (str_contains($ketLow, 'penginapan') || str_contains($ketLow, 'hotel') || $satuanLow === 'malam') {
-                    $pDetails[] = ['nights' => $jumlah, 'rate' => $rate, 'sub' => $sub, 'ket' => $ket];
-                    $calcP += $sub;
-                } else {
-                    $gKey = str_contains($ketLow, 'pesawat') ? 'Pesawat Udara' : (str_contains($ketLow, 'taxi') || str_contains($ketLow, 'taksi') ? 'Taxi' : ($ket ?: 'Transport'));
-                    if (!isset($tGroups[$gKey])) {
-                        $tGroups[$gKey] = ['label' => $gKey, 'rows' => [], 'exact_subtotal' => 0];
-                    }
-                    $tGroups[$gKey]['rows'][] = ['jenis' => $gKey, 'ket' => $ket, 'days' => $jumlah, 'rate' => $rate, 'sub' => $sub, 'lumpsum' => true];
-                    $tGroups[$gKey]['exact_subtotal'] += $sub;
-                    $calcT += $sub;
-                }
-            }
-
-            foreach ($tGroups as $k => $g) {
-                $r = (int)(floor($g['exact_subtotal'] / 100) * 100);
-                $tGroups[$k]['rounded_subtotal'] = $r;
-                $tGroups[$k]['has_rounded'] = ($r !== $g['exact_subtotal']);
-            }
-
-            $totalB = $calcH + $calcT + $calcP;
-            if ($totalB > 2000000) {
-                return [
-                    'transportGroups'  => $tGroups,
-                    'harianDetails'    => $hDetails,
-                    'penginapanDetails'=> $pDetails,
-                    'transport'        => $calcT,
-                    'harian'           => $calcH,
-                    'penginapan'       => $calcP,
-                    'total'            => $totalB,
-                    'is_custom_real_data' => true,
-                ];
-            }
-        }
-
-        // Format A: Associative array ['transport' => [...], 'uang_harian' => [...], 'penginapan' => [...]]
+        // Transport
         $tList = (array)($rincian['transport'] ?? []);
         if (empty($tList) && isset($rincian['transport_start_date'])) {
             $tList = [['tgl_mulai'=>$rincian['transport_start_date']??'','tgl_selesai'=>$rincian['transport_end_date']??'','nominal'=>(int)($rincian['transport_nominal']??0),'keterangan'=>'']];
@@ -420,35 +338,7 @@ class KwitansiExcelGenerator
             $pDetails[] = ['nights'=>$pn,'rate'=>$rate,'sub'=>$calcP,'ket'=>''];
         }
 
-        $total = $calcH + $calcT + $calcP;
-
-        if ($total > 2000000) {
-            return [
-                'transportGroups'  => $tGroups,
-                'harianDetails'    => $hDetails,
-                'penginapanDetails'=> $pDetails,
-                'transport'        => $calcT,
-                'harian'           => $calcH,
-                'penginapan'       => $calcP,
-                'total'            => $total,
-                'is_custom_real_data' => true,
-            ];
-        }
-
-        // Sample fallback matching Lampiran 1 (kwitansi_contoh.xls default values)
-        return [
-            'transportGroups'  => [
-                'Pesawat Udara' => ['label' => 'Pesawat Udara', 'rows' => [['jenis' => 'Pesawat Udara', 'ket' => 'Pekanbaru - Jakarta', 'days' => 1, 'rate' => 1774040, 'sub' => 1774040, 'lumpsum' => true], ['jenis' => 'Pesawat Udara', 'ket' => 'Jakarta - Pekanbaru', 'days' => 1, 'rate' => 1757744, 'sub' => 1757744, 'lumpsum' => true]], 'rounded_subtotal' => 3531700],
-                'Taxi' => ['label' => 'Taxi', 'rows' => [['jenis' => 'Taxi', 'ket' => 'Banten (PP)', 'days' => 1, 'rate' => 500000, 'sub' => 500000, 'lumpsum' => true], ['jenis' => 'Taxi', 'ket' => 'Pekanbaru (PP)', 'days' => 1, 'rate' => 198000, 'sub' => 198000, 'lumpsum' => true]], 'rounded_subtotal' => 698000],
-            ],
-            'harianDetails'    => [['days' => 4, 'rate' => 530000, 'sub' => 2120000, 'ket' => '']],
-            'penginapanDetails'=> [['nights' => 1, 'rate' => 703700, 'sub' => 703700, 'ket' => ''], ['nights' => 2, 'rate' => 730000, 'sub' => 1460000, 'ket' => '']],
-            'transport'        => 4229700,
-            'harian'           => 2120000,
-            'penginapan'       => 2163700,
-            'total'            => 8513400,
-            'is_custom_real_data' => false,
-        ];
+        return ['transportGroups'=>$tGroups,'harianDetails'=>$hDetails,'penginapanDetails'=>$pDetails,'transport'=>$calcT,'harian'=>$calcH,'penginapan'=>$calcP,'total'=>$calcH+$calcT+$calcP];
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -479,10 +369,7 @@ class KwitansiExcelGenerator
     private function terbilang(int|float $angka): string
     {
         if (!function_exists('terbilang_angka')) {
-            $helperPath = APPPATH . 'Helpers/custom_helper.php';
-            if (file_exists($helperPath)) {
-                require_once $helperPath;
-            }
+            helper('custom_helper');
         }
         if (function_exists('terbilang_angka')) {
             return ucwords(terbilang_angka((int)$angka));

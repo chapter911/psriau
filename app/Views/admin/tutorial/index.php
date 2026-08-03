@@ -284,7 +284,7 @@ graph TD
     B --> C[Klik Tombol Update Verifikasi]
     C --> D[Pilih KOP Surat, MAK, Dasar SPT & Tarif Periode]
     D --> E[Upload File SPT TTD PDF]
-    E --> F["Cetak Dokumentasi Resmi: SPT, SPPD 2 Hal, Kwitansi & Rincian Biaya (layout Times New Roman sesuai format resmi), Nominatif"]
+    E --> F[Cetak Dokumentasi Resmi: SPT, SPPD 2 Hal, Kwitansi & Rincian Biaya, Nominatif]
                 </pre>
             </div>
         </div>
@@ -438,9 +438,7 @@ graph TD
                         <h6 class="font-weight-bold text-warning"><i class="fas fa-check-double mr-1"></i> Verifikasi Disposisi Masuk</h6>
                         <p class="small text-muted mb-2"><code>/admin/surat/perjalanan-dinas/disposisi</code></p>
                         <ul class="pl-3 small mb-0">
-                            <li>Buka email notifikasi atau masuk ke menu Disposisi Perjadin (`/admin/surat/perjalanan-dinas/disposisi`).</li>
-                            <li>Filter periode tanggal secara default diset dari awal tahun hingga akhir tahun (1 Januari s.d 31 Desember tahun berjalan).</li>
-                            <li>Daftar disposisi otomatis menampilkan pengajuan yang **belum di-approve (Pending)** pada urutan bagian paling atas.</li>
+                            <li>Buka email notifikasi atau masuk ke menu Disposisi Perjadin.</li>
                             <li>Periksa detail kota tujuan, periode tanggal, dan daftar pegawai pelaksana.</li>
                             <li>Klik tombol hijau <strong>Setujui</strong> atau tombol merah <strong>Tolak</strong>.</li>
                             <li>Setelah disetujui, PDF Disposisi akan tersemat <strong>Stempel Approved</strong> dari PPK &amp; Kasatker.</li>

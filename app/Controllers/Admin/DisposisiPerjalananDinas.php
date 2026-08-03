@@ -97,9 +97,8 @@ class DisposisiPerjalananDinas extends BaseController
 
         $recordsFiltered = (int) $builder->countAllResults(false);
 
-        // Sorting: pending (belum di-approve) first, then id desc
-        $rows = $builder->orderBy("CASE WHEN status = 'pending' THEN 0 ELSE 1 END", 'ASC', false)
-            ->orderBy('id', 'DESC')
+        // Sorting by id desc
+        $rows = $builder->orderBy('id', 'DESC')
             ->limit($length, $start)
             ->get()
             ->getResultArray();
