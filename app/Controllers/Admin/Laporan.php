@@ -728,7 +728,12 @@ class Laporan extends BaseController
                 
                 $row['sppd_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-sppd') . '" class="btn btn-xs btn-primary text-white btn-table-action shadow-sm" title="Cetak SPPD (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak SPPD</a>';
                 
-                $row['kwitansi_html'] = '<a href="' . site_url('admin/surat/perjalanan-dinas/' . (int) $row['id'] . '/cetak-kwitansi') . '" class="btn btn-xs btn-info text-white btn-table-action shadow-sm" title="Cetak Kwitansi (PDF)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Cetak Kwitansi</a>';
+                $baseUrl = site_url('admin/surat/perjalanan-dinas/' . (int) $row['id']);
+                $row['kwitansi_html'] = '
+                    <div class="btn-group" role="group">
+                        <a href="' . $baseUrl . '/cetak-kwitansi-excel-pdf" class="btn btn-xs btn-info text-white btn-table-action shadow-sm" title="Cetak Kwitansi PDF (dari template Excel — identik dengan asli)" target="_blank"><i class="fas fa-file-pdf mr-1"></i> Kwitansi PDF</a>
+                        <a href="' . $baseUrl . '/cetak-kwitansi-xlsx" class="btn btn-xs btn-success text-white btn-table-action shadow-sm" title="Download Kwitansi Excel (XLSX)" target="_blank"><i class="fas fa-file-excel mr-1"></i> Kwitansi Excel</a>
+                    </div>';
                 
                 $row['aksi_spt_html'] = $aksiSptHtml;
 
@@ -1181,10 +1186,32 @@ class Laporan extends BaseController
         ]);
 
         $dompdfOptions = new \Dompdf\Options();
-        $dompdfOptions->set('isRemoteEnabled', true);
+        $dompdfOptions->set('isRemoteEnabled', false);
         $dompdfOptions->set('isHtml5ParserEnabled', true);
+        // Point DomPDF font dir to its own lib/fonts where Tahoma cache already exists
+        $dompdfFontDir = rtrim(ROOTPATH, '/') . '/vendor/dompdf/dompdf/lib/fonts';
+        if (is_dir($dompdfFontDir)) {
+            $dompdfOptions->set('fontDir', $dompdfFontDir);
+            $dompdfOptions->set('fontCache', $dompdfFontDir);
+        }
 
         $dompdf = new \Dompdf\Dompdf($dompdfOptions);
+
+        // Register Tahoma font directly from the cached TTF files.
+        // This bypasses the @font-face HTTP download and ensures the correct
+        // glyph rendering (including "j") that matches the reference document.
+        $tahomaNormalCached = $dompdfFontDir . '/tahoma_normal_d1481a15cdcaefa3e14fc0f834ca8d71';
+        $tahomaBoldCached   = $dompdfFontDir . '/tahoma_bold_2add7f1e1972a0016de745fcd4834a1d';
+        if (file_exists($tahomaNormalCached . '.ttf') && file_exists($tahomaBoldCached . '.ttf')) {
+            $fontMetrics = $dompdf->getFontMetrics();
+            $fontMetrics->setFontFamily('tahoma', [
+                'normal'      => $tahomaNormalCached,
+                'bold'        => $tahomaBoldCached,
+                'italic'      => $tahomaNormalCached,
+                'bold_italic' => $tahomaBoldCached,
+            ]);
+        }
+
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
@@ -1193,6 +1220,89 @@ class Laporan extends BaseController
             ->setHeader('Content-Type', 'application/pdf')
             ->setHeader('Content-Disposition', 'inline; filename="kwitansi_' . $id . '.pdf"')
             ->setBody($dompdf->output());
+    }
+
+    /**
+     * Download kwitansi sebagai file XLSX (Excel) menggunakan template asli.
+     */
+    public function perjalananDinasCetakKwitansiXlsx(int $id)
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $row = (new LaporanPerjalananDinasModel())->find($id);
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+        }
+
+        $this->ensureKodeNomorAssigned($row);
+        $pelaksana = $this->sortPelaksanaByStrukturOrganisasi(json_decode((string)($row['pelaksana_json'] ?? '[]'), true) ?: []);
+
+        $db = \Config\Database::connect();
+        $kopSuratId = (int)($row['kop_surat_id'] ?? 0);
+        $kopSurat   = null;
+        if ($kopSuratId > 0 && $db->tableExists('kop_surat')) {
+            $kopSurat = $db->table('kop_surat')->where('id', $kopSuratId)->get()->getRowArray();
+        }
+        if (!$kopSurat && $db->tableExists('kop_surat')) {
+            $kopSurat = $db->table('kop_surat')->where('is_active', 1)->orderBy('id', 'DESC')->get()->getRowArray();
+        }
+
+        $biayaMaster    = $this->getBiayaMasterForKota($row['kota_tujuan'] ?? '');
+        $mataAnggaran   = $this->resolveMataAnggaran($row);
+
+        $generator  = new \App\Libraries\KwitansiExcelGenerator();
+        $xlsxBytes  = $generator->generateXlsx($row, $pelaksana, $kopSurat, $biayaMaster, $mataAnggaran);
+
+        $filename = 'kwitansi_' . ($row['nip'] ?? $id) . '_' . date('Ymd') . '.xlsx';
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($xlsxBytes);
+    }
+
+    /**
+     * Generate kwitansi PDF langsung dari template Excel (pixel-perfect).
+     * Menggunakan PhpSpreadsheet + Dompdf writer — tanpa HTML intermediate.
+     */
+    public function perjalananDinasCetakKwitansiExcelPdf(int $id)
+    {
+        if (! $this->canViewLaporan()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $row = (new LaporanPerjalananDinasModel())->find($id);
+        if (! is_array($row)) {
+            return redirect()->to(site_url('admin/surat/perjalanan-dinas'))->with('error', 'Data laporan tidak ditemukan.');
+        }
+
+        $this->ensureKodeNomorAssigned($row);
+        $pelaksana = $this->sortPelaksanaByStrukturOrganisasi(json_decode((string)($row['pelaksana_json'] ?? '[]'), true) ?: []);
+
+        $db = \Config\Database::connect();
+        $kopSuratId = (int)($row['kop_surat_id'] ?? 0);
+        $kopSurat   = null;
+        if ($kopSuratId > 0 && $db->tableExists('kop_surat')) {
+            $kopSurat = $db->table('kop_surat')->where('id', $kopSuratId)->get()->getRowArray();
+        }
+        if (!$kopSurat && $db->tableExists('kop_surat')) {
+            $kopSurat = $db->table('kop_surat')->where('is_active', 1)->orderBy('id', 'DESC')->get()->getRowArray();
+        }
+
+        $biayaMaster    = $this->getBiayaMasterForKota($row['kota_tujuan'] ?? '');
+        $mataAnggaran   = $this->resolveMataAnggaran($row);
+
+        $generator = new \App\Libraries\KwitansiExcelGenerator();
+        $pdfBytes  = $generator->generatePdf($row, $pelaksana, $kopSurat, $biayaMaster, $mataAnggaran);
+
+        $filename = 'kwitansi_' . ($row['nip'] ?? $id) . '_' . date('Ymd') . '.pdf';
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->setBody($pdfBytes);
     }
 
     public function perjalananDinasCetakPeriode()

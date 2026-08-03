@@ -284,7 +284,7 @@ graph TD
     B --> C[Klik Tombol Update Verifikasi]
     C --> D[Pilih KOP Surat, MAK, Dasar SPT & Tarif Periode]
     D --> E[Upload File SPT TTD PDF]
-    E --> F[Cetak Dokumentasi Resmi: SPT, SPPD 2 Hal, Kwitansi & Rincian Biaya, Nominatif]
+    E --> F["Cetak Dokumentasi Resmi: SPT, SPPD 2 Hal, Kwitansi & Rincian Biaya (layout Times New Roman sesuai format resmi), Nominatif"]
                 </pre>
             </div>
         </div>

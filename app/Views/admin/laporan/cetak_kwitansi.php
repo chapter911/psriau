@@ -3,25 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Rincian &amp; Kwitansi Perjalanan Dinas</title>
-    <?php
-    $tahomaRegPath = FCPATH . 'assets/fonts/tahoma/Tahoma.ttf';
-    $tahomaBoldPath = FCPATH . 'assets/fonts/tahoma/Tahoma-Bold.ttf';
-    $tahomaRegBase64 = file_exists($tahomaRegPath) ? 'data:font/truetype;charset=utf-8;base64,' . base64_encode(file_get_contents($tahomaRegPath)) : '';
-    $tahomaBoldBase64 = file_exists($tahomaBoldPath) ? 'data:font/truetype;charset=utf-8;base64,' . base64_encode(file_get_contents($tahomaBoldPath)) : '';
-    ?>
     <style>
-        @font-face {
-            font-family: 'Tahoma';
-            font-style: normal;
-            font-weight: normal;
-            src: url('<?= $tahomaRegBase64 ?>') format('truetype');
-        }
-        @font-face {
-            font-family: 'Tahoma';
-            font-style: normal;
-            font-weight: bold;
-            src: url('<?= $tahomaBoldBase64 ?>') format('truetype');
-        }
 
         body {
             font-family: 'Tahoma', sans-serif;
@@ -40,9 +22,9 @@
         /* Kop Surat */
         .kop-surat-img {
             width: 100%;
-            max-height: 150px;
-            object-fit: contain;
-            margin-bottom: 0;
+            height: auto;
+            max-height: 160px;
+            margin: 0 auto;
             display: block;
         }
 
@@ -145,66 +127,110 @@
            KWITANSI PAGE
         ============================ */
 
-        /* Box wrapping the kwitansi content */
+        /* Kwitansi page uses Times New Roman font to match the reference doc */
+        .kwitansi-page {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.5;
+        }
+
+        /* Kop surat wrapper for kwitansi page */
+        .kwitansi-kop-wrapper {
+            margin-bottom: 0;
+        }
+
+        /* Box wrapping the kwitansi content — full border all sides */
         .kwitansi-box {
             border: 1px solid #000;
-            border-top: none;
-            padding: 15px 20px;
-            min-height: 700px;
+            padding: 20px 25px 25px 25px;
+            min-height: 660px;
             position: relative;
         }
 
         /* Info table top-right (Tahun Anggaran etc.) */
+        /* Reference: border on all sides per cell, no outer double-border */
         .kwitansi-info-table {
-            width: 44%;
+            width: 46%;
             float: right;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 0;
+            margin-top: 6px;
         }
         .kwitansi-info-table td {
             border: 1px solid #000;
-            padding: 3px 5px;
-            font-size: 11px;
+            padding: 4px 8px;
+            font-size: 11pt;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        .kwitansi-info-table .label-cell {
+            width: 42%;
             white-space: nowrap;
+        }
+        .kwitansi-info-table .value-cell {
+            width: 58%;
+            font-weight: normal;
+        }
+
+        /* Clearfix helper — DomPDF compatible using overflow:hidden */
+        .kwitansi-clearfix {
+            clear: both;
+            overflow: hidden;
+            height: 0;
+            font-size: 0;
         }
 
         /* Title */
         .kwitansi-title {
             text-align: center;
-            font-size: 15px;
+            font-size: 15pt;
             font-weight: bold;
             text-decoration: underline;
-            letter-spacing: 3px;
-            margin-top: 10px;
-            margin-bottom: 18px;
-            clear: both;
+            letter-spacing: 4px;
+            margin-top: 20px;
+            margin-bottom: 22px;
+            font-family: 'Times New Roman', Times, serif;
         }
 
         /* Body rows */
         .kwitansi-body-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11pt;
         }
         .kwitansi-body-table td {
             vertical-align: top;
-            padding: 4px 4px;
+            padding: 5px 4px;
+            border: none;
+            line-height: 1.5;
         }
         .kwitansi-body-table .label-col {
+            width: 22%;
             white-space: nowrap;
+        }
+        .kwitansi-body-table .colon-col {
+            width: 2%;
+            text-align: center;
+        }
+        .kwitansi-body-table .value-col {
+            width: 76%;
         }
 
         /* TTD table */
         .kwitansi-ttd-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 25px;
+            margin-top: 30px;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11pt;
         }
         .kwitansi-ttd-table td {
             vertical-align: top;
             text-align: center;
             width: 50%;
-            padding: 2px 4px;
+            padding: 2px 8px;
+            line-height: 1.5;
         }
     </style>
 </head>
@@ -763,33 +789,31 @@
         <div class="page-break"></div>
 
         <!-- ========================= KWITANSI PAGE ========================= -->
+        <div class="kwitansi-page">
 
         <?php if ($kopSuratImgUrl): ?>
             <img src="<?= $kopSuratImgUrl; ?>" class="kop-surat-img" alt="Kop Surat">
         <?php endif; ?>
 
-        <!-- Double border separator below kop -->
-        <div style="border-top:2px solid #000; margin:0;"></div>
-        <div style="border-top:1px solid #000; margin:3px 0 0 0;"></div>
-
-        <!-- Box wrapping kuitansi body -->
+        <!-- Box wrapping kuitansi body — full border to match reference -->
         <div class="kwitansi-box">
 
-            <!-- Info table: top right -->
+            <!-- Info table: top right (Tahun Anggaran, Nomor Bukti, Mata Anggaran) -->
             <table class="kwitansi-info-table">
                 <tr>
-                    <td style="width:40%;">Tahun Anggaran</td>
-                    <td style="width:60%;"><?= date('Y'); ?></td>
+                    <td class="label-cell">Tahun Anggaran</td>
+                    <td class="value-cell"><?= date('Y', strtotime($row['tanggal_tanda_tangan'] ?? 'now')); ?></td>
                 </tr>
                 <tr>
-                    <td>Nomor Bukti</td>
-                    <td><?= esc($displayKodeNomor); ?></td>
+                    <td class="label-cell">Nomor Bukti</td>
+                    <td class="value-cell"><?= esc($displayKodeNomor); ?></td>
                 </tr>
                 <tr>
-                    <td>Mata Anggaran</td>
-                    <td><?= esc($mata_anggaran ?? ''); ?></td>
+                    <td class="label-cell">Mata Anggaran</td>
+                    <td class="value-cell" style="font-weight:bold;"><?= esc($mata_anggaran ?? ''); ?></td>
                 </tr>
             </table>
+            <div class="kwitansi-clearfix"></div>
 
             <!-- Title -->
             <div class="kwitansi-title">K U I T A N S I</div>
@@ -797,73 +821,77 @@
             <!-- Body rows -->
             <table class="kwitansi-body-table">
                 <tr>
-                    <td class="label-col" style="width:25%; padding-bottom:10px;">Sudah di terima dari</td>
-                    <td style="width:3%; padding-bottom:10px;">:</td>
-                    <td style="width:72%; padding-bottom:10px; font-weight:bold;">PEJABAT PEMBUAT KOMITMEN PELAKSANAAN PRASARANA STRATEGIS</td>
+                    <td class="label-col">Sudah di terima dari</td>
+                    <td class="colon-col">:</td>
+                    <td class="value-col" style="font-weight:bold;">PEJABAT PEMBUAT KOMITMEN PELAKSANAAN PRASARANA STRATEGIS</td>
                 </tr>
                 <tr>
-                    <td class="label-col" style="padding-bottom:10px;">Jumlah Uang</td>
-                    <td style="padding-bottom:10px;">:</td>
-                    <td style="padding-bottom:10px;" class="font-bold">
-                        Rp.&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?>
+                    <td class="label-col">Jumlah Uang</td>
+                    <td class="colon-col">:</td>
+                    <td class="value-col" style="font-weight:bold;">
+                        Rp.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?>
                     </td>
                 </tr>
                 <tr>
-                    <td class="label-col" style="padding-bottom:12px;">Terbilang</td>
-                    <td style="padding-bottom:12px;">:</td>
-                    <td style="padding-bottom:12px;"><span style="font-style:italic; font-weight:bold;"><?= $terbilangText; ?></span></td>
+                    <td class="label-col">Terbilang</td>
+                    <td class="colon-col">:</td>
+                    <td class="value-col"><em><strong><?= $terbilangText; ?></strong></em></td>
                 </tr>
                 <tr>
-                    <td class="label-col" style="padding-bottom:12px; vertical-align:top;">Untuk Pembayaran</td>
-                    <td style="padding-bottom:12px; vertical-align:top;">:</td>
-                    <td style="padding-bottom:12px; text-align:justify; line-height:1.6;">
-                        Perjalanan Dinas a.n. <?= esc($utama['nama']); ?> <?= esc($utama['jabatan']); ?> dalam rangka <?= $tujuanMaksud; ?> Lokasi <?= $kotaTujuan; ?>, sesuai dengan Peraturan Menteri Keuangan RI Nomor 119 Tahun 2023 Tanggal 15 November 2023, sebagaimana daftar perincian terlampir.
+                    <td class="label-col" style="vertical-align:top; padding-top:6px;">Untuk Pembayaran</td>
+                    <td class="colon-col" style="vertical-align:top; padding-top:6px;">:</td>
+                    <td class="value-col" style="text-align:justify; padding-top:6px;">
+                        Perjalanan Dinas a.n. <strong><?= esc($utama['nama']); ?></strong>, <?= esc($utama['jabatan'] ?? ''); ?>
+                        <?php if (!empty($row['instansi'] ?? '')): ?>, <?= esc($row['instansi']); ?><?php endif; ?>
+                        dalam rangka <?= $tujuanMaksud; ?>. Berdasarkan Surat <?= $nomorSurat; ?> tanggal <?= $tanggalTtd; ?>, sesuai dengan Peraturan Menteri Keuangan RI Nomor 119 Tahun 2023 Tanggal 15 November 2023, sebagaimana daftar perincian terlampir.
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="3" style="padding-top:6px; padding-bottom:2px;">Berdasarkan SPD</td>
+                    <td class="label-col" style="padding-top:10px;">Berdasarkan SPD</td>
+                    <td class="colon-col" style="padding-top:10px;"></td>
+                    <td class="value-col" style="padding-top:10px;"></td>
                 </tr>
                 <tr>
-                    <td class="label-col" style="padding-left:8px;">Nomor</td>
-                    <td>:</td>
-                    <td><?= $nomorSPD; ?></td>
+                    <td class="label-col" style="padding-left:12px;">Nomor</td>
+                    <td class="colon-col">:</td>
+                    <td class="value-col"><?= $nomorSPD; ?></td>
                 </tr>
                 <tr>
-                    <td class="label-col" style="padding-left:8px; padding-bottom:3px;">Tanggal</td>
-                    <td style="padding-bottom:3px;">:</td>
-                    <td style="padding-bottom:3px;"><?= strtoupper($tanggalTtd); ?></td>
+                    <td class="label-col" style="padding-left:12px;">Tanggal</td>
+                    <td class="colon-col">:</td>
+                    <td class="value-col"><?= strtoupper($tanggalTtd); ?></td>
                 </tr>
                 <tr>
-                    <td class="label-col" style="padding-left:8px; padding-bottom:3px;">Untuk perjalanan dinas dari</td>
-                    <td style="padding-bottom:3px;">:</td>
-                    <td style="padding-bottom:3px;">Pekanbaru - <?= $kotaTujuan; ?></td>
+                    <td class="label-col" style="padding-left:12px;">Untuk perjalanan dinas dari</td>
+                    <td class="colon-col">:</td>
+                    <td class="value-col">Pekanbaru - <?= $kotaTujuan; ?></td>
                 </tr>
                 <tr>
-                    <td class="label-col" style="padding-left:8px;">Berangkat dari tanggal</td>
-                    <td>:</td>
-                    <td><?= $tglBerangkat; ?> s/d <?= $tglKembali; ?></td>
+                    <td class="label-col" style="padding-left:12px;">Berangkat dari tanggal</td>
+                    <td class="colon-col">:</td>
+                    <td class="value-col"><?= $tglBerangkat; ?> s/d <?= $tglKembali; ?></td>
                 </tr>
             </table>
 
-            <!-- TTD -->
+            <!-- TTD — 2 columns: PPK (left) and Kepala Satker (right) -->
             <table class="kwitansi-ttd-table">
                 <tr>
-                    <!-- LEFT: PPK -->
-                    <td style="text-align:center;">
+                    <!-- LEFT: PPK / An. Kuasa Pengguna Anggaran -->
+                    <td style="text-align:center; vertical-align:top;">
                         An. Kuasa Pengguna Anggaran<br>
                         Pejabat Pembuat Komitmen<br>
                         Pelaksanaan Prasarana Strategis
-                        <div style="height:65px;"></div>
-                        <span style="text-decoration:underline;" class="font-bold">NURHIDAYAT NUGROHO, S.Ars.</span><br>
+                        <div style="height:75px;"></div>
+                        <strong><span style="text-decoration:underline;">NURHIDAYAT NUGROHO, S.Ars.</span></strong><br>
                         NIP. 19901221 201802 1 001
                     </td>
                     <!-- RIGHT: Kepala Satker -->
-                    <td style="text-align:center;">
-                        Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
+                    <td style="text-align:center; vertical-align:top;">
+                        Pekanbaru, &nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
                         Kepala Satuan Kerja<br>
                         Pelaksanaan Prasarana Strategis Riau
-                        <div style="height:65px;"></div>
-                        <span style="text-decoration:underline;" class="font-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
+                        <div style="height:75px;"></div>
+                        <strong><span style="text-decoration:underline;"><?= strtoupper(esc($utama['nama'])); ?></span></strong>
                         <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
                             <br>NIP. <?= $nipUtama; ?>
                         <?php endif; ?>
@@ -872,6 +900,7 @@
             </table>
 
         </div><!-- /.kwitansi-box -->
+        </div><!-- /.kwitansi-page -->
 
         <?php if ($index < $totalPelaksana - 1): ?>
             <div class="page-break"></div>

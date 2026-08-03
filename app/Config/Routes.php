@@ -305,6 +305,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('surat/perjalanan-dinas/(:num)/cetak-daftar-nominatif', 'Admin\Laporan::perjalananDinasCetakDaftarNominatif/$1');
 	$routes->get('surat/perjalanan-dinas/(:num)/cetak-sppd', 'Admin\Laporan::perjalananDinasCetakSppd/$1');
 	$routes->get('surat/perjalanan-dinas/(:num)/cetak-kwitansi', 'Admin\Laporan::perjalananDinasCetakKwitansi/$1');
+	$routes->get('surat/perjalanan-dinas/(:num)/cetak-kwitansi-xlsx', 'Admin\Laporan::perjalananDinasCetakKwitansiXlsx/$1');
+	$routes->get('surat/perjalanan-dinas/(:num)/cetak-kwitansi-excel-pdf', 'Admin\Laporan::perjalananDinasCetakKwitansiExcelPdf/$1');
 	$routes->post('surat/perjalanan-dinas/set-last-number', 'Admin\Laporan::setLastKodeNomor');
 
 	// Surat Routes - Lupa Absen
