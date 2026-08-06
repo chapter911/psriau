@@ -284,7 +284,7 @@ graph TD
     B --> C[Klik Tombol Update Verifikasi]
     C --> D[Pilih KOP Surat, MAK, Dasar SPT & Tarif Periode]
     D --> E[Upload File SPT TTD PDF]
-    E --> F[Cetak Dokumentasi Resmi: SPT, SPPD 2 Hal, Kwitansi & Rincian Biaya, Nominatif]
+    E --> F[Cetak Dokumentasi Resmi: SPT, SPPD 2 Hal, Kwitansi & Rincian Biaya Excel, Nominatif]
                 </pre>
             </div>
         </div>
@@ -367,6 +367,7 @@ graph TD
                                     <li>Isi Kota Tujuan, Tanggal Mulai/Selesai, dan Maksud Perjadin.</li>
                                     <li>Sistem mengirimkan email approval ke Pejabat Penandatangan.</li>
                                     <li>Klik tombol merah <strong>Cetak</strong> pada tabel untuk mengunduh PDF Disposisi resmi yang dilengkapi <strong>Stempel Approved</strong>.</li>
+                                    <li>Filter periode data secara default disetel dari <strong>awal tahun (1 Januari)</strong> hingga akhir bulan berjalan, serta dapat difilter berdasarkan <strong>Status Disposisi</strong> (Selesai/Disetujui, Belum Selesai/Pending, Ditolak).</li>
                                     <li>Gunakan tombol merah <strong>Hapus</strong> pada kolom Aksi jika ingin menghapus disposisi. Sistem akan menghapus data disposisi beserta seluruh dokumen dan laporan terkait hingga benar-benar bersih.</li>
                                 </ol>
                             </div>
@@ -378,6 +379,7 @@ graph TD
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-file-invoice mr-1"></i> Laporan Perjalanan Dinas</h6>
                                 <p class="small text-muted mb-2"><code>/admin/surat/perjalanan-dinas</code></p>
                                 <ol class="pl-3 small mb-0">
+                                    <li>Filter periode data secara default disetel dari <strong>awal tahun (1 Januari)</strong> hingga akhir bulan berjalan, serta dapat difilter berdasarkan <strong>Status Laporan</strong> (Selesai/Final atau Belum Selesai/Draft).</li>
                                     <li>Pilih Disposisi yang sudah disetujui, klik <strong>Buat Laporan</strong>.</li>
                                     <li>Wajib mengisi seluruh data pada <strong>Tab Umum</strong> terlebih dahulu (Pelaksana, Diketahui Oleh, Periode, Tujuan, Sasaran, & Hasil Perjadin). Urutan Pelaksana Perjalanan Dinas secara otomatis tersinkronisasi dengan hirarki <strong>Struktur Organisasi</strong> (`/admin/master/struktur-organisasi`).</li>
                                     <li>Setelah Tab Umum lengkap, buka tab <strong>Dokumentasi Kegiatan</strong> (foto kegiatan) & tab <strong>Dokumentasi Tiket & Pendukung</strong> (tiket/nota).</li>
@@ -440,6 +442,7 @@ graph TD
                         <ul class="pl-3 small mb-0">
                             <li>Buka email notifikasi atau masuk ke menu Disposisi Perjadin.</li>
                             <li>Periksa detail kota tujuan, periode tanggal, dan daftar pegawai pelaksana.</li>
+                            <li>Tombol <strong>Setujui</strong> dan <strong>Tolak</strong> secara ketat hanya ditampilkan dan dapat dieksekusi oleh pengguna yang memiliki akses approval (Role dengan <code>FiturApproval</code> aktif, Super Administrator, atau Pejabat Penandatangan PPK/Kasatker yang ditunjuk). Pengguna tanpa akses approval hanya akan melihat status <em>Pending</em>.</li>
                             <li>Klik tombol hijau <strong>Setujui</strong> atau tombol merah <strong>Tolak</strong>.</li>
                             <li>Setelah disetujui, PDF Disposisi akan tersemat <strong>Stempel Approved</strong> dari PPK &amp; Kasatker.</li>
                         </ul>
@@ -467,7 +470,7 @@ graph TD
                             <li>Gunakan tombol <strong>Setting Nomor Terakhir SPPD/Kwitansi</strong> untuk mengatur nomor awal auto-increment jika ingin melanjutkan dari penomoran sebelumnya (misal: isi <code>15</code> untuk memulai dari <code>016</code>).</li>
                             <li>Klik tombol kuning <strong>Update Verifikasi</strong> pada baris laporan untuk menentukan KOP Surat, MAK, Dasar SPT, Kode Nomor, dan memasukkan tarif Transport & Penginapan per periode.</li>
                             <li>Upload file PDF <strong>SPT TTD</strong> yang telah disahkan.</li>
-                            <li>Cetak dokumen resmi: <strong>Surat Tugas (SPT)</strong>, <strong>SPPD (2 Halaman)</strong> (dengan format ringkas Golongan pada bagian 3.a seperti <code>III/a</code> dan Jabatan pelaksana), <strong>Kwitansi & Rincian Biaya</strong> (dengan "Kode Nomor" SPPD & "Nomor Bukti" Kwitansi terhubung otomatis dan nama penerima kapital), serta <strong>Daftar Nominatif</strong> (NIP otomatis hanya ditampilkan untuk personil berstatus PNS, CPNS, atau PPPK).</li>
+                            <li>Cetak dokumen resmi: <strong>Surat Tugas (SPT)</strong>, <strong>SPPD (2 Halaman)</strong> (dengan format ringkas Golongan pada bagian 3.a seperti <code>III/a</code> dan Jabatan pelaksana), <strong>Kwitansi & Rincian Biaya (Format Excel Preview HTML & Download File Excel .xls 2 sheet: RINCI & KWITANSI)</strong> (dengan "Kode Nomor" SPPD & "Nomor Bukti" Kwitansi terhubung otomatis dan nama penerima kapital), serta <strong>Daftar Nominatif</strong> (NIP otomatis hanya ditampilkan untuk personil berstatus PNS, CPNS, atau PPPK).</li>
                         </ol>
                     </div>
                 </div>
@@ -506,9 +509,9 @@ graph TD
                     <div class="col-md-6 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="font-weight-bold text-primary"><i class="fas fa-users mr-1"></i> Manajemen User & Hak Akses Role</h6>
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-users mr-1"></i> Manajemen User & Hak Akses Role / Group</h6>
                                 <p class="small text-muted mb-2"><code>/admin/utility/user</code> & <code>/admin/utility/user-group</code></p>
-                                <p class="small mb-0">Tambah, edit, dan perbarui data user serta perubahan role secara dinamis dari master pegawai maupun input manual. Dilengkapi validasi role terintegrasi dan pengaturan hak akses menu per role (Akses, Add, Edit, Delete, Export, Import, Approval).</p>
+                                <p class="small mb-0">Tambah, edit, dan perbarui data user serta perubahan role secara dinamis dari master pegawai maupun input manual. Dilengkapi validasi role terintegrasi dan modal <strong>Atur Akses Menu</strong> berfitur <em>Sticky Header</em> untuk kenyamanan navigasi centang hak akses per menu (Akses, Add, Edit, Delete, Export, Import, Approval).</p>
                             </div>
                         </div>
                     </div>

@@ -45,6 +45,32 @@ $canEdit = (bool) ($can_edit ?? false);
         text-align: right;
     }
 
+    /* Sticky Header Styles for Modal Access Table */
+    #modalGroupAccess .modal-content {
+        max-height: calc(100vh - 2rem);
+    }
+
+    #modalGroupAccess .modal-body {
+        padding: 1rem 1.25rem;
+    }
+
+    #modalGroupAccess .table-responsive {
+        max-height: calc(100vh - 250px);
+        overflow-y: auto;
+        border-radius: 6px;
+    }
+
+    #modalGroupAccess table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #1e293b !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border-bottom: 2px solid #0f172a !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+    }
+
     @media (max-width: 767.98px) {
         .user-group-header-title {
             font-size: 1.5rem;

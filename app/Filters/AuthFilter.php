@@ -581,7 +581,7 @@ class AuthFilter implements FilterInterface
             return 'import';
         }
 
-        if (strpos($normalized, '/approval') !== false || strpos($normalized, '/approve') !== false) {
+        if (strpos($normalized, '/approval') !== false || strpos($normalized, '/approve') !== false || strpos($normalized, '/setujui') !== false || strpos($normalized, '/tolak') !== false) {
             return 'approval';
         }
 

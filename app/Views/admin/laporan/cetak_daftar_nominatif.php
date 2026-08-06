@@ -318,8 +318,8 @@
                 Pejabat Pembuat Komitmen<br>
                 Pelaksanaan Prasarana Strategis<br>
                 <div class="signature-box"></div>
-                <span class="font-weight-bold">NURHIDAYAT NUGROHO, S.Ars.</span>
-                <?php if (should_show_nip(['nip' => '19901221 201802 1 001'])): ?>
+                <span class="font-weight-bold" style="text-decoration: underline;"><u>NURHIDAYAT NUGROHO, S.Ars.</u></span>
+                <?php if (should_show_nip(['nip' => '19901221 201802 1 001', 'jenis_pegawai' => 'PNS'])): ?>
                     <br>NIP. 19901221 201802 1 001
                 <?php endif; ?>
             </td>

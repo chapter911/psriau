@@ -64,10 +64,11 @@ class DisposisiPerjalananDinas extends BaseController
 
         $startDate = trim((string) $this->request->getGet('filter_start_date'));
         $endDate = trim((string) $this->request->getGet('filter_end_date'));
+        $statusFilter = trim((string) $this->request->getGet('filter_status'));
         $kota = trim((string) $this->request->getGet('filter_kota'));
         $pelaksanaId = (int) $this->request->getGet('filter_pelaksana');
 
-        $logMsg = date('Y-m-d H:i:s') . " - dataTable() params - start_date: $startDate, end_date: $endDate, kota: $kota, pelaksana: $pelaksanaId\n";
+        $logMsg = date('Y-m-d H:i:s') . " - dataTable() params - start_date: $startDate, end_date: $endDate, status: $statusFilter, kota: $kota, pelaksana: $pelaksanaId\n";
         file_put_contents(WRITEPATH . 'ajax_debug.log', $logMsg, FILE_APPEND);
 
         if ($startDate !== '') {
@@ -75,6 +76,17 @@ class DisposisiPerjalananDinas extends BaseController
         }
         if ($endDate !== '') {
             $builder->where('periode_selesai <=', $endDate);
+        }
+        if ($statusFilter !== '') {
+            if ($statusFilter === 'selesai' || $statusFilter === 'disetujui') {
+                $builder->where('status', 'disetujui');
+            } elseif ($statusFilter === 'belum' || $statusFilter === 'pending') {
+                $builder->where('status', 'pending');
+            } elseif ($statusFilter === 'ditolak') {
+                $builder->where('status', 'ditolak');
+            } else {
+                $builder->where('status', $statusFilter);
+            }
         }
         if ($kota !== '') {
             $builder->where('kota_tujuan', $kota);
@@ -148,11 +160,17 @@ class DisposisiPerjalananDinas extends BaseController
             $statusBadge = '<div class="text-center" style="white-space:nowrap;">' . $badgeM . ' ' . $badgeD . '<br>' . $badgeOverall . '</div>';
 
             // Approval Column HTML (Single Approval Action)
+            $canApproveRow = $this->canApproveDisposisi($row);
+
             if ($statusOverall === 'pending') {
-                $approvalHtml = '<div class="btn-group btn-group-sm" role="group">' .
-                    '<button type="button" class="btn btn-success btn-single-approve" data-id="' . $row['id'] . '" title="Setujui Disposisi"><i class="fas fa-check"></i> Setujui</button>' .
-                    '<button type="button" class="btn btn-danger btn-single-reject ml-1" data-id="' . $row['id'] . '" title="Tolak Disposisi"><i class="fas fa-times"></i> Tolak</button>' .
-                    '</div>';
+                if ($canApproveRow) {
+                    $approvalHtml = '<div class="btn-group btn-group-sm" role="group">' .
+                        '<button type="button" class="btn btn-success btn-single-approve" data-id="' . $row['id'] . '" title="Setujui Disposisi"><i class="fas fa-check"></i> Setujui</button>' .
+                        '<button type="button" class="btn btn-danger btn-single-reject ml-1" data-id="' . $row['id'] . '" title="Tolak Disposisi"><i class="fas fa-times"></i> Tolak</button>' .
+                        '</div>';
+                } else {
+                    $approvalHtml = '<span class="badge badge-warning px-2 py-1" title="Menunggu persetujuan pejabat penandatangan"><i class="fas fa-hourglass-half"></i> Pending</span>';
+                }
             } elseif ($statusOverall === 'disetujui') {
                 $approvalHtml = '<span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle"></i> Disetujui</span>';
             } else {
@@ -584,6 +602,120 @@ class DisposisiPerjalananDinas extends BaseController
         return in_array($role, ['admin', 'editor', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
     }
 
+    private function canApproveDisposisi(?array $disposisiRow = null): bool
+    {
+        $role = strtolower(trim((string) session()->get('role')));
+        if ($role === '') {
+            return false;
+        }
+
+        $db = db_connect();
+        if ($db->tableExists('menu_akses')) {
+            $roleId = $this->resolveRoleId($db, $role);
+            if ($roleId !== null) {
+                $menuId = $this->resolveMenuIdByLink($db, 'admin/surat/perjalanan-dinas/disposisi');
+                if ($menuId !== null) {
+                    $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+                    $accessRow = $db->table('menu_akses')
+                        ->where($roleColumn, $roleId)
+                        ->where('menu_id', $menuId)
+                        ->get()
+                        ->getRowArray();
+
+                    if (is_array($accessRow)) {
+                        return (int) ($accessRow['FiturApproval'] ?? 0) === 1;
+                    }
+                }
+            }
+        }
+
+        // Fallback for Superadmin if menu_akses configuration row is not present
+        if (in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function resolveCurrentPegawai(string $sessionValue, array $pegawaiRows): ?array
+    {
+        $needle = strtolower(trim($sessionValue));
+        if ($needle === '') {
+            return null;
+        }
+
+        foreach ($pegawaiRows as $row) {
+            $nama = strtolower(trim((string) ($row['nama'] ?? '')));
+            $nip = strtolower(trim((string) ($row['nip'] ?? '')));
+            if ($nama === $needle || $nip === $needle) {
+                return [
+                    'id' => (int) ($row['id'] ?? 0),
+                    'nama' => (string) ($row['nama'] ?? ''),
+                    'nip' => (string) ($row['nip'] ?? ''),
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveRoleId($db, string $role): ?int
+    {
+        $normalizedRole = strtolower(trim($role));
+        if ($normalizedRole === '') {
+            return null;
+        }
+
+        if ($db->tableExists('access_roles')) {
+            $variants = [$normalizedRole];
+            if (strpos($normalizedRole, 'super') !== false) {
+                $variants[] = 'super administrator';
+                $variants[] = 'super_administrator';
+                $variants[] = 'super-admin';
+                $variants[] = 'superadmin';
+            } elseif ($normalizedRole === 'admin' || $normalizedRole === 'administrator') {
+                $variants[] = 'admin';
+                $variants[] = 'administrator';
+            }
+
+            $row = $db->table('access_roles')
+                ->select('id')
+                ->whereIn('role_key', array_values(array_unique($variants)))
+                ->where('is_active', 1)
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (int) $row['id'];
+            }
+        }
+
+        return match ($normalizedRole) {
+            'admin', 'administrator' => 1,
+            'editor' => 2,
+            default => null,
+        };
+    }
+
+    private function resolveMenuIdByLink($db, string $link): ?string
+    {
+        $cleanLink = trim(strtolower($link), '/');
+        foreach (['menu_lv3', 'menu_lv2', 'menu_lv1'] as $table) {
+            if ($db->tableExists($table)) {
+                $row = $db->table($table)
+                    ->select('id')
+                    ->where('LOWER(TRIM(BOTH "/" FROM link))', $cleanLink)
+                    ->get()
+                    ->getRowArray();
+                if (is_array($row) && isset($row['id'])) {
+                    return (string) $row['id'];
+                }
+            }
+        }
+        return null;
+    }
+
     private function isDataTableRequest(): bool
     {
         return $this->request->getGet('draw') !== null
@@ -786,6 +918,31 @@ class DisposisiPerjalananDinas extends BaseController
 
         $currentOverallStatus = trim((string) ($disposisi['status'] ?? 'pending'));
 
+        $tokenReq = trim((string) $this->request->getGet('token'));
+        $roleReq = trim((string) $this->request->getGet('role'));
+        $hasValidToken = false;
+
+        if ($tokenReq !== '') {
+            if ($roleReq === 'menyetujui' && hash_equals((string) ($disposisi['token_menyetujui'] ?? ''), $tokenReq)) {
+                $hasValidToken = true;
+            } elseif ($roleReq === 'diketahui' && hash_equals((string) ($disposisi['token_diketahui'] ?? ''), $tokenReq)) {
+                $hasValidToken = true;
+            } elseif (hash_equals((string) ($disposisi['token_menyetujui'] ?? ''), $tokenReq) || hash_equals((string) ($disposisi['token_diketahui'] ?? ''), $tokenReq)) {
+                $hasValidToken = true;
+            }
+        }
+
+        if (! $hasValidToken && ! $this->canApproveDisposisi($disposisi)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk menyetujui disposisi ini.']);
+            }
+            return view('admin/surat/disposisi_approval_response', [
+                'title'   => 'Akses Ditolak',
+                'status'  => 'error',
+                'message' => 'Anda tidak memiliki hak akses approval untuk menyetujui disposisi ini.',
+            ]);
+        }
+
         if ($currentOverallStatus === 'disetujui' || $currentOverallStatus === 'ditolak') {
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON(['status' => 'error', 'message' => 'Disposisi ini sudah memiliki keputusan akhir (' . strtoupper($currentOverallStatus) . ') dan tidak dapat diubah kembali.']);
@@ -843,6 +1000,31 @@ class DisposisiPerjalananDinas extends BaseController
         }
 
         $currentOverallStatus = trim((string) ($disposisi['status'] ?? 'pending'));
+
+        $tokenReq = trim((string) $this->request->getGet('token'));
+        $roleReq = trim((string) $this->request->getGet('role'));
+        $hasValidToken = false;
+
+        if ($tokenReq !== '') {
+            if ($roleReq === 'menyetujui' && hash_equals((string) ($disposisi['token_menyetujui'] ?? ''), $tokenReq)) {
+                $hasValidToken = true;
+            } elseif ($roleReq === 'diketahui' && hash_equals((string) ($disposisi['token_diketahui'] ?? ''), $tokenReq)) {
+                $hasValidToken = true;
+            } elseif (hash_equals((string) ($disposisi['token_menyetujui'] ?? ''), $tokenReq) || hash_equals((string) ($disposisi['token_diketahui'] ?? ''), $tokenReq)) {
+                $hasValidToken = true;
+            }
+        }
+
+        if (! $hasValidToken && ! $this->canApproveDisposisi($disposisi)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk menolak disposisi ini.']);
+            }
+            return view('admin/surat/disposisi_approval_response', [
+                'title'   => 'Akses Ditolak',
+                'status'  => 'error',
+                'message' => 'Anda tidak memiliki hak akses approval untuk menolak disposisi ini.',
+            ]);
+        }
 
         if ($currentOverallStatus === 'disetujui' || $currentOverallStatus === 'ditolak') {
             if ($this->request->isAJAX()) {

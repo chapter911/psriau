@@ -131,8 +131,24 @@ $canEdit = (bool) ($can_edit ?? false);
     }
 
     #modalRoleAccess .modal-body {
+        padding: 1rem 1.25rem;
+    }
+
+    #modalRoleAccess .table-responsive {
+        max-height: calc(100vh - 250px);
         overflow-y: auto;
-        max-height: calc(100vh - 220px);
+        border-radius: 6px;
+    }
+
+    #modalRoleAccess table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #1e293b !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border-bottom: 2px solid #0f172a !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
     }
 </style>
 <script>

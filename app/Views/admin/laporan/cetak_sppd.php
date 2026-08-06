@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <title>Surat Perjalanan Dinas (SPD)</title>
     <style>
+        @page {
+            margin: 12mm 15mm 12mm 15mm;
+        }
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 11.5px;
+            font-size: 10px;
             margin: 0;
             padding: 0;
-            line-height: 1.3;
+            line-height: 1.18;
         }
         .text-center { text-align: center; }
         .text-left { text-align: left; }
@@ -18,27 +21,28 @@
         
         .header-table {
             width: 100%;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
         }
         .header-table td {
             vertical-align: top;
+            padding: 1px 0;
         }
         .title {
             text-align: center;
-            font-size: 14px;
+            font-size: 12px;
             text-decoration: underline;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
         
         .main-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
         .main-table th, .main-table td {
             border: 1px solid #000;
-            padding: 4px;
+            padding: 2.5px 3.5px;
             vertical-align: top;
         }
         .col-no { width: 4%; text-align: center; }
@@ -48,11 +52,11 @@
         .pengikut-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 5px;
+            margin-top: 2px;
         }
         .pengikut-table th, .pengikut-table td {
             border: none;
-            padding: 4px;
+            padding: 2px;
         }
 
         .ttd-box {
@@ -64,6 +68,7 @@
         }
         .ttd-box td {
             vertical-align: top;
+            padding: 1px 0;
         }
         .clear { clear: both; }
 
@@ -74,9 +79,9 @@
         /* Kop Surat */
         .kop-surat-img {
             width: 100%;
-            max-height: 120px;
+            max-height: 90px;
             object-fit: contain;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
         }
     </style>
 </head>
@@ -166,7 +171,12 @@
             $golonganDisplay = '-';
         }
 
-        $jabatanDisplay = $jabatanStr !== '' ? $jabatanStr : 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
+        $jabatanFull = $jabatanStr !== '' ? $jabatanStr : 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
+        if (strpos($jabatanFull, ',') !== false) {
+            $jabatanDisplay = trim(explode(',', $jabatanFull)[0]);
+        } else {
+            $jabatanDisplay = $jabatanFull;
+        }
 
         $tingkatBiaya = 'c'; // Default to c for non-eselon
         $jabUpper = strtoupper($jabatanStr);
@@ -358,7 +368,7 @@
                 <div style="height: 50px;"></div>
                 
                 <span class="font-weight-bold" style="text-decoration: underline;">NURHIDAYAT NUGROHO, S.Ars.</span>
-                <?php if (should_show_nip(['nip' => '19901221 201802 1 001'])): ?>
+                <?php if (should_show_nip(['nip' => '19901221 201802 1 001', 'jenis_pegawai' => 'PNS'])): ?>
                     <br>NIP. 19901221 201802 1 001
                 <?php endif; ?>
             </div>

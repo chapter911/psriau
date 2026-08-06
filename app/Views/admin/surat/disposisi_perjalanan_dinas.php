@@ -59,13 +59,22 @@
             </div>
             <div class="card-body">
                 <div class="form-row">
-                    <div class="form-group col-md-3">
+                    <div class="form-group col-md-2">
                         <label for="filter_start_date" class="font-weight-bold mb-1">Tanggal Mulai</label>
-                        <input type="date" class="form-control form-control-sm" id="filter_start_date" value="<?= date('Y-m-01'); ?>">
+                        <input type="date" class="form-control form-control-sm" id="filter_start_date" value="<?= date('Y-01-01'); ?>">
                     </div>
-                    <div class="form-group col-md-3">
+                    <div class="form-group col-md-2">
                         <label for="filter_end_date" class="font-weight-bold mb-1">Tanggal Selesai</label>
                         <input type="date" class="form-control form-control-sm" id="filter_end_date" value="<?= date('Y-m-t'); ?>">
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="filter_status" class="font-weight-bold mb-1">Status Disposisi</label>
+                        <select class="form-control form-control-sm select2-filter" id="filter_status" data-placeholder="Semua Status" style="width: 100%;">
+                            <option value="">Semua Status</option>
+                            <option value="selesai">Selesai (Disetujui)</option>
+                            <option value="belum">Belum Selesai (Pending)</option>
+                            <option value="ditolak">Ditolak</option>
+                        </select>
                     </div>
                     <div class="form-group col-md-3">
                         <label for="filter_kota" class="font-weight-bold mb-1">Kota Tujuan</label>
@@ -378,8 +387,15 @@ $(document).ready(function() {
 
     var $filterStartDate = $('#filter_start_date');
     var $filterEndDate = $('#filter_end_date');
+    var $filterStatus = $('#filter_status');
     var $filterKota = $('#filter_kota');
     var $filterPelaksana = $('#filter_pelaksana');
+
+    $('#filter_status').select2({
+        theme: 'bootstrap4',
+        placeholder: 'Semua Status',
+        allowClear: true
+    });
 
     $('#filter_kota').select2({
         theme: 'bootstrap4',
@@ -403,6 +419,7 @@ $(document).ready(function() {
             data: function (d) {
                 d.filter_start_date = $filterStartDate.val();
                 d.filter_end_date = $filterEndDate.val();
+                d.filter_status = $filterStatus.val();
                 d.filter_kota = $filterKota.val();
                 d.filter_pelaksana = $filterPelaksana.val();
             }
@@ -585,12 +602,14 @@ $(document).ready(function() {
 
     $filterStartDate.on('change', function () { table.ajax.reload(); });
     $filterEndDate.on('change', function () { table.ajax.reload(); });
+    $filterStatus.on('change', function () { table.ajax.reload(); });
     $filterKota.on('change', function () { table.ajax.reload(); });
     $filterPelaksana.on('change', function () { table.ajax.reload(); });
 
     $('#btn-reset-filter').on('click', function () {
-        $filterStartDate.val('<?= date('Y-m-01'); ?>');
+        $filterStartDate.val('<?= date('Y-01-01'); ?>');
         $filterEndDate.val('<?= date('Y-m-t'); ?>');
+        $filterStatus.val('').trigger('change');
         $filterKota.val(null).trigger('change');
         $filterPelaksana.val(null).trigger('change');
         table.ajax.reload();

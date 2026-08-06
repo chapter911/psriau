@@ -55,13 +55,23 @@
             </div>
             <div class="card-body py-3">
                 <div class="form-row">
-                    <div class="form-group col-md-3 mb-2 mb-md-0">
+                    <div class="form-group col-md-2 mb-2 mb-md-0">
                         <label for="filter_start_date" class="font-weight-bold mb-1" style="font-size:0.85rem;">Tanggal Mulai</label>
-                        <input type="date" class="form-control form-control-sm" id="filter_start_date" value="<?= date('Y-m-01'); ?>">
+                        <input type="date" class="form-control form-control-sm" id="filter_start_date" value="<?= date('Y-01-01'); ?>">
                     </div>
-                    <div class="form-group col-md-3 mb-2 mb-md-0">
+                    <div class="form-group col-md-2 mb-2 mb-md-0">
                         <label for="filter_end_date" class="font-weight-bold mb-1" style="font-size:0.85rem;">Tanggal Selesai</label>
                         <input type="date" class="form-control form-control-sm" id="filter_end_date" value="<?= date('Y-m-t'); ?>">
+                    </div>
+                    <div class="form-group col-md-2 mb-2 mb-md-0">
+                        <label for="filter_status" class="font-weight-bold mb-1" style="font-size:0.85rem;">Status</label>
+                        <select class="form-control form-control-sm select2-filter" id="filter_status" data-placeholder="Semua Status" style="width: 100%;">
+                            <option value="">Semua Status</option>
+                            <option value="selesai">Selesai (Final)</option>
+                            <option value="belum">Belum Selesai (Draft)</option>
+                            <option value="terverifikasi">Terverifikasi</option>
+                            <option value="belum_verifikasi">Belum Verifikasi</option>
+                        </select>
                     </div>
                     <div class="form-group col-md-3 mb-2 mb-md-0">
                         <label for="filter_kota" class="font-weight-bold mb-1" style="font-size:0.85rem;">Kota Tujuan</label>
@@ -375,8 +385,15 @@
 
         const $filterStartDate = $('#filter_start_date');
         const $filterEndDate = $('#filter_end_date');
+        const $filterStatus = $('#filter_status');
         const $filterKota = $('#filter_kota');
         const $filterPelaksana = $('#filter_pelaksana');
+
+        $('#filter_status').select2({
+            theme: 'bootstrap4',
+            placeholder: 'Semua Status',
+            allowClear: true
+        });
 
         const columns = [
             {
@@ -473,6 +490,7 @@
                 data: function (d) {
                     d.filter_start_date = $filterStartDate.val();
                     d.filter_end_date = $filterEndDate.val();
+                    d.filter_status = $filterStatus.val();
                     d.filter_kota = $filterKota.val();
                     d.filter_pelaksana = $filterPelaksana.val();
                 }
@@ -496,22 +514,26 @@
         // Trigger reload on filter changes
         $filterStartDate.on('change', function () { dt.ajax.reload(); });
         $filterEndDate.on('change', function () { dt.ajax.reload(); });
+        $filterStatus.on('change', function () { dt.ajax.reload(); });
         $filterKota.on('change', function () { dt.ajax.reload(); });
         $filterPelaksana.on('change', function () { dt.ajax.reload(); });
 
         // Reset button
         $('#btn-reset-filter').on('click', function () {
-            $filterStartDate.val('<?= date('Y-m-01'); ?>');
+            $filterStartDate.val('<?= date('Y-01-01'); ?>');
             $filterEndDate.val('<?= date('Y-m-t'); ?>');
             
             // Turn off listeners temporarily to avoid multiple updates
+            $filterStatus.off('change');
             $filterKota.off('change');
             $filterPelaksana.off('change');
             
+            $filterStatus.val('').trigger('change');
             $filterKota.val('').trigger('change');
             $filterPelaksana.val('').trigger('change');
             
             // Re-bind listeners
+            $filterStatus.on('change', function () { dt.ajax.reload(); });
             $filterKota.on('change', function () { dt.ajax.reload(); });
             $filterPelaksana.on('change', function () { dt.ajax.reload(); });
             
@@ -680,10 +702,10 @@
                                 <input type="text" class="form-control form-control-sm input-currency" name="transport_nominal[]" placeholder="Rp" value="${$('<div/>').text(formatRibuan(tNom)).html()}">
                             </div>
                             <div class="col-md-1 mb-1 mb-md-0 text-center" style="padding-right: 5px; padding-left: 5px;">
-                                <label class="font-weight-bold mb-0 text-muted d-block" style="font-size:0.70rem;" for="${rowId}" title="Ceklis jika tarif ini untuk 1 kali bayar (Pulang-Pergi / Lumpsum) dan BUKAN tarif per hari.">Lumpsum</label>
+                                <label class="font-weight-bold mb-0 text-muted d-block" style="font-size:0.70rem;" for="${rowId}" title="Ceklis jika tarif ini untuk 1 kali bayar (Pulang-Pergi / PP) dan BUKAN tarif per hari.">Pulang Pergi (PP)</label>
                                 <input type="hidden" name="transport_is_lumpsum[]" value="${tIsLumpsumVal}" class="hidden-lumpsum">
                                 <div class="d-flex align-items-center justify-content-center" style="height: calc(1.5em + 0.5rem + 2px);">
-                                    <input type="checkbox" id="${rowId}" ${tIsLumpsum} style="transform: scale(1.3); cursor:pointer;" title="Ceklis jika tarif ini untuk 1 kali bayar (Pulang-Pergi / Lumpsum) dan BUKAN tarif per hari." onchange="$(this).siblings('.hidden-lumpsum').val(this.checked ? '1' : '0')">
+                                    <input type="checkbox" id="${rowId}" ${tIsLumpsum} style="transform: scale(1.3); cursor:pointer;" title="Ceklis jika tarif ini untuk 1 kali bayar (Pulang-Pergi / PP) dan BUKAN tarif per hari." onchange="$(this).siblings('.hidden-lumpsum').val(this.checked ? '1' : '0')">
                                 </div>
                             </div>
                             <div class="col-md-1 mb-1 mb-md-0 text-center">
@@ -959,6 +981,7 @@
                 success: function(response) {
                     $btn.html(originalText).prop('disabled', false);
                     if (response.status === 'success') {
+                        $('#modal-verify-spt').modal('hide');
                         Swal.fire('Berhasil', response.message, 'success');
                         dt.ajax.reload(null, false);
                     } else {

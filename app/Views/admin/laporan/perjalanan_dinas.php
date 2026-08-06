@@ -92,17 +92,25 @@
             </div>
             <div class="card-body">
                 <div class="form-row">
-                    <div class="form-group col-md-3">
+                    <div class="form-group col-md-2">
                         <label for="filter_start_date" class="font-weight-bold mb-1">Tanggal Mulai</label>
-                        <input type="date" class="form-control form-control-sm" id="filter_start_date" value="<?= date('Y-m-01'); ?>">
+                        <input type="date" class="form-control form-control-sm" id="filter_start_date" value="<?= date('Y-01-01'); ?>">
                     </div>
-                    <div class="form-group col-md-3">
+                    <div class="form-group col-md-2">
                         <label for="filter_end_date" class="font-weight-bold mb-1">Tanggal Selesai</label>
                         <input type="date" class="form-control form-control-sm" id="filter_end_date" value="<?= date('Y-m-t'); ?>">
                     </div>
+                    <div class="form-group col-md-2">
+                        <label for="filter_status" class="font-weight-bold mb-1">Status Laporan</label>
+                        <select class="form-control form-control-sm select2-filter" id="filter_status" data-placeholder="Semua Status">
+                            <option value="">Semua Status</option>
+                            <option value="selesai">Selesai (Final)</option>
+                            <option value="belum">Belum Selesai (Draft)</option>
+                        </select>
+                    </div>
                     <div class="form-group col-md-3">
                         <label for="filter_kota" class="font-weight-bold mb-1">Kota Tujuan</label>
-                        <select class="form-control form-control-sm" id="filter_kota" data-placeholder="Semua Kota/Kabupaten">
+                        <select class="form-control form-control-sm select2-filter" id="filter_kota" data-placeholder="Semua Kota/Kabupaten">
                             <option value=""></option>
                             <?php foreach ($kabupaten_options ?? [] as $kota): ?>
                                 <option value="<?= esc($kota); ?>"><?= esc($kota); ?></option>
@@ -111,7 +119,7 @@
                     </div>
                     <div class="form-group col-md-3">
                         <label for="filter_pelaksana" class="font-weight-bold mb-1">Pelaksana</label>
-                        <select class="form-control form-control-sm" id="filter_pelaksana" data-placeholder="Semua Pelaksana">
+                        <select class="form-control form-control-sm select2-filter" id="filter_pelaksana" data-placeholder="Semua Pelaksana">
                             <option value=""></option>
                             <?php foreach ($pegawai_options ?? [] as $peg): ?>
                                 <option value="<?= (int) ($peg['id'] ?? 0); ?>"><?= esc($peg['nama'] ?? ''); ?><?= !empty($peg['nip']) ? ' - NIP ' . esc($peg['nip']) : ''; ?></option>
@@ -249,8 +257,15 @@
 
         const $filterStartDate = $('#filter_start_date');
         const $filterEndDate = $('#filter_end_date');
+        const $filterStatus = $('#filter_status');
         const $filterKota = $('#filter_kota');
         const $filterPelaksana = $('#filter_pelaksana');
+
+        $('#filter_status').select2({
+            theme: 'bootstrap4',
+            placeholder: 'Semua Status',
+            allowClear: true
+        });
 
         const columns = [
             {
@@ -337,6 +352,7 @@
                 data: function (d) {
                     d.filter_start_date = $filterStartDate.val();
                     d.filter_end_date = $filterEndDate.val();
+                    d.filter_status = $filterStatus.val();
                     d.filter_kota = $filterKota.val();
                     d.filter_pelaksana = $filterPelaksana.val();
                 }
@@ -360,22 +376,26 @@
         // Trigger reload on filter changes
         $filterStartDate.on('change', function () { dt.ajax.reload(); });
         $filterEndDate.on('change', function () { dt.ajax.reload(); });
+        $filterStatus.on('change', function () { dt.ajax.reload(); });
         $filterKota.on('change', function () { dt.ajax.reload(); });
         $filterPelaksana.on('change', function () { dt.ajax.reload(); });
 
         // Reset button
         $('#btn-reset-filter').on('click', function () {
-            $filterStartDate.val('<?= date('Y-m-01'); ?>');
+            $filterStartDate.val('<?= date('Y-01-01'); ?>');
             $filterEndDate.val('<?= date('Y-m-t'); ?>');
             
             // Turn off listeners temporarily to avoid multiple updates
+            $filterStatus.off('change');
             $filterKota.off('change');
             $filterPelaksana.off('change');
             
+            $filterStatus.val('').trigger('change');
             $filterKota.val('').trigger('change');
             $filterPelaksana.val('').trigger('change');
             
             // Re-bind listeners
+            $filterStatus.on('change', function () { dt.ajax.reload(); });
             $filterKota.on('change', function () { dt.ajax.reload(); });
             $filterPelaksana.on('change', function () { dt.ajax.reload(); });
             
