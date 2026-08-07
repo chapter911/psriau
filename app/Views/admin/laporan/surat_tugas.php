@@ -170,7 +170,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="verify_kode_nomor" class="font-weight-bold mb-1">Kode Nomor (SPPD) & Nomor Bukti (Kwitansi)</label>
-                                <input type="text" class="form-control" id="verify_kode_nomor" name="kode_nomor" placeholder="Otomatis (atau isi manual jika kustom, contoh: 016)">
+                                <input type="text" class="form-control" id="verify_kode_nomor" name="kode_nomor" placeholder="Contoh: 016/SPD/SATKER/PPS-RIAU/2026">
                                 <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle mr-1 text-info"></i> Kosongkan untuk meng-generate nomor auto-increment secara otomatis.</small>
                             </div>
                             <div class="form-group">
@@ -254,8 +254,15 @@
                                 </div>
                             </div>
 
-                            <!-- CARD BIAYA PENGINAPAN -->
-                            <div class="card card-outline card-purple mb-2 shadow-sm" style="border-top-color: #6f42c1;">
+                             <!-- BUTTON DYNAMIC UNTUK KONDISI 1 HARI -->
+                             <div id="btn-enable-penginapan-wrapper" class="mb-3 text-right" style="display:none;">
+                                 <button type="button" class="btn btn-sm btn-outline-purple font-weight-bold" id="btn-enable-penginapan" style="color: #6f42c1; border-color: #6f42c1;">
+                                     <i class="fas fa-hotel mr-1"></i> Tambah Biaya Penginapan (Opsional)
+                                 </button>
+                             </div>
+
+                             <!-- CARD BIAYA PENGINAPAN -->
+                             <div class="card card-outline card-purple mb-2 shadow-sm" id="card-biaya-penginapan" style="border-top-color: #6f42c1;">
                                 <div class="card-header py-2 bg-light">
                                     <h6 class="card-title mb-0 font-weight-bold" style="color: #6f42c1;"><i class="fas fa-hotel mr-1"></i> Biaya Penginapan</h6>
                                 </div>
@@ -378,6 +385,15 @@
                 placeholder: '-- PILIH --'
             });
         }
+
+        // Auto position cursor at start when pre-filled with suffix format (/SPT/Gs7/YYYY or /SPD/SATKER/PPS-RIAU/YYYY)
+        $('#verify_nomor_surat, #verify_kode_nomor').on('focus click', function () {
+            if (this.value && this.value.startsWith('/')) {
+                try {
+                    this.setSelectionRange(0, 0);
+                } catch (e) {}
+            }
+        });
 
         const canEdit = <?= json_encode($canEdit, JSON_UNESCAPED_UNICODE); ?>;
         const canVerify = <?= json_encode($canVerify, JSON_UNESCAPED_UNICODE); ?>;
@@ -570,6 +586,9 @@
         if (canVerify) {
             const $modalVerify = $('#modal-verify-spt');
             const $formVerify = $('#form-verify-spt');
+            let globalTglMulai = '';
+            let globalTglSelesai = '';
+            let globalIsOneDayTrip = false;
 
             function addDasarInputRow(value = '') {
                 const container = $('#dasar-spt-container');
@@ -785,12 +804,25 @@
             $('#btn-add-penginapan').off('click').on('click', function() {
                 addPenginapanInputRow({});
             });
+            $('#btn-enable-penginapan').off('click').on('click', function() {
+                $('#btn-enable-penginapan-wrapper').hide();
+                $('#card-biaya-penginapan').slideDown();
+                if ($('#penginapan-container .penginapan-row').length === 0) {
+                    addPenginapanInputRow({ tgl_mulai: globalTglMulai, tgl_selesai: globalTglSelesai });
+                }
+            });
             $('#penginapan-container').off('click', '.btn-remove-penginapan').on('click', '.btn-remove-penginapan', function() {
                 const rowsCount = $('#penginapan-container .penginapan-row').length;
                 if (rowsCount > 1) {
                     $(this).closest('.penginapan-row').remove();
                 } else {
-                    $('#penginapan-container .penginapan-row input').val('');
+                    $(this).closest('.penginapan-row').remove();
+                    if (globalIsOneDayTrip) {
+                        $('#card-biaya-penginapan').slideUp();
+                        $('#btn-enable-penginapan-wrapper').show();
+                    } else {
+                        addPenginapanInputRow({});
+                    }
                 }
             });
 
@@ -831,8 +863,36 @@
                 $('#info-verify-periode').text(periode);
                 $('#info-verify-pelaksana').text(pelaksana);
 
-                $('#verify_nomor_surat').val(nomor);
-                $('#verify_kode_nomor').val(kodeNomor);
+                let targetYear = new Date().getFullYear();
+                if (tglMulai) {
+                    let yearFromMulai = new Date(tglMulai).getFullYear();
+                    if (!isNaN(yearFromMulai) && yearFromMulai > 2000) {
+                        targetYear = yearFromMulai;
+                    }
+                } else if (tgl) {
+                    let yearFromTgl = new Date(tgl).getFullYear();
+                    if (!isNaN(yearFromTgl) && yearFromTgl > 2000) {
+                        targetYear = yearFromTgl;
+                    }
+                }
+
+                if (nomor && nomor.trim() !== '') {
+                    $('#verify_nomor_surat').val(nomor);
+                } else {
+                    $('#verify_nomor_surat').val('/SPT/Gs7/' + targetYear);
+                }
+
+                if (kodeNomor && kodeNomor.trim() !== '') {
+                    const trimmedKode = kodeNomor.trim();
+                    if (trimmedKode.includes('/')) {
+                        $('#verify_kode_nomor').val(trimmedKode);
+                    } else {
+                        $('#verify_kode_nomor').val(trimmedKode + '/SPD/SATKER/PPS-RIAU/' + targetYear);
+                    }
+                } else {
+                    $('#verify_kode_nomor').val('/SPD/SATKER/PPS-RIAU/' + targetYear);
+                }
+
                 $('#verify_tanggal_ttd').val(tgl !== '' ? tgl : new Date().toISOString().split('T')[0]);
 
                 if (kopSuratId !== '0') {
@@ -898,7 +958,7 @@
                     });
                 }
 
-                // Populate Dynamic Penginapan Rows
+                // Populate Dynamic Penginapan Rows & Card Visibility
                 const penginapanContainer = $('#penginapan-container');
                 penginapanContainer.empty();
                 let penginapanList = rincian.penginapan || [];
@@ -910,12 +970,38 @@
                         keterangan: ''
                     }];
                 }
-                if (penginapanList.length === 0) {
-                    addPenginapanInputRow({ tgl_mulai: tglMulai, tgl_selesai: tglSelesai, nominal: defPenginapan });
-                } else {
+
+                let isOneDayTrip = false;
+                if (tglMulai && tglSelesai) {
+                    if (tglMulai === tglSelesai) {
+                        isOneDayTrip = true;
+                    } else {
+                        const d1 = new Date(tglMulai);
+                        const d2 = new Date(tglSelesai);
+                        const diffTime = Math.abs(d2 - d1);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                        if (diffDays <= 1) {
+                            isOneDayTrip = true;
+                        }
+                    }
+                }
+                globalIsOneDayTrip = isOneDayTrip;
+
+                if (penginapanList.length > 0) {
+                    $('#card-biaya-penginapan').show();
+                    $('#btn-enable-penginapan-wrapper').hide();
                     penginapanList.forEach(function(pItem) {
                         addPenginapanInputRow(pItem);
                     });
+                } else {
+                    if (isOneDayTrip) {
+                        $('#card-biaya-penginapan').hide();
+                        $('#btn-enable-penginapan-wrapper').show();
+                    } else {
+                        $('#card-biaya-penginapan').show();
+                        $('#btn-enable-penginapan-wrapper').hide();
+                        addPenginapanInputRow({ tgl_mulai: tglMulai, tgl_selesai: tglSelesai, nominal: defPenginapan });
+                    }
                 }
 
                 let dasarTexts = [];

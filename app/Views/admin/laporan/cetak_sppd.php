@@ -129,8 +129,31 @@
     
     $nomorSurat = esc($row['nomor_surat_tugas'] ?? '-');
     $kotaTujuan = esc($row['kota_tujuan'] ?? '-');
-    $tujuanMaksud = esc($row['tujuan'] ?? '-');
+    $rawMaksud = !empty($row['perihal_disposisi']) ? $row['perihal_disposisi'] : (!empty($row['perihal']) ? $row['perihal'] : ($row['tujuan'] ?? '-'));
+    $tujuanMaksud = esc($rawMaksud);
     $tanggalTtd = $formatDate($row['tanggal_tanda_tangan'] ?? date('Y-m-d'));
+    
+    $alatAngkutan = '';
+    if (!empty($row['transportasi'])) {
+        $alatAngkutan = $row['transportasi'];
+    } else {
+        $rincianArr = json_decode((string)($row['rincian_biaya_json'] ?? '{}'), true) ?: [];
+        if (!empty($rincianArr['transport']) && is_array($rincianArr['transport'])) {
+            $transList = [];
+            foreach ($rincianArr['transport'] as $tItem) {
+                if (is_array($tItem) && !empty($tItem['nama_transportasi'])) {
+                    $transList[] = $tItem['nama_transportasi'];
+                }
+            }
+            if (!empty($transList)) {
+                $alatAngkutan = implode(', ', array_unique($transList));
+            }
+        }
+    }
+    if (empty($alatAngkutan)) {
+        $alatAngkutan = 'Kendaraan Operasional';
+    }
+    $alatAngkutan = esc($alatAngkutan);
     
     $kopSuratImgUrl = '';
     if (!empty($kop_surat['image_url'])) {
@@ -162,14 +185,27 @@
         }
         
         if ($golonganCode !== '' && $golonganCode !== '-') {
-            if (preg_match('/(I{1,3}|IV)\/[a-e]/i', $golonganCode, $gMatch)) {
+            $golonganCodeClean = trim(preg_replace('/\s*\(.*?\)/', '', $golonganCode));
+            if (preg_match('/(I{1,3}|IV)\/[a-e]/i', $golonganCodeClean, $gMatch)) {
                 $golonganDisplay = strtoupper($gMatch[0]);
             } else {
-                $golonganDisplay = $golonganCode;
+                $golonganDisplay = $golonganCodeClean !== '' ? $golonganCodeClean : '-';
             }
         } else {
             $golonganDisplay = '-';
         }
+
+        $jenisPeg = strtolower(trim((string)($utama['jenis_pegawai'] ?? '')));
+        if ($jenisPeg === '' && !empty($utama['id']) && is_numeric($utama['id'])) {
+            $dbPeg = \Config\Database::connect();
+            if ($dbPeg->tableExists('mst_pegawai')) {
+                $pegRow = $dbPeg->table('mst_pegawai')->select('jenis_pegawai')->where('id', (int)$utama['id'])->get()->getRowArray();
+                if (!empty($pegRow['jenis_pegawai'])) {
+                    $jenisPeg = strtolower(trim((string)$pegRow['jenis_pegawai']));
+                }
+            }
+        }
+        $isPPPK = (strpos($jenisPeg, 'pppk') !== false);
 
         $jabatanFull = $jabatanStr !== '' ? $jabatanStr : 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
         if (strpos($jabatanFull, ',') !== false) {
@@ -232,17 +268,12 @@
             <tr>
                 <td class="col-no">1.</td>
                 <td class="col-label">Pejabat yang Berwenang Memberi Perintah</td>
-                <td class="col-value">Pejabat Pembuat Komitmen<br>Pelaksanaan Prasarana Strategis</td>
+                <td class="col-value">Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis</td>
             </tr>
             <tr>
                 <td class="col-no">2.</td>
                 <td class="col-label">Nama/NIP Pegawai yang melaksanakan perjalanan dinas</td>
-                <td class="col-value">
-                    <?= esc($utama['nama']); ?>
-                    <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
-                        <br>NIP. <?= esc($utama['nip']); ?>
-                    <?php endif; ?>
-                </td>
+                <td class="col-value"><?= esc($utama['nama']); ?></td>
             </tr>
             <tr>
                 <td class="col-no">3.</td>
@@ -253,7 +284,7 @@
                 </td>
                 <td class="col-value">
                     <table style="width:100%; border:none; margin:0; padding:0;">
-                        <tr><td style="border:none; padding:0; width:5%;">a.</td><td style="border:none; padding:0;"><?= esc($golonganDisplay); ?></td></tr>
+                        <tr><td style="border:none; padding:0; width:5%;">a.</td><td style="border:none; padding:0;"><?= ($isPPPK && $golonganDisplay !== '-') ? 'Golongan ' : ''; ?><?= esc($golonganDisplay); ?></td></tr>
                         <tr><td style="border:none; padding:0;">b.</td><td style="border:none; padding:0;"><?= esc($jabatanDisplay); ?></td></tr>
                         <tr><td style="border:none; padding:0;">c.</td><td style="border:none; padding:0;"><?= esc($tingkatBiaya); ?></td></tr>
                     </table>
@@ -267,7 +298,7 @@
             <tr>
                 <td class="col-no">5.</td>
                 <td class="col-label">Alat angkutan yang dipergunakan</td>
-                <td class="col-value">Kendaraan Operasional</td>
+                <td class="col-value"><?= $alatAngkutan; ?></td>
             </tr>
             <tr>
                 <td class="col-no">6.</td>
@@ -360,7 +391,7 @@
                 </tr>
             </table>
             
-            <div style="margin-top: 10px;">
+            <div style="margin-top: 10px; text-align: center;">
                 Pejabat Berwenang yang Memberi Perintah<br>
                 Pejabat Pembuat Komitmen<br>
                 Pelaksanaan Prasarana Strategis

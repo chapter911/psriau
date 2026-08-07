@@ -222,7 +222,7 @@
 
                         <div class="text-center mb-3">
                             <h4 class="font-weight-bold mb-1" style="font-size: 16pt;">RINCIAN BIAYA PERJALANAN DINAS</h4>
-                            <div style="font-size: 12pt;">LAMPIRAN SPD NOMOR : <?= esc(str_replace('SPT', 'SPD', (string)($row['nomor_surat_tugas'] ?? '-'))) ?></div>
+                            <div style="font-size: 12pt;">LAMPIRAN SPD NOMOR : <?= esc($nomor_spd ?? ($row['kode_nomor'] ?? str_replace('SPT', 'SPD', (string)($row['nomor_surat_tugas'] ?? '-')))) ?></div>
                             <div style="font-size: 12pt;">TANGGAL : <?= esc(strtoupper($tanggal_ttd_upper ?? '')) ?></div>
                         </div>
 
@@ -246,66 +246,67 @@
                                 <tr>
                                     <td class="text-center align-top border-thin-left border-thin-right">1</td>
                                     <td class="font-weight-bold border-thin-left">BIAYA TRANSPORT :</td>
-                                    <td class="d-flex justify-content-between border-thin-left"><span class="float-left">Rp.</span> <span class="float-right"><?= number_format($calc_transport ?? 0, 0, ',', '.') ?></span></td>
+                                    <td class="d-flex justify-content-between border-thin-left"><span class="float-left">Rp.</span> <span class="float-right"><?= ($calc_transport ?? 0) == 0 ? '-' : number_format($calc_transport, 0, ',', '.') ?></span></td>
                                     <td class="border-thin-left border-thin-right"></td>
                                 </tr>
-                                <?php if (!empty($transport_groups['Pesawat Udara']['rows'])): ?>
-                                <tr>
-                                    <td class="border-thin-left border-thin-right"></td>
-                                    <td class="pl-3">Pesawat Udara:</td>
-                                    <td class="border-thin-left"></td>
-                                    <td class="border-thin-left border-thin-right"></td>
-                                </tr>
-                                <?php foreach ($transport_groups['Pesawat Udara']['rows'] as $idx => $pRow): ?>
-                                <tr>
-                                    <td class="border-thin-left border-thin-right"></td>
-                                    <td class="pl-4 d-flex justify-content-between">
-                                        <span><?= esc($pRow['ket'] !== '' ? $pRow['ket'] : 'Tiket Pesawat') ?></span>
-                                        <span>Rp.</span>
-                                    </td>
-                                    <td class="text-right pr-4 <?= $idx === count($transport_groups['Pesawat Udara']['rows']) - 1 ? 'border-thin-bottom' : '' ?>"><?= number_format($pRow['sub'], 0, ',', '.') ?></td>
-                                    <td class="border-thin-left border-thin-right"></td>
-                                </tr>
-                                <?php endforeach; ?>
-                                <tr>
-                                    <td class="border-thin-left border-thin-right"></td>
-                                    <td></td>
-                                    <td class="text-right font-weight-bold pr-2"><?= number_format($transport_groups['Pesawat Udara']['rounded_subtotal'] ?? 0, 0, ',', '.') ?></td>
-                                    <td class="border-thin-left border-thin-right"></td>
-                                </tr>
+                                <?php $multiGroup = count($transport_groups ?? []) > 1; ?>
+                                <?php if (empty($transport_groups)): ?>
+                                    <!-- No transport items -->
+                                <?php elseif (!$multiGroup): ?>
+                                    <?php $onlyGroup = reset($transport_groups); ?>
+                                    <?php foreach ($onlyGroup['rows'] as $tRow): ?>
+                                    <tr>
+                                        <td class="border-thin-left border-thin-right"></td>
+                                        <td class="pl-3 d-flex justify-content-between">
+                                            <span><?= esc($tRow['ket'] !== '' ? $tRow['ket'] : (!empty($tRow['jenis']) ? $tRow['jenis'] : 'Transport')) ?></span>
+                                            <span>Rp.</span>
+                                        </td>
+                                        <td class="text-right pr-4"><?= number_format($tRow['sub'], 0, ',', '.') ?></td>
+                                        <td class="border-thin-left border-thin-right"></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <?php foreach ($transport_groups as $gLabel => $grp): ?>
+                                    <tr>
+                                        <td class="border-thin-left border-thin-right"></td>
+                                        <td class="pl-3 font-weight-bold"><?= esc($gLabel) ?>:</td>
+                                        <td class="border-thin-left"></td>
+                                        <td class="border-thin-left border-thin-right"></td>
+                                    </tr>
+                                    <?php foreach ($grp['rows'] as $idx => $tRow): ?>
+                                    <tr>
+                                        <td class="border-thin-left border-thin-right"></td>
+                                        <td class="pl-4 d-flex justify-content-between">
+                                            <span><?= esc($tRow['ket'] !== '' ? $tRow['ket'] : $gLabel) ?></span>
+                                            <span>Rp.</span>
+                                        </td>
+                                        <td class="text-right pr-4 <?= ($idx === count($grp['rows']) - 1 && count($grp['rows']) > 1) ? 'border-thin-bottom' : '' ?>"><?= number_format($tRow['sub'], 0, ',', '.') ?></td>
+                                        <td class="border-thin-left border-thin-right"></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                    <?php if (count($grp['rows']) > 1): ?>
+                                    <tr>
+                                        <td class="border-thin-left border-thin-right"></td>
+                                        <td></td>
+                                        <td class="text-right font-weight-bold pr-2"><?= number_format($grp['rounded_subtotal'] ?? 0, 0, ',', '.') ?></td>
+                                        <td class="border-thin-left border-thin-right"></td>
+                                    </tr>
+                                    <?php endif; ?>
+                                    <?php endforeach; ?>
                                 <?php endif; ?>
 
-                                <?php if (!empty($transport_groups['Taxi']['rows'])): ?>
                                 <tr>
                                     <td class="border-thin-left border-thin-right"></td>
-                                    <td class="pl-3">Taxi :</td>
+                                    <td class="border-thin-left"></td>
                                     <td class="border-thin-left"></td>
                                     <td class="border-thin-left border-thin-right"></td>
                                 </tr>
-                                <?php foreach ($transport_groups['Taxi']['rows'] as $idx => $tRow): ?>
-                                <tr>
-                                    <td class="border-thin-left border-thin-right"></td>
-                                    <td class="pl-4 d-flex justify-content-between">
-                                        <span><?= esc($tRow['ket'] !== '' ? $tRow['ket'] : 'Taxi') ?></span>
-                                        <span>Rp.</span>
-                                    </td>
-                                    <td class="text-right pr-4 <?= $idx === count($transport_groups['Taxi']['rows']) - 1 ? 'border-thin-bottom' : '' ?>"><?= number_format($tRow['sub'], 0, ',', '.') ?></td>
-                                    <td class="border-thin-left border-thin-right"></td>
-                                </tr>
-                                <?php endforeach; ?>
-                                <tr>
-                                    <td class="border-thin-left border-thin-right"></td>
-                                    <td></td>
-                                    <td class="text-right font-weight-bold pr-2"><?= number_format($transport_groups['Taxi']['rounded_subtotal'] ?? 0, 0, ',', '.') ?></td>
-                                    <td class="border-thin-left border-thin-right"></td>
-                                </tr>
-                                <?php endif; ?>
 
                                 <!-- Item 2: Uang Harian -->
                                 <tr>
                                     <td class="text-center align-top border-thin-left border-thin-right">2</td>
                                     <td class="font-weight-bold border-thin-left">UANG HARIAN</td>
-                                    <td class="d-flex justify-content-between border-thin-left"><span class="float-left">Rp.</span> <span class="float-right"><?= number_format($calc_harian ?? 0, 0, ',', '.') ?></span></td>
+                                    <td class="d-flex justify-content-between border-thin-left"><span class="float-left">Rp.</span> <span class="float-right"><?= ($calc_harian ?? 0) == 0 ? '-' : number_format($calc_harian, 0, ',', '.') ?></span></td>
                                     <td class="border-thin-left border-thin-right"></td>
                                 </tr>
                                 <tr>
@@ -318,18 +319,25 @@
                                 <tr>
                                     <td class="border-thin-left border-thin-right"></td>
                                     <td class="pl-4">
-                                        <?= (int)$hRow['days'] ?> hari &nbsp;&nbsp;x&nbsp;&nbsp; Rp <?= number_format($hRow['rate'], 0, ',', '.') ?> &nbsp;&nbsp;Rp &nbsp;&nbsp;<?= number_format($hRow['sub'], 0, ',', '.') ?>
+                                        <?= (int)$hRow['days'] ?> hari &nbsp;&nbsp;x&nbsp;&nbsp; Rp <?= number_format($hRow['rate'], 0, ',', '.') ?> &nbsp;&nbsp;Rp &nbsp;&nbsp;<?= ($hRow['sub'] ?? 0) == 0 ? '-' : number_format($hRow['sub'], 0, ',', '.') ?>
                                     </td>
                                     <td class="border-thin-left"></td>
                                     <td class="border-thin-left border-thin-right"></td>
                                 </tr>
                                 <?php endforeach; ?>
 
+                                <tr>
+                                    <td class="border-thin-left border-thin-right"></td>
+                                    <td class="border-thin-left"></td>
+                                    <td class="border-thin-left"></td>
+                                    <td class="border-thin-left border-thin-right"></td>
+                                </tr>
+
                                 <!-- Item 3: Uang Penginapan -->
                                 <tr>
                                     <td class="text-center align-top border-thin-left border-thin-right">3</td>
                                     <td class="font-weight-bold border-thin-left">UANG PENGINAPAN</td>
-                                    <td class="d-flex justify-content-between border-thin-left"><span class="float-left">Rp.</span> <span class="float-right"><?= number_format($calc_penginapan ?? 0, 0, ',', '.') ?></span></td>
+                                    <td class="d-flex justify-content-between border-thin-left"><span class="float-left">Rp.</span> <span class="float-right"><?= ($calc_penginapan ?? 0) == 0 ? '-' : number_format($calc_penginapan, 0, ',', '.') ?></span></td>
                                     <td class="border-thin-left border-thin-right"></td>
                                 </tr>
                                 <tr>
@@ -341,13 +349,20 @@
                                 <?php foreach ($penginapan_details as $pRow): ?>
                                 <tr>
                                     <td class="border-thin-left border-thin-right"></td>
-                                    <td class="pl-4">
-                                        <?= (int)$pRow['nights'] ?> malam &nbsp;&nbsp;x&nbsp;&nbsp; Rp <?= number_format($pRow['rate'], 0, ',', '.') ?> &nbsp;&nbsp;Rp &nbsp;&nbsp;<?= number_format($pRow['sub'], 0, ',', '.') ?>
-                                    </td>
+                                     <td class="pl-4">
+                                         <?= (int)$pRow['nights'] ?> malam &nbsp;&nbsp;x&nbsp;&nbsp; Rp <?= ((int)($pRow['nights'] ?? 0) === 0) ? '-' : number_format($pRow['rate'], 0, ',', '.') ?> &nbsp;&nbsp;Rp &nbsp;&nbsp;<?= ($pRow['sub'] ?? 0) == 0 ? '-' : number_format($pRow['sub'], 0, ',', '.') ?>
+                                     </td>
                                     <td class="border-thin-left"></td>
                                     <td class="border-thin-left border-thin-right"></td>
                                 </tr>
                                 <?php endforeach; ?>
+
+                                <tr>
+                                    <td class="border-thin-left border-thin-right"></td>
+                                    <td class="border-thin-left"></td>
+                                    <td class="border-thin-left"></td>
+                                    <td class="border-thin-left border-thin-right"></td>
+                                </tr>
 
                                 <!-- Total JUMLAH -->
                                 <tr class="font-weight-bold border-thin-top border-thin-bottom">
@@ -386,7 +401,7 @@
                                 <div class="font-weight-bold mt-3">Yang Menerima :</div>
                                 <div style="height: 60px;"></div>
                                 <div class="font-weight-bold text-underline"><u><?= esc($nama_utama ?? '-') ?></u></div>
-                                <div>NIP. <?= esc($nip_utama ?? '-') ?></div>
+                                <div><?= esc($nip_label_utama ?? 'NIP. ') ?><?= esc($nip_utama ?? '-') ?></div>
                             </div>
                         </div>
 
@@ -406,7 +421,7 @@
                             <div class="col-4 text-right">
                                 <div>Rp. <?= number_format($total_biaya ?? 0, 0, ',', '.') ?></div>
                                 <div class="border-thin-bottom">Rp. -</div>
-                                <div>Rp. <?= number_format($total_biaya ?? 0, 0, ',', '.') ?></div>
+                                <div>Rp. -</div>
                             </div>
                         </div>
 
@@ -453,7 +468,7 @@
                                         </tr>
                                         <tr>
                                             <td class="border-thin-all">Nomor Bukti</td>
-                                            <td class="border-thin-all"></td>
+                                            <td class="border-thin-all font-weight-bold"></td>
                                         </tr>
                                         <tr>
                                             <td class="border-thin-all">Mata Anggaran</td>
@@ -482,7 +497,7 @@
                                 </div>
                                 <div class="row my-2">
                                     <div class="col-3">Untuk Pembayaran</div>
-                                    <div class="col-9 text-justify">: Perjalanan Dinas a.n. <?= esc($nama_utama ?? '') ?> <?= esc($jabatan_utama ?? '') ?> dalam rangka <?= esc($row['tujuan'] ?? '') ?></div>
+                                    <div class="col-9 text-justify">: <?= esc($full_pembayaran_text ?? ('Perjalanan Dinas a.n. ' . ($nama_utama ?? '') . ' ' . ($jabatan_utama ?? '') . ' dalam rangka ' . ($row['tujuan'] ?? '') . ', sebagaimana daftar perincian terlampir.')) ?></div>
                                 </div>
                                 <div class="row my-2">
                                     <div class="col-3">Berdasarkan SPD</div>
@@ -490,7 +505,7 @@
                                 </div>
                                 <div class="row">
                                     <div class="col-3 pl-4">Nomor</div>
-                                    <div class="col-9">: <?= esc(str_replace('SPT', 'SPD', (string)($row['nomor_surat_tugas'] ?? '-'))) ?></div>
+                                    <div class="col-9">: <?= esc($nomor_spd ?? ($row['kode_nomor'] ?? str_replace('SPT', 'SPD', (string)($row['nomor_surat_tugas'] ?? '-')))) ?></div>
                                 </div>
                                 <div class="row">
                                     <div class="col-3 pl-4">Tanggal</div>
@@ -501,8 +516,8 @@
                                     <div class="col-9">: Pekanbaru - <?= esc($row['kota_tujuan'] ?? '-') ?></div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-3">Berangkat dari tanggal</div>
-                                    <div class="col-9">: <?= esc($tgl_berangkat ?? '') ?> s/d <?= esc($tgl_kembali ?? '') ?></div>
+                                     <div class="col-3">Berangkat dari tanggal</div>
+                                     <div class="col-9">: <?= esc(($tgl_berangkat ?? '') === ($tgl_kembali ?? '') ? ($tgl_berangkat ?? '') : (($tgl_berangkat ?? '') . ' s/d ' . ($tgl_kembali ?? ''))) ?></div>
                                 </div>
                             </div>
 
@@ -517,12 +532,12 @@
                                     <div>NIP. 19901221 201802 1 001</div>
                                 </div>
                                 <div class="col-6 text-center">
-                                    <div>Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp;<?= esc($bulan_tahun_str ?? '') ?></div>
-                                    <div>Kepala Satuan Kerja</div>
-                                    <div>Pelaksanaan Prasarana Strategis Riau</div>
+                                     <div>Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp;<?= esc($bulan_tahun_str ?? '') ?></div>
+                                     <div><?= esc($jabatan_utama_line1 ?? ($jabatan_utama ?? '-')) ?></div>
+                                     <div><?= esc($jabatan_utama_line2 ?? '') ?></div>
                                     <div style="height: 70px;"></div>
                                     <div class="font-weight-bold text-underline"><u><?= esc($nama_utama ?? '-') ?></u></div>
-                                    <div>NIP. <?= esc($nip_utama ?? '-') ?></div>
+                                    <div><?= esc($nip_label_utama ?? 'NIP. ') ?><?= esc($nip_utama ?? '-') ?></div>
                                 </div>
                             </div>
 

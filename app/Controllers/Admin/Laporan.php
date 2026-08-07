@@ -691,6 +691,15 @@ class Laporan extends BaseController
                     }
                 }
 
+                if ($dasarTexts === []) {
+                    $allMasterDasar = (new \App\Models\MstDasarSptModel())->orderBy('id', 'ASC')->findAll();
+                    foreach ($allMasterDasar as $mD) {
+                        if (! empty($mD['uraian'])) {
+                            $dasarTexts[] = $mD['uraian'];
+                        }
+                    }
+                }
+
                 $statusVerifikasiHtml = '';
                 if ($isFinal === 0) {
                     $statusVerifikasiHtml = '<span class="badge badge-secondary px-2 py-1 shadow-sm" style="font-size:0.78rem;"><i class="fas fa-hourglass-start mr-1"></i> Belum Selesai</span>';
@@ -711,8 +720,8 @@ class Laporan extends BaseController
                 $aksiSptHtml = '';
                 $updateButtonHtml = '';
                 if ($canVerifyRow) {
-                    $dasarAttr = $isVerified === 1 ? esc(json_encode($dasarTexts), 'attr') : '[]';
-                    $tglAttr = $isVerified === 1 ? esc($tglTtd, 'attr') : '';
+                    $dasarAttr = esc(json_encode($dasarTexts), 'attr');
+                    $tglAttr = $tglTtd !== '' ? esc($tglTtd, 'attr') : date('Y-m-d');
                     $kotaTujuanAttr = esc((string) ($row['kota_tujuan'] ?? ''), 'attr');
                     $tujuanAttr = esc((string) ($row['tujuan'] ?? ''), 'attr');
                     $periodeAttr = esc((string) ($row['periode'] ?? ''), 'attr');
@@ -928,13 +937,10 @@ class Laporan extends BaseController
             $updateData['nomor_surat_tugas'] = $nomorSurat;
             $updateData['dasar_spt_ids_json'] = json_encode($dasarInputs, JSON_UNESCAPED_UNICODE);
             $updateData['tanggal_tanda_tangan'] = $tglTtd;
-            
-            
         }
         
         if ($targetTab === 'all' || $targetTab === 'tab2') {
             $updateData['rincian_biaya_json'] = json_encode($rincianBiaya, JSON_UNESCAPED_UNICODE);
-            
         }
         if ($kopSuratId > 0) {
             $updateData['kop_surat_id'] = $kopSuratId;
@@ -943,12 +949,8 @@ class Laporan extends BaseController
             $updateData['mata_anggaran_id'] = $mataAnggaranId;
         }
 
-        if ($kodeNomorInput !== '') {
-            $updateData['kode_nomor'] = $kodeNomorInput;
-        } else {
-            $this->ensureKodeNomorAssigned($row);
-            $updateData['kode_nomor'] = $row['kode_nomor'];
-        }
+        $this->ensureKodeNomorAssigned($row, $kodeNomorInput);
+        $updateData['kode_nomor'] = $row['kode_nomor'];
 
         $model->update($id, $updateData);
 
@@ -1095,6 +1097,22 @@ class Laporan extends BaseController
         $periodeSelesai = $row['periode_selesai'] ?? '';
 
         $db = \Config\Database::connect();
+        if (! empty($row['disposisi_id']) && $db->tableExists('disposisi_perjalanan_dinas')) {
+            $disposisiRow = $db->table('disposisi_perjalanan_dinas')
+                ->select('perihal, transportasi')
+                ->where('id', $row['disposisi_id'])
+                ->get()
+                ->getRowArray();
+            if (is_array($disposisiRow)) {
+                if (! empty($disposisiRow['perihal'])) {
+                    $row['perihal_disposisi'] = $disposisiRow['perihal'];
+                }
+                if (! empty($disposisiRow['transportasi'])) {
+                    $row['transportasi'] = $disposisiRow['transportasi'];
+                }
+            }
+        }
+
         if (! empty($pelaksana) && $db->tableExists('mst_pegawai')) {
             $pegawaiIds = array_filter(array_column($pelaksana, 'id'));
             if (! empty($pegawaiIds)) {
@@ -1238,22 +1256,76 @@ class Laporan extends BaseController
             } catch (\Throwable $e) {}
         }
 
-        $tanggalTtdRaw = $row['tanggal_tanda_tangan'] ?? date('Y-m-d');
+        $tanggalTtdRaw = !empty($row['tanggal_tanda_tangan'])
+            ? (string)$row['tanggal_tanda_tangan']
+            : '';
+        if (empty($tanggalTtdRaw) && !empty($row['disposisi_id'])) {
+            $dbDisp = \Config\Database::connect();
+            if ($dbDisp->tableExists('disposisi_perjalanan_dinas')) {
+                $dispRow = $dbDisp->table('disposisi_perjalanan_dinas')->select('created_at')->where('id', $row['disposisi_id'])->get()->getRowArray();
+                if (!empty($dispRow['created_at'])) {
+                    $tanggalTtdRaw = date('Y-m-d', strtotime($dispRow['created_at']));
+                }
+            }
+        }
+        if (empty($tanggalTtdRaw) && !empty($row['created_at'])) {
+            $tanggalTtdRaw = date('Y-m-d', strtotime($row['created_at']));
+        }
+        if (empty($tanggalTtdRaw)) {
+            $tanggalTtdRaw = date('Y-m-d');
+        }
+
         $tanggalTtdUpper = strtoupper($formatDateIndo($tanggalTtdRaw, true));
         
-        $tsTtd = strtotime($tanggalTtdRaw) ?: time();
+        $tglDisposisiRaw = '';
+        if (!empty($row['disposisi_id'])) {
+            $dbDisp = \Config\Database::connect();
+            if ($dbDisp->tableExists('disposisi_perjalanan_dinas')) {
+                $dispRow = $dbDisp->table('disposisi_perjalanan_dinas')->select('created_at')->where('id', $row['disposisi_id'])->get()->getRowArray();
+                if (!empty($dispRow['created_at'])) {
+                    $tglDisposisiRaw = date('Y-m-d', strtotime($dispRow['created_at']));
+                }
+            }
+        }
+        if (empty($tglDisposisiRaw) && !empty($row['created_at'])) {
+            $tglDisposisiRaw = date('Y-m-d', strtotime($row['created_at']));
+        }
+        if (empty($tglDisposisiRaw)) {
+            $tglDisposisiRaw = date('Y-m-d');
+        }
+
+        $tsDisp = strtotime($tglDisposisiRaw) ?: time();
+        $tsTtd  = strtotime($tanggalTtdRaw) ?: time();
         $monthsIndo = [
             1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',
             5=>'Mei',6=>'Juni',7=>'Juli',8=>'Agustus',
             9=>'September',10=>'Oktober',11=>'November',12=>'Desember'
         ];
-        $bulanTahunStr = $monthsIndo[(int)date('n', $tsTtd)] . ' ' . date('Y', $tsTtd);
+        $bulanTahunStr = $monthsIndo[(int)date('n', $tsDisp)] . ' ' . date('Y', $tsDisp);
         $tahunAnggaranStr = date('Y', $tsTtd);
 
         $utama = $pelaksana[0] ?? ['nama' => '-', 'nip' => '-', 'jabatan' => '-'];
-        $namaUtama = strtoupper((string)($utama['nama'] ?? '-'));
+        $namaUtama = $this->formatNamaGelar((string)($utama['nama'] ?? '-'));
         $nipUtama  = $formatNip($utama['nip'] ?? '');
         $jabatanUtama = (string)($utama['jabatan'] ?? '');
+
+        $jenisPegUtama = strtolower(trim((string)($utama['jenis_pegawai'] ?? '')));
+        if (empty($jenisPegUtama) && !empty($utama['id'])) {
+            $dbPeg = \Config\Database::connect();
+            if ($dbPeg->tableExists('mst_pegawai')) {
+                $pegRow = $dbPeg->table('mst_pegawai')->select('jenis_pegawai')->where('id', $utama['id'])->get()->getRowArray();
+                if (!empty($pegRow['jenis_pegawai'])) {
+                    $jenisPegUtama = strtolower(trim((string)$pegRow['jenis_pegawai']));
+                }
+            }
+        }
+        $nipLabelUtama = (strpos($jenisPegUtama, 'pppk') !== false) ? 'NIPPPK. ' : 'NIP. ';
+
+        $nomorSPD = !empty($row['kode_nomor']) 
+            ? (string)$row['kode_nomor'] 
+            : (!empty($row['nomor_surat_tugas']) 
+                ? str_replace('SPT', 'SPD', (string)$row['nomor_surat_tugas']) 
+                : '-');
 
         // Cost calculations
         $jabUpper = strtoupper($jabatanUtama);
@@ -1301,10 +1373,24 @@ class Laporan extends BaseController
                 $rate = $tNom;
                 $sub  = $tIsLumpsum ? $rate : (($tDays > 0) ? ($tDays * $rate) : $rate);
 
+                $jenisLow = strtolower($tJenis);
+                $ketLow   = strtolower($tKet);
+                $isTravel = (strpos($jenisLow, 'travel') !== false) || (strpos($ketLow, 'travel') !== false) || ($tJenis === '' && ($tKet === '' || strpos($ketLow, 'kampar') !== false || strpos($ketLow, 'pekanbaru') !== false));
+
+                $tKetFormatted = $tKet;
+                if ($isTravel) {
+                    $dest = !empty($tKet) ? $tKet : (!empty($kotaTujuan) ? $kotaTujuan : 'Tujuan');
+                    $destClean = preg_replace('/^travel\s+/i', '', $dest);
+                    $destClean = preg_replace('/^pekanbaru\s*-\s*/i', '', $destClean);
+                    $destClean = preg_replace('/\s*\(?pp\)?$/i', '', $destClean);
+                    $destClean = trim($destClean);
+                    $tKetFormatted = 'Travel Pekanbaru - ' . $destClean . ' (PP)';
+                }
+
                 if ($tDays > 0 || $rate > 0 || $tIsLumpsum) {
                     $transportItems[] = [
                         'jenis'   => $tJenis,
-                        'ket'     => $tKet,
+                        'ket'     => $tKetFormatted,
                         'days'    => $tDays,
                         'rate'    => $rate,
                         'sub'     => $sub,
@@ -1323,6 +1409,14 @@ class Laporan extends BaseController
                 $gKey = 'Pesawat Udara';
             } elseif (strpos($jenisLow, 'taksi') !== false || strpos($jenisLow, 'taxi') !== false) {
                 $gKey = 'Taxi';
+            } elseif (strpos($jenisLow, 'travel') !== false) {
+                $gKey = 'Travel';
+            } elseif (strpos($jenisLow, 'sewa') !== false) {
+                $gKey = 'Sewa Kendaraan';
+            } elseif (strpos($jenisLow, 'darat') !== false) {
+                $gKey = 'Transport Darat';
+            } elseif (strpos($jenisLow, 'laut') !== false || strpos($jenisLow, 'kapal') !== false) {
+                $gKey = 'Transport Laut';
             } elseif ($jenis !== '') {
                 $gKey = $jenis;
             } else {
@@ -1454,6 +1548,37 @@ class Laporan extends BaseController
             return preg_replace('/\s+/', ' ', trim($temp));
         };
 
+        // Resolve Dasar SPT text for Kwitansi
+        $dasarSptIds = json_decode((string) ($row['dasar_spt_ids_json'] ?? '[]'), true) ?: [];
+        $dasarTexts = [];
+        if (!empty($dasarSptIds)) {
+            $numericIds = array_filter($dasarSptIds, 'is_numeric');
+            $customTexts = array_diff($dasarSptIds, $numericIds);
+            if (!empty($numericIds)) {
+                $dbDasar = (new \App\Models\MstDasarSptModel())->whereIn('id', $numericIds)->orderBy('id', 'ASC')->findAll();
+                foreach ($dbDasar as $dD) {
+                    if (!empty($dD['uraian'])) $dasarTexts[] = $dD['uraian'];
+                }
+            }
+            foreach ($customTexts as $cT) {
+                if (!empty($cT)) $dasarTexts[] = $cT;
+            }
+        }
+
+        $dasarSptStr = '';
+        if (!empty($dasarTexts)) {
+            $dasarSptStr = implode('; ', $dasarTexts);
+        } elseif (!empty($row['nomor_surat_tugas'])) {
+            $dasarSptStr = 'Surat Tugas Nomor: ' . $row['nomor_surat_tugas'];
+        }
+
+        $perihalText = !empty($row['perihal_disposisi']) ? $row['perihal_disposisi'] : (!empty($row['perihal']) ? $row['perihal'] : ($row['tujuan'] ?? '-'));
+        $fullPembayaranText = "Perjalanan Dinas a.n. " . $namaUtama . " " . $jabatanUtama . " dalam rangka " . $perihalText;
+        if (!empty($dasarSptStr)) {
+            $fullPembayaranText .= ", sesuai dengan " . $dasarSptStr;
+        }
+        $fullPembayaranText .= ", sebagaimana daftar perincian terlampir.";
+
         $terbilangText = $terbilangIndoFunc($totalBiaya) . ' Rupiah,-';
 
         $kopSuratPath = '';
@@ -1478,12 +1603,17 @@ class Laporan extends BaseController
             'tahun_anggaran_str' => $tahunAnggaranStr,
             'nama_utama' => $namaUtama,
             'nip_utama' => $nipUtama,
+            'nip_label_utama' => $nipLabelUtama,
             'jabatan_utama' => $jabatanUtama,
+            'jabatan_utama_line1' => $this->splitJabatanTwoLines($jabatanUtama)[0],
+            'jabatan_utama_line2' => $this->splitJabatanTwoLines($jabatanUtama)[1],
             'calc_transport' => $calcTransport,
             'calc_harian' => $calcHarian,
             'calc_penginapan' => $calcPenginapan,
             'total_biaya' => $totalBiaya,
             'terbilang_text' => $terbilangText,
+            'full_pembayaran_text' => $fullPembayaranText,
+            'nomor_spd' => $nomorSPD,
             'transport_groups' => $transportGroups,
             'harian_details' => $harianDetails,
             'penginapan_details' => $penginapanDetails,
@@ -1557,26 +1687,78 @@ class Laporan extends BaseController
         }
 
         $nomorSurat  = (string)($row['nomor_surat_tugas'] ?? '-');
-        $nomorSPD    = str_replace('SPT', 'SPD', $nomorSurat);
+        $nomorSPD    = !empty($row['kode_nomor']) 
+            ? (string)$row['kode_nomor'] 
+            : (!empty($row['nomor_surat_tugas']) 
+                ? str_replace('SPT', 'SPD', $nomorSurat) 
+                : '-');
         $kotaTujuan  = (string)($row['kota_tujuan'] ?? '-');
-        $tujuanMaksud = (string)($row['tujuan'] ?? '-');
+        $tujuanMaksud = !empty($row['perihal_disposisi']) ? (string)$row['perihal_disposisi'] : (!empty($row['perihal']) ? (string)$row['perihal'] : (string)($row['tujuan'] ?? '-'));
 
-        $tanggalTtdRaw = $row['tanggal_tanda_tangan'] ?? date('Y-m-d');
+        $tanggalTtdRaw = !empty($row['tanggal_tanda_tangan'])
+            ? (string)$row['tanggal_tanda_tangan']
+            : '';
+        if (empty($tanggalTtdRaw) && !empty($row['disposisi_id'])) {
+            $dbDisp = \Config\Database::connect();
+            if ($dbDisp->tableExists('disposisi_perjalanan_dinas')) {
+                $dispRow = $dbDisp->table('disposisi_perjalanan_dinas')->select('created_at')->where('id', $row['disposisi_id'])->get()->getRowArray();
+                if (!empty($dispRow['created_at'])) {
+                    $tanggalTtdRaw = date('Y-m-d', strtotime($dispRow['created_at']));
+                }
+            }
+        }
+        if (empty($tanggalTtdRaw) && !empty($row['created_at'])) {
+            $tanggalTtdRaw = date('Y-m-d', strtotime($row['created_at']));
+        }
+        if (empty($tanggalTtdRaw)) {
+            $tanggalTtdRaw = date('Y-m-d');
+        }
+
         $tanggalTtdUpper = strtoupper($formatDateIndo($tanggalTtdRaw, true));
         
-        $tsTtd = strtotime($tanggalTtdRaw) ?: time();
+        $tglDisposisiRaw = '';
+        if (!empty($row['disposisi_id'])) {
+            $dbDisp = \Config\Database::connect();
+            if ($dbDisp->tableExists('disposisi_perjalanan_dinas')) {
+                $dispRow = $dbDisp->table('disposisi_perjalanan_dinas')->select('created_at')->where('id', $row['disposisi_id'])->get()->getRowArray();
+                if (!empty($dispRow['created_at'])) {
+                    $tglDisposisiRaw = date('Y-m-d', strtotime($dispRow['created_at']));
+                }
+            }
+        }
+        if (empty($tglDisposisiRaw) && !empty($row['created_at'])) {
+            $tglDisposisiRaw = date('Y-m-d', strtotime($row['created_at']));
+        }
+        if (empty($tglDisposisiRaw)) {
+            $tglDisposisiRaw = date('Y-m-d');
+        }
+
+        $tsDisp = strtotime($tglDisposisiRaw) ?: time();
+        $tsTtd  = strtotime($tanggalTtdRaw) ?: time();
         $monthsIndo = [
             1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',
             5=>'Mei',6=>'Juni',7=>'Juli',8=>'Agustus',
             9=>'September',10=>'Oktober',11=>'November',12=>'Desember'
         ];
-        $bulanTahunStr = $monthsIndo[(int)date('n', $tsTtd)] . ' ' . date('Y', $tsTtd);
+        $bulanTahunStr = $monthsIndo[(int)date('n', $tsDisp)] . ' ' . date('Y', $tsDisp);
         $tahunAnggaranStr = date('Y', $tsTtd);
 
         $utama = $pelaksana[0] ?? ['nama' => '-', 'nip' => '-', 'jabatan' => '-'];
-        $namaUtama = strtoupper((string)($utama['nama'] ?? '-'));
+        $namaUtama = $this->formatNamaGelar((string)($utama['nama'] ?? '-'));
         $nipUtama  = $formatNip($utama['nip'] ?? '');
         $jabatanUtama = (string)($utama['jabatan'] ?? '');
+
+        $jenisPegUtama = strtolower(trim((string)($utama['jenis_pegawai'] ?? '')));
+        if (empty($jenisPegUtama) && !empty($utama['id'])) {
+            $dbPeg = \Config\Database::connect();
+            if ($dbPeg->tableExists('mst_pegawai')) {
+                $pegRow = $dbPeg->table('mst_pegawai')->select('jenis_pegawai')->where('id', $utama['id'])->get()->getRowArray();
+                if (!empty($pegRow['jenis_pegawai'])) {
+                    $jenisPegUtama = strtolower(trim((string)$pegRow['jenis_pegawai']));
+                }
+            }
+        }
+        $nipLabelUtama = (strpos($jenisPegUtama, 'pppk') !== false) ? 'NIPPPK. ' : 'NIP. ';
 
         // Cost calculations
         $jabUpper = strtoupper($jabatanUtama);
@@ -1624,10 +1806,24 @@ class Laporan extends BaseController
                 $rate = $tNom;
                 $sub  = $tIsLumpsum ? $rate : (($tDays > 0) ? ($tDays * $rate) : $rate);
 
+                $jenisLow = strtolower($tJenis);
+                $ketLow   = strtolower($tKet);
+                $isTravel = (strpos($jenisLow, 'travel') !== false) || (strpos($ketLow, 'travel') !== false) || ($tJenis === '' && ($tKet === '' || strpos($ketLow, 'kampar') !== false || strpos($ketLow, 'pekanbaru') !== false));
+
+                $tKetFormatted = $tKet;
+                if ($isTravel) {
+                    $dest = !empty($tKet) ? $tKet : (!empty($kotaTujuan) ? $kotaTujuan : 'Tujuan');
+                    $destClean = preg_replace('/^travel\s+/i', '', $dest);
+                    $destClean = preg_replace('/^pekanbaru\s*-\s*/i', '', $destClean);
+                    $destClean = preg_replace('/\s*\(?pp\)?$/i', '', $destClean);
+                    $destClean = trim($destClean);
+                    $tKetFormatted = 'Travel Pekanbaru - ' . $destClean . ' (PP)';
+                }
+
                 if ($tDays > 0 || $rate > 0 || $tIsLumpsum) {
                     $transportItems[] = [
                         'jenis'   => $tJenis,
-                        'ket'     => $tKet,
+                        'ket'     => $tKetFormatted,
                         'days'    => $tDays,
                         'rate'    => $rate,
                         'sub'     => $sub,
@@ -1646,6 +1842,14 @@ class Laporan extends BaseController
                 $gKey = 'Pesawat Udara';
             } elseif (strpos($jenisLow, 'taksi') !== false || strpos($jenisLow, 'taxi') !== false) {
                 $gKey = 'Taxi';
+            } elseif (strpos($jenisLow, 'travel') !== false) {
+                $gKey = 'Travel';
+            } elseif (strpos($jenisLow, 'sewa') !== false) {
+                $gKey = 'Sewa Kendaraan';
+            } elseif (strpos($jenisLow, 'darat') !== false) {
+                $gKey = 'Transport Darat';
+            } elseif (strpos($jenisLow, 'laut') !== false || strpos($jenisLow, 'kapal') !== false) {
+                $gKey = 'Transport Laut';
             } elseif ($jenis !== '') {
                 $gKey = $jenis;
             } else {
@@ -1853,132 +2057,142 @@ class Laporan extends BaseController
         $sheetRinci->getStyle('D7')->getFont()->setBold(true);
         $sheetRinci->setCellValue('L7', 'Rp.');
         $sheetRinci->getStyle('L7')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
-        $sheetRinci->setCellValue('M7', '=K12+J16');
-        $sheetRinci->getStyle('M7')->getNumberFormat()->setFormatCode('#,##0');
+        $sheetRinci->setCellValue('M7', (int)$calcTransport);
+        $sheetRinci->getStyle('M7')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
 
-        // Pesawat Udara
-        $sheetRinci->setCellValue('D8', 'Pesawat Udara:');
-        $pesawatRows = $transportGroups['Pesawat Udara']['rows'] ?? [];
-        $p1 = $pesawatRows[0]['sub'] ?? 1774040;
-        $p2 = $pesawatRows[1]['sub'] ?? 1757744;
-        $p1Ket = $pesawatRows[0]['ket'] ?? 'Pekanbaru - Jakarta';
-        $p2Ket = $pesawatRows[1]['ket'] ?? 'Jakarta - Pekanbaru';
+        $curRow = 8;
+        $multiGroup = count($transportGroups) > 1;
 
-        $sheetRinci->setCellValue('D9', $p1Ket);
-        $sheetRinci->setCellValue('I9', 'Rp.');
-        $sheetRinci->setCellValue('J9', $p1);
-        $sheetRinci->getStyle('J9')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+        if (empty($transportGroups)) {
+            // No transport rows
+        } elseif (!$multiGroup) {
+            $onlyGroup = reset($transportGroups);
+            foreach ($onlyGroup['rows'] as $tRow) {
+                $desc = $tRow['ket'] !== '' ? $tRow['ket'] : (!empty($tRow['jenis']) ? $tRow['jenis'] : 'Transport');
+                $sheetRinci->setCellValue('D' . $curRow, $desc);
+                $sheetRinci->setCellValue('I' . $curRow, 'Rp.');
+                $sheetRinci->setCellValue('J' . $curRow, (int)$tRow['sub']);
+                $sheetRinci->getStyle('J' . $curRow)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+                $curRow++;
+            }
+        } else {
+            foreach ($transportGroups as $gLabel => $grp) {
+                $sheetRinci->setCellValue('D' . $curRow, $gLabel . ':');
+                $sheetRinci->getStyle('D' . $curRow)->getFont()->setBold(true);
+                $curRow++;
 
-        $sheetRinci->setCellValue('D10', $p2Ket);
-        $sheetRinci->setCellValue('I10', 'Rp.');
-        $sheetRinci->setCellValue('J10', $p2);
-        $sheetRinci->getStyle('J10')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
-        $sheetRinci->getStyle('J10')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-
-        $sheetRinci->setCellValue('J11', '=SUM(J9:J10)');
-        $sheetRinci->getStyle('J11')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
-
-        $pesawatRounded = $transportGroups['Pesawat Udara']['rounded_subtotal'] ?? (int)(floor(($p1+$p2)/100)*100);
-        $sheetRinci->setCellValue('K12', $pesawatRounded);
-        $sheetRinci->getStyle('K12')->getFont()->setBold(true);
-        $sheetRinci->getStyle('K12')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"??_);_(@_)');
-
-        // Taxi
-        $sheetRinci->setCellValue('D13', 'Taxi :');
-        $taxiRows = $transportGroups['Taxi']['rows'] ?? [];
-        $t1 = $taxiRows[0]['sub'] ?? 500000;
-        $t2 = $taxiRows[1]['sub'] ?? 198000;
-        $t1Ket = $taxiRows[0]['ket'] ?? 'Banten (PP)';
-        $t2Ket = $taxiRows[1]['ket'] ?? 'Pekanbaru (PP)';
-
-        $sheetRinci->setCellValue('D14', $t1Ket);
-        $sheetRinci->setCellValue('I14', 'Rp.');
-        $sheetRinci->setCellValue('J14', $t1);
-        $sheetRinci->getStyle('J14')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
-
-        $sheetRinci->setCellValue('D15', $t2Ket);
-        $sheetRinci->setCellValue('I15', 'Rp.');
-        $sheetRinci->setCellValue('J15', '=99000*2');
-        $sheetRinci->getStyle('J15')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
-        $sheetRinci->getStyle('J15')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-
-        $sheetRinci->setCellValue('J16', '=SUM(J14:J15)');
-        $sheetRinci->getStyle('J16')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+                $grpRows = $grp['rows'];
+                $subStartRow = $curRow;
+                foreach ($grpRows as $idx => $tRow) {
+                    $desc = $tRow['ket'] !== '' ? $tRow['ket'] : $gLabel;
+                    $sheetRinci->setCellValue('D' . $curRow, $desc);
+                    $sheetRinci->setCellValue('I' . $curRow, 'Rp.');
+                    $sheetRinci->setCellValue('J' . $curRow, (int)$tRow['sub']);
+                    $sheetRinci->getStyle('J' . $curRow)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+                    if ($idx === count($grpRows) - 1 && count($grpRows) > 1) {
+                        $sheetRinci->getStyle('J' . $curRow)->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                    }
+                    $curRow++;
+                }
+                if (count($grpRows) > 1) {
+                    $subEndRow = $curRow - 1;
+                    $sheetRinci->setCellValue('J' . $curRow, "=SUM(J{$subStartRow}:J{$subEndRow})");
+                    $sheetRinci->getStyle('J' . $curRow)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+                    $sheetRinci->setCellValue('K' . $curRow, (int)($grp['rounded_subtotal'] ?? 0));
+                    $sheetRinci->getStyle('K' . $curRow)->getFont()->setBold(true);
+                    $sheetRinci->getStyle('K' . $curRow)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+                    $curRow++;
+                }
+            }
+        }
 
         // Item 2: Uang Harian
-        $sheetRinci->setCellValue('C18', '2');
-        $sheetRinci->getStyle('C18')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('D18', 'UANG HARIAN');
-        $sheetRinci->getStyle('D18')->getFont()->setBold(true);
-        $sheetRinci->setCellValue('L18', 'Rp.');
-        $sheetRinci->getStyle('L18')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
-        $sheetRinci->setCellValue('M18', '=SUM(J20:J20)');
-        $sheetRinci->getStyle('M18')->getNumberFormat()->setFormatCode('#,##0');
+        $curRow++; // 1 row separator
+        $harianHeaderRow = $curRow;
+        $sheetRinci->setCellValue('C' . $harianHeaderRow, '2');
+        $sheetRinci->getStyle('C' . $harianHeaderRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheetRinci->setCellValue('D' . $harianHeaderRow, 'UANG HARIAN');
+        $sheetRinci->getStyle('D' . $harianHeaderRow)->getFont()->setBold(true);
+        $sheetRinci->setCellValue('L' . $harianHeaderRow, 'Rp.');
+        $sheetRinci->getStyle('L' . $harianHeaderRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
 
-        $sheetRinci->setCellValue('D19', 'Uang Makan, Uang Transport Lokal, Uang Saku selama :');
-        $h1 = $harianDetails[0] ?? ['days' => 4, 'rate' => 530000];
-        $sheetRinci->setCellValue('D20', $h1['days']);
-        $sheetRinci->getStyle('D20')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('E20', 'hari');
-        $sheetRinci->getStyle('E20')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('F20', 'x');
-        $sheetRinci->getStyle('F20')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('G20', 'Rp');
-        $sheetRinci->getStyle('G20')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('H20', $h1['rate']);
-        $sheetRinci->getStyle('H20')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
-        $sheetRinci->setCellValue('I20', 'Rp');
-        $sheetRinci->getStyle('I20')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('J20', '=D20*H20');
-        $sheetRinci->getStyle('J20')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+        $curRow++;
+        $sheetRinci->setCellValue('D' . $curRow, 'Uang Makan, Uang Transport Lokal, Uang Saku selama :');
+        $curRow++;
+
+        $harianDetailsStart = $curRow;
+        if (!empty($harianDetails)) {
+            foreach ($harianDetails as $hd) {
+                $sheetRinci->setCellValue('D' . $curRow, (int)($hd['days'] ?? 0));
+                $sheetRinci->getStyle('D' . $curRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheetRinci->setCellValue('E' . $curRow, 'hari');
+                $sheetRinci->getStyle('E' . $curRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheetRinci->setCellValue('F' . $curRow, 'x');
+                $sheetRinci->getStyle('F' . $curRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheetRinci->setCellValue('G' . $curRow, 'Rp');
+                $sheetRinci->getStyle('G' . $curRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheetRinci->setCellValue('H' . $curRow, (int)($hd['rate'] ?? 0));
+                $sheetRinci->getStyle('H' . $curRow)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+                $sheetRinci->setCellValue('I' . $curRow, 'Rp');
+                $sheetRinci->getStyle('I' . $curRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheetRinci->setCellValue('J' . $curRow, "=D{$curRow}*H{$curRow}");
+                $sheetRinci->getStyle('J' . $curRow)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+                $curRow++;
+            }
+            $harianDetailsEnd = $curRow - 1;
+            $sheetRinci->setCellValue('M' . $harianHeaderRow, "=SUM(J{$harianDetailsStart}:J{$harianDetailsEnd})");
+        } else {
+            $sheetRinci->setCellValue('M' . $harianHeaderRow, 0);
+        }
+        $sheetRinci->getStyle('M' . $harianHeaderRow)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
 
         // Item 3: Uang Penginapan
-        $sheetRinci->setCellValue('C22', '3');
-        $sheetRinci->getStyle('C22')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('D22', 'UANG PENGINAPAN');
-        $sheetRinci->getStyle('D22')->getFont()->setBold(true);
-        $sheetRinci->setCellValue('L22', 'Rp.');
-        $sheetRinci->getStyle('L22')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
-        $sheetRinci->setCellValue('M22', '=SUM(J24:J25)');
-        $sheetRinci->getStyle('M22')->getNumberFormat()->setFormatCode('#,##0');
+        $curRow++; // 1 row separator
+        $penginapanHeaderRow = $curRow;
+        $sheetRinci->setCellValue('C' . $penginapanHeaderRow, '3');
+        $sheetRinci->getStyle('C' . $penginapanHeaderRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheetRinci->setCellValue('D' . $penginapanHeaderRow, 'UANG PENGINAPAN');
+        $sheetRinci->getStyle('D' . $penginapanHeaderRow)->getFont()->setBold(true);
+        $sheetRinci->setCellValue('L' . $penginapanHeaderRow, 'Rp.');
+        $sheetRinci->getStyle('L' . $penginapanHeaderRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
 
-        $sheetRinci->setCellValue('D23', 'Uang penginapan selama :');
+        $curRow++;
+        $sheetRinci->setCellValue('D' . $curRow, 'Uang penginapan selama :');
+        $curRow++;
 
-        $p1Details = $penginapanDetails[0] ?? ['nights' => 1, 'rate' => 703700];
-        $p2Details = $penginapanDetails[1] ?? ['nights' => 2, 'rate' => 730000];
+        $penginapanDetailsStart = $curRow;
+        if (!empty($penginapanDetails)) {
+            foreach ($penginapanDetails as $pd) {
+                $pNights = (int)($pd['nights'] ?? 0);
+                $pRate   = ($pNights === 0) ? 0 : (int)($pd['rate'] ?? 0);
+                $sheetRinci->setCellValue('D' . $curRow, $pNights);
+                $sheetRinci->getStyle('D' . $curRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheetRinci->setCellValue('E' . $curRow, 'malam');
+                $sheetRinci->getStyle('E' . $curRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheetRinci->setCellValue('F' . $curRow, 'x');
+                $sheetRinci->getStyle('F' . $curRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheetRinci->setCellValue('G' . $curRow, 'Rp');
+                $sheetRinci->getStyle('G' . $curRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheetRinci->setCellValue('H' . $curRow, $pRate);
+                $sheetRinci->getStyle('H' . $curRow)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+                $sheetRinci->setCellValue('I' . $curRow, 'Rp');
+                $sheetRinci->getStyle('I' . $curRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheetRinci->setCellValue('J' . $curRow, "=D{$curRow}*H{$curRow}");
+                $sheetRinci->getStyle('J' . $curRow)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+                $curRow++;
+            }
+            $penginapanDetailsEnd = $curRow - 1;
+            $sheetRinci->setCellValue('M' . $penginapanHeaderRow, "=SUM(J{$penginapanDetailsStart}:J{$penginapanDetailsEnd})");
+        } else {
+            $sheetRinci->setCellValue('M' . $penginapanHeaderRow, 0);
+        }
+        $sheetRinci->getStyle('M' . $penginapanHeaderRow)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
 
-        $sheetRinci->setCellValue('D24', $p1Details['nights']);
-        $sheetRinci->getStyle('D24')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('E24', 'malam');
-        $sheetRinci->getStyle('E24')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('F24', 'x');
-        $sheetRinci->getStyle('F24')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('G24', 'Rp');
-        $sheetRinci->getStyle('G24')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('H24', $p1Details['rate']);
-        $sheetRinci->getStyle('H24')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
-        $sheetRinci->setCellValue('I24', 'Rp');
-        $sheetRinci->getStyle('I24')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('J24', '=(D24*H24)');
-        $sheetRinci->getStyle('J24')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+        $curRow++; // 1 row separator before JUMLAH
 
-        $sheetRinci->setCellValue('D25', $p2Details['nights']);
-        $sheetRinci->getStyle('D25')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('E25', 'malam');
-        $sheetRinci->getStyle('E25')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('F25', 'x');
-        $sheetRinci->getStyle('F25')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('G25', 'Rp');
-        $sheetRinci->getStyle('G25')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('H25', $p2Details['rate']);
-        $sheetRinci->getStyle('H25')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
-        $sheetRinci->setCellValue('I25', 'Rp');
-        $sheetRinci->getStyle('I25')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->setCellValue('J25', '=(D25*H25)');
-        $sheetRinci->getStyle('J25')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
-
-        // Outer table borders for C7:O26
-        for ($r = 7; $r <= 26; $r++) {
+        // Outer table borders for C7:O($curRow - 1)
+        $bodyEndRow = $curRow - 1;
+        for ($r = 7; $r <= $bodyEndRow; $r++) {
             $sheetRinci->getStyle("C$r")->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
             $sheetRinci->getStyle("C$r")->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
             $sheetRinci->getStyle("D$r")->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
@@ -1988,141 +2202,166 @@ class Laporan extends BaseController
             $sheetRinci->getStyle("O$r")->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
         }
 
-        // JUMLAH Row 27
-        $sheetRinci->setCellValue('D27', 'JUMLAH :');
-        $sheetRinci->getStyle('D27')->getFont()->setBold(true);
-        $sheetRinci->getStyle('C27:O27')->getBorders()->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('C27:O27')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('C27')->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('C27')->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('D27')->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        // JUMLAH Row
+        $totalRow = $curRow;
+        $sheetRinci->setCellValue('D' . $totalRow, 'JUMLAH :');
+        $sheetRinci->getStyle('D' . $totalRow)->getFont()->setBold(true);
+        $sheetRinci->getStyle("C{$totalRow}:O{$totalRow}")->getBorders()->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle("C{$totalRow}:O{$totalRow}")->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle('C' . $totalRow)->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle('C' . $totalRow)->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle('D' . $totalRow)->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-        $sheetRinci->setCellValue('L27', 'Rp.');
-        $sheetRinci->getStyle('L27')->getFont()->setBold(true);
-        $sheetRinci->getStyle('L27')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
-        $sheetRinci->getStyle('L27')->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->setCellValue('L' . $totalRow, 'Rp.');
+        $sheetRinci->getStyle('L' . $totalRow)->getFont()->setBold(true);
+        $sheetRinci->getStyle('L' . $totalRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+        $sheetRinci->getStyle('L' . $totalRow)->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-        $sheetRinci->setCellValue('M27', '=SUM(M7:M26)');
-        $sheetRinci->getStyle('M27')->getFont()->setBold(true);
-        $sheetRinci->getStyle('M27')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
-        $sheetRinci->getStyle('M27')->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->setCellValue('M' . $totalRow, "=M7+M{$harianHeaderRow}+M{$penginapanHeaderRow}");
+        $sheetRinci->getStyle('M' . $totalRow)->getFont()->setBold(true);
+        $sheetRinci->getStyle('M' . $totalRow)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+        $sheetRinci->getStyle('M' . $totalRow)->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-        $sheetRinci->getStyle('N27')->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('O27')->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle('N' . $totalRow)->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle('O' . $totalRow)->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-        // TERBILANG Row 28 (Spelled out text calculated dynamically)
-        $sheetRinci->setCellValue('D28', 'TERBILANG : ');
-        $sheetRinci->getStyle('D28')->getFont()->setBold(true);
+        $curRow++;
+
+        // TERBILANG Row
+        $terbilangRow = $curRow;
+        $sheetRinci->setCellValue('D' . $terbilangRow, 'TERBILANG : ');
+        $sheetRinci->getStyle('D' . $terbilangRow)->getFont()->setBold(true);
         
         $terbilangText = $terbilangIndo($totalBiaya) . ' Rupiah,-';
-        $sheetRinci->setCellValue('G28', $terbilangText);
-        $sheetRinci->getStyle('G28')->getFont()->setBold(true);
+        $sheetRinci->setCellValue('G' . $terbilangRow, $terbilangText);
+        $sheetRinci->getStyle('G' . $terbilangRow)->getFont()->setBold(true);
 
-        $sheetRinci->getStyle('C28:O28')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
-        $sheetRinci->getStyle('C28:O28')->getFill()->getStartColor()->setARGB('FFF0F2F5');
-        $sheetRinci->getStyle('C28:O28')->getBorders()->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('C28:O28')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('C28')->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('C28')->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('E28')->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('K28')->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('M28')->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        $sheetRinci->getStyle('O28')->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle("C{$terbilangRow}:O{$terbilangRow}")->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+        $sheetRinci->getStyle("C{$terbilangRow}:O{$terbilangRow}")->getFill()->getStartColor()->setARGB('FFF0F2F5');
+        $sheetRinci->getStyle("C{$terbilangRow}:O{$terbilangRow}")->getBorders()->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle("C{$terbilangRow}:O{$terbilangRow}")->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle('C' . $terbilangRow)->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle('C' . $terbilangRow)->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle('E' . $terbilangRow)->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle('K' . $terbilangRow)->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle('M' . $terbilangRow)->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheetRinci->getStyle('O' . $terbilangRow)->getBorders()->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+        $curRow += 2; // spacing before Signatures
 
         // Signatures Section
-        $sheetRinci->mergeCells('C30:H30');
-        $sheetRinci->setCellValue('C30', 'Telah dibayar uang sebesar');
-        $sheetRinci->getStyle('C30')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sigRow1 = $curRow;
+        $sheetRinci->mergeCells("C{$sigRow1}:H{$sigRow1}");
+        $sheetRinci->setCellValue('C' . $sigRow1, 'Telah dibayar uang sebesar');
+        $sheetRinci->getStyle('C' . $sigRow1)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        $sheetRinci->mergeCells('L30:O30');
-        $sheetRinci->setCellValue('L30', 'Pekanbaru,        ' . $bulanTahunStr);
-        $sheetRinci->getStyle('L30')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheetRinci->mergeCells("L{$sigRow1}:O{$sigRow1}");
+        $sheetRinci->setCellValue('L' . $sigRow1, 'Pekanbaru,        ' . $bulanTahunStr);
+        $sheetRinci->getStyle('L' . $sigRow1)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        $sheetRinci->setCellValue('L31', 'Telah terima sejumlah uang sebesar:');
+        $sigRow2 = $sigRow1 + 1;
+        $sheetRinci->setCellValue('L' . $sigRow2, 'Telah terima sejumlah uang sebesar:');
 
-        $sheetRinci->setCellValue('D32', 'Rp.');
-        $sheetRinci->getStyle('D32')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
-        $sheetRinci->mergeCells('E32:G32');
-        $sheetRinci->setCellValue('E32', '=+M27');
-        $sheetRinci->getStyle('E32')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheetRinci->getStyle('E32')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+        $sigRow3 = $sigRow2 + 1;
+        $sheetRinci->setCellValue('D' . $sigRow3, 'Rp.');
+        $sheetRinci->getStyle('D' . $sigRow3)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $sheetRinci->mergeCells("E{$sigRow3}:G{$sigRow3}");
+        $sheetRinci->setCellValue('E' . $sigRow3, "=M{$totalRow}");
+        $sheetRinci->getStyle('E' . $sigRow3)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheetRinci->getStyle('E' . $sigRow3)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
 
-        $sheetRinci->setCellValue('L33', 'Rp.');
-        $sheetRinci->getStyle('L33')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
-        $sheetRinci->setCellValue('M33', '=+E32');
-        $sheetRinci->getStyle('M33')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
-        $sheetRinci->getStyle('M33')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
+        $sigRow4 = $sigRow3 + 1;
+        $sheetRinci->setCellValue('L' . $sigRow4, 'Rp.');
+        $sheetRinci->getStyle('L' . $sigRow4)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+        $sheetRinci->setCellValue('M' . $sigRow4, "=E{$sigRow3}");
+        $sheetRinci->getStyle('M' . $sigRow4)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+        $sheetRinci->getStyle('M' . $sigRow4)->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
 
-        $sheetRinci->mergeCells('C34:H34');
-        $sheetRinci->setCellValue('C34', '=+L30');
-        $sheetRinci->getStyle('C34')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sigRow5 = $sigRow4 + 1;
+        $sheetRinci->mergeCells("C{$sigRow5}:H{$sigRow5}");
+        $sheetRinci->setCellValue('C' . $sigRow5, "=L{$sigRow1}");
+        $sheetRinci->getStyle('C' . $sigRow5)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        $sheetRinci->mergeCells('C35:H35');
-        $sheetRinci->setCellValue('C35', 'Bendahara Pengeluaran,');
-        $sheetRinci->getStyle('C35')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sigRow6 = $sigRow5 + 1;
+        $sheetRinci->mergeCells("C{$sigRow6}:H{$sigRow6}");
+        $sheetRinci->setCellValue('C' . $sigRow6, 'Bendahara Pengeluaran,');
+        $sheetRinci->getStyle('C' . $sigRow6)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        $sheetRinci->mergeCells('K35:O35');
-        $sheetRinci->setCellValue('K35', 'Yang Menerima :');
-        $sheetRinci->getStyle('K35')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheetRinci->mergeCells("K{$sigRow6}:O{$sigRow6}");
+        $sheetRinci->setCellValue('K' . $sigRow6, 'Yang Menerima :');
+        $sheetRinci->getStyle('K' . $sigRow6)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        $sheetRinci->mergeCells('C39:H39');
-        $sheetRinci->setCellValue('C39', $bendaharaNama);
-        $sheetRinci->getStyle('C39')->getFont()->setBold(true)->setUnderline(true);
-        $sheetRinci->getStyle('C39')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sigRow7 = $sigRow6 + 4;
+        $sheetRinci->mergeCells("C{$sigRow7}:H{$sigRow7}");
+        $sheetRinci->setCellValue('C' . $sigRow7, $bendaharaNama);
+        $sheetRinci->getStyle('C' . $sigRow7)->getFont()->setBold(true)->setUnderline(true);
+        $sheetRinci->getStyle('C' . $sigRow7)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        $sheetRinci->mergeCells('K39:O39');
-        $sheetRinci->setCellValue('K39', $namaUtama);
-        $sheetRinci->getStyle('K39')->getFont()->setBold(true)->setUnderline(true);
-        $sheetRinci->getStyle('K39')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheetRinci->mergeCells("K{$sigRow7}:O{$sigRow7}");
+        $sheetRinci->setCellValue('K' . $sigRow7, $namaUtama);
+        $sheetRinci->getStyle('K' . $sigRow7)->getFont()->setBold(true)->setUnderline(true);
+        $sheetRinci->getStyle('K' . $sigRow7)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        $sheetRinci->mergeCells('C40:H40');
-        $sheetRinci->setCellValue('C40', $bendaharaNip);
-        $sheetRinci->getStyle('C40')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sigRow8 = $sigRow7 + 1;
+        $sheetRinci->mergeCells("C{$sigRow8}:H{$sigRow8}");
+        $sheetRinci->setCellValue('C' . $sigRow8, $bendaharaNip);
+        $sheetRinci->getStyle('C' . $sigRow8)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        $sheetRinci->mergeCells('K40:O40');
-        $sheetRinci->setCellValue('K40', 'NIP. ' . $nipUtama);
-        $sheetRinci->getStyle('K40')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheetRinci->mergeCells("K{$sigRow8}:O{$sigRow8}");
+        $sheetRinci->setCellValue('K' . $sigRow8, $nipLabelUtama . $nipUtama);
+        $sheetRinci->getStyle('K' . $sigRow8)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        // Separator line Row 41
-        $sheetRinci->getStyle('C41:O41')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM);
+        // Separator line
+        $sepRow = $sigRow8 + 1;
+        $sheetRinci->getStyle("C{$sepRow}:O{$sepRow}")->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM);
 
-        // Perhitungan SPD Rampung Title Row 43
-        $sheetRinci->mergeCells('C43:O43');
-        $sheetRinci->setCellValue('C43', 'P E R H I T U N G A N    S P D  R A M P U N G ');
-        $sheetRinci->getStyle('C43')->getFont()->setSize(12)->setBold(true)->setUnderline(true);
-        $sheetRinci->getStyle('C43')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        // Perhitungan SPD Rampung Title
+        $rampTitleRow = $sepRow + 2;
+        $sheetRinci->mergeCells("C{$rampTitleRow}:O{$rampTitleRow}");
+        $sheetRinci->setCellValue('C' . $rampTitleRow, 'P E R H I T U N G A N    S P D  R A M P U N G ');
+        $sheetRinci->getStyle('C' . $rampTitleRow)->getFont()->setSize(12)->setBold(true)->setUnderline(true);
+        $sheetRinci->getStyle('C' . $rampTitleRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         // Rampung Details
-        $sheetRinci->setCellValue('C45', 'Ditetapkan Sejumlah……………………………………………………………….');
-        $sheetRinci->setCellValue('M45', '=+M33');
-        $sheetRinci->getStyle('M45')->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"_);_(@_)');
+        $rDetails1 = $rampTitleRow + 2;
+        $sheetRinci->setCellValue('C' . $rDetails1, 'Ditetapkan Sejumlah……………………………………………………………….');
+        $sheetRinci->setCellValue('M' . $rDetails1, "=M{$sigRow4}");
+        $sheetRinci->getStyle('M' . $rDetails1)->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"_);_(@_)');
 
-        $sheetRinci->setCellValue('C46', 'Yang dibayar semula ……………………………………………………………….');
-        $sheetRinci->setCellValue('M46', '=+M34');
-        $sheetRinci->getStyle('M46')->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"_);_(@_)');
-        $sheetRinci->getStyle('M46')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $rDetails2 = $rDetails1 + 1;
+        $sheetRinci->setCellValue('C' . $rDetails2, 'Yang dibayar semula ……………………………………………………………….');
+        $sheetRinci->setCellValue('M' . $rDetails2, 0);
+        $sheetRinci->getStyle('M' . $rDetails2)->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"_);_(@_)');
+        $sheetRinci->getStyle('M' . $rDetails2)->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-        $sheetRinci->setCellValue('C47', 'Sisa kurang / Lebih    ……………………………………………………………..');
-        $sheetRinci->setCellValue('M47', '=+M35');
-        $sheetRinci->getStyle('M47')->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"_);_(@_)');
+        $rDetails3 = $rDetails2 + 1;
+        $sheetRinci->setCellValue('C' . $rDetails3, 'Sisa kurang / Lebih    ……………………………………………………………..');
+        $sheetRinci->setCellValue('M' . $rDetails3, 0);
+        $sheetRinci->getStyle('M' . $rDetails3)->getNumberFormat()->setFormatCode('_("Rp"* #,##0_);_("Rp"* \(#,##0\);_("Rp"* "-"_);_(@_)');
 
         // PPK Signatures
-        $sheetRinci->mergeCells('K50:O50');
-        $sheetRinci->setCellValue('K50', $ppkJabatanLine1);
-        $sheetRinci->getStyle('K50')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $ppkRow1 = $rDetails3 + 3;
+        $sheetRinci->mergeCells("K{$ppkRow1}:O{$ppkRow1}");
+        $sheetRinci->setCellValue('K' . $ppkRow1, $ppkJabatanLine1);
+        $sheetRinci->getStyle('K' . $ppkRow1)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        $sheetRinci->mergeCells('K51:O51');
-        $sheetRinci->setCellValue('K51', $ppkJabatanLine2);
-        $sheetRinci->getStyle('K51')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $ppkRow2 = $ppkRow1 + 1;
+        $sheetRinci->mergeCells("K{$ppkRow2}:O{$ppkRow2}");
+        $sheetRinci->setCellValue('K' . $ppkRow2, $ppkJabatanLine2);
+        $sheetRinci->getStyle('K' . $ppkRow2)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        $sheetRinci->mergeCells('K56:O56');
-        $sheetRinci->setCellValue('K56', $ppkNama);
-        $sheetRinci->getStyle('K56')->getFont()->setBold(true)->setUnderline(true);
-        $sheetRinci->getStyle('K56')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $ppkRow3 = $ppkRow2 + 5;
+        $sheetRinci->mergeCells("K{$ppkRow3}:O{$ppkRow3}");
+        $sheetRinci->setCellValue('K' . $ppkRow3, $ppkNama);
+        $sheetRinci->getStyle('K' . $ppkRow3)->getFont()->setBold(true)->setUnderline(true);
+        $sheetRinci->getStyle('K' . $ppkRow3)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        $sheetRinci->mergeCells('K57:O57');
-        $sheetRinci->setCellValue('K57', $ppkNip);
-        $sheetRinci->getStyle('K57')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $ppkRow4 = $ppkRow3 + 1;
+        $sheetRinci->mergeCells("K{$ppkRow4}:O{$ppkRow4}");
+        $sheetRinci->setCellValue('K' . $ppkRow4, $ppkNip);
+        $sheetRinci->getStyle('K' . $ppkRow4)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $sheetRinci->getPageSetup()->setPrintArea('C1:O' . $ppkRow4);
 
         // ---------------------------------------------------------
         // SHEET 1: KWITANSI
@@ -2222,7 +2461,7 @@ class Laporan extends BaseController
 
         $sheetKwitansi->mergeCells('P11:T11');
         $sheetKwitansi->setCellValue('P11', '');
-        $sheetKwitansi->getStyle('P11')->getFont()->setSize(14);
+        $sheetKwitansi->getStyle('P11')->getFont()->setSize(14)->setBold(true);
         $sheetKwitansi->getStyle('P11:T11')->getBorders()->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
         $sheetKwitansi->getStyle('P11:T11')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
         $sheetKwitansi->getStyle('P11')->getBorders()->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
@@ -2271,7 +2510,7 @@ class Laporan extends BaseController
         $sheetKwitansi->getStyle('G20')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
 
         $sheetKwitansi->mergeCells('H20:I20');
-        $sheetKwitansi->setCellValue('H20', '=RINCI!M27');
+        $sheetKwitansi->setCellValue('H20', "=RINCI!M{$totalRow}");
         $sheetKwitansi->getStyle('H20')->getFont()->setSize(14)->setBold(true);
         $sheetKwitansi->getStyle('H20')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
         $sheetKwitansi->getStyle('H20')->getNumberFormat()->setFormatCode('_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)');
@@ -2289,7 +2528,7 @@ class Laporan extends BaseController
         $sheetKwitansi->getStyle('F22')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
 
         $sheetKwitansi->mergeCells('G22:T22');
-        $sheetKwitansi->setCellValue('G22', '=RINCI!G28');
+        $sheetKwitansi->setCellValue('G22', $terbilangText);
         $sheetKwitansi->getStyle('G22')->getFont()->setSize(14)->setBold(true)->setItalic(true);
         $sheetKwitansi->getStyle('G22')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT)->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER)->setWrapText(true);
 
@@ -2299,7 +2538,36 @@ class Laporan extends BaseController
         $sheetKwitansi->setCellValue('F24', ':');
         $sheetKwitansi->getStyle('F24')->getFont()->setSize(14);
 
-        $fullPembayaranText = "Perjalanan Dinas a.n. " . $namaUtama . " " . $jabatanUtama . "  dalam rangka " . $tujuanMaksud;
+        // Resolve Dasar SPT text
+        $dasarSptIds = json_decode((string) ($row['dasar_spt_ids_json'] ?? '[]'), true) ?: [];
+        $dasarTexts = [];
+        if (!empty($dasarSptIds)) {
+            $numericIds = array_filter($dasarSptIds, 'is_numeric');
+            $customTexts = array_diff($dasarSptIds, $numericIds);
+            if (!empty($numericIds)) {
+                $dbDasar = (new \App\Models\MstDasarSptModel())->whereIn('id', $numericIds)->orderBy('id', 'ASC')->findAll();
+                foreach ($dbDasar as $dD) {
+                    if (!empty($dD['uraian'])) $dasarTexts[] = $dD['uraian'];
+                }
+            }
+            foreach ($customTexts as $cT) {
+                if (!empty($cT)) $dasarTexts[] = $cT;
+            }
+        }
+
+        $dasarSptStr = '';
+        if (!empty($dasarTexts)) {
+            $dasarSptStr = implode('; ', $dasarTexts);
+        } elseif (!empty($row['nomor_surat_tugas'])) {
+            $dasarSptStr = 'Surat Tugas Nomor: ' . $row['nomor_surat_tugas'];
+        }
+
+        $fullPembayaranText = "Perjalanan Dinas a.n. " . $namaUtama . " " . $jabatanUtama . " dalam rangka " . $tujuanMaksud;
+        if (!empty($dasarSptStr)) {
+            $fullPembayaranText .= ", sesuai dengan " . $dasarSptStr;
+        }
+        $fullPembayaranText .= ", sebagaimana daftar perincian terlampir.";
+
         $sheetKwitansi->mergeCells('G24:T26');
         $sheetKwitansi->setCellValue('G24', $fullPembayaranText);
         $sheetKwitansi->getStyle('G24')->getFont()->setSize(14);
@@ -2317,7 +2585,7 @@ class Laporan extends BaseController
         $sheetKwitansi->getStyle('C28')->getFont()->setSize(14);
         $sheetKwitansi->setCellValue('F28', ':');
         $sheetKwitansi->getStyle('F28')->getFont()->setSize(14);
-        $sheetKwitansi->setCellValue('G28', '=RIGHT(RINCI!C2,28)');
+        $sheetKwitansi->setCellValue('G28', $nomorSPD);
         $sheetKwitansi->getStyle('G28')->getFont()->setName('Tahoma')->setSize(14);
 
         $sheetKwitansi->setCellValue('C29', 'Tanggal');
@@ -2343,7 +2611,7 @@ class Laporan extends BaseController
         $sheetKwitansi->setCellValue('F31', ':');
         $sheetKwitansi->getStyle('F31')->getFont()->setSize(14);
         $sheetKwitansi->mergeCells('G31:T31');
-        $sheetKwitansi->setCellValue('G31', $tglBerangkat . ' s/d ' . $tglKembali);
+        $sheetKwitansi->setCellValue('G31', ($tglBerangkat === $tglKembali) ? $tglBerangkat : ($tglBerangkat . ' s/d ' . $tglKembali));
         $sheetKwitansi->getStyle('G31')->getFont()->setSize(14);
         $sheetKwitansi->getStyle('G31')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
 
@@ -2358,43 +2626,48 @@ class Laporan extends BaseController
         $sheetKwitansi->getStyle('L34')->getFont()->setSize(14);
         $sheetKwitansi->getStyle('L34')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
+        $ppkNama = 'NURHIDAYAT NUGROHO, S.Ars.';
+        $ppkNip  = 'NIP. 19901221 201802 1 001';
+
         $sheetKwitansi->mergeCells('B35:I35');
-        $sheetKwitansi->setCellValue('B35', '=RINCI!K50');
+        $sheetKwitansi->setCellValue('B35', 'Pejabat Pembuat Komitmen');
         $sheetKwitansi->getStyle('B35')->getFont()->setSize(14);
         $sheetKwitansi->getStyle('B35')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
+        list($jab1, $jab2) = $this->splitJabatanTwoLines($jabatanUtama);
+
         $sheetKwitansi->mergeCells('L35:T35');
-        $sheetKwitansi->setCellValue('L35', 'Kepala Satuan Kerja');
+        $sheetKwitansi->setCellValue('L35', $jab1);
         $sheetKwitansi->getStyle('L35')->getFont()->setSize(14);
         $sheetKwitansi->getStyle('L35')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         $sheetKwitansi->mergeCells('B36:I36');
-        $sheetKwitansi->setCellValue('B36', '=RINCI!K51');
+        $sheetKwitansi->setCellValue('B36', 'Pelaksanaan Prasarana Strategis');
         $sheetKwitansi->getStyle('B36')->getFont()->setSize(14);
         $sheetKwitansi->getStyle('B36')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         $sheetKwitansi->mergeCells('L36:T36');
-        $sheetKwitansi->setCellValue('L36', 'Pelaksanaan Prasarana Strategis Riau');
+        $sheetKwitansi->setCellValue('L36', $jab2);
         $sheetKwitansi->getStyle('L36')->getFont()->setSize(14);
         $sheetKwitansi->getStyle('L36')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         $sheetKwitansi->mergeCells('B41:I41');
-        $sheetKwitansi->setCellValue('B41', '=RINCI!K56');
+        $sheetKwitansi->setCellValue('B41', $ppkNama);
         $sheetKwitansi->getStyle('B41')->getFont()->setSize(14)->setBold(true)->setUnderline(true);
         $sheetKwitansi->getStyle('B41')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         $sheetKwitansi->mergeCells('L41:T41');
-        $sheetKwitansi->setCellValue('L41', '=RINCI!K39');
+        $sheetKwitansi->setCellValue('L41', $namaUtama);
         $sheetKwitansi->getStyle('L41')->getFont()->setSize(14)->setBold(true)->setUnderline(true);
         $sheetKwitansi->getStyle('L41')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         $sheetKwitansi->mergeCells('B42:I42');
-        $sheetKwitansi->setCellValue('B42', '=RINCI!K57');
+        $sheetKwitansi->setCellValue('B42', $ppkNip);
         $sheetKwitansi->getStyle('B42')->getFont()->setSize(14);
         $sheetKwitansi->getStyle('B42')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         $sheetKwitansi->mergeCells('M42:S42');
-        $sheetKwitansi->setCellValue('M42', '=RINCI!K40');
+        $sheetKwitansi->setCellValue('M42', $nipLabelUtama . $nipUtama);
         $sheetKwitansi->getStyle('M42')->getFont()->setSize(14);
         $sheetKwitansi->getStyle('M42')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
@@ -4509,7 +4782,7 @@ class Laporan extends BaseController
         return 0;
     }
 
-    private function ensureKodeNomorAssigned(array &$row): void
+    private function ensureKodeNomorAssigned(array &$row, string $customKodeInput = ''): void
     {
         $id = (int) ($row['id'] ?? 0);
         if ($id <= 0) {
@@ -4518,33 +4791,51 @@ class Laporan extends BaseController
 
         $pelaksanaList = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true) ?: [];
         $totalPelaksana = max(1, count($pelaksanaList));
+        $year = ! empty($row['periode_mulai']) && strtotime((string) $row['periode_mulai']) !== false
+            ? date('Y', strtotime((string) $row['periode_mulai']))
+            : date('Y');
 
-        $existingKode = trim((string) ($row['kode_nomor'] ?? ''));
+        $kodeToUse = trim($customKodeInput !== '' ? $customKodeInput : (string) ($row['kode_nomor'] ?? ''));
         $db = \Config\Database::connect();
 
-        if ($existingKode === '') {
+        // If kode is completely empty OR if it's just a suffix like "/SPD/SATKER/PPS-RIAU/2026" without leading digits:
+        if ($kodeToUse === '' || preg_match('/^\/[A-Za-z]/', $kodeToUse)) {
+            $suffix = ($kodeToUse !== '' && strpos($kodeToUse, '/') !== false)
+                ? substr($kodeToUse, strpos($kodeToUse, '/'))
+                : '/SPD/SATKER/PPS-RIAU/' . $year;
+
             $lastSettingNumber = $this->getLastKodeNomorSetting();
             $maxDbNumber = 0;
             if ($db->tableExists('laporan_perjalanan_dinas')) {
-                $maxRow = $db->query("SELECT MAX(CAST(kode_nomor AS UNSIGNED)) AS max_num FROM laporan_perjalanan_dinas WHERE kode_nomor REGEXP '^[0-9]+$'")->getRowArray();
+                $maxRow = $db->query("SELECT MAX(CAST(kode_nomor AS UNSIGNED)) AS max_num FROM laporan_perjalanan_dinas WHERE kode_nomor REGEXP '^[0-9]+'")->getRowArray();
                 if (is_array($maxRow) && isset($maxRow['max_num'])) {
                     $maxDbNumber = (int) $maxRow['max_num'];
                 }
             }
 
             $startNumber = max($lastSettingNumber, $maxDbNumber) + 1;
-            $formattedKode = str_pad((string) $startNumber, 3, '0', STR_PAD_LEFT);
+            $formattedNumber = str_pad((string) $startNumber, 3, '0', STR_PAD_LEFT);
+            $fullKode = $formattedNumber . $suffix;
 
-            $db->table('laporan_perjalanan_dinas')->where('id', $id)->update(['kode_nomor' => $formattedKode]);
-            
+            $db->table('laporan_perjalanan_dinas')->where('id', $id)->update(['kode_nomor' => $fullKode]);
+
             $endNumber = $startNumber + $totalPelaksana - 1;
             if ($db->tableExists('app_settings')) {
                 $db->table('app_settings')->update(['last_kode_nomor_sppd' => $endNumber]);
             }
 
-            $row['kode_nomor'] = $formattedKode;
+            $row['kode_nomor'] = $fullKode;
         } else {
-            if (preg_match('/^(\d+)/', $existingKode, $m)) {
+            // User provided a full kode with front digits or number (e.g. "016/SPD/SATKER/PPS-RIAU/2026" or "016")
+            $fullKode = $kodeToUse;
+            if (is_numeric($kodeToUse)) {
+                $fullKode = str_pad($kodeToUse, 3, '0', STR_PAD_LEFT) . '/SPD/SATKER/PPS-RIAU/' . $year;
+            }
+
+            $db->table('laporan_perjalanan_dinas')->where('id', $id)->update(['kode_nomor' => $fullKode]);
+            $row['kode_nomor'] = $fullKode;
+
+            if (preg_match('/^(\d+)/', $fullKode, $m)) {
                 $startNum = (int) $m[1];
                 $endNumber = $startNum + $totalPelaksana - 1;
                 $currentSetting = $this->getLastKodeNomorSetting();
@@ -4614,5 +4905,41 @@ class Laporan extends BaseController
         }
 
         return $biayaMaster;
+    }
+
+    private function formatNamaGelar(string $nama): string
+    {
+        $nama = trim($nama);
+        if ($nama === '' || $nama === '-') {
+            return '-';
+        }
+        if (strpos($nama, ',') !== false) {
+            $parts = explode(',', $nama, 2);
+            return strtoupper(trim($parts[0])) . ', ' . trim($parts[1]);
+        }
+        return strtoupper($nama);
+    }
+
+    private function splitJabatanTwoLines(string $jabatan): array
+    {
+        $jabatan = trim($jabatan);
+        if (strlen($jabatan) <= 32) {
+            return [$jabatan, ''];
+        }
+        $words = explode(' ', $jabatan);
+        if (count($words) <= 1) {
+            return [$jabatan, ''];
+        }
+        $mid = (int)ceil(strlen($jabatan) / 2);
+        $line1 = '';
+        $line2 = '';
+        foreach ($words as $word) {
+            if ($line1 === '' || (strlen($line1) + strlen($word) + 1) <= ($mid + 5)) {
+                $line1 .= ($line1 === '' ? '' : ' ') . $word;
+            } else {
+                $line2 .= ($line2 === '' ? '' : ' ') . $word;
+            }
+        }
+        return [trim($line1), trim($line2)];
     }
 }

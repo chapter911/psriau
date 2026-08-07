@@ -180,13 +180,7 @@ class DisposisiPerjalananDinas extends BaseController
             // Action Buttons
             $actionHtml = '<div class="doc-btn-group">';
             $actionHtml .= '<a href="' . site_url('admin/surat/perjalanan-dinas/disposisi/' . $row['id'] . '/pdf') . '" class="btn btn-sm btn-danger btn-pdf" title="Cetak Disposisi (PDF)" target="_blank"><i class="fas fa-file-pdf"></i> Cetak</a>';
-
-            if ($statusOverall === 'pending') {
-                $actionHtml .= '<button type="button" class="btn btn-sm btn-info btn-edit ml-1" data-id="' . $row['id'] . '" title="Ubah"><i class="fas fa-edit"></i> Ubah</button>';
-            } else {
-                $actionHtml .= '<button type="button" class="btn btn-sm btn-secondary ml-1" disabled title="Disposisi yang sudah disetujui/ditolak tidak dapat diubah"><i class="fas fa-lock"></i> Ubah</button>';
-            }
-
+            $actionHtml .= '<button type="button" class="btn btn-sm btn-info btn-edit ml-1" data-id="' . $row['id'] . '" title="Ubah Disposisi"><i class="fas fa-edit"></i> Ubah</button>';
             $actionHtml .= '<button type="button" class="btn btn-sm btn-danger btn-delete ml-1" data-id="' . $row['id'] . '" title="Hapus Disposisi"><i class="fas fa-trash"></i> Hapus</button>';
             $actionHtml .= '</div>';
 
@@ -359,12 +353,7 @@ class DisposisiPerjalananDinas extends BaseController
             return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('error', 'Data tidak ditemukan.');
         }
 
-        $sOverall = trim((string) ($existing['status'] ?? 'pending'));
-        $sM = trim((string) ($existing['status_menyetujui'] ?? 'pending'));
-        $sD = trim((string) ($existing['status_diketahui'] ?? 'pending'));
-        if ($sOverall !== 'pending' || $sM !== 'pending' || $sD !== 'pending') {
-            return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'))->with('error', 'Disposisi yang sudah disetujui atau ditolak tidak dapat diubah kembali. Silakan buat pengajuan disposisi baru.');
-        }
+
 
         if (strtolower((string) $this->request->getMethod()) !== 'post') {
             return redirect()->to(site_url('admin/surat/perjalanan-dinas/disposisi'));

@@ -244,10 +244,50 @@
     }
 
     $nomorSurat  = esc($row['nomor_surat_tugas'] ?? '-');
-    $nomorSPD    = str_replace('SPT', 'SPD', $nomorSurat);
+    $nomorSPD    = !empty($row['kode_nomor']) ? esc($row['kode_nomor']) : (!empty($row['nomor_surat_tugas']) ? str_replace('SPT', 'SPD', $nomorSurat) : '-');
     $kotaTujuan  = esc($row['kota_tujuan'] ?? '-');
-    $tujuanMaksud = esc($row['tujuan'] ?? '-');
-    $tanggalTtd  = $formatDate($row['tanggal_tanda_tangan'] ?? date('Y-m-d'));
+    $rawMaksud   = !empty($row['perihal_disposisi']) ? $row['perihal_disposisi'] : (!empty($row['perihal']) ? $row['perihal'] : ($row['tujuan'] ?? '-'));
+    $tujuanMaksud = esc($rawMaksud);
+    $tanggalTtdRaw = !empty($row['tanggal_tanda_tangan'])
+        ? (string)$row['tanggal_tanda_tangan']
+        : '';
+    if (empty($tanggalTtdRaw) && !empty($row['disposisi_id'])) {
+        $dbDisp = \Config\Database::connect();
+        if ($dbDisp->tableExists('disposisi_perjalanan_dinas')) {
+            $dispRow = $dbDisp->table('disposisi_perjalanan_dinas')->select('created_at')->where('id', $row['disposisi_id'])->get()->getRowArray();
+            if (!empty($dispRow['created_at'])) {
+                $tanggalTtdRaw = date('Y-m-d', strtotime($dispRow['created_at']));
+            }
+        }
+    }
+    if (empty($tanggalTtdRaw) && !empty($row['created_at'])) {
+        $tanggalTtdRaw = date('Y-m-d', strtotime($row['created_at']));
+    }
+    $tanggalTtd = $formatDate($tanggalTtdRaw);
+
+    // Resolve Dasar SPT text
+    $dasarSptIds = json_decode((string) ($row['dasar_spt_ids_json'] ?? '[]'), true) ?: [];
+    $dasarTexts = [];
+    if (!empty($dasarSptIds)) {
+        $numericIds = array_filter($dasarSptIds, 'is_numeric');
+        $customTexts = array_diff($dasarSptIds, $numericIds);
+        if (!empty($numericIds)) {
+            $dbDasar = (new \App\Models\MstDasarSptModel())->whereIn('id', $numericIds)->orderBy('id', 'ASC')->findAll();
+            foreach ($dbDasar as $dD) {
+                if (!empty($dD['uraian'])) $dasarTexts[] = $dD['uraian'];
+            }
+        }
+        foreach ($customTexts as $cT) {
+            if (!empty($cT)) $dasarTexts[] = $cT;
+        }
+    }
+
+    $dasarSptStr = '';
+    if (!empty($dasarTexts)) {
+        $dasarSptStr = implode('; ', $dasarTexts);
+    } elseif (!empty($row['nomor_surat_tugas'])) {
+        $dasarSptStr = 'Surat Tugas Nomor: ' . $row['nomor_surat_tugas'];
+    }
 
     // Kop Surat base64
     $kopSuratImgUrl = '';
@@ -325,10 +365,24 @@
                 $sub  = $tIsLumpsum ? $rate : (($tDays > 0) ? ($tDays * $rate) : $rate);
                 $calcTransport += $sub;
 
+                $jenisLow = strtolower($tJenis);
+                $ketLow   = strtolower($tKet);
+                $isTravel = (strpos($jenisLow, 'travel') !== false) || (strpos($ketLow, 'travel') !== false) || ($tJenis === '' && ($tKet === '' || strpos($ketLow, 'kampar') !== false || strpos($ketLow, 'pekanbaru') !== false));
+
+                $tKetFormatted = $tKet;
+                if ($isTravel) {
+                    $dest = !empty($tKet) ? $tKet : (!empty($kotaTujuan) ? $kotaTujuan : 'Tujuan');
+                    $destClean = preg_replace('/^travel\s+/i', '', $dest);
+                    $destClean = preg_replace('/^pekanbaru\s*-\s*/i', '', $destClean);
+                    $destClean = preg_replace('/\s*\(?pp\)?$/i', '', $destClean);
+                    $destClean = trim($destClean);
+                    $tKetFormatted = 'Travel Pekanbaru - ' . $destClean . ' (PP)';
+                }
+
                 if ($tDays > 0 || $rate > 0 || $tIsLumpsum) {
                     $transportItems[] = [
                         'jenis'   => $tJenis,
-                        'ket'     => $tKet,
+                        'ket'     => $tKetFormatted,
                         'days'    => $tDays,
                         'rate'    => $rate,
                         'sub'     => $sub,
@@ -463,6 +517,25 @@
         }
 
         $nipUtama = $formatNip($utama['nip'] ?? '');
+        $jenisPegUtama = strtolower(trim((string)($utama['jenis_pegawai'] ?? '')));
+        if (empty($jenisPegUtama) && !empty($utama['id'])) {
+            $dbPeg = \Config\Database::connect();
+            if ($dbPeg->tableExists('mst_pegawai')) {
+                $pegRow = $dbPeg->table('mst_pegawai')->select('jenis_pegawai')->where('id', $utama['id'])->get()->getRowArray();
+                if (!empty($pegRow['jenis_pegawai'])) {
+                    $jenisPegUtama = strtolower(trim((string)$pegRow['jenis_pegawai']));
+                }
+            }
+        }
+        $formatNamaGelar = function($n) {
+            $n = trim((string)$n);
+            if ($n === '' || $n === '-') return '-';
+            if (strpos($n, ',') !== false) {
+                $p = explode(',', $n, 2);
+                return strtoupper(trim($p[0])) . ', ' . trim($p[1]);
+            }
+            return strtoupper($n);
+        };
         ?>
 
         <!-- ========================= RINCI PAGE ========================= -->
@@ -624,7 +697,7 @@
                                     <td style="width:8%;">malam</td>
                                     <td style="width:5%;">x</td>
                                     <td style="width:7%;">Rp</td>
-                                    <td style="width:32%; text-align:right;"><?= number_format($pd['rate'], 0, ',', '.'); ?></td>
+                                     <td style="width:32%; text-align:right;"><?= ((int)($pd['nights'] ?? 0) === 0) ? '-' : number_format($pd['rate'], 0, ',', '.'); ?></td>
                                     <td style="width:8%;">Rp</td>
                                     <td style="width:30%; text-align:right;"><?= number_format($pd['sub'], 0, ',', '.'); ?></td>
                                 </tr>
@@ -694,9 +767,9 @@
                     Rp.&nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($calcTotal, 0, ',', '.'); ?><br><br>
                     Yang Menerima :<br>
                     <div style="height:65px;"></div>
-                    <span style="text-decoration:underline;" class="font-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
+                    <span style="text-decoration:underline;" class="font-bold"><?= esc($formatNamaGelar($utama['nama'])); ?></span>
                     <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
-                        <br>NIP. <?= $nipUtama; ?>
+                        <br><?= $nipLabelUtama; ?><?= $nipUtama; ?>
                     <?php endif; ?>
                 </td>
             </tr>
@@ -817,7 +890,7 @@
                     <td class="label-col" style="padding-bottom:12px; vertical-align:top;">Untuk Pembayaran</td>
                     <td style="padding-bottom:12px; vertical-align:top;">:</td>
                     <td style="padding-bottom:12px; text-align:justify; line-height:1.6;">
-                        Perjalanan Dinas a.n. <?= esc($utama['nama']); ?> <?= esc($utama['jabatan']); ?> dalam rangka <?= $tujuanMaksud; ?> Lokasi <?= $kotaTujuan; ?>, sesuai dengan Peraturan Menteri Keuangan RI Nomor 119 Tahun 2023 Tanggal 15 November 2023, sebagaimana daftar perincian terlampir.
+                        Perjalanan Dinas a.n. <?= esc($formatNamaGelar($utama['nama'])); ?> <?= esc($utama['jabatan']); ?> dalam rangka <?= $tujuanMaksud; ?><?= !empty($dasarSptStr) ? (', sesuai dengan ' . esc($dasarSptStr)) : '' ?>, sebagaimana daftar perincian terlampir.
                     </td>
                 </tr>
                 <tr>
@@ -841,7 +914,7 @@
                 <tr>
                     <td class="label-col" style="padding-left:8px;">Berangkat dari tanggal</td>
                     <td>:</td>
-                    <td><?= $tglBerangkat; ?> s/d <?= $tglKembali; ?></td>
+                    <td><?= ($tglBerangkat === $tglKembali) ? $tglBerangkat : ($tglBerangkat . ' s/d ' . $tglKembali); ?></td>
                 </tr>
             </table>
 
@@ -859,13 +932,28 @@
                     </td>
                     <!-- RIGHT: Kepala Satker -->
                     <td style="text-align:center;">
-                        Pekanbaru, &nbsp;&nbsp;&nbsp;&nbsp; <?= $tanggalTtd; ?><br>
-                        Kepala Satuan Kerja<br>
-                        Pelaksanaan Prasarana Strategis Riau
+                        <?php
+                        $jabWords = explode(' ', trim((string)$jabatanUtama));
+                        $jLen = strlen(trim((string)$jabatanUtama));
+                        if ($jLen > 32 && count($jabWords) > 1) {
+                            $jMid = (int)ceil($jLen / 2);
+                            $jLine1 = ''; $jLine2 = '';
+                            foreach ($jabWords as $w) {
+                                if ($jLine1 === '' || (strlen($jLine1) + strlen($w) + 1) <= ($jMid + 5)) {
+                                    $jLine1 .= ($jLine1 === '' ? '' : ' ') . $w;
+                                } else {
+                                    $jLine2 .= ($jLine2 === '' ? '' : ' ') . $w;
+                                }
+                            }
+                            echo esc($jLine1) . '<br>' . esc($jLine2) . '<br>';
+                        } else {
+                            echo esc($jabatanUtama) . '<br>';
+                        }
+                        ?>
                         <div style="height:65px;"></div>
-                        <span style="text-decoration:underline;" class="font-bold"><?= strtoupper(esc($utama['nama'])); ?></span>
+                        <span style="text-decoration:underline;" class="font-bold"><?= esc($formatNamaGelar($utama['nama'])); ?></span>
                         <?php if (should_show_nip($utama) && !empty($utama['nip'])): ?>
-                            <br>NIP. <?= $nipUtama; ?>
+                            <br><?= $nipLabelUtama; ?><?= $nipUtama; ?>
                         <?php endif; ?>
                     </td>
                 </tr>
