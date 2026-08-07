@@ -65,18 +65,26 @@
         transform: translateY(50%) !important;
     }
     
+    .tooltip {
+        pointer-events: none !important;
+    }
+    #tablePerjalananDinas th,
+    #tablePerjalananDinas td,
+    .table th,
+    .table td {
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+    }
+    
     /* Text styling for Tujuan column */
     .text-tujuan {
-        max-width: 280px;
-        font-size: 12.5px;
-        line-height: 1.4;
-        white-space: normal;
-        word-break: break-word;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 250px !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+        cursor: pointer;
     }
 </style>
 
@@ -282,9 +290,11 @@
                 render: function (data, type, row) {
                     if (!data) return '-';
                     const escaped = $('<div/>').text(data).html();
-                    let html = '<div class="text-tujuan" title="' + escaped + '">' + escaped + '</div>';
+                    const shortText = data.length > 30 ? data.substring(0, 30) + '...' : data;
+                    const escapedShort = $('<div/>').text(shortText).html();
+                    let html = '<div class="text-tujuan" data-toggle="tooltip" data-placement="top" title="' + escaped + '">' + escapedShort + '</div>';
                     if (row.is_final == 0) {
-                        html += '<span class="badge badge-warning mt-1"><i class="fas fa-clock mr-1"></i> Belum Selesai</span>';
+                        html += ' <span class="badge badge-warning ml-1"><i class="fas fa-clock mr-1"></i> Belum Selesai</span>';
                     }
                     return html;
                 }
@@ -298,7 +308,9 @@
             { 
                 data: 'periode',
                 render: function (data) {
-                    return data ? $('<div/>').text(data).html() : '-';
+                    if (!data) return '-';
+                    const escaped = $('<div/>').text(data).html();
+                    return '<span style="white-space: nowrap !important; display: inline-block;">' + escaped + '</span>';
                 }
             },
             { 
@@ -370,6 +382,13 @@
                     next: 'Berikutnya',
                     previous: 'Sebelumnya'
                 }
+            },
+            drawCallback: function () {
+                $('[data-toggle="tooltip"]').tooltip('dispose').tooltip({
+                    container: 'body',
+                    trigger: 'hover',
+                    boundary: 'window'
+                });
             }
         });
 

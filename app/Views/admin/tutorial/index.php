@@ -367,7 +367,7 @@ graph TD
                                     <li>Isi Kota Tujuan, Tanggal Mulai/Selesai, dan Maksud Perjadin.</li>
                                     <li>Sistem mengirimkan email approval ke Pejabat Penandatangan.</li>
                                     <li>Klik tombol merah <strong>Cetak</strong> pada tabel untuk mengunduh PDF Disposisi resmi yang dilengkapi <strong>Stempel Approved</strong>.</li>
-                                    <li>Filter periode data secara default disetel dari <strong>awal tahun (1 Januari)</strong> hingga akhir bulan berjalan, serta dapat difilter berdasarkan <strong>Status Disposisi</strong> (Selesai/Disetujui, Belum Selesai/Pending, Ditolak).</li>
+                                    <li>Filter periode data secara default disetel dari <strong>awal tahun (1 Januari)</strong> hingga akhir bulan berjalan, serta dapat difilter berdasarkan <strong>Status Disposisi</strong> (Selesai/Disetujui, Belum Selesai/Pending, Ditolak). <em>(Catatan: Seluruh header dan baris isi tabel Disposisi dibuat rapi 1 baris. Teks pada kolom Pelaksana, Tujuan, dan Perihal dipersingkat pada tampilan 1 baris, dan tooltip interaktif tanpa kedip akan muncul saat disorot/hover untuk melihat teks lengkap).</em></li>
                                     <li>Gunakan tombol biru <strong>Ubah</strong> pada kolom Aksi untuk memperbarui data disposisi (pelaksana, tanggal, tujuan, transportasi, perihal, atau pejabat penandatangan).</li>
                                     <li>Gunakan tombol merah <strong>Hapus</strong> pada kolom Aksi jika ingin menghapus disposisi. Sistem akan menghapus data disposisi beserta seluruh dokumen dan laporan terkait hingga benar-benar bersih.</li>
                                 </ol>
@@ -467,7 +467,7 @@ graph TD
                         <h6 class="font-weight-bold text-success"><i class="fas fa-print mr-1"></i> Verifikasi & Cetak Dokumen Keuangan</h6>
                         <p class="small text-muted mb-2"><code>/admin/surat/perjalanan-dinas/surat-tugas</code></p>
                         <ol class="pl-3 small mb-0">
-                            <li>Buka menu Surat Tugas (`/admin/surat/perjalanan-dinas/surat-tugas`).</li>
+                            <li>Buka menu Surat Tugas (`/admin/surat/perjalanan-dinas/surat-tugas`). <em>(Catatan: Seluruh header dan baris isi tabel (termasuk kolom Periode) dibuat rapi 1 baris. Teks pada kolom Tujuan & Pelaksana dipersingkat pada tampilan 1 baris, dan tooltip interaktif akan muncul saat disorot/hover untuk melihat teks lengkap).</em></li>
                             <li>Gunakan tombol <strong>Setting Nomor Terakhir SPPD/Kwitansi</strong> untuk mengatur nomor awal auto-increment jika ingin melanjutkan dari penomoran sebelumnya (misal: isi <code>15</code> untuk memulai dari <code>016</code>).</li>
                             <li>Klik tombol kuning <strong>Update Verifikasi</strong> pada baris laporan untuk menentukan atau memperbarui Nomor Surat Tugas, KOP Surat, MAK, Dasar SPT, Kode Nomor, dan tarif Transport & Penginapan. <em>(Catatan: Nomor Surat Tugas & Kode Nomor ter-prefill otomatis dengan format <code>/SPT/Gs7/{Tahun}</code> dan <code>/SPD/SATKER/PPS-RIAU/{Tahun}</code>, untuk perjalanan dinas 1 hari baris penginapan dihilangkan secara otomatis namun dapat ditambahkan manual jika diperlukan, serta seluruh data yang pernah disimpan sebelumnya akan terisi otomatis).</em></li>
                             <li>Upload file PDF <strong>SPT TTD</strong> yang telah disahkan.</li>

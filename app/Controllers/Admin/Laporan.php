@@ -537,12 +537,16 @@ class Laporan extends BaseController
                 }, $pelaksanaRows), static fn (string $name): bool => $name !== ''));
 
                 if ($pelaksanaNames !== []) {
-                    $items = [];
+                    $numberedNames = [];
+                    $tooltipNames = [];
                     foreach ($pelaksanaNames as $idx => $pName) {
                         $num = $idx + 1;
-                        $items[] = '<div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; font-size: 0.88rem; line-height: 1.6;" title="' . esc($pName, 'attr') . '">' . $num . '. ' . esc($pName) . '</div>';
+                        $numberedNames[] = $num . '. ' . $pName;
+                        $tooltipNames[] = $num . '. ' . $pName;
                     }
-                    $row['pelaksana_names_html'] = '<div class="pelaksana-list">' . implode('', $items) . '</div>';
+                    $singleLineText = implode(', ', $numberedNames);
+                    $tooltipText = implode('<br>', $tooltipNames);
+                    $row['pelaksana_names_html'] = '<div class="pelaksana-single-line" data-toggle="tooltip" data-html="true" data-placement="top" title="' . esc($tooltipText, 'attr') . '">' . esc($singleLineText) . '</div>';
                 } else {
                     $row['pelaksana_names_html'] = '-';
                 }

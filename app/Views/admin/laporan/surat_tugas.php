@@ -6,10 +6,33 @@
     $canVerify = (bool) ($can_verify ?? false);
 ?>
 <style>
+    .tooltip {
+        pointer-events: none !important;
+    }
+    #tableSuratTugas th,
+    #tableSuratTugas td,
+    .table th,
+    .table td {
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+    }
     .text-tujuan {
-        white-space: normal;
-        word-wrap: break-word;
-        max-width: 280px;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 250px !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+        cursor: pointer;
+    }
+    .pelaksana-single-line {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 220px !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+        cursor: pointer;
     }
     .btn-table-action {
         display: inline-flex !important;
@@ -426,7 +449,9 @@
                 render: function (data, type, row) {
                     if (!data) return '-';
                     const escaped = $('<div/>').text(data).html();
-                    return '<div class="text-tujuan" title="' + escaped + '">' + escaped + '</div>';
+                    const shortText = data.length > 30 ? data.substring(0, 30) + '...' : data;
+                    const escapedShort = $('<div/>').text(shortText).html();
+                    return '<div class="text-tujuan" data-toggle="tooltip" data-placement="top" title="' + escaped + '">' + escapedShort + '</div>';
                 }
             },
             { 
@@ -438,7 +463,9 @@
             { 
                 data: 'periode',
                 render: function (data) {
-                    return data ? $('<div/>').text(data).html() : '-';
+                    if (!data) return '-';
+                    const escaped = $('<div/>').text(data).html();
+                    return '<span style="white-space: nowrap !important; display: inline-block;">' + escaped + '</span>';
                 }
             },
             { 
@@ -524,6 +551,13 @@
                     next: 'Berikutnya',
                     previous: 'Sebelumnya'
                 }
+            },
+            drawCallback: function () {
+                $('[data-toggle="tooltip"]').tooltip('dispose').tooltip({
+                    container: 'body',
+                    trigger: 'hover',
+                    boundary: 'window'
+                });
             }
         });
 

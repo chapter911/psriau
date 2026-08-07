@@ -117,22 +117,33 @@ class DisposisiPerjalananDinas extends BaseController
 
         $data = [];
         foreach ($rows as $row) {
-            // Format Pelaksana list
+            // Format Pelaksana list (single-line with tooltip)
             $pelaksanaList = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true);
-            $pelaksanaHtml = '<ol class="pl-3 mb-0">';
-            if (empty($pelaksanaList)) {
-                $pelaksanaHtml .= '<li>-</li>';
-            } else {
-                foreach ($pelaksanaList as $p) {
-                    $pelaksanaHtml .= '<li>' . esc($p['nama']) . ' (' . esc($p['nip'] ?: '-') . ')</li>';
+            $pelaksanaNames = [];
+            $tooltipNames = [];
+            if (!empty($pelaksanaList) && is_array($pelaksanaList)) {
+                foreach ($pelaksanaList as $idx => $p) {
+                    $num = $idx + 1;
+                    $nama = trim((string)($p['nama'] ?? ''));
+                    if ($nama !== '') {
+                        $pelaksanaNames[] = $num . '. ' . $nama;
+                        $tooltipNames[] = $num . '. ' . $nama . (!empty($p['nip']) ? ' (NIP ' . $p['nip'] . ')' : '');
+                    }
                 }
             }
-            $pelaksanaHtml .= '</ol>';
+            if (!empty($pelaksanaNames)) {
+                $singleLineText = implode(', ', $pelaksanaNames);
+                $tooltipText = implode('<br>', $tooltipNames);
+                $pelaksanaHtml = '<div class="pelaksana-single-line" data-toggle="tooltip" data-html="true" data-placement="top" title="' . esc($tooltipText, 'attr') . '">' . esc($singleLineText) . '</div>';
+            } else {
+                $pelaksanaHtml = '-';
+            }
 
-            // Format Periode
+            // Format Periode (single-line)
             $tglMulai = $row['periode_mulai'] ? date('d-m-Y', strtotime($row['periode_mulai'])) : '-';
             $tglSelesai = $row['periode_selesai'] ? date('d-m-Y', strtotime($row['periode_selesai'])) : '-';
-            $periodeHtml = $tglMulai === $tglSelesai ? $tglMulai : $tglMulai . ' s/d ' . $tglSelesai;
+            $periodeLabel = $tglMulai === $tglSelesai ? $tglMulai : $tglMulai . ' s/d ' . $tglSelesai;
+            $periodeHtml = '<span style="white-space: nowrap !important; display: inline-block;">' . esc($periodeLabel) . '</span>';
 
             // Format Status Badges (PPK & Kasatker)
             $statusM = trim((string) ($row['status_menyetujui'] ?? 'pending'));
@@ -152,12 +163,12 @@ class DisposisiPerjalananDinas extends BaseController
             };
 
             $badgeOverall = match ($statusOverall) {
-                'disetujui' => '<span class="badge badge-success px-2 py-1 mt-1 d-inline-block"><i class="fas fa-check-double"></i> Disetujui (Lengkap)</span>',
-                'ditolak'   => '<span class="badge badge-danger px-2 py-1 mt-1 d-inline-block" title="' . esc($row['catatan_penolakan'] ?? '') . '"><i class="fas fa-times"></i> Ditolak</span>',
-                default     => '<span class="badge badge-warning px-2 py-1 mt-1 d-inline-block"><i class="fas fa-hourglass-half"></i> Pending</span>',
+                'disetujui' => '<span class="badge badge-success px-2 py-1 ml-1 d-inline-block"><i class="fas fa-check-double"></i> Disetujui</span>',
+                'ditolak'   => '<span class="badge badge-danger px-2 py-1 ml-1 d-inline-block" title="' . esc($row['catatan_penolakan'] ?? '') . '"><i class="fas fa-times"></i> Ditolak</span>',
+                default     => '<span class="badge badge-warning px-2 py-1 ml-1 d-inline-block"><i class="fas fa-hourglass-half"></i> Pending</span>',
             };
 
-            $statusBadge = '<div class="text-center" style="white-space:nowrap;">' . $badgeM . ' ' . $badgeD . '<br>' . $badgeOverall . '</div>';
+            $statusBadge = '<div class="text-center" style="white-space:nowrap;">' . $badgeM . ' ' . $badgeD . ' ' . $badgeOverall . '</div>';
 
             // Approval Column HTML (Single Approval Action)
             $canApproveRow = $this->canApproveDisposisi($row);

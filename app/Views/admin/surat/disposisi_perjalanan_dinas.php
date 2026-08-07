@@ -8,33 +8,49 @@
     $transportasiOptions = $transportasi_options ?? [];
 ?>
 <style>
-    #tableDisposisi thead th {
+    .tooltip {
+        pointer-events: none !important;
+    }
+
+    #tableDisposisi th,
+    #tableDisposisi td,
+    .table th,
+    .table td {
+        white-space: nowrap !important;
         vertical-align: middle !important;
-        text-align: center;
-        padding: 10px !important;
+        padding: 8px 10px !important;
         font-size: 13.5px;
     }
 
-    #tableDisposisi tbody td {
+    .text-tujuan, .text-perihal, .pelaksana-single-line {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 220px !important;
+        display: inline-block !important;
         vertical-align: middle !important;
-        padding: 10px !important;
-        font-size: 13.5px;
+        cursor: pointer;
     }
 
     .doc-btn-group {
-        display: inline-flex;
-        flex-wrap: wrap;
-        gap: 5px;
-        justify-content: center;
+        display: inline-flex !important;
+        flex-wrap: nowrap !important;
+        white-space: nowrap !important;
+        gap: 4px !important;
+        justify-content: center !important;
+        align-items: center !important;
     }
 
     .doc-btn-group .btn {
-        padding: 4px 8px;
-        font-size: 12px;
-        border-radius: 4px;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+        border-radius: 4px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
     }
 </style>
 
@@ -444,13 +460,25 @@ $(document).ready(function() {
                         display += '<strong>' + $('<div>').text(row.kota_tujuan).html() + '</strong>';
                     }
                     if (row && row.tujuan) {
-                        display += (display ? '<br><small class="text-muted">' : '') + $('<div>').text(row.tujuan).html() + (display ? '</small>' : '');
+                        var escapedTujuan = $('<div>').text(row.tujuan).html();
+                        var shortTujuan = row.tujuan.length > 30 ? row.tujuan.substring(0, 30) + '...' : row.tujuan;
+                        var escapedShort = $('<div>').text(shortTujuan).html();
+                        display += (display ? ' - ' : '') + '<span class="text-tujuan" data-toggle="tooltip" data-placement="top" title="' + escapedTujuan + '">' + escapedShort + '</span>';
                     }
                     return display || '-';
                 }
             },
             { data: 'transportasi', className: 'text-center' },
-            { data: 'perihal' },
+            {
+                data: 'perihal',
+                render: function(data) {
+                    if (!data) return '-';
+                    var escaped = $('<div>').text(data).html();
+                    var shortText = data.length > 30 ? data.substring(0, 30) + '...' : data;
+                    var escapedShort = $('<div>').text(shortText).html();
+                    return '<div class="text-perihal" data-toggle="tooltip" data-placement="top" title="' + escaped + '">' + escapedShort + '</div>';
+                }
+            },
             { data: 'status_badge', className: 'text-center', sortable: false, searchable: false },
             { data: 'approval_html', className: 'text-center', sortable: false, searchable: false },
             { data: 'action_html', className: 'text-center', sortable: false, searchable: false }
@@ -470,6 +498,13 @@ $(document).ready(function() {
                 next: 'Berikutnya',
                 previous: 'Sebelumnya'
             }
+        },
+        drawCallback: function () {
+            $('[data-toggle="tooltip"]').tooltip('dispose').tooltip({
+                container: 'body',
+                trigger: 'hover',
+                boundary: 'window'
+            });
         }
     });
 
