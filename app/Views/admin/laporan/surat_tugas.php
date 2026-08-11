@@ -135,7 +135,7 @@
                         <th style="width:150px;">Periode</th>
                         <th>Nama Pelaksana</th>
                         <th style="width:130px;" class="text-center">Status Laporan</th>
-                        <th style="width:110px;" class="text-center">Cetak SPT</th>
+                        <th style="width:110px;" class="text-center">SPT</th>
                         <th style="width:140px;" class="text-center">Upload SPT (TTD)</th>
                         <th style="width:130px;" class="text-center">Daftar Nominatif</th>
                         <th style="width:100px;" class="text-center">SPPD</th>

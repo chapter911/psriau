@@ -56,6 +56,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('dashboard/map-kecamatan-options', 'Admin\\Dashboard::mapKecamatanOptions');
 	$routes->get('dashboard/map-detail', 'Admin\\Dashboard::mapDetail');
 	$routes->get('dashboard/map-contour-data', 'Admin\\Dashboard::mapContourData');
+	$routes->get('dashboard/calendar-events', 'Admin\\Dashboard::calendarEvents');
 
 	// Update password user
 	$routes->get('password', 'Admin\\Password::index');
@@ -162,6 +163,16 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/mata-anggaran/(:num)/ubah', 'Admin\MataAnggaran::edit/$1');
 	$routes->post('master/mata-anggaran/(:num)/status', 'Admin\MataAnggaran::updateStatus/$1');
 	$routes->post('master/mata-anggaran/(:num)/hapus', 'Admin\MataAnggaran::delete/$1');
+
+	// Master Tanggal Merah / Hari Libur Routes
+	$routes->get('master/tanggal-merah', 'Admin\MasterTanggalMerah::index');
+	$routes->post('master/tanggal-merah/fetch-api', 'Admin\MasterTanggalMerah::fetchApi');
+	$routes->post('master/tanggal-merah/simpan-batch', 'Admin\MasterTanggalMerah::simpanBatch');
+	$routes->post('master/tanggal-merah/tambah', 'Admin\MasterTanggalMerah::create');
+	$routes->post('master/tanggal-merah/(:num)/ubah', 'Admin\MasterTanggalMerah::edit/$1');
+	$routes->post('master/tanggal-merah/(:num)/hapus', 'Admin\MasterTanggalMerah::delete/$1');
+	$routes->post('master/tanggal-merah/hapus-tahun/(:num)', 'Admin\MasterTanggalMerah::deleteYear/$1');
+	$routes->get('master/tanggal-merah/export', 'Admin\MasterTanggalMerah::export');
 
 	// Master Transportasi Routes
 	$routes->get('master/transportasi', 'Admin\Transportasi::index');

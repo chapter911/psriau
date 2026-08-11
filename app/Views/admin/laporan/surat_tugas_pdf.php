@@ -8,12 +8,19 @@ $periodeSelesai = tanggal_indonesia((string) ($data['periode_selesai'] ?? ''));
 $tglTtd = tanggal_indonesia((string) ($data['tanggal_tanda_tangan'] ?? date('Y-m-d')));
 $pelaksana = $data['pelaksana'] ?? [];
 $diketahuiOleh = $data['diketahui_oleh'] ?? [];
+if (empty($diketahuiOleh) || empty($diketahuiOleh['nama']) || $diketahuiOleh['nama'] === '-') {
+    $diketahuiOleh = [
+        'nama' => 'Muhammad Yudi Prasetya, ST',
+        'nip' => '198002142014121002',
+        'jabatan' => 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau',
+    ];
+}
 $dasarSpt = $data['dasar_spt'] ?? [];
 
 $getSignatureJabatan = function($person): string {
     $jabatan = $person['jabatan'] ?? '';
     $nip = trim((string) ($person['nip'] ?? ''));
-    if ($nip === '198002142014121002' || $nip === '198002142014121002') {
+    if ($nip === '198002142014121002' || strpos(strtolower($jabatan), 'kepala satuan kerja') !== false) {
         return "KEPALA SATUAN KERJA<br/>PELAKSANAAN PRASARANA STRATEGIS RIAU";
     }
     

@@ -7,7 +7,7 @@ $records = $records ?? [];
 $getSignatureJabatan = function($person): string {
     $jabatan = $person['jabatan'] ?? '';
     $nip = trim((string) ($person['nip'] ?? ''));
-    if ($nip === '198002142014121002') {
+    if ($nip === '198002142014121002' || strpos(strtolower($jabatan), 'kepala satuan kerja') !== false) {
         return "KEPALA SATUAN KERJA<br/>PELAKSANAAN PRASARANA STRATEGIS RIAU";
     }
     

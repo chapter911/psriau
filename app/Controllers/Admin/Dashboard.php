@@ -9,6 +9,7 @@ use App\Models\HomeSlideModel;
 use App\Models\AuditHistoryModel;
 use App\Models\LoginHistoryModel;
 use App\Models\MstPaketModel;
+use CodeIgniter\HTTP\ResponseInterface;
 
 class Dashboard extends BaseController
 {
@@ -78,6 +79,10 @@ class Dashboard extends BaseController
         // SIMAK Konsultasi Document Data
         $konsultasiChartData = $this->getSimakDokumenChartData($db, 'konsultasi');
 
+        // Calendar Events & Statistics (Holidays, Employee Leaves & Business Trips)
+        $calendarEvents = $this->getCalendarEventsData($db);
+        $calendarStats = $this->getCalendarSummaryStats($calendarEvents);
+
         return view('admin/dashboard', [
             'pageTitle' => 'Dashboard Admin',
             // Schools
@@ -90,7 +95,248 @@ class Dashboard extends BaseController
             // SIMAK Charts
             'konstruksiChartData' => $konstruksiChartData,
             'konsultasiChartData' => $konsultasiChartData,
+            // Calendar
+            'calendarEvents' => $calendarEvents,
+            'calendarStats' => $calendarStats,
         ]);
+    }
+
+    /**
+     * AJAX endpoint to return JSON events for FullCalendar
+     */
+    public function calendarEvents(): ResponseInterface
+    {
+        $db = db_connect();
+        $events = $this->getCalendarEventsData($db);
+
+        return $this->response->setJSON($events);
+    }
+
+    /**
+     * Compile unified calendar events for holidays, employee leaves, and business trips
+     */
+    private function getCalendarEventsData($db): array
+    {
+        $events = [];
+
+        // 1. Hari Libur Nasional & Cuti Bersama from mst_tanggal_merah
+        if ($db->tableExists('mst_tanggal_merah')) {
+            try {
+                $holidays = $db->table('mst_tanggal_merah')
+                    ->select('id, tanggal, tahun, nama_libur, tipe, hari, sumber')
+                    ->orderBy('tanggal', 'ASC')
+                    ->get()
+                    ->getResultArray() ?? [];
+
+                foreach ($holidays as $h) {
+                    $isLeave = ($h['tipe'] ?? '') === 'leave';
+                    $tanggalStr = trim((string) ($h['tanggal'] ?? ''));
+                    if ($tanggalStr === '') {
+                        continue;
+                    }
+
+                    $events[] = [
+                        'id'              => 'holiday_' . $h['id'],
+                        'title'           => ($isLeave ? '🌴 ' : '🔴 ') . $h['nama_libur'],
+                        'start'           => $tanggalStr,
+                        'allDay'          => true,
+                        'backgroundColor' => $isLeave ? '#ff9800' : '#dc3545',
+                        'borderColor'     => $isLeave ? '#f57f17' : '#c82333',
+                        'textColor'       => '#ffffff',
+                        'classNames'      => [$isLeave ? 'fc-event-leave' : 'fc-event-holiday'],
+                        'extendedProps'   => [
+                            'eventType'     => $isLeave ? 'cuti_bersama' : 'libur_nasional',
+                            'categoryLabel' => $isLeave ? 'Cuti Bersama' : 'Hari Libur Nasional',
+                            'nama'          => $h['nama_libur'],
+                            'hari'          => $h['hari'] ?? '-',
+                            'tanggal'       => date('d M Y', strtotime($tanggalStr)),
+                            'sumber'        => $h['sumber'] ?? 'API',
+                            'badgeColor'    => $isLeave ? 'warning' : 'danger',
+                            'icon'          => $isLeave ? 'fas fa-umbrella-beach' : 'fas fa-flag',
+                        ],
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // Ignore holiday fetch error gracefully
+            }
+        }
+
+        // 2. Pegawai Cuti from surat_cuti
+        if ($db->tableExists('surat_cuti')) {
+            try {
+                $cutis = $db->table('surat_cuti')
+                    ->select('id, nama, nip, jabatan, unit_kerja, jenis_cuti, alasan_cuti, tanggal_mulai, tanggal_selesai, lama_cuti_jumlah, lama_cuti_satuan, status')
+                    ->where('tanggal_mulai IS NOT NULL', null, false)
+                    ->where('tanggal_mulai !=', '')
+                    ->orderBy('tanggal_mulai', 'DESC')
+                    ->get()
+                    ->getResultArray() ?? [];
+
+                foreach ($cutis as $c) {
+                    $start = trim((string) ($c['tanggal_mulai'] ?? ''));
+                    if ($start === '') {
+                        continue;
+                    }
+                    $end = trim((string) ($c['tanggal_selesai'] ?? ''));
+                    if ($end === '') {
+                        $end = $start;
+                    }
+
+                    // FullCalendar exclusive end date for multi-day allDay events
+                    $endExclusive = date('Y-m-d', strtotime($end . ' +1 day'));
+                    $namaPegawai = trim((string) ($c['nama'] ?? 'Pegawai'));
+                    $jenisCuti = trim((string) ($c['jenis_cuti'] ?? 'Cuti'));
+
+                    $events[] = [
+                        'id'              => 'cuti_' . $c['id'],
+                        'title'           => '🏖️ ' . $namaPegawai . ' (' . $jenisCuti . ')',
+                        'start'           => $start,
+                        'end'             => $endExclusive,
+                        'allDay'          => true,
+                        'backgroundColor' => '#0284c7',
+                        'borderColor'     => '#0369a1',
+                        'textColor'       => '#ffffff',
+                        'classNames'      => ['fc-event-cuti'],
+                        'extendedProps'   => [
+                            'eventType'     => 'pegawai_cuti',
+                            'categoryLabel' => 'Pegawai Cuti',
+                            'nama'          => $namaPegawai,
+                            'nip'           => $c['nip'] ?? '-',
+                            'jabatan'       => $c['jabatan'] ?? '-',
+                            'unit_kerja'    => $c['unit_kerja'] ?? '-',
+                            'jenis_cuti'    => $jenisCuti,
+                            'alasan'        => $c['alasan_cuti'] ?? '-',
+                            'periode'       => date('d M Y', strtotime($start)) . ' s/d ' . date('d M Y', strtotime($end)),
+                            'lama'          => ($c['lama_cuti_jumlah'] ?? '') . ' ' . ($c['lama_cuti_satuan'] ?? 'Hari'),
+                            'status'        => $c['status'] ?? 'Diajukan',
+                            'badgeColor'    => 'info',
+                            'icon'          => 'fas fa-user-clock',
+                        ],
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // Ignore cuti fetch error gracefully
+            }
+        }
+
+        // 3. Pegawai yang Perjalanan Dinas from disposisi_perjalanan_dinas
+        if ($db->tableExists('disposisi_perjalanan_dinas')) {
+            try {
+                $disposisi = $db->table('disposisi_perjalanan_dinas')
+                    ->select('id, pelaksana_json, periode_mulai, periode_selesai, kota_tujuan, tujuan, perihal, transportasi, status')
+                    ->where('periode_mulai IS NOT NULL', null, false)
+                    ->where('periode_mulai !=', '')
+                    ->orderBy('periode_mulai', 'DESC')
+                    ->get()
+                    ->getResultArray() ?? [];
+
+                foreach ($disposisi as $d) {
+                    $start = trim((string) ($d['periode_mulai'] ?? ''));
+                    if ($start === '') {
+                        continue;
+                    }
+                    $end = trim((string) ($d['periode_selesai'] ?? ''));
+                    if ($end === '') {
+                        $end = $start;
+                    }
+
+                    $endExclusive = date('Y-m-d', strtotime($end . ' +1 day'));
+                    $pelaksanaList = json_decode((string) ($d['pelaksana_json'] ?? '[]'), true) ?: [];
+                    $names = [];
+                    foreach ($pelaksanaList as $p) {
+                        $pName = trim((string) ($p['nama'] ?? $p['name'] ?? ''));
+                        if ($pName !== '') {
+                            $names[] = $pName;
+                        }
+                    }
+
+                    $namesStr = ! empty($names) ? implode(', ', $names) : 'Pegawai Dinas';
+                    $namesShort = ! empty($names) ? (count($names) > 1 ? $names[0] . ' (+' . (count($names) - 1) . ' org)' : $names[0]) : 'Perjadin';
+                    $dest = ! empty($d['kota_tujuan']) ? $d['kota_tujuan'] : (! empty($d['tujuan']) ? $d['tujuan'] : 'Dinas Luar');
+
+                    $events[] = [
+                        'id'              => 'perjadin_' . $d['id'],
+                        'title'           => '✈️ ' . $namesShort . ' (' . $dest . ')',
+                        'start'           => $start,
+                        'end'             => $endExclusive,
+                        'allDay'          => true,
+                        'backgroundColor' => '#10b981',
+                        'borderColor'     => '#047857',
+                        'textColor'       => '#ffffff',
+                        'classNames'      => ['fc-event-perjadin'],
+                        'extendedProps'   => [
+                            'eventType'      => 'perjalanan_dinas',
+                            'categoryLabel'  => 'Perjalanan Dinas',
+                            'pelaksana'      => $namesStr,
+                            'pelaksana_list' => $names,
+                            'kota_tujuan'    => $dest,
+                            'tujuan_detail'  => $d['tujuan'] ?? '-',
+                            'perihal'        => $d['perihal'] ?? '-',
+                            'transportasi'   => $d['transportasi'] ?? '-',
+                            'periode'        => date('d M Y', strtotime($start)) . ' s/d ' . date('d M Y', strtotime($end)),
+                            'status'         => $d['status'] ?? 'Disetujui',
+                            'badgeColor'     => 'success',
+                            'icon'           => 'fas fa-plane-departure',
+                        ],
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // Ignore disposisi fetch error gracefully
+            }
+        }
+
+        return $events;
+    }
+
+    /**
+     * Compute summary metric counters for today and current month
+     */
+    private function getCalendarSummaryStats(array $events): array
+    {
+        $today = date('Y-m-d');
+        $currentMonth = date('Y-m');
+
+        $totalHolidays = 0;
+        $totalLeaves = 0;
+        $activeCutisToday = 0;
+        $activePerjadinToday = 0;
+        $monthCutisCount = 0;
+        $monthPerjadinCount = 0;
+
+        foreach ($events as $ev) {
+            $type = $ev['extendedProps']['eventType'] ?? '';
+            $start = $ev['start'] ?? '';
+            $end = $ev['end'] ?? $start;
+
+            if ($type === 'libur_nasional') {
+                $totalHolidays++;
+            } elseif ($type === 'cuti_bersama') {
+                $totalLeaves++;
+            } elseif ($type === 'pegawai_cuti') {
+                if (strpos((string) $start, $currentMonth) === 0) {
+                    $monthCutisCount++;
+                }
+                if ($today >= $start && $today < $end) {
+                    $activeCutisToday++;
+                }
+            } elseif ($type === 'perjalanan_dinas') {
+                if (strpos((string) $start, $currentMonth) === 0) {
+                    $monthPerjadinCount++;
+                }
+                if ($today >= $start && $today < $end) {
+                    $activePerjadinToday++;
+                }
+            }
+        }
+
+        return [
+            'total_holidays'        => $totalHolidays,
+            'total_leaves'          => $totalLeaves,
+            'active_cutis_today'    => $activeCutisToday,
+            'active_perjadin_today' => $activePerjadinToday,
+            'month_cutis_count'     => $monthCutisCount,
+            'month_perjadin_count'  => $monthPerjadinCount,
+        ];
     }
 
     /**

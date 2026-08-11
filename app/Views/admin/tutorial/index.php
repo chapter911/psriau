@@ -175,6 +175,35 @@
     <!-- MAIN SECTION: FLOWCHART VISUAL DIAGRAMS -->
     <h4 class="font-weight-bold text-dark mb-3"><i class="fas fa-diagram-project text-primary mr-2"></i> Diagram Flowchart Alur Kerja</h4>
 
+    <!-- FLOWCHART 0: DASHBOARD - KALENDER TERPADU KEGIATAN & LIBUR -->
+    <div class="flowchart-card role-section" data-roles="all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-calendar-days mr-2"></i> Alur Pemantauan Kalender Terpadu di Dashboard</h5>
+                <small class="text-muted">Monitoring jadwal hari libur nasional, cuti bersama, pegawai cuti, dan perjalanan dinas terintegrasi via FullCalendar.</small>
+            </div>
+            <div>
+                <span class="badge badge-primary">Semua Role</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A[Buka Halaman Dashboard Admin] --> B[Lihat Kalender Terpadu FullCalendar]
+    B --> C{Filter Tampilan Kategori}
+    C -->|Merah| D[Hari Libur Nasional]
+    C -->|Oranye/Amber| E[Cuti Bersama]
+    C -->|Biru/Cyan| F[Pegawai Sedang Cuti]
+    C -->|Hijau Emerald| G[Pegawai Sedang Perjalanan Dinas]
+    B --> H[Klik Jadwal / Tanggal Tertentu]
+    H --> I[Muncul Modal Detail: Nama Pegawai, NIP, Jabatan, Tanggal & Tujuan]
+    I --> J[Akses Tombol Pintas ke Modul Terkait]
+                </pre>
+            </div>
+        </div>
+    </div>
+
     <!-- FLOWCHART 1: STAF / PELAKSANA - PENGAJUAN DISPOSISI & PELAPORAN PERJADIN -->
     <?php if ($canRenderForUser(['staf_pelaksana'])): ?>
     <div class="flowchart-card role-section" data-roles="staf_pelaksana,all">
@@ -265,8 +294,8 @@ graph TD
     <?php endif; ?>
 
     <!-- FLOWCHART 3: KEUANGAN - VERIFIKASI BIAYA & CETAK KWITANSI/SPPD -->
-    <?php if ($canRenderForUser(['keuangan'])): ?>
-    <div class="flowchart-card role-section" data-roles="keuangan,all">
+    <?php if ($canRenderForUser(['admin', 'super_administrator'])): ?>
+    <div class="flowchart-card role-section" data-roles="admin,super_administrator,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="font-weight-bold mb-1 text-success"><i class="fas fa-calculator mr-2"></i> Alur Kerja Tim Keuangan / Verifikator</h5>
@@ -284,7 +313,7 @@ graph TD
     B --> C[Klik Tombol Update Verifikasi]
     C --> D[Pilih KOP Surat, MAK, Dasar SPT & Tarif Periode]
     D --> E[Upload File SPT TTD PDF]
-    E --> F[Cetak Dokumentasi Resmi: SPT, SPPD 2 Hal, Kwitansi & Rincian Biaya Excel, Nominatif]
+    E --> F[Cetak Dokumentasi Resmi: SPT, SPPD 2 Hal, Kwitansi & Rincian Biaya Excel Multi-Pelaksana 1 File, Nominatif]
                 </pre>
             </div>
         </div>
@@ -307,7 +336,7 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A["Kelola Master Data: Pegawai (PNS/CPNS/PPPK/PPNPN/Konsultan/Security/CS), Struktur Organisasi, MAK, Dasar SPT"] --> B[Kelola Paket Pekerjaan SIMAK Fisik & Konsultasi]
+    A["Kelola Master Data: Pegawai, Tanggal Merah (API upset.dev & Kalender), Struktur Organisasi, MAK, Dasar SPT"] --> B[Kelola Paket Pekerjaan SIMAK Fisik & Konsultasi]
     B --> C[Kelola RAB Gedung Strategis]
     C --> D[Pantau Rekap Mingguan & Dokumentasi Lapangan]
                 </pre>
@@ -321,25 +350,54 @@ graph TD
     <div class="flowchart-card role-section" data-roles="super_administrator,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
-                <h5 class="font-weight-bold mb-1 text-danger"><i class="fas fa-user-gear mr-2"></i> Alur Kerja Super Administrator</h5>
-                <small class="text-muted">Proses pengelolaan akun user, pemetaan role grup, pembagian hak akses menu, dan manajemen database.</small>
+                <h5 class="font-weight-bold mb-1 text-danger"><i class="fas fa-shield-alt mr-2"></i> Alur Kerja Super Administrator</h5>
+                <small class="text-muted">Pengaturan hak akses, menu_akses RBAC, konfigurasi sistem, dan manajemen pengguna.</small>
             </div>
             <div>
-                <span class="badge badge-danger">Super Administrator</span>
+                <span class="badge badge-danger">Super Admin</span>
             </div>
         </div>
         <div class="flowchart-card__body">
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A[Buka Manajemen User / User Group] --> B[Tambah / Edit Akun User & Mappping Pegawai]
-    B --> C[Atur Hak Akses Menu Level 1, 2, 3 per Role]
-    C --> D[Buka Application Setting: Merge / Extract Database & Maintenance]
+    A[Buka Manajemen User & Role] --> B[Atur Hak Akses RBAC & Menu Akses]
+    B --> C[Audit Log & Riwayat Login]
+    C --> D[Konfigurasi KOP Surat & Pengaturan Sistem Global]
                 </pre>
             </div>
         </div>
     </div>
     <?php endif; ?>
+
+    <!-- PANDUAN PENGGUNAAN SISTEM (ACCORDION STYLE) -->
+    <div class="mt-4">
+        <!-- MODUL KEUANGAN & SURAT TUGAS -->
+        <?php if ($canRenderForUser(['admin', 'super_administrator'])): ?>
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,all">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-success">
+                    <i class="fas fa-calculator mr-2"></i> Modul Keuangan: Verifikasi SPT, Kwitansi, SPPD & Nominatif
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-success"><i class="fas fa-print mr-1"></i> Verifikasi & Cetak Dokumen Keuangan</h6>
+                        <p class="small text-muted mb-2"><code>/admin/surat/perjalanan-dinas/surat-tugas</code></p>
+                        <ol class="pl-3 small mb-0">
+                            <li>Buka menu Surat Tugas (`/admin/surat/perjalanan-dinas/surat-tugas`). <em>(Catatan: Seluruh header dan baris isi tabel (termasuk kolom Periode) dibuat rapi 1 baris. Teks pada kolom Tujuan & Pelaksana dipersingkat pada tampilan 1 baris, dan tooltip interaktif akan muncul saat disorot/hover untuk melihat teks lengkap).</em></li>
+                            <li>Gunakan tombol <strong>Setting Nomor Terakhir SPPD/Kwitansi</strong> untuk mengatur nomor awal auto-increment jika ingin melanjutkan dari penomoran sebelumnya (misal: isi <code>15</code> untuk memulai dari <code>016</code>).</li>
+                            <li>Klik tombol kuning <strong>Update Verifikasi</strong> pada baris laporan untuk menentukan atau memperbarui Nomor Surat Tugas, KOP Surat, MAK, Dasar SPT, Kode Nomor, dan tarif Transport & Penginapan. <em>(Catatan: Nomor Surat Tugas & Kode Nomor ter-prefill otomatis dengan format <code>/SPT/Gs7/{Tahun}</code> dan <code>/SPD/SATKER/PPS-RIAU/{Tahun}</code>, untuk perjalanan dinas 1 hari baris penginapan dihilangkan secara otomatis namun dapat ditambahkan manual jika diperlukan, serta seluruh data yang pernah disimpan sebelumnya akan terisi otomatis).</em></li>
+                            <li>Upload file PDF <strong>SPT TTD</strong> yang telah disahkan.</li>
+                            <li>Cetak dokumen resmi: <strong>Surat Tugas (SPT)</strong> (otomatis dilengkapi blok tanda tangan pejabat penandatangan Kasatker/Kepala Satuan Kerja beserta Nama, Jabatan, dan NIP), <strong>SPPD (2 Halaman)</strong> (dengan Maksud Perjalanan Dinas diambil langsung dari Perihal Disposisi, nama Pejabat yang Berwenang Memberi Perintah dibuat 1 baris, bagian 2 hanya menampilkan Nama Pegawai yang melaksanakan perjalanan dinas (tanpa NIP), format ringkas Golongan pada bagian 3.a seperti <code>III/a</code> untuk PNS/CPNS dan prefiks <code>Golongan</code> khusus untuk pegawai PPPK seperti <code>Golongan IX</code> tanpa teks di dalam kurung seperti <code>(Terampil)</code> dan Jabatan pelaksana, bagian 5 Alat angkutan yang dipergunakan menyesuaikan jenis transportasi pada Disposisi/Rincian Biaya, serta blok tanda tangan Pejabat Berwenang beserta nama/NIP dibuat rata tengah), <strong>Kwitansi & Rincian Biaya (Format Excel .xls yang ter-download langsung tanpa HTML preview; jika terdapat beberapa nama pelaksana maka otomatis dibuatkan sheet untuk masing-masing pelaksana seperti <code>RINCI (1)</code>, <code>KWITANSI (1)</code>, <code>RINCI (2)</code>, <code>KWITANSI (2)</code>, dst. tetap dalam 1 file .xls)</strong> (dengan "Kode Nomor" SPPD & "Nomor Bukti" Kwitansi terhubung otomatis, nama penerima kapital sesuai pelaksana masing-masing sheet, serta untuk perjalanan dinas 1 hari tanggal "Berangkat dari tanggal" hanya menampilkan tanggal tanpa tambahan "s/d"), serta <strong>Daftar Nominatif</strong> (NIP otomatis hanya ditampilkan untuk personil berstatus PNS, CPNS, atau PPPK). Seluruh tombol dokumen disajikan ringkas tanpa kata "Cetak" (seperti <code>SPT</code>, <code>Nominatif</code>, <code>SPPD</code>, <code>Kwitansi</code>).</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
 
     <!-- DETAILED TUTORIAL PER MENU CATEGORY -->
     <h4 class="font-weight-bold text-dark mt-4 mb-3"><i class="fas fa-book-open text-primary mr-2"></i> Panduan Tutorial Menu Anda</h4>
@@ -453,31 +511,6 @@ graph TD
         </div>
         <?php endif; ?>
 
-        <!-- MODUL KEUANGAN -->
-        <?php if ($canRenderForUser(['keuangan'])): ?>
-        <div class="card menu-tutorial-card mb-3 role-section" data-roles="keuangan,all">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 font-weight-bold text-success">
-                    <i class="fas fa-calculator mr-2"></i> Modul Keuangan: Verifikasi SPT, Kwitansi, SPPD & Nominatif
-                </h5>
-            </div>
-            <div class="card-body bg-light">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h6 class="font-weight-bold text-success"><i class="fas fa-print mr-1"></i> Verifikasi & Cetak Dokumen Keuangan</h6>
-                        <p class="small text-muted mb-2"><code>/admin/surat/perjalanan-dinas/surat-tugas</code></p>
-                        <ol class="pl-3 small mb-0">
-                            <li>Buka menu Surat Tugas (`/admin/surat/perjalanan-dinas/surat-tugas`). <em>(Catatan: Seluruh header dan baris isi tabel (termasuk kolom Periode) dibuat rapi 1 baris. Teks pada kolom Tujuan & Pelaksana dipersingkat pada tampilan 1 baris, dan tooltip interaktif akan muncul saat disorot/hover untuk melihat teks lengkap).</em></li>
-                            <li>Gunakan tombol <strong>Setting Nomor Terakhir SPPD/Kwitansi</strong> untuk mengatur nomor awal auto-increment jika ingin melanjutkan dari penomoran sebelumnya (misal: isi <code>15</code> untuk memulai dari <code>016</code>).</li>
-                            <li>Klik tombol kuning <strong>Update Verifikasi</strong> pada baris laporan untuk menentukan atau memperbarui Nomor Surat Tugas, KOP Surat, MAK, Dasar SPT, Kode Nomor, dan tarif Transport & Penginapan. <em>(Catatan: Nomor Surat Tugas & Kode Nomor ter-prefill otomatis dengan format <code>/SPT/Gs7/{Tahun}</code> dan <code>/SPD/SATKER/PPS-RIAU/{Tahun}</code>, untuk perjalanan dinas 1 hari baris penginapan dihilangkan secara otomatis namun dapat ditambahkan manual jika diperlukan, serta seluruh data yang pernah disimpan sebelumnya akan terisi otomatis).</em></li>
-                            <li>Upload file PDF <strong>SPT TTD</strong> yang telah disahkan.</li>
-                            <li>Cetak dokumen resmi: <strong>Surat Tugas (SPT)</strong>, <strong>SPPD (2 Halaman)</strong> (dengan Maksud Perjalanan Dinas diambil langsung dari Perihal Disposisi, nama Pejabat yang Berwenang Memberi Perintah dibuat 1 baris, bagian 2 hanya menampilkan Nama Pegawai yang melaksanakan perjalanan dinas (tanpa NIP), format ringkas Golongan pada bagian 3.a seperti <code>III/a</code> untuk PNS/CPNS dan prefiks <code>Golongan</code> khusus untuk pegawai PPPK seperti <code>Golongan IX</code> tanpa teks di dalam kurung seperti <code>(Terampil)</code> dan Jabatan pelaksana, bagian 5 Alat angkutan yang dipergunakan menyesuaikan jenis transportasi pada Disposisi/Rincian Biaya, serta blok tanda tangan Pejabat Berwenang beserta nama/NIP dibuat rata tengah), <strong>Kwitansi & Rincian Biaya (Format Excel Preview HTML & Download File Excel .xls 2 sheet: RINCI & KWITANSI)</strong> (dengan "Kode Nomor" SPPD & "Nomor Bukti" Kwitansi terhubung otomatis, nama penerima kapital, serta untuk perjalanan dinas 1 hari tanggal "Berangkat dari tanggal" hanya menampilkan tanggal tanpa tambahan "s/d"), serta <strong>Daftar Nominatif</strong> (NIP otomatis hanya ditampilkan untuk personil berstatus PNS, CPNS, atau PPPK).</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
 
         <!-- MODUL ADMIN & SUPERADMIN -->
         <?php if ($canRenderForUser(['admin', 'super_administrator'])): ?>
@@ -513,6 +546,24 @@ graph TD
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-users mr-1"></i> Manajemen User & Hak Akses Role / Group</h6>
                                 <p class="small text-muted mb-2"><code>/admin/utility/user</code> & <code>/admin/utility/user-group</code></p>
                                 <p class="small mb-0">Tambah, edit, dan perbarui data user serta perubahan role secara dinamis dari master pegawai maupun input manual. Dilengkapi validasi role terintegrasi dan modal <strong>Atur Akses Menu</strong> berfitur <em>Sticky Header</em> untuk kenyamanan navigasi centang hak akses per menu (Akses, Add, Edit, Delete, Export, Import, Approval).</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-calendar-alt mr-1"></i> Master Tanggal Merah & Kalender Libur</h6>
+                                <p class="small text-muted mb-2"><code>/admin/master/tanggal-merah</code></p>
+                                <p class="small mb-0">Pengelolaan kalender hari libur nasional & cuti bersama terintegrasi live dengan API <code>https://tanggalmerah.upset.dev/api/holidays?year={year}</code>. Dilengkapi <strong>Dropdown Pemilihan Tahun</strong>, tombol <strong>Tarik Data API</strong> dengan modal preview konfirmasi (pembeda data baru vs data yang sudah tersimpan), tampilan <strong>Kalender Interaktif 12 Bulan</strong> (highlight merah untuk Libur Nasional & oranye/amber untuk Cuti Bersama serta klik tanggal untuk detail/tambah), tampilan <strong>Tabel Data</strong>, penambahan/perubahan manual, pembersihan data tahun berjalan, dan ekspor Excel.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-calendar-days mr-1"></i> Dashboard & Kalender Terpadu Satker PPS</h6>
+                                <p class="small text-muted mb-2"><code>/admin/dashboard</code></p>
+                                <p class="small mb-0">Halaman utama dashboard menyajikan <strong>FullCalendar Terpadu (Col-4 Sidebar Layout)</strong> yang mengombinasikan 4 kategori jadwal: Hari Libur Nasional (merah), Cuti Bersama (oranye/amber), Pegawai Cuti (biru/cyan), dan Perjalanan Dinas (hijau). Dilengkapi filter interaktif, counter pegawai cuti & dinas aktif hari ini, tampilan Bulan/List, serta modal detail lengkap saat tanggal/agenda diklik.</p>
                             </div>
                         </div>
                     </div>
