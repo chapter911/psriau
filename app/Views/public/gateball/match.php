@@ -731,6 +731,42 @@
             box-shadow: 0 4px 12px rgba(0, 31, 63, 0.2);
         }
 
+        .btn-swap-teams {
+            margin-top: 14px;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #ffffff;
+            border: 2px solid #38bdf8;
+            border-radius: 12px;
+            padding: 9px 14px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 0.82rem;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+        }
+        .btn-swap-teams:hover {
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.55);
+            background: linear-gradient(135deg, #0369a1, #075985);
+            border-color: #7dd3fc;
+        }
+        .btn-swap-hdr {
+            background: rgba(2, 132, 199, 0.18) !important;
+            border: 1.5px solid #0284c7 !important;
+            color: #ffffff !important;
+        }
+        .btn-swap-hdr:hover {
+            background: #0284c7 !important;
+        }
+
         /* Bottom Action Footer */
         .bottom-action-bar {
             display: flex;
@@ -896,6 +932,11 @@
         </div>
 
         <div class="header-controls">
+            <!-- Tukar Posisi Tim Button (Undian Bola Merah & Putih) -->
+            <button type="button" class="btn-hdr-action btn-swap-hdr" id="btnSwapTeamsHdr" title="Tukar Posisi Tim (Undian Merah & Putih)">
+                <i class="fas fa-arrows-rotate" style="color: #38bdf8;"></i>
+                <span>Tukar Posisi</span>
+            </button>
             <!-- Mode Operator Login / Toggle Button -->
             <button type="button" class="btn-hdr-action btn-mode-operator" id="btnOperatorToggle" title="Masuk Mode Operator Turnamen">
                 <i class="fas fa-key" style="color: #fbbf24;" id="operatorLockIcon"></i>
@@ -988,6 +1029,10 @@
         <!-- Center VS Column -->
         <div class="vs-center-col">
             <div class="vs-circle">VS</div>
+            <button type="button" class="btn-swap-teams" id="btnSwapTeams" title="Tukar Posisi Tim (Hasil Undian Bola Merah & Putih)">
+                <i class="fas fa-arrows-rotate"></i>
+                <span>Tukar Posisi</span>
+            </button>
         </div>
 
         <!-- White Team / Tim 2 (Bola Genap 2, 4, 6, 8, 10) -->
@@ -1034,6 +1079,9 @@
         <div class="operator-only" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <button type="button" class="btn-finish-match" id="btnFinishMatch">
                 <i class="fas fa-flag-checkered"></i> <span>Selesaikan & Kunci Hasil Pertandingan</span>
+            </button>
+            <button type="button" class="btn-ctrl" id="btnSwapTeamsBottom" style="background: #e0f2fe; color: #0369a1; border: 1.5px solid #7dd3fc;" title="Tukar Posisi Tim (Merah ⇄ Putih)">
+                <i class="fas fa-arrows-rotate"></i> <span>Tukar Posisi Tim</span>
             </button>
             <button type="button" class="btn-ctrl btn-reset-timer" id="btnResetMatch" style="color: #dc2626; border-color: #fca5a5; background: #fff5f5;">
                 <i class="fas fa-trash-alt"></i> <span>Kosongkan Skor Pertandingan</span>
@@ -1707,6 +1755,96 @@
             });
         }
     });
+
+    // Swap Teams (Merah <-> Putih)
+    async function handleSwapTeams() {
+        let pwd = savedPassword;
+        if (!pwd) {
+            const authSuccess = await requestOperatorLogin();
+            if (!authSuccess) return;
+            pwd = savedPassword;
+        }
+
+        const confirm = await Swal.fire({
+            title: 'Tukar Posisi Tim (Merah ⇄ Putih)?',
+            html: `
+                <div style="font-size: 0.95rem; margin-top: 8px; text-align: left; background: #f8fafc; padding: 14px; border-radius: 10px; border: 2px solid #cbd5e1;">
+                    <p style="margin-bottom: 10px; color: #475569; font-weight: 600;">Posisi undian bola Merah dan Putih akan ditukar:</p>
+                    <div style="margin-bottom: 8px;">🔴 <strong>Tim Merah (Ganjil):</strong> <span style="color:#dc2626;font-weight:900;font-size:1.05rem;">${escapeHtml(matchState.team2)}</span></div>
+                    <div>⚪ <strong>Tim Putih (Genap):</strong> <span style="color:#0284c7;font-weight:900;font-size:1.05rem;">${escapeHtml(matchState.team1)}</span></div>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-arrows-rotate"></i> Ya, Tukar Posisi',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#0284c7',
+            cancelButtonColor: '#64748b'
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        lastUserActionTimestamp = Date.now();
+        const formData = new FormData();
+        formData.append('password', pwd);
+
+        try {
+            const resp = await fetch('<?= site_url("gateball/api/match/" . (int)$match['id'] . "/swap-teams"); ?>', {
+                method: 'POST',
+                body: formData
+            });
+
+            const res = await resp.json();
+            if (res.status === 'success' && res.data) {
+                matchState = res.data;
+                score1 = matchState.score1 !== null ? parseInt(matchState.score1) : 0;
+                score2 = matchState.score2 !== null ? parseInt(matchState.score2) : 0;
+
+                // Update team names in DOM
+                document.querySelectorAll('.team-red-box .team-name').forEach(el => el.textContent = matchState.team1);
+                document.querySelectorAll('.team-white-box .team-name').forEach(el => el.textContent = matchState.team2);
+
+                if (matchState.score_details_json) {
+                    try {
+                        const parsed = JSON.parse(matchState.score_details_json);
+                        for (let b = 1; b <= 10; b++) {
+                            ballPoints[b] = typeof parsed[b] === 'number' ? parsed[b] : 0;
+                        }
+                    } catch(e) {}
+                }
+
+                renderUI();
+                playBuzzer(750, 0.25, 'sine');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Posisi Tim Berhasil Ditukar!',
+                    html: `🔴 <strong>${escapeHtml(matchState.team1)}</strong> (Merah)<br>⇄<br>⚪ <strong>${escapeHtml(matchState.team2)}</strong> (Putih)`,
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Menukar Posisi',
+                    text: res.message || 'Terjadi kesalahan sistem.',
+                    confirmButtonColor: '#002244'
+                });
+            }
+        } catch(err) {
+            console.error('Swap teams error:', err);
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Koneksi ke server bermasalah.' });
+        }
+    }
+
+    const btnSwap = document.getElementById('btnSwapTeams');
+    if (btnSwap) btnSwap.addEventListener('click', handleSwapTeams);
+
+    const btnSwapHdr = document.getElementById('btnSwapTeamsHdr');
+    if (btnSwapHdr) btnSwapHdr.addEventListener('click', handleSwapTeams);
+
+    const btnSwapBottom = document.getElementById('btnSwapTeamsBottom');
+    if (btnSwapBottom) btnSwapBottom.addEventListener('click', handleSwapTeams);
 
     // Reset Match Entirely
     document.getElementById('btnResetMatch').addEventListener('click', async () => {

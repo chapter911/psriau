@@ -383,14 +383,15 @@ graph TD
                 <pre class="mermaid">
 graph TD
     A["Akses Portal /gateball"] --> B["Pilih Tab Kategori: PUTRA / PUTRI"]
-    B --> C["Lihat Jadwal Pertandingan & Klasemen Live (Auto-Sync 3 Detik)"]
+    B --> C["Lihat Jadwal Pertandingan & Klasemen Live (Auto-Sync 3 Detik & Animasi Perpindahan Posisi)"]
     B --> D["Klik Pertandingan / Tombol Update Skor"]
-    D --> E["Input Password Otorisasi"]
+    D --> E["Input Password Otorisasi (Mode Operator)"]
     E --> F["Pilih Mode: Update Cepat ATAU Buka Halaman Timer & Papan Skor (/gateball/match/{id})"]
-    F --> G["Di Halaman Pertandingan: Kontrol Timer 30:00 (Start, Pause, Reset, Peluit/Buzzer)"]
+    F --> G1["Hasil Undian: Klik 'Tukar Posisi' jika tim Merah/Putih bertukar posisi"]
+    G1 --> G["Di Halaman Pertandingan: Kontrol Timer 30:00 (Start, Pause, Reset, Peluit/Buzzer)"]
     G --> H["Catat Poin per Bola (G1, G2, G3, Agari) / Tombol Skor (+1, +2, -1)"]
     H --> I["Klik Selesaikan & Kunci Hasil Pertandingan"]
-    I --> J["Klasemen & Urutan Peringkat di Seluruh Perangkat Terupdate Real-Time Otomatis"]
+    I --> J["Klasemen & Urutan Peringkat di Seluruh Monitor Terupdate Real-Time Otomatis"]
                 </pre>
             </div>
         </div>
@@ -640,7 +641,8 @@ graph TD
                                 <ol class="pl-3 small mb-0">
                                     <li>Klik baris pertandingan mana saja pada tabel jadwal untuk langsung membuka halaman <strong>Papan Skor & Timer Pertandingan</strong> (bebas dilihat siapa saja secara live tanpa password).</li>
                                     <li>Saat operator ingin melakukan perubahan (menjalankan timer, menambah poin bola, atau mereset), sistem akan meminta verifikasi password otorisasi resmi turnamen.</li>
-                                    <li>Klasemen turnamen otomatis ter-update secara <em>real-time</em> saat pertandingan sedang berlangsung meskipun laga belum selesai.</li>
+                                    <li>Klasemen turnamen otomatis ter-update secara <em>real-time</em> saat pertandingan sedang berlangsung meskipun laga belum selesai, lengkap dengan <strong>Animasi Meluncur Halus (FLIP)</strong> saat posisi klasemen berubah.</li>
+                                    <li>Gunakan tombol <strong>Tukar Posisi (Merah ⇄ Putih)</strong> di toolbar atas atau di bawah lingkaran VS untuk menukar posisi tim sesuai hasil undian bola ganjil/genap sebelum laga dimulai.</li>
                                     <li>Gunakan <strong>Digital Timer 30:00</strong> dengan kontrol Start, Pause, Reset, Tambah/Kurang Waktu, serta Suara Peluit / Buzzer.</li>
                                     <li>Jalankan timer terlebih dahulu, lalu catat poin tim dengan menekan kartu bola yang masuk (sistem mewajibkan timer sedang berjalan sebelum poin dapat diinput, serta otomatis menghitung siklus resmi: <strong>1 pt &rarr; 2 pts &rarr; 3 pts &rarr; 5 pts (Agari)</strong> dengan indikator target gate).</li>
                                     <li>Klik <strong>Selesaikan & Kunci Hasil Pertandingan</strong> untuk menyelesaikan laga dan mengunci hasil akhir turnamen.</li>
