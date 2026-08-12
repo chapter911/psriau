@@ -767,40 +767,43 @@
             gap: 10px;
         }
 
-        /* Large Eye-Catching Score Notification Toast */
-        .swal-score-update-toast {
-            width: 460px !important;
-            max-width: 95vw !important;
-            padding: 16px 20px !important;
-            border-radius: 16px !important;
-            border: 2.5px solid #0284c7 !important;
+        /* Centered Eye-Catching Score Notification Modal */
+        .swal-score-update-modal {
+            width: 520px !important;
+            max-width: 92vw !important;
+            padding: 24px 28px !important;
+            border-radius: 20px !important;
+            border: 3px solid #0284c7 !important;
             background: #ffffff !important;
-            box-shadow: 0 12px 35px rgba(0, 34, 68, 0.22) !important;
+            box-shadow: 0 20px 60px rgba(0, 34, 68, 0.35), 0 0 30px rgba(2, 132, 199, 0.25) !important;
         }
         .toast-score-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 1.25rem;
+            justify-content: center;
+            gap: 12px;
+            font-size: 1.45rem;
             font-weight: 900;
             color: #002244;
             font-family: 'Montserrat', sans-serif;
-            margin-bottom: 8px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 6px;
+            margin-bottom: 14px;
+            border-bottom: 2.5px solid #e2e8f0;
+            padding-bottom: 10px;
+            letter-spacing: 0.5px;
         }
         .toast-score-item {
             background: #f8fafc;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 12px;
-            padding: 10px 14px;
-            margin-top: 6px;
+            border: 2px solid #cbd5e1;
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin-top: 8px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
         .toast-match-title {
-            font-size: 0.82rem;
+            font-size: 0.92rem;
             font-weight: 800;
             color: #475569;
             text-transform: uppercase;
@@ -812,32 +815,33 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 14px;
             font-family: 'Montserrat', sans-serif;
         }
         .toast-team-red {
             color: #dc2626;
             font-weight: 900;
-            font-size: 1.15rem;
+            font-size: 1.3rem;
             flex: 1;
             text-align: left;
         }
         .toast-team-blue {
             color: #0284c7;
             font-weight: 900;
-            font-size: 1.15rem;
+            font-size: 1.3rem;
             flex: 1;
             text-align: right;
         }
         .toast-score-pill {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: 900;
             color: #002244;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
             background: #e2e8f0;
-            padding: 3px 14px;
-            border-radius: 10px;
-            border: 1px solid #cbd5e1;
+            padding: 4px 18px;
+            border-radius: 12px;
+            border: 2px solid #cbd5e1;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
         }
 
         @media (max-width: 992px) {
@@ -1095,16 +1099,16 @@
     let isSavePending = false;
     let savedPassword = '';
 
-    // Auto-closing Toast notification configuration (4.5s countdown timer)
+    // Auto-closing Centered Modal notification configuration (3.5s countdown timer)
     const MatchScoreToast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
+        position: 'center',
         showConfirmButton: false,
-        timer: 4500,
+        timer: 3500,
         timerProgressBar: true,
+        backdrop: 'rgba(0, 24, 48, 0.45)',
         background: '#ffffff',
         customClass: {
-            popup: 'swal-score-update-toast'
+            popup: 'swal-score-update-modal'
         },
         didOpen: (toast) => {
             toast.addEventListener('mouseenter', Swal.stopTimer);
