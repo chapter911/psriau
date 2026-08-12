@@ -1047,6 +1047,39 @@
         putri: <?= json_encode($putriStandings); ?>
     };
 
+    // Auto-closing Toast notification configuration (3.5s countdown timer)
+    const ScoreToast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3500,
+        timerProgressBar: true,
+        background: '#ffffff',
+        color: '#0f172a',
+        customClass: {
+            popup: 'swal2-border-radius shadow-lg'
+        },
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+    });
+
+    // Match signature map to track score updates and prevent double notifications (Rule 1)
+    let matchSignatures = {};
+    function buildMatchSignatures(data) {
+        const sigs = {};
+        ['putra', 'putri'].forEach(cat => {
+            if (data[cat] && Array.isArray(data[cat])) {
+                data[cat].forEach(m => {
+                    sigs[m.id] = `${m.score1 !== null ? m.score1 : '-'}_${m.score2 !== null ? m.score2 : '-'}_${m.status}`;
+                });
+            }
+        });
+        return sigs;
+    }
+    matchSignatures = buildMatchSignatures(matchesData);
+
     // Tab Switching Logic
     const tabPutraBtn = document.getElementById('tabPutraBtn');
     const tabPutriBtn = document.getElementById('tabPutriBtn');
@@ -1078,7 +1111,7 @@
         switchCategory('putri');
     }
 
-    // Refresh Data Function (Polling sync)
+    // Refresh Data Function (Polling sync with auto-closing alert on score updates)
     async function fetchData(silent = false) {
         const refreshIcon = document.getElementById('refreshIcon');
         if (!silent && refreshIcon) refreshIcon.classList.add('fa-spin');
@@ -1087,6 +1120,34 @@
             const resp = await fetch(API_URL_DATA);
             const result = await resp.json();
             if (result.status === 'success' && result.data) {
+                const newMatches = {
+                    putra: result.data.putra.matches,
+                    putri: result.data.putri.matches
+                };
+
+                // Track and detect score or status changes
+                const updatedItems = [];
+                ['putra', 'putri'].forEach(cat => {
+                    if (newMatches[cat]) {
+                        newMatches[cat].forEach(m => {
+                            const newSig = `${m.score1 !== null ? m.score1 : '-'}_${m.score2 !== null ? m.score2 : '-'}_${m.status}`;
+                            const oldSig = matchSignatures[m.id];
+
+                            if (oldSig && oldSig !== newSig) {
+                                const catName = cat.toUpperCase();
+                                const s1 = m.score1 !== null ? m.score1 : 0;
+                                const s2 = m.score2 !== null ? m.score2 : 0;
+                                let statusTag = '';
+                                if (m.status === 'completed') statusTag = ' <span style="color:#15803d;font-size:0.75rem;font-weight:700;">(Selesai)</span>';
+                                else if (m.status === 'ongoing') statusTag = ' <span style="color:#dc2626;font-size:0.75rem;font-weight:700;">(🔴 Live)</span>';
+
+                                updatedItems.push(`<div><strong>Laga #${m.match_number} (${catName})</strong>: ${escapeHtml(m.team1)} <strong>${s1} - ${s2}</strong> ${escapeHtml(m.team2)}${statusTag}</div>`);
+                            }
+                            matchSignatures[m.id] = newSig;
+                        });
+                    }
+                });
+
                 matchesData.putra = result.data.putra.matches;
                 standingsData.putra = result.data.putra.standings;
                 matchesData.putri = result.data.putri.matches;
@@ -1097,6 +1158,15 @@
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 document.getElementById('lastUpdatedTime').textContent = `(Sinkron ${timeStr})`;
+
+                // Show auto-closing notification alert (Rule 1: Pastikan Notifikasinya tidak double)
+                if (updatedItems.length > 0) {
+                    ScoreToast.fire({
+                        icon: 'info',
+                        title: '<span style="font-size:0.95rem;font-weight:800;color:#002244;"><i class="fas fa-bell text-warning"></i> Skor Terupdate!</span>',
+                        html: `<div style="font-size:0.85rem;line-height:1.4;margin-top:4px;">${updatedItems.join('')}</div>`
+                    });
+                }
             }
         } catch (err) {
             console.error('Fetch data error:', err);

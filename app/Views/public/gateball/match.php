@@ -1022,6 +1022,33 @@
     let isSavePending = false;
     let savedPassword = '';
 
+    // Auto-closing Toast notification configuration (3.5s countdown timer)
+    const MatchScoreToast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3500,
+        timerProgressBar: true,
+        background: '#ffffff',
+        color: '#0f172a',
+        customClass: {
+            popup: 'swal2-border-radius shadow-lg'
+        },
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+    });
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.toString().replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // Match state signature for anti-double notification (Rule 1)
+    let lastMatchStateSig = `${score1}_${score2}_${matchStatus}_${JSON.stringify(ballPoints)}`;
+
     // Render operator mode vs viewer mode (Hide/Show buttons based on password authentication)
     function renderOperatorState() {
         const isOp = Boolean(savedPassword);
@@ -1429,20 +1456,11 @@
         });
     }
 
-    // Timer Controls
-    async function startTimer() {
-        if (!await ensureOperatorAuth()) return;
-        lastUserActionTimestamp = Date.now();
+    // Internal Local Timer Ticker (Runs ticking on screen without requiring password)
+    function runTimerTicker() {
         if (timerInterval) clearInterval(timerInterval);
-        timerStatus = 'running';
-        if (matchStatus === 'pending') matchStatus = 'ongoing';
-
-        playBuzzer(880, 0.4, 'sawtooth');
-        renderUI();
-        saveLiveStateToServer();
-
         timerInterval = setInterval(() => {
-            if (timerSeconds > 0) {
+            if (timerStatus === 'running' && timerSeconds > 0) {
                 timerSeconds--;
                 renderUI();
 
@@ -1451,8 +1469,10 @@
                 }
 
                 if (timerSeconds === 0) {
-                    pauseTimer();
+                    stopTimerTicker();
+                    timerStatus = 'stopped';
                     playBuzzer(880, 1.2, 'sawtooth');
+                    renderUI();
                     Swal.fire({
                         title: 'WAKTU PERTANDINGAN HABIS!',
                         text: `Skor Akhir: ${matchState.team1} (${score1}) - (${score2}) ${matchState.team2}`,
@@ -1460,23 +1480,40 @@
                         confirmButtonColor: '#002244'
                     });
                 }
-            } else {
-                pauseTimer();
+            } else if (timerSeconds <= 0) {
+                stopTimerTicker();
             }
         }, 1000);
     }
 
-    async function pauseTimer() {
-        if (!await ensureOperatorAuth()) return;
-        lastUserActionTimestamp = Date.now();
+    function stopTimerTicker() {
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = null;
+    }
+
+    // Operator Timer Actions (Requires Password Verification on Click)
+    document.getElementById('btnStartTimer').addEventListener('click', async () => {
+        if (!await ensureOperatorAuth()) return;
+        lastUserActionTimestamp = Date.now();
+        timerStatus = 'running';
+        if (matchStatus === 'pending') matchStatus = 'ongoing';
+
+        playBuzzer(880, 0.4, 'sawtooth');
+        runTimerTicker();
+        renderUI();
+        saveLiveStateToServer();
+    });
+
+    document.getElementById('btnPauseTimer').addEventListener('click', async () => {
+        if (!await ensureOperatorAuth()) return;
+        lastUserActionTimestamp = Date.now();
+        stopTimerTicker();
         timerStatus = 'paused';
         renderUI();
         saveLiveStateToServer();
-    }
+    });
 
-    async function resetTimer() {
+    document.getElementById('btnResetTimer').addEventListener('click', async () => {
         if (!await ensureOperatorAuth()) return;
         const confirm = await Swal.fire({
             title: 'Reset Waktu Pertandingan?',
@@ -1492,17 +1529,12 @@
         if (!confirm.isConfirmed) return;
 
         lastUserActionTimestamp = Date.now();
-        if (timerInterval) clearInterval(timerInterval);
-        timerInterval = null;
+        stopTimerTicker();
         timerSeconds = TOTAL_MATCH_SECONDS;
         timerStatus = 'stopped';
         renderUI();
         saveLiveStateToServer();
-    }
-
-    document.getElementById('btnStartTimer').addEventListener('click', startTimer);
-    document.getElementById('btnPauseTimer').addEventListener('click', pauseTimer);
-    document.getElementById('btnResetTimer').addEventListener('click', resetTimer);
+    });
 
     document.getElementById('btnAddOneMin').addEventListener('click', async () => {
         if (!await ensureOperatorAuth()) return;
@@ -1630,6 +1662,7 @@
             const res = await resp.json();
             if (res.status === 'success' && res.data) {
                 matchState = res.data;
+                lastMatchStateSig = `${score1}_${score2}_${matchStatus}_${JSON.stringify(ballPoints)}`;
             }
         } catch(e) {
             console.error('Save live state error:', e);
@@ -1654,15 +1687,21 @@
             if (resJson.status === 'success' && resJson.data) {
                 const s = resJson.data;
 
-                if (timerStatus !== 'running') {
+                if (s.timer_status === 'running') {
+                    timerStatus = 'running';
                     timerSeconds = parseInt(s.timer_seconds) || 1800;
+                    if (!timerInterval) runTimerTicker();
+                } else if (Date.now() - lastUserActionTimestamp >= 3500) {
                     timerStatus = s.timer_status || 'stopped';
+                    timerSeconds = parseInt(s.timer_seconds) || 1800;
+                    stopTimerTicker();
                 }
 
                 if (Date.now() - lastUserActionTimestamp >= 3500 && !isSavePending) {
-                    score1 = s.score1 !== null ? parseInt(s.score1) : 0;
-                    score2 = s.score2 !== null ? parseInt(s.score2) : 0;
-                    matchStatus = s.status || 'pending';
+                    const newScore1 = s.score1 !== null ? parseInt(s.score1) : 0;
+                    const newScore2 = s.score2 !== null ? parseInt(s.score2) : 0;
+                    const newStatus = s.status || 'pending';
+                    let newBallPoints = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
 
                     try {
                         if (s.score_details_json) {
@@ -1670,12 +1709,33 @@
                             if (typeof parsed === 'object') {
                                 for (let b = 1; b <= 10; b++) {
                                     if (typeof parsed[b] === 'number') {
-                                        ballPoints[b] = parsed[b];
+                                        newBallPoints[b] = parsed[b];
                                     }
                                 }
                             }
                         }
                     } catch(e) {}
+
+                    const newSig = `${newScore1}_${newScore2}_${newStatus}_${JSON.stringify(newBallPoints)}`;
+
+                    // Detect external score update (Rule 1: no double notification)
+                    if (lastMatchStateSig && lastMatchStateSig !== newSig && (newScore1 !== score1 || newScore2 !== score2 || newStatus !== matchStatus)) {
+                        let statusTag = '';
+                        if (newStatus === 'completed') statusTag = ' <span style="color:#15803d;font-size:0.75rem;font-weight:700;">(Selesai)</span>';
+                        else if (newStatus === 'ongoing') statusTag = ' <span style="color:#dc2626;font-size:0.75rem;font-weight:700;">(🔴 Live)</span>';
+
+                        MatchScoreToast.fire({
+                            icon: 'info',
+                            title: '<span style="font-size:0.95rem;font-weight:800;color:#002244;"><i class="fas fa-bell text-warning"></i> Skor Terupdate!</span>',
+                            html: `<div style="font-size:0.88rem;margin-top:4px;"><strong>${escapeHtml(matchState.team1)}</strong> <span style="color:#dc2626;font-weight:800;">${newScore1}</span> - <span style="color:#0284c7;font-weight:800;">${newScore2}</span> <strong>${escapeHtml(matchState.team2)}</strong>${statusTag}</div>`
+                        });
+                    }
+
+                    score1 = newScore1;
+                    score2 = newScore2;
+                    matchStatus = newStatus;
+                    ballPoints = newBallPoints;
+                    lastMatchStateSig = newSig;
 
                     renderUI();
                 }
@@ -1698,11 +1758,11 @@
         syncFromServer(true);
     }, 2500);
 
-    // Initial render
+    // Initial render (Clean Viewer Mode, no password prompt on load)
     renderOperatorState();
     renderUI();
     if (timerStatus === 'running') {
-        startTimer();
+        runTimerTicker();
     }
 </script>
 
