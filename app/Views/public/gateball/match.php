@@ -716,6 +716,15 @@
             justify-content: center;
         }
 
+        /* Center VS divider & Swap Teams Button */
+        .vs-center-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+
         .vs-circle {
             width: 60px;
             height: 60px;
@@ -732,39 +741,61 @@
         }
 
         .btn-swap-teams {
-            margin-top: 14px;
-            background: linear-gradient(135deg, #0284c7, #0369a1);
-            color: #ffffff;
-            border: 2px solid #38bdf8;
-            border-radius: 12px;
-            padding: 9px 14px;
+            background: #ffffff;
+            color: #0284c7;
+            border: 2px solid #0284c7;
+            border-radius: 9999px;
+            padding: 8px 16px;
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
-            font-size: 0.82rem;
+            font-size: 0.78rem;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.16);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            gap: 8px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             text-transform: uppercase;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.5px;
             white-space: nowrap;
         }
+        .btn-swap-teams i {
+            font-size: 0.85rem;
+            color: #0284c7;
+            transition: transform 0.35s ease;
+        }
         .btn-swap-teams:hover {
-            transform: translateY(-2px) scale(1.04);
-            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.55);
-            background: linear-gradient(135deg, #0369a1, #075985);
-            border-color: #7dd3fc;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #ffffff;
+            border-color: #0369a1;
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35);
         }
-        .btn-swap-hdr {
-            background: rgba(2, 132, 199, 0.18) !important;
-            border: 1.5px solid #0284c7 !important;
-            color: #ffffff !important;
+        .btn-swap-teams:hover i {
+            color: #ffffff;
+            transform: rotate(180deg);
         }
-        .btn-swap-hdr:hover {
+
+        .btn-swap-timer, .btn-swap-bottom {
+            background: #f0f9ff !important;
+            color: #0369a1 !important;
+            border: 1.5px solid #7dd3fc !important;
+            font-weight: 800 !important;
+            font-size: 0.88rem !important;
+            border-radius: 10px !important;
+            transition: all 0.2s ease !important;
+        }
+        .btn-swap-timer:hover, .btn-swap-bottom:hover {
             background: #0284c7 !important;
+            color: #ffffff !important;
+            border-color: #0284c7 !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3) !important;
+        }
+        .btn-swap-timer:hover i, .btn-swap-bottom:hover i {
+            transform: rotate(180deg);
+            transition: transform 0.35s ease;
         }
 
         /* Bottom Action Footer */
@@ -932,11 +963,6 @@
         </div>
 
         <div class="header-controls">
-            <!-- Tukar Posisi Tim Button (Undian Bola Merah & Putih) -->
-            <button type="button" class="btn-hdr-action btn-swap-hdr" id="btnSwapTeamsHdr" title="Tukar Posisi Tim (Undian Merah & Putih)">
-                <i class="fas fa-arrows-rotate" style="color: #38bdf8;"></i>
-                <span>Tukar Posisi</span>
-            </button>
             <!-- Mode Operator Login / Toggle Button -->
             <button type="button" class="btn-hdr-action btn-mode-operator" id="btnOperatorToggle" title="Masuk Mode Operator Turnamen">
                 <i class="fas fa-key" style="color: #fbbf24;" id="operatorLockIcon"></i>
@@ -981,6 +1007,9 @@
             </button>
             <button type="button" class="btn-time-adjust" id="btnAddOneMin">+1 Menit</button>
             <button type="button" class="btn-time-adjust" id="btnSubOneMin">-1 Menit</button>
+            <button type="button" class="btn-ctrl btn-swap-timer" id="btnSwapTeamsTimer" title="Tukar Posisi Tim Merah ⇄ Putih (Hasil Undian)">
+                <i class="fas fa-arrows-rotate"></i> <span>Tukar Posisi Tim</span>
+            </button>
             <button type="button" class="btn-ctrl btn-start" id="btnTestBuzzer" style="background: #fee2e2; border: 1.5px solid #f87171; color: #dc2626; padding: 8px 14px; font-size: 0.85rem;">
                 <i class="fas fa-bullhorn"></i> Bunyikan Peluit
             </button>
@@ -1029,7 +1058,7 @@
         <!-- Center VS Column -->
         <div class="vs-center-col">
             <div class="vs-circle">VS</div>
-            <button type="button" class="btn-swap-teams" id="btnSwapTeams" title="Tukar Posisi Tim (Hasil Undian Bola Merah & Putih)">
+            <button type="button" class="btn-swap-teams operator-only" id="btnSwapTeams" title="Tukar Posisi Tim (Hasil Undian Bola Merah ⇄ Putih)">
                 <i class="fas fa-arrows-rotate"></i>
                 <span>Tukar Posisi</span>
             </button>
@@ -1080,7 +1109,7 @@
             <button type="button" class="btn-finish-match" id="btnFinishMatch">
                 <i class="fas fa-flag-checkered"></i> <span>Selesaikan & Kunci Hasil Pertandingan</span>
             </button>
-            <button type="button" class="btn-ctrl" id="btnSwapTeamsBottom" style="background: #e0f2fe; color: #0369a1; border: 1.5px solid #7dd3fc;" title="Tukar Posisi Tim (Merah ⇄ Putih)">
+            <button type="button" class="btn-ctrl btn-swap-bottom" id="btnSwapTeamsBottom" title="Tukar Posisi Tim (Merah ⇄ Putih)">
                 <i class="fas fa-arrows-rotate"></i> <span>Tukar Posisi Tim</span>
             </button>
             <button type="button" class="btn-ctrl btn-reset-timer" id="btnResetMatch" style="color: #dc2626; border-color: #fca5a5; background: #fff5f5;">
@@ -1840,8 +1869,8 @@
     const btnSwap = document.getElementById('btnSwapTeams');
     if (btnSwap) btnSwap.addEventListener('click', handleSwapTeams);
 
-    const btnSwapHdr = document.getElementById('btnSwapTeamsHdr');
-    if (btnSwapHdr) btnSwapHdr.addEventListener('click', handleSwapTeams);
+    const btnSwapTimer = document.getElementById('btnSwapTeamsTimer');
+    if (btnSwapTimer) btnSwapTimer.addEventListener('click', handleSwapTeams);
 
     const btnSwapBottom = document.getElementById('btnSwapTeamsBottom');
     if (btnSwapBottom) btnSwapBottom.addEventListener('click', handleSwapTeams);
