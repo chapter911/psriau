@@ -183,24 +183,37 @@ class Gateball extends BaseController
             $updateData['score2'] = ($val === '' ? null : (int)$val);
         }
 
-        if ($this->request->getPost('timer_seconds') !== null) {
-            $updateData['timer_seconds'] = (int) $this->request->getPost('timer_seconds');
-        }
+        $oldTimerStatus = $match['timer_status'] ?? 'stopped';
+        $newTimerStatus = $this->request->getPost('timer_status');
+        $forceTimerReset = ($this->request->getPost('force_timer_reset') === '1');
 
-        if ($this->request->getPost('timer_status') !== null) {
-            $tStatus = $this->request->getPost('timer_status');
-            if (in_array($tStatus, ['stopped', 'running', 'paused'], true)) {
-                $updateData['timer_status'] = $tStatus;
-                if ($tStatus === 'running') {
-                    $updateData['timer_started_at'] = $this->request->getPost('timer_started_at') ?: date('Y-m-d H:i:s');
-                } else {
-                    $updateData['timer_started_at'] = null;
+        if ($newTimerStatus !== null && in_array($newTimerStatus, ['stopped', 'running', 'paused'], true)) {
+            $updateData['timer_status'] = $newTimerStatus;
+
+            if ($newTimerStatus === 'running') {
+                if ($oldTimerStatus !== 'running' || empty($match['timer_started_at']) || $forceTimerReset) {
+                    $updateData['timer_started_at'] = date('Y-m-d H:i:s');
+                    if ($this->request->getPost('timer_seconds') !== null) {
+                        $updateData['timer_seconds'] = (int) $this->request->getPost('timer_seconds');
+                    }
                 }
+            } elseif ($newTimerStatus === 'paused') {
+                if ($oldTimerStatus === 'running' && ! empty($match['timer_started_at'])) {
+                    $elapsed = max(0, time() - strtotime($match['timer_started_at']));
+                    $updateData['timer_seconds'] = max(0, (int)$match['timer_seconds'] - $elapsed);
+                } elseif ($this->request->getPost('timer_seconds') !== null) {
+                    $updateData['timer_seconds'] = (int) $this->request->getPost('timer_seconds');
+                }
+                $updateData['timer_started_at'] = null;
+            } elseif ($newTimerStatus === 'stopped') {
+                $updateData['timer_seconds'] = $this->request->getPost('timer_seconds') !== null ? (int)$this->request->getPost('timer_seconds') : 1800;
+                $updateData['timer_started_at'] = null;
             }
-        }
-
-        if ($this->request->getPost('timer_started_at') !== null) {
-            $updateData['timer_started_at'] = $this->request->getPost('timer_started_at') ?: null;
+        } elseif ($this->request->getPost('timer_seconds') !== null && $forceTimerReset) {
+            $updateData['timer_seconds'] = (int) $this->request->getPost('timer_seconds');
+            if ($oldTimerStatus === 'running') {
+                $updateData['timer_started_at'] = date('Y-m-d H:i:s');
+            }
         }
 
         if ($this->request->getPost('status') !== null) {
@@ -220,6 +233,15 @@ class Gateball extends BaseController
 
         $updatedMatch = $this->matchModel->find($matchId);
         $standings    = $this->matchModel->getStandings($updatedMatch['category']);
+
+        $now = time();
+        if ($updatedMatch['timer_status'] === 'running' && ! empty($updatedMatch['timer_started_at'])) {
+            $startedAt = strtotime($updatedMatch['timer_started_at']);
+            $elapsed = max(0, $now - $startedAt);
+            $updatedMatch['current_remaining_seconds'] = max(0, (int)$updatedMatch['timer_seconds'] - $elapsed);
+        } else {
+            $updatedMatch['current_remaining_seconds'] = (int)($updatedMatch['timer_seconds'] ?? 1800);
+        }
 
         return $this->response->setJSON([
             'status'    => 'success',

@@ -1501,7 +1501,7 @@
         playBuzzer(880, 0.4, 'sawtooth');
         runTimerTicker();
         renderUI();
-        saveLiveStateToServer(true);
+        saveLiveStateToServer('timer');
     });
 
     document.getElementById('btnPauseTimer').addEventListener('click', async () => {
@@ -1510,7 +1510,7 @@
         stopTimerTicker();
         timerStatus = 'paused';
         renderUI();
-        saveLiveStateToServer(true);
+        saveLiveStateToServer('timer');
     });
 
     document.getElementById('btnResetTimer').addEventListener('click', async () => {
@@ -1533,7 +1533,7 @@
         timerSeconds = TOTAL_MATCH_SECONDS;
         timerStatus = 'stopped';
         renderUI();
-        saveLiveStateToServer(true);
+        saveLiveStateToServer('timer');
     });
 
     document.getElementById('btnAddOneMin').addEventListener('click', async () => {
@@ -1541,7 +1541,7 @@
         lastUserActionTimestamp = Date.now();
         timerSeconds = Math.min(3600, timerSeconds + 60);
         renderUI();
-        saveLiveStateToServer(true);
+        saveLiveStateToServer('timer');
     });
 
     document.getElementById('btnSubOneMin').addEventListener('click', async () => {
@@ -1549,7 +1549,7 @@
         lastUserActionTimestamp = Date.now();
         timerSeconds = Math.max(0, timerSeconds - 60);
         renderUI();
-        saveLiveStateToServer(true);
+        saveLiveStateToServer('timer');
     });
 
     // Finish Match
@@ -1572,9 +1572,10 @@
         });
 
         if (confirmFinish.isConfirmed) {
-            pauseTimer();
+            stopTimerTicker();
+            timerStatus = 'paused';
             matchStatus = 'completed';
-            await saveLiveStateToServer();
+            await saveLiveStateToServer('timer');
             Swal.fire({
                 title: 'Pertandingan Selesai!',
                 text: 'Hasil dan klasemen telah diperbarui.',
@@ -1600,7 +1601,7 @@
         });
 
         if (confirmReset.isConfirmed) {
-            pauseTimer();
+            stopTimerTicker();
             score1 = 0;
             score2 = 0;
             ballPoints = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
@@ -1614,6 +1615,7 @@
             formData.append('score2', '');
             formData.append('timer_seconds', TOTAL_MATCH_SECONDS);
             formData.append('timer_status', 'stopped');
+            formData.append('force_timer_reset', '1');
             formData.append('status', 'pending');
             formData.append('score_details_json', JSON.stringify(ballPoints));
 
@@ -1628,25 +1630,21 @@
         }
     });
 
-    // Save Live State to Server (Robust AJAX with Password & Absolute Timestamp)
-    async function saveLiveStateToServer(includeStartedAt = false) {
+    // Save Live State to Server (Separated between score updates and timer updates)
+    async function saveLiveStateToServer(actionType = 'score') {
         isSavePending = true;
         const formData = new FormData();
         formData.append('password', savedPassword);
         formData.append('score1', score1);
         formData.append('score2', score2);
-        formData.append('timer_seconds', timerSeconds);
-        formData.append('timer_status', timerStatus);
-        if (includeStartedAt) {
-            if (timerStatus === 'running') {
-                const nowStr = (new Date()).toISOString().slice(0, 19).replace('T', ' ');
-                formData.append('timer_started_at', nowStr);
-            } else {
-                formData.append('timer_started_at', '');
-            }
-        }
         formData.append('status', matchStatus);
         formData.append('score_details_json', JSON.stringify(ballPoints));
+
+        if (actionType === 'timer') {
+            formData.append('timer_seconds', timerSeconds);
+            formData.append('timer_status', timerStatus);
+            formData.append('force_timer_reset', '1');
+        }
 
         try {
             const resp = await fetch(API_UPDATE_MATCH, {
@@ -1697,24 +1695,27 @@
 
                 // Synchronize Live Countdown Timer accurately across all devices
                 if (s.timer_status === 'running') {
-                    timerStatus = 'running';
                     const serverRemaining = typeof s.current_remaining_seconds === 'number' 
                         ? s.current_remaining_seconds 
                         : (parseInt(s.timer_seconds) || 1800);
 
-                    // If local ticker is not running or drifted by > 2 seconds, smoothly align to true remaining time
-                    if (!timerInterval || Math.abs(timerSeconds - serverRemaining) > 2) {
+                    // If local timer was not running or drifted significantly (> 5s), align time
+                    if (!timerInterval) {
+                        timerStatus = 'running';
+                        timerSeconds = serverRemaining;
+                        runTimerTicker();
+                        renderUI();
+                    } else if (Math.abs(timerSeconds - serverRemaining) > 5) {
                         timerSeconds = serverRemaining;
                         renderUI();
                     }
-                    if (!timerInterval) {
-                        runTimerTicker();
-                    }
                 } else if (Date.now() - lastUserActionTimestamp >= 3500) {
-                    timerStatus = s.timer_status || 'stopped';
-                    timerSeconds = parseInt(s.timer_seconds) || 1800;
-                    stopTimerTicker();
-                    renderUI();
+                    if (timerStatus === 'running' || s.timer_status !== timerStatus || timerSeconds !== parseInt(s.timer_seconds)) {
+                        timerStatus = s.timer_status || 'stopped';
+                        timerSeconds = parseInt(s.timer_seconds) || 1800;
+                        stopTimerTicker();
+                        renderUI();
+                    }
                 }
 
                 if (Date.now() - lastUserActionTimestamp >= 3500 && !isSavePending) {
