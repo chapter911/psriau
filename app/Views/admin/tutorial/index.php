@@ -383,12 +383,14 @@ graph TD
                 <pre class="mermaid">
 graph TD
     A["Akses Portal /gateball"] --> B["Pilih Tab Kategori: PUTRA / PUTRI"]
-    B --> C["Lihat Jadwal Pertandingan & Klasemen Live (Auto-Sync)"]
-    B --> D["Klik Update Skor (Khusus Operator)"]
+    B --> C["Lihat Jadwal Pertandingan & Klasemen Live (Auto-Sync 3 Detik)"]
+    B --> D["Klik Pertandingan / Tombol Update Skor"]
     D --> E["Input Password Otorisasi"]
-    E --> F["Input / Ubah Skor UNOR 1 & UNOR 2"]
-    F --> G["Sistem Otomatis Hitung Poin (M=3, S=1, K=0) & Selisih SCORE"]
-    G --> H["Klasemen & Urutan Peringkat Terupdate Otomatis Real-time"]
+    E --> F["Pilih Mode: Update Cepat ATAU Buka Halaman Timer & Papan Skor (/gateball/match/{id})"]
+    F --> G["Di Halaman Pertandingan: Kontrol Timer 30:00 (Start, Pause, Reset, Peluit/Buzzer)"]
+    G --> H["Catat Poin per Bola (G1, G2, G3, Agari) / Tombol Skor (+1, +2, -1)"]
+    H --> I["Klik Selesaikan & Kunci Hasil Pertandingan"]
+    I --> J["Klasemen & Urutan Peringkat di Seluruh Perangkat Terupdate Real-Time Otomatis"]
                 </pre>
             </div>
         </div>
@@ -633,15 +635,15 @@ graph TD
                     <div class="col-md-6 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="font-weight-bold text-primary"><i class="fas fa-key mr-1"></i> Input / Pembaruan Skor (Otorisasi Operator Turnamen)</h6>
-                                <p class="small text-muted mb-2"><code>Otorisasi Operator Turnamen</code></p>
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-stopwatch mr-1"></i> Timer & Papan Skor Live per Pertandingan</h6>
+                                <p class="small text-muted mb-2"><code>/gateball/match/{id}</code> (Otorisasi Operator Turnamen)</p>
                                 <ol class="pl-3 small mb-0">
-                                    <li>Klik tombol <strong>Update Skor</strong> di bagian kanan atas halaman.</li>
+                                    <li>Klik salah satu baris pertandingan pada tabel jadwal atau klik tombol <strong>Update Skor</strong> dan pilih icon stopwatch.</li>
                                     <li>Masukkan password otorisasi resmi turnamen.</li>
-                                    <li>Pada modal yang muncul, masukkan skor masing-masing UNOR untuk pertandingan yang telah selesai dimainkan.</li>
-                                    <li>Sistem menerapkan aturan poin resmi: <strong>Menang = 3 poin</strong>, <strong>Seri = 1 poin</strong>, <strong>Kalah = 0 poin</strong>, dan <strong>SCORE = Skor Memasukkan − Skor Kemasukan</strong>.</li>
-                                    <li>Klik <strong>Simpan Semua Skor</strong>. Klasemen peringkat 1 s/d 5 otomatis dikalkulasi dan diurutkan secara presisi.</li>
-                                    <li>Tersedia tombol <strong>Reset Skor</strong> di dalam modal jika ingin mengosongkan kembali skor kategori yang dipilih.</li>
+                                    <li>Halaman khusus <strong>Papan Skor & Timer Pertandingan</strong> akan terbuka.</li>
+                                    <li>Gunakan <strong>Digital Timer 30:00</strong> dengan kontrol Start, Pause, Reset, Tambah/Kurang Waktu, serta Suara Peluit / Buzzer.</li>
+                                    <li>Catat poin tim cukup dengan menekan kartu bola yang masuk (sistem otomatis menghitung siklus resmi: <strong>1 pt &rarr; 2 pts &rarr; 3 pts &rarr; 5 pts (Agari)</strong>, menampilkan indikator target gate berikutnya: <em>Ke Gate 1, Ke Gate 2, Ke Gate 3, Ke Agari</em>) dan tombol <strong>Reset</strong> dilengkapi dialog konfirmasi pencegah salah klik.</li>
+                                    <li>Klik <strong>Selesaikan & Kunci Hasil Pertandingan</strong> untuk menyelesaikan laga dan menyinkronkan klasemen otomatis di seluruh monitor turnamen.</li>
                                 </ol>
                             </div>
                         </div>

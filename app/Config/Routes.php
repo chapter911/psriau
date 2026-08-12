@@ -32,7 +32,11 @@ $routes->get('terms-of-service', 'Legal::terms');
 
 // Gateball Tournament Routes
 $routes->get('gateball', 'Gateball::index');
+$routes->get('gateball/match/(:num)', 'Gateball::match/$1');
 $routes->get('gateball/api/data', 'Gateball::apiData');
+$routes->post('gateball/api/verify-auth', 'Gateball::apiVerifyAuth');
+$routes->get('gateball/api/match/(:num)', 'Gateball::apiMatchData/$1');
+$routes->post('gateball/api/match/(:num)/update', 'Gateball::apiUpdateMatchLive/$1');
 $routes->post('gateball/api/update-score', 'Gateball::apiUpdateScore');
 $routes->post('gateball/api/batch-update', 'Gateball::apiBatchUpdate');
 $routes->post('gateball/api/reset', 'Gateball::apiReset');

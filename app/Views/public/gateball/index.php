@@ -347,6 +347,43 @@
             background-color: #f1f5f9;
         }
 
+        .match-row-clickable {
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .match-row-clickable:hover {
+            background-color: #e0f2fe !important;
+            transform: scale(1.005);
+            box-shadow: inset 0 0 0 1.5px #0284c7;
+        }
+
+        .match-live-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .tag-ongoing {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #f87171;
+        }
+        .tag-completed {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+        .tag-pending {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+        }
+
         .unor-badge {
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
@@ -427,6 +464,11 @@
             background: #eff6ff;
             border-color: #93c5fd;
             color: #1e40af;
+        }
+        .score-result-badge.ongoing {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #b91c1c;
         }
 
         /* Bottom Section */
@@ -529,7 +571,7 @@
         /* Modal Styles */
         .modal-score-item {
             display: grid;
-            grid-template-columns: 36px 1fr 40px 1fr;
+            grid-template-columns: 36px 1fr 40px 1fr 40px;
             align-items: center;
             gap: 10px;
             padding: 10px 14px;
@@ -659,7 +701,7 @@
         <div class="toolbar-buttons">
             <button type="button" class="btn-action btn-update" id="btnOpenUpdateModal">
                 <i class="fas fa-lock"></i>
-                <span>Update Skor</span>
+                <span>Update Skor Cepat</span>
             </button>
             <button type="button" class="btn-action btn-outline-custom" id="btnRefreshData" title="Muat Ulang Data">
                 <i class="fas fa-sync-alt" id="refreshIcon"></i>
@@ -733,19 +775,28 @@
                             <?php 
                                 $s1 = $match['score1'];
                                 $s2 = $match['score2'];
-                                $isCompleted = ($s1 !== null && $s2 !== null && $match['status'] === 'completed');
+                                $mStatus = $match['status'];
+                                $isCompleted = ($s1 !== null && $s2 !== null && $mStatus === 'completed');
+                                $isOngoing = ($mStatus === 'ongoing');
                             ?>
-                            <tr data-match-id="<?= (int) $match['id']; ?>" data-match-num="<?= (int) $match['match_number']; ?>">
+                            <tr class="match-row-clickable" data-match-id="<?= (int) $match['id']; ?>" data-match-num="<?= (int) $match['match_number']; ?>" onclick="openMatchScoreboard(<?= (int) $match['id']; ?>)" title="Klik untuk membuka Timer & Papan Skor Pertandingan #<?= (int) $match['match_number']; ?>">
                                 <td><strong><?= (int) $match['match_number']; ?>.</strong></td>
                                 <td>
                                     <?php if ($isCompleted): ?>
                                         <span class="score-result-badge completed">
                                             <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
                                         </span>
+                                        <span class="match-live-tag tag-completed">Selesai</span>
+                                    <?php elseif ($isOngoing): ?>
+                                        <span class="score-result-badge ongoing">
+                                            <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
+                                        </span>
+                                        <span class="match-live-tag tag-ongoing"><span class="pulse-dot" style="background:#ef4444; width:6px; height:6px;"></span> Live</span>
                                     <?php else: ?>
                                         <span class="score-result-badge" style="color: #94a3b8;">
                                             -
                                         </span>
+                                        <span class="match-live-tag tag-pending">Siap</span>
                                     <?php endif; ?>
                                 </td>
                                 <td><span class="unor-badge"><?= esc($match['team1']); ?></span></td>
@@ -826,19 +877,28 @@
                             <?php 
                                 $s1 = $match['score1'];
                                 $s2 = $match['score2'];
-                                $isCompleted = ($s1 !== null && $s2 !== null && $match['status'] === 'completed');
+                                $mStatus = $match['status'];
+                                $isCompleted = ($s1 !== null && $s2 !== null && $mStatus === 'completed');
+                                $isOngoing = ($mStatus === 'ongoing');
                             ?>
-                            <tr data-match-id="<?= (int) $match['id']; ?>" data-match-num="<?= (int) $match['match_number']; ?>">
+                            <tr class="match-row-clickable" data-match-id="<?= (int) $match['id']; ?>" data-match-num="<?= (int) $match['match_number']; ?>" onclick="openMatchScoreboard(<?= (int) $match['id']; ?>)" title="Klik untuk membuka Timer & Papan Skor Pertandingan #<?= (int) $match['match_number']; ?>">
                                 <td><strong><?= (int) $match['match_number']; ?>.</strong></td>
                                 <td>
                                     <?php if ($isCompleted): ?>
                                         <span class="score-result-badge completed">
                                             <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
                                         </span>
+                                        <span class="match-live-tag tag-completed">Selesai</span>
+                                    <?php elseif ($isOngoing): ?>
+                                        <span class="score-result-badge ongoing">
+                                            <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
+                                        </span>
+                                        <span class="match-live-tag tag-ongoing"><span class="pulse-dot" style="background:#ef4444; width:6px; height:6px;"></span> Live</span>
                                     <?php else: ?>
                                         <span class="score-result-badge" style="color: #94a3b8;">
                                             -
                                         </span>
+                                        <span class="match-live-tag tag-pending">Siap</span>
                                     <?php endif; ?>
                                 </td>
                                 <td><span class="unor-badge"><?= esc($match['team1']); ?></span></td>
@@ -973,6 +1033,8 @@
     const API_URL_UPDATE = '<?= site_url("gateball/api/update-score"); ?>';
     const API_URL_BATCH = '<?= site_url("gateball/api/batch-update"); ?>';
     const API_URL_RESET = '<?= site_url("gateball/api/reset"); ?>';
+    const API_URL_VERIFY = '<?= site_url("gateball/api/verify-auth"); ?>';
+    const MATCH_PAGE_URL = '<?= site_url("gateball/match/"); ?>';
 
     let currentCategory = 'putra';
     let savedPassword = sessionStorage.getItem('gateball_pwd') || '';
@@ -1016,7 +1078,7 @@
         switchCategory('putri');
     }
 
-    // Refresh Data Function
+    // Refresh Data Function (Polling sync)
     async function fetchData(silent = false) {
         const refreshIcon = document.getElementById('refreshIcon');
         if (!silent && refreshIcon) refreshIcon.classList.add('fa-spin');
@@ -1047,10 +1109,10 @@
         fetchData(false);
     });
 
-    // Auto poll every 10 seconds
+    // Auto poll every 3 seconds for instant real-time multi-device sync
     setInterval(() => {
         fetchData(true);
-    }, 10000);
+    }, 3000);
 
     // Render HTML tables from local state
     function renderAllTables() {
@@ -1069,19 +1131,28 @@
         matches.forEach(m => {
             const s1 = m.score1;
             const s2 = m.score2;
-            const isDone = (s1 !== null && s2 !== null && m.status === 'completed');
+            const mStatus = m.status;
+            const isCompleted = (s1 !== null && s2 !== null && mStatus === 'completed');
+            const isOngoing = (mStatus === 'ongoing');
             
             html += `
-                <tr data-match-id="${m.id}" data-match-num="${m.match_number}">
+                <tr class="match-row-clickable" data-match-id="${m.id}" data-match-num="${m.match_number}" onclick="openMatchScoreboard(${m.id})" title="Klik untuk membuka Timer & Papan Skor Pertandingan #${m.match_number}">
                     <td><strong>${m.match_number}.</strong></td>
                     <td>
-                        ${isDone ? `
+                        ${isCompleted ? `
                             <span class="score-result-badge completed">
                                 <strong>${s1}</strong> - <strong>${s2}</strong>
                             </span>
+                            <span class="match-live-tag tag-completed">Selesai</span>
+                        ` : (isOngoing ? `
+                            <span class="score-result-badge ongoing">
+                                <strong>${s1 !== null ? s1 : 0}</strong> - <strong>${s2 !== null ? s2 : 0}</strong>
+                            </span>
+                            <span class="match-live-tag tag-ongoing"><span class="pulse-dot" style="background:#ef4444; width:6px; height:6px;"></span> Live</span>
                         ` : `
                             <span class="score-result-badge" style="color: #94a3b8;">-</span>
-                        `}
+                            <span class="match-live-tag tag-pending">Siap</span>
+                        `)}
                     </td>
                     <td><span class="unor-badge">${escapeHtml(m.team1)}</span></td>
                     <td><span class="vs-badge">VS</span></td>
@@ -1128,13 +1199,67 @@
         return text.toString().replace(/[&<>"']/g, m => map[m]);
     }
 
-    // Modal Update Skor
+    // Authenticate and open single match scoreboard page
+    async function openMatchScoreboard(matchId) {
+        if (!savedPassword) {
+            const { value: pwd } = await Swal.fire({
+                title: 'Verifikasi Akses Pertandingan',
+                text: 'Masukkan password otorisasi untuk membuka papan skor & timer pertandingan ini:',
+                input: 'password',
+                inputPlaceholder: 'Masukkan Password',
+                inputAttributes: {
+                    autocapitalize: 'off',
+                    autocorrect: 'off'
+                },
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-key"></i> Buka Pertandingan',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#002244',
+                customClass: {
+                    popup: 'swal2-border-radius'
+                }
+            });
+
+            if (!pwd) return;
+
+            try {
+                const formData = new FormData();
+                formData.append('password', pwd);
+
+                const verifyRes = await fetch(API_URL_VERIFY, {
+                    method: 'POST',
+                    body: formData
+                });
+                const resJson = await verifyRes.json();
+
+                if (!verifyRes.ok || resJson.status !== 'success') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Akses Ditolak',
+                        text: 'Password otorisasi tidak sesuai.',
+                        confirmButtonColor: '#002244'
+                    });
+                    return;
+                }
+
+                savedPassword = pwd;
+                sessionStorage.setItem('gateball_pwd', pwd);
+            } catch(err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Koneksi bermasalah.' });
+                return;
+            }
+        }
+
+        // Navigate to match page
+        window.location.href = MATCH_PAGE_URL + matchId;
+    }
+
+    // Modal Update Skor Cepat
     document.getElementById('btnOpenUpdateModal').addEventListener('click', async () => {
-        // If password is not saved yet, prompt for password first
         if (!savedPassword) {
             const { value: pwd } = await Swal.fire({
                 title: 'Verifikasi Akses',
-                text: 'Masukkan password otorisasi untuk mengubah skor pertandingan:',
+                text: 'Masukkan password otorisasi untuk mengubah data skor:',
                 input: 'password',
                 inputPlaceholder: 'Masukkan Password',
                 inputAttributes: {
@@ -1151,32 +1276,33 @@
             });
 
             if (!pwd) return;
-            
-            // Check password with test verification
+
             try {
-                const checkForm = new FormData();
-                checkForm.append('password', pwd);
-                checkForm.append('category', currentCategory);
-                
-                const checkResp = await fetch(API_URL_RESET, {
+                const formData = new FormData();
+                formData.append('password', pwd);
+
+                const verifyRes = await fetch(API_URL_VERIFY, {
                     method: 'POST',
-                    body: checkForm
+                    body: formData
                 });
-                
-                // If 403 Forbidden, password is wrong
-                if (checkResp.status === 403) {
+                const resJson = await verifyRes.json();
+
+                if (!verifyRes.ok || resJson.status !== 'success') {
                     Swal.fire({
                         icon: 'error',
                         title: 'Akses Ditolak',
-                        text: 'Password yang Anda masukkan tidak sesuai.',
+                        text: 'Password otorisasi tidak sesuai.',
                         confirmButtonColor: '#002244'
                     });
                     return;
                 }
-            } catch(e) {}
 
-            savedPassword = pwd;
-            sessionStorage.setItem('gateball_pwd', pwd);
+                savedPassword = pwd;
+                sessionStorage.setItem('gateball_pwd', pwd);
+            } catch(e) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Koneksi bermasalah.' });
+                return;
+            }
         }
 
         openScoreEditorModal();
@@ -1204,6 +1330,11 @@
                         <label for="sc2_${m.id}" style="display:block; font-size:0.75rem; color:#64748b; margin-bottom:2px;">${escapeHtml(m.team2)}</label>
                         <input type="number" id="sc2_${m.id}" class="modal-score-input" value="${s2}" min="0" max="99" placeholder="0">
                     </div>
+                    <div style="text-align: center;">
+                        <a href="${MATCH_PAGE_URL + m.id}" target="_blank" title="Buka Timer & Papan Skor Live" style="color: #0284c7; font-size: 1.1rem;">
+                            <i class="fas fa-stopwatch"></i>
+                        </a>
+                    </div>
                 </div>
             `;
         });
@@ -1212,7 +1343,7 @@
             title: `Update Skor Gateball - ${catName}`,
             html: `
                 <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 14px;">
-                    Masukkan skor untuk masing-masing pertandingan. Kosongkan skor jika pertandingan belum berlangsung.
+                    Masukkan skor untuk masing-masing pertandingan. Klik icon stopwatch <i class="fas fa-stopwatch text-info"></i> untuk membuka Timer & Papan Skor Live per laga.
                 </div>
                 <div style="max-height: 400px; overflow-y: auto; padding-right: 6px;" id="modalScoreList">
                     ${rowsHtml}
@@ -1224,7 +1355,7 @@
                     <small style="color: #64748b; font-size: 0.78rem;">Sistem poin & klasemen otomatis dikalkulasi.</small>
                 </div>
             `,
-            width: '600px',
+            width: '640px',
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-save"></i> Simpan Semua Skor',
             cancelButtonText: 'Batal',
