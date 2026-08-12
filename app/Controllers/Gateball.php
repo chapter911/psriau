@@ -254,6 +254,83 @@ class Gateball extends BaseController
     }
 
     /**
+     * API: Swap team1 and team2 positions (Merah <-> Putih) for a match
+     */
+    public function apiSwapMatchTeams(int $matchId)
+    {
+        $password = trim((string) ($this->request->getPost('password') ?? $this->request->getVar('password')));
+        $isSessionAuth = (session()->get('gateball_authorized') === true);
+
+        if ($password !== self::UPDATE_PASSWORD && ! $isSessionAuth) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                'status'  => 'error',
+                'message' => 'Password salah atau sesi belum terotorisasi.',
+            ]);
+        }
+
+        $match = $this->matchModel->find($matchId);
+        if (! $match) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
+                'status'  => 'error',
+                'message' => 'Data pertandingan tidak ditemukan.',
+            ]);
+        }
+
+        // Swap team names and scores
+        $swappedTeam1 = $match['team2'];
+        $swappedTeam2 = $match['team1'];
+        $swappedScore1 = $match['score2'];
+        $swappedScore2 = $match['score1'];
+
+        // Swap odd/even ball points
+        $swappedBallPoints = [];
+        if (! empty($match['score_details_json'])) {
+            try {
+                $parsed = json_decode($match['score_details_json'], true);
+                if (is_array($parsed)) {
+                    for ($b = 1; $b <= 9; $b += 2) {
+                        $swappedBallPoints[$b] = $parsed[$b + 1] ?? 0;
+                        $swappedBallPoints[$b + 1] = $parsed[$b] ?? 0;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+        if (empty($swappedBallPoints)) {
+            $swappedBallPoints = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 6 => 0, 7 => 0, 8 => 0, 9 => 0, 10 => 0];
+        }
+
+        $updateData = [
+            'team1'              => $swappedTeam1,
+            'team2'              => $swappedTeam2,
+            'score1'             => $swappedScore1,
+            'score2'             => $swappedScore2,
+            'score_details_json' => json_encode($swappedBallPoints),
+            'updated_at'         => date('Y-m-d H:i:s'),
+        ];
+
+        $this->matchModel->update($matchId, $updateData);
+
+        $updatedMatch = $this->matchModel->find($matchId);
+        $standings    = $this->matchModel->getStandings($updatedMatch['category']);
+
+        $now = time();
+        if ($updatedMatch['timer_status'] === 'running' && ! empty($updatedMatch['timer_started_at'])) {
+            $startedAt = strtotime($updatedMatch['timer_started_at']);
+            $elapsed = max(0, $now - $startedAt);
+            $updatedMatch['current_remaining_seconds'] = max(0, (int)$updatedMatch['timer_seconds'] - $elapsed);
+        } else {
+            $updatedMatch['current_remaining_seconds'] = (int)($updatedMatch['timer_seconds'] ?? 1800);
+        }
+
+        return $this->response->setJSON([
+            'status'    => 'success',
+            'message'   => "Posisi berhasil ditukar: {$swappedTeam1} (Merah) vs {$swappedTeam2} (Putih).",
+            'data'      => $updatedMatch,
+            'standings' => $standings,
+        ]);
+    }
+
+    /**
      * API: Get latest data (matches and standings)
      */
     public function apiData()

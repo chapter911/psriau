@@ -37,6 +37,7 @@ $routes->get('gateball/api/data', 'Gateball::apiData');
 $routes->post('gateball/api/verify-auth', 'Gateball::apiVerifyAuth');
 $routes->get('gateball/api/match/(:num)', 'Gateball::apiMatchData/$1');
 $routes->post('gateball/api/match/(:num)/update', 'Gateball::apiUpdateMatchLive/$1');
+$routes->match(['get', 'post'], 'gateball/api/match/(:num)/swap-teams', 'Gateball::apiSwapMatchTeams/$1');
 $routes->post('gateball/api/update-score', 'Gateball::apiUpdateScore');
 $routes->post('gateball/api/batch-update', 'Gateball::apiBatchUpdate');
 $routes->post('gateball/api/reset', 'Gateball::apiReset');
