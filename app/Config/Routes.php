@@ -30,6 +30,13 @@ $routes->get('simak/share/(:segment)/download-dokumen/(:num)', 'Admin\\Kontrak::
 $routes->get('privacy-policy', 'Legal::privacy');
 $routes->get('terms-of-service', 'Legal::terms');
 
+// Gateball Tournament Routes
+$routes->get('gateball', 'Gateball::index');
+$routes->get('gateball/api/data', 'Gateball::apiData');
+$routes->post('gateball/api/update-score', 'Gateball::apiUpdateScore');
+$routes->post('gateball/api/batch-update', 'Gateball::apiBatchUpdate');
+$routes->post('gateball/api/reset', 'Gateball::apiReset');
+
 // OAuth routes for Google Drive
 $routes->get('oauth/connect', 'Oauth::connect');
 $routes->get('oauth/callback', 'Oauth::callback');

@@ -367,6 +367,31 @@ graph TD
                 </pre>
             </div>
         </div>
+    <!-- FLOWCHART 6: JADWAL & KLASEMEN GATEBALL -->
+    <div class="flowchart-card role-section" data-roles="all,admin,super_administrator,staf_pelaksana,ppk_kasatker">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-trophy mr-2 text-warning"></i> Alur Pertandingan & Klasemen Gateball</h5>
+                <small class="text-muted">Akses publik jadwal pertandingan & klasemen live, serta alur operator update skor dengan password otorisasi.</small>
+            </div>
+            <div>
+                <span class="badge badge-info">Publik / Operator</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Akses Portal /gateball"] --> B["Pilih Tab Kategori: PUTRA / PUTRI"]
+    B --> C["Lihat Jadwal Pertandingan & Klasemen Live (Auto-Sync)"]
+    B --> D["Klik Update Skor (Khusus Operator)"]
+    D --> E["Input Password Otorisasi"]
+    E --> F["Input / Ubah Skor UNOR 1 & UNOR 2"]
+    F --> G["Sistem Otomatis Hitung Poin (M=3, S=1, K=0) & Selisih SCORE"]
+    G --> H["Klasemen & Urutan Peringkat Terupdate Otomatis Real-time"]
+                </pre>
+            </div>
+        </div>
     </div>
     <?php endif; ?>
 
@@ -580,6 +605,50 @@ graph TD
             </div>
         </div>
         <?php endif; ?>
+
+        <!-- MODUL PERTANDINGAN GATEBALL -->
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="all,admin,super_administrator,staf_pelaksana,ppk_kasatker">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-trophy mr-2 text-warning"></i> Modul Jadwal & Klasemen Pertandingan Gateball
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-globe mr-1"></i> Akses Publik & Tampilan Real-time</h6>
+                                <p class="small text-muted mb-2"><code>/gateball</code> (satkerpps-riau.online/gateball)</p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Buka URL <code>/gateball</code> dari browser pada smartphone, tablet, laptop, atau layar display TV monitor.</li>
+                                    <li>Pilih tab <strong>PUTRA</strong> atau <strong>PUTRI</strong> di bagian atas banner untuk melihat jadwal dan klasemen masing-masing kategori.</li>
+                                    <li>Tabel kiri menampilkan 10 daftar jadwal pertandingan beserta skor & status pertandingan.</li>
+                                    <li>Tabel kanan menampilkan klasemen 5 UNOR (PS, BWSS III, BPBPK, BP2JK, BPJN) lengkap dengan kolom Main, M (Menang), K (Kalah), S (Seri), POINT, dan SCORE (Selisih Skor).</li>
+                                    <li>Halaman dilengkapi fitur <strong>Live Sync Auto-refresh</strong> otomatis setiap 10 detik dan tombol <strong>Fullscreen</strong> serta <strong>Cetak PDF</strong>.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-key mr-1"></i> Input / Pembaruan Skor (Otorisasi Operator Turnamen)</h6>
+                                <p class="small text-muted mb-2"><code>Otorisasi Operator Turnamen</code></p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Klik tombol <strong>Update Skor</strong> di bagian kanan atas halaman.</li>
+                                    <li>Masukkan password otorisasi resmi turnamen.</li>
+                                    <li>Pada modal yang muncul, masukkan skor masing-masing UNOR untuk pertandingan yang telah selesai dimainkan.</li>
+                                    <li>Sistem menerapkan aturan poin resmi: <strong>Menang = 3 poin</strong>, <strong>Seri = 1 poin</strong>, <strong>Kalah = 0 poin</strong>, dan <strong>SCORE = Skor Memasukkan − Skor Kemasukan</strong>.</li>
+                                    <li>Klik <strong>Simpan Semua Skor</strong>. Klasemen peringkat 1 s/d 5 otomatis dikalkulasi dan diurutkan secara presisi.</li>
+                                    <li>Tersedia tombol <strong>Reset Skor</strong> di dalam modal jika ingin mengosongkan kembali skor kategori yang dipilih.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 </div>
