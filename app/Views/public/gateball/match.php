@@ -1058,10 +1058,6 @@
         <!-- Center VS Column -->
         <div class="vs-center-col">
             <div class="vs-circle">VS</div>
-            <button type="button" class="btn-swap-teams operator-only" id="btnSwapTeams" title="Tukar Posisi Tim (Hasil Undian Bola Merah ⇄ Putih)">
-                <i class="fas fa-arrows-rotate"></i>
-                <span>Tukar Posisi</span>
-            </button>
         </div>
 
         <!-- White Team / Tim 2 (Bola Genap 2, 4, 6, 8, 10) -->
