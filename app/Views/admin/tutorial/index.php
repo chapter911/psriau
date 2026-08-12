@@ -638,12 +638,12 @@ graph TD
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-stopwatch mr-1"></i> Timer & Papan Skor Live per Pertandingan</h6>
                                 <p class="small text-muted mb-2"><code>/gateball/match/{id}</code> (Otorisasi Operator Turnamen)</p>
                                 <ol class="pl-3 small mb-0">
-                                    <li>Klik salah satu baris pertandingan pada tabel jadwal atau klik tombol <strong>Update Skor</strong> dan pilih icon stopwatch.</li>
-                                    <li>Masukkan password otorisasi resmi turnamen.</li>
-                                    <li>Halaman khusus <strong>Papan Skor & Timer Pertandingan</strong> akan terbuka.</li>
+                                    <li>Klik baris pertandingan mana saja pada tabel jadwal untuk langsung membuka halaman <strong>Papan Skor & Timer Pertandingan</strong> (bebas dilihat siapa saja secara live tanpa password).</li>
+                                    <li>Saat operator ingin melakukan perubahan (menjalankan timer, menambah poin bola, atau mereset), sistem akan meminta verifikasi password otorisasi resmi turnamen.</li>
+                                    <li>Klasemen turnamen otomatis ter-update secara <em>real-time</em> saat pertandingan sedang berlangsung meskipun laga belum selesai.</li>
                                     <li>Gunakan <strong>Digital Timer 30:00</strong> dengan kontrol Start, Pause, Reset, Tambah/Kurang Waktu, serta Suara Peluit / Buzzer.</li>
                                     <li>Catat poin tim cukup dengan menekan kartu bola yang masuk (sistem otomatis menghitung siklus resmi: <strong>1 pt &rarr; 2 pts &rarr; 3 pts &rarr; 5 pts (Agari)</strong>, menampilkan indikator target gate berikutnya: <em>Ke Gate 1, Ke Gate 2, Ke Gate 3, Ke Agari</em>) dan tombol <strong>Reset</strong> dilengkapi dialog konfirmasi pencegah salah klik.</li>
-                                    <li>Klik <strong>Selesaikan & Kunci Hasil Pertandingan</strong> untuk menyelesaikan laga dan menyinkronkan klasemen otomatis di seluruh monitor turnamen.</li>
+                                    <li>Klik <strong>Selesaikan & Kunci Hasil Pertandingan</strong> untuk menyelesaikan laga dan mengunci hasil akhir turnamen.</li>
                                 </ol>
                             </div>
                         </div>

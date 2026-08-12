@@ -1199,113 +1199,60 @@
         return text.toString().replace(/[&<>"']/g, m => map[m]);
     }
 
-    // Authenticate and open single match scoreboard page
-    async function openMatchScoreboard(matchId) {
-        if (!savedPassword) {
-            const { value: pwd } = await Swal.fire({
-                title: 'Verifikasi Akses Pertandingan',
-                text: 'Masukkan password otorisasi untuk membuka papan skor & timer pertandingan ini:',
-                input: 'password',
-                inputPlaceholder: 'Masukkan Password',
-                inputAttributes: {
-                    autocapitalize: 'off',
-                    autocorrect: 'off'
-                },
-                showCancelButton: true,
-                confirmButtonText: '<i class="fas fa-key"></i> Buka Pertandingan',
-                cancelButtonText: 'Batal',
-                confirmButtonColor: '#002244',
-                customClass: {
-                    popup: 'swal2-border-radius'
-                }
-            });
-
-            if (!pwd) return;
-
-            try {
-                const formData = new FormData();
-                formData.append('password', pwd);
-
-                const verifyRes = await fetch(API_URL_VERIFY, {
-                    method: 'POST',
-                    body: formData
-                });
-                const resJson = await verifyRes.json();
-
-                if (!verifyRes.ok || resJson.status !== 'success') {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Akses Ditolak',
-                        text: 'Password otorisasi tidak sesuai.',
-                        confirmButtonColor: '#002244'
-                    });
-                    return;
-                }
-
-                savedPassword = pwd;
-                sessionStorage.setItem('gateball_pwd', pwd);
-            } catch(err) {
-                Swal.fire({ icon: 'error', title: 'Error', text: 'Koneksi bermasalah.' });
-                return;
-            }
-        }
-
-        // Navigate to match page
+    // Open single match scoreboard page directly (tanpa perlu password untuk melihat jadwal/laga)
+    function openMatchScoreboard(matchId) {
         window.location.href = MATCH_PAGE_URL + matchId;
     }
 
-    // Modal Update Skor Cepat
+    // Modal Update Skor Cepat - Selalu minta verifikasi password setiap kali diklik
     document.getElementById('btnOpenUpdateModal').addEventListener('click', async () => {
-        if (!savedPassword) {
-            const { value: pwd } = await Swal.fire({
-                title: 'Verifikasi Akses',
-                text: 'Masukkan password otorisasi untuk mengubah data skor:',
-                input: 'password',
-                inputPlaceholder: 'Masukkan Password',
-                inputAttributes: {
-                    autocapitalize: 'off',
-                    autocorrect: 'off'
-                },
-                showCancelButton: true,
-                confirmButtonText: '<i class="fas fa-key"></i> Verifikasi',
-                cancelButtonText: 'Batal',
-                confirmButtonColor: '#002244',
-                customClass: {
-                    popup: 'swal2-border-radius'
-                }
+        const { value: pwd } = await Swal.fire({
+            title: 'Verifikasi Akses Update Skor',
+            text: 'Masukkan password otorisasi turnamen untuk mengubah data skor:',
+            input: 'password',
+            inputPlaceholder: 'Masukkan Password',
+            inputAttributes: {
+                autocapitalize: 'off',
+                autocorrect: 'off'
+            },
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-key"></i> Verifikasi',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#002244',
+            customClass: {
+                popup: 'swal2-border-radius'
+            }
+        });
+
+        if (!pwd) return;
+
+        try {
+            const formData = new FormData();
+            formData.append('password', pwd);
+
+            const verifyRes = await fetch(API_URL_VERIFY, {
+                method: 'POST',
+                body: formData
             });
+            const resJson = await verifyRes.json();
 
-            if (!pwd) return;
-
-            try {
-                const formData = new FormData();
-                formData.append('password', pwd);
-
-                const verifyRes = await fetch(API_URL_VERIFY, {
-                    method: 'POST',
-                    body: formData
+            if (!verifyRes.ok || resJson.status !== 'success') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Akses Ditolak',
+                    text: 'Password otorisasi tidak sesuai.',
+                    confirmButtonColor: '#002244'
                 });
-                const resJson = await verifyRes.json();
-
-                if (!verifyRes.ok || resJson.status !== 'success') {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Akses Ditolak',
-                        text: 'Password otorisasi tidak sesuai.',
-                        confirmButtonColor: '#002244'
-                    });
-                    return;
-                }
-
-                savedPassword = pwd;
-                sessionStorage.setItem('gateball_pwd', pwd);
-            } catch(e) {
-                Swal.fire({ icon: 'error', title: 'Error', text: 'Koneksi bermasalah.' });
                 return;
             }
-        }
 
-        openScoreEditorModal();
+            savedPassword = pwd;
+            sessionStorage.setItem('gateball_pwd', pwd);
+            openScoreEditorModal();
+        } catch(e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Koneksi bermasalah saat verifikasi.' });
+            return;
+        }
     });
 
     function openScoreEditorModal() {

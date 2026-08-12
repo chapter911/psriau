@@ -92,8 +92,8 @@ class GateballMatchModel extends Model
             $score1 = $match['score1'];
             $score2 = $match['score2'];
 
-            // Match is completed if both scores are not null
-            if ($score1 !== null && $score2 !== null && $match['status'] === 'completed') {
+            // Match is counted in standings if scores are present (completed or live ongoing)
+            if ($score1 !== null && $score2 !== null && ($match['status'] === 'completed' || $match['status'] === 'ongoing' || (int)$score1 > 0 || (int)$score2 > 0)) {
                 $t1 = self::normalizeTeamName($match['team1']);
                 $t2 = self::normalizeTeamName($match['team2']);
 

@@ -63,9 +63,6 @@ class Gateball extends BaseController
             throw PageNotFoundException::forPageNotFound("Pertandingan Gateball #{$matchId} tidak ditemukan.");
         }
 
-        // Set session authorization for match operator
-        session()->set('gateball_authorized', true);
-
         $allMatches = $this->matchModel->getMatchesByCategory($match['category']);
         $homeSetting = (new \App\Models\HomeSettingModel())->first() ?? [];
 

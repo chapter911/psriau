@@ -50,6 +50,61 @@
             background-position: 0 0, 18px 18px;
         }
 
+        /* Operator Visibility Rules */
+        body.is-viewer .operator-only {
+            display: none !important;
+        }
+
+        body:not(.is-viewer) .viewer-only {
+            display: none !important;
+        }
+
+        .viewer-mode-notice {
+            background: #f8fafc;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            color: #475569;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin: 4px auto 0 auto;
+        }
+
+        .btn-mode-operator {
+            background: linear-gradient(135deg, #002244, #0d3b66) !important;
+            color: #ffffff !important;
+            border: 2px solid #002244 !important;
+            font-weight: 800 !important;
+            box-shadow: 0 4px 12px rgba(0, 34, 68, 0.25) !important;
+            padding: 8px 18px !important;
+            font-size: 0.9rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+        .btn-mode-operator:hover {
+            background: #001529 !important;
+            color: #ffffff !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 34, 68, 0.35) !important;
+        }
+
+        .btn-mode-operator-active {
+            background: #ecfdf5 !important;
+            color: #065f46 !important;
+            border: 2px solid #10b981 !important;
+            font-weight: 800 !important;
+            padding: 8px 18px !important;
+            font-size: 0.9rem !important;
+            box-shadow: 0 3px 10px rgba(16, 185, 129, 0.2) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+
         .main-container {
             max-width: 1400px;
             width: 100%;
@@ -738,7 +793,7 @@
         }
     </style>
 </head>
-<body>
+<body class="is-viewer">
 
 <div class="main-container" id="matchMainContainer">
 
@@ -764,6 +819,11 @@
         </div>
 
         <div class="header-controls">
+            <!-- Mode Operator Login / Toggle Button -->
+            <button type="button" class="btn-hdr-action btn-mode-operator" id="btnOperatorToggle" title="Masuk Mode Operator Turnamen">
+                <i class="fas fa-key" style="color: #fbbf24;" id="operatorLockIcon"></i>
+                <span id="operatorBtnText">Mode Operator</span>
+            </button>
             <button type="button" class="btn-hdr-action" id="btnToggleFullscreen" title="Layar Penuh">
                 <i class="fas fa-expand" id="fullscreenIcon"></i>
                 <span id="fullscreenText">Fullscreen</span>
@@ -790,7 +850,8 @@
             <div class="timer-progress-bar" id="timerProgressBar" style="width: 100%;"></div>
         </div>
 
-        <div class="timer-controls">
+        <!-- Operator Timer Controls (Hidden when not authenticated) -->
+        <div class="timer-controls operator-only" id="timerControlsWrap">
             <button type="button" class="btn-ctrl btn-start" id="btnStartTimer">
                 <i class="fas fa-play"></i> <span>Mulai Timer</span>
             </button>
@@ -824,19 +885,19 @@
             <div class="ball-click-container">
                 <div class="ball-click-header">
                     <span class="ball-click-title"><i class="fas fa-bullseye text-primary"></i> Target & Poin Bola:</span>
-                    <button type="button" class="btn-ball-reset" onclick="resetTeamBalls(1)" title="Reset Semua Bola Merah">
+                    <button type="button" class="btn-ball-reset operator-only" onclick="resetTeamBalls(1)" title="Reset Semua Bola Merah">
                         <i class="fas fa-redo"></i> Reset Tim
                     </button>
                 </div>
                 <div class="ball-click-grid">
                     <?php foreach ([1, 3, 5, 7, 9] as $bNum): ?>
-                        <div class="ball-click-card" id="card_ball_<?= $bNum; ?>" onclick="clickBall(1, <?= $bNum; ?>)" title="Tekan Bola <?= $bNum; ?> (1 -> 2 -> 3 -> 5 poin)">
+                        <div class="ball-click-card" id="card_ball_<?= $bNum; ?>" onclick="clickBall(1, <?= $bNum; ?>)" title="Bola <?= $bNum; ?>">
                             <div class="ball-sphere ball-sphere-red"><?= $bNum; ?></div>
                             <div class="ball-score-tag" id="score_tag_<?= $bNum; ?>">0 Pts</div>
                             <div class="ball-target-badge target-g1" id="target_badge_<?= $bNum; ?>">
                                 <i class="fas fa-bullseye"></i> Ke Gate 1
                             </div>
-                            <div class="ball-sub-actions" onclick="event.stopPropagation()">
+                            <div class="ball-sub-actions operator-only" onclick="event.stopPropagation()">
                                 <button type="button" class="btn-ball-reset" onclick="resetSingleBall(1, <?= $bNum; ?>)" title="Reset bola ini ke 0">
                                     <i class="fas fa-undo"></i> Reset
                                 </button>
@@ -865,19 +926,19 @@
             <div class="ball-click-container">
                 <div class="ball-click-header">
                     <span class="ball-click-title"><i class="fas fa-bullseye text-primary"></i> Target & Poin Bola:</span>
-                    <button type="button" class="btn-ball-reset" onclick="resetTeamBalls(2)" title="Reset Semua Bola Putih">
+                    <button type="button" class="btn-ball-reset operator-only" onclick="resetTeamBalls(2)" title="Reset Semua Bola Putih">
                         <i class="fas fa-redo"></i> Reset Tim
                     </button>
                 </div>
                 <div class="ball-click-grid">
                     <?php foreach ([2, 4, 6, 8, 10] as $bNum): ?>
-                        <div class="ball-click-card" id="card_ball_<?= $bNum; ?>" onclick="clickBall(2, <?= $bNum; ?>)" title="Tekan Bola <?= $bNum; ?> (1 -> 2 -> 3 -> 5 poin)">
+                        <div class="ball-click-card" id="card_ball_<?= $bNum; ?>" onclick="clickBall(2, <?= $bNum; ?>)" title="Bola <?= $bNum; ?>">
                             <div class="ball-sphere ball-sphere-white"><?= $bNum; ?></div>
                             <div class="ball-score-tag" id="score_tag_<?= $bNum; ?>">0 Pts</div>
                             <div class="ball-target-badge target-g1" id="target_badge_<?= $bNum; ?>">
                                 <i class="fas fa-bullseye"></i> Ke Gate 1
                             </div>
-                            <div class="ball-sub-actions" onclick="event.stopPropagation()">
+                            <div class="ball-sub-actions operator-only" onclick="event.stopPropagation()">
                                 <button type="button" class="btn-ball-reset" onclick="resetSingleBall(2, <?= $bNum; ?>)" title="Reset bola ini ke 0">
                                     <i class="fas fa-undo"></i> Reset
                                 </button>
@@ -892,7 +953,8 @@
 
     <!-- Bottom Action Footer -->
     <footer class="bottom-action-bar">
-        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <!-- Operator Finish / Reset Match Controls (Hidden when not operator) -->
+        <div class="operator-only" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <button type="button" class="btn-finish-match" id="btnFinishMatch">
                 <i class="fas fa-flag-checkered"></i> <span>Selesaikan & Kunci Hasil Pertandingan</span>
             </button>
@@ -923,6 +985,7 @@
     const MATCH_ID = <?= (int)$match['id']; ?>;
     const API_MATCH_DATA = '<?= site_url("gateball/api/match/" . (int)$match['id']); ?>';
     const API_UPDATE_MATCH = '<?= site_url("gateball/api/match/" . (int)$match['id'] . "/update"); ?>';
+    const API_URL_VERIFY = '<?= site_url("gateball/api/verify-auth"); ?>';
     const TOTAL_MATCH_SECONDS = 1800; // 30 mins
 
     let matchState = <?= json_encode($match); ?>;
@@ -957,7 +1020,129 @@
     let isAudioEnabled = true;
     let lastUserActionTimestamp = 0;
     let isSavePending = false;
-    let savedPassword = sessionStorage.getItem('gateball_pwd') || 'ps123';
+    let savedPassword = '';
+
+    // Render operator mode vs viewer mode (Hide/Show buttons based on password authentication)
+    function renderOperatorState() {
+        const isOp = Boolean(savedPassword);
+        document.body.classList.toggle('is-viewer', !isOp);
+
+        const btnOp = document.getElementById('btnOperatorToggle');
+        const icon = document.getElementById('operatorLockIcon');
+        const txt = document.getElementById('operatorBtnText');
+
+        if (isOp) {
+            btnOp.className = 'btn-hdr-action btn-mode-operator-active';
+            icon.className = 'fas fa-unlock text-success';
+            icon.style.color = '';
+            txt.innerHTML = '<span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;margin-right:4px;"></span> Operator Aktif';
+            btnOp.title = 'Klik untuk keluar dari Mode Operator';
+        } else {
+            btnOp.className = 'btn-hdr-action btn-mode-operator';
+            icon.className = 'fas fa-key';
+            icon.style.color = '#fbbf24';
+            txt.textContent = 'Mode Operator';
+            btnOp.title = 'Masuk Mode Operator Turnamen';
+        }
+    }
+
+    // Always show password modal alert when requesting Operator Mode
+    async function requestOperatorLogin() {
+        const { value: pwd } = await Swal.fire({
+            title: 'Verifikasi Mode Operator',
+            text: 'Masukkan password otorisasi turnamen untuk mengontrol skor & timer:',
+            input: 'password',
+            inputPlaceholder: 'Masukkan Password',
+            inputAttributes: {
+                autocapitalize: 'off',
+                autocorrect: 'off'
+            },
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-key"></i> Buka Kontrol',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#002244',
+            customClass: {
+                popup: 'swal2-border-radius'
+            }
+        });
+
+        if (!pwd) return false;
+
+        try {
+            const formData = new FormData();
+            formData.append('password', pwd);
+
+            const verifyRes = await fetch(API_URL_VERIFY, {
+                method: 'POST',
+                body: formData
+            });
+            const resJson = await verifyRes.json();
+
+            if (!verifyRes.ok || resJson.status !== 'success') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Akses Ditolak',
+                    text: 'Password otorisasi tidak sesuai.',
+                    confirmButtonColor: '#002244'
+                });
+                return false;
+            }
+
+            savedPassword = pwd;
+            sessionStorage.setItem('gateball_pwd', pwd);
+            renderOperatorState();
+            return true;
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Koneksi bermasalah saat verifikasi.' });
+            return false;
+        }
+    }
+
+    // Operator Mode Toggle Button Click (Always prompts for password when in viewer mode)
+    document.getElementById('btnOperatorToggle').addEventListener('click', async () => {
+        if (savedPassword) {
+            const confirmLogout = await Swal.fire({
+                title: 'Keluar Mode Operator?',
+                text: 'Tombol kontrol skor dan timer akan disembunyikan kembali.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Keluar Mode Operator',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#002244'
+            });
+            if (confirmLogout.isConfirmed) {
+                savedPassword = '';
+                sessionStorage.removeItem('gateball_pwd');
+                renderOperatorState();
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Mode Penonton Aktif',
+                    text: 'Tombol operator telah disembunyikan.',
+                    timer: 1200,
+                    showConfirmButton: false
+                });
+            }
+        } else {
+            const authSuccess = await requestOperatorLogin();
+            if (authSuccess) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Mode Operator Aktif',
+                    text: 'Seluruh tombol kontrol skor & timer sekarang dapat digunakan.',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        }
+    });
+
+    // Verify operator password before allowing modifications
+    async function ensureOperatorAuth() {
+        if (savedPassword) {
+            return true;
+        }
+        return await requestOperatorLogin();
+    }
 
     // Fullscreen Toggle
     const btnFullscreen = document.getElementById('btnToggleFullscreen');
@@ -1145,7 +1330,8 @@
     }
 
     // CLICK A BALL DIRECTLY: 0 -> 1 -> 2 -> 3 -> 5 (Maksimal 5, tidak balik ke 0)
-    function clickBall(team, ballNum) {
+    async function clickBall(team, ballNum) {
+        if (!await ensureOperatorAuth()) return;
         lastUserActionTimestamp = Date.now();
         
         let current = ballPoints[ballNum] || 0;
@@ -1174,6 +1360,7 @@
 
     // Reset a single ball's score to 0 with Confirmation Alert
     async function resetSingleBall(team, ballNum) {
+        if (!await ensureOperatorAuth()) return;
         const teamColor = team === 1 ? 'Merah' : 'Putih';
         const confirm = await Swal.fire({
             title: `Reset Bola ${ballNum}?`,
@@ -1207,6 +1394,7 @@
 
     // Reset all balls for a team with Confirmation Alert
     async function resetTeamBalls(team) {
+        if (!await ensureOperatorAuth()) return;
         const teamName = team === 1 ? matchState.team1 : matchState.team2;
         const teamColor = team === 1 ? 'Merah' : 'Putih';
         
@@ -1242,7 +1430,8 @@
     }
 
     // Timer Controls
-    function startTimer() {
+    async function startTimer() {
+        if (!await ensureOperatorAuth()) return;
         lastUserActionTimestamp = Date.now();
         if (timerInterval) clearInterval(timerInterval);
         timerStatus = 'running';
@@ -1277,7 +1466,8 @@
         }, 1000);
     }
 
-    function pauseTimer() {
+    async function pauseTimer() {
+        if (!await ensureOperatorAuth()) return;
         lastUserActionTimestamp = Date.now();
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = null;
@@ -1287,6 +1477,7 @@
     }
 
     async function resetTimer() {
+        if (!await ensureOperatorAuth()) return;
         const confirm = await Swal.fire({
             title: 'Reset Waktu Pertandingan?',
             text: 'Waktu akan dikembalikan ke 30:00 menit.',
@@ -1313,14 +1504,16 @@
     document.getElementById('btnPauseTimer').addEventListener('click', pauseTimer);
     document.getElementById('btnResetTimer').addEventListener('click', resetTimer);
 
-    document.getElementById('btnAddOneMin').addEventListener('click', () => {
+    document.getElementById('btnAddOneMin').addEventListener('click', async () => {
+        if (!await ensureOperatorAuth()) return;
         lastUserActionTimestamp = Date.now();
         timerSeconds = Math.min(3600, timerSeconds + 60);
         renderUI();
         saveLiveStateToServer();
     });
 
-    document.getElementById('btnSubOneMin').addEventListener('click', () => {
+    document.getElementById('btnSubOneMin').addEventListener('click', async () => {
+        if (!await ensureOperatorAuth()) return;
         lastUserActionTimestamp = Date.now();
         timerSeconds = Math.max(0, timerSeconds - 60);
         renderUI();
@@ -1329,6 +1522,7 @@
 
     // Finish Match
     document.getElementById('btnFinishMatch').addEventListener('click', async () => {
+        if (!await ensureOperatorAuth()) return;
         lastUserActionTimestamp = Date.now();
         const confirmFinish = await Swal.fire({
             title: 'Selesaikan Pertandingan?',
@@ -1360,6 +1554,7 @@
 
     // Reset Match Entirely
     document.getElementById('btnResetMatch').addEventListener('click', async () => {
+        if (!await ensureOperatorAuth()) return;
         lastUserActionTimestamp = Date.now();
         const confirmReset = await Swal.fire({
             title: 'Kosongkan Skor Pertandingan?',
@@ -1418,6 +1613,20 @@
                 method: 'POST',
                 body: formData
             });
+
+            if (resp.status === 403) {
+                savedPassword = '';
+                sessionStorage.removeItem('gateball_pwd');
+                renderOperatorState();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Otorisasi Dibutuhkan',
+                    text: 'Password otorisasi turnamen dibutuhkan untuk menyimpan perubahan.',
+                    confirmButtonColor: '#002244'
+                });
+                return;
+            }
+
             const res = await resp.json();
             if (res.status === 'success' && res.data) {
                 matchState = res.data;
@@ -1490,6 +1699,7 @@
     }, 2500);
 
     // Initial render
+    renderOperatorState();
     renderUI();
     if (timerStatus === 'running') {
         startTimer();
