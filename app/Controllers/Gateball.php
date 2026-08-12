@@ -35,6 +35,8 @@ class Gateball extends BaseController
     {
         $putraMatches   = $this->matchModel->getMatchesByCategory('putra');
         $putriMatches   = $this->matchModel->getMatchesByCategory('putri');
+        $this->attachLiveTimerInfo($putraMatches);
+        $this->attachLiveTimerInfo($putriMatches);
         $putraStandings = $this->matchModel->getStandings('putra');
         $putriStandings = $this->matchModel->getStandings('putri');
 
@@ -258,6 +260,8 @@ class Gateball extends BaseController
     {
         $putraMatches   = $this->matchModel->getMatchesByCategory('putra');
         $putriMatches   = $this->matchModel->getMatchesByCategory('putri');
+        $this->attachLiveTimerInfo($putraMatches);
+        $this->attachLiveTimerInfo($putriMatches);
         $putraStandings = $this->matchModel->getStandings('putra');
         $putriStandings = $this->matchModel->getStandings('putri');
 
@@ -273,8 +277,25 @@ class Gateball extends BaseController
                     'standings' => $putriStandings,
                 ],
             ],
-            'timestamp' => date('Y-m-d H:i:s'),
+            'server_now_ms' => (int)(microtime(true) * 1000),
+            'timestamp'     => date('Y-m-d H:i:s'),
         ]);
+    }
+
+    /**
+     * Helper to compute dynamic countdown seconds for active matches
+     */
+    private function attachLiveTimerInfo(array &$matches): void
+    {
+        $now = time();
+        foreach ($matches as &$m) {
+            if ($m['timer_status'] === 'running' && ! empty($m['timer_started_at'])) {
+                $elapsed = max(0, $now - strtotime($m['timer_started_at']));
+                $m['current_remaining_seconds'] = max(0, (int)$m['timer_seconds'] - $elapsed);
+            } else {
+                $m['current_remaining_seconds'] = (int)($m['timer_seconds'] ?? 1800);
+            }
+        }
     }
 
     /**

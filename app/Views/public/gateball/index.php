@@ -471,6 +471,56 @@
             color: #b91c1c;
         }
 
+        /* Live Match Timer Chip */
+        .match-score-and-timer {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .live-timer-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: 0.5px;
+        }
+        .live-timer-chip.running {
+            background: #090f1d;
+            color: #00f0ff;
+            border: 1px solid #1e293b;
+            box-shadow: 0 2px 6px rgba(0, 240, 255, 0.25);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+        }
+        .live-timer-chip.paused {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde047;
+        }
+        .live-timer-chip.stopped {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+        }
+        .pulse-dot-red {
+            width: 7px;
+            height: 7px;
+            background-color: #dc2626;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+            animation: pulse-red-timer 1.5s infinite;
+        }
+        @keyframes pulse-red-timer {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+
         /* Bottom Section */
         .bottom-section {
             display: grid;
@@ -657,6 +707,79 @@
             }
         }
 
+        /* Large Eye-Catching Score Notification Toast */
+        .swal-score-update-toast {
+            width: 460px !important;
+            max-width: 95vw !important;
+            padding: 16px 20px !important;
+            border-radius: 16px !important;
+            border: 2.5px solid #0284c7 !important;
+            background: #ffffff !important;
+            box-shadow: 0 12px 35px rgba(0, 34, 68, 0.22) !important;
+        }
+        .toast-score-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: #002244;
+            font-family: 'Montserrat', sans-serif;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+        .toast-score-item {
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-top: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .toast-match-title {
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: #475569;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .toast-score-board {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .toast-team-red {
+            color: #dc2626;
+            font-weight: 900;
+            font-size: 1.15rem;
+            flex: 1;
+            text-align: left;
+        }
+        .toast-team-blue {
+            color: #0284c7;
+            font-weight: 900;
+            font-size: 1.15rem;
+            flex: 1;
+            text-align: right;
+        }
+        .toast-score-pill {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #002244;
+            letter-spacing: 2px;
+            background: #e2e8f0;
+            padding: 3px 14px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+        }
+
         /* Print styles */
         @media print {
             body {
@@ -763,11 +886,11 @@
                 <table class="table-custom" id="tableJadwalPutra">
                     <thead>
                         <tr>
-                            <th style="width: 10%;">No.</th>
-                            <th style="width: 25%;">PERTANDINGAN</th>
-                            <th style="width: 25%;">UNOR 1</th>
-                            <th style="width: 15%;">VS</th>
-                            <th style="width: 25%;">UNOR 2</th>
+                            <th style="width: 8%;">No.</th>
+                            <th style="width: 32%;">SKOR & WAKTU</th>
+                            <th style="width: 24%;">UNOR 1</th>
+                            <th style="width: 10%;">VS</th>
+                            <th style="width: 26%;">UNOR 2</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -776,27 +899,51 @@
                                 $s1 = $match['score1'];
                                 $s2 = $match['score2'];
                                 $mStatus = $match['status'];
+                                $tStatus = $match['timer_status'] ?? 'stopped';
                                 $isCompleted = ($s1 !== null && $s2 !== null && $mStatus === 'completed');
                                 $isOngoing = ($mStatus === 'ongoing');
+                                $sec = $match['current_remaining_seconds'] ?? ($match['timer_seconds'] ?? 1800);
+                                $minPart = floor($sec / 60);
+                                $secPart = $sec % 60;
+                                $timeFormatted = sprintf('%02d:%02d', $minPart, $secPart);
                             ?>
                             <tr class="match-row-clickable" data-match-id="<?= (int) $match['id']; ?>" data-match-num="<?= (int) $match['match_number']; ?>" onclick="openMatchScoreboard(<?= (int) $match['id']; ?>)" title="Klik untuk membuka Timer & Papan Skor Pertandingan #<?= (int) $match['match_number']; ?>">
                                 <td><strong><?= (int) $match['match_number']; ?>.</strong></td>
                                 <td>
                                     <?php if ($isCompleted): ?>
-                                        <span class="score-result-badge completed">
-                                            <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
-                                        </span>
-                                        <span class="match-live-tag tag-completed">Selesai</span>
+                                        <div class="match-score-and-timer">
+                                            <span class="score-result-badge completed">
+                                                <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
+                                            </span>
+                                            <span class="match-live-tag tag-completed"><i class="fas fa-check-circle"></i> Selesai</span>
+                                        </div>
                                     <?php elseif ($isOngoing): ?>
-                                        <span class="score-result-badge ongoing">
-                                            <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
-                                        </span>
-                                        <span class="match-live-tag tag-ongoing"><span class="pulse-dot" style="background:#ef4444; width:6px; height:6px;"></span> Live</span>
+                                        <div class="match-score-and-timer">
+                                            <span class="score-result-badge ongoing">
+                                                <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
+                                            </span>
+                                            <?php if ($tStatus === 'running'): ?>
+                                                <span class="live-timer-chip running" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="running">
+                                                    <i class="fas fa-stopwatch text-danger pulse-dot-red"></i> 
+                                                    <span class="timer-display-val"><?= esc($timeFormatted); ?></span>
+                                                </span>
+                                            <?php elseif ($tStatus === 'paused'): ?>
+                                                <span class="live-timer-chip paused" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="paused">
+                                                    <i class="fas fa-pause text-warning"></i> 
+                                                    <span class="timer-display-val"><?= esc($timeFormatted); ?> (Jeda)</span>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="live-timer-chip stopped" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="stopped">
+                                                    <i class="fas fa-clock text-muted"></i> 
+                                                    <span class="timer-display-val"><?= esc($timeFormatted); ?></span>
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
                                     <?php else: ?>
-                                        <span class="score-result-badge" style="color: #94a3b8;">
-                                            -
-                                        </span>
-                                        <span class="match-live-tag tag-pending">Siap</span>
+                                        <div class="match-score-and-timer">
+                                            <span class="score-result-badge" style="color: #94a3b8;">-</span>
+                                            <span class="match-live-tag tag-pending"><i class="fas fa-clock"></i> 30:00</span>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                                 <td><span class="unor-badge"><?= esc($match['team1']); ?></span></td>
@@ -865,11 +1012,11 @@
                 <table class="table-custom" id="tableJadwalPutri">
                     <thead>
                         <tr>
-                            <th style="width: 10%;">No.</th>
-                            <th style="width: 25%;">PERTANDINGAN</th>
-                            <th style="width: 25%;">UNOR 1</th>
-                            <th style="width: 15%;">VS</th>
-                            <th style="width: 25%;">UNOR 2</th>
+                            <th style="width: 8%;">No.</th>
+                            <th style="width: 32%;">SKOR & WAKTU</th>
+                            <th style="width: 24%;">UNOR 1</th>
+                            <th style="width: 10%;">VS</th>
+                            <th style="width: 26%;">UNOR 2</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -878,27 +1025,51 @@
                                 $s1 = $match['score1'];
                                 $s2 = $match['score2'];
                                 $mStatus = $match['status'];
+                                $tStatus = $match['timer_status'] ?? 'stopped';
                                 $isCompleted = ($s1 !== null && $s2 !== null && $mStatus === 'completed');
                                 $isOngoing = ($mStatus === 'ongoing');
+                                $sec = $match['current_remaining_seconds'] ?? ($match['timer_seconds'] ?? 1800);
+                                $minPart = floor($sec / 60);
+                                $secPart = $sec % 60;
+                                $timeFormatted = sprintf('%02d:%02d', $minPart, $secPart);
                             ?>
                             <tr class="match-row-clickable" data-match-id="<?= (int) $match['id']; ?>" data-match-num="<?= (int) $match['match_number']; ?>" onclick="openMatchScoreboard(<?= (int) $match['id']; ?>)" title="Klik untuk membuka Timer & Papan Skor Pertandingan #<?= (int) $match['match_number']; ?>">
                                 <td><strong><?= (int) $match['match_number']; ?>.</strong></td>
                                 <td>
                                     <?php if ($isCompleted): ?>
-                                        <span class="score-result-badge completed">
-                                            <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
-                                        </span>
-                                        <span class="match-live-tag tag-completed">Selesai</span>
+                                        <div class="match-score-and-timer">
+                                            <span class="score-result-badge completed">
+                                                <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
+                                            </span>
+                                            <span class="match-live-tag tag-completed"><i class="fas fa-check-circle"></i> Selesai</span>
+                                        </div>
                                     <?php elseif ($isOngoing): ?>
-                                        <span class="score-result-badge ongoing">
-                                            <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
-                                        </span>
-                                        <span class="match-live-tag tag-ongoing"><span class="pulse-dot" style="background:#ef4444; width:6px; height:6px;"></span> Live</span>
+                                        <div class="match-score-and-timer">
+                                            <span class="score-result-badge ongoing">
+                                                <strong><?= (int) $s1; ?></strong> - <strong><?= (int) $s2; ?></strong>
+                                            </span>
+                                            <?php if ($tStatus === 'running'): ?>
+                                                <span class="live-timer-chip running" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="running">
+                                                    <i class="fas fa-stopwatch text-danger pulse-dot-red"></i> 
+                                                    <span class="timer-display-val"><?= esc($timeFormatted); ?></span>
+                                                </span>
+                                            <?php elseif ($tStatus === 'paused'): ?>
+                                                <span class="live-timer-chip paused" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="paused">
+                                                    <i class="fas fa-pause text-warning"></i> 
+                                                    <span class="timer-display-val"><?= esc($timeFormatted); ?> (Jeda)</span>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="live-timer-chip stopped" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="stopped">
+                                                    <i class="fas fa-clock text-muted"></i> 
+                                                    <span class="timer-display-val"><?= esc($timeFormatted); ?></span>
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
                                     <?php else: ?>
-                                        <span class="score-result-badge" style="color: #94a3b8;">
-                                            -
-                                        </span>
-                                        <span class="match-live-tag tag-pending">Siap</span>
+                                        <div class="match-score-and-timer">
+                                            <span class="score-result-badge" style="color: #94a3b8;">-</span>
+                                            <span class="match-live-tag tag-pending"><i class="fas fa-clock"></i> 30:00</span>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                                 <td><span class="unor-badge"><?= esc($match['team1']); ?></span></td>
@@ -1047,17 +1218,16 @@
         putri: <?= json_encode($putriStandings); ?>
     };
 
-    // Auto-closing Toast notification configuration (3.5s countdown timer)
+    // Auto-closing Toast notification configuration (4.5s countdown timer)
     const ScoreToast = Swal.mixin({
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
-        timer: 3500,
+        timer: 4500,
         timerProgressBar: true,
         background: '#ffffff',
-        color: '#0f172a',
         customClass: {
-            popup: 'swal2-border-radius shadow-lg'
+            popup: 'swal-score-update-toast'
         },
         didOpen: (toast) => {
             toast.addEventListener('mouseenter', Swal.stopTimer);
@@ -1141,7 +1311,19 @@
                                 if (m.status === 'completed') statusTag = ' <span style="color:#15803d;font-size:0.75rem;font-weight:700;">(Selesai)</span>';
                                 else if (m.status === 'ongoing') statusTag = ' <span style="color:#dc2626;font-size:0.75rem;font-weight:700;">(🔴 Live)</span>';
 
-                                updatedItems.push(`<div><strong>Laga #${m.match_number} (${catName})</strong>: ${escapeHtml(m.team1)} <strong>${s1} - ${s2}</strong> ${escapeHtml(m.team2)}${statusTag}</div>`);
+                                updatedItems.push(`
+                                    <div class="toast-score-item">
+                                        <div class="toast-match-title">
+                                            <span><i class="fas fa-trophy text-warning mr-1"></i> LAGA #${m.match_number} (${catName})</span>
+                                            ${statusTag}
+                                        </div>
+                                        <div class="toast-score-board">
+                                            <span class="toast-team-red">${escapeHtml(m.team1)}</span>
+                                            <span class="toast-score-pill">${s1} - ${s2}</span>
+                                            <span class="toast-team-blue">${escapeHtml(m.team2)}</span>
+                                        </div>
+                                    </div>
+                                `);
                             }
                             matchSignatures[m.id] = newSig;
                         });
@@ -1162,9 +1344,12 @@
                 // Show auto-closing notification alert (Rule 1: Pastikan Notifikasinya tidak double)
                 if (updatedItems.length > 0) {
                     ScoreToast.fire({
-                        icon: 'info',
-                        title: '<span style="font-size:0.95rem;font-weight:800;color:#002244;"><i class="fas fa-bell text-warning"></i> Skor Terupdate!</span>',
-                        html: `<div style="font-size:0.85rem;line-height:1.4;margin-top:4px;">${updatedItems.join('')}</div>`
+                        html: `
+                            <div class="toast-score-header">
+                                <i class="fas fa-bell text-warning"></i> <span>SKOR TERUPDATE!</span>
+                            </div>
+                            ${updatedItems.join('')}
+                        `
                     });
                 }
             }
@@ -1192,6 +1377,14 @@
         renderStandingsTable('putri');
     }
 
+    function formatTimerSeconds(sec) {
+        if (sec === undefined || sec === null || isNaN(sec)) sec = 1800;
+        sec = Math.max(0, parseInt(sec));
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
     function renderMatchesTable(cat) {
         const tbody = document.querySelector(`#tableJadwal${cat.charAt(0).toUpperCase() + cat.slice(1)} tbody`);
         if (!tbody) return;
@@ -1202,28 +1395,76 @@
             const s1 = m.score1;
             const s2 = m.score2;
             const mStatus = m.status;
+            const tStatus = m.timer_status || 'stopped';
             const isCompleted = (s1 !== null && s2 !== null && mStatus === 'completed');
             const isOngoing = (mStatus === 'ongoing');
             
-            html += `
-                <tr class="match-row-clickable" data-match-id="${m.id}" data-match-num="${m.match_number}" onclick="openMatchScoreboard(${m.id})" title="Klik untuk membuka Timer & Papan Skor Pertandingan #${m.match_number}">
-                    <td><strong>${m.match_number}.</strong></td>
-                    <td>
-                        ${isCompleted ? `
-                            <span class="score-result-badge completed">
-                                <strong>${s1}</strong> - <strong>${s2}</strong>
-                            </span>
-                            <span class="match-live-tag tag-completed">Selesai</span>
-                        ` : (isOngoing ? `
+            const remSec = (m.current_remaining_seconds !== undefined && m.current_remaining_seconds !== null) 
+                ? parseInt(m.current_remaining_seconds) 
+                : (parseInt(m.timer_seconds) || 1800);
+            const timeStr = formatTimerSeconds(remSec);
+
+            let scoreTimerHtml = '';
+            if (isCompleted) {
+                scoreTimerHtml = `
+                    <div class="match-score-and-timer">
+                        <span class="score-result-badge completed">
+                            <strong>${s1}</strong> - <strong>${s2}</strong>
+                        </span>
+                        <span class="match-live-tag tag-completed"><i class="fas fa-check-circle"></i> Selesai</span>
+                    </div>
+                `;
+            } else if (isOngoing) {
+                if (tStatus === 'running') {
+                    scoreTimerHtml = `
+                        <div class="match-score-and-timer">
                             <span class="score-result-badge ongoing">
                                 <strong>${s1 !== null ? s1 : 0}</strong> - <strong>${s2 !== null ? s2 : 0}</strong>
                             </span>
-                            <span class="match-live-tag tag-ongoing"><span class="pulse-dot" style="background:#ef4444; width:6px; height:6px;"></span> Live</span>
-                        ` : `
-                            <span class="score-result-badge" style="color: #94a3b8;">-</span>
-                            <span class="match-live-tag tag-pending">Siap</span>
-                        `)}
-                    </td>
+                            <span class="live-timer-chip running" data-match-id="${m.id}" data-timer-sec="${remSec}" data-timer-status="running">
+                                <i class="fas fa-stopwatch text-danger pulse-dot-red"></i> 
+                                <span class="timer-display-val">${timeStr}</span>
+                            </span>
+                        </div>
+                    `;
+                } else if (tStatus === 'paused') {
+                    scoreTimerHtml = `
+                        <div class="match-score-and-timer">
+                            <span class="score-result-badge ongoing">
+                                <strong>${s1 !== null ? s1 : 0}</strong> - <strong>${s2 !== null ? s2 : 0}</strong>
+                            </span>
+                            <span class="live-timer-chip paused" data-match-id="${m.id}" data-timer-sec="${remSec}" data-timer-status="paused">
+                                <i class="fas fa-pause text-warning"></i> 
+                                <span class="timer-display-val">${timeStr} (Jeda)</span>
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    scoreTimerHtml = `
+                        <div class="match-score-and-timer">
+                            <span class="score-result-badge ongoing">
+                                <strong>${s1 !== null ? s1 : 0}</strong> - <strong>${s2 !== null ? s2 : 0}</strong>
+                            </span>
+                            <span class="live-timer-chip stopped" data-match-id="${m.id}" data-timer-sec="${remSec}" data-timer-status="stopped">
+                                <i class="fas fa-clock text-muted"></i> 
+                                <span class="timer-display-val">${timeStr}</span>
+                            </span>
+                        </div>
+                    `;
+                }
+            } else {
+                scoreTimerHtml = `
+                    <div class="match-score-and-timer">
+                        <span class="score-result-badge" style="color: #94a3b8;">-</span>
+                        <span class="match-live-tag tag-pending"><i class="fas fa-clock"></i> 30:00</span>
+                    </div>
+                `;
+            }
+
+            html += `
+                <tr class="match-row-clickable" data-match-id="${m.id}" data-match-num="${m.match_number}" onclick="openMatchScoreboard(${m.id})" title="Klik untuk membuka Timer & Papan Skor Pertandingan #${m.match_number}">
+                    <td><strong>${m.match_number}.</strong></td>
+                    <td>${scoreTimerHtml}</td>
                     <td><span class="unor-badge">${escapeHtml(m.team1)}</span></td>
                     <td><span class="vs-badge">VS</span></td>
                     <td><span class="unor-badge">${escapeHtml(m.team2)}</span></td>
@@ -1232,6 +1473,21 @@
         });
         tbody.innerHTML = html;
     }
+
+    // Global 1-second ticker to decrement running match timers on dashboard smoothly
+    setInterval(() => {
+        document.querySelectorAll('.live-timer-chip.running').forEach(chip => {
+            let sec = parseInt(chip.getAttribute('data-timer-sec'));
+            if (!isNaN(sec) && sec > 0) {
+                sec--;
+                chip.setAttribute('data-timer-sec', sec);
+                const displayEl = chip.querySelector('.timer-display-val');
+                if (displayEl) {
+                    displayEl.textContent = formatTimerSeconds(sec);
+                }
+            }
+        });
+    }, 1000);
 
     function renderStandingsTable(cat) {
         const tbody = document.querySelector(`#tableKlasemen${cat.charAt(0).toUpperCase() + cat.slice(1)} tbody`);

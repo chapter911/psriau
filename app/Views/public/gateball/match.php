@@ -767,6 +767,79 @@
             gap: 10px;
         }
 
+        /* Large Eye-Catching Score Notification Toast */
+        .swal-score-update-toast {
+            width: 460px !important;
+            max-width: 95vw !important;
+            padding: 16px 20px !important;
+            border-radius: 16px !important;
+            border: 2.5px solid #0284c7 !important;
+            background: #ffffff !important;
+            box-shadow: 0 12px 35px rgba(0, 34, 68, 0.22) !important;
+        }
+        .toast-score-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: #002244;
+            font-family: 'Montserrat', sans-serif;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+        .toast-score-item {
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-top: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .toast-match-title {
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: #475569;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .toast-score-board {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .toast-team-red {
+            color: #dc2626;
+            font-weight: 900;
+            font-size: 1.15rem;
+            flex: 1;
+            text-align: left;
+        }
+        .toast-team-blue {
+            color: #0284c7;
+            font-weight: 900;
+            font-size: 1.15rem;
+            flex: 1;
+            text-align: right;
+        }
+        .toast-score-pill {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #002244;
+            letter-spacing: 2px;
+            background: #e2e8f0;
+            padding: 3px 14px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+        }
+
         @media (max-width: 992px) {
             .scoreboard-grid {
                 grid-template-columns: 1fr;
@@ -1022,17 +1095,16 @@
     let isSavePending = false;
     let savedPassword = '';
 
-    // Auto-closing Toast notification configuration (3.5s countdown timer)
+    // Auto-closing Toast notification configuration (4.5s countdown timer)
     const MatchScoreToast = Swal.mixin({
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
-        timer: 3500,
+        timer: 4500,
         timerProgressBar: true,
         background: '#ffffff',
-        color: '#0f172a',
         customClass: {
-            popup: 'swal2-border-radius shadow-lg'
+            popup: 'swal-score-update-toast'
         },
         didOpen: (toast) => {
             toast.addEventListener('mouseenter', Swal.stopTimer);
@@ -1359,6 +1431,25 @@
     // CLICK A BALL DIRECTLY: 0 -> 1 -> 2 -> 3 -> 5 (Maksimal 5, tidak balik ke 0)
     async function clickBall(team, ballNum) {
         if (!await ensureOperatorAuth()) return;
+
+        if (timerStatus !== 'running') {
+            const res = await Swal.fire({
+                icon: 'warning',
+                title: 'Timer Belum Dijalankan!',
+                text: 'Poin bola tidak dapat diubah jika waktu pertandingan belum berjalan. Silakan jalankan timer terlebih dahulu.',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-play"></i> Mulai Timer Sekarang',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#64748b'
+            });
+
+            if (res.isConfirmed) {
+                document.getElementById('btnStartTimer').click();
+            }
+            return;
+        }
+
         lastUserActionTimestamp = Date.now();
         
         let current = ballPoints[ballNum] || 0;
@@ -1382,12 +1473,23 @@
 
         playBuzzer(team === 1 ? 750 : 850, 0.15, 'sine');
         renderUI();
-        saveLiveStateToServer();
+        saveLiveStateToServer('score');
     }
 
     // Reset a single ball's score to 0 with Confirmation Alert
     async function resetSingleBall(team, ballNum) {
         if (!await ensureOperatorAuth()) return;
+
+        if (timerStatus !== 'running') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Timer Belum Dijalankan!',
+                text: 'Poin bola tidak dapat diubah jika waktu pertandingan belum berjalan.',
+                confirmButtonColor: '#002244'
+            });
+            return;
+        }
+
         const teamColor = team === 1 ? 'Merah' : 'Putih';
         const confirm = await Swal.fire({
             title: `Reset Bola ${ballNum}?`,
@@ -1408,7 +1510,7 @@
         calculateTotalFromBalls();
         playBuzzer(400, 0.12, 'sine');
         renderUI();
-        saveLiveStateToServer();
+        saveLiveStateToServer('score');
 
         Swal.fire({
             icon: 'success',
@@ -1422,6 +1524,16 @@
     // Reset all balls for a team with Confirmation Alert
     async function resetTeamBalls(team) {
         if (!await ensureOperatorAuth()) return;
+
+        if (timerStatus !== 'running') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Timer Belum Dijalankan!',
+                text: 'Poin bola tidak dapat diubah jika waktu pertandingan belum berjalan.',
+                confirmButtonColor: '#002244'
+            });
+            return;
+        }
         const teamName = team === 1 ? matchState.team1 : matchState.team2;
         const teamColor = team === 1 ? 'Merah' : 'Putih';
         
@@ -1446,7 +1558,7 @@
         calculateTotalFromBalls();
         playBuzzer(400, 0.15, 'sine');
         renderUI();
-        saveLiveStateToServer();
+        saveLiveStateToServer('score');
 
         Swal.fire({
             icon: 'success',
@@ -1746,9 +1858,22 @@
                         else if (newStatus === 'ongoing') statusTag = ' <span style="color:#dc2626;font-size:0.75rem;font-weight:700;">(🔴 Live)</span>';
 
                         MatchScoreToast.fire({
-                            icon: 'info',
-                            title: '<span style="font-size:0.95rem;font-weight:800;color:#002244;"><i class="fas fa-bell text-warning"></i> Skor Terupdate!</span>',
-                            html: `<div style="font-size:0.88rem;margin-top:4px;"><strong>${escapeHtml(matchState.team1)}</strong> <span style="color:#dc2626;font-weight:800;">${newScore1}</span> - <span style="color:#0284c7;font-weight:800;">${newScore2}</span> <strong>${escapeHtml(matchState.team2)}</strong>${statusTag}</div>`
+                            html: `
+                                <div class="toast-score-header">
+                                    <i class="fas fa-bell text-warning"></i> <span>SKOR TERUPDATE!</span>
+                                </div>
+                                <div class="toast-score-item">
+                                    <div class="toast-match-title">
+                                        <span><i class="fas fa-trophy text-warning mr-1"></i> LAGA #${matchState.match_number} (${(matchState.category || '').toUpperCase()})</span>
+                                        ${statusTag}
+                                    </div>
+                                    <div class="toast-score-board">
+                                        <span class="toast-team-red">${escapeHtml(matchState.team1)}</span>
+                                        <span class="toast-score-pill">${newScore1} - ${newScore2}</span>
+                                        <span class="toast-team-blue">${escapeHtml(matchState.team2)}</span>
+                                    </div>
+                                </div>
+                            `
                         });
                     }
 
