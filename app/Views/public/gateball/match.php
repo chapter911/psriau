@@ -1235,12 +1235,19 @@
         }
     });
 
-    // Verify operator password before allowing modifications
+    // Verify operator password before allowing modifications (Verifikasi password hanya pada tombol Mode Operator)
     async function ensureOperatorAuth() {
         if (savedPassword) {
             return true;
         }
-        return await requestOperatorLogin();
+        Swal.fire({
+            icon: 'info',
+            title: 'Mode Operator Diperlukan',
+            text: 'Silakan klik tombol "Mode Operator" di pojok kanan atas untuk memasukkan password otorisasi.',
+            confirmButtonColor: '#002244',
+            confirmButtonText: 'Mengerti'
+        });
+        return false;
     }
 
     // Fullscreen Toggle

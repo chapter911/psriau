@@ -451,14 +451,16 @@
         .score-result-badge {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
-            background: #f1f5f9;
-            padding: 4px 10px;
-            border-radius: 6px;
-            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: 1.5px solid #cbd5e1;
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
             font-size: 0.95rem;
+            min-width: 54px;
         }
         .score-result-badge.completed {
             background: #eff6ff;
@@ -471,54 +473,100 @@
             color: #b91c1c;
         }
 
-        /* Live Match Timer Chip */
+        /* Live Match Timer Chip - Clean, Readable & Beautiful */
         .match-score-and-timer {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             flex-wrap: wrap;
         }
         .live-timer-chip {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 0.78rem;
-            font-weight: 800;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 8px;
             font-family: 'Montserrat', sans-serif;
-            letter-spacing: 0.5px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            line-height: 1;
+            vertical-align: middle;
+            transition: all 0.2s;
         }
         .live-timer-chip.running {
-            background: #090f1d;
-            color: #00f0ff;
-            border: 1px solid #1e293b;
-            box-shadow: 0 2px 6px rgba(0, 240, 255, 0.25);
-            text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+            background: #0f172a;
+            color: #ffffff;
+            border: 1.5px solid #38bdf8;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+        }
+        .live-timer-chip.running .timer-icon {
+            color: #f87171;
+            font-size: 0.85rem;
+        }
+        .live-timer-chip.running .timer-display-val {
+            color: #38bdf8;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
         }
         .live-timer-chip.paused {
             background: #fef3c7;
             color: #92400e;
-            border: 1px solid #fde047;
+            border: 1.5px solid #facc15;
+        }
+        .live-timer-chip.paused .timer-icon {
+            color: #d97706;
+            font-size: 0.85rem;
+        }
+        .live-timer-chip.paused .timer-display-val {
+            color: #92400e;
+            font-weight: 800;
         }
         .live-timer-chip.stopped {
             background: #f1f5f9;
-            color: #64748b;
-            border: 1px solid #cbd5e1;
+            color: #475569;
+            border: 1.5px solid #cbd5e1;
         }
-        .pulse-dot-red {
+        .timer-dot-live {
             width: 7px;
             height: 7px;
-            background-color: #dc2626;
+            background-color: #ef4444;
             border-radius: 50%;
             display: inline-block;
-            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
-            animation: pulse-red-timer 1.5s infinite;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            animation: timer-pulse-live 1.5s infinite;
         }
-        @keyframes pulse-red-timer {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        @keyframes timer-pulse-live {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* Standings Table FLIP Animation & Rank Movement Highlights */
+        .table-custom tbody tr.standings-row-animated {
+            position: relative;
+            will-change: transform, background-color, box-shadow;
+        }
+        .rank-moved-up {
+            background-color: #ecfdf5 !important;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.28) !important;
+            animation: rankUpGlow 1.4s ease forwards;
+        }
+        .rank-moved-down {
+            background-color: #fffbeb !important;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.22) !important;
+            animation: rankDownGlow 1.4s ease forwards;
+        }
+        @keyframes rankUpGlow {
+            0% { background-color: #a7f3d0; }
+            40% { background-color: #6ee7b7; }
+            100% { background-color: #ecfdf5; }
+        }
+        @keyframes rankDownGlow {
+            0% { background-color: #fde68a; }
+            40% { background-color: #fcd34d; }
+            100% { background-color: #fffbeb; }
         }
 
         /* Bottom Section */
@@ -924,17 +972,18 @@
                                             </span>
                                             <?php if ($tStatus === 'running'): ?>
                                                 <span class="live-timer-chip running" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="running">
-                                                    <i class="fas fa-stopwatch text-danger pulse-dot-red"></i> 
+                                                    <span class="timer-dot-live"></span>
+                                                    <i class="fas fa-stopwatch timer-icon"></i>
                                                     <span class="timer-display-val"><?= esc($timeFormatted); ?></span>
                                                 </span>
                                             <?php elseif ($tStatus === 'paused'): ?>
                                                 <span class="live-timer-chip paused" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="paused">
-                                                    <i class="fas fa-pause text-warning"></i> 
+                                                    <i class="fas fa-pause timer-icon"></i>
                                                     <span class="timer-display-val"><?= esc($timeFormatted); ?> (Jeda)</span>
                                                 </span>
                                             <?php else: ?>
                                                 <span class="live-timer-chip stopped" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="stopped">
-                                                    <i class="fas fa-clock text-muted"></i> 
+                                                    <i class="fas fa-clock text-muted"></i>
                                                     <span class="timer-display-val"><?= esc($timeFormatted); ?></span>
                                                 </span>
                                             <?php endif; ?>
@@ -979,7 +1028,7 @@
                                 $scoreClass = $scoreDiff > 0 ? 'score-positive' : ($scoreDiff < 0 ? 'score-negative' : 'score-zero');
                                 $scoreSign = $scoreDiff > 0 ? '+' . $scoreDiff : (string) $scoreDiff;
                             ?>
-                            <tr>
+                            <tr class="standings-row-animated" data-team-key="<?= esc($row['team']); ?>" data-rank="<?= $rank; ?>">
                                 <td>
                                     <?php if ($rankClass !== ''): ?>
                                         <span class="rank-badge <?= $rankClass; ?>"><?= $rank; ?></span>
@@ -1050,17 +1099,18 @@
                                             </span>
                                             <?php if ($tStatus === 'running'): ?>
                                                 <span class="live-timer-chip running" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="running">
-                                                    <i class="fas fa-stopwatch text-danger pulse-dot-red"></i> 
+                                                    <span class="timer-dot-live"></span>
+                                                    <i class="fas fa-stopwatch timer-icon"></i>
                                                     <span class="timer-display-val"><?= esc($timeFormatted); ?></span>
                                                 </span>
                                             <?php elseif ($tStatus === 'paused'): ?>
                                                 <span class="live-timer-chip paused" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="paused">
-                                                    <i class="fas fa-pause text-warning"></i> 
+                                                    <i class="fas fa-pause timer-icon"></i>
                                                     <span class="timer-display-val"><?= esc($timeFormatted); ?> (Jeda)</span>
                                                 </span>
                                             <?php else: ?>
                                                 <span class="live-timer-chip stopped" data-match-id="<?= (int) $match['id']; ?>" data-timer-sec="<?= (int) $sec; ?>" data-timer-status="stopped">
-                                                    <i class="fas fa-clock text-muted"></i> 
+                                                    <i class="fas fa-clock text-muted"></i>
                                                     <span class="timer-display-val"><?= esc($timeFormatted); ?></span>
                                                 </span>
                                             <?php endif; ?>
@@ -1105,7 +1155,7 @@
                                 $scoreClass = $scoreDiff > 0 ? 'score-positive' : ($scoreDiff < 0 ? 'score-negative' : 'score-zero');
                                 $scoreSign = $scoreDiff > 0 ? '+' . $scoreDiff : (string) $scoreDiff;
                             ?>
-                            <tr>
+                            <tr class="standings-row-animated" data-team-key="<?= esc($row['team']); ?>" data-rank="<?= $rank; ?>">
                                 <td>
                                     <?php if ($rankClass !== ''): ?>
                                         <span class="rank-badge <?= $rankClass; ?>"><?= $rank; ?></span>
@@ -1422,7 +1472,8 @@
                                 <strong>${s1 !== null ? s1 : 0}</strong> - <strong>${s2 !== null ? s2 : 0}</strong>
                             </span>
                             <span class="live-timer-chip running" data-match-id="${m.id}" data-timer-sec="${remSec}" data-timer-status="running">
-                                <i class="fas fa-stopwatch text-danger pulse-dot-red"></i> 
+                                <span class="timer-dot-live"></span>
+                                <i class="fas fa-stopwatch timer-icon"></i>
                                 <span class="timer-display-val">${timeStr}</span>
                             </span>
                         </div>
@@ -1434,7 +1485,7 @@
                                 <strong>${s1 !== null ? s1 : 0}</strong> - <strong>${s2 !== null ? s2 : 0}</strong>
                             </span>
                             <span class="live-timer-chip paused" data-match-id="${m.id}" data-timer-sec="${remSec}" data-timer-status="paused">
-                                <i class="fas fa-pause text-warning"></i> 
+                                <i class="fas fa-pause timer-icon"></i>
                                 <span class="timer-display-val">${timeStr} (Jeda)</span>
                             </span>
                         </div>
@@ -1446,7 +1497,7 @@
                                 <strong>${s1 !== null ? s1 : 0}</strong> - <strong>${s2 !== null ? s2 : 0}</strong>
                             </span>
                             <span class="live-timer-chip stopped" data-match-id="${m.id}" data-timer-sec="${remSec}" data-timer-status="stopped">
-                                <i class="fas fa-clock text-muted"></i> 
+                                <i class="fas fa-clock text-muted"></i>
                                 <span class="timer-display-val">${timeStr}</span>
                             </span>
                         </div>
@@ -1493,6 +1544,16 @@
         const tbody = document.querySelector(`#tableKlasemen${cat.charAt(0).toUpperCase() + cat.slice(1)} tbody`);
         if (!tbody) return;
 
+        // 1. FIRST: Capture current positions of all existing team rows
+        const oldPositions = {};
+        const oldRanks = {};
+        tbody.querySelectorAll('tr[data-team-key]').forEach(tr => {
+            const teamKey = tr.getAttribute('data-team-key');
+            const rank = parseInt(tr.getAttribute('data-rank') || '0');
+            oldPositions[teamKey] = tr.getBoundingClientRect().top;
+            oldRanks[teamKey] = rank;
+        });
+
         const standings = standingsData[cat] || [];
         let html = '';
         standings.forEach(row => {
@@ -1503,7 +1564,7 @@
             const scoreSign = scoreDiff > 0 ? '+' + scoreDiff : scoreDiff.toString();
 
             html += `
-                <tr>
+                <tr class="standings-row-animated" data-team-key="${escapeHtml(row.team)}" data-rank="${rank}">
                     <td>
                         ${rankClass !== '' ? `<span class="rank-badge ${rankClass}">${rank}</span>` : `<strong>${rank}.</strong>`}
                     </td>
@@ -1516,7 +1577,59 @@
                 </tr>
             `;
         });
+
+        // 2. Render new DOM content
         tbody.innerHTML = html;
+
+        // 3. LAST & INVERT: Calculate position deltas and invert with transform
+        const newRows = tbody.querySelectorAll('tr[data-team-key]');
+        const movedRows = [];
+
+        newRows.forEach(tr => {
+            const teamKey = tr.getAttribute('data-team-key');
+            const newRank = parseInt(tr.getAttribute('data-rank') || '0');
+            const oldTop = oldPositions[teamKey];
+            const oldRank = oldRanks[teamKey];
+
+            if (oldTop !== undefined) {
+                const newTop = tr.getBoundingClientRect().top;
+                const deltaY = oldTop - newTop;
+
+                if (Math.abs(deltaY) > 2) {
+                    tr.style.transform = `translateY(${deltaY}px)`;
+                    tr.style.transition = 'none';
+                    tr.style.zIndex = '5';
+
+                    if (oldRank && newRank < oldRank) {
+                        tr.classList.add('rank-moved-up');
+                    } else if (oldRank && newRank > oldRank) {
+                        tr.classList.add('rank-moved-down');
+                    }
+                    movedRows.push(tr);
+                }
+            }
+        });
+
+        // 4. PLAY: Smoothly glide rows into their new positions
+        if (movedRows.length > 0) {
+            tbody.offsetHeight; // Force reflow
+
+            requestAnimationFrame(() => {
+                movedRows.forEach(tr => {
+                    tr.style.transition = 'transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), background-color 1.4s ease, box-shadow 1.4s ease';
+                    tr.style.transform = 'translateY(0)';
+                });
+
+                setTimeout(() => {
+                    movedRows.forEach(tr => {
+                        tr.style.transform = '';
+                        tr.style.transition = '';
+                        tr.style.zIndex = '';
+                        tr.classList.remove('rank-moved-up', 'rank-moved-down');
+                    });
+                }, 1500);
+            });
+        }
     }
 
     function escapeHtml(text) {
