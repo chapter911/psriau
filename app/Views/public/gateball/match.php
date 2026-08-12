@@ -1501,7 +1501,7 @@
         playBuzzer(880, 0.4, 'sawtooth');
         runTimerTicker();
         renderUI();
-        saveLiveStateToServer();
+        saveLiveStateToServer(true);
     });
 
     document.getElementById('btnPauseTimer').addEventListener('click', async () => {
@@ -1510,7 +1510,7 @@
         stopTimerTicker();
         timerStatus = 'paused';
         renderUI();
-        saveLiveStateToServer();
+        saveLiveStateToServer(true);
     });
 
     document.getElementById('btnResetTimer').addEventListener('click', async () => {
@@ -1533,7 +1533,7 @@
         timerSeconds = TOTAL_MATCH_SECONDS;
         timerStatus = 'stopped';
         renderUI();
-        saveLiveStateToServer();
+        saveLiveStateToServer(true);
     });
 
     document.getElementById('btnAddOneMin').addEventListener('click', async () => {
@@ -1541,7 +1541,7 @@
         lastUserActionTimestamp = Date.now();
         timerSeconds = Math.min(3600, timerSeconds + 60);
         renderUI();
-        saveLiveStateToServer();
+        saveLiveStateToServer(true);
     });
 
     document.getElementById('btnSubOneMin').addEventListener('click', async () => {
@@ -1549,7 +1549,7 @@
         lastUserActionTimestamp = Date.now();
         timerSeconds = Math.max(0, timerSeconds - 60);
         renderUI();
-        saveLiveStateToServer();
+        saveLiveStateToServer(true);
     });
 
     // Finish Match
@@ -1628,8 +1628,8 @@
         }
     });
 
-    // Save Live State to Server (Robust AJAX with Password)
-    async function saveLiveStateToServer() {
+    // Save Live State to Server (Robust AJAX with Password & Absolute Timestamp)
+    async function saveLiveStateToServer(includeStartedAt = false) {
         isSavePending = true;
         const formData = new FormData();
         formData.append('password', savedPassword);
@@ -1637,6 +1637,14 @@
         formData.append('score2', score2);
         formData.append('timer_seconds', timerSeconds);
         formData.append('timer_status', timerStatus);
+        if (includeStartedAt) {
+            if (timerStatus === 'running') {
+                const nowStr = (new Date()).toISOString().slice(0, 19).replace('T', ' ');
+                formData.append('timer_started_at', nowStr);
+            } else {
+                formData.append('timer_started_at', '');
+            }
+        }
         formData.append('status', matchStatus);
         formData.append('score_details_json', JSON.stringify(ballPoints));
 
@@ -1687,14 +1695,26 @@
             if (resJson.status === 'success' && resJson.data) {
                 const s = resJson.data;
 
+                // Synchronize Live Countdown Timer accurately across all devices
                 if (s.timer_status === 'running') {
                     timerStatus = 'running';
-                    timerSeconds = parseInt(s.timer_seconds) || 1800;
-                    if (!timerInterval) runTimerTicker();
+                    const serverRemaining = typeof s.current_remaining_seconds === 'number' 
+                        ? s.current_remaining_seconds 
+                        : (parseInt(s.timer_seconds) || 1800);
+
+                    // If local ticker is not running or drifted by > 2 seconds, smoothly align to true remaining time
+                    if (!timerInterval || Math.abs(timerSeconds - serverRemaining) > 2) {
+                        timerSeconds = serverRemaining;
+                        renderUI();
+                    }
+                    if (!timerInterval) {
+                        runTimerTicker();
+                    }
                 } else if (Date.now() - lastUserActionTimestamp >= 3500) {
                     timerStatus = s.timer_status || 'stopped';
                     timerSeconds = parseInt(s.timer_seconds) || 1800;
                     stopTimerTicker();
+                    renderUI();
                 }
 
                 if (Date.now() - lastUserActionTimestamp >= 3500 && !isSavePending) {

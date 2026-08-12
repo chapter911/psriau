@@ -77,6 +77,12 @@ class Gateball extends BaseController
             }
         }
 
+        // Calculate live countdown timer if currently running
+        if ($match['timer_status'] === 'running' && ! empty($match['timer_started_at'])) {
+            $elapsed = max(0, time() - strtotime($match['timer_started_at']));
+            $match['timer_seconds'] = max(0, (int)$match['timer_seconds'] - $elapsed);
+        }
+
         $data = [
             'title'        => 'Papan Skor & Timer Pertandingan #' . $match['match_number'] . ' (' . strtoupper($match['category']) . ')',
             'match'        => $match,
@@ -123,10 +129,21 @@ class Gateball extends BaseController
             ]);
         }
 
+        $now = time();
+        $match['server_now_ms'] = (int)(microtime(true) * 1000);
+        if ($match['timer_status'] === 'running' && ! empty($match['timer_started_at'])) {
+            $startedAt = strtotime($match['timer_started_at']);
+            $elapsed = max(0, $now - $startedAt);
+            $match['current_remaining_seconds'] = max(0, (int)$match['timer_seconds'] - $elapsed);
+        } else {
+            $match['current_remaining_seconds'] = (int)($match['timer_seconds'] ?? 1800);
+        }
+
         return $this->response->setJSON([
-            'status'    => 'success',
-            'data'      => $match,
-            'timestamp' => date('Y-m-d H:i:s'),
+            'status'          => 'success',
+            'data'            => $match,
+            'server_now_ms'   => (int)(microtime(true) * 1000),
+            'timestamp'       => date('Y-m-d H:i:s'),
         ]);
     }
 
@@ -174,6 +191,11 @@ class Gateball extends BaseController
             $tStatus = $this->request->getPost('timer_status');
             if (in_array($tStatus, ['stopped', 'running', 'paused'], true)) {
                 $updateData['timer_status'] = $tStatus;
+                if ($tStatus === 'running') {
+                    $updateData['timer_started_at'] = $this->request->getPost('timer_started_at') ?: date('Y-m-d H:i:s');
+                } else {
+                    $updateData['timer_started_at'] = null;
+                }
             }
         }
 
