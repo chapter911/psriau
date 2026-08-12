@@ -308,7 +308,8 @@
         /* Official Look Table */
         .table-custom {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             background: #ffffff;
             border: 2px solid var(--table-border);
             border-radius: 8px;
@@ -323,10 +324,14 @@
             font-weight: 800;
             font-size: 0.92rem;
             text-transform: uppercase;
-            padding: 10px 8px;
+            padding: 11px 8px;
             text-align: center;
-            border: 1px solid var(--table-border);
+            border-bottom: 2px solid var(--table-border);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
             letter-spacing: 0.5px;
+        }
+        .table-custom thead th:last-child {
+            border-right: none;
         }
 
         .table-custom tbody td {
@@ -334,9 +339,17 @@
             text-align: center;
             font-size: 0.95rem;
             font-weight: 600;
-            border: 1px solid var(--table-border);
+            border-bottom: 1px solid var(--table-border);
+            border-right: 1px solid var(--table-border);
             color: #0f172a;
             vertical-align: middle;
+            background-clip: padding-box;
+        }
+        .table-custom tbody td:last-child {
+            border-right: none;
+        }
+        .table-custom tbody tr:last-child td {
+            border-bottom: none;
         }
 
         .table-custom tbody tr:nth-child(even) {
@@ -881,10 +894,6 @@
             <button type="button" class="btn-action btn-outline-custom" id="btnRefreshData" title="Muat Ulang Data">
                 <i class="fas fa-sync-alt" id="refreshIcon"></i>
                 <span>Refresh</span>
-            </button>
-            <button type="button" class="btn-action btn-outline-custom" onclick="window.print()" title="Cetak Jadwal & Klasemen">
-                <i class="fas fa-print"></i>
-                <span>Cetak PDF</span>
             </button>
             <button type="button" class="btn-action btn-outline-custom" id="btnToggleFullscreen" title="Layar Penuh">
                 <i class="fas fa-expand"></i>
