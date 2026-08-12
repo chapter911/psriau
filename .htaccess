@@ -28,6 +28,11 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # Block malicious bot scans & directory traversal probes (..;, actuator, .env, .git)
+    RewriteCond %{THE_REQUEST} \.\.; [NC,OR]
+    RewriteCond %{REQUEST_URI} (\.\.;|actuator/|\.env|\.git) [NC]
+    RewriteRule ^ - [F,L]
+
     # If the project root is the web root, serve files that physically exist under public/.
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f [OR]
