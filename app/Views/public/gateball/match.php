@@ -911,28 +911,226 @@
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
         }
 
+        /* Complete Mobile & Tablet Responsiveness */
         @media (max-width: 992px) {
-            .scoreboard-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
+            body {
+                padding: 8px;
             }
-            .vs-center-col {
-                display: none;
+            .main-container {
+                padding: 16px 12px;
+                border-radius: 14px;
+            }
+            .top-nav-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            .btn-back-link {
+                width: 100%;
+                justify-content: center;
+                text-align: center;
+            }
+            .match-badge-header {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .header-controls {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 8px;
+                width: 100%;
+            }
+            .btn-hdr-action {
+                flex: 1 1 calc(50% - 8px);
+                justify-content: center;
+                padding: 8px 10px;
+                font-size: 0.82rem;
+            }
+            .timer-card {
+                padding: 16px 10px;
+                border-radius: 14px;
+            }
+            .seven-segment-bezel {
+                padding: 10px 24px;
+                border-radius: 12px;
+                border-width: 3px;
+                width: 100%;
+                max-width: 360px;
+                box-sizing: border-box;
             }
             .timer-display-7seg {
-                font-size: 4rem;
+                font-size: clamp(3.2rem, 13vw, 4.8rem);
+                letter-spacing: 4px;
+            }
+            .timer-controls {
+                gap: 6px;
+                width: 100%;
+            }
+            .timer-controls .btn-ctrl,
+            .timer-controls .btn-time-adjust {
+                padding: 8px 10px;
+                font-size: 0.82rem;
+                flex: 1 1 calc(50% - 6px);
+                justify-content: center;
+            }
+            .scoreboard-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+                margin-bottom: 20px;
+            }
+            .vs-center-col {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                margin: 4px 0;
+            }
+            .vs-circle {
+                width: 46px;
+                height: 46px;
+                font-size: 1.05rem;
+                box-shadow: 0 2px 8px rgba(0, 31, 63, 0.25);
+            }
+            .team-box {
+                padding: 16px 10px;
+                border-radius: 14px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .team-name {
+                font-size: clamp(1.3rem, 5.5vw, 1.85rem);
+                letter-spacing: 0.3px;
+                margin-bottom: 8px;
+                line-height: 1.2;
+            }
+            .score-bezel {
+                min-width: unset;
+                width: 100%;
+                max-width: 280px;
+                padding: 10px 16px;
+                border-width: 3px;
+                border-radius: 12px;
+                margin-bottom: 12px;
+                box-sizing: border-box;
             }
             .score-7seg {
-                font-size: 4.5rem;
+                font-size: clamp(4.5rem, 18vw, 6.2rem);
+                letter-spacing: 4px;
+            }
+            .ball-click-container {
+                padding: 10px 6px;
+                border-radius: 10px;
             }
             .ball-click-grid {
                 grid-template-columns: repeat(5, 1fr);
-                gap: 6px;
+                gap: 4px;
+            }
+            .ball-click-card {
+                padding: 6px 2px;
+                border-radius: 8px;
+                min-width: 0;
             }
             .ball-sphere {
-                width: 36px;
-                height: 36px;
-                font-size: 1rem;
+                width: 32px;
+                height: 32px;
+                font-size: 0.95rem;
+                margin-bottom: 3px;
+            }
+            .ball-score-tag {
+                font-size: 0.72rem;
+                margin-bottom: 2px;
+            }
+            .ball-target-badge {
+                font-size: 0.58rem;
+                padding: 2px 2px;
+                letter-spacing: 0;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                max-width: 100%;
+            }
+            .ball-target-badge i {
+                display: none;
+            }
+            .btn-ball-reset {
+                padding: 2px 4px;
+                font-size: 0.62rem;
+                gap: 2px;
+            }
+            .btn-ball-reset i {
+                font-size: 0.6rem;
+            }
+            .bottom-action-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            .bottom-action-bar .operator-only {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .btn-finish-match,
+            .btn-swap-bottom,
+            .btn-reset-timer {
+                width: 100%;
+                justify-content: center;
+                text-align: center;
+                padding: 10px 16px;
+            }
+            .match-nav-links {
+                width: 100%;
+                justify-content: space-between;
+                gap: 8px;
+            }
+            .match-nav-links a {
+                flex: 1;
+                justify-content: center;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 4px;
+            }
+            .main-container {
+                padding: 12px 8px;
+                border-radius: 10px;
+            }
+            .timer-card {
+                padding: 12px 6px;
+            }
+            .seven-segment-bezel {
+                padding: 8px 14px;
+            }
+            .timer-display-7seg {
+                font-size: clamp(2.6rem, 12vw, 3.5rem);
+                letter-spacing: 2px;
+            }
+            .score-bezel {
+                max-width: 240px;
+                padding: 8px 12px;
+            }
+            .score-7seg {
+                font-size: clamp(3.8rem, 16vw, 5rem);
+                letter-spacing: 3px;
+            }
+            .ball-click-grid {
+                gap: 3px;
+            }
+            .ball-sphere {
+                width: 28px;
+                height: 28px;
+                font-size: 0.85rem;
+            }
+            .ball-score-tag {
+                font-size: 0.65rem;
+            }
+            .ball-target-badge {
+                font-size: 0.54rem;
+                padding: 1px 1px;
             }
         }
     </style>

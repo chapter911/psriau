@@ -724,7 +724,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Responsive styles */
+        /* Enhanced Mobile & Tablet Responsiveness */
         @media (max-width: 1100px) {
             .header-banner {
                 grid-template-columns: 1fr;
@@ -738,6 +738,7 @@
             }
             .content-grid {
                 grid-template-columns: 1fr;
+                gap: 24px;
             }
             .bottom-section {
                 grid-template-columns: 1fr;
@@ -747,24 +748,78 @@
 
         @media (max-width: 640px) {
             body {
-                padding: 8px;
+                padding: 6px;
             }
             .main-container {
-                padding: 16px;
+                padding: 14px 10px;
+                border-radius: 12px;
+            }
+            .top-action-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .live-status-pill {
+                justify-content: center;
+                width: 100%;
+            }
+            .toolbar-buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                width: 100%;
+            }
+            .toolbar-buttons .btn-action {
+                flex: 1 1 calc(50% - 6px);
+                justify-content: center;
+                padding: 8px 10px;
+                font-size: 0.8rem;
             }
             .banner-main-title {
-                font-size: 1.4rem;
+                font-size: clamp(1.2rem, 5vw, 1.6rem);
+                line-height: 1.2;
+                margin-bottom: 8px;
+            }
+            .category-tabs-container {
+                width: 100%;
+                display: flex;
             }
             .category-tab-btn {
-                padding: 6px 20px;
-                font-size: 0.9rem;
+                flex: 1;
+                padding: 8px 12px;
+                font-size: 0.88rem;
+                justify-content: center;
             }
-            .table-custom thead th, .table-custom tbody td {
-                padding: 6px 4px;
-                font-size: 0.8rem;
+            .table-title-pill {
+                padding: 6px 20px;
+                font-size: 0.88rem;
+                letter-spacing: 0.4px;
+            }
+            .card-table-wrap {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+            }
+            .table-custom thead th {
+                padding: 8px 4px;
+                font-size: 0.78rem;
+            }
+            .table-custom tbody td {
+                padding: 8px 4px;
+                font-size: 0.82rem;
             }
             .unor-badge {
                 font-size: 0.85rem;
+            }
+            .score-result-badge {
+                padding: 3px 6px;
+                font-size: 0.82rem;
+                min-width: 44px;
+            }
+            .live-timer-chip {
+                padding: 3px 6px;
+                font-size: 0.72rem;
+                gap: 4px;
             }
         }
 
