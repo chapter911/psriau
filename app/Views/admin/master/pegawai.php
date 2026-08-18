@@ -146,6 +146,9 @@
                         $isActive = (int) ($item['is_active'] ?? 1) === 1;
                         $fotoPath = trim((string) ($item['foto'] ?? ''));
                         $fotoUrl = $fotoPath !== '' ? media_url($fotoPath) : '';
+                        $jpVal = strtolower(trim((string) ($item['jenis_pegawai'] ?? 'pns')));
+                        $isAsn = in_array($jpVal, ['pns', 'cpns', 'pppk'], true);
+                        $displayNip = $isAsn ? trim((string) ($item['nip'] ?? '')) : '';
                     ?>
                     <tr>
                         <td><?= esc((string) $i++); ?></td>
@@ -187,7 +190,7 @@
                                 <span class="badge badge-light border">-</span>
                             <?php endif; ?>
                         </td>
-                        <td><?= esc((string) ($item['nip'] ?? '-')); ?></td>
+                        <td><?= esc($displayNip !== '' ? $displayNip : '-'); ?></td>
                         <td><?= esc((string) ($item['nama'] ?? '-')); ?></td>
                         <td><?= esc((string) ($item['email'] ?? '-')); ?></td>
                         <td class="jabatan-col">

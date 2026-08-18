@@ -232,16 +232,19 @@ class Pegawai extends BaseController
         $no = 1;
         $tempExportPhotos = [];
         foreach ($items as $item) {
+            $jpRaw = strtolower(trim((string) ($item['jenis_pegawai'] ?? 'pns')));
+            $isAsn = in_array($jpRaw, ['pns', 'cpns', 'pppk'], true);
+            $displayNip = $isAsn ? (string) ($item['nip'] ?? '') : '';
+
             $sheet->setCellValue('A' . $row, $no++);
             $sheet->setCellValue('C' . $row, (string) ($item['nama'] ?? ''));
-            $sheet->setCellValue('D' . $row, (string) ($item['nip'] ?? ''));
+            $sheet->setCellValue('D' . $row, $displayNip);
             $sheet->setCellValue('E' . $row, (string) ($item['email'] ?? ''));
             $sheet->setCellValue('F' . $row, (string) ($item['jabatan_utama_label'] ?? ''));
             $sheet->setCellValue('G' . $row, (string) ($item['jabatan_perbendaharaan_label'] ?? ''));
             $sheet->setCellValue('H' . $row, (string) ($item['eselon'] ?? ''));
             $sheet->setCellValue('I' . $row, (string) ($item['golongan'] ?? ''));
             $sheet->setCellValue('J' . $row, (string) ($item['masa_kerja'] ?? ''));
-            $jpRaw = strtolower(trim((string) ($item['jenis_pegawai'] ?? 'pns')));
             $jpLabel = match ($jpRaw) {
                 'konsultan' => 'KONSULTAN INDIVIDUAL',
                 'security' => 'SECURITY',

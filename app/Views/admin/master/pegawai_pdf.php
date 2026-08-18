@@ -287,6 +287,8 @@
                     <?php
                         $isActive = (int) ($item['is_active'] ?? 1) === 1;
                         $jpRaw = strtolower(trim((string) ($item['jenis_pegawai'] ?? 'pns')));
+                        $isAsn = in_array($jpRaw, ['pns', 'cpns', 'pppk'], true);
+                        $displayNip = $isAsn ? trim((string) ($item['nip'] ?? '')) : '';
                         $jpLabel = match ($jpRaw) {
                             'konsultan' => 'Konsultan Individual',
                             'security' => 'Security',
@@ -311,7 +313,7 @@
                             <?php endif; ?>
                         </td>
                         <td class="text-center font-bold" style="font-size: 7.5pt; letter-spacing: 0.2px;">
-                            <?= esc((string) ($item['nip'] ?? '-')); ?>
+                            <?= esc($displayNip !== '' ? $displayNip : '-'); ?>
                         </td>
                         <td>
                             <div class="font-bold" style="color: #0f172a; font-size: 8.2pt;"><?= esc((string) ($item['nama'] ?? '-')); ?></div>
