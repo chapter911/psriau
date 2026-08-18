@@ -6,6 +6,8 @@ use App\Controllers\BaseController;
 use App\Models\MstJabatanModel;
 use App\Models\MstPegawaiModel;
 use CodeIgniter\HTTP\RedirectResponse;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -56,6 +58,65 @@ class Pegawai extends BaseController
         ]);
     }
 
+    private function getFilteredPegawaiForExport(): array
+    {
+        $builder = db_connect()
+            ->table('mst_pegawai p')
+            ->select('p.*, ju.jabatan AS jabatan_utama_label, jp.jabatan AS jabatan_perbendaharaan_label')
+            ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left')
+            ->join('mst_jabatan jp', 'jp.id = p.jabatan_perbendaharaan_id', 'left');
+
+        $filterJenis = trim((string) $this->request->getGet('jenis_pegawai'));
+        $filterEselon = trim((string) $this->request->getGet('eselon'));
+        $filterGolongan = trim((string) $this->request->getGet('golongan'));
+        $filterStatus = trim((string) $this->request->getGet('status'));
+
+        $summaryParts = [];
+
+        if ($filterJenis !== '') {
+            $builder->where('p.jenis_pegawai', $filterJenis);
+            $jpLabel = match (strtolower($filterJenis)) {
+                'konsultan' => 'Konsultan Individual',
+                'security' => 'Security',
+                'cleaning_service' => 'Cleaning Service',
+                'ppnpn' => 'PPNPN',
+                'pppk' => 'PPPK',
+                'cpns' => 'CPNS',
+                'lainnya' => 'Lainnya',
+                default => strtoupper($filterJenis),
+            };
+            $summaryParts[] = 'Jenis: ' . $jpLabel;
+        }
+
+        if ($filterEselon !== '') {
+            $builder->where('p.eselon', $filterEselon);
+            $summaryParts[] = 'Eselon: ' . $filterEselon;
+        }
+
+        if ($filterGolongan !== '') {
+            $builder->where('p.golongan', $filterGolongan);
+            $summaryParts[] = 'Golongan: ' . $filterGolongan;
+        }
+
+        if ($filterStatus !== '') {
+            if (strtolower($filterStatus) === 'aktif' || $filterStatus === '1') {
+                $builder->where('p.is_active', 1);
+                $summaryParts[] = 'Status: Aktif';
+            } elseif (strtolower($filterStatus) === 'nonaktif' || $filterStatus === '0') {
+                $builder->where('p.is_active', 0);
+                $summaryParts[] = 'Status: Nonaktif';
+            }
+        }
+
+        $items = $builder->orderBy('p.nama', 'ASC')->get()->getResultArray();
+        $items = $this->applyMasaKerjaDefaults($items);
+
+        return [
+            'items' => $items,
+            'filter_summary' => implode(' | ', $summaryParts),
+        ];
+    }
+
     public function export()
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
@@ -72,16 +133,9 @@ class Pegawai extends BaseController
             return redirect()->to('/admin/master/pegawai')->with('error', 'Anda tidak memiliki izin export pada menu Pegawai.');
         }
 
-        $items = db_connect()
-            ->table('mst_pegawai p')
-            ->select('p.*, ju.jabatan AS jabatan_utama_label, jp.jabatan AS jabatan_perbendaharaan_label')
-            ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left')
-            ->join('mst_jabatan jp', 'jp.id = p.jabatan_perbendaharaan_id', 'left')
-            ->orderBy('p.nama', 'ASC')
-            ->get()
-            ->getResultArray();
-
-        $items = $this->applyMasaKerjaDefaults($items);
+        $filteredData = $this->getFilteredPegawaiForExport();
+        $items = $filteredData['items'];
+        $filterSummary = $filteredData['filter_summary'];
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -96,6 +150,14 @@ class Pegawai extends BaseController
         $sheet->setCellValue('A2', 'SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU');
         $sheet->setCellValue('A3', 'DIREKTORAT JENDERAL PRASARANA STRATEGIS');
         $sheet->setCellValue('A4', 'KEMENTERIAN PEKERJAAN UMUM');
+
+        if ($filterSummary !== '') {
+            $sheet->mergeCells('A5:L5');
+            $sheet->setCellValue('A5', 'Filter: ' . $filterSummary);
+            $sheet->getStyle('A5:L5')->getFont()->setItalic(true)->setSize(10)->getColor()->setARGB('FF475569');
+            $sheet->getStyle('A5:L5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getRowDimension(5)->setRowHeight(20);
+        }
 
         $sheet->setCellValue('A6', 'NO.');
         $sheet->setCellValue('B6', 'FOTO');
@@ -146,7 +208,7 @@ class Pegawai extends BaseController
         $sheet->getColumnDimension('H')->setWidth(14);
         $sheet->getColumnDimension('I')->setWidth(18);
         $sheet->getColumnDimension('J')->setWidth(16);
-        $sheet->getColumnDimension('K')->setWidth(18);
+        $sheet->getColumnDimension('K')->setWidth(22);
         $sheet->getColumnDimension('L')->setWidth(16);
 
         $sheet->getStyle('A1:L4')->getFont()->setBold(true)->setSize(12);
@@ -230,7 +292,11 @@ class Pegawai extends BaseController
         $sheet->getStyle('L' . $footerRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->getStyle('L' . $footerRow)->getFont()->setItalic(true)->getColor()->setARGB('FF8A8A8A');
 
-        $tmpFile = tempnam(sys_get_temp_dir(), 'pegawai_export_');
+        $tempDir = $this->getTempDirectory();
+        $tmpFile = tempnam($tempDir, 'pegawai_export_');
+        if ($tmpFile === false) {
+            $tmpFile = tempnam(sys_get_temp_dir(), 'pegawai_export_');
+        }
         if ($tmpFile === false) {
             return redirect()->to('/admin/master/pegawai')->with('error', 'Gagal menyiapkan file export.');
         }
@@ -250,6 +316,105 @@ class Pegawai extends BaseController
         }
 
         return $this->response->download($xlsxFile, null)->setFileName('daftar_pegawai.xlsx');
+    }
+
+    public function exportPdf()
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        if (! $this->isPegawaiTableReady()) {
+            return redirect()->to('/admin/master/pegawai')->with('error', 'Tabel pegawai belum tersedia. Jalankan migration.');
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (! (bool) ($menuPermissions['export'] ?? false)) {
+            return redirect()->to('/admin/master/pegawai')->with('error', 'Anda tidak memiliki izin export pada menu Pegawai.');
+        }
+
+        $filteredData = $this->getFilteredPegawaiForExport();
+        $items = $filteredData['items'];
+        $filterSummary = $filteredData['filter_summary'];
+
+        // Prepare Base64 encoded photos for Dompdf
+        foreach ($items as &$item) {
+            $fotoPath = trim((string) ($item['foto'] ?? ''));
+            $item['foto_base64'] = null;
+            if ($fotoPath !== '') {
+                $cleanPath = ltrim(str_replace('..', '', $fotoPath), '/');
+                $absolutePath = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
+                if (is_file($absolutePath)) {
+                    $mime = 'image/jpeg';
+                    $detectedMime = @mime_content_type($absolutePath);
+                    if (is_string($detectedMime) && $detectedMime !== '') {
+                        $mime = $detectedMime;
+                    }
+                    $binary = @file_get_contents($absolutePath);
+                    if ($binary !== false && $binary !== '') {
+                        $item['foto_base64'] = 'data:' . $mime . ';base64,' . base64_encode($binary);
+                    }
+                }
+            }
+        }
+        unset($item);
+
+        // Prepare Kop Surat Base64
+        $kopSuratSrc = '';
+        if (function_exists('kop_surat_url')) {
+            $kopUrl = kop_surat_url();
+            if ($kopUrl !== '') {
+                $cleanKop = ltrim($kopUrl, '/');
+                if (preg_match('#^https?://[^/]+/(.*)$#i', $kopUrl, $m)) {
+                    $cleanKop = ltrim($m[1], '/');
+                }
+                $kopPath = FCPATH . str_replace('/', DIRECTORY_SEPARATOR, $cleanKop);
+                if (is_file($kopPath)) {
+                    $kMime = 'image/png';
+                    $kDet = @mime_content_type($kopPath);
+                    if (is_string($kDet) && $kDet !== '') {
+                        $kMime = $kDet;
+                    }
+                    $kBin = @file_get_contents($kopPath);
+                    if ($kBin !== false && $kBin !== '') {
+                        $kopSuratSrc = 'data:' . $kMime . ';base64,' . base64_encode($kBin);
+                    }
+                }
+            }
+        }
+
+        $html = view('admin/master/pegawai_pdf', [
+            'items' => $items,
+            'filter_summary' => $filterSummary,
+            'kop_surat_src' => $kopSuratSrc,
+        ]);
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('defaultFont', 'Arial');
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $filename = 'daftar_pegawai_' . date('Ymd_His') . '.pdf';
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->setBody($dompdf->output());
+    }
+
+    private function getTempDirectory(): string
+    {
+        $dir = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'do_not_upload' . DIRECTORY_SEPARATOR . 'temp';
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        return is_dir($dir) ? realpath($dir) : sys_get_temp_dir();
     }
 
     private function prepareFotoForExcelExport(string $sourcePath, array &$tempFiles): ?string
@@ -305,7 +470,11 @@ class Pegawai extends BaseController
 
         imagedestroy($sourceImage);
 
-        $tmpFile = tempnam(sys_get_temp_dir(), 'pegawai_export_foto_');
+        $tempDir = $this->getTempDirectory();
+        $tmpFile = tempnam($tempDir, 'pegawai_export_foto_');
+        if ($tmpFile === false) {
+            $tmpFile = tempnam(sys_get_temp_dir(), 'pegawai_export_foto_');
+        }
         if ($tmpFile === false) {
             imagedestroy($targetImage);
             return null;

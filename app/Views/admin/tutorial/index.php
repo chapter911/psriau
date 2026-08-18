@@ -555,7 +555,7 @@ graph TD
                             <div class="card-body">
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-id-card mr-1"></i> Master Data Pegawai</h6>
                                 <p class="small text-muted mb-2"><code>/admin/master/pegawai</code></p>
-                                <p class="small mb-0">Pengelolaan data seluruh personil kantor Satker PPS Riau mencakup PNS, CPNS, PPPK, PPNPN, <strong>Konsultan Individual</strong>, <strong>Security (Tenaga Keamanan)</strong>, <strong>Cleaning Service (Tenaga Kebersihan)</strong>, dan Non-ASN Lainnya. Dilengkapi kalkulasi <strong>Masa Kerja</strong> otomatis real-time dari TMT CPNS (NIP 18-digit, digit 9-14), pengisian manual untuk pegawai non-NIP, filter Jenis Pegawai/Eselon/Golongan/Status, penambahan data NIP/NIK/ID Kontrak, unggah foto profil, serta fitur Import & Export Excel.</p>
+                                <p class="small mb-0">Pengelolaan data seluruh personil kantor Satker PPS Riau mencakup PNS, CPNS, PPPK, PPNPN, <strong>Konsultan Individual</strong>, <strong>Security (Tenaga Keamanan)</strong>, <strong>Cleaning Service (Tenaga Kebersihan)</strong>, dan Non-ASN Lainnya. Dilengkapi kalkulasi <strong>Masa Kerja</strong> otomatis real-time dari TMT CPNS (NIP 18-digit, digit 9-14), pengisian manual untuk pegawai non-NIP, filter Jenis Pegawai/Eselon/Golongan/Status, penambahan data NIP/NIK/ID Kontrak, unggah foto profil, serta fitur Import, <strong>Export Excel (.xlsx)</strong>, dan <strong>Export PDF (.pdf)</strong> lengkap dengan foto profil personil dan sinkronisasi filter aktif.</p>
                             </div>
                         </div>
                     </div>

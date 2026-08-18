@@ -36,7 +36,12 @@
         <?php if (! empty($can_add) || ! empty($can_import) || ! empty($can_export)): ?>
             <div class="float-right">
                 <?php if (! empty($can_export)): ?>
-                    <a href="<?= site_url('/admin/master/pegawai/export'); ?>" class="btn btn-success mr-2">Export Excel</a>
+                    <a href="<?= site_url('/admin/master/pegawai/export'); ?>" class="btn btn-success mr-2" id="btn-export-excel" title="Export ke format Excel (.xlsx)">
+                        <i class="fas fa-file-excel mr-1"></i> Export Excel
+                    </a>
+                    <a href="<?= site_url('/admin/master/pegawai/export-pdf'); ?>" class="btn btn-danger mr-2" id="btn-export-pdf" target="_blank" title="Export ke format PDF (.pdf)">
+                        <i class="fas fa-file-pdf mr-1"></i> Export PDF
+                    </a>
                 <?php endif; ?>
                 <?php if (! empty($can_import)): ?>
                     <button type="button" class="btn btn-info mr-2" data-toggle="modal" data-target="#modal-import-pegawai">Import Excel</button>
@@ -892,6 +897,26 @@
         });
     }
 
+    function syncExportUrls() {
+        const params = new URLSearchParams();
+        const jenis = ($('#filter-jenis-pegawai').val() || '').trim();
+        const eselon = ($('#filter-eselon').val() || '').trim();
+        const golongan = ($('#filter-golongan').val() || '').trim();
+        const status = ($('#filter-status').val() || '').trim();
+
+        if (jenis) params.set('jenis_pegawai', jenis);
+        if (eselon) params.set('eselon', eselon);
+        if (golongan) params.set('golongan', golongan);
+        if (status) params.set('status', status);
+
+        const qs = params.toString() ? ('?' + params.toString()) : '';
+        const baseUrlExcel = '<?= site_url('/admin/master/pegawai/export'); ?>';
+        const baseUrlPdf = '<?= site_url('/admin/master/pegawai/export-pdf'); ?>';
+
+        $('#btn-export-excel').attr('href', baseUrlExcel + qs);
+        $('#btn-export-pdf').attr('href', baseUrlPdf + qs);
+    }
+
     function updatePegawaiFilterIndicator() {
         let activeCount = 0;
         $('#filter-jenis-pegawai, #filter-eselon, #filter-golongan, #filter-status').each(function () {
@@ -910,6 +935,8 @@
             $('#btn-reset-filter').hide();
             $('#active-filter-badge').hide();
         }
+
+        syncExportUrls();
     }
 
     $(document).on('change', '#filter-jenis-pegawai, #filter-eselon, #filter-golongan, #filter-status', function () {
