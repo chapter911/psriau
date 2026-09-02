@@ -66,26 +66,35 @@ class Pegawai extends BaseController
             ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left')
             ->join('mst_jabatan jp', 'jp.id = p.jabatan_perbendaharaan_id', 'left');
 
-        $filterJenis = trim((string) $this->request->getGet('jenis_pegawai'));
+        $filterJenisRaw = $this->request->getGet('jenis_pegawai');
+        $filterJenisList = [];
+        if (is_array($filterJenisRaw)) {
+            $filterJenisList = array_values(array_filter(array_map('trim', $filterJenisRaw), fn($v) => $v !== ''));
+        } elseif (is_string($filterJenisRaw) && trim($filterJenisRaw) !== '') {
+            $filterJenisList = array_values(array_filter(array_map('trim', explode(',', $filterJenisRaw)), fn($v) => $v !== ''));
+        }
+
         $filterEselon = trim((string) $this->request->getGet('eselon'));
         $filterGolongan = trim((string) $this->request->getGet('golongan'));
         $filterStatus = trim((string) $this->request->getGet('status'));
 
         $summaryParts = [];
 
-        if ($filterJenis !== '') {
-            $builder->where('p.jenis_pegawai', $filterJenis);
-            $jpLabel = match (strtolower($filterJenis)) {
-                'konsultan' => 'Konsultan Individual',
-                'security' => 'Security',
-                'cleaning_service' => 'Cleaning Service',
-                'ppnpn' => 'PPNPN',
-                'pppk' => 'PPPK',
-                'cpns' => 'CPNS',
-                'lainnya' => 'Lainnya',
-                default => strtoupper($filterJenis),
-            };
-            $summaryParts[] = 'Jenis: ' . $jpLabel;
+        if (! empty($filterJenisList)) {
+            $builder->whereIn('p.jenis_pegawai', $filterJenisList);
+            $labels = array_map(function ($jp) {
+                return match (strtolower($jp)) {
+                    'konsultan' => 'Konsultan Individual',
+                    'security' => 'Security',
+                    'cleaning_service' => 'Cleaning Service',
+                    'ppnpn' => 'PPNPN',
+                    'pppk' => 'PPPK',
+                    'cpns' => 'CPNS',
+                    'lainnya' => 'Lainnya',
+                    default => strtoupper($jp),
+                };
+            }, $filterJenisList);
+            $summaryParts[] = 'Jenis: ' . implode(', ', $labels);
         }
 
         if ($filterEselon !== '') {

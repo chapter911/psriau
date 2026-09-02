@@ -28,6 +28,58 @@
     .jabatan-text-clamp:hover {
         color: #0056b3;
     }
+    /* Scoped Select2 Multiple Tag Style for Pegawai Filter */
+    .select2-filter-jp-wrapper .select2-container .select2-selection--multiple {
+        min-height: 31px !important;
+        padding-bottom: 2px !important;
+        border-color: #ced4da;
+    }
+    .select2-filter-jp-wrapper .select2-container .select2-selection--multiple .select2-selection__rendered {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 3px !important;
+        padding: 2px 4px !important;
+    }
+    .select2-filter-jp-wrapper .select2-container .select2-selection--multiple .select2-selection__choice {
+        display: inline-flex !important;
+        flex-direction: row-reverse !important;
+        align-items: center !important;
+        width: auto !important;
+        margin: 2px 2px !important;
+        padding: 1px 6px !important;
+        font-size: 0.78rem !important;
+        background-color: var(--app-primary, #0A66C2) !important;
+        border: 1px solid var(--app-primary, #0A66C2) !important;
+        color: #fff !important;
+        border-radius: 3px !important;
+        line-height: 1.3 !important;
+    }
+    .select2-filter-jp-wrapper .select2-container .select2-selection--multiple .select2-selection__choice__remove {
+        color: rgba(255, 255, 255, 0.9) !important;
+        font-size: 0.85rem !important;
+        margin-left: 5px !important;
+        padding: 0 !important;
+        font-weight: bold !important;
+    }
+    .select2-filter-jp-wrapper .select2-container .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #ffcccc !important;
+    }
+    .select2-filter-jp-wrapper .select2-container .select2-selection--multiple .select2-search--inline {
+        display: inline-block !important;
+        width: auto !important;
+        margin: 0 !important;
+    }
+    .select2-filter-jp-wrapper .select2-container .select2-selection--multiple .select2-search__field {
+        width: auto !important;
+        height: 24px !important;
+        min-width: 60px !important;
+        padding: 2px 4px !important;
+        margin: 0 !important;
+        font-size: 0.82rem !important;
+        line-height: normal !important;
+    }
 </style>
 
 <div class="card">
@@ -70,11 +122,16 @@
                 </div>
             </div>
             <div class="card-body py-2">
-                <div class="row">
-                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
-                        <label class="small font-weight-bold text-muted mb-1">JENIS PEGAWAI</label>
-                        <select id="filter-jenis-pegawai" class="form-control form-control-sm custom-select custom-select-sm">
-                            <option value="">Semua Jenis Pegawai</option>
+                <div class="row align-items-start">
+                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0 select2-filter-jp-wrapper">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="small font-weight-bold text-muted mb-0">JENIS PEGAWAI</label>
+                            <span class="small" style="font-size: 0.72rem;">
+                                <a href="#" class="btn-select-all-jp text-primary mr-1" title="Pilih Semua">[Semua]</a>
+                                <a href="#" class="btn-reset-jp text-danger" title="Kosongkan">[Reset]</a>
+                            </span>
+                        </div>
+                        <select id="filter-jenis-pegawai" class="form-control select2" multiple="multiple" data-placeholder="Semua Jenis Pegawai..." style="width: 100%;">
                             <option value="pns">PNS</option>
                             <option value="cpns">CPNS</option>
                             <option value="pppk">PPPK</option>
@@ -86,7 +143,9 @@
                         </select>
                     </div>
                     <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
-                        <label class="small font-weight-bold text-muted mb-1">ESELON</label>
+                        <div class="mb-1" style="height: 17px;">
+                            <label class="small font-weight-bold text-muted mb-0">ESELON</label>
+                        </div>
                         <select id="filter-eselon" class="form-control form-control-sm custom-select custom-select-sm">
                             <option value="">Semua Eselon</option>
                             <option value="Eselon I">Eselon I</option>
@@ -97,7 +156,9 @@
                         </select>
                     </div>
                     <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
-                        <label class="small font-weight-bold text-muted mb-1">GOLONGAN</label>
+                        <div class="mb-1" style="height: 17px;">
+                            <label class="small font-weight-bold text-muted mb-0">GOLONGAN</label>
+                        </div>
                         <select id="filter-golongan" class="form-control form-control-sm custom-select custom-select-sm">
                             <option value="">Semua Golongan</option>
                             <?php
@@ -109,7 +170,9 @@
                         </select>
                     </div>
                     <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
-                        <label class="small font-weight-bold text-muted mb-1">STATUS</label>
+                        <div class="mb-1" style="height: 17px;">
+                            <label class="small font-weight-bold text-muted mb-0">STATUS</label>
+                        </div>
                         <select id="filter-status" class="form-control form-control-sm custom-select custom-select-sm">
                             <option value="">Semua Status</option>
                             <option value="Aktif">Aktif</option>
@@ -861,6 +924,29 @@
         });
     });
 
+    // Initialize Select2 Multi-select on Jenis Pegawai filter
+    if (typeof $ !== 'undefined' && $.fn && $.fn.select2) {
+        $('#filter-jenis-pegawai').select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            placeholder: 'Semua Jenis Pegawai...',
+            allowClear: true,
+            closeOnSelect: false
+        });
+    }
+
+    // Quick action: Select All / Reset Jenis Pegawai
+    $(document).on('click', '.btn-select-all-jp', function (e) {
+        e.preventDefault();
+        $('#filter-jenis-pegawai option').prop('selected', true);
+        $('#filter-jenis-pegawai').trigger('change');
+    });
+
+    $(document).on('click', '.btn-reset-jp', function (e) {
+        e.preventDefault();
+        $('#filter-jenis-pegawai').val(null).trigger('change');
+    });
+
     // Custom DataTables Filter for Pegawai
     if (typeof $ !== 'undefined' && $.fn && $.fn.dataTable) {
         $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
@@ -868,24 +954,52 @@
                 return true;
             }
 
-            const filterJenis = $('#filter-jenis-pegawai').val().toLowerCase();
-            const filterEselon = $('#filter-eselon').val().toLowerCase();
-            const filterGolongan = $('#filter-golongan').val().toLowerCase();
-            const filterStatus = $('#filter-status').val().toLowerCase();
+            let selectedJenis = $('#filter-jenis-pegawai').val();
+            if (!selectedJenis) {
+                selectedJenis = [];
+            } else if (!Array.isArray(selectedJenis)) {
+                selectedJenis = [selectedJenis];
+            }
+            selectedJenis = selectedJenis.map(function (v) {
+                return (v || '').toString().toLowerCase().trim();
+            }).filter(function (v) {
+                return v !== '';
+            });
+
+            const filterEselon = ($('#filter-eselon').val() || '').toLowerCase().trim();
+            const filterGolongan = ($('#filter-golongan').val() || '').toLowerCase().trim();
+            const filterStatus = ($('#filter-status').val() || '').toLowerCase().trim();
 
             const rowJenis = (data[7] || '').trim().toLowerCase();
             const rowEselon = (data[8] || '').trim().toLowerCase();
             const rowGolongan = (data[9] || '').trim().toLowerCase();
             const rowStatus = (data[11] || '').trim().toLowerCase();
 
-            if (filterJenis) {
-                const fj = filterJenis.toLowerCase();
-                const rj = rowJenis.toLowerCase();
-                if (fj === 'konsultan' && !rj.includes('konsultan')) return false;
-                else if (fj === 'security' && !rj.includes('security')) return false;
-                else if (fj === 'cleaning_service' && !rj.includes('cleaning')) return false;
-                else if (fj !== 'konsultan' && fj !== 'security' && fj !== 'cleaning_service' && rj !== fj) return false;
+            if (selectedJenis.length > 0) {
+                let rawJp = '';
+                if (settings.aoData && settings.aoData[dataIndex] && settings.aoData[dataIndex].nTr) {
+                    const cell = $(settings.aoData[dataIndex].nTr).find('td').eq(7);
+                    rawJp = (cell.attr('data-filter') || '').toLowerCase().trim();
+                }
+                if (!rawJp) {
+                    rawJp = rowJenis;
+                }
+
+                const matchesJenis = selectedJenis.some(function (fj) {
+                    if (rawJp === fj) return true;
+                    if (fj === 'konsultan' && (rawJp.includes('konsultan') || rowJenis.includes('konsultan'))) return true;
+                    if (fj === 'security' && (rawJp.includes('security') || rowJenis.includes('security'))) return true;
+                    if (fj === 'cleaning_service' && (rawJp.includes('cleaning') || rawJp.includes('kebersihan') || rowJenis.includes('cleaning'))) return true;
+                    if (fj === 'lainnya' && (rawJp.includes('lainnya') || rawJp.includes('non-asn') || rowJenis.includes('lainnya'))) return true;
+                    if (rowJenis === fj || rowJenis.includes(fj)) return true;
+                    return false;
+                });
+
+                if (!matchesJenis) {
+                    return false;
+                }
             }
+
             if (filterEselon && rowEselon !== filterEselon) {
                 return false;
             }
@@ -902,12 +1016,17 @@
 
     function syncExportUrls() {
         const params = new URLSearchParams();
-        const jenis = ($('#filter-jenis-pegawai').val() || '').trim();
+        const jenisVals = $('#filter-jenis-pegawai').val();
         const eselon = ($('#filter-eselon').val() || '').trim();
         const golongan = ($('#filter-golongan').val() || '').trim();
         const status = ($('#filter-status').val() || '').trim();
 
-        if (jenis) params.set('jenis_pegawai', jenis);
+        if (Array.isArray(jenisVals) && jenisVals.length > 0) {
+            params.set('jenis_pegawai', jenisVals.join(','));
+        } else if (typeof jenisVals === 'string' && jenisVals.trim() !== '') {
+            params.set('jenis_pegawai', jenisVals.trim());
+        }
+
         if (eselon) params.set('eselon', eselon);
         if (golongan) params.set('golongan', golongan);
         if (status) params.set('status', status);
@@ -922,7 +1041,16 @@
 
     function updatePegawaiFilterIndicator() {
         let activeCount = 0;
-        $('#filter-jenis-pegawai, #filter-eselon, #filter-golongan, #filter-status').each(function () {
+
+        const selectedJenis = $('#filter-jenis-pegawai').val();
+        if (Array.isArray(selectedJenis) && selectedJenis.length > 0) {
+            activeCount++;
+            $('.select2-filter-jp-wrapper .select2-selection').addClass('border-info');
+        } else {
+            $('.select2-filter-jp-wrapper .select2-selection').removeClass('border-info');
+        }
+
+        $('#filter-eselon, #filter-golongan, #filter-status').each(function () {
             if ($(this).val() !== '') {
                 activeCount++;
                 $(this).addClass('border-info text-info font-weight-bold');
@@ -950,7 +1078,7 @@
     });
 
     $(document).on('click', '#btn-reset-filter', function () {
-        $('#filter-jenis-pegawai').val('');
+        $('#filter-jenis-pegawai').val(null).trigger('change');
         $('#filter-eselon').val('');
         $('#filter-golongan').val('');
         $('#filter-status').val('');
