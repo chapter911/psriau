@@ -150,10 +150,10 @@ class Pegawai extends BaseController
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Daftar Pegawai');
 
-        $sheet->mergeCells('A1:L1');
-        $sheet->mergeCells('A2:L2');
-        $sheet->mergeCells('A3:L3');
-        $sheet->mergeCells('A4:L4');
+        $sheet->mergeCells('A1:M1');
+        $sheet->mergeCells('A2:M2');
+        $sheet->mergeCells('A3:M3');
+        $sheet->mergeCells('A4:M4');
 
         $sheet->setCellValue('A1', 'DAFTAR PEGAWAI');
         $sheet->setCellValue('A2', 'SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU');
@@ -161,10 +161,10 @@ class Pegawai extends BaseController
         $sheet->setCellValue('A4', 'KEMENTERIAN PEKERJAAN UMUM');
 
         if ($filterSummary !== '') {
-            $sheet->mergeCells('A5:L5');
+            $sheet->mergeCells('A5:M5');
             $sheet->setCellValue('A5', 'Filter: ' . $filterSummary);
-            $sheet->getStyle('A5:L5')->getFont()->setItalic(true)->setSize(10)->getColor()->setARGB('FF475569');
-            $sheet->getStyle('A5:L5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A5:M5')->getFont()->setItalic(true)->setSize(10)->getColor()->setARGB('FF475569');
+            $sheet->getStyle('A5:M5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getRowDimension(5)->setRowHeight(20);
         }
 
@@ -172,67 +172,71 @@ class Pegawai extends BaseController
         $sheet->setCellValue('B6', 'FOTO');
         $sheet->setCellValue('C6', 'NAMA');
         $sheet->setCellValue('D6', 'NIP');
-        $sheet->setCellValue('E6', 'EMAIL');
-        $sheet->setCellValue('F6', 'JABATAN');
-        $sheet->setCellValue('H6', 'ESELON');
-        $sheet->setCellValue('I6', 'GOLONGAN');
-        $sheet->setCellValue('J6', 'MASA KERJA');
-        $sheet->setCellValue('K6', 'JENIS PEGAWAI');
-        $sheet->setCellValue('L6', 'STATUS');
+        $sheet->setCellValue('E6', 'ID CARD (RFID)');
+        $sheet->setCellValue('F6', 'EMAIL');
+        $sheet->setCellValue('G6', 'JABATAN');
+        $sheet->setCellValue('I6', 'ESELON');
+        $sheet->setCellValue('J6', 'GOLONGAN');
+        $sheet->setCellValue('K6', 'MASA KERJA');
+        $sheet->setCellValue('L6', 'JENIS PEGAWAI');
+        $sheet->setCellValue('M6', 'STATUS');
 
         $sheet->mergeCells('A6:A7');
         $sheet->mergeCells('B6:B7');
         $sheet->mergeCells('C6:C7');
         $sheet->mergeCells('D6:D7');
         $sheet->mergeCells('E6:E7');
-        $sheet->mergeCells('F6:G6');
-        $sheet->mergeCells('H6:H7');
+        $sheet->mergeCells('F6:F7');
+        $sheet->mergeCells('G6:H6');
         $sheet->mergeCells('I6:I7');
         $sheet->mergeCells('J6:J7');
         $sheet->mergeCells('K6:K7');
         $sheet->mergeCells('L6:L7');
-        $sheet->setCellValue('F7', 'JABATAN FUNGSIONAL / PELAKSANA');
-        $sheet->setCellValue('G7', 'JABATAN PERBENDAHARAAN');
+        $sheet->mergeCells('M6:M7');
+        $sheet->setCellValue('G7', 'JABATAN FUNGSIONAL / PELAKSANA');
+        $sheet->setCellValue('H7', 'JABATAN PERBENDAHARAAN');
 
         $sheet->setCellValue('A8', '1');
         $sheet->setCellValue('B8', '2');
         $sheet->setCellValue('C8', '3');
         $sheet->setCellValue('D8', '4');
         $sheet->setCellValue('E8', '5');
-        $sheet->mergeCells('F8:G8');
         $sheet->setCellValue('F8', '6');
-        $sheet->setCellValue('H8', '7');
+        $sheet->mergeCells('G8:H8');
+        $sheet->setCellValue('G8', '7');
         $sheet->setCellValue('I8', '8');
         $sheet->setCellValue('J8', '9');
         $sheet->setCellValue('K8', '10');
         $sheet->setCellValue('L8', '11');
+        $sheet->setCellValue('M8', '12');
 
         $sheet->getColumnDimension('A')->setWidth(6);
         $sheet->getColumnDimension('B')->setWidth(16);
         $sheet->getColumnDimension('C')->setWidth(32);
         $sheet->getColumnDimension('D')->setWidth(24);
-        $sheet->getColumnDimension('E')->setWidth(28);
-        $sheet->getColumnDimension('F')->setWidth(42);
+        $sheet->getColumnDimension('E')->setWidth(20);
+        $sheet->getColumnDimension('F')->setWidth(28);
         $sheet->getColumnDimension('G')->setWidth(42);
-        $sheet->getColumnDimension('H')->setWidth(14);
-        $sheet->getColumnDimension('I')->setWidth(18);
-        $sheet->getColumnDimension('J')->setWidth(16);
-        $sheet->getColumnDimension('K')->setWidth(22);
-        $sheet->getColumnDimension('L')->setWidth(16);
+        $sheet->getColumnDimension('H')->setWidth(42);
+        $sheet->getColumnDimension('I')->setWidth(14);
+        $sheet->getColumnDimension('J')->setWidth(18);
+        $sheet->getColumnDimension('K')->setWidth(16);
+        $sheet->getColumnDimension('L')->setWidth(22);
+        $sheet->getColumnDimension('M')->setWidth(16);
 
-        $sheet->getStyle('A1:L4')->getFont()->setBold(true)->setSize(12);
-        $sheet->getStyle('A1:L4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A1:L4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A1:M4')->getFont()->setBold(true)->setSize(12);
+        $sheet->getStyle('A1:M4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:M4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
         $sheet->getRowDimension(1)->setRowHeight(28);
         $sheet->getRowDimension(2)->setRowHeight(28);
         $sheet->getRowDimension(3)->setRowHeight(28);
         $sheet->getRowDimension(4)->setRowHeight(28);
 
-        $sheet->getStyle('A6:L8')->getFont()->setBold(true);
-        $sheet->getStyle('A6:L8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A6:L8')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A6:L8')->getAlignment()->setWrapText(true);
-        $sheet->getStyle('A6:L8')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEAEAEA');
+        $sheet->getStyle('A6:M8')->getFont()->setBold(true);
+        $sheet->getStyle('A6:M8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A6:M8')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A6:M8')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A6:M8')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEAEAEA');
         $sheet->getRowDimension(6)->setRowHeight(30);
         $sheet->getRowDimension(7)->setRowHeight(28);
         $sheet->getRowDimension(8)->setRowHeight(22);
@@ -248,12 +252,13 @@ class Pegawai extends BaseController
             $sheet->setCellValue('A' . $row, $no++);
             $sheet->setCellValue('C' . $row, (string) ($item['nama'] ?? ''));
             $sheet->setCellValue('D' . $row, $displayNip);
-            $sheet->setCellValue('E' . $row, (string) ($item['email'] ?? ''));
-            $sheet->setCellValue('F' . $row, (string) ($item['jabatan_utama_label'] ?? ''));
-            $sheet->setCellValue('G' . $row, (string) ($item['jabatan_perbendaharaan_label'] ?? ''));
-            $sheet->setCellValue('H' . $row, (string) ($item['eselon'] ?? ''));
-            $sheet->setCellValue('I' . $row, (string) ($item['golongan'] ?? ''));
-            $sheet->setCellValue('J' . $row, (string) ($item['masa_kerja'] ?? ''));
+            $sheet->setCellValue('E' . $row, (string) ($item['id_card'] ?? ''));
+            $sheet->setCellValue('F' . $row, (string) ($item['email'] ?? ''));
+            $sheet->setCellValue('G' . $row, (string) ($item['jabatan_utama_label'] ?? ''));
+            $sheet->setCellValue('H' . $row, (string) ($item['jabatan_perbendaharaan_label'] ?? ''));
+            $sheet->setCellValue('I' . $row, (string) ($item['eselon'] ?? ''));
+            $sheet->setCellValue('J' . $row, (string) ($item['golongan'] ?? ''));
+            $sheet->setCellValue('K' . $row, (string) ($item['masa_kerja'] ?? ''));
             $jpLabel = match ($jpRaw) {
                 'konsultan' => 'KONSULTAN INDIVIDUAL',
                 'security' => 'SECURITY',
@@ -264,8 +269,8 @@ class Pegawai extends BaseController
                 'lainnya' => 'LAINNYA',
                 default => strtoupper($jpRaw),
             };
-            $sheet->setCellValue('K' . $row, $jpLabel);
-            $sheet->setCellValue('L' . $row, (int) ($item['is_active'] ?? 1) === 1 ? 'AKTIF' : 'NONAKTIF');
+            $sheet->setCellValue('L' . $row, $jpLabel);
+            $sheet->setCellValue('M' . $row, (int) ($item['is_active'] ?? 1) === 1 ? 'AKTIF' : 'NONAKTIF');
 
             $sheet->getRowDimension($row)->setRowHeight(82);
 
@@ -288,21 +293,22 @@ class Pegawai extends BaseController
         }
 
         $lastRow = max(9, $row - 1);
-        $sheet->getStyle('A9:L' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
-        $sheet->getStyle('A9:L' . $lastRow)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A9:M' . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+        $sheet->getStyle('A9:M' . $lastRow)->getAlignment()->setWrapText(true);
         $sheet->getStyle('A9:A' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('B9:B' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('D9:D' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('H9:L' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('E9:E' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('I9:M' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $sheet->getStyle('A6:L' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-        $sheet->getStyle('A6:L' . $lastRow)->getBorders()->getOutline()->setBorderStyle(Border::BORDER_MEDIUM);
-        $sheet->getStyle('A6:L' . $lastRow)->getBorders()->getOutline()->getColor()->setARGB('FF1E3A8A');
+        $sheet->getStyle('A6:M' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyle('A6:M' . $lastRow)->getBorders()->getOutline()->setBorderStyle(Border::BORDER_MEDIUM);
+        $sheet->getStyle('A6:M' . $lastRow)->getBorders()->getOutline()->getColor()->setARGB('FF1E3A8A');
 
         $footerRow = $lastRow + 1;
-        $sheet->setCellValue('L' . $footerRow, 'Page 1');
-        $sheet->getStyle('L' . $footerRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->getStyle('L' . $footerRow)->getFont()->setItalic(true)->getColor()->setARGB('FF8A8A8A');
+        $sheet->setCellValue('M' . $footerRow, 'Page 1');
+        $sheet->getStyle('M' . $footerRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('M' . $footerRow)->getFont()->setItalic(true)->getColor()->setARGB('FF8A8A8A');
 
         $tempDir = $this->getTempDirectory();
         $tmpFile = tempnam($tempDir, 'pegawai_export_');
@@ -560,6 +566,7 @@ class Pegawai extends BaseController
             'nip' => 'required|max_length[30]',
             'nama' => 'required|max_length[150]',
             'email' => 'permit_empty|valid_email|max_length[255]',
+            'id_card' => 'permit_empty|max_length[100]',
             'jenis_pegawai' => 'required|in_list[cpns,pns,pppk,ppnpn,konsultan,security,cleaning_service,lainnya]',
             'jabatan_utama_id' => 'permit_empty|integer',
             'jabatan_perbendaharaan_id' => 'permit_empty|integer',
@@ -572,6 +579,11 @@ class Pegawai extends BaseController
         $fotoFile = $this->request->getFile('foto');
         if ($fotoFile && $fotoFile->isValid()) {
             $rules['foto'] = 'is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png,image/webp]';
+        }
+
+        $fotoIdCardFile = $this->request->getFile('foto_id_card');
+        if ($fotoIdCardFile && $fotoIdCardFile->isValid()) {
+            $rules['foto_id_card'] = 'is_image[foto_id_card]|max_size[foto_id_card,2048]|mime_in[foto_id_card,image/jpg,image/jpeg,image/png,image/webp]';
         }
 
         if (! $this->validate($rules)) {
@@ -601,6 +613,18 @@ class Pegawai extends BaseController
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'NIP sudah terdaftar.');
         }
 
+        $idCard = $this->nullableString($this->request->getPost('id_card'));
+        if ($idCard !== null && $model->where('id_card', $idCard)->countAllResults() > 0) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'ID Card (RFID) sudah terdaftar pada pegawai lain.',
+                    'csrf_hash' => csrf_hash(),
+                ]);
+            }
+            return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'ID Card (RFID) sudah terdaftar pada pegawai lain.');
+        }
+
         $jabatanOptions = $this->resolveJabatanOptions();
         $jabatanUtamaRaw = $this->request->getPost('jabatan_utama_id');
         $jabatanUtamaId = ($jabatanUtamaRaw !== null && $jabatanUtamaRaw !== '' && (int) $jabatanUtamaRaw > 0) ? (int) $jabatanUtamaRaw : null;
@@ -628,7 +652,8 @@ class Pegawai extends BaseController
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'Jabatan perbendaharaan tidak valid.');
         }
 
-        $fotoPath = $this->handleFotoUpload('foto', null);
+        $fotoPath = $this->handleFotoUpload('foto', null, 'pegawai');
+        $fotoIdCardPath = $this->handleFotoUpload('foto_id_card', null, 'pegawai/id_card');
 
         $now = date('Y-m-d H:i:s');
         $username = (string) (session()->get('username') ?? 'system');
@@ -637,8 +662,10 @@ class Pegawai extends BaseController
             'nip' => $nip,
             'nama' => trim((string) $this->request->getPost('nama')),
             'email' => $this->nullableString($this->request->getPost('email')),
+            'id_card' => $idCard,
             'jenis_pegawai' => strtolower(trim((string) $this->request->getPost('jenis_pegawai'))),
             'foto' => $fotoPath,
+            'foto_id_card' => $fotoIdCardPath,
             'jabatan_utama_id' => $jabatanUtamaId,
             'jabatan_perbendaharaan_id' => $jabatanPerbendaharaanId > 0 ? $jabatanPerbendaharaanId : null,
             'eselon' => $this->nullableString($this->request->getPost('eselon')),
@@ -702,6 +729,7 @@ class Pegawai extends BaseController
             'nip' => 'required|max_length[30]',
             'nama' => 'required|max_length[150]',
             'email' => 'permit_empty|valid_email|max_length[255]',
+            'id_card' => 'permit_empty|max_length[100]',
             'jenis_pegawai' => 'required|in_list[cpns,pns,pppk,ppnpn,konsultan,security,cleaning_service,lainnya]',
             'jabatan_utama_id' => 'permit_empty|integer',
             'jabatan_perbendaharaan_id' => 'permit_empty|integer',
@@ -714,6 +742,11 @@ class Pegawai extends BaseController
         $fotoFile = $this->request->getFile('foto');
         if ($fotoFile && $fotoFile->isValid()) {
             $rules['foto'] = 'is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png,image/webp]';
+        }
+
+        $fotoIdCardFile = $this->request->getFile('foto_id_card');
+        if ($fotoIdCardFile && $fotoIdCardFile->isValid()) {
+            $rules['foto_id_card'] = 'is_image[foto_id_card]|max_size[foto_id_card,2048]|mime_in[foto_id_card,image/jpg,image/jpeg,image/png,image/webp]';
         }
 
         if (! $this->validate($rules)) {
@@ -756,6 +789,21 @@ class Pegawai extends BaseController
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'NIP sudah digunakan oleh data lain.');
         }
 
+        $idCard = $this->nullableString($this->request->getPost('id_card'));
+        if ($idCard !== null) {
+            $duplicateCard = $model->where('id_card', $idCard)->where('id !=', $id)->countAllResults();
+            if ($duplicateCard > 0) {
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON([
+                        'status' => 'error',
+                        'message' => 'ID Card (RFID) sudah digunakan oleh pegawai lain.',
+                        'csrf_hash' => csrf_hash(),
+                    ]);
+                }
+                return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'ID Card (RFID) sudah digunakan oleh pegawai lain.');
+            }
+        }
+
         $jabatanOptions = $this->resolveJabatanOptions();
         $jabatanUtamaRaw = $this->request->getPost('jabatan_utama_id');
         $jabatanUtamaId = ($jabatanUtamaRaw !== null && $jabatanUtamaRaw !== '' && (int) $jabatanUtamaRaw > 0) ? (int) $jabatanUtamaRaw : null;
@@ -783,14 +831,17 @@ class Pegawai extends BaseController
             return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'Jabatan perbendaharaan tidak valid.');
         }
 
-        $fotoPath = $this->handleFotoUpload('foto', (string) ($existing['foto'] ?? ''));
+        $fotoPath = $this->handleFotoUpload('foto', (string) ($existing['foto'] ?? ''), 'pegawai');
+        $fotoIdCardPath = $this->handleFotoUpload('foto_id_card', (string) ($existing['foto_id_card'] ?? ''), 'pegawai/id_card');
 
         $model->update($id, [
             'nip' => $nip,
             'nama' => trim((string) $this->request->getPost('nama')),
             'email' => $this->nullableString($this->request->getPost('email')),
+            'id_card' => $idCard,
             'jenis_pegawai' => strtolower(trim((string) $this->request->getPost('jenis_pegawai'))),
             'foto' => $fotoPath,
+            'foto_id_card' => $fotoIdCardPath,
             'jabatan_utama_id' => $jabatanUtamaId,
             'jabatan_perbendaharaan_id' => $jabatanPerbendaharaanId > 0 ? $jabatanPerbendaharaanId : null,
             'eselon' => $this->nullableString($this->request->getPost('eselon')),
@@ -899,26 +950,28 @@ class Pegawai extends BaseController
         $sheet->setCellValue('A1', 'nip');
         $sheet->setCellValue('B1', 'nama');
         $sheet->setCellValue('C1', 'email');
-        $sheet->setCellValue('D1', 'jabatan_utama');
-        $sheet->setCellValue('E1', 'jabatan_perbendaharaan');
-        $sheet->setCellValue('F1', 'eselon');
-        $sheet->setCellValue('G1', 'golongan');
-        $sheet->setCellValue('H1', 'masa_kerja');
-        $sheet->setCellValue('I1', 'status');
-        $sheet->setCellValue('J1', 'jenis_pegawai');
+        $sheet->setCellValue('D1', 'id_card');
+        $sheet->setCellValue('E1', 'jabatan_utama');
+        $sheet->setCellValue('F1', 'jabatan_perbendaharaan');
+        $sheet->setCellValue('G1', 'eselon');
+        $sheet->setCellValue('H1', 'golongan');
+        $sheet->setCellValue('I1', 'masa_kerja');
+        $sheet->setCellValue('J1', 'status');
+        $sheet->setCellValue('K1', 'jenis_pegawai');
 
         $sheet->setCellValue('A2', '198301012008011001');
         $sheet->setCellValue('B2', 'Nama Pegawai');
         $sheet->setCellValue('C2', 'pegawai@example.com');
-        $sheet->setCellValue('D2', 'Analis Kepegawaian');
-        $sheet->setCellValue('E2', 'Bendahara Pengeluaran');
-        $sheet->setCellValue('F2', 'III.a');
-        $sheet->setCellValue('G2', 'III/b');
-        $sheet->setCellValue('H2', '10 Tahun');
-        $sheet->setCellValue('I2', 'aktif');
-        $sheet->setCellValue('J2', 'pns');
+        $sheet->setCellValue('D2', 'RFID-12345678');
+        $sheet->setCellValue('E2', 'Analis Kepegawaian');
+        $sheet->setCellValue('F2', 'Bendahara Pengeluaran');
+        $sheet->setCellValue('G2', 'III.a');
+        $sheet->setCellValue('H2', 'III/b');
+        $sheet->setCellValue('I2', '10 Tahun');
+        $sheet->setCellValue('J2', 'aktif');
+        $sheet->setCellValue('K2', 'pns');
 
-        foreach (range('A', 'J') as $col) {
+        foreach (range('A', 'K') as $col) {
             $sheet->getStyle($col . '1')->getFont()->setBold(true);
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
@@ -1076,6 +1129,7 @@ class Pegawai extends BaseController
                 'nip' => $nip,
                 'nama' => $nama,
                 'email' => $this->nullableString($rowData['email'] ?? ''),
+                'id_card' => $this->nullableString($rowData['id_card'] ?? ''),
                 'jenis_pegawai' => $jenisPegawai,
                 'jabatan_utama_id' => $jabatanUtamaId,
                 'jabatan_perbendaharaan_id' => $jabatanPerbendId,
@@ -1095,6 +1149,7 @@ class Pegawai extends BaseController
             }
 
             $payload['foto'] = null;
+            $payload['foto_id_card'] = null;
             $payload['created_by'] = $username;
             $payload['created_date'] = $now;
             $model->insert($payload);
@@ -1283,7 +1338,7 @@ class Pegawai extends BaseController
         return null;
     }
 
-    private function handleFotoUpload(string $fieldName, ?string $oldPath): ?string
+    private function handleFotoUpload(string $fieldName, ?string $oldPath, string $subDir = 'pegawai'): ?string
     {
         $file = $this->request->getFile($fieldName);
         if (! $file || $file->getError() === UPLOAD_ERR_NO_FILE) {
@@ -1294,7 +1349,8 @@ class Pegawai extends BaseController
             return $oldPath;
         }
 
-        $uploadDir = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'pegawai';
+        $cleanSubDir = trim(str_replace(['\\', '..'], '/', $subDir), '/');
+        $uploadDir = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanSubDir);
         if (! is_dir($uploadDir)) {
             @mkdir($uploadDir, 0775, true);
         }
@@ -1306,13 +1362,13 @@ class Pegawai extends BaseController
             $this->deleteFotoFile($oldPath);
         }
 
-        return 'uploads/pegawai/' . $newName;
+        return 'uploads/' . $cleanSubDir . '/' . $newName;
     }
 
     private function deleteFotoFile(string $relativePath): void
     {
         $relativePath = ltrim(str_replace('..', '', $relativePath), '/');
-        if ($relativePath === '' || strpos($relativePath, 'uploads/pegawai/') !== 0) {
+        if ($relativePath === '' || strpos($relativePath, 'uploads/pegawai') !== 0) {
             return;
         }
 
@@ -1331,6 +1387,8 @@ class Pegawai extends BaseController
         return match ($header) {
             'nip' => 'nip',
             'nama', 'nama_pegawai' => 'nama',
+            'email' => 'email',
+            'id_card', 'idcard', 'rfid', 'kartu_rfid', 'nomor_id_card', 'id_kartu' => 'id_card',
             'jabatan_utama', 'jabatan', 'jabatan_fungsional_pelaksana' => 'jabatan_utama',
             'jabatan_perbendaharaan', 'perbendaharaan' => 'jabatan_perbendaharaan',
             'eselon' => 'eselon',

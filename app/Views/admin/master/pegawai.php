@@ -187,9 +187,11 @@
             <thead>
                 <tr style="white-space: nowrap;">
                     <th class="text-center">#</th>
-                    <th class="text-center">FOTO</th>
+                    <th class="text-center">FOTO PROFIL</th>
+                    <th class="text-center">FOTO ID CARD</th>
                     <th class="text-center">NIP</th>
                     <th class="text-center">NAMA</th>
+                    <th class="text-center">ID CARD (RFID)</th>
                     <th class="text-center">EMAIL</th>
                     <th class="text-center jabatan-col">JABATAN (FUNGSIONAL/PELAKSANA)</th>
                     <th class="text-center jabatan-col">JABATAN (PERBENDAHARAAN)</th>
@@ -209,9 +211,12 @@
                         $isActive = (int) ($item['is_active'] ?? 1) === 1;
                         $fotoPath = trim((string) ($item['foto'] ?? ''));
                         $fotoUrl = $fotoPath !== '' ? media_url($fotoPath) : '';
+                        $fotoIdCardPath = trim((string) ($item['foto_id_card'] ?? ''));
+                        $fotoIdCardUrl = $fotoIdCardPath !== '' ? media_url($fotoIdCardPath) : '';
                         $jpVal = strtolower(trim((string) ($item['jenis_pegawai'] ?? 'pns')));
                         $isAsn = in_array($jpVal, ['pns', 'cpns', 'pppk'], true);
                         $displayNip = $isAsn ? trim((string) ($item['nip'] ?? '')) : '';
+                        $idCardVal = trim((string) ($item['id_card'] ?? ''));
                     ?>
                     <tr>
                         <td><?= esc((string) $i++); ?></td>
@@ -221,10 +226,10 @@
                                     type="button"
                                     class="btn p-0 border-0 bg-transparent js-open-foto-modal"
                                     data-foto-url="<?= esc($fotoUrl, 'attr'); ?>"
-                                    data-nama="<?= esc((string) ($item['nama'] ?? 'Pegawai'), 'attr'); ?>"
-                                    title="Lihat foto"
+                                    data-nama="Foto Profil - <?= esc((string) ($item['nama'] ?? 'Pegawai'), 'attr'); ?>"
+                                    title="Lihat foto profil"
                                 >
-                                    <img src="<?= esc($fotoUrl); ?>" alt="Foto Pegawai" style="width: 56px; height: 56px; border-radius: 6px; object-fit: cover; border: 1px solid #dee2e6;">
+                                    <img src="<?= esc($fotoUrl); ?>" alt="Foto Pegawai" style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover; border: 1px solid #dee2e6;">
                                 </button>
                             <?php elseif (! empty($can_edit)): ?>
                                 <button
@@ -236,7 +241,9 @@
                                     data-nip="<?= esc((string) ($item['nip'] ?? ''), 'attr'); ?>"
                                     data-nama="<?= esc((string) ($item['nama'] ?? ''), 'attr'); ?>"
                                     data-email="<?= esc((string) ($item['email'] ?? ''), 'attr'); ?>"
+                                    data-id_card="<?= esc($idCardVal, 'attr'); ?>"
                                     data-foto-url=""
+                                    data-foto_id_card-url="<?= esc($fotoIdCardUrl, 'attr'); ?>"
                                     data-jabatan_utama_id="<?= esc((string) ($item['jabatan_utama_id'] ?? ''), 'attr'); ?>"
                                     data-jabatan_perbendaharaan_id="<?= esc((string) ($item['jabatan_perbendaharaan_id'] ?? ''), 'attr'); ?>"
                                     data-jenis_pegawai="<?= esc((string) ($item['jenis_pegawai'] ?? 'pns'), 'attr'); ?>"
@@ -244,8 +251,8 @@
                                     data-golongan="<?= esc((string) ($item['golongan'] ?? ''), 'attr'); ?>"
                                     data-masa_kerja="<?= esc((string) ($item['masa_kerja'] ?? ''), 'attr'); ?>"
                                     data-is_active="<?= esc((string) ($item['is_active'] ?? 1), 'attr'); ?>"
-                                    title="Klik untuk update foto"
-                                    style="width: 56px; height: 56px; border-radius: 6px;"
+                                    title="Upload foto profil"
+                                    style="width: 50px; height: 50px; border-radius: 6px; border-style: dashed !important;"
                                 >
                                     <span class="text-muted font-weight-bold">+</span>
                                 </button>
@@ -253,8 +260,57 @@
                                 <span class="badge badge-light border">-</span>
                             <?php endif; ?>
                         </td>
+                        <td class="text-center">
+                            <?php if ($fotoIdCardUrl !== ''): ?>
+                                <button
+                                    type="button"
+                                    class="btn p-0 border-0 bg-transparent js-open-foto-modal"
+                                    data-foto-url="<?= esc($fotoIdCardUrl, 'attr'); ?>"
+                                    data-nama="Foto ID Card - <?= esc((string) ($item['nama'] ?? 'Pegawai'), 'attr'); ?>"
+                                    title="Lihat foto ID Card"
+                                >
+                                    <img src="<?= esc($fotoIdCardUrl); ?>" alt="Foto ID Card" style="width: 58px; height: 38px; border-radius: 4px; object-fit: cover; border: 1px solid #17a2b8; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                </button>
+                            <?php elseif (! empty($can_edit)): ?>
+                                <button
+                                    type="button"
+                                    class="btn btn-light border d-inline-flex align-items-center justify-content-center js-open-edit-pegawai-foto"
+                                    data-toggle="modal"
+                                    data-target="#modal-ubah-pegawai"
+                                    data-id="<?= esc((string) ($item['id'] ?? ''), 'attr'); ?>"
+                                    data-nip="<?= esc((string) ($item['nip'] ?? ''), 'attr'); ?>"
+                                    data-nama="<?= esc((string) ($item['nama'] ?? ''), 'attr'); ?>"
+                                    data-email="<?= esc((string) ($item['email'] ?? ''), 'attr'); ?>"
+                                    data-id_card="<?= esc($idCardVal, 'attr'); ?>"
+                                    data-foto-url="<?= esc($fotoUrl, 'attr'); ?>"
+                                    data-foto_id_card-url=""
+                                    data-jabatan_utama_id="<?= esc((string) ($item['jabatan_utama_id'] ?? ''), 'attr'); ?>"
+                                    data-jabatan_perbendaharaan_id="<?= esc((string) ($item['jabatan_perbendaharaan_id'] ?? ''), 'attr'); ?>"
+                                    data-jenis_pegawai="<?= esc((string) ($item['jenis_pegawai'] ?? 'pns'), 'attr'); ?>"
+                                    data-eselon="<?= esc((string) ($item['eselon'] ?? ''), 'attr'); ?>"
+                                    data-golongan="<?= esc((string) ($item['golongan'] ?? ''), 'attr'); ?>"
+                                    data-masa_kerja="<?= esc((string) ($item['masa_kerja'] ?? ''), 'attr'); ?>"
+                                    data-is_active="<?= esc((string) ($item['is_active'] ?? 1), 'attr'); ?>"
+                                    title="Upload foto ID card"
+                                    style="width: 58px; height: 38px; border-radius: 4px; border-style: dashed !important;"
+                                >
+                                    <i class="fas fa-id-card text-muted small mr-1"></i><span class="text-muted font-weight-bold" style="font-size: 11px;">+</span>
+                                </button>
+                            <?php else: ?>
+                                <span class="badge badge-light border">-</span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= esc($displayNip !== '' ? $displayNip : '-'); ?></td>
                         <td><?= esc((string) ($item['nama'] ?? '-')); ?></td>
+                        <td class="text-center">
+                            <?php if ($idCardVal !== ''): ?>
+                                <span class="badge badge-info" style="font-family: monospace; font-size: 0.82rem; letter-spacing: 0.5px; padding: 4px 6px;">
+                                    <i class="fas fa-id-badge mr-1"></i><?= esc($idCardVal); ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="text-muted">-</span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= esc((string) ($item['email'] ?? '-')); ?></td>
                         <td class="jabatan-col">
                             <?php $jabatanUtama = trim((string) ($item['jabatan_utama_label'] ?? '-')); ?>
@@ -306,7 +362,9 @@
                                     data-nip="<?= esc((string) ($item['nip'] ?? ''), 'attr'); ?>"
                                     data-nama="<?= esc((string) ($item['nama'] ?? ''), 'attr'); ?>"
                                     data-email="<?= esc((string) ($item['email'] ?? ''), 'attr'); ?>"
+                                    data-id_card="<?= esc($idCardVal, 'attr'); ?>"
                                     data-foto-url="<?= esc($fotoUrl, 'attr'); ?>"
+                                    data-foto_id_card-url="<?= esc($fotoIdCardUrl, 'attr'); ?>"
                                     data-jabatan_utama_id="<?= esc((string) ($item['jabatan_utama_id'] ?? ''), 'attr'); ?>"
                                     data-jabatan_perbendaharaan_id="<?= esc((string) ($item['jabatan_perbendaharaan_id'] ?? ''), 'attr'); ?>"
                                     data-jenis_pegawai="<?= esc((string) ($item['jenis_pegawai'] ?? 'pns'), 'attr'); ?>"
@@ -347,7 +405,7 @@
                 <div class="modal-body">
                     <div class="alert alert-info mb-3">
                         Kolom wajib: <strong>nip</strong>, <strong>nama</strong>, <strong>jabatan_utama</strong>, <strong>jenis_pegawai</strong> (pns/cpns/pppk/ppnpn/konsultan/security/cleaning_service/lainnya).<br>
-                        Kolom opsional: <strong>email</strong>, <strong>jabatan_perbendaharaan</strong>, <strong>eselon</strong>, <strong>golongan</strong>, <strong>masa_kerja</strong>, <strong>status</strong>.
+                        Kolom opsional: <strong>id_card</strong>, <strong>email</strong>, <strong>jabatan_perbendaharaan</strong>, <strong>eselon</strong>, <strong>golongan</strong>, <strong>masa_kerja</strong>, <strong>status</strong>.
                     </div>
                     <div class="mb-3">
                         <a href="<?= site_url('/admin/master/pegawai/template'); ?>" class="btn btn-success btn-sm">
@@ -357,7 +415,7 @@
                     <div class="form-group mb-0">
                         <label for="file_excel_pegawai">File Excel</label>
                         <input type="file" class="form-control" id="file_excel_pegawai" name="file_excel" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
-                        <small class="text-muted">Import hanya untuk data teks. Foto tetap diupload dari form tambah/ubah.</small>
+                        <small class="text-muted">Import hanya untuk data teks (termasuk nomor RFID/ID Card). Foto profil & foto ID Card diupload dari form tambah/ubah.</small>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -400,8 +458,21 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label>Foto</label>
+                            <label><i class="fas fa-id-card text-info mr-1"></i> ID Card (RFID)</label>
+                            <input type="text" name="id_card" class="form-control" maxlength="100" placeholder="Nomor / UID Kartu RFID">
+                            <small class="text-muted">Nomor serial/kartu RFID pegawai</small>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Foto ID Card</label>
+                            <input type="file" name="foto_id_card" class="form-control" accept="image/*">
+                            <small class="text-muted">Upload scan / foto kartu fisik ID Card</small>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Foto Profil</label>
                             <input type="file" name="foto" class="form-control" accept="image/*">
+                            <small class="text-muted">Upload foto profil pegawai</small>
                         </div>
                         <div class="form-group col-md-6">
                             <label>Status</label>
@@ -499,9 +570,21 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label>Foto</label>
+                            <label><i class="fas fa-id-card text-info mr-1"></i> ID Card (RFID)</label>
+                            <input type="text" id="edit_id_card" name="id_card" class="form-control" maxlength="100" placeholder="Nomor / UID Kartu RFID">
+                            <small class="text-muted">Nomor serial/kartu RFID pegawai</small>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Foto ID Card</label>
+                            <input type="file" id="edit_foto_id_card" name="foto_id_card" class="form-control" accept="image/*">
+                            <small class="text-muted">Kosongkan jika foto ID Card tidak diubah.</small>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Foto Profil</label>
                             <input type="file" name="foto" class="form-control" accept="image/*">
-                            <small class="text-muted">Kosongkan jika foto tidak diubah.</small>
+                            <small class="text-muted">Kosongkan jika foto profil tidak diubah.</small>
                         </div>
                         <div class="form-group col-md-6">
                             <label>Status</label>
@@ -511,8 +594,17 @@
                             </select>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <img id="edit_foto_preview" src="" alt="Preview Foto" style="display:none;width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid #dee2e6;">
+                    <div class="form-row mb-3">
+                        <div class="col-md-6">
+                            <label class="small text-muted font-weight-bold d-block mb-1">Preview Foto Profil:</label>
+                            <img id="edit_foto_preview" src="" alt="Preview Foto Profil" style="display:none;width:56px;height:56px;border-radius:6px;object-fit:cover;border:1px solid #dee2e6;">
+                            <span id="edit_foto_empty_text" class="text-muted small italic" style="display:none;">Belum ada foto profil</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-muted font-weight-bold d-block mb-1">Preview Foto ID Card:</label>
+                            <img id="edit_foto_id_card_preview" src="" alt="Preview Foto ID Card" style="display:none;width:90px;height:56px;border-radius:6px;object-fit:cover;border:1px solid #17a2b8;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                            <span id="edit_foto_id_card_empty_text" class="text-muted small italic" style="display:none;">Belum ada foto ID Card</span>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Jabatan (Fungsional/Pelaksana/Opsional)</label>
@@ -582,7 +674,7 @@
                 </button>
             </div>
             <div class="modal-body text-center">
-                <img id="fotoPegawaiModalImage" src="" alt="Foto Pegawai" style="max-width: 100%; max-height: 70vh; border-radius: 8px; border: 1px solid #dee2e6;">
+                <img id="fotoPegawaiModalImage" src="" alt="Foto" style="max-width: 100%; max-height: 70vh; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
             </div>
         </div>
     </div>
@@ -693,6 +785,7 @@
         const fieldNip = document.getElementById('edit_nip');
         const fieldNama = document.getElementById('edit_nama');
         const fieldEmail = document.getElementById('edit_email');
+        const fieldIdCard = document.getElementById('edit_id_card');
         const fieldJabatanUtama = document.getElementById('edit_jabatan_utama_id');
         const fieldJabatanPerbend = document.getElementById('edit_jabatan_perbendaharaan_id');
         const fieldJenisPegawai = document.getElementById('edit_jenis_pegawai');
@@ -701,6 +794,9 @@
         const fieldMasaKerja = document.getElementById('edit_masa_kerja');
         const fieldStatus = document.getElementById('edit_is_active');
         const fotoPreview = document.getElementById('edit_foto_preview');
+        const fotoEmptyText = document.getElementById('edit_foto_empty_text');
+        const fotoIdCardPreview = document.getElementById('edit_foto_id_card_preview');
+        const fotoIdCardEmptyText = document.getElementById('edit_foto_id_card_empty_text');
 
         const applyEditData = (el) => {
             if (!el) {
@@ -713,6 +809,7 @@
             fieldNip.value = trigger.getAttribute('data-nip') || '';
             fieldNama.value = trigger.getAttribute('data-nama') || '';
             if (fieldEmail) fieldEmail.value = trigger.getAttribute('data-email') || '';
+            if (fieldIdCard) fieldIdCard.value = trigger.getAttribute('data-id_card') || '';
             fieldJabatanUtama.value = trigger.getAttribute('data-jabatan_utama_id') || '';
             fieldJabatanPerbend.value = trigger.getAttribute('data-jabatan_perbendaharaan_id') || '';
             fieldJenisPegawai.value = (trigger.getAttribute('data-jenis_pegawai') || 'pns').toLowerCase();
@@ -727,9 +824,22 @@
             if (fotoUrl) {
                 fotoPreview.src = fotoUrl;
                 fotoPreview.style.display = 'inline-block';
+                if (fotoEmptyText) fotoEmptyText.style.display = 'none';
             } else {
                 fotoPreview.src = '';
                 fotoPreview.style.display = 'none';
+                if (fotoEmptyText) fotoEmptyText.style.display = 'inline-block';
+            }
+
+            const fotoIdCardUrl = trigger.getAttribute('data-foto_id_card-url') || '';
+            if (fotoIdCardUrl) {
+                fotoIdCardPreview.src = fotoIdCardUrl;
+                fotoIdCardPreview.style.display = 'inline-block';
+                if (fotoIdCardEmptyText) fotoIdCardEmptyText.style.display = 'none';
+            } else {
+                fotoIdCardPreview.src = '';
+                fotoIdCardPreview.style.display = 'none';
+                if (fotoIdCardEmptyText) fotoIdCardEmptyText.style.display = 'inline-block';
             }
         };
 
@@ -761,9 +871,9 @@
             }
 
             const fotoUrl = trigger.getAttribute('data-foto-url') || '';
-            const nama = trigger.getAttribute('data-nama') || 'Pegawai';
+            const nama = trigger.getAttribute('data-nama') || 'Foto';
 
-            fotoTitle.textContent = 'Foto - ' + nama;
+            fotoTitle.textContent = nama;
             fotoImage.src = fotoUrl;
 
             if (typeof $ !== 'undefined') {
@@ -970,15 +1080,15 @@
             const filterGolongan = ($('#filter-golongan').val() || '').toLowerCase().trim();
             const filterStatus = ($('#filter-status').val() || '').toLowerCase().trim();
 
-            const rowJenis = (data[7] || '').trim().toLowerCase();
-            const rowEselon = (data[8] || '').trim().toLowerCase();
-            const rowGolongan = (data[9] || '').trim().toLowerCase();
-            const rowStatus = (data[11] || '').trim().toLowerCase();
+            const rowJenis = (data[9] || '').trim().toLowerCase();
+            const rowEselon = (data[10] || '').trim().toLowerCase();
+            const rowGolongan = (data[11] || '').trim().toLowerCase();
+            const rowStatus = (data[13] || '').trim().toLowerCase();
 
             if (selectedJenis.length > 0) {
                 let rawJp = '';
                 if (settings.aoData && settings.aoData[dataIndex] && settings.aoData[dataIndex].nTr) {
-                    const cell = $(settings.aoData[dataIndex].nTr).find('td').eq(7);
+                    const cell = $(settings.aoData[dataIndex].nTr).find('td').eq(9);
                     rawJp = (cell.attr('data-filter') || '').toLowerCase().trim();
                 }
                 if (!rawJp) {

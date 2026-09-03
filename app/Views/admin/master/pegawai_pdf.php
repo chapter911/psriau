@@ -314,6 +314,9 @@
                         </td>
                         <td class="text-center font-bold" style="font-size: 7.5pt; letter-spacing: 0.2px;">
                             <?= esc($displayNip !== '' ? $displayNip : '-'); ?>
+                            <?php if (! empty($item['id_card'])): ?>
+                                <div style="font-size: 6.8pt; color: #0284c7; margin-top: 2px; font-weight: normal; font-family: monospace;">RFID: <?= esc((string) $item['id_card']); ?></div>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <div class="font-bold" style="color: #0f172a; font-size: 8.2pt;"><?= esc((string) ($item['nama'] ?? '-')); ?></div>
