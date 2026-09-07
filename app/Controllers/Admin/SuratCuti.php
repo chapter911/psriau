@@ -20,8 +20,9 @@ class SuratCuti extends BaseController
             return $this->dataTable();
         }
 
+        $permissions = $this->getPermissions();
         $role = strtolower((string) session()->get('role'));
-        $canApprove = in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        $canApprove = ($permissions['approval'] ?? false) || in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
 
         // Current logged-in employee details
         $pegawaiData = $this->getCurrentPegawaiData();
@@ -47,8 +48,11 @@ class SuratCuti extends BaseController
 
         return view('admin/surat/cuti', [
             'title' => 'Pengajuan Cuti',
-            'can_edit' => $this->canAccess(),
+            'can_add' => $permissions['add'] ?? false,
+            'can_edit' => $permissions['edit'] ?? false,
+            'can_delete' => $permissions['delete'] ?? false,
             'can_approve' => $canApprove,
+            'can_export' => $permissions['export'] ?? false,
             'current_pegawai' => $pegawaiData,
             'pegawai_list' => $pegawaiList,
         ]);
@@ -56,9 +60,12 @@ class SuratCuti extends BaseController
 
     private function dataTable()
     {
-        $canEdit = $this->canAccess();
+        $permissions = $this->getPermissions();
+        $canEdit = $permissions['edit'] ?? false;
+        $canDelete = $permissions['delete'] ?? false;
+        $canExport = $permissions['export'] ?? false;
         $role = strtolower((string) session()->get('role'));
-        $canApprove = in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        $canApprove = ($permissions['approval'] ?? false) || in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
 
         $draw = $this->getDataTableDraw();
         $start = $this->getDataTableStart();
@@ -98,7 +105,7 @@ class SuratCuti extends BaseController
 
         $rows = $builder->limit($length, $start)->get()->getResultArray();
 
-        $data = array_map(function (array $row) use ($canEdit, $canApprove) {
+        $data = array_map(function (array $row) use ($canEdit, $canDelete, $canApprove, $canExport) {
             $status = trim((string) ($row['status'] ?? 'pending'));
             $statusBadge = match ($status) {
                 'disetujui' => '<span class="badge badge-success"><i class="fas fa-check"></i> Disetujui</span>',
@@ -116,18 +123,22 @@ class SuratCuti extends BaseController
 
             // Dokumen Export buttons (Word & PDF)
             $id = (int) ($row['id'] ?? 0);
-            $row['dokumen_html'] = '<div class="btn-group btn-group-sm" role="group">' .
-                                    '<a href="' . site_url('admin/surat/cuti/' . $id . '/export-word') . '" class="btn btn-primary" title="Export Word (.docx)" target="_blank"><i class="fas fa-file-word mr-1"></i> Word</a>' .
-                                    '<a href="' . site_url('admin/surat/cuti/' . $id . '/export-pdf') . '" class="btn btn-outline-danger" title="Export PDF" target="_blank"><i class="fas fa-file-pdf mr-1"></i> PDF</a>' .
-                                    '</div>';
+            if ($canExport) {
+                $row['dokumen_html'] = '<div class="btn-group btn-group-sm" role="group">' .
+                                        '<a href="' . site_url('admin/surat/cuti/' . $id . '/export-word') . '" class="btn btn-primary" title="Export Word (.docx)" target="_blank"><i class="fas fa-file-word mr-1"></i> Word</a>' .
+                                        '<a href="' . site_url('admin/surat/cuti/' . $id . '/export-pdf') . '" class="btn btn-outline-danger" title="Export PDF" target="_blank"><i class="fas fa-file-pdf mr-1"></i> PDF</a>' .
+                                        '</div>';
+            } else {
+                $row['dokumen_html'] = '<span class="text-muted">-</span>';
+            }
 
             $actions = '';
-            if ($canEdit || $canApprove) {
+            if ($canEdit || $canDelete || $canApprove) {
                 $actions .= '<div class="d-flex justify-content-center align-items-center" style="gap: 5px; white-space: nowrap;">';
                 if ($canEdit && $status === 'pending') {
                     $actions .= '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" data-id="' . $id . '" title="Edit"><i class="fas fa-edit"></i></button>';
                 }
-                if ($canEdit) {
+                if ($canDelete) {
                     $actions .= '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' . $id . '" title="Hapus"><i class="fas fa-trash"></i></button>';
                 }
                 if ($canApprove && $status === 'pending') {
@@ -153,6 +164,10 @@ class SuratCuti extends BaseController
     {
         if (! $this->canAccess()) {
             return redirect()->to(site_url('/admin'));
+        }
+
+        if (! ($this->getPermissions()['add'] ?? false)) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Anda tidak memiliki hak akses untuk menambah pengajuan cuti.');
         }
 
         if (strtolower((string) $this->request->getMethod()) !== 'post') {
@@ -285,6 +300,10 @@ class SuratCuti extends BaseController
             return redirect()->to(site_url('/admin'));
         }
 
+        if (! ($this->getPermissions()['edit'] ?? false)) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Anda tidak memiliki hak akses untuk mengubah data cuti.');
+        }
+
         $model = new SuratCutiModel();
         $row = $model->find($id);
 
@@ -346,6 +365,10 @@ class SuratCuti extends BaseController
             return redirect()->to(site_url('/admin'));
         }
 
+        if (! ($this->getPermissions()['delete'] ?? false)) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Anda tidak memiliki hak akses untuk menghapus data cuti.');
+        }
+
         $model = new SuratCutiModel();
         $row = $model->find($id);
 
@@ -360,8 +383,9 @@ class SuratCuti extends BaseController
 
     public function setujui(int $id)
     {
+        $permissions = $this->getPermissions();
         $role = strtolower((string) session()->get('role'));
-        $canApprove = in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        $canApprove = ($permissions['approval'] ?? false) || in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
 
         if (! $canApprove) {
             return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Anda tidak memiliki hak akses persetujuan.');
@@ -379,8 +403,9 @@ class SuratCuti extends BaseController
 
     public function tolak(int $id)
     {
+        $permissions = $this->getPermissions();
         $role = strtolower((string) session()->get('role'));
-        $canApprove = in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        $canApprove = ($permissions['approval'] ?? false) || in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
 
         if (! $canApprove) {
             return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Anda tidak memiliki hak akses persetujuan.');
@@ -400,6 +425,10 @@ class SuratCuti extends BaseController
     {
         if (! $this->canAccess()) {
             return redirect()->to(site_url('/admin'));
+        }
+
+        if (! ($this->getPermissions()['export'] ?? false)) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Anda tidak memiliki hak akses untuk export data.');
         }
 
         $model = new SuratCutiModel();
@@ -593,6 +622,10 @@ class SuratCuti extends BaseController
             return redirect()->to(site_url('/admin'));
         }
 
+        if (! ($this->getPermissions()['export'] ?? false)) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Anda tidak memiliki hak akses untuk export data.');
+        }
+
         $model = new SuratCutiModel();
         $row = $model->find($id);
 
@@ -684,5 +717,211 @@ class SuratCuti extends BaseController
             ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
             ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->setBody($fileContent);
+    }
+
+    public function exportWordKosong()
+    {
+        helper(['url', 'form']);
+        if (! $this->canAccess()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        $permissions = $this->getPermissions();
+        if (! ($permissions['export'] ?? false)) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Anda tidak memiliki hak akses untuk export data.');
+        }
+
+        $templateFile = APPPATH . 'Views/admin/surat/form_surat_cuti_template.docx';
+        if (! file_exists($templateFile)) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Template Surat Cuti (.docx) tidak ditemukan.');
+        }
+
+        $months = ['January'=>'Januari','February'=>'Februari','March'=>'Maret','April'=>'April','May'=>'Mei','June'=>'Juni','July'=>'Juli','August'=>'Agustus','September'=>'September','October'=>'Oktober','November'=>'November','December'=>'Desember'];
+
+        $formatIndoDate = static function (?string $dateStr) use ($months): string {
+            if (empty($dateStr)) return '-';
+            $time = strtotime($dateStr);
+            if (! $time) return '-';
+            $d = date('j F Y', $time);
+            foreach ($months as $en => $idMonth) {
+                $d = str_replace($en, $idMonth, $d);
+            }
+            return $d;
+        };
+
+        $processor = new \PhpOffice\PhpWord\TemplateProcessor($templateFile);
+
+        // Blank form replacements
+        $processor->setValue('tgl_pengajuan', $formatIndoDate(date('Y-m-d')));
+        $processor->setValue('pejabat_jabatan_tujuan', 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis');
+
+        // First occurrence: Data Pegawai (table cell)
+        // Second occurrence: Hormat saya signature block
+        $processor->setValue('nama', '', 1);
+        $processor->setValue('nama', '( ............................................ )', 1);
+
+        $processor->setValue('nip', '', 1);
+        $processor->setValue('nip', '............................................', 1);
+
+        $processor->setValue('jabatan', '');
+        $processor->setValue('masa_kerja', '');
+        $processor->setValue('unit_kerja', 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau');
+
+        // Checkboxes all blank
+        $processor->setValue('v_ct', '');
+        $processor->setValue('v_cb', '');
+        $processor->setValue('v_cs', '');
+        $processor->setValue('v_cm', '');
+        $processor->setValue('v_cap', '');
+        $processor->setValue('v_cltn', '');
+
+        $processor->setValue('alasan_cuti', '');
+        $processor->setValue('lama_cuti', '');
+        $processor->setValue('tanggal_mulai', '');
+        $processor->setValue('tanggal_selesai', '');
+
+        $processor->setValue('catatan_tahun', date('Y'));
+        $processor->setValue('catatan_cuti_n', '');
+        $processor->setValue('catatan_cuti_keterangan', '');
+
+        $processor->setValue('alamat_selama_cuti', '');
+        $processor->setValue('telepon', '');
+
+        $processor->setValue('v_atasan_setuju', '');
+        $processor->setValue('v_atasan_ubah', '');
+        $processor->setValue('v_atasan_tangguh', '');
+        $processor->setValue('v_atasan_tolak', '');
+        $processor->setValue('atasan_jabatan', 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau');
+        $processor->setValue('atasan_nama', 'Muhammad Yudi Prasetya, ST');
+        $processor->setValue('atasan_nip', '198002142014121002');
+
+        $processor->setValue('v_pejabat_setuju', '');
+        $processor->setValue('v_pejabat_ubah', '');
+        $processor->setValue('v_pejabat_tangguh', '');
+        $processor->setValue('v_pejabat_tolak', '');
+        $processor->setValue('pejabat_jabatan', 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis');
+        $processor->setValue('pejabat_nama', 'Ir. Agung Hari Prabowo, M.T');
+        $processor->setValue('pejabat_nip', '196910301998031005');
+
+        $filename = 'Form_Permintaan_dan_Pemberian_Cuti_Kosong.docx';
+        $tempPath = WRITEPATH . 'uploads/' . $filename;
+        $processor->saveAs($tempPath);
+
+        $fileContent = file_get_contents($tempPath);
+        @unlink($tempPath);
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($fileContent);
+    }
+
+    private function getPermissions(): array
+    {
+        $role = strtolower(trim((string) session()->get('role')));
+        $isSuperAdmin = in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+
+        $default = [
+            'add' => $isSuperAdmin,
+            'edit' => $isSuperAdmin,
+            'delete' => $isSuperAdmin,
+            'export' => $isSuperAdmin,
+            'import' => $isSuperAdmin,
+            'approval' => $isSuperAdmin,
+        ];
+
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return $default;
+        }
+
+        $roleId = $this->resolveRoleId((string) session()->get('role'), $db);
+        $menuId = $this->resolveMenuIdByLink('admin/surat/cuti', $db);
+        if ($roleId === null || $menuId === null) {
+            return $default;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        $row = $db->table('menu_akses')
+            ->select('FiturAdd, FiturEdit, FiturDelete, FiturExport, FiturImport, FiturApproval')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($row)) {
+            return $default;
+        }
+
+        return [
+            'add' => (bool) ((int) ($row['FiturAdd'] ?? 0)),
+            'edit' => (bool) ((int) ($row['FiturEdit'] ?? 0)),
+            'delete' => (bool) ((int) ($row['FiturDelete'] ?? 0)),
+            'export' => (bool) ((int) ($row['FiturExport'] ?? 0)),
+            'import' => (bool) ((int) ($row['FiturImport'] ?? 0)),
+            'approval' => (bool) ((int) ($row['FiturApproval'] ?? 0)),
+        ];
+    }
+
+    private function resolveRoleId(string $role, $db): ?int
+    {
+        $normalized = strtolower(trim($role));
+        if ($normalized === '') {
+            return null;
+        }
+
+        if ($db->tableExists('access_roles')) {
+            $variants = [$normalized];
+            if ($normalized === 'super administrator') {
+                $variants[] = 'super_administrator';
+                $variants[] = 'super-admin';
+                $variants[] = 'superadmin';
+            } elseif ($normalized === 'super_administrator' || $normalized === 'super-admin' || $normalized === 'superadmin') {
+                $variants[] = 'super administrator';
+                $variants[] = 'super_administrator';
+                $variants[] = 'super-admin';
+                $variants[] = 'superadmin';
+            }
+
+            $row = $db->table('access_roles')
+                ->select('id')
+                ->whereIn('role_key', array_values(array_unique($variants)))
+                ->where('is_active', 1)
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (int) $row['id'];
+            }
+        }
+
+        return match ($normalized) {
+            'admin' => 1,
+            'editor' => 2,
+            default => null,
+        };
+    }
+
+    private function resolveMenuIdByLink(string $menuLink, $db): ?string
+    {
+        foreach (['menu_lv3', 'menu_lv2', 'menu_lv1'] as $table) {
+            if (! $db->tableExists($table) || ! $db->fieldExists('link', $table)) {
+                continue;
+            }
+
+            $row = $db->table($table)
+                ->select('id')
+                ->where('LOWER(link)', strtolower(trim($menuLink)))
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (string) $row['id'];
+            }
+        }
+
+        return null;
     }
 }

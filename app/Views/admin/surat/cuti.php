@@ -68,11 +68,18 @@
                 <h4 class="font-weight-bold mb-0"><i class="far fa-calendar-alt mr-2 text-warning"></i> Daftar Pengajuan Cuti</h4>
                 <small class="text-light" style="opacity: 0.85;">Kelola pengajuan cuti pegawai Satuan Kerja Pelaksanaan Prasarana Strategis Riau.</small>
             </div>
-            <?php if ($can_edit): ?>
-                <button type="button" class="btn btn-warning font-weight-bold text-dark shadow-sm" id="btnOpenModalBuat">
-                    <i class="fas fa-plus-circle mr-1"></i> Ajukan Cuti
-                </button>
-            <?php endif; ?>
+            <div class="d-flex align-items-center" style="gap: 8px;">
+                <?php if ($can_export ?? false): ?>
+                    <a href="<?= site_url('admin/surat/cuti/export-word-kosong'); ?>" class="btn btn-outline-light font-weight-bold shadow-sm" id="btnExportWordKosong" title="Unduh Formulir Permintaan dan Pemberian Cuti Kosong (.docx)">
+                        <i class="fas fa-file-word mr-1 text-info"></i> Form Cuti Kosong (.docx)
+                    </a>
+                <?php endif; ?>
+                <?php if (($can_add ?? false) || ($can_edit ?? false)): ?>
+                    <button type="button" class="btn btn-warning font-weight-bold text-dark shadow-sm" id="btnOpenModalBuat">
+                        <i class="fas fa-plus-circle mr-1"></i> Ajukan Cuti
+                    </button>
+                <?php endif; ?>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">

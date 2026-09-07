@@ -243,7 +243,7 @@ graph TD
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="font-weight-bold mb-1 text-primary"><i class="far fa-calendar-alt mr-2"></i> Alur Kerja Pengajuan & Approval Cuti Pegawai</h5>
-                <small class="text-muted">Proses pengajuan cuti melalui modal, tanggal pengajuan otomatis terkunci, hingga ekspor dokumen Word (.docx) dan PDF.</small>
+                <small class="text-muted">Proses pengajuan cuti melalui modal, ekspor form Word (.docx) kosong resmi, tanggal pengajuan otomatis terkunci, hingga ekspor dokumen Word (.docx) dan PDF terisi.</small>
             </div>
             <div>
                 <span class="badge badge-primary">Staf & Admin</span>
@@ -254,12 +254,14 @@ graph TD
                 <pre class="mermaid">
 graph TD
     A[Buka Menu Surat-Surat -> Cuti] --> B[Klik Tombol Ajukan Cuti]
+    A --> B2[Klik Tombol Form Cuti Kosong .docx]
+    B2 --> H2[Unduh Langsung Template Word Kosong Resmi]
     B --> C[Sistem Otomatis Mengisi Tanggal Pengajuan Terkunci & Data Pegawai]
     C --> D[Pilih Jenis Cuti, Alasan, Lamanya Cuti & Tanggal Mulai-Selesai]
     D --> E[Isi Alamat & Kontak Selama Cuti]
     E --> F[Klik Simpan Pengajuan Cuti]
     F --> G{Persetujuan Atasan / Admin}
-    G -->|Disetujui| H[Ekspor Dokumen Resmi: Word .docx & PDF Form Surat Cuti]
+    G -->|Disetujui| H[Ekspor Dokumen Terisi: Word .docx & PDF Form Surat Cuti]
                 </pre>
             </div>
         </div>
@@ -497,13 +499,14 @@ graph TD
                                 <h6 class="font-weight-bold text-primary"><i class="far fa-calendar-alt mr-1"></i> Pengajuan Cuti</h6>
                                 <p class="small text-muted mb-2"><code>/admin/surat/cuti</code></p>
                                 <ol class="pl-3 small mb-0">
-                                    <li>Klik tombol <strong>Ajukan Cuti</strong>.</li>
+                                    <li>Klik tombol <strong>Form Cuti Kosong (.docx)</strong> di bagian atas untuk mengunduh template formulir cuti kosong resmi Satker PPS Riau (format Word .docx).</li>
+                                    <li>Klik tombol <strong>Ajukan Cuti</strong> untuk membuat permohonan cuti baru secara digital.</li>
                                     <li><strong>Tanggal Pengajuan</strong> otomatis terkunci pada tanggal hari ini.</li>
                                     <li>Data pegawai (Nama, NIP, Jabatan, dan kalkulasi Masa Kerja real-time dari NIP TMT CPNS) terisi secara otomatis.</li>
                                     <li>Pilih <strong>Jenis Cuti</strong> (Tahunan, Besar, Sakit, Melahirkan, Alasan Penting, atau Luar Tanggungan).</li>
                                     <li>Isi Alasan, Periode Tanggal Cuti, Alamat & Telepon selama cuti.</li>
                                     <li>Klik <strong>Simpan Pengajuan Cuti</strong>.</li>
-                                    <li>Gunakan tombol <strong>PDF</strong> pada tabel untuk mengekspor dokumen Formulir Permintaan dan Pemberian Cuti resmi.</li>
+                                    <li>Gunakan tombol <strong>Word</strong> atau <strong>PDF</strong> pada tabel untuk mengekspor formulir cuti resmi yang telah terisi data permohonan dan persetujuan.</li>
                                 </ol>
                             </div>
                         </div>

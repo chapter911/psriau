@@ -350,6 +350,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'surat/cuti/(:num)/tolak', 'Admin\SuratCuti::tolak/$1');
 	$routes->get('surat/cuti/(:num)/export-pdf', 'Admin\SuratCuti::exportPdf/$1');
 	$routes->get('surat/cuti/(:num)/export-word', 'Admin\SuratCuti::exportWord/$1');
+	$routes->get('surat/cuti/export-word-kosong', 'Admin\SuratCuti::exportWordKosong');
 
 	// Surat Routes - Disposisi Perjalanan Dinas
 	$routes->get('surat/perjalanan-dinas/disposisi', 'Admin\DisposisiPerjalananDinas::index');
