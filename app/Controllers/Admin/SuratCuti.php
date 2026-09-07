@@ -651,67 +651,64 @@ class SuratCuti extends BaseController
             return $d;
         };
 
-        $processor = new \PhpOffice\PhpWord\TemplateProcessor($templateFile);
-
         $jenisKey = strtolower(trim((string) ($row['jenis_cuti'] ?? '')));
         $pertimbangan = strtolower(trim((string) ($row['pertimbangan_atasan'] ?? '')));
         $keputusan = strtolower(trim((string) ($row['keputusan_pejabat'] ?? '')));
-
         $checkSymbol = 'V';
-
-        $processor->setValue('tgl_pengajuan', $formatIndoDate($row['tanggal_pengajuan'] ?? date('Y-m-d')));
-        $processor->setValue('pejabat_jabatan_tujuan', $row['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis');
-        $processor->setValue('nama', $row['nama'] ?? '');
-        $processor->setValue('nip', $row['nip'] ?? '');
 
         $partsJabatan = explode(',', $row['jabatan'] ?? '');
         $jabatanClean = trim($partsJabatan[0] ?? '');
 
-        $processor->setValue('jabatan', $jabatanClean);
-        $processor->setValue('masa_kerja', $row['masa_kerja'] ?? '');
-        $processor->setValue('unit_kerja', $row['unit_kerja'] ?? '');
+        $sequential = [
+            ['search' => 'nama', 'replace' => (string) ($row['nama'] ?? ''), 'limit' => 1],
+            ['search' => 'nama', 'replace' => (string) ($row['nama'] ?? ''), 'limit' => 1],
+            ['search' => 'nip', 'replace' => (string) ($row['nip'] ?? ''), 'limit' => 1],
+            ['search' => 'nip', 'replace' => (string) ($row['nip'] ?? ''), 'limit' => 1],
+        ];
 
-        $processor->setValue('v_ct', $jenisKey === 'cuti tahunan' ? $checkSymbol : '');
-        $processor->setValue('v_cb', $jenisKey === 'cuti besar' ? $checkSymbol : '');
-        $processor->setValue('v_cs', $jenisKey === 'cuti sakit' ? $checkSymbol : '');
-        $processor->setValue('v_cm', $jenisKey === 'cuti melahirkan' ? $checkSymbol : '');
-        $processor->setValue('v_cap', $jenisKey === 'cuti karena alasan penting' ? $checkSymbol : '');
-        $processor->setValue('v_cltn', $jenisKey === 'cuti di luar tanggungan negara' ? $checkSymbol : '');
+        $simple = [
+            'tgl_pengajuan' => $formatIndoDate($row['tanggal_pengajuan'] ?? date('Y-m-d')),
+            'pejabat_jabatan_tujuan' => $row['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis',
+            'jabatan' => $jabatanClean,
+            'masa_kerja' => $row['masa_kerja'] ?? '',
+            'unit_kerja' => $row['unit_kerja'] ?? '',
+            'v_ct' => $jenisKey === 'cuti tahunan' ? $checkSymbol : '',
+            'v_cb' => $jenisKey === 'cuti besar' ? $checkSymbol : '',
+            'v_cs' => $jenisKey === 'cuti sakit' ? $checkSymbol : '',
+            'v_cm' => $jenisKey === 'cuti melahirkan' ? $checkSymbol : '',
+            'v_cap' => $jenisKey === 'cuti karena alasan penting' ? $checkSymbol : '',
+            'v_cltn' => $jenisKey === 'cuti di luar tanggungan negara' ? $checkSymbol : '',
+            'alasan_cuti' => $row['alasan_cuti'] ?? '',
+            'lama_cuti' => ((int)($row['lama_cuti_jumlah'] ?? 1)) . ' ' . ($row['lama_cuti_satuan'] ?? 'Hari'),
+            'tanggal_mulai' => $formatIndoDate($row['tanggal_mulai']),
+            'tanggal_selesai' => $formatIndoDate($row['tanggal_selesai']),
+            'catatan_tahun' => date('Y'),
+            'catatan_cuti_n' => ((int)($row['catatan_cuti_n'] ?? 0)) . ' Hari',
+            'catatan_cuti_keterangan' => $row['catatan_cuti_keterangan'] ?? '',
+            'alamat_selama_cuti' => $row['alamat_selama_cuti'] ?? '',
+            'telepon' => $row['telepon'] ?? '',
+            'v_atasan_setuju' => ($pertimbangan === 'disetujui' || $pertimbangan === 'setuju') ? $checkSymbol : '',
+            'v_atasan_ubah' => ($pertimbangan === 'perubahan') ? $checkSymbol : '',
+            'v_atasan_tangguh' => ($pertimbangan === 'ditangguhkan') ? $checkSymbol : '',
+            'v_atasan_tolak' => ($pertimbangan === 'tidak disetujui' || $pertimbangan === 'ditolak') ? $checkSymbol : '',
+            'atasan_jabatan' => $row['atasan_jabatan'] ?? 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau',
+            'atasan_nama' => $row['atasan_nama'] ?? 'Muhammad Yudi Prasetya, ST',
+            'atasan_nip' => $row['atasan_nip'] ?? '198002142014121002',
+            'v_pejabat_setuju' => ($keputusan === 'disetujui' || $keputusan === 'setuju') ? $checkSymbol : '',
+            'v_pejabat_ubah' => ($keputusan === 'perubahan') ? $checkSymbol : '',
+            'v_pejabat_tangguh' => ($keputusan === 'ditangguhkan') ? $checkSymbol : '',
+            'v_pejabat_tolak' => ($keputusan === 'tidak disetujui' || $keputusan === 'ditolak') ? $checkSymbol : '',
+            'pejabat_jabatan' => $row['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis',
+            'pejabat_nama' => $row['pejabat_nama'] ?? 'Ir. Agung Hari Prabowo, M.T',
+            'pejabat_nip' => $row['pejabat_nip'] ?? '196910301998031005',
+        ];
 
-        $processor->setValue('alasan_cuti', $row['alasan_cuti'] ?? '');
-        $processor->setValue('lama_cuti', ((int)($row['lama_cuti_jumlah'] ?? 1)) . ' ' . ($row['lama_cuti_satuan'] ?? 'Hari'));
-        $processor->setValue('tanggal_mulai', $formatIndoDate($row['tanggal_mulai']));
-        $processor->setValue('tanggal_selesai', $formatIndoDate($row['tanggal_selesai']));
-
-        $processor->setValue('catatan_tahun', date('Y'));
-        $processor->setValue('catatan_cuti_n', ((int)($row['catatan_cuti_n'] ?? 0)) . ' Hari');
-        $processor->setValue('catatan_cuti_keterangan', $row['catatan_cuti_keterangan'] ?? '');
-
-        $processor->setValue('alamat_selama_cuti', $row['alamat_selama_cuti'] ?? '');
-        $processor->setValue('telepon', $row['telepon'] ?? '');
-
-        $processor->setValue('v_atasan_setuju', ($pertimbangan === 'disetujui' || $pertimbangan === 'setuju') ? $checkSymbol : '');
-        $processor->setValue('v_atasan_ubah', ($pertimbangan === 'perubahan') ? $checkSymbol : '');
-        $processor->setValue('v_atasan_tangguh', ($pertimbangan === 'ditangguhkan') ? $checkSymbol : '');
-        $processor->setValue('v_atasan_tolak', ($pertimbangan === 'tidak disetujui' || $pertimbangan === 'ditolak') ? $checkSymbol : '');
-        $processor->setValue('atasan_jabatan', $row['atasan_jabatan'] ?? 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau');
-        $processor->setValue('atasan_nama', $row['atasan_nama'] ?? 'Muhammad Yudi Prasetya, ST');
-        $processor->setValue('atasan_nip', $row['atasan_nip'] ?? '198002142014121002');
-
-        $processor->setValue('v_pejabat_setuju', ($keputusan === 'disetujui' || $keputusan === 'setuju') ? $checkSymbol : '');
-        $processor->setValue('v_pejabat_ubah', ($keputusan === 'perubahan') ? $checkSymbol : '');
-        $processor->setValue('v_pejabat_tangguh', ($keputusan === 'ditangguhkan') ? $checkSymbol : '');
-        $processor->setValue('v_pejabat_tolak', ($keputusan === 'tidak disetujui' || $keputusan === 'ditolak') ? $checkSymbol : '');
-        $processor->setValue('pejabat_jabatan', $row['pejabat_jabatan'] ?? 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis');
-        $processor->setValue('pejabat_nama', $row['pejabat_nama'] ?? 'Ir. Agung Hari Prabowo, M.T');
-        $processor->setValue('pejabat_nip', $row['pejabat_nip'] ?? '196910301998031005');
+        $fileContent = $this->processWordDocx($templateFile, $simple, $sequential);
+        if ($fileContent === null) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Gagal memproses dokumen Word.');
+        }
 
         $filename = 'Form_Cuti_' . preg_replace('/[^a-zA-Z0-9]/', '_', $row['nama']) . '.docx';
-        $tempPath = WRITEPATH . 'uploads/' . $filename;
-        $processor->saveAs($tempPath);
-
-        $fileContent = file_get_contents($tempPath);
-        @unlink($tempPath);
 
         return $this->response
             ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
@@ -749,71 +746,150 @@ class SuratCuti extends BaseController
             return $d;
         };
 
-        $processor = new \PhpOffice\PhpWord\TemplateProcessor($templateFile);
+        // First occurrence: Data Pegawai (blank cell)
+        // Second occurrence: Hormat saya signature block (dotted line)
+        $sequential = [
+            ['search' => 'nama', 'replace' => '', 'limit' => 1],
+            ['search' => 'nama', 'replace' => '( ............................................ )', 'limit' => 1],
+            ['search' => 'nip', 'replace' => '', 'limit' => 1],
+            ['search' => 'nip', 'replace' => '............................................', 'limit' => 1],
+        ];
 
-        // Blank form replacements
-        $processor->setValue('tgl_pengajuan', $formatIndoDate(date('Y-m-d')));
-        $processor->setValue('pejabat_jabatan_tujuan', 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis');
+        $simple = [
+            'tgl_pengajuan' => $formatIndoDate(date('Y-m-d')),
+            'pejabat_jabatan_tujuan' => 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis',
+            'jabatan' => '',
+            'masa_kerja' => '',
+            'unit_kerja' => 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau',
+            'v_ct' => '',
+            'v_cb' => '',
+            'v_cs' => '',
+            'v_cm' => '',
+            'v_cap' => '',
+            'v_cltn' => '',
+            'alasan_cuti' => '',
+            'lama_cuti' => '',
+            'tanggal_mulai' => '',
+            'tanggal_selesai' => '',
+            'catatan_tahun' => date('Y'),
+            'catatan_cuti_n' => '',
+            'catatan_cuti_keterangan' => '',
+            'alamat_selama_cuti' => '',
+            'telepon' => '',
+            'v_atasan_setuju' => '',
+            'v_atasan_ubah' => '',
+            'v_atasan_tangguh' => '',
+            'v_atasan_tolak' => '',
+            'atasan_jabatan' => 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau',
+            'atasan_nama' => 'Muhammad Yudi Prasetya, ST',
+            'atasan_nip' => '198002142014121002',
+            'v_pejabat_setuju' => '',
+            'v_pejabat_ubah' => '',
+            'v_pejabat_tangguh' => '',
+            'v_pejabat_tolak' => '',
+            'pejabat_jabatan' => 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis',
+            'pejabat_nama' => 'Ir. Agung Hari Prabowo, M.T',
+            'pejabat_nip' => '196910301998031005',
+        ];
 
-        // First occurrence: Data Pegawai (table cell)
-        // Second occurrence: Hormat saya signature block
-        $processor->setValue('nama', '', 1);
-        $processor->setValue('nama', '( ............................................ )', 1);
-
-        $processor->setValue('nip', '', 1);
-        $processor->setValue('nip', '............................................', 1);
-
-        $processor->setValue('jabatan', '');
-        $processor->setValue('masa_kerja', '');
-        $processor->setValue('unit_kerja', 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau');
-
-        // Checkboxes all blank
-        $processor->setValue('v_ct', '');
-        $processor->setValue('v_cb', '');
-        $processor->setValue('v_cs', '');
-        $processor->setValue('v_cm', '');
-        $processor->setValue('v_cap', '');
-        $processor->setValue('v_cltn', '');
-
-        $processor->setValue('alasan_cuti', '');
-        $processor->setValue('lama_cuti', '');
-        $processor->setValue('tanggal_mulai', '');
-        $processor->setValue('tanggal_selesai', '');
-
-        $processor->setValue('catatan_tahun', date('Y'));
-        $processor->setValue('catatan_cuti_n', '');
-        $processor->setValue('catatan_cuti_keterangan', '');
-
-        $processor->setValue('alamat_selama_cuti', '');
-        $processor->setValue('telepon', '');
-
-        $processor->setValue('v_atasan_setuju', '');
-        $processor->setValue('v_atasan_ubah', '');
-        $processor->setValue('v_atasan_tangguh', '');
-        $processor->setValue('v_atasan_tolak', '');
-        $processor->setValue('atasan_jabatan', 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau');
-        $processor->setValue('atasan_nama', 'Muhammad Yudi Prasetya, ST');
-        $processor->setValue('atasan_nip', '198002142014121002');
-
-        $processor->setValue('v_pejabat_setuju', '');
-        $processor->setValue('v_pejabat_ubah', '');
-        $processor->setValue('v_pejabat_tangguh', '');
-        $processor->setValue('v_pejabat_tolak', '');
-        $processor->setValue('pejabat_jabatan', 'Plt. Sekretariat Direktorat Jenderal Prasarana Strategis');
-        $processor->setValue('pejabat_nama', 'Ir. Agung Hari Prabowo, M.T');
-        $processor->setValue('pejabat_nip', '196910301998031005');
+        $fileContent = $this->processWordDocx($templateFile, $simple, $sequential);
+        if ($fileContent === null) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Gagal memproses dokumen Word.');
+        }
 
         $filename = 'Form_Permintaan_dan_Pemberian_Cuti_Kosong.docx';
-        $tempPath = WRITEPATH . 'uploads/' . $filename;
-        $processor->saveAs($tempPath);
-
-        $fileContent = file_get_contents($tempPath);
-        @unlink($tempPath);
 
         return $this->response
             ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
             ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->setBody($fileContent);
+    }
+
+    /**
+     * Generate docx content using PHPWord if available, or native ZipArchive fallback.
+     */
+    private function processWordDocx(string $templateFile, array $simpleReplacements, array $sequentialReplacements = []): ?string
+    {
+        if (! file_exists($templateFile)) {
+            return null;
+        }
+
+        // Method 1: Use PHPWord TemplateProcessor if installed
+        if (class_exists(\PhpOffice\PhpWord\TemplateProcessor::class)) {
+            try {
+                $processor = new \PhpOffice\PhpWord\TemplateProcessor($templateFile);
+                foreach ($sequentialReplacements as $item) {
+                    $processor->setValue($item['search'], $item['replace'], $item['limit'] ?? 1);
+                }
+                foreach ($simpleReplacements as $key => $val) {
+                    $processor->setValue($key, (string) $val);
+                }
+                $tempPath = WRITEPATH . 'uploads/' . uniqid('word_', true) . '.docx';
+                $processor->saveAs($tempPath);
+                $content = file_get_contents($tempPath);
+                @unlink($tempPath);
+                return $content ?: null;
+            } catch (\Throwable $e) {
+                log_message('warning', 'PHPWord TemplateProcessor failed, falling back to native ZipArchive: ' . $e->getMessage());
+            }
+        }
+
+        // Method 2: Native PHP ZipArchive fallback (no external library required)
+        if (class_exists(\ZipArchive::class)) {
+            $tempPath = WRITEPATH . 'uploads/' . uniqid('native_word_', true) . '.docx';
+            if (! @copy($templateFile, $tempPath)) {
+                return null;
+            }
+
+            $zip = new \ZipArchive();
+            if ($zip->open($tempPath) !== true) {
+                @unlink($tempPath);
+                return null;
+            }
+
+            $xml = $zip->getFromName('word/document.xml');
+            if ($xml === false) {
+                $zip->close();
+                @unlink($tempPath);
+                return null;
+            }
+
+            $xmlEscape = static function ($val): string {
+                return htmlspecialchars((string) $val, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+            };
+
+            // Sequential replacements with limit
+            foreach ($sequentialReplacements as $item) {
+                $search = '${' . $item['search'] . '}';
+                $replace = $xmlEscape($item['replace']);
+                $limit = $item['limit'] ?? 1;
+                for ($i = 0; $i < $limit; $i++) {
+                    $pos = strpos($xml, $search);
+                    if ($pos === false) {
+                        break;
+                    }
+                    $xml = substr_replace($xml, $replace, $pos, strlen($search));
+                }
+            }
+
+            // Simple replacements
+            $keys = [];
+            $values = [];
+            foreach ($simpleReplacements as $key => $val) {
+                $keys[] = '${' . $key . '}';
+                $values[] = $xmlEscape($val);
+            }
+            $xml = str_replace($keys, $values, $xml);
+
+            $zip->addFromString('word/document.xml', $xml);
+            $zip->close();
+
+            $content = file_get_contents($tempPath);
+            @unlink($tempPath);
+            return $content ?: null;
+        }
+
+        return null;
     }
 
     private function getPermissions(): array
