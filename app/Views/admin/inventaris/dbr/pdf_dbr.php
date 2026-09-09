@@ -17,94 +17,53 @@
             padding: 0;
         }
 
-        /* Kop Surat Instansi Kedinasan PU */
-        .kop-master-container {
+        /* Header Instansi Biasa (Bukan Kop Surat) */
+        .header-instansi {
             text-align: center;
-            margin-bottom: 6px;
+            margin-bottom: 2px;
             width: 100%;
         }
-        .kop-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 0px;
-        }
-        .kop-table td {
-            vertical-align: middle;
-        }
-        .kop-logo {
-            width: 65px;
-            text-align: center;
-            padding-right: 10px;
-        }
-        .kop-logo img {
-            width: 55px;
-            height: auto;
-        }
-        .kop-text {
-            text-align: center;
-            line-height: 1.2;
-            padding-right: 25px;
-        }
-        .kop-instansi-1 {
-            font-size: 10.5pt;
-            font-weight: bold;
-            color: #0f172a;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-        }
-        .kop-instansi-2 {
+        .instansi-text-1 {
             font-size: 9.5pt;
             font-weight: bold;
-            color: #1e293b;
+            color: #0f172a;
             letter-spacing: 0.5px;
             text-transform: uppercase;
+            line-height: 1.25;
         }
-        .kop-instansi-3 {
+        .instansi-text-2 {
             font-size: 9pt;
+            font-weight: bold;
+            color: #1e293b;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            line-height: 1.25;
+        }
+        .instansi-text-3 {
+            font-size: 8.5pt;
             font-weight: bold;
             color: #1e3a8a;
             letter-spacing: 0.3px;
             text-transform: uppercase;
+            line-height: 1.25;
         }
-        .kop-alamat {
-            font-size: 7pt;
-            color: #475569;
-            margin-top: 2px;
-        }
-
-        /* Garis Pemisah Kop Kedinasan PU */
-        .kop-divider-wrapper {
-            margin-top: 4px;
-            margin-bottom: 8px;
-        }
-        .kop-divider-thick {
-            border-top: 2px solid #1e3a8a;
-            margin: 0;
-        }
-        .kop-divider-thin {
-            border-top: 1px solid #1e3a8a;
-            margin-top: 1.5px;
-            margin-bottom: 0;
+        .header-divider {
+            border-top: 1.5px solid #1e3a8a;
+            margin: 4px 0 6px 0;
+            width: 100%;
         }
 
-        /* Judul Dokumen & Penomoran Resmi */
+        /* Judul Dokumen */
         .doc-header {
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .doc-title {
-            font-size: 10.5pt;
+            font-size: 11pt;
             font-weight: bold;
             letter-spacing: 1px;
             color: #0f172a;
             text-transform: uppercase;
-            margin-bottom: 1px;
-        }
-        .doc-number {
-            font-size: 7.5pt;
-            color: #334155;
-            font-weight: bold;
-            letter-spacing: 0.3px;
         }
 
         /* Info Box Ruangan */
@@ -289,41 +248,20 @@
 </head>
 <body>
 
-    <!-- Header / Kop Surat (Otomatis dari Master Kop Surat jika aktif) -->
-    <?php if (! empty($kopSuratImg)): ?>
-        <div class="kop-master-container">
-            <?= $kopSuratImg; ?>
-        </div>
-    <?php else: ?>
-        <!-- Fallback Kop Instansi PU Resmi -->
-        <table class="kop-table">
-            <tr>
-                <td class="kop-logo">
-                    <?php if (! empty($logoBase64)): ?>
-                        <img src="<?= $logoBase64; ?>" alt="Logo PU">
-                    <?php endif; ?>
-                </td>
-                <td class="kop-text">
-                    <div class="kop-instansi-1">Kementerian Pekerjaan Umum</div>
-                    <div class="kop-instansi-2">Direktorat Jenderal Prasarana Strategis</div>
-                    <div class="kop-instansi-3">Satuan Kerja Pelaksanaan Prasarana Strategis Provinsi Riau</div>
-                    <div class="kop-alamat">Jl. Arifin Achmad No. 89, Kota Pekanbaru, Riau | Telp: (0761) 8522340 | Email: satker.psriau@pu.go.id</div>
-                </td>
-            </tr>
-        </table>
-        <div class="kop-divider-wrapper">
-            <div class="kop-divider-thick"></div>
-            <div class="kop-divider-thin"></div>
-        </div>
-    <?php endif; ?>
+    <!-- Header Instansi Biasa (Bukan Seperti Surat) -->
+    <div class="header-instansi">
+        <div class="instansi-text-1">KEMENTERIAN PEKERJAAN UMUM</div>
+        <div class="instansi-text-2">DIREKTORAT JENDERAL PRASARANA STRATEGIS</div>
+        <div class="instansi-text-3">SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS PROVINSI RIAU</div>
+    </div>
+    <div class="header-divider"></div>
 
-    <!-- Judul Dokumen -->
+    <!-- Judul Dokumen (Tanpa Nomor & Tahun Anggaran) -->
     <div class="doc-header">
-        <div class="doc-title">Rekap Daftar Barang Ruangan (DBR)</div>
-        <div class="doc-number">Nomor: <?= esc($nomorDokumen ?? ('DBR/690835/' . strtoupper(preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($room['kode_ruangan'] ?? 'RUANG'))) . '/' . date('Y'))); ?> &bull; Tahun Anggaran: <?= esc($tahun ?? date('Y')); ?></div>
+        <div class="doc-title">DAFTAR BARANG RUANGAN (DBR)</div>
     </div>
 
-    <!-- Kotak Metadata Ruangan & UAKPB -->
+    <!-- Kotak Metadata Ruangan & UAKPB (Tanpa Penanggung Jawab di Atas) -->
     <table class="info-box">
         <tr>
             <td class="info-label">Unit Akuntansi (UAKPB)</td>
@@ -343,18 +281,16 @@
             <td class="info-sep">:</td>
             <td class="info-val font-mono font-bold"><?= esc(strtoupper($room['kode_ruangan'] ?? '-')); ?></td>
         </tr>
+        <?php if (! empty($room['lokasi_gedung']) || ! empty($room['lantai']) || ! empty($room['lokasi_ruangan'])): ?>
         <tr>
-            <td class="info-label">Penanggung Jawab</td>
-            <td class="info-sep">:</td>
-            <td class="info-val font-bold"><?= esc(! empty($room['penanggung_jawab_nama']) ? $room['penanggung_jawab_nama'] : 'Belum ditetapkan'); ?></td>
-            
             <td class="info-label">Lokasi Fisik</td>
             <td class="info-sep">:</td>
-            <td class="info-val">
-                <?= esc(! empty($room['lokasi_gedung']) ? $room['lokasi_gedung'] : 'Gedung Kantor'); ?> 
+            <td class="info-val" colspan="4">
+                <?= esc(! empty($room['lokasi_gedung']) ? $room['lokasi_gedung'] : (! empty($room['lokasi_ruangan']) ? $room['lokasi_ruangan'] : 'Gedung Kantor')); ?> 
                 <?= ! empty($room['lantai']) ? (' &bull; Lantai ' . esc($room['lantai'])) : ''; ?>
             </td>
         </tr>
+        <?php endif; ?>
     </table>
 
     <!-- Tabel Daftar Barang Ruangan (Compact, Tanpa NUP & Nilai Perolehan) -->

@@ -378,57 +378,144 @@
 <!-- Modal Alokasi Barang ke Ruangan -->
 <?php if (! empty($can_add)): ?>
 <div class="modal fade" id="modal-alokasi-barang" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
-        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
-            <div class="modal-header bg-light py-3" style="border-bottom: 1px solid #e9eef5;">
-                <h5 class="modal-title font-weight-bold text-dark" style="font-size: 1.1rem;">
-                    <i class="fas fa-box-open text-primary mr-2"></i>Alokasikan Barang ke <?= esc($room['nama_ruangan']); ?>
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document" style="max-width: 1140px;">
+        <div class="modal-content" style="border-radius: 14px; border: none; box-shadow: 0 14px 40px rgba(0,0,0,0.18); overflow: hidden;">
+            <div class="modal-header py-3" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff;">
+                <div>
+                    <h5 class="modal-title font-weight-bold mb-0 text-white" style="font-size: 1.15rem;">
+                        <i class="fas fa-box-open text-primary mr-2"></i>Alokasikan Barang ke Ruangan
+                    </h5>
+                    <small style="color: #94a3b8;">Ruangan Tujuan: <strong class="text-white"><?= esc($room['nama_ruangan']); ?> (<?= esc($room['kode_ruangan']); ?>)</strong></small>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.85;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="<?= site_url('admin/inventaris/dbr/' . $room['id'] . '/alokasi-barang'); ?>" method="post">
+            <form id="form-alokasi-barang" action="<?= site_url('admin/inventaris/dbr/' . $room['id'] . '/alokasi-barang'); ?>" method="post">
                 <?= csrf_field(); ?>
-                <div class="modal-body py-3">
-                    <p class="small text-muted mb-2">
-                        Pilih barang-barang BMN yang berada di ruangan ini (centang kotak di sebelah kiri, lalu klik <strong>Alokasikan ke Ruangan</strong>):
-                    </p>
+                <div class="modal-body py-3 bg-light">
+                    <!-- Search & Filter Card -->
+                    <div class="card border-0 shadow-sm mb-3 bg-white" style="border-radius: 10px;">
+                        <div class="card-body p-3">
+                            <div class="row align-items-center">
+                                <div class="col-12 col-lg-6 mb-2 mb-lg-0">
+                                    <label class="small font-weight-bold text-dark mb-1">
+                                        <i class="fas fa-search text-primary mr-1"></i> Cari Aset BMN:
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-light border-right-0 text-muted" style="border-radius: 8px 0 0 8px;">
+                                                <i class="fas fa-search"></i>
+                                            </span>
+                                        </div>
+                                        <input type="text" id="inputSearchAlokasi" class="form-control border-left-0 font-weight-medium" placeholder="Ketik Nama Barang, Kode Barang, NUP, Merk/Tipe, atau Kode Register SIMAN..." autocomplete="off" style="border-radius: 0 8px 8px 0;">
+                                        <div class="input-group-append" id="wrapperClearSearch" style="display: none;">
+                                            <button class="btn btn-outline-secondary border-left-0" type="button" id="btnClearSearchAlokasi" title="Bersihkan Pencarian" style="border-radius: 0 8px 8px 0;">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-lg-3 mb-2 mb-lg-0">
+                                    <label class="small font-weight-bold text-dark mb-1">
+                                        <i class="fas fa-map-marker-alt text-info mr-1"></i> Asal / Sumber Aset:
+                                    </label>
+                                    <select id="filterSumberAlokasi" class="form-control custom-select" style="border-radius: 8px; font-size: 0.88rem;">
+                                        <option value="">Semua Sumber Aset</option>
+                                        <option value="belum_berlokasi">Aset Belum Berlokasi Saja</option>
+                                        <option value="ruangan_lain">Dari Ruangan Lain (Pindah Ruangan)</option>
+                                    </select>
+                                </div>
+                                <div class="col-6 col-lg-3 mb-2 mb-lg-0">
+                                    <label class="small font-weight-bold text-dark mb-1">
+                                        <i class="fas fa-check-circle text-success mr-1"></i> Kondisi Fisik:
+                                    </label>
+                                    <select id="filterKondisiAlokasi" class="form-control custom-select" style="border-radius: 8px; font-size: 0.88rem;">
+                                        <option value="">Semua Kondisi</option>
+                                        <option value="baik">Baik</option>
+                                        <option value="rusak_ringan">Rusak Ringan</option>
+                                        <option value="rusak_berat">Rusak Berat</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selection & Counter Toolbar -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 px-1" style="gap: 8px;">
+                        <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                            <span class="badge badge-light border px-3 py-2 font-weight-bold text-dark shadow-sm" id="badgeSelectedCount" style="font-size: 0.85rem; border-radius: 6px;">
+                                <i class="fas fa-check-square text-primary mr-1"></i> <span id="countSelectedText">0</span> Barang Dipilih
+                            </span>
+                            <button type="button" class="btn btn-sm btn-outline-danger shadow-sm font-weight-bold" id="btnResetSelection" style="display: none; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem;">
+                                <i class="fas fa-times mr-1"></i> Batalkan Semua Pilihan
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary shadow-sm font-weight-bold" id="btnToggleOnlySelected" style="border-radius: 6px; padding: 4px 10px; font-size: 0.8rem;">
+                                <i class="fas fa-filter mr-1"></i> <span id="textToggleOnlySelected">Tampilkan Hanya yang Dipilih</span>
+                            </button>
+                        </div>
+                        <div class="small text-muted font-weight-medium">
+                            <span id="labelTotalAvailable">Menampilkan <?= count($unallocatedAssets); ?> aset tersedia</span>
+                        </div>
+                    </div>
 
                     <?php if (empty($unallocatedAssets)): ?>
-                        <div class="alert alert-info mb-0">
-                            <i class="fas fa-info-circle mr-1"></i> Tidak ada barang dengan status "Belum berlokasi". Semua aset telah dialokasikan atau silakan import data aset baru terlebih dahulu pada menu <strong>Inventaris Satker</strong>.
+                        <div class="alert alert-info mb-0" style="border-radius: 8px;">
+                            <i class="fas fa-info-circle mr-1"></i> Tidak ada data aset inventaris satker yang tersedia untuk dialokasikan. Semua aset sudah berada di ruangan ini atau silakan tambahkan data aset pada menu <strong>Inventaris Satker</strong>.
                         </div>
                     <?php else: ?>
-                        <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
-                            <table class="table table-hover table-bordered table-sm w-100 js-datatable table-modal-dbr" data-scroll-x="false" data-order='[[1, "asc"], [2, "asc"]]' style="font-size: 0.9rem;">
-                                <thead class="thead-light sticky-top bg-light">
+                        <div class="table-responsive bg-white rounded border shadow-sm" style="max-height: 440px; overflow-y: auto;">
+                            <table id="tableAlokasiBarang" class="table table-hover table-bordered table-sm w-100 mb-0" style="font-size: 0.88rem;">
+                                <thead class="thead-light sticky-top bg-light" style="z-index: 5;">
                                     <tr>
-                                        <th style="width: 40px;" class="text-center align-middle" data-orderable="false">
-                                            <input type="checkbox" id="checkAllAssets" title="Pilih Semua">
+                                        <th style="width: 42px;" class="text-center align-middle" data-orderable="false">
+                                            <input type="checkbox" id="checkAllAlokasi" title="Pilih Semua di Hasil Ini">
                                         </th>
-                                        <th style="width: 140px;" class="align-middle">Kode Barang</th>
-                                        <th style="width: 80px;" class="text-center align-middle">NUP</th>
+                                        <th style="width: 170px;" class="align-middle">Kode Barang & Register</th>
+                                        <th style="width: 75px;" class="text-center align-middle">NUP</th>
                                         <th class="align-middle">Nama Barang</th>
                                         <th class="align-middle">Merk / Tipe</th>
-                                        <th style="width: 90px;" class="text-center align-middle">Kondisi</th>
+                                        <th style="width: 140px;" class="text-center align-middle">Asal / Status</th>
+                                        <th style="width: 95px;" class="text-center align-middle">Kondisi</th>
                                         <th style="width: 80px;" class="text-center align-middle">Jumlah</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($unallocatedAssets as $u): ?>
-                                        <tr>
+                                        <?php
+                                            $isUnassigned = empty($u['ruangan_id']) || $u['ruangan_id'] == 0;
+                                            $sumberType = $isUnassigned ? 'belum_berlokasi' : 'ruangan_lain';
+                                        ?>
+                                        <tr data-id="<?= (int) $u['id']; ?>" data-sumber="<?= $sumberType; ?>" data-kondisi="<?= esc($u['kondisi']); ?>">
                                             <td class="text-center align-middle">
-                                                <input type="checkbox" name="asset_ids[]" value="<?= esc((string) $u['id'], 'attr'); ?>" class="asset-checkbox">
+                                                <input type="checkbox" class="asset-checkbox-alokasi" value="<?= (int) $u['id']; ?>" data-id="<?= (int) $u['id']; ?>" data-kode="<?= esc($u['kode_barang'], 'attr'); ?>" data-nup="<?= esc((string) $u['nup'], 'attr'); ?>" data-nama="<?= esc($u['nama_barang'], 'attr'); ?>">
                                             </td>
-                                            <td class="align-middle font-weight-bold"><?= esc($u['kode_barang']); ?></td>
+                                            <td class="align-middle">
+                                                <span class="font-weight-bold text-dark font-mono"><?= esc($u['kode_barang']); ?></span>
+                                                <?php if (! empty($u['kode_register'])): ?>
+                                                    <div class="text-muted font-mono text-truncate" style="max-width: 180px; font-size: 0.74rem;" title="Kode Register SIMAN: <?= esc($u['kode_register']); ?>">
+                                                        <i class="fas fa-barcode text-secondary mr-1"></i><?= esc($u['kode_register']); ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </td>
                                             <td class="text-center align-middle" data-order="<?= (int) ($u['nup'] ?? 0); ?>">
-                                                <span class="badge badge-light border"><?= esc((string) $u['nup']); ?></span>
+                                                <span class="badge badge-light border font-mono"><?= esc((string) $u['nup']); ?></span>
                                             </td>
                                             <td class="align-middle font-weight-bold text-primary"><?= esc($u['nama_barang']); ?></td>
                                             <td class="align-middle"><?= esc($u['merk_tipe'] ?: '-'); ?></td>
                                             <td class="text-center align-middle">
-                                                <span class="badge badge-<?= $u['kondisi'] === 'baik' ? 'success' : ($u['kondisi'] === 'rusak_ringan' ? 'warning' : 'danger'); ?> px-2 py-1">
+                                                <?php if ($isUnassigned): ?>
+                                                    <span class="badge badge-secondary px-2 py-1" style="font-size: 0.78rem;">
+                                                        <i class="fas fa-box-open mr-1"></i>Belum Berlokasi
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="badge badge-info px-2 py-1 text-truncate" style="max-width: 130px; font-size: 0.78rem;" title="Saat ini di: <?= esc($u['lokasi_ruangan']); ?>">
+                                                        <i class="fas fa-exchange-alt mr-1"></i><?= esc($u['lokasi_ruangan']); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-center align-middle">
+                                                <span class="badge badge-<?= $u['kondisi'] === 'baik' ? 'success' : ($u['kondisi'] === 'rusak_ringan' ? 'warning' : 'danger'); ?> px-2 py-1" style="font-size: 0.78rem;">
                                                     <?= ucfirst(str_replace('_', ' ', $u['kondisi'])); ?>
                                                 </span>
                                             </td>
@@ -443,8 +530,8 @@
                 <div class="modal-footer bg-light py-3" style="border-top: 1px solid #e9eef5;">
                     <button type="button" class="btn btn-secondary px-3" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
                     <?php if (! empty($unallocatedAssets)): ?>
-                        <button type="submit" class="btn btn-primary px-4 shadow-sm" style="border-radius: 6px;">
-                            <i class="fas fa-check-circle mr-1"></i> Alokasikan ke Ruangan
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm font-weight-bold" id="btnSubmitAlokasi" style="border-radius: 6px; background: #2563eb; border-color: #2563eb;">
+                            <i class="fas fa-check-circle mr-1"></i> Alokasikan <span id="btnSubmitCountBadge" class="badge badge-light text-primary ml-1" style="display: none;">0</span> ke Ruangan
                         </button>
                     <?php endif; ?>
                 </div>
@@ -1023,11 +1110,254 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Auto-adjust DataTable inside modal alokasi when opened
-    $('#modal-alokasi-barang').on('shown.bs.modal', function () {
-        if ($.fn.dataTable) {
-            $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+    /* ==========================================================================
+       MODAL ALOKASI BARANG: LIVE SEARCH, FILTER & MULTI-SELECTION RETENTION
+       ========================================================================== */
+    var selectedAssetMap = new Map();
+    var isFilterOnlySelected = false;
+    var alokasiDataTable = null;
+
+    function updateAlokasiSelectionUI() {
+        var count = selectedAssetMap.size;
+        $('#countSelectedText').text(count);
+        $('#btnSubmitCountBadge').text(count);
+
+        if (count > 0) {
+            $('#badgeSelectedCount')
+                .removeClass('badge-light text-dark')
+                .addClass('badge-primary text-white');
+            $('#btnResetSelection').show();
+            $('#btnSubmitCountBadge').show();
+        } else {
+            $('#badgeSelectedCount')
+                .removeClass('badge-primary text-white')
+                .addClass('badge-light text-dark');
+            $('#btnResetSelection').hide();
+            $('#btnSubmitCountBadge').hide();
         }
+
+        if (alokasiDataTable) {
+            var totalVisible = 0;
+            var totalVisibleChecked = 0;
+            alokasiDataTable.rows({ filter: 'applied' }).every(function() {
+                totalVisible++;
+                var rowNode = this.node();
+                var chk = $(rowNode).find('.asset-checkbox-alokasi');
+                if (chk.length && selectedAssetMap.has(String(chk.val()))) {
+                    totalVisibleChecked++;
+                }
+            });
+            $('#checkAllAlokasi').prop('checked', totalVisible > 0 && totalVisible === totalVisibleChecked);
+            $('#labelTotalAvailable').text('Menampilkan ' + totalVisible + ' aset dari <?= count($unallocatedAssets); ?> aset');
+        }
+    }
+
+    // Inisialisasi DataTable untuk Alokasi Barang saat modal ditampilkan
+    $('#modal-alokasi-barang').on('shown.bs.modal', function () {
+        if (!alokasiDataTable && $.fn.DataTable) {
+            // Register custom filter for sumber & kondisi & onlySelected
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                if (settings.nTable.id !== 'tableAlokasiBarang') {
+                    return true;
+                }
+
+                var $row = $(settings.aoData[dataIndex].nTr);
+                var rowId = String($row.attr('data-id') || '');
+                var rowSumber = $row.attr('data-sumber') || '';
+                var rowKondisi = $row.attr('data-kondisi') || '';
+
+                // 1. Filter Hanya yang Dipilih
+                if (isFilterOnlySelected && !selectedAssetMap.has(rowId)) {
+                    return false;
+                }
+
+                // 2. Filter Sumber
+                var selectedSumber = $('#filterSumberAlokasi').val();
+                if (selectedSumber && rowSumber !== selectedSumber) {
+                    return false;
+                }
+
+                // 3. Filter Kondisi
+                var selectedKondisi = $('#filterKondisiAlokasi').val();
+                if (selectedKondisi && rowKondisi !== selectedKondisi) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            alokasiDataTable = $('#tableAlokasiBarang').DataTable({
+                responsive: false,
+                autoWidth: false,
+                order: [[1, 'asc'], [2, 'asc']],
+                dom: 't<"d-flex flex-wrap justify-content-between align-items-center mt-2 px-2"ip>',
+                pageLength: 25,
+                language: {
+                    info: 'Menampilkan _START_ s/d _END_ dari _TOTAL_ aset',
+                    infoEmpty: 'Tidak ada aset yang cocok',
+                    zeroRecords: '<div class="text-center py-4 text-muted"><i class="fas fa-search fa-2x mb-2 d-block text-secondary"></i>Tidak ditemukan aset dengan kriteria pencarian tersebut</div>',
+                    paginate: {
+                        first: 'Awal',
+                        last: 'Akhir',
+                        next: '&rsaquo;',
+                        previous: '&lsaquo;'
+                    }
+                },
+                drawCallback: function() {
+                    // Sync checkboxes on current page with selectedAssetMap
+                    $('#tableAlokasiBarang .asset-checkbox-alokasi').each(function() {
+                        var id = String($(this).val());
+                        $(this).prop('checked', selectedAssetMap.has(id));
+                    });
+                    updateAlokasiSelectionUI();
+                }
+            });
+        } else if (alokasiDataTable) {
+            alokasiDataTable.columns.adjust();
+        }
+
+        // Focus search input
+        setTimeout(function() {
+            $('#inputSearchAlokasi').focus();
+        }, 150);
+    });
+
+    // Real-time search handler with debounce
+    var searchDebounceTimer = null;
+    $('#inputSearchAlokasi').on('input keyup', function() {
+        var val = $(this).val();
+        if (val.trim() !== '') {
+            $('#wrapperClearSearch').show();
+        } else {
+            $('#wrapperClearSearch').hide();
+        }
+
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(function() {
+            if (alokasiDataTable) {
+                alokasiDataTable.search(val).draw();
+            }
+        }, 200);
+    });
+
+    // Clear search button
+    $('#btnClearSearchAlokasi').on('click', function() {
+        $('#inputSearchAlokasi').val('').trigger('input').focus();
+    });
+
+    // Change filter sumber & kondisi
+    $('#filterSumberAlokasi, #filterKondisiAlokasi').on('change', function() {
+        if (alokasiDataTable) {
+            alokasiDataTable.draw();
+        }
+    });
+
+    // Individual Checkbox Click
+    $(document).on('change', '#tableAlokasiBarang .asset-checkbox-alokasi', function() {
+        var $chk = $(this);
+        var id = String($chk.val());
+        if ($chk.is(':checked')) {
+            selectedAssetMap.set(id, {
+                id: id,
+                kode: $chk.data('kode'),
+                nup: $chk.data('nup'),
+                nama: $chk.data('nama')
+            });
+        } else {
+            selectedAssetMap.delete(id);
+            if (isFilterOnlySelected) {
+                if (alokasiDataTable) alokasiDataTable.draw();
+            }
+        }
+        updateAlokasiSelectionUI();
+    });
+
+    // Select All in filtered results
+    $('#checkAllAlokasi').on('change', function() {
+        var isChecked = $(this).is(':checked');
+        if (!alokasiDataTable) return;
+
+        alokasiDataTable.rows({ filter: 'applied' }).every(function() {
+            var rowNode = this.node();
+            var chk = $(rowNode).find('.asset-checkbox-alokasi');
+            if (chk.length) {
+                var id = String(chk.val());
+                chk.prop('checked', isChecked);
+                if (isChecked) {
+                    selectedAssetMap.set(id, {
+                        id: id,
+                        kode: chk.data('kode'),
+                        nup: chk.data('nup'),
+                        nama: chk.data('nama')
+                    });
+                } else {
+                    selectedAssetMap.delete(id);
+                }
+            }
+        });
+        updateAlokasiSelectionUI();
+    });
+
+    // Reset All Selection
+    $('#btnResetSelection').on('click', function() {
+        selectedAssetMap.clear();
+        $('#tableAlokasiBarang .asset-checkbox-alokasi').prop('checked', false);
+        $('#checkAllAlokasi').prop('checked', false);
+        if (isFilterOnlySelected) {
+            isFilterOnlySelected = false;
+            $('#btnToggleOnlySelected').removeClass('btn-primary text-white').addClass('btn-outline-primary');
+            $('#textToggleOnlySelected').text('Tampilkan Hanya yang Dipilih');
+            if (alokasiDataTable) alokasiDataTable.draw();
+        }
+        updateAlokasiSelectionUI();
+    });
+
+    // Toggle "Tampilkan Hanya yang Dipilih"
+    $('#btnToggleOnlySelected').on('click', function() {
+        isFilterOnlySelected = !isFilterOnlySelected;
+        if (isFilterOnlySelected) {
+            $(this).removeClass('btn-outline-primary').addClass('btn-primary text-white');
+            $('#textToggleOnlySelected').text('Tampilkan Semua Aset');
+        } else {
+            $(this).removeClass('btn-primary text-white').addClass('btn-outline-primary');
+            $('#textToggleOnlySelected').text('Tampilkan Hanya yang Dipilih');
+        }
+        if (alokasiDataTable) {
+            alokasiDataTable.draw();
+        }
+    });
+
+    // Form Submit Handler: Inject all selected IDs from Map into hidden inputs
+    $('#form-alokasi-barang').on('submit', function(e) {
+        if (selectedAssetMap.size === 0) {
+            e.preventDefault();
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pilih Aset Terlebih Dahulu',
+                    text: 'Silakan centang minimal 1 barang inventaris yang ingin dialokasikan ke ruangan ini.',
+                    confirmButtonText: 'Mengerti'
+                });
+            } else {
+                alert('Silakan pilih minimal satu barang untuk dialokasikan.');
+            }
+            return false;
+        }
+
+        // Hapus input checkbox eksisting di form agar tidak bentrok
+        $(this).find('.injected-asset-id').remove();
+
+        // Inject all selected IDs
+        selectedAssetMap.forEach(function(val, id) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'asset_ids[]',
+                value: id,
+                class: 'injected-asset-id'
+            }).appendTo('#form-alokasi-barang');
+        });
+
+        return true;
     });
 
     // Auto-focus manual input when switching tab

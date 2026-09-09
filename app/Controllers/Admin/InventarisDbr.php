@@ -255,12 +255,13 @@ class InventarisDbr extends BaseController
             ->get()
             ->getResultArray();
 
-        // 3. Unallocated assets available to be assigned to this room
+        // 3. Unallocated assets or assets from other rooms available to be assigned to this room
         $unallocatedAssets = $db->table('trn_inventaris_satker')
-            ->select('id, kode_barang, nup, kode_register, nama_barang, merk_tipe, kondisi, jumlah, satuan, nilai_perolehan, no_psp')
+            ->select('id, kode_barang, nup, kode_register, nama_barang, merk_tipe, kondisi, jumlah, satuan, nilai_perolehan, no_psp, ruangan_id, lokasi_ruangan')
             ->groupStart()
                 ->where('ruangan_id IS NULL', null, false)
                 ->orWhere('ruangan_id', 0)
+                ->orWhere('ruangan_id !=', $ruanganId)
             ->groupEnd()
             ->orderBy('kode_barang', 'ASC')
             ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
