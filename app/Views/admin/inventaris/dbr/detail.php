@@ -563,25 +563,24 @@
     #qr-reader {
         position: relative !important;
         width: 100% !important;
-        height: 100% !important;
         min-height: 340px !important;
         border: none !important;
         padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
         overflow: hidden !important;
         border-radius: 12px !important;
-        background: #000 !important;
+        background: transparent !important;
     }
     #qr-reader video {
         width: 100% !important;
-        height: 100% !important;
+        height: auto !important;
         min-height: 340px !important;
+        max-height: 55vh !important;
         object-fit: cover !important;
         border-radius: 12px !important;
         display: block !important;
-        background: #000 !important;
+        background: transparent !important;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
     }
     #qr-shaded-region {
         display: none !important;
@@ -596,7 +595,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: #020617;
+        background: #0f172a;
         z-index: 5;
     }
     #qr-reader-container {
@@ -604,15 +603,10 @@
         width: 100%;
         max-width: 640px;
         margin: 0 auto;
-        background: #020617;
+        background: #0f172a;
         border-radius: 12px;
         overflow: hidden;
         min-height: 340px;
-        height: 52vh;
-        max-height: 520px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         box-shadow: 0 8px 30px rgba(0,0,0,0.35);
     }
     .scanner-reticle-box {
@@ -694,16 +688,13 @@
         }
         #qr-reader-container {
             min-height: 320px !important;
-            height: 50vh !important;
-            max-height: 480px !important;
         }
         #qr-reader {
             min-height: 320px !important;
-            height: 100% !important;
         }
         #qr-reader video {
             min-height: 320px !important;
-            height: 100% !important;
+            max-height: 52vh !important;
         }
         #modal-scan-qr .nav-pills .nav-link {
             font-size: 0.8rem;
@@ -880,6 +871,26 @@
 <?php endif; ?>
 
 <!-- Script HTML5 QR Code Library & Handler -->
+<script>
+// Global iOS WebKit Video PlaysInline Safeguard
+(function() {
+    var origCreate = document.createElement;
+    document.createElement = function(tag, opt) {
+        var el = origCreate.call(document, tag, opt);
+        if (tag && typeof tag === 'string' && tag.toLowerCase() === 'video') {
+            el.setAttribute('playsinline', 'true');
+            el.setAttribute('webkit-playsinline', 'true');
+            el.setAttribute('autoplay', 'true');
+            el.setAttribute('muted', 'true');
+            el.playsInline = true;
+            el.muted = true;
+            el.autoplay = true;
+            el.style.background = 'transparent';
+        }
+        return el;
+    };
+})();
+</script>
 <script src="<?= base_url('assets/adminlte/plugins/html5-qrcode/html5-qrcode.min.js'); ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -1130,6 +1141,42 @@ document.addEventListener('DOMContentLoaded', function() {
     var currentFacingMode = 'environment'; // default rear camera
     var currentCameraId = null;
 
+    // MutationObserver to enforce playsinline and attributes the millisecond video element is created in DOM
+    var qrReaderEl = document.getElementById('qr-reader');
+    if (qrReaderEl && window.MutationObserver) {
+        var videoObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node && node.tagName && node.tagName.toLowerCase() === 'video') {
+                        node.setAttribute('playsinline', 'true');
+                        node.setAttribute('webkit-playsinline', 'true');
+                        node.setAttribute('autoplay', 'true');
+                        node.setAttribute('muted', 'true');
+                        node.playsInline = true;
+                        node.muted = true;
+                        node.autoplay = true;
+                        node.style.width = '100%';
+                        node.style.minHeight = '320px';
+                        node.style.objectFit = 'cover';
+                        node.style.background = 'transparent';
+                        node.style.webkitTransform = 'translateZ(0)';
+                        node.style.transform = 'translateZ(0)';
+
+                        node.addEventListener('loadedmetadata', function() {
+                            if (node.paused) {
+                                var p = node.play();
+                                if (p && typeof p.catch === 'function') {
+                                    p.catch(function(e) { console.warn('video play warning:', e); });
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        });
+        videoObserver.observe(qrReaderEl, { childList: true, subtree: true });
+    }
+
     function isRearCamera(camera) {
         if (!camera) return false;
         var lbl = (camera.label || '').toLowerCase();
@@ -1144,8 +1191,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Optimized scan configuration for mobile speed & responsiveness
-        // NOTE: Do NOT enforce strict aspectRatio: 1.0 or BarcodeDetector on mobile WebRTC
-        // as they can cause black screens or driver stalls on Android/iOS browsers.
         var config = {
             fps: 15,
             qrbox: function(viewfinderWidth, viewfinderHeight) {
@@ -1166,19 +1211,25 @@ document.addEventListener('DOMContentLoaded', function() {
         var statusEl = document.getElementById('cam-status');
         var btnText = document.getElementById('btn-cam-text');
 
+        var isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
         // Resolve camera constraints:
-        // Priority 1: Object passed directly (e.g. { facingMode: "environment" } or { facingMode: "user" })
-        // Priority 2: String cameraId provided (e.g. from dropdown)
-        // Priority 3: Default to rear camera { facingMode: "environment" }
+        // On mobile devices (iOS / Android), ALWAYS use facingMode constraints because
+        // virtual multi-camera IDs (e.g. iPhone 'Tiga Kamera Belakang') break WebKit WebRTC when requested via exact deviceId.
         var camConfig = { facingMode: "environment" };
         if (typeof cameraIdOrFacing === 'object' && cameraIdOrFacing !== null) {
             camConfig = cameraIdOrFacing;
-            if (camConfig.facingMode) {
-                currentFacingMode = camConfig.facingMode;
-            }
+            if (camConfig.facingMode) currentFacingMode = camConfig.facingMode;
+        } else if (typeof cameraIdOrFacing === 'string' && (cameraIdOrFacing === 'environment' || cameraIdOrFacing === 'user')) {
+            currentFacingMode = cameraIdOrFacing;
+            camConfig = { facingMode: cameraIdOrFacing };
         } else if (typeof cameraIdOrFacing === 'string' && cameraIdOrFacing.trim() !== '') {
-            camConfig = cameraIdOrFacing;
-            currentCameraId = cameraIdOrFacing;
+            if (isMobileDevice) {
+                currentFacingMode = 'environment';
+                camConfig = { facingMode: "environment" };
+            } else {
+                camConfig = cameraIdOrFacing;
+            }
         } else {
             currentFacingMode = 'environment';
             camConfig = { facingMode: "environment" };
@@ -1226,7 +1277,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 videoEl.setAttribute('playsinline', 'true');
                 videoEl.setAttribute('webkit-playsinline', 'true');
                 videoEl.setAttribute('autoplay', 'true');
+                videoEl.setAttribute('muted', 'true');
+                videoEl.playsInline = true;
                 videoEl.muted = true;
+                videoEl.autoplay = true;
+                videoEl.style.width = '100%';
+                videoEl.style.minHeight = '320px';
+                videoEl.style.objectFit = 'cover';
+                videoEl.style.background = 'transparent';
+                videoEl.style.webkitTransform = 'translateZ(0)';
+                videoEl.style.transform = 'translateZ(0)';
+
                 if (videoEl.paused) {
                     var p = videoEl.play();
                     if (p && typeof p.catch === 'function') {
@@ -1259,27 +1320,8 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(function(err) {
             console.warn('Initial camera start failed, trying fallback:', err);
-            // Fallback 1: If specific deviceId or constraint failed, try generic rear camera
-            if (typeof camConfig === 'string' || (camConfig && camConfig.deviceId)) {
-                currentFacingMode = 'environment';
-                html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
-                .then(function() {
-                    onCameraStarted();
-                })
-                .catch(function(err2) {
-                    console.warn('Environment fallback failed, falling back to front camera:', err2);
-                    currentFacingMode = 'user';
-                    // Fallback 2: front camera
-                    html5QrCode.start({ facingMode: "user" }, config, onScanSuccess, onScanFailure)
-                    .then(function() {
-                        onCameraStarted();
-                    })
-                    .catch(function(err3) {
-                        onCameraError(err3);
-                    });
-                });
-            } else if (camConfig && camConfig.facingMode === 'environment') {
-                // If environment failed (e.g. laptop with only front camera)
+            // Fallback 1: If generic rear camera failed, try user camera
+            if (camConfig && camConfig.facingMode === 'environment') {
                 console.warn('Rear camera not available, falling back to front camera:', err);
                 currentFacingMode = 'user';
                 html5QrCode.start({ facingMode: "user" }, config, onScanSuccess, onScanFailure)
@@ -1296,6 +1338,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function stopCamera(callback) {
+        var videoEl = document.querySelector('#qr-reader video');
+        if (videoEl && videoEl.srcObject) {
+            try {
+                var tracks = videoEl.srcObject.getTracks();
+                tracks.forEach(function(track) {
+                    track.stop();
+                });
+                videoEl.srcObject = null;
+            } catch(e) {}
+        }
+
         if (html5QrCode && isCameraRunning) {
             html5QrCode.stop().then(function() {
                 isCameraRunning = false;
@@ -1319,6 +1372,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (typeof callback === 'function') callback();
             });
         } else {
+            isCameraRunning = false;
             if (typeof callback === 'function') callback();
         }
     }
@@ -1378,11 +1432,30 @@ document.addEventListener('DOMContentLoaded', function() {
             availableCameras = cameras;
 
             var selectCam = document.getElementById('camera-select');
+            if (!selectCam) return;
 
-            if (selectCam) {
-                var currentSelected = selectCam.value;
-                selectCam.innerHTML = '';
+            var isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
+            selectCam.innerHTML = '';
+
+            if (isMobileDevice) {
+                // On mobile (iOS / Android), multi-camera virtual devices (e.g. iPhone 'Tiga Kamera Belakang')
+                // break WebKit WebRTC if selected by exact deviceId.
+                // Present clean facingMode options:
+                var optBack = document.createElement('option');
+                optBack.value = 'environment';
+                optBack.textContent = '📷 Belakang (Utama)';
+                selectCam.appendChild(optBack);
+
+                var optFront = document.createElement('option');
+                optFront.value = 'user';
+                optFront.textContent = '📱 Depan (Selfie)';
+                selectCam.appendChild(optFront);
+
+                selectCam.value = currentFacingMode;
+                selectCam.style.display = 'inline-block';
+            } else {
+                // Desktop / PC with individual USB webcams
                 var rearIdx = -1;
                 cameras.forEach(function(c, i) {
                     var isRear = isRearCamera(c);
@@ -1390,17 +1463,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     var opt = document.createElement('option');
                     opt.value = c.id;
-                    opt.textContent = (isRear ? '📷 Belakang: ' : '📱 Depan: ') + (c.label || ('Kamera ' + (i + 1)));
+                    opt.textContent = (isRear ? '📷 Belakang: ' : '📱 Depan / USB: ') + (c.label || ('Kamera ' + (i + 1)));
                     selectCam.appendChild(opt);
                 });
 
-                if (currentSelected) {
-                    selectCam.value = currentSelected;
-                } else if (rearIdx !== -1) {
+                if (rearIdx !== -1) {
                     selectCam.value = cameras[rearIdx].id;
-                    currentCameraIndex = rearIdx;
                 }
-
                 if (cameras.length > 1) {
                     selectCam.style.display = 'inline-block';
                 }
@@ -1414,13 +1483,15 @@ document.addEventListener('DOMContentLoaded', function() {
     var selectCamEl = document.getElementById('camera-select');
     if (selectCamEl) {
         selectCamEl.addEventListener('change', function() {
-            var chosenId = this.value;
+            var val = this.value;
+            var isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            var targetConstraint = (isMobileDevice || val === 'environment' || val === 'user') ? { facingMode: val } : val;
             if (isCameraRunning) {
                 stopCamera(function() {
-                    startCamera(chosenId);
+                    startCamera(targetConstraint);
                 });
             } else {
-                startCamera(chosenId);
+                startCamera(targetConstraint);
             }
         });
     }
@@ -1429,28 +1500,29 @@ document.addEventListener('DOMContentLoaded', function() {
     var btnFlipCam = document.getElementById('btn-flip-cam');
     if (btnFlipCam) {
         btnFlipCam.addEventListener('click', function() {
-            if (availableCameras && availableCameras.length > 2) {
-                currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
-                var nextCamera = availableCameras[currentCameraIndex];
-                if (selectCamEl) selectCamEl.value = nextCamera.id;
-                var isRear = isRearCamera(nextCamera);
-                currentFacingMode = isRear ? 'environment' : 'user';
-                if (isCameraRunning) {
-                    stopCamera(function() {
-                        startCamera(nextCamera.id);
-                    });
-                } else {
-                    startCamera(nextCamera.id);
-                }
-            } else {
-                // Smartphone standard flip: toggle back vs front camera
+            var isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobileDevice) {
                 currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+                if (selectCamEl) selectCamEl.value = currentFacingMode;
                 if (isCameraRunning) {
                     stopCamera(function() {
                         startCamera({ facingMode: currentFacingMode });
                     });
                 } else {
                     startCamera({ facingMode: currentFacingMode });
+                }
+            } else {
+                if (availableCameras && availableCameras.length > 1) {
+                    currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+                    var nextCamera = availableCameras[currentCameraIndex];
+                    if (selectCamEl) selectCamEl.value = nextCamera.id;
+                    if (isCameraRunning) {
+                        stopCamera(function() {
+                            startCamera(nextCamera.id);
+                        });
+                    } else {
+                        startCamera(nextCamera.id);
+                    }
                 }
             }
         });
