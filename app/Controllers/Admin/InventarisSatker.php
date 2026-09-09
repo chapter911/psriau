@@ -448,21 +448,33 @@ class InventarisSatker extends BaseController
     {
         $forbidden = $this->checkAccess();
         if ($forbidden instanceof RedirectResponse) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Sesi berakhir atau akses ditolak.'])->setStatusCode(403);
+            }
             return $forbidden;
         }
 
         $menuPermissions = $this->resolvePermissions();
         if (! (bool) ($menuPermissions['import'] ?? false)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk mengimpor data inventaris.'])->setStatusCode(403);
+            }
             return redirect()->to('/admin/inventaris/barang')->with('error', 'Anda tidak memiliki hak akses untuk mengimpor data inventaris.');
         }
 
         $file = $this->request->getFile('file_excel');
         if (! $file || ! $file->isValid()) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Silakan pilih file Excel SIMAN yang valid untuk diunggah.'])->setStatusCode(400);
+            }
             return redirect()->to('/admin/inventaris/barang')->with('error', 'Silakan pilih file Excel SIMAN yang valid untuk diunggah.');
         }
 
         $ext = strtolower($file->getClientExtension());
         if (! in_array($ext, ['xlsx', 'xls'], true)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Format file harus berupa .xlsx atau .xls.'])->setStatusCode(400);
+            }
             return redirect()->to('/admin/inventaris/barang')->with('error', 'Format file harus berupa .xlsx atau .xls.');
         }
 
@@ -475,6 +487,9 @@ class InventarisSatker extends BaseController
             $highestRow = $sheet->getHighestRow();
 
             if ($highestRow < 2) {
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['status' => 'error', 'message' => 'File Excel tidak memiliki data aset yang cukup.'])->setStatusCode(400);
+                }
                 return redirect()->to('/admin/inventaris/barang')->with('error', 'File Excel tidak memiliki data aset yang cukup.');
             }
 
@@ -826,9 +841,28 @@ class InventarisSatker extends BaseController
             }
 
             $totalProses = $importedCount + $updatedCount;
-            return redirect()->to('/admin/inventaris/barang')
-                ->with('message', "Proses import Excel selesai! {$importedCount} data baru ditambahkan dan {$updatedCount} data diperbarui berdasarkan kecocokan Kode Barang & NUP (Total: {$totalProses} aset).");
+            $successMsg  = "Proses import Excel selesai! {$importedCount} data baru ditambahkan dan {$updatedCount} data diperbarui berdasarkan kecocokan Kode Barang & NUP (Total: {$totalProses} aset).";
+
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status'         => 'success',
+                    'message'        => $successMsg,
+                    'imported_count' => $importedCount,
+                    'updated_count'  => $updatedCount,
+                    'total_proses'   => $totalProses,
+                    'csrfHash'       => csrf_hash(),
+                ]);
+            }
+
+            return redirect()->to('/admin/inventaris/barang')->with('message', $successMsg);
         } catch (\Throwable $e) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status'   => 'error',
+                    'message'  => 'Gagal memproses file Excel SIMAN: ' . $e->getMessage(),
+                    'csrfHash' => csrf_hash(),
+                ])->setStatusCode(500);
+            }
             return redirect()->to('/admin/inventaris/barang')
                 ->with('error', 'Gagal memproses file Excel SIMAN: ' . $e->getMessage());
         }

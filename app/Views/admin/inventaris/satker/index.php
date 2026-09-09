@@ -713,39 +713,145 @@
 
 <!-- Modal Import SIMAN -->
 <?php if (! empty($can_import)): ?>
-<div class="modal fade" id="modal-import-siman" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="modal-import-siman" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
-            <div class="modal-header bg-light py-3" style="border-bottom: 1px solid #e9eef5;">
-                <h5 class="modal-title font-weight-bold text-dark" style="font-size: 1.1rem;">
+        <div class="modal-content" style="border-radius: 14px; border: none; box-shadow: 0 12px 36px rgba(0,0,0,0.18); overflow: hidden;">
+            <div class="modal-header py-3" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff;">
+                <h5 class="modal-title font-weight-bold mb-0" style="font-size: 1.05rem;">
                     <i class="fas fa-file-excel text-success mr-2"></i>Import Data Aset BMN SIMAN
                 </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" id="btn-close-import-x" style="opacity: 0.85;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="<?= site_url('admin/inventaris/barang/import-siman'); ?>" method="post" enctype="multipart/form-data">
+            
+            <!-- SECTION 1: Form Input (Initial View) -->
+            <form id="form-import-siman" action="<?= site_url('admin/inventaris/barang/import-siman'); ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
-                <div class="modal-body py-4">
-                    <div class="alert alert-info py-2 px-3 small mb-3" style="border-radius: 6px;">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        Upload file ekspor Master Aset dari aplikasi <strong>SIMAN / SAKTI Kemenkeu</strong> (format <code>.xlsx</code> atau <code>.xls</code> seperti <code>daftar-aset-1.xlsx</code>). Sistem akan membaca Kode Barang, NUP, Nama Barang, Merk/Tipe, Kondisi, Nilai Perolehan, dan No PSP.
+                <div class="modal-body py-4" id="import-form-view">
+                    <div class="alert alert-info py-2 px-3 small mb-3 border-0 shadow-sm" style="border-radius: 8px; background-color: #f0f9ff; color: #0369a1;">
+                        <i class="fas fa-info-circle mr-1 text-info"></i>
+                        Upload file ekspor Master Aset dari aplikasi <strong>SIMAN / SAKTI Kemenkeu</strong> (format <code>.xlsx</code> atau <code>.xls</code> seperti <code>daftar-aset-1.xlsx</code>). Sistem secara otomatis mencocokkan <strong>Kode Barang &amp; NUP</strong> (update data yang sudah ada, insert data baru) serta membaca Kode Register BMN.
                     </div>
                     <div class="form-group mb-0">
                         <label class="font-weight-bold small text-dark">Pilih File Excel SIMAN <span class="text-danger">*</span></label>
                         <div class="custom-file">
-                            <input type="file" name="file_excel" class="custom-file-input" id="file_excel" accept=".xlsx, .xls" required onchange="this.nextElementSibling.innerText = this.files[0] ? this.files[0].name : 'Pilih file .xlsx / .xls';">
-                            <label class="custom-file-label" for="file_excel">Pilih file .xlsx / .xls</label>
+                            <input type="file" name="file_excel" class="custom-file-input" id="file_excel" accept=".xlsx, .xls" required>
+                            <label class="custom-file-label font-mono text-truncate" for="file_excel" id="file_excel_label" style="border-radius: 8px;">Pilih file .xlsx / .xls</label>
                         </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-check text-success mr-1"></i> Dilengkapi loading progress real-time, estimasi waktu, dan status tahapan impor.
+                        </small>
                     </div>
                 </div>
-                <div class="modal-footer bg-light py-3" style="border-top: 1px solid #e9eef5;">
+                <div class="modal-footer bg-light py-3" id="import-form-footer" style="border-top: 1px solid #e9eef5;">
                     <button type="button" class="btn btn-secondary px-3" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
-                    <button type="submit" class="btn btn-success px-4 shadow-sm" style="border-radius: 6px;">
+                    <button type="submit" class="btn btn-success px-4 shadow-sm font-weight-bold" id="btn-submit-import" style="border-radius: 6px;">
                         <i class="fas fa-upload mr-1"></i> Mulai Import Aset
                     </button>
                 </div>
             </form>
+
+            <!-- SECTION 2: Progress Screen (Active during upload & processing) -->
+            <div class="modal-body py-4" id="import-progress-view" style="display: none;">
+                <div class="text-center">
+                    <div id="progress-spinner-wrapper" class="mb-3">
+                        <div class="spinner-border text-success" style="width: 3.5rem; height: 3.5rem; border-width: 0.3em;" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                    <div id="progress-success-icon" style="display: none;" class="mb-3">
+                        <i class="fas fa-check-circle text-success" style="font-size: 3.5rem;"></i>
+                    </div>
+                    <div id="progress-error-icon" style="display: none;" class="mb-3">
+                        <i class="fas fa-times-circle text-danger" style="font-size: 3.5rem;"></i>
+                    </div>
+
+                    <h5 class="font-weight-bold text-dark mb-1" id="progress-main-title">Mengimpor Data Aset SIMAN...</h5>
+                    <p class="text-muted small mb-3" id="progress-sub-title">File: <strong id="progress-filename">-</strong> (<span id="progress-filesize">-</span>)</p>
+
+                    <!-- Progress Bar Container -->
+                    <div class="px-2 mb-2">
+                        <div class="progress" style="height: 22px; border-radius: 12px; background-color: #e2e8f0; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                            <div id="import-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success font-weight-bold" role="progressbar" style="width: 0%; font-size: 0.8rem; transition: width 0.3s ease;">0%</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between px-2 text-muted small mb-3">
+                        <span id="progress-status-desc" class="font-weight-bold text-info"><i class="fas fa-arrow-up mr-1"></i> Memulai upload file...</span>
+                        <span id="progress-timer" class="font-mono"><i class="fas fa-clock mr-1"></i> 00:00</span>
+                    </div>
+
+                    <!-- Step Tracker -->
+                    <div class="px-2 text-left mb-3">
+                        <div class="bg-light p-3 rounded border small shadow-xs" style="font-size: 0.82rem;">
+                            <div class="d-flex align-items-center mb-2" id="step-upload">
+                                <i class="fas fa-spinner fa-spin mr-2 text-primary" id="step-upload-icon"></i>
+                                <span id="step-upload-text" class="font-weight-bold text-dark">1. Mengunggah file Excel ke server</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2 text-muted" id="step-parse">
+                                <i class="far fa-circle mr-2" id="step-parse-icon"></i>
+                                <span id="step-parse-text">2. Membaca lembar data SIMAN BMN &amp; memetakan kolom</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2 text-muted" id="step-match">
+                                <i class="far fa-circle mr-2" id="step-match-icon"></i>
+                                <span id="step-match-text">3. Validasi &amp; pencocokan Kode Barang &amp; NUP</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2 text-muted" id="step-save">
+                                <i class="far fa-circle mr-2" id="step-save-icon"></i>
+                                <span id="step-save-text">4. Menjalankan proses Upsert (Insert baru &amp; Update aset)</span>
+                            </div>
+                            <div class="d-flex align-items-center text-muted" id="step-finish">
+                                <i class="far fa-circle mr-2" id="step-finish-icon"></i>
+                                <span id="step-finish-text">5. Finalisasi data &amp; penyegaran tabel</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning py-2 px-3 small text-left mb-0 border-0" id="progress-warning-note" style="border-radius: 8px; font-size: 0.78rem;">
+                        <i class="fas fa-exclamation-triangle mr-1 text-warning"></i>
+                        Mohon <strong>jangan menutup atau me-refresh tab browser</strong> sampai seluruh proses impor dan penyimpanan data selesai.
+                    </div>
+
+                    <!-- Result Summary Box (Shown upon completion) -->
+                    <div id="progress-result-box" style="display: none;" class="px-2 mt-3 text-left">
+                        <div class="card border-0 shadow-sm" style="border-radius: 10px; background: #f0fdf4; border: 1px solid #bbf7d0 !important;">
+                            <div class="card-body p-3">
+                                <div class="font-weight-bold text-success small mb-2">
+                                    <i class="fas fa-check-double mr-1"></i> Impor Berhasil Diproses!
+                                </div>
+                                <div class="row text-center">
+                                    <div class="col-4 border-right">
+                                        <div class="text-muted small" style="font-size: 0.75rem;">Total Diproses</div>
+                                        <h5 class="font-weight-bold text-dark mb-0" id="res-total">0</h5>
+                                    </div>
+                                    <div class="col-4 border-right">
+                                        <div class="text-muted small" style="font-size: 0.75rem;">Aset Baru</div>
+                                        <h5 class="font-weight-bold text-success mb-0" id="res-imported">0</h5>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-muted small" style="font-size: 0.75rem;">Diperbarui</div>
+                                        <h5 class="font-weight-bold text-info mb-0" id="res-updated">0</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-success btn-block mt-3 py-2 font-weight-bold shadow-sm" id="btn-import-finish-reload" style="border-radius: 8px;">
+                            <i class="fas fa-check mr-1"></i> Selesai &amp; Tampilkan Data
+                        </button>
+                    </div>
+
+                    <!-- Error Box (Shown if failed) -->
+                    <div id="progress-error-box" style="display: none;" class="px-2 mt-3 text-left">
+                        <div class="alert alert-danger border-0 shadow-sm py-2 px-3 small mb-3" id="progress-error-msg" style="border-radius: 8px;">
+                            Terjadi kesalahan saat mengimpor data.
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-block py-2 font-weight-bold" id="btn-import-retry" style="border-radius: 8px;">
+                            <i class="fas fa-undo mr-1"></i> Kembali &amp; Coba Lagi
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -1030,6 +1136,275 @@ document.addEventListener('DOMContentLoaded', function() {
             nameEl.textContent = '"' + nama + '"';
         }
     });
+
+    // ========================================================
+    // Real-Time Loading Progress for Import SIMAN Excel
+    // ========================================================
+    var formImport = document.getElementById('form-import-siman');
+    var fileInputImport = document.getElementById('file_excel');
+    var fileLabelImport = document.getElementById('file_excel_label');
+
+    if (fileInputImport && fileLabelImport) {
+        fileInputImport.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                fileLabelImport.textContent = this.files[0].name;
+            } else {
+                fileLabelImport.textContent = 'Pilih file .xlsx / .xls';
+            }
+        });
+    }
+
+    if (formImport) {
+        var timerInterval = null;
+        var processingTicker = null;
+        var isImportRunning = false;
+
+        function formatBytes(bytes, decimals) {
+            if (!bytes || bytes === 0) return '0 Bytes';
+            var k = 1024;
+            var dm = decimals < 0 ? 0 : (decimals || 1);
+            var sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            var i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function setProgressBar(percent, text, customClass) {
+            var bar = document.getElementById('import-progress-bar');
+            if (!bar) return;
+            bar.style.width = percent + '%';
+            bar.textContent = text !== undefined ? text : (percent + '%');
+            if (customClass) {
+                bar.className = 'progress-bar progress-bar-striped progress-bar-animated font-weight-bold ' + customClass;
+            }
+        }
+
+        function setStepActive(stepId, text) {
+            var el = document.getElementById(stepId);
+            if (!el) return;
+            el.className = 'd-flex align-items-center mb-2 font-weight-bold text-primary';
+            var icon = document.getElementById(stepId + '-icon');
+            if (icon) icon.className = 'fas fa-spinner fa-spin mr-2 text-primary';
+            var txt = document.getElementById(stepId + '-text');
+            if (txt && text) txt.textContent = text;
+        }
+
+        function markStepDone(stepId) {
+            var el = document.getElementById(stepId);
+            if (!el) return;
+            el.className = 'd-flex align-items-center mb-2 text-success font-weight-bold';
+            var icon = document.getElementById(stepId + '-icon');
+            if (icon) icon.className = 'fas fa-check-circle mr-2 text-success';
+        }
+
+        function resetImportModal() {
+            isImportRunning = false;
+            clearInterval(timerInterval);
+            clearInterval(processingTicker);
+
+            document.getElementById('import-form-view').style.display = 'block';
+            document.getElementById('import-form-footer').style.display = 'flex';
+            document.getElementById('import-progress-view').style.display = 'none';
+            document.getElementById('progress-spinner-wrapper').style.display = 'block';
+            document.getElementById('progress-success-icon').style.display = 'none';
+            document.getElementById('progress-error-icon').style.display = 'none';
+            document.getElementById('progress-result-box').style.display = 'none';
+            document.getElementById('progress-error-box').style.display = 'none';
+            document.getElementById('progress-warning-note').style.display = 'block';
+            document.getElementById('btn-close-import-x').style.display = 'block';
+
+            var steps = ['step-upload', 'step-parse', 'step-match', 'step-save', 'step-finish'];
+            steps.forEach(function(s) {
+                var el = document.getElementById(s);
+                if (el) el.className = 'd-flex align-items-center mb-2 text-muted';
+                var icon = document.getElementById(s + '-icon');
+                if (icon) icon.className = 'far fa-circle mr-2';
+            });
+
+            if (fileInputImport) fileInputImport.value = '';
+            if (fileLabelImport) fileLabelImport.textContent = 'Pilih file .xlsx / .xls';
+        }
+
+        function showImportError(msg) {
+            isImportRunning = false;
+            clearInterval(timerInterval);
+            clearInterval(processingTicker);
+
+            setProgressBar(100, 'Error', 'bg-danger');
+            document.getElementById('progress-spinner-wrapper').style.display = 'none';
+            document.getElementById('progress-error-icon').style.display = 'block';
+            document.getElementById('progress-main-title').textContent = 'Proses Impor Gagal';
+            document.getElementById('progress-status-desc').innerHTML = '<i class="fas fa-exclamation-circle mr-1 text-danger"></i> Terjadi kesalahan';
+            document.getElementById('progress-warning-note').style.display = 'none';
+            document.getElementById('progress-error-msg').textContent = msg || 'Gagal memproses file Excel SIMAN.';
+            document.getElementById('progress-error-box').style.display = 'block';
+            document.getElementById('btn-close-import-x').style.display = 'block';
+        }
+
+        var btnRetry = document.getElementById('btn-import-retry');
+        if (btnRetry) {
+            btnRetry.addEventListener('click', function() {
+                resetImportModal();
+            });
+        }
+
+        // Prevent accidental closing of window during active import
+        window.addEventListener('beforeunload', function(e) {
+            if (isImportRunning) {
+                e.preventDefault();
+                e.returnValue = 'Proses impor data sedang berlangsung. Apakah Anda yakin ingin meninggalkan halaman?';
+                return e.returnValue;
+            }
+        });
+
+        formImport.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!fileInputImport.files || fileInputImport.files.length === 0) {
+                alert('Silakan pilih file Excel SIMAN terlebih dahulu.');
+                return;
+            }
+
+            var file = fileInputImport.files[0];
+            var ext = file.name.split('.').pop().toLowerCase();
+            if (ext !== 'xlsx' && ext !== 'xls') {
+                alert('Format file harus berupa .xlsx atau .xls');
+                return;
+            }
+
+            isImportRunning = true;
+
+            // Setup UI info
+            document.getElementById('progress-filename').textContent = file.name;
+            document.getElementById('progress-filesize').textContent = formatBytes(file.size);
+
+            // Switch to progress screen
+            document.getElementById('import-form-view').style.display = 'none';
+            document.getElementById('import-form-footer').style.display = 'none';
+            document.getElementById('import-progress-view').style.display = 'block';
+            document.getElementById('btn-close-import-x').style.display = 'none';
+
+            setProgressBar(0, '0%', 'bg-success');
+            setStepActive('step-upload', '1. Mengunggah file Excel ke server...');
+
+            // Start timer
+            var secondsElapsed = 0;
+            var timerEl = document.getElementById('progress-timer');
+            timerInterval = setInterval(function() {
+                secondsElapsed++;
+                var m = Math.floor(secondsElapsed / 60);
+                var s = secondsElapsed % 60;
+                if (timerEl) {
+                    timerEl.innerHTML = '<i class="fas fa-clock mr-1"></i> ' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+                }
+            }, 1000);
+
+            var formData = new FormData(formImport);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', formImport.action, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            // Track upload bytes
+            xhr.upload.onprogress = function(pe) {
+                if (pe.lengthComputable) {
+                    var percent = Math.round((pe.loaded / pe.total) * 35); // 0-35%
+                    setProgressBar(percent, percent + '%');
+                    document.getElementById('progress-status-desc').innerHTML = '<i class="fas fa-arrow-up mr-1 text-info"></i> Mengunggah (' + formatBytes(pe.loaded) + ' / ' + formatBytes(pe.total) + ')...';
+                }
+            };
+
+            // Upload complete, server processing begins
+            xhr.upload.onload = function() {
+                markStepDone('step-upload');
+                setStepActive('step-parse', '2. Membaca lembar data SIMAN BMN & memetakan kolom...');
+                setProgressBar(45, '45%');
+                document.getElementById('progress-status-desc').innerHTML = '<i class="fas fa-cog fa-spin mr-1 text-primary"></i> Membaca file di server...';
+
+                var currentPct = 45;
+                var stepParseDone = false;
+                var stepMatchDone = false;
+
+                processingTicker = setInterval(function() {
+                    currentPct = Math.min(currentPct + 4, 88);
+                    setProgressBar(currentPct, currentPct + '%');
+
+                    if (currentPct >= 58 && !stepParseDone) {
+                        markStepDone('step-parse');
+                        setStepActive('step-match', '3. Validasi & pencocokan Kode Barang & NUP di database...');
+                        document.getElementById('progress-status-desc').innerHTML = '<i class="fas fa-database fa-spin mr-1 text-info"></i> Mencocokkan data aset di database...';
+                        stepParseDone = true;
+                    } else if (currentPct >= 74 && !stepMatchDone) {
+                        markStepDone('step-match');
+                        setStepActive('step-save', '4. Menjalankan proses Upsert (Insert baru & Update aset)...');
+                        document.getElementById('progress-status-desc').innerHTML = '<i class="fas fa-sync fa-spin mr-1 text-success"></i> Menyimpan aset ke database...';
+                        stepMatchDone = true;
+                    }
+                }, 1100);
+            };
+
+            // Response received
+            xhr.onload = function() {
+                isImportRunning = false;
+                clearInterval(timerInterval);
+                clearInterval(processingTicker);
+
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        var res = JSON.parse(xhr.responseText);
+                        if (res.status === 'success') {
+                            setProgressBar(100, '100%');
+                            markStepDone('step-upload');
+                            markStepDone('step-parse');
+                            markStepDone('step-match');
+                            markStepDone('step-save');
+                            markStepDone('step-finish');
+
+                            document.getElementById('progress-spinner-wrapper').style.display = 'none';
+                            document.getElementById('progress-success-icon').style.display = 'block';
+                            document.getElementById('progress-main-title').textContent = 'Impor Data Berhasil!';
+                            document.getElementById('progress-status-desc').innerHTML = '<i class="fas fa-check-circle mr-1 text-success"></i> ' + (res.message || 'Selesai.');
+                            document.getElementById('progress-warning-note').style.display = 'none';
+
+                            document.getElementById('res-total').textContent = (res.total_proses || 0).toLocaleString();
+                            document.getElementById('res-imported').textContent = (res.imported_count || 0).toLocaleString();
+                            document.getElementById('res-updated').textContent = (res.updated_count || 0).toLocaleString();
+                            document.getElementById('progress-result-box').style.display = 'block';
+                            document.getElementById('btn-close-import-x').style.display = 'block';
+
+                            var btnFinish = document.getElementById('btn-import-finish-reload');
+                            if (btnFinish) {
+                                btnFinish.addEventListener('click', function() {
+                                    window.location.reload();
+                                });
+                            }
+
+                            // Auto-refresh after 2.5s
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 2500);
+                            return;
+                        } else {
+                            showImportError(res.message || 'Gagal memproses file Excel.');
+                        }
+                    } catch (err) {
+                        showImportError('Respons server tidak valid.');
+                    }
+                } else {
+                    var errMsg = 'Gagal menghubungi server (HTTP ' + xhr.status + ').';
+                    try {
+                        var errObj = JSON.parse(xhr.responseText);
+                        if (errObj.message) errMsg = errObj.message;
+                    } catch (e) {}
+                    showImportError(errMsg);
+                }
+            };
+
+            xhr.onerror = function() {
+                showImportError('Koneksi jaringan terputus saat memproses impor.');
+            };
+
+            xhr.send(formData);
+        });
+    }
 });
 </script>
 <?= $this->endSection(); ?>
