@@ -218,6 +218,7 @@
                     minimumResultsForSearch: 0,
                     closeOnSelect: $select.data('close-on-select') !== false && $select.data('close-on-select') !== 'false',
                     selectOnClose: false,
+                    tags: $select.data('tags') === true || $select.data('tags') === 'true',
                 };
 
                 const placeholder = buildPlaceholder($select);
@@ -287,12 +288,14 @@
 
         $('.js-datatable').each(function () {
             const tableOrder = $(this).data('order') || [[0, 'asc']];
+            const scrollXData = $(this).data('scroll-x');
+            const useScrollX = (scrollXData !== false && scrollXData !== 'false');
 
             $(this).DataTable({
                 responsive: false,
                 autoWidth: false,
-                scrollX: true,
-                scrollCollapse: true,
+                scrollX: useScrollX,
+                scrollCollapse: useScrollX,
                 order: tableOrder,
                 language: {
                     search: 'Cari:',
@@ -308,6 +311,19 @@
                     }
                 }
             });
+        });
+
+        // Auto-recalculate column widths when Bootstrap tabs or modals are displayed
+        $(document).on('shown.bs.tab', 'a[data-toggle="tab"], a[data-toggle="pill"]', function () {
+            if ($.fn.dataTable) {
+                $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+            }
+        });
+
+        $(document).on('shown.bs.modal', '.modal', function () {
+            if ($.fn.dataTable) {
+                $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+            }
         });
     })();
 

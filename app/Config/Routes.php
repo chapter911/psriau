@@ -389,7 +389,31 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'berita/tambah', 'Admin\\Article::create');
 	$routes->match(['get', 'post'], 'berita/(:num)/ubah', 'Admin\\Article::edit/$1');
 	$routes->post('berita/(:num)/hapus', 'Admin\\Article::delete/$1');
+
+	// Modul Inventarisasi
+	$routes->get('inventaris/satker', 'Admin\\InventarisSatker::index');
+	$routes->post('inventaris/satker/tambah', 'Admin\\InventarisSatker::create');
+	$routes->post('inventaris/satker/(:num)/ubah', 'Admin\\InventarisSatker::edit/$1');
+	$routes->post('inventaris/satker/(:num)/hapus', 'Admin\\InventarisSatker::delete/$1');
+	$routes->get('inventaris/satker/export', 'Admin\\InventarisSatker::export');
+	$routes->post('inventaris/satker/import-siman', 'Admin\\InventarisSatker::importSiman');
+
+	// Modul DBR (Daftar Barang Ruangan)
+	$routes->get('inventaris/dbr', 'Admin\\InventarisDbr::index');
+	$routes->post('inventaris/dbr/ruangan/tambah', 'Admin\\InventarisDbr::createRuangan');
+	$routes->post('inventaris/dbr/ruangan/(:num)/ubah', 'Admin\\InventarisDbr::editRuangan/$1');
+	$routes->post('inventaris/dbr/ruangan/(:num)/hapus', 'Admin\\InventarisDbr::deleteRuangan/$1');
+	$routes->get('inventaris/dbr/(:num)', 'Admin\\InventarisDbr::detail/$1');
+	$routes->post('inventaris/dbr/(:num)/alokasi-barang', 'Admin\\InventarisDbr::alokasiBarang/$1');
+	$routes->post('inventaris/dbr/(:num)/keluarkan-barang', 'Admin\\InventarisDbr::keluarkanBarang/$1');
+	$routes->post('inventaris/dbr/(:num)/scan-lookup', 'Admin\\InventarisDbr::scanLookup/$1');
+	$routes->post('inventaris/dbr/(:num)/scan-alokasi', 'Admin\\InventarisDbr::scanAlokasi/$1');
+	$routes->get('inventaris/dbr/(:num)/cetak-pdf', 'Admin\\InventarisDbr::cetakPdf/$1');
+	$routes->get('inventaris/dbr/(:num)/export-excel', 'Admin\\InventarisDbr::exportExcel/$1');
+
+	$routes->get('inventaris/sekolah', 'Admin\\InventarisSekolah::index');
 });
+
 
 $routes->group('api', static function ($routes): void {
     // API Documentation (Swagger UI)

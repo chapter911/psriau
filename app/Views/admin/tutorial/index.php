@@ -398,7 +398,46 @@ graph TD
             </div>
         </div>
     </div>
+
+    <!-- FLOWCHART 7: INVENTARISASI - PENDATAAN ASET SATKER, DBR & SARPRAS SEKOLAH -->
+    <div class="flowchart-card role-section" data-roles="admin,super_administrator,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-boxes-stacked mr-2 text-primary"></i> Alur Pengelolaan Inventarisasi Satker, DBR &amp; Sekolah</h5>
+                <small class="text-muted">Alur import SIMAN/SAKTI BMN, pendataan fisik barang, penempatan aset ruangan (DBR), cetak dokumen resmi DBR (PDF/Excel), serta monitoring sarpras sekolah binaan.</small>
+            </div>
+            <div>
+                <span class="badge badge-primary">Inventarisasi</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Menu Utama Inventarisasi"] --> B1["Inventaris Satker (Menu Induk)"]
+    A --> B2["Inventaris Sekolah (/admin/inventaris/sekolah)"]
+    
+    B1 --> C1["Daftar Barang Inventaris (/admin/inventaris/satker)"]
+    B1 --> C2["Daftar Ruangan (/admin/inventaris/dbr)"]
+
+    C1 --> D1["Kelola 2.000+ Aset BMN (Kode Register Unik/Boleh Kosong, Dropdown Tagging Satuan &amp; Lokasi Ruangan)"]
+    C1 --> D2["Import File Excel SIMAN / SAKTI BMN (Daftar Aset NUP)"]
+    C1 --> D3["Export Rekapitulasi Aset Satker ke Excel (.xlsx)"]
+
+    C2 --> E1["Kelola Master Ruangan &amp; Tunjuk Penanggung Jawab (NIP)"]
+    E1 --> E2["Detail Ruangan (Alokasi Cepat via Scan QR Code / Register &amp; Manual)"]
+    E2 --> E3["Cetak Rekap DBR Resmi PDF (Master Kop, Pas 1 Halaman / Kotak Paraf Otomatis jika Multi-Halaman)"]
+    E2 --> E4["Export Rekapitulasi DBR ke Excel (Format Lengkap Nilai &amp; PSP)"]
+
+    B2 --> F1["Monitoring Sekolah Binaan &amp; Paket Proyek Renovasi"]
+    F1 --> F2["Filter Wilayah Kabupaten / Kecamatan / Paket"]
+    F2 --> F3["Pantau Status Inventarisasi Sarana Prasarana Sekolah"]
+                </pre>
+            </div>
+        </div>
+    </div>
     <?php endif; ?>
+
 
     <!-- PANDUAN PENGGUNAAN SISTEM (ACCORDION STYLE) -->
     <div class="mt-4">
@@ -612,8 +651,75 @@ graph TD
         </div>
         <?php endif; ?>
 
+        <!-- MODUL INVENTARISASI -->
+        <?php if ($canRenderForUser(['admin', 'super_administrator'])): ?>
+
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,all">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-boxes-stacked mr-2"></i> Modul Inventarisasi: Aset BMN Satker, DBR &amp; Sarpras Sekolah
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="row">
+                    <div class="col-lg-4 col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-boxes mr-1"></i> Daftar Barang Inventaris</h6>
+                                <p class="small text-muted mb-2"><code>/admin/inventaris/satker</code> (Submenu dari <em>Inventaris Satker</em>)</p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Inventaris Satker &gt; Daftar Barang Inventaris</strong>.</li>
+                                    <li>Di bagian atas tersedia widget rekapitulasi: <strong>Total Inventaris</strong>, <strong>Kondisi Baik</strong>, <strong>Rusak Ringan</strong>, dan <strong>Rusak Berat</strong>.</li>
+                                    <li><strong>Tampilan Tabel Ringkas &amp; Urutan Natural:</strong> Kolom <strong>Kode Barang</strong> dan <strong>NUP</strong> disajikan dalam kolom terpisah dengan penataan font monospaced dan urutan natural numerik murni (1, 2, 3, dst bukan 1, 10, 11). Tabel luar tetap ringkas dan fokus pada atribut esensial aset.</li>
+                                    <li><strong>Import File SIMAN/SAKTI:</strong> Klik tombol <em>Import SIMAN</em> untuk mengunggah file spreadsheet export BMN (misal <code>daftar-aset-1.xlsx</code>). Ribuan data aset, NUP, kode register 32-hex, kode barang, merk/tipe, status PSP, dan nilai buku akan otomatis tersimpan.</li>
+                                    <li><strong>Pencatatan Aset, Kode Register Unik &amp; Dropdown Satuan/Ruangan:</strong> Formulir penambahan maupun pengubahan data inventaris dilengkapi: (1) <em>Kode Register</em> fisik SIMAN BMN dengan validasi keunikan ketat di database dan form (namun tetap opsional/boleh kosong jika belum memiliki stiker QR SIMAN), serta tombol salin instan di modal ubah; (2) Dropdown <em>Satuan</em> berbasis Select2 yang menyediakan opsi standar (Unit, Buah, Set, Pcs, Lembar, Paket, Kotak, Roll, Meter, Batang) dan data tersimpan, serta mendukung pengetikan satuan baru secara manual; (3) Dropdown <em>Lokasi Ruangan</em> cerdas yang merangkum seluruh ruangan kantor Satker sekaligus mendukung pengetikan nama ruangan baru.</li>
+                                    <li>Klik tombol <strong>Export Excel</strong> untuk mengunduh rekapitulasi seluruh inventaris kantor Satker dalam format Excel (.xlsx) dengan urutan kode dan NUP numerik yang sinkron.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-success"><i class="fas fa-door-open mr-1"></i> Daftar Ruangan (DBR)</h6>
+                                <p class="small text-muted mb-2"><code>/admin/inventaris/dbr</code> (Submenu dari <em>Inventaris Satker</em>)</p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Inventaris Satker &gt; Daftar Ruangan</strong>.</li>
+                                    <li>Klik tombol <strong>Kelola / Detail Barang</strong> pada ruangan untuk membuka penatausahaan aset. Tampilan detail dilengkapi: (a) Header kartu ruangan modern dengan 4 ubin KPI terstruktur (Penanggung Jawab, Lokasi Ruangan, Total Unit Fisik, dan Nilai Perolehan Total Aset BMN), (b) Navigasi tab rapi antara <em>Rekapitulasi DBR (Format Resmi)</em> dan <em>Daftar Detail Fisik Barang</em>, serta (c) Tabel dengan tipografi monospaced, soft badge kondisi/legalitas PSP, dan tata letak tombol aksi yang proporsional.</li>
+                                    <li><strong>Alokasikan Barang (Scan QR Code &amp; Alokasi Manual):</strong>
+                                        <ul class="pl-3 mt-1">
+                                            <li><strong>Scan QR Code / Register:</strong> Klik tombol <code><i class="fas fa-qrcode mr-1"></i> Scan QR Code / Register</code> untuk memindai stiker fisik QR SIMAN BMN menggunakan kamera (HP/webcam) atau scanner barcode fisik USB/Bluetooth. Mendukung pembacaan <em>Kode Register</em> 32-karakter hexadecimal SIMAN, format <code>kode_barang.nup</code>, maupun URL detail BMN. Aktifkan opsi <strong>Mode Cepat: Otomatis Alokasikan Langsung</strong> dan feedback audio beep untuk audit fisik ruangan secara kilat.</li>
+                                            <li><strong>Alokasikan Manual:</strong> Klik tombol <code><i class="fas fa-plus-circle mr-1"></i> Alokasikan Manual</code> untuk memilih aset BMN dari daftar inventaris satker yang belum teralokasi atau memindahkan aset antar-ruangan.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Cetak Dokumen Resmi DBR (PDF 1 Halaman Standar PU &amp; Kotak Paraf Multi-Halaman):</strong> Klik tombol <em>Cetak PDF</em> untuk menghasilkan dokumen DBR resmi kedinasan Kementerian Pekerjaan Umum format A4 Portrait yang dirancang presisi tepat 1 halaman (menggunakan <strong>Master Kop Surat</strong> instansi aktif, nomor registrasi dokumen resmi <code>DBR/690835/...</code>, kartu informasi ruangan, tabel barang ringkas tanpa NUP dan nilai perolehan agar rapi dan fokus pada inventarisasi fisik ruangan, catatan regulasi BMN, footer running keabsahan dokumen, serta blok tanda tangan Kuasa Pengguna Barang &amp; Penanggung Jawab Ruangan). <em>Apabila jumlah barang pada suatu ruangan sangat banyak sehingga terdiri dari beberapa halaman, sistem secara otomatis menggambar kotak paraf kecil di pojok kanan bawah pada setiap lembar halaman sebelum lembar tanda tangan akhir.</em></li>
+                                    <li>Klik tombol <strong>Export Excel</strong> untuk mengunduh rekap DBR ruangan dalam bentuk spreadsheet lengkap dengan kolom NUP, Tahun, Kondisi, Nilai Perolehan (Rp), Legalitas SK PSP, dan Status BMN.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-12 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-info"><i class="fas fa-school mr-1"></i> Inventaris Sarpras Sekolah</h6>
+                                <p class="small text-muted mb-2"><code>/admin/inventaris/sekolah</code></p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Inventaris Sekolah</strong>.</li>
+                                    <li>Halaman menampilkan seluruh sekolah binaan Satker PPS Riau yang telah terdata dalam paket rehabilitasi/renovasi prasarana strategis.</li>
+                                    <li>Gunakan filter <strong>Paket Proyek</strong>, <strong>Kabupaten</strong>, atau <strong>Kata Kunci</strong> (NPSN / Nama Sekolah) untuk memetakan inventaris sarpras per lokasi sekolah binaan.</li>
+                                    <li>Status sarpras sekolah terpantau secara terintegrasi dengan data paket proyek prasarana sekolah.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- MODUL PERTANDINGAN GATEBALL -->
         <div class="card menu-tutorial-card mb-3 role-section" data-roles="all,admin,super_administrator,staf_pelaksana,ppk_kasatker">
+
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 font-weight-bold text-primary">
                     <i class="fas fa-trophy mr-2 text-warning"></i> Modul Jadwal & Klasemen Pertandingan Gateball
