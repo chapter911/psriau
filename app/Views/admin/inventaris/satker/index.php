@@ -1158,6 +1158,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var timerInterval = null;
         var processingTicker = null;
         var isImportRunning = false;
+        var isImportDone = false;
 
         function formatBytes(bytes, decimals) {
             if (!bytes || bytes === 0) return '0 Bytes';
@@ -1169,6 +1170,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function setProgressBar(percent, text, customClass) {
+            // If import has already completed successfully, prevent any intermediate ticker from downgrading it
+            if (isImportDone && percent < 100) {
+                return;
+            }
             var bar = document.getElementById('import-progress-bar');
             if (!bar) return;
             bar.style.width = percent + '%';
@@ -1198,8 +1203,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function resetImportModal() {
             isImportRunning = false;
-            clearInterval(timerInterval);
-            clearInterval(processingTicker);
+            isImportDone = false;
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            if (processingTicker) { clearInterval(processingTicker); processingTicker = null; }
+
+            var btnSubmit = document.getElementById('btn-submit-import');
+            if (btnSubmit) btnSubmit.disabled = false;
 
             document.getElementById('import-form-view').style.display = 'block';
             document.getElementById('import-form-footer').style.display = 'flex';
@@ -1226,8 +1235,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function showImportError(msg) {
             isImportRunning = false;
-            clearInterval(timerInterval);
-            clearInterval(processingTicker);
+            isImportDone = false;
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            if (processingTicker) { clearInterval(processingTicker); processingTicker = null; }
+
+            var btnSubmit = document.getElementById('btn-submit-import');
+            if (btnSubmit) btnSubmit.disabled = false;
 
             setProgressBar(100, 'Error', 'bg-danger');
             document.getElementById('progress-spinner-wrapper').style.display = 'none';
@@ -1259,6 +1272,10 @@ document.addEventListener('DOMContentLoaded', function() {
         formImport.addEventListener('submit', function(e) {
             e.preventDefault();
 
+            if (isImportRunning) {
+                return;
+            }
+
             if (!fileInputImport.files || fileInputImport.files.length === 0) {
                 alert('Silakan pilih file Excel SIMAN terlebih dahulu.');
                 return;
@@ -1272,6 +1289,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             isImportRunning = true;
+            isImportDone = false;
+
+            var btnSubmit = document.getElementById('btn-submit-import');
+            if (btnSubmit) btnSubmit.disabled = true;
 
             // Setup UI info
             document.getElementById('progress-filename').textContent = file.name;
@@ -1314,6 +1335,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Upload complete, server processing begins
             xhr.upload.onload = function() {
+                if (!isImportRunning || isImportDone) return;
+
                 markStepDone('step-upload');
                 setStepActive('step-parse', '2. Membaca lembar data SIMAN BMN & memetakan kolom...');
                 setProgressBar(45, '45%');
@@ -1323,8 +1346,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 var stepParseDone = false;
                 var stepMatchDone = false;
 
+                if (processingTicker) {
+                    clearInterval(processingTicker);
+                    processingTicker = null;
+                }
+
                 processingTicker = setInterval(function() {
-                    currentPct = Math.min(currentPct + 4, 88);
+                    if (!isImportRunning || isImportDone) {
+                        clearInterval(processingTicker);
+                        processingTicker = null;
+                        return;
+                    }
+
+                    currentPct = Math.min(currentPct + 4, 90);
                     setProgressBar(currentPct, currentPct + '%');
 
                     if (currentPct >= 58 && !stepParseDone) {
@@ -1338,20 +1372,30 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById('progress-status-desc').innerHTML = '<i class="fas fa-sync fa-spin mr-1 text-success"></i> Menyimpan aset ke database...';
                         stepMatchDone = true;
                     }
-                }, 1100);
+                }, 1000);
             };
 
             // Response received
             xhr.onload = function() {
                 isImportRunning = false;
-                clearInterval(timerInterval);
-                clearInterval(processingTicker);
+                if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+                if (processingTicker) { clearInterval(processingTicker); processingTicker = null; }
 
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
                         var res = JSON.parse(xhr.responseText);
                         if (res.status === 'success') {
-                            setProgressBar(100, '100%');
+                            isImportDone = true;
+
+                            // Force progress bar to 100%
+                            setProgressBar(100, '100%', 'bg-success');
+                            var bar = document.getElementById('import-progress-bar');
+                            if (bar) {
+                                bar.style.width = '100%';
+                                bar.textContent = '100%';
+                                bar.className = 'progress-bar progress-bar-striped bg-success font-weight-bold';
+                            }
+
                             markStepDone('step-upload');
                             markStepDone('step-parse');
                             markStepDone('step-match');
@@ -1376,11 +1420,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     window.location.reload();
                                 });
                             }
-
-                            // Auto-refresh after 2.5s
-                            setTimeout(function() {
-                                window.location.reload();
-                            }, 2500);
                             return;
                         } else {
                             showImportError(res.message || 'Gagal memproses file Excel.');
