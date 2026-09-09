@@ -22,6 +22,7 @@ class InventarisSatkerModel extends Model
         'jumlah',
         'satuan',
         'kondisi',
+        'peruntukan',
         'lokasi_ruangan',
         'ruangan_id',
         'nilai_perolehan',

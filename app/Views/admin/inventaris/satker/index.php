@@ -1,139 +1,327 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
+<style>
+    .font-mono {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace !important;
+    }
+    .inv-hero-card {
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.05);
+        background: #ffffff;
+    }
+    .inv-kpi-tile {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px 16px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none !important;
+        display: block;
+        position: relative;
+        overflow: hidden;
+    }
+    .inv-kpi-tile:hover {
+        transform: translateY(-2px);
+        background: #ffffff;
+        box-shadow: 0 8px 18px -4px rgba(0, 0, 0, 0.08);
+        border-color: #cbd5e1;
+    }
+    .inv-kpi-tile.active-all {
+        background: #f0f9ff;
+        border-color: #0284c7;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+    }
+    .inv-kpi-tile.active-all::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3.5px;
+        background: #0284c7;
+    }
+    .inv-kpi-tile.active-kantor {
+        background: #eff6ff;
+        border-color: #2563eb;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+    .inv-kpi-tile.active-kantor::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3.5px;
+        background: #2563eb;
+    }
+    .inv-kpi-tile.active-mobiler {
+        background: #fffbeb;
+        border-color: #d97706;
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
+    }
+    .inv-kpi-tile.active-mobiler::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3.5px;
+        background: #d97706;
+    }
+    .inv-kpi-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+</style>
+
 <div class="container-fluid">
 
-    <!-- Summary Widgets -->
-    <div class="row mb-3">
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #007bff;">
-                <span class="info-box-icon bg-primary elevation-1" style="border-radius: 8px;"><i class="fas fa-boxes-stacked"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text text-muted font-weight-bold">Total Inventaris</span>
-                    <span class="info-box-number text-dark" style="font-size: 1.35rem;"><?= number_format((int) ($summary['total'] ?? 0)); ?></span>
+    <!-- Hero Card: Header, Consolidated Actions & Interactive KPI Filter Tiles -->
+    <div class="card inv-hero-card mb-3">
+        <div class="card-body p-3 p-md-4">
+            
+            <!-- Header Top: Context, Title & Action Buttons -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3" style="gap: 12px;">
+                <div>
+                    <div class="d-flex align-items-center mb-1 text-muted small">
+                        <span><i class="fas fa-boxes-stacked mr-1"></i> Modul Inventarisasi</span>
+                        <span class="mx-2">/</span>
+                        <span class="text-primary font-weight-bold">Daftar Barang</span>
+                    </div>
+                    <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
+                        <h4 class="font-weight-bold text-dark mb-0" style="font-size: 1.35rem; letter-spacing: -0.3px;">
+                            Daftar Barang Inventarisasi
+                        </h4>
+                        <span class="badge badge-light border px-2.5 py-1 text-muted font-weight-bold" style="font-size: 0.82rem; border-radius: 6px;">
+                            <?= number_format((int) ($summary['total'] ?? 0)); ?> Unit Terdaftar
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-0 mt-1">
+                        Penatausahaan aset BMN, klasifikasi peruntukan operasional kantor satker vs mobiler sekolah, serta distribusi ke DBR.
+                    </p>
                 </div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #28a745;">
-                <span class="info-box-icon bg-success elevation-1" style="border-radius: 8px;"><i class="fas fa-check-circle"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text text-muted font-weight-bold">Kondisi Baik</span>
-                    <span class="info-box-number text-success" style="font-size: 1.35rem;"><?= number_format((int) ($summary['baik'] ?? 0)); ?></span>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #ffc107;">
-                <span class="info-box-icon bg-warning elevation-1" style="border-radius: 8px;"><i class="fas fa-exclamation-triangle"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text text-muted font-weight-bold">Rusak Ringan</span>
-                    <span class="info-box-number text-warning" style="font-size: 1.35rem;"><?= number_format((int) ($summary['rusak_ringan'] ?? 0)); ?></span>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #dc3545;">
-                <span class="info-box-icon bg-danger elevation-1" style="border-radius: 8px;"><i class="fas fa-times-circle"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text text-muted font-weight-bold">Rusak Berat</span>
-                    <span class="info-box-number text-danger" style="font-size: 1.35rem;"><?= number_format((int) ($summary['rusak_berat'] ?? 0)); ?></span>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Filter Card -->
-    <div class="card shadow-sm mb-3" style="border-radius: 10px; border: 1px solid #e9eef5;">
-        <div class="card-body py-3">
-            <form method="get" action="<?= site_url('admin/inventaris/satker'); ?>">
-                <div class="row align-items-end">
-                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
-                        <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-tag mr-1"></i> Kategori</label>
-                        <select name="kategori" class="form-control form-control-sm" style="border-radius: 6px;">
-                            <option value="">Semua Kategori</option>
-                            <?php foreach ($kategoriList as $kat): ?>
-                                <option value="<?= esc($kat); ?>" <?= ($filterKategori === $kat) ? 'selected' : ''; ?>><?= esc($kat); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
-                        <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-heartbeat mr-1"></i> Kondisi</label>
-                        <select name="kondisi" class="form-control form-control-sm" style="border-radius: 6px;">
-                            <option value="">Semua Kondisi</option>
-                            <option value="baik" <?= ($filterKondisi === 'baik') ? 'selected' : ''; ?>>Baik</option>
-                            <option value="rusak_ringan" <?= ($filterKondisi === 'rusak_ringan') ? 'selected' : ''; ?>>Rusak Ringan</option>
-                            <option value="rusak_berat" <?= ($filterKondisi === 'rusak_berat') ? 'selected' : ''; ?>>Rusak Berat</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
-                        <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-map-marker-alt mr-1"></i> Lokasi Ruangan</label>
-                        <select name="lokasi" class="form-control form-control-sm" style="border-radius: 6px;">
-                            <option value="">Semua Lokasi</option>
-                            <?php foreach ($lokasiList as $lok): ?>
-                                <option value="<?= esc($lok); ?>" <?= ($filterLokasi === $lok) ? 'selected' : ''; ?>><?= esc($lok); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-md-3 col-sm-6 d-flex" style="gap: 6px;">
-                        <button type="submit" class="btn btn-primary btn-sm flex-fill shadow-sm" style="border-radius: 6px;">
-                            <i class="fas fa-filter mr-1"></i> Filter
+                <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                    <?php if (! empty($can_edit)): ?>
+                        <button type="button" class="btn btn-warning btn-sm px-3 shadow-sm font-weight-bold text-dark" data-toggle="modal" data-target="#modal-update-peruntukan-massal" style="border-radius: 8px;">
+                            <i class="fas fa-sliders-h mr-1.5"></i> Update Peruntukan Massal (NUP)
                         </button>
-                        <a href="<?= site_url('admin/inventaris/satker'); ?>" class="btn btn-outline-secondary btn-sm shadow-sm" style="border-radius: 6px;" title="Reset Filter">
-                            <i class="fas fa-undo"></i>
-                        </a>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Data Card -->
-    <div class="card shadow-sm" style="border: 1px solid #e9eef5; border-radius: 12px; overflow: hidden;">
-        <div class="card-header bg-white py-3" style="border-bottom: 1px solid #e9eef5;">
-            <div class="d-flex flex-wrap justify-content-between align-items-center w-100">
-                <h3 class="card-title mb-0 font-weight-bold text-dark" style="font-size: 1.15rem; line-height: 1.8;">
-                    <i class="fas fa-boxes text-primary mr-2"></i>Daftar Barang Inventaris
-                </h3>
-                <div class="card-tools d-flex align-items-center m-0" style="gap: 8px;">
-                    <a href="<?= site_url('admin/inventaris/dbr'); ?>" class="btn btn-outline-info btn-sm px-3 shadow-sm" style="border-radius: 6px;">
-                        <i class="fas fa-door-open mr-1"></i> Daftar Ruangan
+                    <?php endif; ?>
+                    <a href="<?= site_url('admin/inventaris/dbr'); ?>" class="btn btn-outline-info btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 8px;">
+                        <i class="fas fa-door-open mr-1.5"></i> Ruangan (DBR)
                     </a>
                     <?php if (! empty($can_import)): ?>
-                        <button type="button" class="btn btn-outline-success btn-sm px-3 shadow-sm" data-toggle="modal" data-target="#modal-import-siman" style="border-radius: 6px;">
-                            <i class="fas fa-file-import mr-1"></i> Import SIMAN
+                        <button type="button" class="btn btn-outline-success btn-sm px-3 shadow-sm font-weight-bold" data-toggle="modal" data-target="#modal-import-siman" style="border-radius: 8px;">
+                            <i class="fas fa-file-import mr-1.5"></i> Import SIMAN
                         </button>
                     <?php endif; ?>
                     <?php if (! empty($can_export)): ?>
-                        <a href="<?= site_url('admin/inventaris/satker/export?' . http_build_query(['kategori' => $filterKategori, 'kondisi' => $filterKondisi, 'lokasi' => $filterLokasi])); ?>" class="btn btn-success btn-sm px-3 shadow-sm" style="border-radius: 6px;">
-                            <i class="fas fa-file-excel mr-1"></i> Export Excel
+                        <a href="<?= site_url('admin/inventaris/barang/export?' . http_build_query(['peruntukan' => $filterPeruntukan, 'kategori' => $filterKategori, 'kondisi' => $filterKondisi, 'lokasi' => $filterLokasi])); ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 8px;" title="Export Excel">
+                            <i class="fas fa-file-excel text-success mr-1.5"></i> Export Excel
                         </a>
                     <?php endif; ?>
                     <?php if (! empty($can_add)): ?>
-                        <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-toggle="modal" data-target="#modal-tambah-inventaris" style="border-radius: 6px;">
-                            <i class="fas fa-plus mr-1"></i> Tambah Barang
+                        <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm font-weight-bold" data-toggle="modal" data-target="#modal-tambah-inventaris" style="border-radius: 8px;">
+                            <i class="fas fa-plus mr-1.5"></i> Tambah Barang
                         </button>
                     <?php endif; ?>
                 </div>
             </div>
+
+            <!-- Row 2: 4 Interactive KPI Tiles (Click to Quick Filter Peruntukan) -->
+            <div class="row" style="margin-left: -6px; margin-right: -6px;">
+                <!-- Tile 1: Semua Barang -->
+                <div class="col-12 col-sm-6 col-lg-3 px-1 mb-2 mb-lg-0">
+                    <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => '']))); ?>" class="inv-kpi-tile <?= empty($filterPeruntukan) ? 'active-all' : ''; ?>" title="Klik untuk menampilkan seluruh barang">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="small font-weight-bold text-muted text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem;">Semua Barang</span>
+                            <div class="inv-kpi-icon bg-light text-primary" style="border: 1px solid #e2e8f0;">
+                                <i class="fas fa-boxes-stacked"></i>
+                            </div>
+                        </div>
+                        <div class="h4 font-weight-bold text-dark mb-0" style="letter-spacing: -0.5px;">
+                            <?= number_format((int) ($summary['total'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
+                        </div>
+                        <div class="small <?= empty($filterPeruntukan) ? 'text-primary font-weight-bold' : 'text-muted'; ?> mt-1">
+                            <?= empty($filterPeruntukan) ? '● Sedang Menampilkan Semua' : 'Klik untuk tampilkan semua'; ?>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Tile 2: Kantor / Satker -->
+                <div class="col-12 col-sm-6 col-lg-3 px-1 mb-2 mb-lg-0">
+                    <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => 'kantor']))); ?>" class="inv-kpi-tile <?= ($filterPeruntukan === 'kantor') ? 'active-kantor' : ''; ?>" title="Klik untuk menyaring khusus aset Kantor Satker">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="small font-weight-bold text-primary text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem;">Kantor / Satker</span>
+                            <div class="inv-kpi-icon" style="background-color: #dbeafe; color: #1d4ed8;">
+                                <i class="fas fa-building"></i>
+                            </div>
+                        </div>
+                        <div class="h4 font-weight-bold text-dark mb-0" style="letter-spacing: -0.5px;">
+                            <?= number_format((int) ($summary['total_kantor'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
+                        </div>
+                        <div class="small <?= ($filterPeruntukan === 'kantor') ? 'text-primary font-weight-bold' : 'text-muted'; ?> mt-1">
+                            <?= ($filterPeruntukan === 'kantor') ? '● Filter Aktif: Aset Kantor (DBR)' : 'Aset Operasional & Ruangan'; ?>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Tile 3: Mobiler / Sekolah -->
+                <div class="col-12 col-sm-6 col-lg-3 px-1 mb-2 mb-lg-0">
+                    <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => 'mobiler']))); ?>" class="inv-kpi-tile <?= ($filterPeruntukan === 'mobiler') ? 'active-mobiler' : ''; ?>" title="Klik untuk menyaring khusus aset Mobiler Sekolah">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="small font-weight-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem; color: #b45309 !important;">Mobiler / Sekolah</span>
+                            <div class="inv-kpi-icon" style="background-color: #fef3c7; color: #d97706;">
+                                <i class="fas fa-school"></i>
+                            </div>
+                        </div>
+                        <div class="h4 font-weight-bold text-dark mb-0" style="letter-spacing: -0.5px;">
+                            <?= number_format((int) ($summary['total_mobiler'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
+                        </div>
+                        <div class="small <?= ($filterPeruntukan === 'mobiler') ? 'font-weight-bold' : 'text-muted'; ?> mt-1" style="<?= ($filterPeruntukan === 'mobiler') ? 'color: #b45309 !important;' : ''; ?>">
+                            <?= ($filterPeruntukan === 'mobiler') ? '● Filter Aktif: Mobiler Sekolah' : 'Bantuan Sarpras Sekolah'; ?>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Tile 4: Kondisi Fisik -->
+                <div class="col-12 col-sm-6 col-lg-3 px-1">
+                    <div class="inv-kpi-tile" style="cursor: default;">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="small font-weight-bold text-muted text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem;">Kondisi Fisik</span>
+                            <div class="inv-kpi-icon" style="background-color: #dcfce7; color: #15803d;">
+                                <i class="fas fa-heartbeat"></i>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center flex-wrap mt-1" style="gap: 5px;">
+                            <span class="badge badge-success font-weight-bold px-2 py-1">
+                                <?= number_format((int) ($summary['baik'] ?? 0)); ?> Baik
+                            </span>
+                            <span class="badge badge-warning text-dark font-weight-bold px-2 py-1">
+                                <?= number_format((int) ($summary['rusak_ringan'] ?? 0)); ?> R.Ringan
+                            </span>
+                            <span class="badge badge-danger font-weight-bold px-2 py-1">
+                                <?= number_format((int) ($summary['rusak_berat'] ?? 0)); ?> R.Berat
+                            </span>
+                        </div>
+                        <div class="small text-muted mt-1">
+                            Status Kelayakan Aset
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
+    </div>
+
+    <!-- Main Data Card with Integrated Filter Strip -->
+    <div class="card shadow-sm">
+        
+        <!-- Card Header: Title & Filter Status -->
+        <div class="card-header">
+            <h3 class="card-title font-weight-bold">
+                <i class="fas fa-boxes text-primary mr-1"></i> Data Inventarisasi Barang
+                <?php if ($filterPeruntukan === 'kantor'): ?>
+                    <span class="badge badge-primary ml-2 px-2 py-1">
+                        <i class="fas fa-building mr-1"></i> Difilter: Kantor / Satker
+                    </span>
+                <?php elseif ($filterPeruntukan === 'mobiler'): ?>
+                    <span class="badge badge-warning text-dark ml-2 px-2 py-1">
+                        <i class="fas fa-school mr-1"></i> Difilter: Mobiler / Sekolah
+                    </span>
+                <?php else: ?>
+                    <span class="badge badge-secondary ml-2 px-2 py-1">
+                        <i class="fas fa-layer-group mr-1"></i> Semua Peruntukan
+                    </span>
+                <?php endif; ?>
+
+                <?php if (! empty($filterKategori) || ! empty($filterKondisi) || ! empty($filterLokasi)): ?>
+                    <span class="badge badge-danger ml-1 px-2 py-1">
+                        <i class="fas fa-filter mr-1"></i> Filter Detail Aktif
+                    </span>
+                <?php endif; ?>
+            </h3>
+
+            <div class="card-tools d-flex align-items-center" style="gap: 8px;">
+                <button class="btn btn-sm btn-outline-secondary px-3" type="button" data-toggle="collapse" data-target="#collapseFilterBar" aria-expanded="true" aria-controls="collapseFilterBar">
+                    <i class="fas fa-sliders-h mr-1"></i> Filter Detail <i class="fas fa-chevron-down ml-1" style="font-size: 0.72rem;"></i>
+                </button>
+                <?php if (! empty($filterKategori) || ! empty($filterKondisi) || ! empty($filterLokasi) || ! empty($filterPeruntukan)): ?>
+                    <a href="<?= site_url('admin/inventaris/barang'); ?>" class="btn btn-sm btn-light border text-muted px-2.5" title="Reset Semua Filter">
+                        <i class="fas fa-undo mr-1"></i> Reset
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Integrated Filter Strip (Collapsible) -->
+        <div class="collapse show" id="collapseFilterBar">
+            <div class="px-3 py-3" style="background-color: #f8fafc; border-bottom: 1px solid #dee2e6;">
+                <form method="get" action="<?= site_url('admin/inventaris/barang'); ?>" id="form-filter-inventaris">
+                    <?php if (! empty($filterPeruntukan)): ?>
+                        <input type="hidden" name="peruntukan" value="<?= esc($filterPeruntukan); ?>">
+                    <?php endif; ?>
+                    <div class="row align-items-end" style="margin-left: -6px; margin-right: -6px;">
+                        <div class="col-12 col-sm-6 col-md-3 px-1 mb-2 mb-md-0">
+                            <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-tag mr-1 text-primary"></i> Kategori Aset</label>
+                            <select name="kategori" class="form-control form-control-sm">
+                                <option value="">Semua Kategori</option>
+                                <?php foreach ($kategoriList as $kat): ?>
+                                    <option value="<?= esc($kat); ?>" <?= ($filterKategori === $kat) ? 'selected' : ''; ?>><?= esc($kat); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-3 px-1 mb-2 mb-md-0">
+                            <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-heartbeat mr-1 text-success"></i> Kondisi Fisik</label>
+                            <select name="kondisi" class="form-control form-control-sm">
+                                <option value="">Semua Kondisi</option>
+                                <option value="baik" <?= ($filterKondisi === 'baik') ? 'selected' : ''; ?>>Baik</option>
+                                <option value="rusak_ringan" <?= ($filterKondisi === 'rusak_ringan') ? 'selected' : ''; ?>>Rusak Ringan</option>
+                                <option value="rusak_berat" <?= ($filterKondisi === 'rusak_berat') ? 'selected' : ''; ?>>Rusak Berat</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-3 px-1 mb-2 mb-md-0">
+                            <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-map-marker-alt mr-1 text-danger"></i> Lokasi Ruangan</label>
+                            <select name="lokasi" class="form-control form-control-sm">
+                                <option value="">Semua Lokasi</option>
+                                <?php foreach ($lokasiList as $lok): ?>
+                                    <option value="<?= esc($lok); ?>" <?= ($filterLokasi === $lok) ? 'selected' : ''; ?>><?= esc($lok); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-3 px-1 d-flex" style="gap: 6px;">
+                            <button type="submit" class="btn btn-primary btn-sm flex-fill shadow-sm font-weight-bold">
+                                <i class="fas fa-search mr-1"></i> Terapkan Filter
+                            </button>
+                            <a href="<?= site_url('admin/inventaris/barang' . (! empty($filterPeruntukan) ? '?peruntukan=' . esc($filterPeruntukan) : '')); ?>" class="btn btn-outline-secondary btn-sm shadow-sm" title="Reset Filter Kategori/Kondisi/Lokasi">
+                                <i class="fas fa-undo"></i>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Table Body -->
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover table-bordered table-striped w-100 js-datatable" data-order='[[1, "asc"], [2, "asc"]]' style="border-radius: 8px;">
+                <table class="table table-bordered table-striped table-hover w-100 js-datatable" data-order='[[1, "asc"], [2, "asc"]]'>
                     <thead class="thead-light">
-                        <tr>
-                            <th style="width: 45px;" class="text-center align-middle" data-orderable="false">#</th>
-                            <th class="align-middle" style="width: 125px;">Kode Barang</th>
-                            <th class="text-center align-middle" style="width: 75px;">NUP</th>
+                        <tr style="white-space: nowrap;">
+                            <th style="width: 40px;" class="text-center align-middle" data-orderable="false">#</th>
+                            <th class="align-middle" style="width: 120px;">Kode Barang</th>
+                            <th class="text-center align-middle" style="width: 65px;">NUP</th>
+                            <th class="text-center align-middle" style="width: 100px;">Peruntukan</th>
                             <th class="align-middle">Nama Barang</th>
-                            <th class="align-middle">Kategori</th>
-                            <th class="align-middle">Merk / Tipe</th>
-                            <th class="text-center align-middle" style="width: 90px;">Jumlah</th>
+                            <th class="align-middle" style="width: 130px;">Kategori</th>
+                            <th class="align-middle" style="width: 140px;">Merk / Tipe</th>
+                            <th class="text-center align-middle" style="width: 85px;">Jumlah</th>
                             <th class="text-center align-middle" style="width: 110px;">Kondisi</th>
-                            <th class="align-middle">Lokasi Ruangan</th>
-                            <th class="text-center align-middle" style="width: 80px;">Tahun</th>
+                            <th class="align-middle" style="width: 140px;">Lokasi Ruangan</th>
+                            <th class="text-center align-middle" style="width: 70px;">Tahun</th>
                             <?php if (! empty($can_edit) || ! empty($can_delete)): ?>
-                                <th style="width: 100px;" class="text-center align-middle" data-orderable="false">Aksi</th>
+                                <th style="width: 90px;" class="text-center align-middle" data-orderable="false">Aksi</th>
                             <?php endif; ?>
                         </tr>
                     </thead>
@@ -141,38 +329,49 @@
                         <?php $no = 1; foreach (($items ?? []) as $item): ?>
                             <tr>
                                 <td class="text-center align-middle"><?= $no++; ?></td>
-                                <td class="align-middle">
-                                    <span class="font-weight-bold text-dark" style="font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 0.88rem;"><?= esc($item['kode_barang']); ?></span>
+                                <td class="align-middle font-mono font-weight-bold text-dark">
+                                    <?= esc($item['kode_barang']); ?>
                                 </td>
                                 <td class="text-center align-middle" data-order="<?= (int) ($item['nup'] ?? 0); ?>">
                                     <?php if (! empty($item['nup'])): ?>
-                                        <span class="badge badge-light border font-weight-bold px-2 py-1" style="font-size: 0.85rem; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; background-color: #f1f5f9; color: #0f172a;">
+                                        <span class="badge badge-light border font-mono font-weight-bold px-2 py-1">
                                             <?= esc((string) $item['nup']); ?>
                                         </span>
                                     <?php else: ?>
                                         <span class="text-muted">-</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="align-middle">
-                                    <span class="font-weight-bold text-primary"><?= esc($item['nama_barang']); ?></span>
-                                    <?php if (! empty($item['keterangan'])): ?>
-                                        <small class="text-muted d-block" style="font-size: 0.8rem;"><?= esc($item['keterangan']); ?></small>
+                                <td class="text-center align-middle" data-order="<?= ($item['peruntukan'] ?? 'kantor') === 'mobiler' ? 2 : 1; ?>">
+                                    <?php if (($item['peruntukan'] ?? 'kantor') === 'mobiler'): ?>
+                                        <span class="badge badge-warning text-dark font-weight-bold px-2 py-1" title="Diperuntukkan untuk Mobiler Sekolah">
+                                            <i class="fas fa-school mr-1"></i> Mobiler
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge badge-primary font-weight-bold px-2 py-1" title="Diperuntukkan untuk Kantor Satker">
+                                            <i class="fas fa-building mr-1"></i> Kantor
+                                        </span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="align-middle">
-                                    <span class="badge badge-info px-2 py-1"><?= esc($item['kategori']); ?></span>
+                                    <div class="font-weight-bold text-primary"><?= esc($item['nama_barang']); ?></div>
+                                    <?php if (! empty($item['keterangan'])): ?>
+                                        <small class="text-muted d-block mt-0.5"><i class="fas fa-info-circle mr-1"></i><?= esc($item['keterangan']); ?></small>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="align-middle">
+                                    <span class="badge badge-light border px-2 py-1"><?= esc($item['kategori']); ?></span>
                                 </td>
                                 <td class="align-middle"><?= esc($item['merk_tipe'] ?: '-'); ?></td>
                                 <td class="text-center align-middle font-weight-bold">
-                                    <?= number_format((int) ($item['jumlah'] ?? 1)); ?> <small class="text-muted"><?= esc($item['satuan'] ?? 'Unit'); ?></small>
+                                    <?= number_format((int) ($item['jumlah'] ?? 1)); ?> <small class="text-muted font-weight-normal"><?= esc($item['satuan'] ?? 'Unit'); ?></small>
                                 </td>
                                 <td class="text-center align-middle">
                                     <?php if ($item['kondisi'] === 'baik'): ?>
-                                        <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i> Baik</span>
+                                        <span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i> Baik</span>
                                     <?php elseif ($item['kondisi'] === 'rusak_ringan'): ?>
-                                        <span class="badge badge-warning px-2 py-1"><i class="fas fa-exclamation-triangle mr-1"></i> Rusak Ringan</span>
+                                        <span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-exclamation-triangle mr-1"></i> Rusak Ringan</span>
                                     <?php else: ?>
-                                        <span class="badge badge-danger px-2 py-1"><i class="fas fa-times-circle mr-1"></i> Rusak Berat</span>
+                                        <span class="badge badge-danger px-2 py-1"><i class="fas fa-times mr-1"></i> Rusak Berat</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="align-middle">
@@ -181,17 +380,18 @@
                                 <td class="text-center align-middle"><?= esc((string) ($item['tahun_perolehan'] ?: '-')); ?></td>
                                 <?php if (! empty($can_edit) || ! empty($can_delete)): ?>
                                     <td class="text-center align-middle" style="white-space: nowrap;">
-                                        <div class="btn-group" role="group" style="gap: 4px;">
+                                        <div class="btn-group" role="group">
                                             <?php if (! empty($can_edit)): ?>
                                                 <button
                                                     type="button"
-                                                    class="btn btn-outline-primary btn-xs px-2 py-1 btn-edit-inventaris"
+                                                    class="btn btn-warning btn-sm btn-edit-inventaris"
                                                     data-toggle="modal"
                                                     data-target="#modal-edit-inventaris"
                                                     data-id="<?= esc((string) $item['id'], 'attr'); ?>"
                                                     data-kode="<?= esc((string) $item['kode_barang'], 'attr'); ?>"
                                                     data-nup="<?= esc((string) ($item['nup'] ?? ''), 'attr'); ?>"
                                                     data-register="<?= esc((string) ($item['kode_register'] ?? ''), 'attr'); ?>"
+                                                    data-peruntukan="<?= esc((string) ($item['peruntukan'] ?? 'kantor'), 'attr'); ?>"
                                                     data-nama="<?= esc((string) $item['nama_barang'], 'attr'); ?>"
                                                     data-kategori="<?= esc((string) $item['kategori'], 'attr'); ?>"
                                                     data-merk="<?= esc((string) ($item['merk_tipe'] ?? ''), 'attr'); ?>"
@@ -201,24 +401,22 @@
                                                     data-lokasi="<?= esc((string) $item['lokasi_ruangan'], 'attr'); ?>"
                                                     data-tahun="<?= esc((string) ($item['tahun_perolehan'] ?? ''), 'attr'); ?>"
                                                     data-keterangan="<?= esc((string) ($item['keterangan'] ?? ''), 'attr'); ?>"
-                                                    style="border-radius: 4px;"
                                                     title="Edit Barang"
                                                 >
-                                                    <i class="fas fa-pen"></i>
+                                                    <i class="fas fa-edit"></i>
                                                 </button>
                                             <?php endif; ?>
                                             <?php if (! empty($can_delete)): ?>
                                                 <button
                                                     type="button"
-                                                    class="btn btn-outline-danger btn-xs px-2 py-1 btn-delete-inventaris"
+                                                    class="btn btn-danger btn-sm btn-delete-inventaris"
                                                     data-toggle="modal"
                                                     data-target="#modal-delete-inventaris"
                                                     data-id="<?= esc((string) $item['id'], 'attr'); ?>"
                                                     data-nama="<?= esc((string) $item['nama_barang'], 'attr'); ?>"
-                                                    style="border-radius: 4px;"
                                                     title="Hapus Barang"
                                                 >
-                                                    <i class="fas fa-trash-alt"></i>
+                                                    <i class="fas fa-trash"></i>
                                                 </button>
                                             <?php endif; ?>
                                         </div>
@@ -319,9 +517,26 @@
                             </select>
                             <small class="text-muted" style="font-size: 0.72rem;">Pilih dari daftar ruangan atau ketik langsung nama ruangan baru</small>
                         </div>
-                        <div class="col-md-6 form-group">
+                        <div class="col-md-3 form-group">
                             <label class="font-weight-bold small text-dark">Tahun Perolehan</label>
                             <input type="number" name="tahun_perolehan" class="form-control" placeholder="Contoh: <?= date('Y'); ?>" min="1990" max="<?= date('Y') + 1; ?>" style="border-radius: 6px;">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label class="font-weight-bold small text-dark">Peruntukan <span class="text-danger">*</span></label>
+                            <div class="d-flex align-items-center mt-2" style="gap: 15px;">
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="tambah_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input" checked>
+                                    <label class="custom-control-label font-weight-normal text-primary" for="tambah_peruntukan_kantor">
+                                        <i class="fas fa-building mr-1"></i> Kantor
+                                    </label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="tambah_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
+                                    <label class="custom-control-label font-weight-normal text-warning" for="tambah_peruntukan_mobiler">
+                                        <i class="fas fa-school mr-1"></i> <strong class="text-dark">Mobiler</strong>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-12 form-group mb-0">
                             <label class="font-weight-bold small text-dark">Keterangan Tambahan</label>
@@ -424,9 +639,26 @@
                             </select>
                             <small class="text-muted" style="font-size: 0.72rem;">Pilih dari daftar ruangan atau ketik langsung nama ruangan baru</small>
                         </div>
-                        <div class="col-md-6 form-group">
+                        <div class="col-md-3 form-group">
                             <label class="font-weight-bold small text-dark">Tahun Perolehan</label>
                             <input type="number" id="edit-tahun" name="tahun_perolehan" class="form-control" min="1990" max="<?= date('Y') + 1; ?>" style="border-radius: 6px;">
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label class="font-weight-bold small text-dark">Peruntukan <span class="text-danger">*</span></label>
+                            <div class="d-flex align-items-center mt-2" style="gap: 15px;">
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="edit_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input" checked>
+                                    <label class="custom-control-label font-weight-normal text-primary" for="edit_peruntukan_kantor">
+                                        <i class="fas fa-building mr-1"></i> Kantor
+                                    </label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="edit_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
+                                    <label class="custom-control-label font-weight-normal text-warning" for="edit_peruntukan_mobiler">
+                                        <i class="fas fa-school mr-1"></i> <strong class="text-dark">Mobiler</strong>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-12 form-group mb-0">
                             <label class="font-weight-bold small text-dark">Keterangan Tambahan</label>
@@ -492,7 +724,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="<?= site_url('admin/inventaris/satker/import-siman'); ?>" method="post" enctype="multipart/form-data">
+            <form action="<?= site_url('admin/inventaris/barang/import-siman'); ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
                 <div class="modal-body py-4">
                     <div class="alert alert-info py-2 px-3 small mb-3" style="border-radius: 6px;">
@@ -519,88 +751,240 @@
 </div>
 <?php endif; ?>
 
+<!-- Modal Update Peruntukan Massal -->
+<?php if (! empty($can_edit)): ?>
+<div class="modal fade" id="modal-update-peruntukan-massal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <div class="modal-header bg-warning text-dark py-3" style="border-bottom: 1px solid #ffeeba;">
+                <h5 class="modal-title font-weight-bold" style="font-size: 1.1rem;">
+                    <i class="fas fa-sliders-h mr-2"></i>Update Peruntukan Barang Massal
+                </h5>
+                <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="<?= site_url('admin/inventaris/barang/update-peruntukan-massal'); ?>" method="post" id="form-mass-update">
+                <?= csrf_field(); ?>
+                <div class="modal-body py-4">
+                    <div class="alert alert-light border py-2 px-3 small mb-3" style="border-radius: 8px; background-color: #fcfbf6;">
+                        <i class="fas fa-info-circle text-info mr-1"></i>
+                        Gunakan fitur ini untuk mengubah status peruntukan (<strong>Kantor Satker</strong> atau <strong>Mobiler Sekolah</strong>) sekaligus untuk unit barang berdasarkan <strong>Kode Barang</strong> dan <strong>Rentang Nomor Urut Pendaftaran (NUP)</strong>.
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-dark">Pilih Kode Barang / Nama Barang <span class="text-danger">*</span></label>
+                        <select name="kode_barang" id="mass-kode-barang" class="form-control select2" required style="width: 100%;">
+                            <option value="">-- Pilih Kode Barang --</option>
+                            <?php foreach (($uniqueKodeBarangList ?? []) as $kb): ?>
+                                <option value="<?= esc($kb['kode_barang']); ?>">
+                                    <?= esc($kb['kode_barang']); ?> — <?= esc($kb['nama_barang']); ?> (<?= number_format((int) $kb['total_unit']); ?> unit)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Box Detail Info Aset Terpilih (AJAX Loaded) -->
+                    <div id="mass-info-box" class="p-3 mb-3 border rounded shadow-none" style="background-color: #f8fafc; border-color: #e2e8f0; display: none;">
+                        <div class="row text-center">
+                            <div class="col-4 border-right">
+                                <small class="text-muted d-block font-weight-bold">Total Unit Terdata</small>
+                                <span class="h5 font-weight-bold text-dark mb-0" id="mass-info-total">0</span>
+                            </div>
+                            <div class="col-4 border-right">
+                                <small class="text-muted d-block font-weight-bold">Rentang NUP Terdaftar</small>
+                                <span class="h5 font-weight-bold text-primary mb-0" id="mass-info-nup-range">-</span>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted d-block font-weight-bold">Peruntukan Saat Ini</small>
+                                <div class="mt-1">
+                                    <span class="badge badge-primary px-2" id="mass-info-kantor">0 Kantor</span>
+                                    <span class="badge badge-warning text-dark px-2" id="mass-info-mobiler">0 Mobiler</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="font-weight-bold small text-dark">Dari NUP Awal <span class="text-danger">*</span></label>
+                            <input type="number" name="nup_awal" id="mass-nup-awal" class="form-control font-weight-bold" placeholder="Contoh: 1" required min="1" style="border-radius: 6px;">
+                            <small class="text-muted" style="font-size: 0.72rem;">Nomor urut pendaftaran awal yang akan diubah</small>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="font-weight-bold small text-dark">Hingga NUP Akhir <span class="text-danger">*</span></label>
+                            <input type="number" name="nup_akhir" id="mass-nup-akhir" class="form-control font-weight-bold" placeholder="Contoh: 50" required min="1" style="border-radius: 6px;">
+                            <small class="text-muted" style="font-size: 0.72rem;">Nomor urut pendaftaran akhir yang akan diubah</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="font-weight-bold small text-dark">Ubah Peruntukan Menjadi <span class="text-danger">*</span></label>
+                        <div class="card p-3" style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+                            <div class="row">
+                                <div class="col-md-6 mb-2 mb-md-0">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="mass_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input" checked>
+                                        <label class="custom-control-label font-weight-bold text-primary" for="mass_peruntukan_kantor">
+                                            <i class="fas fa-building mr-1"></i> Kantor / Satker
+                                        </label>
+                                        <small class="text-muted d-block" style="font-size: 0.75rem;">Aset operasional kantor satker (dapat dialokasikan ke Ruangan / DBR)</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="mass_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
+                                        <label class="custom-control-label font-weight-bold text-dark" for="mass_peruntukan_mobiler">
+                                            <i class="fas fa-school text-warning mr-1"></i> Mobiler / Sekolah
+                                        </label>
+                                        <small class="text-muted d-block" style="font-size: 0.75rem;">Aset bantuan pendidikan yang didistribusikan ke sekolah-sekolah</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-3" style="border-top: 1px solid #e9eef5;">
+                    <button type="button" class="btn btn-secondary px-3" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
+                    <button type="submit" class="btn btn-warning px-4 shadow-sm font-weight-bold text-dark" style="border-radius: 6px;">
+                        <i class="fas fa-check-circle mr-1"></i> Simpan Perubahan Massal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Populate Edit Modal
-    document.querySelectorAll('.btn-edit-inventaris').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var id = this.getAttribute('data-id');
-            var form = document.getElementById('form-edit-inventaris');
-            if (form) {
-                form.action = '<?= site_url('admin/inventaris/satker'); ?>/' + id + '/ubah';
-            }
-            document.getElementById('edit-kode').value = this.getAttribute('data-kode') || '';
-            document.getElementById('edit-nup').value = this.getAttribute('data-nup') || '';
-            document.getElementById('edit-kode-register').value = this.getAttribute('data-register') || '';
-            document.getElementById('edit-nama').value = this.getAttribute('data-nama') || '';
-            document.getElementById('edit-kategori').value = this.getAttribute('data-kategori') || '';
-            document.getElementById('edit-merk').value = this.getAttribute('data-merk') || '';
-            document.getElementById('edit-jumlah').value = this.getAttribute('data-jumlah') || '1';
-            document.getElementById('edit-kondisi').value = this.getAttribute('data-kondisi') || 'baik';
-            document.getElementById('edit-tahun').value = this.getAttribute('data-tahun') || '';
-            document.getElementById('edit-keterangan').value = this.getAttribute('data-keterangan') || '';
+    // Populate Edit Modal via delegated click
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-edit-inventaris');
+        if (!btn) return;
+        var id = btn.getAttribute('data-id');
+        var form = document.getElementById('form-edit-inventaris');
+        if (form) {
+            form.action = '<?= site_url('admin/inventaris/barang'); ?>/' + id + '/ubah';
+        }
+        document.getElementById('edit-kode').value = btn.getAttribute('data-kode') || '';
+        document.getElementById('edit-nup').value = btn.getAttribute('data-nup') || '';
+        document.getElementById('edit-kode-register').value = btn.getAttribute('data-register') || '';
+        document.getElementById('edit-nama').value = btn.getAttribute('data-nama') || '';
+        document.getElementById('edit-kategori').value = btn.getAttribute('data-kategori') || '';
+        document.getElementById('edit-merk').value = btn.getAttribute('data-merk') || '';
+        document.getElementById('edit-jumlah').value = btn.getAttribute('data-jumlah') || '1';
+        document.getElementById('edit-kondisi').value = btn.getAttribute('data-kondisi') || 'baik';
+        document.getElementById('edit-tahun').value = btn.getAttribute('data-tahun') || '';
+        document.getElementById('edit-keterangan').value = btn.getAttribute('data-keterangan') || '';
 
-            // Handle Satuan Select2 (Dropdown + Manual Input)
-            var satuanVal = (this.getAttribute('data-satuan') || 'Unit').trim();
-            if (typeof $ !== 'undefined') {
-                var $editSatuan = $('#edit-satuan');
-                if ($editSatuan.length) {
-                    if (satuanVal !== '') {
-                        var optSatuanExists = false;
-                        $editSatuan.find('option').each(function() {
-                            if ($(this).val().toLowerCase() === satuanVal.toLowerCase()) {
-                                optSatuanExists = true;
-                                satuanVal = $(this).val();
-                                return false;
-                            }
-                        });
-                        if (!optSatuanExists) {
-                            var newSatuanOption = new Option(satuanVal, satuanVal, true, true);
-                            $editSatuan.append(newSatuanOption);
-                        }
-                        $editSatuan.val(satuanVal).trigger('change');
-                    } else {
-                        $editSatuan.val('Unit').trigger('change');
-                    }
-                }
-            } else {
-                var elSatuan = document.getElementById('edit-satuan');
-                if (elSatuan) elSatuan.value = satuanVal;
-            }
+        // Handle Peruntukan Radio
+        var peruntukanVal = (btn.getAttribute('data-peruntukan') || 'kantor').toLowerCase();
+        if (peruntukanVal === 'mobiler') {
+            var radioMobiler = document.getElementById('edit_peruntukan_mobiler');
+            if (radioMobiler) radioMobiler.checked = true;
+        } else {
+            var radioKantor = document.getElementById('edit_peruntukan_kantor');
+            if (radioKantor) radioKantor.checked = true;
+        }
 
-            // Handle Lokasi Ruangan Select2 (Dropdown + Manual Input)
-            var lokasiVal = (this.getAttribute('data-lokasi') || '').trim();
-            if (typeof $ !== 'undefined') {
-                var $editLokasi = $('#edit-lokasi');
-                if ($editLokasi.length) {
-                    if (lokasiVal !== '') {
-                        var optionExists = false;
-                        $editLokasi.find('option').each(function() {
-                            if ($(this).val() === lokasiVal) {
-                                optionExists = true;
-                                return false;
-                            }
-                        });
-                        if (!optionExists) {
-                            var newOption = new Option(lokasiVal, lokasiVal, true, true);
-                            $editLokasi.append(newOption);
+        // Handle Satuan Select2 (Dropdown + Manual Input)
+        var satuanVal = (btn.getAttribute('data-satuan') || 'Unit').trim();
+        if (typeof $ !== 'undefined') {
+            var $editSatuan = $('#edit-satuan');
+            if ($editSatuan.length) {
+                if (satuanVal !== '') {
+                    var optSatuanExists = false;
+                    $editSatuan.find('option').each(function() {
+                        if ($(this).val().toLowerCase() === satuanVal.toLowerCase()) {
+                            optSatuanExists = true;
+                            satuanVal = $(this).val();
+                            return false;
                         }
-                        $editLokasi.val(lokasiVal).trigger('change');
-                    } else {
-                        $editLokasi.val('').trigger('change');
+                    });
+                    if (!optSatuanExists) {
+                        var newSatuanOption = new Option(satuanVal, satuanVal, true, true);
+                        $editSatuan.append(newSatuanOption);
                     }
+                    $editSatuan.val(satuanVal).trigger('change');
+                } else {
+                    $editSatuan.val('Unit').trigger('change');
                 }
-            } else {
-                var el = document.getElementById('edit-lokasi');
-                if (el) el.value = lokasiVal;
             }
-        });
+        } else {
+            var elSatuan = document.getElementById('edit-satuan');
+            if (elSatuan) elSatuan.value = satuanVal;
+        }
+
+        // Handle Lokasi Ruangan Select2 (Dropdown + Manual Input)
+        var lokasiVal = (btn.getAttribute('data-lokasi') || '').trim();
+        if (typeof $ !== 'undefined') {
+            var $editLokasi = $('#edit-lokasi');
+            if ($editLokasi.length) {
+                if (lokasiVal !== '') {
+                    var optionExists = false;
+                    $editLokasi.find('option').each(function() {
+                        if ($(this).val() === lokasiVal) {
+                            optionExists = true;
+                            return false;
+                        }
+                    });
+                    if (!optionExists) {
+                        var newOption = new Option(lokasiVal, lokasiVal, true, true);
+                        $editLokasi.append(newOption);
+                    }
+                    $editLokasi.val(lokasiVal).trigger('change');
+                } else {
+                    $editLokasi.val('').trigger('change');
+                }
+            }
+        } else {
+            var el = document.getElementById('edit-lokasi');
+            if (el) el.value = lokasiVal;
+        }
     });
 
     if (typeof $ !== 'undefined') {
         $('#modal-tambah-inventaris').on('show.bs.modal', function () {
             $('#tambah-lokasi').val('').trigger('change');
             $('#tambah-satuan').val('Unit').trigger('change');
+            var radioKantor = document.getElementById('tambah_peruntukan_kantor');
+            if (radioKantor) radioKantor.checked = true;
+        });
+
+        // AJAX range fetch for Batch Update Modal
+        $('#mass-kode-barang').on('change', function() {
+            var kode = $(this).val();
+            if (!kode) {
+                $('#mass-info-box').slideUp();
+                $('#mass-nup-awal').val('');
+                $('#mass-nup-akhir').val('');
+                return;
+            }
+            $.getJSON('<?= site_url('admin/inventaris/barang/nup-range-by-kode'); ?>', { kode_barang: kode }, function(res) {
+                if (res && res.success && res.data) {
+                    var d = res.data;
+                    $('#mass-info-total').text((d.total_unit || 0) + ' Unit');
+                    var minNup = d.min_nup !== null ? d.min_nup : 0;
+                    var maxNup = d.max_nup !== null ? d.max_nup : 0;
+                    $('#mass-info-nup-range').text(minNup + ' s/d ' + maxNup);
+                    $('#mass-info-kantor').text((d.total_kantor || 0) + ' Kantor');
+                    $('#mass-info-mobiler').text((d.total_mobiler || 0) + ' Mobiler');
+                    
+                    if (minNup > 0) $('#mass-nup-awal').val(minNup);
+                    if (maxNup > 0) $('#mass-nup-akhir').val(maxNup);
+                    
+                    $('#mass-info-box').slideDown();
+                }
+            });
+        });
+
+        $('#modal-update-peruntukan-massal').on('shown.bs.modal', function () {
+            if ($.fn.select2) {
+                $('#mass-kode-barang').select2({
+                    dropdownParent: $('#modal-update-peruntukan-massal')
+                });
+            }
         });
     }
 
@@ -631,20 +1015,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Populate Delete Modal
-    document.querySelectorAll('.btn-delete-inventaris').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var id = this.getAttribute('data-id');
-            var nama = this.getAttribute('data-nama');
-            var form = document.getElementById('form-delete-inventaris');
-            if (form) {
-                form.action = '<?= site_url('admin/inventaris/satker'); ?>/' + id + '/hapus';
-            }
-            var nameEl = document.getElementById('delete-barang-name');
-            if (nameEl) {
-                nameEl.textContent = '"' + nama + '"';
-            }
-        });
+    // Populate Delete Modal via delegated click
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-delete-inventaris');
+        if (!btn) return;
+        var id = btn.getAttribute('data-id');
+        var nama = btn.getAttribute('data-nama');
+        var form = document.getElementById('form-delete-inventaris');
+        if (form) {
+            form.action = '<?= site_url('admin/inventaris/barang'); ?>/' + id + '/hapus';
+        }
+        var nameEl = document.getElementById('delete-barang-name');
+        if (nameEl) {
+            nameEl.textContent = '"' + nama + '"';
+        }
     });
 });
 </script>

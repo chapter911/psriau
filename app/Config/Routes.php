@@ -390,13 +390,25 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'berita/(:num)/ubah', 'Admin\\Article::edit/$1');
 	$routes->post('berita/(:num)/hapus', 'Admin\\Article::delete/$1');
 
-	// Modul Inventarisasi
+	// Modul Inventarisasi - Daftar Barang (General: Kantor vs Mobiler)
+	$routes->get('inventaris/barang', 'Admin\\InventarisSatker::index');
+	$routes->post('inventaris/barang/tambah', 'Admin\\InventarisSatker::create');
+	$routes->post('inventaris/barang/(:num)/ubah', 'Admin\\InventarisSatker::edit/$1');
+	$routes->post('inventaris/barang/(:num)/hapus', 'Admin\\InventarisSatker::delete/$1');
+	$routes->get('inventaris/barang/export', 'Admin\\InventarisSatker::export');
+	$routes->post('inventaris/barang/import-siman', 'Admin\\InventarisSatker::importSiman');
+	$routes->post('inventaris/barang/update-peruntukan-massal', 'Admin\\InventarisSatker::updatePeruntukanMassal');
+	$routes->get('inventaris/barang/nup-range-by-kode', 'Admin\\InventarisSatker::getNupRangeByKode');
+
+	// Alias routes lama untuk backward compatibility
 	$routes->get('inventaris/satker', 'Admin\\InventarisSatker::index');
 	$routes->post('inventaris/satker/tambah', 'Admin\\InventarisSatker::create');
 	$routes->post('inventaris/satker/(:num)/ubah', 'Admin\\InventarisSatker::edit/$1');
 	$routes->post('inventaris/satker/(:num)/hapus', 'Admin\\InventarisSatker::delete/$1');
 	$routes->get('inventaris/satker/export', 'Admin\\InventarisSatker::export');
 	$routes->post('inventaris/satker/import-siman', 'Admin\\InventarisSatker::importSiman');
+	$routes->post('inventaris/satker/update-peruntukan-massal', 'Admin\\InventarisSatker::updatePeruntukanMassal');
+	$routes->get('inventaris/satker/nup-range-by-kode', 'Admin\\InventarisSatker::getNupRangeByKode');
 
 	// Modul DBR (Daftar Barang Ruangan)
 	$routes->get('inventaris/dbr', 'Admin\\InventarisDbr::index');

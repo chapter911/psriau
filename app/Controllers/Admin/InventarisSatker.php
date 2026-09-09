@@ -15,11 +15,38 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class InventarisSatker extends BaseController
 {
-    private const MENU_LINK = 'admin/inventaris/satker';
+    private const MENU_LINK = 'admin/inventaris/barang';
+    private const MENU_LINK_ALT = 'admin/inventaris/satker';
+
+    private function checkAccess(): ?RedirectResponse
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            $forbiddenAlt = $this->denyIfNoMenuAccess(self::MENU_LINK_ALT);
+            if ($forbiddenAlt instanceof RedirectResponse) {
+                return $forbidden;
+            }
+        }
+        return null;
+    }
+
+    private function resolvePermissions(): array
+    {
+        $p1 = $this->resolveMenuPermissions(self::MENU_LINK);
+        $p2 = $this->resolveMenuPermissions(self::MENU_LINK_ALT);
+        return [
+            'add'      => ($p1['add'] ?? false) || ($p2['add'] ?? false),
+            'edit'     => ($p1['edit'] ?? false) || ($p2['edit'] ?? false),
+            'delete'   => ($p1['delete'] ?? false) || ($p2['delete'] ?? false),
+            'export'   => ($p1['export'] ?? false) || ($p2['export'] ?? false),
+            'import'   => ($p1['import'] ?? false) || ($p2['import'] ?? false),
+            'approval' => ($p1['approval'] ?? false) || ($p2['approval'] ?? false),
+        ];
+    }
 
     public function index()
     {
-        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        $forbidden = $this->checkAccess();
         if ($forbidden instanceof RedirectResponse) {
             return $forbidden;
         }
@@ -27,11 +54,15 @@ class InventarisSatker extends BaseController
         $model = new InventarisSatkerModel();
         $builder = $model->builder();
 
-        $filterKategori = trim((string) $this->request->getGet('kategori'));
-        $filterKondisi  = trim((string) $this->request->getGet('kondisi'));
-        $filterLokasi   = trim((string) $this->request->getGet('lokasi'));
-        $searchKeyword  = trim((string) $this->request->getGet('keyword'));
+        $filterPeruntukan = strtolower(trim((string) $this->request->getGet('peruntukan')));
+        $filterKategori   = trim((string) $this->request->getGet('kategori'));
+        $filterKondisi    = trim((string) $this->request->getGet('kondisi'));
+        $filterLokasi     = trim((string) $this->request->getGet('lokasi'));
+        $searchKeyword    = trim((string) $this->request->getGet('keyword'));
 
+        if (in_array($filterPeruntukan, ['kantor', 'mobiler'], true)) {
+            $builder->where('peruntukan', $filterPeruntukan);
+        }
         if ($filterKategori !== '' && $filterKategori !== '*') {
             $builder->where('kategori', $filterKategori);
         }
@@ -59,6 +90,15 @@ class InventarisSatker extends BaseController
 
         // Get unique dropdown options
         $db = db_connect();
+
+        // Unique kode_barang list for bulk update modal
+        $uniqueKodeBarangList = $db->table('trn_inventaris_satker')
+            ->select('kode_barang, nama_barang, COUNT(id) AS total_unit, MIN(CAST(NULLIF(nup, "") AS UNSIGNED)) AS min_nup, MAX(CAST(NULLIF(nup, "") AS UNSIGNED)) AS max_nup')
+            ->groupBy('kode_barang, nama_barang')
+            ->orderBy('kode_barang', 'ASC')
+            ->get()
+            ->getResultArray();
+
         $kategoriList = $db->table('trn_inventaris_satker')
             ->select('kategori')
             ->distinct()
@@ -99,48 +139,54 @@ class InventarisSatker extends BaseController
         $satuanOptions = array_values(array_unique(array_filter(array_map('trim', $mergedSatuans))));
 
         // Summary counts
-        $totalItems = $db->table('trn_inventaris_satker')->countAllResults();
-        $totalBaik  = $db->table('trn_inventaris_satker')->where('kondisi', 'baik')->countAllResults();
-        $totalRingan = $db->table('trn_inventaris_satker')->where('kondisi', 'rusak_ringan')->countAllResults();
-        $totalBerat = $db->table('trn_inventaris_satker')->where('kondisi', 'rusak_berat')->countAllResults();
+        $totalItems   = $db->table('trn_inventaris_satker')->countAllResults();
+        $totalKantor  = $db->table('trn_inventaris_satker')->where('peruntukan', 'kantor')->countAllResults();
+        $totalMobiler = $db->table('trn_inventaris_satker')->where('peruntukan', 'mobiler')->countAllResults();
+        $totalBaik    = $db->table('trn_inventaris_satker')->where('kondisi', 'baik')->countAllResults();
+        $totalRingan  = $db->table('trn_inventaris_satker')->where('kondisi', 'rusak_ringan')->countAllResults();
+        $totalBerat   = $db->table('trn_inventaris_satker')->where('kondisi', 'rusak_berat')->countAllResults();
 
-        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        $menuPermissions = $this->resolvePermissions();
 
         return view('admin/inventaris/satker/index', [
-            'pageTitle'        => 'Inventaris Satker',
-            'items'            => $items,
-            'kategoriList'     => array_column($kategoriList, 'kategori'),
-            'lokasiList'       => array_column($lokasiList, 'lokasi_ruangan'),
-            'ruanganOptions'   => $ruanganOptions,
-            'satuanOptions'    => $satuanOptions,
-            'filterKategori'   => $filterKategori,
-            'filterKondisi'    => $filterKondisi,
-            'filterLokasi'     => $filterLokasi,
-            'searchKeyword'    => $searchKeyword,
-            'summary'          => [
+            'pageTitle'            => 'Daftar Barang Inventarisasi',
+            'items'                => $items,
+            'kategoriList'         => array_column($kategoriList, 'kategori'),
+            'lokasiList'           => array_column($lokasiList, 'lokasi_ruangan'),
+            'ruanganOptions'       => $ruanganOptions,
+            'satuanOptions'        => $satuanOptions,
+            'uniqueKodeBarangList' => $uniqueKodeBarangList,
+            'filterPeruntukan'     => $filterPeruntukan,
+            'filterKategori'       => $filterKategori,
+            'filterKondisi'        => $filterKondisi,
+            'filterLokasi'         => $filterLokasi,
+            'searchKeyword'        => $searchKeyword,
+            'summary'              => [
                 'total'        => $totalItems,
+                'kantor'       => $totalKantor,
+                'mobiler'      => $totalMobiler,
                 'baik'         => $totalBaik,
                 'rusak_ringan' => $totalRingan,
                 'rusak_berat'  => $totalBerat,
             ],
-            'can_add'          => (bool) ($menuPermissions['add'] ?? false),
-            'can_edit'         => (bool) ($menuPermissions['edit'] ?? false),
-            'can_delete'       => (bool) ($menuPermissions['delete'] ?? false),
-            'can_export'       => (bool) ($menuPermissions['export'] ?? false),
-            'can_import'       => (bool) ($menuPermissions['import'] ?? false),
+            'can_add'              => (bool) ($menuPermissions['add'] ?? false),
+            'can_edit'             => (bool) ($menuPermissions['edit'] ?? false),
+            'can_delete'           => (bool) ($menuPermissions['delete'] ?? false),
+            'can_export'           => (bool) ($menuPermissions['export'] ?? false),
+            'can_import'           => (bool) ($menuPermissions['import'] ?? false),
         ]);
     }
 
     public function create()
     {
-        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        $forbidden = $this->checkAccess();
         if ($forbidden instanceof RedirectResponse) {
             return $forbidden;
         }
 
-        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        $menuPermissions = $this->resolvePermissions();
         if (! (bool) ($menuPermissions['add'] ?? false)) {
-            return redirect()->to('/admin/inventaris/satker')->with('error', 'Anda tidak memiliki hak akses untuk menambah data inventaris.');
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Anda tidak memiliki hak akses untuk menambah data inventaris.');
         }
 
         $rules = [
@@ -152,6 +198,7 @@ class InventarisSatker extends BaseController
             'jumlah'         => 'required|integer|greater_than[0]',
             'satuan'         => 'required|max_length[50]',
             'kondisi'        => 'required|in_list[baik,rusak_ringan,rusak_berat]',
+            'peruntukan'     => 'permit_empty|in_list[kantor,mobiler]',
             'lokasi_ruangan' => 'required|max_length[150]',
         ];
 
@@ -164,13 +211,14 @@ class InventarisSatker extends BaseController
         if (! $this->validate($rules, $customMessages)) {
             $errors = $this->validator->getErrors();
             $firstError = reset($errors) ?: 'Gagal menambahkan data: mohon periksa inputan formulir Anda.';
-            return redirect()->to('/admin/inventaris/satker')
+            return redirect()->to('/admin/inventaris/barang')
                 ->withInput()
                 ->with('error', $firstError);
         }
 
         $model = new InventarisSatkerModel();
         $userId = (int) (session()->get('userId') ?? 0);
+        $peruntukan = in_array(strtolower(trim((string) $this->request->getPost('peruntukan'))), ['kantor', 'mobiler'], true) ? strtolower(trim((string) $this->request->getPost('peruntukan'))) : 'kantor';
 
         $model->insert([
             'kode_barang'     => trim((string) $this->request->getPost('kode_barang')),
@@ -182,6 +230,7 @@ class InventarisSatker extends BaseController
             'jumlah'          => (int) $this->request->getPost('jumlah'),
             'satuan'          => trim((string) $this->request->getPost('satuan')),
             'kondisi'         => trim((string) $this->request->getPost('kondisi')),
+            'peruntukan'      => $peruntukan,
             'lokasi_ruangan'  => trim((string) $this->request->getPost('lokasi_ruangan')),
             'tahun_perolehan' => (int) $this->request->getPost('tahun_perolehan') ?: null,
             'keterangan'      => trim((string) $this->request->getPost('keterangan')) ?: null,
@@ -189,25 +238,25 @@ class InventarisSatker extends BaseController
             'updated_by'      => $userId ?: null,
         ]);
 
-        return redirect()->to('/admin/inventaris/satker')->with('message', 'Data inventaris barang berhasil ditambahkan.');
+        return redirect()->to('/admin/inventaris/barang')->with('message', 'Data inventaris barang berhasil ditambahkan.');
     }
 
     public function edit(int $id)
     {
-        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        $forbidden = $this->checkAccess();
         if ($forbidden instanceof RedirectResponse) {
             return $forbidden;
         }
 
-        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        $menuPermissions = $this->resolvePermissions();
         if (! (bool) ($menuPermissions['edit'] ?? false)) {
-            return redirect()->to('/admin/inventaris/satker')->with('error', 'Anda tidak memiliki hak akses untuk mengubah data inventaris.');
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Anda tidak memiliki hak akses untuk mengubah data inventaris.');
         }
 
         $model = new InventarisSatkerModel();
         $existing = $model->find($id);
         if (! is_array($existing)) {
-            return redirect()->to('/admin/inventaris/satker')->with('error', 'Data inventaris tidak ditemukan.');
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Data inventaris tidak ditemukan.');
         }
 
         $rules = [
@@ -219,6 +268,7 @@ class InventarisSatker extends BaseController
             'jumlah'         => 'required|integer|greater_than[0]',
             'satuan'         => 'required|max_length[50]',
             'kondisi'        => 'required|in_list[baik,rusak_ringan,rusak_berat]',
+            'peruntukan'     => 'permit_empty|in_list[kantor,mobiler]',
             'lokasi_ruangan' => 'required|max_length[150]',
         ];
 
@@ -231,12 +281,13 @@ class InventarisSatker extends BaseController
         if (! $this->validate($rules, $customMessages)) {
             $errors = $this->validator->getErrors();
             $firstError = reset($errors) ?: 'Gagal memperbarui data: mohon periksa inputan formulir Anda.';
-            return redirect()->to('/admin/inventaris/satker')
+            return redirect()->to('/admin/inventaris/barang')
                 ->withInput()
                 ->with('error', $firstError);
         }
 
         $userId = (int) (session()->get('userId') ?? 0);
+        $peruntukan = in_array(strtolower(trim((string) $this->request->getPost('peruntukan'))), ['kantor', 'mobiler'], true) ? strtolower(trim((string) $this->request->getPost('peruntukan'))) : 'kantor';
 
         $model->update($id, [
             'kode_barang'     => trim((string) $this->request->getPost('kode_barang')),
@@ -248,58 +299,171 @@ class InventarisSatker extends BaseController
             'jumlah'          => (int) $this->request->getPost('jumlah'),
             'satuan'          => trim((string) $this->request->getPost('satuan')),
             'kondisi'         => trim((string) $this->request->getPost('kondisi')),
+            'peruntukan'      => $peruntukan,
             'lokasi_ruangan'  => trim((string) $this->request->getPost('lokasi_ruangan')),
             'tahun_perolehan' => (int) $this->request->getPost('tahun_perolehan') ?: null,
             'keterangan'      => trim((string) $this->request->getPost('keterangan')) ?: null,
             'updated_by'      => $userId ?: null,
         ]);
 
-        return redirect()->to('/admin/inventaris/satker')->with('message', 'Data inventaris berhasil diperbarui.');
+        return redirect()->to('/admin/inventaris/barang')->with('message', 'Data inventaris berhasil diperbarui.');
     }
 
     public function delete(int $id)
     {
-        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        $forbidden = $this->checkAccess();
         if ($forbidden instanceof RedirectResponse) {
             return $forbidden;
         }
 
-        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        $menuPermissions = $this->resolvePermissions();
         if (! (bool) ($menuPermissions['delete'] ?? false)) {
-            return redirect()->to('/admin/inventaris/satker')->with('error', 'Anda tidak memiliki hak akses untuk menghapus data inventaris.');
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Anda tidak memiliki hak akses untuk menghapus data inventaris.');
         }
 
         $model = new InventarisSatkerModel();
         $existing = $model->find($id);
         if (! is_array($existing)) {
-            return redirect()->to('/admin/inventaris/satker')->with('error', 'Data inventaris tidak ditemukan.');
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Data inventaris tidak ditemukan.');
         }
 
         $model->delete($id);
 
-        return redirect()->to('/admin/inventaris/satker')->with('message', 'Data inventaris barang berhasil dihapus.');
+        return redirect()->to('/admin/inventaris/barang')->with('message', 'Data inventaris barang berhasil dihapus.');
     }
 
-    public function importSiman()
+    public function updatePeruntukanMassal()
     {
-        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        $forbidden = $this->checkAccess();
         if ($forbidden instanceof RedirectResponse) {
             return $forbidden;
         }
 
-        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        $menuPermissions = $this->resolvePermissions();
+        if (! (bool) ($menuPermissions['edit'] ?? false)) {
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Anda tidak memiliki hak akses untuk mengubah data inventaris.');
+        }
+
+        $kodeBarang = trim((string) $this->request->getPost('kode_barang'));
+        $nupAwal    = (int) $this->request->getPost('nup_awal');
+        $nupAkhir   = (int) $this->request->getPost('nup_akhir');
+        $peruntukan = strtolower(trim((string) $this->request->getPost('peruntukan')));
+
+        if ($kodeBarang === '') {
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Silakan pilih Kode Barang terlebih dahulu.');
+        }
+
+        if ($nupAwal <= 0 || $nupAkhir <= 0) {
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'NUP Awal dan NUP Akhir harus berupa angka positif (minimal 1).');
+        }
+
+        if ($nupAwal > $nupAkhir) {
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'NUP Awal (' . $nupAwal . ') tidak boleh lebih besar dari NUP Akhir (' . $nupAkhir . ').');
+        }
+
+        if (! in_array($peruntukan, ['kantor', 'mobiler'], true)) {
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Pilihan peruntukan tidak valid. Pilih "Kantor" atau "Mobiler".');
+        }
+
+        $db = db_connect();
+        $userId = (int) (session()->get('userId') ?? 0);
+
+        // Cari item yang sesuai kode barang dan rentang NUP
+        $targetRows = $db->table('trn_inventaris_satker')
+            ->select('id, nama_barang')
+            ->where('kode_barang', $kodeBarang)
+            ->where('CAST(NULLIF(nup, "") AS UNSIGNED) >=', $nupAwal, false)
+            ->where('CAST(NULLIF(nup, "") AS UNSIGNED) <=', $nupAkhir, false)
+            ->get()
+            ->getResultArray();
+
+        $ids = array_column($targetRows, 'id');
+        if (empty($ids)) {
+            return redirect()->to('/admin/inventaris/barang')
+                ->with('error', "Tidak ditemukan data aset dengan Kode Barang \"{$kodeBarang}\" dalam rentang NUP {$nupAwal} s.d {$nupAkhir}.");
+        }
+
+        $db->table('trn_inventaris_satker')
+            ->whereIn('id', $ids)
+            ->update([
+                'peruntukan' => $peruntukan,
+                'updated_at' => date('Y-m-d H:i:s'),
+                'updated_by' => $userId ?: null,
+            ]);
+
+        $count = count($ids);
+        $namaSample = $targetRows[0]['nama_barang'] ?? '';
+        $labelTarget = $peruntukan === 'mobiler' ? 'Mobiler (Sekolah)' : 'Kantor (Satker)';
+
+        return redirect()->to('/admin/inventaris/barang')->with(
+            'message',
+            "Berhasil memperbarui {$count} unit aset \"{$namaSample}\" (Kode: {$kodeBarang}, NUP: {$nupAwal} s.d {$nupAkhir}) menjadi peruntukan \"{$labelTarget}\"."
+        );
+    }
+
+    public function getNupRangeByKode()
+    {
+        $kode = trim((string) $this->request->getGet('kode'));
+        if ($kode === '') {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Parameter kode barang tidak boleh kosong.',
+            ]);
+        }
+
+        $db = db_connect();
+        $row = $db->table('trn_inventaris_satker')
+            ->select('kode_barang, nama_barang, COUNT(id) AS total_unit,
+                      MIN(CAST(NULLIF(nup, "") AS UNSIGNED)) AS min_nup,
+                      MAX(CAST(NULLIF(nup, "") AS UNSIGNED)) AS max_nup,
+                      SUM(CASE WHEN peruntukan = "kantor" THEN 1 ELSE 0 END) AS count_kantor,
+                      SUM(CASE WHEN peruntukan = "mobiler" THEN 1 ELSE 0 END) AS count_mobiler')
+            ->where('kode_barang', $kode)
+            ->groupBy('kode_barang, nama_barang')
+            ->get()
+            ->getRowArray();
+
+        if (! $row) {
+            return $this->response->setJSON([
+                'status'  => 'not_found',
+                'message' => "Data aset dengan Kode Barang \"{$kode}\" tidak ditemukan.",
+            ]);
+        }
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => [
+                'kode_barang'   => $row['kode_barang'],
+                'nama_barang'   => $row['nama_barang'],
+                'total_unit'    => (int) ($row['total_unit'] ?? 0),
+                'min_nup'       => (int) ($row['min_nup'] ?? 1),
+                'max_nup'       => (int) ($row['max_nup'] ?? 1),
+                'count_kantor'  => (int) ($row['count_kantor'] ?? 0),
+                'count_mobiler' => (int) ($row['count_mobiler'] ?? 0),
+            ],
+        ]);
+    }
+
+    public function importSiman()
+    {
+        $forbidden = $this->checkAccess();
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $menuPermissions = $this->resolvePermissions();
         if (! (bool) ($menuPermissions['import'] ?? false)) {
-            return redirect()->to('/admin/inventaris/satker')->with('error', 'Anda tidak memiliki hak akses untuk mengimpor data inventaris.');
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Anda tidak memiliki hak akses untuk mengimpor data inventaris.');
         }
 
         $file = $this->request->getFile('file_excel');
         if (! $file || ! $file->isValid()) {
-            return redirect()->to('/admin/inventaris/satker')->with('error', 'Silakan pilih file Excel SIMAN yang valid untuk diunggah.');
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Silakan pilih file Excel SIMAN yang valid untuk diunggah.');
         }
 
         $ext = strtolower($file->getClientExtension());
         if (! in_array($ext, ['xlsx', 'xls'], true)) {
-            return redirect()->to('/admin/inventaris/satker')->with('error', 'Format file harus berupa .xlsx atau .xls.');
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Format file harus berupa .xlsx atau .xls.');
         }
 
         ini_set('memory_limit', '512M');
@@ -310,64 +474,206 @@ class InventarisSatker extends BaseController
             $sheet = $spreadsheet->getSheetByName('Master Aset') ?: $spreadsheet->getActiveSheet();
             $highestRow = $sheet->getHighestRow();
 
-            if ($highestRow < 3) {
-                return redirect()->to('/admin/inventaris/satker')->with('error', 'File Excel tidak memiliki data aset yang cukup.');
+            if ($highestRow < 2) {
+                return redirect()->to('/admin/inventaris/barang')->with('error', 'File Excel tidak memiliki data aset yang cukup.');
             }
 
             $db = db_connect();
             $userId = (int) (session()->get('userId') ?? 0);
             $now = date('Y-m-d H:i:s');
 
-            $importedCount = 0;
-            $updatedCount  = 0;
+            // 1. Deteksi Baris Header & Mapping Kolom Dinamis (Mendukung File SIMAN Resmi & Template Ekspor Aplikasi)
+            $colMap = [
+                'kode_barang'     => 'E',
+                'nup'             => 'F',
+                'kode_register'   => 'BT',
+                'nama_barang'     => 'G',
+                'kategori'        => 'B',
+                'status_bmn'      => 'H',
+                'merk'            => 'I',
+                'tipe'            => 'J',
+                'merk_tipe'       => '',
+                'kondisi'         => 'K',
+                'tgl_perolehan'   => 'AH',
+                'nilai_perolehan' => 'AL',
+                'nilai_buku'      => 'AN',
+                'no_psp'          => 'AY',
+                'lokasi_ruangan'  => 'BU',
+                'jumlah'          => '',
+                'satuan'          => '',
+                'peruntukan'      => '',
+                'tahun_perolehan' => '',
+                'keterangan'      => '',
+            ];
 
-            // Preload existing (kode_barang, nup) map for speed
+            $startRow = 3; // Default untuk file resmi SIMAN Kemenkeu (header baris 1, data baris 3)
+
+            $highestColumn = $sheet->getHighestColumn();
+            $highestColIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
+
+            for ($row = 1; $row <= min(8, $highestRow); $row++) {
+                $rowHeaders = [];
+                for ($col = 1; $col <= $highestColIdx; $col++) {
+                    $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
+                    $val = strtolower(trim((string) $sheet->getCell($letter . $row)->getValue()));
+                    if ($val !== '') {
+                        $rowHeaders[$letter] = $val;
+                    }
+                }
+
+                $detected = [];
+                foreach ($rowHeaders as $letter => $val) {
+                    if (preg_match('/kode\s*barang|^kode$|kd_?brg/i', $val)) {
+                        $detected['kode_barang'] = $letter;
+                    } elseif (preg_match('/^nup$|no\.?\s*nup/i', $val)) {
+                        $detected['nup'] = $letter;
+                    } elseif (preg_match('/kode\s*register|no\.?\s*register/i', $val)) {
+                        $detected['kode_register'] = $letter;
+                    } elseif (preg_match('/nama\s*barang|^nama$|uraian\s*barang/i', $val)) {
+                        $detected['nama_barang'] = $letter;
+                    } elseif (preg_match('/kategori|jenis\s*bmn/i', $val)) {
+                        $detected['kategori'] = $letter;
+                    } elseif (preg_match('/merk\s*[\/\-]?\s*tipe/i', $val)) {
+                        $detected['merk_tipe'] = $letter;
+                    } elseif (preg_match('/^merk$/i', $val)) {
+                        $detected['merk'] = $letter;
+                    } elseif (preg_match('/^tipe$|^type$/i', $val)) {
+                        $detected['tipe'] = $letter;
+                    } elseif (preg_match('/peruntukan/i', $val)) {
+                        $detected['peruntukan'] = $letter;
+                    } elseif (preg_match('/kondisi/i', $val)) {
+                        $detected['kondisi'] = $letter;
+                    } elseif (preg_match('/lokasi\s*ruang|lokasi|ruangan/i', $val)) {
+                        $detected['lokasi_ruangan'] = $letter;
+                    } elseif (preg_match('/jumlah|kuantum|qty/i', $val)) {
+                        $detected['jumlah'] = $letter;
+                    } elseif (preg_match('/satuan/i', $val)) {
+                        $detected['satuan'] = $letter;
+                    } elseif (preg_match('/nilai\s*perolehan/i', $val)) {
+                        $detected['nilai_perolehan'] = $letter;
+                    } elseif (preg_match('/nilai\s*buku/i', $val)) {
+                        $detected['nilai_buku'] = $letter;
+                    } elseif (preg_match('/status\s*bmn|^status$/i', $val)) {
+                        $detected['status_bmn'] = $letter;
+                    } elseif (preg_match('/no\.?\s*psp/i', $val)) {
+                        $detected['no_psp'] = $letter;
+                    } elseif (preg_match('/tanggal\s*perolehan|tgl\s*perolehan/i', $val)) {
+                        $detected['tgl_perolehan'] = $letter;
+                    } elseif (preg_match('/tahun\s*perolehan|^tahun$/i', $val)) {
+                        $detected['tahun_perolehan'] = $letter;
+                    } elseif (preg_match('/keterangan|catatan/i', $val)) {
+                        $detected['keterangan'] = $letter;
+                    }
+                }
+
+                if (isset($detected['kode_barang']) && (isset($detected['nama_barang']) || isset($detected['nup']))) {
+                    $colMap = array_merge($colMap, $detected);
+                    $startRow = $row + 1;
+                    if ($startRow <= $highestRow) {
+                        $nextVal = trim((string) $sheet->getCell($colMap['kode_barang'] . $startRow)->getValue());
+                        $nextName = ! empty($colMap['nama_barang']) ? trim((string) $sheet->getCell($colMap['nama_barang'] . $startRow)->getValue()) : '';
+                        if ($nextVal === '' && $nextName === '') {
+                            $startRow++;
+                        }
+                    }
+                    break;
+                }
+            }
+
+            // 2. Normalisasi Helper
+            $normalizeKode = static function ($val): string {
+                return strtoupper(trim((string) $val));
+            };
+
+            $normalizeNup = static function ($val): string {
+                $n = trim((string) $val);
+                if ($n === '') {
+                    return '';
+                }
+                if (is_numeric($n)) {
+                    return (string) ((int) $n);
+                }
+                return strtolower($n);
+            };
+
+            // 3. Muat Data Yang Sudah Ada di Database (Map Composite Key: kode_barang + nup)
             $existingRows = $db->table('trn_inventaris_satker')
-                ->select('id, kode_barang, nup, ruangan_id')
+                ->select('id, kode_barang, nup, kode_register, ruangan_id, lokasi_ruangan, peruntukan')
                 ->get()
                 ->getResultArray();
 
             $existingMap = [];
+            $usedRegisters = [];
+
             foreach ($existingRows as $er) {
-                $key = trim((string) $er['kode_barang']) . '___' . trim((string) $er['nup']);
-                $existingMap[$key] = [
-                    'id'         => (int) $er['id'],
-                    'ruangan_id' => (int) ($er['ruangan_id'] ?? 0),
+                $normKey = $normalizeKode($er['kode_barang']) . '___' . $normalizeNup($er['nup']);
+                $existingMap[$normKey] = [
+                    'id'             => (int) $er['id'],
+                    'ruangan_id'     => (int) ($er['ruangan_id'] ?? 0),
+                    'lokasi_ruangan' => (string) ($er['lokasi_ruangan'] ?? ''),
+                    'peruntukan'     => (string) ($er['peruntukan'] ?? 'kantor'),
+                    'kode_register'  => (string) ($er['kode_register'] ?? ''),
                 ];
+
+                $reg = trim((string) ($er['kode_register'] ?? ''));
+                if ($reg !== '') {
+                    $usedRegisters[$reg] = (int) $er['id'];
+                }
             }
 
-            for ($r = 3; $r <= $highestRow; $r++) {
-                $kodeBarang   = trim((string) $sheet->getCell('E' . $r)->getValue());
-                $nup          = trim((string) $sheet->getCell('F' . $r)->getValue());
-                $kodeRegister = trim((string) $sheet->getCell('BT' . $r)->getValue());
-                $namaBarang   = trim((string) $sheet->getCell('G' . $r)->getValue());
+            $importedCount = 0;
+            $updatedCount  = 0;
+
+            for ($r = $startRow; $r <= $highestRow; $r++) {
+                $getVal = static function ($field) use ($sheet, $colMap, $r): string {
+                    $col = $colMap[$field] ?? '';
+                    return ($col !== '') ? trim((string) $sheet->getCell($col . $r)->getValue()) : '';
+                };
+
+                $kodeBarang   = $getVal('kode_barang');
+                $nup          = $getVal('nup');
+                $namaBarang   = $getVal('nama_barang');
+                $kodeRegister = $getVal('kode_register');
 
                 if ($kodeBarang === '' && $namaBarang === '') {
                     continue;
                 }
-
-                $kategori    = trim((string) $sheet->getCell('B' . $r)->getValue()) ?: 'Peralatan Kantor';
-                $statusBmn   = trim((string) $sheet->getCell('H' . $r)->getValue()) ?: 'Aktif';
-                $merk        = trim((string) $sheet->getCell('I' . $r)->getValue());
-                $tipe        = trim((string) $sheet->getCell('J' . $r)->getValue());
-                $rawKondisi  = trim((string) $sheet->getCell('K' . $r)->getValue());
-                $rawTgl      = $sheet->getCell('AH' . $r)->getValue();
-                $nilaiPerolehan = (float) ($sheet->getCell('AL' . $r)->getValue() ?? 0);
-                $nilaiBuku      = (float) ($sheet->getCell('AN' . $r)->getValue() ?? 0);
-                $noPsp       = trim((string) $sheet->getCell('AY' . $r)->getValue());
-                $lokasiRuang = trim((string) $sheet->getCell('BU' . $r)->getValue()) ?: 'Kantor Satker PPS';
-
-                // Format merk_tipe
-                $merkTipe = '';
-                if ($merk !== '' && $tipe !== '') {
-                    $merkTipe = ($merk === $tipe) ? $merk : ($merk . ' ' . $tipe);
-                } elseif ($merk !== '') {
-                    $merkTipe = $merk;
-                } else {
-                    $merkTipe = $tipe;
+                if ($kodeBarang === '') {
+                    continue;
                 }
 
-                // Format kondisi
+                $kategori     = $getVal('kategori') ?: 'Peralatan Kantor';
+                $statusBmn    = $getVal('status_bmn') ?: 'Aktif';
+                $merk         = $getVal('merk');
+                $tipe         = $getVal('tipe');
+                $merkTipe     = $getVal('merk_tipe');
+                $rawKondisi   = $getVal('kondisi');
+                $noPsp        = $getVal('no_psp');
+                $lokasiRuang  = $getVal('lokasi_ruangan');
+                $peruntukanIn = strtolower($getVal('peruntukan'));
+                $satuanIn     = $getVal('satuan');
+                $jumlahIn     = (int) $getVal('jumlah');
+                $keteranganIn = $getVal('keterangan');
+
+                // Parsing nilai finansial
+                $colNilaiPerolehan = $colMap['nilai_perolehan'] ?? '';
+                $nilaiPerolehan = ($colNilaiPerolehan !== '') ? (float) ($sheet->getCell($colNilaiPerolehan . $r)->getValue() ?? 0) : 0.0;
+
+                $colNilaiBuku = $colMap['nilai_buku'] ?? '';
+                $nilaiBuku = ($colNilaiBuku !== '') ? (float) ($sheet->getCell($colNilaiBuku . $r)->getValue() ?? 0) : 0.0;
+
+                // Format merk_tipe jika tidak tersedia kolom gabungan
+                if ($merkTipe === '') {
+                    if ($merk !== '' && $tipe !== '') {
+                        $merkTipe = ($merk === $tipe) ? $merk : ($merk . ' ' . $tipe);
+                    } elseif ($merk !== '') {
+                        $merkTipe = $merk;
+                    } else {
+                        $merkTipe = $tipe;
+                    }
+                }
+
+                // Format kondisi fisik
                 $kondisi = 'baik';
                 $lk = strtolower($rawKondisi);
                 if (strpos($lk, 'berat') !== false) {
@@ -376,14 +682,23 @@ class InventarisSatker extends BaseController
                     $kondisi = 'rusak_ringan';
                 }
 
-                // Format tanggal & tahun
-                $tglPerolehan = null;
-                $tahunPerolehan = null;
+                // Format tanggal & tahun perolehan
+                $colTgl = $colMap['tgl_perolehan'] ?? '';
+                $rawTgl = ($colTgl !== '') ? $sheet->getCell($colTgl . $r)->getValue() : null;
+
+                $colTahun = $colMap['tahun_perolehan'] ?? '';
+                $rawTahun = ($colTahun !== '') ? trim((string) $sheet->getCell($colTahun . $r)->getValue()) : '';
+
+                $tglPerolehan   = null;
+                $tahunPerolehan = is_numeric($rawTahun) ? (int) $rawTahun : null;
+
                 if (is_numeric($rawTgl) && $rawTgl > 10000) {
                     try {
                         $dt = ExcelDate::excelToDateTimeObject($rawTgl);
                         $tglPerolehan = $dt->format('Y-m-d');
-                        $tahunPerolehan = (int) $dt->format('Y');
+                        if ($tahunPerolehan === null) {
+                            $tahunPerolehan = (int) $dt->format('Y');
+                        }
                     } catch (\Throwable $e) {
                         // ignore
                     }
@@ -391,59 +706,130 @@ class InventarisSatker extends BaseController
                     $ts = strtotime((string) $rawTgl);
                     if ($ts !== false) {
                         $tglPerolehan = date('Y-m-d', $ts);
-                        $tahunPerolehan = (int) date('Y', $ts);
+                        if ($tahunPerolehan === null) {
+                            $tahunPerolehan = (int) date('Y', $ts);
+                        }
                     }
                 }
 
-                $record = [
-                    'kode_barang'     => $kodeBarang,
-                    'nup'             => $nup ?: null,
-                    'kode_register'   => $kodeRegister ?: null,
-                    'nama_barang'     => $namaBarang,
-                    'kategori'        => $kategori,
-                    'merk'            => $merk ?: null,
-                    'tipe'            => $tipe ?: null,
-                    'merk_tipe'       => $merkTipe ?: null,
-                    'jumlah'          => 1,
-                    'satuan'          => 'Buah',
-                    'kondisi'         => $kondisi,
-                    'lokasi_ruangan'  => $lokasiRuang,
-                    'nilai_perolehan' => $nilaiPerolehan,
-                    'nilai_buku'      => $nilaiBuku,
-                    'status_bmn'      => $statusBmn,
-                    'no_psp'          => $noPsp ?: null,
-                    'tahun_perolehan' => $tahunPerolehan,
-                    'tgl_perolehan'   => $tglPerolehan,
-                    'updated_at'      => $now,
-                    'updated_by'      => $userId ?: null,
-                ];
+                // Normalisasi NUP untuk matching dan penyimpanan
+                $cleanNup = $normalizeNup($nup);
+                $saveNup  = ($cleanNup !== '') ? $cleanNup : null;
 
-                $mapKey = $kodeBarang . '___' . $nup;
+                $mapKey = $normalizeKode($kodeBarang) . '___' . $cleanNup;
+
+                // ATURAN UPSERT:
+                // Jika Kode Barang dan NUP sama -> UPDATE SAJA
+                // Jika Kode Barang atau NUP beda -> INSERT
                 if (isset($existingMap[$mapKey])) {
+                    // ========================================================
+                    // KODE BARANG & NUP SAMA -> UPDATE SAJA
+                    // ========================================================
                     $existingItem = $existingMap[$mapKey];
-                    if (! empty($existingItem['ruangan_id'])) {
-                        unset($record['lokasi_ruangan']);
+                    $existingId   = $existingItem['id'];
+
+                    $updateData = [
+                        'nama_barang'     => $namaBarang,
+                        'kategori'        => $kategori,
+                        'kondisi'         => $kondisi,
+                        'nilai_perolehan' => $nilaiPerolehan,
+                        'nilai_buku'      => $nilaiBuku,
+                        'status_bmn'      => $statusBmn,
+                        'updated_at'      => $now,
+                        'updated_by'      => $userId ?: null,
+                    ];
+
+                    if ($merk !== '') $updateData['merk'] = $merk;
+                    if ($tipe !== '') $updateData['tipe'] = $tipe;
+                    if ($merkTipe !== '') $updateData['merk_tipe'] = $merkTipe;
+                    if ($satuanIn !== '') $updateData['satuan'] = $satuanIn;
+                    if ($jumlahIn > 0) $updateData['jumlah'] = $jumlahIn;
+                    if ($noPsp !== '') $updateData['no_psp'] = $noPsp;
+                    if ($tahunPerolehan !== null) $updateData['tahun_perolehan'] = $tahunPerolehan;
+                    if ($tglPerolehan !== null) $updateData['tgl_perolehan'] = $tglPerolehan;
+                    if ($keteranganIn !== '') $updateData['keterangan'] = $keteranganIn;
+
+                    // Peruntukan: update jika file excel secara eksplisit menyertakan kolom peruntukan ('kantor' atau 'mobiler')
+                    if (in_array($peruntukanIn, ['kantor', 'mobiler'], true)) {
+                        $updateData['peruntukan'] = $peruntukanIn;
                     }
-                    $db->table('trn_inventaris_satker')->where('id', $existingItem['id'])->update($record);
+
+                    // Lokasi ruangan: jika aset belum masuk ke ruangan DBR (ruangan_id kosong), perbarui lokasinya
+                    if (empty($existingItem['ruangan_id']) && $lokasiRuang !== '') {
+                        $updateData['lokasi_ruangan'] = $lokasiRuang;
+                    }
+
+                    // Kode register: update jika ada pada Excel dan tidak bentrok dengan ID aset lain
+                    if ($kodeRegister !== '') {
+                        if (! isset($usedRegisters[$kodeRegister]) || $usedRegisters[$kodeRegister] === $existingId) {
+                            $updateData['kode_register'] = $kodeRegister;
+                            $usedRegisters[$kodeRegister] = $existingId;
+                        }
+                    }
+
+                    $db->table('trn_inventaris_satker')->where('id', $existingId)->update($updateData);
                     $updatedCount++;
                 } else {
-                    $record['created_at'] = $now;
-                    $record['created_by'] = $userId ?: null;
-                    $db->table('trn_inventaris_satker')->insert($record);
-                    $newId = $db->insertID();
-                    $existingMap[$mapKey] = [
-                        'id'         => $newId,
-                        'ruangan_id' => 0,
+                    // ========================================================
+                    // KODE BARANG / NUP BEDA -> INSERT DATA BARU
+                    // ========================================================
+                    $regToInsert = null;
+                    if ($kodeRegister !== '' && ! isset($usedRegisters[$kodeRegister])) {
+                        $regToInsert = $kodeRegister;
+                    }
+
+                    $insertData = [
+                        'kode_barang'     => $kodeBarang,
+                        'nup'             => $saveNup,
+                        'kode_register'   => $regToInsert,
+                        'nama_barang'     => $namaBarang,
+                        'kategori'        => $kategori,
+                        'merk'            => $merk ?: null,
+                        'tipe'            => $tipe ?: null,
+                        'merk_tipe'       => $merkTipe ?: null,
+                        'jumlah'          => ($jumlahIn > 0) ? $jumlahIn : 1,
+                        'satuan'          => $satuanIn ?: 'Buah',
+                        'kondisi'         => $kondisi,
+                        'lokasi_ruangan'  => $lokasiRuang ?: 'Ruang Kantor Satker',
+                        'nilai_perolehan' => $nilaiPerolehan,
+                        'nilai_buku'      => $nilaiBuku,
+                        'status_bmn'      => $statusBmn,
+                        'peruntukan'      => in_array($peruntukanIn, ['kantor', 'mobiler'], true) ? $peruntukanIn : 'kantor',
+                        'no_psp'          => $noPsp ?: null,
+                        'tahun_perolehan' => $tahunPerolehan,
+                        'tgl_perolehan'   => $tglPerolehan,
+                        'keterangan'      => $keteranganIn ?: null,
+                        'created_at'      => $now,
+                        'updated_at'      => $now,
+                        'created_by'      => $userId ?: null,
+                        'updated_by'      => $userId ?: null,
                     ];
+
+                    $db->table('trn_inventaris_satker')->insert($insertData);
+                    $newId = (int) $db->insertID();
+
+                    // Daftarkan ke map agar baris berikutnya jika sama di file yang sama akan di-update
+                    $existingMap[$mapKey] = [
+                        'id'             => $newId,
+                        'ruangan_id'     => 0,
+                        'lokasi_ruangan' => $insertData['lokasi_ruangan'],
+                        'peruntukan'     => $insertData['peruntukan'],
+                        'kode_register'  => (string) $regToInsert,
+                    ];
+
+                    if ($regToInsert !== null) {
+                        $usedRegisters[$regToInsert] = $newId;
+                    }
+
                     $importedCount++;
                 }
             }
 
             $totalProses = $importedCount + $updatedCount;
-            return redirect()->to('/admin/inventaris/satker')
-                ->with('message', "Proses import SIMAN selesai! {$importedCount} data baru ditambahkan dan {$updatedCount} data diperbarui (Total: {$totalProses} aset).");
+            return redirect()->to('/admin/inventaris/barang')
+                ->with('message', "Proses import Excel selesai! {$importedCount} data baru ditambahkan dan {$updatedCount} data diperbarui berdasarkan kecocokan Kode Barang & NUP (Total: {$totalProses} aset).");
         } catch (\Throwable $e) {
-            return redirect()->to('/admin/inventaris/satker')
+            return redirect()->to('/admin/inventaris/barang')
                 ->with('error', 'Gagal memproses file Excel SIMAN: ' . $e->getMessage());
         }
     }
@@ -457,16 +843,20 @@ class InventarisSatker extends BaseController
 
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
         if (! (bool) ($menuPermissions['export'] ?? false)) {
-            return redirect()->to('/admin/inventaris/satker')->with('error', 'Anda tidak memiliki izin untuk mengunduh laporan.');
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Anda tidak memiliki izin untuk mengunduh laporan.');
         }
 
         $model = new InventarisSatkerModel();
         $builder = $model->builder();
 
-        $filterKategori = trim((string) $this->request->getGet('kategori'));
-        $filterKondisi  = trim((string) $this->request->getGet('kondisi'));
-        $filterLokasi   = trim((string) $this->request->getGet('lokasi'));
+        $filterPeruntukan = strtolower(trim((string) $this->request->getGet('peruntukan')));
+        $filterKategori   = trim((string) $this->request->getGet('kategori'));
+        $filterKondisi    = trim((string) $this->request->getGet('kondisi'));
+        $filterLokasi     = trim((string) $this->request->getGet('lokasi'));
 
+        if (in_array($filterPeruntukan, ['kantor', 'mobiler'], true)) {
+            $builder->where('peruntukan', $filterPeruntukan);
+        }
         if ($filterKategori !== '' && $filterKategori !== '*') {
             $builder->where('kategori', $filterKategori);
         }
@@ -485,22 +875,22 @@ class InventarisSatker extends BaseController
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Inventaris Satker');
+        $sheet->setTitle('Daftar Barang BMN');
 
         // Header Title
-        $sheet->mergeCells('A1:K1');
-        $sheet->mergeCells('A2:K2');
-        $sheet->mergeCells('A3:K3');
-        $sheet->mergeCells('A4:K4');
+        $sheet->mergeCells('A1:L1');
+        $sheet->mergeCells('A2:L2');
+        $sheet->mergeCells('A3:L3');
+        $sheet->mergeCells('A4:L4');
 
-        $sheet->setCellValue('A1', 'DAFTAR INVENTARISASI BARANG MILIK NEGARA / SARANA KANTOR');
+        $sheet->setCellValue('A1', 'DAFTAR INVENTARISASI BARANG MILIK NEGARA / SARANA BMN');
         $sheet->setCellValue('A2', 'SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU');
         $sheet->setCellValue('A3', 'DIREKTORAT JENDERAL PRASARANA STRATEGIS');
         $sheet->setCellValue('A4', 'KEMENTERIAN PEKERJAAN UMUM');
 
-        $sheet->getStyle('A1:K4')->getFont()->setBold(true)->setSize(12);
-        $sheet->getStyle('A1:K4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A1:K4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A1:L4')->getFont()->setBold(true)->setSize(12);
+        $sheet->getStyle('A1:L4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:L4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
         // Table Header
         $headers = [
@@ -511,20 +901,21 @@ class InventarisSatker extends BaseController
             'E6' => 'NAMA BARANG',
             'F6' => 'KATEGORI',
             'G6' => 'MERK / TIPE',
-            'H6' => 'JUMLAH',
-            'I6' => 'KONDISI',
-            'J6' => 'LOKASI RUANGAN',
-            'K6' => 'THN PEROLEHAN',
+            'H6' => 'PERUNTUKAN',
+            'I6' => 'JUMLAH',
+            'J6' => 'KONDISI',
+            'K6' => 'LOKASI RUANGAN',
+            'L6' => 'THN PEROLEHAN',
         ];
 
         foreach ($headers as $cell => $text) {
             $sheet->setCellValue($cell, $text);
         }
 
-        $sheet->getStyle('A6:K6')->getFont()->setBold(true);
-        $sheet->getStyle('A6:K6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A6:K6')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A6:K6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE2E8F0');
+        $sheet->getStyle('A6:L6')->getFont()->setBold(true);
+        $sheet->getStyle('A6:L6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A6:L6')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A6:L6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE2E8F0');
 
         $sheet->getColumnDimension('A')->setWidth(6);
         $sheet->getColumnDimension('B')->setWidth(20);
@@ -533,10 +924,11 @@ class InventarisSatker extends BaseController
         $sheet->getColumnDimension('E')->setWidth(35);
         $sheet->getColumnDimension('F')->setWidth(20);
         $sheet->getColumnDimension('G')->setWidth(25);
-        $sheet->getColumnDimension('H')->setWidth(14);
-        $sheet->getColumnDimension('I')->setWidth(16);
-        $sheet->getColumnDimension('J')->setWidth(25);
-        $sheet->getColumnDimension('K')->setWidth(16);
+        $sheet->getColumnDimension('H')->setWidth(18);
+        $sheet->getColumnDimension('I')->setWidth(14);
+        $sheet->getColumnDimension('J')->setWidth(16);
+        $sheet->getColumnDimension('K')->setWidth(25);
+        $sheet->getColumnDimension('L')->setWidth(16);
 
         $rowNum = 7;
         $no = 1;
@@ -548,6 +940,8 @@ class InventarisSatker extends BaseController
                 default        => ucfirst($item['kondisi'] ?? '-'),
             };
 
+            $peruntukanLabel = ($item['peruntukan'] ?? 'kantor') === 'mobiler' ? 'Mobiler (Sekolah)' : 'Kantor (Satker)';
+
             $sheet->setCellValue('A' . $rowNum, $no++);
             $sheet->setCellValueExplicit('B' . $rowNum, (string) ($item['kode_barang'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('C' . $rowNum, (string) ($item['nup'] ?? '-'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
@@ -555,26 +949,30 @@ class InventarisSatker extends BaseController
             $sheet->setCellValue('E' . $rowNum, (string) ($item['nama_barang'] ?? ''));
             $sheet->setCellValue('F' . $rowNum, (string) ($item['kategori'] ?? ''));
             $sheet->setCellValue('G' . $rowNum, (string) ($item['merk_tipe'] ?? '-'));
-            $sheet->setCellValue('H' . $rowNum, ($item['jumlah'] ?? 0) . ' ' . ($item['satuan'] ?? 'Unit'));
-            $sheet->setCellValue('I' . $rowNum, $kondisiLabel);
-            $sheet->setCellValue('J' . $rowNum, (string) ($item['lokasi_ruangan'] ?? ''));
-            $sheet->setCellValue('K' . $rowNum, (string) ($item['tahun_perolehan'] ?? '-'));
+            $sheet->setCellValue('H' . $rowNum, $peruntukanLabel);
+            $sheet->setCellValue('I' . $rowNum, ($item['jumlah'] ?? 0) . ' ' . ($item['satuan'] ?? 'Unit'));
+            $sheet->setCellValue('J' . $rowNum, $kondisiLabel);
+            $sheet->setCellValue('K' . $rowNum, (string) ($item['lokasi_ruangan'] ?? ''));
+            $sheet->setCellValue('L' . $rowNum, (string) ($item['tahun_perolehan'] ?? '-'));
 
             $sheet->getStyle('A' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('B' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('C' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('D' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('H' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('I' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('K' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('J' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('L' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
             $rowNum++;
         }
 
-        $lastRow = max(7, $rowNum - 1);
-        $sheet->getStyle('A6:K' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $lastRow = $rowNum - 1;
+        if ($lastRow >= 7) {
+            $sheet->getStyle('A6:L' . $lastRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        }
 
         $writer = new Xlsx($spreadsheet);
-        $fileName = 'inventaris_satker_pps_riau_' . date('Ymd_His') . '.xlsx';
+        $fileName = 'Daftar_Barang_BMN_' . date('Ymd_His') . '.xlsx';
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');

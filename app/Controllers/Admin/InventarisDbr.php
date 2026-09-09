@@ -54,6 +54,7 @@ class InventarisDbr extends BaseController
             ->countAllResults();
 
         $totalAsetBelum = (int) $db->table('trn_inventaris_satker')
+            ->where('peruntukan', 'kantor')
             ->groupStart()
                 ->where('ruangan_id IS NULL', null, false)
                 ->orWhere('ruangan_id', 0)
@@ -255,9 +256,10 @@ class InventarisDbr extends BaseController
             ->get()
             ->getResultArray();
 
-        // 3. Unallocated assets or assets from other rooms available to be assigned to this room
+        // 3. Unallocated assets or assets from other rooms available to be assigned to this room (Khusus peruntukan Kantor)
         $unallocatedAssets = $db->table('trn_inventaris_satker')
-            ->select('id, kode_barang, nup, kode_register, nama_barang, merk_tipe, kondisi, jumlah, satuan, nilai_perolehan, no_psp, ruangan_id, lokasi_ruangan')
+            ->select('id, kode_barang, nup, kode_register, nama_barang, merk_tipe, kondisi, jumlah, satuan, nilai_perolehan, no_psp, ruangan_id, lokasi_ruangan, peruntukan')
+            ->where('peruntukan', 'kantor')
             ->groupStart()
                 ->where('ruangan_id IS NULL', null, false)
                 ->orWhere('ruangan_id', 0)

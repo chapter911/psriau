@@ -550,19 +550,135 @@
         left: 0;
         width: 100%;
         height: 3px;
-        background: linear-gradient(to right, transparent, #00f2fe, #4facfe, transparent);
-        box-shadow: 0 0 12px #00f2fe;
+        background: linear-gradient(to right, transparent, #38bdf8, #818cf8, transparent);
+        box-shadow: 0 0 14px #38bdf8, 0 0 24px rgba(56, 189, 248, 0.6);
         animation: scanLaserAnim 2s ease-in-out infinite alternate;
-        z-index: 10;
+        z-index: 12;
         pointer-events: none;
     }
     @keyframes scanLaserAnim {
-        0% { top: 6%; }
-        100% { top: 94%; }
+        0% { top: 4%; }
+        100% { top: 96%; }
+    }
+    #qr-reader {
+        width: 100% !important;
+        border: none !important;
+        padding: 0 !important;
     }
     #qr-reader video {
-        border-radius: 8px;
-        object-fit: cover;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 360px !important;
+        max-height: 520px !important;
+        object-fit: cover !important;
+        border-radius: 12px !important;
+    }
+    #qr-reader-container {
+        position: relative;
+        width: 100%;
+        max-width: 640px;
+        margin: 0 auto;
+        background: #020617;
+        border-radius: 12px;
+        overflow: hidden;
+        min-height: 380px;
+        height: 50vh;
+        max-height: 520px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    }
+    .scanner-reticle-box {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 78%;
+        max-width: 320px;
+        height: 78%;
+        max-height: 320px;
+        pointer-events: none;
+        z-index: 11;
+        border-radius: 12px;
+    }
+    .reticle-corner {
+        position: absolute;
+        width: 28px;
+        height: 28px;
+        border-color: #38bdf8;
+        border-style: solid;
+        border-width: 0;
+    }
+    .reticle-corner.top-left {
+        top: 0;
+        left: 0;
+        border-top-width: 3.5px;
+        border-left-width: 3.5px;
+        border-top-left-radius: 10px;
+    }
+    .reticle-corner.top-right {
+        top: 0;
+        right: 0;
+        border-top-width: 3.5px;
+        border-right-width: 3.5px;
+        border-top-right-radius: 10px;
+    }
+    .reticle-corner.bottom-left {
+        bottom: 0;
+        left: 0;
+        border-bottom-width: 3.5px;
+        border-left-width: 3.5px;
+        border-bottom-left-radius: 10px;
+    }
+    .reticle-corner.bottom-right {
+        bottom: 0;
+        right: 0;
+        border-bottom-width: 3.5px;
+        border-right-width: 3.5px;
+        border-bottom-right-radius: 10px;
+    }
+    .reticle-badge {
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15, 23, 42, 0.85);
+        color: #e2e8f0;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 3px 12px;
+        border-radius: 20px;
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        white-space: nowrap;
+        z-index: 11;
+        pointer-events: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    @media (max-width: 767.98px) {
+        #modal-scan-qr .modal-dialog {
+            margin: 0.35rem auto;
+            max-width: calc(100% - 0.7rem);
+        }
+        #modal-scan-qr .modal-body {
+            padding: 0.65rem !important;
+        }
+        #modal-scan-qr .modal-header {
+            padding: 0.75rem 1rem !important;
+        }
+        #qr-reader-container {
+            min-height: 360px !important;
+            height: 52vh !important;
+            max-height: 520px !important;
+        }
+        #qr-reader video {
+            min-height: 350px !important;
+            height: 52vh !important;
+        }
+        #modal-scan-qr .nav-pills .nav-link {
+            font-size: 0.8rem;
+            padding: 0.45rem 0.5rem;
+        }
     }
 </style>
 
@@ -580,17 +696,17 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body p-4 bg-light">
+            <div class="modal-body p-3 p-md-4 bg-light">
                 <!-- Nav Tabs Scanner Mode -->
                 <ul class="nav nav-pills nav-justified mb-3 bg-white p-1 rounded border shadow-sm" id="pills-scan-tab" role="tablist">
                     <li class="nav-item">
                         <a class="nav-link active font-weight-bold py-2" id="pills-camera-tab" data-toggle="pill" href="#pills-camera" role="tab">
-                            <i class="fas fa-camera mr-1"></i> Kamera Scanner (Live HP / Webcam)
+                            <i class="fas fa-camera mr-1"></i> <span class="d-none d-sm-inline">Kamera </span>Scanner Live (HP)
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link font-weight-bold py-2" id="pills-manual-tab" data-toggle="pill" href="#pills-manual" role="tab">
-                            <i class="fas fa-barcode mr-1"></i> Scanner Fisik (USB/Bluetooth) / Input Manual
+                            <i class="fas fa-barcode mr-1"></i> <span class="d-none d-sm-inline">Scanner </span>Fisik USB / Manual
                         </a>
                     </li>
                 </ul>
@@ -599,24 +715,43 @@
                     <!-- TAB A: KAMERA SCANNER -->
                     <div class="tab-pane fade show active" id="pills-camera" role="tabpanel">
                         <div class="card border-0 shadow-sm mb-3" style="border-radius: 10px;">
-                            <div class="card-body p-3 text-center">
+                            <div class="card-body p-2 p-md-3 text-center">
                                 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap" style="gap: 6px;">
-                                    <div class="small font-weight-bold text-muted" id="cam-status">
+                                    <div class="small font-weight-bold text-muted d-flex align-items-center" id="cam-status">
                                         <i class="fas fa-circle text-warning mr-1"></i> Kamera siap dinyalakan
                                     </div>
-                                    <div class="d-flex align-items-center" style="gap: 6px;">
-                                        <select id="camera-select" class="form-control form-control-sm" style="max-width: 200px; border-radius: 6px; font-size: 0.8rem; display: none;"></select>
-                                        <button type="button" class="btn btn-outline-primary btn-sm px-3" id="btn-toggle-cam" style="border-radius: 6px;">
-                                            <i class="fas fa-video mr-1"></i> <span id="btn-cam-text">Nyalakan Kamera</span>
+                                    <div class="d-flex align-items-center flex-wrap" style="gap: 6px;">
+                                        <button type="button" class="btn btn-warning btn-sm px-2 text-dark font-weight-bold shadow-sm" id="btn-toggle-torch" style="border-radius: 6px; display: none;" title="Nyalakan/Matikan Senter HP">
+                                            <i class="fas fa-lightbulb mr-1"></i> <span id="torch-text">Flash</span>
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-sm px-2 shadow-sm font-weight-bold" id="btn-flip-cam" style="border-radius: 6px;" title="Ganti Kamera Belakang / Depan">
+                                            <i class="fas fa-sync-alt mr-1"></i> <span class="d-none d-sm-inline">Ganti </span>Kamera
+                                        </button>
+                                        <select id="camera-select" class="form-control form-control-sm custom-select" style="max-width: 170px; border-radius: 6px; font-size: 0.8rem; display: none;"></select>
+                                        <button type="button" class="btn btn-primary btn-sm px-3 font-weight-bold shadow-sm" id="btn-toggle-cam" style="border-radius: 6px;">
+                                            <i class="fas fa-video mr-1"></i> <span id="btn-cam-text">Nyalakan</span>
                                         </button>
                                     </div>
                                 </div>
-                                <div id="qr-reader-container" style="position: relative; width: 100%; max-width: 480px; margin: 0 auto; background: #0b132b; border-radius: 10px; overflow: hidden; min-height: 250px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);">
+                                <div id="qr-reader-container">
                                     <div id="scan-laser-line" class="scan-laser" style="display: none;"></div>
-                                    <div id="qr-reader" style="width: 100%;"></div>
+                                    
+                                    <!-- Reticle targeting overlay -->
+                                    <div id="scanner-reticle" class="scanner-reticle-box" style="display: none;">
+                                        <div class="reticle-corner top-left"></div>
+                                        <div class="reticle-corner top-right"></div>
+                                        <div class="reticle-corner bottom-left"></div>
+                                        <div class="reticle-corner bottom-right"></div>
+                                        <div class="reticle-badge">
+                                            <i class="fas fa-crosshairs text-info mr-1"></i> Bidik QR Code BMN
+                                        </div>
+                                    </div>
+
+                                    <div id="qr-reader"></div>
                                     <div id="camera-placeholder" class="text-white text-center p-4">
-                                        <i class="fas fa-camera fa-3x mb-2 text-secondary" style="opacity: 0.6;"></i>
-                                        <p class="small text-muted mb-0">Arahkan kamera ke stiker label QR Code SIMAN pada barang fisik.</p>
+                                        <i class="fas fa-camera fa-3x mb-3 text-info" style="opacity: 0.75;"></i>
+                                        <h6 class="font-weight-bold text-white mb-1">Kamera Belakang Siap Digunakan</h6>
+                                        <p class="small text-muted mb-0" style="max-width: 320px; margin: 0 auto;">Arahkan kamera smartphone ke stiker label QR Code SIMAN BMN pada fisik barang.</p>
                                     </div>
                                 </div>
                             </div>
@@ -958,6 +1093,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Camera scanner variables & state
+    var availableCameras = [];
+    var currentCameraIndex = 0;
+    var isTorchOn = false;
+
+    function isRearCamera(camera) {
+        if (!camera) return false;
+        var lbl = (camera.label || '').toLowerCase();
+        return lbl.includes('back') || lbl.includes('rear') || lbl.includes('belakang') || lbl.includes('environment');
+    }
+
     // Camera scanner start/stop
     function startCamera(cameraId) {
         if (!window.Html5Qrcode) {
@@ -965,9 +1111,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Optimized scan configuration for mobile speed & responsiveness
         var config = {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
+            fps: 24, // Rapid scan framerate
+            qrbox: function(viewfinderWidth, viewfinderHeight) {
+                var minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                var boxEdge = Math.max(260, Math.floor(minEdge * 0.82));
+                return { width: boxEdge, height: boxEdge };
+            },
+            aspectRatio: 1.0,
+            experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true // Native hardware-accelerated scanning on mobile browsers
+            }
         };
 
         if (!html5QrCode) {
@@ -976,58 +1131,239 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var placeholder = document.getElementById('camera-placeholder');
         var laser = document.getElementById('scan-laser-line');
+        var reticle = document.getElementById('scanner-reticle');
         var statusEl = document.getElementById('cam-status');
         var btnText = document.getElementById('btn-cam-text');
 
+        // Priority: if specific cameraId provided, use deviceId; else ALWAYS default to back camera (facingMode: "environment")
         var camConfig = cameraId ? { deviceId: { exact: cameraId } } : { facingMode: "environment" };
+
+        if (statusEl) {
+            statusEl.innerHTML = '<span class="spinner-border spinner-border-sm text-info mr-1"></span> Menghubungkan kamera belakang...';
+        }
+
+        function onScanSuccess(decodedText) {
+            var now = Date.now();
+            if (decodedText === lastScannedCode && (now - lastScannedTime) < scanCooldown) {
+                return; // skip duplicate in cooldown
+            }
+            lastScannedCode = decodedText;
+            lastScannedTime = now;
+
+            // Haptic vibration feedback on smartphone
+            if (navigator.vibrate) {
+                try { navigator.vibrate(80); } catch(e) {}
+            }
+
+            lookupAsset(decodedText);
+        }
+
+        function onScanFailure(errorMessage) {
+            // scanning frame ignored
+        }
+
+        function onCameraStarted() {
+            isCameraRunning = true;
+            if (placeholder) placeholder.style.display = 'none';
+            if (laser) laser.style.display = 'block';
+            if (reticle) reticle.style.display = 'block';
+            if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle text-success mr-1"></i> Kamera Belakang Aktif';
+            if (btnText) btnText.textContent = 'Matikan';
+
+            // Sync dropdown and enumerate cameras
+            checkAndSyncCameras();
+            // Check torch / flash support
+            checkTorchSupport();
+        }
+
+        function onCameraError(err) {
+            console.error('Camera error:', err);
+            isCameraRunning = false;
+            if (statusEl) statusEl.innerHTML = '<i class="fas fa-exclamation-triangle text-danger mr-1"></i> Kamera gagal diakses (' + err + ')';
+            if (btnText) btnText.textContent = 'Nyalakan';
+        }
 
         html5QrCode.start(
             camConfig,
             config,
-            function(decodedText) {
-                var now = Date.now();
-                if (decodedText === lastScannedCode && (now - lastScannedTime) < scanCooldown) {
-                    return; // skip duplicate in cooldown
-                }
-                lastScannedCode = decodedText;
-                lastScannedTime = now;
-                lookupAsset(decodedText);
-            },
-            function(errorMessage) {
-                // scanning frame ignored
-            }
+            onScanSuccess,
+            onScanFailure
         )
         .then(function() {
-            isCameraRunning = true;
-            if (placeholder) placeholder.style.display = 'none';
-            if (laser) laser.style.display = 'block';
-            if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle text-success mr-1"></i> Kamera aktif & memindai...';
-            if (btnText) btnText.textContent = 'Matikan Kamera';
+            onCameraStarted();
         })
         .catch(function(err) {
-            console.error('Camera error:', err);
-            isCameraRunning = false;
-            if (statusEl) statusEl.innerHTML = '<i class="fas fa-exclamation-triangle text-danger mr-1"></i> Kamera gagal diakses (' + err + ')';
-            if (btnText) btnText.textContent = 'Nyalakan Kamera';
+            console.warn('Camera start with config error, attempting fallback:', err);
+            // If deviceId exact constraint failed, fallback to environment facingMode
+            if (camConfig && camConfig.deviceId) {
+                html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
+                .then(function() {
+                    onCameraStarted();
+                })
+                .catch(function(err2) {
+                    onCameraError(err2);
+                });
+            } else {
+                onCameraError(err);
+            }
         });
     }
 
-    function stopCamera() {
+    function stopCamera(callback) {
         if (html5QrCode && isCameraRunning) {
             html5QrCode.stop().then(function() {
                 isCameraRunning = false;
+                isTorchOn = false;
+                var btnTorch = document.getElementById('btn-toggle-torch');
+                if (btnTorch) btnTorch.style.display = 'none';
                 var placeholder = document.getElementById('camera-placeholder');
                 var laser = document.getElementById('scan-laser-line');
+                var reticle = document.getElementById('scanner-reticle');
                 var statusEl = document.getElementById('cam-status');
                 var btnText = document.getElementById('btn-cam-text');
                 if (placeholder) placeholder.style.display = 'block';
                 if (laser) laser.style.display = 'none';
+                if (reticle) reticle.style.display = 'none';
                 if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle text-warning mr-1"></i> Kamera dimatikan';
-                if (btnText) btnText.textContent = 'Nyalakan Kamera';
+                if (btnText) btnText.textContent = 'Nyalakan';
+                if (typeof callback === 'function') callback();
             }).catch(function(err) {
                 console.error('Stop camera error:', err);
+                if (typeof callback === 'function') callback();
             });
+        } else {
+            if (typeof callback === 'function') callback();
         }
+    }
+
+    // Check torch / flash support
+    function checkTorchSupport() {
+        var btnTorch = document.getElementById('btn-toggle-torch');
+        if (!btnTorch) return;
+        try {
+            var videoEl = document.querySelector('#qr-reader video');
+            if (videoEl && videoEl.srcObject) {
+                var track = videoEl.srcObject.getVideoTracks()[0];
+                if (track && track.getCapabilities) {
+                    var capabilities = track.getCapabilities();
+                    if (capabilities.torch) {
+                        btnTorch.style.display = 'inline-block';
+                        btnTorch.className = isTorchOn ? 'btn btn-warning btn-sm px-2 text-dark font-weight-bold shadow-sm' : 'btn btn-outline-warning btn-sm px-2 font-weight-bold shadow-sm';
+                        return;
+                    }
+                }
+            }
+        } catch (e) {}
+        btnTorch.style.display = 'none';
+    }
+
+    // Toggle torch / flash
+    var btnTorch = document.getElementById('btn-toggle-torch');
+    if (btnTorch) {
+        btnTorch.addEventListener('click', function() {
+            try {
+                var videoEl = document.querySelector('#qr-reader video');
+                if (videoEl && videoEl.srcObject) {
+                    var track = videoEl.srcObject.getVideoTracks()[0];
+                    if (track && track.applyConstraints) {
+                        isTorchOn = !isTorchOn;
+                        track.applyConstraints({
+                            advanced: [{ torch: isTorchOn }]
+                        }).then(function() {
+                            var torchText = document.getElementById('torch-text');
+                            if (torchText) torchText.textContent = isTorchOn ? 'Flash On' : 'Flash';
+                            btnTorch.className = isTorchOn ? 'btn btn-warning btn-sm px-2 text-dark font-weight-bold shadow-sm' : 'btn btn-outline-warning btn-sm px-2 font-weight-bold shadow-sm';
+                        }).catch(function(e) {
+                            console.log('Torch error:', e);
+                        });
+                    }
+                }
+            } catch (e) {}
+        });
+    }
+
+    // Check and populate cameras in dropdown
+    function checkAndSyncCameras() {
+        if (!window.Html5Qrcode || !Html5Qrcode.getCameras) return;
+
+        Html5Qrcode.getCameras().then(function(cameras) {
+            if (!cameras || cameras.length === 0) return;
+            availableCameras = cameras;
+
+            var selectCam = document.getElementById('camera-select');
+
+            if (selectCam) {
+                var currentSelected = selectCam.value;
+                selectCam.innerHTML = '';
+
+                var rearIdx = -1;
+                cameras.forEach(function(c, i) {
+                    var isRear = isRearCamera(c);
+                    if (isRear && rearIdx === -1) rearIdx = i;
+
+                    var opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = (isRear ? '📷 Belakang: ' : '📱 Depan: ') + (c.label || ('Kamera ' + (i + 1)));
+                    selectCam.appendChild(opt);
+                });
+
+                if (currentSelected) {
+                    selectCam.value = currentSelected;
+                } else if (rearIdx !== -1) {
+                    selectCam.value = cameras[rearIdx].id;
+                    currentCameraIndex = rearIdx;
+                }
+
+                if (cameras.length > 1) {
+                    selectCam.style.display = 'inline-block';
+                }
+            }
+        }).catch(function(err) {
+            console.log('getCameras error:', err);
+        });
+    }
+
+    // Camera select change listener
+    var selectCamEl = document.getElementById('camera-select');
+    if (selectCamEl) {
+        selectCamEl.addEventListener('change', function() {
+            var chosenId = this.value;
+            if (isCameraRunning) {
+                stopCamera(function() {
+                    startCamera(chosenId);
+                });
+            } else {
+                startCamera(chosenId);
+            }
+        });
+    }
+
+    // Flip camera button (cycle cameras or toggle back/front)
+    var btnFlipCam = document.getElementById('btn-flip-cam');
+    if (btnFlipCam) {
+        btnFlipCam.addEventListener('click', function() {
+            if (availableCameras && availableCameras.length > 1) {
+                currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+                var nextCamera = availableCameras[currentCameraIndex];
+                if (selectCamEl) selectCamEl.value = nextCamera.id;
+                if (isCameraRunning) {
+                    stopCamera(function() {
+                        startCamera(nextCamera.id);
+                    });
+                } else {
+                    startCamera(nextCamera.id);
+                }
+            } else {
+                // If only 1 camera enumerated, restart with environment
+                if (isCameraRunning) {
+                    stopCamera(function() {
+                        startCamera(null);
+                    });
+                } else {
+                    startCamera(null);
+                }
+            }
+        });
     }
 
     // Toggle camera button
@@ -1037,8 +1373,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isCameraRunning) {
                 stopCamera();
             } else {
-                var selectCam = document.getElementById('camera-select');
-                var chosenId = (selectCam && selectCam.value) ? selectCam.value : null;
+                var chosenId = (selectCamEl && selectCamEl.value) ? selectCamEl.value : null;
                 startCamera(chosenId);
             }
         });
@@ -1046,23 +1381,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Modal lifecycle
     $('#modal-scan-qr').on('shown.bs.modal', function() {
-        // Enumerate cameras if possible
+        // Automatically start rear camera by default
         if (window.Html5Qrcode && Html5Qrcode.getCameras) {
             Html5Qrcode.getCameras().then(function(cameras) {
-                var selectCam = document.getElementById('camera-select');
-                if (cameras && cameras.length > 0 && selectCam) {
-                    selectCam.innerHTML = '';
-                    cameras.forEach(function(c, i) {
-                        var opt = document.createElement('option');
-                        opt.value = c.id;
-                        opt.textContent = c.label || ('Kamera ' + (i + 1));
-                        selectCam.appendChild(opt);
-                    });
-                    if (cameras.length > 1) {
-                        selectCam.style.display = 'inline-block';
+                if (cameras && cameras.length > 0) {
+                    availableCameras = cameras;
+                    var rearCam = cameras.find(isRearCamera);
+                    if (rearCam) {
+                        currentCameraIndex = cameras.indexOf(rearCam);
+                        startCamera(rearCam.id);
+                    } else {
+                        // Pass null to let startCamera request facingMode: "environment"
+                        startCamera(null);
                     }
+                } else {
+                    startCamera(null);
                 }
-                startCamera(selectCam && selectCam.value ? selectCam.value : null);
             }).catch(function() {
                 startCamera(null);
             });
