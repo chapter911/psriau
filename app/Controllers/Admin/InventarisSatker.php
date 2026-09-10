@@ -227,7 +227,7 @@ class InventarisSatker extends BaseController
             'nama_barang'     => trim((string) $this->request->getPost('nama_barang')),
             'kategori'        => trim((string) $this->request->getPost('kategori')),
             'merk_tipe'       => trim((string) $this->request->getPost('merk_tipe')) ?: null,
-            'jumlah'          => (int) $this->request->getPost('jumlah'),
+            'jumlah'          => 1, // Standar BMN: 1 Kode Barang + 1 NUP = 1 Unit Fisik
             'satuan'          => trim((string) $this->request->getPost('satuan')),
             'kondisi'         => trim((string) $this->request->getPost('kondisi')),
             'peruntukan'      => $peruntukan,
@@ -296,7 +296,7 @@ class InventarisSatker extends BaseController
             'nama_barang'     => trim((string) $this->request->getPost('nama_barang')),
             'kategori'        => trim((string) $this->request->getPost('kategori')),
             'merk_tipe'       => trim((string) $this->request->getPost('merk_tipe')) ?: null,
-            'jumlah'          => (int) $this->request->getPost('jumlah'),
+            'jumlah'          => 1, // Standar BMN: 1 Kode Barang + 1 NUP = 1 Unit Fisik
             'satuan'          => trim((string) $this->request->getPost('satuan')),
             'kondisi'         => trim((string) $this->request->getPost('kondisi')),
             'peruntukan'      => $peruntukan,
@@ -560,7 +560,7 @@ class InventarisSatker extends BaseController
                         $detected['kondisi'] = $letter;
                     } elseif (preg_match('/lokasi\s*ruang|lokasi|ruangan/i', $val)) {
                         $detected['lokasi_ruangan'] = $letter;
-                    } elseif (preg_match('/jumlah|kuantum|qty/i', $val)) {
+                    } elseif (preg_match('/^(jumlah|kuantum|qty)(\s*barang)?$/i', $val) && ! preg_match('/foto|lantai|kamar|orang|pintu/i', $val)) {
                         $detected['jumlah'] = $letter;
                     } elseif (preg_match('/satuan/i', $val)) {
                         $detected['satuan'] = $letter;
@@ -758,7 +758,7 @@ class InventarisSatker extends BaseController
                     if ($tipe !== '') $updateData['tipe'] = $tipe;
                     if ($merkTipe !== '') $updateData['merk_tipe'] = $merkTipe;
                     if ($satuanIn !== '') $updateData['satuan'] = $satuanIn;
-                    if ($jumlahIn > 0) $updateData['jumlah'] = $jumlahIn;
+                    $updateData['jumlah'] = 1; // Standar BMN: 1 Kode Barang + 1 NUP = 1 Unit Fisik
                     if ($noPsp !== '') $updateData['no_psp'] = $noPsp;
                     if ($tahunPerolehan !== null) $updateData['tahun_perolehan'] = $tahunPerolehan;
                     if ($tglPerolehan !== null) $updateData['tgl_perolehan'] = $tglPerolehan;
@@ -802,7 +802,7 @@ class InventarisSatker extends BaseController
                         'merk'            => $merk ?: null,
                         'tipe'            => $tipe ?: null,
                         'merk_tipe'       => $merkTipe ?: null,
-                        'jumlah'          => ($jumlahIn > 0) ? $jumlahIn : 1,
+                        'jumlah'          => 1, // Standar BMN: 1 Kode Barang + 1 NUP = 1 Unit Fisik
                         'satuan'          => $satuanIn ?: 'Buah',
                         'kondisi'         => $kondisi,
                         'lokasi_ruangan'  => $lokasiRuang ?: 'Ruang Kantor Satker',

@@ -487,8 +487,9 @@
                             <input type="text" name="merk_tipe" class="form-control" placeholder="Contoh: Asus Zenbook, Toyota Hilux, dll." style="border-radius: 6px;">
                         </div>
                         <div class="col-md-4 form-group">
-                            <label class="font-weight-bold small text-dark">Jumlah <span class="text-danger">*</span></label>
-                            <input type="number" name="jumlah" class="form-control" value="1" min="1" required style="border-radius: 6px;">
+                            <label class="font-weight-bold small text-dark">Jumlah (Unit BMN) <span class="text-danger">*</span></label>
+                            <input type="number" name="jumlah" class="form-control" value="1" min="1" max="1" readonly style="border-radius: 6px; background-color: #f8fafc;">
+                            <small class="text-muted" style="font-size: 0.72rem;"><i class="fas fa-shield-alt mr-1 text-primary"></i>1 Kode & NUP = Tepat 1 Unit Fisik</small>
                         </div>
                         <div class="col-md-4 form-group">
                             <label class="font-weight-bold small text-dark">Satuan <span class="text-danger">*</span></label>
@@ -609,8 +610,9 @@
                             <input type="text" id="edit-merk" name="merk_tipe" class="form-control" style="border-radius: 6px;">
                         </div>
                         <div class="col-md-4 form-group">
-                            <label class="font-weight-bold small text-dark">Jumlah <span class="text-danger">*</span></label>
-                            <input type="number" id="edit-jumlah" name="jumlah" class="form-control" min="1" required style="border-radius: 6px;">
+                            <label class="font-weight-bold small text-dark">Jumlah (Unit BMN) <span class="text-danger">*</span></label>
+                            <input type="number" id="edit-jumlah" name="jumlah" class="form-control" value="1" min="1" max="1" readonly style="border-radius: 6px; background-color: #f8fafc;">
+                            <small class="text-muted" style="font-size: 0.72rem;"><i class="fas fa-shield-alt mr-1 text-primary"></i>1 Kode & NUP = Tepat 1 Unit Fisik</small>
                         </div>
                         <div class="col-md-4 form-group">
                             <label class="font-weight-bold small text-dark">Satuan <span class="text-danger">*</span></label>
@@ -979,7 +981,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('edit-nama').value = btn.getAttribute('data-nama') || '';
         document.getElementById('edit-kategori').value = btn.getAttribute('data-kategori') || '';
         document.getElementById('edit-merk').value = btn.getAttribute('data-merk') || '';
-        document.getElementById('edit-jumlah').value = btn.getAttribute('data-jumlah') || '1';
+        document.getElementById('edit-jumlah').value = '1';
         document.getElementById('edit-kondisi').value = btn.getAttribute('data-kondisi') || 'baik';
         document.getElementById('edit-tahun').value = btn.getAttribute('data-tahun') || '';
         document.getElementById('edit-keterangan').value = btn.getAttribute('data-keterangan') || '';

@@ -28,7 +28,7 @@ class InventarisDbr extends BaseController
 
         // Query rooms with item & unit count
         $ruanganList = $db->table('mst_ruangan r')
-            ->select('r.*, COUNT(s.id) AS total_aset, COALESCE(SUM(s.jumlah), 0) AS total_unit')
+            ->select('r.*, COUNT(s.id) AS total_aset, COUNT(DISTINCT CONCAT(s.kode_barang, "___", s.nup)) AS total_unit')
             ->join('trn_inventaris_satker s', 's.ruangan_id = r.id', 'left')
             ->groupBy('r.id')
             ->orderBy('r.kode_ruangan', 'ASC')
@@ -239,7 +239,7 @@ class InventarisDbr extends BaseController
 
         // 1. Grouped items for DBR view (aggregating identical kode_barang, nama_barang, merk_tipe)
         $dbrItems = $db->table('trn_inventaris_satker')
-            ->select('kode_barang, nama_barang, merk_tipe, COUNT(id) AS nup_count, SUM(jumlah) AS total_jumlah, satuan, MIN(kondisi) AS sample_kondisi, GROUP_CONCAT(nup ORDER BY CAST(NULLIF(nup, "") AS UNSIGNED) ASC SEPARATOR ", ") AS nup_list, MIN(tahun_perolehan) AS tahun_perolehan, SUM(nilai_perolehan) AS total_nilai, MAX(no_psp) AS no_psp, MAX(status_bmn) AS status_bmn')
+            ->select('kode_barang, nama_barang, merk_tipe, COUNT(DISTINCT CONCAT(kode_barang, "___", nup)) AS nup_count, COUNT(DISTINCT CONCAT(kode_barang, "___", nup)) AS total_jumlah, satuan, MIN(kondisi) AS sample_kondisi, GROUP_CONCAT(DISTINCT nup ORDER BY CAST(NULLIF(nup, "") AS UNSIGNED) ASC SEPARATOR ", ") AS nup_list, MIN(tahun_perolehan) AS tahun_perolehan, SUM(nilai_perolehan) AS total_nilai, MAX(no_psp) AS no_psp, MAX(status_bmn) AS status_bmn')
             ->where('ruangan_id', $ruanganId)
             ->groupBy('kode_barang, nama_barang, merk_tipe, satuan')
             ->orderBy('kode_barang', 'ASC')
@@ -560,11 +560,11 @@ class InventarisDbr extends BaseController
         $rawItems = $db->table('trn_inventaris_satker')
             ->select('kode_barang, nama_barang, merk_tipe, satuan, kondisi,
                       MIN(tahun_perolehan) AS tahun_perolehan,
-                      COUNT(id) AS nup_count,
-                      SUM(jumlah) AS total_jumlah,
+                      COUNT(DISTINCT CONCAT(kode_barang, "___", nup)) AS nup_count,
+                      COUNT(DISTINCT CONCAT(kode_barang, "___", nup)) AS total_jumlah,
                       MIN(nup) AS min_nup,
                       MAX(nup) AS max_nup,
-                      GROUP_CONCAT(nup ORDER BY CAST(NULLIF(nup, "") AS UNSIGNED) ASC SEPARATOR ", ") AS daftar_nup,
+                      GROUP_CONCAT(DISTINCT nup ORDER BY CAST(NULLIF(nup, "") AS UNSIGNED) ASC SEPARATOR ", ") AS daftar_nup,
                       SUM(nilai_perolehan) AS total_nilai,
                       MAX(no_psp) AS no_psp,
                       MAX(status_bmn) AS status_bmn')
@@ -699,11 +699,11 @@ class InventarisDbr extends BaseController
         $items = $db->table('trn_inventaris_satker')
             ->select('kode_barang, nama_barang, merk_tipe, satuan, kondisi,
                       MIN(tahun_perolehan) AS tahun_perolehan,
-                      COUNT(id) AS nup_count,
-                      SUM(jumlah) AS total_jumlah,
+                      COUNT(DISTINCT CONCAT(kode_barang, "___", nup)) AS nup_count,
+                      COUNT(DISTINCT CONCAT(kode_barang, "___", nup)) AS total_jumlah,
                       MIN(nup) AS min_nup,
                       MAX(nup) AS max_nup,
-                      GROUP_CONCAT(nup ORDER BY CAST(NULLIF(nup, "") AS UNSIGNED) ASC SEPARATOR ", ") AS daftar_nup,
+                      GROUP_CONCAT(DISTINCT nup ORDER BY CAST(NULLIF(nup, "") AS UNSIGNED) ASC SEPARATOR ", ") AS daftar_nup,
                       SUM(nilai_perolehan) AS total_nilai,
                       MAX(no_psp) AS no_psp,
                       MAX(status_bmn) AS status_bmn')

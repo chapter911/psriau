@@ -419,12 +419,14 @@ graph TD
     A --> B3["3. Inventaris Sekolah (/admin/inventaris/sekolah)"]
 
     B1 --> C1["Klasifikasi Peruntukan Aset: Kantor (Satker) &amp; Mobiler (Sekolah)"]
-    B1 --> C2["Update Peruntukan Massal (Berdasarkan Kode Barang &amp; Rentang NUP)"]
-    B1 --> C3["Import File SIMAN / Excel (Upsert: Kode Barang &amp; NUP Sama = Update, Beda = Insert) &amp; Export Excel"]
+    B1 --> C2["Standar BMN: 1 Kode Barang + 1 NUP = Tepat 1 Unit Fisik (Validasi Ketat Form &amp; Import)"]
+    B1 --> C3["Update Peruntukan Massal (Berdasarkan Kode Barang &amp; Rentang NUP)"]
+    B1 --> C4["Import File SIMAN / Excel (Upsert Cerdas: Kode &amp; NUP Sama = Update, Beda = Insert) &amp; Export Excel"]
 
     B2 --> D1["Kelola Master Ruangan Kantor Satker &amp; Penanggung Jawab"]
-    B2 --> D2["Alokasi Aset Kantor ke Ruangan (DBR) via Scan QR / Pencarian Manual"]
-    B2 --> D3["Cetak PDF DBR Resmi (A4 Portrait) &amp; Export Excel Ruangan"]
+    B2 --> D2["Kalkulasi Unit DBR Berbasis NUP Unik (COUNT DISTINCT nup, Bebas Anomali Duplikasi)"]
+    B2 --> D3["Alokasi Aset Kantor ke Ruangan (DBR) via Scan QR / Pencarian Manual"]
+    B2 --> D4["Cetak PDF DBR Resmi (A4 Portrait) &amp; Export Excel Ruangan"]
 
     B3 --> E1["Monitoring Sarpras &amp; Distribusi Mobiler Sekolah Binaan"]
     B3 --> E2["Pemetaan Wilayah Kabupaten / Kecamatan / Paket Proyek"]
@@ -675,9 +677,10 @@ graph TD
                                         </ul>
                                     </li>
                                     <li><strong>Bilah Filter Cepat Peruntukan:</strong> Di atas daftar data tersedia tombol filter instan (<em>Semua Barang</em>, <em>Kantor / Satker</em>, dan <em>Mobiler / Sekolah</em>) lengkap dengan penghitung total unit terkini.</li>
+                                    <li><strong>Standar Kuantitas BMN (1 Kode Barang + 1 NUP = 1 Unit Fisik):</strong> Sesuai dengan kaidah penatausahaan BMN Kementerian Keuangan (SIMAN DJKN / SAKTI), setiap 1 baris yang memiliki pasangan Kode Barang dan NUP (Nomor Urut Pendaftaran) secara fisik selalu bernilai tepat 1 Unit. Pada formulir Tambah maupun Ubah Aset, field <em>Jumlah</em> dikunci otomatis menjadi 1 Unit untuk menjaga integritas data register fisik BMN.</li>
                                     <li><strong>⚡ Update Peruntukan Massal (Rentang NUP):</strong> Klik tombol <em>Update Peruntukan Massal (NUP)</em> untuk mengubah status peruntukan banyak barang sekaligus dalam 1 kali klik. Cukup pilih Kode Barang, sistem otomatis mendeteksi rentang NUP yang ada, lalu masukkan batas <em>NUP Awal</em> hingga <em>NUP Akhir</em> dan pilih target peruntukan (Kantor/Mobiler).</li>
                                     <li><strong>Pencatatan Aset, Kode Register Unik &amp; Dropdown Satuan/Ruangan:</strong> Formulir penambahan maupun pengubahan data inventaris dilengkapi: (1) <em>Kode Register</em> fisik SIMAN BMN dengan validasi keunikan ketat di database dan form (namun tetap opsional/boleh kosong jika belum memiliki stiker QR SIMAN), serta tombol salin instan di modal ubah; (2) Dropdown <em>Satuan</em> berbasis Select2 yang menyediakan opsi standar dan mendukung pengetikan satuan baru secara manual; (3) Dropdown <em>Lokasi Ruangan</em> cerdas yang merangkum seluruh ruangan kantor Satker sekaligus mendukung pengetikan nama ruangan baru; (4) Pilihan radio peruntukan aset.</li>
-                                    <li><strong>Import SIMAN &amp; Export Excel (Loading Progress Real-Time &amp; Mekanisme Upsert):</strong> Unggah file Excel dari SIMAN / SAKTI BMN maupun format spreadsheet lainnya via modal <em>Import SIMAN</em>. Dilengkapi <strong>Loading Progress Real-Time</strong> (progress bar persentase 0–100%, ukuran upload file MB, pengukur waktu berjalan/timer, serta pelacak 5 tahapan proses dari pembacaan lembar data hingga penyimpanan database). Sistem secara cerdas melakukan pencocokan: <strong>jika Kode Barang dan NUP sama persis dengan data yang sudah ada, sistem akan memperbarui (update)</strong> data aset tersebut tanpa mereset status ruangan maupun peruntukan yang telah disetel; <strong>jika Kode Barang atau NUP berbeda/baru, sistem akan menambahkan (insert)</strong> sebagai data aset baru. Setelah proses selesai, kartu ringkasan hasil impor (total diproses, aset baru, dan aset di-update) akan ditampilkan secara transparan. Anda juga dapat mengunduh seluruh data ber-peruntukan melalui tombol <strong>Export Excel</strong>.</li>
+                                    <li><strong>Import SIMAN &amp; Export Excel (Loading Progress Real-Time &amp; Mekanisme Upsert):</strong> Unggah file Excel dari SIMAN / SAKTI BMN maupun format spreadsheet lainnya via modal <em>Import SIMAN</em>. Dilengkapi <strong>Loading Progress Real-Time</strong> (progress bar persentase 0–100%, ukuran upload file MB, pengukur waktu berjalan/timer, serta pelacak 5 tahapan proses dari pembacaan lembar data hingga penyimpanan database). Sistem secara cerdas melakukan pemetaan kolom secara presisi (mengecualikan kolom 'Jumlah Foto' atau 'Jumlah Lantai' dari kuantitas aset) dan menjalankan pencocokan: <strong>jika Kode Barang dan NUP sama persis dengan data yang sudah ada, sistem akan memperbarui (update)</strong> data aset tersebut tanpa mereset status ruangan maupun peruntukan yang telah disetel; <strong>jika Kode Barang atau NUP berbeda/baru, sistem akan menambahkan (insert)</strong> sebagai data aset baru dengan kuantitas baku 1 unit. Setelah proses selesai, kartu ringkasan hasil impor (total diproses, aset baru, dan aset di-update) akan ditampilkan secara transparan. Anda juga dapat mengunduh seluruh data ber-peruntukan melalui tombol <strong>Export Excel</strong>.</li>
                                 </ol>
                             </div>
                         </div>
@@ -690,6 +693,7 @@ graph TD
                                 <ol class="pl-3 small mb-0">
                                     <li>Masuk ke menu <strong>Inventarisasi &gt; Inventaris Kantor</strong>. Menampilkan seluruh ruangan kerja kantor Satker PPS Riau beserta penanggung jawab ruangan.</li>
                                     <li>Klik tombol <strong>Kelola / Detail Barang</strong> pada ruangan untuk membuka penatausahaan aset. Tampilan detail dilengkapi 4 ubin KPI terstruktur (Penanggung Jawab, Lokasi Ruangan, Total Unit Fisik, dan Nilai Perolehan Total Aset BMN) serta navigasi tab rapi antara <em>Rekapitulasi DBR (Format Resmi)</em> dan <em>Daftar Detail Fisik Barang</em>.</li>
+                                    <li><strong>Perhitungan Jumlah Unit DBR Berbasis NUP Unik:</strong> Pada rekapitulasi DBR, kolom <em>JUMLAH</em> dihitung murni berdasarkan banyaknya pasangan Kode Barang dan NUP unik (<code>COUNT(DISTINCT nup)</code>). Kode barang dan NUP yang sama tidak akan pernah dihitung lebih dari 1 unit, sehingga rekapitulasi DBR di layar, cetak PDF, dan export Excel selalu akurat mencerminkan unit fisik riil.</li>
                                     <li><strong>Alokasi Khusus Aset Kantor:</strong> Sistem secara otomatis menyaring aset unallocated agar hanya barang ber-peruntukan <strong>Kantor</strong> yang dialokasikan ke ruangan kantor Satker (aset mobiler sekolah disaring agar tidak tercampur).</li>
                                     <li><strong>Alokasikan Barang (Scan QR Code &amp; Alokasi Manual):</strong>
                                         <ul class="pl-3 mt-1">
