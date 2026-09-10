@@ -423,7 +423,7 @@ graph TD
     B1 --> C3["Update Peruntukan Massal (Pilihan Seluruh NUP / Sebagian Rentang NUP Terisolasi per Kode, Nama &amp; Merk)"]
     B1 --> C4["Import File SIMAN / Excel (Upsert Cerdas: Kode &amp; NUP Sama = Update, Beda = Insert) &amp; Export Excel"]
 
-    B2 --> D1["Kelola Master Ruangan Kantor Satker &amp; Penanggung Jawab"]
+    B2 --> D1["Kelola Master Ruangan Kantor Satker &amp; Penanggung Jawab (Fleksibel: Opsi Kosongkan / Belum Ditentukan)"]
     B2 --> D2["Kalkulasi Unit DBR Berbasis NUP Unik (COUNT DISTINCT nup, Bebas Anomali Duplikasi)"]
     B2 --> D3["Alokasi Aset Kantor ke Ruangan (DBR) via Scan QR / Pencarian Manual"]
     B2 --> D4["Cetak Dokumen DBR PDF (Per Ruangan / Seluruh Ruangan Detail NUP A4 Portrait) &amp; Export Excel"]
@@ -692,7 +692,7 @@ graph TD
                                 <h6 class="font-weight-bold text-success"><i class="fas fa-door-open mr-1"></i> 2. Inventaris Kantor (DBR)</h6>
                                 <p class="small text-muted mb-2"><code>/admin/inventaris/dbr</code> (Menu Lv2 Inventarisasi)</p>
                                 <ol class="pl-3 small mb-0">
-                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Inventaris Kantor</strong>. Menampilkan seluruh ruangan kerja kantor Satker PPS Riau beserta penanggung jawab ruangan. Dilengkapi fitur <strong>Tambah Ruangan</strong>, <strong>Ubah Data Ruangan</strong> (terintegrasi otomatis dengan master pegawai, kode, nama, lantai, dan keterangan), serta <strong>Hapus Ruangan</strong>.</li>
+                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Inventaris Kantor</strong>. Menampilkan seluruh ruangan kerja kantor Satker PPS Riau beserta penanggung jawab ruangan. Dilengkapi fitur <strong>Tambah Ruangan</strong>, <strong>Ubah Data Ruangan</strong> (terintegrasi otomatis dengan master pegawai, kode, nama, lantai, keterangan, serta tombol &amp; opsi fleksibel <em>Kosongkan / Belum Ditentukan</em> jika penanggung jawab ruangan belum ditetapkan), serta <strong>Hapus Ruangan</strong>.</li>
                                     <li>Klik tombol <strong>Kelola / Detail Barang</strong> pada ruangan untuk membuka penatausahaan aset. Tampilan detail dilengkapi 4 ubin KPI terstruktur (Penanggung Jawab, Lokasi Ruangan, Total Unit Fisik, dan Nilai Perolehan Total Aset BMN) serta navigasi tab rapi antara <em>Rekapitulasi DBR (Format Resmi)</em> dan <em>Daftar Detail Fisik Barang</em>.</li>
                                     <li><strong>Perhitungan Jumlah Unit DBR Berbasis NUP Unik:</strong> Pada rekapitulasi DBR, kolom <em>JUMLAH</em> dihitung murni berdasarkan banyaknya pasangan Kode Barang dan NUP unik (<code>COUNT(DISTINCT nup)</code>). Kode barang dan NUP yang sama tidak akan pernah dihitung lebih dari 1 unit, sehingga rekapitulasi DBR di layar, cetak PDF, dan export Excel selalu akurat mencerminkan unit fisik riil.</li>
                                     <li><strong>Alokasi Khusus Aset Kantor:</strong> Sistem secara otomatis menyaring aset unallocated agar hanya barang ber-peruntukan <strong>Kantor</strong> yang dialokasikan ke ruangan kantor Satker (aset mobiler sekolah disaring agar tidak tercampur).</li>

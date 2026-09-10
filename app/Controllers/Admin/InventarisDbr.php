@@ -98,16 +98,31 @@ class InventarisDbr extends BaseController
             return redirect()->to('/admin/inventaris/dbr')->withInput()->with('error', 'Kode dan Nama Ruangan wajib diisi.');
         }
 
-        $pegawaiId = (int) $this->request->getPost('pegawai_id') ?: null;
+        // Resolusi Penanggung Jawab Ruangan (Dapat Dikosongkan jika Belum Ditentukan)
+        $pegawaiIdPost = $this->request->getPost('pegawai_id');
         $pjNama = trim((string) $this->request->getPost('penanggung_jawab_nama'));
         $pjNip  = trim((string) $this->request->getPost('penanggung_jawab_nip'));
 
-        $db = db_connect();
-        if ($pegawaiId !== null && $pegawaiId > 0 && $db->tableExists('mst_pegawai')) {
-            $peg = $db->table('mst_pegawai')->where('id', $pegawaiId)->get()->getRowArray();
-            if (is_array($peg)) {
-                $pjNama = $peg['nama'] ?? $pjNama;
-                $pjNip  = $peg['nip'] ?? $pjNip;
+        if ($pjNama === '' || $pegawaiIdPost === '' || $pegawaiIdPost === null || $pegawaiIdPost === '0') {
+            if ($pjNama === '') {
+                // Pengguna mengosongkan penanggung jawab (Belum Ditentukan)
+                $pegawaiId = null;
+                $pjNama    = null;
+                $pjNip     = null;
+            } else {
+                // Penanggung jawab manual non-pegawai
+                $pegawaiId = null;
+                $pjNip     = $pjNip ?: null;
+            }
+        } else {
+            $pegawaiId = (int) $pegawaiIdPost ?: null;
+            $db = db_connect();
+            if ($pegawaiId !== null && $pegawaiId > 0 && $db->tableExists('mst_pegawai')) {
+                $peg = $db->table('mst_pegawai')->where('id', $pegawaiId)->get()->getRowArray();
+                if (is_array($peg)) {
+                    $pjNama = $pjNama ?: ($peg['nama'] ?? null);
+                    $pjNip  = $pjNip ?: ($peg['nip'] ?? null);
+                }
             }
         }
 
@@ -155,16 +170,31 @@ class InventarisDbr extends BaseController
             return redirect()->to('/admin/inventaris/dbr')->withInput()->with('error', 'Kode dan Nama Ruangan wajib diisi.');
         }
 
-        $pegawaiId = (int) $this->request->getPost('pegawai_id') ?: null;
+        // Resolusi Penanggung Jawab Ruangan (Dapat Dikosongkan jika Belum Ditentukan)
+        $pegawaiIdPost = $this->request->getPost('pegawai_id');
         $pjNama = trim((string) $this->request->getPost('penanggung_jawab_nama'));
         $pjNip  = trim((string) $this->request->getPost('penanggung_jawab_nip'));
 
-        $db = db_connect();
-        if ($pegawaiId !== null && $pegawaiId > 0 && $db->tableExists('mst_pegawai')) {
-            $peg = $db->table('mst_pegawai')->where('id', $pegawaiId)->get()->getRowArray();
-            if (is_array($peg)) {
-                $pjNama = $peg['nama'] ?? $pjNama;
-                $pjNip  = $peg['nip'] ?? $pjNip;
+        if ($pjNama === '' || $pegawaiIdPost === '' || $pegawaiIdPost === null || $pegawaiIdPost === '0') {
+            if ($pjNama === '') {
+                // Pengguna mengosongkan penanggung jawab (Belum Ditentukan)
+                $pegawaiId = null;
+                $pjNama    = null;
+                $pjNip     = null;
+            } else {
+                // Penanggung jawab manual non-pegawai
+                $pegawaiId = null;
+                $pjNip     = $pjNip ?: null;
+            }
+        } else {
+            $pegawaiId = (int) $pegawaiIdPost ?: null;
+            $db = db_connect();
+            if ($pegawaiId !== null && $pegawaiId > 0 && $db->tableExists('mst_pegawai')) {
+                $peg = $db->table('mst_pegawai')->where('id', $pegawaiId)->get()->getRowArray();
+                if (is_array($peg)) {
+                    $pjNama = $pjNama ?: ($peg['nama'] ?? null);
+                    $pjNip  = $pjNip ?: ($peg['nip'] ?? null);
+                }
             }
         }
 
@@ -175,8 +205,8 @@ class InventarisDbr extends BaseController
             'kode_ruangan'          => trim((string) $this->request->getPost('kode_ruangan')),
             'nama_ruangan'          => $namaRuanganBaru,
             'pegawai_id'            => $pegawaiId,
-            'penanggung_jawab_nama' => $pjNama ?: null,
-            'penanggung_jawab_nip'  => $pjNip ?: null,
+            'penanggung_jawab_nama' => $pjNama,
+            'penanggung_jawab_nip'  => $pjNip,
             'lokasi_lantai'         => trim((string) $this->request->getPost('lokasi_lantai')) ?: null,
             'keterangan'            => trim((string) $this->request->getPost('keterangan')) ?: null,
             'updated_by'            => $userId ?: null,

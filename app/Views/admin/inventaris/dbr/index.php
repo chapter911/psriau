@@ -189,15 +189,21 @@
                         <input type="text" name="nama_ruangan" class="form-control" placeholder="Contoh: RUANG KASATKER, RUANG TATA USAHA" required style="border-radius: 6px;">
                     </div>
                     <div class="form-group">
-                        <label class="font-weight-bold small text-dark">Pilih Pegawai Penanggung Jawab Ruangan</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="font-weight-bold small text-dark mb-0">Pilih Pegawai Penanggung Jawab Ruangan</label>
+                            <button type="button" class="btn btn-link btn-xs text-danger p-0" id="btn-clear-tambah-pj" style="font-size: 0.75rem; text-decoration: none;">
+                                <i class="fas fa-times-circle mr-1"></i> Kosongkan (Belum Ditentukan)
+                            </button>
+                        </div>
                         <select name="pegawai_id" id="tambah-pegawai-select" class="form-control" style="border-radius: 6px;">
-                            <option value="">-- Pilih dari Master Pegawai (Opsional) --</option>
+                            <option value="">-- Belum Ditentukan (Kosongkan) --</option>
                             <?php foreach ($pegawaiList as $p): ?>
                                 <option value="<?= esc($p['id']); ?>" data-nama="<?= esc($p['nama']); ?>" data-nip="<?= esc($p['nip']); ?>">
                                     <?= esc($p['nama']); ?> (NIP. <?= esc($p['nip'] ?: '-'); ?>)
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <small class="text-muted" style="font-size: 0.72rem;">Opsional. Jika penanggung jawab belum ditentukan, biarkan kosong.</small>
                     </div>
                     <div class="row">
                         <div class="col-md-6 form-group">
@@ -255,15 +261,21 @@
                         <input type="text" id="edit-nama" name="nama_ruangan" class="form-control" required style="border-radius: 6px;">
                     </div>
                     <div class="form-group">
-                        <label class="font-weight-bold small text-dark">Pilih Pegawai Penanggung Jawab Ruangan</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="font-weight-bold small text-dark mb-0">Pilih Pegawai Penanggung Jawab Ruangan</label>
+                            <button type="button" class="btn btn-outline-danger btn-xs px-2 py-0" id="btn-clear-edit-pj" style="font-size: 0.75rem; border-radius: 4px;" title="Hapus penanggung jawab ruangan jika belum ditentukan">
+                                <i class="fas fa-user-slash mr-1"></i> Kosongkan / Belum Ditentukan
+                            </button>
+                        </div>
                         <select name="pegawai_id" id="edit-pegawai-select" class="form-control" style="border-radius: 6px;">
-                            <option value="">-- Pilih dari Master Pegawai (Opsional) --</option>
+                            <option value="">-- Belum Ditentukan (Kosongkan Penanggung Jawab) --</option>
                             <?php foreach ($pegawaiList as $p): ?>
                                 <option value="<?= esc($p['id']); ?>" data-nama="<?= esc($p['nama']); ?>" data-nip="<?= esc($p['nip']); ?>">
                                     <?= esc($p['nama']); ?> (NIP. <?= esc($p['nip'] ?: '-'); ?>)
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <small class="text-muted" style="font-size: 0.72rem;">Pilih dari pegawai, atau pilih "Belum Ditentukan" / klik tombol merah untuk mengosongkan.</small>
                     </div>
                     <div class="row">
                         <div class="col-md-6 form-group">
@@ -335,9 +347,23 @@ document.addEventListener('DOMContentLoaded', function() {
     var selectTambah = document.getElementById('tambah-pegawai-select');
     if (selectTambah) {
         selectTambah.addEventListener('change', function() {
-            var opt = this.options[this.selectedIndex];
-            document.getElementById('tambah-pj-nama').value = opt.getAttribute('data-nama') || '';
-            document.getElementById('tambah-pj-nip').value = opt.getAttribute('data-nip') || '';
+            if (this.value === '') {
+                document.getElementById('tambah-pj-nama').value = '';
+                document.getElementById('tambah-pj-nip').value = '';
+            } else {
+                var opt = this.options[this.selectedIndex];
+                document.getElementById('tambah-pj-nama').value = opt.getAttribute('data-nama') || '';
+                document.getElementById('tambah-pj-nip').value = opt.getAttribute('data-nip') || '';
+            }
+        });
+    }
+
+    var btnClearTambah = document.getElementById('btn-clear-tambah-pj');
+    if (btnClearTambah) {
+        btnClearTambah.addEventListener('click', function() {
+            if (selectTambah) selectTambah.value = '';
+            document.getElementById('tambah-pj-nama').value = '';
+            document.getElementById('tambah-pj-nip').value = '';
         });
     }
 
@@ -345,9 +371,34 @@ document.addEventListener('DOMContentLoaded', function() {
     var selectEdit = document.getElementById('edit-pegawai-select');
     if (selectEdit) {
         selectEdit.addEventListener('change', function() {
-            var opt = this.options[this.selectedIndex];
-            document.getElementById('edit-pj-nama').value = opt.getAttribute('data-nama') || '';
-            document.getElementById('edit-pj-nip').value = opt.getAttribute('data-nip') || '';
+            if (this.value === '') {
+                document.getElementById('edit-pj-nama').value = '';
+                document.getElementById('edit-pj-nip').value = '';
+            } else {
+                var opt = this.options[this.selectedIndex];
+                document.getElementById('edit-pj-nama').value = opt.getAttribute('data-nama') || '';
+                document.getElementById('edit-pj-nip').value = opt.getAttribute('data-nip') || '';
+            }
+        });
+    }
+
+    var btnClearEdit = document.getElementById('btn-clear-edit-pj');
+    if (btnClearEdit) {
+        btnClearEdit.addEventListener('click', function() {
+            if (selectEdit) selectEdit.value = '';
+            document.getElementById('edit-pj-nama').value = '';
+            document.getElementById('edit-pj-nip').value = '';
+        });
+    }
+
+    // Jika pengguna menghapus teks Nama Penanggung Jawab langsung, reset dropdown dan NIP
+    var editPjNamaInput = document.getElementById('edit-pj-nama');
+    if (editPjNamaInput) {
+        editPjNamaInput.addEventListener('input', function() {
+            if (this.value.trim() === '') {
+                if (selectEdit) selectEdit.value = '';
+                document.getElementById('edit-pj-nip').value = '';
+            }
         });
     }
 

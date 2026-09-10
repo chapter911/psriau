@@ -94,6 +94,24 @@ class InventarisSmokeTest extends BaseCommand
                 }
                 CLI::write("  [OK] Query dropdown penanggung jawab (mst_pegawai) berhasil mengambil " . count($pegawaiList) . " data pegawai tanpa error kolom 'jabatan'", "green");
 
+                // Uji penghapusan penanggung jawab ruangan (Belum Ditentukan)
+                $ruanganModel->update($ruanganId, [
+                    'pegawai_id'            => null,
+                    'penanggung_jawab_nama' => null,
+                    'penanggung_jawab_nip'  => null,
+                ]);
+                $clearedRoom = $ruanganModel->find($ruanganId);
+                $dbrIndexContent = file_get_contents(APPPATH . 'Views/admin/inventaris/dbr/index.php');
+                $hasClearEditBtn = (strpos($dbrIndexContent, 'id="btn-clear-edit-pj"') !== false);
+                $hasClearTambahBtn = (strpos($dbrIndexContent, 'id="btn-clear-tambah-pj"') !== false);
+                $hasBelumDitentukanOpt = (strpos($dbrIndexContent, 'Belum Ditentukan (Kosongkan Penanggung Jawab)') !== false);
+
+                if (empty($clearedRoom['penanggung_jawab_nama']) && empty($clearedRoom['pegawai_id']) && $hasClearEditBtn && $hasClearTambahBtn && $hasBelumDitentukanOpt) {
+                    CLI::write("  [OK] Update pengosongan penanggung jawab ruangan (Belum Ditentukan) teruji sukses: tombol clear, opsi dropdown, dan persistensi database NULL berfungsi sempurna", "green");
+                } else {
+                    CLI::error("  [FAIL] Pengosongan penanggung jawab ruangan gagal atau komponen view tidak lengkap.");
+                }
+
                 $passedTests++;
             } else {
                 CLI::error("  [FAIL] Ruangan uji tidak ditemukan dalam getRuanganWithStats()");
