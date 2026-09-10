@@ -427,10 +427,20 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 
 	// Modul Inventarisasi - Pinjam Pakai Aset (Personal Assets / BAPP)
 	$routes->get('inventaris/pinjam-pakai', 'Admin\InventarisPinjamPakai::index');
+	$routes->post('inventaris/pinjam-pakai/create', 'Admin\InventarisPinjamPakai::createPinjam');
 	$routes->post('inventaris/pinjam-pakai/tambah', 'Admin\InventarisPinjamPakai::createPinjam');
+	$routes->get('inventaris/pinjam-pakai/create', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
+	$routes->get('inventaris/pinjam-pakai/tambah', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
+	$routes->post('inventaris/pinjam-pakai/(:num)/edit', 'Admin\InventarisPinjamPakai::editPinjam/$1');
 	$routes->post('inventaris/pinjam-pakai/(:num)/ubah', 'Admin\InventarisPinjamPakai::editPinjam/$1');
+	$routes->get('inventaris/pinjam-pakai/(:num)/edit', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
+	$routes->get('inventaris/pinjam-pakai/(:num)/ubah', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
 	$routes->post('inventaris/pinjam-pakai/(:num)/kembalikan', 'Admin\InventarisPinjamPakai::kembalikanAset/$1');
+	$routes->get('inventaris/pinjam-pakai/(:num)/kembalikan', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
+	$routes->post('inventaris/pinjam-pakai/(:num)/delete', 'Admin\InventarisPinjamPakai::deletePinjam/$1');
 	$routes->post('inventaris/pinjam-pakai/(:num)/hapus', 'Admin\InventarisPinjamPakai::deletePinjam/$1');
+	$routes->get('inventaris/pinjam-pakai/(:num)/delete', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
+	$routes->get('inventaris/pinjam-pakai/(:num)/hapus', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
 	$routes->get('inventaris/pinjam-pakai/(:num)/cetak-pdf', 'Admin\InventarisPinjamPakai::cetakSuratPdf/$1');
 	$routes->get('inventaris/pinjam-pakai/export-excel', 'Admin\InventarisPinjamPakai::exportExcel');
 
