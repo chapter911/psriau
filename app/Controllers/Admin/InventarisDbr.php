@@ -53,20 +53,31 @@ class InventarisDbr extends BaseController
             ->where('ruangan_id >', 0)
             ->countAllResults();
 
-        $totalAsetBelum = (int) $db->table('trn_inventaris_satker')
+        $totalAsetDipinjam = 0;
+        $activeLoanAssetIds = [];
+        if ($db->tableExists('trn_inventaris_pinjam_pakai')) {
+            $loans = $db->table('trn_inventaris_pinjam_pakai')
+                ->select('inventaris_id')
+                ->where('status', 'dipinjam')
+                ->get()
+                ->getResultArray();
+            $activeLoanAssetIds = array_filter(array_column($loans, 'inventaris_id'));
+            $totalAsetDipinjam = count($activeLoanAssetIds);
+        }
+
+        $builderBelum = $db->table('trn_inventaris_satker')
             ->where('peruntukan', 'kantor')
             ->groupStart()
                 ->where('ruangan_id IS NULL', null, false)
                 ->orWhere('ruangan_id', 0)
-            ->groupEnd()
-            ->countAllResults();
+            ->groupEnd();
 
-        $totalAsetDipinjam = 0;
-        if ($db->tableExists('trn_inventaris_pinjam_pakai')) {
-            $totalAsetDipinjam = (int) $db->table('trn_inventaris_pinjam_pakai')
-                ->where('status', 'dipinjam')
-                ->countAllResults();
+        if (! empty($activeLoanAssetIds)) {
+            $builderBelum->whereNotIn('id', $activeLoanAssetIds);
         }
+        $builderBelum->where('status_bmn !=', 'Dipinjam Pakai');
+
+        $totalAsetBelum = (int) $builderBelum->countAllResults();
 
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
 

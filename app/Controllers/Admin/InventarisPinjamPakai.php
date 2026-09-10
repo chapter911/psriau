@@ -438,12 +438,18 @@ class InventarisPinjamPakai extends BaseController
             return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Data pinjam pakai tidak ditemukan.');
         }
 
-        // Logo PUPR base64
-        $logoBase64 = '';
-        $logoPath = FCPATH . 'assets/images/logo_pupr.png';
+        // Ambil Kop Surat dari Master Kop (kop_surat)
+        $kopSuratImg = '';
+        if (function_exists('kop_surat_img_tag')) {
+            $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 110px; object-fit: contain;', 'Kop Surat Instansi');
+        }
+
+        // Logo PU Base64 (Fallback jika master kop tidak ada)
+        $logoPath = FCPATH . 'uploads/branding/1774740768_77e8482499660c14c637.png';
         if (! file_exists($logoPath)) {
             $logoPath = FCPATH . 'assets/img/logo_pupr.png';
         }
+        $logoBase64 = '';
         if (file_exists($logoPath)) {
             $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
         }
@@ -462,6 +468,7 @@ class InventarisPinjamPakai extends BaseController
 
         $data = [
             'loan'           => $loan,
+            'kopSuratImg'    => $kopSuratImg,
             'logoBase64'     => $logoBase64,
             'tglPinjamIndo'  => $tglPinjamIndo,
             'tglCetak'       => $tglCetak,
@@ -495,7 +502,15 @@ class InventarisPinjamPakai extends BaseController
             ? preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $loan['no_surat'])
             : ('ID_' . $id . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) ($loan['nama_peminjam'] ?? 'Aset')));
         $filename = 'Surat_Pinjam_Pakai_' . $suratSlug . '.pdf';
-        return $dompdf->stream($filename, ['Attachment' => false]);
+
+        if (ob_get_length()) {
+            ob_clean();
+        }
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->setBody($dompdf->output());
     }
 
     public function exportExcel()
