@@ -693,7 +693,7 @@ class InventarisSmokeTest extends BaseCommand
             $hasPdfAllBtn = (strpos($dbrIndexContent, 'admin/inventaris/dbr/cetak-pdf') !== false);
 
             if ($allPdfSize > 2000 && $hasPdfAllBtn) {
-                CLI::write("  [OK] Cetak PDF DBR Seluruh Ruangan (A4 Portrait, Tanpa Kop, Tanpa Kode Register & Nilai Perolehan) berhasil dirender! Ukuran: " . round($allPdfSize / 1024, 2) . " KB, Tombol Cetak PDF aktif di halaman utama DBR", "green");
+                CLI::write("  [OK] Cetak PDF DBR Seluruh Ruangan (A4 Portrait, Tabel Terpisah Per Ruangan, Tanpa Kop/Reg/Nilai) berhasil dirender! Ukuran: " . round($allPdfSize / 1024, 2) . " KB, Tombol Cetak PDF aktif di halaman utama DBR", "green");
             } else {
                 CLI::error("  [FAIL] Render PDF DBR Seluruh Ruangan gagal atau tombol di view tidak ditemukan.");
             }
