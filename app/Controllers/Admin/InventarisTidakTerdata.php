@@ -106,7 +106,7 @@ class InventarisTidakTerdata extends BaseController
         return redirect()->to('/admin/inventaris/tidak-terdata')->with('success', 'Data aset tidak terdata berhasil ditambahkan.');
     }
 
-    public function update(int $id)
+    public function update($id = null)
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
         if ($forbidden instanceof RedirectResponse) {
@@ -116,6 +116,11 @@ class InventarisTidakTerdata extends BaseController
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
         if (! ($menuPermissions['edit'] ?? false)) {
             return redirect()->to('/admin/inventaris/tidak-terdata')->with('error', 'Anda tidak memiliki hak akses untuk mengubah data.');
+        }
+
+        $id = (int) $id;
+        if ($id <= 0) {
+            return redirect()->to('/admin/inventaris/tidak-terdata')->with('error', 'ID data tidak valid.');
         }
 
         $model = new InventarisTidakTerdataModel();
@@ -168,7 +173,7 @@ class InventarisTidakTerdata extends BaseController
         return redirect()->to('/admin/inventaris/tidak-terdata')->with('success', 'Data aset tidak terdata berhasil diperbarui.');
     }
 
-    public function delete(int $id)
+    public function delete($id = null)
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
         if ($forbidden instanceof RedirectResponse) {
@@ -178,6 +183,11 @@ class InventarisTidakTerdata extends BaseController
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
         if (! ($menuPermissions['delete'] ?? false)) {
             return redirect()->to('/admin/inventaris/tidak-terdata')->with('error', 'Anda tidak memiliki hak akses untuk menghapus data.');
+        }
+
+        $id = (int) $id;
+        if ($id <= 0) {
+            return redirect()->to('/admin/inventaris/tidak-terdata')->with('error', 'ID data tidak valid.');
         }
 
         $model = new InventarisTidakTerdataModel();

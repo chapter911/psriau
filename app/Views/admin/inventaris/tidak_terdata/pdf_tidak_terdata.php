@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 1.0cm 1.2cm 1.0cm 1.2cm;
+            margin: 1.2cm 1.4cm 1.2cm 1.4cm;
         }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -17,83 +17,34 @@
             padding: 0;
         }
 
-        /* Kop Surat PU */
-        .kop-table {
-            width: 100%;
-            border-collapse: collapse;
-            border-bottom: 2.5px solid #111827;
-            padding-bottom: 5px;
-            margin-bottom: 12px;
-        }
-        .kop-table td {
-            vertical-align: middle;
-            padding: 0;
-        }
-        .kop-logo {
-            width: 65px;
-            text-align: center;
-        }
-        .kop-logo img {
-            max-width: 58px;
-            height: auto;
-        }
-        .kop-content {
-            text-align: center;
-            padding-left: 10px;
-        }
-        .kop-instansi-1 {
-            font-size: 11pt;
-            font-weight: bold;
-            color: #0f172a;
-            text-transform: uppercase;
-            line-height: 1.2;
-        }
-        .kop-instansi-2 {
-            font-size: 9.5pt;
-            font-weight: bold;
-            color: #1e3a8a;
-            text-transform: uppercase;
-            line-height: 1.2;
-            margin-top: 2px;
-        }
-        .kop-satker {
-            font-size: 9.5pt;
-            font-weight: bold;
-            color: #0f172a;
-            text-transform: uppercase;
-            line-height: 1.2;
-            margin-top: 2px;
-        }
-        .kop-alamat {
-            font-size: 7.5pt;
-            color: #475569;
-            margin-top: 3px;
-        }
-
-        /* Judul Dokumen */
+        /* Judul Dokumen (Tanpa Kop Surat) */
         .doc-title-box {
             text-align: center;
-            margin-bottom: 14px;
+            margin-top: 5px;
+            margin-bottom: 16px;
         }
         .doc-title {
-            font-size: 11.5pt;
+            font-size: 12pt;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.8px;
             color: #0f172a;
             text-decoration: underline;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
         }
         .doc-subtitle {
-            font-size: 8.5pt;
-            color: #475569;
+            font-size: 9pt;
+            font-weight: 600;
+            color: #334155;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* Tabel Data */
         .table-data {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
         .table-data th {
             background-color: #f1f5f9;
@@ -107,7 +58,7 @@
         }
         .table-data td {
             border: 1px solid #000000;
-            padding: 5px 6px;
+            padding: 5.5px 6px;
             font-size: 8pt;
             vertical-align: top;
         }
@@ -127,7 +78,7 @@
         .signature-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 25px;
             page-break-inside: avoid;
         }
         .signature-table td {
@@ -146,7 +97,7 @@
         .sign-title {
             font-size: 8.5pt;
             font-weight: bold;
-            line-height: 1.3;
+            line-height: 1.35;
         }
         .sign-space {
             height: 65px;
@@ -166,41 +117,22 @@
 </head>
 <body>
 
-    <!-- Kop Surat PU -->
-    <table class="kop-table">
-        <tr>
-            <td class="kop-logo">
-                <?php if (! empty($logoPuBase64)) : ?>
-                    <img src="<?= $logoPuBase64; ?>" alt="Logo PU">
-                <?php else : ?>
-                    <div style="font-weight: bold; font-size: 14pt; color: #1E3A8A;">PU</div>
-                <?php endif; ?>
-            </td>
-            <td class="kop-content">
-                <div class="kop-instansi-1">KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT</div>
-                <div class="kop-instansi-2">DIREKTORAT JENDERAL CIPTA KARYA</div>
-                <div class="kop-satker">SATUAN KERJA PELAKSANAAN PRASARANA PERMUKIMAN STRATEGIS PROVINSI RIAU</div>
-                <div class="kop-alamat">Jl. Jenderal Sudirman No. 235, Pekanbaru, Riau | Telp/Fax: (0761) 32185</div>
-            </td>
-        </tr>
-    </table>
-
-    <!-- Judul Dokumen -->
+    <!-- Judul Dokumen Langsung (Tanpa Kop Sesuai Permintaan) -->
     <div class="doc-title-box">
         <div class="doc-title">DAFTAR ASET TIDAK TERDATA</div>
-        <div class="doc-subtitle">Inventaris Non-BMN / Operasional Satker Pelaksanaan Prasarana Strategis Riau</div>
+        <div class="doc-subtitle">SATUAN KERJA PELAKSANAAN PRASARANA PERMUKIMAN STRATEGIS PROVINSI RIAU</div>
     </div>
 
-    <!-- Tabel Data Sesuai Format Lampiran -->
+    <!-- Tabel Data Sesuai Format Asli Lampiran -->
     <table class="table-data">
         <thead>
             <tr>
                 <th style="width: 25px;">No</th>
-                <th style="width: 140px;">Nama Barang</th>
+                <th style="width: 145px;">Nama Barang</th>
                 <th style="width: 50px;">Buah</th>
                 <th>Merk / Type</th>
                 <th style="width: 55px;">Tahun Perolehan</th>
-                <th style="width: 95px;">Lokasi Aset</th>
+                <th style="width: 100px;">Lokasi Aset</th>
                 <th style="width: 140px;">Keterangan</th>
             </tr>
         </thead>

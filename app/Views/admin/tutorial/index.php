@@ -441,7 +441,7 @@ graph TD
 
     B5 --> G1["Pencatatan Inventaris Non-BMN / Operasional Satker (P.C Unit, Printer, AC, Lemari Es, dll.)"]
     B5 --> G2["Penetapan Lokasi Penempatan Aset (Terintegrasi Master Ruangan Kantor &amp; Input Detail Ruang)"]
-    B5 --> G3["Cetak &amp; Ekspor PDF Format Lampiran (A4 Portrait Ber-KOP PU, Total Buah &amp; TTD Petugas Aset)"]
+    B5 --> G3["Cetak &amp; Ekspor PDF Format Lampiran (A4 Portrait Tanpa Kop, Total Buah &amp; TTD Petugas Aset)"]
     B5 --> G4["Export Spreadsheet Excel (.xlsx) Lengkap dengan Lokasi &amp; Kondisi Fisik Barang"]
                 </pre>
             </div>
@@ -759,7 +759,7 @@ graph TD
                                     <li><strong>Ubin Metrik Ringkasan:</strong> Dilengkapi 4 indikator KPI otomatis: <em>Jenis Barang</em>, <em>Total Kuantitas (Buah)</em>, <em>Kondisi Baik</em>, dan <em>Perlu Perbaikan / Rusak</em>.</li>
                                     <li><strong>Pencatatan &amp; Penetapan Lokasi Aset:</strong> Klik tombol <em>Tambah Aset</em>. Masukkan Nama Barang, Kuantitas (Buah), Satuan, Merk/Spesifikasi, Tahun Perolehan, dan Kondisi Fisik. Tentukan <strong>Lokasi Aset</strong>: pilih dari dropdown resmi <em>Master Ruangan</em> kantor Satker dan/atau lengkapi detail lokasi spesifik (misal: Ruang Tata Usaha, Ruang Staf, Aula Pertemuan, Pantry/Dapur). Masukkan keterangan riwayat perolehan aset.</li>
                                     <li><strong>Pengubahan &amp; Penghapusan Data:</strong> Tombol <em>Ubah</em> (kuning) untuk memperbarui data fisik atau mutasi lokasi barang, dan tombol <em>Hapus</em> (merah) dengan dialog konfirmasi aman.</li>
-                                    <li><strong>Cetak &amp; Ekspor PDF Format Lampiran Resmi (Standar PU):</strong> Tersedia tombol <em>Cetak PDF</em> (pratinjau cetak di tab baru) dan tombol <em>Ekspor PDF</em> (unduh langsung file .pdf) ber-KOP resmi Kementerian Pekerjaan Umum lengkap dengan tabel format lampiran (No, Nama Barang, Buah, Merk/Type, Tahun Perolehan, Lokasi Aset, Keterangan), baris rekapitulasi Total Buah, serta blok tanda tangan Petugas Aset Tetap Hendrick Bastiar (NIP. 197810162025211023).</li>
+                                    <li><strong>Cetak &amp; Ekspor PDF Format Lampiran (Tanpa Kop Surat):</strong> Sesuai format lampiran asli, dokumen PDF disajikan tanpa kop surat, diawali langsung dengan judul DAFTAR ASET TIDAK TERDATA, tabel data lengkap (No, Nama Barang, Buah, Merk/Type, Tahun Perolehan, Lokasi Aset, Keterangan), baris rekapitulasi Total Buah, serta blok tanda tangan Petugas Aset Tetap Hendrick Bastiar (NIP. 197810162025211023). Tersedia tombol <em>Cetak PDF</em> (pratinjau di tab baru) dan <em>Ekspor PDF</em> (unduh langsung file .pdf).</li>
                                     <li><strong>Export Excel (.xlsx):</strong> Klik tombol <em>Ekspor Excel</em> untuk mengunduh rekapitulasi lengkap dalam format spreadsheet yang rapi dan siap saji.</li>
                                 </ol>
                             </div>

@@ -278,17 +278,34 @@
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm">
                                         <?php if (! empty($menuPermissions['edit'])) : ?>
-                                            <button type="button" class="btn btn-warning text-white btn-edit" 
-                                                data-item='<?= json_encode($item, JSON_HEX_APOS | JSON_HEX_QUOT); ?>' 
+                                            <button type="button" 
+                                                class="btn btn-warning text-white btn-edit" 
+                                                data-toggle="modal" 
+                                                data-target="#modalEdit"
+                                                data-id="<?= (int) $item['id']; ?>"
+                                                data-nama="<?= esc($item['nama_barang'], 'attr'); ?>"
+                                                data-jumlah="<?= (int) $item['jumlah']; ?>"
+                                                data-satuan="<?= esc($item['satuan'] ?: 'Buah', 'attr'); ?>"
+                                                data-merk="<?= esc($item['merk_tipe'] ?? '', 'attr'); ?>"
+                                                data-tahun="<?= esc($item['tahun_perolehan'] ?? '', 'attr'); ?>"
+                                                data-ruangan-id="<?= esc((string) ($item['ruangan_id'] ?? ''), 'attr'); ?>"
+                                                data-lokasi="<?= esc($item['lokasi_penempatan'] ?? '', 'attr'); ?>"
+                                                data-kondisi="<?= esc($item['kondisi'] ?? 'baik', 'attr'); ?>"
+                                                data-petugas-nama="<?= esc($item['petugas_nama'] ?? 'Hendrick Bastiar', 'attr'); ?>"
+                                                data-petugas-nip="<?= esc($item['petugas_nip'] ?? '197810162025211023', 'attr'); ?>"
+                                                data-keterangan="<?= esc($item['keterangan'] ?? '', 'attr'); ?>"
                                                 title="Ubah Data">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                         <?php endif; ?>
 
                                         <?php if (! empty($menuPermissions['delete'])) : ?>
-                                            <button type="button" class="btn btn-danger btn-delete" 
-                                                data-id="<?= $item['id']; ?>" 
-                                                data-nama="<?= esc($item['nama_barang']); ?>" 
+                                            <button type="button" 
+                                                class="btn btn-danger btn-delete" 
+                                                data-toggle="modal" 
+                                                data-target="#modalDelete"
+                                                data-id="<?= (int) $item['id']; ?>" 
+                                                data-nama="<?= esc($item['nama_barang'], 'attr'); ?>" 
                                                 title="Hapus Data">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -535,7 +552,7 @@
 
 <?= $this->endSection(); ?>
 
-<?= $this->section('scripts'); ?>
+<?= $this->section('pageScripts'); ?>
 <script>
 $(document).ready(function() {
     // Inisialisasi DataTable
@@ -575,7 +592,7 @@ $(document).ready(function() {
         });
     });
 
-    $('#tambahRuanganId').on('change', function() {
+    $('#tambahRuanganId').on('select2:select', function() {
         var selectedName = $(this).find(':selected').data('nama');
         if (selectedName && !$('#tambahLokasiPenempatan').val()) {
             $('#tambahLokasiPenempatan').val(selectedName);
@@ -591,43 +608,83 @@ $(document).ready(function() {
         });
     });
 
-    $('#editRuanganId').on('change', function() {
+    $('#editRuanganId').on('select2:select', function() {
         var selectedName = $(this).find(':selected').data('nama');
         if (selectedName) {
             $('#editLokasiPenempatan').val(selectedName);
         }
     });
 
-    // Handle Tombol Edit
-    $(document).on('click', '.btn-edit', function() {
-        var data = $(this).data('item');
-        if (!data) return;
+    // Fungsi Pengisian Data Modal Edit yang Andal
+    function populateEditModal(el) {
+        var $btn = $(el).closest('.btn-edit');
+        if ($btn.length === 0) return;
 
-        $('#formEdit').attr('action', '<?= base_url("admin/inventaris/tidak-terdata"); ?>/' + data.id + '/edit');
-        $('#editNamaBarang').val(data.nama_barang || '');
-        $('#editJumlah').val(data.jumlah || 1);
-        $('#editSatuan').val(data.satuan || 'Buah');
-        $('#editMerkTipe').val(data.merk_tipe || '');
-        $('#editTahunPerolehan').val(data.tahun_perolehan || '');
-        $('#editRuanganId').val(data.ruangan_id || '').trigger('change');
-        $('#editLokasiPenempatan').val(data.lokasi_penempatan || '');
-        $('#editKondisi').val(data.kondisi || 'baik');
-        $('#editPetugasNama').val(data.petugas_nama || 'Hendrick Bastiar');
-        $('#editPetugasNip').val(data.petugas_nip || '197810162025211023');
-        $('#editKeterangan').val(data.keterangan || '');
+        var id = $btn.data('id') || $btn.attr('data-id');
+        if (!id) return;
 
-        $('#modalEdit').modal('show');
-    });
+        var nama = $btn.data('nama') || $btn.attr('data-nama') || '';
+        var jumlah = $btn.data('jumlah') || $btn.attr('data-jumlah') || 1;
+        var satuan = $btn.data('satuan') || $btn.attr('data-satuan') || 'Buah';
+        var merk = $btn.data('merk') || $btn.attr('data-merk') || '';
+        var tahun = $btn.data('tahun') || $btn.attr('data-tahun') || '';
+        var ruanganId = $btn.data('ruangan-id') || $btn.attr('data-ruangan-id') || '';
+        var lokasi = $btn.data('lokasi') || $btn.attr('data-lokasi') || '';
+        var kondisi = $btn.data('kondisi') || $btn.attr('data-kondisi') || 'baik';
+        var petugasNama = $btn.data('petugas-nama') || $btn.attr('data-petugas-nama') || 'Hendrick Bastiar';
+        var petugasNip = $btn.data('petugas-nip') || $btn.attr('data-petugas-nip') || '197810162025211023';
+        var keterangan = $btn.data('keterangan') || $btn.attr('data-keterangan') || '';
 
-    // Handle Tombol Hapus
-    $(document).on('click', '.btn-delete', function() {
-        var id = $(this).data('id');
-        var nama = $(this).data('nama');
+        $('#formEdit').attr('action', '<?= base_url("admin/inventaris/tidak-terdata"); ?>/' + id + '/edit');
+        $('#editNamaBarang').val(nama);
+        $('#editJumlah').val(jumlah);
+        $('#editSatuan').val(satuan);
+        $('#editMerkTipe').val(merk);
+        $('#editTahunPerolehan').val(tahun);
+        $('#editRuanganId').val(ruanganId ? String(ruanganId) : '').trigger('change');
+        $('#editLokasiPenempatan').val(lokasi);
+        $('#editKondisi').val(kondisi);
+        $('#editPetugasNama').val(petugasNama);
+        $('#editPetugasNip').val(petugasNip);
+        $('#editKeterangan').val(keterangan);
+    }
+
+    // Fungsi Pengisian Data Modal Hapus
+    function populateDeleteModal(el) {
+        var $btn = $(el).closest('.btn-delete');
+        if ($btn.length === 0) return;
+
+        var id = $btn.data('id') || $btn.attr('data-id');
+        var nama = $btn.data('nama') || $btn.attr('data-nama') || '';
 
         $('#formDelete').attr('action', '<?= base_url("admin/inventaris/tidak-terdata"); ?>/' + id + '/delete');
         $('#deleteNamaBarang').text(nama);
+    }
 
+    // Event Listener Klik Tombol Edit
+    $(document).on('click', '.btn-edit', function(e) {
+        populateEditModal(this);
+        $('#modalEdit').modal('show');
+    });
+
+    // Event Listener Modal Edit saat ditampilkan via Bootstrap data-toggle
+    $('#modalEdit').on('show.bs.modal', function(e) {
+        if (e.relatedTarget) {
+            populateEditModal(e.relatedTarget);
+        }
+    });
+
+    // Event Listener Klik Tombol Hapus
+    $(document).on('click', '.btn-delete', function(e) {
+        populateDeleteModal(this);
         $('#modalDelete').modal('show');
+    });
+
+    // Event Listener Modal Hapus saat ditampilkan via Bootstrap data-toggle
+    $('#modalDelete').on('show.bs.modal', function(e) {
+        if (e.relatedTarget) {
+            populateDeleteModal(e.relatedTarget);
+        }
     });
 });
 </script>
