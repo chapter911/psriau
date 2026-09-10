@@ -783,6 +783,14 @@ class InventarisSmokeTest extends BaseCommand
         // ---------------------------------------------------------------------
         CLI::write("\n[TEST 8] Menguji modul Pinjam Pakai Aset BMN (Peminjaman, PDF & Pengembalian)...", "cyan");
         try {
+            // 0. Validasi metode kontrol akses di controller InventarisPinjamPakai
+            $refController = new \ReflectionClass(\App\Controllers\Admin\InventarisPinjamPakai::class);
+            if ($refController->hasMethod('denyIfNoMenuAccess') && $refController->hasMethod('resolveMenuPermissions')) {
+                CLI::write("  [OK] Controller InventarisPinjamPakai memiliki metode 'denyIfNoMenuAccess' dan 'resolveMenuPermissions'", "green");
+            } else {
+                CLI::error("  [FAIL] Controller InventarisPinjamPakai kehilangan metode kontrol akses menu!");
+            }
+
             // 1. Buat aset dummy khusus pinjam pakai
             $dummyPinjamAssetId = $satkerModel->insert([
                 'kode_barang'     => 'SMOKE-PINJAM-01',

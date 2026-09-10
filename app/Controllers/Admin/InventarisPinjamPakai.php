@@ -563,4 +563,141 @@ class InventarisPinjamPakai extends BaseController
         $writer->save('php://output');
         exit;
     }
+
+    private function denyIfNoMenuAccess(string $menuLink): ?RedirectResponse
+    {
+        if ($this->hasMenuAccess($menuLink)) {
+            return null;
+        }
+
+        return redirect()->to('/forbidden?from=' . rawurlencode($menuLink));
+    }
+
+    private function hasMenuAccess(string $menuLink): bool
+    {
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return true;
+        }
+
+        $roleId = $this->resolveRoleId((string) session()->get('role'), $db);
+        if ($roleId === null) {
+            return false;
+        }
+
+        $menuId = $this->resolveMenuIdByLink($menuLink, $db);
+        if ($menuId === null) {
+            return false;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+
+        return (int) $db->table('menu_akses')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->countAllResults() > 0;
+    }
+
+    private function resolveMenuPermissions(string $menuLink): array
+    {
+        $default = [
+            'add'      => false,
+            'edit'     => false,
+            'delete'   => false,
+            'export'   => false,
+            'import'   => false,
+            'approval' => false,
+        ];
+
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return $default;
+        }
+
+        $roleId = $this->resolveRoleId((string) session()->get('role'), $db);
+        $menuId = $this->resolveMenuIdByLink($menuLink, $db);
+        if ($roleId === null || $menuId === null) {
+            return $default;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        $row = $db->table('menu_akses')
+            ->select('FiturAdd, FiturEdit, FiturDelete, FiturExport, FiturImport, FiturApproval')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($row)) {
+            return $default;
+        }
+
+        return [
+            'add'      => (bool) ((int) ($row['FiturAdd'] ?? 0)),
+            'edit'     => (bool) ((int) ($row['FiturEdit'] ?? 0)),
+            'delete'   => (bool) ((int) ($row['FiturDelete'] ?? 0)),
+            'export'   => (bool) ((int) ($row['FiturExport'] ?? 0)),
+            'import'   => (bool) ((int) ($row['FiturImport'] ?? 0)),
+            'approval' => (bool) ((int) ($row['FiturApproval'] ?? 0)),
+        ];
+    }
+
+    private function resolveRoleId(string $role, $db): ?int
+    {
+        $normalized = strtolower(trim($role));
+        if ($normalized === '') {
+            return null;
+        }
+
+        if ($db->tableExists('access_roles')) {
+            $variants = [$normalized];
+            if ($normalized === 'super administrator') {
+                $variants[] = 'super_administrator';
+                $variants[] = 'super-admin';
+                $variants[] = 'superadmin';
+            } elseif ($normalized === 'super_administrator' || $normalized === 'super-admin' || $normalized === 'superadmin') {
+                $variants[] = 'super administrator';
+                $variants[] = 'super_administrator';
+                $variants[] = 'super-admin';
+                $variants[] = 'superadmin';
+            }
+
+            $row = $db->table('access_roles')
+                ->select('id')
+                ->whereIn('role_key', array_values(array_unique($variants)))
+                ->where('is_active', 1)
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (int) $row['id'];
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveMenuIdByLink(string $menuLink, $db): ?string
+    {
+        $normalized = trim(strtolower($menuLink), '/');
+
+        foreach (['menu_lv3', 'menu_lv2', 'menu_lv1'] as $table) {
+            if (! $db->tableExists($table)) {
+                continue;
+            }
+
+            $row = $db->table($table)
+                ->select('id')
+                ->where('LOWER(TRIM(link))', $normalized)
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (string) $row['id'];
+            }
+        }
+
+        return null;
+    }
 }
