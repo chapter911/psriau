@@ -418,6 +418,7 @@ graph TD
     A --> B2["2. Inventaris Kantor (/admin/inventaris/dbr)"]
     A --> B3["3. Pinjam Pakai Aset (/admin/inventaris/pinjam-pakai)"]
     A --> B4["4. Inventaris Sekolah (/admin/inventaris/sekolah)"]
+    A --> B5["5. Aset Tidak Terdata (/admin/inventaris/tidak-terdata)"]
 
     B1 --> C1["Klasifikasi Peruntukan Aset: Kantor (Satker), Mobiler (Sekolah), &amp; Item Lainnya (Peminjaman / Renovasi / Non-Ruangan)"]
     B1 --> C2["Standar BMN: 1 Kode Barang + 1 NUP = Tepat 1 Unit Fisik (Validasi Ketat Form &amp; Import)"]
@@ -437,6 +438,11 @@ graph TD
 
     B4 --> E1["Monitoring Sarpras &amp; Distribusi Mobiler Sekolah Binaan"]
     B4 --> E2["Pemetaan Wilayah Kabupaten / Kecamatan / Paket Proyek"]
+
+    B5 --> G1["Pencatatan Inventaris Non-BMN / Operasional Satker (P.C Unit, Printer, AC, Lemari Es, dll.)"]
+    B5 --> G2["Penetapan Lokasi Penempatan Aset (Terintegrasi Master Ruangan Kantor &amp; Input Detail Ruang)"]
+    B5 --> G3["Cetak &amp; Ekspor PDF Format Lampiran (A4 Portrait Ber-KOP PU, Total Buah &amp; TTD Petugas Aset)"]
+    B5 --> G4["Export Spreadsheet Excel (.xlsx) Lengkap dengan Lokasi &amp; Kondisi Fisik Barang"]
                 </pre>
             </div>
         </div>
@@ -739,6 +745,22 @@ graph TD
                                     <li>Halaman menampilkan seluruh sekolah binaan Satker PPS Riau yang telah terdata dalam paket rehabilitasi/renovasi prasarana strategis dan penerima bantuan mobiler pendidikan.</li>
                                     <li>Gunakan filter <strong>Paket Proyek</strong>, <strong>Kabupaten</strong>, atau <strong>Kata Kunci</strong> (NPSN / Nama Sekolah) untuk memetakan inventaris sarpras dan mobiler per lokasi sekolah binaan.</li>
                                     <li>Status sarpras sekolah terpantau secara terintegrasi dengan data paket proyek prasarana sekolah.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 mb-3">
+                        <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #1E3A8A !important;">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-navy" style="color: #1E3A8A;"><i class="fas fa-clipboard-list mr-1"></i> 5. Aset Tidak Terdata (Non-BMN)</h6>
+                                <p class="small text-muted mb-2"><code>/admin/inventaris/tidak-terdata</code> (Menu Lv2 Inventarisasi)</p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Aset Tidak Terdata</strong>. Menu ini difungsikan khusus untuk mencatat aset fisik operasional kantor yang belum/tidak terdaftar dalam aplikasi SIMAN BMN (contoh: aset perolehan saat masih status PPK PS di BPPW Cipta Karya seperti P.C Unit, Printer HP/Epson, AC Split, AC Floor Stand, Lemari Es, dsb).</li>
+                                    <li><strong>Ubin Metrik Ringkasan:</strong> Dilengkapi 4 indikator KPI otomatis: <em>Jenis Barang</em>, <em>Total Kuantitas (Buah)</em>, <em>Kondisi Baik</em>, dan <em>Perlu Perbaikan / Rusak</em>.</li>
+                                    <li><strong>Pencatatan &amp; Penetapan Lokasi Aset:</strong> Klik tombol <em>Tambah Aset</em>. Masukkan Nama Barang, Kuantitas (Buah), Satuan, Merk/Spesifikasi, Tahun Perolehan, dan Kondisi Fisik. Tentukan <strong>Lokasi Aset</strong>: pilih dari dropdown resmi <em>Master Ruangan</em> kantor Satker dan/atau lengkapi detail lokasi spesifik (misal: Ruang Tata Usaha, Ruang Staf, Aula Pertemuan, Pantry/Dapur). Masukkan keterangan riwayat perolehan aset.</li>
+                                    <li><strong>Pengubahan &amp; Penghapusan Data:</strong> Tombol <em>Ubah</em> (kuning) untuk memperbarui data fisik atau mutasi lokasi barang, dan tombol <em>Hapus</em> (merah) dengan dialog konfirmasi aman.</li>
+                                    <li><strong>Cetak &amp; Ekspor PDF Format Lampiran Resmi (Standar PU):</strong> Tersedia tombol <em>Cetak PDF</em> (pratinjau cetak di tab baru) dan tombol <em>Ekspor PDF</em> (unduh langsung file .pdf) ber-KOP resmi Kementerian Pekerjaan Umum lengkap dengan tabel format lampiran (No, Nama Barang, Buah, Merk/Type, Tahun Perolehan, Lokasi Aset, Keterangan), baris rekapitulasi Total Buah, serta blok tanda tangan Petugas Aset Tetap Hendrick Bastiar (NIP. 197810162025211023).</li>
+                                    <li><strong>Export Excel (.xlsx):</strong> Klik tombol <em>Ekspor Excel</em> untuk mengunduh rekapitulasi lengkap dalam format spreadsheet yang rapi dan siap saji.</li>
                                 </ol>
                             </div>
                         </div>

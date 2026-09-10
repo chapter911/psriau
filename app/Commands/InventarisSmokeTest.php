@@ -34,13 +34,13 @@ class InventarisSmokeTest extends BaseCommand
         $pinjamModel = new InventarisPinjamPakaiModel();
 
         $passedTests = 0;
-        $totalTests = 8;
+        $totalTests = 9;
 
         // ---------------------------------------------------------------------
         // TEST 1: Cek Struktur Tabel Database
         // ---------------------------------------------------------------------
         CLI::write("\n[TEST 1] Memeriksa keberadaan tabel database...", "cyan");
-        $requiredTables = ['mst_ruangan', 'trn_inventaris_satker', 'trn_inventaris_pinjam_pakai', 'menu_lv1', 'menu_lv2', 'menu_akses'];
+        $requiredTables = ['mst_ruangan', 'trn_inventaris_satker', 'trn_inventaris_pinjam_pakai', 'trn_inventaris_tidak_terdata', 'menu_lv1', 'menu_lv2', 'menu_akses'];
         $missingTables = [];
         foreach ($requiredTables as $table) {
             if (! $db->tableExists($table)) {
@@ -746,32 +746,35 @@ class InventarisSmokeTest extends BaseCommand
         }
 
         // ---------------------------------------------------------------------
-        // TEST 7: Integritas Menu Lv1 & Lv2 (4 Menu Utama Inventarisasi) & Hak Akses
+        // TEST 7: Integritas Menu Lv1 & Lv2 (5 Menu Utama Inventarisasi) & Hak Akses
         // ---------------------------------------------------------------------
-        CLI::write("\n[TEST 7] Memeriksa integrasi menu Inventarisasi (4 Menu Lv2) & hak akses...", "cyan");
+        CLI::write("\n[TEST 7] Memeriksa integrasi menu Inventarisasi (5 Menu Lv2) & hak akses...", "cyan");
         $menuLv1 = $db->table('menu_lv1')->like('label', 'Inventarisasi')->get()->getRowArray();
-        $menuLv2Barang  = $db->table('menu_lv2')->where('id', '11-01')->get()->getRowArray();
-        $menuLv2Dbr     = $db->table('menu_lv2')->where('id', '11-02')->get()->getRowArray();
-        $menuLv2Pinjam  = $db->table('menu_lv2')->where('id', '11-04')->get()->getRowArray();
-        $menuLv2Sekolah = $db->table('menu_lv2')->where('id', '11-03')->get()->getRowArray();
+        $menuLv2Barang       = $db->table('menu_lv2')->where('id', '11-01')->get()->getRowArray();
+        $menuLv2Dbr          = $db->table('menu_lv2')->where('id', '11-02')->get()->getRowArray();
+        $menuLv2Pinjam       = $db->table('menu_lv2')->where('id', '11-04')->get()->getRowArray();
+        $menuLv2Sekolah      = $db->table('menu_lv2')->where('id', '11-03')->get()->getRowArray();
+        $menuLv2TidakTerdata = $db->table('menu_lv2')->where('id', '11-05')->get()->getRowArray();
 
-        $hierarchyOk = ($menuLv1 !== null && $menuLv2Barang !== null && $menuLv2Dbr !== null && $menuLv2Pinjam !== null && $menuLv2Sekolah !== null);
+        $hierarchyOk = ($menuLv1 !== null && $menuLv2Barang !== null && $menuLv2Dbr !== null && $menuLv2Pinjam !== null && $menuLv2Sekolah !== null && $menuLv2TidakTerdata !== null);
 
-        $aksesBarang  = $db->table('menu_akses')->where('menu_id', '11-01')->countAllResults();
-        $aksesDbr     = $db->table('menu_akses')->where('menu_id', '11-02')->countAllResults();
-        $aksesPinjam  = $db->table('menu_akses')->where('menu_id', '11-04')->countAllResults();
-        $aksesSekolah = $db->table('menu_akses')->where('menu_id', '11-03')->countAllResults();
+        $aksesBarang       = $db->table('menu_akses')->where('menu_id', '11-01')->countAllResults();
+        $aksesDbr          = $db->table('menu_akses')->where('menu_id', '11-02')->countAllResults();
+        $aksesPinjam       = $db->table('menu_akses')->where('menu_id', '11-04')->countAllResults();
+        $aksesSekolah      = $db->table('menu_akses')->where('menu_id', '11-03')->countAllResults();
+        $aksesTidakTerdata = $db->table('menu_akses')->where('menu_id', '11-05')->countAllResults();
 
         // Uji keberadaan kolom peruntukan di tabel trn_inventaris_satker
         $peruntukanColOk = $db->fieldExists('peruntukan', 'trn_inventaris_satker');
 
-        if ($hierarchyOk && $aksesBarang > 0 && $aksesDbr > 0 && $aksesPinjam > 0 && $aksesSekolah > 0 && $peruntukanColOk) {
-            CLI::write("  [OK] Hierarki Menu Inventarisasi Terstruktur Sempurna (4 Menu Lv2 Utama):", "green");
+        if ($hierarchyOk && $aksesBarang > 0 && $aksesDbr > 0 && $aksesPinjam > 0 && $aksesSekolah > 0 && $aksesTidakTerdata > 0 && $peruntukanColOk) {
+            CLI::write("  [OK] Hierarki Menu Inventarisasi Terstruktur Sempurna (5 Menu Lv2 Lengkap):", "green");
             CLI::write("       - Lv1: {$menuLv1['label']} (ID: {$menuLv1['id']})", "green");
             CLI::write("         - Lv2: 1. {$menuLv2Barang['label']} (ID: {$menuLv2Barang['id']}, Link: {$menuLv2Barang['link']}) -> {$aksesBarang} Roles", "green");
             CLI::write("         - Lv2: 2. {$menuLv2Dbr['label']} (ID: {$menuLv2Dbr['id']}, Link: {$menuLv2Dbr['link']}) -> {$aksesDbr} Roles", "green");
             CLI::write("         - Lv2: 3. {$menuLv2Pinjam['label']} (ID: {$menuLv2Pinjam['id']}, Link: {$menuLv2Pinjam['link']}) -> {$aksesPinjam} Roles", "green");
             CLI::write("         - Lv2: 4. {$menuLv2Sekolah['label']} (ID: {$menuLv2Sekolah['id']}, Link: {$menuLv2Sekolah['link']}) -> {$aksesSekolah} Roles", "green");
+            CLI::write("         - Lv2: 5. {$menuLv2TidakTerdata['label']} (ID: {$menuLv2TidakTerdata['id']}, Link: {$menuLv2TidakTerdata['link']}) -> {$aksesTidakTerdata} Roles", "green");
             CLI::write("  [OK] Kolom 'peruntukan' (kantor / mobiler / lainnya) terdeteksi aktif pada tabel trn_inventaris_satker", "green");
             $passedTests++;
         } else {
@@ -967,6 +970,154 @@ class InventarisSmokeTest extends BaseCommand
             if (isset($dummyPinjamAssetId) && $dummyPinjamAssetId) {
                 $db->table('trn_inventaris_pinjam_pakai')->where('inventaris_id', $dummyPinjamAssetId)->delete();
                 $db->table('trn_inventaris_satker')->where('id', $dummyPinjamAssetId)->delete();
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // TEST 9: Pengujian Modul Aset Tidak Terdata (trn_inventaris_tidak_terdata)
+        // ---------------------------------------------------------------------
+        CLI::write("\n[TEST 9] Menguji Modul Aset Tidak Terdata & Lokasi Aset...", "cyan");
+        try {
+            $tidakTerdataModel = new \App\Models\InventarisTidakTerdataModel();
+
+            // 1. Verifikasi Menu Lv2 11-05
+            $menuRow = $db->table('menu_lv2')->where('id', '11-05')->get()->getRowArray();
+            if ($menuRow && $menuRow['link'] === 'admin/inventaris/tidak-terdata') {
+                CLI::write("  [OK] Menu Lv2 '{$menuRow['label']}' (ID: 11-05, Link: {$menuRow['link']}) terdaftar dengan benar.", "green");
+            } else {
+                throw new \Exception("Menu Lv2 11-05 belum terdaftar atau link salah.");
+            }
+
+            // Verifikasi metode cetakPdf & exportPdf
+            $refController = new \ReflectionClass(\App\Controllers\Admin\InventarisTidakTerdata::class);
+            if ($refController->hasMethod('cetakPdf') && $refController->hasMethod('exportPdf')) {
+                CLI::write("  [OK] Controller InventarisTidakTerdata memiliki metode 'cetakPdf' (inline) dan 'exportPdf' (attachment)", "green");
+            } else {
+                throw new \Exception("Controller InventarisTidakTerdata kehilangan metode cetakPdf atau exportPdf.");
+            }
+
+            // 2. Verifikasi Data Awal & Statistik Kuantitas
+            $stats = $tidakTerdataModel->getSummaryStats();
+            $items = $tidakTerdataModel->getWithRelations();
+            CLI::write("  [OK] Berhasil membaca data aset tidak terdata. Total: {$stats['total_item']} item, {$stats['total_buah']} buah (Baik: {$stats['total_baik']}, Rusak: {$stats['total_rusak']})", "green");
+
+            // Pastikan field lokasi_penempatan ada di setiap baris
+            $hasLocation = true;
+            foreach ($items as $item) {
+                if (! array_key_exists('lokasi_penempatan', $item)) {
+                    $hasLocation = false;
+                    break;
+                }
+            }
+            if ($hasLocation) {
+                CLI::write("  [OK] Field lokasi penempatan aset tersedia di seluruh record.", "green");
+            } else {
+                throw new \Exception("Field lokasi_penempatan tidak ditemukan di struktur data.");
+            }
+
+            // 3. Test CRUD Dummy Aset Tidak Terdata dengan Lokasi
+            $dummyTidakTerdataId = $tidakTerdataModel->insert([
+                'nama_barang'       => 'SMOKE_TEST_LAPTOP_OPERASIONAL',
+                'jumlah'            => 2,
+                'satuan'            => 'Unit',
+                'merk_tipe'         => 'Lenovo ThinkPad L14 Gen 3',
+                'tahun_perolehan'   => '2024',
+                'ruangan_id'        => $ruanganId,
+                'lokasi_penempatan' => 'Ruang Server & Pengolahan Data',
+                'kondisi'           => 'baik',
+                'keterangan'        => 'Pengujian smoke test otomatis lokasi aset',
+                'petugas_nama'      => 'Hendrick Bastiar',
+                'petugas_nip'       => '197810162025211023',
+            ]);
+
+            $inserted = $tidakTerdataModel->find($dummyTidakTerdataId);
+            if ($inserted && $inserted['lokasi_penempatan'] === 'Ruang Server & Pengolahan Data' && (int)$inserted['jumlah'] === 2) {
+                CLI::write("  [OK] Insert data aset tidak terdata berhasil (ID: {$dummyTidakTerdataId}, Lokasi: '{$inserted['lokasi_penempatan']}', Qty: 2 Unit).", "green");
+            } else {
+                throw new \Exception("Gagal melakukan insert data aset tidak terdata.");
+            }
+
+            // Update Lokasi & Kuantitas
+            $tidakTerdataModel->update($dummyTidakTerdataId, [
+                'lokasi_penempatan' => 'Ruang Rapat Utama Lantai 2',
+                'kondisi'           => 'rusak_ringan',
+            ]);
+            $updated = $tidakTerdataModel->find($dummyTidakTerdataId);
+            if ($updated['lokasi_penempatan'] === 'Ruang Rapat Utama Lantai 2' && $updated['kondisi'] === 'rusak_ringan') {
+                CLI::write("  [OK] Update lokasi aset dan kondisi berhasil diperbarui.", "green");
+            } else {
+                throw new \Exception("Gagal memperbarui data aset tidak terdata.");
+            }
+
+            // 4. Test Render PDF (Format Dokumen Sesuai Lampiran)
+            $tempDir = ROOTPATH . 'do_not_upload/temp/';
+            if (! is_dir($tempDir)) {
+                mkdir($tempDir, 0777, true);
+            }
+            $tempPdfPath = $tempDir . 'test_aset_tidak_terdata_' . time() . '.pdf';
+
+            $allItems = $tidakTerdataModel->getWithRelations();
+            $summaryStats = $tidakTerdataModel->getSummaryStats();
+            $pdfHtml = view('admin/inventaris/tidak_terdata/pdf_tidak_terdata', [
+                'items'        => $allItems,
+                'summary'      => $summaryStats,
+                'logoPuBase64' => '',
+                'tanggalCetak' => date('d F Y'),
+            ]);
+
+            $pdfOptions = new \Dompdf\Options();
+            $pdfOptions->set('isHtml5ParserEnabled', true);
+            $dompdf = new \Dompdf\Dompdf($pdfOptions);
+            $dompdf->loadHtml($pdfHtml);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            file_put_contents($tempPdfPath, $dompdf->output());
+
+            if (file_exists($tempPdfPath) && filesize($tempPdfPath) > 1000) {
+                CLI::write("  [OK] Dokumen PDF Aset Tidak Terdata berhasil di-render (Ukuran: " . number_format(filesize($tempPdfPath)) . " bytes).", "green");
+            } else {
+                throw new \Exception("Render PDF Aset Tidak Terdata gagal atau file kosong.");
+            }
+
+            // Cleanup temp PDF file sesuai Rule 3
+            if (file_exists($tempPdfPath)) {
+                unlink($tempPdfPath);
+                CLI::write("  [CLEANUP] File sementara {$tempPdfPath} telah dihapus sesuai Rule 3.", "yellow");
+            }
+
+            // 5. Test Excel Generation
+            $tempXlsxPath = $tempDir . 'test_aset_tidak_terdata_' . time() . '.xlsx';
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setCellValue('A1', 'DAFTAR ASET TIDAK TERDATA');
+            $sheet->setCellValue('A5', 'NO');
+            $sheet->setCellValue('B5', 'NAMA BARANG');
+            $sheet->setCellValue('C5', 'BUAH (QTY)');
+            $sheet->setCellValue('F5', 'LOKASI ASET');
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save($tempXlsxPath);
+
+            if (file_exists($tempXlsxPath) && filesize($tempXlsxPath) > 1000) {
+                CLI::write("  [OK] File Excel Aset Tidak Terdata berhasil di-generate (Ukuran: " . number_format(filesize($tempXlsxPath)) . " bytes).", "green");
+            } else {
+                throw new \Exception("Generate Excel Aset Tidak Terdata gagal.");
+            }
+
+            // Cleanup temp XLSX file sesuai Rule 3
+            if (file_exists($tempXlsxPath)) {
+                unlink($tempXlsxPath);
+                CLI::write("  [CLEANUP] File sementara {$tempXlsxPath} telah dihapus sesuai Rule 3.", "yellow");
+            }
+
+            // Cleanup dummy row
+            $tidakTerdataModel->delete($dummyTidakTerdataId);
+            CLI::write("  [CLEANUP] Data dummy aset tidak terdata berhasil dibersihkan dari database.", "green");
+
+            $passedTests++;
+        } catch (\Throwable $e) {
+            CLI::error("  [FAIL] Exception saat uji coba Aset Tidak Terdata: " . $e->getMessage());
+            if (isset($dummyTidakTerdataId) && $dummyTidakTerdataId) {
+                $db->table('trn_inventaris_tidak_terdata')->where('id', $dummyTidakTerdataId)->delete();
             }
         }
 

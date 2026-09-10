@@ -445,6 +445,24 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('inventaris/pinjam-pakai/export-excel', 'Admin\InventarisPinjamPakai::exportExcel');
 
 	$routes->get('inventaris/sekolah', 'Admin\InventarisSekolah::index');
+
+	// Modul Inventarisasi - Aset Tidak Terdata (Non-BMN / Operasional Kantor)
+	$routes->get('inventaris/tidak-terdata', 'Admin\InventarisTidakTerdata::index');
+	$routes->post('inventaris/tidak-terdata/create', 'Admin\InventarisTidakTerdata::store');
+	$routes->post('inventaris/tidak-terdata/tambah', 'Admin\InventarisTidakTerdata::store');
+	$routes->get('inventaris/tidak-terdata/create', static fn() => redirect()->to('/admin/inventaris/tidak-terdata'));
+	$routes->get('inventaris/tidak-terdata/tambah', static fn() => redirect()->to('/admin/inventaris/tidak-terdata'));
+	$routes->post('inventaris/tidak-terdata/(:num)/edit', 'Admin\InventarisTidakTerdata::update/$1');
+	$routes->post('inventaris/tidak-terdata/(:num)/ubah', 'Admin\InventarisTidakTerdata::update/$1');
+	$routes->get('inventaris/tidak-terdata/(:num)/edit', static fn() => redirect()->to('/admin/inventaris/tidak-terdata'));
+	$routes->get('inventaris/tidak-terdata/(:num)/ubah', static fn() => redirect()->to('/admin/inventaris/tidak-terdata'));
+	$routes->post('inventaris/tidak-terdata/(:num)/delete', 'Admin\InventarisTidakTerdata::delete/$1');
+	$routes->post('inventaris/tidak-terdata/(:num)/hapus', 'Admin\InventarisTidakTerdata::delete/$1');
+	$routes->get('inventaris/tidak-terdata/(:num)/delete', static fn() => redirect()->to('/admin/inventaris/tidak-terdata'));
+	$routes->get('inventaris/tidak-terdata/(:num)/hapus', static fn() => redirect()->to('/admin/inventaris/tidak-terdata'));
+	$routes->get('inventaris/tidak-terdata/cetak-pdf', 'Admin\InventarisTidakTerdata::cetakPdf');
+	$routes->get('inventaris/tidak-terdata/export-pdf', 'Admin\InventarisTidakTerdata::exportPdf');
+	$routes->get('inventaris/tidak-terdata/export-excel', 'Admin\InventarisTidakTerdata::exportExcel');
 });
 
 
