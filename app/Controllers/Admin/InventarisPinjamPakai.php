@@ -79,7 +79,7 @@ class InventarisPinjamPakai extends BaseController
         $rules = [
             'inventaris_id'   => 'required|is_natural_no_zero',
             'nama_peminjam'   => 'required|max_length[150]',
-            'no_surat'        => 'required|max_length[100]',
+            'no_surat'        => 'permit_empty|max_length[100]',
             'tgl_pinjam'      => 'required|valid_date',
             'keperluan'       => 'required',
             'kondisi_pinjam'  => 'permit_empty|in_list[baik,rusak_ringan,rusak_berat]',
@@ -153,6 +153,7 @@ class InventarisPinjamPakai extends BaseController
         }
 
         $userId = (int) (session()->get('userId') ?? 0);
+        $noSuratVal = trim((string) $this->request->getPost('no_surat')) ?: null;
 
         $pinjamId = $pinjamModel->insert([
             'inventaris_id'        => $inventarisId,
@@ -161,7 +162,7 @@ class InventarisPinjamPakai extends BaseController
             'nip_peminjam'         => $nipPeminjam,
             'jabatan_peminjam'     => $jabatanPeminjam,
             'kontak_peminjam'      => $kontakPeminjam,
-            'no_surat'             => trim((string) $this->request->getPost('no_surat')),
+            'no_surat'             => $noSuratVal,
             'tgl_pinjam'           => trim((string) $this->request->getPost('tgl_pinjam')),
             'tgl_kembali_rencana'  => trim((string) $this->request->getPost('tgl_kembali_rencana')) ?: null,
             'keperluan'            => trim((string) $this->request->getPost('keperluan')),
@@ -208,7 +209,7 @@ class InventarisPinjamPakai extends BaseController
 
         $rules = [
             'nama_peminjam'  => 'required|max_length[150]',
-            'no_surat'       => 'required|max_length[100]',
+            'no_surat'       => 'permit_empty|max_length[100]',
             'tgl_pinjam'     => 'required|valid_date',
             'keperluan'      => 'required',
             'kondisi_pinjam' => 'permit_empty|in_list[baik,rusak_ringan,rusak_berat]',
@@ -248,6 +249,7 @@ class InventarisPinjamPakai extends BaseController
         }
 
         $userId = (int) (session()->get('userId') ?? 0);
+        $noSuratEdit = trim((string) $this->request->getPost('no_surat')) ?: null;
 
         $pinjamModel->update($id, [
             'pegawai_id'          => $pegawaiId,
@@ -255,7 +257,7 @@ class InventarisPinjamPakai extends BaseController
             'nip_peminjam'        => $nipPeminjam,
             'jabatan_peminjam'    => $jabatanPeminjam,
             'kontak_peminjam'     => $kontakPeminjam,
-            'no_surat'            => trim((string) $this->request->getPost('no_surat')),
+            'no_surat'            => $noSuratEdit,
             'tgl_pinjam'          => trim((string) $this->request->getPost('tgl_pinjam')),
             'tgl_kembali_rencana' => trim((string) $this->request->getPost('tgl_kembali_rencana')) ?: null,
             'keperluan'           => trim((string) $this->request->getPost('keperluan')),
@@ -440,7 +442,10 @@ class InventarisPinjamPakai extends BaseController
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
-        $filename = 'Surat_Pinjam_Pakai_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $loan['no_surat']) . '.pdf';
+        $suratSlug = ! empty($loan['no_surat'])
+            ? preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $loan['no_surat'])
+            : ('ID_' . $id . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) ($loan['nama_peminjam'] ?? 'Aset')));
+        $filename = 'Surat_Pinjam_Pakai_' . $suratSlug . '.pdf';
         return $dompdf->stream($filename, ['Attachment' => false]);
     }
 

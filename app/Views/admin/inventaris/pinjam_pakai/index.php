@@ -92,7 +92,7 @@
                                 <td class="text-center align-middle"><?= $no++; ?></td>
                                 <td class="align-middle">
                                     <span class="font-weight-bold text-dark d-block" style="font-size: 0.95rem;">
-                                        <?= esc($p['no_surat']); ?>
+                                        <?= ! empty($p['no_surat']) ? esc($p['no_surat']) : '<span class="text-muted font-italic font-weight-normal">(Tanpa No. Surat)</span>'; ?>
                                     </span>
                                     <small class="text-muted d-block mb-1">
                                         <i class="far fa-calendar-alt mr-1"></i> <?= date('d/m/Y', strtotime($p['tgl_pinjam'])); ?>
@@ -286,19 +286,13 @@
                         <small class="text-muted">Aset yang sedang dalam status dipinjam aktif tidak ditampilkan pada daftar ini.</small>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Kondisi Fisik Saat Dipinjam <span class="text-danger">*</span></label>
-                            <select name="kondisi_pinjam" class="form-control" required style="border-radius: 6px;">
-                                <option value="baik" selected>Baik</option>
-                                <option value="rusak_ringan">Rusak Ringan</option>
-                                <option value="rusak_berat">Rusak Berat</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Kelengkapan / Aksesoris</label>
-                            <input type="text" name="kelengkapan" class="form-control" placeholder="Contoh: Charger original, Tas laptop, Mouse wireless" style="border-radius: 6px;">
-                        </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold small text-dark">Kondisi Fisik Saat Dipinjam <span class="text-danger">*</span></label>
+                        <select name="kondisi_pinjam" class="form-control" required style="border-radius: 6px;">
+                            <option value="baik" selected>Baik</option>
+                            <option value="rusak_ringan">Rusak Ringan</option>
+                            <option value="rusak_berat">Rusak Berat</option>
+                        </select>
                     </div>
 
                     <!-- Section Pegawai Peminjam -->
@@ -354,8 +348,8 @@
                     </h6>
                     <div class="row">
                         <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Nomor Surat Izin Pinjam Pakai <span class="text-danger">*</span></label>
-                            <input type="text" name="no_surat" class="form-control" placeholder="Contoh: 01/SPP/BMN/PPS-RIAU/2026" value="SPP/BMN/<?= date('Y/m'); ?>/" required style="border-radius: 6px;">
+                            <label class="font-weight-bold small text-dark">Nomor Surat Izin Pinjam Pakai <span class="text-muted font-weight-normal">(Opsional)</span></label>
+                            <input type="text" name="no_surat" class="form-control" placeholder="Contoh: 01/SPP/BMN/PPS-RIAU/2026 (Opsional)" style="border-radius: 6px;">
                         </div>
                         <div class="col-md-3 form-group">
                             <label class="font-weight-bold small text-dark">Tanggal Pinjam <span class="text-danger">*</span></label>
@@ -461,8 +455,8 @@
                     </h6>
                     <div class="row">
                         <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Nomor Surat <span class="text-danger">*</span></label>
-                            <input type="text" name="no_surat" id="edit-no-surat" class="form-control" required style="border-radius: 6px;">
+                            <label class="font-weight-bold small text-dark">Nomor Surat <span class="text-muted font-weight-normal">(Opsional)</span></label>
+                            <input type="text" name="no_surat" id="edit-no-surat" class="form-control" placeholder="Opsional (boleh dikosongkan)" style="border-radius: 6px;">
                         </div>
                         <div class="col-md-3 form-group">
                             <label class="font-weight-bold small text-dark">Tanggal Pinjam <span class="text-danger">*</span></label>
@@ -474,19 +468,13 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Kondisi Fisik Saat Pinjam</label>
-                            <select name="kondisi_pinjam" id="edit-kondisi-pinjam" class="form-control" style="border-radius: 6px;">
-                                <option value="baik">Baik</option>
-                                <option value="rusak_ringan">Rusak Ringan</option>
-                                <option value="rusak_berat">Rusak Berat</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Kelengkapan / Aksesoris</label>
-                            <input type="text" name="kelengkapan" id="edit-kelengkapan" class="form-control" style="border-radius: 6px;">
-                        </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold small text-dark">Kondisi Fisik Saat Pinjam</label>
+                        <select name="kondisi_pinjam" id="edit-kondisi-pinjam" class="form-control" style="border-radius: 6px;">
+                            <option value="baik">Baik</option>
+                            <option value="rusak_ringan">Rusak Ringan</option>
+                            <option value="rusak_berat">Rusak Berat</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -709,7 +697,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('edit-tgl-kembali-rencana').value = btn.getAttribute('data-tgl-kembali') || '';
         document.getElementById('edit-keperluan').value = btn.getAttribute('data-keperluan') || '';
         document.getElementById('edit-kondisi-pinjam').value = btn.getAttribute('data-kondisi') || 'baik';
-        document.getElementById('edit-kelengkapan').value = btn.getAttribute('data-kelengkapan') || '';
         document.getElementById('edit-catatan').value = btn.getAttribute('data-catatan') || '';
     }
 
@@ -735,7 +722,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (elPeminjam) elPeminjam.textContent = peminjam;
 
         var elSurat = document.getElementById('kembali-surat-no');
-        if (elSurat) elSurat.textContent = surat;
+        if (elSurat) elSurat.textContent = surat ? surat : '(Tanpa No. Surat)';
 
         var elKondisi = document.getElementById('kembali-kondisi-select');
         if (elKondisi) elKondisi.value = kondisi;
@@ -754,7 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var suratEl = document.getElementById('delete-pinjam-surat');
         if (suratEl) {
-            suratEl.textContent = 'Surat: ' + surat + ' (' + barang + ')';
+            suratEl.textContent = (surat ? ('Surat: ' + surat) : '(Tanpa No. Surat)') + ' (' + barang + ')';
         }
     }
 

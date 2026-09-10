@@ -820,8 +820,8 @@ class InventarisSmokeTest extends BaseCommand
                 'lokasi_ruangan'  => 'Gudang Satker',
             ]);
 
-            // 2. Catat peminjaman baru
-            $nomorSuratTest = 'SPP/BMN/' . date('Y/m') . '/TEST-' . time();
+            // 2. Catat peminjaman baru (menguji no_surat bernilai NULL / opsional dan tanpa kelengkapan)
+            $nomorSuratTest = null;
             $peminjamNamaTest = 'Budi Santoso, S.T.';
             $peminjamNipTest  = '198505152010011005';
 
@@ -837,7 +837,7 @@ class InventarisSmokeTest extends BaseCommand
                 'tgl_kembali_rencana'  => date('Y-m-d', strtotime('+30 days')),
                 'keperluan'            => 'Pengawasan lapangan proyek rehabilitasi sekolah',
                 'kondisi_pinjam'       => 'baik',
-                'kelengkapan'          => 'Charger, Tas Laptop, Mouse',
+                'kelengkapan'          => null,
                 'status'               => 'dipinjam',
             ]);
 

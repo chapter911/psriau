@@ -232,7 +232,7 @@
     <!-- Judul Dokumen -->
     <div class="doc-title-box">
         <div class="doc-title">SURAT IZIN PINJAM PAKAI BARANG MILIK NEGARA (BMN)</div>
-        <div class="doc-no">Nomor: <?= esc($loan['no_surat']); ?></div>
+        <div class="doc-no">Nomor: <?= ! empty($loan['no_surat']) ? esc($loan['no_surat']) : '................................................'; ?></div>
     </div>
 
     <!-- Pembukaan -->
