@@ -206,19 +206,23 @@
         .sig-table td {
             vertical-align: top;
             width: 50%;
+            text-align: center;
         }
         .sig-box {
             padding: 0 10px;
+            text-align: center;
         }
         .sig-role {
             font-size: 7.5pt;
             color: #475569;
             margin-bottom: 1px;
+            text-align: center;
         }
         .sig-title {
             font-weight: bold;
             color: #0f172a;
             font-size: 8pt;
+            text-align: center;
         }
         .sig-space {
             height: 42px;
@@ -228,11 +232,13 @@
             color: #0f172a;
             font-size: 8pt;
             text-decoration: underline;
+            text-align: center;
         }
         .sig-nip {
             font-size: 7.5pt;
             color: #334155;
             margin-top: 1px;
+            text-align: center;
         }
 
         /* Footer Halaman */
@@ -366,7 +372,7 @@
     <!-- Blok Pengesahan / Tanda Tangan -->
     <table class="sig-table">
         <tr>
-            <td style="padding-left: 20px;">
+            <td style="width: 50%; text-align: center; padding: 0 15px;">
                 <div class="sig-box">
                     <div class="sig-role">Mengetahui,</div>
                     <div class="sig-title">Penanggung Jawab UAKPB</div>
@@ -376,7 +382,7 @@
                     <div class="sig-nip">NIP. <?= esc($kasatker['nip'] ?? '198002142014121002'); ?></div>
                 </div>
             </td>
-            <td style="padding-left: 40px;">
+            <td style="width: 50%; text-align: center; padding: 0 15px;">
                 <div class="sig-box">
                     <div class="sig-role">Pekanbaru, <?= esc($tglPenetapan ?? date('d F Y')); ?></div>
                     <div class="sig-title">Penanggung Jawab Ruangan</div>
