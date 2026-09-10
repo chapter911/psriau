@@ -542,7 +542,7 @@
                                 <option value="rusak_berat">Rusak Berat</option>
                             </select>
                         </div>
-                        <div class="col-md-6 form-group">
+                        <div class="col-md-8 form-group">
                             <label class="font-weight-bold small text-dark">Lokasi Ruangan <span class="text-danger">*</span></label>
                             <select name="lokasi_ruangan" id="tambah-lokasi" class="form-control select2" data-tags="true" data-placeholder="-- Pilih atau Ketik Ruangan --" required style="width: 100%;">
                                 <option value=""></option>
@@ -552,30 +552,38 @@
                             </select>
                             <small class="text-muted" style="font-size: 0.72rem;">Pilih dari daftar ruangan atau ketik langsung nama ruangan baru</small>
                         </div>
-                        <div class="col-md-3 form-group">
+                        <div class="col-md-4 form-group">
                             <label class="font-weight-bold small text-dark">Tahun Perolehan</label>
                             <input type="number" name="tahun_perolehan" class="form-control" placeholder="Contoh: <?= date('Y'); ?>" min="1990" max="<?= date('Y') + 1; ?>" style="border-radius: 6px;">
                         </div>
-                        <div class="col-md-3 form-group">
-                            <label class="font-weight-bold small text-dark">Peruntukan <span class="text-danger">*</span></label>
-                            <div class="d-flex align-items-center mt-2" style="gap: 15px;">
-                                <div class="custom-control custom-radio">
-                                    <input type="radio" id="tambah_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input" checked>
-                                    <label class="custom-control-label font-weight-normal text-primary" for="tambah_peruntukan_kantor">
-                                        <i class="fas fa-building mr-1"></i> Kantor
-                                    </label>
-                                </div>
-                                <div class="custom-control custom-radio">
-                                    <input type="radio" id="tambah_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
-                                    <label class="custom-control-label font-weight-normal text-warning" for="tambah_peruntukan_mobiler">
-                                        <i class="fas fa-school mr-1"></i> <strong class="text-dark">Mobiler</strong>
-                                    </label>
-                                </div>
-                                <div class="custom-control custom-radio">
-                                    <input type="radio" id="tambah_peruntukan_lainnya" name="peruntukan" value="lainnya" class="custom-control-input">
-                                    <label class="custom-control-label font-weight-normal" style="color: #6d28d9;" for="tambah_peruntukan_lainnya">
-                                        <i class="fas fa-layer-group mr-1"></i> <strong class="text-dark">Item Lainnya</strong>
-                                    </label>
+                        <div class="col-md-12 form-group">
+                            <label class="font-weight-bold small text-dark d-block mb-2">Peruntukan Aset <span class="text-danger">*</span></label>
+                            <div class="card p-2 mb-0" style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                <div class="row align-items-center">
+                                    <div class="col-md-4 col-sm-6 mb-2 mb-md-0">
+                                        <div class="custom-control custom-radio">
+                                            <input type="radio" id="tambah_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input" checked>
+                                            <label class="custom-control-label font-weight-bold text-primary" for="tambah_peruntukan_kantor" style="cursor: pointer;">
+                                                <i class="fas fa-building mr-1"></i> Kantor (Satker)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-sm-6 mb-2 mb-md-0">
+                                        <div class="custom-control custom-radio">
+                                            <input type="radio" id="tambah_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
+                                            <label class="custom-control-label font-weight-bold text-warning" for="tambah_peruntukan_mobiler" style="cursor: pointer;">
+                                                <i class="fas fa-school mr-1"></i> <span class="text-dark">Mobiler (Sekolah)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-sm-12">
+                                        <div class="custom-control custom-radio">
+                                            <input type="radio" id="tambah_peruntukan_lainnya" name="peruntukan" value="lainnya" class="custom-control-input">
+                                            <label class="custom-control-label font-weight-bold" style="color: #7c3aed; cursor: pointer;" for="tambah_peruntukan_lainnya">
+                                                <i class="fas fa-layer-group mr-1"></i> <span class="text-dark">Item Lainnya</span>
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -671,7 +679,7 @@
                                 <option value="rusak_berat">Rusak Berat</option>
                             </select>
                         </div>
-                        <div class="col-md-6 form-group">
+                        <div class="col-md-8 form-group">
                             <label class="font-weight-bold small text-dark">Lokasi Ruangan <span class="text-danger">*</span></label>
                             <select id="edit-lokasi" name="lokasi_ruangan" class="form-control select2" data-tags="true" data-placeholder="-- Pilih atau Ketik Ruangan --" required style="width: 100%;">
                                 <option value=""></option>
@@ -681,30 +689,38 @@
                             </select>
                             <small class="text-muted" style="font-size: 0.72rem;">Pilih dari daftar ruangan atau ketik langsung nama ruangan baru</small>
                         </div>
-                        <div class="col-md-3 form-group">
+                        <div class="col-md-4 form-group">
                             <label class="font-weight-bold small text-dark">Tahun Perolehan</label>
                             <input type="number" id="edit-tahun" name="tahun_perolehan" class="form-control" min="1990" max="<?= date('Y') + 1; ?>" style="border-radius: 6px;">
                         </div>
-                        <div class="col-md-3 form-group">
-                            <label class="font-weight-bold small text-dark">Peruntukan <span class="text-danger">*</span></label>
-                            <div class="d-flex align-items-center mt-2" style="gap: 15px;">
-                                <div class="custom-control custom-radio">
-                                    <input type="radio" id="edit_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input" checked>
-                                    <label class="custom-control-label font-weight-normal text-primary" for="edit_peruntukan_kantor">
-                                        <i class="fas fa-building mr-1"></i> Kantor
-                                    </label>
-                                </div>
-                                <div class="custom-control custom-radio">
-                                    <input type="radio" id="edit_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
-                                    <label class="custom-control-label font-weight-normal text-warning" for="edit_peruntukan_mobiler">
-                                        <i class="fas fa-school mr-1"></i> <strong class="text-dark">Mobiler</strong>
-                                    </label>
-                                </div>
-                                <div class="custom-control custom-radio">
-                                    <input type="radio" id="edit_peruntukan_lainnya" name="peruntukan" value="lainnya" class="custom-control-input">
-                                    <label class="custom-control-label font-weight-normal" style="color: #6d28d9;" for="edit_peruntukan_lainnya">
-                                        <i class="fas fa-layer-group mr-1"></i> <strong class="text-dark">Item Lainnya</strong>
-                                    </label>
+                        <div class="col-md-12 form-group">
+                            <label class="font-weight-bold small text-dark d-block mb-2">Peruntukan Aset <span class="text-danger">*</span></label>
+                            <div class="card p-2 mb-0" style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                <div class="row align-items-center">
+                                    <div class="col-md-4 col-sm-6 mb-2 mb-md-0">
+                                        <div class="custom-control custom-radio">
+                                            <input type="radio" id="edit_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input" checked>
+                                            <label class="custom-control-label font-weight-bold text-primary" for="edit_peruntukan_kantor" style="cursor: pointer;">
+                                                <i class="fas fa-building mr-1"></i> Kantor (Satker)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-sm-6 mb-2 mb-md-0">
+                                        <div class="custom-control custom-radio">
+                                            <input type="radio" id="edit_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
+                                            <label class="custom-control-label font-weight-bold text-warning" for="edit_peruntukan_mobiler" style="cursor: pointer;">
+                                                <i class="fas fa-school mr-1"></i> <span class="text-dark">Mobiler (Sekolah)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-sm-12">
+                                        <div class="custom-control custom-radio">
+                                            <input type="radio" id="edit_peruntukan_lainnya" name="peruntukan" value="lainnya" class="custom-control-input">
+                                            <label class="custom-control-label font-weight-bold" style="color: #7c3aed; cursor: pointer;" for="edit_peruntukan_lainnya">
+                                                <i class="fas fa-layer-group mr-1"></i> <span class="text-dark">Item Lainnya</span>
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
