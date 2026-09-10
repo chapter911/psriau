@@ -791,6 +791,20 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::error("  [FAIL] Controller InventarisPinjamPakai kehilangan metode kontrol akses menu!");
             }
 
+            // 0b. Validasi query dropdown pegawai terhubung dengan mst_jabatan tanpa error kolom
+            $testPegList = $db->table('mst_pegawai p')
+                ->select('p.id, p.nama, p.nip, p.email, ju.jabatan AS jabatan')
+                ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left')
+                ->where('p.is_active', 1)
+                ->orderBy('p.nama', 'ASC')
+                ->get()
+                ->getResultArray();
+            if (! empty($testPegList) && isset($testPegList[0]['nama'])) {
+                CLI::write("  [OK] Query master pegawai & jabatan untuk dropdown pinjam pakai berhasil mengambil " . count($testPegList) . " pegawai aktif", "green");
+            } else {
+                CLI::error("  [FAIL] Query master pegawai & jabatan untuk pinjam pakai gagal.");
+            }
+
             // 1. Buat aset dummy khusus pinjam pakai
             $dummyPinjamAssetId = $satkerModel->insert([
                 'kode_barang'     => 'SMOKE-PINJAM-01',

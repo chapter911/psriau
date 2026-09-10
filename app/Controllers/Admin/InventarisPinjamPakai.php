@@ -39,11 +39,13 @@ class InventarisPinjamPakai extends BaseController
         // Ambil daftar pegawai aktif dari master pegawai
         $pegawaiList = [];
         if ($db->tableExists('mst_pegawai')) {
-            $builder = $db->table('mst_pegawai')->select('id, nama, nip, jabatan, no_hp, email');
+            $builder = $db->table('mst_pegawai p')
+                ->select('p.id, p.nama, p.nip, p.email, ju.jabatan AS jabatan')
+                ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left');
             if ($db->fieldExists('is_active', 'mst_pegawai')) {
-                $builder->where('is_active', 1);
+                $builder->where('p.is_active', 1);
             }
-            $pegawaiList = $builder->orderBy('nama', 'ASC')->get()->getResultArray();
+            $pegawaiList = $builder->orderBy('p.nama', 'ASC')->get()->getResultArray();
         }
 
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
@@ -113,12 +115,16 @@ class InventarisPinjamPakai extends BaseController
         if ($pegawaiId !== null && $pegawaiId > 0) {
             $db = db_connect();
             if ($db->tableExists('mst_pegawai')) {
-                $peg = $db->table('mst_pegawai')->where('id', $pegawaiId)->get()->getRowArray();
+                $peg = $db->table('mst_pegawai p')
+                    ->select('p.id, p.nama, p.nip, ju.jabatan AS jabatan')
+                    ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left')
+                    ->where('p.id', $pegawaiId)
+                    ->get()
+                    ->getRowArray();
                 if (is_array($peg)) {
                     $namaPeminjam = $namaPeminjam ?: ($peg['nama'] ?? '');
                     $nipPeminjam = $nipPeminjam ?: ($peg['nip'] ?? null);
                     $jabatanPeminjam = $jabatanPeminjam ?: ($peg['jabatan'] ?? null);
-                    $kontakPeminjam = $kontakPeminjam ?: ($peg['no_hp'] ?? null);
                 }
             }
         }
