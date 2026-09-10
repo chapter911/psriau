@@ -108,11 +108,13 @@ class InventarisSatker extends BaseController
 
         // Get unique dropdown options
 
-        // Unique kode_barang list for bulk update modal
+        // Unique item list for bulk update modal (dikelompokkan berdasarkan kode_barang, nama_barang, dan merk_tipe)
         $uniqueKodeBarangList = $db->table('trn_inventaris_satker')
-            ->select('kode_barang, nama_barang, COUNT(id) AS total_unit, MIN(CAST(NULLIF(nup, "") AS UNSIGNED)) AS min_nup, MAX(CAST(NULLIF(nup, "") AS UNSIGNED)) AS max_nup')
-            ->groupBy('kode_barang, nama_barang')
+            ->select('kode_barang, nama_barang, merk_tipe, COUNT(id) AS total_unit, MIN(CAST(NULLIF(nup, "") AS UNSIGNED)) AS min_nup, MAX(CAST(NULLIF(nup, "") AS UNSIGNED)) AS max_nup')
+            ->groupBy('kode_barang, nama_barang, merk_tipe')
             ->orderBy('kode_barang', 'ASC')
+            ->orderBy('nama_barang', 'ASC')
+            ->orderBy('merk_tipe', 'ASC')
             ->get()
             ->getResultArray();
 
@@ -370,6 +372,20 @@ class InventarisSatker extends BaseController
         }
 
         $kodeBarang = trim((string) $this->request->getPost('kode_barang'));
+        $namaBarang = trim((string) $this->request->getPost('nama_barang'));
+        $merkTipe   = trim((string) $this->request->getPost('merk_tipe'));
+
+        if (strpos($kodeBarang, ':::') !== false) {
+            $parts = explode(':::', $kodeBarang);
+            $kodeBarang = trim($parts[0] ?? '');
+            if ($namaBarang === '') {
+                $namaBarang = trim($parts[1] ?? '');
+            }
+            if ($merkTipe === '') {
+                $merkTipe = trim($parts[2] ?? '');
+            }
+        }
+
         $lingkupNup = strtolower(trim((string) $this->request->getPost('lingkup_nup')));
         if (! in_array($lingkupNup, ['semua', 'sebagian'], true)) {
             $lingkupNup = 'semua';
@@ -388,18 +404,25 @@ class InventarisSatker extends BaseController
         $userId = (int) (session()->get('userId') ?? 0);
         $labelTarget = ($peruntukan === 'mobiler') ? 'Mobiler (Sekolah)' : 'Kantor (Satker)';
 
-        // 1. Opsi: Update SELURUH NUP (Semua Unit Barang ini)
-        if ($lingkupNup === 'semua') {
-            $targetRows = $db->table('trn_inventaris_satker')
-                ->select('id, nama_barang')
-                ->where('kode_barang', $kodeBarang)
-                ->get()
-                ->getResultArray();
+        $builder = $db->table('trn_inventaris_satker')
+            ->select('id, nama_barang, merk_tipe, nup')
+            ->where('kode_barang', $kodeBarang);
 
+        if ($namaBarang !== '') {
+            $builder->where('nama_barang', $namaBarang);
+        }
+        if ($merkTipe !== '') {
+            $builder->where('merk_tipe', $merkTipe);
+        }
+
+        // 1. Opsi: Update SELURUH NUP (Hanya barang dengan Kode, Nama, dan Merk/Tipe yang sama)
+        if ($lingkupNup === 'semua') {
+            $targetRows = $builder->get()->getResultArray();
             $ids = array_column($targetRows, 'id');
+
             if (empty($ids)) {
                 return redirect()->to('/admin/inventaris/barang')
-                    ->with('error', "Tidak ditemukan data aset dengan Kode Barang \"{$kodeBarang}\".");
+                    ->with('error', "Tidak ditemukan data aset yang cocok dengan kriteria barang yang dipilih.");
             }
 
             $db->table('trn_inventaris_satker')
@@ -411,15 +434,16 @@ class InventarisSatker extends BaseController
                 ]);
 
             $count = count($ids);
-            $namaSample = $targetRows[0]['nama_barang'] ?? '';
+            $namaSample = $targetRows[0]['nama_barang'] ?? $namaBarang;
+            $merkWording = ! empty($merkTipe) ? " [{$merkTipe}]" : (! empty($targetRows[0]['merk_tipe']) ? " [{$targetRows[0]['merk_tipe']}]" : '');
 
             return redirect()->to('/admin/inventaris/barang')->with(
                 'message',
-                "Berhasil memperbarui seluruh ({$count} unit) aset \"{$namaSample}\" (Kode: {$kodeBarang}) menjadi peruntukan \"{$labelTarget}\"."
+                "Berhasil memperbarui seluruh ({$count} unit) aset \"{$namaSample}\"{$merkWording} (Kode: {$kodeBarang}) menjadi peruntukan \"{$labelTarget}\"."
             );
         }
 
-        // 2. Opsi: Update SEBAGIAN NUP (Rentang NUP Tertentu)
+        // 2. Opsi: Update SEBAGIAN NUP (Rentang NUP Tertentu pada Kode, Nama, dan Merk/Tipe yang sama)
         $nupAwal  = (int) $this->request->getPost('nup_awal');
         $nupAkhir = (int) $this->request->getPost('nup_akhir');
 
@@ -431,19 +455,15 @@ class InventarisSatker extends BaseController
             return redirect()->to('/admin/inventaris/barang')->with('error', 'NUP Awal (' . $nupAwal . ') tidak boleh lebih besar dari NUP Akhir (' . $nupAkhir . ').');
         }
 
-        // Cari item yang sesuai kode barang dan rentang NUP
-        $targetRows = $db->table('trn_inventaris_satker')
-            ->select('id, nama_barang')
-            ->where('kode_barang', $kodeBarang)
-            ->where('CAST(NULLIF(nup, "") AS UNSIGNED) >=', $nupAwal, false)
-            ->where('CAST(NULLIF(nup, "") AS UNSIGNED) <=', $nupAkhir, false)
-            ->get()
-            ->getResultArray();
+        $builder->where('CAST(NULLIF(nup, "") AS UNSIGNED) >=', $nupAwal, false)
+                ->where('CAST(NULLIF(nup, "") AS UNSIGNED) <=', $nupAkhir, false);
 
+        $targetRows = $builder->get()->getResultArray();
         $ids = array_column($targetRows, 'id');
+
         if (empty($ids)) {
             return redirect()->to('/admin/inventaris/barang')
-                ->with('error', "Tidak ditemukan data aset dengan Kode Barang \"{$kodeBarang}\" dalam rentang NUP {$nupAwal} s.d {$nupAkhir}.");
+                ->with('error', "Tidak ditemukan data aset yang cocok dalam rentang NUP {$nupAwal} s.d {$nupAkhir}.");
         }
 
         $db->table('trn_inventaris_satker')
@@ -455,17 +475,32 @@ class InventarisSatker extends BaseController
             ]);
 
         $count = count($ids);
-        $namaSample = $targetRows[0]['nama_barang'] ?? '';
+        $namaSample = $targetRows[0]['nama_barang'] ?? $namaBarang;
+        $merkWording = ! empty($merkTipe) ? " [{$merkTipe}]" : (! empty($targetRows[0]['merk_tipe']) ? " [{$targetRows[0]['merk_tipe']}]" : '');
 
         return redirect()->to('/admin/inventaris/barang')->with(
             'message',
-            "Berhasil memperbarui {$count} unit aset \"{$namaSample}\" (Kode: {$kodeBarang}, NUP: {$nupAwal} s.d {$nupAkhir}) menjadi peruntukan \"{$labelTarget}\"."
+            "Berhasil memperbarui {$count} unit aset \"{$namaSample}\"{$merkWording} (Kode: {$kodeBarang}, NUP: {$nupAwal} s.d {$nupAkhir}) menjadi peruntukan \"{$labelTarget}\"."
         );
     }
 
     public function getNupRangeByKode()
     {
-        $kode = trim((string) $this->request->getGet('kode'));
+        $kode = trim((string) ($this->request->getGet('kode_barang') ?: $this->request->getGet('kode')));
+        $nama = trim((string) $this->request->getGet('nama_barang'));
+        $merk = trim((string) $this->request->getGet('merk_tipe'));
+
+        if (strpos($kode, ':::') !== false) {
+            $parts = explode(':::', $kode);
+            $kode = trim($parts[0] ?? '');
+            if ($nama === '') {
+                $nama = trim($parts[1] ?? '');
+            }
+            if ($merk === '') {
+                $merk = trim($parts[2] ?? '');
+            }
+        }
+
         if ($kode === '') {
             return $this->response->setJSON([
                 'status'  => 'error',
@@ -475,14 +510,22 @@ class InventarisSatker extends BaseController
         }
 
         $db = db_connect();
-        $row = $db->table('trn_inventaris_satker')
-            ->select('kode_barang, nama_barang, COUNT(id) AS total_unit,
+        $builder = $db->table('trn_inventaris_satker')
+            ->select('kode_barang, nama_barang, merk_tipe, COUNT(id) AS total_unit,
                       MIN(CAST(NULLIF(nup, "") AS UNSIGNED)) AS min_nup,
                       MAX(CAST(NULLIF(nup, "") AS UNSIGNED)) AS max_nup,
                       SUM(CASE WHEN peruntukan = "kantor" THEN 1 ELSE 0 END) AS count_kantor,
                       SUM(CASE WHEN peruntukan = "mobiler" THEN 1 ELSE 0 END) AS count_mobiler')
-            ->where('kode_barang', $kode)
-            ->groupBy('kode_barang, nama_barang')
+            ->where('kode_barang', $kode);
+
+        if ($nama !== '') {
+            $builder->where('nama_barang', $nama);
+        }
+        if ($merk !== '') {
+            $builder->where('merk_tipe', $merk);
+        }
+
+        $row = $builder->groupBy('kode_barang, nama_barang, merk_tipe')
             ->get()
             ->getRowArray();
 
@@ -490,7 +533,7 @@ class InventarisSatker extends BaseController
             return $this->response->setJSON([
                 'status'  => 'not_found',
                 'success' => false,
-                'message' => "Data aset dengan Kode Barang \"{$kode}\" tidak ditemukan.",
+                'message' => "Data aset tidak ditemukan.",
             ]);
         }
 
@@ -500,6 +543,7 @@ class InventarisSatker extends BaseController
             'data'    => [
                 'kode_barang'   => $row['kode_barang'],
                 'nama_barang'   => $row['nama_barang'],
+                'merk_tipe'     => $row['merk_tipe'] ?? '',
                 'total_unit'    => (int) ($row['total_unit'] ?? 0),
                 'min_nup'       => (int) ($row['min_nup'] ?? 1),
                 'max_nup'       => (int) ($row['max_nup'] ?? 1),

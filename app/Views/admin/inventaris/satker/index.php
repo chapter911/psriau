@@ -881,15 +881,28 @@
                     </div>
 
                     <div class="form-group mb-3">
-                        <label class="font-weight-bold small text-dark">Pilih Kode Barang / Nama Barang <span class="text-danger">*</span></label>
-                        <select name="kode_barang" id="mass-kode-barang" class="form-control select2" required style="width: 100%;">
-                            <option value="">-- Pilih Kode Barang --</option>
+                        <label class="font-weight-bold small text-dark">Pilih Kode Barang / Nama Barang / Merk Tipe <span class="text-danger">*</span></label>
+                        <select id="mass-kode-barang-select" class="form-control select2" required style="width: 100%;">
+                            <option value="">-- Pilih Barang --</option>
                             <?php foreach (($uniqueKodeBarangList ?? []) as $kb): ?>
-                                <option value="<?= esc($kb['kode_barang']); ?>">
-                                    <?= esc($kb['kode_barang']); ?> — <?= esc($kb['nama_barang']); ?> (<?= number_format((int) $kb['total_unit']); ?> unit)
+                                <?php
+                                    $itemText = $kb['kode_barang'] . ' — ' . $kb['nama_barang'];
+                                    if (! empty($kb['merk_tipe']) && stripos($kb['nama_barang'], $kb['merk_tipe']) === false) {
+                                        $itemText .= ' (' . $kb['merk_tipe'] . ')';
+                                    }
+                                    $itemText .= ' (' . number_format((int) $kb['total_unit']) . ' unit)';
+                                ?>
+                                <option value="<?= esc($kb['kode_barang'] . ':::' . $kb['nama_barang'] . ':::' . ($kb['merk_tipe'] ?? '')); ?>"
+                                        data-kode="<?= esc($kb['kode_barang']); ?>"
+                                        data-nama="<?= esc($kb['nama_barang']); ?>"
+                                        data-merk="<?= esc($kb['merk_tipe'] ?? ''); ?>">
+                                    <?= esc($itemText); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <input type="hidden" name="kode_barang" id="mass-kode-barang">
+                        <input type="hidden" name="nama_barang" id="mass-hidden-nama">
+                        <input type="hidden" name="merk_tipe" id="mass-hidden-merk">
                     </div>
 
                     <!-- Box Detail Info Aset Terpilih (AJAX Loaded) -->
@@ -1087,17 +1100,30 @@ document.addEventListener('DOMContentLoaded', function() {
             if (radioKantor) radioKantor.checked = true;
         });
 
-        // AJAX range fetch for Batch Update Modal
-        $('#mass-kode-barang').on('change', function() {
-            var kode = $(this).val();
+        // AJAX range fetch for Batch Update Modal (Specific to Kode, Nama, and Merk/Tipe)
+        $('#mass-kode-barang-select').on('change', function() {
+            var $selected = $(this).find(':selected');
+            var kode = $selected.data('kode') || '';
+            var nama = $selected.data('nama') || '';
+            var merk = $selected.data('merk') || '';
+
+            $('#mass-kode-barang').val(kode);
+            $('#mass-hidden-nama').val(nama);
+            $('#mass-hidden-merk').val(merk);
+
             if (!kode) {
                 $('#mass-info-box').slideUp();
                 $('#mass-nup-awal').val('');
                 $('#mass-nup-akhir').val('');
                 return;
             }
-            $.getJSON('<?= site_url('admin/inventaris/barang/nup-range-by-kode'); ?>', { kode_barang: kode }, function(res) {
-                if (res && res.success && res.data) {
+
+            $.getJSON('<?= site_url('admin/inventaris/barang/nup-range-by-kode'); ?>', { 
+                kode_barang: kode,
+                nama_barang: nama,
+                merk_tipe: merk
+            }, function(res) {
+                if (res && (res.success || res.status === 'success') && res.data) {
                     var d = res.data;
                     $('#mass-info-total').text((d.total_unit || 0) + ' Unit');
                     var minNup = d.min_nup !== null ? d.min_nup : 0;
@@ -1142,9 +1168,26 @@ document.addEventListener('DOMContentLoaded', function() {
             updateLingkupNupUI();
         });
 
+        $('#form-mass-update').on('submit', function(e) {
+            var $selected = $('#mass-kode-barang-select').find(':selected');
+            var kode = $selected.data('kode') || '';
+            var nama = $selected.data('nama') || '';
+            var merk = $selected.data('merk') || '';
+
+            $('#mass-kode-barang').val(kode);
+            $('#mass-hidden-nama').val(nama);
+            $('#mass-hidden-merk').val(merk);
+
+            if (!kode) {
+                e.preventDefault();
+                alert('Silakan pilih barang terlebih dahulu.');
+                return false;
+            }
+        });
+
         $('#modal-update-peruntukan-massal').on('shown.bs.modal', function () {
             if ($.fn.select2) {
-                $('#mass-kode-barang').select2({
+                $('#mass-kode-barang-select').select2({
                     dropdownParent: $('#modal-update-peruntukan-massal')
                 });
             }

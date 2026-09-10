@@ -287,9 +287,30 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::error("  [FAIL] Komponen Peruntukan atau Modal Batch Update belum lengkap di view.");
             }
 
-            // Uji Batch Update Peruntukan berdasarkan Kode Barang & Rentang NUP
+            // Buat item dummy ke-3 dengan Kode Barang sama tapi Nama & Merk berbeda
+            $item3Id = $satkerModel->insert([
+                'kode_barang'     => $dummyKodeBarang,
+                'nup'             => 3,
+                'nama_barang'     => 'Laptop Uji Coba Berbeda',
+                'merk_tipe'       => 'Smoke-Laptop Ryzen',
+                'merk'            => 'Smoke-Laptop',
+                'tipe'            => 'Ryzen',
+                'jumlah'          => 1,
+                'satuan'          => 'Buah',
+                'kondisi'         => 'Baik',
+                'peruntukan'      => 'kantor',
+                'tahun_perolehan' => 2024,
+                'nilai_perolehan' => 15000000,
+                'nilai_buku'      => 12000000,
+                'ruangan_id'      => $ruanganId,
+                'status_bmn'      => 'Digunakan Sendiri',
+            ]);
+
+            // Uji 1: Batch Update Sebagian NUP (NUP 1 s/d 1)
             $db->table('trn_inventaris_satker')
                 ->where('kode_barang', $dummyKodeBarang)
+                ->where('nama_barang', 'Komputer Unit Uji Coba')
+                ->where('merk_tipe', 'Smoke-PC Core i7')
                 ->where('CAST(NULLIF(nup, "") AS UNSIGNED) >=', 1)
                 ->where('CAST(NULLIF(nup, "") AS UNSIGNED) <=', 1)
                 ->update(['peruntukan' => 'mobiler']);
@@ -301,6 +322,24 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::write("  [OK] Batch Update Peruntukan berhasil mengubah NUP 1 menjadi 'mobiler' dan mempertahankan NUP 2 sebagai 'kantor'", "green");
             } else {
                 CLI::error("  [FAIL] Batch Update Peruntukan tidak mengupdate sesuai rentang NUP.");
+            }
+
+            // Uji 2: Batch Update Seluruh NUP spesifik (hanya item dengan Kode + Nama + Merk yang cocok)
+            // Target: Seluruh unit 'Komputer Unit Uji Coba' diubah ke 'mobiler'
+            // Hasil yang diharapkan: item1 & item2 berubah/tetap 'mobiler', sedangkan item3 ('Laptop Uji Coba Berbeda') TETAP 'kantor'
+            $db->table('trn_inventaris_satker')
+                ->where('kode_barang', $dummyKodeBarang)
+                ->where('nama_barang', 'Komputer Unit Uji Coba')
+                ->where('merk_tipe', 'Smoke-PC Core i7')
+                ->update(['peruntukan' => 'mobiler']);
+
+            $item2After = $db->table('trn_inventaris_satker')->where('id', $item2Id)->get()->getRowArray();
+            $item3After = $db->table('trn_inventaris_satker')->where('id', $item3Id)->get()->getRowArray();
+
+            if (($item2After['peruntukan'] ?? '') === 'mobiler' && ($item3After['peruntukan'] ?? '') === 'kantor') {
+                CLI::write("  [OK] Update Seluruh NUP terisolasi sempurna: Hanya item dengan Nama Barang & Merk/Tipe yang sama yang terupdate, item lain dengan kode sama tetap aman", "green");
+            } else {
+                CLI::error("  [FAIL] Update Seluruh NUP tidak terisolasi berdasarkan Nama Barang dan Merk Tipe.");
             }
 
             $passedTests++;
