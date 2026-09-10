@@ -343,44 +343,81 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Populate Edit Modal
-    document.querySelectorAll('.btn-edit-ruangan').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var id = this.getAttribute('data-id');
-            var form = document.getElementById('form-edit-ruangan');
-            if (form) {
-                form.action = '<?= site_url('admin/inventaris/dbr/ruangan'); ?>/' + id + '/ubah';
-            }
-            document.getElementById('edit-kode').value = this.getAttribute('data-kode') || '';
-            document.getElementById('edit-nama').value = this.getAttribute('data-nama') || '';
-            document.getElementById('edit-pj-nama').value = this.getAttribute('data-pj-nama') || '';
-            document.getElementById('edit-pj-nip').value = this.getAttribute('data-pj-nip') || '';
-            document.getElementById('edit-lantai').value = this.getAttribute('data-lantai') || '';
-            document.getElementById('edit-keterangan').value = this.getAttribute('data-keterangan') || '';
+    function populateEditModal(btn) {
+        if (!btn) return;
+        var id = btn.getAttribute('data-id') || '';
+        var form = document.getElementById('form-edit-ruangan');
+        if (form && id) {
+            form.action = '<?= site_url('admin/inventaris/dbr/ruangan'); ?>/' + id + '/ubah';
+        }
+        var editKode = document.getElementById('edit-kode');
+        if (editKode) editKode.value = btn.getAttribute('data-kode') || '';
+        
+        var editNama = document.getElementById('edit-nama');
+        if (editNama) editNama.value = btn.getAttribute('data-nama') || '';
+        
+        var editPjNama = document.getElementById('edit-pj-nama');
+        if (editPjNama) editPjNama.value = btn.getAttribute('data-pj-nama') || '';
+        
+        var editPjNip = document.getElementById('edit-pj-nip');
+        if (editPjNip) editPjNip.value = btn.getAttribute('data-pj-nip') || '';
+        
+        var editLantai = document.getElementById('edit-lantai');
+        if (editLantai) editLantai.value = btn.getAttribute('data-lantai') || '';
+        
+        var editKeterangan = document.getElementById('edit-keterangan');
+        if (editKeterangan) editKeterangan.value = btn.getAttribute('data-keterangan') || '';
 
-            var pegId = this.getAttribute('data-pegawai');
-            var pegSelect = document.getElementById('edit-pegawai-select');
-            if (pegSelect) {
-                pegSelect.value = pegId || '';
-            }
-        });
+        var pegId = btn.getAttribute('data-pegawai') || '';
+        var pegSelect = document.getElementById('edit-pegawai-select');
+        if (pegSelect) {
+            pegSelect.value = pegId;
+        }
+    }
+
+    function populateDeleteModal(btn) {
+        if (!btn) return;
+        var id = btn.getAttribute('data-id') || '';
+        var nama = btn.getAttribute('data-nama') || '';
+        var form = document.getElementById('form-delete-ruangan');
+        if (form && id) {
+            form.action = '<?= site_url('admin/inventaris/dbr/ruangan'); ?>/' + id + '/hapus';
+        }
+        var nameEl = document.getElementById('delete-ruangan-name');
+        if (nameEl) {
+            nameEl.textContent = '"' + nama + '"';
+        }
+    }
+
+    // Delegated click listener (survives DataTables redraw, pagination, and sorting)
+    document.addEventListener('click', function(e) {
+        var editBtn = e.target.closest('.btn-edit-ruangan');
+        if (editBtn) {
+            populateEditModal(editBtn);
+        }
+
+        var deleteBtn = e.target.closest('.btn-delete-ruangan');
+        if (deleteBtn) {
+            populateDeleteModal(deleteBtn);
+        }
     });
 
-    // Populate Delete Modal
-    document.querySelectorAll('.btn-delete-ruangan').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var id = this.getAttribute('data-id');
-            var nama = this.getAttribute('data-nama');
-            var form = document.getElementById('form-delete-ruangan');
-            if (form) {
-                form.action = '<?= site_url('admin/inventaris/dbr/ruangan'); ?>/' + id + '/hapus';
-            }
-            var nameEl = document.getElementById('delete-ruangan-name');
-            if (nameEl) {
-                nameEl.textContent = '"' + nama + '"';
+    // Also hook Bootstrap's show.bs.modal event via jQuery if available
+    if (typeof $ !== 'undefined') {
+        $('#modal-edit-ruangan').on('show.bs.modal', function(event) {
+            var btn = event.relatedTarget;
+            if (btn) {
+                populateEditModal(btn);
             }
         });
-    });
+
+        $('#modal-delete-ruangan').on('show.bs.modal', function(event) {
+            var btn = event.relatedTarget;
+            if (btn) {
+                populateDeleteModal(btn);
+            }
+        });
+    }
 });
 </script>
 <?= $this->endSection(); ?>
