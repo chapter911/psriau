@@ -1269,7 +1269,7 @@ class InventarisDbr extends BaseController
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
         $fileName = 'DBR_Seluruh_Ruangan_PPS_Riau_' . date('Ymd_His') . '.pdf';

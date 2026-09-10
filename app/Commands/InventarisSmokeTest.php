@@ -599,7 +599,7 @@ class InventarisSmokeTest extends BaseCommand
             // Uji Generator Export Excel Seluruh Ruangan (Individual NUP)
             $tempAllXlsxPath = ROOTPATH . 'do_not_upload/temp/smoke_test_dbr_all.xlsx';
             $allAssetsWithRooms = $db->table('trn_inventaris_satker s')
-                ->select('s.kode_barang, s.nup, s.nama_barang, s.nilai_perolehan, r.kode_ruangan, r.nama_ruangan')
+                ->select('s.kode_barang, s.nup, s.nama_barang, s.nilai_perolehan, s.merk_tipe, s.kondisi, s.tahun_perolehan, r.kode_ruangan, r.nama_ruangan, r.lokasi_lantai, r.penanggung_jawab_nama, r.penanggung_jawab_nip')
                 ->join('mst_ruangan r', 'r.id = s.ruangan_id', 'inner')
                 ->where('s.peruntukan', 'kantor')
                 ->orderBy('r.kode_ruangan', 'ASC')
@@ -685,7 +685,7 @@ class InventarisSmokeTest extends BaseCommand
             ob_end_clean();
             service('response')->setBody('');
             $dompdfAll->loadHtml($htmlAll);
-            $dompdfAll->setPaper('A4', 'landscape');
+            $dompdfAll->setPaper('A4', 'portrait');
             $dompdfAll->render();
             file_put_contents($tempAllPdfPath, $dompdfAll->output());
 
@@ -693,7 +693,7 @@ class InventarisSmokeTest extends BaseCommand
             $hasPdfAllBtn = (strpos($dbrIndexContent, 'admin/inventaris/dbr/cetak-pdf') !== false);
 
             if ($allPdfSize > 2000 && $hasPdfAllBtn) {
-                CLI::write("  [OK] Cetak PDF DBR Seluruh Ruangan (A4 Landscape, NUP per baris) berhasil dirender! Ukuran: " . round($allPdfSize / 1024, 2) . " KB, Tombol Cetak PDF aktif di halaman utama DBR", "green");
+                CLI::write("  [OK] Cetak PDF DBR Seluruh Ruangan (A4 Portrait, Tanpa Kop, Tanpa Kode Register & Nilai Perolehan) berhasil dirender! Ukuran: " . round($allPdfSize / 1024, 2) . " KB, Tombol Cetak PDF aktif di halaman utama DBR", "green");
             } else {
                 CLI::error("  [FAIL] Render PDF DBR Seluruh Ruangan gagal atau tombol di view tidak ditemukan.");
             }
