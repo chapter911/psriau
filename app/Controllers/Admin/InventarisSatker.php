@@ -80,6 +80,8 @@ class InventarisSatker extends BaseController
             ->groupEnd();
         } elseif ($filterPeruntukan === 'mobiler') {
             $builder->where('peruntukan', 'mobiler');
+        } elseif ($filterPeruntukan === 'lainnya') {
+            $builder->where('peruntukan', 'lainnya');
         }
         if ($filterKategori !== '' && $filterKategori !== '*') {
             $builder->where('kategori', $filterKategori);
@@ -160,6 +162,7 @@ class InventarisSatker extends BaseController
         // Summary counts
         $totalItems   = (int) $db->table('trn_inventaris_satker')->countAllResults();
         $totalMobiler = (int) $db->table('trn_inventaris_satker')->where('peruntukan', 'mobiler')->countAllResults();
+        $totalLainnya = (int) $db->table('trn_inventaris_satker')->where('peruntukan', 'lainnya')->countAllResults();
         $totalKantor  = (int) $db->table('trn_inventaris_satker')
             ->groupStart()
                 ->where('peruntukan', 'kantor')
@@ -190,8 +193,10 @@ class InventarisSatker extends BaseController
                 'total'         => $totalItems,
                 'kantor'        => $totalKantor,
                 'mobiler'       => $totalMobiler,
+                'lainnya'       => $totalLainnya,
                 'total_kantor'  => $totalKantor,
                 'total_mobiler' => $totalMobiler,
+                'total_lainnya' => $totalLainnya,
                 'baik'          => $totalBaik,
                 'rusak_ringan'  => $totalRingan,
                 'rusak_berat'   => $totalBerat,
@@ -225,7 +230,7 @@ class InventarisSatker extends BaseController
             'jumlah'         => 'required|integer|greater_than[0]',
             'satuan'         => 'required|max_length[50]',
             'kondisi'        => 'required|in_list[baik,rusak_ringan,rusak_berat]',
-            'peruntukan'     => 'permit_empty|in_list[kantor,mobiler]',
+            'peruntukan'     => 'permit_empty|in_list[kantor,mobiler,lainnya]',
             'lokasi_ruangan' => 'required|max_length[150]',
         ];
 
@@ -245,7 +250,7 @@ class InventarisSatker extends BaseController
 
         $model = new InventarisSatkerModel();
         $userId = (int) (session()->get('userId') ?? 0);
-        $peruntukan = in_array(strtolower(trim((string) $this->request->getPost('peruntukan'))), ['kantor', 'mobiler'], true) ? strtolower(trim((string) $this->request->getPost('peruntukan'))) : 'kantor';
+        $peruntukan = in_array(strtolower(trim((string) $this->request->getPost('peruntukan'))), ['kantor', 'mobiler', 'lainnya'], true) ? strtolower(trim((string) $this->request->getPost('peruntukan'))) : 'kantor';
 
         $model->insert([
             'kode_barang'     => trim((string) $this->request->getPost('kode_barang')),
@@ -295,7 +300,7 @@ class InventarisSatker extends BaseController
             'jumlah'         => 'required|integer|greater_than[0]',
             'satuan'         => 'required|max_length[50]',
             'kondisi'        => 'required|in_list[baik,rusak_ringan,rusak_berat]',
-            'peruntukan'     => 'permit_empty|in_list[kantor,mobiler]',
+            'peruntukan'     => 'permit_empty|in_list[kantor,mobiler,lainnya]',
             'lokasi_ruangan' => 'required|max_length[150]',
         ];
 
@@ -314,7 +319,7 @@ class InventarisSatker extends BaseController
         }
 
         $userId = (int) (session()->get('userId') ?? 0);
-        $peruntukan = in_array(strtolower(trim((string) $this->request->getPost('peruntukan'))), ['kantor', 'mobiler'], true) ? strtolower(trim((string) $this->request->getPost('peruntukan'))) : 'kantor';
+        $peruntukan = in_array(strtolower(trim((string) $this->request->getPost('peruntukan'))), ['kantor', 'mobiler', 'lainnya'], true) ? strtolower(trim((string) $this->request->getPost('peruntukan'))) : 'kantor';
 
         $model->update($id, [
             'kode_barang'     => trim((string) $this->request->getPost('kode_barang')),
@@ -396,13 +401,13 @@ class InventarisSatker extends BaseController
             return redirect()->to('/admin/inventaris/barang')->with('error', 'Silakan pilih Kode Barang terlebih dahulu.');
         }
 
-        if (! in_array($peruntukan, ['kantor', 'mobiler'], true)) {
-            return redirect()->to('/admin/inventaris/barang')->with('error', 'Pilihan peruntukan tidak valid. Pilih "Kantor" atau "Mobiler".');
+        if (! in_array($peruntukan, ['kantor', 'mobiler', 'lainnya'], true)) {
+            return redirect()->to('/admin/inventaris/barang')->with('error', 'Pilihan peruntukan tidak valid. Pilih "Kantor", "Mobiler", atau "Item Lainnya".');
         }
 
         $db = db_connect();
         $userId = (int) (session()->get('userId') ?? 0);
-        $labelTarget = ($peruntukan === 'mobiler') ? 'Mobiler (Sekolah)' : 'Kantor (Satker)';
+        $labelTarget = ($peruntukan === 'mobiler') ? 'Mobiler (Sekolah)' : (($peruntukan === 'lainnya') ? 'Item Lainnya' : 'Kantor (Satker)');
 
         $builder = $db->table('trn_inventaris_satker')
             ->select('id, nama_barang, merk_tipe, nup')
@@ -515,7 +520,8 @@ class InventarisSatker extends BaseController
                       MIN(CAST(NULLIF(nup, "") AS UNSIGNED)) AS min_nup,
                       MAX(CAST(NULLIF(nup, "") AS UNSIGNED)) AS max_nup,
                       SUM(CASE WHEN peruntukan = "kantor" THEN 1 ELSE 0 END) AS count_kantor,
-                      SUM(CASE WHEN peruntukan = "mobiler" THEN 1 ELSE 0 END) AS count_mobiler')
+                      SUM(CASE WHEN peruntukan = "mobiler" THEN 1 ELSE 0 END) AS count_mobiler,
+                      SUM(CASE WHEN peruntukan = "lainnya" THEN 1 ELSE 0 END) AS count_lainnya')
             ->where('kode_barang', $kode);
 
         if ($nama !== '') {
@@ -549,6 +555,7 @@ class InventarisSatker extends BaseController
                 'max_nup'       => (int) ($row['max_nup'] ?? 1),
                 'count_kantor'  => (int) ($row['count_kantor'] ?? 0),
                 'count_mobiler' => (int) ($row['count_mobiler'] ?? 0),
+                'count_lainnya' => (int) ($row['count_lainnya'] ?? 0),
             ],
         ]);
     }
@@ -873,9 +880,9 @@ class InventarisSatker extends BaseController
                     if ($tglPerolehan !== null) $updateData['tgl_perolehan'] = $tglPerolehan;
                     if ($keteranganIn !== '') $updateData['keterangan'] = $keteranganIn;
 
-                    // Peruntukan: update jika file excel secara eksplisit menyertakan kolom peruntukan ('kantor' atau 'mobiler')
-                    if (in_array($peruntukanIn, ['kantor', 'mobiler'], true)) {
-                        $updateData['peruntukan'] = $peruntukanIn;
+                    // Peruntukan: update jika file excel secara eksplisit menyertakan kolom peruntukan ('kantor', 'mobiler', atau 'lainnya')
+                    if (in_array($peruntukanIn, ['kantor', 'mobiler', 'lainnya', 'item lainnya', 'item_lainnya'], true)) {
+                        $updateData['peruntukan'] = ($peruntukanIn === 'item lainnya' || $peruntukanIn === 'item_lainnya') ? 'lainnya' : $peruntukanIn;
                     }
 
                     // Lokasi ruangan: jika aset belum masuk ke ruangan DBR (ruangan_id kosong), perbarui lokasinya
@@ -902,6 +909,10 @@ class InventarisSatker extends BaseController
                         $regToInsert = $kodeRegister;
                     }
 
+                    $finalPeruntukan = in_array($peruntukanIn, ['kantor', 'mobiler', 'lainnya', 'item lainnya', 'item_lainnya'], true)
+                        ? (($peruntukanIn === 'item lainnya' || $peruntukanIn === 'item_lainnya') ? 'lainnya' : $peruntukanIn)
+                        : 'kantor';
+
                     $insertData = [
                         'kode_barang'     => $kodeBarang,
                         'nup'             => $saveNup,
@@ -918,7 +929,7 @@ class InventarisSatker extends BaseController
                         'nilai_perolehan' => $nilaiPerolehan,
                         'nilai_buku'      => $nilaiBuku,
                         'status_bmn'      => $statusBmn,
-                        'peruntukan'      => in_array($peruntukanIn, ['kantor', 'mobiler'], true) ? $peruntukanIn : 'kantor',
+                        'peruntukan'      => $finalPeruntukan,
                         'no_psp'          => $noPsp ?: null,
                         'tahun_perolehan' => $tahunPerolehan,
                         'tgl_perolehan'   => $tglPerolehan,
@@ -997,7 +1008,7 @@ class InventarisSatker extends BaseController
         $filterKondisi    = trim((string) $this->request->getGet('kondisi'));
         $filterLokasi     = trim((string) $this->request->getGet('lokasi'));
 
-        if (in_array($filterPeruntukan, ['kantor', 'mobiler'], true)) {
+        if (in_array($filterPeruntukan, ['kantor', 'mobiler', 'lainnya'], true)) {
             $builder->where('peruntukan', $filterPeruntukan);
         }
         if ($filterKategori !== '' && $filterKategori !== '*') {
@@ -1048,7 +1059,7 @@ class InventarisSatker extends BaseController
             'I6' => 'JUMLAH',
             'J6' => 'KONDISI',
             'K6' => 'LOKASI RUANGAN',
-            'L6' => 'THN PEROLEHAN',
+            'L6' => 'TAHUN',
         ];
 
         foreach ($headers as $cell => $text) {
@@ -1083,7 +1094,11 @@ class InventarisSatker extends BaseController
                 default        => ucfirst($item['kondisi'] ?? '-'),
             };
 
-            $peruntukanLabel = ($item['peruntukan'] ?? 'kantor') === 'mobiler' ? 'Mobiler (Sekolah)' : 'Kantor (Satker)';
+            $peruntukanLabel = match ($item['peruntukan'] ?? 'kantor') {
+                'mobiler' => 'Mobiler (Sekolah)',
+                'lainnya' => 'Item Lainnya',
+                default   => 'Kantor (Satker)',
+            };
 
             $sheet->setCellValue('A' . $rowNum, $no++);
             $sheet->setCellValueExplicit('B' . $rowNum, (string) ($item['kode_barang'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);

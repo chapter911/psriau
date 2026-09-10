@@ -64,6 +64,18 @@
         height: 3.5px;
         background: #d97706;
     }
+    .inv-kpi-tile.active-lainnya {
+        background: #f5f3ff;
+        border-color: #7c3aed;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+    }
+    .inv-kpi-tile.active-lainnya::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3.5px;
+        background: #7c3aed;
+    }
     .inv-kpi-icon {
         width: 42px;
         height: 42px;
@@ -129,10 +141,10 @@
                 </div>
             </div>
 
-            <!-- Row 2: 4 Interactive KPI Tiles (Click to Quick Filter Peruntukan) -->
+            <!-- Row 2: 5 Interactive KPI Tiles (Click to Quick Filter Peruntukan) -->
             <div class="row" style="margin-left: -6px; margin-right: -6px;">
                 <!-- Tile 1: Semua Barang -->
-                <div class="col-12 col-sm-6 col-lg-3 px-1 mb-2 mb-lg-0">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl px-1 mb-2 mb-xl-0">
                     <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => '']))); ?>" class="inv-kpi-tile <?= empty($filterPeruntukan) ? 'active-all' : ''; ?>" title="Klik untuk menampilkan seluruh barang">
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <span class="small font-weight-bold text-muted text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem;">Semua Barang</span>
@@ -144,13 +156,13 @@
                             <?= number_format((int) ($summary['total'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
                         </div>
                         <div class="small <?= empty($filterPeruntukan) ? 'text-primary font-weight-bold' : 'text-muted'; ?> mt-1">
-                            <?= empty($filterPeruntukan) ? '● Sedang Menampilkan Semua' : 'Klik untuk tampilkan semua'; ?>
+                            <?= empty($filterPeruntukan) ? '● Menampilkan Semua' : 'Klik tampilkan semua'; ?>
                         </div>
                     </a>
                 </div>
 
                 <!-- Tile 2: Kantor / Satker -->
-                <div class="col-12 col-sm-6 col-lg-3 px-1 mb-2 mb-lg-0">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl px-1 mb-2 mb-xl-0">
                     <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => 'kantor']))); ?>" class="inv-kpi-tile <?= ($filterPeruntukan === 'kantor') ? 'active-kantor' : ''; ?>" title="Klik untuk menyaring khusus aset Kantor Satker">
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <span class="small font-weight-bold text-primary text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem;">Kantor / Satker</span>
@@ -162,13 +174,13 @@
                             <?= number_format((int) ($summary['total_kantor'] ?? $summary['kantor'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
                         </div>
                         <div class="small <?= ($filterPeruntukan === 'kantor') ? 'text-primary font-weight-bold' : 'text-muted'; ?> mt-1">
-                            <?= ($filterPeruntukan === 'kantor') ? '● Filter Aktif: Aset Kantor (DBR)' : 'Aset Operasional & Ruangan'; ?>
+                            <?= ($filterPeruntukan === 'kantor') ? '● Filter: Kantor (DBR)' : 'Aset Ruangan Kantor'; ?>
                         </div>
                     </a>
                 </div>
 
                 <!-- Tile 3: Mobiler / Sekolah -->
-                <div class="col-12 col-sm-6 col-lg-3 px-1 mb-2 mb-lg-0">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl px-1 mb-2 mb-xl-0">
                     <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => 'mobiler']))); ?>" class="inv-kpi-tile <?= ($filterPeruntukan === 'mobiler') ? 'active-mobiler' : ''; ?>" title="Klik untuk menyaring khusus aset Mobiler Sekolah">
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <span class="small font-weight-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem; color: #b45309 !important;">Mobiler / Sekolah</span>
@@ -180,13 +192,31 @@
                             <?= number_format((int) ($summary['total_mobiler'] ?? $summary['mobiler'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
                         </div>
                         <div class="small <?= ($filterPeruntukan === 'mobiler') ? 'font-weight-bold' : 'text-muted'; ?> mt-1" style="<?= ($filterPeruntukan === 'mobiler') ? 'color: #b45309 !important;' : ''; ?>">
-                            <?= ($filterPeruntukan === 'mobiler') ? '● Filter Aktif: Mobiler Sekolah' : 'Bantuan Sarpras Sekolah'; ?>
+                            <?= ($filterPeruntukan === 'mobiler') ? '● Filter: Mobiler Sekolah' : 'Sarpras Binaan Sekolah'; ?>
                         </div>
                     </a>
                 </div>
 
-                <!-- Tile 4: Kondisi Fisik -->
-                <div class="col-12 col-sm-6 col-lg-3 px-1">
+                <!-- Tile 4: Item Lainnya -->
+                <div class="col-12 col-sm-6 col-lg-4 col-xl px-1 mb-2 mb-xl-0">
+                    <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => 'lainnya']))); ?>" class="inv-kpi-tile <?= ($filterPeruntukan === 'lainnya') ? 'active-lainnya' : ''; ?>" title="Klik untuk menyaring khusus Item Lainnya">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="small font-weight-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem; color: #6d28d9 !important;">Item Lainnya</span>
+                            <div class="inv-kpi-icon" style="background-color: #ede9fe; color: #7c3aed;">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                        </div>
+                        <div class="h4 font-weight-bold text-dark mb-0" style="letter-spacing: -0.5px;">
+                            <?= number_format((int) ($summary['total_lainnya'] ?? $summary['lainnya'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
+                        </div>
+                        <div class="small <?= ($filterPeruntukan === 'lainnya') ? 'font-weight-bold' : 'text-muted'; ?> mt-1" style="<?= ($filterPeruntukan === 'lainnya') ? 'color: #6d28d9 !important;' : ''; ?>">
+                            <?= ($filterPeruntukan === 'lainnya') ? '● Filter: Item Lainnya' : 'Pendataan Aset Lainnya'; ?>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Tile 5: Kondisi Fisik -->
+                <div class="col-12 col-sm-6 col-lg-4 col-xl px-1">
                     <div class="inv-kpi-tile" style="cursor: default;">
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <span class="small font-weight-bold text-muted text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem;">Kondisi Fisik</span>
@@ -194,14 +224,14 @@
                                 <i class="fas fa-heartbeat"></i>
                             </div>
                         </div>
-                        <div class="d-flex align-items-center flex-wrap mt-1" style="gap: 5px;">
-                            <span class="badge badge-success font-weight-bold px-2 py-1">
+                        <div class="d-flex align-items-center flex-wrap mt-1" style="gap: 4px;">
+                            <span class="badge badge-success font-weight-bold px-1.5 py-1" style="font-size: 0.72rem;">
                                 <?= number_format((int) ($summary['baik'] ?? 0)); ?> Baik
                             </span>
-                            <span class="badge badge-warning text-dark font-weight-bold px-2 py-1">
+                            <span class="badge badge-warning text-dark font-weight-bold px-1.5 py-1" style="font-size: 0.72rem;">
                                 <?= number_format((int) ($summary['rusak_ringan'] ?? 0)); ?> R.Ringan
                             </span>
-                            <span class="badge badge-danger font-weight-bold px-2 py-1">
+                            <span class="badge badge-danger font-weight-bold px-1.5 py-1" style="font-size: 0.72rem;">
                                 <?= number_format((int) ($summary['rusak_berat'] ?? 0)); ?> R.Berat
                             </span>
                         </div>
@@ -341,10 +371,14 @@
                                         <span class="text-muted">-</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="text-center align-middle" data-order="<?= ($item['peruntukan'] ?? 'kantor') === 'mobiler' ? 2 : 1; ?>">
+                                <td class="text-center align-middle" data-order="<?= ($item['peruntukan'] ?? 'kantor') === 'mobiler' ? 2 : (($item['peruntukan'] ?? 'kantor') === 'lainnya' ? 3 : 1); ?>">
                                     <?php if (($item['peruntukan'] ?? 'kantor') === 'mobiler'): ?>
                                         <span class="badge badge-warning text-dark font-weight-bold px-2 py-1" title="Diperuntukkan untuk Mobiler Sekolah">
                                             <i class="fas fa-school mr-1"></i> Mobiler
+                                        </span>
+                                    <?php elseif (($item['peruntukan'] ?? 'kantor') === 'lainnya'): ?>
+                                        <span class="badge font-weight-bold px-2 py-1" style="background-color: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe;" title="Diperuntukkan untuk Item Lainnya">
+                                            <i class="fas fa-layer-group mr-1"></i> Item Lainnya
                                         </span>
                                     <?php else: ?>
                                         <span class="badge badge-primary font-weight-bold px-2 py-1" title="Diperuntukkan untuk Kantor Satker">
@@ -537,6 +571,12 @@
                                         <i class="fas fa-school mr-1"></i> <strong class="text-dark">Mobiler</strong>
                                     </label>
                                 </div>
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="tambah_peruntukan_lainnya" name="peruntukan" value="lainnya" class="custom-control-input">
+                                    <label class="custom-control-label font-weight-normal" style="color: #6d28d9;" for="tambah_peruntukan_lainnya">
+                                        <i class="fas fa-layer-group mr-1"></i> <strong class="text-dark">Item Lainnya</strong>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-12 form-group mb-0">
@@ -658,6 +698,12 @@
                                     <input type="radio" id="edit_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
                                     <label class="custom-control-label font-weight-normal text-warning" for="edit_peruntukan_mobiler">
                                         <i class="fas fa-school mr-1"></i> <strong class="text-dark">Mobiler</strong>
+                                    </label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="edit_peruntukan_lainnya" name="peruntukan" value="lainnya" class="custom-control-input">
+                                    <label class="custom-control-label font-weight-normal" style="color: #6d28d9;" for="edit_peruntukan_lainnya">
+                                        <i class="fas fa-layer-group mr-1"></i> <strong class="text-dark">Item Lainnya</strong>
                                     </label>
                                 </div>
                             </div>
@@ -918,9 +964,10 @@
                             </div>
                             <div class="col-4">
                                 <small class="text-muted d-block font-weight-bold">Peruntukan Saat Ini</small>
-                                <div class="mt-1">
+                                <div class="mt-1 d-flex justify-content-center flex-wrap" style="gap: 3px;">
                                     <span class="badge badge-primary px-2" id="mass-info-kantor">0 Kantor</span>
                                     <span class="badge badge-warning text-dark px-2" id="mass-info-mobiler">0 Mobiler</span>
+                                    <span class="badge px-2" style="background-color: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe;" id="mass-info-lainnya">0 Lainnya</span>
                                 </div>
                             </div>
                         </div>
@@ -970,22 +1017,31 @@
                         <label class="font-weight-bold small text-dark">Ubah Peruntukan Menjadi <span class="text-danger">*</span></label>
                         <div class="card p-3" style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
                             <div class="row">
-                                <div class="col-md-6 mb-2 mb-md-0">
+                                <div class="col-md-4 mb-2 mb-md-0">
                                     <div class="custom-control custom-radio">
                                         <input type="radio" id="mass_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input" checked>
                                         <label class="custom-control-label font-weight-bold text-primary" for="mass_peruntukan_kantor">
                                             <i class="fas fa-building mr-1"></i> Kantor / Satker
                                         </label>
-                                        <small class="text-muted d-block" style="font-size: 0.75rem;">Aset operasional kantor satker (dapat dialokasikan ke Ruangan / DBR)</small>
+                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Aset operasional kantor satker (dapat dialokasikan ke DBR)</small>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4 mb-2 mb-md-0">
                                     <div class="custom-control custom-radio">
                                         <input type="radio" id="mass_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
                                         <label class="custom-control-label font-weight-bold text-dark" for="mass_peruntukan_mobiler">
                                             <i class="fas fa-school text-warning mr-1"></i> Mobiler / Sekolah
                                         </label>
-                                        <small class="text-muted d-block" style="font-size: 0.75rem;">Aset bantuan pendidikan yang didistribusikan ke sekolah-sekolah</small>
+                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Aset bantuan pendidikan prasarana sekolah</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="mass_peruntukan_lainnya" name="peruntukan" value="lainnya" class="custom-control-input">
+                                        <label class="custom-control-label font-weight-bold" style="color: #6d28d9;" for="mass_peruntukan_lainnya">
+                                            <i class="fas fa-layer-group mr-1"></i> Item Lainnya
+                                        </label>
+                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Aset khusus/peminjaman/renovasi/pengerjaan</small>
                                     </div>
                                 </div>
                             </div>
@@ -1031,6 +1087,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (peruntukanVal === 'mobiler') {
             var radioMobiler = document.getElementById('edit_peruntukan_mobiler');
             if (radioMobiler) radioMobiler.checked = true;
+        } else if (peruntukanVal === 'lainnya') {
+            var radioLainnya = document.getElementById('edit_peruntukan_lainnya');
+            if (radioLainnya) radioLainnya.checked = true;
         } else {
             var radioKantor = document.getElementById('edit_peruntukan_kantor');
             if (radioKantor) radioKantor.checked = true;
@@ -1129,8 +1188,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     var minNup = d.min_nup !== null ? d.min_nup : 0;
                     var maxNup = d.max_nup !== null ? d.max_nup : 0;
                     $('#mass-info-nup-range').text(minNup + ' s/d ' + maxNup);
-                    $('#mass-info-kantor').text((d.total_kantor || 0) + ' Kantor');
-                    $('#mass-info-mobiler').text((d.total_mobiler || 0) + ' Mobiler');
+                    $('#mass-info-kantor').text((d.count_kantor || d.total_kantor || 0) + ' Kantor');
+                    $('#mass-info-mobiler').text((d.count_mobiler || d.total_mobiler || 0) + ' Mobiler');
+                    $('#mass-info-lainnya').text((d.count_lainnya || d.total_lainnya || 0) + ' Lainnya');
                     
                     if (minNup > 0) $('#mass-nup-awal').val(minNup);
                     if (maxNup > 0) $('#mass-nup-akhir').val(maxNup);

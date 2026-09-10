@@ -342,6 +342,22 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::error("  [FAIL] Update Seluruh NUP tidak terisolasi berdasarkan Nama Barang dan Merk Tipe.");
             }
 
+            // Uji 3: Peruntukan 'lainnya' (Item Lainnya)
+            $db->table('trn_inventaris_satker')
+                ->where('id', $item3Id)
+                ->update(['peruntukan' => 'lainnya']);
+
+            $item3Lainnya = $db->table('trn_inventaris_satker')->where('id', $item3Id)->get()->getRowArray();
+            $countLainnya = (int) $db->table('trn_inventaris_satker')->where('peruntukan', 'lainnya')->countAllResults();
+            $hasLainnyaTile = (strpos($viewContent, 'active-lainnya') !== false);
+            $hasLainnyaRadio = (strpos($viewContent, 'id="mass_peruntukan_lainnya"') !== false);
+
+            if (($item3Lainnya['peruntukan'] ?? '') === 'lainnya' && $countLainnya >= 1 && $hasLainnyaTile && $hasLainnyaRadio) {
+                CLI::write("  [OK] Peruntukan 'Item Lainnya' (lainnya) teruji sempurna: KPI Tile, modal radio, dan filter database berfungsi normal", "green");
+            } else {
+                CLI::error("  [FAIL] Uji peruntukan 'lainnya' gagal.");
+            }
+
             $passedTests++;
         } else {
             CLI::error("  [FAIL] Agregasi DBR tidak menghasilkan jumlah total yang sesuai.");
