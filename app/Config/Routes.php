@@ -411,7 +411,9 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('inventaris/satker/nup-range-by-kode', 'Admin\\InventarisSatker::getNupRangeByKode');
 
 	// Modul DBR (Daftar Barang Ruangan)
-	$routes->get('inventaris/dbr', 'Admin\\InventarisDbr::index');
+	$routes->get('inventaris/dbr', 'Admin\InventarisDbr::index');
+	$routes->get('inventaris/dbr/export-excel', 'Admin\InventarisDbr::exportExcelAll');
+	$routes->get('inventaris/dbr/cetak-pdf', 'Admin\InventarisDbr::cetakPdfAll');
 	$routes->post('inventaris/dbr/ruangan/tambah', 'Admin\\InventarisDbr::createRuangan');
 	$routes->post('inventaris/dbr/ruangan/(:num)/ubah', 'Admin\\InventarisDbr::editRuangan/$1');
 	$routes->post('inventaris/dbr/ruangan/(:num)/hapus', 'Admin\\InventarisDbr::deleteRuangan/$1');

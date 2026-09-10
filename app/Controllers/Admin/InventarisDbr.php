@@ -881,6 +881,405 @@ class InventarisDbr extends BaseController
         exit;
     }
 
+    public function exportExcelAll()
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (! (bool) ($menuPermissions['export'] ?? false)) {
+            return redirect()->to('/admin/inventaris/dbr')->with('error', 'Anda tidak memiliki hak akses untuk mengunduh laporan.');
+        }
+
+        $db = db_connect();
+
+        // 1. Ambil data seluruh aset berlokasi di ruangan (peruntukan kantor)
+        $items = $db->table('trn_inventaris_satker s')
+            ->select('s.id, s.kode_barang, s.nup, s.kode_register, s.nama_barang, s.merk_tipe, s.kondisi,
+                      s.status_bmn, s.tahun_perolehan, s.jumlah, s.satuan, s.nilai_perolehan, s.nilai_buku,
+                      s.no_psp, s.keterangan, s.lokasi_ruangan,
+                      r.id AS ruangan_id, r.kode_ruangan, r.nama_ruangan, r.lokasi_lantai,
+                      r.penanggung_jawab_nama, r.penanggung_jawab_nip')
+            ->join('mst_ruangan r', 'r.id = s.ruangan_id', 'inner')
+            ->where('s.peruntukan', 'kantor')
+            ->orderBy('r.kode_ruangan', 'ASC')
+            ->orderBy('r.nama_ruangan', 'ASC')
+            ->orderBy('s.kode_barang', 'ASC')
+            ->orderBy('CAST(NULLIF(s.nup, "") AS UNSIGNED)', 'ASC', false)
+            ->orderBy('s.nup', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // 2. Ambil data rekapitulasi per ruangan untuk Sheet 2
+        $rekapRuangan = $db->table('mst_ruangan r')
+            ->select('r.kode_ruangan, r.nama_ruangan, r.lokasi_lantai, r.penanggung_jawab_nama, r.penanggung_jawab_nip,
+                      COUNT(DISTINCT CONCAT(s.kode_barang, "___", s.nup)) AS total_unit,
+                      COUNT(s.id) AS total_aset,
+                      SUM(s.nilai_perolehan) AS total_nilai')
+            ->join('trn_inventaris_satker s', 's.ruangan_id = r.id AND s.peruntukan = "kantor"', 'left')
+            ->groupBy('r.id')
+            ->orderBy('r.kode_ruangan', 'ASC')
+            ->orderBy('r.nama_ruangan', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $spreadsheet = new Spreadsheet();
+
+        // ==========================================
+        // SHEET 1: DETAIL ASET PER RUANGAN (INDIVIDUAL NUP)
+        // ==========================================
+        $sheet1 = $spreadsheet->getActiveSheet();
+        $sheet1->setTitle('Detail Aset (NUP)');
+
+        // Header Title (Row 1-4)
+        $sheet1->mergeCells('A1:R1');
+        $sheet1->mergeCells('A2:R2');
+        $sheet1->mergeCells('A3:R3');
+        $sheet1->mergeCells('A4:R4');
+
+        $sheet1->setCellValue('A1', 'KEMENTERIAN PEKERJAAN UMUM');
+        $sheet1->setCellValue('A2', 'DIREKTORAT JENDERAL PRASARANA STRATEGIS');
+        $sheet1->setCellValue('A3', 'SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU');
+        $sheet1->setCellValue('A4', 'DAFTAR BARANG RUANGAN (DBR) - SELURUH RUANGAN KANTOR (DETAIL NUP)');
+
+        $sheet1->getStyle('A1:R4')->getFont()->setBold(true);
+        $sheet1->getStyle('A1:R3')->getFont()->setSize(11);
+        $sheet1->getStyle('A4')->getFont()->setSize(12);
+        $sheet1->getStyle('A1:R4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet1->getStyle('A1:R4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+        // Metadata Cetak (Row 5)
+        $sheet1->setCellValue('A5', 'Tanggal Unduh: ' . date('d/m/Y H:i:s') . ' WIB | Filter: Seluruh Ruangan (Peruntukan Kantor)');
+        $sheet1->getStyle('A5')->getFont()->setItalic(true)->setSize(9);
+
+        // Table Header (Row 7)
+        $headers1 = [
+            'A7' => 'NO',
+            'B7' => 'KODE RUANGAN',
+            'C7' => 'NAMA RUANGAN',
+            'D7' => 'LOKASI / LANTAI',
+            'E7' => 'PENANGGUNG JAWAB',
+            'F7' => 'NIP PENANGGUNG JAWAB',
+            'G7' => 'KODE BARANG',
+            'H7' => 'NUP',
+            'I7' => 'KODE REGISTER (SIMAN)',
+            'J7' => 'NAMA BARANG',
+            'K7' => 'MERK / TIPE',
+            'L7' => 'KONDISI',
+            'M7' => 'STATUS BMN',
+            'N7' => 'THN PEROLEHAN',
+            'O7' => 'JML',
+            'P7' => 'SATUAN',
+            'Q7' => 'NILAI PEROLEHAN (RP)',
+            'R7' => 'NO SK PSP / LEGALITAS',
+        ];
+
+        foreach ($headers1 as $cell => $text) {
+            $sheet1->setCellValue($cell, $text);
+        }
+
+        $sheet1->getStyle('A7:R7')->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE));
+        $sheet1->getStyle('A7:R7')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet1->getStyle('A7:R7')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet1->getStyle('A7:R7')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF1E293B');
+
+        $colWidths1 = [
+            'A' => 6,
+            'B' => 16,
+            'C' => 28,
+            'D' => 20,
+            'E' => 26,
+            'F' => 22,
+            'G' => 18,
+            'H' => 10,
+            'I' => 36,
+            'J' => 32,
+            'K' => 28,
+            'L' => 14,
+            'M' => 20,
+            'N' => 14,
+            'O' => 8,
+            'P' => 10,
+            'Q' => 22,
+            'R' => 24,
+        ];
+
+        foreach ($colWidths1 as $col => $w) {
+            $sheet1->getColumnDimension($col)->setWidth($w);
+        }
+
+        $rowNum1 = 8;
+        $no1 = 1;
+        $totalQty1 = 0;
+        $totalNilai1 = 0;
+
+        foreach ($items as $item) {
+            $qty = 1;
+            $totalQty1 += $qty;
+            $nilai = (float) ($item['nilai_perolehan'] ?? 0);
+            $totalNilai1 += $nilai;
+
+            $sheet1->setCellValue('A' . $rowNum1, $no1++);
+            $sheet1->setCellValueExplicit('B' . $rowNum1, (string) ($item['kode_ruangan'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet1->setCellValue('C' . $rowNum1, (string) ($item['nama_ruangan'] ?? ''));
+            $sheet1->setCellValue('D' . $rowNum1, (string) ($item['lokasi_lantai'] ?: '-'));
+            $sheet1->setCellValue('E' . $rowNum1, (string) ($item['penanggung_jawab_nama'] ?: '-'));
+            $sheet1->setCellValueExplicit('F' . $rowNum1, (string) ($item['penanggung_jawab_nip'] ?: '-'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet1->setCellValueExplicit('G' . $rowNum1, (string) ($item['kode_barang'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet1->setCellValue('H' . $rowNum1, (int) ($item['nup'] ?? 0));
+            $sheet1->setCellValueExplicit('I' . $rowNum1, (string) ($item['kode_register'] ?: '-'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet1->setCellValue('J' . $rowNum1, (string) ($item['nama_barang'] ?? ''));
+            $sheet1->setCellValue('K' . $rowNum1, (string) ($item['merk_tipe'] ?: '-'));
+            $sheet1->setCellValue('L' . $rowNum1, ucfirst(str_replace('_', ' ', (string) ($item['kondisi'] ?? 'baik'))));
+            $sheet1->setCellValue('M' . $rowNum1, (string) ($item['status_bmn'] ?: 'Digunakan Sendiri'));
+            $sheet1->setCellValue('N' . $rowNum1, (string) ($item['tahun_perolehan'] ?: '-'));
+            $sheet1->setCellValue('O' . $rowNum1, $qty);
+            $sheet1->setCellValue('P' . $rowNum1, (string) ($item['satuan'] ?: 'Unit'));
+            $sheet1->setCellValue('Q' . $rowNum1, $nilai);
+            $sheet1->setCellValue('R' . $rowNum1, (string) ($item['no_psp'] ?: '-'));
+
+            $sheet1->getStyle('A' . $rowNum1)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('B' . $rowNum1)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('F' . $rowNum1)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('G' . $rowNum1)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('H' . $rowNum1)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('I' . $rowNum1)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('L' . $rowNum1)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('M' . $rowNum1)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('N' . $rowNum1)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('O' . $rowNum1)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('P' . $rowNum1)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('Q' . $rowNum1)->getNumberFormat()->setFormatCode('#,##0');
+
+            $rowNum1++;
+        }
+
+        // Total Row Sheet 1
+        $sheet1->mergeCells("A{$rowNum1}:N{$rowNum1}");
+        $sheet1->setCellValue("A{$rowNum1}", 'TOTAL KESELURUHAN');
+        $sheet1->setCellValue("O{$rowNum1}", $totalQty1);
+        $sheet1->setCellValue("P{$rowNum1}", 'Unit');
+        $sheet1->setCellValue("Q{$rowNum1}", $totalNilai1);
+        $sheet1->setCellValue("R{$rowNum1}", '-');
+
+        $sheet1->getStyle("A{$rowNum1}:R{$rowNum1}")->getFont()->setBold(true);
+        $sheet1->getStyle("A{$rowNum1}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet1->getStyle("O{$rowNum1}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet1->getStyle("P{$rowNum1}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet1->getStyle("Q{$rowNum1}")->getNumberFormat()->setFormatCode('#,##0');
+        $sheet1->getStyle("R{$rowNum1}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet1->getStyle("A{$rowNum1}:R{$rowNum1}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
+
+        $sheet1->getStyle("A7:R{$rowNum1}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        // ==========================================
+        // SHEET 2: REKAPITULASI PER RUANGAN
+        // ==========================================
+        $sheet2 = $spreadsheet->createSheet();
+        $sheet2->setTitle('Rekapitulasi Ruangan');
+
+        // Header Title (Row 1-4)
+        $sheet2->mergeCells('A1:H1');
+        $sheet2->mergeCells('A2:H2');
+        $sheet2->mergeCells('A3:H3');
+        $sheet2->mergeCells('A4:H4');
+
+        $sheet2->setCellValue('A1', 'KEMENTERIAN PEKERJAAN UMUM');
+        $sheet2->setCellValue('A2', 'DIREKTORAT JENDERAL PRASARANA STRATEGIS');
+        $sheet2->setCellValue('A3', 'SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS RIAU');
+        $sheet2->setCellValue('A4', 'REKAPITULASI ASET DAN NILAI PEROLEHAN PER RUANGAN (DBR)');
+
+        $sheet2->getStyle('A1:H4')->getFont()->setBold(true);
+        $sheet2->getStyle('A1:H3')->getFont()->setSize(11);
+        $sheet2->getStyle('A4')->getFont()->setSize(12);
+        $sheet2->getStyle('A1:H4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet2->getStyle('A1:H4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+        $headers2 = [
+            'A6' => 'NO',
+            'B6' => 'KODE RUANGAN',
+            'C6' => 'NAMA RUANGAN',
+            'D6' => 'LOKASI / LANTAI',
+            'E6' => 'PENANGGUNG JAWAB',
+            'F6' => 'NIP PENANGGUNG JAWAB',
+            'G6' => 'TOTAL UNIT FISIK (NUP)',
+            'H6' => 'TOTAL NILAI PEROLEHAN (RP)',
+        ];
+
+        foreach ($headers2 as $cell => $text) {
+            $sheet2->setCellValue($cell, $text);
+        }
+
+        $sheet2->getStyle('A6:H6')->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE));
+        $sheet2->getStyle('A6:H6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet2->getStyle('A6:H6')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet2->getStyle('A6:H6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF0F766E');
+
+        $colWidths2 = [
+            'A' => 6,
+            'B' => 18,
+            'C' => 32,
+            'D' => 22,
+            'E' => 28,
+            'F' => 24,
+            'G' => 24,
+            'H' => 26,
+        ];
+
+        foreach ($colWidths2 as $col => $w) {
+            $sheet2->getColumnDimension($col)->setWidth($w);
+        }
+
+        $rowNum2 = 7;
+        $no2 = 1;
+        $sumUnit2 = 0;
+        $sumNilai2 = 0;
+
+        foreach ($rekapRuangan as $rek) {
+            $uCount = (int) ($rek['total_unit'] ?? 0);
+            $nVal = (float) ($rek['total_nilai'] ?? 0);
+            $sumUnit2 += $uCount;
+            $sumNilai2 += $nVal;
+
+            $sheet2->setCellValue('A' . $rowNum2, $no2++);
+            $sheet2->setCellValueExplicit('B' . $rowNum2, (string) ($rek['kode_ruangan'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet2->setCellValue('C' . $rowNum2, (string) ($rek['nama_ruangan'] ?? ''));
+            $sheet2->setCellValue('D' . $rowNum2, (string) ($rek['lokasi_lantai'] ?: '-'));
+            $sheet2->setCellValue('E' . $rowNum2, (string) ($rek['penanggung_jawab_nama'] ?: '-'));
+            $sheet2->setCellValueExplicit('F' . $rowNum2, (string) ($rek['penanggung_jawab_nip'] ?: '-'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet2->setCellValue('G' . $rowNum2, $uCount);
+            $sheet2->setCellValue('H' . $rowNum2, $nVal);
+
+            $sheet2->getStyle('A' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle('B' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle('F' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle('G' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle('H' . $rowNum2)->getNumberFormat()->setFormatCode('#,##0');
+
+            $rowNum2++;
+        }
+
+        // Total Row Sheet 2
+        $sheet2->mergeCells("A{$rowNum2}:F{$rowNum2}");
+        $sheet2->setCellValue("A{$rowNum2}", 'TOTAL KESELURUHAN');
+        $sheet2->setCellValue("G{$rowNum2}", $sumUnit2);
+        $sheet2->setCellValue("H{$rowNum2}", $sumNilai2);
+
+        $sheet2->getStyle("A{$rowNum2}:H{$rowNum2}")->getFont()->setBold(true);
+        $sheet2->getStyle("A{$rowNum2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet2->getStyle("G{$rowNum2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet2->getStyle("H{$rowNum2}")->getNumberFormat()->setFormatCode('#,##0');
+        $sheet2->getStyle("A{$rowNum2}:H{$rowNum2}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
+
+        $sheet2->getStyle("A6:H{$rowNum2}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        // Set active sheet back to Sheet 1
+        $spreadsheet->setActiveSheetIndex(0);
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'DBR_Seluruh_Ruangan_PPS_Riau_' . date('Ymd_His') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+        $writer->save('php://output');
+        exit;
+    }
+
+    public function cetakPdfAll()
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (! (bool) ($menuPermissions['export'] ?? false)) {
+            return redirect()->to('/admin/inventaris/dbr')->with('error', 'Anda tidak memiliki hak akses untuk mencetak atau mengunduh PDF.');
+        }
+
+        $db = db_connect();
+
+        $items = $db->table('trn_inventaris_satker s')
+            ->select('s.id, s.kode_barang, s.nup, s.kode_register, s.nama_barang, s.merk_tipe, s.kondisi,
+                      s.status_bmn, s.tahun_perolehan, s.jumlah, s.satuan, s.nilai_perolehan, s.nilai_buku,
+                      s.no_psp, s.keterangan, s.lokasi_ruangan,
+                      r.id AS ruangan_id, r.kode_ruangan, r.nama_ruangan, r.lokasi_lantai,
+                      r.penanggung_jawab_nama, r.penanggung_jawab_nip')
+            ->join('mst_ruangan r', 'r.id = s.ruangan_id', 'inner')
+            ->where('s.peruntukan', 'kantor')
+            ->orderBy('r.kode_ruangan', 'ASC')
+            ->orderBy('r.nama_ruangan', 'ASC')
+            ->orderBy('s.kode_barang', 'ASC')
+            ->orderBy('CAST(NULLIF(s.nup, "") AS UNSIGNED)', 'ASC', false)
+            ->orderBy('s.nup', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $totalUnit = count($items);
+        $totalNilai = 0.0;
+        foreach ($items as $it) {
+            $totalNilai += (float) ($it['nilai_perolehan'] ?? 0);
+        }
+
+        // Ambil Kop Surat dari Master Kop (kop_surat)
+        $kopSuratImg = '';
+        if (function_exists('kop_surat_img_tag')) {
+            $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 115px; object-fit: contain;', 'Kop Surat Instansi');
+        }
+
+        // Logo PU Base64 (Fallback jika master kop tidak ada)
+        $logoPath = FCPATH . 'uploads/branding/1774740768_77e8482499660c14c637.png';
+        $logoBase64 = '';
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
+        // Format tanggal Indonesia
+        $bulanIndo = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
+            7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $tglHariIni = date('j') . ' ' . ($bulanIndo[(int) date('n')] ?? date('F')) . ' ' . date('Y');
+
+        $data = [
+            'items'        => $items,
+            'totalUnit'    => $totalUnit,
+            'totalNilai'   => $totalNilai,
+            'tglPenetapan' => $tglHariIni,
+            'waktuCetak'   => date('d/m/Y H:i') . ' WIB',
+            'kopSuratImg'  => $kopSuratImg,
+            'logoBase64'   => $logoBase64,
+            'kasatker'     => [
+                'nama'    => 'Muhammad Yudi Prasetya, S.T.',
+                'nip'     => '198002142014121002',
+                'jabatan' => 'Kepala Kuasa Pengguna Barang',
+            ],
+            'tahun'        => date('Y'),
+        ];
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isPhpEnabled', true);
+
+        $html = view('admin/inventaris/dbr/pdf_dbr_all', $data);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $fileName = 'DBR_Seluruh_Ruangan_PPS_Riau_' . date('Ymd_His') . '.pdf';
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="' . $fileName . '"')
+            ->setBody($dompdf->output());
+    }
+
     private function denyIfNoMenuAccess(string $menuLink): ?RedirectResponse
     {
         if ($this->hasMenuAccess($menuLink)) {

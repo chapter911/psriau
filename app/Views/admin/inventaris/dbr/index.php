@@ -48,6 +48,14 @@
                     <a href="<?= site_url('admin/inventaris/satker'); ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm" style="border-radius: 6px;">
                         <i class="fas fa-boxes mr-1"></i> Daftar Barang Inventaris
                     </a>
+                    <?php if (! empty($can_export)): ?>
+                        <a href="<?= site_url('admin/inventaris/dbr/export-excel'); ?>" class="btn btn-success btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 6px;" title="Export Seluruh Ruangan & Aset (Individual NUP)">
+                            <i class="fas fa-file-excel mr-1"></i> Export Excel Seluruh Ruangan
+                        </a>
+                        <a href="<?= site_url('admin/inventaris/dbr/cetak-pdf'); ?>" target="_blank" class="btn btn-danger btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 6px;" title="Cetak PDF Seluruh Ruangan & Aset (Individual NUP)">
+                            <i class="fas fa-file-pdf mr-1"></i> Cetak PDF Seluruh Ruangan
+                        </a>
+                    <?php endif; ?>
                     <?php if (! empty($can_add)): ?>
                         <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-toggle="modal" data-target="#modal-tambah-ruangan" style="border-radius: 6px;">
                             <i class="fas fa-plus mr-1"></i> Tambah Ruangan

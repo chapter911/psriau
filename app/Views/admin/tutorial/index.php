@@ -426,7 +426,7 @@ graph TD
     B2 --> D1["Kelola Master Ruangan Kantor Satker &amp; Penanggung Jawab"]
     B2 --> D2["Kalkulasi Unit DBR Berbasis NUP Unik (COUNT DISTINCT nup, Bebas Anomali Duplikasi)"]
     B2 --> D3["Alokasi Aset Kantor ke Ruangan (DBR) via Scan QR / Pencarian Manual"]
-    B2 --> D4["Cetak PDF DBR Resmi (A4 Portrait) &amp; Export Excel Ruangan"]
+    B2 --> D4["Cetak Dokumen DBR PDF (Per Ruangan A4 Portrait / Seluruh Ruangan Detail NUP A4 Landscape) &amp; Export Excel"]
 
     B3 --> E1["Monitoring Sarpras &amp; Distribusi Mobiler Sekolah Binaan"]
     B3 --> E2["Pemetaan Wilayah Kabupaten / Kecamatan / Paket Proyek"]
@@ -701,8 +701,9 @@ graph TD
                                             <li><strong>Alokasikan Manual:</strong> Modal alokasi aset dengan bilah pencarian cepat (Nama, Kode, NUP, Merk, Register), filter kondisi, retention centang lintas halaman/pencarian, selection summary toolbar, serta <strong>pengurutan NUP numerik murni yang selalu berurutan (1, 2, 3... 13, 14...)</strong> secara terintegrasi dengan kode barang.</li>
                                         </ul>
                                     </li>
-                                    <li><strong>Cetak Dokumen Resmi DBR (PDF Standar PU &amp; Kotak Paraf Multi-Halaman):</strong> Klik tombol <em>Cetak PDF</em> untuk mencetak dokumen DBR resmi format A4 Portrait (header instansi Kementerian Pekerjaan Umum, judul DAFTAR BARANG RUANGAN (DBR), kartu info ruangan ringkas, tabel barang agregat, dan kotak paraf otomatis di lembar-lembar awal).</li>
-                                    <li>Klik tombol <strong>Export Excel</strong> untuk mengunduh rekap DBR ruangan format spreadsheet lengkap.</li>
+                                    <li><strong>Cetak Dokumen Resmi DBR Per Ruangan (PDF Standar PU &amp; Kotak Paraf Multi-Halaman):</strong> Klik tombol <em>Cetak PDF</em> pada detail ruangan untuk mencetak dokumen DBR resmi format A4 Portrait (header instansi Kementerian Pekerjaan Umum, judul DAFTAR BARANG RUANGAN (DBR), kartu info ruangan ringkas, tabel barang agregat, dan kotak paraf otomatis di lembar-lembar awal).</li>
+                                    <li><strong>Cetak PDF Seluruh Ruangan (A4 Landscape &amp; Detail NUP Per Baris):</strong> Klik tombol merah <span class="badge badge-danger px-1">Cetak PDF Seluruh Ruangan</span> di header halaman utama DBR (<code>/admin/inventaris/dbr/cetak-pdf</code>) untuk mencetak seluruh aset berlokasi di seluruh ruangan kantor dalam format PDF resmi A4 Landscape dengan penulisan masing-masing NUP tersendiri per baris, header berulang otomatis antar halaman, badge kondisi fisik aset, rekapitulasi unit &amp; nilai total, serta lembar tanda tangan Kepala Satker dan Petugas BMN.</li>
+                                    <li><strong>Export Excel (Per Ruangan &amp; Seluruh Ruangan Detail NUP):</strong> Tersedia dua fasilitas ekspor spreadsheet: (1) Tombol <em>Export Excel Seluruh Ruangan</em> di halaman utama DBR untuk mengunduh seluruh aset berlokasi di seluruh ruangan secara lengkap di mana setiap NUP ditulis tersendiri per baris (individual NUP) beserta lembar kerja rekapitulasi per ruangan; (2) Tombol <em>Excel</em> pada tabel ruangan atau tombol <em>Export Excel</em> di halaman kelola barang ruangan untuk mengunduh rekapitulasi DBR format resmi per ruangan tertentu.</li>
                                 </ol>
                             </div>
                         </div>

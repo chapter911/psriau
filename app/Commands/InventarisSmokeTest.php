@@ -584,7 +584,7 @@ class InventarisSmokeTest extends BaseCommand
 
             $xlsxSize = filesize($tempXlsxPath);
             if ($xlsxSize > 1000) {
-                CLI::write("  [OK] File Excel DBR berhasil dibuat! Ukuran file: " . round($xlsxSize / 1024, 2) . " KB", "green");
+                CLI::write("  [OK] File Excel DBR per ruangan berhasil dibuat! Ukuran file: " . round($xlsxSize / 1024, 2) . " KB", "green");
                 $passedTests++;
             } else {
                 CLI::error("  [FAIL] File Excel DBR kosong atau korup.");
@@ -595,9 +595,118 @@ class InventarisSmokeTest extends BaseCommand
                 unlink($tempXlsxPath);
                 CLI::write("  [CLEANUP] File sementara {$tempXlsxPath} telah dihapus sesuai Rule 3.", "yellow");
             }
+
+            // Uji Generator Export Excel Seluruh Ruangan (Individual NUP)
+            $tempAllXlsxPath = ROOTPATH . 'do_not_upload/temp/smoke_test_dbr_all.xlsx';
+            $allAssetsWithRooms = $db->table('trn_inventaris_satker s')
+                ->select('s.kode_barang, s.nup, s.nama_barang, s.nilai_perolehan, r.kode_ruangan, r.nama_ruangan')
+                ->join('mst_ruangan r', 'r.id = s.ruangan_id', 'inner')
+                ->where('s.peruntukan', 'kantor')
+                ->orderBy('r.kode_ruangan', 'ASC')
+                ->orderBy('s.kode_barang', 'ASC')
+                ->orderBy('CAST(NULLIF(s.nup, "") AS UNSIGNED)', 'ASC', false)
+                ->limit(50)
+                ->get()
+                ->getResultArray();
+
+            $spreadsheetAll = new Spreadsheet();
+            $sheetAll1 = $spreadsheetAll->getActiveSheet();
+            $sheetAll1->setTitle('Detail Aset (NUP)');
+            $sheetAll1->setCellValue('A1', 'DAFTAR BARANG RUANGAN (DBR) - SELURUH RUANGAN KANTOR (DETAIL NUP)');
+            
+            $headersAll = ['NO', 'KODE RUANGAN', 'NAMA RUANGAN', 'KODE BARANG', 'NUP', 'NAMA BARANG', 'NILAI PEROLEHAN'];
+            $colAll = 'A';
+            foreach ($headersAll as $ha) {
+                $sheetAll1->setCellValue($colAll . '5', $ha);
+                $colAll++;
+            }
+
+            $rAll = 6;
+            $nAll = 1;
+            foreach ($allAssetsWithRooms as $ar) {
+                $sheetAll1->setCellValue('A' . $rAll, $nAll++);
+                $sheetAll1->setCellValueExplicit('B' . $rAll, (string) ($ar['kode_ruangan'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheetAll1->setCellValue('C' . $rAll, (string) ($ar['nama_ruangan'] ?? ''));
+                $sheetAll1->setCellValueExplicit('D' . $rAll, (string) ($ar['kode_barang'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheetAll1->setCellValue('E' . $rAll, (int) ($ar['nup'] ?? 0));
+                $sheetAll1->setCellValue('F' . $rAll, (string) ($ar['nama_barang'] ?? ''));
+                $sheetAll1->setCellValue('G' . $rAll, (float) ($ar['nilai_perolehan'] ?? 0));
+                $rAll++;
+            }
+
+            $sheetAll2 = $spreadsheetAll->createSheet();
+            $sheetAll2->setTitle('Rekapitulasi Ruangan');
+            $sheetAll2->setCellValue('A1', 'REKAPITULASI ASET DAN NILAI PEROLEHAN PER RUANGAN');
+
+            $writerAll = new Xlsx($spreadsheetAll);
+            $writerAll->save($tempAllXlsxPath);
+
+            $allXlsxSize = filesize($tempAllXlsxPath);
+            $sheetCount = $spreadsheetAll->getSheetCount();
+
+            $dbrIndexContent = file_get_contents(APPPATH . 'Views/admin/inventaris/dbr/index.php');
+            $hasExportBtn = (strpos($dbrIndexContent, 'admin/inventaris/dbr/export-excel') !== false);
+
+            if ($allXlsxSize > 1000 && $sheetCount === 2 && $hasExportBtn) {
+                CLI::write("  [OK] Export Excel DBR Seluruh Ruangan (Individual NUP per baris) berhasil dibuat! Ukuran: " . round($allXlsxSize / 1024, 2) . " KB, Total Sheet: {$sheetCount}, Tombol Export aktif di halaman utama DBR", "green");
+            } else {
+                CLI::error("  [FAIL] Export Excel Seluruh Ruangan gagal atau tombol di view tidak ditemukan.");
+            }
+
+            if (file_exists($tempAllXlsxPath)) {
+                unlink($tempAllXlsxPath);
+                CLI::write("  [CLEANUP] File sementara {$tempAllXlsxPath} telah dihapus sesuai Rule 3.", "yellow");
+            }
+
+            // Uji Cetak PDF Seluruh Ruangan (A4 Landscape, Individual NUP)
+            $tempAllPdfPath = ROOTPATH . 'do_not_upload/temp/smoke_test_dbr_all.pdf';
+            $pdfData = [
+                'items'        => $allAssetsWithRooms,
+                'totalUnit'    => count($allAssetsWithRooms),
+                'totalNilai'   => array_sum(array_column($allAssetsWithRooms, 'nilai_perolehan')),
+                'tglPenetapan' => date('j F Y'),
+                'waktuCetak'   => date('d/m/Y H:i') . ' WIB',
+                'kopSuratImg'  => '',
+                'logoBase64'   => '',
+                'kasatker'     => [
+                    'nama'    => 'Muhammad Yudi Prasetya, S.T.',
+                    'nip'     => '198002142014121002',
+                    'jabatan' => 'Kepala Kuasa Pengguna Barang',
+                ],
+                'tahun'        => date('Y'),
+            ];
+
+            $options = new \Dompdf\Options();
+            $options->set('isRemoteEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $dompdfAll = new \Dompdf\Dompdf($options);
+            ob_start();
+            $htmlAll = view('admin/inventaris/dbr/pdf_dbr_all', $pdfData);
+            ob_end_clean();
+            service('response')->setBody('');
+            $dompdfAll->loadHtml($htmlAll);
+            $dompdfAll->setPaper('A4', 'landscape');
+            $dompdfAll->render();
+            file_put_contents($tempAllPdfPath, $dompdfAll->output());
+
+            $allPdfSize = filesize($tempAllPdfPath);
+            $hasPdfAllBtn = (strpos($dbrIndexContent, 'admin/inventaris/dbr/cetak-pdf') !== false);
+
+            if ($allPdfSize > 2000 && $hasPdfAllBtn) {
+                CLI::write("  [OK] Cetak PDF DBR Seluruh Ruangan (A4 Landscape, NUP per baris) berhasil dirender! Ukuran: " . round($allPdfSize / 1024, 2) . " KB, Tombol Cetak PDF aktif di halaman utama DBR", "green");
+            } else {
+                CLI::error("  [FAIL] Render PDF DBR Seluruh Ruangan gagal atau tombol di view tidak ditemukan.");
+            }
+
+            if (file_exists($tempAllPdfPath)) {
+                unlink($tempAllPdfPath);
+                CLI::write("  [CLEANUP] File sementara {$tempAllPdfPath} telah dihapus sesuai Rule 3.", "yellow");
+            }
         } catch (\Throwable $e) {
-            CLI::error("  [FAIL] Exception saat generate Excel DBR: " . $e->getMessage());
+            CLI::error("  [FAIL] Exception saat generate Excel/PDF DBR: " . $e->getMessage());
             if (file_exists($tempXlsxPath)) unlink($tempXlsxPath);
+            if (isset($tempAllXlsxPath) && file_exists($tempAllXlsxPath)) unlink($tempAllXlsxPath);
+            if (isset($tempAllPdfPath) && file_exists($tempAllPdfPath)) unlink($tempAllPdfPath);
         }
 
         // ---------------------------------------------------------------------
