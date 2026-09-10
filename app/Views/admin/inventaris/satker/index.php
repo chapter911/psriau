@@ -159,7 +159,7 @@
                             </div>
                         </div>
                         <div class="h4 font-weight-bold text-dark mb-0" style="letter-spacing: -0.5px;">
-                            <?= number_format((int) ($summary['total_kantor'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
+                            <?= number_format((int) ($summary['total_kantor'] ?? $summary['kantor'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
                         </div>
                         <div class="small <?= ($filterPeruntukan === 'kantor') ? 'text-primary font-weight-bold' : 'text-muted'; ?> mt-1">
                             <?= ($filterPeruntukan === 'kantor') ? '● Filter Aktif: Aset Kantor (DBR)' : 'Aset Operasional & Ruangan'; ?>
@@ -177,7 +177,7 @@
                             </div>
                         </div>
                         <div class="h4 font-weight-bold text-dark mb-0" style="letter-spacing: -0.5px;">
-                            <?= number_format((int) ($summary['total_mobiler'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
+                            <?= number_format((int) ($summary['total_mobiler'] ?? $summary['mobiler'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
                         </div>
                         <div class="small <?= ($filterPeruntukan === 'mobiler') ? 'font-weight-bold' : 'text-muted'; ?> mt-1" style="<?= ($filterPeruntukan === 'mobiler') ? 'color: #b45309 !important;' : ''; ?>">
                             <?= ($filterPeruntukan === 'mobiler') ? '● Filter Aktif: Mobiler Sekolah' : 'Bantuan Sarpras Sekolah'; ?>
@@ -913,16 +913,43 @@
                         </div>
                     </div>
 
-                    <div class="row">
+                    <!-- Pilihan Lingkup NUP (Seluruh vs Sebagian) -->
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-dark">Lingkup Pembaruan NUP <span class="text-danger">*</span></label>
+                        <div class="card p-3 mb-1" style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+                            <div class="row">
+                                <div class="col-md-6 mb-2 mb-md-0">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="mass_lingkup_semua" name="lingkup_nup" value="semua" class="custom-control-input" checked>
+                                        <label class="custom-control-label font-weight-bold text-dark" for="mass_lingkup_semua" style="cursor: pointer;">
+                                            <i class="fas fa-check-double text-success mr-1"></i> Seluruh NUP (Semua Unit)
+                                        </label>
+                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Otomatis mengubah seluruh unit yang terdaftar untuk kode ini</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="mass_lingkup_sebagian" name="lingkup_nup" value="sebagian" class="custom-control-input">
+                                        <label class="custom-control-label font-weight-bold text-dark" for="mass_lingkup_sebagian" style="cursor: pointer;">
+                                            <i class="fas fa-filter text-primary mr-1"></i> Sebagian NUP (Rentang Tertentu)
+                                        </label>
+                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Tentukan nomor urut NUP awal hingga akhir secara spesifik</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row" id="mass-rentang-wrapper">
                         <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Dari NUP Awal <span class="text-danger">*</span></label>
-                            <input type="number" name="nup_awal" id="mass-nup-awal" class="form-control font-weight-bold" placeholder="Contoh: 1" required min="1" style="border-radius: 6px;">
-                            <small class="text-muted" style="font-size: 0.72rem;">Nomor urut pendaftaran awal yang akan diubah</small>
+                            <label class="font-weight-bold small text-dark">Dari NUP Awal <span class="text-danger" id="req-star-awal" style="display: none;">*</span></label>
+                            <input type="number" name="nup_awal" id="mass-nup-awal" class="form-control font-weight-bold" placeholder="Contoh: 1" min="1" readonly style="border-radius: 6px; background-color: #f1f5f9;">
+                            <small class="text-muted" id="note-nup-awal" style="font-size: 0.72rem;">Nomor urut pendaftaran awal yang akan diubah</small>
                         </div>
                         <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Hingga NUP Akhir <span class="text-danger">*</span></label>
-                            <input type="number" name="nup_akhir" id="mass-nup-akhir" class="form-control font-weight-bold" placeholder="Contoh: 50" required min="1" style="border-radius: 6px;">
-                            <small class="text-muted" style="font-size: 0.72rem;">Nomor urut pendaftaran akhir yang akan diubah</small>
+                            <label class="font-weight-bold small text-dark">Hingga NUP Akhir <span class="text-danger" id="req-star-akhir" style="display: none;">*</span></label>
+                            <input type="number" name="nup_akhir" id="mass-nup-akhir" class="form-control font-weight-bold" placeholder="Contoh: 50" min="1" readonly style="border-radius: 6px; background-color: #f1f5f9;">
+                            <small class="text-muted" id="note-nup-akhir" style="font-size: 0.72rem;">Nomor urut pendaftaran akhir yang akan diubah</small>
                         </div>
                     </div>
 
@@ -1081,10 +1108,38 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (minNup > 0) $('#mass-nup-awal').val(minNup);
                     if (maxNup > 0) $('#mass-nup-akhir').val(maxNup);
+                    updateLingkupNupUI();
                     
                     $('#mass-info-box').slideDown();
                 }
             });
+        });
+
+        function updateLingkupNupUI() {
+            var isSemua = $('#mass_lingkup_semua').is(':checked');
+            if (isSemua) {
+                $('#mass-nup-awal, #mass-nup-akhir').prop('readonly', true).css('background-color', '#f1f5f9');
+                $('#req-star-awal, #req-star-akhir').hide();
+                $('#note-nup-awal').html('<span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i>Otomatis mencakup NUP terendah</span>');
+                $('#note-nup-akhir').html('<span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i>Otomatis mencakup NUP tertinggi</span>');
+            } else {
+                $('#mass-nup-awal, #mass-nup-akhir').prop('readonly', false).css('background-color', '#ffffff');
+                $('#req-star-awal, #req-star-akhir').show();
+                $('#note-nup-awal').text('Nomor urut pendaftaran awal yang akan diubah');
+                $('#note-nup-akhir').text('Nomor urut pendaftaran akhir yang akan diubah');
+            }
+        }
+
+        $('input[name="lingkup_nup"]').on('change', function() {
+            updateLingkupNupUI();
+            if ($('#mass_lingkup_sebagian').is(':checked')) {
+                $('#mass-nup-awal').focus();
+            }
+        });
+
+        $('#modal-update-peruntukan-massal').on('show.bs.modal', function () {
+            $('#mass_lingkup_semua').prop('checked', true);
+            updateLingkupNupUI();
         });
 
         $('#modal-update-peruntukan-massal').on('shown.bs.modal', function () {
