@@ -1220,8 +1220,22 @@ class InventarisDbr extends BaseController
 
         $totalUnit = count($items);
         $totalNilai = 0.0;
+        $groupedRooms = [];
         foreach ($items as $it) {
             $totalNilai += (float) ($it['nilai_perolehan'] ?? 0);
+            $roomId = (int) $it['ruangan_id'];
+            if (! isset($groupedRooms[$roomId])) {
+                $groupedRooms[$roomId] = [
+                    'ruangan_id'            => $roomId,
+                    'kode_ruangan'          => (string) ($it['kode_ruangan'] ?? ''),
+                    'nama_ruangan'          => (string) ($it['nama_ruangan'] ?? ''),
+                    'lokasi_lantai'         => (string) ($it['lokasi_lantai'] ?? ''),
+                    'penanggung_jawab_nama' => (string) ($it['penanggung_jawab_nama'] ?? ''),
+                    'penanggung_jawab_nip'  => (string) ($it['penanggung_jawab_nip'] ?? ''),
+                    'items'                 => [],
+                ];
+            }
+            $groupedRooms[$roomId]['items'][] = $it;
         }
 
         // Ambil Kop Surat dari Master Kop (kop_surat)
@@ -1245,6 +1259,7 @@ class InventarisDbr extends BaseController
         $tglHariIni = date('j') . ' ' . ($bulanIndo[(int) date('n')] ?? date('F')) . ' ' . date('Y');
 
         $data = [
+            'groupedRooms' => $groupedRooms,
             'items'        => $items,
             'totalUnit'    => $totalUnit,
             'totalNilai'   => $totalNilai,
