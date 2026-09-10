@@ -2,6 +2,71 @@
 
 <?= $this->section('content'); ?>
 <style>
+/* Hilangkan tombol expand responsive DataTable secara permanen */
+.dtr-control, 
+.dtr-control:before,
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before,
+table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control:before {
+    display: none !important;
+}
+table.dataTable > tbody > tr > td.dtr-control {
+    padding-left: 0.75rem !important;
+}
+
+/* Card & Table Polish */
+.card-tidak-terdata {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+
+#tblTidakTerdata {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+#tblTidakTerdata thead th {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #334155;
+    background-color: #f1f5f9;
+    border-top: none;
+    border-bottom: 2px solid #cbd5e1;
+    vertical-align: middle;
+    padding: 12px 10px;
+}
+
+#tblTidakTerdata tbody td {
+    vertical-align: middle;
+    padding: 11px 10px;
+    font-size: 0.88rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+#tblTidakTerdata tfoot td {
+    vertical-align: middle;
+    padding: 12px 10px;
+    background-color: #f8fafc;
+    border-top: 2px solid #cbd5e1;
+}
+
+.dataTables_wrapper {
+    padding: 14px 16px;
+}
+
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter {
+    margin-bottom: 12px;
+}
+
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    padding-top: 14px;
+}
+
 /* Styling Modal & Select2 Enhancement */
 .modal-content {
     border: none !important;
@@ -63,24 +128,6 @@
 </style>
 
 <div class="container-fluid">
-    <?php if (session()->getFlashdata('success')) : ?>
-        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="fas fa-check-circle mr-1"></i> <?= esc(session()->getFlashdata('success')); ?>
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    <?php endif; ?>
-
-    <?php if (session()->getFlashdata('error')) : ?>
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <i class="fas fa-exclamation-circle mr-1"></i> <?= esc(session()->getFlashdata('error')); ?>
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    <?php endif; ?>
-
     <!-- Summary Widgets -->
     <div class="row mb-3">
         <div class="col-12 col-sm-6 col-md-3">
@@ -122,27 +169,27 @@
     </div>
 
     <!-- Main Card -->
-    <div class="card card-outline card-primary shadow-sm" style="border-radius: 10px;">
-        <div class="card-header bg-white py-3">
-            <div class="d-flex flex-wrap justify-content-between align-items-center">
-                <div>
-                    <h5 class="card-title font-weight-bold text-dark mb-0">
+    <div class="card card-outline card-primary card-tidak-terdata shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-bottom">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                <div class="mb-2 mb-md-0">
+                    <h5 class="font-weight-bold text-dark mb-1">
                         <i class="fas fa-clipboard-list text-primary mr-2"></i>Daftar Aset Tidak Terdata
                     </h5>
                     <div class="text-muted small">Pencatatan inventaris non-BMN / aset operasional kantor yang belum terinput di aplikasi SIMAN</div>
                 </div>
-                <div class="card-tools mt-2 mt-sm-0">
+                <div class="d-flex flex-wrap align-items-center" style="gap: 6px;">
                     <?php if (! empty($menuPermissions['add'])) : ?>
-                        <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm mr-1" data-toggle="modal" data-target="#modalTambah">
+                        <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm font-weight-bold" data-toggle="modal" data-target="#modalTambah">
                             <i class="fas fa-plus-circle mr-1"></i> Tambah Aset
                         </button>
                     <?php endif; ?>
 
                     <?php if (! empty($menuPermissions['export'])) : ?>
-                        <a href="<?= base_url('admin/inventaris/tidak-terdata/cetak-pdf?' . http_build_query($filters)); ?>" target="_blank" class="btn btn-outline-danger btn-sm rounded-pill px-3 mr-1 shadow-sm" title="Pratinjau Cetak PDF di Tab Baru">
+                        <a href="<?= base_url('admin/inventaris/tidak-terdata/cetak-pdf?' . http_build_query($filters)); ?>" target="_blank" class="btn btn-outline-danger btn-sm rounded-pill px-3 shadow-sm" title="Pratinjau Cetak PDF di Tab Baru">
                             <i class="fas fa-print mr-1"></i> Cetak PDF
                         </a>
-                        <a href="<?= base_url('admin/inventaris/tidak-terdata/export-pdf?' . http_build_query($filters)); ?>" class="btn btn-danger btn-sm rounded-pill px-3 mr-1 shadow-sm" title="Unduh Langsung File PDF (.pdf)">
+                        <a href="<?= base_url('admin/inventaris/tidak-terdata/export-pdf?' . http_build_query($filters)); ?>" class="btn btn-danger btn-sm rounded-pill px-3 shadow-sm font-weight-bold" title="Unduh Langsung File PDF (.pdf)">
                             <i class="fas fa-file-pdf mr-1"></i> Ekspor PDF
                         </a>
                         <a href="<?= base_url('admin/inventaris/tidak-terdata/export-excel?' . http_build_query($filters)); ?>" class="btn btn-outline-success btn-sm rounded-pill px-3 shadow-sm" title="Unduh Spreadsheet Excel (.xlsx)">
@@ -154,14 +201,14 @@
         </div>
 
         <!-- Filter Box -->
-        <div class="card-body border-bottom bg-light py-2">
+        <div class="card-body border-bottom bg-light py-2 px-3">
             <form action="<?= base_url('admin/inventaris/tidak-terdata'); ?>" method="get" class="form-row align-items-center">
-                <div class="col-md-4 col-sm-6 my-1">
+                <div class="col-lg-4 col-md-5 col-sm-12 my-1">
                     <div class="input-group input-group-sm">
                         <div class="input-group-prepend">
                             <span class="input-group-text bg-white"><i class="fas fa-map-marker-alt text-danger"></i></span>
                         </div>
-                        <select name="ruangan_id" class="form-control form-control-sm select2-filter">
+                        <select name="ruangan_id" class="custom-select custom-select-sm">
                             <option value="">-- Semua Ruangan / Lokasi --</option>
                             <?php foreach ($ruanganList as $r) : ?>
                                 <option value="<?= $r['id']; ?>" <?= ($filters['ruangan_id'] ?? '') == $r['id'] ? 'selected' : ''; ?>>
@@ -172,12 +219,12 @@
                     </div>
                 </div>
 
-                <div class="col-md-3 col-sm-6 my-1">
+                <div class="col-lg-3 col-md-3 col-sm-6 my-1">
                     <div class="input-group input-group-sm">
                         <div class="input-group-prepend">
                             <span class="input-group-text bg-white"><i class="fas fa-heartbeat text-info"></i></span>
                         </div>
-                        <select name="kondisi" class="form-control form-control-sm">
+                        <select name="kondisi" class="custom-select custom-select-sm">
                             <option value="">-- Semua Kondisi --</option>
                             <option value="baik" <?= ($filters['kondisi'] ?? '') === 'baik' ? 'selected' : ''; ?>>Baik</option>
                             <option value="rusak_ringan" <?= ($filters['kondisi'] ?? '') === 'rusak_ringan' ? 'selected' : ''; ?>>Rusak Ringan</option>
@@ -186,11 +233,11 @@
                     </div>
                 </div>
 
-                <div class="col-md-4 col-sm-8 my-1">
+                <div class="col-lg-5 col-md-4 col-sm-6 my-1">
                     <div class="input-group input-group-sm">
                         <input type="text" name="q" value="<?= esc($filters['q'] ?? ''); ?>" class="form-control form-control-sm" placeholder="Cari nama barang, merk/tipe, lokasi...">
                         <div class="input-group-append">
-                            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-search mr-1"></i> Filter</button>
                             <?php if (! empty($filters['ruangan_id']) || ! empty($filters['kondisi']) || ! empty($filters['q'])) : ?>
                                 <a href="<?= base_url('admin/inventaris/tidak-terdata'); ?>" class="btn btn-outline-secondary" title="Reset Filter"><i class="fas fa-sync-alt"></i></a>
                             <?php endif; ?>
@@ -201,19 +248,19 @@
         </div>
 
         <!-- Table View -->
-        <div class="card-body table-responsive p-0">
-            <table class="table table-hover table-striped text-nowrap align-middle" id="tblTidakTerdata" style="width: 100%;">
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-hover table-striped text-nowrap align-middle mb-0" id="tblTidakTerdata" style="width: 100%;">
                 <thead class="thead-light">
                     <tr>
-                        <th class="text-center" style="width: 45px;">No</th>
-                        <th>Nama Barang</th>
-                        <th class="text-center">Kuantitas</th>
-                        <th>Merk / Type</th>
-                        <th class="text-center">Tahun</th>
-                        <th><i class="fas fa-map-marker-alt text-danger mr-1"></i> Lokasi Aset</th>
-                        <th class="text-center">Kondisi</th>
-                        <th>Keterangan Perolehan</th>
-                        <th class="text-center" style="width: 90px;">Aksi</th>
+                        <th class="text-center" style="width: 50px;">No</th>
+                        <th style="min-width: 170px;">Nama Barang</th>
+                        <th class="text-center" style="width: 110px;">Kuantitas</th>
+                        <th style="min-width: 220px;">Merk / Type</th>
+                        <th class="text-center" style="width: 80px;">Tahun</th>
+                        <th style="min-width: 160px;"><i class="fas fa-map-marker-alt text-danger mr-1"></i> Lokasi Aset</th>
+                        <th class="text-center" style="width: 120px;">Kondisi</th>
+                        <th style="min-width: 200px;">Keterangan</th>
+                        <th class="text-center" style="width: 95px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -319,14 +366,14 @@
                 <?php if (! empty($items)) : ?>
                     <tfoot class="bg-light font-weight-bold">
                         <tr>
-                            <td colspan="2" class="text-right">TOTAL KUANTITAS:</td>
+                            <td colspan="2" class="text-right text-uppercase text-secondary" style="letter-spacing: 0.5px;">TOTAL KUANTITAS:</td>
                             <td class="text-center">
                                 <span class="badge badge-pill badge-dark px-3 py-1 font-weight-bold" style="font-size: 0.9rem;">
                                     <?= number_format($summary['total_buah'] ?? 0); ?> Buah
                                 </span>
                             </td>
                             <td colspan="6" class="text-muted font-italic">
-                                (Terdiri dari <?= number_format($summary['total_item'] ?? 0); ?> jenis barang inventaris)
+                                <i class="fas fa-info-circle mr-1 text-primary"></i> Terdiri dari <?= number_format($summary['total_item'] ?? 0); ?> jenis barang inventaris kantor
                             </td>
                         </tr>
                     </tfoot>
@@ -555,11 +602,17 @@
 <?= $this->section('pageScripts'); ?>
 <script>
 $(document).ready(function() {
-    // Inisialisasi DataTable
+    // Inisialisasi DataTable Tanpa Tombol Expand (Semua Kolom Ditampilkan Penuh)
     if ($.fn.DataTable) {
         $('#tblTidakTerdata').DataTable({
-            responsive: true,
+            responsive: false,
+            autoWidth: false,
+            scrollX: true,
+            scrollCollapse: true,
             pageLength: 25,
+            columnDefs: [
+                { orderable: false, targets: [8] } // Kolom Aksi tidak perlu di-sort
+            ],
             language: {
                 search: "Cari data:",
                 lengthMenu: "Tampilkan _MENU_ baris",
@@ -572,14 +625,6 @@ $(document).ready(function() {
                 },
                 emptyTable: "Tidak ada data yang tersedia"
             }
-        });
-    }
-
-    // Inisialisasi Select2 Filter
-    if ($.fn.select2) {
-        $('.select2-filter').select2({
-            theme: 'bootstrap4',
-            width: 'resolve'
         });
     }
 
