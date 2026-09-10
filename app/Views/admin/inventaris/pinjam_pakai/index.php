@@ -1,6 +1,102 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
+<style>
+/* Styling Khusus Modal Pinjam Pakai & Select2 Enhancement */
+.modal-content {
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.18) !important;
+}
+.modal-header {
+    border-top-left-radius: 12px !important;
+    border-top-right-radius: 12px !important;
+}
+.modal-footer {
+    border-bottom-left-radius: 12px !important;
+    border-bottom-right-radius: 12px !important;
+}
+
+/* Select2 Bootstrap 4 Styling Khusus di Dalam Modal */
+.modal .select2-container--bootstrap4 .select2-selection {
+    border: 1px solid #ced4da !important;
+    border-radius: 6px !important;
+    min-height: 40px !important;
+    padding: 5px 8px !important;
+    background-color: #ffffff !important;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.modal .select2-container--bootstrap4.select2-container--focus .select2-selection,
+.modal .select2-container--bootstrap4.select2-container--open .select2-selection {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+}
+.modal .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+    line-height: 28px !important;
+    padding-left: 4px !important;
+    color: #1e293b !important;
+    font-size: 0.9rem !important;
+}
+.modal .select2-container--bootstrap4 .select2-selection--single .select2-selection__placeholder {
+    color: #94a3b8 !important;
+    font-size: 0.88rem !important;
+}
+.modal .select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow {
+    height: 100% !important;
+    top: 0 !important;
+    right: 10px !important;
+}
+
+/* Select2 Dropdown Layer & Search Field */
+.select2-container--open .select2-dropdown {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18) !important;
+    z-index: 9999 !important;
+    overflow: hidden !important;
+}
+.select2-search--dropdown {
+    padding: 8px 10px !important;
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+.select2-search--dropdown .select2-search__field {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 7px 12px !important;
+    font-size: 0.88rem !important;
+    color: #1e293b !important;
+    outline: none !important;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+.select2-search--dropdown .select2-search__field:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15) !important;
+}
+.select2-results__options {
+    max-height: 260px !important;
+    padding: 4px 0 !important;
+}
+.select2-results__option {
+    padding: 8px 12px !important;
+    font-size: 0.87rem !important;
+    line-height: 1.4 !important;
+    border-bottom: 1px solid #f8fafc !important;
+}
+.select2-results__option--highlighted {
+    background-color: #007bff !important;
+    color: #ffffff !important;
+}
+.select2-results__option--highlighted .text-dark,
+.select2-results__option--highlighted .text-muted,
+.select2-results__option--highlighted i {
+    color: #ffffff !important;
+}
+.select2-results__option--highlighted .badge {
+    background-color: #ffffff !important;
+    color: #007bff !important;
+}
+</style>
 <div class="container-fluid">
 
     <!-- Summary Widgets -->
@@ -210,6 +306,10 @@
                                                 data-jabatan="<?= esc((string) ($p['jabatan_peminjam'] ?? ''), 'attr'); ?>"
                                                 data-kontak="<?= esc((string) ($p['kontak_peminjam'] ?? ''), 'attr'); ?>"
                                                 data-surat="<?= esc((string) $p['no_surat'], 'attr'); ?>"
+                                                data-barang="<?= esc((string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
+                                                data-nup="<?= esc((string) ($p['nup'] ?? ''), 'attr'); ?>"
+                                                data-kode="<?= esc((string) ($p['kode_barang'] ?? ''), 'attr'); ?>"
+                                                data-status="<?= esc((string) $p['status'], 'attr'); ?>"
                                                 data-tgl-pinjam="<?= esc((string) $p['tgl_pinjam'], 'attr'); ?>"
                                                 data-tgl-kembali="<?= esc((string) ($p['tgl_kembali_rencana'] ?? ''), 'attr'); ?>"
                                                 data-keperluan="<?= esc((string) $p['keperluan'], 'attr'); ?>"
@@ -254,133 +354,158 @@
 
 <!-- Modal Tambah Pinjam Pakai -->
 <?php if (! empty($can_add)): ?>
-<div class="modal fade" id="modal-tambah-pinjam" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="modal-tambah-pinjam" role="dialog" aria-labelledby="modalTambahPinjamTitle" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.12);">
-            <div class="modal-header bg-light py-3" style="border-bottom: 1px solid #e9eef5;">
-                <h5 class="modal-title font-weight-bold text-dark" style="font-size: 1.1rem;">
-                    <i class="fas fa-plus-circle text-primary mr-2"></i>Peminjaman Aset BMN Baru
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <div class="modal-content">
+            <div class="modal-header py-3 px-4" style="background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%); border-bottom: 1px solid #e2e8f0;">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3 d-flex align-items-center justify-content-center bg-primary text-white rounded-circle shadow-sm" style="width: 42px; height: 42px; font-size: 1.15rem;">
+                        <i class="fas fa-hand-holding"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold text-dark mb-0" id="modalTambahPinjamTitle" style="font-size: 1.15rem;">
+                            Peminjaman Aset BMN Baru
+                        </h5>
+                        <small class="text-muted">Pencatatan peminjaman aset dinas yang digunakan pribadi oleh pegawai</small>
+                    </div>
+                </div>
+                <button type="button" class="close text-secondary" data-dismiss="modal" aria-label="Close" style="font-size: 1.5rem; opacity: 0.7;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <form action="<?= site_url('admin/inventaris/pinjam-pakai/create'); ?>" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
-                <div class="modal-body py-4">
+                <div class="modal-body py-4 px-4">
                     
-                    <!-- Section Aset BMN -->
-                    <h6 class="font-weight-bold text-primary mb-3 border-bottom pb-2">
-                        <i class="fas fa-box-open mr-1"></i> 1. Informasi Aset yang Dipinjamkan
-                    </h6>
-                    <div class="form-group">
-                        <label class="font-weight-bold small text-dark">Pilih Aset BMN <span class="text-danger">*</span></label>
-                        <select name="inventaris_id" class="form-control select2" required style="width: 100%; border-radius: 6px;">
-                            <option value="">-- Pilih Aset BMN yang Tersedia --</option>
-                            <?php foreach (($availableAssets ?? []) as $ast): ?>
-                                <option value="<?= esc($ast['id']); ?>">
-                                    [NUP <?= esc($ast['nup']); ?>] <?= esc($ast['nama_barang']); ?> <?= ! empty($ast['merk_tipe']) ? ' - ' . esc($ast['merk_tipe']) : ''; ?> (<?= esc($ast['kode_barang']); ?>) - Kondisi: <?= esc(ucwords(str_replace('_', ' ', $ast['kondisi'] ?? 'baik'))); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <small class="text-muted">Aset yang sedang dalam status dipinjam aktif tidak ditampilkan pada daftar ini.</small>
-                    </div>
+                    <!-- Section 1: Aset BMN -->
+                    <div class="card border mb-3 shadow-none" style="border-radius: 8px; border-color: #e2e8f0; background: #fafbfc;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge badge-primary rounded-circle mr-2 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.75rem;">1</span>
+                                <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">Informasi Aset BMN yang Dipinjamkan</h6>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold small text-dark mb-1">Pilih Aset BMN <span class="text-danger">*</span></label>
+                                <select name="inventaris_id" id="tambah-inventaris-select" class="form-control" required style="width: 100%;">
+                                    <option value="">-- Pilih atau Cari Aset BMN yang Tersedia --</option>
+                                    <?php foreach (($availableAssets ?? []) as $ast): ?>
+                                        <option value="<?= esc($ast['id']); ?>">
+                                            [NUP <?= esc($ast['nup']); ?>] <?= esc($ast['nama_barang']); ?> <?= ! empty($ast['merk_tipe']) ? ' - ' . esc($ast['merk_tipe']) : ''; ?> (<?= esc($ast['kode_barang']); ?>) - Kondisi: <?= esc(ucwords(str_replace('_', ' ', $ast['kondisi'] ?? 'baik'))); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle mr-1 text-primary"></i>Hanya menampilkan aset aktif yang sedang tidak dipinjam. Cari berdasarkan nama, merk, kode, atau NUP.</small>
+                            </div>
 
-                    <div class="form-group">
-                        <label class="font-weight-bold small text-dark">Kondisi Fisik Saat Dipinjam <span class="text-danger">*</span></label>
-                        <select name="kondisi_pinjam" class="form-control" required style="border-radius: 6px;">
-                            <option value="baik" selected>Baik</option>
-                            <option value="rusak_ringan">Rusak Ringan</option>
-                            <option value="rusak_berat">Rusak Berat</option>
-                        </select>
-                    </div>
-
-                    <!-- Section Pegawai Peminjam -->
-                    <h6 class="font-weight-bold text-primary mb-3 mt-4 border-bottom pb-2">
-                        <i class="fas fa-user mr-1"></i> 2. Identitas Peminjam
-                    </h6>
-                    <div class="form-group">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="font-weight-bold small text-dark mb-0">Pilih dari Master Pegawai</label>
-                            <button type="button" class="btn btn-link btn-xs text-danger p-0" id="btn-clear-tambah-pegawai" style="font-size: 0.75rem; text-decoration: none;">
-                                <i class="fas fa-times-circle mr-1"></i> Input Manual / Reset
-                            </button>
-                        </div>
-                        <select name="pegawai_id" id="tambah-pegawai-select" class="form-control select2" style="width: 100%; border-radius: 6px;">
-                            <option value="">-- Pilih Pegawai (Otomatis Isi Data) --</option>
-                            <?php foreach (($pegawaiList ?? []) as $peg): ?>
-                                <option value="<?= esc($peg['id']); ?>" 
-                                    data-nama="<?= esc($peg['nama']); ?>" 
-                                    data-nip="<?= esc($peg['nip']); ?>" 
-                                    data-jabatan="<?= esc($peg['jabatan'] ?? ''); ?>" 
-                                    data-kontak="<?= esc($peg['no_hp'] ?? ''); ?>">
-                                    <?= esc($peg['nama']); ?> (NIP. <?= esc($peg['nip'] ?: '-'); ?>) <?= ! empty($peg['jabatan']) ? ' - ' . esc($peg['jabatan']) : ''; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Nama Lengkap Peminjam <span class="text-danger">*</span></label>
-                            <input type="text" name="nama_peminjam" id="tambah-nama-peminjam" class="form-control" placeholder="Nama lengkap & gelar" required style="border-radius: 6px;">
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">NIP Peminjam</label>
-                            <input type="text" name="nip_peminjam" id="tambah-nip-peminjam" class="form-control" placeholder="NIP 18 digit" style="border-radius: 6px;">
+                            <div class="form-group mb-0">
+                                <label class="font-weight-bold small text-dark mb-1">Kondisi Fisik Saat Dipinjam <span class="text-danger">*</span></label>
+                                <select name="kondisi_pinjam" class="form-control" required style="border-radius: 6px; font-size: 0.9rem;">
+                                    <option value="baik" selected>Baik</option>
+                                    <option value="rusak_ringan">Rusak Ringan</option>
+                                    <option value="rusak_berat">Rusak Berat</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Jabatan Peminjam</label>
-                            <input type="text" name="jabatan_peminjam" id="tambah-jabatan-peminjam" class="form-control" placeholder="Jabatan kedinasan" style="border-radius: 6px;">
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">No. Handphone / WhatsApp</label>
-                            <input type="text" name="kontak_peminjam" id="tambah-kontak-peminjam" class="form-control" placeholder="Contoh: 081234567890" style="border-radius: 6px;">
+                    <!-- Section 2: Pegawai Peminjam -->
+                    <div class="card border mb-3 shadow-none" style="border-radius: 8px; border-color: #e2e8f0; background: #fafbfc;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge badge-primary rounded-circle mr-2 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.75rem;">2</span>
+                                    <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">Identitas Pegawai Peminjam</h6>
+                                </div>
+                                <button type="button" class="btn btn-link btn-xs text-danger p-0 font-weight-bold" id="btn-clear-tambah-pegawai" style="font-size: 0.75rem; text-decoration: none;">
+                                    <i class="fas fa-undo mr-1"></i> Reset / Input Manual
+                                </button>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold small text-dark mb-1">Pilih dari Master Pegawai <small class="text-muted font-weight-normal">(Otomatis isi nama, NIP, jabatan)</small></label>
+                                <select name="pegawai_id" id="tambah-pegawai-select" class="form-control" style="width: 100%;">
+                                    <option value="">-- Pilih atau Cari Nama Pegawai --</option>
+                                    <?php foreach (($pegawaiList ?? []) as $peg): ?>
+                                        <option value="<?= esc($peg['id']); ?>" 
+                                            data-nama="<?= esc($peg['nama']); ?>" 
+                                            data-nip="<?= esc($peg['nip']); ?>" 
+                                            data-jabatan="<?= esc($peg['jabatan'] ?? ''); ?>" 
+                                            data-kontak="<?= esc($peg['no_hp'] ?? ''); ?>">
+                                            <?= esc($peg['nama']); ?> (NIP. <?= esc($peg['nip'] ?: '-'); ?>) <?= ! empty($peg['jabatan']) ? ' - ' . esc($peg['jabatan']) : ''; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">Nama Lengkap Peminjam <span class="text-danger">*</span></label>
+                                    <input type="text" name="nama_peminjam" id="tambah-nama-peminjam" class="form-control" placeholder="Nama lengkap & gelar peminjam" required style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                                <div class="col-md-6 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">NIP Peminjam</label>
+                                    <input type="text" name="nip_peminjam" id="tambah-nip-peminjam" class="form-control" placeholder="NIP 18 digit (jika PNS/PPPK)" style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-0">
+                                    <label class="font-weight-bold small text-dark mb-1">Jabatan Peminjam</label>
+                                    <input type="text" name="jabatan_peminjam" id="tambah-jabatan-peminjam" class="form-control" placeholder="Jabatan kedinasan" style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                                <div class="col-md-6 form-group mb-0">
+                                    <label class="font-weight-bold small text-dark mb-1">No. Handphone / WhatsApp</label>
+                                    <input type="text" name="kontak_peminjam" id="tambah-kontak-peminjam" class="form-control" placeholder="Contoh: 081234567890" style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Section Administrasi Surat -->
-                    <h6 class="font-weight-bold text-primary mb-3 mt-4 border-bottom pb-2">
-                        <i class="fas fa-file-contract mr-1"></i> 3. Administrasi & Masa Pinjam
-                    </h6>
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Nomor Surat Izin Pinjam Pakai <span class="text-muted font-weight-normal">(Opsional)</span></label>
-                            <input type="text" name="no_surat" class="form-control" placeholder="Contoh: 01/SPP/BMN/PPS-RIAU/2026 (Opsional)" style="border-radius: 6px;">
-                        </div>
-                        <div class="col-md-3 form-group">
-                            <label class="font-weight-bold small text-dark">Tanggal Pinjam <span class="text-danger">*</span></label>
-                            <input type="date" name="tgl_pinjam" class="form-control" value="<?= date('Y-m-d'); ?>" required style="border-radius: 6px;">
-                        </div>
-                        <div class="col-md-3 form-group">
-                            <label class="font-weight-bold small text-dark">Rencana Pengembalian</label>
-                            <input type="date" name="tgl_kembali_rencana" class="form-control" style="border-radius: 6px;">
-                            <small class="text-muted">Kosongkan bila tentatif</small>
-                        </div>
-                    </div>
+                    <!-- Section 3: Administrasi Surat & Masa Pinjam -->
+                    <div class="card border mb-0 shadow-none" style="border-radius: 8px; border-color: #e2e8f0; background: #fafbfc;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge badge-primary rounded-circle mr-2 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.75rem;">3</span>
+                                <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">Administrasi &amp; Masa Pinjam</h6>
+                            </div>
 
-                    <div class="form-group">
-                        <label class="font-weight-bold small text-dark">Keperluan Peminjaman <span class="text-danger">*</span></label>
-                        <textarea name="keperluan" class="form-control" rows="2" placeholder="Contoh: Digunakan untuk tugas kedinasan pengawasan lapangan dan operasional harian Satker PPS Riau..." required style="border-radius: 6px;"></textarea>
-                    </div>
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">Nomor Surat Izin Pinjam Pakai <span class="text-muted font-weight-normal">(Opsional)</span></label>
+                                    <input type="text" name="no_surat" class="form-control" placeholder="Contoh: 01/SPP/BMN/PPS-RIAU/2026 (Opsional)" style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                                <div class="col-md-3 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">Tanggal Pinjam <span class="text-danger">*</span></label>
+                                    <input type="date" name="tgl_pinjam" class="form-control" value="<?= date('Y-m-d'); ?>" required style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                                <div class="col-md-3 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">Rencana Kembali</label>
+                                    <input type="date" name="tgl_kembali_rencana" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                            </div>
 
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Upload Scan Dokumen Pinjam (PDF)</label>
-                            <input type="file" name="file_surat" class="form-control-file border p-1 w-100" accept=".pdf" style="border-radius: 6px;">
-                            <small class="text-muted">Format .PDF maks 10MB (opsional, bisa diupload menyusul)</small>
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Catatan Tambahan</label>
-                            <textarea name="catatan" class="form-control" rows="2" placeholder="Catatan atau perjanjian khusus..." style="border-radius: 6px;"></textarea>
+                            <div class="form-group mb-2">
+                                <label class="font-weight-bold small text-dark mb-1">Keperluan Peminjaman <span class="text-danger">*</span></label>
+                                <textarea name="keperluan" class="form-control" rows="2" placeholder="Uraikan keperluan kedinasan penggunaan aset BMN ini..." required style="border-radius: 6px; font-size: 0.9rem;"></textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-0">
+                                    <label class="font-weight-bold small text-dark mb-1">Upload Scan Dokumen Pinjam (PDF)</label>
+                                    <input type="file" name="file_surat" class="form-control-file border p-2 w-100 bg-white" accept=".pdf" style="border-radius: 6px; font-size: 0.85rem;">
+                                    <small class="text-muted">Format .PDF maks 10MB (opsional, bisa diupload menyusul)</small>
+                                </div>
+                                <div class="col-md-6 form-group mb-0">
+                                    <label class="font-weight-bold small text-dark mb-1">Catatan Tambahan</label>
+                                    <textarea name="catatan" class="form-control" rows="2" placeholder="Catatan atau perjanjian khusus..." style="border-radius: 6px; font-size: 0.9rem;"></textarea>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                 </div>
-                <div class="modal-footer bg-light py-3" style="border-top: 1px solid #e9eef5;">
+                <div class="modal-footer py-3 px-4" style="background: #f8fafc; border-top: 1px solid #e2e8f0;">
                     <button type="button" class="btn btn-secondary px-3" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
                     <button type="submit" class="btn btn-primary px-4 shadow-sm font-weight-bold" style="border-radius: 6px;">
                         <i class="fas fa-save mr-1"></i> Simpan Peminjaman Aset
@@ -394,108 +519,151 @@
 
 <!-- Modal Edit Pinjam Pakai -->
 <?php if (! empty($can_edit)): ?>
-<div class="modal fade" id="modal-edit-pinjam" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="modal-edit-pinjam" role="dialog" aria-labelledby="modalEditPinjamTitle" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.12);">
-            <div class="modal-header bg-light py-3" style="border-bottom: 1px solid #e9eef5;">
-                <h5 class="modal-title font-weight-bold text-dark" style="font-size: 1.1rem;">
-                    <i class="fas fa-edit text-primary mr-2"></i>Ubah Data Pinjam Pakai
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <div class="modal-content">
+            <div class="modal-header py-3 px-4" style="background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%); border-bottom: 1px solid #e2e8f0;">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3 d-flex align-items-center justify-content-center bg-info text-white rounded-circle shadow-sm" style="width: 42px; height: 42px; font-size: 1.15rem;">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold text-dark mb-0" id="modalEditPinjamTitle" style="font-size: 1.15rem;">
+                            Ubah Data Pinjam Pakai
+                        </h5>
+                        <small class="text-muted">Perbarui data peminjam, nomor surat, tanggal, atau ganti file dokumen scan</small>
+                    </div>
+                </div>
+                <button type="button" class="close text-secondary" data-dismiss="modal" aria-label="Close" style="font-size: 1.5rem; opacity: 0.7;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <form id="form-edit-pinjam" action="" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
-                <div class="modal-body py-4">
+                <div class="modal-body py-4 px-4">
 
-                    <h6 class="font-weight-bold text-primary mb-3 border-bottom pb-2">
-                        <i class="fas fa-user mr-1"></i> 1. Identitas Peminjam
-                    </h6>
-                    <div class="form-group">
-                        <label class="font-weight-bold small text-dark mb-1">Pilih dari Master Pegawai</label>
-                        <select name="pegawai_id" id="edit-pegawai-select" class="form-control" style="border-radius: 6px;">
-                            <option value="">-- Pilih Pegawai --</option>
-                            <?php foreach (($pegawaiList ?? []) as $peg): ?>
-                                <option value="<?= esc($peg['id']); ?>" 
-                                    data-nama="<?= esc($peg['nama']); ?>" 
-                                    data-nip="<?= esc($peg['nip']); ?>" 
-                                    data-jabatan="<?= esc($peg['jabatan'] ?? ''); ?>" 
-                                    data-kontak="<?= esc($peg['no_hp'] ?? ''); ?>">
-                                    <?= esc($peg['nama']); ?> (NIP. <?= esc($peg['nip'] ?: '-'); ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Nama Lengkap Peminjam <span class="text-danger">*</span></label>
-                            <input type="text" name="nama_peminjam" id="edit-nama-peminjam" class="form-control" required style="border-radius: 6px;">
+                    <!-- Info Banner Aset Terkait (Read Only) -->
+                    <div class="alert alert-light border d-flex align-items-center mb-3 py-2 px-3 shadow-none" style="border-radius: 8px; background: #f0f7ff; border-left: 4px solid #007bff !important;">
+                        <div class="mr-3 text-primary" style="font-size: 1.6rem;">
+                            <i class="fas fa-box-open"></i>
                         </div>
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">NIP Peminjam</label>
-                            <input type="text" name="nip_peminjam" id="edit-nip-peminjam" class="form-control" style="border-radius: 6px;">
+                        <div class="flex-grow-1">
+                            <div class="small text-muted font-weight-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Aset BMN yang Sedang Dipinjam:</div>
+                            <div class="font-weight-bold text-dark" id="edit-aset-nama" style="font-size: 0.98rem;">-</div>
+                            <div class="small text-muted mt-1">
+                                <span>Kode: <strong id="edit-aset-kode">-</strong></span> | 
+                                <span>NUP: <span class="badge badge-primary px-2 py-0" id="edit-aset-nup">-</span></span> | 
+                                <span>Status: <span class="badge badge-warning px-2 py-0" id="edit-aset-status">-</span></span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Jabatan Peminjam</label>
-                            <input type="text" name="jabatan_peminjam" id="edit-jabatan-peminjam" class="form-control" style="border-radius: 6px;">
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">No. Handphone / WhatsApp</label>
-                            <input type="text" name="kontak_peminjam" id="edit-kontak-peminjam" class="form-control" style="border-radius: 6px;">
+                    <!-- Section 1: Identitas Pegawai Peminjam -->
+                    <div class="card border mb-3 shadow-none" style="border-radius: 8px; border-color: #e2e8f0; background: #fafbfc;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge badge-info rounded-circle mr-2 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.75rem;">1</span>
+                                    <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">Identitas Pegawai Peminjam</h6>
+                                </div>
+                                <button type="button" class="btn btn-link btn-xs text-danger p-0 font-weight-bold" id="btn-clear-edit-pegawai" style="font-size: 0.75rem; text-decoration: none;">
+                                    <i class="fas fa-undo mr-1"></i> Reset / Input Manual
+                                </button>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold small text-dark mb-1">Pilih dari Master Pegawai <small class="text-muted font-weight-normal">(Otomatis isi nama, NIP, jabatan)</small></label>
+                                <select name="pegawai_id" id="edit-pegawai-select" class="form-control" style="width: 100%;">
+                                    <option value="">-- Pilih atau Cari Nama Pegawai --</option>
+                                    <?php foreach (($pegawaiList ?? []) as $peg): ?>
+                                        <option value="<?= esc($peg['id']); ?>" 
+                                            data-nama="<?= esc($peg['nama']); ?>" 
+                                            data-nip="<?= esc($peg['nip']); ?>" 
+                                            data-jabatan="<?= esc($peg['jabatan'] ?? ''); ?>" 
+                                            data-kontak="<?= esc($peg['no_hp'] ?? ''); ?>">
+                                            <?= esc($peg['nama']); ?> (NIP. <?= esc($peg['nip'] ?: '-'); ?>) <?= ! empty($peg['jabatan']) ? ' - ' . esc($peg['jabatan']) : ''; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">Nama Lengkap Peminjam <span class="text-danger">*</span></label>
+                                    <input type="text" name="nama_peminjam" id="edit-nama-peminjam" class="form-control" required style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                                <div class="col-md-6 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">NIP Peminjam</label>
+                                    <input type="text" name="nip_peminjam" id="edit-nip-peminjam" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-0">
+                                    <label class="font-weight-bold small text-dark mb-1">Jabatan Peminjam</label>
+                                    <input type="text" name="jabatan_peminjam" id="edit-jabatan-peminjam" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                                <div class="col-md-6 form-group mb-0">
+                                    <label class="font-weight-bold small text-dark mb-1">No. Handphone / WhatsApp</label>
+                                    <input type="text" name="kontak_peminjam" id="edit-kontak-peminjam" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <h6 class="font-weight-bold text-primary mb-3 mt-4 border-bottom pb-2">
-                        <i class="fas fa-file-contract mr-1"></i> 2. Dokumen & Kondisi
-                    </h6>
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Nomor Surat <span class="text-muted font-weight-normal">(Opsional)</span></label>
-                            <input type="text" name="no_surat" id="edit-no-surat" class="form-control" placeholder="Opsional (boleh dikosongkan)" style="border-radius: 6px;">
-                        </div>
-                        <div class="col-md-3 form-group">
-                            <label class="font-weight-bold small text-dark">Tanggal Pinjam <span class="text-danger">*</span></label>
-                            <input type="date" name="tgl_pinjam" id="edit-tgl-pinjam" class="form-control" required style="border-radius: 6px;">
-                        </div>
-                        <div class="col-md-3 form-group">
-                            <label class="font-weight-bold small text-dark">Rencana Kembali</label>
-                            <input type="date" name="tgl_kembali_rencana" id="edit-tgl-kembali-rencana" class="form-control" style="border-radius: 6px;">
-                        </div>
-                    </div>
+                    <!-- Section 2: Administrasi Surat & Kondisi -->
+                    <div class="card border mb-0 shadow-none" style="border-radius: 8px; border-color: #e2e8f0; background: #fafbfc;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge badge-info rounded-circle mr-2 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.75rem;">2</span>
+                                <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">Dokumen &amp; Kondisi</h6>
+                            </div>
 
-                    <div class="form-group">
-                        <label class="font-weight-bold small text-dark">Kondisi Fisik Saat Pinjam</label>
-                        <select name="kondisi_pinjam" id="edit-kondisi-pinjam" class="form-control" style="border-radius: 6px;">
-                            <option value="baik">Baik</option>
-                            <option value="rusak_ringan">Rusak Ringan</option>
-                            <option value="rusak_berat">Rusak Berat</option>
-                        </select>
-                    </div>
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">Nomor Surat <span class="text-muted font-weight-normal">(Opsional)</span></label>
+                                    <input type="text" name="no_surat" id="edit-no-surat" class="form-control" placeholder="Opsional (boleh dikosongkan)" style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                                <div class="col-md-3 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">Tanggal Pinjam <span class="text-danger">*</span></label>
+                                    <input type="date" name="tgl_pinjam" id="edit-tgl-pinjam" class="form-control" required style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                                <div class="col-md-3 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">Rencana Kembali</label>
+                                    <input type="date" name="tgl_kembali_rencana" id="edit-tgl-kembali-rencana" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
+                                </div>
+                            </div>
 
-                    <div class="form-group">
-                        <label class="font-weight-bold small text-dark">Keperluan Peminjaman <span class="text-danger">*</span></label>
-                        <textarea name="keperluan" id="edit-keperluan" class="form-control" rows="2" required style="border-radius: 6px;"></textarea>
-                    </div>
+                            <div class="form-group mb-2">
+                                <label class="font-weight-bold small text-dark mb-1">Kondisi Fisik Saat Pinjam</label>
+                                <select name="kondisi_pinjam" id="edit-kondisi-pinjam" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
+                                    <option value="baik">Baik</option>
+                                    <option value="rusak_ringan">Rusak Ringan</option>
+                                    <option value="rusak_berat">Rusak Berat</option>
+                                </select>
+                            </div>
 
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Ganti File Scan Dokumen (PDF)</label>
-                            <input type="file" name="file_surat" class="form-control-file border p-1 w-100" accept=".pdf" style="border-radius: 6px;">
-                            <small class="text-muted">Biarkan kosong jika tidak mengubah scan PDF</small>
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold small text-dark">Catatan Tambahan</label>
-                            <textarea name="catatan" id="edit-catatan" class="form-control" rows="2" style="border-radius: 6px;"></textarea>
+                            <div class="form-group mb-2">
+                                <label class="font-weight-bold small text-dark mb-1">Keperluan Peminjaman <span class="text-danger">*</span></label>
+                                <textarea name="keperluan" id="edit-keperluan" class="form-control" rows="2" required style="border-radius: 6px; font-size: 0.9rem;"></textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-0">
+                                    <label class="font-weight-bold small text-dark mb-1">Ganti File Scan Dokumen (PDF)</label>
+                                    <input type="file" name="file_surat" class="form-control-file border p-2 w-100 bg-white" accept=".pdf" style="border-radius: 6px; font-size: 0.85rem;">
+                                    <small class="text-muted">Biarkan kosong jika tidak mengubah scan PDF</small>
+                                </div>
+                                <div class="col-md-6 form-group mb-0">
+                                    <label class="font-weight-bold small text-dark mb-1">Catatan Tambahan</label>
+                                    <textarea name="catatan" id="edit-catatan" class="form-control" rows="2" style="border-radius: 6px; font-size: 0.9rem;"></textarea>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                 </div>
-                <div class="modal-footer bg-light py-3" style="border-top: 1px solid #e9eef5;">
+                <div class="modal-footer py-3 px-4" style="background: #f8fafc; border-top: 1px solid #e2e8f0;">
                     <button type="button" class="btn btn-secondary px-3" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
                     <button type="submit" class="btn btn-primary px-4 shadow-sm font-weight-bold" style="border-radius: 6px;">
                         <i class="fas fa-save mr-1"></i> Perbarui Data
@@ -509,48 +677,56 @@
 
 <!-- Modal Kembalikan Aset -->
 <?php if (! empty($can_edit)): ?>
-<div class="modal fade" id="modal-kembalikan-pinjam" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="modal-kembalikan-pinjam" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.12);">
-            <div class="modal-header bg-success text-white py-3">
-                <h5 class="modal-title font-weight-bold" style="font-size: 1.05rem;">
-                    <i class="fas fa-undo-alt mr-2"></i>Konfirmasi Pengembalian Aset BMN
-                </h5>
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white py-3 px-4">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3 d-flex align-items-center justify-content-center bg-white text-success rounded-circle shadow-sm" style="width: 38px; height: 38px; font-size: 1.1rem;">
+                        <i class="fas fa-undo-alt"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold text-white mb-0" style="font-size: 1.05rem;">
+                            Konfirmasi Pengembalian Aset BMN
+                        </h5>
+                        <small class="text-white-50">Pengembalian aset dinas ke gudang / inventaris induk</small>
+                    </div>
+                </div>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <form id="form-kembalikan-pinjam" action="" method="post">
                 <?= csrf_field(); ?>
-                <div class="modal-body py-4">
-                    <div class="alert alert-light border mb-3">
-                        <div class="small text-muted">Aset BMN:</div>
-                        <div class="font-weight-bold text-dark" id="kembali-barang-nama">-</div>
+                <div class="modal-body py-4 px-4">
+                    <div class="alert alert-light border mb-3 py-3 px-3 shadow-none" style="border-radius: 8px; background: #f8fafc; border-left: 4px solid #28a745 !important;">
+                        <div class="small text-muted font-weight-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Aset yang Dikembalikan:</div>
+                        <div class="font-weight-bold text-dark" id="kembali-barang-nama" style="font-size: 0.98rem;">-</div>
                         <div class="small text-muted mt-1">Peminjam: <strong class="text-primary" id="kembali-peminjam-nama">-</strong></div>
                         <div class="small text-muted">No. Surat: <span id="kembali-surat-no">-</span></div>
                     </div>
 
                     <div class="form-group">
-                        <label class="font-weight-bold small text-dark">Tanggal Realisasi Pengembalian <span class="text-danger">*</span></label>
+                        <label class="font-weight-bold small text-dark mb-1">Tanggal Realisasi Pengembalian <span class="text-danger">*</span></label>
                         <input type="date" name="tgl_kembali_realisasi" class="form-control" value="<?= date('Y-m-d'); ?>" required style="border-radius: 6px;">
                     </div>
 
                     <div class="form-group">
-                        <label class="font-weight-bold small text-dark">Kondisi Fisik Saat Dikembalikan <span class="text-danger">*</span></label>
+                        <label class="font-weight-bold small text-dark mb-1">Kondisi Fisik Saat Dikembalikan <span class="text-danger">*</span></label>
                         <select name="kondisi_kembali" id="kembali-kondisi-select" class="form-control" required style="border-radius: 6px;">
                             <option value="baik">Baik</option>
                             <option value="rusak_ringan">Rusak Ringan</option>
                             <option value="rusak_berat">Rusak Berat</option>
                         </select>
-                        <small class="text-muted">Kondisi ini akan memperbarui status fisik barang pada data inventaris induk.</small>
+                        <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle mr-1 text-success"></i>Kondisi ini otomatis memperbarui fisik barang di database inventaris.</small>
                     </div>
 
                     <div class="form-group mb-0">
-                        <label class="font-weight-bold small text-dark">Catatan Pengembalian</label>
-                        <textarea name="catatan_kembali" class="form-control" rows="2" placeholder="Kondisi kelengkapan barang yang dikembalikan..." style="border-radius: 6px;"></textarea>
+                        <label class="font-weight-bold small text-dark mb-1">Catatan Pengembalian</label>
+                        <textarea name="catatan_kembali" class="form-control" rows="2" placeholder="Catatan fisik atau kelengkapan barang saat diserahkan kembali..." style="border-radius: 6px;"></textarea>
                     </div>
                 </div>
-                <div class="modal-footer bg-light py-3" style="border-top: 1px solid #e9eef5;">
+                <div class="modal-footer py-3 px-4" style="background: #f8fafc; border-top: 1px solid #e2e8f0;">
                     <button type="button" class="btn btn-secondary px-3" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
                     <button type="submit" class="btn btn-success px-4 shadow-sm font-weight-bold" style="border-radius: 6px;">
                         <i class="fas fa-check-circle mr-1"></i> Simpan Pengembalian Aset
@@ -564,26 +740,33 @@
 
 <!-- Modal Hapus Pinjam Pakai -->
 <?php if (! empty($can_delete)): ?>
-<div class="modal fade" id="modal-delete-pinjam" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="modal-delete-pinjam" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.12);">
-            <div class="modal-header bg-danger text-white py-3">
-                <h5 class="modal-title font-weight-bold" style="font-size: 1.05rem;">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>Konfirmasi Hapus Pinjam Pakai
-                </h5>
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white py-3 px-4">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3 d-flex align-items-center justify-content-center bg-white text-danger rounded-circle shadow-sm" style="width: 38px; height: 38px; font-size: 1.1rem;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h5 class="modal-title font-weight-bold text-white mb-0" style="font-size: 1.05rem;">
+                        Konfirmasi Hapus Pinjam Pakai
+                    </h5>
+                </div>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <form id="form-delete-pinjam" action="" method="post">
                 <?= csrf_field(); ?>
-                <div class="modal-body py-4 text-center">
-                    <i class="fas fa-trash-alt text-danger mb-3" style="font-size: 3rem;"></i>
-                    <p class="mb-1 text-dark font-weight-bold">Apakah Anda yakin ingin menghapus catatan transaksi peminjaman ini?</p>
+                <div class="modal-body py-4 px-4 text-center">
+                    <i class="fas fa-trash-alt text-danger mb-3" style="font-size: 2.8rem;"></i>
+                    <p class="mb-1 text-dark font-weight-bold" style="font-size: 1rem;">Apakah Anda yakin ingin menghapus data transaksi peminjaman ini?</p>
                     <p id="delete-pinjam-surat" class="text-primary font-weight-bold mb-2"></p>
-                    <small class="text-muted d-block" id="delete-pinjam-warning">Jika aset masih berstatus dipinjam, status aset akan otomatis dikembalikan ke 'Belum berlokasi'.</small>
+                    <div class="alert alert-warning py-2 px-3 small text-left mb-0" style="border-radius: 6px;">
+                        <i class="fas fa-info-circle mr-1"></i> Jika status aset masih <strong>dipinjam</strong>, status aset di inventaris induk akan dipulihkan ke <em>'Belum berlokasi'</em> secara otomatis.
+                    </div>
                 </div>
-                <div class="modal-footer bg-light py-3" style="border-top: 1px solid #e9eef5;">
+                <div class="modal-footer py-3 px-4" style="background: #f8fafc; border-top: 1px solid #e2e8f0;">
                     <button type="button" class="btn btn-secondary px-3" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
                     <button type="submit" class="btn btn-danger px-4 shadow-sm font-weight-bold" style="border-radius: 6px;">
                         <i class="fas fa-trash-alt mr-1"></i> Ya, Hapus Catatan
@@ -597,15 +780,112 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Inisialisasi Select2 jika tersedia
-    if (typeof $ !== 'undefined' && $.fn.select2) {
-        $('.select2').select2({
-            theme: 'bootstrap4',
-            dropdownParent: $('body')
-        });
+    // 1. NONAKTIFKAN BOOTSTRAP MODAL ENFORCE FOCUS
+    // Supaya search input Select2 di dalam modal selalu dapat diketik secara bebas tanpa terblokir focus trap
+    if (typeof $ !== 'undefined' && $.fn.modal && $.fn.modal.Constructor) {
+        $.fn.modal.Constructor.prototype._enforceFocus = function() {};
     }
 
-    // Auto-fill Data Peminjam dari Master Pegawai (Modal Tambah)
+    // 2. TEMPLATE FORMATTER SELECT2
+    function formatAssetOption(state) {
+        if (!state.id) return state.text;
+        var text = state.text;
+        var nupMatch = text.match(/\[NUP\s*([^\]]+)\]/i);
+        var nup = nupMatch ? nupMatch[1] : '';
+        var cleanText = text.replace(/\[NUP\s*[^\]]+\]/i, '').trim();
+
+        return $(
+            '<div class="d-flex justify-content-between align-items-center py-1">' +
+                '<div class="text-truncate pr-2" style="font-size: 0.88rem; color: #1e293b; font-weight: 600;">' + 
+                    $('<div>').text(cleanText).html() + 
+                '</div>' +
+                (nup ? '<span class="badge badge-primary px-2 py-1 font-weight-bold" style="font-size: 0.74rem; white-space: nowrap;">NUP ' + $('<div>').text(nup).html() + '</span>' : '') +
+            '</div>'
+        );
+    }
+
+    function formatPegawaiOption(state) {
+        if (!state.id) return state.text;
+        var el = state.element;
+        if (!el) return state.text;
+        var nama = el.getAttribute('data-nama') || state.text;
+        var nip = el.getAttribute('data-nip') || '';
+        var jabatan = el.getAttribute('data-jabatan') || '';
+
+        return $(
+            '<div class="py-1">' +
+                '<div class="font-weight-bold" style="font-size: 0.88rem; color: #1e293b;"><i class="fas fa-user-circle text-primary mr-1"></i> ' + $('<div>').text(nama).html() + '</div>' +
+                '<div class="small text-muted mt-0">' +
+                    (nip ? '<span>NIP. ' + $('<div>').text(nip).html() + '</span>' : '<span class="font-italic">Tanpa NIP</span>') +
+                    (jabatan ? ' &bull; <span>' + $('<div>').text(jabatan).html() + '</span>' : '') +
+                '</div>' +
+            '</div>'
+        );
+    }
+
+    // 3. INITIALIZER SELECT2 UNTUK MODAL TAMBAH & EDIT
+    function initSelect2ForModals() {
+        if (typeof $ === 'undefined' || ! $.fn.select2) return;
+
+        // Modal Tambah: dropdownParent = #modal-tambah-pinjam
+        var $modalTambah = $('#modal-tambah-pinjam');
+        if ($modalTambah.length) {
+            var $selAsset = $('#tambah-inventaris-select');
+            if ($selAsset.length && ! $selAsset.data('select2')) {
+                $selAsset.select2({
+                    theme: 'bootstrap4',
+                    dropdownParent: $modalTambah,
+                    width: '100%',
+                    placeholder: '-- Pilih atau Cari Aset BMN yang Tersedia --',
+                    allowClear: true,
+                    templateResult: formatAssetOption
+                });
+            }
+
+            var $selPegTambah = $('#tambah-pegawai-select');
+            if ($selPegTambah.length && ! $selPegTambah.data('select2')) {
+                $selPegTambah.select2({
+                    theme: 'bootstrap4',
+                    dropdownParent: $modalTambah,
+                    width: '100%',
+                    placeholder: '-- Pilih atau Cari Nama Pegawai --',
+                    allowClear: true,
+                    templateResult: formatPegawaiOption
+                });
+            }
+        }
+
+        // Modal Edit: dropdownParent = #modal-edit-pinjam
+        var $modalEdit = $('#modal-edit-pinjam');
+        if ($modalEdit.length) {
+            var $selPegEdit = $('#edit-pegawai-select');
+            if ($selPegEdit.length && ! $selPegEdit.data('select2')) {
+                $selPegEdit.select2({
+                    theme: 'bootstrap4',
+                    dropdownParent: $modalEdit,
+                    width: '100%',
+                    placeholder: '-- Pilih atau Cari Nama Pegawai --',
+                    allowClear: true,
+                    templateResult: formatPegawaiOption
+                });
+            }
+        }
+    }
+
+    // Inisialisasi awal saat halaman siap
+    initSelect2ForModals();
+
+    // Auto-focus search field ketika dropdown Select2 dibuka
+    $(document).on('select2:open', function() {
+        setTimeout(function() {
+            var sf = document.querySelector('.select2-container--open .select2-search__field');
+            if (sf) {
+                sf.focus();
+            }
+        }, 50);
+    });
+
+    // 4. AUTO-FILL DATA PEMINJAM DARI MASTER PEGAWAI (MODAL TAMBAH)
     var selectTambahPeg = document.getElementById('tambah-pegawai-select');
     if (selectTambahPeg) {
         var handlerTambah = function() {
@@ -648,7 +928,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Auto-fill Data Peminjam dari Master Pegawai (Modal Edit)
+    // 5. AUTO-FILL DATA PEMINJAM DARI MASTER PEGAWAI (MODAL EDIT)
     var selectEditPeg = document.getElementById('edit-pegawai-select');
     if (selectEditPeg) {
         var handlerEdit = function() {
@@ -670,7 +950,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Populate Edit Modal
+    var btnClearEditPeg = document.getElementById('btn-clear-edit-pegawai');
+    if (btnClearEditPeg) {
+        btnClearEditPeg.addEventListener('click', function() {
+            if (selectEditPeg) {
+                selectEditPeg.value = '';
+                if (typeof $ !== 'undefined') {
+                    $('#edit-pegawai-select').val('').trigger('change.select2');
+                }
+            }
+            document.getElementById('edit-nama-peminjam').value = '';
+            document.getElementById('edit-nip-peminjam').value = '';
+            document.getElementById('edit-jabatan-peminjam').value = '';
+            document.getElementById('edit-kontak-peminjam').value = '';
+        });
+    }
+
+    // 6. POPULATE EDIT MODAL
     function populateEditModal(btn) {
         if (!btn) return;
         var id = btn.getAttribute('data-id') || '';
@@ -679,12 +975,30 @@ document.addEventListener('DOMContentLoaded', function() {
             form.action = '<?= site_url('admin/inventaris/pinjam-pakai'); ?>/' + id + '/edit';
         }
 
+        // Info Banner Aset Terkait
+        var barang = btn.getAttribute('data-barang') || '-';
+        var nup = btn.getAttribute('data-nup') || '-';
+        var kode = btn.getAttribute('data-kode') || '-';
+        var status = btn.getAttribute('data-status') || 'dipinjam';
+
+        var elNama = document.getElementById('edit-aset-nama');
+        if (elNama) elNama.textContent = barang;
+
+        var elNup = document.getElementById('edit-aset-nup');
+        if (elNup) elNup.textContent = 'NUP ' + nup;
+
+        var elKode = document.getElementById('edit-aset-kode');
+        if (elKode) elKode.textContent = kode;
+
+        var elStatus = document.getElementById('edit-aset-status');
+        if (elStatus) elStatus.textContent = status === 'dipinjam' ? 'Sedang Dipinjam' : 'Dikembalikan';
+
         var pegSelect = document.getElementById('edit-pegawai-select');
         var pegId = btn.getAttribute('data-pegawai') || '';
         if (pegSelect) {
             pegSelect.value = pegId;
             if (typeof $ !== 'undefined') {
-                $(pegSelect).trigger('change.select2');
+                $(pegSelect).val(pegId).trigger('change.select2');
             }
         }
 
@@ -700,7 +1014,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('edit-catatan').value = btn.getAttribute('data-catatan') || '';
     }
 
-    // Populate Kembalikan Modal
+    // 7. POPULATE KEMBALIKAN MODAL
     function populateKembalikanModal(btn) {
         if (!btn) return;
         var id = btn.getAttribute('data-id') || '';
@@ -728,7 +1042,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (elKondisi) elKondisi.value = kondisi;
     }
 
-    // Populate Delete Modal
+    // 8. POPULATE DELETE MODAL
     function populateDeleteModal(btn) {
         if (!btn) return;
         var id = btn.getAttribute('data-id') || '';
@@ -745,7 +1059,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Delegated click listeners (berfungsi optimal meskipun DataTables melakukan sorting, filter, paging)
+    // 9. EVENT LISTENERS (DELEGASI UNTUK DATATABLES SORT & PAGING)
     document.addEventListener('click', function(e) {
         var editBtn = e.target.closest('.btn-edit-pinjam');
         if (editBtn) {
@@ -763,9 +1077,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Bootstrap modal show event hooks
+    // 10. MODAL SHOWN EVENT (PASTIKAN SELECT2 TERINISIALISASI SEMPURNA DENGAN 100% WIDTH)
     if (typeof $ !== 'undefined') {
-        $('#modal-edit-pinjam').on('show.bs.modal', function(e) {
+        $('#modal-tambah-pinjam').on('shown.bs.modal', function() {
+            initSelect2ForModals();
+        });
+
+        $('#modal-edit-pinjam').on('shown.bs.modal', function(e) {
+            initSelect2ForModals();
             var btn = e.relatedTarget;
             if (btn) populateEditModal(btn);
         });
