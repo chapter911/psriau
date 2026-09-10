@@ -98,6 +98,13 @@
 }
 </style>
 <div class="container-fluid">
+<?php
+$stats = $stats ?? $summary ?? [];
+$cntDipinjam = (int) ($stats['total_dipinjam'] ?? $summary['total_dipinjam'] ?? 0);
+$cntDikembalikan = (int) ($stats['total_dikembalikan'] ?? $summary['total_dikembalikan'] ?? 0);
+$cntPeminjam = (int) ($stats['total_peminjam'] ?? $stats['total_peminjam_unik'] ?? $summary['total_peminjam'] ?? $summary['total_peminjam_unik'] ?? 0);
+$valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_dipinjam'] ?? 0);
+?>
 
     <!-- Summary Widgets -->
     <div class="row mb-3">
@@ -106,7 +113,7 @@
                 <span class="info-box-icon bg-warning elevation-1 text-white" style="border-radius: 8px;"><i class="fas fa-hand-holding"></i></span>
                 <div class="info-box-content">
                     <span class="info-box-text text-muted font-weight-bold">Sedang Dipinjam</span>
-                    <span class="info-box-number text-dark" style="font-size: 1.35rem;"><?= number_format((int) ($stats['total_dipinjam'] ?? 0)); ?> Aset</span>
+                    <span class="info-box-number text-dark" style="font-size: 1.35rem;"><?= number_format($cntDipinjam); ?> Aset</span>
                 </div>
             </div>
         </div>
@@ -115,7 +122,7 @@
                 <span class="info-box-icon bg-success elevation-1" style="border-radius: 8px;"><i class="fas fa-check-circle"></i></span>
                 <div class="info-box-content">
                     <span class="info-box-text text-muted font-weight-bold">Telah Dikembalikan</span>
-                    <span class="info-box-number text-success" style="font-size: 1.35rem;"><?= number_format((int) ($stats['total_dikembalikan'] ?? 0)); ?> Selesai</span>
+                    <span class="info-box-number text-success" style="font-size: 1.35rem;"><?= number_format($cntDikembalikan); ?> Selesai</span>
                 </div>
             </div>
         </div>
@@ -124,7 +131,7 @@
                 <span class="info-box-icon bg-info elevation-1" style="border-radius: 8px;"><i class="fas fa-users"></i></span>
                 <div class="info-box-content">
                     <span class="info-box-text text-muted font-weight-bold">Pegawai Peminjam</span>
-                    <span class="info-box-number text-info" style="font-size: 1.35rem;"><?= number_format((int) ($stats['total_peminjam'] ?? 0)); ?> Orang</span>
+                    <span class="info-box-number text-info" style="font-size: 1.35rem;"><?= number_format($cntPeminjam); ?> Orang</span>
                 </div>
             </div>
         </div>
@@ -133,7 +140,7 @@
                 <span class="info-box-icon bg-secondary elevation-1" style="border-radius: 8px;"><i class="fas fa-coins"></i></span>
                 <div class="info-box-content">
                     <span class="info-box-text text-muted font-weight-bold">Nilai Aset Dipinjam</span>
-                    <span class="info-box-number text-dark" style="font-size: 1.15rem;">Rp <?= number_format((float) ($stats['total_nilai_dipinjam'] ?? 0), 0, ',', '.'); ?></span>
+                    <span class="info-box-number text-dark" style="font-size: 1.15rem;">Rp <?= number_format($valDipinjam, 0, ',', '.'); ?></span>
                 </div>
             </div>
         </div>

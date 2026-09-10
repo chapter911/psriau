@@ -55,7 +55,8 @@ class CreateInventarisPinjamPakaiTable extends Migration
                 'no_surat' => [
                     'type'       => 'VARCHAR',
                     'constraint' => 100,
-                    'null'       => false,
+                    'null'       => true,
+                    'default'    => null,
                 ],
                 'tgl_pinjam' => [
                     'type' => 'DATE',

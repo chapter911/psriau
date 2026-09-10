@@ -61,6 +61,13 @@ class InventarisDbr extends BaseController
             ->groupEnd()
             ->countAllResults();
 
+        $totalAsetDipinjam = 0;
+        if ($db->tableExists('trn_inventaris_pinjam_pakai')) {
+            $totalAsetDipinjam = (int) $db->table('trn_inventaris_pinjam_pakai')
+                ->where('status', 'dipinjam')
+                ->countAllResults();
+        }
+
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
 
         return view('admin/inventaris/dbr/index', [
@@ -70,6 +77,7 @@ class InventarisDbr extends BaseController
             'totalRuangan'        => $totalRuangan,
             'totalAsetBerlokasi'  => $totalAsetBerlokasi,
             'totalAsetBelum'      => $totalAsetBelum,
+            'totalAsetDipinjam'   => $totalAsetDipinjam,
             'can_add'             => (bool) ($menuPermissions['add'] ?? false),
             'can_edit'            => (bool) ($menuPermissions['edit'] ?? false),
             'can_delete'          => (bool) ($menuPermissions['delete'] ?? false),
@@ -289,14 +297,30 @@ class InventarisDbr extends BaseController
             ->getResultArray();
 
         // 3. Unallocated assets or assets from other rooms available to be assigned to this room (Khusus peruntukan Kantor)
-        $unallocatedAssets = $db->table('trn_inventaris_satker')
+        $activeLoanAssetIds = [];
+        if ($db->tableExists('trn_inventaris_pinjam_pakai')) {
+            $loans = $db->table('trn_inventaris_pinjam_pakai')
+                ->select('inventaris_id')
+                ->where('status', 'dipinjam')
+                ->get()
+                ->getResultArray();
+            $activeLoanAssetIds = array_filter(array_column($loans, 'inventaris_id'));
+        }
+
+        $unallocatedBuilder = $db->table('trn_inventaris_satker')
             ->select('id, kode_barang, nup, kode_register, nama_barang, merk_tipe, kondisi, jumlah, satuan, nilai_perolehan, no_psp, ruangan_id, lokasi_ruangan, peruntukan')
             ->where('peruntukan', 'kantor')
             ->groupStart()
                 ->where('ruangan_id IS NULL', null, false)
                 ->orWhere('ruangan_id', 0)
                 ->orWhere('ruangan_id !=', $ruanganId)
-            ->groupEnd()
+            ->groupEnd();
+
+        if (! empty($activeLoanAssetIds)) {
+            $unallocatedBuilder->whereNotIn('id', $activeLoanAssetIds);
+        }
+
+        $unallocatedAssets = $unallocatedBuilder
             ->orderBy('kode_barang', 'ASC')
             ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
             ->orderBy('nup', 'ASC')

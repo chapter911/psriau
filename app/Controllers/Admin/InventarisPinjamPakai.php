@@ -17,12 +17,32 @@ class InventarisPinjamPakai extends BaseController
 {
     private const MENU_LINK = 'admin/inventaris/pinjam-pakai';
 
+    private function ensureNoSuratNullable(): void
+    {
+        try {
+            $db = db_connect();
+            if ($db->tableExists('trn_inventaris_pinjam_pakai')) {
+                $fields = $db->getFieldData('trn_inventaris_pinjam_pakai');
+                foreach ($fields as $field) {
+                    if ($field->name === 'no_surat' && empty($field->nullable)) {
+                        $db->query("ALTER TABLE trn_inventaris_pinjam_pakai MODIFY COLUMN no_surat VARCHAR(100) NULL DEFAULT NULL");
+                        break;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore if DB user lacks alter permission
+        }
+    }
+
     public function index()
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
         if ($forbidden instanceof RedirectResponse) {
             return $forbidden;
         }
+
+        $this->ensureNoSuratNullable();
 
         $pinjamModel = new InventarisPinjamPakaiModel();
         $db = db_connect();
@@ -54,6 +74,7 @@ class InventarisPinjamPakai extends BaseController
             'pageTitle'        => 'Pinjam Pakai Aset BMN',
             'pinjamList'       => $pinjamList,
             'summary'          => $summary,
+            'stats'            => $summary,
             'availableAssets'  => $availableAssets,
             'pegawaiList'      => $pegawaiList,
             'currentFilter'    => $filterStatus,
@@ -152,8 +173,22 @@ class InventarisPinjamPakai extends BaseController
             $fileSuratPath = 'uploads/inventaris/surat_pinjam/' . $newName;
         }
 
+        $this->ensureNoSuratNullable();
+
         $userId = (int) (session()->get('userId') ?? 0);
-        $noSuratVal = trim((string) $this->request->getPost('no_surat')) ?: null;
+        $rawNoSurat = trim((string) $this->request->getPost('no_surat'));
+        $isNullable = true;
+        try {
+            $fieldData = $db->getFieldData('trn_inventaris_pinjam_pakai');
+            foreach ($fieldData as $f) {
+                if ($f->name === 'no_surat') {
+                    $isNullable = ! empty($f->nullable);
+                    break;
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        $noSuratVal = ($rawNoSurat !== '') ? $rawNoSurat : ($isNullable ? null : '');
 
         $pinjamId = $pinjamModel->insert([
             'inventaris_id'        => $inventarisId,
@@ -248,8 +283,22 @@ class InventarisPinjamPakai extends BaseController
             $fileSuratPath = 'uploads/inventaris/surat_pinjam/' . $newName;
         }
 
+        $this->ensureNoSuratNullable();
+
         $userId = (int) (session()->get('userId') ?? 0);
-        $noSuratEdit = trim((string) $this->request->getPost('no_surat')) ?: null;
+        $rawNoSuratEdit = trim((string) $this->request->getPost('no_surat'));
+        $isNullable = true;
+        try {
+            $fieldData = $db->getFieldData('trn_inventaris_pinjam_pakai');
+            foreach ($fieldData as $f) {
+                if ($f->name === 'no_surat') {
+                    $isNullable = ! empty($f->nullable);
+                    break;
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        $noSuratEdit = ($rawNoSuratEdit !== '') ? $rawNoSuratEdit : ($isNullable ? null : '');
 
         $pinjamModel->update($id, [
             'pegawai_id'          => $pegawaiId,

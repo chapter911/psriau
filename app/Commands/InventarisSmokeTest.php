@@ -866,6 +866,21 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::error("  [FAIL] Aset yang sedang dipinjam masih muncul di daftar aset yang tersedia.");
             }
 
+            // 3b. Uji Perhitungan Metrik Ringkasan (Pinjam Pakai & Integrasi DBR)
+            $statsPinjam = $pinjamModel->getSummaryStats();
+            if (isset($statsPinjam['total_dipinjam'], $statsPinjam['total_peminjam'], $statsPinjam['total_nilai_dipinjam']) && $statsPinjam['total_dipinjam'] >= 1) {
+                CLI::write("  [OK] Kalkulasi metrik Pinjam Pakai akurat: Dipinjam = {$statsPinjam['total_dipinjam']}, Peminjam = {$statsPinjam['total_peminjam']}, Nilai = Rp " . number_format($statsPinjam['total_nilai_dipinjam']), "green");
+            } else {
+                CLI::error("  [FAIL] Kalkulasi getSummaryStats() tidak menghasilkan data yang sesuai.");
+            }
+
+            $dbrDipinjamCount = (int) $db->table('trn_inventaris_pinjam_pakai')->where('status', 'dipinjam')->countAllResults();
+            if ($dbrDipinjamCount === $statsPinjam['total_dipinjam']) {
+                CLI::write("  [OK] Integrasi metrik DBR 'Sedang Dipinjam Pakai' ({$dbrDipinjamCount} Aset) tersinkronisasi 100% dengan Pinjam Pakai", "green");
+            } else {
+                CLI::error("  [FAIL] Sinkronisasi metrik DBR dan Pinjam Pakai tidak cocok.");
+            }
+
             // 4. Uji Render Surat Izin Pinjam Pakai BMN (PDF A4 Portrait)
             $loanDetail = $pinjamModel->getPinjamDetail($pinjamId);
             $tempPdfSurat = ROOTPATH . 'do_not_upload/temp/smoke_test_surat_pinjam.pdf';

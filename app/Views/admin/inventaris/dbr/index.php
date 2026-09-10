@@ -5,16 +5,16 @@
 
     <!-- Summary Widgets -->
     <div class="row mb-3">
-        <div class="col-12 col-sm-6 col-md-4">
+        <div class="col-12 col-sm-6 col-md-3">
             <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #17a2b8;">
                 <span class="info-box-icon bg-info elevation-1" style="border-radius: 8px;"><i class="fas fa-door-open"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text text-muted font-weight-bold">Total Ruangan Terdata</span>
+                    <span class="info-box-text text-muted font-weight-bold">Total Ruangan</span>
                     <span class="info-box-number text-dark" style="font-size: 1.35rem;"><?= number_format((int) ($totalRuangan ?? 0)); ?> Ruangan</span>
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-md-4">
+        <div class="col-12 col-sm-6 col-md-3">
             <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #28a745;">
                 <span class="info-box-icon bg-success elevation-1" style="border-radius: 8px;"><i class="fas fa-check-double"></i></span>
                 <div class="info-box-content">
@@ -23,12 +23,26 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-md-4">
-            <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #ffc107;">
-                <span class="info-box-icon bg-warning elevation-1" style="border-radius: 8px;"><i class="fas fa-box-open"></i></span>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #fd7e14;">
+                <span class="info-box-icon bg-warning elevation-1 text-white" style="border-radius: 8px;"><i class="fas fa-hand-holding"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text text-muted font-weight-bold">Sedang Dipinjam Pakai</span>
+                    <div class="d-flex align-items-baseline justify-content-between">
+                        <span class="info-box-number text-dark" style="font-size: 1.35rem;"><?= number_format((int) ($totalAsetDipinjam ?? 0)); ?> Aset</span>
+                        <a href="<?= site_url('admin/inventaris/pinjam-pakai'); ?>" class="small font-weight-bold text-warning text-decoration-none" title="Buka Pinjam Pakai Aset BMN">
+                            Lihat <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #6c757d;">
+                <span class="info-box-icon bg-secondary elevation-1" style="border-radius: 8px;"><i class="fas fa-box-open"></i></span>
                 <div class="info-box-content">
                     <span class="info-box-text text-muted font-weight-bold">Belum Masuk Ruangan</span>
-                    <span class="info-box-number text-warning" style="font-size: 1.35rem;"><?= number_format((int) ($totalAsetBelum ?? 0)); ?> Aset</span>
+                    <span class="info-box-number text-secondary" style="font-size: 1.35rem;"><?= number_format((int) ($totalAsetBelum ?? 0)); ?> Aset</span>
                 </div>
             </div>
         </div>
@@ -46,7 +60,10 @@
                 </div>
                 <div class="card-tools d-flex align-items-center m-0" style="gap: 8px;">
                     <a href="<?= site_url('admin/inventaris/satker'); ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm" style="border-radius: 6px;">
-                        <i class="fas fa-boxes mr-1"></i> Daftar Barang Inventaris
+                        <i class="fas fa-boxes mr-1"></i> Daftar Barang
+                    </a>
+                    <a href="<?= site_url('admin/inventaris/pinjam-pakai'); ?>" class="btn btn-outline-warning btn-sm px-3 shadow-sm text-dark font-weight-bold" style="border-radius: 6px;" title="Kelola Aset BMN yang Sedang Dipinjam Pakai Pegawai">
+                        <i class="fas fa-hand-holding text-warning mr-1"></i> Pinjam Pakai (<?= number_format((int) ($totalAsetDipinjam ?? 0)); ?>)
                     </a>
                     <?php if (! empty($can_export)): ?>
                         <a href="<?= site_url('admin/inventaris/dbr/export-excel'); ?>" class="btn btn-success btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 6px;" title="Export Seluruh Ruangan & Aset (Individual NUP)">

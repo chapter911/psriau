@@ -141,6 +141,7 @@ class InventarisPinjamPakaiModel extends Model
         return [
             'total_dipinjam'       => $totalDipinjam,
             'total_dikembalikan'   => $totalDikembalikan,
+            'total_peminjam'       => $totalPeminjamUnik,
             'total_peminjam_unik'  => $totalPeminjamUnik,
             'total_nilai_dipinjam' => $totalNilaiDipinjam,
         ];
