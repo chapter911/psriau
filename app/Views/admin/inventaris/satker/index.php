@@ -311,7 +311,7 @@
                         <tr style="white-space: nowrap;">
                             <th style="width: 40px;" class="text-center align-middle" data-orderable="false">#</th>
                             <th class="align-middle" style="width: 120px;">Kode Barang</th>
-                            <th class="text-center align-middle" style="width: 65px;">NUP</th>
+                            <th class="text-center align-middle" style="width: 65px;" data-type="num">NUP</th>
                             <th class="text-center align-middle" style="width: 100px;">Peruntukan</th>
                             <th class="align-middle">Nama Barang</th>
                             <th class="align-middle" style="width: 130px;">Kategori</th>
@@ -329,7 +329,7 @@
                         <?php $no = 1; foreach (($items ?? []) as $item): ?>
                             <tr>
                                 <td class="text-center align-middle"><?= $no++; ?></td>
-                                <td class="align-middle font-mono font-weight-bold text-dark">
+                                <td class="align-middle font-mono font-weight-bold text-dark" data-order="<?= esc($item['kode_barang']); ?>">
                                     <?= esc($item['kode_barang']); ?>
                                 </td>
                                 <td class="text-center align-middle" data-order="<?= (int) ($item['nup'] ?? 0); ?>">

@@ -315,7 +315,7 @@
                                 <tr>
                                     <th style="width: 45px;" class="text-center align-middle" data-orderable="false">#</th>
                                     <th class="align-middle" style="width: 150px;">KODE BARANG</th>
-                                    <th class="text-center align-middle" style="width: 80px;">NUP</th>
+                                    <th class="text-center align-middle" style="width: 80px;" data-type="num">NUP</th>
                                     <th class="align-middle">NAMA BARANG</th>
                                     <th class="align-middle">MERK / TIPE</th>
                                     <th class="text-center align-middle" style="width: 110px;">KONDISI</th>
@@ -329,7 +329,7 @@
                                 <?php $idx = 1; foreach (($individualItems ?? []) as $ind): ?>
                                     <tr>
                                         <td class="text-center align-middle text-muted font-weight-bold"><?= $idx++; ?></td>
-                                        <td class="align-middle">
+                                        <td class="align-middle" data-order="<?= esc($ind['kode_barang']); ?>">
                                             <span class="font-weight-bold text-dark font-mono"><?= esc($ind['kode_barang']); ?></span>
                                             <?php if (! empty($ind['kode_register'])): ?>
                                                 <small class="text-muted d-block font-mono" style="font-size: 0.73rem;" title="Kode Register SIMAN: <?= esc($ind['kode_register']); ?>">
@@ -472,7 +472,7 @@
                                             <input type="checkbox" id="checkAllAlokasi" title="Pilih Semua di Hasil Ini">
                                         </th>
                                         <th style="width: 170px;" class="align-middle">Kode Barang & Register</th>
-                                        <th style="width: 75px;" class="text-center align-middle">NUP</th>
+                                        <th style="width: 75px;" class="text-center align-middle" data-type="num">NUP</th>
                                         <th class="align-middle">Nama Barang</th>
                                         <th class="align-middle">Merk / Tipe</th>
                                         <th style="width: 140px;" class="text-center align-middle">Asal / Status</th>
@@ -490,7 +490,7 @@
                                             <td class="text-center align-middle">
                                                 <input type="checkbox" class="asset-checkbox-alokasi" value="<?= (int) $u['id']; ?>" data-id="<?= (int) $u['id']; ?>" data-kode="<?= esc($u['kode_barang'], 'attr'); ?>" data-nup="<?= esc((string) $u['nup'], 'attr'); ?>" data-nama="<?= esc($u['nama_barang'], 'attr'); ?>">
                                             </td>
-                                            <td class="align-middle">
+                                            <td class="align-middle" data-order="<?= esc($u['kode_barang']); ?>">
                                                 <span class="font-weight-bold text-dark font-mono"><?= esc($u['kode_barang']); ?></span>
                                                 <?php if (! empty($u['kode_register'])): ?>
                                                     <div class="text-muted font-mono text-truncate" style="max-width: 180px; font-size: 0.74rem;" title="Kode Register SIMAN: <?= esc($u['kode_register']); ?>">
@@ -1667,6 +1667,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 responsive: false,
                 autoWidth: false,
                 order: [[1, 'asc'], [2, 'asc']],
+                columnDefs: [
+                    { targets: 0, orderable: false },
+                    { targets: 1, orderData: [1, 2] },
+                    { targets: 2, orderData: [2, 1], type: 'num' },
+                    { targets: 3, orderData: [3, 2] },
+                    { targets: 4, orderData: [4, 2] }
+                ],
                 dom: 't<"d-flex flex-wrap justify-content-between align-items-center mt-2 px-2"ip>',
                 pageLength: 25,
                 language: {
