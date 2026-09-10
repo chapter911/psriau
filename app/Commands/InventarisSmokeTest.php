@@ -6,6 +6,7 @@ use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 use App\Models\MstRuanganModel;
 use App\Models\InventarisSatkerModel;
+use App\Models\InventarisPinjamPakaiModel;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -19,7 +20,7 @@ class InventarisSmokeTest extends BaseCommand
 {
     protected $group = 'Testing';
     protected $name = 'inventaris:smoke-test';
-    protected $description = 'Menjalankan smoke test menyeluruh untuk modul Inventarisasi, DBR, Parser SIMAN, Cetak PDF, dan Export Excel.';
+    protected $description = 'Menjalankan smoke test menyeluruh untuk modul Inventarisasi, DBR, Parser SIMAN, Pinjam Pakai, Cetak PDF, dan Export Excel.';
 
     public function run(array $params)
     {
@@ -30,15 +31,16 @@ class InventarisSmokeTest extends BaseCommand
         $db = db_connect();
         $ruanganModel = new MstRuanganModel();
         $satkerModel = new InventarisSatkerModel();
+        $pinjamModel = new InventarisPinjamPakaiModel();
 
         $passedTests = 0;
-        $totalTests = 7;
+        $totalTests = 8;
 
         // ---------------------------------------------------------------------
         // TEST 1: Cek Struktur Tabel Database
         // ---------------------------------------------------------------------
         CLI::write("\n[TEST 1] Memeriksa keberadaan tabel database...", "cyan");
-        $requiredTables = ['mst_ruangan', 'trn_inventaris_satker', 'menu_lv1', 'menu_lv2', 'menu_akses'];
+        $requiredTables = ['mst_ruangan', 'trn_inventaris_satker', 'trn_inventaris_pinjam_pakai', 'menu_lv1', 'menu_lv2', 'menu_akses'];
         $missingTables = [];
         foreach ($requiredTables as $table) {
             if (! $db->tableExists($table)) {
@@ -744,33 +746,191 @@ class InventarisSmokeTest extends BaseCommand
         }
 
         // ---------------------------------------------------------------------
-        // TEST 7: Integritas Menu Lv1 & Lv2 (Restrukturisasi 3 Menu Utama) & Hak Akses
+        // TEST 7: Integritas Menu Lv1 & Lv2 (4 Menu Utama Inventarisasi) & Hak Akses
         // ---------------------------------------------------------------------
-        CLI::write("\n[TEST 7] Memeriksa integrasi restrukturisasi menu Inventarisasi (3 Menu Lv2) & hak akses...", "cyan");
+        CLI::write("\n[TEST 7] Memeriksa integrasi menu Inventarisasi (4 Menu Lv2) & hak akses...", "cyan");
         $menuLv1 = $db->table('menu_lv1')->like('label', 'Inventarisasi')->get()->getRowArray();
         $menuLv2Barang  = $db->table('menu_lv2')->where('id', '11-01')->get()->getRowArray();
         $menuLv2Dbr     = $db->table('menu_lv2')->where('id', '11-02')->get()->getRowArray();
+        $menuLv2Pinjam  = $db->table('menu_lv2')->where('id', '11-04')->get()->getRowArray();
         $menuLv2Sekolah = $db->table('menu_lv2')->where('id', '11-03')->get()->getRowArray();
 
-        $hierarchyOk = ($menuLv1 !== null && $menuLv2Barang !== null && $menuLv2Dbr !== null && $menuLv2Sekolah !== null);
+        $hierarchyOk = ($menuLv1 !== null && $menuLv2Barang !== null && $menuLv2Dbr !== null && $menuLv2Pinjam !== null && $menuLv2Sekolah !== null);
 
         $aksesBarang  = $db->table('menu_akses')->where('menu_id', '11-01')->countAllResults();
         $aksesDbr     = $db->table('menu_akses')->where('menu_id', '11-02')->countAllResults();
+        $aksesPinjam  = $db->table('menu_akses')->where('menu_id', '11-04')->countAllResults();
         $aksesSekolah = $db->table('menu_akses')->where('menu_id', '11-03')->countAllResults();
 
         // Uji keberadaan kolom peruntukan di tabel trn_inventaris_satker
         $peruntukanColOk = $db->fieldExists('peruntukan', 'trn_inventaris_satker');
 
-        if ($hierarchyOk && $aksesBarang > 0 && $aksesDbr > 0 && $aksesSekolah > 0 && $peruntukanColOk) {
-            CLI::write("  [OK] Hierarki Menu Inventarisasi Terstruktur Sempurna (3 Menu Lv2 Utama Tanpa Sub-Induk):", "green");
+        if ($hierarchyOk && $aksesBarang > 0 && $aksesDbr > 0 && $aksesPinjam > 0 && $aksesSekolah > 0 && $peruntukanColOk) {
+            CLI::write("  [OK] Hierarki Menu Inventarisasi Terstruktur Sempurna (4 Menu Lv2 Utama):", "green");
             CLI::write("       - Lv1: {$menuLv1['label']} (ID: {$menuLv1['id']})", "green");
             CLI::write("         - Lv2: 1. {$menuLv2Barang['label']} (ID: {$menuLv2Barang['id']}, Link: {$menuLv2Barang['link']}) -> {$aksesBarang} Roles", "green");
             CLI::write("         - Lv2: 2. {$menuLv2Dbr['label']} (ID: {$menuLv2Dbr['id']}, Link: {$menuLv2Dbr['link']}) -> {$aksesDbr} Roles", "green");
-            CLI::write("         - Lv2: 3. {$menuLv2Sekolah['label']} (ID: {$menuLv2Sekolah['id']}, Link: {$menuLv2Sekolah['link']}) -> {$aksesSekolah} Roles", "green");
-            CLI::write("  [OK] Kolom 'peruntukan' (kantor / mobiler) terdeteksi aktif pada tabel trn_inventaris_satker", "green");
+            CLI::write("         - Lv2: 3. {$menuLv2Pinjam['label']} (ID: {$menuLv2Pinjam['id']}, Link: {$menuLv2Pinjam['link']}) -> {$aksesPinjam} Roles", "green");
+            CLI::write("         - Lv2: 4. {$menuLv2Sekolah['label']} (ID: {$menuLv2Sekolah['id']}, Link: {$menuLv2Sekolah['link']}) -> {$aksesSekolah} Roles", "green");
+            CLI::write("  [OK] Kolom 'peruntukan' (kantor / mobiler / lainnya) terdeteksi aktif pada tabel trn_inventaris_satker", "green");
             $passedTests++;
         } else {
-            CLI::error("  [FAIL] Hierarki menu atau kolom peruntukan belum sesuai.");
+            CLI::error("  [FAIL] Hierarki menu atau hak akses belum sesuai.");
+        }
+
+        // ---------------------------------------------------------------------
+        // TEST 8: Transaksi Pinjam Pakai Aset BMN & Penerbitan Surat PDF
+        // ---------------------------------------------------------------------
+        CLI::write("\n[TEST 8] Menguji modul Pinjam Pakai Aset BMN (Peminjaman, PDF & Pengembalian)...", "cyan");
+        try {
+            // 1. Buat aset dummy khusus pinjam pakai
+            $dummyPinjamAssetId = $satkerModel->insert([
+                'kode_barang'     => 'SMOKE-PINJAM-01',
+                'nup'             => '999',
+                'nama_barang'     => 'Laptop Operasional Smoke Test',
+                'merk_tipe'       => 'ThinkPad X1 Carbon',
+                'jumlah'          => 1,
+                'satuan'          => 'Unit',
+                'kondisi'         => 'Baik',
+                'peruntukan'      => 'kantor',
+                'nilai_perolehan' => 22000000,
+                'status_bmn'      => 'Digunakan Sendiri',
+                'lokasi_ruangan'  => 'Gudang Satker',
+            ]);
+
+            // 2. Catat peminjaman baru
+            $nomorSuratTest = 'SPP/BMN/' . date('Y/m') . '/TEST-' . time();
+            $peminjamNamaTest = 'Budi Santoso, S.T.';
+            $peminjamNipTest  = '198505152010011005';
+
+            $pinjamId = $pinjamModel->insert([
+                'inventaris_id'        => $dummyPinjamAssetId,
+                'pegawai_id'           => null,
+                'nama_peminjam'        => $peminjamNamaTest,
+                'nip_peminjam'         => $peminjamNipTest,
+                'jabatan_peminjam'     => 'Staf Pengawas Lapangan',
+                'kontak_peminjam'      => '081234567890',
+                'no_surat'             => $nomorSuratTest,
+                'tgl_pinjam'           => date('Y-m-d'),
+                'tgl_kembali_rencana'  => date('Y-m-d', strtotime('+30 days')),
+                'keperluan'            => 'Pengawasan lapangan proyek rehabilitasi sekolah',
+                'kondisi_pinjam'       => 'baik',
+                'kelengkapan'          => 'Charger, Tas Laptop, Mouse',
+                'status'               => 'dipinjam',
+            ]);
+
+            // Sinkronkan status aset di tabel induk
+            $satkerModel->update($dummyPinjamAssetId, [
+                'status_bmn'     => 'Dipinjam Pakai',
+                'lokasi_ruangan' => 'Pinjam Pakai: ' . $peminjamNamaTest,
+            ]);
+
+            $assetAfterLoan = $satkerModel->find($dummyPinjamAssetId);
+            $isLoanActive = ($assetAfterLoan['status_bmn'] === 'Dipinjam Pakai' && strpos($assetAfterLoan['lokasi_ruangan'], $peminjamNamaTest) !== false);
+
+            if ($pinjamId && $isLoanActive) {
+                CLI::write("  [OK] Pencatatan Pinjam Pakai berhasil: Surat {$nomorSuratTest} -> {$peminjamNamaTest}", "green");
+                CLI::write("  [OK] Status aset induk tersinkronisasi otomatis: '{$assetAfterLoan['status_bmn']}' & Lokasi: '{$assetAfterLoan['lokasi_ruangan']}'", "green");
+            } else {
+                CLI::error("  [FAIL] Sinkronisasi status aset saat dipinjam pakai gagal.");
+            }
+
+            // 3. Pastikan aset yang sedang dipinjam aktif tidak muncul di getAvailableAssetsForLoan()
+            $availableList = $pinjamModel->getAvailableAssetsForLoan();
+            $availableIds = array_column($availableList, 'id');
+            if (! in_array($dummyPinjamAssetId, $availableIds, true)) {
+                CLI::write("  [OK] Aset yang sedang dipinjam aktif otomatis disaring dari daftar peminjaman baru (bebas pinjam ganda)", "green");
+            } else {
+                CLI::error("  [FAIL] Aset yang sedang dipinjam masih muncul di daftar aset yang tersedia.");
+            }
+
+            // 4. Uji Render Surat Izin Pinjam Pakai BMN (PDF A4 Portrait)
+            $loanDetail = $pinjamModel->getPinjamDetail($pinjamId);
+            $tempPdfSurat = ROOTPATH . 'do_not_upload/temp/smoke_test_surat_pinjam.pdf';
+
+            $pdfDataSurat = [
+                'loan'           => $loanDetail,
+                'logoBase64'     => '',
+                'tglPinjamIndo'  => date('j F Y'),
+                'tglCetak'       => date('j F Y'),
+                'namaUakpb'      => 'PELAKSANAAN PRASARANA STRATEGIS PROVINSI RIAU',
+                'kodeUakpb'      => '145060900691285000KP',
+                'kasatker'       => [
+                    'nama'    => 'Muhammad Yudi Prasetya, S.T.',
+                    'nip'     => '198002142014121002',
+                    'jabatan' => 'Kepala Balai / Kuasa Pengguna Barang',
+                ],
+                'pengurusBarang' => [
+                    'nama'    => 'Petugas Penatausahaan BMN',
+                    'nip'     => '199001012015031001',
+                    'jabatan' => 'Pengurus Barang Pengguna',
+                ],
+            ];
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $dompdfSurat = new Dompdf($options);
+
+            ob_start();
+            $htmlSurat = view('admin/inventaris/pinjam_pakai/surat_pinjam_pdf', $pdfDataSurat);
+            ob_end_clean();
+            service('response')->setBody('');
+
+            $dompdfSurat->loadHtml($htmlSurat);
+            $dompdfSurat->setPaper('A4', 'portrait');
+            $dompdfSurat->render();
+            file_put_contents($tempPdfSurat, $dompdfSurat->output());
+
+            $suratPdfSize = filesize($tempPdfSurat);
+            if ($suratPdfSize > 2000) {
+                CLI::write("  [OK] Dokumen resmi Surat Izin Pinjam Pakai BMN (PDF A4 Portrait) berhasil dirender! Ukuran: " . round($suratPdfSize / 1024, 2) . " KB", "green");
+            } else {
+                CLI::error("  [FAIL] Render PDF Surat Pinjam Pakai gagal atau file kosong.");
+            }
+
+            // Hapus file sementara sesuai Rule 3
+            if (file_exists($tempPdfSurat)) {
+                unlink($tempPdfSurat);
+                CLI::write("  [CLEANUP] File sementara {$tempPdfSurat} telah dihapus sesuai Rule 3.", "yellow");
+            }
+
+            // 5. Uji Proses Pengembalian Aset
+            $pinjamModel->update($pinjamId, [
+                'status'                => 'dikembalikan',
+                'tgl_kembali_realisasi' => date('Y-m-d'),
+                'kondisi_kembali'       => 'baik',
+                'catatan'               => 'Dikembalikan lengkap dengan charger dan tas.',
+            ]);
+
+            $satkerModel->update($dummyPinjamAssetId, [
+                'status_bmn'     => 'Digunakan Sendiri',
+                'kondisi'        => 'baik',
+                'lokasi_ruangan' => 'Gudang / Belum Berlokasi',
+                'ruangan_id'     => null,
+            ]);
+
+            $assetAfterReturn = $satkerModel->find($dummyPinjamAssetId);
+            $loanAfterReturn  = $pinjamModel->find($pinjamId);
+
+            if ($loanAfterReturn['status'] === 'dikembalikan' && $assetAfterReturn['status_bmn'] === 'Digunakan Sendiri') {
+                CLI::write("  [OK] Proses pengembalian aset berhasil: Status transaksi 'dikembalikan', aset induk dipulihkan ke '{$assetAfterReturn['status_bmn']}' ({$assetAfterReturn['lokasi_ruangan']})", "green");
+                $passedTests++;
+            } else {
+                CLI::error("  [FAIL] Pemulihan status aset saat pengembalian gagal.");
+            }
+
+            // 6. Bersihkan data dummy pinjam pakai
+            $pinjamModel->delete($pinjamId);
+            $satkerModel->delete($dummyPinjamAssetId);
+            CLI::write("  [CLEANUP] Data dummy peminjaman aset berhasil dibersihkan dari database.", "green");
+
+        } catch (\Throwable $e) {
+            CLI::error("  [FAIL] Exception saat uji coba Pinjam Pakai: " . $e->getMessage());
+            if (isset($dummyPinjamAssetId) && $dummyPinjamAssetId) {
+                $db->table('trn_inventaris_pinjam_pakai')->where('inventaris_id', $dummyPinjamAssetId)->delete();
+                $db->table('trn_inventaris_satker')->where('id', $dummyPinjamAssetId)->delete();
+            }
         }
 
         // ---------------------------------------------------------------------

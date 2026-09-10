@@ -425,7 +425,16 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('inventaris/dbr/(:num)/cetak-pdf', 'Admin\\InventarisDbr::cetakPdf/$1');
 	$routes->get('inventaris/dbr/(:num)/export-excel', 'Admin\\InventarisDbr::exportExcel/$1');
 
-	$routes->get('inventaris/sekolah', 'Admin\\InventarisSekolah::index');
+	// Modul Inventarisasi - Pinjam Pakai Aset (Personal Assets / BAPP)
+	$routes->get('inventaris/pinjam-pakai', 'Admin\InventarisPinjamPakai::index');
+	$routes->post('inventaris/pinjam-pakai/tambah', 'Admin\InventarisPinjamPakai::createPinjam');
+	$routes->post('inventaris/pinjam-pakai/(:num)/ubah', 'Admin\InventarisPinjamPakai::editPinjam/$1');
+	$routes->post('inventaris/pinjam-pakai/(:num)/kembalikan', 'Admin\InventarisPinjamPakai::kembalikanAset/$1');
+	$routes->post('inventaris/pinjam-pakai/(:num)/hapus', 'Admin\InventarisPinjamPakai::deletePinjam/$1');
+	$routes->get('inventaris/pinjam-pakai/(:num)/cetak-pdf', 'Admin\InventarisPinjamPakai::cetakSuratPdf/$1');
+	$routes->get('inventaris/pinjam-pakai/export-excel', 'Admin\InventarisPinjamPakai::exportExcel');
+
+	$routes->get('inventaris/sekolah', 'Admin\InventarisSekolah::index');
 });
 
 

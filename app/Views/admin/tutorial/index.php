@@ -399,12 +399,12 @@ graph TD
         </div>
     </div>
 
-    <!-- FLOWCHART 7: INVENTARISASI - PENDATAAN ASET SATKER, DBR & SARPRAS SEKOLAH -->
+    <!-- FLOWCHART 7: INVENTARISASI - PENDATAAN ASET SATKER, DBR, PINJAM PAKAI & SARPRAS SEKOLAH -->
     <div class="flowchart-card role-section" data-roles="admin,super_administrator,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
-                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-boxes-stacked mr-2 text-primary"></i> Alur Pengelolaan Inventarisasi Satker, DBR &amp; Sekolah</h5>
-                <small class="text-muted">Alur import SIMAN/SAKTI BMN, pendataan fisik barang, penempatan aset ruangan (DBR), cetak dokumen resmi DBR (PDF/Excel), serta monitoring sarpras sekolah binaan.</small>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-boxes-stacked mr-2 text-primary"></i> Alur Pengelolaan Inventarisasi Satker, DBR, Pinjam Pakai &amp; Sekolah</h5>
+                <small class="text-muted">Alur import SIMAN/SAKTI BMN, pendataan fisik barang, penempatan aset ruangan (DBR), administrasi pinjam pakai aset dinas pegawai, cetak dokumen resmi (PDF/Excel), serta monitoring sarpras sekolah binaan.</small>
             </div>
             <div>
                 <span class="badge badge-primary">Inventarisasi</span>
@@ -416,7 +416,8 @@ graph TD
 graph TD
     A["Menu Utama Inventarisasi"] --> B1["1. Daftar Barang (/admin/inventaris/barang)"]
     A --> B2["2. Inventaris Kantor (/admin/inventaris/dbr)"]
-    A --> B3["3. Inventaris Sekolah (/admin/inventaris/sekolah)"]
+    A --> B3["3. Pinjam Pakai Aset (/admin/inventaris/pinjam-pakai)"]
+    A --> B4["4. Inventaris Sekolah (/admin/inventaris/sekolah)"]
 
     B1 --> C1["Klasifikasi Peruntukan Aset: Kantor (Satker), Mobiler (Sekolah), &amp; Item Lainnya (Peminjaman / Renovasi / Non-Ruangan)"]
     B1 --> C2["Standar BMN: 1 Kode Barang + 1 NUP = Tepat 1 Unit Fisik (Validasi Ketat Form &amp; Import)"]
@@ -428,8 +429,13 @@ graph TD
     B2 --> D3["Alokasi Aset Kantor ke Ruangan (DBR) via Scan QR / Pencarian Manual"]
     B2 --> D4["Cetak Dokumen DBR PDF (Per Ruangan / Seluruh Ruangan Detail NUP A4 Portrait) &amp; Export Excel"]
 
-    B3 --> E1["Monitoring Sarpras &amp; Distribusi Mobiler Sekolah Binaan"]
-    B3 --> E2["Pemetaan Wilayah Kabupaten / Kecamatan / Paket Proyek"]
+    B3 --> F1["Pencatatan Pinjam Pakai Aset Kedinasan Pegawai (Aset di Luar Ruangan DBR)"]
+    B3 --> F2["Penerbitan Surat Izin Pinjam Pakai BMN Resmi (PDF A4 Portrait Ber-KOP PUPR &amp; Tanda Tangan Para Pihak)"]
+    B3 --> F3["Upload Scan Dokumen &amp; Monitoring Status (Sedang Dipinjam / Selesai Dikembalikan)"]
+    B3 --> F4["Proses Pengembalian Aset (Update Kondisi Fisik, Catatan &amp; Pemulihan Status Aset Induk)"]
+
+    B4 --> E1["Monitoring Sarpras &amp; Distribusi Mobiler Sekolah Binaan"]
+    B4 --> E2["Pemetaan Wilayah Kabupaten / Kecamatan / Paket Proyek"]
                 </pre>
             </div>
         </div>
@@ -650,23 +656,20 @@ graph TD
         <?php endif; ?>
 
         <!-- MODUL INVENTARISASI -->
+        <!-- MODUL INVENTARISASI & DBR -->
         <?php if ($canRenderForUser(['admin', 'super_administrator'])): ?>
-
         <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,all">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 font-weight-bold text-primary">
-                    <i class="fas fa-boxes-stacked mr-2"></i> Modul Inventarisasi: Aset BMN Satker, DBR &amp; Sarpras Sekolah
+                    <i class="fas fa-boxes-stacked mr-2"></i> Modul Inventarisasi: Barang Satker, DBR, Pinjam Pakai &amp; Sekolah
                 </h5>
             </div>
             <div class="card-body bg-light">
                 <div class="row">
-                    <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="col-lg-6 col-md-12 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
-                    <div class="col-lg-4 col-md-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body">
-                                <h6 class="font-weight-bold text-primary"><i class="fas fa-boxes-stacked mr-1"></i> 1. Daftar Barang</h6>
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-boxes mr-1"></i> 1. Daftar Barang Inventaris</h6>
                                 <p class="small text-muted mb-2"><code>/admin/inventaris/barang</code> (Menu Lv2 Inventarisasi)</p>
                                 <ol class="pl-3 small mb-0">
                                     <li>Masuk ke menu <strong>Inventarisasi &gt; Daftar Barang</strong>. Seluruh aset fisik BMN berada langsung di menu utama ini.</li>
@@ -674,7 +677,7 @@ graph TD
                                         <ul class="pl-3 mt-1">
                                             <li><span class="badge badge-primary px-1">Kantor</span> : Aset operasional kantor satker yang dapat dialokasikan ke ruangan-ruangan kantor (DBR).</li>
                                             <li><span class="badge badge-warning text-dark px-1">Mobiler</span> : Aset bantuan sarana pendidikan yang didistribusikan ke sekolah-sekolah penerima.</li>
-                                            <li><span class="badge badge-purple text-white px-1" style="background:#7c3aed;">Item Lainnya</span> : Aset non-operasional ruangan / khusus (seperti peminjaman aset, aset tetap dalam renovasi/pengerjaan, atau aset belum terdata di ruangan).</li>
+                                            <li><span class="badge badge-purple text-white px-1" style="background:#7c3aed;">Item Lainnya</span> : Aset non-operasional ruangan / khusus (seperti peminjaman aset kedinasan, aset tetap dalam perbaikan/renovasi, atau aset non-ruangan).</li>
                                         </ul>
                                     </li>
                                     <li><strong>Bilah Filter Cepat Peruntukan:</strong> Di atas daftar data tersedia tombol filter instan (<em>Semua Barang</em>, <em>Kantor / Satker</em>, <em>Mobiler / Sekolah</em>, dan <em>Item Lainnya</em>) lengkap dengan penghitung total unit terkini.</li>
@@ -686,7 +689,7 @@ graph TD
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="col-lg-6 col-md-12 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
                                 <h6 class="font-weight-bold text-success"><i class="fas fa-door-open mr-1"></i> 2. Inventaris Kantor (DBR)</h6>
@@ -709,10 +712,26 @@ graph TD
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4 col-md-12 mb-3">
+                    <div class="col-lg-6 col-md-12 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="font-weight-bold text-info"><i class="fas fa-school mr-1"></i> 3. Inventaris Sekolah</h6>
+                                <h6 class="font-weight-bold text-warning text-dark"><i class="fas fa-hand-holding mr-1 text-warning"></i> 3. Pinjam Pakai Aset BMN</h6>
+                                <p class="small text-muted mb-2"><code>/admin/inventaris/pinjam-pakai</code> (Menu Lv2 Inventarisasi)</p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Pinjam Pakai Aset</strong>. Modul ini didedikasikan khusus untuk mencatat dan mengelola peminjaman aset BMN yang digunakan secara pribadi oleh pegawai untuk keperluan dinas (tidak tercatat di ruangan kantor DBR).</li>
+                                    <li><strong>Peminjaman Baru (Pinjamkan Aset):</strong> Klik tombol <em>Pinjamkan Aset</em>. Pilih aset BMN yang tersedia dari dropdown (aset yang sedang dipinjam aktif otomatis disaring), pilih nama pegawai peminjam dari master pegawai (nama lengkap, NIP, jabatan, dan no. HP terisi otomatis, atau isi manual jika diperlukan), masukkan Nomor Surat Izin Pinjam Pakai, tanggal pinjam, estimasi rencana pengembalian, kondisi fisik, kelengkapan barang (charger, tas, dll), dan uraian keperluan dinas. Anda juga dapat langsung mengunggah file scan PDF surat peminjaman.</li>
+                                    <li><strong>Penerbitan Surat Izin Pinjam Pakai BMN (Cetak PDF A4 Portrait):</strong> Klik tombol merah <em>Cetak PDF</em> pada baris transaksi untuk menerbitkan dokumen resmi format A4 Portrait standar Kementerian Pekerjaan Umum (lengkap dengan KOP Surat, nomor surat, identitas para pihak, tabel spesifikasi teknis BMN, pasal-pasal hak dan kewajiban peminjam, serta blok tanda tangan Peminjam, Kuasa Pengguna Barang, dan Pengurus Barang).</li>
+                                    <li><strong>Sinkronisasi Status Aset Terintegrasi:</strong> Saat peminjaman disimpan, status aset BMN induk otomatis beralih menjadi <em>Dipinjam Pakai</em> dan lokasi tercatat sebagai <em>Pinjam Pakai: [Nama Pegawai]</em> sehingga tidak dapat dialokasikan ganda ke ruangan DBR.</li>
+                                    <li><strong>Proses Pengembalian Aset:</strong> Setelah peminjaman berakhir, klik tombol hijau <em>Kembalikan</em>. Tentukan tanggal realisasi pengembalian, kondisi fisik saat barang kembali (Baik / Rusak Ringan / Rusak Berat), dan catatan kelengkapan. Status transaksi berganti menjadi <em>Telah Dikembalikan</em>, dan aset inventaris induk otomatis dipulihkan menjadi <em>Digunakan Sendiri</em> dengan lokasi <em>Gudang / Belum Berlokasi</em> sehingga siap digunakan kembali.</li>
+                                    <li><strong>Export Excel Rekap Pinjam Pakai:</strong> Klik tombol hijau <em>Export Excel</em> di bagian atas untuk mengunduh seluruh rekaman transaksi peminjaman aset dalam format spreadsheet.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-info"><i class="fas fa-school mr-1"></i> 4. Inventaris Sekolah</h6>
                                 <p class="small text-muted mb-2"><code>/admin/inventaris/sekolah</code> (Menu Lv2 Inventarisasi)</p>
                                 <ol class="pl-3 small mb-0">
                                     <li>Masuk ke menu <strong>Inventarisasi &gt; Inventaris Sekolah</strong>.</li>

@@ -98,6 +98,8 @@ class InventarisDbr extends BaseController
             return redirect()->to('/admin/inventaris/dbr')->withInput()->with('error', 'Kode dan Nama Ruangan wajib diisi.');
         }
 
+        $db = db_connect();
+
         // Resolusi Penanggung Jawab Ruangan (Dapat Dikosongkan jika Belum Ditentukan)
         $pegawaiIdPost = $this->request->getPost('pegawai_id');
         $pjNama = trim((string) $this->request->getPost('penanggung_jawab_nama'));
@@ -116,7 +118,6 @@ class InventarisDbr extends BaseController
             }
         } else {
             $pegawaiId = (int) $pegawaiIdPost ?: null;
-            $db = db_connect();
             if ($pegawaiId !== null && $pegawaiId > 0 && $db->tableExists('mst_pegawai')) {
                 $peg = $db->table('mst_pegawai')->where('id', $pegawaiId)->get()->getRowArray();
                 if (is_array($peg)) {
@@ -170,6 +171,8 @@ class InventarisDbr extends BaseController
             return redirect()->to('/admin/inventaris/dbr')->withInput()->with('error', 'Kode dan Nama Ruangan wajib diisi.');
         }
 
+        $db = db_connect();
+
         // Resolusi Penanggung Jawab Ruangan (Dapat Dikosongkan jika Belum Ditentukan)
         $pegawaiIdPost = $this->request->getPost('pegawai_id');
         $pjNama = trim((string) $this->request->getPost('penanggung_jawab_nama'));
@@ -188,7 +191,6 @@ class InventarisDbr extends BaseController
             }
         } else {
             $pegawaiId = (int) $pegawaiIdPost ?: null;
-            $db = db_connect();
             if ($pegawaiId !== null && $pegawaiId > 0 && $db->tableExists('mst_pegawai')) {
                 $peg = $db->table('mst_pegawai')->where('id', $pegawaiId)->get()->getRowArray();
                 if (is_array($peg)) {
