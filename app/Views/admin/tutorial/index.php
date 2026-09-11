@@ -446,11 +446,12 @@ graph TD
     B5 --> G3["Cetak &amp; Ekspor PDF Format Lampiran (A4 Portrait Tanpa Kop, Total Buah &amp; TTD Petugas Aset)"]
     B5 --> G4["Export Spreadsheet Excel (.xlsx) Lengkap dengan Lokasi &amp; Kondisi Fisik Barang"]
 
-    B6 --> H1["Fleksibilitas Lingkup Audit: Aset Kantor per Ruangan DBR, Seluruh Aset Kantor, atau Mobiler Sekolah"]
+    B6 --> H1["Fleksibilitas Lingkup Audit: 1 Kantor Dibagi Per Ruangan DBR, Single Ruangan, atau Mobiler Sekolah"]
     B6 --> H2["Deteksi Otomatis Status Pinjam Pakai Pegawai (Mencegah Salah Vonis Hilang pada Aset Kedinasan)"]
-    B6 --> H3["Metode Verifikasi Cepat: Scan Barcode / QR Code / NUP Otomatis &amp; Checklist Interaktif"]
-    B6 --> H4["Pencatatan Status Temuan Lapangan: Sesuai, Kondisi Berubah, Salah Ruangan/Pindah, &amp; Selisih Kurang"]
-    B6 --> H5["Penerbitan Berita Acara Pemeriksaan Fisik BMN (BAP Stock Opname PDF A4 Portrait &amp; Export Excel)"]
+    B6 --> H3["Partisi Ruangan Pintar: Navigasi Antar-Ruangan, Mini Progress Bar, &amp; Tombol Verifikasi Sisa per Ruangan"]
+    B6 --> H4["Metode Verifikasi Cepat: Scan Barcode / QR Code / NUP Otomatis &amp; Checklist Interaktif"]
+    B6 --> H5["Pencatatan Status Temuan Lapangan: Sesuai, Kondisi Berubah, Salah Ruangan/Pindah, &amp; Selisih Kurang"]
+    B6 --> H6["Penerbitan Berita Acara Stock Opname BMN (BAP PDF A4 Portrait per Ruangan &amp; Export Excel Terkelompok)"]
                 </pre>
             </div>
         </div>
@@ -784,24 +785,26 @@ graph TD
                                     <li><strong>Ubin Metrik Global KPI:</strong> Memantau secara real-time: <em>Total Sesi Audit</em>, <em>Sedang Berjalan</em>, <em>Selesai &amp; Terkunci</em>, dan <em>Total Aset Diperiksa</em>.</li>
                                     <li><strong>Mulai Sesi Audit Baru (3 Pilihan Lingkup Fleksibel):</strong> Klik tombol <em>Mulai Sesi Audit Baru</em>. Tentukan Judul Kegiatan, Tanggal, dan Nama Petugas Auditor. Pilih lingkup audit yang diinginkan:
                                         <ul class="pl-3 mt-1">
-                                            <li><strong>Kantor - Per Ruangan:</strong> Memilih ruangan kantor target dari Master DBR (misal: Ruang Tata Usaha, Ruang Kepala Satker). Sistem otomatis memuat seluruh aset yang tercatat di ruangan tersebut.</li>
-                                            <li><strong>Kantor - Seluruh Aset:</strong> Menarik seluruh aset operasional kantor satker secara menyeluruh, termasuk aset yang belum terdistribusi ke ruangan maupun aset yang sedang dipinjam pakai.</li>
-                                            <li><strong>Sekolah / Mobiler:</strong> Menarik seluruh data aset mobiler sarana pendidikan binaan sekolah.</li>
+                                            <li><strong>1 Kantor (Dibagi Per Ruangan) [Rekomendasi Utama]:</strong> Mengaudit seluruh aset kantor satker dalam 1 sesi terpadu, namun secara otomatis dipartisi per ruangan DBR. Petugas dapat berpindah memeriksa ruangan demi ruangan tanpa perlu membuat banyak sesi terpisah.</li>
+                                            <li><strong>Kantor - Khusus 1 Ruangan:</strong> Memilih 1 ruangan kantor target spesifik dari Master DBR (misal: Ruang Tata Usaha saja).</li>
+                                            <li><strong>Aset Sekolah / Mobiler:</strong> Menarik seluruh data aset sarana pendidikan binaan sekolah.</li>
                                         </ul>
                                     </li>
                                     <li><strong>Shortcut Cepat 1-Klik dari Menu DBR:</strong> Pada halaman Detail DBR (<code>/admin/inventaris/dbr/{id}</code>) dan tabel daftar ruangan utama, tersedia tombol kuning <span class="badge badge-warning text-dark px-1.5"><i class="fas fa-clipboard-check mr-1"></i>Audit Ruangan Ini</span> yang secara otomatis langsung membuka dan menginisiasi sesi audit untuk ruangan bersangkutan tanpa perlu input manual.</li>
                                     <li><strong>Deteksi Otomatis Aset Sedang Dipinjam Pakai Pegawai:</strong> Saat sesi audit dibentuk, sistem secara otomatis mengecek relasi ke modul <em>Pinjam Pakai</em>. Aset yang sedang sah dipinjam pegawai akan diberi badge oranye <em>Dipinjam</em> lengkap dengan nama peminjam dan nomor surat izin, sehingga petugas auditor tidak salah menetapkan aset tersebut sebagai barang hilang.</li>
-                                    <li><strong>Metode Pemeriksaan Fisik Lapangan (Workspace Audit):</strong>
+                                    <li><strong>Navigasi Partisi Ruangan &amp; Workspace Audit:</strong>
                                         <ul class="pl-3 mt-1">
+                                            <li><strong>Pills Navigasi Ruangan &amp; Progress Bar:</strong> Di atas tabel audit tersedia bilah tab/pill seluruh ruangan beserta indikator persentase penyelesaian dan progress bar mini. Klik salah satu ruangan untuk memfokuskan daftar aset pada ruangan tersebut.</li>
+                                            <li><strong>Kartu Konteks Ruangan &amp; Tombol Verifikasi Ruangan:</strong> Saat fokus ke ruangan tertentu, muncul kartu info penanggung jawab ruangan, nomor lantai, dan tombol <span class="badge badge-light border text-success font-weight-bold"><i class="fas fa-check-double mr-1"></i>Tandai Sisa Ruangan Ini Selesai</span> untuk memverifikasi sisa aset pada ruangan tersebut dalam 1 klik tanpa memengaruhi ruangan lain.</li>
                                             <li><strong>Mode Scan Cepat (Barcode / QR Code / NUP):</strong> Kotak pemindai di bagian atas mendukung scanner barcode USB atau ketikan NUP/Kode Barang. Cukup scan barcode atau tekan Enter, sistem seketika memverifikasi dan menandai fisik aset sebagai <em>Sesuai</em> via AJAX tanpa reload halaman.</li>
                                             <li><strong>Tombol Aksi Cepat Baris:</strong> Klik tombol centang hijau <i class="fas fa-check text-success"></i> untuk langsung memverifikasi fisik aset sebagai Sesuai.</li>
                                             <li><strong>Pencatatan Temuan Khusus:</strong> Klik tombol edit biru <i class="fas fa-edit text-primary"></i> untuk mencatat temuan: (1) <em>Kondisi Berubah</em> (misal di buku tercatat Baik, fisik ditemukan Rusak Ringan/Rusak Berat); (2) <em>Salah Lokasi / Pindah Ruangan</em> (memilih ruangan fisik tempat barang ditemukan); (3) <em>Terkonfirmasi Dipinjam Sah</em>; atau (4) <em>Tidak Ditemukan / Hilang (Selisih Kurang)</em> beserta catatan keterangan.</li>
                                         </ul>
                                     </li>
-                                    <li><strong>Verifikasi Sisa Sesuai Massal:</strong> Klik tombol <em>Verifikasi Sisa Sesuai</em> untuk menandai seluruh sisa barang yang belum diperiksa sekaligus menjadi status Sesuai (aset pinjam pakai otomatis terkonfirmasi dipinjam).</li>
+                                    <li><strong>Verifikasi Sisa Sesuai Massal:</strong> Klik tombol <em>Verifikasi Sisa Sesuai</em> di toolbar utama untuk menandai seluruh sisa barang kantor yang belum diperiksa sekaligus menjadi status Sesuai (aset pinjam pakai otomatis terkonfirmasi dipinjam).</li>
                                     <li><strong>Penyelesaian &amp; Penguncian Sesi Audit:</strong> Setelah seluruh fisik terverifikasi, klik tombol <em>Selesaikan Audit</em> untuk mengunci data agar tidak berubah. Tersedia pula tombol <em>Buka Kembali Sesi</em> jika sewaktu-waktu diperlukan perbaikan/revisi.</li>
-                                    <li><strong>Cetak Berita Acara Stock Opname (PDF Resmi A4 Portrait):</strong> Klik tombol <em>Cetak BAP (PDF)</em> untuk mencetak Berita Acara Pemeriksaan Fisik BMN resmi lengkap dengan KOP Satker Kementerian PU, nomor berita acara, tabel rekapitulasi hasil pemeriksaan (Sesuai, Dipinjam, Berubah Kondisi, Hilang, Belum Dicek), daftar rincian temuan per item, dan kolom tanda tangan pengesahan Penanggung Jawab Ruangan serta Petugas Auditor.</li>
-                                    <li><strong>Export Excel Spreadsheet (.xlsx):</strong> Klik tombol <em>Export Excel</em> untuk mengunduh rekapitulasi lengkap hasil audit dalam format spreadsheet Excel dengan pewarnaan status temuan yang rapi.</li>
+                                    <li><strong>Cetak Berita Acara Stock Opname (PDF Resmi A4 Portrait Terkelompok per Ruangan):</strong> Klik tombol <em>Cetak BAP (PDF)</em> untuk mencetak Berita Acara Pemeriksaan Fisik BMN resmi. Tabel rincian barang otomatis terkelompok rapi dengan Banner Ruangan, informasi penanggung jawab ruangan, rincian fisik, serta subtotal unit per ruangan, ditutup dengan kolom tanda tangan pengesahan resmi.</li>
+                                    <li><strong>Export Excel Spreadsheet Terkelompok (.xlsx):</strong> Klik tombol <em>Export Excel</em> untuk mengunduh rekapitulasi lengkap hasil audit dalam format spreadsheet Excel dengan banner ruangan terpisah dan pewarnaan status temuan yang rapi.</li>
                                     <li><strong>Penghapusan Sesi Audit:</strong> Pengguna dengan izin <code>FiturDelete</code> (sesuai aturan tabel <code>menu_akses</code>) dapat menghapus sesi audit baik langsung dari tombol hapus di tabel utama maupun dari dalam workspace audit. Konfirmasi dilakukan melalui modal interaktif yang aman untuk mencegah ketidaksengajaan.</li>
                                 </ol>
                             </div>

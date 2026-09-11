@@ -377,13 +377,27 @@ class InventarisAudit extends BaseController
         $itemModel = new InventarisAuditItemModel();
         $ruanganModel = new MstRuanganModel();
 
+        $activeRuangan      = trim((string) ($this->request->getGet('ruangan') ?? 'all'));
         $filterStatusAudit  = trim((string) ($this->request->getGet('status_audit') ?? 'semua'));
         $filterStatusPinjam = trim((string) ($this->request->getGet('status_pinjam') ?? 'semua'));
         $keyword            = trim((string) ($this->request->getGet('q') ?? ''));
 
+        $roomStats = $itemModel->getRoomStatsByAudit($id);
+
+        $selectedRoomInfo = null;
+        if ($activeRuangan !== 'all') {
+            foreach ($roomStats as $rs) {
+                if ($rs['ruangan_key'] === $activeRuangan) {
+                    $selectedRoomInfo = $rs;
+                    break;
+                }
+            }
+        }
+
         $items = $itemModel->getItemsByAudit($id, [
             'status_audit'  => $filterStatusAudit,
             'status_pinjam' => $filterStatusPinjam,
+            'ruangan_id'    => $activeRuangan,
             'keyword'       => $keyword,
         ]);
 
@@ -394,6 +408,9 @@ class InventarisAudit extends BaseController
             'pageTitle'          => 'Workspace Audit: ' . $audit['kode_audit'],
             'audit'              => $audit,
             'items'              => $items,
+            'roomStats'          => $roomStats,
+            'activeRuangan'      => $activeRuangan,
+            'selectedRoomInfo'   => $selectedRoomInfo,
             'ruanganList'        => $ruanganList,
             'filterStatusAudit'  => $filterStatusAudit,
             'filterStatusPinjam' => $filterStatusPinjam,
@@ -546,6 +563,37 @@ class InventarisAudit extends BaseController
             ->with('message', 'Seluruh sisa item berhasil diverifikasi dan ditandai Sesuai.');
     }
 
+    public function markRuanganRemainingSesuai(int $auditId, string $ruanganKey)
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (! ($menuPermissions['edit'] ?? false)) {
+            return redirect()->to('/admin/inventaris/audit/' . $auditId)->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi item.');
+        }
+
+        $auditModel = new InventarisAuditModel();
+        $audit = $auditModel->find($auditId);
+        if (! $audit || $audit['status'] === 'selesai') {
+            return redirect()->to('/admin/inventaris/audit/' . $auditId)->with('error', 'Sesi audit tidak dapat diubah atau telah terkunci.');
+        }
+
+        $itemModel = new InventarisAuditItemModel();
+        $userId = (int) (session()->get('userId') ?? 0);
+        $userName = (string) (session()->get('fullName') ?: session()->get('username'));
+
+        $count = $itemModel->markRuanganRemainingSesuai($auditId, $ruanganKey, $userId, $userName);
+        $auditModel->recalculateStats($auditId);
+
+        $ruanganParam = $ruanganKey !== 'all' ? '?ruangan=' . urlencode($ruanganKey) : '';
+
+        return redirect()->to('/admin/inventaris/audit/' . $auditId . $ruanganParam)
+            ->with('message', "Sebanyak {$count} item sisa pada ruangan terpilih berhasil diverifikasi menjadi Sesuai.");
+    }
+
     public function selesai(int $auditId)
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
@@ -630,11 +678,21 @@ class InventarisAudit extends BaseController
         }
 
         $itemModel = new InventarisAuditItemModel();
+        $roomStats = $itemModel->getRoomStatsByAudit($auditId);
+
         $items = $itemModel->where('audit_id', $auditId)
+            ->orderBy('CASE WHEN ruangan_sistem_nama IS NULL OR ruangan_sistem_nama = "" THEN 1 ELSE 0 END', 'ASC', false)
+            ->orderBy('ruangan_sistem_nama', 'ASC')
             ->orderBy('kode_barang', 'ASC')
             ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
             ->orderBy('nup', 'ASC')
             ->findAll();
+
+        $groupedItems = [];
+        foreach ($items as $item) {
+            $rKey = ! empty($item['ruangan_sistem_id']) ? (string) $item['ruangan_sistem_id'] : 'non_ruangan';
+            $groupedItems[$rKey][] = $item;
+        }
 
         $logoPuPath = FCPATH . 'assets/img/logo-pu.png';
         if (! file_exists($logoPuPath)) {
@@ -648,6 +706,8 @@ class InventarisAudit extends BaseController
         $data = [
             'audit'        => $audit,
             'items'        => $items,
+            'groupedItems' => $groupedItems,
+            'roomStats'    => $roomStats,
             'logoPuBase64' => $logoPuBase64,
             'tanggalCetak' => date('d F Y'),
         ];
@@ -696,6 +756,8 @@ class InventarisAudit extends BaseController
 
         $itemModel = new InventarisAuditItemModel();
         $items = $itemModel->where('audit_id', $auditId)
+            ->orderBy('CASE WHEN ruangan_sistem_nama IS NULL OR ruangan_sistem_nama = "" THEN 1 ELSE 0 END', 'ASC', false)
+            ->orderBy('ruangan_sistem_nama', 'ASC')
             ->orderBy('kode_barang', 'ASC')
             ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
             ->orderBy('nup', 'ASC')
@@ -730,7 +792,7 @@ class InventarisAudit extends BaseController
             'C6' => 'NUP',
             'D6' => 'NAMA BARANG / JENIS',
             'E6' => 'MERK / TIPE',
-            'F6' => 'LOKASI SISTEM',
+            'F6' => 'LOKASI RUANGAN',
             'G6' => 'KONDISI SISTEM',
             'H6' => 'STATUS AUDIT / FISIK',
             'I6' => 'KONDISI FISIK TEMUAN',
@@ -761,53 +823,68 @@ class InventarisAudit extends BaseController
 
         $rowNum = 7;
         $no = 1;
+        $lastRoom = null;
+
         foreach ($items as $item) {
-            $sheet->setCellValue('A' . $rowNum, $no);
+            $roomName = $item['ruangan_sistem_nama'] ?: ($item['peruntukan'] === 'mobiler' ? 'Sekolah / Mobiler' : 'Gudang / Belum Berlokasi');
+
+            // Jika ruangan berganti, sisipkan baris pemisah header ruangan
+            if ($lastRoom !== $roomName) {
+                $lastRoom = $roomName;
+                $no = 1;
+
+                $sheet->mergeCells('A' . $rowNum . ':J' . $rowNum);
+                $sheet->setCellValue('A' . $rowNum, '  🏢 RUANGAN: ' . strtoupper($roomName));
+                $sheet->getStyle('A' . $rowNum . ':J' . $rowNum)->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['rgb' => '0F172A'], 'size' => 10],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]],
+                ]);
+                $sheet->getRowDimension($rowNum)->setRowHeight(22);
+                $rowNum++;
+            }
+
+            $sheet->setCellValue('A' . $rowNum, $no++);
             $sheet->setCellValueExplicit('B' . $rowNum, $item['kode_barang'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('C' . $rowNum, $item['nup'] ?: '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('D' . $rowNum, $item['nama_barang']);
             $sheet->setCellValue('E' . $rowNum, $item['merk_tipe'] ?: '-');
-            $sheet->setCellValue('F' . $rowNum, $item['ruangan_sistem_nama'] ?: ($item['peruntukan'] === 'mobiler' ? 'Sekolah / Mobiler' : 'Tanpa Ruangan'));
+            $sheet->setCellValue('F' . $rowNum, $roomName);
             $sheet->setCellValue('G' . $rowNum, $item['kondisi_sistem']);
 
-            // Label status audit
-            $statusLabel = strtoupper(str_replace('_', ' ', $item['status_audit']));
-            if ($item['status_audit'] === 'terkonfirmasi_dipinjam' && ! empty($item['peminjam_nama'])) {
-                $statusLabel .= ' (Oleh: ' . $item['peminjam_nama'] . ')';
-            } elseif ($item['status_audit'] === 'salah_lokasi' && ! empty($item['ruangan_fisik_nama'])) {
-                $statusLabel .= ' (Ditemukan di: ' . $item['ruangan_fisik_nama'] . ')';
-            }
-            $sheet->setCellValue('H' . $rowNum, $statusLabel);
-
+            $statusText = match ($item['status_audit']) {
+                'sesuai'                 => 'Sesuai & Ada',
+                'terkonfirmasi_dipinjam' => 'Sedang Dipinjam Sah',
+                'kondisi_berubah'        => 'Kondisi Berubah',
+                'salah_lokasi'           => 'Pindah Ruangan',
+                'tidak_ditemukan'        => 'Tidak Ditemukan (Hilang)',
+                default                  => 'Belum Diperiksa',
+            };
+            $sheet->setCellValue('H' . $rowNum, $statusText);
             $sheet->setCellValue('I' . $rowNum, $item['kondisi_fisik'] ?: '-');
-            $sheet->setCellValue('J' . $rowNum, $item['catatan_pemeriksaan'] ?: '-');
 
-            $rowStyle = [
+            $catatan = $item['catatan_pemeriksaan'] ?: '';
+            if ($item['status_pinjam_sistem'] === 'dipinjam') {
+                $catatan = 'Dipinjam: ' . ($item['peminjam_nama'] ?: 'Pegawai') . ' (Surat: ' . ($item['no_surat_pinjam'] ?: '-') . ')';
+            }
+            $sheet->setCellValue('J' . $rowNum, $catatan);
+
+            $borderStyle = [
                 'borders' => [
-                    'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'D1D5DB']],
+                    'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']],
                 ],
-                'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
             ];
-            $sheet->getStyle('A' . $rowNum . ':J' . $rowNum)->applyFromArray($rowStyle);
+            $sheet->getStyle('A' . $rowNum . ':J' . $rowNum)->applyFromArray($borderStyle);
 
-            $sheet->getStyle('A' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('B' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('C' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('G' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('H' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('I' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            // Highlight baris berdasarkan status audit
             if ($item['status_audit'] === 'sesuai') {
-                $sheet->getStyle('H' . $rowNum)->getFont()->getColor()->setRGB('15803D'); // Hijau
-            } elseif ($item['status_audit'] === 'tidak_ditemukan') {
-                $sheet->getStyle('H' . $rowNum)->getFont()->getColor()->setRGB('B91C1C'); // Merah
+                $sheet->getStyle('H' . $rowNum)->getFont()->getColor()->setRGB('15803D');
             } elseif ($item['status_audit'] === 'terkonfirmasi_dipinjam') {
-                $sheet->getStyle('H' . $rowNum)->getFont()->getColor()->setRGB('B45309'); // Oranye
+                $sheet->getStyle('H' . $rowNum)->getFont()->getColor()->setRGB('B45309');
+            } elseif ($item['status_audit'] === 'tidak_ditemukan') {
+                $sheet->getStyle('H' . $rowNum)->getFont()->getColor()->setRGB('B91C1C');
             }
 
             $rowNum++;
-            $no++;
         }
 
         // Auto width

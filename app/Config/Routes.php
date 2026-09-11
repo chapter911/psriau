@@ -472,6 +472,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('inventaris/audit/(:num)', 'Admin\InventarisAudit::detail/$1');
 	$routes->post('inventaris/audit/(:num)/update-item', 'Admin\InventarisAudit::updateItemAjax/$1');
 	$routes->post('inventaris/audit/(:num)/mark-all-sesuai', 'Admin\InventarisAudit::markRemainingSesuai/$1');
+	$routes->post('inventaris/audit/(:num)/mark-ruangan-sesuai/(:any)', 'Admin\InventarisAudit::markRuanganRemainingSesuai/$1/$2');
 	$routes->post('inventaris/audit/(:num)/selesai', 'Admin\InventarisAudit::selesai/$1');
 	$routes->post('inventaris/audit/(:num)/buka-kembali', 'Admin\InventarisAudit::bukaKembali/$1');
 	$routes->match(['get', 'post'], 'inventaris/audit/(:num)/delete', 'Admin\InventarisAudit::delete/$1');

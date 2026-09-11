@@ -300,28 +300,28 @@
                         <label class="font-weight-bold text-dark d-block mb-2">Pilih Lingkup Audit <span class="text-danger">*</span></label>
                         <div class="row">
                             <div class="col-md-4 mb-2">
-                                <label class="audit-scope-card d-flex flex-column h-100 p-3 border rounded shadow-sm" for="lingkup_ruangan">
+                                <label class="audit-scope-card d-flex flex-column h-100 p-3 border rounded shadow-sm active-scope" for="lingkup_seluruh">
                                     <div class="custom-control custom-radio mb-1">
-                                        <input type="radio" id="lingkup_ruangan" name="lingkup_audit" value="kantor_ruangan" class="custom-control-input" checked>
+                                        <input type="radio" id="lingkup_seluruh" name="lingkup_audit" value="kantor_seluruh" class="custom-control-input" checked>
                                         <span class="custom-control-label font-weight-bold text-dark">
-                                            <i class="fas fa-door-open text-info mr-1"></i> Kantor - Per Ruangan
+                                            <i class="fas fa-building text-primary mr-1"></i> 1 Kantor (Per Ruangan)
                                         </span>
                                     </div>
                                     <small class="text-muted d-block" style="padding-left: 1.6rem; font-size: 0.8rem; line-height: 1.35;">
-                                        Audit aset yang berlokasi pada ruangan DBR tertentu.
+                                        Audit 1 kantor langsung dalam 1 sesi, otomatis dipilah & dibagi per ruangan DBR di dalamnya.
                                     </small>
                                 </label>
                             </div>
                             <div class="col-md-4 mb-2">
-                                <label class="audit-scope-card d-flex flex-column h-100 p-3 border rounded shadow-sm" for="lingkup_seluruh">
+                                <label class="audit-scope-card d-flex flex-column h-100 p-3 border rounded shadow-sm" for="lingkup_ruangan">
                                     <div class="custom-control custom-radio mb-1">
-                                        <input type="radio" id="lingkup_seluruh" name="lingkup_audit" value="kantor_seluruh" class="custom-control-input">
+                                        <input type="radio" id="lingkup_ruangan" name="lingkup_audit" value="kantor_ruangan" class="custom-control-input">
                                         <span class="custom-control-label font-weight-bold text-dark">
-                                            <i class="fas fa-building text-primary mr-1"></i> Kantor - Seluruh Aset
+                                            <i class="fas fa-door-open text-info mr-1"></i> 1 Ruangan Khusus
                                         </span>
                                     </div>
                                     <small class="text-muted d-block" style="padding-left: 1.6rem; font-size: 0.8rem; line-height: 1.35;">
-                                        Semua aset kantor (termasuk yang dipinjam & non-ruangan).
+                                        Hanya audit aset pada 1 ruangan DBR tertentu saja.
                                     </small>
                                 </label>
                             </div>
@@ -341,8 +341,8 @@
                         </div>
                     </div>
 
-                    <!-- Target Selection: Ruangan -->
-                    <div id="target_ruangan_wrapper" class="form-group mb-3">
+                    <!-- Target Selection: Ruangan (Khusus jika pilih 1 Ruangan Saja) -->
+                    <div id="target_ruangan_wrapper" class="form-group mb-3" style="display: none;">
                         <label class="font-weight-bold text-dark">Pilih Ruangan Kantor Target <span class="text-danger">*</span></label>
                         <select name="ruangan_id" id="select_ruangan_id" class="form-control" style="border-radius: 6px;">
                             <option value="">-- Pilih Ruangan DBR --</option>
