@@ -289,7 +289,7 @@ class InventarisAuditItemModel extends Model
     }
 
     /**
-     * Cari item berdasarkan scan QR / barcode / NUP
+     * Cari item berdasarkan scan QR / barcode / Kode Register SIMAN / NUP
      */
     public function lookupScan(int $auditId, string $keyword): ?array
     {
@@ -298,7 +298,39 @@ class InventarisAuditItemModel extends Model
             return null;
         }
 
-        // Format umum QR DBR: "KODE|NUP" atau "KODE" atau "NUP"
+        $db = \Config\Database::connect();
+
+        // 1. Deteksi apakah scan QR mengandung Kode Register SIMAN (32-hex) atau URL SIMAN
+        $hexCode = null;
+        if (preg_match('/([a-f0-9]{32})/i', $keyword, $matches)) {
+            $hexCode = strtoupper($matches[1]);
+        }
+
+        if ($hexCode !== null || strlen($keyword) >= 20) {
+            $codeToFind = $hexCode ?: $keyword;
+            $satkerItem = $db->table('trn_inventaris_satker')
+                ->where('kode_register', $codeToFind)
+                ->get()
+                ->getRowArray();
+
+            if ($satkerItem) {
+                $foundItem = $this->where('audit_id', $auditId)
+                    ->groupStart()
+                        ->where('inventaris_id', $satkerItem['id'])
+                        ->orGroupStart()
+                            ->where('kode_barang', $satkerItem['kode_barang'])
+                            ->where('nup', $satkerItem['nup'])
+                        ->groupEnd()
+                    ->groupEnd()
+                    ->first();
+
+                if ($foundItem) {
+                    return $foundItem;
+                }
+            }
+        }
+
+        // 2. Format umum QR DBR: "KODE|NUP"
         $kodeBarang = null;
         $nup = null;
 
@@ -308,6 +340,12 @@ class InventarisAuditItemModel extends Model
             $nup = trim($parts[1] ?? '');
         }
 
+        // 3. Format Kode Barang (10 digit) + pemisah + NUP (misal 3050104001.1 atau 3050104001-5)
+        if (! $kodeBarang && preg_match('/^(\d{10})[^\d]+(\d+)$/', $keyword, $m)) {
+            $kodeBarang = $m[1];
+            $nup = $m[2];
+        }
+
         $builder = $this->where('audit_id', $auditId);
 
         if ($kodeBarang && $nup) {
@@ -315,13 +353,19 @@ class InventarisAuditItemModel extends Model
                 ->where('kode_barang', $kodeBarang)
                 ->where('nup', $nup)
                 ->groupEnd();
-        } else {
-            $builder->groupStart()
-                ->where('nup', $keyword)
-                ->orWhere('kode_barang', $keyword)
-                ->orLike('nama_barang', $keyword)
-                ->groupEnd();
+            $found = $builder->first();
+            if ($found) {
+                return $found;
+            }
         }
+
+        // 4. Pencarian fallback berdasarkan NUP exact atau Kode Barang exact atau like nama
+        $builder = $this->where('audit_id', $auditId);
+        $builder->groupStart()
+            ->where('nup', $keyword)
+            ->orWhere('kode_barang', $keyword)
+            ->orLike('nama_barang', $keyword)
+            ->groupEnd();
 
         return $builder->first();
     }

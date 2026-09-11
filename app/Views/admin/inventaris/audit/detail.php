@@ -252,16 +252,16 @@
                         </div>
                     </div>
                     <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
-                        <span class="badge badge-light border text-dark font-weight-bold px-3 py-2" style="font-size: 0.85rem;">
+                        <span class="badge badge-light border text-dark font-weight-bold px-3 py-2" id="selected-room-progress-badge" style="font-size: 0.85rem;">
                             Selesai: <?= $selectedRoomInfo['total_item'] - $selectedRoomInfo['total_belum']; ?> / <?= $selectedRoomInfo['total_item']; ?> (<?= $selectedRoomInfo['persen']; ?>%)
                         </span>
                         <?php if ($audit['status'] === 'berjalan' && $selectedRoomInfo['total_belum'] > 0 && ($menuPermissions['edit'] ?? false)): ?>
                             <?php if ($isDipinjamGrp): ?>
-                                <button type="button" class="btn btn-warning btn-sm font-weight-bold shadow-sm text-dark" onclick="confirmMarkRuanganSesuai('dipinjam', 'Aset yang Dipinjam')" style="border-radius: 6px;">
+                                <button type="button" class="btn btn-warning btn-sm font-weight-bold shadow-sm text-dark" id="btn-mark-room-finished" onclick="confirmMarkRuanganSesuai('dipinjam', 'Aset yang Dipinjam')" style="border-radius: 6px;">
                                     <i class="fas fa-check-double mr-1"></i> Konfirmasi Sisa Aset Pinjam Selesai
                                 </button>
                             <?php else: ?>
-                                <button type="button" class="btn btn-outline-success btn-sm font-weight-bold shadow-sm" onclick="confirmMarkRuanganSesuai('<?= esc($selectedRoomInfo['ruangan_key']); ?>', '<?= esc($roomTitle); ?>')" style="border-radius: 6px;">
+                                <button type="button" class="btn btn-outline-success btn-sm font-weight-bold shadow-sm" id="btn-mark-room-finished" onclick="confirmMarkRuanganSesuai('<?= esc($selectedRoomInfo['ruangan_key']); ?>', '<?= esc($roomTitle); ?>')" style="border-radius: 6px;">
                                     <i class="fas fa-check-double mr-1"></i> Tandai Sisa Ruangan Ini Selesai
                                 </button>
                             <?php endif; ?>
@@ -275,27 +275,38 @@
         </div>
     <?php endif; ?>
 
-    <!-- Scanner & Quick-Search Box -->
+    <!-- Scanner & Quick-Search Box (USB & Kamera HP) -->
     <div class="card shadow-sm mb-3" style="border-radius: 12px; background: linear-gradient(135deg, #0A66C2 0%, #004182 100%); color: white;">
         <div class="card-body py-3 px-4">
             <div class="row align-items-center">
-                <div class="col-md-5 mb-2 mb-md-0">
-                    <h5 class="mb-1 font-weight-bold text-white"><i class="fas fa-qrcode mr-2"></i>Mode Scan Cepat (Barcode / QR Code / NUP)</h5>
-                    <p class="small text-white-50 mb-0">Arahkan scanner USB/Kamera ke barcode aset atau ketik NUP/Kode Barang lalu tekan <strong>Enter</strong> untuk menandai fisik aset secara instan.</p>
+                <div class="col-lg-5 mb-2 mb-lg-0">
+                    <h5 class="mb-1 font-weight-bold text-white"><i class="fas fa-qrcode mr-2"></i>Verifikasi Scan Aset (Kamera HP & Barcode)</h5>
+                    <p class="small text-white-50 mb-0">Gunakan kamera smartphone untuk scan QR Kode Register SIMAN BMN atau gunakan scanner USB / ketik NUP untuk verifikasi seketika.</p>
                 </div>
-                <div class="col-md-7">
-                    <div class="input-group shadow-sm">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text bg-white border-0 text-primary font-weight-bold">
-                                <i class="fas fa-barcode fa-lg"></i>
-                            </span>
+                <div class="col-lg-7">
+                    <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
+                        <div class="input-group shadow-sm flex-grow-1" style="min-width: 240px;">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-white border-0 text-primary font-weight-bold">
+                                    <i class="fas fa-barcode fa-lg"></i>
+                                </span>
+                            </div>
+                            <input type="text" id="inputFastScan" class="form-control form-control-lg border-0" placeholder="Scan Barcode / Kode Register SIMAN / NUP..." autocomplete="off" <?= $audit['status'] === 'selesai' ? 'disabled' : ''; ?>>
+                            <div class="input-group-append">
+                                <button type="button" id="btnSubmitScan" class="btn btn-warning font-weight-bold px-3 text-dark" <?= $audit['status'] === 'selesai' ? 'disabled' : ''; ?>>
+                                    <i class="fas fa-check mr-1"></i> Periksa
+                                </button>
+                            </div>
                         </div>
-                        <input type="text" id="inputFastScan" class="form-control form-control-lg border-0" placeholder="Scan Barcode atau masukkan Kode Barang / NUP di sini..." autocomplete="off" <?= $audit['status'] === 'selesai' ? 'disabled' : ''; ?>>
-                        <div class="input-group-append">
-                            <button type="button" id="btnSubmitScan" class="btn btn-warning font-weight-bold px-4 text-dark" <?= $audit['status'] === 'selesai' ? 'disabled' : ''; ?>>
-                                <i class="fas fa-check mr-1"></i> Periksa
+                        <?php if ($audit['status'] === 'berjalan'): ?>
+                            <button type="button" class="btn btn-light font-weight-bold px-3 py-2 text-primary shadow-sm d-flex align-items-center" id="btnOpenScannerModal" style="border-radius: 8px; height: 48px; white-space: nowrap; gap: 8px;">
+                                <i class="fas fa-camera fa-lg text-primary"></i>
+                                <div class="text-left" style="line-height: 1.2;">
+                                    <div style="font-size: 0.85rem;">Scan Kamera HP</div>
+                                    <small class="text-muted" style="font-size: 0.68rem;">QR SIMAN & Barcode</small>
+                                </div>
                             </button>
-                        </div>
+                        <?php endif; ?>
                     </div>
                     <div id="scanFeedback" class="small mt-1 text-white font-weight-bold" style="display: none; min-height: 18px;"></div>
                 </div>
@@ -438,8 +449,8 @@
                                     </td>
                                     <td class="text-center align-middle">
                                         <?php if ($audit['status'] === 'berjalan'): ?>
-                                            <div class="btn-group btn-group-sm">
-                                                <button type="button" class="btn btn-outline-success btn-xs px-2 py-1 shadow-sm" onclick="markItemSesuaiQuick(<?= $item['id']; ?>)" title="Tandai Sesuai & Ada">
+                                            <div class="btn-group btn-group-sm" id="action-btn-group-<?= $item['id']; ?>">
+                                                <button type="button" class="btn <?= ($item['status_audit'] === 'sesuai') ? 'btn-success text-white' : 'btn-outline-success'; ?> btn-xs px-2 py-1 shadow-sm" id="btn-quick-sesuai-<?= $item['id']; ?>" onclick="markItemSesuaiQuick(<?= $item['id']; ?>)" title="<?= ($item['status_audit'] === 'sesuai') ? 'Sudah Sesuai (Klik untuk Verifikasi Ulang)' : 'Tandai Sesuai & Ada'; ?>">
                                                     <i class="fas fa-check"></i>
                                                 </button>
                                                 <button type="button" class="btn btn-outline-primary btn-xs px-2 py-1 shadow-sm" onclick="openModalEditItem(<?= htmlspecialchars(json_encode($item), ENT_QUOTES, 'UTF-8'); ?>)" title="Ubah Kondisi / Lokasi / Catatan Temuan">
@@ -455,6 +466,138 @@
                         <?php endif; ?>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #qr-reader-container {
+        position: relative;
+        background: #090d16;
+        border-radius: 12px;
+        overflow: hidden;
+        min-height: 280px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    #qr-reader {
+        width: 100% !important;
+        border: none !important;
+    }
+    #qr-reader video {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 48vh !important;
+        object-fit: cover !important;
+        border-radius: 10px;
+    }
+    .scan-guide-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 220px;
+        height: 220px;
+        border: 2px dashed rgba(56, 189, 248, 0.85);
+        border-radius: 16px;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+        pointer-events: none;
+        z-index: 10;
+    }
+    .scan-laser-line {
+        position: absolute;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+        top: 0;
+        animation: scanLaser 2s infinite ease-in-out;
+    }
+    @keyframes scanLaser {
+        0% { top: 0%; opacity: 0.8; }
+        50% { top: 100%; opacity: 1; }
+        100% { top: 0%; opacity: 0.8; }
+    }
+    @media (max-width: 767.98px) {
+        #modalScanCamera .modal-dialog {
+            margin: 0.5rem auto;
+            max-width: calc(100% - 1rem);
+        }
+        #qr-reader-container {
+            min-height: 260px !important;
+        }
+    }
+</style>
+
+<!-- Modal Scanner Kamera HP -->
+<div class="modal fade" id="modalScanCamera" tabindex="-1" role="dialog" aria-labelledby="modalScanCameraLabel" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 14px; border: none; box-shadow: 0 12px 36px rgba(0,0,0,0.25); overflow: hidden;">
+            <div class="modal-header py-3" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff;">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary text-white rounded-circle p-2 mr-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold mb-0" id="modalScanCameraLabel" style="font-size: 1.05rem;">
+                            Scan QR / Barcode Aset BMN (Kamera HP)
+                        </h5>
+                        <small style="color: #94a3b8;">Arahkan kamera ke stiker QR SIMAN (Kode Register) atau Barcode BMN</small>
+                    </div>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.85;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-3 bg-light">
+                <!-- Status & Control Toolbar -->
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap" style="gap: 6px;">
+                    <div class="small font-weight-bold text-muted d-flex align-items-center" id="cam-status">
+                        <i class="fas fa-circle text-warning mr-1"></i> Kamera siap dinyalakan
+                    </div>
+                    <div class="d-flex align-items-center flex-wrap" style="gap: 6px;">
+                        <button type="button" class="btn btn-warning btn-sm px-2 text-dark font-weight-bold shadow-sm" id="btn-toggle-torch" style="border-radius: 6px; display: none;" title="Nyalakan/Matikan Senter HP">
+                            <i class="fas fa-lightbulb mr-1"></i> <span id="torch-text">Senter</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm px-2 shadow-sm font-weight-bold" id="btn-flip-cam" style="border-radius: 6px;" title="Ganti Kamera Belakang / Depan">
+                            <i class="fas fa-sync-alt mr-1"></i> Ganti Kamera
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm px-3 font-weight-bold shadow-sm" id="btn-toggle-cam" style="border-radius: 6px;">
+                            <i class="fas fa-video mr-1"></i> <span id="btn-cam-text">Nyalakan</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Camera Stream Viewport -->
+                <div id="qr-reader-container" class="mb-3">
+                    <div id="qr-reader"></div>
+                    <div class="scan-guide-overlay" id="scanGuideOverlay" style="display: none;">
+                        <div class="scan-laser-line"></div>
+                    </div>
+                </div>
+
+                <!-- Hasil Scan Terakhir -->
+                <div id="camScanResultBox" style="display: none;">
+                    <div class="alert alert-success shadow-sm mb-2 p-2.5" style="border-radius: 10px; border-left: 4px solid #16a34a;">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 text-success" style="font-size: 1.5rem;"><i class="fas fa-check-circle"></i></div>
+                            <div class="flex-grow-1">
+                                <div class="font-weight-bold text-dark" id="camResultTitle" style="font-size: 0.92rem;">-</div>
+                                <div class="small text-muted" id="camResultMeta">-</div>
+                            </div>
+                            <span class="badge badge-success px-2.5 py-1 font-weight-bold" style="font-size: 0.8rem;">TERVERIFIKASI SESUAI</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-muted small text-center">
+                    <i class="fas fa-info-circle mr-1 text-primary"></i> Kamera mendeteksi URL QR SIMAN, Kode Register 32-hex, Kode Barang & NUP secara otomatis tanpa reload halaman.
+                </div>
+            </div>
+            <div class="modal-footer py-2 bg-white d-flex justify-content-between">
+                <span class="small text-muted" id="camScanCounterText">Belum ada barang di-scan sesi ini</span>
+                <button type="button" class="btn btn-secondary btn-sm px-3 font-weight-bold" data-dismiss="modal">
+                    Tutup Scanner
+                </button>
             </div>
         </div>
     </div>
@@ -569,8 +712,44 @@
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>
+<script src="<?= base_url('assets/adminlte/plugins/html5-qrcode/html5-qrcode.min.js'); ?>"></script>
 <script>
 var ajaxUrl = '<?= site_url('admin/inventaris/audit/' . $audit['id'] . '/update-item'); ?>';
+var csrfTokenName = '<?= csrf_token(); ?>';
+var csrfHash = '<?= csrf_hash(); ?>';
+
+function updateCsrf(newHash) {
+    if (newHash) {
+        csrfHash = newHash;
+    }
+}
+
+function getAjaxPostData(extraData) {
+    var data = extraData || {};
+    data[csrfTokenName] = csrfHash;
+    return data;
+}
+
+// Audio Feedback (Web Audio API)
+function playBeep(isSuccess) {
+    try {
+        var AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        var audioCtx = new AudioContext();
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(isSuccess ? 880 : 380, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + (isSuccess ? 0.15 : 0.25));
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + (isSuccess ? 0.15 : 0.25));
+    } catch (e) {
+        // audio tidak wajib, abaikan jika ditolak browser
+    }
+}
 
 // Inisialisasi focus ke input scanner
 $(document).ready(function() {
@@ -588,61 +767,79 @@ $(document).ready(function() {
     });
 });
 
+// 1. Eksekusi Scan Cepat (Scanner Fisik USB / Input Teks)
 function executeFastScan() {
     var val = $('#inputFastScan').val().trim();
     if (!val) return;
 
-    $('#scanFeedback').show().html('<i class="fas fa-spinner fa-spin mr-1"></i> Memeriksa ' + val + '...');
+    $('#scanFeedback').show().html('<i class="fas fa-spinner fa-spin mr-1"></i> Memeriksa: ' + val + '...');
 
     $.ajax({
         url: ajaxUrl,
         type: 'POST',
-        data: {
-            scan_keyword: val,
-            '<?= csrf_token(); ?>': '<?= csrf_hash(); ?>'
-        },
+        data: getAjaxPostData({
+            scan_keyword: val
+        }),
         dataType: 'json',
         success: function(res) {
+            if (res.csrf_hash) updateCsrf(res.csrf_hash);
+
             if (res.success) {
+                playBeep(true);
                 $('#scanFeedback').html('<i class="fas fa-check-circle mr-1 text-light"></i> ' + res.message);
                 $('#inputFastScan').val('').focus();
                 updateRowUI(res.item);
-                updateStatsUI(res.stats);
+                updateStatsUI(res.stats, res.room_stats);
             } else {
+                playBeep(false);
                 $('#scanFeedback').html('<i class="fas fa-exclamation-circle mr-1 text-warning"></i> ' + res.message);
                 $('#inputFastScan').select();
             }
         },
         error: function() {
+            playBeep(false);
             $('#scanFeedback').html('<i class="fas fa-times-circle mr-1 text-danger"></i> Gagal menghubungi server.');
         }
     });
 }
 
+// 2. Klik Centang Cepat Baris (Reaktif & Otomatis Terkalkulasi Tanpa Reload)
 function markItemSesuaiQuick(itemId) {
+    var btn = $('#btn-quick-sesuai-' + itemId);
+    var oldHtml = btn.html();
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
     $.ajax({
         url: ajaxUrl,
         type: 'POST',
-        data: {
+        data: getAjaxPostData({
             item_id: itemId,
-            status_audit: 'sesuai',
-            '<?= csrf_token(); ?>': '<?= csrf_hash(); ?>'
-        },
+            status_audit: 'sesuai'
+        }),
         dataType: 'json',
         success: function(res) {
+            btn.prop('disabled', false);
+            if (res.csrf_hash) updateCsrf(res.csrf_hash);
+
             if (res.success) {
+                btn.removeClass('btn-outline-success').addClass('btn-success text-white').html('<i class="fas fa-check"></i>');
+                btn.attr('title', 'Sudah Sesuai (Klik untuk Verifikasi Ulang)');
                 updateRowUI(res.item);
-                updateStatsUI(res.stats);
+                updateStatsUI(res.stats, res.room_stats);
+                playBeep(true);
             } else {
+                btn.html(oldHtml);
                 alert(res.message);
             }
         },
         error: function() {
-            alert('Gagal memperbarui status item.');
+            btn.prop('disabled', false).html(oldHtml);
+            alert('Gagal memperbarui status item. Silakan periksa koneksi Anda.');
         }
     });
 }
 
+// 3. Modal Edit Temuan Khusus
 function openModalEditItem(item) {
     $('#edit_item_id').val(item.id);
     $('#info_item_nama').text(item.nama_barang);
@@ -675,7 +872,7 @@ function onStatusAuditChange(val) {
 function submitFormUpdateItem(e) {
     e.preventDefault();
     var formData = $('#formUpdateItemAudit').serializeArray();
-    formData.push({name: '<?= csrf_token(); ?>', value: '<?= csrf_hash(); ?>'});
+    formData.push({name: csrfTokenName, value: csrfHash});
 
     $.ajax({
         url: ajaxUrl,
@@ -683,10 +880,13 @@ function submitFormUpdateItem(e) {
         data: formData,
         dataType: 'json',
         success: function(res) {
+            if (res.csrf_hash) updateCsrf(res.csrf_hash);
+
             if (res.success) {
                 $('#modalEditItemAudit').modal('hide');
                 updateRowUI(res.item);
-                updateStatsUI(res.stats);
+                updateStatsUI(res.stats, res.room_stats);
+                playBeep(true);
             } else {
                 alert(res.message);
             }
@@ -697,10 +897,12 @@ function submitFormUpdateItem(e) {
     });
 }
 
+// 4. Update Tampilan Baris Tabel Secara Instan (Bebas Reload)
 function updateRowUI(item) {
-    var row = $('#row-item-<?= '' ?>' + item.id);
+    if (!item || !item.id) return;
+
+    var row = $('#row-item-' + item.id);
     if (!row.length) {
-        location.reload();
         return;
     }
 
@@ -712,41 +914,281 @@ function updateRowUI(item) {
     if (item.status_audit === 'sesuai') {
         badgeHtml = '<span class="badge badge-success px-2 py-1 font-weight-bold"><i class="fas fa-check mr-1"></i> Sesuai</span>' +
                     '<small class="text-muted d-block mt-1">Fisik: ' + (item.kondisi_fisik || item.kondisi_sistem) + '</small>';
+        $('#btn-quick-sesuai-' + item.id).removeClass('btn-outline-success').addClass('btn-success text-white');
     } else if (item.status_audit === 'terkonfirmasi_dipinjam') {
         badgeHtml = '<span class="badge badge-warning text-dark px-2 py-1 font-weight-bold"><i class="fas fa-file-signature mr-1"></i> Terkonfirmasi Dipinjam</span>';
+        $('#btn-quick-sesuai-' + item.id).removeClass('btn-success text-white').addClass('btn-outline-success');
     } else if (item.status_audit === 'kondisi_berubah') {
         badgeHtml = '<span class="badge badge-info px-2 py-1 font-weight-bold"><i class="fas fa-exclamation-triangle mr-1"></i> Kondisi Berubah</span>' +
                     '<small class="text-danger font-weight-bold d-block mt-1">Fisik: ' + item.kondisi_fisik + '</small>';
+        $('#btn-quick-sesuai-' + item.id).removeClass('btn-success text-white').addClass('btn-outline-success');
     } else if (item.status_audit === 'salah_lokasi') {
         badgeHtml = '<span class="badge badge-secondary px-2 py-1 font-weight-bold"><i class="fas fa-exchange-alt mr-1"></i> Pindah Ruangan</span>' +
                     '<small class="text-primary font-weight-bold d-block mt-1">' + (item.ruangan_fisik_nama || 'Ruang Lain') + '</small>';
+        $('#btn-quick-sesuai-' + item.id).removeClass('btn-success text-white').addClass('btn-outline-success');
     } else if (item.status_audit === 'tidak_ditemukan') {
         badgeHtml = '<span class="badge badge-danger px-2 py-1 font-weight-bold"><i class="fas fa-times mr-1"></i> Tidak Ditemukan</span>';
+        $('#btn-quick-sesuai-' + item.id).removeClass('btn-success text-white').addClass('btn-outline-success');
     }
 
     if (item.catatan_pemeriksaan) {
         badgeHtml += '<small class="text-muted d-block font-italic" style="font-size: 0.7rem;">"' + item.catatan_pemeriksaan + '"</small>';
     }
 
-    cellStatus.html(badgeHtml);
+    if (cellStatus.length) {
+        cellStatus.html(badgeHtml);
+    }
 
-    // Animasi flash baris
-    row.css('background-color', '#ecfdf5');
+    // Animasi flash baris warna hijau lembut
+    row.css('transition', 'background-color 0.4s ease');
+    row.css('background-color', '#dcfce7');
     setTimeout(function() {
         row.css('background-color', '');
-    }, 1500);
+    }, 1200);
 }
 
-function updateStatsUI(stats) {
+// 5. Update Seluruh Kalkulasi Metrik KPI, Dropdown Partisi, dan Kartu Fokus Tanpa Reload
+function updateStatsUI(stats, roomStats) {
     if (!stats) return;
+
+    // A. Update Ubin KPI Utama di Atas
     $('#stat-total-item').text(stats.total_item);
     $('#stat-total-sesuai').text(stats.total_sesuai);
     $('#stat-total-dipinjam').text(stats.total_dipinjam);
     $('#stat-total-berubah').text(stats.total_berubah);
     $('#stat-total-selisih').text(stats.total_selisih);
     $('#stat-total-belum').text(stats.total_belum);
+
+    var totalChecked = stats.total_checked !== undefined ? stats.total_checked : (stats.total_item - stats.total_belum);
+    var persenSelesai = stats.persen_selesai !== undefined ? stats.persen_selesai : (stats.total_item > 0 ? Math.round((totalChecked / stats.total_item) * 100) : 0);
+
+    // B. Update Dropdown Selector Partisi Ruangan
+    var selectRoom = $('#selectPartitionRoom');
+    if (selectRoom.length) {
+        selectRoom.find('option[value="all"]').text('🏢 Semua Ruangan (' + totalChecked + ' / ' + stats.total_item + ' unit - ' + persenSelesai + '% Selesai)');
+
+        if (roomStats && Array.isArray(roomStats)) {
+            roomStats.forEach(function(rs) {
+                var opt = selectRoom.find('option[value="' + rs.ruangan_key + '"]');
+                if (opt.length) {
+                    var chk = rs.total_item - rs.total_belum;
+                    var isDone = (rs.total_item > 0 && rs.total_belum === 0);
+                    var icon = rs.is_dipinjam_group ? '📋' : (rs.is_non_ruangan ? '📦' : '🚪');
+                    var floor = rs.lokasi_lantai ? ' (' + rs.lokasi_lantai + ')' : '';
+                    var tagDone = isDone ? ' [✓ Selesai]' : '';
+                    opt.text(icon + ' ' + (rs.ruangan_nama || rs.nama_ruangan) + floor + ' — ' + chk + '/' + rs.total_item + ' unit (' + rs.persen + '%)' + tagDone);
+                }
+            });
+        }
+    }
+
+    // C. Update Kartu Konteks Partisi Terpilih (jika ada)
+    var currentRoomKey = $('#selectPartitionRoom').val() || 'all';
+    if (currentRoomKey !== 'all' && roomStats && Array.isArray(roomStats)) {
+        var currentRs = roomStats.find(function(r) { return String(r.ruangan_key) === String(currentRoomKey); });
+        if (currentRs) {
+            var chk = currentRs.total_item - currentRs.total_belum;
+            $('#selected-room-progress-badge').text('Selesai: ' + chk + ' / ' + currentRs.total_item + ' (' + currentRs.persen + '%)');
+            if (currentRs.total_belum === 0) {
+                $('#btn-mark-room-finished').slideUp();
+            }
+        }
+    }
 }
 
+// 6. Integrasi Scanner Kamera HP (Html5Qrcode)
+var html5QrCode = null;
+var isCameraRunning = false;
+var lastScannedCode = '';
+var lastScannedTime = 0;
+var scanCooldown = 1800; // jeda 1.8 detik antar scan
+var sessionScannedCount = 0;
+var currentFacingMode = "environment"; // Kamera Belakang Smartphone
+
+$('#btnOpenScannerModal').on('click', function() {
+    $('#modalScanCamera').modal('show');
+});
+
+$('#modalScanCamera').on('shown.bs.modal', function() {
+    startCameraScanner();
+});
+
+$('#modalScanCamera').on('hidden.bs.modal', function() {
+    stopCameraScanner();
+});
+
+function startCameraScanner() {
+    if (!window.Html5Qrcode) {
+        $('#cam-status').html('<i class="fas fa-times-circle text-danger mr-1"></i> Library scanner belum tersedia.');
+        return;
+    }
+
+    if (isCameraRunning) return;
+
+    $('#cam-status').html('<i class="fas fa-spinner fa-spin text-warning mr-1"></i> Membuka kamera...');
+    $('#scanGuideOverlay').show();
+
+    if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("qr-reader");
+    }
+
+    var config = {
+        fps: 15,
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+            var minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            var qrboxSize = Math.floor(minEdge * 0.72);
+            return {
+                width: Math.max(qrboxSize, 220),
+                height: Math.max(qrboxSize, 220)
+            };
+        },
+        aspectRatio: 1.0
+    };
+
+    html5QrCode.start(
+        { facingMode: currentFacingMode },
+        config,
+        onQrCodeScannedSuccess,
+        onQrCodeScanError
+    ).then(function() {
+        isCameraRunning = true;
+        $('#cam-status').html('<i class="fas fa-circle text-success mr-1"></i> Kamera Aktif - Arahkan ke QR BMN');
+        $('#btn-cam-text').text('Matikan');
+        $('#btn-toggle-cam').removeClass('btn-primary').addClass('btn-danger');
+
+        checkTorchCapability();
+    }).catch(function(err) {
+        isCameraRunning = false;
+        $('#scanGuideOverlay').hide();
+        $('#cam-status').html('<i class="fas fa-exclamation-triangle text-danger mr-1"></i> Izin kamera ditolak atau kamera tidak dapat diakses.');
+        console.error('Camera start error:', err);
+    });
+}
+
+function stopCameraScanner() {
+    if (html5QrCode && isCameraRunning) {
+        html5QrCode.stop().then(function() {
+            isCameraRunning = false;
+            $('#scanGuideOverlay').hide();
+            $('#cam-status').html('<i class="fas fa-circle text-secondary mr-1"></i> Kamera dimatikan');
+            $('#btn-cam-text').text('Nyalakan');
+            $('#btn-toggle-cam').removeClass('btn-danger').addClass('btn-primary');
+            $('#btn-toggle-torch').hide();
+        }).catch(function(err) {
+            console.error('Camera stop error:', err);
+        });
+    }
+}
+
+$('#btn-toggle-cam').on('click', function() {
+    if (isCameraRunning) {
+        stopCameraScanner();
+    } else {
+        startCameraScanner();
+    }
+});
+
+$('#btn-flip-cam').on('click', function() {
+    currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+    if (isCameraRunning) {
+        stopCameraScanner();
+        setTimeout(function() {
+            startCameraScanner();
+        }, 400);
+    }
+});
+
+var isTorchOn = false;
+function checkTorchCapability() {
+    try {
+        var track = html5QrCode.getRunningTrackCapabilities();
+        if (track && track.torch) {
+            $('#btn-toggle-torch').show();
+        } else {
+            $('#btn-toggle-torch').hide();
+        }
+    } catch (e) {
+        $('#btn-toggle-torch').hide();
+    }
+}
+
+$('#btn-toggle-torch').on('click', function() {
+    try {
+        isTorchOn = !isTorchOn;
+        html5QrCode.applyVideoConstraints({
+            advanced: [{ torch: isTorchOn }]
+        }).then(function() {
+            $('#torch-text').text(isTorchOn ? 'Senter ON' : 'Senter OFF');
+            if (isTorchOn) {
+                $('#btn-toggle-torch').removeClass('btn-warning text-dark').addClass('btn-light text-warning');
+            } else {
+                $('#btn-toggle-torch').removeClass('btn-light text-warning').addClass('btn-warning text-dark');
+            }
+        });
+    } catch (e) {
+        console.error('Torch error:', e);
+    }
+});
+
+function onQrCodeScannedSuccess(decodedText, decodedResult) {
+    var now = Date.now();
+    if (decodedText === lastScannedCode && (now - lastScannedTime) < scanCooldown) {
+        return;
+    }
+
+    lastScannedCode = decodedText;
+    lastScannedTime = now;
+
+    processCameraScannedCode(decodedText);
+}
+
+function onQrCodeScanError(errorMessage) {
+    // abaikan frame scanning biasa
+}
+
+function processCameraScannedCode(code) {
+    $('#cam-status').html('<i class="fas fa-spinner fa-spin text-primary mr-1"></i> Memproses: ' + code.substring(0, 22) + '...');
+
+    $.ajax({
+        url: ajaxUrl,
+        type: 'POST',
+        data: getAjaxPostData({
+            scan_keyword: code
+        }),
+        dataType: 'json',
+        success: function(res) {
+            if (res.csrf_hash) updateCsrf(res.csrf_hash);
+
+            if (res.success) {
+                playBeep(true);
+                sessionScannedCount++;
+                $('#camScanCounterText').text(sessionScannedCount + ' barang berhasil diverifikasi pada sesi ini');
+
+                var it = res.item;
+                $('#camResultTitle').text(it.nama_barang + ' (NUP: ' + (it.nup || '-') + ')');
+                $('#camResultMeta').text('Kode: ' + it.kode_barang + ' • Lokasi: ' + (it.ruangan_sistem_nama || 'Satker') + ' • Kondisi: ' + it.kondisi_sistem);
+                $('#camScanResultBox').slideDown();
+
+                $('#cam-status').html('<i class="fas fa-check-circle text-success mr-1"></i> ' + it.nama_barang + ' Sesuai!');
+
+                updateRowUI(res.item);
+                updateStatsUI(res.stats, res.room_stats);
+            } else {
+                playBeep(false);
+                $('#camResultTitle').text('Item Tidak Ditemukan');
+                $('#camResultMeta').text(res.message);
+                $('#camScanResultBox').slideDown();
+                $('#cam-status').html('<i class="fas fa-times-circle text-danger mr-1"></i> Tidak ditemukan pada audit ini');
+            }
+        },
+        error: function() {
+            playBeep(false);
+            $('#cam-status').html('<i class="fas fa-times-circle text-danger mr-1"></i> Gagal menghubungi server.');
+        }
+    });
+}
+
+// 7. Aksi Toolbar & Massal
 function confirmMarkRemainingSesuai() {
     if (confirm('Verifikasi dan tandai seluruh sisa barang yang BELUM diperiksa menjadi SESUAI? Aset yang sedang dipinjam pakai akan otomatis terkonfirmasi dipinjam.')) {
         var f = document.getElementById('formActionPost');

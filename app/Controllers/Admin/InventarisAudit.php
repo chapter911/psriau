@@ -489,8 +489,10 @@ class InventarisAudit extends BaseController
 
         if (! $item) {
             return $this->response->setJSON([
-                'success' => false, 
-                'message' => 'Item barang tidak ditemukan pada daftar target audit ini.'
+                'success'    => false, 
+                'message'    => 'Item barang tidak ditemukan pada daftar target audit ini. Periksa kembali barcode / Kode Register / NUP yang dimasukkan.',
+                'csrf_token' => csrf_token(),
+                'csrf_hash'  => csrf_hash(),
             ]);
         }
 
@@ -536,19 +538,30 @@ class InventarisAudit extends BaseController
 
         $updatedAudit = $auditModel->find($auditId);
         $updatedItem  = $itemModel->find($item['id']);
+        $roomStats    = $itemModel->getRoomStatsByAudit($auditId);
+
+        $totalItem = (int) $updatedAudit['total_item'];
+        $totalBelum = (int) $updatedAudit['total_belum'];
+        $totalChecked = $totalItem - $totalBelum;
+        $persenSelesai = $totalItem > 0 ? round(($totalChecked / $totalItem) * 100) : 0;
 
         return $this->response->setJSON([
-            'success' => true,
-            'message' => 'Status barang "' . esc($item['nama_barang']) . ' (NUP: ' . esc($item['nup']) . ')" berhasil diperbarui menjadi: ' . strtoupper(str_replace('_', ' ', $statusAudit)),
-            'item'    => $updatedItem,
-            'stats'   => [
-                'total_item'     => (int) $updatedAudit['total_item'],
+            'success'    => true,
+            'message'    => 'Status barang "' . esc($item['nama_barang']) . ' (NUP: ' . esc($item['nup']) . ')" berhasil diverifikasi menjadi: ' . strtoupper(str_replace('_', ' ', $statusAudit)),
+            'item'       => $updatedItem,
+            'stats'      => [
+                'total_item'     => $totalItem,
                 'total_sesuai'   => (int) $updatedAudit['total_sesuai'],
                 'total_berubah'  => (int) $updatedAudit['total_berubah'],
                 'total_selisih'  => (int) $updatedAudit['total_selisih'],
                 'total_dipinjam' => (int) $updatedAudit['total_dipinjam'],
-                'total_belum'    => (int) $updatedAudit['total_belum'],
+                'total_belum'    => $totalBelum,
+                'total_checked'  => $totalChecked,
+                'persen_selesai' => $persenSelesai,
             ],
+            'room_stats' => $roomStats,
+            'csrf_token' => csrf_token(),
+            'csrf_hash'  => csrf_hash(),
         ]);
     }
 
