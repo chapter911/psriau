@@ -108,6 +108,9 @@
                     <a href="<?= site_url('admin/inventaris/dbr'); ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 6px;">
                         <i class="fas fa-arrow-left mr-1"></i> Kembali
                     </a>
+                    <a href="<?= site_url('admin/inventaris/audit/mulai-ruangan/' . $room['id']); ?>" class="btn btn-warning btn-sm px-3 shadow-sm font-weight-bold text-dark" style="border-radius: 6px;" title="Mulai Sesi Audit & Stock Opname Fisik Ruangan Ini">
+                        <i class="fas fa-clipboard-check mr-1"></i> Audit Ruangan Ini
+                    </a>
                     <?php if (! empty($can_export)): ?>
                         <div class="btn-group shadow-sm">
                             <a href="<?= site_url('admin/inventaris/dbr/' . $room['id'] . '/cetak-pdf'); ?>" target="_blank" class="btn btn-danger btn-sm px-3 font-weight-bold" style="border-radius: 6px 0 0 6px;">

@@ -128,6 +128,9 @@
                                         <a href="<?= site_url('admin/inventaris/dbr/' . $r['id']); ?>" class="btn btn-info btn-xs px-2 py-1 shadow-sm" style="border-radius: 4px;" title="Kelola Isi Barang Ruangan">
                                             <i class="fas fa-boxes-stacked mr-1"></i> Kelola Barang
                                         </a>
+                                        <a href="<?= site_url('admin/inventaris/audit/mulai-ruangan/' . $r['id']); ?>" class="btn btn-warning btn-xs px-2 py-1 shadow-sm text-dark font-weight-bold" style="border-radius: 4px;" title="Audit / Stock Opname Fisik Ruangan Ini">
+                                            <i class="fas fa-clipboard-check mr-1"></i> Audit
+                                        </a>
                                         <?php if (! empty($can_export)): ?>
                                             <a href="<?= site_url('admin/inventaris/dbr/' . $r['id'] . '/cetak-pdf'); ?>" target="_blank" class="btn btn-danger btn-xs px-2 py-1 shadow-sm" style="border-radius: 4px;" title="Cetak PDF Rekap DBR">
                                                 <i class="fas fa-file-pdf mr-1"></i> PDF

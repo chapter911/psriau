@@ -463,6 +463,21 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('inventaris/tidak-terdata/cetak-pdf', 'Admin\InventarisTidakTerdata::cetakPdf');
 	$routes->get('inventaris/tidak-terdata/export-pdf', 'Admin\InventarisTidakTerdata::exportPdf');
 	$routes->get('inventaris/tidak-terdata/export-excel', 'Admin\InventarisTidakTerdata::exportExcel');
+
+	// Modul Inventarisasi - Audit & Stock Opname Aset
+	$routes->get('inventaris/audit', 'Admin\InventarisAudit::index');
+	$routes->post('inventaris/audit/create', 'Admin\InventarisAudit::create');
+	$routes->post('inventaris/audit/tambah', 'Admin\InventarisAudit::create');
+	$routes->get('inventaris/audit/mulai-ruangan/(:num)', 'Admin\InventarisAudit::mulaiRuangan/$1');
+	$routes->get('inventaris/audit/(:num)', 'Admin\InventarisAudit::detail/$1');
+	$routes->post('inventaris/audit/(:num)/update-item', 'Admin\InventarisAudit::updateItemAjax/$1');
+	$routes->post('inventaris/audit/(:num)/mark-all-sesuai', 'Admin\InventarisAudit::markRemainingSesuai/$1');
+	$routes->post('inventaris/audit/(:num)/selesai', 'Admin\InventarisAudit::selesai/$1');
+	$routes->post('inventaris/audit/(:num)/buka-kembali', 'Admin\InventarisAudit::bukaKembali/$1');
+	$routes->post('inventaris/audit/(:num)/delete', 'Admin\InventarisAudit::delete/$1');
+	$routes->post('inventaris/audit/(:num)/hapus', 'Admin\InventarisAudit::delete/$1');
+	$routes->get('inventaris/audit/(:num)/cetak-pdf', 'Admin\InventarisAudit::cetakPdf/$1');
+	$routes->get('inventaris/audit/(:num)/export-excel', 'Admin\InventarisAudit::exportExcel/$1');
 });
 
 

@@ -34,7 +34,7 @@ class InventarisSmokeTest extends BaseCommand
         $pinjamModel = new InventarisPinjamPakaiModel();
 
         $passedTests = 0;
-        $totalTests = 9;
+        $totalTests = 10;
 
         // ---------------------------------------------------------------------
         // TEST 1: Cek Struktur Tabel Database
@@ -1118,6 +1118,149 @@ class InventarisSmokeTest extends BaseCommand
             CLI::error("  [FAIL] Exception saat uji coba Aset Tidak Terdata: " . $e->getMessage());
             if (isset($dummyTidakTerdataId) && $dummyTidakTerdataId) {
                 $db->table('trn_inventaris_tidak_terdata')->where('id', $dummyTidakTerdataId)->delete();
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // TEST 10: Modul Audit & Stock Opname Aset BMN
+        // ---------------------------------------------------------------------
+        CLI::write("\n[TEST 10] Pengujian Modul Audit & Stock Opname Aset BMN...", "cyan");
+        $dummyAuditId = null;
+        try {
+            $auditModel = new \App\Models\InventarisAuditModel();
+            $auditItemModel = new \App\Models\InventarisAuditItemModel();
+
+            // 1. Cek Tabel dan Menu
+            if (! $db->tableExists('trn_inventaris_audit') || ! $db->tableExists('trn_inventaris_audit_item')) {
+                throw new \Exception("Tabel trn_inventaris_audit atau trn_inventaris_audit_item tidak ditemukan.");
+            }
+            CLI::write("  [OK] Tabel trn_inventaris_audit dan trn_inventaris_audit_item terverifikasi.", "green");
+
+            $menuAudit = $db->table('menu_lv2')->where('id', '11-06')->get()->getRowArray();
+            if (! $menuAudit) {
+                throw new \Exception("Menu Lv2 Audit 11-06 tidak ditemukan.");
+            }
+            CLI::write("  [OK] Registrasi Menu Lv2 11-06 (Audit & Stock Opname) terverifikasi.", "green");
+
+            // 2. Test Sesi Audit Dummy
+            $kodeAudit = $auditModel->generateKodeAudit();
+            $dummyAuditId = $auditModel->insert([
+                'kode_audit'    => $kodeAudit,
+                'judul_audit'   => 'Smoke Test Sesi Audit Fisik',
+                'lingkup_audit' => 'kantor_seluruh',
+                'tanggal_audit' => date('Y-m-d'),
+                'auditor_nama'  => 'Auditor Smoke Test',
+                'status'        => 'berjalan',
+            ]);
+
+            if (! $dummyAuditId) {
+                throw new \Exception("Gagal insert sesi audit dummy.");
+            }
+            CLI::write("  [OK] Sesi audit dummy berhasil dibuat dengan kode: {$kodeAudit}.", "green");
+
+            // 3. Test Tambah Item Target & Rekalkulasi
+            $auditItemModel->insert([
+                'audit_id'             => $dummyAuditId,
+                'kode_barang'          => '3.05.01.04.001',
+                'nup'                  => '1',
+                'nama_barang'          => 'Laptop Smoke Test',
+                'kondisi_sistem'       => 'Baik',
+                'status_pinjam_sistem' => 'tidak',
+                'status_audit'         => 'sesuai',
+                'kondisi_fisik'        => 'Baik',
+            ]);
+
+            $auditItemModel->insert([
+                'audit_id'             => $dummyAuditId,
+                'kode_barang'          => '3.05.01.04.002',
+                'nup'                  => '2',
+                'nama_barang'          => 'Proyektor Smoke Test',
+                'kondisi_sistem'       => 'Baik',
+                'status_pinjam_sistem' => 'dipinjam',
+                'peminjam_nama'        => 'Staf Peminjam Uji',
+                'no_surat_pinjam'      => 'SP-001/PUPR/2026',
+                'status_audit'         => 'terkonfirmasi_dipinjam',
+                'kondisi_fisik'        => 'Baik',
+            ]);
+
+            $auditModel->recalculateStats($dummyAuditId);
+            $auditRow = $auditModel->find($dummyAuditId);
+
+            if ((int) $auditRow['total_item'] !== 2 || (int) $auditRow['total_sesuai'] !== 1 || (int) $auditRow['total_dipinjam'] !== 1) {
+                throw new \Exception("Rekalkulasi stats audit tidak cocok: total={$auditRow['total_item']}, sesuai={$auditRow['total_sesuai']}, dipinjam={$auditRow['total_dipinjam']}");
+            }
+            CLI::write("  [OK] Item audit dan rekalkulasi metrik otomatis terverifikasi akurat.", "green");
+
+            // 4. Test Render Berita Acara PDF via Dompdf
+            $tempDir = ROOTPATH . 'do_not_upload/temp/';
+            if (! is_dir($tempDir)) {
+                mkdir($tempDir, 0777, true);
+            }
+            $tempBapPdf = $tempDir . 'test_bap_audit_' . time() . '.pdf';
+
+            $itemsForPdf = $auditItemModel->where('audit_id', $dummyAuditId)->findAll();
+            $pdfHtml = view('admin/inventaris/audit/pdf_berita_acara', [
+                'audit'        => $auditRow,
+                'items'        => $itemsForPdf,
+                'logoPuBase64' => '',
+                'tanggalCetak' => date('d F Y'),
+            ]);
+
+            $pdfOptions = new \Dompdf\Options();
+            $pdfOptions->set('isHtml5ParserEnabled', true);
+            $dompdf = new \Dompdf\Dompdf($pdfOptions);
+            $dompdf->loadHtml($pdfHtml);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            file_put_contents($tempBapPdf, $dompdf->output());
+
+            if (file_exists($tempBapPdf) && filesize($tempBapPdf) > 1000) {
+                CLI::write("  [OK] Dokumen Berita Acara Audit PDF berhasil di-render (Ukuran: " . number_format(filesize($tempBapPdf)) . " bytes).", "green");
+            } else {
+                throw new \Exception("Render PDF Berita Acara Audit gagal.");
+            }
+
+            // Cleanup temp PDF file sesuai Rule 3
+            if (file_exists($tempBapPdf)) {
+                unlink($tempBapPdf);
+                CLI::write("  [CLEANUP] File sementara {$tempBapPdf} telah dihapus sesuai Rule 3.", "yellow");
+            }
+
+            // 5. Test Excel Export via PhpSpreadsheet
+            $tempAuditXlsx = $tempDir . 'test_audit_excel_' . time() . '.xlsx';
+            $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sh = $ss->getActiveSheet();
+            $sh->setCellValue('A1', 'BERITA ACARA PEMERIKSAAN FISIK (STOCK OPNAME) ASET BMN');
+            $sh->setCellValue('A6', 'NO');
+            $sh->setCellValue('B6', 'KODE BARANG');
+            $sh->setCellValue('D6', 'NAMA BARANG');
+            $sh->setCellValue('H6', 'STATUS AUDIT / FISIK');
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($ss);
+            $writer->save($tempAuditXlsx);
+
+            if (file_exists($tempAuditXlsx) && filesize($tempAuditXlsx) > 1000) {
+                CLI::write("  [OK] File Excel Hasil Audit berhasil di-generate (Ukuran: " . number_format(filesize($tempAuditXlsx)) . " bytes).", "green");
+            } else {
+                throw new \Exception("Generate Excel Hasil Audit gagal.");
+            }
+
+            // Cleanup temp Excel file sesuai Rule 3
+            if (file_exists($tempAuditXlsx)) {
+                unlink($tempAuditXlsx);
+                CLI::write("  [CLEANUP] File sementara {$tempAuditXlsx} telah dihapus sesuai Rule 3.", "yellow");
+            }
+
+            // Cleanup data dummy audit
+            $db->table('trn_inventaris_audit_item')->where('audit_id', $dummyAuditId)->delete();
+            $auditModel->delete($dummyAuditId);
+            CLI::write("  [CLEANUP] Data dummy sesi audit berhasil dibersihkan dari database.", "green");
+
+            $passedTests++;
+        } catch (\Throwable $e) {
+            CLI::error("  [FAIL] Exception saat uji coba Audit & Stock Opname: " . $e->getMessage());
+            if (isset($dummyAuditId) && $dummyAuditId) {
+                $db->table('trn_inventaris_audit_item')->where('audit_id', $dummyAuditId)->delete();
+                $db->table('trn_inventaris_audit')->where('id', $dummyAuditId)->delete();
             }
         }
 

@@ -419,6 +419,7 @@ graph TD
     A --> B3["3. Pinjam Pakai Aset (/admin/inventaris/pinjam-pakai)"]
     A --> B4["4. Inventaris Sekolah (/admin/inventaris/sekolah)"]
     A --> B5["5. Aset Tidak Terdata (/admin/inventaris/tidak-terdata)"]
+    A --> B6["6. Audit &amp; Stock Opname (/admin/inventaris/audit)"]
 
     B1 --> C1["Klasifikasi Peruntukan Aset: Kantor (Satker), Mobiler (Sekolah), &amp; Item Lainnya (Peminjaman / Renovasi / Non-Ruangan)"]
     B1 --> C2["Standar BMN: 1 Kode Barang + 1 NUP = Tepat 1 Unit Fisik (Validasi Ketat Form &amp; Import)"]
@@ -430,6 +431,7 @@ graph TD
     B2 --> D3["Alokasi Aset Kantor ke Ruangan (DBR) via Scan QR / Pencarian Manual"]
     B2 --> D4["Cetak Dokumen DBR PDF (Per Ruangan / Seluruh Ruangan Detail NUP A4 Portrait) &amp; Export Excel"]
     B2 --> D5["Integrasi Metrik Real-time: Monitoring Aset Sedang Dipinjam Pakai dari Modul Pinjam Pakai"]
+    B2 --> D6["Shortcut 1-Klik 'Audit Ruangan Ini' Terkoneksi ke Modul Audit &amp; Stock Opname"]
 
     B3 --> F1["Pencatatan Pinjam Pakai Aset Kedinasan Pegawai (Aset di Luar Ruangan DBR)"]
     B3 --> F2["Penerbitan Surat Izin Pinjam Pakai BMN Resmi (PDF A4 Portrait Ber-KOP PUPR &amp; Tanda Tangan Para Pihak)"]
@@ -443,6 +445,12 @@ graph TD
     B5 --> G2["Penetapan Lokasi Penempatan Aset (Terintegrasi Master Ruangan Kantor &amp; Input Detail Ruang)"]
     B5 --> G3["Cetak &amp; Ekspor PDF Format Lampiran (A4 Portrait Tanpa Kop, Total Buah &amp; TTD Petugas Aset)"]
     B5 --> G4["Export Spreadsheet Excel (.xlsx) Lengkap dengan Lokasi &amp; Kondisi Fisik Barang"]
+
+    B6 --> H1["Fleksibilitas Lingkup Audit: Aset Kantor per Ruangan DBR, Seluruh Aset Kantor, atau Mobiler Sekolah"]
+    B6 --> H2["Deteksi Otomatis Status Pinjam Pakai Pegawai (Mencegah Salah Vonis Hilang pada Aset Kedinasan)"]
+    B6 --> H3["Metode Verifikasi Cepat: Scan Barcode / QR Code / NUP Otomatis &amp; Checklist Interaktif"]
+    B6 --> H4["Pencatatan Status Temuan Lapangan: Sesuai, Kondisi Berubah, Salah Ruangan/Pindah, &amp; Selisih Kurang"]
+    B6 --> H5["Penerbitan Berita Acara Pemeriksaan Fisik BMN (BAP Stock Opname PDF A4 Portrait &amp; Export Excel)"]
                 </pre>
             </div>
         </div>
@@ -668,7 +676,7 @@ graph TD
         <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,all">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 font-weight-bold text-primary">
-                    <i class="fas fa-boxes-stacked mr-2"></i> Modul Inventarisasi: Barang Satker, DBR, Pinjam Pakai &amp; Sekolah
+                    <i class="fas fa-boxes-stacked mr-2"></i> Modul Inventarisasi: Barang Satker, DBR, Pinjam Pakai, Sekolah &amp; Audit Aset
                 </h5>
             </div>
             <div class="card-body bg-light">
@@ -762,6 +770,38 @@ graph TD
                                     <li><strong>Pengubahan &amp; Penghapusan Data:</strong> Tombol <em>Ubah</em> (kuning) untuk memperbarui data fisik atau mutasi lokasi barang, dan tombol <em>Hapus</em> (merah) dengan dialog konfirmasi aman.</li>
                                     <li><strong>Cetak &amp; Ekspor PDF Format Lampiran (Tanpa Kop Surat):</strong> Sesuai format lampiran asli, dokumen PDF disajikan tanpa kop surat, diawali langsung dengan judul DAFTAR ASET TIDAK TERDATA, tabel data lengkap (No, Nama Barang, Buah, Merk/Type, Tahun Perolehan, Lokasi Aset, Keterangan), baris rekapitulasi Total Buah, serta blok tanda tangan Petugas Aset Tetap Hendrick Bastiar (NIP. 197810162025211023). Tersedia tombol <em>Cetak PDF</em> (pratinjau di tab baru) dan <em>Ekspor PDF</em> (unduh langsung file .pdf).</li>
                                     <li><strong>Export Excel (.xlsx):</strong> Klik tombol <em>Ekspor Excel</em> untuk mengunduh rekapitulasi lengkap dalam format spreadsheet yang rapi dan siap saji.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-md-12 mb-3">
+                        <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #0A66C2 !important;">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-clipboard-check mr-1"></i> 6. Audit &amp; Stock Opname Aset BMN</h6>
+                                <p class="small text-muted mb-2"><code>/admin/inventaris/audit</code> (Menu Lv2 Inventarisasi)</p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Audit &amp; Stock Opname</strong>. Modul ini difungsikan khusus untuk pelaksanaan pemeriksaan fisik periodik (stock opname) seluruh aset BMN kantor maupun aset bantuan mobiler sekolah binaan Satker PPS Riau.</li>
+                                    <li><strong>Ubin Metrik Global KPI:</strong> Memantau secara real-time: <em>Total Sesi Audit</em>, <em>Sedang Berjalan</em>, <em>Selesai &amp; Terkunci</em>, dan <em>Total Aset Diperiksa</em>.</li>
+                                    <li><strong>Mulai Sesi Audit Baru (3 Pilihan Lingkup Fleksibel):</strong> Klik tombol <em>Mulai Sesi Audit Baru</em>. Tentukan Judul Kegiatan, Tanggal, dan Nama Petugas Auditor. Pilih lingkup audit yang diinginkan:
+                                        <ul class="pl-3 mt-1">
+                                            <li><strong>Kantor - Per Ruangan:</strong> Memilih ruangan kantor target dari Master DBR (misal: Ruang Tata Usaha, Ruang Kepala Satker). Sistem otomatis memuat seluruh aset yang tercatat di ruangan tersebut.</li>
+                                            <li><strong>Kantor - Seluruh Aset:</strong> Menarik seluruh aset operasional kantor satker secara menyeluruh, termasuk aset yang belum terdistribusi ke ruangan maupun aset yang sedang dipinjam pakai.</li>
+                                            <li><strong>Sekolah / Mobiler:</strong> Menarik seluruh data aset mobiler sarana pendidikan binaan sekolah.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Shortcut Cepat 1-Klik dari Menu DBR:</strong> Pada halaman Detail DBR (<code>/admin/inventaris/dbr/{id}</code>) dan tabel daftar ruangan utama, tersedia tombol kuning <span class="badge badge-warning text-dark px-1.5"><i class="fas fa-clipboard-check mr-1"></i>Audit Ruangan Ini</span> yang secara otomatis langsung membuka dan menginisiasi sesi audit untuk ruangan bersangkutan tanpa perlu input manual.</li>
+                                    <li><strong>Deteksi Otomatis Aset Sedang Dipinjam Pakai Pegawai:</strong> Saat sesi audit dibentuk, sistem secara otomatis mengecek relasi ke modul <em>Pinjam Pakai</em>. Aset yang sedang sah dipinjam pegawai akan diberi badge oranye <em>Dipinjam</em> lengkap dengan nama peminjam dan nomor surat izin, sehingga petugas auditor tidak salah menetapkan aset tersebut sebagai barang hilang.</li>
+                                    <li><strong>Metode Pemeriksaan Fisik Lapangan (Workspace Audit):</strong>
+                                        <ul class="pl-3 mt-1">
+                                            <li><strong>Mode Scan Cepat (Barcode / QR Code / NUP):</strong> Kotak pemindai di bagian atas mendukung scanner barcode USB atau ketikan NUP/Kode Barang. Cukup scan barcode atau tekan Enter, sistem seketika memverifikasi dan menandai fisik aset sebagai <em>Sesuai</em> via AJAX tanpa reload halaman.</li>
+                                            <li><strong>Tombol Aksi Cepat Baris:</strong> Klik tombol centang hijau <i class="fas fa-check text-success"></i> untuk langsung memverifikasi fisik aset sebagai Sesuai.</li>
+                                            <li><strong>Pencatatan Temuan Khusus:</strong> Klik tombol edit biru <i class="fas fa-edit text-primary"></i> untuk mencatat temuan: (1) <em>Kondisi Berubah</em> (misal di buku tercatat Baik, fisik ditemukan Rusak Ringan/Rusak Berat); (2) <em>Salah Lokasi / Pindah Ruangan</em> (memilih ruangan fisik tempat barang ditemukan); (3) <em>Terkonfirmasi Dipinjam Sah</em>; atau (4) <em>Tidak Ditemukan / Hilang (Selisih Kurang)</em> beserta catatan keterangan.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Verifikasi Sisa Sesuai Massal:</strong> Klik tombol <em>Verifikasi Sisa Sesuai</em> untuk menandai seluruh sisa barang yang belum diperiksa sekaligus menjadi status Sesuai (aset pinjam pakai otomatis terkonfirmasi dipinjam).</li>
+                                    <li><strong>Penyelesaian &amp; Penguncian Sesi Audit:</strong> Setelah seluruh fisik terverifikasi, klik tombol <em>Selesaikan Audit</em> untuk mengunci data agar tidak berubah. Tersedia pula tombol <em>Buka Kembali Sesi</em> jika sewaktu-waktu diperlukan perbaikan/revisi.</li>
+                                    <li><strong>Cetak Berita Acara Stock Opname (PDF Resmi A4 Portrait):</strong> Klik tombol <em>Cetak BAP (PDF)</em> untuk mencetak Berita Acara Pemeriksaan Fisik BMN resmi lengkap dengan KOP Satker Kementerian PU, nomor berita acara, tabel rekapitulasi hasil pemeriksaan (Sesuai, Dipinjam, Berubah Kondisi, Hilang, Belum Dicek), daftar rincian temuan per item, dan kolom tanda tangan pengesahan Penanggung Jawab Ruangan serta Petugas Auditor.</li>
+                                    <li><strong>Export Excel Spreadsheet (.xlsx):</strong> Klik tombol <em>Export Excel</em> untuk mengunduh rekapitulasi lengkap hasil audit dalam format spreadsheet Excel dengan pewarnaan status temuan yang rapi.</li>
                                 </ol>
                             </div>
                         </div>
