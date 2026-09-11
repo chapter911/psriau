@@ -428,7 +428,7 @@ graph TD
 
     B2 --> D1["Kelola Master Ruangan Kantor Satker &amp; Penanggung Jawab (Fleksibel: Opsi Kosongkan / Belum Ditentukan)"]
     B2 --> D2["Kalkulasi Unit DBR Berbasis NUP Unik (COUNT DISTINCT nup, Bebas Anomali Duplikasi)"]
-    B2 --> D3["Alokasi Aset Kantor ke Ruangan (DBR) via Scan QR / Pencarian Manual"]
+    B2 --> D3["Alokasi Aset ke DBR via Scan QR Kamera HP Cerdas (Continuous Scan, Laser Reticle, Web Audio &amp; Multi-Format QR SIMAN Paritas Audit) / Manual"]
     B2 --> D4["Cetak Dokumen DBR PDF (Per Ruangan / Seluruh Ruangan Detail NUP A4 Portrait) &amp; Export Excel"]
     B2 --> D5["Integrasi Metrik Real-time: Monitoring Aset Sedang Dipinjam Pakai dari Modul Pinjam Pakai"]
     B2 --> D6["Shortcut 1-Klik 'Audit Ruangan Ini' Terkoneksi ke Modul Audit &amp; Stock Opname"]
@@ -717,7 +717,7 @@ graph TD
                                     <li><strong>Alokasi Khusus Aset Kantor:</strong> Sistem secara otomatis menyaring aset unallocated agar hanya barang ber-peruntukan <strong>Kantor</strong> yang dialokasikan ke ruangan kantor Satker (aset mobiler sekolah disaring agar tidak tercampur).</li>
                                     <li><strong>Alokasikan Barang (Scan QR Code &amp; Alokasi Manual):</strong>
                                         <ul class="pl-3 mt-1">
-                                            <li><strong>Scan QR Code / Register (Mobile Scanner Cepat):</strong> Memindai stiker fisik QR SIMAN BMN menggunakan kamera smartphone (Android/iOS) atau scanner barcode fisik USB/Bluetooth. Dilengkapi optimasi mobile: otomatis langsung mengaktifkan kamera belakang (rear camera) via native WebRTC <code>facingMode: "environment"</code> tanpa layar hitam, auto-adaptive aspect ratio, rendering inline (playsinline) bebas hambatan, tampilan bidik (viewfinder) layar penuh diperbesar dengan reticle corner, tombol <em>Ganti Kamera</em> 1-tap, tombol <em>Flash/Senter</em> di ruangan temaram, serta umpan balik audio beep dan getaran (haptic) instan.</li>
+                                            <li><strong>Scan QR Code / Register (Mobile Scanner Cepat Paritas Audit):</strong> Memindai stiker fisik QR SIMAN BMN atau barcode aset menggunakan arsitektur scanner kamera HP modern yang terpadu dan identik dengan modul Audit (continuous live scanning tanpa reload atau konfirmasi klik manual berulang, modal gelap elegan dengan laser reticle animasi presisi tinggi, umpan balik Web Audio API beep, auto rear-camera, tombol senter/flashlight, dan dukungan multi-format: URL SIMAN BMN, 32-hex register, Kode.NUP, Kode|NUP, maupun barcode USB). Aset yang discan otomatis langsung dialokasikan ke ruangan secara real-time dan modal dapat terus digunakan memindai aset berikutnya tanpa jeda.</li>
                                             <li><strong>Alokasikan Manual:</strong> Modal alokasi aset dengan bilah pencarian cepat (Nama, Kode, NUP, Merk, Register), filter kondisi, retention centang lintas halaman/pencarian, selection summary toolbar, serta <strong>pengurutan NUP numerik murni yang selalu berurutan (1, 2, 3... 13, 14...)</strong> secara terintegrasi dengan kode barang.</li>
                                         </ul>
                                     </li>

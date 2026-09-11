@@ -608,6 +608,181 @@ class InventarisDbr extends BaseController
         ]);
     }
 
+    /**
+     * Endpoint terpadu untuk alokasi cepat via Scan QR Kamera HP / Barcode USB (Metode identik dengan Audit)
+     */
+    public function scanProcess(int $ruanganId)
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $this->response->setJSON([
+                'success'    => false, 
+                'message'    => 'Sesi login telah berakhir atau akses ditolak.',
+                'csrf_token' => csrf_token(),
+                'csrf_hash'  => csrf_hash(),
+            ])->setStatusCode(403);
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (! (bool) ($menuPermissions['add'] ?? false) && ! (bool) ($menuPermissions['edit'] ?? false)) {
+            return $this->response->setJSON([
+                'success'    => false, 
+                'message'    => 'Anda tidak memiliki hak akses untuk mengalokasikan barang.',
+                'csrf_token' => csrf_token(),
+                'csrf_hash'  => csrf_hash(),
+            ])->setStatusCode(403);
+        }
+
+        $code = trim((string) ($this->request->getPost('scan_keyword') ?? $this->request->getPost('code') ?? ''));
+        if ($code === '') {
+            return $this->response->setJSON([
+                'success'    => false, 
+                'message'    => 'Kode QR / barcode tidak boleh kosong.',
+                'csrf_token' => csrf_token(),
+                'csrf_hash'  => csrf_hash(),
+            ]);
+        }
+
+        $roomModel = new MstRuanganModel();
+        $room = $roomModel->find($ruanganId);
+        if (! is_array($room)) {
+            return $this->response->setJSON([
+                'success'    => false, 
+                'message'    => 'Data ruangan tujuan tidak ditemukan.',
+                'csrf_token' => csrf_token(),
+                'csrf_hash'  => csrf_hash(),
+            ]);
+        }
+
+        $db = db_connect();
+
+        // 1. Deteksi apakah scan QR mengandung Kode Register SIMAN (32-hex) atau URL SIMAN
+        $hexCode = null;
+        if (preg_match('/([a-f0-9]{32})/i', $code, $matches)) {
+            $hexCode = strtoupper($matches[1]);
+        }
+
+        $item = null;
+        if ($hexCode !== null || strlen($code) >= 20) {
+            $codeToFind = $hexCode ?: $code;
+            $item = $db->table('trn_inventaris_satker')
+                ->where('kode_register', $codeToFind)
+                ->get()
+                ->getRowArray();
+        }
+
+        // 2. Format umum QR: "KODE|NUP"
+        if (! $item && str_contains($code, '|')) {
+            $parts = explode('|', $code);
+            $kb = trim($parts[0] ?? '');
+            $nup = trim($parts[1] ?? '');
+            if ($kb !== '' && $nup !== '') {
+                $item = $db->table('trn_inventaris_satker')
+                    ->where('kode_barang', $kb)
+                    ->where('nup', $nup)
+                    ->get()
+                    ->getRowArray();
+            }
+        }
+
+        // 3. Format Kode Barang (10 digit) + pemisah + NUP (misal 3050104001.1 atau 3050104001-5)
+        if (! $item && preg_match('/^(\d{10})[^\d]+(\d+)$/', $code, $m)) {
+            $item = $db->table('trn_inventaris_satker')
+                ->where('kode_barang', $m[1])
+                ->where('nup', $m[2])
+                ->get()
+                ->getRowArray();
+        }
+
+        // 4. Exact kode_register
+        if (! $item) {
+            $item = $db->table('trn_inventaris_satker')
+                ->where('kode_register', $code)
+                ->get()
+                ->getRowArray();
+        }
+
+        // 5. Pure NUP numerik (jika integer)
+        if (! $item && ctype_digit($code) && strlen($code) <= 6) {
+            $item = $db->table('trn_inventaris_satker')
+                ->where('nup', $code)
+                ->get()
+                ->getRowArray();
+        }
+
+        // 6. Exact kode_barang
+        if (! $item) {
+            $item = $db->table('trn_inventaris_satker')
+                ->where('kode_barang', $code)
+                ->orderBy('nup', 'ASC')
+                ->limit(1)
+                ->get()
+                ->getRowArray();
+        }
+
+        if (! $item) {
+            return $this->response->setJSON([
+                'success'    => false, 
+                'message'    => "Barang dengan kode \"{$code}\" tidak ditemukan dalam database inventaris satker.",
+                'csrf_token' => csrf_token(),
+                'csrf_hash'  => csrf_hash(),
+            ]);
+        }
+
+        $isAlready = ((int) ($item['ruangan_id'] ?? 0) === $ruanganId);
+        if ($isAlready) {
+            return $this->response->setJSON([
+                'success'    => true,
+                'already'    => true,
+                'message'    => "Aset \"{$item['nama_barang']}\" (NUP: " . ($item['nup'] ?: '-') . ") sudah berada di ruangan {$room['nama_ruangan']}.",
+                'item'       => [
+                    'id'             => (int) $item['id'],
+                    'nama_barang'    => $item['nama_barang'],
+                    'kode_barang'    => $item['kode_barang'],
+                    'nup'            => $item['nup'],
+                    'kondisi'        => $item['kondisi'],
+                    'lokasi_ruangan' => $room['nama_ruangan'],
+                    'merk_tipe'      => $item['merk_tipe'] ?: '-',
+                ],
+                'csrf_token' => csrf_token(),
+                'csrf_hash'  => csrf_hash(),
+            ]);
+        }
+
+        // Alokasikan ke ruangan ini
+        $userId = (int) (session()->get('userId') ?? 0);
+        $db->table('trn_inventaris_satker')
+            ->where('id', $item['id'])
+            ->update([
+                'ruangan_id'     => $ruanganId,
+                'lokasi_ruangan' => $room['nama_ruangan'],
+                'updated_at'     => date('Y-m-d H:i:s'),
+                'updated_by'     => $userId ?: null,
+            ]);
+
+        $totalUnitNow = (int) $db->table('trn_inventaris_satker')
+            ->where('ruangan_id', $ruanganId)
+            ->countAllResults();
+
+        return $this->response->setJSON([
+            'success'        => true,
+            'already'        => false,
+            'message'        => "Berhasil menempatkan \"{$item['nama_barang']}\" (NUP: " . ($item['nup'] ?: '-') . ") ke ruangan {$room['nama_ruangan']}.",
+            'total_unit_now' => $totalUnitNow,
+            'item'           => [
+                'id'             => (int) $item['id'],
+                'nama_barang'    => $item['nama_barang'],
+                'kode_barang'    => $item['kode_barang'],
+                'nup'            => $item['nup'],
+                'kondisi'        => $item['kondisi'],
+                'lokasi_ruangan' => $room['nama_ruangan'],
+                'merk_tipe'      => $item['merk_tipe'] ?: '-',
+            ],
+            'csrf_token'     => csrf_token(),
+            'csrf_hash'      => csrf_hash(),
+        ]);
+    }
+
     public function cetakPdf(int $ruanganId)
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);

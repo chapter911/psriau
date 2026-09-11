@@ -422,6 +422,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('inventaris/dbr/(:num)/keluarkan-barang', 'Admin\\InventarisDbr::keluarkanBarang/$1');
 	$routes->post('inventaris/dbr/(:num)/scan-lookup', 'Admin\\InventarisDbr::scanLookup/$1');
 	$routes->post('inventaris/dbr/(:num)/scan-alokasi', 'Admin\\InventarisDbr::scanAlokasi/$1');
+	$routes->post('inventaris/dbr/(:num)/scan-process', 'Admin\\InventarisDbr::scanProcess/$1');
 	$routes->get('inventaris/dbr/(:num)/cetak-pdf', 'Admin\\InventarisDbr::cetakPdf/$1');
 	$routes->get('inventaris/dbr/(:num)/export-excel', 'Admin\\InventarisDbr::exportExcel/$1');
 

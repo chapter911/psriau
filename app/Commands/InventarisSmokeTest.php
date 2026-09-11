@@ -240,7 +240,7 @@ class InventarisSmokeTest extends BaseCommand
 
             // Uji ketersediaan library html5-qrcode dan modal scanner di detail.php
             $detailViewContent = file_get_contents(APPPATH . 'Views/admin/inventaris/dbr/detail.php');
-            $hasQrModal = (strpos($detailViewContent, 'id="modal-scan-qr"') !== false);
+            $hasQrModal = (strpos($detailViewContent, 'id="modalScanCamera"') !== false || strpos($detailViewContent, 'id="modal-scan-qr"') !== false);
             $hasQrLib = file_exists(FCPATH . 'assets/adminlte/plugins/html5-qrcode/html5-qrcode.min.js');
 
             if ($hasQrModal && $hasQrLib) {
