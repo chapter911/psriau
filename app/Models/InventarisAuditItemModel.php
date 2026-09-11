@@ -47,7 +47,11 @@ class InventarisAuditItemModel extends Model
         $builder = $this->where('audit_id', $auditId);
 
         if (! empty($filters['status_audit']) && $filters['status_audit'] !== 'semua') {
-            $builder->where('status_audit', $filters['status_audit']);
+            if ($filters['status_audit'] === 'sudah_diperiksa') {
+                $builder->where('status_audit !=', 'belum_diperiksa');
+            } else {
+                $builder->where('status_audit', $filters['status_audit']);
+            }
         }
 
         if (! empty($filters['status_pinjam']) && $filters['status_pinjam'] !== 'semua') {

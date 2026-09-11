@@ -322,20 +322,28 @@
                 <ul class="nav nav-pills small" style="gap: 4px;">
                     <?php
                         $activeTab = $filterStatusAudit;
-                        $tabLinks = [
-                            'semua'                  => 'Semua (' . count($items) . ')',
-                            'belum_diperiksa'        => 'Belum Diperiksa',
-                            'sesuai'                 => 'Sesuai',
-                            'terkonfirmasi_dipinjam' => 'Dipinjam',
-                            'kondisi_berubah'        => 'Kondisi Berubah',
-                            'salah_lokasi'           => 'Salah Lokasi',
-                            'tidak_ditemukan'        => 'Tidak Ditemukan',
+                        $totalItem = (int) $audit['total_item'];
+                        $totalBelum = (int) $audit['total_belum'];
+                        $totalSudah = $totalItem - $totalBelum;
+                        
+                        $tabList = [
+                            'belum_diperiksa'        => ['label' => '⏳ Belum Diperiksa', 'count' => $totalBelum, 'badge' => 'badge-warning text-dark', 'id' => 'tab-count-belum'],
+                            'sudah_diperiksa'        => ['label' => '✅ Sudah Diperiksa', 'count' => $totalSudah, 'badge' => 'badge-success', 'id' => 'tab-count-sudah'],
+                            'semua'                  => ['label' => '📋 Semua Target', 'count' => $totalItem, 'badge' => 'badge-secondary', 'id' => 'tab-count-semua'],
+                            'sesuai'                 => ['label' => 'Sesuai', 'count' => (int) $audit['total_sesuai'], 'badge' => 'badge-light border', 'id' => 'tab-count-sesuai'],
+                            'terkonfirmasi_dipinjam' => ['label' => 'Dipinjam', 'count' => (int) $audit['total_dipinjam'], 'badge' => 'badge-light border', 'id' => 'tab-count-dipinjam'],
+                            'kondisi_berubah'        => ['label' => 'Kondisi Berubah', 'count' => (int) $audit['total_berubah'], 'badge' => 'badge-light border', 'id' => 'tab-count-berubah'],
+                            'salah_lokasi'           => ['label' => 'Salah Lokasi', 'count' => null, 'badge' => '', 'id' => ''],
+                            'tidak_ditemukan'        => ['label' => 'Tidak Ditemukan', 'count' => (int) $audit['total_selisih'], 'badge' => 'badge-light border text-danger', 'id' => 'tab-count-selisih'],
                         ];
                     ?>
-                    <?php foreach ($tabLinks as $key => $label): ?>
+                    <?php foreach ($tabList as $key => $t): ?>
                         <li class="nav-item">
-                            <a class="nav-link py-1 px-2.5 <?= ($activeTab === $key) ? 'active' : 'text-dark bg-light'; ?>" style="border-radius: 6px;" href="<?= site_url('admin/inventaris/audit/' . $audit['id'] . '?ruangan=' . esc($activeRuangan) . '&status_audit=' . $key . (! empty($keyword) ? '&q=' . esc($keyword) : '')); ?>">
-                                <?= $label; ?>
+                            <a class="nav-link py-1 px-2.5 <?= ($activeTab === $key) ? 'active font-weight-bold shadow-sm' : 'text-dark bg-light'; ?>" style="border-radius: 6px;" href="<?= site_url('admin/inventaris/audit/' . $audit['id'] . '?ruangan=' . esc($activeRuangan) . '&status_audit=' . $key . (! empty($keyword) ? '&q=' . esc($keyword) : '')); ?>">
+                                <?= $t['label']; ?>
+                                <?php if ($t['count'] !== null): ?>
+                                    <span class="badge <?= ($activeTab === $key) ? 'badge-light text-primary' : $t['badge']; ?> ml-1" id="<?= $t['id']; ?>"><?= $t['count']; ?></span>
+                                <?php endif; ?>
                             </a>
                         </li>
                     <?php endforeach; ?>
@@ -717,6 +725,9 @@
 var ajaxUrl = '<?= site_url('admin/inventaris/audit/' . $audit['id'] . '/update-item'); ?>';
 var csrfTokenName = '<?= csrf_token(); ?>';
 var csrfHash = '<?= csrf_hash(); ?>';
+var currentFilterStatus = '<?= esc($filterStatusAudit); ?>';
+var currentActiveRuangan = '<?= esc($activeRuangan); ?>';
+var isInternalSyncing = false;
 
 function updateCsrf(newHash) {
     if (newHash) {
@@ -939,15 +950,57 @@ function updateRowUI(item) {
         cellStatus.html(badgeHtml);
     }
 
-    // Animasi flash baris warna hijau lembut
-    row.css('transition', 'background-color 0.4s ease');
-    row.css('background-color', '#dcfce7');
-    setTimeout(function() {
-        row.css('background-color', '');
-    }, 1200);
+    // Animasi flash baris warna hijau lembut konfirmasi
+    row.css('transition', 'background-color 0.3s ease');
+    row.css('background-color', '#bbf7d0');
+
+    // Jika tab aktif BUKAN 'sudah_diperiksa', hilangkan baris ini dari tabel aktif setelah jeda 350ms
+    // sehingga baris otomatis berpindah ke tab "Sudah Diperiksa"
+    if (currentFilterStatus !== 'sudah_diperiksa' && item.status_audit !== 'belum_diperiksa') {
+        setTimeout(function() {
+            row.fadeOut(350, function() {
+                row.remove();
+                updateRowNumbering();
+                checkEmptyTableNotice();
+            });
+        }, 350);
+    } else {
+        setTimeout(function() {
+            row.css('background-color', '');
+        }, 1200);
+    }
 }
 
-// 5. Update Seluruh Kalkulasi Metrik KPI, Dropdown Partisi, dan Kartu Fokus Tanpa Reload
+// Merapikan kembali nomor urut tabel secara dinamis
+function updateRowNumbering() {
+    $('#tableAuditItems tbody tr.item-row:visible').each(function(idx) {
+        $(this).find('td:first').text(idx + 1);
+    });
+}
+
+// Memberikan notifikasi tampilan bersih jika seluruh item pada filter ini telah selesai diperiksa
+function checkEmptyTableNotice() {
+    var tbody = $('#tableAuditItems tbody');
+    var remainingRows = tbody.find('tr.item-row:visible');
+    if (remainingRows.length === 0) {
+        if ($('#row-empty-table').length === 0) {
+            var sudahDiperiksaUrl = '<?= site_url('admin/inventaris/audit/' . $audit['id'] . '?ruangan=' . esc($activeRuangan) . '&status_audit=sudah_diperiksa' . (! empty($keyword) ? '&q=' . esc($keyword) : '')); ?>';
+            var emptyHtml = '<tr id="row-empty-table">' +
+                '<td colspan="8" class="text-center py-5 text-muted">' +
+                '<i class="fas fa-check-circle fa-3x mb-3 text-success d-block" style="opacity: 0.85;"></i>' +
+                '<h5 class="font-weight-bold text-dark mb-1">Seluruh Aset pada Tampilan Ini Telah Selesai Diperiksa!</h5>' +
+                '<p class="text-muted small mb-3">Tidak ada lagi aset yang perlu diperiksa pada filter ini.</p>' +
+                '<a href="' + sudahDiperiksaUrl + '" class="btn btn-sm btn-success font-weight-bold shadow-sm px-3" style="border-radius: 6px;">' +
+                '<i class="fas fa-clipboard-check mr-1"></i> Buka Tab Sudah Diperiksa' +
+                '</a>' +
+                '</td>' +
+                '</tr>';
+            tbody.append(emptyHtml);
+        }
+    }
+}
+
+// 5. Update Seluruh Kalkulasi Metrik KPI, Tab Badge, Dropdown Partisi, dan Kartu Fokus Tanpa Reload
 function updateStatsUI(stats, roomStats) {
     if (!stats) return;
 
@@ -962,10 +1015,20 @@ function updateStatsUI(stats, roomStats) {
     var totalChecked = stats.total_checked !== undefined ? stats.total_checked : (stats.total_item - stats.total_belum);
     var persenSelesai = stats.persen_selesai !== undefined ? stats.persen_selesai : (stats.total_item > 0 ? Math.round((totalChecked / stats.total_item) * 100) : 0);
 
-    // B. Update Dropdown Selector Partisi Ruangan
+    // B. Update Seluruh Badge Angka pada Tab Filter
+    $('#tab-count-belum').text(stats.total_belum);
+    $('#tab-count-sudah').text(totalChecked);
+    $('#tab-count-semua').text(stats.total_item);
+    $('#tab-count-sesuai').text(stats.total_sesuai);
+    $('#tab-count-dipinjam').text(stats.total_dipinjam);
+    $('#tab-count-berubah').text(stats.total_berubah);
+    $('#tab-count-selisih').text(stats.total_selisih);
+
+    // C. Update Dropdown Selector Partisi Ruangan
     var selectRoom = $('#selectPartitionRoom');
     if (selectRoom.length) {
-        selectRoom.find('option[value="all"]').text('🏢 Semua Ruangan (' + totalChecked + ' / ' + stats.total_item + ' unit - ' + persenSelesai + '% Selesai)');
+        var allText = '🏢 Semua Ruangan (' + totalChecked + ' / ' + stats.total_item + ' unit - ' + persenSelesai + '% Selesai)';
+        selectRoom.find('option[value="all"]').text(allText);
 
         if (roomStats && Array.isArray(roomStats)) {
             roomStats.forEach(function(rs) {
@@ -980,9 +1043,36 @@ function updateStatsUI(stats, roomStats) {
                 }
             });
         }
+
+        // PENTING: Update teks visual Select2 rendered yang tampil di layar!
+        var selectedOpt = selectRoom.find('option:selected');
+        var currentActiveText = selectedOpt.length ? selectedOpt.text() : allText;
+
+        // Cari elemen Select2 rendered container
+        var s2Container = selectRoom.next('.select2-container');
+        var s2Rendered = s2Container.length ? s2Container.find('.select2-selection__rendered') : $('#select2-selectPartitionRoom-container');
+        
+        if (s2Rendered.length) {
+            var clearBtn = s2Rendered.find('.select2-selection__clear');
+            if (clearBtn.length) {
+                // Hapus node teks saja agar tombol clear (x) tetap utuh
+                s2Rendered.contents().filter(function() { return this.nodeType === 3; }).remove();
+                s2Rendered.append(document.createTextNode(' ' + currentActiveText.trim()));
+            } else {
+                s2Rendered.text(currentActiveText);
+            }
+            s2Rendered.attr('title', currentActiveText);
+        }
+
+        // Sinkronkan internal event Select2 dengan proteksi guard agar tidak memicu reload onchange
+        isInternalSyncing = true;
+        try {
+            selectRoom.trigger('change.select2');
+        } catch (e) {}
+        isInternalSyncing = false;
     }
 
-    // C. Update Kartu Konteks Partisi Terpilih (jika ada)
+    // D. Update Kartu Konteks Partisi Terpilih (jika ada)
     var currentRoomKey = $('#selectPartitionRoom').val() || 'all';
     if (currentRoomKey !== 'all' && roomStats && Array.isArray(roomStats)) {
         var currentRs = roomStats.find(function(r) { return String(r.ruangan_key) === String(currentRoomKey); });
@@ -1198,6 +1288,7 @@ function confirmMarkRemainingSesuai() {
 }
 
 function onSelectRoomPartition(ruanganKey) {
+    if (isInternalSyncing) return;
     var baseUrl = '<?= site_url('admin/inventaris/audit/' . $audit['id']); ?>';
     var params = new URLSearchParams();
     params.set('ruangan', ruanganKey);
