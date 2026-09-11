@@ -355,10 +355,11 @@
                     <!-- Target Selection: Sekolah (Opsional / Seluruh Sekolah) -->
                     <div id="target_sekolah_wrapper" class="form-group mb-3" style="display: none;">
                         <label class="font-weight-bold text-dark">Pilih Sekolah Binaan (Opsional)</label>
-                        <select name="sekolah_id" id="select_sekolah_id" class="form-control" style="border-radius: 6px;">
+                        <select name="sekolah_npsn" id="select_sekolah_npsn" class="form-control" style="border-radius: 6px;">
                             <option value="">-- Seluruh Sekolah Binaan (Semua Mobiler) --</option>
                             <?php foreach ($sekolahList as $s): ?>
-                                <option value="<?= esc($s['id']); ?>"><?= esc($s['nama']); ?> <?= ! empty($s['kabupaten_kota']) ? '(' . esc($s['kabupaten_kota']) . ')' : ''; ?></option>
+                                <?php $npsnVal = $s['npsn'] ?? ($s['id'] ?? ''); ?>
+                                <option value="<?= esc($npsnVal); ?>"><?= esc($s['nama'] ?? '-'); ?> <?= ! empty($s['kabupaten']) ? '(' . esc($s['kabupaten']) . ')' : (! empty($s['kabupaten_kota']) ? '(' . esc($s['kabupaten_kota']) . ')' : ''); ?></option>
                             <?php endforeach; ?>
                         </select>
                         <small class="text-muted">Pilih sekolah tertentu atau biarkan opsi default untuk mengaudit seluruh sekolah.</small>

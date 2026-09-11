@@ -122,6 +122,9 @@ class InventarisAudit extends BaseController
         $paketId     = $this->request->getPost('paket_id');
         $paketId     = (! empty($paketId) && is_numeric($paketId)) ? (int) $paketId : null;
         $sekolahNpsn = trim((string) ($this->request->getPost('sekolah_npsn') ?? '')) ?: null;
+        if (empty($sekolahNpsn)) {
+            $sekolahNpsn = trim((string) ($this->request->getPost('sekolah_id') ?? '')) ?: null;
+        }
         $sekolahNama = null;
 
         if ($lingkupAudit === 'sekolah' && ! empty($sekolahNpsn)) {
