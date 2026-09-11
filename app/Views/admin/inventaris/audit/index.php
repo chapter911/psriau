@@ -1,6 +1,38 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
+<style>
+.audit-scope-card {
+    border: 1.5px solid #e2e8f0 !important;
+    background-color: #ffffff;
+    border-radius: 10px !important;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    margin-bottom: 0;
+}
+.audit-scope-card:hover {
+    border-color: #007bff !important;
+    background-color: #f8fbff;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.08) !important;
+}
+.audit-scope-card.active-scope {
+    border-color: #007bff !important;
+    background-color: #f0f7ff !important;
+    box-shadow: 0 0 0 1px #007bff, 0 4px 12px rgba(0, 123, 255, 0.12) !important;
+}
+.audit-scope-card .custom-control {
+    padding-left: 1.6rem;
+}
+.audit-scope-card .custom-control-label {
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+.audit-scope-card .custom-control-label::before,
+.audit-scope-card .custom-control-label::after {
+    top: 0.18rem;
+    left: -1.6rem;
+}
+</style>
 <div class="container-fluid">
 
     <!-- KPI Summary Widgets -->
@@ -217,7 +249,12 @@
                                                 </a>
                                             <?php endif; ?>
                                             <?php if ($menuPermissions['delete'] ?? false): ?>
-                                                <button type="button" class="btn btn-outline-danger btn-xs px-2 py-1 shadow-sm" onclick="confirmDeleteAudit(<?= $a['id']; ?>, '<?= esc($a['kode_audit']); ?>')" title="Hapus Sesi Audit">
+                                                <button type="button" 
+                                                        class="btn btn-outline-danger btn-xs px-2 py-1 shadow-sm btn-delete-audit" 
+                                                        data-id="<?= $a['id']; ?>" 
+                                                        data-kode="<?= esc($a['kode_audit']); ?>" 
+                                                        data-judul="<?= esc($a['judul_audit']); ?>" 
+                                                        title="Hapus Sesi Audit">
                                                     <i class="fas fa-trash-alt"></i>
                                                 </button>
                                             <?php endif; ?>
@@ -260,34 +297,46 @@
                     </div>
 
                     <div class="form-group mb-3">
-                        <label class="font-weight-bold text-dark d-block">Pilih Lingkup Audit <span class="text-danger">*</span></label>
+                        <label class="font-weight-bold text-dark d-block mb-2">Pilih Lingkup Audit <span class="text-danger">*</span></label>
                         <div class="row">
                             <div class="col-md-4 mb-2">
-                                <div class="custom-control custom-radio p-2 border rounded" style="cursor: pointer;">
-                                    <input type="radio" id="lingkup_ruangan" name="lingkup_audit" value="kantor_ruangan" class="custom-control-input" checked onchange="toggleLingkupInput(this.value)">
-                                    <label class="custom-control-label font-weight-bold text-dark" for="lingkup_ruangan" style="cursor: pointer;">
-                                        <i class="fas fa-door-open text-info mr-1"></i> Kantor - Per Ruangan
-                                    </label>
-                                    <small class="text-muted d-block ml-4">Audit aset yang berlokasi pada ruangan DBR tertentu.</small>
-                                </div>
+                                <label class="audit-scope-card d-flex flex-column h-100 p-3 border rounded shadow-sm" for="lingkup_ruangan">
+                                    <div class="custom-control custom-radio mb-1">
+                                        <input type="radio" id="lingkup_ruangan" name="lingkup_audit" value="kantor_ruangan" class="custom-control-input" checked>
+                                        <span class="custom-control-label font-weight-bold text-dark">
+                                            <i class="fas fa-door-open text-info mr-1"></i> Kantor - Per Ruangan
+                                        </span>
+                                    </div>
+                                    <small class="text-muted d-block" style="padding-left: 1.6rem; font-size: 0.8rem; line-height: 1.35;">
+                                        Audit aset yang berlokasi pada ruangan DBR tertentu.
+                                    </small>
+                                </label>
                             </div>
                             <div class="col-md-4 mb-2">
-                                <div class="custom-control custom-radio p-2 border rounded" style="cursor: pointer;">
-                                    <input type="radio" id="lingkup_seluruh" name="lingkup_audit" value="kantor_seluruh" class="custom-control-input" onchange="toggleLingkupInput(this.value)">
-                                    <label class="custom-control-label font-weight-bold text-dark" for="lingkup_seluruh" style="cursor: pointer;">
-                                        <i class="fas fa-building text-primary mr-1"></i> Kantor - Seluruh Aset
-                                    </label>
-                                    <small class="text-muted d-block ml-4">Semua aset kantor (termasuk yang dipinjam & non-ruangan).</small>
-                                </div>
+                                <label class="audit-scope-card d-flex flex-column h-100 p-3 border rounded shadow-sm" for="lingkup_seluruh">
+                                    <div class="custom-control custom-radio mb-1">
+                                        <input type="radio" id="lingkup_seluruh" name="lingkup_audit" value="kantor_seluruh" class="custom-control-input">
+                                        <span class="custom-control-label font-weight-bold text-dark">
+                                            <i class="fas fa-building text-primary mr-1"></i> Kantor - Seluruh Aset
+                                        </span>
+                                    </div>
+                                    <small class="text-muted d-block" style="padding-left: 1.6rem; font-size: 0.8rem; line-height: 1.35;">
+                                        Semua aset kantor (termasuk yang dipinjam & non-ruangan).
+                                    </small>
+                                </label>
                             </div>
                             <div class="col-md-4 mb-2">
-                                <div class="custom-control custom-radio p-2 border rounded" style="cursor: pointer;">
-                                    <input type="radio" id="lingkup_sekolah" name="lingkup_audit" value="sekolah" class="custom-control-input" onchange="toggleLingkupInput(this.value)">
-                                    <label class="custom-control-label font-weight-bold text-dark" for="lingkup_sekolah" style="cursor: pointer;">
-                                        <i class="fas fa-school text-warning mr-1"></i> Sekolah / Mobiler
-                                    </label>
-                                    <small class="text-muted d-block ml-4">Seluruh aset mobiler binaan sekolah.</small>
-                                </div>
+                                <label class="audit-scope-card d-flex flex-column h-100 p-3 border rounded shadow-sm" for="lingkup_sekolah">
+                                    <div class="custom-control custom-radio mb-1">
+                                        <input type="radio" id="lingkup_sekolah" name="lingkup_audit" value="sekolah" class="custom-control-input">
+                                        <span class="custom-control-label font-weight-bold text-dark">
+                                            <i class="fas fa-school text-warning mr-1"></i> Sekolah / Mobiler
+                                        </span>
+                                    </div>
+                                    <small class="text-muted d-block" style="padding-left: 1.6rem; font-size: 0.8rem; line-height: 1.35;">
+                                        Seluruh aset mobiler binaan sekolah.
+                                    </small>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -301,6 +350,18 @@
                                 <option value="<?= esc($r['id']); ?>"><?= esc($r['kode_ruangan']); ?> - <?= esc($r['nama_ruangan']); ?> <?= ! empty($r['lokasi_lantai']) ? '(' . esc($r['lokasi_lantai']) . ')' : ''; ?></option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+
+                    <!-- Target Selection: Sekolah (Opsional / Seluruh Sekolah) -->
+                    <div id="target_sekolah_wrapper" class="form-group mb-3" style="display: none;">
+                        <label class="font-weight-bold text-dark">Pilih Sekolah Binaan (Opsional)</label>
+                        <select name="sekolah_id" id="select_sekolah_id" class="form-control" style="border-radius: 6px;">
+                            <option value="">-- Seluruh Sekolah Binaan (Semua Mobiler) --</option>
+                            <?php foreach ($sekolahList as $s): ?>
+                                <option value="<?= esc($s['id']); ?>"><?= esc($s['nama']); ?> <?= ! empty($s['kabupaten_kota']) ? '(' . esc($s['kabupaten_kota']) . ')' : ''; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="text-muted">Pilih sekolah tertentu atau biarkan opsi default untuk mengaudit seluruh sekolah.</small>
                     </div>
 
                     <div class="row">
@@ -330,33 +391,90 @@
     </div>
 </div>
 
-<!-- Form Delete Audit -->
-<form id="formDeleteAudit" action="" method="post" style="display: none;">
-    <?= csrf_field(); ?>
-</form>
+<!-- Modal Konfirmasi Hapus Sesi Audit -->
+<div class="modal fade" id="modalDeleteAudit" tabindex="-1" role="dialog" aria-labelledby="modalDeleteAuditLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none;">
+            <form id="formDeleteAudit" action="" method="post">
+                <?= csrf_field(); ?>
+                <div class="modal-header bg-danger text-white py-3">
+                    <h5 class="modal-title font-weight-bold" id="modalDeleteAuditLabel">
+                        <i class="fas fa-trash-alt mr-2"></i>Konfirmasi Hapus Sesi Audit
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5 class="font-weight-bold text-dark mb-1">Hapus Sesi Audit Ini?</h5>
+                    <p class="text-danger font-weight-bold mb-1" id="delKodeAudit" style="font-size: 1.15rem;"></p>
+                    <p class="text-muted small mb-3" id="delJudulAudit"></p>
+                    <div class="alert alert-warning text-left small mb-0 py-2">
+                        <i class="fas fa-info-circle mr-1"></i> <strong>Perhatian:</strong> Seluruh data checklist fisik, temuan aset, dan catatan pemeriksaan pada sesi audit ini akan dihapus secara permanen.
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 justify-content-center">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm font-weight-bold">
+                        <i class="fas fa-trash-alt mr-1"></i> Ya, Hapus Sekarang
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <?= $this->endSection(); ?>
 
-<?= $this->section('scripts'); ?>
+<?= $this->section('pageScripts'); ?>
 <script>
 function toggleLingkupInput(val) {
     var rWrapper = document.getElementById('target_ruangan_wrapper');
     var rSelect  = document.getElementById('select_ruangan_id');
+    var sWrapper = document.getElementById('target_sekolah_wrapper');
+
     if (val === 'kantor_ruangan') {
-        rWrapper.style.display = 'block';
-        rSelect.setAttribute('required', 'required');
+        if (rWrapper) rWrapper.style.display = 'block';
+        if (rSelect) rSelect.setAttribute('required', 'required');
+        if (sWrapper) sWrapper.style.display = 'none';
+    } else if (val === 'sekolah') {
+        if (rWrapper) rWrapper.style.display = 'none';
+        if (rSelect) rSelect.removeAttribute('required');
+        if (sWrapper) sWrapper.style.display = 'block';
     } else {
-        rWrapper.style.display = 'none';
-        rSelect.removeAttribute('required');
+        if (rWrapper) rWrapper.style.display = 'none';
+        if (rSelect) rSelect.removeAttribute('required');
+        if (sWrapper) sWrapper.style.display = 'none';
     }
 }
 
-function confirmDeleteAudit(id, kode) {
-    if (confirm('Apakah Anda yakin ingin menghapus sesi audit ' + kode + '? Seluruh catatan pemeriksaan pada sesi ini akan terhapus.')) {
-        var f = document.getElementById('formDeleteAudit');
-        f.action = '<?= site_url('admin/inventaris/audit'); ?>/' + id + '/delete';
-        f.submit();
+$(document).ready(function() {
+    function syncScopeCards() {
+        var checkedRadio = $('input[name="lingkup_audit"]:checked');
+        var checkedVal = checkedRadio.val();
+        $('.audit-scope-card').removeClass('active-scope');
+        checkedRadio.closest('.audit-scope-card').addClass('active-scope');
+        toggleLingkupInput(checkedVal);
     }
-}
+
+    $('input[name="lingkup_audit"]').on('change', function() {
+        syncScopeCards();
+    });
+    syncScopeCards();
+
+    // Event listener modal delete
+    $(document).on('click', '.btn-delete-audit', function(e) {
+        e.preventDefault();
+        var id    = $(this).data('id');
+        var kode  = $(this).data('kode');
+        var judul = $(this).data('judul');
+
+        $('#delKodeAudit').text(kode);
+        $('#delJudulAudit').text(judul || '');
+        $('#formDeleteAudit').attr('action', '<?= site_url('admin/inventaris/audit'); ?>/' + id + '/delete');
+        $('#modalDeleteAudit').modal('show');
+    });
+});
 </script>
 <?= $this->endSection(); ?>

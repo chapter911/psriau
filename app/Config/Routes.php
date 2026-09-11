@@ -474,8 +474,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('inventaris/audit/(:num)/mark-all-sesuai', 'Admin\InventarisAudit::markRemainingSesuai/$1');
 	$routes->post('inventaris/audit/(:num)/selesai', 'Admin\InventarisAudit::selesai/$1');
 	$routes->post('inventaris/audit/(:num)/buka-kembali', 'Admin\InventarisAudit::bukaKembali/$1');
-	$routes->post('inventaris/audit/(:num)/delete', 'Admin\InventarisAudit::delete/$1');
-	$routes->post('inventaris/audit/(:num)/hapus', 'Admin\InventarisAudit::delete/$1');
+	$routes->match(['get', 'post'], 'inventaris/audit/(:num)/delete', 'Admin\InventarisAudit::delete/$1');
+	$routes->match(['get', 'post'], 'inventaris/audit/(:num)/hapus', 'Admin\InventarisAudit::delete/$1');
 	$routes->get('inventaris/audit/(:num)/cetak-pdf', 'Admin\InventarisAudit::cetakPdf/$1');
 	$routes->get('inventaris/audit/(:num)/export-excel', 'Admin\InventarisAudit::exportExcel/$1');
 });

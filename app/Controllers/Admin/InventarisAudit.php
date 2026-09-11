@@ -595,11 +595,17 @@ class InventarisAudit extends BaseController
             return redirect()->to('/admin/inventaris/audit')->with('error', 'Anda tidak memiliki hak akses untuk menghapus sesi audit.');
         }
 
+        $auditModel = new InventarisAuditModel();
+        $audit = $auditModel->find($auditId);
+        if (! $audit) {
+            return redirect()->to('/admin/inventaris/audit')->with('error', 'Sesi audit tidak ditemukan.');
+        }
+
         $db = db_connect();
         $db->table('trn_inventaris_audit_item')->where('audit_id', $auditId)->delete();
         $db->table('trn_inventaris_audit')->where('id', $auditId)->delete();
 
-        return redirect()->to('/admin/inventaris/audit')->with('message', 'Sesi audit berhasil dihapus.');
+        return redirect()->to('/admin/inventaris/audit')->with('message', 'Sesi audit ' . esc($audit['kode_audit']) . ' berhasil dihapus.');
     }
 
     public function cetakPdf(int $auditId)
@@ -876,14 +882,37 @@ class InventarisAudit extends BaseController
             'approval' => false,
         ];
 
+        $rawRole = (string) session()->get('role');
+        $normalizedRole = strtolower(trim($rawRole));
+
         $db = db_connect();
         if (! $db->tableExists('menu_akses')) {
+            if (in_array($normalizedRole, ['super administrator', 'super_administrator', 'superadmin', 'super-admin', 'admin', 'administrator'], true)) {
+                return [
+                    'add'      => true,
+                    'edit'     => true,
+                    'delete'   => true,
+                    'export'   => true,
+                    'import'   => true,
+                    'approval' => true,
+                ];
+            }
             return $default;
         }
 
-        $roleId = $this->resolveRoleId((string) session()->get('role'), $db);
+        $roleId = $this->resolveRoleId($rawRole, $db);
         $menuId = $this->resolveMenuIdByLink($menuLink, $db);
         if ($roleId === null || $menuId === null) {
+            if (in_array($normalizedRole, ['super administrator', 'super_administrator', 'superadmin', 'super-admin', 'admin', 'administrator'], true)) {
+                return [
+                    'add'      => true,
+                    'edit'     => true,
+                    'delete'   => true,
+                    'export'   => true,
+                    'import'   => true,
+                    'approval' => true,
+                ];
+            }
             return $default;
         }
 
@@ -896,6 +925,16 @@ class InventarisAudit extends BaseController
             ->getRowArray();
 
         if (! is_array($row)) {
+            if (in_array($roleId, [1, 2], true) || in_array($normalizedRole, ['super administrator', 'super_administrator', 'superadmin', 'super-admin', 'admin', 'administrator'], true)) {
+                return [
+                    'add'      => true,
+                    'edit'     => true,
+                    'delete'   => true,
+                    'export'   => true,
+                    'import'   => true,
+                    'approval' => true,
+                ];
+            }
             return $default;
         }
 
@@ -911,19 +950,45 @@ class InventarisAudit extends BaseController
 
     private function resolveRoleId(string $role, $db): ?int
     {
-        $role = trim($role);
-        if ($role === '') {
+        $normalized = strtolower(trim($role));
+        if ($normalized === '') {
             return null;
         }
 
-        if (is_numeric($role)) {
-            return (int) $role;
+        if (is_numeric($normalized)) {
+            return (int) $normalized;
+        }
+
+        if ($db->tableExists('access_roles')) {
+            $variants = [$normalized];
+            if ($normalized === 'super administrator') {
+                $variants[] = 'super_administrator';
+                $variants[] = 'super-admin';
+                $variants[] = 'superadmin';
+            } elseif ($normalized === 'super_administrator' || $normalized === 'super-admin' || $normalized === 'superadmin') {
+                $variants[] = 'super administrator';
+                $variants[] = 'super_administrator';
+                $variants[] = 'super-admin';
+                $variants[] = 'superadmin';
+            }
+
+            $row = $db->table('access_roles')
+                ->select('id')
+                ->whereIn('role_key', array_values(array_unique($variants)))
+                ->where('is_active', 1)
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (int) $row['id'];
+            }
         }
 
         if ($db->tableExists('groups')) {
             $group = $db->table('groups')
                 ->select('id')
-                ->where('name', $role)
+                ->where('name', $normalized)
                 ->get()
                 ->getRowArray();
 
@@ -934,24 +999,31 @@ class InventarisAudit extends BaseController
 
         $map = [
             'super_administrator' => 1,
+            'super administrator' => 1,
             'superadmin'          => 1,
+            'super-admin'         => 1,
             'admin'               => 2,
+            'administrator'       => 2,
             'verifikator'         => 3,
             'staf'                => 4,
             'kepala_satker'       => 5,
         ];
 
-        return $map[$role] ?? null;
+        return $map[$normalized] ?? null;
     }
 
     private function resolveMenuIdByLink(string $menuLink, $db): ?string
     {
-        $cleanLink = trim($menuLink, '/');
+        $cleanLink = trim(strtolower($menuLink), '/');
 
-        if ($db->tableExists('menu_lv2')) {
-            $row = $db->table('menu_lv2')
+        foreach (['menu_lv3', 'menu_lv2', 'menu_lv1'] as $table) {
+            if (! $db->tableExists($table)) {
+                continue;
+            }
+
+            $row = $db->table($table)
                 ->select('id')
-                ->where('link', $cleanLink)
+                ->where('LOWER(TRIM(link))', $cleanLink)
                 ->get()
                 ->getRowArray();
 

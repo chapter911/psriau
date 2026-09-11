@@ -802,6 +802,7 @@ graph TD
                                     <li><strong>Penyelesaian &amp; Penguncian Sesi Audit:</strong> Setelah seluruh fisik terverifikasi, klik tombol <em>Selesaikan Audit</em> untuk mengunci data agar tidak berubah. Tersedia pula tombol <em>Buka Kembali Sesi</em> jika sewaktu-waktu diperlukan perbaikan/revisi.</li>
                                     <li><strong>Cetak Berita Acara Stock Opname (PDF Resmi A4 Portrait):</strong> Klik tombol <em>Cetak BAP (PDF)</em> untuk mencetak Berita Acara Pemeriksaan Fisik BMN resmi lengkap dengan KOP Satker Kementerian PU, nomor berita acara, tabel rekapitulasi hasil pemeriksaan (Sesuai, Dipinjam, Berubah Kondisi, Hilang, Belum Dicek), daftar rincian temuan per item, dan kolom tanda tangan pengesahan Penanggung Jawab Ruangan serta Petugas Auditor.</li>
                                     <li><strong>Export Excel Spreadsheet (.xlsx):</strong> Klik tombol <em>Export Excel</em> untuk mengunduh rekapitulasi lengkap hasil audit dalam format spreadsheet Excel dengan pewarnaan status temuan yang rapi.</li>
+                                    <li><strong>Penghapusan Sesi Audit:</strong> Pengguna dengan izin <code>FiturDelete</code> (sesuai aturan tabel <code>menu_akses</code>) dapat menghapus sesi audit baik langsung dari tombol hapus di tabel utama maupun dari dalam workspace audit. Konfirmasi dilakukan melalui modal interaktif yang aman untuk mencegah ketidaksengajaan.</li>
                                 </ol>
                             </div>
                         </div>

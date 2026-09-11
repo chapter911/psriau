@@ -68,6 +68,12 @@
                             <i class="fas fa-file-excel mr-1"></i> Export Excel
                         </a>
                     <?php endif; ?>
+
+                    <?php if ($menuPermissions['delete'] ?? false): ?>
+                        <button type="button" class="btn btn-outline-danger btn-sm font-weight-bold shadow-sm btn-delete-audit" data-id="<?= $audit['id']; ?>" data-kode="<?= esc($audit['kode_audit']); ?>" data-judul="<?= esc($audit['judul_audit']); ?>" style="border-radius: 6px;" title="Hapus Sesi Audit">
+                            <i class="fas fa-trash-alt mr-1"></i> Hapus Sesi
+                        </button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -365,6 +371,40 @@
     </div>
 </div>
 
+<!-- Modal Konfirmasi Hapus Sesi Audit -->
+<div class="modal fade" id="modalDeleteAudit" tabindex="-1" role="dialog" aria-labelledby="modalDeleteAuditLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none;">
+            <form id="formDeleteAudit" action="<?= site_url('admin/inventaris/audit/' . $audit['id'] . '/delete'); ?>" method="post">
+                <?= csrf_field(); ?>
+                <div class="modal-header bg-danger text-white py-3">
+                    <h5 class="modal-title font-weight-bold" id="modalDeleteAuditLabel">
+                        <i class="fas fa-trash-alt mr-2"></i>Konfirmasi Hapus Sesi Audit
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5 class="font-weight-bold text-dark mb-1">Hapus Sesi Audit Ini?</h5>
+                    <p class="text-danger font-weight-bold mb-1" style="font-size: 1.15rem;"><?= esc($audit['kode_audit']); ?></p>
+                    <p class="text-muted small mb-3"><?= esc($audit['judul_audit']); ?></p>
+                    <div class="alert alert-warning text-left small mb-0 py-2">
+                        <i class="fas fa-info-circle mr-1"></i> <strong>Perhatian:</strong> Seluruh data checklist fisik, temuan aset, dan catatan pemeriksaan pada sesi audit ini akan dihapus secara permanen.
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 justify-content-center">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm font-weight-bold">
+                        <i class="fas fa-trash-alt mr-1"></i> Ya, Hapus Sekarang
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Forms for actions -->
 <form id="formActionPost" action="" method="post" style="display: none;">
     <?= csrf_field(); ?>
@@ -372,7 +412,7 @@
 
 <?= $this->endSection(); ?>
 
-<?= $this->section('scripts'); ?>
+<?= $this->section('pageScripts'); ?>
 <script>
 var ajaxUrl = '<?= site_url('admin/inventaris/audit/' . $audit['id'] . '/update-item'); ?>';
 
@@ -574,5 +614,10 @@ function confirmBukaKembaliAudit() {
         f.submit();
     }
 }
+
+$(document).on('click', '.btn-delete-audit', function(e) {
+    e.preventDefault();
+    $('#modalDeleteAudit').modal('show');
+});
 </script>
 <?= $this->endSection(); ?>
