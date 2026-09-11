@@ -271,7 +271,7 @@
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
                             <td style="width: 60%; vertical-align: middle;">
-                                <strong style="font-size: 8.5pt; color: #1e3a8a;">RUANGAN: <?= esc(strtoupper($rs['ruangan_nama'])); ?></strong>
+                                <strong style="font-size: 8.5pt; color: #1e3a8a;">RUANGAN: <?= esc(strtoupper($rs['ruangan_nama'] ?? $rs['nama_ruangan'] ?? 'Ruangan')); ?></strong>
                                 <?php if (! empty($rs['lokasi_lantai'])): ?>
                                     <span style="font-size: 7.2pt; color: #64748b;">(<?= esc($rs['lokasi_lantai']); ?>)</span>
                                 <?php endif; ?>
@@ -359,7 +359,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="row-subtotal">
-                            <td colspan="4" style="text-align: right;">Subtotal Ruangan <?= esc($rs['ruangan_nama']); ?>:</td>
+                            <td colspan="4" style="text-align: right;">Subtotal Ruangan <?= esc($rs['ruangan_nama'] ?? $rs['nama_ruangan'] ?? 'Ruangan'); ?>:</td>
                             <td colspan="4">
                                 <strong><?= count($roomItems); ?> Unit Aset</strong>
                                 (Sesuai: <?= (int) $rs['total_sesuai']; ?>, Dipinjam: <?= (int) $rs['total_dipinjam']; ?>, Berubah: <?= (int) $rs['total_berubah']; ?>, Selisih: <?= (int) $rs['total_selisih']; ?>, Belum: <?= (int) $rs['total_belum']; ?>)

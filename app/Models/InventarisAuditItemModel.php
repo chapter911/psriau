@@ -131,10 +131,13 @@ class InventarisAuditItemModel extends Model
             $selesai = $tot - $blm;
             $pct = $tot > 0 ? round(($selesai / $tot) * 100) : 0;
 
+            $roomName = $rInfo ? $rInfo['nama_ruangan'] : $rNama;
+
             $result[] = [
                 'ruangan_id'             => $rId,
                 'ruangan_key'            => $rId !== null ? (string) $rId : 'non_ruangan',
-                'nama_ruangan'           => $rInfo ? $rInfo['nama_ruangan'] : $rNama,
+                'ruangan_nama'           => $roomName,
+                'nama_ruangan'           => $roomName,
                 'kode_ruangan'           => $rInfo ? $rInfo['kode_ruangan'] : '',
                 'penanggung_jawab_nama'  => $rInfo ? $rInfo['penanggung_jawab_nama'] : null,
                 'penanggung_jawab_nip'   => $rInfo ? $rInfo['penanggung_jawab_nip'] : null,

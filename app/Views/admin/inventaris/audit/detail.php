@@ -175,7 +175,7 @@
                             <div>
                                 <div class="font-weight-bold" style="font-size: 0.84rem;">
                                     <i class="fas fa-door-closed mr-1 <?= $isRoomActive ? 'text-white' : ($isRoomDone ? 'text-success' : 'text-secondary'); ?>"></i>
-                                    <?= esc($rs['ruangan_nama']); ?>
+                                    <?= esc($rs['ruangan_nama'] ?? $rs['nama_ruangan'] ?? 'Ruangan'); ?>
                                 </div>
                                 <div class="d-flex align-items-center" style="gap: 6px;">
                                     <small class="<?= $isRoomActive ? 'text-white-50' : 'text-muted'; ?>" style="font-size: 0.7rem;">
@@ -209,7 +209,7 @@
                                 <i class="fas fa-door-open mr-1"></i> FOKUS RUANGAN
                             </span>
                             <h4 class="font-weight-bold text-dark mb-0" style="font-size: 1.15rem;">
-                                <?= esc($selectedRoomInfo['ruangan_nama']); ?>
+                                <?= esc($selectedRoomInfo['ruangan_nama'] ?? $selectedRoomInfo['nama_ruangan'] ?? 'Ruangan'); ?>
                             </h4>
                         </div>
                         <div class="text-muted small d-flex flex-wrap align-items-center" style="gap: 12px;">
@@ -225,7 +225,7 @@
                             Selesai: <?= $selectedRoomInfo['total_item'] - $selectedRoomInfo['total_belum']; ?> / <?= $selectedRoomInfo['total_item']; ?> (<?= $selectedRoomInfo['persen']; ?>%)
                         </span>
                         <?php if ($audit['status'] === 'berjalan' && $selectedRoomInfo['total_belum'] > 0 && ($menuPermissions['edit'] ?? false)): ?>
-                            <button type="button" class="btn btn-outline-success btn-sm font-weight-bold shadow-sm" onclick="confirmMarkRuanganSesuai('<?= esc($selectedRoomInfo['ruangan_key']); ?>', '<?= esc($selectedRoomInfo['ruangan_nama']); ?>')" style="border-radius: 6px;">
+                            <button type="button" class="btn btn-outline-success btn-sm font-weight-bold shadow-sm" onclick="confirmMarkRuanganSesuai('<?= esc($selectedRoomInfo['ruangan_key']); ?>', '<?= esc($selectedRoomInfo['ruangan_nama'] ?? $selectedRoomInfo['nama_ruangan'] ?? 'Ruangan'); ?>')" style="border-radius: 6px;">
                                 <i class="fas fa-check-double mr-1"></i> Tandai Sisa Ruangan Ini Selesai
                             </button>
                         <?php endif; ?>
