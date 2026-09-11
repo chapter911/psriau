@@ -271,14 +271,21 @@
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
                             <td style="width: 60%; vertical-align: middle;">
-                                <strong style="font-size: 8.5pt; color: #1e3a8a;">RUANGAN: <?= esc(strtoupper($rs['ruangan_nama'] ?? $rs['nama_ruangan'] ?? 'Ruangan')); ?></strong>
-                                <?php if (! empty($rs['lokasi_lantai'])): ?>
-                                    <span style="font-size: 7.2pt; color: #64748b;">(<?= esc($rs['lokasi_lantai']); ?>)</span>
+                                <?php if (! empty($rs['is_dipinjam_group'])): ?>
+                                    <strong style="font-size: 8.5pt; color: #b45309;">📋 ASET YANG SEDANG DIPINJAM PEGAWAI</strong>
+                                    <div style="font-size: 7pt; color: #78350f; margin-top: 1px;">
+                                        Kategori: <strong>Aset Pinjam Pakai Sah (Di Luar Ruangan Fisik)</strong>
+                                    </div>
+                                <?php else: ?>
+                                    <strong style="font-size: 8.5pt; color: #1e3a8a;">RUANGAN: <?= esc(strtoupper($rs['ruangan_nama'] ?? $rs['nama_ruangan'] ?? 'Ruangan')); ?></strong>
+                                    <?php if (! empty($rs['lokasi_lantai'])): ?>
+                                        <span style="font-size: 7.2pt; color: #64748b;">(<?= esc($rs['lokasi_lantai']); ?>)</span>
+                                    <?php endif; ?>
+                                    <div style="font-size: 7pt; color: #334155; margin-top: 1px;">
+                                        Penanggung Jawab: <strong><?= esc($rs['penanggung_jawab_nama'] ?: 'Petugas Ruangan'); ?></strong>
+                                        <?= ! empty($rs['penanggung_jawab_nip']) ? ' (NIP: ' . esc($rs['penanggung_jawab_nip']) . ')' : ''; ?>
+                                    </div>
                                 <?php endif; ?>
-                                <div style="font-size: 7pt; color: #334155; margin-top: 1px;">
-                                    Penanggung Jawab: <strong><?= esc($rs['penanggung_jawab_nama'] ?: 'Petugas Ruangan'); ?></strong>
-                                    <?= ! empty($rs['penanggung_jawab_nip']) ? ' (NIP: ' . esc($rs['penanggung_jawab_nip']) . ')' : ''; ?>
-                                </div>
                             </td>
                             <td style="width: 40%; text-align: right; vertical-align: middle;">
                                 <span class="room-unit-badge">

@@ -125,99 +125,130 @@
         </div>
     </div>
 
-    <!-- Room Navigation Tabs / Pills (Divided per Ruangan) -->
+    <!-- Room Partition Selector (Dropdown Mode) -->
     <?php if (! empty($roomStats)): ?>
-        <div class="card shadow-sm mb-3" style="border-radius: 12px; border: 1px solid #e2e8f0;">
-            <div class="card-header bg-white py-2 px-3 border-bottom d-flex flex-wrap justify-content-between align-items-center" style="gap: 8px;">
-                <div class="d-flex align-items-center">
-                    <span class="font-weight-bold text-dark mr-2" style="font-size: 0.92rem;">
-                        <i class="fas fa-door-open text-primary mr-1"></i> Partisi Ruangan Audit
-                    </span>
-                    <span class="badge badge-light border text-muted small"><?= count($roomStats); ?> Ruangan Terlibat</span>
-                </div>
-                <div class="small text-muted">
-                    Klik salah satu ruangan di bawah untuk fokus memeriksa aset di ruangan tersebut:
-                </div>
-            </div>
-            <div class="card-body p-2.5">
-                <div class="d-flex flex-wrap" style="gap: 8px;">
-                    <!-- Pill: Semua Ruangan -->
-                    <?php
-                        $isAllActive = ($activeRuangan === 'all');
-                        $totalAuditItems = (int) $audit['total_item'];
-                        $totalAuditChecked = $totalAuditItems - (int) $audit['total_belum'];
-                        $allPercent = $totalAuditItems > 0 ? round(($totalAuditChecked / $totalAuditItems) * 100) : 0;
-                    ?>
-                    <a href="<?= site_url('admin/inventaris/audit/' . $audit['id'] . '?ruangan=all' . ($filterStatusAudit !== 'semua' ? '&status_audit=' . esc($filterStatusAudit) : '') . (! empty($keyword) ? '&q=' . esc($keyword) : '')); ?>"
-                       class="btn btn-sm <?= $isAllActive ? 'btn-primary shadow-sm' : 'btn-outline-secondary'; ?> d-flex align-items-center"
-                       style="border-radius: 8px; padding: 6px 12px; gap: 8px;">
-                        <div>
-                            <div class="font-weight-bold" style="font-size: 0.84rem;"><i class="fas fa-building mr-1"></i> Semua Ruangan</div>
-                            <small class="<?= $isAllActive ? 'text-white-50' : 'text-muted'; ?>" style="font-size: 0.7rem;">
-                                <?= $totalAuditChecked; ?> / <?= $totalAuditItems; ?> unit (<?= $allPercent; ?>%)
-                            </small>
-                        </div>
-                        <?php if ($allPercent === 100): ?>
-                            <span class="badge badge-success px-1.5 py-0.5"><i class="fas fa-check"></i></span>
-                        <?php endif; ?>
-                    </a>
+        <?php
+            $totalAuditItems = (int) $audit['total_item'];
+            $totalAuditChecked = $totalAuditItems - (int) $audit['total_belum'];
+            $allPercent = $totalAuditItems > 0 ? round(($totalAuditChecked / $totalAuditItems) * 100) : 0;
+            $selectedRoomKey = (string) ($activeRuangan ?: 'all');
 
-                    <!-- Pills per Room -->
-                    <?php foreach ($roomStats as $rs): ?>
-                        <?php
-                            $isRoomActive = ($activeRuangan === $rs['ruangan_key']);
-                            $isRoomDone = ($rs['total_item'] > 0 && $rs['total_belum'] === 0);
-                            $checkedCount = $rs['total_item'] - $rs['total_belum'];
-                        ?>
-                        <a href="<?= site_url('admin/inventaris/audit/' . $audit['id'] . '?ruangan=' . esc($rs['ruangan_key']) . ($filterStatusAudit !== 'semua' ? '&status_audit=' . esc($filterStatusAudit) : '') . (! empty($keyword) ? '&q=' . esc($keyword) : '')); ?>"
-                           class="btn btn-sm <?= $isRoomActive ? 'btn-primary shadow-sm' : ($isRoomDone ? 'btn-light border-success text-dark' : 'btn-light border text-dark'); ?> d-flex align-items-center position-relative"
-                           style="border-radius: 8px; padding: 6px 12px; gap: 8px; text-align: left;">
-                            <div>
-                                <div class="font-weight-bold" style="font-size: 0.84rem;">
-                                    <i class="fas fa-door-closed mr-1 <?= $isRoomActive ? 'text-white' : ($isRoomDone ? 'text-success' : 'text-secondary'); ?>"></i>
-                                    <?= esc($rs['ruangan_nama'] ?? $rs['nama_ruangan'] ?? 'Ruangan'); ?>
-                                </div>
-                                <div class="d-flex align-items-center" style="gap: 6px;">
-                                    <small class="<?= $isRoomActive ? 'text-white-50' : 'text-muted'; ?>" style="font-size: 0.7rem;">
-                                        <?= $checkedCount; ?> / <?= $rs['total_item']; ?> unit (<?= $rs['persen']; ?>%)
-                                    </small>
-                                    <div class="progress" style="width: 45px; height: 5px; border-radius: 3px; background-color: <?= $isRoomActive ? 'rgba(255,255,255,0.3)' : '#e2e8f0'; ?>;">
-                                        <div class="progress-bar <?= $isRoomDone ? 'bg-success' : ($isRoomActive ? 'bg-white' : 'bg-primary'); ?>" style="width: <?= $rs['persen']; ?>%;"></div>
-                                    </div>
-                                </div>
+            // Kelompokkan ruangan fisik vs aset pinjam / lainnya
+            $ruanganFisik = [];
+            $ruanganKhusus = [];
+            foreach ($roomStats as $rs) {
+                if (! empty($rs['is_dipinjam_group']) || ! empty($rs['is_non_ruangan'])) {
+                    $ruanganKhusus[] = $rs;
+                } else {
+                    $ruanganFisik[] = $rs;
+                }
+            }
+        ?>
+        <div class="card shadow-sm mb-3" style="border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff;">
+            <div class="card-body py-2.5 px-3">
+                <div class="row align-items-center">
+                    <div class="col-lg-7 col-md-8 mb-2 mb-md-0">
+                        <div class="d-flex align-items-center">
+                            <label for="selectPartitionRoom" class="font-weight-bold text-dark mb-0 mr-2 text-nowrap" style="font-size: 0.88rem;">
+                                <i class="fas fa-door-open text-primary mr-1"></i> Partisi Ruangan:
+                            </label>
+                            <div class="flex-grow-1">
+                                <select id="selectPartitionRoom" class="form-control form-control-sm font-weight-bold text-dark" style="border-radius: 8px; border: 1.5px solid #cbd5e1; height: 38px; font-size: 0.86rem;" onchange="onSelectRoomPartition(this.value)">
+                                    <option value="all" <?= $selectedRoomKey === 'all' ? 'selected' : ''; ?>>
+                                        🏢 Semua Ruangan (<?= $totalAuditChecked; ?> / <?= $totalAuditItems; ?> unit - <?= $allPercent; ?>% Selesai)
+                                    </option>
+
+                                    <?php if (! empty($ruanganFisik)): ?>
+                                        <optgroup label="── RUANGAN KANTOR ──">
+                                            <?php foreach ($ruanganFisik as $rs): ?>
+                                                <?php
+                                                    $checked = $rs['total_item'] - $rs['total_belum'];
+                                                    $isDone = ($rs['total_item'] > 0 && $rs['total_belum'] === 0);
+                                                    $tagDone = $isDone ? ' [✓ Selesai]' : '';
+                                                ?>
+                                                <option value="<?= esc($rs['ruangan_key']); ?>" <?= ($selectedRoomKey === (string)$rs['ruangan_key']) ? 'selected' : ''; ?>>
+                                                    🚪 <?= esc($rs['ruangan_nama'] ?? $rs['nama_ruangan'] ?? 'Ruangan'); ?><?= ! empty($rs['lokasi_lantai']) ? ' (' . esc($rs['lokasi_lantai']) . ')' : ''; ?> &mdash; <?= $checked; ?>/<?= $rs['total_item']; ?> unit (<?= $rs['persen']; ?>%)<?= $tagDone; ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
+
+                                    <?php if (! empty($ruanganKhusus)): ?>
+                                        <optgroup label="── PEMINJAMAN & LAINNYA ──">
+                                            <?php foreach ($ruanganKhusus as $rs): ?>
+                                                <?php
+                                                    $checked = $rs['total_item'] - $rs['total_belum'];
+                                                    $isDone = ($rs['total_item'] > 0 && $rs['total_belum'] === 0);
+                                                    $tagDone = $isDone ? ' [✓ Selesai]' : '';
+                                                    $icon = ! empty($rs['is_dipinjam_group']) ? '📋' : '📦';
+                                                ?>
+                                                <option value="<?= esc($rs['ruangan_key']); ?>" <?= ($selectedRoomKey === (string)$rs['ruangan_key']) ? 'selected' : ''; ?>>
+                                                    <?= $icon; ?> <?= esc($rs['ruangan_nama'] ?? $rs['nama_ruangan'] ?? 'Ruangan'); ?> &mdash; <?= $checked; ?>/<?= $rs['total_item']; ?> unit (<?= $rs['persen']; ?>%)<?= $tagDone; ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
+                                </select>
                             </div>
-                            <?php if ($isRoomDone): ?>
-                                <span class="badge <?= $isRoomActive ? 'badge-light text-primary' : 'badge-success'; ?> px-1.5 py-0.5" title="Ruangan selesai diperiksa">
-                                    <i class="fas fa-check"></i>
-                                </span>
-                            <?php endif; ?>
-                        </a>
-                    <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <div class="col-lg-5 col-md-4 d-flex justify-content-md-end align-items-center" style="gap: 8px;">
+                        <?php if ($selectedRoomKey !== 'all'): ?>
+                            <a href="<?= site_url('admin/inventaris/audit/' . $audit['id'] . '?ruangan=all' . ($filterStatusAudit !== 'semua' ? '&status_audit=' . esc($filterStatusAudit) : '') . (! empty($keyword) ? '&q=' . esc($keyword) : '')); ?>" class="btn btn-outline-secondary btn-sm" style="border-radius: 6px; font-size: 0.8rem;" title="Kembali ke semua ruangan">
+                                <i class="fas fa-times mr-1"></i> Tampilkan Semua
+                            </a>
+                        <?php endif; ?>
+                        <span class="badge badge-light border text-muted py-2 px-2.5" style="border-radius: 6px; font-size: 0.78rem;">
+                            <i class="fas fa-layer-group text-primary mr-1"></i> <?= count($roomStats); ?> Partisi Terdaftar
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     <?php endif; ?>
 
-    <!-- Selected Room Context Card (when focusing on a specific room) -->
+    <!-- Selected Room Context Card (when focusing on a specific partition) -->
     <?php if ($selectedRoomInfo): ?>
-        <div class="card shadow-sm mb-3" style="border-radius: 12px; border-left: 5px solid #0A66C2; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+        <?php
+            $isDipinjamGrp = ! empty($selectedRoomInfo['is_dipinjam_group']);
+            $isNonRuanganGrp = ! empty($selectedRoomInfo['is_non_ruangan']);
+            $cardBorderColor = $isDipinjamGrp ? '#f59e0b' : ($isNonRuanganGrp ? '#64748b' : '#0A66C2');
+            $roomTitle = $selectedRoomInfo['ruangan_nama'] ?? $selectedRoomInfo['nama_ruangan'] ?? 'Ruangan';
+        ?>
+        <div class="card shadow-sm mb-3" style="border-radius: 12px; border-left: 5px solid <?= $cardBorderColor; ?>; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
             <div class="card-body py-3 px-4">
                 <div class="d-flex flex-wrap justify-content-between align-items-center" style="gap: 12px;">
                     <div>
                         <div class="d-flex align-items-center flex-wrap mb-1" style="gap: 8px;">
-                            <span class="badge badge-primary px-2 py-1 font-weight-bold" style="font-size: 0.8rem;">
-                                <i class="fas fa-door-open mr-1"></i> FOKUS RUANGAN
-                            </span>
+                            <?php if ($isDipinjamGrp): ?>
+                                <span class="badge badge-warning text-dark px-2.5 py-1 font-weight-bold" style="font-size: 0.8rem;">
+                                    <i class="fas fa-hand-holding mr-1"></i> ASET YANG DIPINJAM
+                                </span>
+                            <?php elseif ($isNonRuanganGrp): ?>
+                                <span class="badge badge-secondary px-2.5 py-1 font-weight-bold" style="font-size: 0.8rem;">
+                                    <i class="fas fa-warehouse mr-1"></i> GUDANG / NON-RUANGAN
+                                </span>
+                            <?php else: ?>
+                                <span class="badge badge-primary px-2.5 py-1 font-weight-bold" style="font-size: 0.8rem;">
+                                    <i class="fas fa-door-open mr-1"></i> FOKUS RUANGAN
+                                </span>
+                            <?php endif; ?>
                             <h4 class="font-weight-bold text-dark mb-0" style="font-size: 1.15rem;">
-                                <?= esc($selectedRoomInfo['ruangan_nama'] ?? $selectedRoomInfo['nama_ruangan'] ?? 'Ruangan'); ?>
+                                <?= esc($roomTitle); ?>
                             </h4>
                         </div>
                         <div class="text-muted small d-flex flex-wrap align-items-center" style="gap: 12px;">
-                            <span><i class="fas fa-user-tie text-secondary mr-1"></i> <strong>Penanggung Jawab:</strong> <?= esc($selectedRoomInfo['penanggung_jawab_nama'] ?: 'Belum ditetapkan'); ?><?= ! empty($selectedRoomInfo['penanggung_jawab_nip']) ? ' (NIP: ' . esc($selectedRoomInfo['penanggung_jawab_nip']) . ')' : ''; ?></span>
-                            <?php if (! empty($selectedRoomInfo['lokasi_lantai'])): ?>
-                                <span><i class="fas fa-layer-group text-info mr-1"></i> <?= esc($selectedRoomInfo['lokasi_lantai']); ?></span>
+                            <?php if ($isDipinjamGrp): ?>
+                                <span><i class="fas fa-info-circle text-warning mr-1"></i> <strong>Kategori:</strong> Seluruh aset yang sedang berstatus Pinjam Pakai resmi oleh pegawai</span>
+                            <?php elseif ($isNonRuanganGrp): ?>
+                                <span><i class="fas fa-info-circle text-secondary mr-1"></i> <strong>Kategori:</strong> Aset yang belum memiliki penetapan ruangan kantor</span>
+                            <?php else: ?>
+                                <span><i class="fas fa-user-tie text-secondary mr-1"></i> <strong>Penanggung Jawab:</strong> <?= esc($selectedRoomInfo['penanggung_jawab_nama'] ?: 'Belum ditetapkan'); ?><?= ! empty($selectedRoomInfo['penanggung_jawab_nip']) ? ' (NIP: ' . esc($selectedRoomInfo['penanggung_jawab_nip']) . ')' : ''; ?></span>
+                                <?php if (! empty($selectedRoomInfo['lokasi_lantai'])): ?>
+                                    <span><i class="fas fa-layer-group text-info mr-1"></i> <?= esc($selectedRoomInfo['lokasi_lantai']); ?></span>
+                                <?php endif; ?>
                             <?php endif; ?>
-                            <span><i class="fas fa-boxes text-primary mr-1"></i> Target Ruangan: <strong><?= $selectedRoomInfo['total_item']; ?> Unit</strong></span>
+                            <span><i class="fas fa-boxes text-primary mr-1"></i> Target Partisi: <strong><?= $selectedRoomInfo['total_item']; ?> Unit</strong></span>
                         </div>
                     </div>
                     <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
@@ -225,9 +256,15 @@
                             Selesai: <?= $selectedRoomInfo['total_item'] - $selectedRoomInfo['total_belum']; ?> / <?= $selectedRoomInfo['total_item']; ?> (<?= $selectedRoomInfo['persen']; ?>%)
                         </span>
                         <?php if ($audit['status'] === 'berjalan' && $selectedRoomInfo['total_belum'] > 0 && ($menuPermissions['edit'] ?? false)): ?>
-                            <button type="button" class="btn btn-outline-success btn-sm font-weight-bold shadow-sm" onclick="confirmMarkRuanganSesuai('<?= esc($selectedRoomInfo['ruangan_key']); ?>', '<?= esc($selectedRoomInfo['ruangan_nama'] ?? $selectedRoomInfo['nama_ruangan'] ?? 'Ruangan'); ?>')" style="border-radius: 6px;">
-                                <i class="fas fa-check-double mr-1"></i> Tandai Sisa Ruangan Ini Selesai
-                            </button>
+                            <?php if ($isDipinjamGrp): ?>
+                                <button type="button" class="btn btn-warning btn-sm font-weight-bold shadow-sm text-dark" onclick="confirmMarkRuanganSesuai('dipinjam', 'Aset yang Dipinjam')" style="border-radius: 6px;">
+                                    <i class="fas fa-check-double mr-1"></i> Konfirmasi Sisa Aset Pinjam Selesai
+                                </button>
+                            <?php else: ?>
+                                <button type="button" class="btn btn-outline-success btn-sm font-weight-bold shadow-sm" onclick="confirmMarkRuanganSesuai('<?= esc($selectedRoomInfo['ruangan_key']); ?>', '<?= esc($roomTitle); ?>')" style="border-radius: 6px;">
+                                    <i class="fas fa-check-double mr-1"></i> Tandai Sisa Ruangan Ini Selesai
+                                </button>
+                            <?php endif; ?>
                         <?php endif; ?>
                         <a href="<?= site_url('admin/inventaris/audit/' . $audit['id'] . '?ruangan=all' . ($filterStatusAudit !== 'semua' ? '&status_audit=' . esc($filterStatusAudit) : '') . (! empty($keyword) ? '&q=' . esc($keyword) : '')); ?>" class="btn btn-light border btn-sm text-muted font-weight-bold" style="border-radius: 6px;" title="Kembali ke Semua Ruangan">
                             <i class="fas fa-times mr-1"></i> Reset Fokus
@@ -718,8 +755,24 @@ function confirmMarkRemainingSesuai() {
     }
 }
 
+function onSelectRoomPartition(ruanganKey) {
+    var baseUrl = '<?= site_url('admin/inventaris/audit/' . $audit['id']); ?>';
+    var params = new URLSearchParams();
+    params.set('ruangan', ruanganKey);
+    <?php if ($filterStatusAudit !== 'semua'): ?>
+    params.set('status_audit', '<?= esc($filterStatusAudit); ?>');
+    <?php endif; ?>
+    <?php if (! empty($keyword)): ?>
+    params.set('q', '<?= esc($keyword); ?>');
+    <?php endif; ?>
+    window.location.href = baseUrl + '?' + params.toString();
+}
+
 function confirmMarkRuanganSesuai(ruanganKey, roomName) {
-    if (confirm('Tandai seluruh sisa aset di ruangan "' + roomName + '" yang BELUM diperiksa menjadi SESUAI?\n\nAset yang sedang berstatus dipinjam pakai akan otomatis terkonfirmasi dipinjam.')) {
+    var msg = (ruanganKey === 'dipinjam')
+        ? 'Tandai seluruh sisa pada "Aset yang Dipinjam" yang BELUM diperiksa menjadi TERKONFIRMASI DIPINJAM?'
+        : 'Tandai seluruh sisa aset di ruangan "' + roomName + '" yang BELUM diperiksa menjadi SESUAI?\n\nAset yang sedang berstatus dipinjam pakai akan otomatis terkonfirmasi dipinjam.';
+    if (confirm(msg)) {
         var f = document.getElementById('formActionPost');
         f.action = '<?= site_url('admin/inventaris/audit/' . $audit['id'] . '/mark-ruangan-sesuai/'); ?>' + encodeURIComponent(ruanganKey);
         f.submit();

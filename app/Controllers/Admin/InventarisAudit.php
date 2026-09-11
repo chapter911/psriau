@@ -719,7 +719,7 @@ class InventarisAudit extends BaseController
         $roomStats = $itemModel->getRoomStatsByAudit($auditId);
 
         $items = $itemModel->where('audit_id', $auditId)
-            ->orderBy('CASE WHEN ruangan_sistem_nama IS NULL OR ruangan_sistem_nama = "" THEN 1 ELSE 0 END', 'ASC', false)
+            ->orderBy('CASE WHEN status_pinjam_sistem = "dipinjam" THEN 1 WHEN ruangan_sistem_nama IS NULL OR ruangan_sistem_nama = "" THEN 2 ELSE 0 END', 'ASC', false)
             ->orderBy('ruangan_sistem_nama', 'ASC')
             ->orderBy('kode_barang', 'ASC')
             ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
@@ -728,7 +728,13 @@ class InventarisAudit extends BaseController
 
         $groupedItems = [];
         foreach ($items as $item) {
-            $rKey = ! empty($item['ruangan_sistem_id']) ? (string) $item['ruangan_sistem_id'] : 'non_ruangan';
+            if ($item['status_pinjam_sistem'] === 'dipinjam') {
+                $rKey = 'dipinjam';
+            } elseif (! empty($item['ruangan_sistem_id'])) {
+                $rKey = (string) $item['ruangan_sistem_id'];
+            } else {
+                $rKey = 'non_ruangan';
+            }
             $groupedItems[$rKey][] = $item;
         }
 
@@ -794,7 +800,7 @@ class InventarisAudit extends BaseController
 
         $itemModel = new InventarisAuditItemModel();
         $items = $itemModel->where('audit_id', $auditId)
-            ->orderBy('CASE WHEN ruangan_sistem_nama IS NULL OR ruangan_sistem_nama = "" THEN 1 ELSE 0 END', 'ASC', false)
+            ->orderBy('CASE WHEN status_pinjam_sistem = "dipinjam" THEN 1 WHEN ruangan_sistem_nama IS NULL OR ruangan_sistem_nama = "" THEN 2 ELSE 0 END', 'ASC', false)
             ->orderBy('ruangan_sistem_nama', 'ASC')
             ->orderBy('kode_barang', 'ASC')
             ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
@@ -864,7 +870,14 @@ class InventarisAudit extends BaseController
         $lastRoom = null;
 
         foreach ($items as $item) {
-            $roomName = $item['ruangan_sistem_nama'] ?: ($item['peruntukan'] === 'mobiler' ? 'Sekolah / Mobiler' : 'Gudang / Belum Berlokasi');
+            $isDipinjam = ($item['status_pinjam_sistem'] === 'dipinjam');
+            if ($isDipinjam) {
+                $roomName = 'Aset yang Dipinjam';
+                $roomBannerTitle = '📋 ASET YANG DIPINJAM PEGAWAI';
+            } else {
+                $roomName = $item['ruangan_sistem_nama'] ?: ($item['peruntukan'] === 'mobiler' ? 'Sekolah / Mobiler' : 'Gudang / Belum Berlokasi');
+                $roomBannerTitle = '🏢 RUANGAN: ' . strtoupper($roomName);
+            }
 
             // Jika ruangan berganti, sisipkan baris pemisah header ruangan
             if ($lastRoom !== $roomName) {
@@ -872,10 +885,10 @@ class InventarisAudit extends BaseController
                 $no = 1;
 
                 $sheet->mergeCells('A' . $rowNum . ':J' . $rowNum);
-                $sheet->setCellValue('A' . $rowNum, '  🏢 RUANGAN: ' . strtoupper($roomName));
+                $sheet->setCellValue('A' . $rowNum, '  ' . $roomBannerTitle);
                 $sheet->getStyle('A' . $rowNum . ':J' . $rowNum)->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => '0F172A'], 'size' => 10],
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $isDipinjam ? 'FEF3C7' : 'E2E8F0']],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]],
                 ]);
                 $sheet->getRowDimension($rowNum)->setRowHeight(22);

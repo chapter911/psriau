@@ -55,15 +55,17 @@ class InventarisAuditItemModel extends Model
         }
 
         if (isset($filters['ruangan_id']) && $filters['ruangan_id'] !== 'semua' && $filters['ruangan_id'] !== 'all' && $filters['ruangan_id'] !== '') {
-            if ($filters['ruangan_id'] === 'non_ruangan') {
-                $builder->groupStart()
-                    ->where('ruangan_sistem_id IS NULL', null, false)
-                    ->orWhere('ruangan_sistem_id', 0)
-                    ->groupEnd();
-            } elseif ($filters['ruangan_id'] === 'dipinjam') {
+            if ($filters['ruangan_id'] === 'dipinjam') {
                 $builder->where('status_pinjam_sistem', 'dipinjam');
+            } elseif ($filters['ruangan_id'] === 'non_ruangan') {
+                $builder->where('status_pinjam_sistem !=', 'dipinjam')
+                    ->groupStart()
+                        ->where('ruangan_sistem_id IS NULL', null, false)
+                        ->orWhere('ruangan_sistem_id', 0)
+                    ->groupEnd();
             } elseif (is_numeric($filters['ruangan_id'])) {
-                $builder->where('ruangan_sistem_id', (int) $filters['ruangan_id']);
+                $builder->where('status_pinjam_sistem !=', 'dipinjam')
+                    ->where('ruangan_sistem_id', (int) $filters['ruangan_id']);
             }
         }
 
@@ -86,28 +88,12 @@ class InventarisAuditItemModel extends Model
     }
 
     /**
-     * Mengambil statistik ringkasan per ruangan dalam suatu sesi audit
+     * Mengambil statistik ringkasan per ruangan dalam suatu sesi audit.
+     * Seluruh aset yang berstatus dipinjam disatukan ke dalam grup "Aset yang Dipinjam".
      */
     public function getRoomStatsByAudit(int $auditId): array
     {
         $db = db_connect();
-
-        $stats = $db->table($this->table)
-            ->select('
-                ruangan_sistem_id,
-                ruangan_sistem_nama,
-                COUNT(id) AS total_item,
-                SUM(CASE WHEN status_audit = "sesuai" THEN 1 ELSE 0 END) AS total_sesuai,
-                SUM(CASE WHEN status_audit = "terkonfirmasi_dipinjam" OR status_pinjam_sistem = "dipinjam" THEN 1 ELSE 0 END) AS total_dipinjam,
-                SUM(CASE WHEN status_audit IN ("kondisi_berubah", "salah_lokasi") THEN 1 ELSE 0 END) AS total_berubah,
-                SUM(CASE WHEN status_audit = "tidak_ditemukan" THEN 1 ELSE 0 END) AS total_selisih,
-                SUM(CASE WHEN status_audit = "belum_diperiksa" THEN 1 ELSE 0 END) AS total_belum
-            ')
-            ->where('audit_id', $auditId)
-            ->groupBy('ruangan_sistem_id, ruangan_sistem_nama')
-            ->orderBy('ruangan_sistem_nama', 'ASC')
-            ->get()
-            ->getResultArray();
 
         $ruanganMap = [];
         if ($db->tableExists('mst_ruangan')) {
@@ -120,49 +106,134 @@ class InventarisAuditItemModel extends Model
             }
         }
 
-        $result = [];
-        foreach ($stats as $row) {
-            $rId = ! empty($row['ruangan_sistem_id']) ? (int) $row['ruangan_sistem_id'] : null;
-            $rNama = $row['ruangan_sistem_nama'] ?: ($rId === null ? 'Gudang / Tanpa Ruangan' : 'Ruangan #' . $rId);
-            $rInfo = $rId && isset($ruanganMap[$rId]) ? $ruanganMap[$rId] : null;
+        // Ambil semua item audit untuk dikelompokkan
+        $items = $db->table($this->table)
+            ->select('id, ruangan_sistem_id, ruangan_sistem_nama, status_pinjam_sistem, status_audit')
+            ->where('audit_id', $auditId)
+            ->get()
+            ->getResultArray();
 
-            $tot = (int) ($row['total_item'] ?? 0);
-            $blm = (int) ($row['total_belum'] ?? 0);
-            $selesai = $tot - $blm;
-            $pct = $tot > 0 ? round(($selesai / $tot) * 100) : 0;
+        $groups = [];
 
-            $roomName = $rInfo ? $rInfo['nama_ruangan'] : $rNama;
+        foreach ($items as $item) {
+            $isLoaned = ($item['status_pinjam_sistem'] === 'dipinjam');
 
-            $result[] = [
-                'ruangan_id'             => $rId,
-                'ruangan_key'            => $rId !== null ? (string) $rId : 'non_ruangan',
-                'ruangan_nama'           => $roomName,
-                'nama_ruangan'           => $roomName,
-                'kode_ruangan'           => $rInfo ? $rInfo['kode_ruangan'] : '',
-                'penanggung_jawab_nama'  => $rInfo ? $rInfo['penanggung_jawab_nama'] : null,
-                'penanggung_jawab_nip'   => $rInfo ? $rInfo['penanggung_jawab_nip'] : null,
-                'lokasi_lantai'          => $rInfo ? $rInfo['lokasi_lantai'] : null,
-                'total_item'             => $tot,
-                'total_sesuai'           => (int) ($row['total_sesuai'] ?? 0),
-                'total_dipinjam'         => (int) ($row['total_dipinjam'] ?? 0),
-                'total_berubah'          => (int) ($row['total_berubah'] ?? 0),
-                'total_selisih'          => (int) ($row['total_selisih'] ?? 0),
-                'total_belum'            => $blm,
-                'total_selesai'          => $selesai,
-                'persen'                 => $pct,
-            ];
+            if ($isLoaned) {
+                $groupKey = 'dipinjam';
+            } elseif (! empty($item['ruangan_sistem_id']) && (int) $item['ruangan_sistem_id'] > 0) {
+                $groupKey = (string) ((int) $item['ruangan_sistem_id']);
+            } else {
+                $groupKey = 'non_ruangan';
+            }
+
+            if (! isset($groups[$groupKey])) {
+                if ($groupKey === 'dipinjam') {
+                    $groups[$groupKey] = [
+                        'ruangan_id'            => 'dipinjam',
+                        'ruangan_key'           => 'dipinjam',
+                        'ruangan_nama'          => 'Aset yang Dipinjam',
+                        'nama_ruangan'          => 'Aset yang Dipinjam',
+                        'kode_ruangan'          => 'PINJAM',
+                        'penanggung_jawab_nama' => 'Peminjam Pegawai Satker',
+                        'penanggung_jawab_nip'  => null,
+                        'lokasi_lantai'         => 'Izin Pinjam Pakai',
+                        'is_dipinjam_group'     => true,
+                        'total_item'            => 0,
+                        'total_sesuai'          => 0,
+                        'total_dipinjam'        => 0,
+                        'total_berubah'         => 0,
+                        'total_selisih'         => 0,
+                        'total_belum'           => 0,
+                    ];
+                } elseif ($groupKey === 'non_ruangan') {
+                    $groups[$groupKey] = [
+                        'ruangan_id'            => null,
+                        'ruangan_key'           => 'non_ruangan',
+                        'ruangan_nama'          => 'Gudang / Belum Berlokasi',
+                        'nama_ruangan'          => 'Gudang / Belum Berlokasi',
+                        'kode_ruangan'          => '',
+                        'penanggung_jawab_nama' => null,
+                        'penanggung_jawab_nip'  => null,
+                        'lokasi_lantai'         => 'Penyimpanan Satker',
+                        'is_dipinjam_group'     => false,
+                        'total_item'            => 0,
+                        'total_sesuai'          => 0,
+                        'total_dipinjam'        => 0,
+                        'total_berubah'         => 0,
+                        'total_selisih'         => 0,
+                        'total_belum'           => 0,
+                    ];
+                } else {
+                    $rId = (int) $groupKey;
+                    $rInfo = $ruanganMap[$rId] ?? null;
+                    $rName = $rInfo ? $rInfo['nama_ruangan'] : ($item['ruangan_sistem_nama'] ?: 'Ruangan #' . $rId);
+
+                    $groups[$groupKey] = [
+                        'ruangan_id'            => $rId,
+                        'ruangan_key'           => $groupKey,
+                        'ruangan_nama'          => $rName,
+                        'nama_ruangan'          => $rName,
+                        'kode_ruangan'          => $rInfo ? $rInfo['kode_ruangan'] : '',
+                        'penanggung_jawab_nama' => $rInfo ? $rInfo['penanggung_jawab_nama'] : null,
+                        'penanggung_jawab_nip'  => $rInfo ? $rInfo['penanggung_jawab_nip'] : null,
+                        'lokasi_lantai'         => $rInfo ? $rInfo['lokasi_lantai'] : null,
+                        'is_dipinjam_group'     => false,
+                        'total_item'            => 0,
+                        'total_sesuai'          => 0,
+                        'total_dipinjam'        => 0,
+                        'total_berubah'         => 0,
+                        'total_selisih'         => 0,
+                        'total_belum'           => 0,
+                    ];
+                }
+            }
+
+            $groups[$groupKey]['total_item']++;
+            $st = $item['status_audit'];
+            if ($st === 'sesuai') {
+                $groups[$groupKey]['total_sesuai']++;
+            } elseif ($st === 'terkonfirmasi_dipinjam' || $isLoaned) {
+                $groups[$groupKey]['total_dipinjam']++;
+            } elseif (in_array($st, ['kondisi_berubah', 'salah_lokasi'], true)) {
+                $groups[$groupKey]['total_berubah']++;
+            } elseif ($st === 'tidak_ditemukan') {
+                $groups[$groupKey]['total_selisih']++;
+            } elseif ($st === 'belum_diperiksa') {
+                $groups[$groupKey]['total_belum']++;
+            }
         }
 
-        // Urutkan alfabet nama ruangan, non-ruangan ditaruh di paling akhir
-        usort($result, static function ($a, $b) {
-            if ($a['ruangan_id'] === null) {
-                return 1;
+        $roomList = [];
+        $loanGroup = null;
+        $nonRoomGroup = null;
+
+        foreach ($groups as $k => $g) {
+            $tot = $g['total_item'];
+            $blm = $g['total_belum'];
+            $selesai = $tot - $blm;
+            $g['total_selesai'] = $selesai;
+            $g['persen'] = $tot > 0 ? round(($selesai / $tot) * 100) : 0;
+
+            if ($k === 'dipinjam') {
+                $loanGroup = $g;
+            } elseif ($k === 'non_ruangan') {
+                $nonRoomGroup = $g;
+            } else {
+                $roomList[] = $g;
             }
-            if ($b['ruangan_id'] === null) {
-                return -1;
-            }
-            return strcmp((string) $a['nama_ruangan'], (string) $b['nama_ruangan']);
+        }
+
+        usort($roomList, static function ($a, $b) {
+            return strcmp((string) $a['ruangan_nama'], (string) $b['ruangan_nama']);
         });
+
+        $result = $roomList;
+        if ($loanGroup !== null) {
+            $result[] = $loanGroup;
+        }
+        if ($nonRoomGroup !== null) {
+            $result[] = $nonRoomGroup;
+        }
 
         return $result;
     }
@@ -177,13 +248,17 @@ class InventarisAuditItemModel extends Model
             ->where('audit_id', $auditId)
             ->where('status_audit', 'belum_diperiksa');
 
-        if ($ruanganKey === 'non_ruangan') {
-            $builder->groupStart()
-                ->where('ruangan_sistem_id IS NULL', null, false)
-                ->orWhere('ruangan_sistem_id', 0)
+        if ($ruanganKey === 'dipinjam') {
+            $builder->where('status_pinjam_sistem', 'dipinjam');
+        } elseif ($ruanganKey === 'non_ruangan') {
+            $builder->where('status_pinjam_sistem !=', 'dipinjam')
+                ->groupStart()
+                    ->where('ruangan_sistem_id IS NULL', null, false)
+                    ->orWhere('ruangan_sistem_id', 0)
                 ->groupEnd();
         } elseif (is_numeric($ruanganKey)) {
-            $builder->where('ruangan_sistem_id', (int) $ruanganKey);
+            $builder->where('status_pinjam_sistem !=', 'dipinjam')
+                ->where('ruangan_sistem_id', (int) $ruanganKey);
         }
 
         $items = $builder->get()->getResultArray();
