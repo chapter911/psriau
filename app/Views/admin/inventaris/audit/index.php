@@ -366,13 +366,37 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-7 mb-3">
                             <label class="font-weight-bold text-dark">Nama Auditor / Pemeriksa <span class="text-danger">*</span></label>
-                            <input type="text" name="auditor_nama" class="form-control" placeholder="Nama petugas pemeriksa..." value="<?= esc(session()->get('name') ?: (session()->get('username') ?: '')); ?>" required>
+                            <select name="auditor_nama" id="select_auditor_nama" class="form-control" data-tags="true" data-placeholder="Pilih nama pegawai atau ketik nama baru..." required>
+                                <option value="">-- Pilih atau Ketik Nama Auditor --</option>
+                                <?php
+                                    $currentLoggedUser = session()->get('name') ?: (session()->get('username') ?: '');
+                                    $isUserSelected = false;
+                                ?>
+                                <?php if (! empty($pegawaiList)): ?>
+                                    <?php foreach ($pegawaiList as $peg): ?>
+                                        <?php
+                                            $pegNama  = trim((string) $peg['nama']);
+                                            $pegNip   = trim((string) ($peg['nip'] ?? ''));
+                                            $selected = (! $isUserSelected && ! empty($currentLoggedUser) && strcasecmp($pegNama, $currentLoggedUser) === 0) ? 'selected' : '';
+                                            if ($selected) $isUserSelected = true;
+                                        ?>
+                                        <option value="<?= esc($pegNama); ?>" data-nip="<?= esc($pegNip); ?>" <?= $selected; ?>>
+                                            <?= esc($pegNama); ?><?= ! empty($pegNip) ? ' (NIP: ' . esc($pegNip) . ')' : ''; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                                <?php if (! $isUserSelected && ! empty($currentLoggedUser)): ?>
+                                    <option value="<?= esc($currentLoggedUser); ?>" selected><?= esc($currentLoggedUser); ?> (Login Aktif)</option>
+                                <?php endif; ?>
+                            </select>
+                            <small class="text-muted d-block mt-1">Bisa pilih dari daftar pegawai atau langsung ketik nama auditor baru.</small>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-5 mb-3">
                             <label class="font-weight-bold text-dark">NIP Auditor (Opsional)</label>
-                            <input type="text" name="auditor_nip" class="form-control" placeholder="Nomor Induk Pegawai...">
+                            <input type="text" name="auditor_nip" id="input_auditor_nip" class="form-control" placeholder="Nomor Induk Pegawai...">
+                            <small class="text-muted d-block mt-1">Terisi otomatis jika memilih pegawai terdaftar.</small>
                         </div>
                     </div>
 
@@ -463,6 +487,23 @@ $(document).ready(function() {
         syncScopeCards();
     });
     syncScopeCards();
+
+    // Auto-fill NIP saat memilih auditor dari dropdown pegawai
+    $('#select_auditor_nama').on('change', function() {
+        var selectedOpt = $(this).find('option:selected');
+        var nip = selectedOpt.data('nip');
+        if (nip) {
+            $('#input_auditor_nip').val(nip);
+        }
+    });
+
+    $('#modalCreateAudit').on('shown.bs.modal', function() {
+        var selectedOpt = $('#select_auditor_nama').find('option:selected');
+        var nip = selectedOpt.data('nip');
+        if (nip && ! $('#input_auditor_nip').val()) {
+            $('#input_auditor_nip').val(nip);
+        }
+    });
 
     // Event listener modal delete
     $(document).on('click', '.btn-delete-audit', function(e) {

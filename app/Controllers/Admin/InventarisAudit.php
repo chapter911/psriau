@@ -63,6 +63,16 @@ class InventarisAudit extends BaseController
         $paketList   = $paketModel->where('is_active', 1)->orderBy('nama_paket', 'ASC')->findAll();
         $sekolahList = $sekolahModel->orderBy('nama', 'ASC')->findAll();
 
+        $pegawaiList = [];
+        $db = db_connect();
+        if ($db->tableExists('mst_pegawai')) {
+            $pBuilder = $db->table('mst_pegawai')->select('id, nama, nip');
+            if ($db->fieldExists('is_active', 'mst_pegawai')) {
+                $pBuilder->where('is_active', 1);
+            }
+            $pegawaiList = $pBuilder->orderBy('nama', 'ASC')->get()->getResultArray();
+        }
+
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
 
         return view('admin/inventaris/audit/index', [
@@ -72,6 +82,7 @@ class InventarisAudit extends BaseController
             'ruanganList'     => $ruanganList,
             'paketList'       => $paketList,
             'sekolahList'     => $sekolahList,
+            'pegawaiList'     => $pegawaiList,
             'filterStatus'    => $filterStatus,
             'filterLingkup'   => $filterLingkup,
             'searchKeyword'   => $searchKeyword,
