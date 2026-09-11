@@ -371,7 +371,7 @@
                             <select name="auditor_nama" id="select_auditor_nama" class="form-control" data-tags="true" data-placeholder="Pilih nama pegawai atau ketik nama baru..." required>
                                 <option value="">-- Pilih atau Ketik Nama Auditor --</option>
                                 <?php
-                                    $currentLoggedUser = session()->get('name') ?: (session()->get('username') ?: '');
+                                    $targetAuditorName = ! empty($defaultAuditorNama) ? $defaultAuditorNama : (session()->get('fullName') ?: '');
                                     $isUserSelected = false;
                                 ?>
                                 <?php if (! empty($pegawaiList)): ?>
@@ -379,7 +379,7 @@
                                         <?php
                                             $pegNama  = trim((string) $peg['nama']);
                                             $pegNip   = trim((string) ($peg['nip'] ?? ''));
-                                            $selected = (! $isUserSelected && ! empty($currentLoggedUser) && strcasecmp($pegNama, $currentLoggedUser) === 0) ? 'selected' : '';
+                                            $selected = (! $isUserSelected && ! empty($targetAuditorName) && strcasecmp($pegNama, $targetAuditorName) === 0) ? 'selected' : '';
                                             if ($selected) $isUserSelected = true;
                                         ?>
                                         <option value="<?= esc($pegNama); ?>" data-nip="<?= esc($pegNip); ?>" <?= $selected; ?>>
@@ -387,15 +387,15 @@
                                         </option>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
-                                <?php if (! $isUserSelected && ! empty($currentLoggedUser)): ?>
-                                    <option value="<?= esc($currentLoggedUser); ?>" selected><?= esc($currentLoggedUser); ?> (Login Aktif)</option>
+                                <?php if (! $isUserSelected && ! empty($targetAuditorName)): ?>
+                                    <option value="<?= esc($targetAuditorName); ?>" data-nip="<?= esc($defaultAuditorNip ?? ''); ?>" selected><?= esc($targetAuditorName); ?></option>
                                 <?php endif; ?>
                             </select>
                             <small class="text-muted d-block mt-1">Bisa pilih dari daftar pegawai atau langsung ketik nama auditor baru.</small>
                         </div>
                         <div class="col-md-5 mb-3">
                             <label class="font-weight-bold text-dark">NIP Auditor (Opsional)</label>
-                            <input type="text" name="auditor_nip" id="input_auditor_nip" class="form-control" placeholder="Nomor Induk Pegawai...">
+                            <input type="text" name="auditor_nip" id="input_auditor_nip" class="form-control" placeholder="Nomor Induk Pegawai..." value="<?= esc($defaultAuditorNip ?? ''); ?>">
                             <small class="text-muted d-block mt-1">Terisi otomatis jika memilih pegawai terdaftar.</small>
                         </div>
                     </div>

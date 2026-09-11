@@ -73,20 +73,47 @@ class InventarisAudit extends BaseController
             $pegawaiList = $pBuilder->orderBy('nama', 'ASC')->get()->getResultArray();
         }
 
+        $loggedUsername = trim((string) (session()->get('username') ?? ''));
+        $loggedFullName = trim((string) (session()->get('fullName') ?? ''));
+
+        // Cari default auditor dari mst_pegawai berdasarkan NIP / username atau nama
+        $defaultAuditorNama = $loggedFullName;
+        $defaultAuditorNip  = '';
+
+        if (! empty($pegawaiList)) {
+            foreach ($pegawaiList as $p) {
+                $pNip  = trim((string) ($p['nip'] ?? ''));
+                $pNama = trim((string) ($p['nama'] ?? ''));
+
+                if (! empty($loggedUsername) && ! empty($pNip) && $pNip === $loggedUsername) {
+                    $defaultAuditorNama = $pNama;
+                    $defaultAuditorNip  = $pNip;
+                    break;
+                }
+                if (! empty($loggedFullName) && strcasecmp($pNama, $loggedFullName) === 0) {
+                    $defaultAuditorNama = $pNama;
+                    $defaultAuditorNip  = $pNip;
+                    break;
+                }
+            }
+        }
+
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
 
         return view('admin/inventaris/audit/index', [
-            'pageTitle'       => 'Audit & Stock Opname Aset',
-            'audits'          => $audits,
-            'summaryKPI'      => $summaryKPI,
-            'ruanganList'     => $ruanganList,
-            'paketList'       => $paketList,
-            'sekolahList'     => $sekolahList,
-            'pegawaiList'     => $pegawaiList,
-            'filterStatus'    => $filterStatus,
-            'filterLingkup'   => $filterLingkup,
-            'searchKeyword'   => $searchKeyword,
-            'menuPermissions' => $menuPermissions,
+            'pageTitle'          => 'Audit & Stock Opname Aset',
+            'audits'             => $audits,
+            'summaryKPI'         => $summaryKPI,
+            'ruanganList'        => $ruanganList,
+            'paketList'          => $paketList,
+            'sekolahList'        => $sekolahList,
+            'pegawaiList'        => $pegawaiList,
+            'defaultAuditorNama' => $defaultAuditorNama,
+            'defaultAuditorNip'  => $defaultAuditorNip,
+            'filterStatus'       => $filterStatus,
+            'filterLingkup'      => $filterLingkup,
+            'searchKeyword'      => $searchKeyword,
+            'menuPermissions'    => $menuPermissions,
         ]);
     }
 
