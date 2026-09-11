@@ -415,6 +415,7 @@ class InventarisAudit extends BaseController
         $itemModel = new InventarisAuditItemModel();
         $ruanganModel = new MstRuanganModel();
 
+        $activeRuangan      = trim((string) ($this->request->getGet('ruangan') ?? 'all'));
         $defaultStatus      = ($audit['status'] === 'selesai') ? 'semua' : 'belum_diperiksa';
         $filterStatusAudit  = trim((string) ($this->request->getGet('status_audit') ?? $defaultStatus));
         $filterStatusPinjam = trim((string) ($this->request->getGet('status_pinjam') ?? 'semua'));
