@@ -65,9 +65,9 @@ class InventarisAuditItemModel extends Model
                 ->groupEnd();
         }
 
-        return $builder->orderBy('status_audit = "belum_diperiksa"', 'DESC')
+        return $builder->orderBy('status_audit = "belum_diperiksa"', 'DESC', false)
             ->orderBy('kode_barang', 'ASC')
-            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC')
+            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
             ->orderBy('nup', 'ASC')
             ->findAll();
     }

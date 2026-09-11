@@ -190,7 +190,7 @@ class InventarisAudit extends BaseController
         }
 
         $assets = $builder->orderBy('kode_barang', 'ASC')
-            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC')
+            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
             ->orderBy('nup', 'ASC')
             ->get()
             ->getResultArray();
@@ -309,7 +309,7 @@ class InventarisAudit extends BaseController
         $assets = $db->table('trn_inventaris_satker')
             ->where('ruangan_id', $ruanganId)
             ->orderBy('kode_barang', 'ASC')
-            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC')
+            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
             ->orderBy('nup', 'ASC')
             ->get()
             ->getResultArray();
@@ -623,7 +623,7 @@ class InventarisAudit extends BaseController
         $itemModel = new InventarisAuditItemModel();
         $items = $itemModel->where('audit_id', $auditId)
             ->orderBy('kode_barang', 'ASC')
-            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC')
+            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
             ->orderBy('nup', 'ASC')
             ->findAll();
 
@@ -688,7 +688,7 @@ class InventarisAudit extends BaseController
         $itemModel = new InventarisAuditItemModel();
         $items = $itemModel->where('audit_id', $auditId)
             ->orderBy('kode_barang', 'ASC')
-            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC')
+            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
             ->orderBy('nup', 'ASC')
             ->findAll();
 
