@@ -1364,13 +1364,26 @@ class InventarisSatker extends BaseController
             return redirect()->to(site_url(self::MENU_LINK))->with('error', 'Tidak ada data aset yang ditemukan untuk dicetak stikernya.');
         }
 
-        // Inisialisasi generator QR Code GD PNG
-        $qrOptions = new QROptions([
-            'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
-            'scale'           => 6,
-            'margin'          => 0,
+        // Pastikan namespace chillerlan terdaftar di autoloader (baik via Composer maupun ThirdParty)
+        \CodeIgniter\Config\Services::autoloader()->addNamespace([
+            'chillerlan\QRCode'   => APPPATH . 'ThirdParty/chillerlan/php-qrcode/src',
+            'chillerlan\Settings' => APPPATH . 'ThirdParty/chillerlan/php-settings-container/src',
         ]);
-        $qrGenerator = new QRCode($qrOptions);
+
+        // Inisialisasi generator QR Code GD PNG
+        $qrGenerator = null;
+        if (class_exists(QROptions::class) && class_exists(QRCode::class)) {
+            try {
+                $qrOptions = new QROptions([
+                    'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
+                    'scale'           => 6,
+                    'margin'          => 0,
+                ]);
+                $qrGenerator = new QRCode($qrOptions);
+            } catch (\Throwable $e) {
+                log_message('error', 'Gagal inisialisasi QR Code: ' . $e->getMessage());
+            }
+        }
 
         $stickerData = [];
         foreach ($items as $item) {
@@ -1383,7 +1396,14 @@ class InventarisSatker extends BaseController
                 $qrContent = $item['kode_barang'] . '.' . $item['nup'];
             }
 
-            $qrBase64 = $qrGenerator->render($qrContent);
+            $qrBase64 = '';
+            if ($qrGenerator !== null) {
+                try {
+                    $qrBase64 = $qrGenerator->render($qrContent);
+                } catch (\Throwable $e) {
+                    $qrBase64 = '';
+                }
+            }
 
             $merkTipeDisplay = trim((string) ($item['merk_tipe'] ?? ''));
             if ($merkTipeDisplay === '') {

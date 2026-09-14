@@ -38,7 +38,9 @@ class Autoload extends AutoloadConfig
      * @var array<string, list<string>|string>
      */
     public $psr4 = [
-        APP_NAMESPACE => APPPATH,
+        APP_NAMESPACE          => APPPATH,
+        'chillerlan\QRCode'    => APPPATH . 'ThirdParty/chillerlan/php-qrcode/src',
+        'chillerlan\Settings'  => APPPATH . 'ThirdParty/chillerlan/php-settings-container/src',
     ];
 
     /**

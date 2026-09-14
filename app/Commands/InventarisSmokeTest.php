@@ -577,6 +577,13 @@ class InventarisSmokeTest extends BaseCommand
             // Test Render PDF Sticker BMN (1 Baris Terdiri Atas 2 Sticker Standar Kementerian PU)
             $tempStickerPdfPath = ROOTPATH . 'do_not_upload/temp/smoke_test_sticker.pdf';
             try {
+                if (! class_exists(\chillerlan\QRCode\QROptions::class)) {
+                    \CodeIgniter\Config\Services::autoloader()->addNamespace([
+                        'chillerlan\QRCode'   => APPPATH . 'ThirdParty/chillerlan/php-qrcode/src',
+                        'chillerlan\Settings' => APPPATH . 'ThirdParty/chillerlan/php-settings-container/src',
+                    ]);
+                }
+
                 $qrOptions = new \chillerlan\QRCode\QROptions([
                     'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
                     'scale'           => 4,
