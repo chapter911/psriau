@@ -468,7 +468,7 @@ graph TD
     B2 --> D6["Shortcut 1-Klik 'Audit Ruangan Ini' Terkoneksi ke Modul Audit &amp; Stock Opname"]
 
     B3 --> F1["Pencatatan & Ubah Data Pinjam Pakai: Pilihan Kop Surat Instansi, Nomor Surat, & Verifikasi Aset"]
-    B3 --> F2["Penerbitan Surat Perjanjian Pinjam Pakai BMN 3 Halaman Resmi (PDF Pixel-Perfect: Halaman 1-2 Surat Perjanjian Pasal 1-8 & Halaman 3 Lampiran Tabel Aset BMN)"]
+    B3 --> F2["Penerbitan Surat Pinjam Pakai BMN 3 Halaman Resmi (PDF Mixed-Orientation: Halaman 1-2 Portrait & Halaman 3 Landscape Tabel Lampiran BMN)"]
     B3 --> F3["Upload Scan Dokumen &amp; Monitoring Status (Sedang Dipinjam / Selesai Dikembalikan)"]
     B3 --> F4["Proses Pengembalian Aset (Update Kondisi Fisik, Catatan &amp; Pemulihan Status Aset Induk)"]
 
@@ -784,7 +784,7 @@ graph TD
                                         <ul class="pl-3 mt-1 mb-1">
                                             <li><strong>Halaman 1:</strong> Memuat KOP Surat terpilih, Judul <em>SURAT PERJANJIAN PINJAM PAKAI</em>, Nomor Surat, pembukaan resmi terbilang hari dan tanggal, data lengkap PIHAK PERTAMA (Kepala Satker / Kuasa Pengguna Barang) &amp; PIHAK KEDUA (Peminjam), serta kesepakatan Pasal 1 s/d Pasal 4.</li>
                                             <li><strong>Halaman 2:</strong> Memuat ketentuan lanjutan Pasal 5 s/d Pasal 8, serta blok tanda tangan resmi PIHAK KEDUA dan PIHAK PERTAMA.</li>
-                                            <li><strong>Halaman 3:</strong> Memuat Lampiran <em>DAFTAR BARANG MILIK NEGARA YANG DIPINJAM PAKAI</em> dalam format tabel <em>landscape</em> 10 kolom lengkap (No, Kode Barang, Nama Barang, NUP, Jenis Barang, Tahun Perolehan, Jumlah, Nilai Aset per Unit Rp, Kondisi Barang, dan Keterangan) beserta tanda tangan para pihak.</li>
+                                            <li><strong>Halaman 3 (Orientasi Landscape):</strong> Memuat Lampiran <em>DAFTAR BARANG MILIK NEGARA YANG DIPINJAM PAKAI</em> dalam orientasi halaman <em>Landscape A4</em> murni (tabel 10 kolom: No, Kode Barang, Nama Barang, NUP, Jenis Barang, Tahun Perolehan, Jumlah, Nilai Aset per Unit Rp, Kondisi Barang, dan Keterangan) beserta blok tanda tangan resmi PIHAK KEDUA &amp; PIHAK PERTAMA. Dokumen digabungkan secara otomatis dalam satu berkas PDF tunggal (Halaman 1-2 Portrait dan Halaman 3 Landscape).</li>
                                         </ul>
                                     </li>
                                     <li><strong>Sinkronisasi Status Aset Terintegrasi:</strong> Saat peminjaman disimpan, status aset BMN induk otomatis beralih menjadi <em>Dipinjam Pakai</em> dan lokasi tercatat sebagai <em>Pinjam Pakai: [Nama Pegawai]</em> sehingga tidak dapat dialokasikan ganda ke ruangan DBR.</li>

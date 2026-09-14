@@ -9,6 +9,8 @@ use App\Models\InventarisSatkerModel;
 use App\Models\InventarisPinjamPakaiModel;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use setasign\Fpdi\Fpdi;
+use setasign\Fpdi\PdfParser\StreamReader;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -951,13 +953,16 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::error("  [FAIL] Sinkronisasi metrik DBR dan Pinjam Pakai tidak cocok.");
             }
 
-            // 4. Uji Render Surat Izin Pinjam Pakai BMN (PDF A4 Portrait)
+            // 4. Uji Render Surat Izin Pinjam Pakai BMN (Halaman 1-2 Portrait, Halaman 3 Landscape via FPDI)
             $loanDetail = $pinjamModel->getPinjamDetail($pinjamId);
             $tempPdfSurat = ROOTPATH . 'do_not_upload/temp/smoke_test_surat_pinjam.pdf';
 
             $pdfDataSurat = [
                 'loan'           => $loanDetail,
+                'kopSuratImg'    => '',
                 'logoBase64'     => '',
+                'introText'      => 'Pada hari ini Senin tanggal Empat Belas bulan September tahun Dua Ribu Dua Puluh Enam (14-09-2026), kami yang bertanda tangan di bawah ini:',
+                'tahunPinjam'    => date('Y'),
                 'tglPinjamIndo'  => date('j F Y'),
                 'tglCetak'       => date('j F Y'),
                 'namaUakpb'      => 'PELAKSANAAN PRASARANA STRATEGIS PROVINSI RIAU',
@@ -977,23 +982,47 @@ class InventarisSmokeTest extends BaseCommand
             $options = new Options();
             $options->set('isRemoteEnabled', true);
             $options->set('isHtml5ParserEnabled', true);
+
+            // Surat (Portrait Halaman 1 & 2)
             $dompdfSurat = new Dompdf($options);
-
-            ob_start();
             $htmlSurat = view('admin/inventaris/pinjam_pakai/surat_pinjam_pdf', $pdfDataSurat);
-            ob_end_clean();
-            service('response')->setBody('');
-
             $dompdfSurat->loadHtml($htmlSurat);
             $dompdfSurat->setPaper('A4', 'portrait');
             $dompdfSurat->render();
-            file_put_contents($tempPdfSurat, $dompdfSurat->output());
+            $suratStream = $dompdfSurat->output();
+
+            // Lampiran (Landscape Halaman 3)
+            $dompdfLampiran = new Dompdf($options);
+            $htmlLampiran = view('admin/inventaris/pinjam_pakai/surat_pinjam_lampiran_pdf', $pdfDataSurat);
+            $dompdfLampiran->loadHtml($htmlLampiran);
+            $dompdfLampiran->setPaper('A4', 'landscape');
+            $dompdfLampiran->render();
+            $lampiranStream = $dompdfLampiran->output();
+
+            // FPDI Merge
+            $fpdi = new Fpdi();
+            $fpdi->SetAutoPageBreak(false);
+            $pCount1 = $fpdi->setSourceFile(StreamReader::createByString($suratStream));
+            for ($p = 1; $p <= $pCount1; $p++) {
+                $t = $fpdi->importPage($p);
+                $s = $fpdi->getTemplateSize($t);
+                $fpdi->AddPage($s['orientation'], [$s['width'], $s['height']]);
+                $fpdi->useTemplate($t);
+            }
+            $pCount2 = $fpdi->setSourceFile(StreamReader::createByString($lampiranStream));
+            for ($p = 1; $p <= $pCount2; $p++) {
+                $t = $fpdi->importPage($p);
+                $s = $fpdi->getTemplateSize($t);
+                $fpdi->AddPage($s['orientation'], [$s['width'], $s['height']]);
+                $fpdi->useTemplate($t);
+            }
+            file_put_contents($tempPdfSurat, $fpdi->Output('S'));
 
             $suratPdfSize = filesize($tempPdfSurat);
-            if ($suratPdfSize > 2000) {
-                CLI::write("  [OK] Dokumen resmi Surat Izin Pinjam Pakai BMN (PDF A4 Portrait) berhasil dirender! Ukuran: " . round($suratPdfSize / 1024, 2) . " KB", "green");
+            if ($suratPdfSize > 2000 && ($pCount1 + $pCount2) === 3) {
+                CLI::write("  [OK] Dokumen resmi Surat Pinjam Pakai BMN (Halaman 1-2 Portrait, Halaman 3 Landscape) berhasil dirender! Total 3 halaman, Ukuran: " . round($suratPdfSize / 1024, 2) . " KB", "green");
             } else {
-                CLI::error("  [FAIL] Render PDF Surat Pinjam Pakai gagal atau file kosong.");
+                CLI::error("  [FAIL] Render PDF Surat Pinjam Pakai gagal atau jumlah halaman tidak sesuai.");
             }
 
             // Hapus file sementara sesuai Rule 3

@@ -7,6 +7,9 @@ use App\Models\InventarisPinjamPakaiModel;
 use App\Models\InventarisSatkerModel;
 use CodeIgniter\HTTP\RedirectResponse;
 use Dompdf\Dompdf;
+use Dompdf\Options;
+use setasign\Fpdi\Fpdi;
+use setasign\Fpdi\PdfParser\StreamReader;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -567,17 +570,50 @@ class InventarisPinjamPakai extends BaseController
             ],
         ];
 
-        $options = new \Dompdf\Options();
+        $options = new Options();
         $options->set('isRemoteEnabled', true);
         $options->set('isHtml5ParserEnabled', true);
         $options->set('isPhpEnabled', true);
 
-        $html = view('admin/inventaris/pinjam_pakai/surat_pinjam_pdf', $data);
+        // 1. Render Surat Perjanjian (Halaman 1-2: A4 Portrait)
+        $htmlPortrait = view('admin/inventaris/pinjam_pakai/surat_pinjam_pdf', $data);
+        $dompdfPortrait = new Dompdf($options);
+        $dompdfPortrait->loadHtml($htmlPortrait);
+        $dompdfPortrait->setPaper('A4', 'portrait');
+        $dompdfPortrait->render();
+        $pdfPortraitStream = $dompdfPortrait->output();
 
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
+        // 2. Render Lampiran BMN (Halaman Akhir: A4 Landscape)
+        $htmlLandscape = view('admin/inventaris/pinjam_pakai/surat_pinjam_lampiran_pdf', $data);
+        $dompdfLandscape = new Dompdf($options);
+        $dompdfLandscape->loadHtml($htmlLandscape);
+        $dompdfLandscape->setPaper('A4', 'landscape');
+        $dompdfLandscape->render();
+        $pdfLandscapeStream = $dompdfLandscape->output();
+
+        // 3. Gabungkan Portrait dan Landscape ke satu dokumen PDF dengan FPDI
+        $fpdi = new Fpdi();
+        $fpdi->SetAutoPageBreak(false);
+
+        // Masukkan Halaman Surat (Portrait)
+        $pageCountPortrait = $fpdi->setSourceFile(StreamReader::createByString($pdfPortraitStream));
+        for ($pageNo = 1; $pageNo <= $pageCountPortrait; $pageNo++) {
+            $tplId = $fpdi->importPage($pageNo);
+            $size  = $fpdi->getTemplateSize($tplId);
+            $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
+            $fpdi->useTemplate($tplId);
+        }
+
+        // Masukkan Halaman Lampiran (Landscape)
+        $pageCountLandscape = $fpdi->setSourceFile(StreamReader::createByString($pdfLandscapeStream));
+        for ($pageNo = 1; $pageNo <= $pageCountLandscape; $pageNo++) {
+            $tplId = $fpdi->importPage($pageNo);
+            $size  = $fpdi->getTemplateSize($tplId);
+            $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
+            $fpdi->useTemplate($tplId);
+        }
+
+        $pdfOutput = $fpdi->Output('S');
 
         $suratSlug = ! empty($loan['no_surat'])
             ? preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $loan['no_surat'])
@@ -591,7 +627,7 @@ class InventarisPinjamPakai extends BaseController
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
             ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
-            ->setBody($dompdf->output());
+            ->setBody($pdfOutput);
     }
 
     public function exportExcel()
