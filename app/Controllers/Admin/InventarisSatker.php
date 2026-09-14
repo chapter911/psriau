@@ -1420,6 +1420,7 @@ class InventarisSatker extends BaseController
 
                 $qrOptions = new QROptions([
                     'outputInterface' => $outputInterface,
+                    'eccLevel'        => \chillerlan\QRCode\Common\EccLevel::L,
                     'scale'           => 6,
                     'margin'          => 0,
                 ]);
@@ -1452,11 +1453,11 @@ class InventarisSatker extends BaseController
             $kb = trim((string) ($item['kode_barang'] ?? ''));
             $reg = trim((string) ($item['kode_register'] ?? ''));
             if ($reg !== '') {
-                // Official SIMAN URL format
-                $qrContent = 'https://siman.kemenkeu.go.id/bmn/' . $reg;
+                // Sederhana & tajam: #{Kode Register} agar modul QR besar dan mudah dideteksi kamera
+                $qrContent = '#' . $reg;
             } else {
-                // Fallback: Kode Barang . NUP
-                $qrContent = $kb . '.' . $item['nup'];
+                // Fallback jika belum memiliki kode register: #{Kode Barang}.{NUP}
+                $qrContent = '#' . $kb . '.' . $item['nup'];
             }
 
             $qrBase64 = '';

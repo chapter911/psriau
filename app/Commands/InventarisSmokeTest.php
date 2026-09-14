@@ -230,9 +230,12 @@ class InventarisSmokeTest extends BaseCommand
                 $foundByUrl = preg_match('/([a-f0-9]{32})/i', "https://siman.kemenkeu.go.id/bmn/" . $code, $m)
                     ? $db->table('trn_inventaris_satker')->where('kode_register', strtoupper($m[1]))->get()->getRowArray()
                     : null;
+                $foundByHash = preg_match('/([a-f0-9]{32})/i', "#" . $code, $m2)
+                    ? $db->table('trn_inventaris_satker')->where('kode_register', strtoupper($m2[1]))->get()->getRowArray()
+                    : null;
 
-                if ($foundByRegister && $foundByUrl) {
-                    CLI::write("  [OK] Fitur pencarian QR Code Aset via Kode Register & URL SIMAN teruji akurat: {$sampleAsset['kode_barang']} (Reg: " . substr($code, 0, 10) . "...) -> {$sampleAsset['nama_barang']}", "green");
+                if ($foundByRegister && $foundByUrl && $foundByHash) {
+                    CLI::write("  [OK] Fitur pencarian QR Code Aset via Kode Register (#Kode & URL SIMAN) teruji akurat: {$sampleAsset['kode_barang']} (Reg: #" . substr($code, 0, 8) . "...) -> {$sampleAsset['nama_barang']}", "green");
                 } else {
                     CLI::error("  [FAIL] Pencarian QR Code via kode register gagal.");
                 }

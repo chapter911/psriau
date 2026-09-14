@@ -685,8 +685,8 @@ class InventarisDbr extends BaseController
             }
         }
 
-        // 3. Format Kode Barang (10 digit) + pemisah + NUP (misal 3050104001.1 atau 3050104001-5)
-        if (! $item && preg_match('/^(\d{10})[^\d]+(\d+)$/', $code, $m)) {
+        // 3. Format Kode Barang (10 digit) + pemisah + NUP (misal #3050104001.1, 3050104001.1 atau 3050104001-5)
+        if (! $item && preg_match('/^#?(\d{10})[^\d]+(\d+)$/', $code, $m)) {
             $item = $db->table('trn_inventaris_satker')
                 ->where('kode_barang', $m[1])
                 ->where('nup', $m[2])

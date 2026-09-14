@@ -344,8 +344,8 @@ class InventarisAuditItemModel extends Model
             $nup = trim($parts[1] ?? '');
         }
 
-        // 3. Format Kode Barang (10 digit) + pemisah + NUP (misal 3050104001.1 atau 3050104001-5)
-        if (! $kodeBarang && preg_match('/^(\d{10})[^\d]+(\d+)$/', $keyword, $m)) {
+        // 3. Format Kode Barang (10 digit) + pemisah + NUP (misal #3050104001.1, 3050104001.1 atau 3050104001-5)
+        if (! $kodeBarang && preg_match('/^#?(\d{10})[^\d]+(\d+)$/', $keyword, $m)) {
             $kodeBarang = $m[1];
             $nup = $m[2];
         }
