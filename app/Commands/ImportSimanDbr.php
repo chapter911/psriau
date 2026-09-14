@@ -70,7 +70,7 @@ class ImportSimanDbr extends BaseCommand
             $kodeBarang   = trim((string) $sheet->getCell('E' . $r)->getValue());
             $rawNup       = $sheet->getCell('F' . $r)->getValue();
             $kodeRegister = trim((string) $sheet->getCell('BT' . $r)->getValue());
-            $namaBarang   = trim((string) $sheet->getCell('G' . $r)->getValue());
+            $namaBarang   = clean_inventaris_text((string) $sheet->getCell('G' . $r)->getValue());
 
             if ($kodeBarang === '' && $namaBarang === '') {
                 continue;
@@ -80,8 +80,8 @@ class ImportSimanDbr extends BaseCommand
 
             $kategori   = trim((string) $sheet->getCell('B' . $r)->getValue()) ?: 'Peralatan dan Mesin';
             $statusBmn  = trim((string) $sheet->getCell('H' . $r)->getValue()) ?: 'Digunakan Sendiri';
-            $merk       = trim((string) $sheet->getCell('I' . $r)->getValue());
-            $tipe       = trim((string) $sheet->getCell('J' . $r)->getValue());
+            $merk       = clean_inventaris_text((string) $sheet->getCell('I' . $r)->getValue());
+            $tipe       = clean_inventaris_text((string) $sheet->getCell('J' . $r)->getValue());
             $rawKondisi = trim((string) $sheet->getCell('K' . $r)->getValue());
 
             // Normalisasi kondisi
@@ -95,12 +95,21 @@ class ImportSimanDbr extends BaseCommand
             // Normalisasi merk_tipe
             $merkTipe = '';
             if ($merk !== '' && $tipe !== '') {
-                $merkTipe = ($merk === $tipe) ? $merk : ($merk . ' ' . $tipe);
+                if (strcasecmp($merk, $tipe) === 0) {
+                    $merkTipe = $merk;
+                } elseif (stripos($tipe, $merk) !== false) {
+                    $merkTipe = $tipe;
+                } elseif (stripos($merk, $tipe) !== false) {
+                    $merkTipe = $merk;
+                } else {
+                    $merkTipe = clean_inventaris_text($merk . ' ' . $tipe);
+                }
             } elseif ($merk !== '') {
                 $merkTipe = $merk;
             } else {
                 $merkTipe = $tipe;
             }
+            $merkTipe = clean_inventaris_text($merkTipe);
 
             // Tanggal dan tahun perolehan
             $rawTgl = $sheet->getCell('AH' . $r)->getValue();

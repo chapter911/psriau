@@ -300,9 +300,9 @@ class InventarisSatker extends BaseController
             'kode_barang'     => trim((string) $this->request->getPost('kode_barang')),
             'nup'             => trim((string) $this->request->getPost('nup')) ?: null,
             'kode_register'   => trim((string) $this->request->getPost('kode_register')) ?: null,
-            'nama_barang'     => trim((string) $this->request->getPost('nama_barang')),
+            'nama_barang'     => clean_inventaris_text((string) $this->request->getPost('nama_barang')),
             'kategori'        => trim((string) $this->request->getPost('kategori')),
-            'merk_tipe'       => trim((string) $this->request->getPost('merk_tipe')) ?: null,
+            'merk_tipe'       => clean_inventaris_text((string) $this->request->getPost('merk_tipe')) ?: null,
             'jumlah'          => 1, // Standar BMN: 1 Kode Barang + 1 NUP = 1 Unit Fisik
             'satuan'          => trim((string) $this->request->getPost('satuan')),
             'kondisi'         => trim((string) $this->request->getPost('kondisi')),
@@ -369,9 +369,9 @@ class InventarisSatker extends BaseController
             'kode_barang'     => trim((string) $this->request->getPost('kode_barang')),
             'nup'             => trim((string) $this->request->getPost('nup')) ?: null,
             'kode_register'   => trim((string) $this->request->getPost('kode_register')) ?: null,
-            'nama_barang'     => trim((string) $this->request->getPost('nama_barang')),
+            'nama_barang'     => clean_inventaris_text((string) $this->request->getPost('nama_barang')),
             'kategori'        => trim((string) $this->request->getPost('kategori')),
-            'merk_tipe'       => trim((string) $this->request->getPost('merk_tipe')) ?: null,
+            'merk_tipe'       => clean_inventaris_text((string) $this->request->getPost('merk_tipe')) ?: null,
             'jumlah'          => 1, // Standar BMN: 1 Kode Barang + 1 NUP = 1 Unit Fisik
             'satuan'          => trim((string) $this->request->getPost('satuan')),
             'kondisi'         => trim((string) $this->request->getPost('kondisi')),
@@ -807,7 +807,7 @@ class InventarisSatker extends BaseController
 
                 $kodeBarang   = $getVal('kode_barang');
                 $nup          = $getVal('nup');
-                $namaBarang   = $getVal('nama_barang');
+                $namaBarang   = clean_inventaris_text($getVal('nama_barang'));
                 $kodeRegister = $getVal('kode_register');
 
                 if ($kodeBarang === '' && $namaBarang === '') {
@@ -819,9 +819,9 @@ class InventarisSatker extends BaseController
 
                 $kategori     = $getVal('kategori') ?: 'Peralatan Kantor';
                 $statusBmn    = $getVal('status_bmn') ?: 'Aktif';
-                $merk         = $getVal('merk');
-                $tipe         = $getVal('tipe');
-                $merkTipe     = $getVal('merk_tipe');
+                $merk         = clean_inventaris_text($getVal('merk'));
+                $tipe         = clean_inventaris_text($getVal('tipe'));
+                $merkTipe     = clean_inventaris_text($getVal('merk_tipe'));
                 $rawKondisi   = $getVal('kondisi');
                 $noPsp        = $getVal('no_psp');
                 $lokasiRuang  = $getVal('lokasi_ruangan');
@@ -840,11 +840,31 @@ class InventarisSatker extends BaseController
                 // Format merk_tipe jika tidak tersedia kolom gabungan
                 if ($merkTipe === '') {
                     if ($merk !== '' && $tipe !== '') {
-                        $merkTipe = ($merk === $tipe) ? $merk : ($merk . ' ' . $tipe);
+                        if (strcasecmp($merk, $tipe) === 0) {
+                            $merkTipe = $merk;
+                        } elseif (stripos($tipe, $merk) !== false) {
+                            $merkTipe = $tipe;
+                        } elseif (stripos($merk, $tipe) !== false) {
+                            $merkTipe = $merk;
+                        } else {
+                            $merkTipe = clean_inventaris_text($merk . ' ' . $tipe);
+                        }
                     } elseif ($merk !== '') {
                         $merkTipe = $merk;
                     } else {
                         $merkTipe = $tipe;
+                    }
+                }
+                $merkTipe = clean_inventaris_text($merkTipe);
+
+                // Standarisasi kodifikasi baku BMN (pulihkan nama umum aset resmi jika tersimpan merk duplikat)
+                if (isset(self::KODIFIKASI_BMN[$kodeBarang])) {
+                    $namaBaku = self::KODIFIKASI_BMN[$kodeBarang];
+                    if (strcasecmp($namaBarang, $namaBaku) !== 0) {
+                        if ($merkTipe === '' || strcasecmp($merkTipe, $namaBarang) === 0) {
+                            $merkTipe = $namaBarang;
+                        }
+                        $namaBarang = $namaBaku;
                     }
                 }
 
@@ -1431,20 +1451,7 @@ class InventarisSatker extends BaseController
 
         // Helper untuk membersihkan duplikasi teks (e.g. "X X" menjadi "X")
         $deduplicate = static function (string $str): string {
-            $str = trim($str);
-            $len = strlen($str);
-            if ($len >= 4 && $len % 2 !== 0) {
-                $half = ($len - 1) / 2;
-                if (substr($str, 0, $half) === substr($str, $half + 1)) {
-                    return substr($str, 0, $half);
-                }
-            } elseif ($len >= 4 && $len % 2 === 0) {
-                $half = $len / 2;
-                if (substr($str, 0, $half) === substr($str, $half)) {
-                    return trim(substr($str, 0, $half));
-                }
-            }
-            return $str;
+            return clean_inventaris_text($str);
         };
 
         $stickerData = [];

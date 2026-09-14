@@ -107,14 +107,17 @@
                 $kondisiItem = $itm['kondisi_pinjam'] ?? ($loan['kondisi_pinjam'] ?? 'Baik');
                 $kelengkapanItem = $itm['kelengkapan'] ?? ($loan['kelengkapan'] ?? '');
                 $catatanItem = ! empty($itm['catatan']) ? $itm['catatan'] : (! empty($loan['catatan']) ? $loan['catatan'] : 'Tercatat pada Inventarisasi Aset Satker Pelaksanaan Prasarana Strategis');
+                $cleanNama = clean_inventaris_text($itm['nama_barang'] ?? '');
+                $cleanMerk = clean_inventaris_text($itm['merk_tipe'] ?? '');
+                $displayMerk = ($cleanMerk !== '' && strcasecmp($cleanMerk, $cleanNama) !== 0) ? $cleanMerk : '-';
             ?>
             <tr>
                 <td style="text-align: center;"><?= $noUrut++; ?>.</td>
                 <td style="text-align: center;"><?= esc($itm['kode_barang'] ?? ''); ?></td>
-                <td><?= esc($itm['nama_barang'] ?? ''); ?></td>
+                <td><?= esc($cleanNama); ?></td>
                 <td style="text-align: center;"><?= esc($itm['nup'] ?? ''); ?></td>
                 <td>
-                    Tipe : <?= esc($itm['merk_tipe'] ?? '-') ?: '-'; ?>
+                    Tipe : <?= esc($displayMerk); ?>
                     <?= ! empty($kelengkapanItem) ? ' (Kelengkapan: ' . esc($kelengkapanItem) . ')' : ''; ?>
                 </td>
                 <td style="text-align: center;"><?= esc($itm['tahun_perolehan'] ?? '-') ?: '-'; ?></td>

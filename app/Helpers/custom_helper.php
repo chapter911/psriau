@@ -594,4 +594,78 @@ if (! function_exists('should_show_nip')) {
     }
 }
 
+if (! function_exists('clean_inventaris_text')) {
+    /**
+     * Membersihkan teks nama aset/barang atau merk/tipe dari duplikasi berulang (contoh: "X X" -> "X")
+     * Kebal terhadap spasi berlebih, non-breaking space (0xA0), dan tanda pemisah.
+     */
+    function clean_inventaris_text(?string $str): string
+    {
+        if ($str === null) {
+            return '';
+        }
+
+        // Ganti non-breaking space (0xA0) dan bersihkan spasi berlebih
+        $str = preg_replace('/\x{00a0}+/u', ' ', $str);
+        $str = trim(preg_replace('/\s+/', ' ', $str));
+
+        if ($str === '') {
+            return '';
+        }
+
+        // 1. Duplikasi persis dua bagian identik (misal: "X X" atau "X - X" atau "X / X" atau "XX")
+        $len = strlen($str);
+        if ($len >= 6) {
+            $half = (int) ($len / 2);
+            // Kasus ganjil dengan pemisah 1 karakter di tengah: e.g. "X X"
+            if ($len % 2 !== 0 && substr($str, 0, $half) === substr($str, $half + 1)) {
+                $str = trim(substr($str, 0, $half));
+            }
+            // Kasus genap tanpa pemisah: e.g. "XX"
+            elseif ($len % 2 === 0 && substr($str, 0, $half) === substr($str, $half)) {
+                $str = trim(substr($str, 0, $half));
+            }
+        }
+
+        // 2. Regex untuk duplikasi dengan tanda pemisah (spasi, strip, garis miring, titik koma)
+        if (preg_match('/^(.{3,})\s*[\s\-\/;]+\s*\1$/i', $str, $matches)) {
+            $str = trim($matches[1]);
+        }
+
+        // 3. Duplikasi kata/prefix awalan yang berulang (misal: "SAMSUNG SAMSUNG GALAXY" -> "SAMSUNG GALAXY")
+        if (preg_match('/^([a-zA-Z0-9\-\.]{3,})\s+\1\b\s*(.*)$/i', $str, $matches)) {
+            $str = trim($matches[1] . ' ' . $matches[2]);
+        }
+
+        return $str;
+    }
+}
+
+if (! function_exists('format_inventaris_merk')) {
+    /**
+     * Mengembalikan merk/tipe yang rapi tanpa menduplikasi nama barang jika sudah sama atau tercakup
+     */
+    function format_inventaris_merk(?string $namaBarang, ?string $merkTipe): string
+    {
+        $nama = clean_inventaris_text($namaBarang);
+        $merk = clean_inventaris_text($merkTipe);
+
+        if ($merk === '' || $merk === '-') {
+            return '-';
+        }
+
+        // Jika merk/tipe sama persis dengan nama barang (case-insensitive)
+        if (strcasecmp($nama, $merk) === 0) {
+            return '-';
+        }
+
+        // Jika nama barang sudah mengandung seluruh string merk/tipe
+        if (stripos($nama, $merk) !== false) {
+            return '-';
+        }
+
+        return $merk;
+    }
+}
+
 
