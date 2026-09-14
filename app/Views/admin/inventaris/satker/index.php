@@ -414,7 +414,7 @@
                                     <?php endif; ?>
                                 </td>
                                 <td class="align-middle">
-                                    <div class="font-weight-bold text-primary"><?= esc($item['nama_barang']); ?></div>
+                                    <div class="font-weight-bold text-primary"><?= esc(clean_inventaris_text($item['nama_barang'])); ?></div>
                                     <?php if (! empty($item['keterangan'])): ?>
                                         <small class="text-muted d-block mt-0.5"><i class="fas fa-info-circle mr-1"></i><?= esc($item['keterangan']); ?></small>
                                     <?php endif; ?>
@@ -422,26 +422,29 @@
                                 <td class="align-middle">
                                     <span class="badge badge-light border px-2 py-1"><?= esc($item['kategori']); ?></span>
                                 </td>
-                                <td class="align-middle"><?= esc($item['merk_tipe'] ?: '-'); ?></td>
+                                <td class="align-middle"><?= esc(clean_inventaris_text($item['merk_tipe'] ?: '-')); ?></td>
                                 <td class="text-center align-middle font-weight-bold">
                                     <?= number_format((int) ($item['jumlah'] ?? 1)); ?> <small class="text-muted font-weight-normal"><?= esc($item['satuan'] ?? 'Unit'); ?></small>
                                 </td>
                                 <td class="text-center align-middle">
                                     <?php if ($item['kondisi'] === 'baik'): ?>
-                                        <span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i> Baik</span>
+                                        <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Baik</span>
                                     <?php elseif ($item['kondisi'] === 'rusak_ringan'): ?>
-                                        <span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-exclamation-triangle mr-1"></i> Rusak Ringan</span>
+                                        <span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-exclamation-triangle mr-1"></i>Rusak Ringan</span>
                                     <?php else: ?>
-                                        <span class="badge badge-danger px-2 py-1"><i class="fas fa-times mr-1"></i> Rusak Berat</span>
+                                        <span class="badge badge-danger px-2 py-1"><i class="fas fa-times-circle mr-1"></i>Rusak Berat</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="align-middle">
-                                    <i class="fas fa-door-open text-muted mr-1"></i> <?= esc($item['lokasi_ruangan']); ?>
+                                <td class="align-middle font-weight-medium">
+                                    <i class="fas fa-map-marker-alt text-muted mr-1.5" style="font-size: 0.8rem;"></i>
+                                    <?= esc($item['lokasi_ruangan'] ?: 'Belum ditentukan'); ?>
                                 </td>
-                                <td class="text-center align-middle"><?= esc((string) ($item['tahun_perolehan'] ?: '-')); ?></td>
+                                <td class="text-center align-middle text-muted">
+                                    <?= esc($item['tahun_perolehan'] ?: '-'); ?>
+                                </td>
                                 <?php if (! empty($can_edit) || ! empty($can_delete) || ! empty($can_export)): ?>
                                     <td class="text-center align-middle" style="white-space: nowrap;">
-                                        <div class="btn-group" role="group">
+                                        <div class="btn-group btn-group-sm" role="group">
                                             <?php if (! empty($can_export)): ?>
                                                 <a href="<?= site_url('admin/inventaris/barang/cetak-sticker?id=' . $item['id']); ?>" target="_blank" class="btn btn-info btn-sm" title="Cetak Sticker BMN (1 Baris 2 Sticker)">
                                                     <i class="fas fa-qrcode"></i>
@@ -458,9 +461,9 @@
                                                     data-nup="<?= esc((string) ($item['nup'] ?? ''), 'attr'); ?>"
                                                     data-register="<?= esc((string) ($item['kode_register'] ?? ''), 'attr'); ?>"
                                                     data-peruntukan="<?= esc((string) ($item['peruntukan'] ?? 'kantor'), 'attr'); ?>"
-                                                    data-nama="<?= esc((string) $item['nama_barang'], 'attr'); ?>"
+                                                    data-nama="<?= esc(clean_inventaris_text($item['nama_barang']), 'attr'); ?>"
                                                     data-kategori="<?= esc((string) $item['kategori'], 'attr'); ?>"
-                                                    data-merk="<?= esc((string) ($item['merk_tipe'] ?? ''), 'attr'); ?>"
+                                                    data-merk="<?= esc(clean_inventaris_text($item['merk_tipe'] ?? ''), 'attr'); ?>"
                                                     data-jumlah="<?= esc((string) ($item['jumlah'] ?? 1), 'attr'); ?>"
                                                     data-satuan="<?= esc((string) ($item['satuan'] ?? 'Unit'), 'attr'); ?>"
                                                     data-kondisi="<?= esc((string) $item['kondisi'], 'attr'); ?>"

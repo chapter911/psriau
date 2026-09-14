@@ -319,9 +319,13 @@
                                 <td style="text-align: center; font-family: monospace;"><?= esc($item['kode_barang']); ?></td>
                                 <td style="text-align: center; font-weight: bold;"><?= esc($item['nup'] ?: '-'); ?></td>
                                 <td>
-                                    <strong><?= esc($item['nama_barang']); ?></strong>
-                                    <?php if (! empty($item['merk_tipe'])): ?>
-                                        <br><span style="color: #4b5563; font-size: 7pt;"><?= esc($item['merk_tipe']); ?></span>
+                                    <?php 
+                                        $cleanNama = clean_inventaris_text($item['nama_barang']);
+                                        $cleanMerk = clean_inventaris_text($item['merk_tipe'] ?? '');
+                                    ?>
+                                    <strong><?= esc($cleanNama); ?></strong>
+                                    <?php if (! empty($cleanMerk) && strcasecmp($cleanMerk, $cleanNama) !== 0): ?>
+                                        <br><span style="color: #4b5563; font-size: 7pt;"><?= esc($cleanMerk); ?></span>
                                     <?php endif; ?>
                                 </td>
                                 <td style="text-align: center;"><?= esc($item['kondisi_sistem']); ?></td>
@@ -397,9 +401,13 @@
                         <td style="text-align: center; font-family: monospace;"><?= esc($item['kode_barang']); ?></td>
                         <td style="text-align: center; font-weight: bold;"><?= esc($item['nup'] ?: '-'); ?></td>
                         <td>
-                            <strong><?= esc($item['nama_barang']); ?></strong>
-                            <?php if (! empty($item['merk_tipe'])): ?>
-                                <br><span style="color: #4b5563; font-size: 7pt;"><?= esc($item['merk_tipe']); ?></span>
+                            <?php 
+                                $cleanNama = clean_inventaris_text($item['nama_barang']);
+                                $cleanMerk = clean_inventaris_text($item['merk_tipe'] ?? '');
+                            ?>
+                            <strong><?= esc($cleanNama); ?></strong>
+                            <?php if (! empty($cleanMerk) && strcasecmp($cleanMerk, $cleanNama) !== 0): ?>
+                                <br><span style="color: #4b5563; font-size: 7pt;"><?= esc($cleanMerk); ?></span>
                             <?php endif; ?>
                         </td>
                         <td><?= esc($item['ruangan_sistem_nama'] ?: ($item['peruntukan'] === 'mobiler' ? 'Sekolah' : 'Kantor')); ?></td>

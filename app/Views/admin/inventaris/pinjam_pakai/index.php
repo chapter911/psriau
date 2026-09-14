@@ -456,11 +456,16 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                     <span class="badge badge-info ml-1" style="font-size: 0.72rem;">Bisa Pilih Beberapa Barang Sekaligus</span>
                                 </label>
                                 <select name="inventaris_ids[]" id="tambah-inventaris-select" class="form-control" multiple="multiple" required style="width: 100%;">
-                                    <?php foreach (($availableAssets ?? []) as $ast): ?>
-                                        <option value="<?= esc($ast['id']); ?>">
-                                            [NUP <?= esc($ast['nup']); ?>] <?= esc($ast['nama_barang']); ?> <?= ! empty($ast['merk_tipe']) ? ' - ' . esc($ast['merk_tipe']) : ''; ?> (<?= esc($ast['kode_barang']); ?>) - Kondisi: <?= esc(ucwords(str_replace('_', ' ', $ast['kondisi'] ?? 'baik'))); ?>
-                                        </option>
-                                    <?php endforeach; ?>
+                                     <?php foreach (($availableAssets ?? []) as $ast): ?>
+                                         <?php
+                                             $astNama = clean_inventaris_text($ast['nama_barang'] ?? '');
+                                             $astMerk = clean_inventaris_text($ast['merk_tipe'] ?? '');
+                                             $extraMerk = ($astMerk !== '' && strcasecmp($astMerk, $astNama) !== 0 && stripos($astNama, $astMerk) === false) ? ' - ' . $astMerk : '';
+                                         ?>
+                                         <option value="<?= esc($ast['id']); ?>">
+                                             [NUP <?= esc($ast['nup']); ?>] <?= esc($astNama); ?><?= esc($extraMerk); ?> (<?= esc($ast['kode_barang']); ?>) - Kondisi: <?= esc(ucwords(str_replace('_', ' ', $ast['kondisi'] ?? 'baik'))); ?>
+                                         </option>
+                                     <?php endforeach; ?>
                                 </select>
                                 <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle mr-1 text-primary"></i>Pilih satu atau beberapa aset BMN yang tersedia. Cari berdasarkan nama, merk, kode, atau NUP.</small>
                             </div>

@@ -340,12 +340,12 @@
                         <td class="text-center"><?= $no++; ?></td>
                         <td class="text-center font-mono font-bold" style="color: #1e293b;"><?= esc($item['kode_barang']); ?></td>
                         <td>
-                            <div class="font-bold" style="color: #0f172a;"><?= esc($item['nama_barang']); ?></div>
+                            <div class="font-bold" style="color: #0f172a;"><?= esc(clean_inventaris_text($item['nama_barang'])); ?></div>
                             <?php if ($noPsp !== ''): ?>
                                 <div class="badge-psp">PSP: <?= esc($noPsp); ?></div>
                             <?php endif; ?>
                         </td>
-                        <td><?= esc(! empty($item['merk_tipe']) ? $item['merk_tipe'] : '-'); ?></td>
+                        <td><?= esc(! empty($item['merk_tipe']) ? clean_inventaris_text($item['merk_tipe']) : '-'); ?></td>
                         <td class="text-center"><?= esc(! empty($item['tahun_perolehan']) ? $item['tahun_perolehan'] : '-'); ?></td>
                         <td class="text-center">
                             <span class="<?= $kondisiBadgeClass; ?>"><?= $kondisiText; ?></span>

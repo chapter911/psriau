@@ -146,9 +146,9 @@
             ?>
                 <tr>
                     <td class="text-center"><?= $no++; ?></td>
-                    <td style="font-weight: bold;"><?= esc($item['nama_barang']); ?></td>
+                    <td style="font-weight: bold;"><?= esc(clean_inventaris_text($item['nama_barang'])); ?></td>
                     <td class="text-center font-weight-bold"><?= (int) $item['jumlah']; ?></td>
-                    <td><?= esc($item['merk_tipe'] ?: '-'); ?></td>
+                    <td><?= esc(clean_inventaris_text($item['merk_tipe'] ?: '-')); ?></td>
                     <td class="text-center"><?= esc($item['tahun_perolehan'] ?: '-'); ?></td>
                     <td><?= esc($lokasi); ?></td>
                     <td><?= esc($item['keterangan'] ?: '-'); ?></td>

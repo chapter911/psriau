@@ -1268,6 +1268,23 @@ class InventarisSmokeTest extends BaseCommand
             $satkerModel->delete($multiAsset1);
             $satkerModel->delete($multiAsset2);
 
+            // 4b. Uji Sanitasi Anti-Duplikasi Nama Barang BMN (clean_inventaris_text)
+            $testDupText = "SAMSUNG GALAXY TAB S11 (5G) 12/256 GB SAMSUNG GALAXY TAB S11 (5G) 12/256 GB";
+            $cleaned = clean_inventaris_text($testDupText);
+            if ($cleaned === "SAMSUNG GALAXY TAB S11 (5G) 12/256 GB") {
+                CLI::write("  [OK] Sanitasi Anti-Duplikasi valid: '{$testDupText}' -> '{$cleaned}' (1x penulisan bersih)", "green");
+            } else {
+                CLI::error("  [FAIL] Sanitasi Anti-Duplikasi gagal: '{$cleaned}'");
+            }
+
+            $testMerkSpec = format_inventaris_merk("Tablet PC", "SAMSUNG GALAXY TAB S11 (5G) 12/256 GB");
+            $testDupMerk  = format_inventaris_merk("SAMSUNG GALAXY TAB S11 (5G) 12/256 GB", "SAMSUNG GALAXY TAB S11 (5G) 12/256 GB");
+            if ($testMerkSpec === "SAMSUNG GALAXY TAB S11 (5G) 12/256 GB" && $testDupMerk === "-") {
+                CLI::write("  [OK] Format Merk/Tipe Protektif valid: Spesifikasi terjaga & redundansi identik dieliminasi menjadi '-'", "green");
+            } else {
+                CLI::error("  [FAIL] Format Merk/Tipe Protektif gagal.");
+            }
+
             // 5. Uji Proses Pengembalian Aset
             $pinjamModel->update($pinjamId, [
                 'status'                => 'dikembalikan',

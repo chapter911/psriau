@@ -332,8 +332,8 @@
                                     <td class="text-center font-bold" style="color: #64748b;"><?= $no++; ?></td>
                                     <td class="text-center font-bold font-mono" style="color: #1e3a8a;"><?= esc($it['kode_barang']); ?></td>
                                     <td class="text-center font-bold font-mono" style="background-color: #f1f5f9;"><?= esc((string) $it['nup']); ?></td>
-                                    <td class="font-bold" style="color: #0f172a;"><?= esc($it['nama_barang']); ?></td>
-                                    <td style="color: #475569;"><?= esc(! empty($it['merk_tipe']) ? $it['merk_tipe'] : '-'); ?></td>
+                                    <td class="font-bold" style="color: #0f172a;"><?= esc(clean_inventaris_text($it['nama_barang'])); ?></td>
+                                    <td style="color: #475569;"><?= esc(! empty($it['merk_tipe']) ? clean_inventaris_text($it['merk_tipe']) : '-'); ?></td>
                                     <td class="text-center">
                                         <?php if ($it['kondisi'] === 'baik'): ?>
                                             <span class="badge-kondisi-b">Baik</span>
