@@ -13,7 +13,7 @@ if (! function_exists('esc')) {
     <style>
         @page {
             size: A4 portrait;
-            margin: 8mm 7mm 8mm 7mm;
+            margin: 7mm 6mm 7mm 6mm;
         }
         * {
             box-sizing: border-box;
@@ -27,16 +27,26 @@ if (! function_exists('esc')) {
             font-size: 8pt;
             line-height: 1.15;
         }
+
+        /* Tabel Halaman Utama: 2 Kolom Per Baris Fixed Layout */
         .sticker-page-table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: separate;
-            border-spacing: 4mm 4mm;
+            border-spacing: 3.5mm 3.5mm;
         }
         .sticker-cell {
             width: 50%;
+            max-width: 95.5mm;
             vertical-align: top;
             padding: 0;
         }
+        .sticker-cell.empty-cell {
+            border: none;
+            background: transparent;
+        }
+
+        /* Kartu Stiker Tunggal */
         .sticker-card {
             width: 100%;
             height: 35.5mm;
@@ -45,14 +55,17 @@ if (! function_exists('esc')) {
             background: #ffffff;
             page-break-inside: avoid;
             overflow: hidden;
+            box-sizing: border-box;
         }
 
         /* Bagian Atas (Identitas Instansi) */
         .header-table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
             border-bottom: 1px solid #111111;
-            padding: 1.2mm 2.2mm 1.2mm 2.2mm;
+            padding: 1.2mm 2.2mm 1mm 2.2mm;
+            height: 10.5mm;
         }
         .header-logo-td {
             width: 9.5mm;
@@ -68,7 +81,7 @@ if (! function_exists('esc')) {
         .header-text-td {
             vertical-align: middle;
             text-align: center;
-            padding: 0 0 0 1.5mm;
+            padding: 0 0 0 1mm;
         }
         .instansi-title {
             font-size: 8.5pt;
@@ -76,46 +89,57 @@ if (! function_exists('esc')) {
             color: #000000;
             line-height: 1.15;
             letter-spacing: 0.1px;
+            white-space: nowrap;
+            overflow: hidden;
         }
         .instansi-code {
             font-size: 7.8pt;
             font-weight: normal;
             color: #000000;
             line-height: 1.15;
-            margin-top: 0.4mm;
+            margin-top: 0.3mm;
             letter-spacing: 0.2px;
+            white-space: nowrap;
+            overflow: hidden;
         }
 
         /* Bagian Bawah (Data Spesifikasi Aset & Verifikasi) */
         .body-table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
             padding: 1.5mm 2.2mm 1.5mm 2.2mm;
+            height: 24.5mm;
         }
         .body-info-td {
-            width: 74%;
+            width: 73%;
             vertical-align: top;
             padding-right: 1.5mm;
         }
         .info-top-table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
-            margin-bottom: 0.4mm;
+            margin-bottom: 0.3mm;
         }
         .cell-kode-barang {
-            width: 52%;
+            width: 53%;
             font-size: 8.2pt;
             font-weight: normal;
             color: #000000;
             vertical-align: top;
+            white-space: nowrap;
+            overflow: hidden;
         }
         .cell-nup {
-            width: 48%;
+            width: 47%;
             font-size: 8.2pt;
             font-weight: normal;
             color: #000000;
             vertical-align: top;
             text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
         }
         .cell-nama-barang {
             font-size: 8.2pt;
@@ -130,7 +154,7 @@ if (! function_exists('esc')) {
             height: 4.5mm;
         }
         .cell-merk-tipe {
-            font-size: 7.8pt;
+            font-size: 7.6pt;
             font-weight: normal;
             color: #000000;
             line-height: 1.15;
@@ -141,7 +165,7 @@ if (! function_exists('esc')) {
 
         /* Area Kanan (Kode Digital: QR Code) */
         .body-qr-td {
-            width: 26%;
+            width: 27%;
             vertical-align: middle;
             text-align: right;
             padding: 0;
@@ -152,11 +176,22 @@ if (! function_exists('esc')) {
             display: block;
             margin-left: auto;
         }
+        .qr-placeholder {
+            width: 19mm;
+            height: 19mm;
+            border: 1px dashed #cccccc;
+            display: block;
+            margin-left: auto;
+        }
     </style>
 </head>
 <body>
 
     <table class="sticker-page-table" cellpadding="0" cellspacing="0">
+        <colgroup>
+            <col style="width: 50%;">
+            <col style="width: 50%;">
+        </colgroup>
         <?php
         $chunks = array_chunk($stickers ?? [], 2);
         foreach ($chunks as $row):
@@ -195,20 +230,23 @@ if (! function_exists('esc')) {
                                                 <td class="cell-nup">NUP: <?= esc($stk['nup']); ?></td>
                                             </tr>
                                         </table>
-                                        <!-- Baris Tengah: Nama Baku Barang -->
-                                        <div class="cell-nama-barang"><?= esc($stk['nama_barang']); ?></div>
 
-                                        <!-- Spacer agar deskripsi spesifik berada di baris bawah -->
+                                        <!-- Baris Tengah: Nama Baku Barang Berdasarkan Kodifikasi Resmi BMN -->
+                                        <div class="cell-nama-barang" title="<?= esc($stk['nama_barang'], 'attr'); ?>"><?= esc($stk['nama_barang']); ?></div>
+
+                                        <!-- Spacer vertikal agar deskripsi spesifik berada di baris bawah -->
                                         <div class="cell-spacer"></div>
 
-                                        <!-- Baris Bawah: Deskripsi Spesifik / Merk / Tipe Fisik -->
-                                        <div class="cell-merk-tipe"><?= esc($stk['merk_tipe']); ?></div>
+                                        <!-- Baris Bawah: Deskripsi Spesifik, Tipe, atau Merek Fisik Aset -->
+                                        <div class="cell-merk-tipe" title="<?= esc($stk['merk_tipe'], 'attr'); ?>"><?= esc($stk['merk_tipe']); ?></div>
                                     </td>
 
                                     <!-- Area Kanan (Kode Digital: QR Code) -->
                                     <td class="body-qr-td">
                                         <?php if (! empty($stk['qr_base64'])): ?>
                                             <img src="<?= $stk['qr_base64']; ?>" class="qr-image" alt="QR Code">
+                                        <?php else: ?>
+                                            <div class="qr-placeholder"></div>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -218,8 +256,8 @@ if (! function_exists('esc')) {
                 <?php endforeach; ?>
 
                 <?php if (count($row) === 1): ?>
-                    <!-- Sel kosong penyeimbang jika jumlah ganjil -->
-                    <td class="sticker-cell" style="border: none;"></td>
+                    <!-- Sel kosong penyeimbang jika baris ganjil -->
+                    <td class="sticker-cell empty-cell"></td>
                 <?php endif; ?>
             </tr>
         <?php endforeach; ?>

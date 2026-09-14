@@ -22,6 +22,46 @@ class InventarisSatker extends BaseController
     private const MENU_LINK = 'admin/inventaris/barang';
     private const MENU_LINK_ALT = 'admin/inventaris/satker';
 
+    /**
+     * Tabel Standar Kodifikasi Baku Barang Milik Negara (BMN) Kementerian Keuangan
+     * Menjamin Baris Tengah pada Stiker BMN menampilkan nama baku kodifikasi resmi BMN.
+     */
+    private const KODIFIKASI_BMN = [
+        '3050104001' => 'Lemari Besi/Metal',
+        '3050104003' => 'Rak Besi',
+        '3050104007' => 'Brandkas',
+        '3050105010' => 'White Board',
+        '3050105015' => 'Alat Penghancur Kertas',
+        '3050105096' => 'Papan Tulis Kaca',
+        '3050201001' => 'Meja Kerja Besi/Metal',
+        '3050201002' => 'Meja Kerja Kayu',
+        '3050201003' => 'Kursi Besi/Metal',
+        '3050201008' => 'Meja Rapat',
+        '3050201020' => 'Kursi Fiber Glas/Plastik',
+        '3050201033' => 'Sofa',
+        '3050203005' => 'Air Cleaner',
+        '3050204004' => 'A.C. Split',
+        '3050204007' => 'Exhause Fan',
+        '3050206002' => 'Televisi',
+        '3050206007' => 'Loudspeaker',
+        '3050206014' => 'Microphone',
+        '3050206036' => 'Dispenser',
+        '3060101056' => 'Battery Charger (Peralatan Studio Audio)',
+        '3060102045' => 'Tripod Camera',
+        '3060102128' => 'Camera Digital',
+        '3060102132' => 'Video Conference',
+        '3060102170' => 'Gimbal Tripod',
+        '3060105047' => 'Kamera Udara',
+        '3100102001' => 'P.C Unit',
+        '3100102003' => 'Note Book',
+        '3100102009' => 'Tablet PC',
+        '3100203003' => 'Printer (Peralatan Personal Komputer)',
+        '3100203004' => 'Scanner (Peralatan Personal Komputer)',
+        '3100203017' => 'External/ Portable Hardisk',
+        '6070501001' => 'Aset Tetap Lainnya Dalam Renovasi',
+        '7010101005' => 'Aset Tetap Lainnya Dalam Pengerjaan',
+    ];
+
     private function checkAccess(): ?RedirectResponse
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
@@ -1370,12 +1410,16 @@ class InventarisSatker extends BaseController
             'chillerlan\Settings' => APPPATH . 'ThirdParty/chillerlan/php-settings-container/src',
         ]);
 
-        // Inisialisasi generator QR Code GD PNG
+        // Inisialisasi generator QR Code (GD PNG atau SVG fallback)
         $qrGenerator = null;
         if (class_exists(QROptions::class) && class_exists(QRCode::class)) {
             try {
+                $outputInterface = extension_loaded('gd')
+                    ? \chillerlan\QRCode\Output\QRGdImagePNG::class
+                    : \chillerlan\QRCode\Output\QRMarkupSVG::class;
+
                 $qrOptions = new QROptions([
-                    'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
+                    'outputInterface' => $outputInterface,
                     'scale'           => 6,
                     'margin'          => 0,
                 ]);
@@ -1385,15 +1429,34 @@ class InventarisSatker extends BaseController
             }
         }
 
+        // Helper untuk membersihkan duplikasi teks (e.g. "X X" menjadi "X")
+        $deduplicate = static function (string $str): string {
+            $str = trim($str);
+            $len = strlen($str);
+            if ($len >= 4 && $len % 2 !== 0) {
+                $half = ($len - 1) / 2;
+                if (substr($str, 0, $half) === substr($str, $half + 1)) {
+                    return substr($str, 0, $half);
+                }
+            } elseif ($len >= 4 && $len % 2 === 0) {
+                $half = $len / 2;
+                if (substr($str, 0, $half) === substr($str, $half)) {
+                    return trim(substr($str, 0, $half));
+                }
+            }
+            return $str;
+        };
+
         $stickerData = [];
         foreach ($items as $item) {
+            $kb = trim((string) ($item['kode_barang'] ?? ''));
             $reg = trim((string) ($item['kode_register'] ?? ''));
             if ($reg !== '') {
                 // Official SIMAN URL format
                 $qrContent = 'https://siman.kemenkeu.go.id/bmn/' . $reg;
             } else {
                 // Fallback: Kode Barang . NUP
-                $qrContent = $item['kode_barang'] . '.' . $item['nup'];
+                $qrContent = $kb . '.' . $item['nup'];
             }
 
             $qrBase64 = '';
@@ -1405,6 +1468,19 @@ class InventarisSatker extends BaseController
                 }
             }
 
+            // 1. Resolusi Nama Baku Barang BMN (Baris Tengah)
+            // Prioritaskan tabel kodifikasi baku BMN jika terdaftar, atau bersihkan teks dari database
+            $rawNama = trim((string) ($item['nama_barang'] ?? ''));
+            $rawNamaDedup = $deduplicate($rawNama);
+            if (isset(self::KODIFIKASI_BMN[$kb])) {
+                $namaBaku = self::KODIFIKASI_BMN[$kb];
+            } elseif ($rawNamaDedup !== '') {
+                $namaBaku = $rawNamaDedup;
+            } else {
+                $namaBaku = '-';
+            }
+
+            // 2. Resolusi Deskripsi Spesifik / Merk / Tipe Fisik (Baris Bawah)
             $merkTipeDisplay = trim((string) ($item['merk_tipe'] ?? ''));
             if ($merkTipeDisplay === '') {
                 $merkTipeDisplay = trim((string) ($item['merk'] ?? ''));
@@ -1412,13 +1488,17 @@ class InventarisSatker extends BaseController
             if ($merkTipeDisplay === '') {
                 $merkTipeDisplay = trim((string) ($item['tipe'] ?? ''));
             }
+            if ($merkTipeDisplay === '' && $rawNamaDedup !== '' && $rawNamaDedup !== $namaBaku) {
+                $merkTipeDisplay = $rawNamaDedup;
+            }
+            $merkTipeDisplay = $deduplicate($merkTipeDisplay);
 
             $stickerData[] = [
                 'id'              => $item['id'],
-                'kode_barang'     => $item['kode_barang'],
+                'kode_barang'     => $kb,
                 'nup'             => $item['nup'],
                 'kode_register'   => $reg,
-                'nama_barang'     => $item['nama_barang'],
+                'nama_barang'     => $namaBaku,
                 'merk_tipe'       => $merkTipeDisplay ?: '-',
                 'tahun_perolehan' => ! empty($item['tahun_perolehan']) ? $item['tahun_perolehan'] : '2025',
                 'qr_base64'       => $qrBase64,
