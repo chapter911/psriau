@@ -671,6 +671,8 @@
     const contourLayer = L.layerGroup().addTo(map);
     let mapScript = '';
     let activeMarkers = [];
+    const markerIconCache = new Map();
+
     function escapeHtml(str) {
         if (!str) return '';
         return String(str)
