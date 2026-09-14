@@ -1410,8 +1410,8 @@ class InventarisSatker extends BaseController
             'chillerlan\Settings' => APPPATH . 'ThirdParty/chillerlan/php-settings-container/src',
         ]);
 
-        // Inisialisasi generator QR Code (GD PNG atau SVG fallback)
-        $qrGenerator = null;
+        // Inisialisasi konfigurasi generator QR Code (GD PNG atau SVG fallback)
+        $qrOptions = null;
         if (class_exists(QROptions::class) && class_exists(QRCode::class)) {
             try {
                 $outputInterface = extension_loaded('gd')
@@ -1424,7 +1424,6 @@ class InventarisSatker extends BaseController
                     'scale'           => 6,
                     'margin'          => 0,
                 ]);
-                $qrGenerator = new QRCode($qrOptions);
             } catch (\Throwable $e) {
                 log_message('error', 'Gagal inisialisasi QR Code: ' . $e->getMessage());
             }
@@ -1461,9 +1460,10 @@ class InventarisSatker extends BaseController
             }
 
             $qrBase64 = '';
-            if ($qrGenerator !== null) {
+            if ($qrOptions !== null) {
                 try {
-                    $qrBase64 = $qrGenerator->render($qrContent);
+                    // PENTING: Instansiasi baru per item agar data segments tidak terakumulasi antar item
+                    $qrBase64 = (new QRCode($qrOptions))->render($qrContent);
                 } catch (\Throwable $e) {
                     $qrBase64 = '';
                 }
