@@ -399,6 +399,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('inventaris/barang/import-siman', 'Admin\\InventarisSatker::importSiman');
 	$routes->post('inventaris/barang/update-peruntukan-massal', 'Admin\\InventarisSatker::updatePeruntukanMassal');
 	$routes->get('inventaris/barang/nup-range-by-kode', 'Admin\\InventarisSatker::getNupRangeByKode');
+	$routes->match(['get', 'post'], 'inventaris/barang/cetak-sticker', 'Admin\\InventarisSatker::cetakSticker');
 
 	// Alias routes lama untuk backward compatibility
 	$routes->get('inventaris/satker', 'Admin\\InventarisSatker::index');
@@ -409,6 +410,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('inventaris/satker/import-siman', 'Admin\\InventarisSatker::importSiman');
 	$routes->post('inventaris/satker/update-peruntukan-massal', 'Admin\\InventarisSatker::updatePeruntukanMassal');
 	$routes->get('inventaris/satker/nup-range-by-kode', 'Admin\\InventarisSatker::getNupRangeByKode');
+	$routes->match(['get', 'post'], 'inventaris/satker/cetak-sticker', 'Admin\\InventarisSatker::cetakSticker');
 
 	// Modul DBR (Daftar Barang Ruangan)
 	$routes->get('inventaris/dbr', 'Admin\InventarisDbr::index');

@@ -12,6 +12,10 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 
 class InventarisSatker extends BaseController
 {
@@ -1274,5 +1278,163 @@ class InventarisSatker extends BaseController
         }
 
         return null;
+    }
+
+    /**
+     * Cetak Sticker Barcode / QR BMN (Layout 2 Kolom / 2 Sticker Per Baris)
+     * Format sesuai stiker resmi Kementerian Pekerjaan Umum.
+     */
+    public function cetakSticker()
+    {
+        $forbidden = $this->checkAccess();
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $perms = $this->resolvePermissions();
+        if (! $perms['export']) {
+            return redirect()->to(site_url(self::MENU_LINK))->with('error', 'Anda tidak memiliki hak akses untuk mencetak sticker.');
+        }
+
+        $db = db_connect();
+        $builder = $db->table('trn_inventaris_satker');
+
+        // Parameter input fleksibel
+        $singleId  = $this->request->getGet('id') ?? $this->request->getPost('id');
+        $rawIds    = $this->request->getPost('ids') ?? $this->request->getGet('ids');
+        $kodeBarangParam = trim((string) ($this->request->getPost('kode_barang') ?? $this->request->getGet('kode_barang')));
+        $nupStart  = $this->request->getPost('nup_start') ?? $this->request->getGet('nup_start');
+        $nupEnd    = $this->request->getPost('nup_end') ?? $this->request->getGet('nup_end');
+
+        // Parameter filter aktif
+        $peruntukan = trim((string) ($this->request->getPost('peruntukan') ?? $this->request->getGet('peruntukan')));
+        $kategori   = trim((string) ($this->request->getPost('kategori') ?? $this->request->getGet('kategori')));
+        $kondisi    = trim((string) ($this->request->getPost('kondisi') ?? $this->request->getGet('kondisi')));
+        $lokasi     = trim((string) ($this->request->getPost('lokasi') ?? $this->request->getGet('lokasi')));
+        $search     = trim((string) ($this->request->getPost('search') ?? $this->request->getGet('search')));
+
+        if (! empty($singleId)) {
+            $builder->where('id', (int) $singleId);
+        } elseif (! empty($rawIds)) {
+            $ids = is_array($rawIds) ? $rawIds : explode(',', (string) $rawIds);
+            $ids = array_filter(array_map('intval', $ids));
+            if (! empty($ids)) {
+                $builder->whereIn('id', $ids);
+            }
+        } else {
+            if ($kodeBarangParam !== '') {
+                $builder->where('kode_barang', $kodeBarangParam);
+            }
+            if ($nupStart !== null && $nupStart !== '') {
+                $builder->where('CAST(nup AS UNSIGNED) >=', (int) $nupStart);
+            }
+            if ($nupEnd !== null && $nupEnd !== '') {
+                $builder->where('CAST(nup AS UNSIGNED) <=', (int) $nupEnd);
+            }
+            if ($peruntukan !== '') {
+                $builder->where('peruntukan', $peruntukan);
+            }
+            if ($kategori !== '') {
+                $builder->where('kategori', $kategori);
+            }
+            if ($kondisi !== '') {
+                $builder->where('kondisi', $kondisi);
+            }
+            if ($lokasi !== '') {
+                $builder->where('lokasi_ruangan', $lokasi);
+            }
+            if ($search !== '') {
+                $builder->groupStart()
+                    ->like('kode_barang', $search)
+                    ->orLike('nama_barang', $search)
+                    ->orLike('nup', $search)
+                    ->orLike('merk_tipe', $search)
+                    ->orLike('kode_register', $search)
+                    ->groupEnd();
+            }
+        }
+
+        $items = $builder
+            ->orderBy('kode_barang', 'ASC')
+            ->orderBy('CAST(nup AS UNSIGNED)', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        if (empty($items)) {
+            return redirect()->to(site_url(self::MENU_LINK))->with('error', 'Tidak ada data aset yang ditemukan untuk dicetak stikernya.');
+        }
+
+        // Inisialisasi generator QR Code GD PNG
+        $qrOptions = new QROptions([
+            'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
+            'scale'           => 6,
+            'margin'          => 0,
+        ]);
+        $qrGenerator = new QRCode($qrOptions);
+
+        $stickerData = [];
+        foreach ($items as $item) {
+            $reg = trim((string) ($item['kode_register'] ?? ''));
+            if ($reg !== '') {
+                // Official SIMAN URL format
+                $qrContent = 'https://siman.kemenkeu.go.id/bmn/' . $reg;
+            } else {
+                // Fallback: Kode Barang . NUP
+                $qrContent = $item['kode_barang'] . '.' . $item['nup'];
+            }
+
+            $qrBase64 = $qrGenerator->render($qrContent);
+
+            $merkTipeDisplay = trim((string) ($item['merk_tipe'] ?? ''));
+            if ($merkTipeDisplay === '') {
+                $merkTipeDisplay = trim((string) ($item['merk'] ?? ''));
+            }
+            if ($merkTipeDisplay === '') {
+                $merkTipeDisplay = trim((string) ($item['tipe'] ?? ''));
+            }
+
+            $stickerData[] = [
+                'id'              => $item['id'],
+                'kode_barang'     => $item['kode_barang'],
+                'nup'             => $item['nup'],
+                'kode_register'   => $reg,
+                'nama_barang'     => $item['nama_barang'],
+                'merk_tipe'       => $merkTipeDisplay ?: '-',
+                'tahun_perolehan' => ! empty($item['tahun_perolehan']) ? $item['tahun_perolehan'] : '2025',
+                'qr_base64'       => $qrBase64,
+            ];
+        }
+
+        // Logo PU Base64
+        $logoPath = FCPATH . 'uploads/branding/1774740768_77e8482499660c14c637.png';
+        if (! file_exists($logoPath)) {
+            $logoPath = FCPATH . 'uploads/branding/1774773296_62f922407f66fb004e77.jpg';
+        }
+        $logoBase64 = file_exists($logoPath)
+            ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
+            : '';
+
+        $data = [
+            'stickers'   => $stickerData,
+            'logoBase64' => $logoBase64,
+            'kodeUakpb'  => '145060900691285000KP',
+        ];
+
+        $html = view('admin/inventaris/satker/pdf_sticker', $data);
+
+        $dompdfOptions = new Options();
+        $dompdfOptions->setIsRemoteEnabled(true);
+        $dompdfOptions->setIsHtml5ParserEnabled(true);
+
+        $dompdf = new Dompdf($dompdfOptions);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = 'Sticker_BMN_' . date('Ymd_His') . '.pdf';
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->setBody($dompdf->output());
     }
 }

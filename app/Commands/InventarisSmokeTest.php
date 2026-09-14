@@ -573,6 +573,63 @@ class InventarisSmokeTest extends BaseCommand
                 unlink($tempPdfPath);
                 CLI::write("  [CLEANUP] File sementara {$tempPdfPath} telah dihapus sesuai Rule 3.", "yellow");
             }
+
+            // Test Render PDF Sticker BMN (1 Baris Terdiri Atas 2 Sticker Standar Kementerian PU)
+            $tempStickerPdfPath = ROOTPATH . 'do_not_upload/temp/smoke_test_sticker.pdf';
+            try {
+                $qrOptions = new \chillerlan\QRCode\QROptions([
+                    'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
+                    'scale'           => 4,
+                    'margin'          => 0,
+                ]);
+                $qrGen = new \chillerlan\QRCode\QRCode($qrOptions);
+                $sampleStickers = [
+                    [
+                        'kode_barang'     => '3050201002',
+                        'nup'             => 26,
+                        'nama_barang'     => 'Meja Kerja Kayu',
+                        'merk_tipe'       => 'Meja Kantor 1/2 Biro Orbitrend',
+                        'tahun_perolehan' => 2025,
+                        'qr_base64'       => $qrGen->render('https://siman.kemenkeu.go.id/bmn/46AE98636C28D2F4E06366E7D80A5A07'),
+                    ],
+                    [
+                        'kode_barang'     => '3050104001',
+                        'nup'             => 1,
+                        'nama_barang'     => 'Lemari Besi/Metal',
+                        'merk_tipe'       => 'Lemari Besi Arsip Kaca Kombinasi',
+                        'tahun_perolehan' => 2025,
+                        'qr_base64'       => $qrGen->render('3050104001.1'),
+                    ],
+                ];
+
+                $stickerHtml = view('admin/inventaris/satker/pdf_sticker', [
+                    'stickers'   => $sampleStickers,
+                    'logoBase64' => '',
+                    'kodeUakpb'  => '145060900691285000KP',
+                ]);
+
+                $dompdfSticker = new Dompdf($options);
+                $dompdfSticker->loadHtml($stickerHtml);
+                $dompdfSticker->setPaper('A4', 'portrait');
+                $dompdfSticker->render();
+
+                $stickerPdfOutput = $dompdfSticker->output();
+                file_put_contents($tempStickerPdfPath, $stickerPdfOutput);
+
+                if (filesize($tempStickerPdfPath) > 1000 && substr($stickerPdfOutput, 0, 4) === '%PDF') {
+                    CLI::write("  [OK] Dokumen PDF Sticker BMN (1 Baris 2 Sticker format resmi PU) berhasil dirender! Ukuran: " . round(filesize($tempStickerPdfPath) / 1024, 2) . " KB", "green");
+                } else {
+                    CLI::error("  [FAIL] Output PDF Sticker BMN tidak valid.");
+                }
+
+                if (file_exists($tempStickerPdfPath)) {
+                    unlink($tempStickerPdfPath);
+                    CLI::write("  [CLEANUP] File sementara {$tempStickerPdfPath} telah dihapus sesuai Rule 3.", "yellow");
+                }
+            } catch (\Throwable $e) {
+                CLI::error("  [FAIL] Exception saat render PDF Sticker BMN: " . $e->getMessage());
+                if (file_exists($tempStickerPdfPath)) unlink($tempStickerPdfPath);
+            }
         } catch (\Throwable $e) {
             CLI::error("  [FAIL] Exception saat render PDF DBR: " . $e->getMessage());
             if (file_exists($tempPdfPath)) unlink($tempPdfPath);

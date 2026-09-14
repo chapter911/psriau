@@ -129,6 +129,9 @@
                         </button>
                     <?php endif; ?>
                     <?php if (! empty($can_export)): ?>
+                        <button type="button" class="btn btn-outline-primary btn-sm px-3 shadow-sm font-weight-bold" data-toggle="modal" data-target="#modal-cetak-sticker" style="border-radius: 8px;" title="Cetak Sticker Barcode / QR BMN (2 Sticker Per Baris)">
+                            <i class="fas fa-qrcode text-primary mr-1.5"></i> Cetak Sticker
+                        </button>
                         <a href="<?= site_url('admin/inventaris/barang/export?' . http_build_query(['peruntukan' => $filterPeruntukan, 'kategori' => $filterKategori, 'kondisi' => $filterKondisi, 'lokasi' => $filterLokasi])); ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 8px;" title="Export Excel">
                             <i class="fas fa-file-excel text-success mr-1.5"></i> Export Excel
                         </a>
@@ -335,11 +338,32 @@
 
         <!-- Table Body -->
         <div class="card-body">
+            <!-- Floating / Inline Toolbar Pemilihan Cetak Sticker Massal -->
+            <div id="batch-sticker-toolbar" class="alert alert-primary py-2 px-3 mb-3 d-none align-items-center justify-content-between flex-wrap shadow-sm" style="border-radius: 8px; gap: 10px;">
+                <div class="d-flex align-items-center">
+                    <span class="badge badge-light text-primary font-weight-bold mr-2 p-1.5" style="font-size: 0.9rem;">
+                        <i class="fas fa-check-double"></i>
+                    </span>
+                    <span class="font-weight-bold"><span id="selected-sticker-count">0</span> Aset Terpilih</span>
+                    <span class="text-muted small ml-2 d-none d-sm-inline">(Siap dicetak pada lembar sticker 2 kolom)</span>
+                </div>
+                <div class="d-flex align-items-center flex-wrap" style="gap: 6px;">
+                    <button type="button" class="btn btn-outline-light btn-sm text-dark font-weight-bold bg-white" id="btn-uncheck-all-stickers" style="border-radius: 6px;">
+                        <i class="fas fa-times mr-1 text-danger"></i> Batal Pilih
+                    </button>
+                    <button type="button" class="btn btn-warning text-dark btn-sm font-weight-bold shadow-sm" id="btn-cetak-selected-stickers" style="border-radius: 6px;">
+                        <i class="fas fa-qrcode mr-1.5 text-dark"></i> Cetak Sticker Terpilih (<span id="selected-sticker-count-btn">0</span>)
+                    </button>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-bordered table-striped table-hover w-100 js-datatable" data-order='[[1, "asc"], [2, "asc"]]'>
                     <thead class="thead-light">
                         <tr style="white-space: nowrap;">
-                            <th style="width: 40px;" class="text-center align-middle" data-orderable="false">#</th>
+                            <th style="width: 55px;" class="text-center align-middle" data-orderable="false">
+                                <input type="checkbox" id="check-all-stickers" title="Pilih Semua Aset di Halaman Ini" style="cursor: pointer;">
+                            </th>
                             <th class="align-middle" style="width: 120px;">Kode Barang</th>
                             <th class="text-center align-middle" style="width: 65px;" data-type="num">NUP</th>
                             <th class="text-center align-middle" style="width: 100px;">Peruntukan</th>
@@ -350,15 +374,18 @@
                             <th class="text-center align-middle" style="width: 110px;">Kondisi</th>
                             <th class="align-middle" style="width: 140px;">Lokasi Ruangan</th>
                             <th class="text-center align-middle" style="width: 70px;">Tahun</th>
-                            <?php if (! empty($can_edit) || ! empty($can_delete)): ?>
-                                <th style="width: 90px;" class="text-center align-middle" data-orderable="false">Aksi</th>
+                            <?php if (! empty($can_edit) || ! empty($can_delete) || ! empty($can_export)): ?>
+                                <th style="width: 110px;" class="text-center align-middle" data-orderable="false">Aksi</th>
                             <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
                         <?php $no = 1; foreach (($items ?? []) as $item): ?>
                             <tr>
-                                <td class="text-center align-middle"><?= $no++; ?></td>
+                                <td class="text-center align-middle" style="white-space: nowrap;">
+                                    <input type="checkbox" class="check-sticker-item" value="<?= $item['id']; ?>" title="Pilih aset ini untuk cetak sticker" style="cursor: pointer;">
+                                    <span class="text-muted small ml-1"><?= $no++; ?></span>
+                                </td>
                                 <td class="align-middle font-mono font-weight-bold text-dark" data-order="<?= esc($item['kode_barang']); ?>">
                                     <?= esc($item['kode_barang']); ?>
                                 </td>
@@ -412,9 +439,14 @@
                                     <i class="fas fa-door-open text-muted mr-1"></i> <?= esc($item['lokasi_ruangan']); ?>
                                 </td>
                                 <td class="text-center align-middle"><?= esc((string) ($item['tahun_perolehan'] ?: '-')); ?></td>
-                                <?php if (! empty($can_edit) || ! empty($can_delete)): ?>
+                                <?php if (! empty($can_edit) || ! empty($can_delete) || ! empty($can_export)): ?>
                                     <td class="text-center align-middle" style="white-space: nowrap;">
                                         <div class="btn-group" role="group">
+                                            <?php if (! empty($can_export)): ?>
+                                                <a href="<?= site_url('admin/inventaris/barang/cetak-sticker?id=' . $item['id']); ?>" target="_blank" class="btn btn-info btn-sm" title="Cetak Sticker BMN (1 Baris 2 Sticker)">
+                                                    <i class="fas fa-qrcode"></i>
+                                                </a>
+                                            <?php endif; ?>
                                             <?php if (! empty($can_edit)): ?>
                                                 <button
                                                     type="button"
@@ -1076,6 +1108,90 @@
 </div>
 <?php endif; ?>
 
+<!-- Modal Cetak Sticker BMN (1 Baris Terdiri Atas 2 Sticker) -->
+<?php if (! empty($can_export)): ?>
+<div class="modal fade" id="modal-cetak-sticker" tabindex="-1" role="dialog" aria-labelledby="modalCetakStickerLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 14px; border: none; box-shadow: 0 12px 36px rgba(0,0,0,0.18); overflow: hidden;">
+            <div class="modal-header py-3" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: #fff;">
+                <h5 class="modal-title font-weight-bold mb-0" id="modalCetakStickerLabel" style="font-size: 1.05rem;">
+                    <i class="fas fa-qrcode mr-2 text-warning"></i>Cetak Sticker Barcode / QR BMN
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.85;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="<?= site_url('admin/inventaris/barang/cetak-sticker'); ?>" method="GET" target="_blank" id="form-cetak-sticker">
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border small text-muted mb-3" style="border-radius: 8px;">
+                        <i class="fas fa-info-circle text-primary mr-1"></i>
+                        Sticker dicetak pada lembar A4 Portrait dengan format <strong>1 baris terdiri atas 2 sticker</strong> sesuai standar resmi Kementerian Pekerjaan Umum.
+                    </div>
+
+                    <label class="font-weight-bold text-dark small text-uppercase mb-2" style="letter-spacing: 0.5px;">Pilih Cakupan Cetak:</label>
+
+                    <div class="custom-control custom-radio mb-2.5 p-2 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                        <input type="radio" id="scope-filter" name="print_scope" class="custom-control-input" value="filter" checked>
+                        <label class="custom-control-label font-weight-bold text-dark" for="scope-filter" style="cursor: pointer;">
+                            Semua Hasil Filter Saat Ini
+                            <small class="text-muted d-block font-weight-normal mt-0.5">Mencetak seluruh aset yang sesuai dengan filter aktif (peruntukan, kategori, kondisi, lokasi, kata kunci pencarian).</small>
+                        </label>
+                    </div>
+
+                    <div class="custom-control custom-radio mb-2.5 p-2 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                        <input type="radio" id="scope-selected" name="print_scope" class="custom-control-input" value="selected">
+                        <label class="custom-control-label font-weight-bold text-dark" for="scope-selected" style="cursor: pointer;">
+                            Hanya Aset yang Dicentang (<span class="selected-modal-count text-primary font-weight-bold">0</span> aset)
+                            <small class="text-muted d-block font-weight-normal mt-0.5">Hanya mencetak sticker untuk baris aset yang telah Anda pilih/centang pada tabel.</small>
+                        </label>
+                    </div>
+
+                    <div class="custom-control custom-radio mb-3 p-2 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                        <input type="radio" id="scope-range" name="print_scope" class="custom-control-input" value="range">
+                        <label class="custom-control-label font-weight-bold text-dark" for="scope-range" style="cursor: pointer;">
+                            Berdasarkan Kode Barang &amp; Rentang NUP Tertentu
+                            <small class="text-muted d-block font-weight-normal mt-0.5">Cetak sticker untuk barang spesifik dalam rentang nomor NUP tertentu.</small>
+                        </label>
+                    </div>
+
+                    <!-- Hidden fields for Filter Scope -->
+                    <input type="hidden" name="peruntukan" id="modal-filter-peruntukan" value="<?= esc($filterPeruntukan); ?>">
+                    <input type="hidden" name="kategori" id="modal-filter-kategori" value="<?= esc($filterKategori); ?>">
+                    <input type="hidden" name="kondisi" id="modal-filter-kondisi" value="<?= esc($filterKondisi); ?>">
+                    <input type="hidden" name="lokasi" id="modal-filter-lokasi" value="<?= esc($filterLokasi); ?>">
+                    <input type="hidden" name="search" id="modal-filter-search" value="<?= esc($searchKeyword); ?>">
+                    <input type="hidden" name="ids" id="modal-hidden-ids" value="">
+
+                    <!-- Range Box (hanya tampil jika scope-range dipilih) -->
+                    <div id="box-range-inputs" class="p-3 bg-light border rounded mb-2 d-none" style="border-radius: 8px;">
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold mb-1">Kode Barang:</label>
+                            <input type="text" name="kode_barang" id="modal-range-kode" class="form-control form-control-sm font-mono" placeholder="Contoh: 3050201002">
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <label class="small font-weight-bold mb-1">NUP Awal:</label>
+                                <input type="number" name="nup_start" id="modal-range-start" class="form-control form-control-sm" placeholder="Contoh: 1">
+                            </div>
+                            <div class="col-6">
+                                <label class="small font-weight-bold mb-1">NUP Akhir:</label>
+                                <input type="number" name="nup_end" id="modal-range-end" class="form-control form-control-sm" placeholder="Contoh: 26">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2.5 px-4" style="border-top: 1px solid #e2e8f0;">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 shadow-sm font-weight-bold" style="border-radius: 6px;">
+                        <i class="fas fa-print mr-1.5"></i> Buka &amp; Cetak PDF Sticker
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Populate Edit Modal via delegated click
@@ -1618,6 +1734,148 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             xhr.send(formData);
+        });
+    }
+
+    // --- STICKER SELECTION & PRINT HANDLERS ---
+    var checkAllStickers = document.getElementById('check-all-stickers');
+    var batchToolbar = document.getElementById('batch-sticker-toolbar');
+    var selectedCountSpan = document.getElementById('selected-sticker-count');
+    var selectedCountBtnSpan = document.getElementById('selected-sticker-count-btn');
+    var modalCountSpans = document.querySelectorAll('.selected-modal-count');
+    var btnUncheckAll = document.getElementById('btn-uncheck-all-stickers');
+    var btnCetakSelected = document.getElementById('btn-cetak-selected-stickers');
+    var formCetakSticker = document.getElementById('form-cetak-sticker');
+    var hiddenIdsInput = document.getElementById('modal-hidden-ids');
+    var boxRangeInputs = document.getElementById('box-range-inputs');
+
+    function updateStickerSelectionUI() {
+        var checkedItems = document.querySelectorAll('.check-sticker-item:checked');
+        var count = checkedItems.length;
+        if (selectedCountSpan) selectedCountSpan.textContent = count;
+        if (selectedCountBtnSpan) selectedCountBtnSpan.textContent = count;
+        modalCountSpans.forEach(function(el) { el.textContent = count; });
+
+        if (batchToolbar) {
+            if (count > 0) {
+                batchToolbar.classList.remove('d-none');
+                batchToolbar.classList.add('d-flex');
+            } else {
+                batchToolbar.classList.add('d-none');
+                batchToolbar.classList.remove('d-flex');
+            }
+        }
+
+        var allCheckboxes = document.querySelectorAll('.check-sticker-item');
+        if (checkAllStickers && allCheckboxes.length > 0) {
+            checkAllStickers.checked = (count === allCheckboxes.length);
+            checkAllStickers.indeterminate = (count > 0 && count < allCheckboxes.length);
+        }
+    }
+
+    if (checkAllStickers) {
+        checkAllStickers.addEventListener('change', function() {
+            var isChecked = this.checked;
+            document.querySelectorAll('.check-sticker-item').forEach(function(cb) {
+                cb.checked = isChecked;
+            });
+            updateStickerSelectionUI();
+        });
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('check-sticker-item')) {
+            updateStickerSelectionUI();
+        }
+    });
+
+    if (btnUncheckAll) {
+        btnUncheckAll.addEventListener('click', function() {
+            document.querySelectorAll('.check-sticker-item').forEach(function(cb) {
+                cb.checked = false;
+            });
+            if (checkAllStickers) {
+                checkAllStickers.checked = false;
+                checkAllStickers.indeterminate = false;
+            }
+            updateStickerSelectionUI();
+        });
+    }
+
+    if (btnCetakSelected) {
+        btnCetakSelected.addEventListener('click', function() {
+            var radioSelected = document.getElementById('scope-selected');
+            if (radioSelected) radioSelected.checked = true;
+            if (boxRangeInputs) boxRangeInputs.classList.add('d-none');
+            $('#modal-cetak-sticker').modal('show');
+        });
+    }
+
+    // Radio change in modal
+    document.querySelectorAll('input[name="print_scope"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            if (this.value === 'range') {
+                if (boxRangeInputs) boxRangeInputs.classList.remove('d-none');
+            } else {
+                if (boxRangeInputs) boxRangeInputs.classList.add('d-none');
+            }
+        });
+    });
+
+    if (formCetakSticker) {
+        formCetakSticker.addEventListener('submit', function(e) {
+            var scope = document.querySelector('input[name="print_scope"]:checked');
+            var scopeVal = scope ? scope.value : 'filter';
+
+            if (scopeVal === 'selected') {
+                var checkedItems = document.querySelectorAll('.check-sticker-item:checked');
+                if (checkedItems.length === 0) {
+                    e.preventDefault();
+                    alert('Silakan centang minimal 1 aset pada tabel untuk dicetak stikernya.');
+                    return false;
+                }
+                var ids = [];
+                checkedItems.forEach(function(cb) { ids.push(cb.value); });
+                if (hiddenIdsInput) hiddenIdsInput.value = ids.join(',');
+
+                var p = document.getElementById('modal-filter-peruntukan'); if (p) p.disabled = true;
+                var k = document.getElementById('modal-filter-kategori'); if (k) k.disabled = true;
+                var c = document.getElementById('modal-filter-kondisi'); if (c) c.disabled = true;
+                var l = document.getElementById('modal-filter-lokasi'); if (l) l.disabled = true;
+                var s = document.getElementById('modal-filter-search'); if (s) s.disabled = true;
+                var rk = document.getElementById('modal-range-kode'); if (rk) rk.disabled = true;
+                var rs = document.getElementById('modal-range-start'); if (rs) rs.disabled = true;
+                var re = document.getElementById('modal-range-end'); if (re) re.disabled = true;
+            } else if (scopeVal === 'range') {
+                if (hiddenIdsInput) hiddenIdsInput.value = '';
+                var p = document.getElementById('modal-filter-peruntukan'); if (p) p.disabled = true;
+                var k = document.getElementById('modal-filter-kategori'); if (k) k.disabled = true;
+                var c = document.getElementById('modal-filter-kondisi'); if (c) c.disabled = true;
+                var l = document.getElementById('modal-filter-lokasi'); if (l) l.disabled = true;
+                var s = document.getElementById('modal-filter-search'); if (s) s.disabled = true;
+                var rk = document.getElementById('modal-range-kode'); if (rk) rk.disabled = false;
+                var rs = document.getElementById('modal-range-start'); if (rs) rs.disabled = false;
+                var re = document.getElementById('modal-range-end'); if (re) re.disabled = false;
+            } else {
+                if (hiddenIdsInput) hiddenIdsInput.value = '';
+                var p = document.getElementById('modal-filter-peruntukan'); if (p) p.disabled = false;
+                var k = document.getElementById('modal-filter-kategori'); if (k) k.disabled = false;
+                var c = document.getElementById('modal-filter-kondisi'); if (c) c.disabled = false;
+                var l = document.getElementById('modal-filter-lokasi'); if (l) l.disabled = false;
+                var s = document.getElementById('modal-filter-search'); if (s) s.disabled = false;
+                var rk = document.getElementById('modal-range-kode'); if (rk) rk.disabled = true;
+                var rs = document.getElementById('modal-range-start'); if (rs) rs.disabled = true;
+                var re = document.getElementById('modal-range-end'); if (re) re.disabled = true;
+            }
+
+            setTimeout(function() {
+                ['modal-filter-peruntukan','modal-filter-kategori','modal-filter-kondisi','modal-filter-lokasi','modal-filter-search','modal-range-kode','modal-range-start','modal-range-end'].forEach(function(id) {
+                    var el = document.getElementById(id);
+                    if (el) el.disabled = false;
+                });
+            }, 600);
+
+            $('#modal-cetak-sticker').modal('hide');
         });
     }
 });
