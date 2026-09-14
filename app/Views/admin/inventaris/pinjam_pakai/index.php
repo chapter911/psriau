@@ -313,6 +313,7 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                                 data-jabatan="<?= esc((string) ($p['jabatan_peminjam'] ?? ''), 'attr'); ?>"
                                                 data-kontak="<?= esc((string) ($p['kontak_peminjam'] ?? ''), 'attr'); ?>"
                                                 data-surat="<?= esc((string) $p['no_surat'], 'attr'); ?>"
+                                                data-kop-id="<?= esc((string) ($p['kop_surat_id'] ?? ''), 'attr'); ?>"
                                                 data-barang="<?= esc((string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
                                                 data-nup="<?= esc((string) ($p['nup'] ?? ''), 'attr'); ?>"
                                                 data-kode="<?= esc((string) ($p['kode_barang'] ?? ''), 'attr'); ?>"
@@ -479,14 +480,33 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
 
                             <div class="row">
                                 <div class="col-md-6 form-group mb-2">
-                                    <label class="font-weight-bold small text-dark mb-1">Nomor Surat Izin Pinjam Pakai <span class="text-muted font-weight-normal">(Opsional)</span></label>
-                                    <input type="text" name="no_surat" class="form-control" placeholder="Contoh: 01/SPP/BMN/PPS-RIAU/2026 (Opsional)" style="border-radius: 6px; font-size: 0.9rem;">
+                                    <label class="font-weight-bold small text-dark mb-1">Nomor Surat Perjanjian Pinjam Pakai <span class="text-muted font-weight-normal">(Opsional)</span></label>
+                                    <input type="text" name="no_surat" class="form-control" placeholder="Contoh: 01/SPP/BMN/PPS-RIAU/2026" style="border-radius: 6px; font-size: 0.9rem;">
+                                    <small class="text-muted">Nomor surat dicetak pada dokumen perjanjian pinjam pakai.</small>
                                 </div>
-                                <div class="col-md-3 form-group mb-2">
+                                <div class="col-md-6 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">Pilih Kop Surat Instansi</label>
+                                    <select name="kop_surat_id" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
+                                        <?php if (! empty($kopSuratList)): ?>
+                                            <?php foreach ($kopSuratList as $kop): ?>
+                                                <option value="<?= (int) $kop['id']; ?>" <?= ! empty($kop['is_active']) ? 'selected' : ''; ?>>
+                                                    <?= esc($kop['nama']); ?> <?= ! empty($kop['is_active']) ? '(Aktif)' : ''; ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <option value="">-- Kop Surat Standar Satker PPS Riau --</option>
+                                        <?php endif; ?>
+                                    </select>
+                                    <small class="text-muted">Kop surat yang akan dicetak pada dokumen PDF.</small>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Tanggal Pinjam <span class="text-danger">*</span></label>
                                     <input type="date" name="tgl_pinjam" class="form-control" value="<?= date('Y-m-d'); ?>" required style="border-radius: 6px; font-size: 0.9rem;">
                                 </div>
-                                <div class="col-md-3 form-group mb-2">
+                                <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Rencana Kembali</label>
                                     <input type="date" name="tgl_kembali_rencana" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
                                 </div>
@@ -628,14 +648,33 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
 
                             <div class="row">
                                 <div class="col-md-6 form-group mb-2">
-                                    <label class="font-weight-bold small text-dark mb-1">Nomor Surat <span class="text-muted font-weight-normal">(Opsional)</span></label>
+                                    <label class="font-weight-bold small text-dark mb-1">Nomor Surat Perjanjian Pinjam Pakai <span class="text-muted font-weight-normal">(Opsional)</span></label>
                                     <input type="text" name="no_surat" id="edit-no-surat" class="form-control" placeholder="Opsional (boleh dikosongkan)" style="border-radius: 6px; font-size: 0.9rem;">
+                                    <small class="text-muted">Nomor surat dicetak pada dokumen perjanjian pinjam pakai.</small>
                                 </div>
-                                <div class="col-md-3 form-group mb-2">
+                                <div class="col-md-6 form-group mb-2">
+                                    <label class="font-weight-bold small text-dark mb-1">Pilih Kop Surat Instansi</label>
+                                    <select name="kop_surat_id" id="edit-kop-surat-id" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
+                                        <?php if (! empty($kopSuratList)): ?>
+                                            <?php foreach ($kopSuratList as $kop): ?>
+                                                <option value="<?= (int) $kop['id']; ?>">
+                                                    <?= esc($kop['nama']); ?> <?= ! empty($kop['is_active']) ? '(Aktif)' : ''; ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <option value="">-- Kop Surat Standar Satker PPS Riau --</option>
+                                        <?php endif; ?>
+                                    </select>
+                                    <small class="text-muted">Kop surat yang akan dicetak pada dokumen PDF.</small>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Tanggal Pinjam <span class="text-danger">*</span></label>
                                     <input type="date" name="tgl_pinjam" id="edit-tgl-pinjam" class="form-control" required style="border-radius: 6px; font-size: 0.9rem;">
                                 </div>
-                                <div class="col-md-3 form-group mb-2">
+                                <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Rencana Kembali</label>
                                     <input type="date" name="tgl_kembali_rencana" id="edit-tgl-kembali-rencana" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
                                 </div>
@@ -1014,6 +1053,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('edit-jabatan-peminjam').value = btn.getAttribute('data-jabatan') || '';
         document.getElementById('edit-kontak-peminjam').value = btn.getAttribute('data-kontak') || '';
         document.getElementById('edit-no-surat').value = btn.getAttribute('data-surat') || '';
+        var elKop = document.getElementById('edit-kop-surat-id');
+        if (elKop) {
+            elKop.value = btn.getAttribute('data-kop-id') || '';
+        }
         document.getElementById('edit-tgl-pinjam').value = btn.getAttribute('data-tgl-pinjam') || '';
         document.getElementById('edit-tgl-kembali-rencana').value = btn.getAttribute('data-tgl-kembali') || '';
         document.getElementById('edit-keperluan').value = btn.getAttribute('data-keperluan') || '';

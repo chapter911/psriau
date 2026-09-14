@@ -18,6 +18,7 @@ class InventarisPinjamPakaiModel extends Model
         'jabatan_peminjam',
         'kontak_peminjam',
         'no_surat',
+        'kop_surat_id',
         'tgl_pinjam',
         'tgl_kembali_rencana',
         'tgl_kembali_realisasi',
@@ -48,10 +49,12 @@ class InventarisPinjamPakaiModel extends Model
                       i.merk_tipe, i.nilai_perolehan, i.satuan, i.kondisi as kondisi_aset_sekarang,
                       i.lokasi_ruangan, i.peruntukan,
                       peg.nama as pegawai_master_nama, peg.nip as pegawai_master_nip,
-                      ju.jabatan as pegawai_master_jabatan')
+                      ju.jabatan as pegawai_master_jabatan,
+                      ks.title as kop_surat_title')
             ->join('trn_inventaris_satker i', 'i.id = p.inventaris_id', 'left')
             ->join('mst_pegawai peg', 'peg.id = p.pegawai_id', 'left')
-            ->join('mst_jabatan ju', 'ju.id = peg.jabatan_utama_id', 'left');
+            ->join('mst_jabatan ju', 'ju.id = peg.jabatan_utama_id', 'left')
+            ->join('kop_surat ks', 'ks.id = p.kop_surat_id', 'left');
 
         if ($statusFilter && in_array($statusFilter, ['dipinjam', 'dikembalikan'], true)) {
             $builder->where('p.status', $statusFilter);
@@ -75,10 +78,12 @@ class InventarisPinjamPakaiModel extends Model
                       i.merk_tipe, i.nilai_perolehan, i.satuan, i.kondisi as kondisi_aset_sekarang,
                       i.tahun_perolehan, i.lokasi_ruangan, i.peruntukan,
                       peg.nama as pegawai_master_nama, peg.nip as pegawai_master_nip,
-                      ju.jabatan as pegawai_master_jabatan')
+                      ju.jabatan as pegawai_master_jabatan,
+                      ks.title as kop_surat_title, ks.image_url as kop_surat_image_url')
             ->join('trn_inventaris_satker i', 'i.id = p.inventaris_id', 'left')
             ->join('mst_pegawai peg', 'peg.id = p.pegawai_id', 'left')
             ->join('mst_jabatan ju', 'ju.id = peg.jabatan_utama_id', 'left')
+            ->join('kop_surat ks', 'ks.id = p.kop_surat_id', 'left')
             ->where('p.id', $id)
             ->get()
             ->getRowArray();

@@ -35,6 +35,20 @@ class InventarisPinjamPakai extends BaseController
         }
     }
 
+    private function ensureKopSuratIdColumn(): void
+    {
+        try {
+            $db = db_connect();
+            if ($db->tableExists('trn_inventaris_pinjam_pakai')) {
+                if (! $db->fieldExists('kop_surat_id', 'trn_inventaris_pinjam_pakai')) {
+                    $db->query("ALTER TABLE trn_inventaris_pinjam_pakai ADD COLUMN kop_surat_id INT UNSIGNED NULL AFTER no_surat");
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore if DB user lacks alter permission
+        }
+    }
+
     public function index()
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
@@ -43,6 +57,7 @@ class InventarisPinjamPakai extends BaseController
         }
 
         $this->ensureNoSuratNullable();
+        $this->ensureKopSuratIdColumn();
 
         $pinjamModel = new InventarisPinjamPakaiModel();
         $db = db_connect();
@@ -68,6 +83,17 @@ class InventarisPinjamPakai extends BaseController
             $pegawaiList = $builder->orderBy('p.nama', 'ASC')->get()->getResultArray();
         }
 
+        // Ambil daftar Kop Surat
+        $kopSuratList = [];
+        if ($db->tableExists('kop_surat')) {
+            $kopSuratList = $db->table('kop_surat')
+                ->select('id, title AS nama, is_active')
+                ->orderBy('is_active', 'DESC')
+                ->orderBy('id', 'DESC')
+                ->get()
+                ->getResultArray();
+        }
+
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
 
         return view('admin/inventaris/pinjam_pakai/index', [
@@ -77,6 +103,7 @@ class InventarisPinjamPakai extends BaseController
             'stats'            => $summary,
             'availableAssets'  => $availableAssets,
             'pegawaiList'      => $pegawaiList,
+            'kopSuratList'     => $kopSuratList,
             'currentFilter'    => $filterStatus,
             'can_add'          => (bool) ($menuPermissions['add'] ?? false),
             'can_edit'         => (bool) ($menuPermissions['edit'] ?? false),
@@ -101,6 +128,7 @@ class InventarisPinjamPakai extends BaseController
             'inventaris_id'   => 'required|is_natural_no_zero',
             'nama_peminjam'   => 'required|max_length[150]',
             'no_surat'        => 'permit_empty|max_length[100]',
+            'kop_surat_id'    => 'permit_empty|is_natural_no_zero',
             'tgl_pinjam'      => 'required|valid_date',
             'keperluan'       => 'required',
             'kondisi_pinjam'  => 'permit_empty|in_list[baik,rusak_ringan,rusak_berat]',
@@ -131,6 +159,7 @@ class InventarisPinjamPakai extends BaseController
         $nipPeminjam = trim((string) $this->request->getPost('nip_peminjam')) ?: null;
         $jabatanPeminjam = trim((string) $this->request->getPost('jabatan_peminjam')) ?: null;
         $kontakPeminjam = trim((string) $this->request->getPost('kontak_peminjam')) ?: null;
+        $kopSuratId = (int) $this->request->getPost('kop_surat_id') ?: null;
 
         // Auto-fill dari master pegawai jika ID dipilih
         if ($pegawaiId !== null && $pegawaiId > 0) {
@@ -174,6 +203,7 @@ class InventarisPinjamPakai extends BaseController
         }
 
         $this->ensureNoSuratNullable();
+        $this->ensureKopSuratIdColumn();
 
         $userId = (int) (session()->get('userId') ?? 0);
         $rawNoSurat = trim((string) $this->request->getPost('no_surat'));
@@ -198,6 +228,7 @@ class InventarisPinjamPakai extends BaseController
             'jabatan_peminjam'     => $jabatanPeminjam,
             'kontak_peminjam'      => $kontakPeminjam,
             'no_surat'             => $noSuratVal,
+            'kop_surat_id'         => $kopSuratId,
             'tgl_pinjam'           => trim((string) $this->request->getPost('tgl_pinjam')),
             'tgl_kembali_rencana'  => trim((string) $this->request->getPost('tgl_kembali_rencana')) ?: null,
             'keperluan'            => trim((string) $this->request->getPost('keperluan')),
@@ -245,6 +276,7 @@ class InventarisPinjamPakai extends BaseController
         $rules = [
             'nama_peminjam'  => 'required|max_length[150]',
             'no_surat'       => 'permit_empty|max_length[100]',
+            'kop_surat_id'   => 'permit_empty|is_natural_no_zero',
             'tgl_pinjam'     => 'required|valid_date',
             'keperluan'      => 'required',
             'kondisi_pinjam' => 'permit_empty|in_list[baik,rusak_ringan,rusak_berat]',
@@ -259,6 +291,7 @@ class InventarisPinjamPakai extends BaseController
         $nipPeminjam = trim((string) $this->request->getPost('nip_peminjam')) ?: null;
         $jabatanPeminjam = trim((string) $this->request->getPost('jabatan_peminjam')) ?: null;
         $kontakPeminjam = trim((string) $this->request->getPost('kontak_peminjam')) ?: null;
+        $kopSuratId = (int) $this->request->getPost('kop_surat_id') ?: null;
 
         $fileSuratPath = $existing['file_surat'];
         $file = $this->request->getFile('file_surat');
@@ -284,6 +317,7 @@ class InventarisPinjamPakai extends BaseController
         }
 
         $this->ensureNoSuratNullable();
+        $this->ensureKopSuratIdColumn();
 
         $userId = (int) (session()->get('userId') ?? 0);
         $rawNoSuratEdit = trim((string) $this->request->getPost('no_surat'));
@@ -307,6 +341,7 @@ class InventarisPinjamPakai extends BaseController
             'jabatan_peminjam'    => $jabatanPeminjam,
             'kontak_peminjam'     => $kontakPeminjam,
             'no_surat'            => $noSuratEdit,
+            'kop_surat_id'        => $kopSuratId,
             'tgl_pinjam'          => trim((string) $this->request->getPost('tgl_pinjam')),
             'tgl_kembali_rencana' => trim((string) $this->request->getPost('tgl_kembali_rencana')) ?: null,
             'keperluan'           => trim((string) $this->request->getPost('keperluan')),
@@ -424,6 +459,46 @@ class InventarisPinjamPakai extends BaseController
         return redirect()->to('/admin/inventaris/pinjam-pakai')->with('message', 'Data transaksi pinjam pakai berhasil dihapus.');
     }
 
+    private function terbilangAngka(int $angka): string
+    {
+        $bilangan = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+        if ($angka < 12) {
+            return $bilangan[$angka];
+        } elseif ($angka < 20) {
+            return $this->terbilangAngka($angka - 10) . ' Belas';
+        } elseif ($angka < 100) {
+            return $this->terbilangAngka((int) ($angka / 10)) . ' Puluh' . ($angka % 10 ? ' ' . $bilangan[$angka % 10] : '');
+        } elseif ($angka < 200) {
+            return 'Seratus' . ($angka % 100 ? ' ' . $this->terbilangAngka($angka % 100) : '');
+        } elseif ($angka < 1000) {
+            return $this->terbilangAngka((int) ($angka / 100)) . ' Ratus' . ($angka % 100 ? ' ' . $this->terbilangAngka($angka % 100) : '');
+        } elseif ($angka < 2000) {
+            return 'Seribu' . ($angka % 1000 ? ' ' . $this->terbilangAngka($angka % 1000) : '');
+        } elseif ($angka < 1000000) {
+            return $this->terbilangAngka((int) ($angka / 1000)) . ' Ribu' . ($angka % 1000 ? ' ' . $this->terbilangAngka($angka % 1000) : '');
+        }
+        return (string) $angka;
+    }
+
+    private function formatTanggalPerjanjian(?string $tglStr): string
+    {
+        $hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        $bulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+        $ts = strtotime((string) $tglStr) ?: time();
+        $dayOfWeek = (int) date('w', $ts);
+        $d = (int) date('j', $ts);
+        $m = (int) date('n', $ts);
+        $y = (int) date('Y', $ts);
+
+        $hariNama = $hari[$dayOfWeek];
+        $tglTerbilang = ucfirst(strtolower($this->terbilangAngka($d)));
+        $blnNama = $bulan[$m] ?? date('F', $ts);
+        $thnTerbilang = ucfirst(strtolower($this->terbilangAngka($y)));
+
+        return "Hari ini {$hariNama} tanggal {$tglTerbilang} bulan {$blnNama} tahun {$thnTerbilang} (" . date('d/m/Y', $ts) . "), kami yang bertandatangan di bawah ini :";
+    }
+
     public function cetakSuratPdf(int $id)
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
@@ -438,20 +513,21 @@ class InventarisPinjamPakai extends BaseController
             return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Data pinjam pakai tidak ditemukan.');
         }
 
-        // Ambil Kop Surat dari Master Kop (kop_surat)
+        // Ambil Kop Surat dari Master Kop (kop_surat) sesuai kop_surat_id pinjam atau default aktif
+        $kopSuratId = ! empty($loan['kop_surat_id']) ? (int) $loan['kop_surat_id'] : null;
         $kopSuratImg = '';
         if (function_exists('kop_surat_img_tag')) {
-            $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 110px; object-fit: contain;', 'Kop Surat Instansi');
+            $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 105px; object-fit: contain;', 'Kop Surat Instansi', $kopSuratId);
         }
 
         // Logo PU Base64 (Fallback jika master kop tidak ada)
-        $logoPath = FCPATH . 'uploads/branding/1774740768_77e8482499660c14c637.png';
+        $logoPath = FCPATH . 'assets/img/logo_pupr.png';
         if (! file_exists($logoPath)) {
-            $logoPath = FCPATH . 'assets/img/logo_pupr.png';
+            $logoPath = FCPATH . 'uploads/branding/1774740768_77e8482499660c14c637.png';
         }
         $logoBase64 = '';
         if (file_exists($logoPath)) {
-            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+            $logoBase64 = 'data:image/png;base64,' . base64_encode((string) file_get_contents($logoPath));
         }
 
         // Format tanggal Indonesia
@@ -459,25 +535,30 @@ class InventarisPinjamPakai extends BaseController
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
             7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
         ];
-        $tglPinjamParts = explode('-', (string) $loan['tgl_pinjam']);
+        $tglPinjamParts = explode('-', (string) ($loan['tgl_pinjam'] ?? ''));
         $tglPinjamIndo = count($tglPinjamParts) === 3
             ? ((int) $tglPinjamParts[2]) . ' ' . ($bulanIndo[(int) $tglPinjamParts[1]] ?? '') . ' ' . $tglPinjamParts[0]
-            : $loan['tgl_pinjam'];
+            : (string) ($loan['tgl_pinjam'] ?? '');
 
         $tglCetak = date('j') . ' ' . ($bulanIndo[(int) date('n')] ?? date('F')) . ' ' . date('Y');
+
+        $introText = $this->formatTanggalPerjanjian($loan['tgl_pinjam'] ?? null);
+        $tahunPinjam = ! empty($loan['tgl_pinjam']) ? date('Y', strtotime((string) $loan['tgl_pinjam'])) : date('Y');
 
         $data = [
             'loan'           => $loan,
             'kopSuratImg'    => $kopSuratImg,
             'logoBase64'     => $logoBase64,
+            'introText'      => $introText,
+            'tahunPinjam'    => $tahunPinjam,
             'tglPinjamIndo'  => $tglPinjamIndo,
             'tglCetak'       => $tglCetak,
             'namaUakpb'      => 'PELAKSANAAN PRASARANA STRATEGIS PROVINSI RIAU',
             'kodeUakpb'      => '145060900691285000KP',
             'kasatker'       => [
-                'nama'    => 'Muhammad Yudi Prasetya, S.T.',
+                'nama'    => 'Muhammad Yudi Prasetya, ST.',
                 'nip'     => '198002142014121002',
-                'jabatan' => 'Kepala Balai / Kuasa Pengguna Barang',
+                'jabatan' => 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau selaku Kuasa Penguna Barang Milik Negara',
             ],
             'pengurusBarang' => [
                 'nama'    => 'Petugas Penatausahaan BMN',
