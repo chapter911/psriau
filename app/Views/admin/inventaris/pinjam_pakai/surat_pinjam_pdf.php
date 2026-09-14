@@ -282,25 +282,41 @@
         </div>
     </div>
 
-    <table class="ttd-table" style="margin-top: 45px;">
+    <table class="ttd-table" style="margin-top: 40px;">
         <tr>
-            <td style="text-align: center;">
+            <td style="width: 50%; text-align: center; vertical-align: top;">
                 <strong>PIHAK KEDUA</strong><br>
-                Yang menerima,<br><br><br><br><br><br>
-                <strong><?= esc($loan['nama_peminjam'] ?? ''); ?></strong><br>
+                Yang menerima,
+            </td>
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+                <strong>PIHAK PERTAMA</strong><br>
+                yang menyerahkan,<br>
+                Kepala Satuan Kerja<br>
+                Pelaksanaan Prasarana Strategis Riau<br>
+                Selaku Kuasa Penguna Barang,
+            </td>
+        </tr>
+        <tr>
+            <td style="height: 60px;"></td>
+            <td style="height: 60px;"></td>
+        </tr>
+        <tr>
+            <td style="text-align: center; vertical-align: bottom;">
+                <strong><u><?= esc($loan['nama_peminjam'] ?? ''); ?></u></strong>
+            </td>
+            <td style="text-align: center; vertical-align: bottom;">
+                <strong><u><?= esc($kasatker['nama'] ?? 'Muhammad Yudi Prasetya, ST.'); ?></u></strong>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center; vertical-align: top; padding-top: 3px;">
                 <?php if (! empty($isKonsultan)): ?>
                     Tenaga Penunjang Kegiatan
                 <?php else: ?>
                     NIP. <?= esc($loan['nip_peminjam'] ?? '') ?: '-'; ?>
                 <?php endif; ?>
             </td>
-            <td style="text-align: center;">
-                <strong>PIHAK PERTAMA</strong><br>
-                yang menyerahkan,<br>
-                Kepala Satuan Kerja<br>
-                Pelaksanaan Prasarana Strategis Riau<br>
-                Selaku Kuasa Penguna Barang,<br><br><br><br>
-                <strong><?= esc($kasatker['nama'] ?? 'Muhammad Yudi Prasetya, ST.'); ?></strong><br>
+            <td style="text-align: center; vertical-align: top; padding-top: 3px;">
                 NIP. <?= esc($kasatker['nip'] ?? '198002142014121002'); ?>
             </td>
         </tr>

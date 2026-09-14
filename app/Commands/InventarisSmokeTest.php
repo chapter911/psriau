@@ -1078,11 +1078,19 @@ class InventarisSmokeTest extends BaseCommand
             $hasKonsultanPage1 = (strpos($htmlSuratKonsultan, '<td>Tenaga Penunjang Kegiatan</td>') !== false);
             $hasKonsultanPage2 = (strpos($htmlSuratKonsultan, 'Tenaga Penunjang Kegiatan') !== false && strpos($htmlSuratKonsultan, 'NIP. Tenaga Penunjang Kegiatan') === false);
             $hasKonsultanPage3 = (strpos($htmlLampiranKonsultan, 'Tenaga Penunjang Kegiatan') !== false && strpos($htmlLampiranKonsultan, 'NIP. Tenaga Penunjang Kegiatan') === false);
+            $hasUnderlineSurat = (strpos($htmlSuratKonsultan, '<u>' . $konsultanLoanDetail['nama_peminjam'] . '</u>') !== false);
+            $hasUnderlineLampiran = (strpos($htmlLampiranKonsultan, '<u>' . $konsultanLoanDetail['nama_peminjam'] . '</u>') !== false);
 
-            if ($hasKonsultanPage1 && $hasKonsultanPage2 && $hasKonsultanPage3) {
-                CLI::write("  [OK] Validasi NIP Konsultan teruji sukses: Teks 'Tenaga Penunjang Kegiatan' tampil rapi pada Halaman 1 (Tabel PIHAK KEDUA), Halaman 2 (TTD Surat), dan Halaman 3 (TTD Lampiran)", "green");
+            $dompdfPreview = new Dompdf($options);
+            $dompdfPreview->loadHtml($htmlSuratKonsultan);
+            $dompdfPreview->setPaper('A4', 'portrait');
+            $dompdfPreview->render();
+            file_put_contents(ROOTPATH . 'do_not_upload/temp/test_preview.pdf', $dompdfPreview->output());
+
+            if ($hasKonsultanPage1 && $hasKonsultanPage2 && $hasKonsultanPage3 && $hasUnderlineSurat && $hasUnderlineLampiran) {
+                CLI::write("  [OK] Validasi TTD & NIP Konsultan teruji sukses: Posisi simetris sebaris, nama bergaris bawah (<u>Nama</u>), dan teks 'Tenaga Penunjang Kegiatan' tampil rapi", "green");
             } else {
-                CLI::error("  [FAIL] Validasi penyesuaian NIP Konsultan 'Tenaga Penunjang Kegiatan' gagal.");
+                CLI::error("  [FAIL] Validasi penyesuaian TTD / NIP Konsultan gagal.");
             }
 
             // 4c. Uji Penomoran Otomatis Berjalan (Auto Increment 001 -> 002)
