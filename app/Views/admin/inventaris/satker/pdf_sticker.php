@@ -25,9 +25,9 @@ if (! function_exists('esc')) {
             color: #000000;
             background: #ffffff;
             font-size: 8pt;
-            line-height: 1.2;
+            line-height: 1.15;
         }
-        .sticker-table {
+        .sticker-page-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 4mm 4mm;
@@ -39,116 +39,116 @@ if (! function_exists('esc')) {
         }
         .sticker-card {
             width: 100%;
-            height: 36.5mm;
-            max-height: 36.5mm;
+            height: 35.5mm;
+            max-height: 35.5mm;
             border: 1px solid #111111;
             background: #ffffff;
             page-break-inside: avoid;
             overflow: hidden;
-            position: relative;
         }
-        /* Header Bagian Atas */
-        .sticker-header {
+
+        /* Bagian Atas (Identitas Instansi) */
+        .header-table {
             width: 100%;
-            height: 11mm;
+            border-collapse: collapse;
             border-bottom: 1px solid #111111;
-            display: table;
-            padding: 1mm 2mm 1mm 2mm;
+            padding: 1.2mm 2.2mm 1.2mm 2.2mm;
         }
-        .header-logo-col {
-            display: table-cell;
-            width: 9mm;
+        .header-logo-td {
+            width: 9.5mm;
             vertical-align: middle;
             text-align: left;
+            padding: 0;
         }
-        .header-logo-col img {
-            width: 8.8mm;
-            height: 8.8mm;
+        .pu-logo {
+            width: 8.5mm;
+            height: 8.5mm;
             display: block;
         }
-        .header-text-col {
-            display: table-cell;
+        .header-text-td {
             vertical-align: middle;
             text-align: center;
-            padding-left: 1.5mm;
+            padding: 0 0 0 1.5mm;
         }
         .instansi-title {
-            font-size: 7.8pt;
-            font-weight: bold;
-            line-height: 1.15;
+            font-size: 8.5pt;
+            font-weight: normal;
             color: #000000;
+            line-height: 1.15;
             letter-spacing: 0.1px;
         }
         .instansi-code {
-            font-size: 7.2pt;
+            font-size: 7.8pt;
             font-weight: normal;
-            line-height: 1.15;
             color: #000000;
+            line-height: 1.15;
             margin-top: 0.4mm;
-            font-family: Arial, Helvetica, sans-serif;
             letter-spacing: 0.2px;
         }
-        /* Body Bagian Bawah */
-        .sticker-body {
+
+        /* Bagian Bawah (Data Spesifikasi Aset & Verifikasi) */
+        .body-table {
             width: 100%;
-            height: 25.5mm;
-            display: table;
-            padding: 1.5mm 2mm 1.5mm 2.2mm;
+            border-collapse: collapse;
+            padding: 1.5mm 2.2mm 1.5mm 2.2mm;
         }
-        .body-info-col {
-            display: table-cell;
+        .body-info-td {
+            width: 74%;
             vertical-align: top;
-            width: 73%;
             padding-right: 1.5mm;
         }
-        .info-code-nup-table {
+        .info-top-table {
             width: 100%;
-            display: table;
-            margin-bottom: 0.8mm;
+            border-collapse: collapse;
+            margin-bottom: 0.4mm;
         }
-        .col-kode-barang {
-            display: table-cell;
-            font-size: 7.8pt;
-            font-weight: bold;
+        .cell-kode-barang {
+            width: 52%;
+            font-size: 8.2pt;
+            font-weight: normal;
             color: #000000;
-            width: 55%;
-            vertical-align: middle;
-            font-family: Arial, Helvetica, sans-serif;
+            vertical-align: top;
         }
-        .col-nup {
-            display: table-cell;
-            font-size: 7.8pt;
-            font-weight: bold;
+        .cell-nup {
+            width: 48%;
+            font-size: 8.2pt;
+            font-weight: normal;
             color: #000000;
+            vertical-align: top;
             text-align: left;
-            width: 45%;
-            vertical-align: middle;
         }
-        .item-nama {
-            font-size: 7.8pt;
-            font-weight: bold;
+        .cell-nama-barang {
+            font-size: 8.2pt;
+            font-weight: normal;
             color: #000000;
             line-height: 1.15;
-            max-height: 8mm;
+            white-space: nowrap;
             overflow: hidden;
-            margin-bottom: 2mm;
+            text-overflow: ellipsis;
         }
-        .item-merk {
-            font-size: 7pt;
+        .cell-spacer {
+            height: 4.5mm;
+        }
+        .cell-merk-tipe {
+            font-size: 7.8pt;
+            font-weight: normal;
+            color: #000000;
             line-height: 1.15;
-            color: #111111;
-            max-height: 7.5mm;
+            white-space: nowrap;
             overflow: hidden;
+            text-overflow: ellipsis;
         }
-        .body-qr-col {
-            display: table-cell;
-            width: 27%;
+
+        /* Area Kanan (Kode Digital: QR Code) */
+        .body-qr-td {
+            width: 26%;
             vertical-align: middle;
             text-align: right;
+            padding: 0;
         }
-        .body-qr-col img {
-            width: 20mm;
-            height: 20mm;
+        .qr-image {
+            width: 19mm;
+            height: 19mm;
             display: block;
             margin-left: auto;
         }
@@ -156,7 +156,7 @@ if (! function_exists('esc')) {
 </head>
 <body>
 
-    <table class="sticker-table">
+    <table class="sticker-page-table" cellpadding="0" cellspacing="0">
         <?php
         $chunks = array_chunk($stickers ?? [], 2);
         foreach ($chunks as $row):
@@ -168,35 +168,51 @@ if (! function_exists('esc')) {
                 ?>
                     <td class="sticker-cell">
                         <div class="sticker-card">
-                            <!-- Header Instansi & Kode UAKPB -->
-                            <div class="sticker-header">
-                                <div class="header-logo-col">
-                                    <?php if (! empty($logoBase64)): ?>
-                                        <img src="<?= $logoBase64; ?>" alt="Logo PU">
-                                    <?php endif; ?>
-                                </div>
-                                <div class="header-text-col">
-                                    <div class="instansi-title">Kementerian Pekerjaan Umum</div>
-                                    <div class="instansi-code"><?= esc($headerCode); ?></div>
-                                </div>
-                            </div>
+                            <!-- Bagian Atas (Identitas Instansi) -->
+                            <table class="header-table" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="header-logo-td">
+                                        <?php if (! empty($logoBase64)): ?>
+                                            <img src="<?= $logoBase64; ?>" class="pu-logo" alt="Logo PU">
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="header-text-td">
+                                        <div class="instansi-title">Kementerian Pekerjaan Umum</div>
+                                        <div class="instansi-code"><?= esc($headerCode); ?></div>
+                                    </td>
+                                </tr>
+                            </table>
 
-                            <!-- Body: Data Aset & QR Code -->
-                            <div class="sticker-body">
-                                <div class="body-info-col">
-                                    <div class="info-code-nup-table">
-                                        <div class="col-kode-barang"><?= esc($stk['kode_barang']); ?></div>
-                                        <div class="col-nup">NUP: <?= esc($stk['nup']); ?></div>
-                                    </div>
-                                    <div class="item-nama"><?= esc($stk['nama_barang']); ?></div>
-                                    <div class="item-merk"><?= esc($stk['merk_tipe']); ?></div>
-                                </div>
-                                <div class="body-qr-col">
-                                    <?php if (! empty($stk['qr_base64'])): ?>
-                                        <img src="<?= $stk['qr_base64']; ?>" alt="QR Code">
-                                    <?php endif; ?>
-                                </div>
-                            </div>
+                            <!-- Bagian Bawah (Data Spesifikasi Aset & Verifikasi) -->
+                            <table class="body-table" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <!-- Area Kiri (Informasi Barang) -->
+                                    <td class="body-info-td">
+                                        <!-- Baris Atas: Kode Barang & NUP -->
+                                        <table class="info-top-table" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td class="cell-kode-barang"><?= esc($stk['kode_barang']); ?></td>
+                                                <td class="cell-nup">NUP: <?= esc($stk['nup']); ?></td>
+                                            </tr>
+                                        </table>
+                                        <!-- Baris Tengah: Nama Baku Barang -->
+                                        <div class="cell-nama-barang"><?= esc($stk['nama_barang']); ?></div>
+
+                                        <!-- Spacer agar deskripsi spesifik berada di baris bawah -->
+                                        <div class="cell-spacer"></div>
+
+                                        <!-- Baris Bawah: Deskripsi Spesifik / Merk / Tipe Fisik -->
+                                        <div class="cell-merk-tipe"><?= esc($stk['merk_tipe']); ?></div>
+                                    </td>
+
+                                    <!-- Area Kanan (Kode Digital: QR Code) -->
+                                    <td class="body-qr-td">
+                                        <?php if (! empty($stk['qr_base64'])): ?>
+                                            <img src="<?= $stk['qr_base64']; ?>" class="qr-image" alt="QR Code">
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </td>
                 <?php endforeach; ?>
