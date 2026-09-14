@@ -204,6 +204,39 @@ graph TD
         </div>
     </div>
 
+    <!-- FLOWCHART 0B: PETA SEBARAN SEKOLAH & FITUR EXPORT PETA A3 -->
+    <div class="flowchart-card role-section" data-roles="all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-map-marked-alt mr-2"></i> Alur Pemetaan Sekolah &amp; Fitur Export Peta A3</h5>
+                <small class="text-muted">Navigasi peta sebaran sekolah, filter lokasi/paket proyek, kustomisasi judul export peta, dan unduh dokumen kartografi A3 Landscape.</small>
+            </div>
+            <div>
+                <span class="badge badge-primary">Semua Role</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu Map (/admin/map)"] --> B["Eksplorasi Peta Interaktif &amp; Gunakan Filter (Tipe Map, NPSN, Wilayah, Paket)"]
+    B --> C["Opsi 1: Klik Tombol 'Export Peta A3' di Header Halaman"]
+    B --> D["Opsi 2: Klik Marker Sekolah &amp; Buka Modal Detail Sekolah"]
+    D --> E["Klik Tombol 'Export Peta A3' pada Modal Detail"]
+    C --> F["Muncul Dialog Input Judul Peta Export"]
+    E --> F
+    F -->|Default: 'PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU' atau Ketik Judul Kustom| G["Klik Tombol 'Lanjut'"]
+    G --> H{"Pilih Format Tampilan Kartografi Peta"}
+    H -->|Tombol Hijau| I["Dengan Kontur Elevasi Topografi"]
+    H -->|Tombol Abu-abu| J["Tanpa Kontur (Peta Bersih)"]
+    I --> K["Sistem Merender Canvas &amp; Menyusun Layout A3 Landscape"]
+    J --> K
+    K --> L["Dokumen PDF Berhasil Diterbitkan: Buka di Tab Baru / Unduh Otomatis"]
+                </pre>
+            </div>
+        </div>
+    </div>
+
     <!-- FLOWCHART 1: STAF / PELAKSANA - PENGAJUAN DISPOSISI & PELAPORAN PERJADIN -->
     <?php if ($canRenderForUser(['staf_pelaksana'])): ?>
     <div class="flowchart-card role-section" data-roles="staf_pelaksana,all">
@@ -655,6 +688,15 @@ graph TD
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-calendar-days mr-1"></i> Dashboard & Kalender Terpadu Satker PPS</h6>
                                 <p class="small text-muted mb-2"><code>/admin/dashboard</code></p>
                                 <p class="small mb-0">Halaman utama dashboard menyajikan <strong>FullCalendar Terpadu (Col-4 Sidebar Layout)</strong> yang mengombinasikan 4 kategori jadwal: Hari Libur Nasional (merah), Cuti Bersama (oranye/amber), Pegawai Cuti (biru/cyan), dan Perjalanan Dinas (hijau). Dilengkapi filter interaktif, counter pegawai cuti & dinas aktif hari ini, tampilan Bulan/List, serta modal detail lengkap saat tanggal/agenda diklik.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-map-marked-alt mr-1"></i> Peta Sebaran Sekolah (GIS &amp; Export Peta A3)</h6>
+                                <p class="small text-muted mb-2"><code>/admin/map</code></p>
+                                <p class="small mb-0">Halaman pemetaan interaktif sebaran sekolah binaan berbasis Leaflet Map dengan filter Tipe Map, NPSN, Nama Sekolah, Wilayah Administratif, Klasifikasi Kerusakan, dan Paket Proyek. Dilengkapi fasilitas <strong>Export Peta A3 Landscape</strong> dengan dialog input kustomisasi <strong>Judul Peta</strong> (default: <em>PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU</em>), pilihan opsi kartografi <em>Dengan Kontur</em> atau <em>Tanpa Kontur</em>, kompas mata angin, skala bar dinamis, legenda sebaran sekolah, peta indeks (inset) Provinsi Riau, serta blok tanda tangan pengesahan resmi.</p>
                             </div>
                         </div>
                     </div>

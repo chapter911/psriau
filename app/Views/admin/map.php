@@ -130,9 +130,11 @@
     <div class="card-header d-flex align-items-center">
         <h3 class="card-title mb-0">Peta Sebaran Sekolah</h3>
         <div class="card-tools ml-auto">
+            <?php if (! isset($pagePermissions) || ! empty($pagePermissions['export'])): ?>
             <button class="btn btn-danger btn-sm" type="button" id="exportMapPdfBtnMain">
                 <i class="fas fa-file-pdf mr-1"></i> Export Peta A3
             </button>
+            <?php endif; ?>
         </div>
     </div>
     <div class="card-body">
@@ -322,9 +324,11 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <?php if (! isset($pagePermissions) || ! empty($pagePermissions['export'])): ?>
                 <button type="button" class="btn btn-danger" id="btn-export-peta-pdf-dashboard">
                     <i class="fas fa-file-pdf mr-1"></i> Export Peta A3
                 </button>
+                <?php endif; ?>
                 <a id="mapOpenGoogleBtn" class="btn btn-outline-primary" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">
                     <i class="fas fa-map-marked-alt mr-1"></i> Buka Google Maps
                 </a>
@@ -667,7 +671,15 @@
     const contourLayer = L.layerGroup().addTo(map);
     let mapScript = '';
     let activeMarkers = [];
-    const markerIconCache = new Map();
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
     function getScaleBarHtml(exportMap) {
         const bounds = exportMap.getBounds();
@@ -1497,6 +1509,30 @@
             return;
         }
 
+        const defaultTitle = 'PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU';
+        const titleResult = await Swal.fire({
+            title: 'Judul Peta Export',
+            input: 'text',
+            inputLabel: 'Masukkan judul peta untuk dokumen export:',
+            inputValue: defaultTitle,
+            showCancelButton: true,
+            confirmButtonText: 'Lanjut <i class="fas fa-arrow-right ml-1"></i>',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#007bff',
+            cancelButtonColor: '#6c757d',
+            reverseButtons: true,
+            inputValidator: (value) => {
+                if (!value || !value.trim()) {
+                    return 'Judul export tidak boleh kosong!';
+                }
+            }
+        });
+
+        if (!titleResult.isConfirmed || !titleResult.value) {
+            return;
+        }
+        const exportTitle = titleResult.value.trim().toUpperCase();
+
         const swalResult = await Swal.fire({
             title: 'Opsi Peta',
             html: `
@@ -1514,7 +1550,9 @@
             `,
             showConfirmButton: false,
             showDenyButton: false,
-            showCancelButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'Batal',
+            cancelButtonColor: '#d33',
             allowOutsideClick: true,
             didOpen: () => {
                 const b1 = document.getElementById('btnWithContour1');
@@ -1560,7 +1598,7 @@
             // Build interior HTML
             exportContainer.innerHTML = `
                 <div style="text-align: center; border: 2px solid black; padding: 10px; margin-bottom: 10px; font-weight: bold; font-size: 24px; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase;">
-                    PETA LAHAN USULAN SEKOLAH RAKYAT PROVINSI RIAU
+                    ${escapeHtml(exportTitle)}
                 </div>
                 <div style="display: flex; justify-content: space-between; height: 1010px; font-family: Arial, sans-serif;">
                     <!-- Left: Map Container -->
@@ -1848,8 +1886,9 @@
             const blobUrl = pdf.output('bloburl');
             const newTab = window.open(blobUrl, '_blank');
             
+            const safeFileName = exportTitle.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'Peta_PS_Riau';
             if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
-                pdf.save('Peta_PS_Riau.pdf');
+                pdf.save(`${safeFileName}.pdf`);
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil',
@@ -1891,6 +1930,30 @@
     }
 
     async function exportMainMapPdf() {
+        const defaultTitle = 'PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU';
+        const titleResult = await Swal.fire({
+            title: 'Judul Peta Export',
+            input: 'text',
+            inputLabel: 'Masukkan judul peta untuk dokumen export:',
+            inputValue: defaultTitle,
+            showCancelButton: true,
+            confirmButtonText: 'Lanjut <i class="fas fa-arrow-right ml-1"></i>',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#007bff',
+            cancelButtonColor: '#6c757d',
+            reverseButtons: true,
+            inputValidator: (value) => {
+                if (!value || !value.trim()) {
+                    return 'Judul export tidak boleh kosong!';
+                }
+            }
+        });
+
+        if (!titleResult.isConfirmed || !titleResult.value) {
+            return;
+        }
+        const exportTitle = titleResult.value.trim().toUpperCase();
+
         const swalResult = await Swal.fire({
             title: 'Opsi Peta',
             html: `
@@ -1908,7 +1971,9 @@
             `,
             showConfirmButton: false,
             showDenyButton: false,
-            showCancelButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'Batal',
+            cancelButtonColor: '#d33',
             allowOutsideClick: true,
             didOpen: () => {
                 const b1 = document.getElementById('btnWithContour');
@@ -1998,7 +2063,7 @@
             // Build interior HTML
             exportContainer.innerHTML = `
                 <div style="text-align: center; border: 2px solid black; padding: 10px; margin-bottom: 10px; font-weight: bold; font-size: 24px; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase;">
-                    PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU
+                    ${escapeHtml(exportTitle)}
                 </div>
                 <div style="display: flex; justify-content: space-between; height: 1010px; font-family: Arial, sans-serif;">
                     <!-- Left: Map Container -->
@@ -2324,8 +2389,9 @@
             const blobUrl = pdf.output('bloburl');
             const newTab = window.open(blobUrl, '_blank');
             
+            const safeFileName = exportTitle.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'Peta_Sebaran_PS_Riau';
             if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
-                pdf.save('Peta_Sebaran_PS_Riau.pdf');
+                pdf.save(`${safeFileName}.pdf`);
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil',
