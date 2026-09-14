@@ -223,10 +223,10 @@ graph TD
     B --> C["Opsi 1: Klik Tombol 'Export Peta A3' di Header Halaman"]
     B --> D["Opsi 2: Klik Marker Sekolah &amp; Buka Modal Detail Sekolah"]
     D --> E["Klik Tombol 'Export Peta A3' pada Modal Detail"]
-    C --> F["Muncul Dialog Input Judul Peta Export"]
+    C --> F["Muncul 1 Modal Dialog Terpadu 'Export Peta A3'"]
     E --> F
-    F -->|Default: 'PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU' atau Ketik Judul Kustom| G["Klik Tombol 'Lanjut'"]
-    G --> H{"Pilih Format Tampilan Kartografi Peta"}
+    F --> G["Kolom Judul Peta (Default: 'PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU' / Kustom)"]
+    G --> H{"Pilih Langsung Format Kartografi dalam Dialog yang Sama"}
     H -->|Tombol Hijau| I["Dengan Kontur Elevasi Topografi"]
     H -->|Tombol Abu-abu| J["Tanpa Kontur (Peta Bersih)"]
     I --> K["Sistem Merender Canvas &amp; Menyusun Layout A3 Landscape"]

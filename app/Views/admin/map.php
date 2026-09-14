@@ -1505,47 +1505,28 @@
         }
     };
 
-    async function exportMapPdf(lat, lng, schoolName, kabupaten = 'Bengkalis', kecamatan = 'Bengkalis') {
-        if (!lat || !lng) {
-            Swal.fire('Gagal', 'Koordinat sekolah tidak valid.', 'error');
-            return;
-        }
+    async function showExportMapOptionsDialog(defaultTitle = 'PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU') {
+        let selectedContour = true;
 
-        const defaultTitle = 'PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU';
-        const titleResult = await Swal.fire({
-            title: 'Judul Peta Export',
-            input: 'text',
-            inputLabel: 'Masukkan judul peta untuk dokumen export:',
-            inputValue: defaultTitle,
-            showCancelButton: true,
-            confirmButtonText: 'Lanjut <i class="fas fa-arrow-right ml-1"></i>',
-            cancelButtonText: 'Batal',
-            confirmButtonColor: '#007bff',
-            cancelButtonColor: '#6c757d',
-            reverseButtons: true,
-            inputValidator: (value) => {
-                if (!value || !value.trim()) {
-                    return 'Judul export tidak boleh kosong!';
-                }
-            }
-        });
-
-        if (!titleResult.isConfirmed || !titleResult.value) {
-            return;
-        }
-        const exportTitle = titleResult.value.trim().toUpperCase();
-
-        const swalResult = await Swal.fire({
-            title: 'Opsi Peta',
+        const result = await Swal.fire({
+            title: 'Export Peta A3',
             html: `
-                <div style="font-size: 14px; margin-bottom: 20px;">Pilih format tampilan peta yang akan diekspor:</div>
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <label for="exportMapTitleInput" style="font-weight: bold; font-size: 13px; color: #333; margin-bottom: 6px; display: block;">
+                        Judul Peta / Dokumen Export:
+                    </label>
+                    <input type="text" id="exportMapTitleInput" class="swal2-input" style="width: 100%; margin: 0; box-sizing: border-box; font-size: 14px; font-weight: bold; text-transform: uppercase;" value="${escapeHtml(defaultTitle)}" placeholder="Masukkan judul export...">
+                </div>
+                <div style="font-size: 13px; margin-bottom: 12px; text-align: left; color: #555; font-weight: 500;">
+                    Pilih format tampilan peta yang akan diekspor:
+                </div>
                 <div style="display: flex; gap: 15px; justify-content: center;">
-                    <button id="btnWithContour1" class="swal2-confirm swal2-styled" style="width: 150px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #28a745; margin: 0; gap: 10px;">
-                        <i class="fas fa-layer-group" style="font-size: 32px;"></i>
+                    <button id="swalBtnWithContour" type="button" class="swal2-confirm swal2-styled" style="width: 150px; height: 115px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #28a745; margin: 0; gap: 10px; border-radius: 8px; border: none; cursor: pointer; color: white;">
+                        <i class="fas fa-layer-group" style="font-size: 30px;"></i>
                         <span style="font-size: 13px; font-weight: bold;">Dengan Kontur</span>
                     </button>
-                    <button id="btnNoContour1" class="swal2-deny swal2-styled" style="width: 150px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #6c757d; margin: 0; gap: 10px;">
-                        <i class="fas fa-map" style="font-size: 32px;"></i>
+                    <button id="swalBtnNoContour" type="button" class="swal2-deny swal2-styled" style="width: 150px; height: 115px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #6c757d; margin: 0; gap: 10px; border-radius: 8px; border: none; cursor: pointer; color: white;">
+                        <i class="fas fa-map" style="font-size: 30px;"></i>
                         <span style="font-size: 13px; font-weight: bold;">Tanpa Kontur</span>
                     </button>
                 </div>
@@ -1557,17 +1538,69 @@
             cancelButtonColor: '#d33',
             allowOutsideClick: true,
             didOpen: () => {
-                const b1 = document.getElementById('btnWithContour1');
-                const b2 = document.getElementById('btnNoContour1');
-                if(b1) b1.addEventListener('click', () => Swal.clickConfirm());
-                if(b2) b2.addEventListener('click', () => Swal.clickDeny());
+                const input = document.getElementById('exportMapTitleInput');
+                const b1 = document.getElementById('swalBtnWithContour');
+                const b2 = document.getElementById('swalBtnNoContour');
+
+                if (b1) {
+                    b1.addEventListener('click', () => {
+                        selectedContour = true;
+                        Swal.clickConfirm();
+                    });
+                }
+                if (b2) {
+                    b2.addEventListener('click', () => {
+                        selectedContour = false;
+                        Swal.clickConfirm();
+                    });
+                }
+                if (input) {
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            selectedContour = true;
+                            Swal.clickConfirm();
+                        }
+                    });
+                    setTimeout(() => {
+                        input.focus();
+                        input.select();
+                    }, 150);
+                }
+            },
+            preConfirm: () => {
+                const input = document.getElementById('exportMapTitleInput');
+                const val = (input ? input.value : '').trim();
+                if (!val) {
+                    Swal.showValidationMessage('Judul export tidak boleh kosong!');
+                    if (input) input.focus();
+                    return false;
+                }
+                return {
+                    exportTitle: val.toUpperCase(),
+                    useContour: selectedContour
+                };
             }
         });
 
-        if (!swalResult.isConfirmed && !swalResult.isDenied) {
+        if (!result.isConfirmed || !result.value) {
+            return null;
+        }
+
+        return result.value;
+    }
+
+    async function exportMapPdf(lat, lng, schoolName, kabupaten = 'Bengkalis', kecamatan = 'Bengkalis') {
+        if (!lat || !lng) {
+            Swal.fire('Gagal', 'Koordinat sekolah tidak valid.', 'error');
             return;
         }
-        const useContour = swalResult.isConfirmed;
+
+        const exportOptions = await showExportMapOptionsDialog();
+        if (!exportOptions) {
+            return;
+        }
+        const { exportTitle, useContour } = exportOptions;
 
         Swal.fire({
             title: 'Mohon Tunggu',
@@ -1932,63 +1965,11 @@
     }
 
     async function exportMainMapPdf() {
-        const defaultTitle = 'PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU';
-        const titleResult = await Swal.fire({
-            title: 'Judul Peta Export',
-            input: 'text',
-            inputLabel: 'Masukkan judul peta untuk dokumen export:',
-            inputValue: defaultTitle,
-            showCancelButton: true,
-            confirmButtonText: 'Lanjut <i class="fas fa-arrow-right ml-1"></i>',
-            cancelButtonText: 'Batal',
-            confirmButtonColor: '#007bff',
-            cancelButtonColor: '#6c757d',
-            reverseButtons: true,
-            inputValidator: (value) => {
-                if (!value || !value.trim()) {
-                    return 'Judul export tidak boleh kosong!';
-                }
-            }
-        });
-
-        if (!titleResult.isConfirmed || !titleResult.value) {
+        const exportOptions = await showExportMapOptionsDialog();
+        if (!exportOptions) {
             return;
         }
-        const exportTitle = titleResult.value.trim().toUpperCase();
-
-        const swalResult = await Swal.fire({
-            title: 'Opsi Peta',
-            html: `
-                <div style="font-size: 14px; margin-bottom: 20px;">Pilih format tampilan peta yang akan diekspor:</div>
-                <div style="display: flex; gap: 15px; justify-content: center;">
-                    <button id="btnWithContour" class="swal2-confirm swal2-styled" style="width: 150px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #28a745; margin: 0; gap: 10px;">
-                        <i class="fas fa-layer-group" style="font-size: 32px;"></i>
-                        <span style="font-size: 13px; font-weight: bold;">Dengan Kontur</span>
-                    </button>
-                    <button id="btnNoContour" class="swal2-deny swal2-styled" style="width: 150px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #6c757d; margin: 0; gap: 10px;">
-                        <i class="fas fa-map" style="font-size: 32px;"></i>
-                        <span style="font-size: 13px; font-weight: bold;">Tanpa Kontur</span>
-                    </button>
-                </div>
-            `,
-            showConfirmButton: false,
-            showDenyButton: false,
-            showCancelButton: true,
-            cancelButtonText: 'Batal',
-            cancelButtonColor: '#d33',
-            allowOutsideClick: true,
-            didOpen: () => {
-                const b1 = document.getElementById('btnWithContour');
-                const b2 = document.getElementById('btnNoContour');
-                if(b1) b1.addEventListener('click', () => Swal.clickConfirm());
-                if(b2) b2.addEventListener('click', () => Swal.clickDeny());
-            }
-        });
-
-        if (!swalResult.isConfirmed && !swalResult.isDenied) {
-            return;
-        }
-        const useContour = swalResult.isConfirmed;
+        const { exportTitle, useContour } = exportOptions;
 
         Swal.fire({
             title: 'Mohon Tunggu',
