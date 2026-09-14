@@ -49,8 +49,8 @@ if (! function_exists('esc')) {
         /* Kartu Stiker Tunggal */
         .sticker-card {
             width: 100%;
-            height: 35.5mm;
-            max-height: 35.5mm;
+            height: 36.5mm;
+            max-height: 36.5mm;
             border: 1px solid #111111;
             background: #ffffff;
             page-break-inside: avoid;
@@ -64,14 +64,13 @@ if (! function_exists('esc')) {
             table-layout: fixed;
             border-collapse: collapse;
             border-bottom: 1px solid #111111;
-            padding: 1.2mm 2.2mm 1mm 2.2mm;
-            height: 10.5mm;
+            height: 12mm;
         }
         .header-logo-td {
-            width: 9.5mm;
+            width: 12mm;
             vertical-align: middle;
             text-align: left;
-            padding: 0;
+            padding: 1.8mm 0 2mm 2.2mm;
         }
         .pu-logo {
             width: 8.5mm;
@@ -81,14 +80,19 @@ if (! function_exists('esc')) {
         .header-text-td {
             vertical-align: middle;
             text-align: center;
-            padding: 0 0 0 1mm;
+            padding: 1.8mm 1mm 2mm 1mm;
+        }
+        .header-spacer-td {
+            width: 12mm;
+            padding: 0;
         }
         .instansi-title {
             font-size: 8.5pt;
             font-weight: normal;
             color: #000000;
-            line-height: 1.15;
+            line-height: 1.2;
             letter-spacing: 0.1px;
+            text-align: center;
             white-space: nowrap;
             overflow: hidden;
         }
@@ -96,9 +100,10 @@ if (! function_exists('esc')) {
             font-size: 7.8pt;
             font-weight: normal;
             color: #000000;
-            line-height: 1.15;
-            margin-top: 0.3mm;
+            line-height: 1.2;
+            margin-top: 0.6mm;
             letter-spacing: 0.2px;
+            text-align: center;
             white-space: nowrap;
             overflow: hidden;
         }
@@ -108,13 +113,12 @@ if (! function_exists('esc')) {
             width: 100%;
             table-layout: fixed;
             border-collapse: collapse;
-            padding: 1.5mm 2.2mm 1.5mm 2.2mm;
             height: 24.5mm;
         }
         .body-info-td {
             width: 73%;
             vertical-align: top;
-            padding-right: 1.5mm;
+            padding: 2.2mm 1.5mm 1.5mm 2.2mm;
         }
         .info-top-table {
             width: 100%;
@@ -168,7 +172,7 @@ if (! function_exists('esc')) {
             width: 27%;
             vertical-align: middle;
             text-align: right;
-            padding: 0;
+            padding: 2mm 2.2mm 1.5mm 0;
         }
         .qr-image {
             width: 19mm;
@@ -215,6 +219,7 @@ if (! function_exists('esc')) {
                                         <div class="instansi-title">Kementerian Pekerjaan Umum</div>
                                         <div class="instansi-code"><?= esc($headerCode); ?></div>
                                     </td>
+                                    <td class="header-spacer-td"></td>
                                 </tr>
                             </table>
 
