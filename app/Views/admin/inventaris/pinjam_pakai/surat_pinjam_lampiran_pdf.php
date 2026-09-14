@@ -94,20 +94,41 @@
             </tr>
         </thead>
         <tbody>
+            <?php 
+            $itemList = ! empty($loan['items']) ? $loan['items'] : [$loan];
+            $totalQty = 0;
+            $totalNilai = 0.0;
+            $noUrut = 1;
+            foreach ($itemList as $itm): 
+                $qty = 1;
+                $totalQty += $qty;
+                $nilaiItem = (float) ($itm['nilai_perolehan'] ?? 0);
+                $totalNilai += $nilaiItem;
+                $kondisiItem = $itm['kondisi_pinjam'] ?? ($loan['kondisi_pinjam'] ?? 'Baik');
+                $kelengkapanItem = $itm['kelengkapan'] ?? ($loan['kelengkapan'] ?? '');
+                $catatanItem = ! empty($itm['catatan']) ? $itm['catatan'] : (! empty($loan['catatan']) ? $loan['catatan'] : 'Tercatat pada Inventarisasi Aset Satker Pelaksanaan Prasarana Strategis');
+            ?>
             <tr>
-                <td style="text-align: center;">1.</td>
-                <td style="text-align: center;"><?= esc($loan['kode_barang'] ?? ''); ?></td>
-                <td><?= esc($loan['nama_barang'] ?? ''); ?></td>
-                <td style="text-align: center;"><?= esc($loan['nup'] ?? ''); ?></td>
+                <td style="text-align: center;"><?= $noUrut++; ?>.</td>
+                <td style="text-align: center;"><?= esc($itm['kode_barang'] ?? ''); ?></td>
+                <td><?= esc($itm['nama_barang'] ?? ''); ?></td>
+                <td style="text-align: center;"><?= esc($itm['nup'] ?? ''); ?></td>
                 <td>
-                    Tipe : <?= esc($loan['merk_tipe'] ?? '-') ?: '-'; ?>
-                    <?= ! empty($loan['kelengkapan']) ? ' (Kelengkapan: ' . esc($loan['kelengkapan']) . ')' : ''; ?>
+                    Tipe : <?= esc($itm['merk_tipe'] ?? '-') ?: '-'; ?>
+                    <?= ! empty($kelengkapanItem) ? ' (Kelengkapan: ' . esc($kelengkapanItem) . ')' : ''; ?>
                 </td>
-                <td style="text-align: center;"><?= esc($loan['tahun_perolehan'] ?? '-') ?: '-'; ?></td>
-                <td style="text-align: center;">1</td>
-                <td style="text-align: right;"><?= number_format((float) ($loan['nilai_perolehan'] ?? 0), 0, ',', '.'); ?></td>
-                <td style="text-align: center;"><?= ucwords(str_replace('_', ' ', (string) ($loan['kondisi_pinjam'] ?? 'Baik'))); ?></td>
-                <td><?= ! empty($loan['catatan']) ? esc($loan['catatan']) : 'Tercatat pada Inventarisasi Aset Satker Pelaksanaan Prasarana Strategis'; ?></td>
+                <td style="text-align: center;"><?= esc($itm['tahun_perolehan'] ?? '-') ?: '-'; ?></td>
+                <td style="text-align: center;"><?= $qty; ?></td>
+                <td style="text-align: right;"><?= number_format($nilaiItem, 0, ',', '.'); ?></td>
+                <td style="text-align: center;"><?= ucwords(str_replace('_', ' ', (string) $kondisiItem)); ?></td>
+                <td><?= esc($catatanItem); ?></td>
+            </tr>
+            <?php endforeach; ?>
+            <tr style="background-color: #f8fafc; font-weight: bold;">
+                <td colspan="6" style="text-align: center; font-weight: bold; padding: 5px;">JUMLAH / TOTAL</td>
+                <td style="text-align: center; font-weight: bold;"><?= $totalQty; ?></td>
+                <td style="text-align: right; font-weight: bold;"><?= number_format($totalNilai, 0, ',', '.'); ?></td>
+                <td colspan="2" style="background-color: #f1f5f9;"></td>
             </tr>
         </tbody>
     </table>

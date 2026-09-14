@@ -1151,6 +1151,123 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::write("  [INFO] Next nomor surat 2026: '{$nextNoAfter}'", "yellow");
             }
 
+            // 4d. Uji Peminjaman Multi-Aset Sekaligus (1 Orang Meminjam Beberapa Barang Sekaligus)
+            $multiAsset1 = $satkerModel->insert([
+                'kode_barang'     => 'SMOKE-MULTI-01',
+                'nup'             => '101',
+                'nama_barang'     => 'Laptop Lenovo ThinkPad T14',
+                'merk_tipe'       => 'Gen 3 Core i7',
+                'jumlah'          => 1,
+                'satuan'          => 'Unit',
+                'kondisi'         => 'Baik',
+                'peruntukan'      => 'kantor',
+                'nilai_perolehan' => 18500000,
+                'status_bmn'      => 'Digunakan Sendiri',
+                'lokasi_ruangan'  => 'Gudang Satker',
+            ]);
+
+            $multiAsset2 = $satkerModel->insert([
+                'kode_barang'     => 'SMOKE-MULTI-02',
+                'nup'             => '102',
+                'nama_barang'     => 'Monitor Dell UltraSharp 27 Inch',
+                'merk_tipe'       => 'U2723QE 4K',
+                'jumlah'          => 1,
+                'satuan'          => 'Unit',
+                'kondisi'         => 'Baik',
+                'peruntukan'      => 'kantor',
+                'nilai_perolehan' => 9500000,
+                'status_bmn'      => 'Digunakan Sendiri',
+                'lokasi_ruangan'  => 'Gudang Satker',
+            ]);
+
+            $multiPeminjamNama = 'Rian Hidayat, S.Kom.';
+            $multiPinjamId = $pinjamModel->insert([
+                'inventaris_id'        => $multiAsset1,
+                'pegawai_id'           => null,
+                'nama_peminjam'        => $multiPeminjamNama,
+                'nip_peminjam'         => '199203102020121004',
+                'jabatan_peminjam'     => 'Pranata Komputer Ahli Pertama',
+                'no_surat'             => 'PS.03.01/B/Gs7/2026/099',
+                'tgl_pinjam'           => date('Y-m-d'),
+                'keperluan'            => 'Dinas pengembangan sistem informasi',
+                'kondisi_pinjam'       => 'baik',
+                'status'               => 'dipinjam',
+            ]);
+
+            // Insert child items
+            $now = date('Y-m-d H:i:s');
+            $db->table('trn_inventaris_pinjam_pakai_item')->insertBatch([
+                [
+                    'pinjam_pakai_id' => $multiPinjamId,
+                    'inventaris_id'   => $multiAsset1,
+                    'kondisi_pinjam'  => 'baik',
+                    'status'          => 'dipinjam',
+                    'created_at'      => $now,
+                    'updated_at'      => $now,
+                ],
+                [
+                    'pinjam_pakai_id' => $multiPinjamId,
+                    'inventaris_id'   => $multiAsset2,
+                    'kondisi_pinjam'  => 'baik',
+                    'status'          => 'dipinjam',
+                    'created_at'      => $now,
+                    'updated_at'      => $now,
+                ],
+            ]);
+
+            // Sinkronkan status kedua aset
+            $satkerModel->whereIn('id', [$multiAsset1, $multiAsset2])->set([
+                'status_bmn'     => 'Dipinjam Pakai',
+                'lokasi_ruangan' => 'Pinjam Pakai: ' . $multiPeminjamNama,
+            ])->update();
+
+            // Verifikasi detail pinjam memuat 2 items
+            $multiDetail = $pinjamModel->getPinjamDetail($multiPinjamId);
+            $multiItemsCount = count($multiDetail['items'] ?? []);
+
+            // Render Lampiran PDF untuk multi-item
+            $pdfDataMulti = $pdfDataSurat;
+            $pdfDataMulti['loan'] = $multiDetail;
+            $htmlMultiLampiran = view('admin/inventaris/pinjam_pakai/surat_pinjam_lampiran_pdf', $pdfDataMulti);
+
+            $hasItem1 = (strpos($htmlMultiLampiran, 'Laptop Lenovo ThinkPad T14') !== false);
+            $hasItem2 = (strpos($htmlMultiLampiran, 'Monitor Dell UltraSharp 27 Inch') !== false);
+            $hasTotalRow = (strpos($htmlMultiLampiran, 'JUMLAH / TOTAL') !== false);
+            $hasTotalQty = (strpos($htmlMultiLampiran, '>2<') !== false);
+
+            if ($multiItemsCount === 2 && $hasItem1 && $hasItem2 && $hasTotalRow && $hasTotalQty) {
+                CLI::write("  [OK] Fitur Multi-Item Pinjam Pakai sukses: 1 orang meminjam 2 aset sekaligus ('{$multiDetail['nama_peminjam']}'), seluruh item tersimpan di child table, dan lampiran PDF merender tabel 10 kolom 2 baris lengkap dengan baris Total!", "green");
+            } else {
+                CLI::error("  [FAIL] Validasi peminjaman multi-item atau render PDF lampiran multi-item gagal.");
+            }
+
+            // Uji pengembalian massal multi-aset
+            $db->table('trn_inventaris_pinjam_pakai_item')->where('pinjam_pakai_id', $multiPinjamId)->update([
+                'status'          => 'dikembalikan',
+                'kondisi_kembali' => 'baik',
+                'updated_at'      => date('Y-m-d H:i:s'),
+            ]);
+            $satkerModel->whereIn('id', [$multiAsset1, $multiAsset2])->set([
+                'status_bmn'     => 'Digunakan Sendiri',
+                'kondisi'        => 'baik',
+                'lokasi_ruangan' => 'Gudang / Belum Berlokasi',
+            ])->update();
+            $pinjamModel->update($multiPinjamId, ['status' => 'dikembalikan', 'tgl_kembali_realisasi' => date('Y-m-d'), 'kondisi_kembali' => 'baik']);
+
+            $afterReturn1 = $satkerModel->find($multiAsset1);
+            $afterReturn2 = $satkerModel->find($multiAsset2);
+            if ($afterReturn1['status_bmn'] === 'Digunakan Sendiri' && $afterReturn2['status_bmn'] === 'Digunakan Sendiri') {
+                CLI::write("  [OK] Pengembalian multi-aset berhasil: Seluruh aset ({$multiAsset1}, {$multiAsset2}) otomatis dipulihkan ke 'Digunakan Sendiri' (Gudang)", "green");
+            } else {
+                CLI::error("  [FAIL] Pemulihan status multi-aset saat pengembalian gagal.");
+            }
+
+            // Bersihkan data dummy multi-item
+            $db->table('trn_inventaris_pinjam_pakai_item')->where('pinjam_pakai_id', $multiPinjamId)->delete();
+            $pinjamModel->delete($multiPinjamId);
+            $satkerModel->delete($multiAsset1);
+            $satkerModel->delete($multiAsset2);
+
             // 5. Uji Proses Pengembalian Aset
             $pinjamModel->update($pinjamId, [
                 'status'                => 'dikembalikan',

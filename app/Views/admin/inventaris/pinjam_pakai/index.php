@@ -222,15 +222,55 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                     </div>
                                 </td>
                                 <td class="align-middle">
-                                    <span class="font-weight-bold text-primary d-block" style="font-size: 0.95rem;">
-                                        <?= esc($p['nama_barang'] ?? '-'); ?>
-                                    </span>
-                                    <div class="small text-muted mt-1">
-                                        <span><strong>NUP:</strong> <?= esc($p['nup'] ?? '-'); ?></span> | 
-                                        <span><strong>Kode:</strong> <?= esc($p['kode_barang'] ?? '-'); ?></span>
-                                    </div>
-                                    <?php if (! empty($p['merk_tipe'])): ?>
-                                        <small class="text-muted d-block"><i class="fas fa-tag mr-1"></i> <?= esc($p['merk_tipe']); ?></small>
+                                    <?php 
+                                    $loanItems = ! empty($p['items']) ? $p['items'] : [];
+                                    if (empty($loanItems) && ! empty($p['inventaris_id'])) {
+                                        $loanItems = [[
+                                            'nama_barang' => $p['nama_barang'] ?? '-',
+                                            'nup' => $p['nup'] ?? '-',
+                                            'kode_barang' => $p['kode_barang'] ?? '-',
+                                            'merk_tipe' => $p['merk_tipe'] ?? '',
+                                            'kondisi_pinjam' => $p['kondisi_pinjam'] ?? 'baik',
+                                            'kondisi_kembali' => $p['kondisi_kembali'] ?? null,
+                                        ]];
+                                    }
+                                    $isMulti = count($loanItems) > 1;
+                                    $itemsJson = json_encode($loanItems);
+                                    ?>
+                                    <?php if ($isMulti): ?>
+                                        <div class="mb-2">
+                                            <span class="badge badge-primary px-2 py-1 font-weight-bold shadow-sm" style="font-size: 0.8rem;">
+                                                <i class="fas fa-boxes mr-1"></i> <?= count($loanItems); ?> Unit Aset Dipinjam
+                                            </span>
+                                        </div>
+                                        <div class="bg-light p-2 rounded border" style="font-size: 0.84rem; max-height: 180px; overflow-y: auto;">
+                                            <?php foreach ($loanItems as $idx => $itm): ?>
+                                                <div class="<?= $idx > 0 ? 'border-top pt-1 mt-1' : ''; ?>">
+                                                    <span class="font-weight-bold text-dark">
+                                                        <?= ($idx + 1) . '. ' . esc($itm['nama_barang']); ?>
+                                                    </span>
+                                                    <div class="text-muted small">
+                                                        <span><strong>NUP:</strong> <?= esc($itm['nup']); ?></span> | 
+                                                        <span><strong>Kode:</strong> <?= esc($itm['kode_barang']); ?></span>
+                                                        <?php if (! empty($itm['merk_tipe'])): ?>
+                                                            | <span><i class="fas fa-tag mr-1"></i><?= esc($itm['merk_tipe']); ?></span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <?php $single = ! empty($loanItems[0]) ? $loanItems[0] : ['nama_barang' => $p['nama_barang'] ?? '-', 'nup' => $p['nup'] ?? '-', 'kode_barang' => $p['kode_barang'] ?? '-', 'merk_tipe' => $p['merk_tipe'] ?? '']; ?>
+                                        <span class="font-weight-bold text-primary d-block" style="font-size: 0.95rem;">
+                                            <?= esc($single['nama_barang']); ?>
+                                        </span>
+                                        <div class="small text-muted mt-1">
+                                            <span><strong>NUP:</strong> <?= esc($single['nup']); ?></span> | 
+                                            <span><strong>Kode:</strong> <?= esc($single['kode_barang']); ?></span>
+                                        </div>
+                                        <?php if (! empty($single['merk_tipe'])): ?>
+                                            <small class="text-muted d-block"><i class="fas fa-tag mr-1"></i> <?= esc($single['merk_tipe']); ?></small>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                     <div class="mt-1">
                                         <span class="badge badge-light border px-2 py-1" style="font-size: 0.75rem;">
@@ -290,10 +330,12 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                                 data-target="#modal-kembalikan-pinjam"
                                                 data-id="<?= esc((string) $p['id'], 'attr'); ?>"
                                                 data-surat="<?= esc((string) $p['no_surat'], 'attr'); ?>"
-                                                data-barang="<?= esc((string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
-                                                data-nup="<?= esc((string) ($p['nup'] ?? ''), 'attr'); ?>"
+                                                data-barang="<?= esc($isMulti ? (count($loanItems) . ' Unit Aset BMN') : (string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
+                                                data-nup="<?= esc($isMulti ? 'Multi-NUP' : (string) ($p['nup'] ?? ''), 'attr'); ?>"
                                                 data-peminjam="<?= esc((string) $p['nama_peminjam'], 'attr'); ?>"
                                                 data-kondisi="<?= esc((string) ($p['kondisi_pinjam'] ?? 'baik'), 'attr'); ?>"
+                                                data-items-count="<?= count($loanItems); ?>"
+                                                data-items-json="<?= esc($itemsJson, 'attr'); ?>"
                                                 style="border-radius: 4px;"
                                                 title="Proses Pengembalian Aset"
                                             >
@@ -317,8 +359,8 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                                 data-kontak="<?= esc((string) ($p['kontak_peminjam'] ?? ''), 'attr'); ?>"
                                                 data-surat="<?= esc((string) $p['no_surat'], 'attr'); ?>"
                                                 data-kop-id="<?= esc((string) ($p['kop_surat_id'] ?? ''), 'attr'); ?>"
-                                                data-barang="<?= esc((string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
-                                                data-nup="<?= esc((string) ($p['nup'] ?? ''), 'attr'); ?>"
+                                                data-barang="<?= esc($isMulti ? (count($loanItems) . ' Unit Aset BMN') : (string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
+                                                data-nup="<?= esc($isMulti ? 'Multi-NUP' : (string) ($p['nup'] ?? ''), 'attr'); ?>"
                                                 data-kode="<?= esc((string) ($p['kode_barang'] ?? ''), 'attr'); ?>"
                                                 data-status="<?= esc((string) $p['status'], 'attr'); ?>"
                                                 data-tgl-pinjam="<?= esc((string) $p['tgl_pinjam'], 'attr'); ?>"
@@ -327,6 +369,8 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                                 data-kondisi="<?= esc((string) ($p['kondisi_pinjam'] ?? 'baik'), 'attr'); ?>"
                                                 data-kelengkapan="<?= esc((string) ($p['kelengkapan'] ?? ''), 'attr'); ?>"
                                                 data-catatan="<?= esc((string) ($p['catatan'] ?? ''), 'attr'); ?>"
+                                                data-items-count="<?= count($loanItems); ?>"
+                                                data-items-json="<?= esc($itemsJson, 'attr'); ?>"
                                                 style="border-radius: 4px;"
                                                 title="Edit Data Pinjam Pakai"
                                             >
@@ -343,9 +387,11 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                                 data-target="#modal-delete-pinjam"
                                                 data-id="<?= esc((string) $p['id'], 'attr'); ?>"
                                                 data-surat="<?= esc((string) $p['no_surat'], 'attr'); ?>"
-                                                data-barang="<?= esc((string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
-                                                data-nup="<?= esc((string) ($p['nup'] ?? ''), 'attr'); ?>"
+                                                data-barang="<?= esc($isMulti ? (count($loanItems) . ' Unit Aset BMN') : (string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
+                                                data-nup="<?= esc($isMulti ? 'Multi-NUP' : (string) ($p['nup'] ?? ''), 'attr'); ?>"
                                                 data-status="<?= esc((string) $p['status'], 'attr'); ?>"
+                                                data-items-count="<?= count($loanItems); ?>"
+                                                data-items-json="<?= esc($itemsJson, 'attr'); ?>"
                                                 style="border-radius: 4px;"
                                                 title="Hapus Transaksi Pinjam Pakai"
                                             >
@@ -397,16 +443,18 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                             </div>
                             
                             <div class="form-group mb-3">
-                                <label class="font-weight-bold small text-dark mb-1">Pilih Aset BMN <span class="text-danger">*</span></label>
-                                <select name="inventaris_id" id="tambah-inventaris-select" class="form-control" required style="width: 100%;">
-                                    <option value="">-- Pilih atau Cari Aset BMN yang Tersedia --</option>
+                                <label class="font-weight-bold small text-dark mb-1">
+                                    Pilih Aset BMN yang Dipinjam <span class="text-danger">*</span>
+                                    <span class="badge badge-info ml-1" style="font-size: 0.72rem;">Bisa Pilih Beberapa Barang Sekaligus</span>
+                                </label>
+                                <select name="inventaris_ids[]" id="tambah-inventaris-select" class="form-control" multiple="multiple" required style="width: 100%;">
                                     <?php foreach (($availableAssets ?? []) as $ast): ?>
                                         <option value="<?= esc($ast['id']); ?>">
                                             [NUP <?= esc($ast['nup']); ?>] <?= esc($ast['nama_barang']); ?> <?= ! empty($ast['merk_tipe']) ? ' - ' . esc($ast['merk_tipe']) : ''; ?> (<?= esc($ast['kode_barang']); ?>) - Kondisi: <?= esc(ucwords(str_replace('_', ' ', $ast['kondisi'] ?? 'baik'))); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                                <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle mr-1 text-primary"></i>Hanya menampilkan aset aktif yang sedang tidak dipinjam. Cari berdasarkan nama, merk, kode, atau NUP.</small>
+                                <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle mr-1 text-primary"></i>Pilih satu atau beberapa aset BMN yang tersedia. Cari berdasarkan nama, merk, kode, atau NUP.</small>
                             </div>
 
                             <div class="form-group mb-0">
@@ -594,19 +642,22 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                 <div class="modal-body py-4 px-4">
 
                     <!-- Info Banner Aset Terkait (Read Only) -->
-                    <div class="alert alert-light border d-flex align-items-center mb-3 py-2 px-3 shadow-none" style="border-radius: 8px; background: #f0f7ff; border-left: 4px solid #007bff !important;">
-                        <div class="mr-3 text-primary" style="font-size: 1.6rem;">
-                            <i class="fas fa-box-open"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="small text-muted font-weight-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Aset BMN yang Sedang Dipinjam:</div>
-                            <div class="font-weight-bold text-dark" id="edit-aset-nama" style="font-size: 0.98rem;">-</div>
-                            <div class="small text-muted mt-1">
-                                <span>Kode: <strong id="edit-aset-kode">-</strong></span> | 
-                                <span>NUP: <span class="badge badge-primary px-2 py-0" id="edit-aset-nup">-</span></span> | 
-                                <span>Status: <span class="badge badge-warning px-2 py-0" id="edit-aset-status">-</span></span>
+                    <div class="alert alert-light border mb-3 py-2 px-3 shadow-none" style="border-radius: 8px; background: #f0f7ff; border-left: 4px solid #007bff !important;">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3 text-primary" style="font-size: 1.6rem;">
+                                <i class="fas fa-box-open"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="small text-muted font-weight-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Aset BMN yang Dipinjam:</div>
+                                <div class="font-weight-bold text-dark" id="edit-aset-nama" style="font-size: 0.98rem;">-</div>
+                                <div class="small text-muted mt-1">
+                                    <span>Kode: <strong id="edit-aset-kode">-</strong></span> | 
+                                    <span>NUP: <span class="badge badge-primary px-2 py-0" id="edit-aset-nup">-</span></span> | 
+                                    <span>Status: <span class="badge badge-warning px-2 py-0" id="edit-aset-status">-</span></span>
+                                </div>
                             </div>
                         </div>
+                        <div id="edit-aset-list" class="mt-2 pt-2 border-top small" style="display: none; max-height: 120px; overflow-y: auto;"></div>
                     </div>
 
                     <!-- Section 1: Identitas Pegawai Peminjam -->
@@ -795,6 +846,7 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                         <div class="font-weight-bold text-dark" id="kembali-barang-nama" style="font-size: 0.98rem;">-</div>
                         <div class="small text-muted mt-1">Peminjam: <strong class="text-primary" id="kembali-peminjam-nama">-</strong></div>
                         <div class="small text-muted">No. Surat: <span id="kembali-surat-no">-</span></div>
+                        <div id="kembali-barang-list" class="mt-2 pt-2 border-top small" style="display: none; max-height: 140px; overflow-y: auto;"></div>
                     </div>
 
                     <div class="form-group">
@@ -927,8 +979,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     theme: 'bootstrap4',
                     dropdownParent: $modalTambah,
                     width: '100%',
-                    placeholder: '-- Pilih atau Cari Aset BMN yang Tersedia --',
+                    placeholder: '-- Pilih satu atau beberapa Aset BMN yang Tersedia --',
                     allowClear: true,
+                    closeOnSelect: false,
                     templateResult: formatAssetOption
                 });
             }
@@ -1254,13 +1307,33 @@ document.addEventListener('DOMContentLoaded', function() {
         if (elNama) elNama.textContent = barang;
 
         var elNup = document.getElementById('edit-aset-nup');
-        if (elNup) elNup.textContent = 'NUP ' + nup;
+        if (elNup) elNup.textContent = nup !== 'Multi-NUP' ? ('NUP ' + nup) : nup;
 
         var elKode = document.getElementById('edit-aset-kode');
         if (elKode) elKode.textContent = kode;
 
         var elStatus = document.getElementById('edit-aset-status');
         if (elStatus) elStatus.textContent = status === 'dipinjam' ? 'Sedang Dipinjam' : 'Dikembalikan';
+
+        // Render rincian aset jika multi-item
+        var rawEditItems = btn.getAttribute('data-items-json') || '[]';
+        var editItems = [];
+        try { editItems = JSON.parse(rawEditItems); } catch(e) {}
+        var editListEl = document.getElementById('edit-aset-list');
+        if (editListEl) {
+            if (editItems && editItems.length > 1) {
+                var html = '<div class="font-weight-bold text-primary mb-1"><i class="fas fa-boxes mr-1"></i> Rincian ' + editItems.length + ' Unit Aset yang Dipinjam:</div><ol class="pl-3 mb-0">';
+                editItems.forEach(function(it) {
+                    html += '<li><strong>' + (it.nama_barang || '-') + '</strong> (NUP: ' + (it.nup || '-') + (it.kode_barang ? (', Kode: ' + it.kode_barang) : '') + ')</li>';
+                });
+                html += '</ol>';
+                editListEl.innerHTML = html;
+                editListEl.style.display = 'block';
+            } else {
+                editListEl.style.display = 'none';
+                editListEl.innerHTML = '';
+            }
+        }
 
         var pegSelect = document.getElementById('edit-pegawai-select');
         var pegId = btn.getAttribute('data-pegawai') || '';
@@ -1308,7 +1381,9 @@ document.addEventListener('DOMContentLoaded', function() {
         var kondisi = btn.getAttribute('data-kondisi') || 'baik';
 
         var elBarang = document.getElementById('kembali-barang-nama');
-        if (elBarang) elBarang.textContent = barang + ' (NUP: ' + nup + ')';
+        if (elBarang) {
+            elBarang.textContent = nup !== 'Multi-NUP' ? (barang + ' (NUP: ' + nup + ')') : barang;
+        }
 
         var elPeminjam = document.getElementById('kembali-peminjam-nama');
         if (elPeminjam) elPeminjam.textContent = peminjam;
@@ -1318,6 +1393,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var elKondisi = document.getElementById('kembali-kondisi-select');
         if (elKondisi) elKondisi.value = kondisi;
+
+        // Render rincian aset jika multi-item
+        var rawKembaliItems = btn.getAttribute('data-items-json') || '[]';
+        var kembaliItems = [];
+        try { kembaliItems = JSON.parse(rawKembaliItems); } catch(e) {}
+        var listEl = document.getElementById('kembali-barang-list');
+        if (listEl) {
+            if (kembaliItems && kembaliItems.length > 1) {
+                var html = '<div class="font-weight-bold text-success mb-1"><i class="fas fa-boxes mr-1"></i> Rincian ' + kembaliItems.length + ' Unit Aset yang Akan Dikembalikan:</div><ol class="pl-3 mb-0">';
+                kembaliItems.forEach(function(it) {
+                    html += '<li><strong>' + (it.nama_barang || '-') + '</strong> (NUP: ' + (it.nup || '-') + ')</li>';
+                });
+                html += '</ol>';
+                listEl.innerHTML = html;
+                listEl.style.display = 'block';
+            } else {
+                listEl.style.display = 'none';
+                listEl.innerHTML = '';
+            }
+        }
     }
 
     // 8. POPULATE DELETE MODAL
