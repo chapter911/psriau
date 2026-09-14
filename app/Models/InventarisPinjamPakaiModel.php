@@ -78,6 +78,7 @@ class InventarisPinjamPakaiModel extends Model
                       i.merk_tipe, i.nilai_perolehan, i.satuan, i.kondisi as kondisi_aset_sekarang,
                       i.tahun_perolehan, i.lokasi_ruangan, i.peruntukan,
                       peg.nama as pegawai_master_nama, peg.nip as pegawai_master_nip,
+                      peg.jenis_pegawai as pegawai_master_jenis_pegawai,
                       ju.jabatan as pegawai_master_jabatan,
                       ks.title as kop_surat_title, ks.image_url as kop_surat_image_url')
             ->join('trn_inventaris_satker i', 'i.id = p.inventaris_id', 'left')
@@ -151,4 +152,36 @@ class InventarisPinjamPakaiModel extends Model
             'total_nilai_dipinjam' => $totalNilaiDipinjam,
         ];
     }
+
+    /**
+     * Generate nomor surat pinjam pakai auto increment per tahun
+     * Format: PS.03.01/B/Gs7/{tahun}/{nomor auto increment 3 digit}
+     * Contoh: PS.03.01/B/Gs7/2026/001
+     */
+    public function generateNextNoSurat(?int $tahun = null): string
+    {
+        $tahun = $tahun ?: (int) date('Y');
+        $prefix = "PS.03.01/B/Gs7/{$tahun}/";
+
+        $rows = $this->db->table($this->table)
+            ->select('no_surat')
+            ->like('no_surat', $prefix, 'after')
+            ->get()
+            ->getResultArray();
+
+        $maxNum = 0;
+        foreach ($rows as $row) {
+            $val = trim((string) ($row['no_surat'] ?? ''));
+            if (preg_match('/PS\.03\.01\/B\/Gs7\/' . $tahun . '\/(\d+)/i', $val, $matches)) {
+                $num = (int) $matches[1];
+                if ($num > $maxNum) {
+                    $maxNum = $num;
+                }
+            }
+        }
+
+        $nextNum = $maxNum + 1;
+        return $prefix . str_pad((string) $nextNum, 3, '0', STR_PAD_LEFT);
+    }
 }
+

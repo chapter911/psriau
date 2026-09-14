@@ -78,7 +78,7 @@ class InventarisPinjamPakai extends BaseController
         $pegawaiList = [];
         if ($db->tableExists('mst_pegawai')) {
             $builder = $db->table('mst_pegawai p')
-                ->select('p.id, p.nama, p.nip, p.email, ju.jabatan AS jabatan')
+                ->select('p.id, p.nama, p.nip, p.email, p.jenis_pegawai, ju.jabatan AS jabatan')
                 ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left');
             if ($db->fieldExists('is_active', 'mst_pegawai')) {
                 $builder->where('p.is_active', 1);
@@ -98,6 +98,7 @@ class InventarisPinjamPakai extends BaseController
         }
 
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        $nextNoSurat = $pinjamModel->generateNextNoSurat((int) date('Y'));
 
         return view('admin/inventaris/pinjam_pakai/index', [
             'pageTitle'        => 'Pinjam Pakai Aset BMN',
@@ -107,6 +108,8 @@ class InventarisPinjamPakai extends BaseController
             'availableAssets'  => $availableAssets,
             'pegawaiList'      => $pegawaiList,
             'kopSuratList'     => $kopSuratList,
+            'nextNoSurat'      => $nextNoSurat,
+            'tahunIni'         => (int) date('Y'),
             'currentFilter'    => $filterStatus,
             'can_add'          => (bool) ($menuPermissions['add'] ?? false),
             'can_edit'         => (bool) ($menuPermissions['edit'] ?? false),
@@ -169,14 +172,21 @@ class InventarisPinjamPakai extends BaseController
             $db = db_connect();
             if ($db->tableExists('mst_pegawai')) {
                 $peg = $db->table('mst_pegawai p')
-                    ->select('p.id, p.nama, p.nip, ju.jabatan AS jabatan')
+                    ->select('p.id, p.nama, p.nip, p.jenis_pegawai, ju.jabatan AS jabatan')
                     ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left')
                     ->where('p.id', $pegawaiId)
                     ->get()
                     ->getRowArray();
                 if (is_array($peg)) {
                     $namaPeminjam = $namaPeminjam ?: ($peg['nama'] ?? '');
-                    $nipPeminjam = $nipPeminjam ?: ($peg['nip'] ?? null);
+                    $isKonsultanPeg = (strtolower(trim((string) ($peg['jenis_pegawai'] ?? ''))) === 'konsultan');
+                    if ($isKonsultanPeg) {
+                        if (empty($nipPeminjam) || preg_match('/^NIP[A-Z]+$/i', (string) $nipPeminjam)) {
+                            $nipPeminjam = 'Tenaga Penunjang Kegiatan';
+                        }
+                    } else {
+                        $nipPeminjam = $nipPeminjam ?: ($peg['nip'] ?? null);
+                    }
                     $jabatanPeminjam = $jabatanPeminjam ?: ($peg['jabatan'] ?? null);
                 }
             }
@@ -209,7 +219,23 @@ class InventarisPinjamPakai extends BaseController
         $this->ensureKopSuratIdColumn();
 
         $userId = (int) (session()->get('userId') ?? 0);
+        $tglPinjamInput = trim((string) $this->request->getPost('tgl_pinjam'));
+        $tahunPinjam = ! empty($tglPinjamInput) ? (int) date('Y', strtotime($tglPinjamInput)) : (int) date('Y');
         $rawNoSurat = trim((string) $this->request->getPost('no_surat'));
+
+        // Aturan nomor surat:
+        // Tahun 2025 (atau <= 2025): boleh tidak menggunakan nomor surat (opsional)
+        // Tahun 2026 ke atas: wajib menggunakan nomor surat dengan format PS.03.01/B/Gs7/{tahun}/{nomor auto increment}
+        if ($tahunPinjam >= 2026) {
+            if ($rawNoSurat === '') {
+                $rawNoSurat = $pinjamModel->generateNextNoSurat($tahunPinjam);
+            }
+        } else {
+            if ($rawNoSurat === '') {
+                $rawNoSurat = null;
+            }
+        }
+
         $isNullable = true;
         try {
             $fieldData = $db->getFieldData('trn_inventaris_pinjam_pakai');
@@ -221,7 +247,7 @@ class InventarisPinjamPakai extends BaseController
             }
         } catch (\Throwable $e) {}
 
-        $noSuratVal = ($rawNoSurat !== '') ? $rawNoSurat : ($isNullable ? null : '');
+        $noSuratVal = ($rawNoSurat !== null && $rawNoSurat !== '') ? $rawNoSurat : ($isNullable ? null : '');
 
         $pinjamId = $pinjamModel->insert([
             'inventaris_id'        => $inventarisId,
@@ -232,7 +258,7 @@ class InventarisPinjamPakai extends BaseController
             'kontak_peminjam'      => $kontakPeminjam,
             'no_surat'             => $noSuratVal,
             'kop_surat_id'         => $kopSuratId,
-            'tgl_pinjam'           => trim((string) $this->request->getPost('tgl_pinjam')),
+            'tgl_pinjam'           => $tglPinjamInput,
             'tgl_kembali_rencana'  => trim((string) $this->request->getPost('tgl_kembali_rencana')) ?: null,
             'keperluan'            => trim((string) $this->request->getPost('keperluan')),
             'kondisi_pinjam'       => trim((string) $this->request->getPost('kondisi_pinjam')) ?: 'baik',
@@ -296,6 +322,25 @@ class InventarisPinjamPakai extends BaseController
         $kontakPeminjam = trim((string) $this->request->getPost('kontak_peminjam')) ?: null;
         $kopSuratId = (int) $this->request->getPost('kop_surat_id') ?: null;
 
+        // Otomatisasi NIP untuk Konsultan menjadi "Tenaga Penunjang Kegiatan"
+        if ($pegawaiId !== null && $pegawaiId > 0) {
+            $db = db_connect();
+            if ($db->tableExists('mst_pegawai')) {
+                $peg = $db->table('mst_pegawai p')
+                    ->select('p.id, p.nama, p.nip, p.jenis_pegawai, ju.jabatan AS jabatan')
+                    ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left')
+                    ->where('p.id', $pegawaiId)
+                    ->get()
+                    ->getRowArray();
+                if (is_array($peg)) {
+                    $isKonsultanPeg = (strtolower(trim((string) ($peg['jenis_pegawai'] ?? ''))) === 'konsultan');
+                    if ($isKonsultanPeg && (empty($nipPeminjam) || preg_match('/^NIP[A-Z]+$/i', (string) $nipPeminjam))) {
+                        $nipPeminjam = 'Tenaga Penunjang Kegiatan';
+                    }
+                }
+            }
+        }
+
         $fileSuratPath = $existing['file_surat'];
         $file = $this->request->getFile('file_surat');
         if ($file && $file->isValid() && ! $file->hasMoved()) {
@@ -323,7 +368,23 @@ class InventarisPinjamPakai extends BaseController
         $this->ensureKopSuratIdColumn();
 
         $userId = (int) (session()->get('userId') ?? 0);
+        $tglPinjamEdit = trim((string) $this->request->getPost('tgl_pinjam'));
+        $tahunPinjamEdit = ! empty($tglPinjamEdit) ? (int) date('Y', strtotime($tglPinjamEdit)) : (int) date('Y');
         $rawNoSuratEdit = trim((string) $this->request->getPost('no_surat'));
+
+        // Aturan nomor surat pada Edit:
+        // Tahun 2026+: wajib nomor surat. Jika dikosongkan, gunakan nomor sebelumnya atau generate baru.
+        // Tahun 2025-: boleh tidak menggunakan nomor surat (opsional).
+        if ($tahunPinjamEdit >= 2026) {
+            if ($rawNoSuratEdit === '') {
+                $rawNoSuratEdit = ! empty($existing['no_surat']) ? $existing['no_surat'] : $pinjamModel->generateNextNoSurat($tahunPinjamEdit);
+            }
+        } else {
+            if ($rawNoSuratEdit === '') {
+                $rawNoSuratEdit = null;
+            }
+        }
+
         $isNullable = true;
         try {
             $fieldData = $db->getFieldData('trn_inventaris_pinjam_pakai');
@@ -335,7 +396,7 @@ class InventarisPinjamPakai extends BaseController
             }
         } catch (\Throwable $e) {}
 
-        $noSuratEdit = ($rawNoSuratEdit !== '') ? $rawNoSuratEdit : ($isNullable ? null : '');
+        $noSuratEdit = ($rawNoSuratEdit !== null && $rawNoSuratEdit !== '') ? $rawNoSuratEdit : ($isNullable ? null : '');
 
         $pinjamModel->update($id, [
             'pegawai_id'          => $pegawaiId,
@@ -345,7 +406,7 @@ class InventarisPinjamPakai extends BaseController
             'kontak_peminjam'     => $kontakPeminjam,
             'no_surat'            => $noSuratEdit,
             'kop_surat_id'        => $kopSuratId,
-            'tgl_pinjam'          => trim((string) $this->request->getPost('tgl_pinjam')),
+            'tgl_pinjam'          => $tglPinjamEdit,
             'tgl_kembali_rencana' => trim((string) $this->request->getPost('tgl_kembali_rencana')) ?: null,
             'keperluan'           => trim((string) $this->request->getPost('keperluan')),
             'kondisi_pinjam'      => trim((string) $this->request->getPost('kondisi_pinjam')) ?: 'baik',
@@ -548,22 +609,66 @@ class InventarisPinjamPakai extends BaseController
         $introText = $this->formatTanggalPerjanjian($loan['tgl_pinjam'] ?? null);
         $tahunPinjam = ! empty($loan['tgl_pinjam']) ? date('Y', strtotime((string) $loan['tgl_pinjam'])) : date('Y');
 
+        // Deteksi apakah peminjam adalah Konsultan / Non-ASN
+        $isKonsultan = false;
+        $jenisPegawai = strtolower(trim((string) ($loan['pegawai_master_jenis_pegawai'] ?? '')));
+        $jabatanPeminjam = strtolower(trim((string) ($loan['jabatan_peminjam'] ?? '')));
+        $nipPeminjamRaw = trim((string) ($loan['nip_peminjam'] ?? ''));
+
+        if ($jenisPegawai === 'konsultan') {
+            $isKonsultan = true;
+        } elseif (empty($jenisPegawai) && ! empty($loan['nama_peminjam'])) {
+            $db = db_connect();
+            if ($db->tableExists('mst_pegawai')) {
+                $matchedPeg = $db->table('mst_pegawai')
+                    ->select('jenis_pegawai')
+                    ->where('LOWER(nama)', strtolower(trim((string) $loan['nama_peminjam'])))
+                    ->get()
+                    ->getRowArray();
+                if ($matchedPeg && strtolower(trim((string) ($matchedPeg['jenis_pegawai'] ?? ''))) === 'konsultan') {
+                    $isKonsultan = true;
+                }
+            }
+        }
+
+        if (
+            ! $isKonsultan && (
+                stripos($jabatanPeminjam, 'konsultan') !== false ||
+                stripos($nipPeminjamRaw, 'konsultan') !== false ||
+                stripos($nipPeminjamRaw, 'tenaga penunjang') !== false ||
+                preg_match('/^NIP[A-Z]+$/i', $nipPeminjamRaw)
+            )
+        ) {
+            $isKonsultan = true;
+        }
+
+        $nipPeminjamDisplay = $isKonsultan
+            ? 'Tenaga Penunjang Kegiatan'
+            : (! empty($loan['nip_peminjam']) ? $loan['nip_peminjam'] : '-');
+
+        $nipPeminjamTtd = $isKonsultan
+            ? 'Tenaga Penunjang Kegiatan'
+            : (! empty($loan['nip_peminjam']) ? 'NIP. ' . $loan['nip_peminjam'] : 'NIP. -');
+
         $data = [
-            'loan'           => $loan,
-            'kopSuratImg'    => $kopSuratImg,
-            'logoBase64'     => $logoBase64,
-            'introText'      => $introText,
-            'tahunPinjam'    => $tahunPinjam,
-            'tglPinjamIndo'  => $tglPinjamIndo,
-            'tglCetak'       => $tglCetak,
-            'namaUakpb'      => 'PELAKSANAAN PRASARANA STRATEGIS PROVINSI RIAU',
-            'kodeUakpb'      => '145060900691285000KP',
-            'kasatker'       => [
+            'loan'               => $loan,
+            'isKonsultan'        => $isKonsultan,
+            'nipPeminjamDisplay' => $nipPeminjamDisplay,
+            'nipPeminjamTtd'     => $nipPeminjamTtd,
+            'kopSuratImg'        => $kopSuratImg,
+            'logoBase64'         => $logoBase64,
+            'introText'          => $introText,
+            'tahunPinjam'        => $tahunPinjam,
+            'tglPinjamIndo'      => $tglPinjamIndo,
+            'tglCetak'           => $tglCetak,
+            'namaUakpb'          => 'PELAKSANAAN PRASARANA STRATEGIS PROVINSI RIAU',
+            'kodeUakpb'          => '145060900691285000KP',
+            'kasatker'           => [
                 'nama'    => 'Muhammad Yudi Prasetya, ST.',
                 'nip'     => '198002142014121002',
                 'jabatan' => 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau selaku Kuasa Penguna Barang Milik Negara',
             ],
-            'pengurusBarang' => [
+            'pengurusBarang'     => [
                 'nama'    => 'Petugas Penatausahaan BMN',
                 'nip'     => '199001012015031001',
                 'jabatan' => 'Pengurus Barang Pengguna',
@@ -909,5 +1014,31 @@ class InventarisPinjamPakai extends BaseController
         }
 
         return null;
+    }
+
+    /**
+     * Endpoint AJAX untuk mengambil nomor surat pinjam pakai berikutnya
+     */
+    public function getNextNoSurat()
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $this->response->setStatusCode(403)->setJSON(['status' => 'error', 'message' => 'Akses ditolak.']);
+        }
+
+        $tahun = (int) ($this->request->getGet('tahun') ?: date('Y'));
+        if ($tahun < 2000 || $tahun > 2100) {
+            $tahun = (int) date('Y');
+        }
+
+        $pinjamModel = new InventarisPinjamPakaiModel();
+        $nextNo = $pinjamModel->generateNextNoSurat($tahun);
+
+        return $this->response->setJSON([
+            'status'      => 'success',
+            'tahun'       => $tahun,
+            'no_surat'    => $nextNo,
+            'is_required' => ($tahun >= 2026),
+        ]);
     }
 }

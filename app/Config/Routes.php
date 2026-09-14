@@ -446,6 +446,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('inventaris/pinjam-pakai/(:num)/hapus', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
 	$routes->get('inventaris/pinjam-pakai/(:num)/cetak-pdf', 'Admin\InventarisPinjamPakai::cetakSuratPdf/$1');
 	$routes->get('inventaris/pinjam-pakai/export-excel', 'Admin\InventarisPinjamPakai::exportExcel');
+	$routes->get('inventaris/pinjam-pakai/get-next-no-surat', 'Admin\InventarisPinjamPakai::getNextNoSurat');
 
 	$routes->get('inventaris/sekolah', 'Admin\InventarisSekolah::index');
 

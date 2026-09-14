@@ -245,7 +245,7 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                         <?= esc($p['nama_peminjam']); ?>
                                     </span>
                                     <?php if (! empty($p['nip_peminjam'])): ?>
-                                        <small class="text-muted d-block">NIP. <?= esc($p['nip_peminjam']); ?></small>
+                                        <small class="text-muted d-block"><?= (stripos($p['nip_peminjam'], 'tenaga penunjang') !== false || preg_match('/^NIP[A-Z]+$/i', $p['nip_peminjam'])) ? 'Tenaga Penunjang Kegiatan' : 'NIP. ' . esc($p['nip_peminjam']); ?></small>
                                     <?php endif; ?>
                                     <?php if (! empty($p['jabatan_peminjam'])): ?>
                                         <small class="text-muted d-block"><i class="fas fa-briefcase mr-1"></i> <?= esc($p['jabatan_peminjam']); ?></small>
@@ -435,12 +435,18 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                 <select name="pegawai_id" id="tambah-pegawai-select" class="form-control" style="width: 100%;">
                                     <option value="">-- Pilih atau Cari Nama Pegawai --</option>
                                     <?php foreach (($pegawaiList ?? []) as $peg): ?>
+                                        <?php 
+                                            $isKonsultanItem = (strtolower(trim((string) ($peg['jenis_pegawai'] ?? ''))) === 'konsultan');
+                                            $nipDisplayOpt = $isKonsultanItem ? 'Tenaga Penunjang Kegiatan' : (! empty($peg['nip']) ? 'NIP. ' . $peg['nip'] : 'NIP. -');
+                                            $nipDataVal = $isKonsultanItem ? 'Tenaga Penunjang Kegiatan' : ($peg['nip'] ?? '');
+                                        ?>
                                         <option value="<?= esc($peg['id']); ?>" 
                                             data-nama="<?= esc($peg['nama']); ?>" 
-                                            data-nip="<?= esc($peg['nip']); ?>" 
+                                            data-nip="<?= esc($nipDataVal); ?>" 
+                                            data-jenis="<?= esc($peg['jenis_pegawai'] ?? ''); ?>"
                                             data-jabatan="<?= esc($peg['jabatan'] ?? ''); ?>" 
                                             data-kontak="<?= esc($peg['no_hp'] ?? ''); ?>">
-                                            <?= esc($peg['nama']); ?> (NIP. <?= esc($peg['nip'] ?: '-'); ?>) <?= ! empty($peg['jabatan']) ? ' - ' . esc($peg['jabatan']) : ''; ?>
+                                            <?= esc($peg['nama']); ?> (<?= esc($nipDisplayOpt); ?>) <?= ! empty($peg['jabatan']) ? ' - ' . esc($peg['jabatan']) : ''; ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -480,9 +486,19 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
 
                             <div class="row">
                                 <div class="col-md-6 form-group mb-2">
-                                    <label class="font-weight-bold small text-dark mb-1">Nomor Surat Perjanjian Pinjam Pakai <span class="text-muted font-weight-normal">(Opsional)</span></label>
-                                    <input type="text" name="no_surat" class="form-control" placeholder="Contoh: 01/SPP/BMN/PPS-RIAU/2026" style="border-radius: 6px; font-size: 0.9rem;">
-                                    <small class="text-muted">Nomor surat dicetak pada dokumen perjanjian pinjam pakai.</small>
+                                    <label class="font-weight-bold small text-dark mb-1">
+                                        Nomor Surat Perjanjian Pinjam Pakai
+                                        <span id="tambah-badge-no-surat" class="badge badge-danger ml-1" style="font-size: 0.72rem;">Wajib (Tahun <?= date('Y'); ?>)</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" name="no_surat" id="tambah-no-surat" class="form-control" placeholder="PS.03.01/B/Gs7/<?= date('Y'); ?>/001" value="<?= esc($nextNoSurat ?? ''); ?>" style="border-radius: 6px 0 0 6px; font-size: 0.9rem;">
+                                        <div class="input-group-append">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-generate-no-surat" title="Generate Nomor Otomatis" style="border-radius: 0 6px 6px 0;">
+                                                <i class="fas fa-magic mr-1"></i> Auto
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mt-1" id="tambah-no-surat-hint">Tahun 2026+ wajib format <code>PS.03.01/B/Gs7/{tahun}/{001}</code>. Tahun 2025 boleh kosong.</small>
                                 </div>
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Pilih Kop Surat Instansi</label>
@@ -504,7 +520,7 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                             <div class="row">
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Tanggal Pinjam <span class="text-danger">*</span></label>
-                                    <input type="date" name="tgl_pinjam" class="form-control" value="<?= date('Y-m-d'); ?>" required style="border-radius: 6px; font-size: 0.9rem;">
+                                    <input type="date" name="tgl_pinjam" id="tambah-tgl-pinjam" class="form-control" value="<?= date('Y-m-d'); ?>" required style="border-radius: 6px; font-size: 0.9rem;">
                                 </div>
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Rencana Kembali</label>
@@ -603,12 +619,18 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                 <select name="pegawai_id" id="edit-pegawai-select" class="form-control" style="width: 100%;">
                                     <option value="">-- Pilih atau Cari Nama Pegawai --</option>
                                     <?php foreach (($pegawaiList ?? []) as $peg): ?>
+                                        <?php 
+                                            $isKonsultanItem = (strtolower(trim((string) ($peg['jenis_pegawai'] ?? ''))) === 'konsultan');
+                                            $nipDisplayOpt = $isKonsultanItem ? 'Tenaga Penunjang Kegiatan' : (! empty($peg['nip']) ? 'NIP. ' . $peg['nip'] : 'NIP. -');
+                                            $nipDataVal = $isKonsultanItem ? 'Tenaga Penunjang Kegiatan' : ($peg['nip'] ?? '');
+                                        ?>
                                         <option value="<?= esc($peg['id']); ?>" 
                                             data-nama="<?= esc($peg['nama']); ?>" 
-                                            data-nip="<?= esc($peg['nip']); ?>" 
+                                            data-nip="<?= esc($nipDataVal); ?>" 
+                                            data-jenis="<?= esc($peg['jenis_pegawai'] ?? ''); ?>"
                                             data-jabatan="<?= esc($peg['jabatan'] ?? ''); ?>" 
                                             data-kontak="<?= esc($peg['no_hp'] ?? ''); ?>">
-                                            <?= esc($peg['nama']); ?> (NIP. <?= esc($peg['nip'] ?: '-'); ?>) <?= ! empty($peg['jabatan']) ? ' - ' . esc($peg['jabatan']) : ''; ?>
+                                            <?= esc($peg['nama']); ?> (<?= esc($nipDisplayOpt); ?>) <?= ! empty($peg['jabatan']) ? ' - ' . esc($peg['jabatan']) : ''; ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -648,9 +670,19 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
 
                             <div class="row">
                                 <div class="col-md-6 form-group mb-2">
-                                    <label class="font-weight-bold small text-dark mb-1">Nomor Surat Perjanjian Pinjam Pakai <span class="text-muted font-weight-normal">(Opsional)</span></label>
-                                    <input type="text" name="no_surat" id="edit-no-surat" class="form-control" placeholder="Opsional (boleh dikosongkan)" style="border-radius: 6px; font-size: 0.9rem;">
-                                    <small class="text-muted">Nomor surat dicetak pada dokumen perjanjian pinjam pakai.</small>
+                                    <label class="font-weight-bold small text-dark mb-1">
+                                        Nomor Surat Perjanjian Pinjam Pakai
+                                        <span id="edit-badge-no-surat" class="badge badge-danger ml-1" style="font-size: 0.72rem;">Wajib (Tahun 2026+)</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" name="no_surat" id="edit-no-surat" class="form-control" placeholder="PS.03.01/B/Gs7/<?= date('Y'); ?>/001" style="border-radius: 6px 0 0 6px; font-size: 0.9rem;">
+                                        <div class="input-group-append">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-generate-edit-no-surat" title="Generate Nomor Otomatis" style="border-radius: 0 6px 6px 0;">
+                                                <i class="fas fa-magic mr-1"></i> Auto
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mt-1" id="edit-no-surat-hint">Tahun 2026+ wajib nomor surat. Tahun 2025 boleh dikosongkan.</small>
                                 </div>
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Pilih Kop Surat Instansi</label>
@@ -944,8 +976,13 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 var opt = selectTambahPeg.options[selectTambahPeg.selectedIndex];
                 if (opt) {
+                    var jenis = (opt.getAttribute('data-jenis') || '').toLowerCase();
+                    var nipVal = opt.getAttribute('data-nip') || '';
+                    if (jenis === 'konsultan' || /^NIP[A-Z]+$/i.test(nipVal)) {
+                        nipVal = 'Tenaga Penunjang Kegiatan';
+                    }
                     document.getElementById('tambah-nama-peminjam').value = opt.getAttribute('data-nama') || '';
-                    document.getElementById('tambah-nip-peminjam').value = opt.getAttribute('data-nip') || '';
+                    document.getElementById('tambah-nip-peminjam').value = nipVal;
                     document.getElementById('tambah-jabatan-peminjam').value = opt.getAttribute('data-jabatan') || '';
                     document.getElementById('tambah-kontak-peminjam').value = opt.getAttribute('data-kontak') || '';
                 }
@@ -982,8 +1019,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (val !== '') {
                 var opt = selectEditPeg.options[selectEditPeg.selectedIndex];
                 if (opt) {
+                    var jenis = (opt.getAttribute('data-jenis') || '').toLowerCase();
+                    var nipVal = opt.getAttribute('data-nip') || '';
+                    if (jenis === 'konsultan' || /^NIP[A-Z]+$/i.test(nipVal)) {
+                        nipVal = 'Tenaga Penunjang Kegiatan';
+                    }
                     document.getElementById('edit-nama-peminjam').value = opt.getAttribute('data-nama') || '';
-                    document.getElementById('edit-nip-peminjam').value = opt.getAttribute('data-nip') || '';
+                    document.getElementById('edit-nip-peminjam').value = nipVal;
                     document.getElementById('edit-jabatan-peminjam').value = opt.getAttribute('data-jabatan') || '';
                     document.getElementById('edit-kontak-peminjam').value = opt.getAttribute('data-kontak') || '';
                 }
@@ -1009,6 +1051,114 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('edit-nip-peminjam').value = '';
             document.getElementById('edit-jabatan-peminjam').value = '';
             document.getElementById('edit-kontak-peminjam').value = '';
+        });
+    }
+
+    // 5b. ATURAN NOMOR SURAT (2025 OPSIONAL, 2026+ WAJIB FORMAT PS.03.01/B/Gs7/{tahun}/{nomor})
+    function fetchNextNoSurat(year, callback) {
+        fetch('<?= site_url('admin/inventaris/pinjam-pakai/get-next-no-surat'); ?>?tahun=' + encodeURIComponent(year))
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data && data.status === 'success' && data.no_surat) {
+                    callback(data.no_surat, data.is_required);
+                }
+            })
+            .catch(function(err) {
+                console.error('Error fetching next no surat:', err);
+            });
+    }
+
+    var inputTambahTglPinjam = document.getElementById('tambah-tgl-pinjam');
+    var inputTambahNoSurat = document.getElementById('tambah-no-surat');
+    var badgeTambahNoSurat = document.getElementById('tambah-badge-no-surat');
+    var btnGenerateTambah = document.getElementById('btn-generate-no-surat');
+
+    function updateNoSuratStateTambah() {
+        if (!inputTambahTglPinjam || !inputTambahNoSurat) return;
+        var val = inputTambahTglPinjam.value;
+        var year = val ? new Date(val).getFullYear() : (new Date()).getFullYear();
+        if (isNaN(year)) year = (new Date()).getFullYear();
+
+        if (year >= 2026) {
+            if (badgeTambahNoSurat) {
+                badgeTambahNoSurat.className = 'badge badge-danger ml-1';
+                badgeTambahNoSurat.textContent = 'Wajib (Tahun ' + year + ')';
+            }
+            inputTambahNoSurat.required = true;
+            inputTambahNoSurat.placeholder = 'PS.03.01/B/Gs7/' + year + '/001';
+            if (!inputTambahNoSurat.value || /^PS\.03\.01\/B\/Gs7\/\d{4}\/\d+$/i.test(inputTambahNoSurat.value)) {
+                fetchNextNoSurat(year, function(newNo) {
+                    inputTambahNoSurat.value = newNo;
+                });
+            }
+        } else {
+            if (badgeTambahNoSurat) {
+                badgeTambahNoSurat.className = 'badge badge-secondary ml-1';
+                badgeTambahNoSurat.textContent = 'Opsional (Tahun ' + year + ')';
+            }
+            inputTambahNoSurat.required = false;
+            inputTambahNoSurat.placeholder = 'Opsional (Boleh kosong tahun ' + year + ')';
+        }
+    }
+
+    if (inputTambahTglPinjam) {
+        inputTambahTglPinjam.addEventListener('change', updateNoSuratStateTambah);
+    }
+    if (btnGenerateTambah) {
+        btnGenerateTambah.addEventListener('click', function() {
+            var val = inputTambahTglPinjam ? inputTambahTglPinjam.value : '';
+            var year = val ? new Date(val).getFullYear() : (new Date()).getFullYear();
+            if (isNaN(year)) year = (new Date()).getFullYear();
+            fetchNextNoSurat(year, function(newNo) {
+                if (inputTambahNoSurat) inputTambahNoSurat.value = newNo;
+            });
+        });
+    }
+
+    var inputEditTglPinjam = document.getElementById('edit-tgl-pinjam');
+    var inputEditNoSurat = document.getElementById('edit-no-surat');
+    var badgeEditNoSurat = document.getElementById('edit-badge-no-surat');
+    var btnGenerateEdit = document.getElementById('btn-generate-edit-no-surat');
+
+    function updateNoSuratStateEdit() {
+        if (!inputEditTglPinjam || !inputEditNoSurat) return;
+        var val = inputEditTglPinjam.value;
+        var year = val ? new Date(val).getFullYear() : (new Date()).getFullYear();
+        if (isNaN(year)) year = (new Date()).getFullYear();
+
+        if (year >= 2026) {
+            if (badgeEditNoSurat) {
+                badgeEditNoSurat.className = 'badge badge-danger ml-1';
+                badgeEditNoSurat.textContent = 'Wajib (Tahun ' + year + ')';
+            }
+            inputEditNoSurat.required = true;
+            inputEditNoSurat.placeholder = 'PS.03.01/B/Gs7/' + year + '/001';
+            if (!inputEditNoSurat.value) {
+                fetchNextNoSurat(year, function(newNo) {
+                    inputEditNoSurat.value = newNo;
+                });
+            }
+        } else {
+            if (badgeEditNoSurat) {
+                badgeEditNoSurat.className = 'badge badge-secondary ml-1';
+                badgeEditNoSurat.textContent = 'Opsional (Tahun ' + year + ')';
+            }
+            inputEditNoSurat.required = false;
+            inputEditNoSurat.placeholder = 'Opsional (Boleh kosong tahun ' + year + ')';
+        }
+    }
+
+    if (inputEditTglPinjam) {
+        inputEditTglPinjam.addEventListener('change', updateNoSuratStateEdit);
+    }
+    if (btnGenerateEdit) {
+        btnGenerateEdit.addEventListener('click', function() {
+            var val = inputEditTglPinjam ? inputEditTglPinjam.value : '';
+            var year = val ? new Date(val).getFullYear() : (new Date()).getFullYear();
+            if (isNaN(year)) year = (new Date()).getFullYear();
+            fetchNextNoSurat(year, function(newNo) {
+                if (inputEditNoSurat) inputEditNoSurat.value = newNo;
+            });
         });
     }
 
@@ -1049,7 +1199,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         document.getElementById('edit-nama-peminjam').value = btn.getAttribute('data-nama') || '';
-        document.getElementById('edit-nip-peminjam').value = btn.getAttribute('data-nip') || '';
+        var editNipVal = btn.getAttribute('data-nip') || '';
+        if (/^NIP[A-Z]+$/i.test(editNipVal)) {
+            editNipVal = 'Tenaga Penunjang Kegiatan';
+        }
+        document.getElementById('edit-nip-peminjam').value = editNipVal;
         document.getElementById('edit-jabatan-peminjam').value = btn.getAttribute('data-jabatan') || '';
         document.getElementById('edit-kontak-peminjam').value = btn.getAttribute('data-kontak') || '';
         document.getElementById('edit-no-surat').value = btn.getAttribute('data-surat') || '';
@@ -1062,6 +1216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('edit-keperluan').value = btn.getAttribute('data-keperluan') || '';
         document.getElementById('edit-kondisi-pinjam').value = btn.getAttribute('data-kondisi') || 'baik';
         document.getElementById('edit-catatan').value = btn.getAttribute('data-catatan') || '';
+        updateNoSuratStateEdit();
     }
 
     // 7. POPULATE KEMBALIKAN MODAL

@@ -118,7 +118,11 @@
                 <strong>PIHAK KEDUA</strong><br>
                 Yang menerima,<br><br><br><br><br>
                 <strong><?= esc($loan['nama_peminjam'] ?? ''); ?></strong><br>
-                NIP. <?= esc($loan['nip_peminjam'] ?? '') ?: '-'; ?>
+                <?php if (! empty($isKonsultan)): ?>
+                    Tenaga Penunjang Kegiatan
+                <?php else: ?>
+                    NIP. <?= esc($loan['nip_peminjam'] ?? '') ?: '-'; ?>
+                <?php endif; ?>
             </td>
             <td style="text-align: center;">
                 <strong>PIHAK PERTAMA</strong><br>

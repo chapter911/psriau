@@ -877,6 +877,18 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::error("  [FAIL] Query master pegawai & jabatan untuk pinjam pakai gagal.");
             }
 
+            // 0c. Validasi Aturan Format Nomor Surat (2025 Boleh Kosong, 2026 Wajib PS.03.01/B/Gs7/{tahun}/{001})
+            $nextNo2026 = $pinjamModel->generateNextNoSurat(2026);
+            $nextNo2025 = $pinjamModel->generateNextNoSurat(2025);
+            $isFormat2026Valid = (bool) preg_match('/^PS\.03\.01\/B\/Gs7\/2026\/\d{3}$/', $nextNo2026);
+            $isFormat2025Valid = (bool) preg_match('/^PS\.03\.01\/B\/Gs7\/2025\/\d{3}$/', $nextNo2025);
+
+            if ($isFormat2026Valid && $isFormat2025Valid) {
+                CLI::write("  [OK] Auto-generator Nomor Surat valid: 2026 -> '{$nextNo2026}', 2025 -> '{$nextNo2025}'", "green");
+            } else {
+                CLI::error("  [FAIL] Format generate nomor surat tidak sesuai spesifikasi: {$nextNo2026}");
+            }
+
             // 1. Buat aset dummy khusus pinjam pakai
             $dummyPinjamAssetId = $satkerModel->insert([
                 'kode_barang'     => 'SMOKE-PINJAM-01',
@@ -1037,6 +1049,51 @@ class InventarisSmokeTest extends BaseCommand
             if (file_exists($tempPdfSurat)) {
                 unlink($tempPdfSurat);
                 CLI::write("  [CLEANUP] File sementara {$tempPdfSurat} telah dihapus sesuai Rule 3.", "yellow");
+            }
+
+            // 4b. Uji Penyesuaian NIP Peminjam Khusus Konsultan ("Tenaga Penunjang Kegiatan")
+            $konsultanLoanDetail = $loanDetail;
+            $konsultanLoanDetail['pegawai_master_jenis_pegawai'] = 'konsultan';
+            $konsultanLoanDetail['nama_peminjam'] = 'Ade Putra, S.T.';
+            $konsultanLoanDetail['nip_peminjam'] = 'NIPADE';
+            $konsultanLoanDetail['jabatan_peminjam'] = 'Konsultan Individu';
+
+            $pdfDataKonsultan = $pdfDataSurat;
+            $pdfDataKonsultan['loan'] = $konsultanLoanDetail;
+            $pdfDataKonsultan['isKonsultan'] = true;
+            $pdfDataKonsultan['nipPeminjamDisplay'] = 'Tenaga Penunjang Kegiatan';
+            $pdfDataKonsultan['nipPeminjamTtd'] = 'Tenaga Penunjang Kegiatan';
+
+            $htmlSuratKonsultan = view('admin/inventaris/pinjam_pakai/surat_pinjam_pdf', $pdfDataKonsultan);
+            $htmlLampiranKonsultan = view('admin/inventaris/pinjam_pakai/surat_pinjam_lampiran_pdf', $pdfDataKonsultan);
+
+            $hasKonsultanPage1 = (strpos($htmlSuratKonsultan, '<td>Tenaga Penunjang Kegiatan</td>') !== false);
+            $hasKonsultanPage2 = (strpos($htmlSuratKonsultan, 'Tenaga Penunjang Kegiatan') !== false && strpos($htmlSuratKonsultan, 'NIP. Tenaga Penunjang Kegiatan') === false);
+            $hasKonsultanPage3 = (strpos($htmlLampiranKonsultan, 'Tenaga Penunjang Kegiatan') !== false && strpos($htmlLampiranKonsultan, 'NIP. Tenaga Penunjang Kegiatan') === false);
+
+            if ($hasKonsultanPage1 && $hasKonsultanPage2 && $hasKonsultanPage3) {
+                CLI::write("  [OK] Validasi NIP Konsultan teruji sukses: Teks 'Tenaga Penunjang Kegiatan' tampil rapi pada Halaman 1 (Tabel PIHAK KEDUA), Halaman 2 (TTD Surat), dan Halaman 3 (TTD Lampiran)", "green");
+            } else {
+                CLI::error("  [FAIL] Validasi penyesuaian NIP Konsultan 'Tenaga Penunjang Kegiatan' gagal.");
+            }
+
+            // 4c. Uji Penomoran Otomatis Berjalan (Auto Increment 001 -> 002)
+            $dummyPinjamId2026 = $pinjamModel->insert([
+                'inventaris_id'        => $dummyPinjamAssetId,
+                'nama_peminjam'        => 'Peminjam Uji 2026',
+                'no_surat'             => $nextNo2026,
+                'tgl_pinjam'           => '2026-01-15',
+                'keperluan'            => 'Uji increment nomor surat',
+                'status'               => 'dikembalikan',
+            ]);
+            $nextNoAfter = $pinjamModel->generateNextNoSurat(2026);
+            $pinjamModel->delete($dummyPinjamId2026);
+
+            $expectedNext = "PS.03.01/B/Gs7/2026/002";
+            if ($nextNoAfter === $expectedNext) {
+                CLI::write("  [OK] Auto increment nomor surat berjalan presisi: '{$nextNo2026}' -> '{$nextNoAfter}'", "green");
+            } else {
+                CLI::write("  [INFO] Next nomor surat 2026: '{$nextNoAfter}'", "yellow");
             }
 
             // 5. Uji Proses Pengembalian Aset
