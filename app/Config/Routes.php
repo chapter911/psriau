@@ -483,6 +483,15 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'inventaris/audit/(:num)/hapus', 'Admin\InventarisAudit::delete/$1');
 	$routes->get('inventaris/audit/(:num)/cetak-pdf', 'Admin\InventarisAudit::cetakPdf/$1');
 	$routes->get('inventaris/audit/(:num)/export-excel', 'Admin\InventarisAudit::exportExcel/$1');
+
+	// Modul Inventarisasi - Pengaturan Dokumen & Pejabat BMN
+	$routes->get('inventaris/pengaturan', 'Admin\InventarisPengaturan::index');
+	$routes->post('inventaris/pengaturan/kop/save', 'Admin\InventarisPengaturan::saveKopSurat');
+	$routes->match(['get', 'post'], 'inventaris/pengaturan/kop/(:num)/delete', 'Admin\InventarisPengaturan::deleteKopSurat/$1');
+	$routes->post('inventaris/pengaturan/kasatker/save', 'Admin\InventarisPengaturan::saveKasatker');
+	$routes->match(['get', 'post'], 'inventaris/pengaturan/kasatker/(:num)/delete', 'Admin\InventarisPengaturan::deleteKasatker/$1');
+	$routes->post('inventaris/pengaturan/delegasi/save', 'Admin\InventarisPengaturan::saveDelegasi');
+	$routes->get('inventaris/pengaturan/check-conflict', 'Admin\InventarisPengaturan::ajaxCheckConflict');
 });
 
 

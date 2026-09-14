@@ -453,6 +453,7 @@ graph TD
     A --> B4["4. Inventaris Sekolah (/admin/inventaris/sekolah)"]
     A --> B5["5. Aset Tidak Terdata (/admin/inventaris/tidak-terdata)"]
     A --> B6["6. Audit &amp; Stock Opname (/admin/inventaris/audit)"]
+    A --> B7["7. Pengaturan Dokumen (/admin/inventaris/pengaturan)"]
 
     B1 --> C1["Klasifikasi Peruntukan Aset: Kantor (Satker), Mobiler (Sekolah), &amp; Item Lainnya (Peminjaman / Renovasi / Non-Ruangan)"]
     B1 --> C2["Standar BMN: 1 Kode Barang + 1 NUP = Tepat 1 Unit Fisik (Validasi Ketat Form &amp; Import)"]
@@ -467,8 +468,8 @@ graph TD
     B2 --> D5["Integrasi Metrik Real-time: Monitoring Aset Sedang Dipinjam Pakai dari Modul Pinjam Pakai"]
     B2 --> D6["Shortcut 1-Klik 'Audit Ruangan Ini' Terkoneksi ke Modul Audit &amp; Stock Opname"]
 
-    B3 --> F1["Pencatatan &amp; Ubah Pinjam Pakai: Pilihan Kop Surat, Aturan Nomor Surat (2025 Opsional, 2026+ Wajib PS.03.01/B/Gs7/{tahun}/{001}), &amp; Verifikasi Aset"]
-    B3 --> F2["Penerbitan Surat Pinjam Pakai BMN 3 Halaman Resmi (PDF Mixed-Orientation: Halaman 1-2 Portrait &amp; Halaman 3 Landscape, Otomatisasi NIP Konsultan 'Tenaga Penunjang Kegiatan')"]
+    B3 --> F1["Pencatatan &amp; Ubah Pinjam Pakai: Pilihan Kop Surat, Aturan Nomor Surat (2025 Opsional, 2026+ Wajib PS.03.01/B/Gs7/{tahun}/{001}), Deteksi Benturan Kasatker &amp; Verifikasi Aset"]
+    B3 --> F2["Penerbitan Surat Pinjam Pakai BMN 3 Halaman Resmi (PDF Mixed-Orientation: Halaman 1-2 Portrait &amp; Halaman 3 Landscape, Auto-Kop &amp; Kasatker Tanggal, Delegasi TTD a.n. KPB, NIP Konsultan 'Tenaga Penunjang Kegiatan')"]
     B3 --> F3["Upload Scan Dokumen &amp; Monitoring Status (Sedang Dipinjam / Selesai Dikembalikan)"]
     B3 --> F4["Proses Pengembalian Aset (Update Kondisi Fisik, Catatan &amp; Pemulihan Status Aset Induk)"]
 
@@ -486,6 +487,10 @@ graph TD
     B6 --> H4["Verifikasi Cepat &amp; Scanner Kamera HP: Scan QR Kode Register SIMAN, Centang Reaktif Auto-Pindah ke Tab Sudah Diperiksa, &amp; Sinkronisasi Dropdown Real-time"]
     B6 --> H5["Pencatatan Status Temuan Lapangan: Sesuai, Kondisi Berubah, Salah Ruangan/Pindah, &amp; Selisih Kurang"]
     B6 --> H6["Penerbitan Berita Acara Stock Opname BMN (BAP PDF A4 Portrait per Ruangan &amp; Export Excel Terkelompok)"]
+
+    B7 --> I1["Pengaturan Masa Berlaku Kop Surat BMN (Auto-Select Sesuai Tanggal Transaksi Surat)"]
+    B7 --> I2["Riwayat Masa Jabatan Kasatker Kuasa Pengguna Barang (Sinkronisasi Otomatis Dokumen Lintas Periode)"]
+    B7 --> I3["Delegasi Penandatangan BMN a.n. KPB (Pengalihan Otomatis ke Pengurus Barang saat Kasatker Meminjam Aset)"]
                 </pre>
             </div>
         </div>
@@ -859,6 +864,19 @@ graph TD
                                     <li><strong>Cetak Berita Acara Stock Opname (PDF Resmi A4 Portrait Terkelompok per Ruangan):</strong> Klik tombol <em>Cetak BAP (PDF)</em> untuk mencetak Berita Acara Pemeriksaan Fisik BMN resmi. Tabel rincian barang otomatis terkelompok rapi dengan Banner Ruangan, informasi penanggung jawab ruangan, rincian fisik, serta subtotal unit per ruangan, ditutup dengan kolom tanda tangan pengesahan resmi.</li>
                                     <li><strong>Export Excel Spreadsheet Terkelompok (.xlsx):</strong> Klik tombol <em>Export Excel</em> untuk mengunduh rekapitulasi lengkap hasil audit dalam format spreadsheet Excel dengan banner ruangan terpisah dan pewarnaan status temuan yang rapi.</li>
                                     <li><strong>Penghapusan Sesi Audit:</strong> Pengguna dengan izin <code>FiturDelete</code> (sesuai aturan tabel <code>menu_akses</code>) dapat menghapus sesi audit baik langsung dari tombol hapus di tabel utama maupun dari dalam workspace audit. Konfirmasi dilakukan melalui modal interaktif yang aman untuk mencegah ketidaksengajaan.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    <div class="col-lg-12 col-md-12 mb-3">
+                        <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #6366F1 !important;">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold" style="color: #4F46E5;"><i class="fas fa-sliders-h mr-1"></i> 7. Pengaturan Dokumen &amp; Pejabat BMN</h6>
+                                <p class="small text-muted mb-2"><code>/admin/inventaris/pengaturan</code> (Menu Lv2 Inventarisasi)</p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Pengaturan Dokumen</strong>. Modul ini dikhususkan untuk mengelola konfigurasi penerbitan berkas resmi BMN (Surat Perjanjian Pinjam Pakai, DBR, dan BAP Audit) secara mandiri di dalam modul Inventarisasi tanpa bercampur dengan Master Data umum instansi.</li>
+                                    <li><strong>Tab 1: Masa Berlaku Kop Surat BMN:</strong> Mengelola berkas gambar Kop Surat resmi instansi lengkap dengan rentang tanggal berlaku (<em>Berlaku Dari</em> s/d <em>Berlaku Sampai</em>). Sistem secara cerdas memilih kop surat yang sesuai dengan tanggal transaksi surat saat formulir dibuka atau dicetak.</li>
+                                    <li><strong>Tab 2: Riwayat Jabatan Kasatker (Kuasa Pengguna Barang):</strong> Mencatat daftar nama pejabat Kasatker, NIP, gelar, jabatan resmi, dan rentang masa jabatan (TMT Mulai s/d TMT Selesai). Berkas arsip transaksi masa lampau yang dicetak ulang otomatis mencantumkan nama Kasatker yang menjabat pada masa tersebut, bukan pejabat saat ini.</li>
+                                    <li><strong>Tab 3: Delegasi Penyerah BMN (Solusi Benturan Kepentingan Kasatker Pinjam BMN):</strong> Berdasarkan tata kelola BMN Kementerian PU, jika <em>Kepala Satuan Kerja (Kuasa Pengguna Barang)</em> meminjam aset untuk keperluan operasional dinasnya, maka pihak penyerah BMN (PIHAK PERTAMA) secara hukum tidak boleh ditandatangani oleh dirinya sendiri (mencegah <em>self-contracting</em>). Sistem secara otomatis mendeteksi kondisi ini dan mengalihkan PIHAK PERTAMA kepada <strong>Pengurus Barang Pengguna</strong> atas nama Kuasa Pengguna Barang (<em>a.n. Kuasa Pengguna Barang</em>), lengkap dengan format tanda tangan dan identitas pejabat yang dapat dikonfigurasi di tab ini.</li>
                                 </ol>
                             </div>
                         </div>

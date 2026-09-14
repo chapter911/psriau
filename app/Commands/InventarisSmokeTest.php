@@ -817,33 +817,36 @@ class InventarisSmokeTest extends BaseCommand
         // ---------------------------------------------------------------------
         // TEST 7: Integritas Menu Lv1 & Lv2 (5 Menu Utama Inventarisasi) & Hak Akses
         // ---------------------------------------------------------------------
-        CLI::write("\n[TEST 7] Memeriksa integrasi menu Inventarisasi (5 Menu Lv2) & hak akses...", "cyan");
+        CLI::write("\n[TEST 7] Memeriksa integrasi menu Inventarisasi (Lengkap Menu Lv2) & hak akses...", "cyan");
         $menuLv1 = $db->table('menu_lv1')->like('label', 'Inventarisasi')->get()->getRowArray();
         $menuLv2Barang       = $db->table('menu_lv2')->where('id', '11-01')->get()->getRowArray();
         $menuLv2Dbr          = $db->table('menu_lv2')->where('id', '11-02')->get()->getRowArray();
         $menuLv2Pinjam       = $db->table('menu_lv2')->where('id', '11-04')->get()->getRowArray();
         $menuLv2Sekolah      = $db->table('menu_lv2')->where('id', '11-03')->get()->getRowArray();
         $menuLv2TidakTerdata = $db->table('menu_lv2')->where('id', '11-05')->get()->getRowArray();
+        $menuLv2Pengaturan   = $db->table('menu_lv2')->where('id', '11-07')->get()->getRowArray();
 
-        $hierarchyOk = ($menuLv1 !== null && $menuLv2Barang !== null && $menuLv2Dbr !== null && $menuLv2Pinjam !== null && $menuLv2Sekolah !== null && $menuLv2TidakTerdata !== null);
+        $hierarchyOk = ($menuLv1 !== null && $menuLv2Barang !== null && $menuLv2Dbr !== null && $menuLv2Pinjam !== null && $menuLv2Sekolah !== null && $menuLv2TidakTerdata !== null && $menuLv2Pengaturan !== null);
 
         $aksesBarang       = $db->table('menu_akses')->where('menu_id', '11-01')->countAllResults();
         $aksesDbr          = $db->table('menu_akses')->where('menu_id', '11-02')->countAllResults();
         $aksesPinjam       = $db->table('menu_akses')->where('menu_id', '11-04')->countAllResults();
         $aksesSekolah      = $db->table('menu_akses')->where('menu_id', '11-03')->countAllResults();
         $aksesTidakTerdata = $db->table('menu_akses')->where('menu_id', '11-05')->countAllResults();
+        $aksesPengaturan   = $db->table('menu_akses')->where('menu_id', '11-07')->countAllResults();
 
         // Uji keberadaan kolom peruntukan di tabel trn_inventaris_satker
         $peruntukanColOk = $db->fieldExists('peruntukan', 'trn_inventaris_satker');
 
-        if ($hierarchyOk && $aksesBarang > 0 && $aksesDbr > 0 && $aksesPinjam > 0 && $aksesSekolah > 0 && $aksesTidakTerdata > 0 && $peruntukanColOk) {
-            CLI::write("  [OK] Hierarki Menu Inventarisasi Terstruktur Sempurna (5 Menu Lv2 Lengkap):", "green");
+        if ($hierarchyOk && $aksesBarang > 0 && $aksesDbr > 0 && $aksesPinjam > 0 && $aksesSekolah > 0 && $aksesTidakTerdata > 0 && $aksesPengaturan > 0 && $peruntukanColOk) {
+            CLI::write("  [OK] Hierarki Menu Inventarisasi Terstruktur Sempurna (Termasuk Menu 11-07 Pengaturan Dokumen):", "green");
             CLI::write("       - Lv1: {$menuLv1['label']} (ID: {$menuLv1['id']})", "green");
             CLI::write("         - Lv2: 1. {$menuLv2Barang['label']} (ID: {$menuLv2Barang['id']}, Link: {$menuLv2Barang['link']}) -> {$aksesBarang} Roles", "green");
             CLI::write("         - Lv2: 2. {$menuLv2Dbr['label']} (ID: {$menuLv2Dbr['id']}, Link: {$menuLv2Dbr['link']}) -> {$aksesDbr} Roles", "green");
             CLI::write("         - Lv2: 3. {$menuLv2Pinjam['label']} (ID: {$menuLv2Pinjam['id']}, Link: {$menuLv2Pinjam['link']}) -> {$aksesPinjam} Roles", "green");
             CLI::write("         - Lv2: 4. {$menuLv2Sekolah['label']} (ID: {$menuLv2Sekolah['id']}, Link: {$menuLv2Sekolah['link']}) -> {$aksesSekolah} Roles", "green");
             CLI::write("         - Lv2: 5. {$menuLv2TidakTerdata['label']} (ID: {$menuLv2TidakTerdata['id']}, Link: {$menuLv2TidakTerdata['link']}) -> {$aksesTidakTerdata} Roles", "green");
+            CLI::write("         - Lv2: 7. {$menuLv2Pengaturan['label']} (ID: {$menuLv2Pengaturan['id']}, Link: {$menuLv2Pengaturan['link']}) -> {$aksesPengaturan} Roles", "green");
             CLI::write("  [OK] Kolom 'peruntukan' (kantor / mobiler / lainnya) terdeteksi aktif pada tabel trn_inventaris_satker", "green");
             $passedTests++;
         } else {
@@ -1087,10 +1090,46 @@ class InventarisSmokeTest extends BaseCommand
             $dompdfPreview->render();
             file_put_contents(ROOTPATH . 'do_not_upload/temp/test_preview.pdf', $dompdfPreview->output());
 
+            if (file_exists(ROOTPATH . 'do_not_upload/temp/test_preview.pdf')) {
+                unlink(ROOTPATH . 'do_not_upload/temp/test_preview.pdf');
+            }
+
             if ($hasKonsultanPage1 && $hasKonsultanPage2 && $hasKonsultanPage3 && $hasUnderlineSurat && $hasUnderlineLampiran) {
                 CLI::write("  [OK] Validasi TTD & NIP Konsultan teruji sukses: Posisi simetris sebaris, nama bergaris bawah (<u>Nama</u>), dan teks 'Tenaga Penunjang Kegiatan' tampil rapi", "green");
             } else {
                 CLI::error("  [FAIL] Validasi penyesuaian TTD / NIP Konsultan gagal.");
+            }
+
+            // 4c. Uji Delegasi Penandatangan BMN saat Kasatker Meminjam BMN (Solusi Benturan Kepentingan)
+            $pengaturanModel = new \App\Models\InventarisPengaturanModel();
+            $resolusiDelegasi = $pengaturanModel->resolvePihakPertama('Muhammad Yudi Prasetya, ST.', '198002142014121002', '2026-02-01');
+            $isConflictDetected = ($resolusiDelegasi['is_delegasi'] === true);
+
+            $kasatkerLoanDetail = $loanDetail;
+            $kasatkerLoanDetail['nama_peminjam'] = 'Muhammad Yudi Prasetya, ST.';
+            $kasatkerLoanDetail['nip_peminjam'] = '198002142014121002';
+            $kasatkerLoanDetail['jabatan_peminjam'] = 'Kepala Satuan Kerja';
+
+            $pdfDataKasatker = $pdfDataSurat;
+            $pdfDataKasatker['loan'] = $kasatkerLoanDetail;
+            $pdfDataKasatker['pihakPertama'] = $resolusiDelegasi;
+            $pdfDataKasatker['isDelegasi'] = true;
+            $pdfDataKasatker['isKonsultan'] = false;
+            $pdfDataKasatker['nipPeminjamDisplay'] = '198002142014121002';
+            $pdfDataKasatker['nipPeminjamTtd'] = 'NIP. 198002142014121002';
+
+            $htmlSuratKasatker = view('admin/inventaris/pinjam_pakai/surat_pinjam_pdf', $pdfDataKasatker);
+            $htmlLampiranKasatker = view('admin/inventaris/pinjam_pakai/surat_pinjam_lampiran_pdf', $pdfDataKasatker);
+
+            $hasDelegasiAnPage1 = (strpos($htmlSuratKasatker, 'a.n. Kuasa Pengguna Barang') !== false);
+            $hasDelegasiAnPage2 = (strpos($htmlSuratKasatker, 'a.n. Kuasa Pengguna Barang') !== false);
+            $hasDelegasiAnPage3 = (strpos($htmlLampiranKasatker, 'a.n. Kuasa Pengguna Barang') !== false);
+            $hasDelegasiNama = (strpos($htmlSuratKasatker, $resolusiDelegasi['nama']) !== false);
+
+            if ($isConflictDetected && $hasDelegasiAnPage1 && $hasDelegasiAnPage2 && $hasDelegasiAnPage3 && $hasDelegasiNama) {
+                CLI::write("  [OK] Delegasi Penandatangan BMN teruji sukses: Deteksi otomatis peminjam Kasatker, pengalihan PIHAK PERTAMA ke 'a.n. Kuasa Pengguna Barang ({$resolusiDelegasi['nama']})', dan bebas benturan kepentingan", "green");
+            } else {
+                CLI::error("  [FAIL] Delegasi penandatangan BMN gagal terverifikasi.");
             }
 
             // 4c. Uji Penomoran Otomatis Berjalan (Auto Increment 001 -> 002)

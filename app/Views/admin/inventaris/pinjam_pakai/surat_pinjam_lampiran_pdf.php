@@ -117,12 +117,20 @@
             <td style="width: 50%; text-align: center; vertical-align: top;">
                 <strong>PIHAK KEDUA</strong><br>
                 Yang menerima,
+                <?php if (! empty($isDelegasi)): ?>
+                    <br><?= esc($loan['jabatan_peminjam'] ?? 'Kepala Satuan Kerja'); ?>
+                <?php endif; ?>
             </td>
             <td style="width: 50%; text-align: center; vertical-align: top;">
                 <strong>PIHAK PERTAMA</strong><br>
                 Yang menyerahkan,<br>
-                Satuan Kerja Pelaksanaan Prasarana Strategis Riau<br>
-                Selaku Kuasa Penguna Barang,
+                <?php if (! empty($isDelegasi)): ?>
+                    a.n. Kuasa Pengguna Barang<br>
+                    <?= esc($pihakPertama['jabatan_singkat'] ?? 'Pengurus Barang Pengguna'); ?>,
+                <?php else: ?>
+                    Satuan Kerja Pelaksanaan Prasarana Strategis Riau<br>
+                    Selaku Kuasa Penguna Barang,
+                <?php endif; ?>
             </td>
         </tr>
         <tr>
@@ -134,7 +142,7 @@
                 <strong><u><?= esc($loan['nama_peminjam'] ?? ''); ?></u></strong>
             </td>
             <td style="text-align: center; vertical-align: bottom;">
-                <strong><u><?= esc($kasatker['nama'] ?? 'Muhammad Yudi Prasetya, ST.'); ?></u></strong>
+                <strong><u><?= esc($pihakPertama['nama'] ?? ($kasatker['nama'] ?? 'Muhammad Yudi Prasetya, ST.')); ?></u></strong>
             </td>
         </tr>
         <tr>
@@ -146,7 +154,7 @@
                 <?php endif; ?>
             </td>
             <td style="text-align: center; vertical-align: top; padding-top: 3px;">
-                NIP. <?= esc($kasatker['nip'] ?? '198002142014121002'); ?>
+                NIP. <?= esc($pihakPertama['nip'] ?? ($kasatker['nip'] ?? '198002142014121002')); ?>
             </td>
         </tr>
     </table>

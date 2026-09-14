@@ -847,20 +847,27 @@ class InventarisDbr extends BaseController
             $totalNilai += (float) ($it['total_nilai'] ?? 0);
         }
 
-        // Ambil Kop Surat dari Master Kop (kop_surat)
+        // Ambil Kop Surat dari Master Pengaturan Dokumen BMN
+        $pengaturanModel = new \App\Models\InventarisPengaturanModel();
+        $matchedKop = $pengaturanModel->getKopSuratByDate(date('Y-m-d'));
         $kopSuratImg = '';
-        if (function_exists('kop_surat_img_tag')) {
+        if ($matchedKop && ! empty($matchedKop['image_url'])) {
+            $kopUrl = media_url((string) $matchedKop['image_url']);
+            $kopSuratImg = '<img src="' . esc($kopUrl) . '" alt="' . esc($matchedKop['nama_kop'] ?? 'Kop Surat') . '" style="width: 100%; max-height: 115px; object-fit: contain;" />';
+        } elseif (function_exists('kop_surat_img_tag')) {
             $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 115px; object-fit: contain;', 'Kop Surat Instansi');
         }
 
         // Logo PU Base64 (Fallback jika master kop tidak ada)
         $logoPath = FCPATH . 'uploads/branding/1774740768_77e8482499660c14c637.png';
+        if (! file_exists($logoPath)) {
+            $logoPath = FCPATH . 'assets/img/logo_pupr.png';
+        }
         $logoBase64 = '';
         if (file_exists($logoPath)) {
             $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
         }
 
-        // Format tanggal Indonesia
         $bulanIndo = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
             7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
@@ -870,6 +877,7 @@ class InventarisDbr extends BaseController
         $nomorDokumen = 'DBR/690835/' . strtoupper(preg_replace('/[^a-zA-Z0-9_-]/', '', (string) $room['kode_ruangan'])) . '/' . date('Y');
 
         // Official UAKPB & Kasatker credentials
+        $kasatkerData = $pengaturanModel->getKasatkerByDate(date('Y-m-d'));
         $data = [
             'namaUakpb'     => 'PELAKSANAAN PRASARANA STRATEGIS PROVINSI RIAU',
             'kodeUakpb'     => '145060900691285000KP',
@@ -883,8 +891,8 @@ class InventarisDbr extends BaseController
             'kopSuratImg'   => $kopSuratImg,
             'logoBase64'    => $logoBase64,
             'kasatker'      => [
-                'nama'    => 'Muhammad Yudi Prasetya, S.T.',
-                'nip'     => '198002142014121002',
+                'nama'    => $kasatkerData['nama'] ?? 'Muhammad Yudi Prasetya, S.T.',
+                'nip'     => $kasatkerData['nip'] ?? '198002142014121002',
                 'jabatan' => 'Kepala Kuasa Pengguna Barang',
             ],
             'tahun'         => date('Y'),
@@ -1480,14 +1488,22 @@ class InventarisDbr extends BaseController
             $groupedRooms[$roomId]['items'][] = $it;
         }
 
-        // Ambil Kop Surat dari Master Kop (kop_surat)
+        // Ambil Kop Surat dari Master Pengaturan Dokumen BMN
+        $pengaturanModel = new \App\Models\InventarisPengaturanModel();
+        $matchedKop = $pengaturanModel->getKopSuratByDate(date('Y-m-d'));
         $kopSuratImg = '';
-        if (function_exists('kop_surat_img_tag')) {
+        if ($matchedKop && ! empty($matchedKop['image_url'])) {
+            $kopUrl = media_url((string) $matchedKop['image_url']);
+            $kopSuratImg = '<img src="' . esc($kopUrl) . '" alt="' . esc($matchedKop['nama_kop'] ?? 'Kop Surat') . '" style="width: 100%; max-height: 115px; object-fit: contain;" />';
+        } elseif (function_exists('kop_surat_img_tag')) {
             $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 115px; object-fit: contain;', 'Kop Surat Instansi');
         }
 
         // Logo PU Base64 (Fallback jika master kop tidak ada)
         $logoPath = FCPATH . 'uploads/branding/1774740768_77e8482499660c14c637.png';
+        if (! file_exists($logoPath)) {
+            $logoPath = FCPATH . 'assets/img/logo_pupr.png';
+        }
         $logoBase64 = '';
         if (file_exists($logoPath)) {
             $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
@@ -1500,6 +1516,7 @@ class InventarisDbr extends BaseController
         ];
         $tglHariIni = date('j') . ' ' . ($bulanIndo[(int) date('n')] ?? date('F')) . ' ' . date('Y');
 
+        $kasatkerData = $pengaturanModel->getKasatkerByDate(date('Y-m-d'));
         $data = [
             'groupedRooms' => $groupedRooms,
             'items'        => $items,
@@ -1510,8 +1527,8 @@ class InventarisDbr extends BaseController
             'kopSuratImg'  => $kopSuratImg,
             'logoBase64'   => $logoBase64,
             'kasatker'     => [
-                'nama'    => 'Muhammad Yudi Prasetya, S.T.',
-                'nip'     => '198002142014121002',
+                'nama'    => $kasatkerData['nama'] ?? 'Muhammad Yudi Prasetya, S.T.',
+                'nip'     => $kasatkerData['nip'] ?? '198002142014121002',
                 'jabatan' => 'Kepala Kuasa Pengguna Barang',
             ],
             'tahun'        => date('Y'),

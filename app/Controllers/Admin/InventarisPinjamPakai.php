@@ -86,9 +86,17 @@ class InventarisPinjamPakai extends BaseController
             $pegawaiList = $builder->orderBy('p.nama', 'ASC')->get()->getResultArray();
         }
 
-        // Ambil daftar Kop Surat
+        // Ambil daftar Kop Surat (prioritas pengaturan dokumen BMN)
         $kopSuratList = [];
-        if ($db->tableExists('kop_surat')) {
+        if ($db->tableExists('cfg_inventaris_kop_surat')) {
+            $kopSuratList = $db->table('cfg_inventaris_kop_surat')
+                ->select('id, nama_kop AS nama, berlaku_dari, berlaku_sampai, is_active')
+                ->orderBy('is_active', 'DESC')
+                ->orderBy('berlaku_dari', 'DESC')
+                ->orderBy('id', 'DESC')
+                ->get()
+                ->getResultArray();
+        } elseif ($db->tableExists('kop_surat')) {
             $kopSuratList = $db->table('kop_surat')
                 ->select('id, title AS nama, is_active')
                 ->orderBy('is_active', 'DESC')
@@ -577,11 +585,24 @@ class InventarisPinjamPakai extends BaseController
             return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Data pinjam pakai tidak ditemukan.');
         }
 
-        // Ambil Kop Surat dari Master Kop (kop_surat) sesuai kop_surat_id pinjam atau default aktif
+        $pengaturanModel = new \App\Models\InventarisPengaturanModel();
+
+        // 1. Ambil Kop Surat: Jika ada kop_surat_id spesifik gunakan itu, jika tidak cari berdasarkan tanggal pinjam
         $kopSuratId = ! empty($loan['kop_surat_id']) ? (int) $loan['kop_surat_id'] : null;
         $kopSuratImg = '';
-        if (function_exists('kop_surat_img_tag')) {
-            $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 105px; object-fit: contain;', 'Kop Surat Instansi', $kopSuratId);
+
+        if (! empty($kopSuratId)) {
+            if (function_exists('kop_surat_img_tag')) {
+                $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 105px; object-fit: contain;', 'Kop Surat Instansi', $kopSuratId);
+            }
+        } else {
+            $matchedKop = $pengaturanModel->getKopSuratByDate($loan['tgl_pinjam'] ?? null);
+            if ($matchedKop && ! empty($matchedKop['image_url'])) {
+                $kopUrl = media_url((string) $matchedKop['image_url']);
+                $kopSuratImg = '<img src="' . esc($kopUrl) . '" alt="' . esc($matchedKop['nama_kop'] ?? 'Kop Surat') . '" style="width: 100%; max-height: 105px; object-fit: contain;" />';
+            } elseif (function_exists('kop_surat_img_tag')) {
+                $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 105px; object-fit: contain;', 'Kop Surat Instansi');
+            }
         }
 
         // Logo PU Base64 (Fallback jika master kop tidak ada)
@@ -650,6 +671,15 @@ class InventarisPinjamPakai extends BaseController
             ? 'Tenaga Penunjang Kegiatan'
             : (! empty($loan['nip_peminjam']) ? 'NIP. ' . $loan['nip_peminjam'] : 'NIP. -');
 
+        // 2. Resolusi Pihak Pertama (Cek Benturan Kepentingan: Peminjam == Kasatker)
+        $pihakPertama = $pengaturanModel->resolvePihakPertama(
+            (string) ($loan['nama_peminjam'] ?? ''),
+            (string) ($loan['nip_peminjam'] ?? ''),
+            $loan['tgl_pinjam'] ?? null
+        );
+        $kasatker = $pihakPertama['kasatker_asli'] ?? $pengaturanModel->getKasatkerByDate($loan['tgl_pinjam'] ?? null);
+        $delegasi = $pengaturanModel->getDelegasi();
+
         $data = [
             'loan'               => $loan,
             'isKonsultan'        => $isKonsultan,
@@ -663,16 +693,10 @@ class InventarisPinjamPakai extends BaseController
             'tglCetak'           => $tglCetak,
             'namaUakpb'          => 'PELAKSANAAN PRASARANA STRATEGIS PROVINSI RIAU',
             'kodeUakpb'          => '145060900691285000KP',
-            'kasatker'           => [
-                'nama'    => 'Muhammad Yudi Prasetya, ST.',
-                'nip'     => '198002142014121002',
-                'jabatan' => 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau selaku Kuasa Penguna Barang Milik Negara',
-            ],
-            'pengurusBarang'     => [
-                'nama'    => 'Petugas Penatausahaan BMN',
-                'nip'     => '199001012015031001',
-                'jabatan' => 'Pengurus Barang Pengguna',
-            ],
+            'pihakPertama'       => $pihakPertama,
+            'isDelegasi'         => (bool) ($pihakPertama['is_delegasi'] ?? false),
+            'kasatker'           => $kasatker,
+            'pengurusBarang'     => $delegasi,
         ];
 
         $options = new Options();

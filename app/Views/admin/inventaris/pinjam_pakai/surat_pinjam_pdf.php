@@ -180,19 +180,19 @@
             <td style="width: 20px;">1.</td>
             <td style="width: 55px;">Nama</td>
             <td style="width: 10px;">:</td>
-            <td><?= esc($kasatker['nama'] ?? 'Muhammad Yudi Prasetya, ST.'); ?></td>
+            <td><?= esc($pihakPertama['nama'] ?? ($kasatker['nama'] ?? 'Muhammad Yudi Prasetya, ST.')); ?></td>
         </tr>
         <tr>
             <td></td>
             <td>NIP</td>
             <td>:</td>
-            <td><?= esc($kasatker['nip'] ?? '198002142014121002'); ?></td>
+            <td><?= esc($pihakPertama['nip'] ?? ($kasatker['nip'] ?? '198002142014121002')); ?></td>
         </tr>
         <tr>
             <td></td>
             <td>Jabatan</td>
             <td>:</td>
-            <td style="text-align: justify;">Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau selaku Kuasa Penguna Barang Milik Negara, yang bertindak untuk atas nama Satuan Kerja Pelaksanaan Prasarana Strategis Riau,<br>Yang selanjutnya disebut <strong>PIHAK PERTAMA</strong>.</td>
+            <td style="text-align: justify;"><?= esc($pihakPertama['jabatan'] ?? 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau selaku Kuasa Penguna Barang Milik Negara'); ?>, yang bertindak untuk atas nama Satuan Kerja Pelaksanaan Prasarana Strategis Riau,<br>Yang selanjutnya disebut <strong>PIHAK PERTAMA</strong>.</td>
         </tr>
     </table>
 
@@ -287,13 +287,21 @@
             <td style="width: 50%; text-align: center; vertical-align: top;">
                 <strong>PIHAK KEDUA</strong><br>
                 Yang menerima,
+                <?php if (! empty($isDelegasi)): ?>
+                    <br><?= esc($loan['jabatan_peminjam'] ?? 'Kepala Satuan Kerja'); ?>
+                <?php endif; ?>
             </td>
             <td style="width: 50%; text-align: center; vertical-align: top;">
                 <strong>PIHAK PERTAMA</strong><br>
                 yang menyerahkan,<br>
-                Kepala Satuan Kerja<br>
-                Pelaksanaan Prasarana Strategis Riau<br>
-                Selaku Kuasa Penguna Barang,
+                <?php if (! empty($isDelegasi)): ?>
+                    a.n. Kuasa Pengguna Barang<br>
+                    <?= esc($pihakPertama['jabatan_singkat'] ?? 'Pengurus Barang Pengguna'); ?>,
+                <?php else: ?>
+                    Kepala Satuan Kerja<br>
+                    Pelaksanaan Prasarana Strategis Riau<br>
+                    Selaku Kuasa Penguna Barang,
+                <?php endif; ?>
             </td>
         </tr>
         <tr>
@@ -305,7 +313,7 @@
                 <strong><u><?= esc($loan['nama_peminjam'] ?? ''); ?></u></strong>
             </td>
             <td style="text-align: center; vertical-align: bottom;">
-                <strong><u><?= esc($kasatker['nama'] ?? 'Muhammad Yudi Prasetya, ST.'); ?></u></strong>
+                <strong><u><?= esc($pihakPertama['nama'] ?? ($kasatker['nama'] ?? 'Muhammad Yudi Prasetya, ST.')); ?></u></strong>
             </td>
         </tr>
         <tr>
@@ -317,7 +325,7 @@
                 <?php endif; ?>
             </td>
             <td style="text-align: center; vertical-align: top; padding-top: 3px;">
-                NIP. <?= esc($kasatker['nip'] ?? '198002142014121002'); ?>
+                NIP. <?= esc($pihakPertama['nip'] ?? ($kasatker['nip'] ?? '198002142014121002')); ?>
             </td>
         </tr>
     </table>
