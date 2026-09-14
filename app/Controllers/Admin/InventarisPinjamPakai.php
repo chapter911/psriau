@@ -591,29 +591,47 @@ class InventarisPinjamPakai extends BaseController
         $dompdfLandscape->render();
         $pdfLandscapeStream = $dompdfLandscape->output();
 
+        // Pastikan pustaka FPDF & FPDI ter-load (baik via Composer maupun fallback APPPATH . 'ThirdParty/setasign')
+        if (! class_exists('FPDF') && file_exists(APPPATH . 'ThirdParty/setasign/fpdf/fpdf.php')) {
+            require_once APPPATH . 'ThirdParty/setasign/fpdf/fpdf.php';
+        }
+        if (! class_exists('setasign\Fpdi\Fpdi') && file_exists(APPPATH . 'ThirdParty/setasign/fpdi/src/autoload.php')) {
+            require_once APPPATH . 'ThirdParty/setasign/fpdi/src/autoload.php';
+        }
+
         // 3. Gabungkan Portrait dan Landscape ke satu dokumen PDF dengan FPDI
-        $fpdi = new Fpdi();
-        $fpdi->SetAutoPageBreak(false);
+        $pdfOutput = '';
+        if (class_exists(Fpdi::class) && class_exists(StreamReader::class)) {
+            try {
+                $fpdi = new Fpdi();
+                $fpdi->SetAutoPageBreak(false);
 
-        // Masukkan Halaman Surat (Portrait)
-        $pageCountPortrait = $fpdi->setSourceFile(StreamReader::createByString($pdfPortraitStream));
-        for ($pageNo = 1; $pageNo <= $pageCountPortrait; $pageNo++) {
-            $tplId = $fpdi->importPage($pageNo);
-            $size  = $fpdi->getTemplateSize($tplId);
-            $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
-            $fpdi->useTemplate($tplId);
+                // Masukkan Halaman Surat (Portrait)
+                $pageCountPortrait = $fpdi->setSourceFile(StreamReader::createByString($pdfPortraitStream));
+                for ($pageNo = 1; $pageNo <= $pageCountPortrait; $pageNo++) {
+                    $tplId = $fpdi->importPage($pageNo);
+                    $size  = $fpdi->getTemplateSize($tplId);
+                    $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                    $fpdi->useTemplate($tplId);
+                }
+
+                // Masukkan Halaman Lampiran (Landscape)
+                $pageCountLandscape = $fpdi->setSourceFile(StreamReader::createByString($pdfLandscapeStream));
+                for ($pageNo = 1; $pageNo <= $pageCountLandscape; $pageNo++) {
+                    $tplId = $fpdi->importPage($pageNo);
+                    $size  = $fpdi->getTemplateSize($tplId);
+                    $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                    $fpdi->useTemplate($tplId);
+                }
+
+                $pdfOutput = $fpdi->Output('S');
+            } catch (\Throwable $e) {
+                log_message('error', 'Gagal menggabungkan PDF Pinjam Pakai via FPDI: ' . $e->getMessage());
+                $pdfOutput = $pdfPortraitStream;
+            }
+        } else {
+            $pdfOutput = $pdfPortraitStream;
         }
-
-        // Masukkan Halaman Lampiran (Landscape)
-        $pageCountLandscape = $fpdi->setSourceFile(StreamReader::createByString($pdfLandscapeStream));
-        for ($pageNo = 1; $pageNo <= $pageCountLandscape; $pageNo++) {
-            $tplId = $fpdi->importPage($pageNo);
-            $size  = $fpdi->getTemplateSize($tplId);
-            $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
-            $fpdi->useTemplate($tplId);
-        }
-
-        $pdfOutput = $fpdi->Output('S');
 
         $suratSlug = ! empty($loan['no_surat'])
             ? preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $loan['no_surat'])

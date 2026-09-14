@@ -999,6 +999,14 @@ class InventarisSmokeTest extends BaseCommand
             $dompdfLampiran->render();
             $lampiranStream = $dompdfLampiran->output();
 
+            // Pastikan FPDF & FPDI ter-load
+            if (! class_exists('FPDF') && file_exists(APPPATH . 'ThirdParty/setasign/fpdf/fpdf.php')) {
+                require_once APPPATH . 'ThirdParty/setasign/fpdf/fpdf.php';
+            }
+            if (! class_exists('setasign\Fpdi\Fpdi') && file_exists(APPPATH . 'ThirdParty/setasign/fpdi/src/autoload.php')) {
+                require_once APPPATH . 'ThirdParty/setasign/fpdi/src/autoload.php';
+            }
+
             // FPDI Merge
             $fpdi = new Fpdi();
             $fpdi->SetAutoPageBreak(false);

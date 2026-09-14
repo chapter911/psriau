@@ -41,6 +41,7 @@ class Autoload extends AutoloadConfig
         APP_NAMESPACE          => APPPATH,
         'chillerlan\QRCode'    => APPPATH . 'ThirdParty/chillerlan/php-qrcode/src',
         'chillerlan\Settings'  => APPPATH . 'ThirdParty/chillerlan/php-settings-container/src',
+        'setasign\Fpdi'        => APPPATH . 'ThirdParty/setasign/fpdi/src',
     ];
 
     /**
@@ -60,7 +61,9 @@ class Autoload extends AutoloadConfig
      *
      * @var array<string, string>
      */
-    public $classmap = [];
+    public $classmap = [
+        'FPDF' => APPPATH . 'ThirdParty/setasign/fpdf/fpdf.php',
+    ];
 
     /**
      * -------------------------------------------------------------------
