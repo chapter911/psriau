@@ -1045,6 +1045,14 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::error("  [FAIL] Render PDF Surat Pinjam Pakai gagal atau jumlah halaman tidak sesuai.");
             }
 
+            // Verifikasi bahwa dokumen tanpa nomor surat (seperti transaksi 2025) tidak memuat titik-titik
+            $hasNoSuratDots = (strpos($htmlSurat, '................') !== false);
+            if (! $hasNoSuratDots) {
+                CLI::write("  [OK] Dokumen tanpa nomor surat (tahun 2025) teruji bersih tanpa titik-titik (clean header)", "green");
+            } else {
+                CLI::error("  [FAIL] Dokumen tanpa nomor surat masih memuat titik-titik!");
+            }
+
             // Hapus file sementara sesuai Rule 3
             if (file_exists($tempPdfSurat)) {
                 unlink($tempPdfSurat);

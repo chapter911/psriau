@@ -168,7 +168,9 @@
 
     <div class="title-box">
         <div class="title-text">SURAT PERJANJIAN PINJAM PAKAI</div>
-        <div class="title-no">Nomor : <?= ! empty($loan['no_surat']) ? esc($loan['no_surat']) : '................................................'; ?></div>
+        <?php if (! empty($loan['no_surat'])): ?>
+            <div class="title-no">Nomor : <?= esc($loan['no_surat']); ?></div>
+        <?php endif; ?>
     </div>
 
     <div class="intro-text"><?= esc($introText ?? ''); ?></div>
@@ -229,7 +231,7 @@
     <div class="pasal-block">
         <div class="pasal-title">Pasal 2</div>
         <div class="pasal-content">
-            PIHAK PERTAMA meminjamkan kepada PIHAK KEDUA Barang Milik Negara sebagaimana dimaksud pada Pasal 1 sampai berakhirnya tahun anggaran (31 Desember <?= esc($tahunPinjam ?? date('Y')); ?>)<?= ! empty($loan['tgl_kembali_rencana']) ? ' atau sampai dengan tanggal ' . date('d/m/Y', strtotime($loan['tgl_kembali_rencana'])) : ''; ?>, dan dapat diperpanjang jika diperlukan..
+            PIHAK PERTAMA meminjamkan kepada PIHAK KEDUA Barang Milik Negara sebagaimana dimaksud pada Pasal 1 sampai berakhirnya tahun anggaran (31 Desember <?= esc($tahunPinjam ?? date('Y')); ?>)<?= ! empty($loan['tgl_kembali_rencana']) ? ' atau sampai dengan tanggal ' . date('d/m/Y', strtotime($loan['tgl_kembali_rencana'])) : ''; ?>, dan dapat diperpanjang jika diperlukan.
         </div>
     </div>
 
