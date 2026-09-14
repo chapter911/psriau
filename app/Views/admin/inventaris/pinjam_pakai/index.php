@@ -242,37 +242,45 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                             <span class="badge badge-primary px-2 py-1 font-weight-bold shadow-sm" style="font-size: 0.8rem;">
                                                 <i class="fas fa-boxes mr-1"></i> <?= count($loanItems); ?> Unit Aset Dipinjam
                                             </span>
-                                        </div>
-                                        <div class="bg-light p-2 rounded border" style="font-size: 0.84rem; max-height: 180px; overflow-y: auto;">
-                                            <?php foreach ($loanItems as $idx => $itm): ?>
-                                                <div class="<?= $idx > 0 ? 'border-top pt-1 mt-1' : ''; ?>">
-                                                    <span class="font-weight-bold text-dark">
-                                                        <?= ($idx + 1) . '. ' . esc($itm['nama_barang']); ?>
-                                                    </span>
-                                                    <div class="text-muted small">
-                                                        <span><strong>NUP:</strong> <?= esc($itm['nup']); ?></span> | 
-                                                        <span><strong>Kode:</strong> <?= esc($itm['kode_barang']); ?></span>
-                                                        <?php if (! empty($itm['merk_tipe'])): ?>
-                                                            | <span><i class="fas fa-tag mr-1"></i><?= esc($itm['merk_tipe']); ?></span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    <?php else: ?>
-                                        <?php $single = ! empty($loanItems[0]) ? $loanItems[0] : ['nama_barang' => $p['nama_barang'] ?? '-', 'nup' => $p['nup'] ?? '-', 'kode_barang' => $p['kode_barang'] ?? '-', 'merk_tipe' => $p['merk_tipe'] ?? '']; ?>
-                                        <span class="font-weight-bold text-primary d-block" style="font-size: 0.95rem;">
-                                            <?= esc($single['nama_barang']); ?>
-                                        </span>
-                                        <div class="small text-muted mt-1">
-                                            <span><strong>NUP:</strong> <?= esc($single['nup']); ?></span> | 
-                                            <span><strong>Kode:</strong> <?= esc($single['kode_barang']); ?></span>
-                                        </div>
-                                        <?php if (! empty($single['merk_tipe'])): ?>
-                                            <small class="text-muted d-block"><i class="fas fa-tag mr-1"></i> <?= esc($single['merk_tipe']); ?></small>
-                                        <?php endif; ?>
-                                    <?php endif; ?>
-                                    <div class="mt-1">
+                                         </div>
+                                         <div class="bg-light p-2 rounded border" style="font-size: 0.84rem; max-height: 180px; overflow-y: auto;">
+                                             <?php foreach ($loanItems as $idx => $itm): ?>
+                                                 <?php 
+                                                     $cleanItmNama = clean_inventaris_text($itm['nama_barang'] ?? '');
+                                                     $cleanItmMerk = clean_inventaris_text($itm['merk_tipe'] ?? '');
+                                                 ?>
+                                                 <div class="<?= $idx > 0 ? 'border-top pt-1 mt-1' : ''; ?>">
+                                                     <span class="font-weight-bold text-dark">
+                                                         <?= ($idx + 1) . '. ' . esc($cleanItmNama); ?>
+                                                     </span>
+                                                     <div class="text-muted small">
+                                                         <span><strong>NUP:</strong> <?= esc($itm['nup']); ?></span> | 
+                                                         <span><strong>Kode:</strong> <?= esc($itm['kode_barang']); ?></span>
+                                                         <?php if (! empty($cleanItmMerk) && strcasecmp($cleanItmMerk, $cleanItmNama) !== 0): ?>
+                                                             | <span><i class="fas fa-tag mr-1"></i><?= esc($cleanItmMerk); ?></span>
+                                                         <?php endif; ?>
+                                                     </div>
+                                                 </div>
+                                             <?php endforeach; ?>
+                                         </div>
+                                     <?php else: ?>
+                                         <?php 
+                                             $single = ! empty($loanItems[0]) ? $loanItems[0] : ['nama_barang' => $p['nama_barang'] ?? '-', 'nup' => $p['nup'] ?? '-', 'kode_barang' => $p['kode_barang'] ?? '-', 'merk_tipe' => $p['merk_tipe'] ?? '']; 
+                                             $cleanSingleNama = clean_inventaris_text($single['nama_barang'] ?? '');
+                                             $cleanSingleMerk = clean_inventaris_text($single['merk_tipe'] ?? '');
+                                         ?>
+                                         <span class="font-weight-bold text-primary d-block" style="font-size: 0.95rem;">
+                                             <?= esc($cleanSingleNama); ?>
+                                         </span>
+                                         <div class="small text-muted mt-1">
+                                             <span><strong>NUP:</strong> <?= esc($single['nup']); ?></span> | 
+                                             <span><strong>Kode:</strong> <?= esc($single['kode_barang']); ?></span>
+                                         </div>
+                                         <?php if (! empty($cleanSingleMerk) && strcasecmp($cleanSingleMerk, $cleanSingleNama) !== 0): ?>
+                                             <small class="text-muted d-block"><i class="fas fa-tag mr-1"></i> <?= esc($cleanSingleMerk); ?></small>
+                                         <?php endif; ?>
+                                     <?php endif; ?>
+                                     <div class="mt-1">
                                         <span class="badge badge-light border px-2 py-1" style="font-size: 0.75rem;">
                                             Kondisi Pinjam: <strong><?= esc(ucwords(str_replace('_', ' ', $p['kondisi_pinjam'] ?? 'baik'))); ?></strong>
                                         </span>
