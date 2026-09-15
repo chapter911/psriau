@@ -199,13 +199,14 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                     <thead class="thead-light">
                         <tr>
                             <th style="width: 40px;" class="text-center align-middle">#</th>
-                            <th style="width: 170px;" class="align-middle">Surat Perjanjian</th>
-                            <th class="align-middle" style="min-width: 220px;">Rincian Aset BMN</th>
-                            <th class="align-middle" style="min-width: 180px;">Pegawai Peminjam</th>
-                            <th class="align-middle" style="min-width: 170px;">Masa Pinjam & Keperluan</th>
-                            <th style="width: 140px;" class="text-center align-middle">Status & Berkas TTD</th>
-                            <th style="width: 135px;" class="text-center align-middle">Dokumen</th>
-                            <th style="width: 165px;" class="text-center align-middle">Aksi</th>
+                            <th style="width: 165px;" class="align-middle">Surat Perjanjian</th>
+                            <th class="align-middle" style="min-width: 210px;">Rincian Aset BMN</th>
+                            <th class="align-middle" style="min-width: 175px;">Pegawai Peminjam</th>
+                            <th class="align-middle" style="min-width: 165px;">Masa Pinjam & Keperluan</th>
+                            <th style="width: 135px;" class="text-center align-middle">Status & Berkas TTD</th>
+                            <th style="width: 130px;" class="text-center align-middle">Dokumen</th>
+                            <th style="width: 155px;" class="text-center align-middle">Kelola Pinjam</th>
+                            <th style="width: 85px;" class="text-center align-middle">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -385,63 +386,76 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                     </div>
                                 </td>
 
-                                <!-- Kolom Aksi Operasional (Perbaharui, Kembalikan, Edit, Hapus) -->
+                                <!-- Kolom Kelola Pinjam (Perbaharui & Kembalikan) -->
+                                <td class="text-center align-middle" style="white-space: nowrap;">
+                                    <?php 
+                                        $hasPerbaharui = ($p['status'] === 'dipinjam' && (! empty($can_edit) || ! empty($can_add)));
+                                        $hasKembalikan = ($p['status'] === 'dipinjam' && ! empty($can_edit));
+                                    ?>
+                                    <?php if ($hasPerbaharui || $hasKembalikan): ?>
+                                        <div class="btn-group" role="group" style="gap: 4px;">
+                                            <!-- Tombol Perbaharui Pinjaman (Annual Renewal / Awal Tahun) -->
+                                            <?php if ($hasPerbaharui): ?>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-warning btn-xs px-2 py-1 text-white font-weight-bold btn-perbaharui-pinjam shadow-sm"
+                                                    data-toggle="modal"
+                                                    data-target="#modal-perbaharui-pinjam"
+                                                    data-id="<?= esc((string) $p['id'], 'attr'); ?>"
+                                                    data-surat="<?= esc((string) ($p['no_surat'] ?: ''), 'attr'); ?>"
+                                                    data-peminjam="<?= esc((string) $p['nama_peminjam'], 'attr'); ?>"
+                                                    data-nip="<?= esc((string) ($p['nip_peminjam'] ?? ''), 'attr'); ?>"
+                                                    data-jabatan="<?= esc((string) ($p['jabatan_peminjam'] ?? ''), 'attr'); ?>"
+                                                    data-kontak="<?= esc((string) ($p['kontak_peminjam'] ?? ''), 'attr'); ?>"
+                                                    data-kop-id="<?= esc((string) ($p['kop_surat_id'] ?? ''), 'attr'); ?>"
+                                                    data-barang="<?= esc($isMulti ? (count($loanItems) . ' Unit Aset BMN') : (string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
+                                                    data-nup="<?= esc($isMulti ? 'Multi-NUP' : (string) ($p['nup'] ?? ''), 'attr'); ?>"
+                                                    data-kode="<?= esc((string) ($p['kode_barang'] ?? ''), 'attr'); ?>"
+                                                    data-tgl-pinjam="<?= esc((string) $p['tgl_pinjam'], 'attr'); ?>"
+                                                    data-tgl-kembali="<?= esc((string) ($p['tgl_kembali_rencana'] ?? ''), 'attr'); ?>"
+                                                    data-keperluan="<?= esc((string) $p['keperluan'], 'attr'); ?>"
+                                                    data-kondisi="<?= esc((string) ($p['kondisi_pinjam'] ?? 'baik'), 'attr'); ?>"
+                                                    data-kelengkapan="<?= esc((string) ($p['kelengkapan'] ?? ''), 'attr'); ?>"
+                                                    data-catatan="<?= esc((string) ($p['catatan'] ?? ''), 'attr'); ?>"
+                                                    data-items-count="<?= count($loanItems); ?>"
+                                                    data-items-json="<?= esc($itemsJson, 'attr'); ?>"
+                                                    style="border-radius: 4px;"
+                                                    title="Perbaharui Pinjam Pakai (Tahun Baru / Perpanjangan)"
+                                                >
+                                                    <i class="fas fa-sync-alt mr-1"></i> Perbaharui
+                                                </button>
+                                            <?php endif; ?>
+
+                                            <!-- Tombol Kembalikan Aset (Hanya jika sedang dipinjam) -->
+                                            <?php if ($hasKembalikan): ?>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-success btn-xs px-2 py-1 btn-kembalikan-pinjam"
+                                                    data-toggle="modal"
+                                                    data-target="#modal-kembalikan-pinjam"
+                                                    data-id="<?= esc((string) $p['id'], 'attr'); ?>"
+                                                    data-surat="<?= esc((string) $p['no_surat'], 'attr'); ?>"
+                                                    data-barang="<?= esc($isMulti ? (count($loanItems) . ' Unit Aset BMN') : (string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
+                                                    data-nup="<?= esc($isMulti ? 'Multi-NUP' : (string) ($p['nup'] ?? ''), 'attr'); ?>"
+                                                    data-peminjam="<?= esc((string) $p['nama_peminjam'], 'attr'); ?>"
+                                                    data-kondisi="<?= esc((string) ($p['kondisi_pinjam'] ?? 'baik'), 'attr'); ?>"
+                                                    data-items-count="<?= count($loanItems); ?>"
+                                                    data-items-json="<?= esc($itemsJson, 'attr'); ?>"
+                                                    style="border-radius: 4px;"
+                                                    title="Proses Pengembalian Aset"
+                                                >
+                                                    <i class="fas fa-undo-alt mr-1"></i> Kembalikan
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="text-muted small font-italic">-</span>
+                                    <?php endif; ?>
+                                </td>
+
+                                <!-- Kolom Aksi (Edit & Hapus Saja) -->
                                 <td class="text-center align-middle" style="white-space: nowrap;">
                                     <div class="btn-group" role="group" style="gap: 4px;">
-                                        <!-- Tombol Perbaharui Pinjaman (Annual Renewal / Awal Tahun) -->
-                                        <?php if ($p['status'] === 'dipinjam' && (! empty($can_edit) || ! empty($can_add))): ?>
-                                            <button
-                                                type="button"
-                                                class="btn btn-warning btn-xs px-2 py-1 text-white font-weight-bold btn-perbaharui-pinjam shadow-sm"
-                                                data-toggle="modal"
-                                                data-target="#modal-perbaharui-pinjam"
-                                                data-id="<?= esc((string) $p['id'], 'attr'); ?>"
-                                                data-surat="<?= esc((string) ($p['no_surat'] ?: ''), 'attr'); ?>"
-                                                data-peminjam="<?= esc((string) $p['nama_peminjam'], 'attr'); ?>"
-                                                data-nip="<?= esc((string) ($p['nip_peminjam'] ?? ''), 'attr'); ?>"
-                                                data-jabatan="<?= esc((string) ($p['jabatan_peminjam'] ?? ''), 'attr'); ?>"
-                                                data-kontak="<?= esc((string) ($p['kontak_peminjam'] ?? ''), 'attr'); ?>"
-                                                data-kop-id="<?= esc((string) ($p['kop_surat_id'] ?? ''), 'attr'); ?>"
-                                                data-barang="<?= esc($isMulti ? (count($loanItems) . ' Unit Aset BMN') : (string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
-                                                data-nup="<?= esc($isMulti ? 'Multi-NUP' : (string) ($p['nup'] ?? ''), 'attr'); ?>"
-                                                data-kode="<?= esc((string) ($p['kode_barang'] ?? ''), 'attr'); ?>"
-                                                data-tgl-pinjam="<?= esc((string) $p['tgl_pinjam'], 'attr'); ?>"
-                                                data-tgl-kembali="<?= esc((string) ($p['tgl_kembali_rencana'] ?? ''), 'attr'); ?>"
-                                                data-keperluan="<?= esc((string) $p['keperluan'], 'attr'); ?>"
-                                                data-kondisi="<?= esc((string) ($p['kondisi_pinjam'] ?? 'baik'), 'attr'); ?>"
-                                                data-kelengkapan="<?= esc((string) ($p['kelengkapan'] ?? ''), 'attr'); ?>"
-                                                data-catatan="<?= esc((string) ($p['catatan'] ?? ''), 'attr'); ?>"
-                                                data-items-count="<?= count($loanItems); ?>"
-                                                data-items-json="<?= esc($itemsJson, 'attr'); ?>"
-                                                style="border-radius: 4px;"
-                                                title="Perbaharui Pinjam Pakai (Tahun Baru / Perpanjangan)"
-                                            >
-                                                <i class="fas fa-sync-alt mr-1"></i> Perbaharui
-                                            </button>
-                                        <?php endif; ?>
-
-                                        <!-- Tombol Kembalikan Aset (Hanya jika sedang dipinjam) -->
-                                        <?php if ($p['status'] === 'dipinjam' && ! empty($can_edit)): ?>
-                                            <button
-                                                type="button"
-                                                class="btn btn-success btn-xs px-2 py-1 btn-kembalikan-pinjam"
-                                                data-toggle="modal"
-                                                data-target="#modal-kembalikan-pinjam"
-                                                data-id="<?= esc((string) $p['id'], 'attr'); ?>"
-                                                data-surat="<?= esc((string) $p['no_surat'], 'attr'); ?>"
-                                                data-barang="<?= esc($isMulti ? (count($loanItems) . ' Unit Aset BMN') : (string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
-                                                data-nup="<?= esc($isMulti ? 'Multi-NUP' : (string) ($p['nup'] ?? ''), 'attr'); ?>"
-                                                data-peminjam="<?= esc((string) $p['nama_peminjam'], 'attr'); ?>"
-                                                data-kondisi="<?= esc((string) ($p['kondisi_pinjam'] ?? 'baik'), 'attr'); ?>"
-                                                data-items-count="<?= count($loanItems); ?>"
-                                                data-items-json="<?= esc($itemsJson, 'attr'); ?>"
-                                                style="border-radius: 4px;"
-                                                title="Proses Pengembalian Aset"
-                                            >
-                                                <i class="fas fa-undo-alt mr-1"></i> Kembalikan
-                                            </button>
-                                        <?php endif; ?>
-
                                         <!-- Edit Pinjam Pakai -->
                                         <?php if (! empty($can_edit)): ?>
                                             <button
