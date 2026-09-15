@@ -289,20 +289,13 @@
         </div>
     </div>
 
-    <table class="ttd-table" style="margin-top: 40px;">
+    <table class="ttd-table" style="margin-top: 30px;">
         <tr>
             <td style="width: 50%; text-align: center; vertical-align: top;">
                 <strong>PIHAK KEDUA</strong><br>
                 Yang menerima,
                 <?php if (! empty($isDelegasi)): ?>
                     <br><?= esc($loan['jabatan_peminjam'] ?? 'Kepala Satuan Kerja'); ?>
-                <?php endif; ?>
-                <div style="height: 65px;"></div>
-                <strong><u><?= esc($loan['nama_peminjam'] ?? ''); ?></u></strong><br>
-                <?php if (! empty($isKonsultan)): ?>
-                    Tenaga Penunjang Kegiatan
-                <?php else: ?>
-                    NIP. <?= esc($loan['nip_peminjam'] ?? '') ?: '-'; ?>
                 <?php endif; ?>
             </td>
             <td style="width: 50%; text-align: center; vertical-align: top;">
@@ -316,8 +309,29 @@
                     Kepala Satuan Kerja<br>
                     Pelaksanaan Prasarana Strategis Riau
                 <?php endif; ?>
-                <div style="height: <?= ! empty($isDelegasi) ? '65px' : '45px'; ?>;"></div>
-                <strong><u><?= esc($pihakPertama['nama'] ?? ($kasatker['nama'] ?? 'Muhammad Yudi Prasetya, ST.')); ?></u></strong><br>
+            </td>
+        </tr>
+        <tr>
+            <td style="height: 55px;"></td>
+            <td style="height: 55px;"></td>
+        </tr>
+        <tr>
+            <td style="text-align: center; vertical-align: bottom;">
+                <strong><u><?= esc($loan['nama_peminjam'] ?? ''); ?></u></strong>
+            </td>
+            <td style="text-align: center; vertical-align: bottom;">
+                <strong><u><?= esc($pihakPertama['nama'] ?? ($kasatker['nama'] ?? 'Muhammad Yudi Prasetya, ST.')); ?></u></strong>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center; vertical-align: top; padding-top: 2px;">
+                <?php if (! empty($isKonsultan)): ?>
+                    Tenaga Penunjang Kegiatan
+                <?php else: ?>
+                    NIP. <?= esc($loan['nip_peminjam'] ?? '') ?: '-'; ?>
+                <?php endif; ?>
+            </td>
+            <td style="text-align: center; vertical-align: top; padding-top: 2px;">
                 NIP. <?= esc($pihakPertama['nip'] ?? ($kasatker['nip'] ?? '198002142014121002')); ?>
             </td>
         </tr>
