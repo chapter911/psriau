@@ -12,6 +12,7 @@ class InventarisPinjamPakaiModel extends Model
     protected $useAutoIncrement = true;
     protected $allowedFields    = [
         'inventaris_id',
+        'renewed_from_id',
         'pegawai_id',
         'nama_peminjam',
         'nip_peminjam',
@@ -350,6 +351,7 @@ class InventarisPinjamPakaiModel extends Model
         // 1. Insert header pinjaman baru
         $newLoanData = [
             'inventaris_id'        => $items[0]['inventaris_id'],
+            'renewed_from_id'      => $oldId,
             'pegawai_id'           => $oldLoan['pegawai_id'],
             'nama_peminjam'        => $oldLoan['nama_peminjam'],
             'nip_peminjam'         => $oldLoan['nip_peminjam'],
@@ -440,6 +442,133 @@ class InventarisPinjamPakaiModel extends Model
         }
 
         return $newPinjamId;
+    }
+
+    /**
+     * Menghapus transaksi pinjam pakai dengan mekanisme Rollback otomatis:
+     * - Jika transaksi yang dihapus adalah hasil pembaruan (renewed_from_id),
+     *   maka transaksi surat sebelumnya otomatis dipulihkan ke status 'dipinjam',
+     *   tgl_kembali_realisasi & kondisi_kembali dikosongkan kembali,
+     *   seluruh item lama kembali ke status 'dipinjam',
+     *   dan status master aset di trn_inventaris_satker tetap aman sebagai 'Dipinjam Pakai'.
+     * - Jika bukan transaksi pembaruan (peminjaman biasa),
+     *   status aset dikembalikan ke 'Digunakan Sendiri' (Belum berlokasi / Gudang).
+     */
+    public function hapusPinjamDenganRollback(int $id, int $userId = 0): array
+    {
+        $existing = $this->find($id);
+        if (! is_array($existing)) {
+            throw new \RuntimeException('Data transaksi pinjam pakai tidak ditemukan.');
+        }
+
+        $items = $this->getItemsByPinjamId($id);
+        $itemIds = array_column($items, 'inventaris_id');
+        if (empty($itemIds) && ! empty($existing['inventaris_id'])) {
+            $itemIds = [(int) $existing['inventaris_id']];
+        }
+        $itemIds = array_unique(array_filter($itemIds));
+
+        // Cari transaksi induk sebelumnya (jika ini hasil pembaruan)
+        $parentLoan = null;
+        $renewedFromId = ! empty($existing['renewed_from_id']) ? (int) $existing['renewed_from_id'] : null;
+
+        if ($renewedFromId) {
+            $parentLoan = $this->find($renewedFromId);
+        }
+
+        // Fallback pencarian transaksi asal via catatan jika renewed_from_id kosong
+        if (! $parentLoan) {
+            $parentCandidate = $this->where('status', 'diperbaharui')
+                ->like('catatan', "(ID #{$id})")
+                ->first();
+            if (is_array($parentCandidate)) {
+                $parentLoan = $parentCandidate;
+                $renewedFromId = (int) $parentCandidate['id'];
+            }
+        }
+
+        $isRollback = false;
+        $parentNoSurat = '';
+
+        $this->db->transStart();
+
+        if ($parentLoan && is_array($parentLoan) && ($parentLoan['status'] ?? '') === 'diperbaharui') {
+            $isRollback = true;
+            $parentNoSurat = ! empty($parentLoan['no_surat']) ? $parentLoan['no_surat'] : "ID #{$parentLoan['id']}";
+
+            // 1. Bersihkan catatan pembaruan dari transaksi lama
+            $rawCatatan = (string) ($parentLoan['catatan'] ?? '');
+            $cleanCatatan = preg_replace('/\s*\|\s*Diperbaharui ke Surat.*$/i', '', $rawCatatan);
+            $cleanCatatan = preg_replace('/Diperbaharui ke Surat.*$/i', '', (string) $cleanCatatan);
+            $cleanCatatan = trim((string) $cleanCatatan);
+
+            // 2. Pulihkan transaksi induk ke 'dipinjam'
+            $this->update($renewedFromId, [
+                'status'                => 'dipinjam',
+                'tgl_kembali_realisasi' => null,
+                'kondisi_kembali'       => null,
+                'catatan'               => $cleanCatatan !== '' ? $cleanCatatan : null,
+                'updated_by'            => $userId ?: null,
+            ]);
+
+            // 3. Pulihkan status child items transaksi lama ke 'dipinjam'
+            if ($this->db->tableExists('trn_inventaris_pinjam_pakai_item')) {
+                $this->db->table('trn_inventaris_pinjam_pakai_item')
+                    ->where('pinjam_pakai_id', $renewedFromId)
+                    ->update([
+                        'status'          => 'dipinjam',
+                        'kondisi_kembali' => null,
+                        'catatan'         => null,
+                        'updated_at'      => date('Y-m-d H:i:s'),
+                    ]);
+            }
+
+            // 4. Pastikan master aset BMN tetap 'Dipinjam Pakai' atas nama peminjam lama
+            if (! empty($itemIds)) {
+                $satkerModel = new \App\Models\InventarisSatkerModel();
+                $satkerModel->whereIn('id', $itemIds)->set([
+                    'status_bmn'     => 'Dipinjam Pakai',
+                    'lokasi_ruangan' => 'Pinjam Pakai: ' . $parentLoan['nama_peminjam'],
+                    'kondisi'        => $parentLoan['kondisi_pinjam'] ?? 'baik',
+                    'updated_by'     => $userId ?: null,
+                ])->update();
+            }
+        } else {
+            // Bukan pembaruan: jika sedang dipinjam, kembalikan aset fisik ke Gudang
+            if ($existing['status'] === 'dipinjam' && ! empty($itemIds)) {
+                $satkerModel = new \App\Models\InventarisSatkerModel();
+                $satkerModel->whereIn('id', $itemIds)->set([
+                    'status_bmn'     => 'Digunakan Sendiri',
+                    'lokasi_ruangan' => 'Belum berlokasi',
+                    'updated_by'     => $userId ?: null,
+                ])->update();
+            }
+        }
+
+        // Hapus file fisik jika ada
+        if (! empty($existing['file_surat']) && file_exists(FCPATH . $existing['file_surat'])) {
+            @unlink(FCPATH . $existing['file_surat']);
+        }
+
+        // Hapus child items dari transaksi yang dihapus
+        if ($this->db->tableExists('trn_inventaris_pinjam_pakai_item')) {
+            $this->db->table('trn_inventaris_pinjam_pakai_item')->where('pinjam_pakai_id', $id)->delete();
+        }
+
+        // Hapus transaksi
+        $this->delete($id);
+
+        $this->db->transComplete();
+
+        if ($this->db->transStatus() === false) {
+            throw new \RuntimeException('Gagal menghapus transaksi pinjam pakai.');
+        }
+
+        return [
+            'is_rollback'     => $isRollback,
+            'parent_no_surat' => $parentNoSurat,
+            'parent_id'       => $renewedFromId,
+        ];
     }
 }
 

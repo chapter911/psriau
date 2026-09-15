@@ -1018,7 +1018,7 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                     <p class="mb-1 text-dark font-weight-bold" style="font-size: 1rem;">Apakah Anda yakin ingin menghapus data transaksi peminjaman ini?</p>
                     <p id="delete-pinjam-surat" class="text-primary font-weight-bold mb-2"></p>
                     <div class="alert alert-warning py-2 px-3 small text-left mb-0" style="border-radius: 6px;">
-                        <i class="fas fa-info-circle mr-1"></i> Jika status aset masih <strong>dipinjam</strong>, status aset di inventaris induk akan dipulihkan ke <em>'Belum berlokasi'</em> secara otomatis.
+                        <i class="fas fa-info-circle mr-1"></i> Jika transaksi ini merupakan <strong>hasil pembaruan</strong>, status surat perjanjian sebelumnya akan <strong>otomatis dipulihkan menjadi Sedang Dipinjam</strong> (aset tetap berstatus Dipinjam Pakai). Jika transaksi biasa, aset akan dipulihkan ke <em>'Belum berlokasi (Gudang)'</em>.
                     </div>
                 </div>
                 <div class="modal-footer py-3 px-4" style="background: #f8fafc; border-top: 1px solid #e2e8f0;">

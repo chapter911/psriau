@@ -928,7 +928,18 @@ class InventarisSmokeTest extends BaseCommand
                 'status'               => 'dipinjam',
             ]);
 
-            // Sinkronkan status aset di tabel induk
+            // Sinkronkan status aset di tabel induk & child items
+            if ($db->tableExists('trn_inventaris_pinjam_pakai_item')) {
+                $db->table('trn_inventaris_pinjam_pakai_item')->insert([
+                    'pinjam_pakai_id' => $pinjamId,
+                    'inventaris_id'   => $dummyPinjamAssetId,
+                    'kondisi_pinjam'  => 'baik',
+                    'status'          => 'dipinjam',
+                    'created_at'      => date('Y-m-d H:i:s'),
+                    'updated_at'      => date('Y-m-d H:i:s'),
+                ]);
+            }
+
             $satkerModel->update($dummyPinjamAssetId, [
                 'status_bmn'     => 'Dipinjam Pakai',
                 'lokasi_ruangan' => 'Pinjam Pakai: ' . $peminjamNamaTest,
@@ -1356,8 +1367,26 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::write("  [OK] Deteksi berkas belum diunggah valid: Transaksi baru tanpa file_surat ditandai untuk highlight baris merah (table-danger) dan badge 'Belum Upload Berkas TTD'", "green");
             }
 
-            // 5. Uji Proses Pengembalian Aset (pada transaksi yang diperbaharui)
-            $pinjamModel->update($renewPinjamId, [
+            // 4c. Uji Fitur Rollback Otomatis saat Transaksi Pembaruan Dihapus
+            $rollbackResult = $pinjamModel->hapusPinjamDenganRollback($renewPinjamId, 1);
+            $oldLoanAfterRollback = $pinjamModel->find($pinjamId);
+            $assetAfterRollback = $satkerModel->find($dummyPinjamAssetId);
+            $oldItemsAfterRollback = $pinjamModel->getItemsByPinjamId($pinjamId);
+
+            $isRollbackValid = (! empty($rollbackResult['is_rollback']))
+                && ($oldLoanAfterRollback['status'] === 'dipinjam')
+                && empty($oldLoanAfterRollback['tgl_kembali_realisasi'])
+                && ($assetAfterRollback['status_bmn'] === 'Dipinjam Pakai')
+                && (! empty($oldItemsAfterRollback) && $oldItemsAfterRollback[0]['status'] === 'dipinjam');
+
+            if ($isRollbackValid) {
+                CLI::write("  [OK] Rollback Otomatis Hapus Pembaruan valid: Transaksi lama kembali aktif ke status 'dipinjam', tgl realisasi bersih, item lama pulih, dan master aset tetap 'Dipinjam Pakai'", "green");
+            } else {
+                CLI::error("  [FAIL] Rollback Otomatis Hapus Pembaruan gagal.");
+            }
+
+            // 5. Uji Proses Pengembalian Aset (pada transaksi yang telah di-rollback)
+            $pinjamModel->update($pinjamId, [
                 'status'                => 'dikembalikan',
                 'tgl_kembali_realisasi' => date('Y-m-d'),
                 'kondisi_kembali'       => 'baik',
@@ -1372,7 +1401,7 @@ class InventarisSmokeTest extends BaseCommand
             ]);
 
             $assetAfterReturn = $satkerModel->find($dummyPinjamAssetId);
-            $loanAfterReturn  = $pinjamModel->find($renewPinjamId);
+            $loanAfterReturn  = $pinjamModel->find($pinjamId);
 
             if ($loanAfterReturn['status'] === 'dikembalikan' && $assetAfterReturn['status_bmn'] === 'Digunakan Sendiri') {
                 CLI::write("  [OK] Proses pengembalian aset berhasil: Status transaksi 'dikembalikan', aset induk dipulihkan ke '{$assetAfterReturn['status_bmn']}' ({$assetAfterReturn['lokasi_ruangan']})", "green");
@@ -1382,7 +1411,7 @@ class InventarisSmokeTest extends BaseCommand
             }
 
             // 6. Bersihkan data dummy pinjam pakai
-            $pinjamModel->delete($renewPinjamId);
+            $pinjamModel->delete($pinjamId);
             $pinjamModel->delete($pinjamId);
             if ($db->tableExists('trn_inventaris_pinjam_pakai_item')) {
                 $db->table('trn_inventaris_pinjam_pakai_item')->whereIn('pinjam_pakai_id', [$pinjamId, $renewPinjamId])->delete();

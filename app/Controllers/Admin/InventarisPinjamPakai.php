@@ -740,39 +740,20 @@ class InventarisPinjamPakai extends BaseController
         }
 
         $pinjamModel = new InventarisPinjamPakaiModel();
-        $existing = $pinjamModel->find($id);
-        if (! is_array($existing)) {
-            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Data pinjam pakai tidak ditemukan.');
+        $userId = (int) (session()->get('user_id') ?? 0);
+
+        try {
+            $result = $pinjamModel->hapusPinjamDenganRollback($id, $userId);
+
+            if (! empty($result['is_rollback'])) {
+                $suratText = ! empty($result['parent_no_surat']) ? $result['parent_no_surat'] : "ID #{$result['parent_id']}";
+                return redirect()->to('/admin/inventaris/pinjam-pakai')->with('message', "Transaksi pembaruan berhasil dihapus. Status surat perjanjian sebelumnya ({$suratText}) otomatis dikembalikan aktif menjadi Sedang Dipinjam.");
+            }
+
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('message', 'Data transaksi pinjam pakai berhasil dihapus.');
+        } catch (\Throwable $e) {
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Gagal menghapus pinjam pakai: ' . $e->getMessage());
         }
-
-        $items = $pinjamModel->getItemsByPinjamId($id);
-        $itemIds = array_column($items, 'inventaris_id');
-        if (empty($itemIds) && ! empty($existing['inventaris_id'])) {
-            $itemIds = [(int) $existing['inventaris_id']];
-        }
-
-        // Jika aset masih dalam status dipinjam, kembalikan status seluruh aset ke semula
-        if ($existing['status'] === 'dipinjam' && ! empty($itemIds)) {
-            $satkerModel = new InventarisSatkerModel();
-            $satkerModel->whereIn('id', $itemIds)->set([
-                'status_bmn'     => 'Digunakan Sendiri',
-                'lokasi_ruangan' => 'Belum berlokasi',
-            ])->update();
-        }
-
-        // Hapus file fisik jika ada
-        if (! empty($existing['file_surat']) && file_exists(FCPATH . $existing['file_surat'])) {
-            @unlink(FCPATH . $existing['file_surat']);
-        }
-
-        $db = db_connect();
-        if ($db->tableExists('trn_inventaris_pinjam_pakai_item')) {
-            $db->table('trn_inventaris_pinjam_pakai_item')->where('pinjam_pakai_id', $id)->delete();
-        }
-
-        $pinjamModel->delete($id);
-
-        return redirect()->to('/admin/inventaris/pinjam-pakai')->with('message', 'Data transaksi pinjam pakai berhasil dihapus.');
     }
 
     private function terbilangAngka(int $angka): string
