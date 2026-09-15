@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 1.0cm 2.0cm 1.5cm 2.5cm;
+            margin: 0.8cm 2.0cm 1.0cm 2.5cm;
         }
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -25,21 +25,21 @@
         .kop-wrapper {
             width: 100%;
             margin-top: 0;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             text-align: center;
         }
         .kop-wrapper img {
             width: 100%;
-            max-height: 88px;
+            max-height: 85px;
             object-fit: contain;
         }
         .kop-table {
             width: 100%;
             border-collapse: collapse;
             border-bottom: 2px solid #000;
-            padding-bottom: 2px;
+            padding-bottom: 1px;
             margin-top: 0;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .kop-table td {
             vertical-align: middle;
@@ -79,7 +79,7 @@
         /* JUDUL & NO SURAT */
         .title-box {
             text-align: center;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .title-text {
             font-size: 12pt;
@@ -100,12 +100,12 @@
             text-align: justify;
             font-size: 12pt;
             line-height: 1.12;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
         .pihak-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             font-size: 12pt;
         }
         .pihak-table td {
@@ -121,7 +121,7 @@
             text-align: center;
             font-size: 12pt;
             margin-top: 2px;
-            margin-bottom: 1px;
+            margin-bottom: 9pt; /* 1 baris kosong setelah Pasal */
             line-height: 1.12;
         }
         .pasal-content {
@@ -132,7 +132,7 @@
 
         /* TANDA TANGAN HALAMAN 2 */
         .page-2-content {
-            margin-top: 1.5cm; /* 1.0cm + 1.5cm = 2.5cm margin from top */
+            margin-top: 1.7cm; /* 0.8cm + 1.7cm = 2.5cm margin from top */
         }
         .ttd-table {
             width: 100%;
