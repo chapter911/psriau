@@ -803,9 +803,10 @@ graph TD
                                             <li><strong>Pengarsipan Transaksi Lama:</strong> Status transaksi lama beralih menjadi <em>Diperbaharui</em> dan terhubung secara transparan dengan nomor surat baru untuk rekam jejak audit BMN yang rapi.</li>
                                         </ul>
                                     </li>
-                                    <li><strong>Indikator Visual Baris Merah &amp; Upload Cepat Berkas TTD:</strong> Untuk mempermudah monitoring dokumen fisik yang belum kembali/diunggah:
+                                    <li><strong>Tata Letak Tabel 7 Kolom &amp; Indikator Berkas TTD:</strong> Tabel disajikan dalam 7 kolom terstruktur rapi: <em>No</em>, <em>Surat Perjanjian</em>, <em>Rincian Aset BMN</em>, <em>Pegawai Peminjam</em>, <em>Masa Pinjam &amp; Keperluan</em>, <strong>Status &amp; Berkas TTD</strong>, dan <em>Aksi</em>.
                                         <ul class="pl-3 mt-1 mb-1">
-                                            <li><strong>Highlight Baris Merah:</strong> Baris transaksi yang belum memiliki file scan dokumen resmi yang telah ditandatangani secara otomatis diberi latar belakang warna merah lembut (<code>table-danger</code>) serta badge merah peringatan <strong>Belum Upload Berkas TTD</strong>.</li>
+                                            <li><strong>Pemisahan Kolom 'Status &amp; Berkas TTD':</strong> Status peminjaman (<em>Sedang Dipinjam</em> / <em>Diperbaharui</em> / <em>Telah Dikembalikan</em>) dan status ketersediaan scan naskah dinas (<em>Scan PDF</em> / <em>Belum Upload</em>) disajikan dalam kolom tersendiri di tengah tabel sehingga sangat mudah diawasi.</li>
+                                            <li><strong>Highlight Baris Merah:</strong> Baris transaksi yang belum memiliki file scan dokumen resmi yang telah ditandatangani secara otomatis diberi latar belakang warna merah lembut (<code>table-danger</code>) serta badge merah peringatan <strong>Belum Upload</strong>.</li>
                                             <li><strong>Tombol Upload Cepat:</strong> Disediakan tombol merah <span class="badge badge-outline-danger px-1.5"><i class="fas fa-upload mr-1"></i>Upload</span> langsung pada baris tabel agar petugas aset dapat langsung mengunggah file PDF scan bertanda tangan tanpa perlu membuka form edit.</li>
                                         </ul>
                                     </li>

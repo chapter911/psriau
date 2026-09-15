@@ -199,11 +199,12 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                     <thead class="thead-light">
                         <tr>
                             <th style="width: 40px;" class="text-center align-middle">#</th>
-                            <th style="width: 170px;" class="align-middle">Surat & Status</th>
-                            <th class="align-middle" style="min-width: 220px;">Aset BMN</th>
+                            <th style="width: 170px;" class="align-middle">Surat Perjanjian</th>
+                            <th class="align-middle" style="min-width: 220px;">Rincian Aset BMN</th>
                             <th class="align-middle" style="min-width: 180px;">Pegawai Peminjam</th>
-                            <th class="align-middle" style="min-width: 180px;">Masa Pinjam & Keperluan</th>
-                            <th style="width: 180px;" class="text-center align-middle">Aksi & Dokumen</th>
+                            <th class="align-middle" style="min-width: 170px;">Masa Pinjam & Keperluan</th>
+                            <th style="width: 145px;" class="text-center align-middle">Status & Berkas TTD</th>
+                            <th style="width: 180px;" class="text-center align-middle">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -215,37 +216,17 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                             <tr class="<?= $rowClass; ?>" data-id="<?= $p['id']; ?>">
                                 <td class="text-center align-middle"><?= $no++; ?></td>
                                 <td class="align-middle">
-                                    <span class="font-weight-bold text-dark d-block" style="font-size: 0.95rem;">
+                                    <span class="font-weight-bold text-dark d-block" style="font-size: 0.93rem;">
                                         <?= ! empty($p['no_surat']) ? esc($p['no_surat']) : '<span class="text-muted font-italic font-weight-normal">(Tanpa No. Surat)</span>'; ?>
                                     </span>
-                                    <small class="text-muted d-block mb-1">
-                                        <i class="far fa-calendar-alt mr-1"></i> <?= date('d/m/Y', strtotime($p['tgl_pinjam'])); ?>
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="far fa-calendar-alt mr-1 text-primary"></i> <?= date('d/m/Y', strtotime($p['tgl_pinjam'])); ?>
                                     </small>
-                                    <div>
-                                        <?php if ($p['status'] === 'dipinjam'): ?>
-                                            <span class="badge badge-warning px-2 py-1 font-weight-bold shadow-sm" style="font-size: 0.78rem;">
-                                                <i class="fas fa-clock mr-1"></i> Sedang Dipinjam
-                                            </span>
-                                        <?php elseif ($p['status'] === 'diperbaharui'): ?>
-                                            <span class="badge badge-info px-2 py-1 font-weight-bold shadow-sm" style="font-size: 0.78rem;" title="Pinjaman telah diperbaharui ke tahun berikutnya">
-                                                <i class="fas fa-sync-alt mr-1"></i> Diperbaharui
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="badge badge-success px-2 py-1 font-weight-bold shadow-sm" style="font-size: 0.78rem;">
-                                                <i class="fas fa-check-circle mr-1"></i> Telah Dikembalikan
-                                            </span>
-                                        <?php endif; ?>
-
-                                        <?php if (! empty($p['file_surat'])): ?>
-                                            <a href="<?= base_url(esc($p['file_surat'])); ?>" target="_blank" class="badge badge-danger px-2 py-1 ml-1" title="Lihat Scan Dokumen PDF">
-                                                <i class="fas fa-file-pdf mr-1"></i> Scan PDF
-                                            </a>
-                                        <?php else: ?>
-                                            <span class="badge badge-danger px-2 py-1 font-weight-bold ml-1 shadow-sm d-inline-block mt-1" title="Surat Perjanjian Pinjam Pakai bertanda tangan belum diunggah">
-                                                <i class="fas fa-exclamation-circle mr-1"></i> Belum Upload Berkas TTD
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
+                                    <?php if (! empty($p['kop_surat_title'])): ?>
+                                        <small class="text-secondary d-block mt-1 text-truncate" style="max-width: 165px; font-size: 0.76rem;" title="Kop: <?= esc($p['kop_surat_title']); ?>">
+                                            <i class="fas fa-heading mr-1"></i> <?= esc($p['kop_surat_title']); ?>
+                                        </small>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="align-middle">
                                     <?php 
@@ -347,6 +328,34 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                     <?php if (! empty($p['kelengkapan'])): ?>
                                         <small class="text-secondary d-block font-italic mt-1"><i class="fas fa-paperclip mr-1"></i> <?= esc($p['kelengkapan']); ?></small>
                                     <?php endif; ?>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <div class="mb-1">
+                                        <?php if ($p['status'] === 'dipinjam'): ?>
+                                            <span class="badge badge-warning px-2 py-1 font-weight-bold shadow-sm d-inline-block" style="font-size: 0.78rem;">
+                                                <i class="fas fa-clock mr-1"></i> Sedang Dipinjam
+                                            </span>
+                                        <?php elseif ($p['status'] === 'diperbaharui'): ?>
+                                            <span class="badge badge-info px-2 py-1 font-weight-bold shadow-sm d-inline-block" style="font-size: 0.78rem;" title="Pinjaman telah diperbaharui ke tahun berikutnya">
+                                                <i class="fas fa-sync-alt mr-1"></i> Diperbaharui
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge badge-success px-2 py-1 font-weight-bold shadow-sm d-inline-block" style="font-size: 0.78rem;">
+                                                <i class="fas fa-check-circle mr-1"></i> Telah Dikembalikan
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div>
+                                        <?php if (! empty($p['file_surat'])): ?>
+                                            <a href="<?= base_url(esc($p['file_surat'])); ?>" target="_blank" class="badge badge-danger px-2 py-1 shadow-sm d-inline-block" style="font-size: 0.76rem;" title="Lihat Scan Dokumen PDF">
+                                                <i class="fas fa-file-pdf mr-1"></i> Scan PDF
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="badge badge-danger px-2 py-1 font-weight-bold shadow-sm d-inline-block" style="font-size: 0.74rem;" title="Surat Perjanjian Pinjam Pakai bertanda tangan belum diunggah">
+                                                <i class="fas fa-exclamation-circle mr-1"></i> Belum Upload
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                                 <td class="text-center align-middle" style="white-space: nowrap;">
                                     <div class="btn-group" role="group" style="gap: 4px;">
