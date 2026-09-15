@@ -6,12 +6,12 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 0.8cm 2.0cm 0.8cm 2.5cm;
+            margin: 0.8cm 2.0cm 0.6cm 2.5cm;
         }
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 12pt;
-            line-height: 1.12;
+            font-size: 11pt;
+            line-height: 1.20;
             color: #000;
             margin: 0;
             padding: 0;
@@ -39,7 +39,7 @@
             border-bottom: 2px solid #000;
             padding-bottom: 1px;
             margin-top: 0;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
         .kop-table td {
             vertical-align: middle;
@@ -56,79 +56,79 @@
             font-size: 11.5pt;
             font-weight: bold;
             letter-spacing: 0.2px;
-            line-height: 1.12;
+            line-height: 1.15;
         }
         .kop-t2 {
             font-size: 11pt;
             font-weight: bold;
             letter-spacing: 0.2px;
-            line-height: 1.12;
+            line-height: 1.15;
         }
         .kop-t3 {
             font-size: 11pt;
             font-weight: bold;
             letter-spacing: 0.2px;
-            line-height: 1.12;
+            line-height: 1.15;
         }
         .kop-t4 {
             font-size: 7.5pt;
             margin-top: 1px;
-            line-height: 1.12;
+            line-height: 1.15;
         }
 
         /* JUDUL & NO SURAT */
         .title-box {
             text-align: center;
-            margin-bottom: 5px;
-            margin-top: 5px;
+            margin-bottom: 12px;
+            margin-top: 12px;
         }
         .title-text {
             font-size: 12pt;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.3px;
-            line-height: 1.12;
+            line-height: 1.2;
         }
         .title-no {
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: bold;
-            margin-top: 1px;
-            line-height: 1.12;
+            margin-top: 2px;
+            line-height: 1.2;
         }
 
         /* PARAGRAF & PASAL */
         .intro-text {
             text-align: justify;
-            font-size: 12pt;
-            line-height: 1.12;
-            margin-bottom: 3px;
+            font-size: 11pt;
+            line-height: 1.20;
+            margin-bottom: 12px;
         }
         .pihak-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 3px;
-            font-size: 12pt;
+            margin-bottom: 12px;
+            font-size: 11pt;
         }
         .pihak-table td {
             padding: 0;
             vertical-align: top;
-            font-size: 12pt;
-            line-height: 1.12;
+            font-size: 11pt;
+            line-height: 1.20;
         }
         .pasal-block {
-            margin-bottom: 3px;
+            margin-bottom: 12px;
         }
         .pasal-title {
             text-align: center;
-            font-size: 12pt;
-            margin-top: 5px;
-            margin-bottom: 8pt; /* 1 baris kosong setelah Pasal */
-            line-height: 1.12;
+            font-size: 11pt;
+            margin-top: 10px;
+            margin-bottom: 9pt; /* 1 baris kosong setelah Pasal */
+            line-height: 1.20;
         }
         .pasal-content {
             text-align: justify;
-            font-size: 12pt;
-            line-height: 1.12;
+            font-size: 11pt;
+            line-height: 1.20;
         }
 
         /* TANDA TANGAN HALAMAN 2 */
@@ -138,14 +138,14 @@
         .ttd-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 30px;
-            font-size: 12pt;
+            margin-top: 35px;
+            font-size: 11pt;
         }
         .ttd-table td {
             width: 50%;
             vertical-align: top;
-            font-size: 12pt;
-            line-height: 1.15;
+            font-size: 11pt;
+            line-height: 1.20;
         }
     </style>
 </head>
@@ -204,7 +204,7 @@
             <td style="text-align: justify;"><?= esc($pihakPertama['jabatan'] ?? 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau selaku Kuasa Penguna Barang Milik Negara'); ?>, yang bertindak untuk atas nama Satuan Kerja Pelaksanaan Prasarana Strategis Riau,<br>Yang selanjutnya disebut <strong>PIHAK PERTAMA</strong>.</td>
         </tr>
         <tr>
-            <td colspan="4" style="height: 4px;"></td>
+            <td colspan="4" style="height: 10px;"></td>
         </tr>
         <tr>
             <td>2.</td>
@@ -226,7 +226,7 @@
         </tr>
     </table>
 
-    <div class="intro-text" style="margin-bottom: 4px;">
+    <div class="intro-text" style="margin-bottom: 12px;">
         Kedua belah pihak sepakat untuk membuat Perjanjian Pinjam Pakai Barang Milik Negara sebagaimana tercantum pada Lampiran Surat Perjanjian ini, dengan ketentuan sebagai berikut:
     </div>
 
