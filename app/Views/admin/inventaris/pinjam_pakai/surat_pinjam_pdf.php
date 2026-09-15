@@ -79,7 +79,8 @@
         /* JUDUL & NO SURAT */
         .title-box {
             text-align: center;
-            margin-bottom: 4px;
+            margin-bottom: 9px;
+            margin-top: 9px;
         }
         .title-text {
             font-size: 12pt;
@@ -120,7 +121,7 @@
         .pasal-title {
             text-align: center;
             font-size: 12pt;
-            margin-top: 2px;
+            margin-top: 9px;
             margin-bottom: 9pt; /* 1 baris kosong setelah Pasal */
             line-height: 1.12;
         }
