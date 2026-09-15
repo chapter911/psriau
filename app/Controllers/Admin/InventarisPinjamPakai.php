@@ -273,12 +273,10 @@ class InventarisPinjamPakai extends BaseController
         $rawNoSurat = trim((string) $this->request->getPost('no_surat'));
 
         // Aturan nomor surat:
-        // Tahun 2025 (atau <= 2025): boleh tidak menggunakan nomor surat (opsional)
-        // Tahun 2026 ke atas: wajib menggunakan nomor surat dengan format PS.03.01/B/Gs7/{tahun}/{nomor auto increment}
+        // Tahun 2025 (atau <= 2025): boleh tidak menggunakan nomor surat (opsional, boleh isi manual jika ada)
+        // Tahun 2026 ke atas: OTOMATIS & TERKUNCI (selalu di-generate otomatis dengan format PS.03.01/B/Gs7/{tahun}/{nomor}, tidak bisa diedit/di-override manual)
         if ($tahunPinjam >= 2026) {
-            if ($rawNoSurat === '') {
-                $rawNoSurat = $pinjamModel->generateNextNoSurat($tahunPinjam);
-            }
+            $rawNoSurat = $pinjamModel->generateNextNoSurat($tahunPinjam);
         } else {
             if ($rawNoSurat === '') {
                 $rawNoSurat = null;
@@ -451,11 +449,17 @@ class InventarisPinjamPakai extends BaseController
         $rawNoSuratEdit = trim((string) $this->request->getPost('no_surat'));
 
         // Aturan nomor surat pada Edit:
-        // Tahun 2026+: wajib nomor surat. Jika dikosongkan, gunakan nomor sebelumnya atau generate baru.
-        // Tahun 2025-: boleh tidak menggunakan nomor surat (opsional).
+        // Tahun 2026 ke atas: nomor surat OTOMATIS & TERKUNCI (tidak bisa diedit lagi).
+        // Pertahankan nomor yang sudah terbit pada tahun tersebut, atau terbitkan otomatis jika belum ada nomor.
+        // Tahun 2025 ke bawah: boleh tidak menggunakan nomor surat (opsional), atau diedit bebas jika diperlukan.
         if ($tahunPinjamEdit >= 2026) {
-            if ($rawNoSuratEdit === '') {
-                $rawNoSuratEdit = ! empty($existing['no_surat']) ? $existing['no_surat'] : $pinjamModel->generateNextNoSurat($tahunPinjamEdit);
+            $existingYear = ! empty($existing['tgl_pinjam']) ? (int) date('Y', strtotime($existing['tgl_pinjam'])) : 0;
+            if (! empty($existing['no_surat']) && $existingYear === $tahunPinjamEdit) {
+                // Kunci nomor surat resmi yang sudah terbit (abaikan input POST / tidak bisa diubah)
+                $rawNoSuratEdit = $existing['no_surat'];
+            } else {
+                // Jika belum ada nomor surat atau tahun diubah ke tahun 2026+, generate nomor otomatis baru
+                $rawNoSuratEdit = $pinjamModel->generateNextNoSurat($tahunPinjamEdit);
             }
         } else {
             if ($rawNoSuratEdit === '') {

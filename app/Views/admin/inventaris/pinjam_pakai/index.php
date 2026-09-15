@@ -557,17 +557,21 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">
                                         Nomor Surat Perjanjian Pinjam Pakai
-                                        <span id="tambah-badge-no-surat" class="badge badge-danger ml-1" style="font-size: 0.72rem;">Wajib (Tahun <?= date('Y'); ?>)</span>
+                                        <span id="tambah-badge-no-surat" class="badge <?= date('Y') >= 2026 ? 'badge-info' : 'badge-secondary'; ?> ml-1" style="font-size: 0.72rem;">
+                                            <?= date('Y') >= 2026 ? '<i class="fas fa-lock mr-1"></i>Otomatis &amp; Terkunci (Tahun ' . date('Y') . ')' : 'Opsional (Tahun ' . date('Y') . ')'; ?>
+                                        </span>
                                     </label>
                                     <div class="input-group">
-                                        <input type="text" name="no_surat" id="tambah-no-surat" class="form-control" placeholder="PS.03.01/B/Gs7/<?= date('Y'); ?>/001" value="<?= esc($nextNoSurat ?? ''); ?>" style="border-radius: 6px 0 0 6px; font-size: 0.9rem;">
+                                        <input type="text" name="no_surat" id="tambah-no-surat" class="form-control" placeholder="PS.03.01/B/Gs7/<?= date('Y'); ?>/001" value="<?= esc($nextNoSurat ?? ''); ?>" style="border-radius: 6px 0 0 6px; font-size: 0.9rem; <?= date('Y') >= 2026 ? 'background-color: #e9ecef; cursor: not-allowed;' : ''; ?>" <?= date('Y') >= 2026 ? 'readonly="readonly"' : ''; ?>>
                                         <div class="input-group-append">
-                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-generate-no-surat" title="Generate Nomor Otomatis" style="border-radius: 0 6px 6px 0;">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-generate-no-surat" title="Generate Nomor Otomatis" style="border-radius: 0 6px 6px 0; <?= date('Y') >= 2026 ? 'display: none;' : ''; ?>">
                                                 <i class="fas fa-magic mr-1"></i> Auto
                                             </button>
                                         </div>
                                     </div>
-                                    <small class="text-muted d-block mt-1" id="tambah-no-surat-hint">Tahun 2026+ wajib format <code>PS.03.01/B/Gs7/{tahun}/{001}</code>. Tahun 2025 boleh kosong.</small>
+                                    <small class="text-muted d-block mt-1" id="tambah-no-surat-hint">
+                                        <?= date('Y') >= 2026 ? '<i class="fas fa-info-circle text-info mr-1"></i>Tahun 2026+ nomor surat otomatis terbit dan terkunci (tidak bisa diedit manual).' : 'Tahun 2025 boleh dikosongkan atau diedit. Tahun 2026+ otomatis dan terkunci.'; ?>
+                                    </small>
                                 </div>
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Pilih Kop Surat Instansi</label>
@@ -749,17 +753,17 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">
                                         Nomor Surat Perjanjian Pinjam Pakai
-                                        <span id="edit-badge-no-surat" class="badge badge-danger ml-1" style="font-size: 0.72rem;">Wajib (Tahun 2026+)</span>
+                                        <span id="edit-badge-no-surat" class="badge badge-info ml-1" style="font-size: 0.72rem;"><i class="fas fa-lock mr-1"></i>Otomatis &amp; Terkunci</span>
                                     </label>
                                     <div class="input-group">
                                         <input type="text" name="no_surat" id="edit-no-surat" class="form-control" placeholder="PS.03.01/B/Gs7/<?= date('Y'); ?>/001" style="border-radius: 6px 0 0 6px; font-size: 0.9rem;">
                                         <div class="input-group-append">
-                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-generate-edit-no-surat" title="Generate Nomor Otomatis" style="border-radius: 0 6px 6px 0;">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-generate-edit-no-surat" title="Generate Nomor Otomatis" style="border-radius: 0 6px 6px 0; display: none;">
                                                 <i class="fas fa-magic mr-1"></i> Auto
                                             </button>
                                         </div>
                                     </div>
-                                    <small class="text-muted d-block mt-1" id="edit-no-surat-hint">Tahun 2026+ wajib nomor surat. Tahun 2025 boleh dikosongkan.</small>
+                                    <small class="text-muted d-block mt-1" id="edit-no-surat-hint">Nomor surat terbit otomatis dan dikunci untuk tahun 2026 dan seterusnya.</small>
                                 </div>
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Pilih Kop Surat Instansi</label>
@@ -1218,14 +1222,24 @@ document.addEventListener('DOMContentLoaded', function() {
         var year = val ? new Date(val).getFullYear() : (new Date()).getFullYear();
         if (isNaN(year)) year = (new Date()).getFullYear();
 
+        var hintEl = document.getElementById('tambah-no-surat-hint');
+
         if (year >= 2026) {
             if (badgeTambahNoSurat) {
-                badgeTambahNoSurat.className = 'badge badge-danger ml-1';
-                badgeTambahNoSurat.textContent = 'Wajib (Tahun ' + year + ')';
+                badgeTambahNoSurat.className = 'badge badge-info ml-1';
+                badgeTambahNoSurat.innerHTML = '<i class="fas fa-lock mr-1"></i>Otomatis &amp; Terkunci (Tahun ' + year + ')';
             }
-            inputTambahNoSurat.required = true;
+            inputTambahNoSurat.readOnly = true;
+            inputTambahNoSurat.style.backgroundColor = '#e9ecef';
+            inputTambahNoSurat.style.cursor = 'not-allowed';
             inputTambahNoSurat.placeholder = 'PS.03.01/B/Gs7/' + year + '/001';
-            if (!inputTambahNoSurat.value || /^PS\.03\.01\/B\/Gs7\/\d{4}\/\d+$/i.test(inputTambahNoSurat.value)) {
+            if (btnGenerateTambah) btnGenerateTambah.style.display = 'none';
+            if (hintEl) {
+                hintEl.innerHTML = '<i class="fas fa-info-circle text-info mr-1"></i>Tahun ' + year + ' nomor surat otomatis terbit dan terkunci (tidak bisa diedit manual).';
+            }
+            var currentVal = inputTambahNoSurat.value || '';
+            var yearMatch = currentVal.match(/PS\.03\.01\/B\/Gs7\/(\d{4})\//i);
+            if (!currentVal || !yearMatch || parseInt(yearMatch[1], 10) !== year) {
                 fetchNextNoSurat(year, function(newNo) {
                     inputTambahNoSurat.value = newNo;
                 });
@@ -1233,10 +1247,16 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             if (badgeTambahNoSurat) {
                 badgeTambahNoSurat.className = 'badge badge-secondary ml-1';
-                badgeTambahNoSurat.textContent = 'Opsional (Tahun ' + year + ')';
+                badgeTambahNoSurat.innerHTML = 'Opsional (Tahun ' + year + ')';
             }
-            inputTambahNoSurat.required = false;
+            inputTambahNoSurat.readOnly = false;
+            inputTambahNoSurat.style.backgroundColor = '#ffffff';
+            inputTambahNoSurat.style.cursor = 'text';
             inputTambahNoSurat.placeholder = 'Opsional (Boleh kosong tahun ' + year + ')';
+            if (btnGenerateTambah) btnGenerateTambah.style.display = '';
+            if (hintEl) {
+                hintEl.innerHTML = 'Tahun ' + year + ' boleh dikosongkan atau diisi nomor manual.';
+            }
         }
     }
 
@@ -1253,6 +1273,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+    // Jalankan inisialisasi awal pada form tambah
+    updateNoSuratStateTambah();
 
     var inputEditTglPinjam = document.getElementById('edit-tgl-pinjam');
     var inputEditNoSurat = document.getElementById('edit-no-surat');
@@ -1265,13 +1287,21 @@ document.addEventListener('DOMContentLoaded', function() {
         var year = val ? new Date(val).getFullYear() : (new Date()).getFullYear();
         if (isNaN(year)) year = (new Date()).getFullYear();
 
+        var hintEl = document.getElementById('edit-no-surat-hint');
+
         if (year >= 2026) {
             if (badgeEditNoSurat) {
-                badgeEditNoSurat.className = 'badge badge-danger ml-1';
-                badgeEditNoSurat.textContent = 'Wajib (Tahun ' + year + ')';
+                badgeEditNoSurat.className = 'badge badge-info ml-1';
+                badgeEditNoSurat.innerHTML = '<i class="fas fa-lock mr-1"></i>Otomatis &amp; Terkunci (Tahun ' + year + ')';
             }
-            inputEditNoSurat.required = true;
+            inputEditNoSurat.readOnly = true;
+            inputEditNoSurat.style.backgroundColor = '#e9ecef';
+            inputEditNoSurat.style.cursor = 'not-allowed';
             inputEditNoSurat.placeholder = 'PS.03.01/B/Gs7/' + year + '/001';
+            if (btnGenerateEdit) btnGenerateEdit.style.display = 'none';
+            if (hintEl) {
+                hintEl.innerHTML = '<i class="fas fa-lock text-muted mr-1"></i>Nomor surat terbit otomatis dan dikunci untuk tahun 2026 dan seterusnya guna menjaga validitas penomoran resmi.';
+            }
             if (!inputEditNoSurat.value) {
                 fetchNextNoSurat(year, function(newNo) {
                     inputEditNoSurat.value = newNo;
@@ -1280,10 +1310,16 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             if (badgeEditNoSurat) {
                 badgeEditNoSurat.className = 'badge badge-secondary ml-1';
-                badgeEditNoSurat.textContent = 'Opsional (Tahun ' + year + ')';
+                badgeEditNoSurat.innerHTML = 'Opsional (Tahun ' + year + ')';
             }
-            inputEditNoSurat.required = false;
+            inputEditNoSurat.readOnly = false;
+            inputEditNoSurat.style.backgroundColor = '#ffffff';
+            inputEditNoSurat.style.cursor = 'text';
             inputEditNoSurat.placeholder = 'Opsional (Boleh kosong tahun ' + year + ')';
+            if (btnGenerateEdit) btnGenerateEdit.style.display = '';
+            if (hintEl) {
+                hintEl.innerHTML = 'Tahun 2025 boleh dikosongkan atau diisi nomor manual.';
+            }
         }
     }
 
