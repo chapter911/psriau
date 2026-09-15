@@ -203,8 +203,9 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                             <th class="align-middle" style="min-width: 220px;">Rincian Aset BMN</th>
                             <th class="align-middle" style="min-width: 180px;">Pegawai Peminjam</th>
                             <th class="align-middle" style="min-width: 170px;">Masa Pinjam & Keperluan</th>
-                            <th style="width: 145px;" class="text-center align-middle">Status & Berkas TTD</th>
-                            <th style="width: 180px;" class="text-center align-middle">Aksi</th>
+                            <th style="width: 140px;" class="text-center align-middle">Status & Berkas TTD</th>
+                            <th style="width: 135px;" class="text-center align-middle">Dokumen</th>
+                            <th style="width: 165px;" class="text-center align-middle">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -357,6 +358,7 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                         <?php endif; ?>
                                     </div>
                                 </td>
+                                <!-- Kolom Dokumen (Cetak PDF & Upload Scan Berkas TTD) -->
                                 <td class="text-center align-middle" style="white-space: nowrap;">
                                     <div class="btn-group" role="group" style="gap: 4px;">
                                         <!-- Cetak Surat Pinjam PDF -->
@@ -364,23 +366,28 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                             <i class="fas fa-file-pdf mr-1"></i> Cetak PDF
                                         </a>
 
-                                        <!-- Tombol Cepat Upload Berkas TTD (Jika belum upload) -->
-                                        <?php if (! empty($can_edit) && empty($p['file_surat'])): ?>
+                                        <!-- Tombol Cepat Upload Berkas TTD -->
+                                        <?php if (! empty($can_edit)): ?>
                                             <button
                                                 type="button"
-                                                class="btn btn-outline-danger btn-xs px-2 py-1 btn-quick-upload shadow-sm"
+                                                class="btn <?= empty($p['file_surat']) ? 'btn-outline-danger' : 'btn-outline-secondary'; ?> btn-xs px-2 py-1 btn-quick-upload shadow-sm"
                                                 data-toggle="modal"
                                                 data-target="#modal-quick-upload"
                                                 data-id="<?= esc((string) $p['id'], 'attr'); ?>"
                                                 data-surat="<?= esc((string) ($p['no_surat'] ?: "ID #{$p['id']}"), 'attr'); ?>"
                                                 data-peminjam="<?= esc((string) $p['nama_peminjam'], 'attr'); ?>"
                                                 style="border-radius: 4px;"
-                                                title="Unggah Scan Dokumen Bertanda Tangan"
+                                                title="<?= empty($p['file_surat']) ? 'Unggah Scan Dokumen Bertanda Tangan' : 'Ganti/Unggah Ulang Scan Dokumen Bertanda Tangan'; ?>"
                                             >
-                                                <i class="fas fa-upload mr-1"></i> Upload
+                                                <i class="fas fa-upload mr-1"></i> <?= empty($p['file_surat']) ? 'Upload' : 'Ganti Scan'; ?>
                                             </button>
                                         <?php endif; ?>
+                                    </div>
+                                </td>
 
+                                <!-- Kolom Aksi Operasional (Perbaharui, Kembalikan, Edit, Hapus) -->
+                                <td class="text-center align-middle" style="white-space: nowrap;">
+                                    <div class="btn-group" role="group" style="gap: 4px;">
                                         <!-- Tombol Perbaharui Pinjaman (Annual Renewal / Awal Tahun) -->
                                         <?php if ($p['status'] === 'dipinjam' && (! empty($can_edit) || ! empty($can_add))): ?>
                                             <button
