@@ -1322,8 +1322,42 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::error("  [FAIL] Format Merk/Tipe Protektif gagal.");
             }
 
-            // 5. Uji Proses Pengembalian Aset
-            $pinjamModel->update($pinjamId, [
+            // 4b. Uji Fitur Pembaruan Pinjam Aset (Annual Renewal Awal Tahun) & Kelanjutan Nomor Surat
+            $currentNext2026 = $pinjamModel->generateNextNoSurat(2026);
+            $renewPinjamId = $pinjamModel->perbaharuiPinjam($pinjamId, [
+                'tgl_pinjam'          => '2026-01-02',
+                'tgl_kembali_rencana' => '2026-12-31',
+                'keperluan'           => 'Perpanjangan dinas tahun anggaran 2026',
+                'kondisi_pinjam'      => 'baik',
+                'catatan'             => 'Pembaruan tahunan',
+            ]);
+
+            $oldLoanAfterRenew = $pinjamModel->find($pinjamId);
+            $newLoanAfterRenew = $pinjamModel->find($renewPinjamId);
+            $assetAfterRenew = $satkerModel->find($dummyPinjamAssetId);
+            $newLoanItems = $pinjamModel->getItemsByPinjamId($renewPinjamId);
+
+            $isRenewalValid = ($oldLoanAfterRenew['status'] === 'diperbaharui')
+                && ($newLoanAfterRenew['status'] === 'dipinjam')
+                && ($newLoanAfterRenew['no_surat'] === $currentNext2026)
+                && ($assetAfterRenew['status_bmn'] === 'Dipinjam Pakai')
+                && (count($newLoanItems) >= 1)
+                && ((int) $newLoanItems[0]['inventaris_id'] === (int) $dummyPinjamAssetId);
+
+            if ($isRenewalValid) {
+                CLI::write("  [OK] Pembaruan Pinjam Aset (Annual Renewal) sukses: Surat lama berstatus 'diperbaharui', surat baru terbit melanjutkan nomor '{$newLoanAfterRenew['no_surat']}', item aset ditransfer, dan master aset tetap 'Dipinjam Pakai'", "green");
+            } else {
+                CLI::error("  [FAIL] Pembaruan Pinjam Aset gagal.");
+            }
+
+            // Uji Indikator Baris Belum Upload
+            $isBelumUploadFlag = empty($newLoanAfterRenew['file_surat']);
+            if ($isBelumUploadFlag) {
+                CLI::write("  [OK] Deteksi berkas belum diunggah valid: Transaksi baru tanpa file_surat ditandai untuk highlight baris merah (table-danger) dan badge 'Belum Upload Berkas TTD'", "green");
+            }
+
+            // 5. Uji Proses Pengembalian Aset (pada transaksi yang diperbaharui)
+            $pinjamModel->update($renewPinjamId, [
                 'status'                => 'dikembalikan',
                 'tgl_kembali_realisasi' => date('Y-m-d'),
                 'kondisi_kembali'       => 'baik',
@@ -1338,7 +1372,7 @@ class InventarisSmokeTest extends BaseCommand
             ]);
 
             $assetAfterReturn = $satkerModel->find($dummyPinjamAssetId);
-            $loanAfterReturn  = $pinjamModel->find($pinjamId);
+            $loanAfterReturn  = $pinjamModel->find($renewPinjamId);
 
             if ($loanAfterReturn['status'] === 'dikembalikan' && $assetAfterReturn['status_bmn'] === 'Digunakan Sendiri') {
                 CLI::write("  [OK] Proses pengembalian aset berhasil: Status transaksi 'dikembalikan', aset induk dipulihkan ke '{$assetAfterReturn['status_bmn']}' ({$assetAfterReturn['lokasi_ruangan']})", "green");
@@ -1348,7 +1382,11 @@ class InventarisSmokeTest extends BaseCommand
             }
 
             // 6. Bersihkan data dummy pinjam pakai
+            $pinjamModel->delete($renewPinjamId);
             $pinjamModel->delete($pinjamId);
+            if ($db->tableExists('trn_inventaris_pinjam_pakai_item')) {
+                $db->table('trn_inventaris_pinjam_pakai_item')->whereIn('pinjam_pakai_id', [$pinjamId, $renewPinjamId])->delete();
+            }
             $satkerModel->delete($dummyPinjamAssetId);
             CLI::write("  [CLEANUP] Data dummy peminjaman aset berhasil dibersihkan dari database.", "green");
 

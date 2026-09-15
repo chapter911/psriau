@@ -96,6 +96,20 @@
     background-color: #ffffff !important;
     color: #007bff !important;
 }
+
+/* Styling Highlight Baris Tabel Belum Upload Berkas TTD */
+.table-hover tbody tr.row-belum-upload,
+.table-striped tbody tr.row-belum-upload:nth-of-type(odd),
+.table-striped tbody tr.row-belum-upload:nth-of-type(even) {
+    background-color: #fff1f0 !important;
+}
+.table-hover tbody tr.row-belum-upload:hover,
+.table-hover tbody tr.row-belum-upload:hover td {
+    background-color: #ffe4e1 !important;
+}
+.table-hover tbody tr.row-belum-upload td {
+    border-color: #ffd8d6 !important;
+}
 </style>
 <div class="container-fluid">
 <?php
@@ -194,7 +208,11 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                     </thead>
                     <tbody>
                         <?php $no = 1; foreach (($pinjamList ?? []) as $p): ?>
-                            <tr>
+                            <?php 
+                                $isBelumUpload = empty($p['file_surat']); 
+                                $rowClass = $isBelumUpload ? 'row-belum-upload table-danger' : '';
+                            ?>
+                            <tr class="<?= $rowClass; ?>" data-id="<?= $p['id']; ?>">
                                 <td class="text-center align-middle"><?= $no++; ?></td>
                                 <td class="align-middle">
                                     <span class="font-weight-bold text-dark d-block" style="font-size: 0.95rem;">
@@ -208,6 +226,10 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                             <span class="badge badge-warning px-2 py-1 font-weight-bold shadow-sm" style="font-size: 0.78rem;">
                                                 <i class="fas fa-clock mr-1"></i> Sedang Dipinjam
                                             </span>
+                                        <?php elseif ($p['status'] === 'diperbaharui'): ?>
+                                            <span class="badge badge-info px-2 py-1 font-weight-bold shadow-sm" style="font-size: 0.78rem;" title="Pinjaman telah diperbaharui ke tahun berikutnya">
+                                                <i class="fas fa-sync-alt mr-1"></i> Diperbaharui
+                                            </span>
                                         <?php else: ?>
                                             <span class="badge badge-success px-2 py-1 font-weight-bold shadow-sm" style="font-size: 0.78rem;">
                                                 <i class="fas fa-check-circle mr-1"></i> Telah Dikembalikan
@@ -218,6 +240,10 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                             <a href="<?= base_url(esc($p['file_surat'])); ?>" target="_blank" class="badge badge-danger px-2 py-1 ml-1" title="Lihat Scan Dokumen PDF">
                                                 <i class="fas fa-file-pdf mr-1"></i> Scan PDF
                                             </a>
+                                        <?php else: ?>
+                                            <span class="badge badge-danger px-2 py-1 font-weight-bold ml-1 shadow-sm d-inline-block mt-1" title="Surat Perjanjian Pinjam Pakai bertanda tangan belum diunggah">
+                                                <i class="fas fa-exclamation-circle mr-1"></i> Belum Upload Berkas TTD
+                                            </span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -328,6 +354,55 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                         <a href="<?= site_url('admin/inventaris/pinjam-pakai/' . $p['id'] . '/cetak-pdf'); ?>" target="_blank" class="btn btn-danger btn-xs px-2 py-1 shadow-sm" style="border-radius: 4px;" title="Cetak Surat Izin Pinjam Pakai BMN (PDF)">
                                             <i class="fas fa-file-pdf mr-1"></i> Cetak PDF
                                         </a>
+
+                                        <!-- Tombol Cepat Upload Berkas TTD (Jika belum upload) -->
+                                        <?php if (! empty($can_edit) && empty($p['file_surat'])): ?>
+                                            <button
+                                                type="button"
+                                                class="btn btn-outline-danger btn-xs px-2 py-1 btn-quick-upload shadow-sm"
+                                                data-toggle="modal"
+                                                data-target="#modal-quick-upload"
+                                                data-id="<?= esc((string) $p['id'], 'attr'); ?>"
+                                                data-surat="<?= esc((string) ($p['no_surat'] ?: "ID #{$p['id']}"), 'attr'); ?>"
+                                                data-peminjam="<?= esc((string) $p['nama_peminjam'], 'attr'); ?>"
+                                                style="border-radius: 4px;"
+                                                title="Unggah Scan Dokumen Bertanda Tangan"
+                                            >
+                                                <i class="fas fa-upload mr-1"></i> Upload
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <!-- Tombol Perbaharui Pinjaman (Annual Renewal / Awal Tahun) -->
+                                        <?php if ($p['status'] === 'dipinjam' && (! empty($can_edit) || ! empty($can_add))): ?>
+                                            <button
+                                                type="button"
+                                                class="btn btn-warning btn-xs px-2 py-1 text-white font-weight-bold btn-perbaharui-pinjam shadow-sm"
+                                                data-toggle="modal"
+                                                data-target="#modal-perbaharui-pinjam"
+                                                data-id="<?= esc((string) $p['id'], 'attr'); ?>"
+                                                data-surat="<?= esc((string) ($p['no_surat'] ?: ''), 'attr'); ?>"
+                                                data-peminjam="<?= esc((string) $p['nama_peminjam'], 'attr'); ?>"
+                                                data-nip="<?= esc((string) ($p['nip_peminjam'] ?? ''), 'attr'); ?>"
+                                                data-jabatan="<?= esc((string) ($p['jabatan_peminjam'] ?? ''), 'attr'); ?>"
+                                                data-kontak="<?= esc((string) ($p['kontak_peminjam'] ?? ''), 'attr'); ?>"
+                                                data-kop-id="<?= esc((string) ($p['kop_surat_id'] ?? ''), 'attr'); ?>"
+                                                data-barang="<?= esc($isMulti ? (count($loanItems) . ' Unit Aset BMN') : (string) ($p['nama_barang'] ?? ''), 'attr'); ?>"
+                                                data-nup="<?= esc($isMulti ? 'Multi-NUP' : (string) ($p['nup'] ?? ''), 'attr'); ?>"
+                                                data-kode="<?= esc((string) ($p['kode_barang'] ?? ''), 'attr'); ?>"
+                                                data-tgl-pinjam="<?= esc((string) $p['tgl_pinjam'], 'attr'); ?>"
+                                                data-tgl-kembali="<?= esc((string) ($p['tgl_kembali_rencana'] ?? ''), 'attr'); ?>"
+                                                data-keperluan="<?= esc((string) $p['keperluan'], 'attr'); ?>"
+                                                data-kondisi="<?= esc((string) ($p['kondisi_pinjam'] ?? 'baik'), 'attr'); ?>"
+                                                data-kelengkapan="<?= esc((string) ($p['kelengkapan'] ?? ''), 'attr'); ?>"
+                                                data-catatan="<?= esc((string) ($p['catatan'] ?? ''), 'attr'); ?>"
+                                                data-items-count="<?= count($loanItems); ?>"
+                                                data-items-json="<?= esc($itemsJson, 'attr'); ?>"
+                                                style="border-radius: 4px;"
+                                                title="Perbaharui Pinjam Pakai (Tahun Baru / Perpanjangan)"
+                                            >
+                                                <i class="fas fa-sync-alt mr-1"></i> Perbaharui
+                                            </button>
+                                        <?php endif; ?>
 
                                         <!-- Tombol Kembalikan Aset (Hanya jika sedang dipinjam) -->
                                         <?php if ($p['status'] === 'dipinjam' && ! empty($can_edit)): ?>
@@ -928,6 +1003,213 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
 </div>
 <?php endif; ?>
 
+<!-- Modal Perbaharui Pinjam Pakai (Annual Renewal / Perpanjangan Awal Tahun) -->
+<?php if (! empty($can_edit) || ! empty($can_add)): ?>
+<div class="modal fade" id="modal-perbaharui-pinjam" role="dialog" aria-labelledby="modalPerbaharuiTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header py-3 px-4" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-bottom: 1px solid #fde68a;">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3 d-flex align-items-center justify-content-center bg-warning text-white rounded-circle shadow-sm" style="width: 42px; height: 42px; font-size: 1.15rem;">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold text-dark mb-0" id="modalPerbaharuiTitle" style="font-size: 1.15rem;">
+                            Pembaruan Pinjam Pakai Aset BMN
+                        </h5>
+                        <small class="text-muted">Perpanjang masa pinjam pakai aset dinas ke tahun anggaran berikutnya dan terbitkan Surat Perjanjian baru</small>
+                    </div>
+                </div>
+                <button type="button" class="close text-secondary" data-dismiss="modal" aria-label="Close" style="font-size: 1.5rem; opacity: 0.7;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="form-perbaharui-pinjam" action="" method="post" enctype="multipart/form-data">
+                <?= csrf_field(); ?>
+                <div class="modal-body py-4 px-4">
+                    
+                    <!-- Section 1: Ringkasan Pinjaman Saat Ini -->
+                    <div class="card border mb-3 shadow-none" style="border-radius: 8px; border-color: #e2e8f0; background: #fafbfc;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge badge-warning rounded-circle mr-2 d-inline-flex align-items-center justify-content-center text-white" style="width: 22px; height: 22px; font-size: 0.75rem;">1</span>
+                                <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">Informasi Peminjam & Aset Saat Ini</h6>
+                            </div>
+                            <div class="row small text-muted">
+                                <div class="col-md-6 mb-2">
+                                    <span class="d-block"><strong>Pegawai Peminjam:</strong> <span id="perbaharui-peminjam-nama" class="text-dark font-weight-bold">-</span></span>
+                                    <span class="d-block"><strong>NIP:</strong> <span id="perbaharui-peminjam-nip" class="text-dark">-</span> | <strong>Jabatan:</strong> <span id="perbaharui-peminjam-jabatan" class="text-dark">-</span></span>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <span class="d-block"><strong>Nomor Surat Lama:</strong> <span id="perbaharui-surat-lama" class="text-primary font-weight-bold">-</span></span>
+                                    <span class="d-block"><strong>Tanggal Pinjam Lama:</strong> <span id="perbaharui-tgl-lama" class="text-dark">-</span></span>
+                                </div>
+                            </div>
+                            <div id="perbaharui-aset-list" class="mt-2 pt-2 border-top small" style="display: none; max-height: 140px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Konfigurasi Surat Perjanjian Baru -->
+                    <div class="card border mb-3 shadow-none" style="border-radius: 8px; border-color: #e2e8f0; background: #fafbfc;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge badge-primary rounded-circle mr-2 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.75rem;">2</span>
+                                <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">Konfigurasi Pembaruan Surat & Periode Baru</h6>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="font-weight-bold text-dark small mb-1">
+                                        Tanggal Mulai Pinjam Baru <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="date" name="tgl_pinjam" id="perbaharui-tgl-pinjam" class="form-control" required style="border-radius: 6px; font-size: 0.88rem;">
+                                    <small class="text-muted d-block mt-1">Awal tahun anggaran (misal: 02 Januari tahun baru atau hari kerja pertama).</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="font-weight-bold text-dark small mb-1">
+                                        Estimasi Selesai Pinjam Baru
+                                    </label>
+                                    <input type="date" name="tgl_kembali_rencana" id="perbaharui-tgl-kembali" class="form-control" style="border-radius: 6px; font-size: 0.88rem;">
+                                    <small class="text-muted d-block mt-1">Standar BMN: 31 Desember tahun anggaran berjalan.</small>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="font-weight-bold text-dark small mb-1">
+                                        Nomor Surat Perjanjian Baru (Melanjutkan Urutan Nomor Berjalan) <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-light text-primary font-weight-bold" style="font-size: 0.88rem;">
+                                                <i class="fas fa-file-signature mr-1"></i> No. Surat Baru
+                                            </span>
+                                        </div>
+                                        <input type="text" name="no_surat" id="perbaharui-no-surat" class="form-control font-weight-bold bg-light" readonly style="border-radius: 0 6px 6px 0; font-size: 0.9rem; letter-spacing: 0.5px;">
+                                    </div>
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fas fa-lock text-warning mr-1"></i> Nomor surat terisi secara otomatis melanjutkan registrasi urut BMN yang sedang berlangsung pada tahun target.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="font-weight-bold text-dark small mb-1">
+                                        Pilihan Kop Surat Instansi
+                                    </label>
+                                    <select name="kop_surat_id" id="perbaharui-kop-surat-id" class="form-control" style="border-radius: 6px; font-size: 0.88rem;">
+                                        <option value="">-- Gunakan Kop Aktif Default --</option>
+                                        <?php foreach (($kopSuratList ?? []) as $kop): ?>
+                                            <option value="<?= $kop['id']; ?>" <?= ! empty($kop['is_active']) ? 'selected' : ''; ?>>
+                                                <?= esc($kop['nama']); ?> <?= ! empty($kop['is_active']) ? '(Aktif)' : ''; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="font-weight-bold text-dark small mb-1">
+                                        Kondisi Fisik Barang Saat Pembaruan
+                                    </label>
+                                    <select name="kondisi_pinjam" id="perbaharui-kondisi-pinjam" class="form-control" style="border-radius: 6px; font-size: 0.88rem;">
+                                        <option value="baik">Baik (Layak Operasional)</option>
+                                        <option value="rusak_ringan">Rusak Ringan</option>
+                                        <option value="rusak_berat">Rusak Berat</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold text-dark small mb-1">
+                                    Keperluan Dinas <span class="text-danger">*</span>
+                                </label>
+                                <textarea name="keperluan" id="perbaharui-keperluan" class="form-control" rows="2" required style="border-radius: 6px; font-size: 0.88rem;"></textarea>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold text-dark small mb-1">
+                                    Kelengkapan & Catatan Pembaruan
+                                </label>
+                                <input type="text" name="kelengkapan" id="perbaharui-kelengkapan" class="form-control mb-2" placeholder="Kelengkapan (Unit, Charger, Tas, dll.)" style="border-radius: 6px; font-size: 0.88rem;">
+                                <input type="text" name="catatan" id="perbaharui-catatan" class="form-control" placeholder="Catatan tambahan pembaruan" style="border-radius: 6px; font-size: 0.88rem;">
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label class="font-weight-bold text-dark small mb-1">
+                                    Upload Scan Surat Pinjam Baru (PDF Bertanda Tangan) <small class="text-muted font-italic">(Opsional)</small>
+                                </label>
+                                <input type="file" name="file_surat" class="form-control-file border p-2 w-100 bg-white" accept=".pdf" style="border-radius: 6px; font-size: 0.85rem;">
+                                <small class="text-muted d-block mt-1">Format PDF, maksimal 10 MB. Jika belum ditandatangani, cetak dahulu PDF-nya dan unggah belakangan.</small>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 small mb-0" style="border-radius: 6px;">
+                        <i class="fas fa-info-circle mr-1"></i> <strong>Catatan Sistem:</strong> Seluruh aset yang dipinjam akan otomatis dibawa ke transaksi peminjaman baru. Transaksi lama akan ditandai sebagai <em>Diperbaharui</em> dan nomor surat baru akan terbit siap cetak.
+                    </div>
+
+                </div>
+                <div class="modal-footer py-3 px-4" style="background: #f8fafc; border-top: 1px solid #e2e8f0;">
+                    <button type="button" class="btn btn-secondary px-3" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
+                    <button type="submit" class="btn btn-warning px-4 text-white font-weight-bold shadow-sm" style="border-radius: 6px;">
+                        <i class="fas fa-sync-alt mr-1"></i> Simpan Pembaruan & Terbitkan SPP Baru
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Modal Cepat Upload Berkas TTD PDF -->
+<?php if (! empty($can_edit)): ?>
+<div class="modal fade" id="modal-quick-upload" role="dialog" aria-labelledby="modalQuickUploadTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header py-3 px-4" style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-bottom: 1px solid #fecaca;">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3 d-flex align-items-center justify-content-center bg-danger text-white rounded-circle shadow-sm" style="width: 38px; height: 38px; font-size: 1.1rem;">
+                        <i class="fas fa-file-upload"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold text-danger mb-0" id="modalQuickUploadTitle" style="font-size: 1.05rem;">
+                            Upload Scan Surat Bertanda Tangan
+                        </h5>
+                        <small class="text-muted">Unggah berkas scan PDF resmi Surat Perjanjian Pinjam Pakai yang telah ditandatangani</small>
+                    </div>
+                </div>
+                <button type="button" class="close text-secondary" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="form-quick-upload" action="" method="post" enctype="multipart/form-data">
+                <?= csrf_field(); ?>
+                <div class="modal-body py-4 px-4">
+                    <div class="mb-3 p-3 bg-light rounded border">
+                        <div class="small text-muted mb-1">Peminjam: <strong id="quick-upload-peminjam" class="text-dark">-</strong></div>
+                        <div class="small text-muted">Surat: <strong id="quick-upload-surat" class="text-primary">-</strong></div>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="font-weight-bold text-dark small mb-1">
+                            Pilih Berkas PDF Scan TTD <span class="text-danger">*</span>
+                        </label>
+                        <input type="file" name="file_surat" class="form-control-file border p-2 w-100 bg-white" accept=".pdf" required style="border-radius: 6px; font-size: 0.85rem;">
+                        <small class="text-muted d-block mt-1">Format PDF, maksimal ukuran 10 MB.</small>
+                    </div>
+                </div>
+                <div class="modal-footer py-3 px-4" style="background: #f8fafc; border-top: 1px solid #e2e8f0;">
+                    <button type="button" class="btn btn-secondary px-3" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
+                    <button type="submit" class="btn btn-danger px-4 shadow-sm font-weight-bold" style="border-radius: 6px;">
+                        <i class="fas fa-upload mr-1"></i> Unggah Berkas PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // 1. NONAKTIFKAN BOOTSTRAP MODAL ENFORCE FOCUS
@@ -1451,11 +1733,165 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // 8b. POPULATE PERBAHARUI MODAL (ANNUAL RENEWAL)
+    function populatePerbaharuiModal(btn) {
+        if (!btn) return;
+        var id = btn.getAttribute('data-id') || '';
+        var form = document.getElementById('form-perbaharui-pinjam');
+        if (form && id) {
+            form.action = '<?= site_url('admin/inventaris/pinjam-pakai'); ?>/' + id + '/perbaharui';
+        }
+
+        var nama = btn.getAttribute('data-peminjam') || '-';
+        var nip = btn.getAttribute('data-nip') || '-';
+        if (/^NIP[A-Z]+$/i.test(nip)) {
+            nip = 'Tenaga Penunjang Kegiatan';
+        }
+        var jabatan = btn.getAttribute('data-jabatan') || '-';
+        var surat = btn.getAttribute('data-surat') || '(Tanpa No. Surat)';
+        var tglPinjam = btn.getAttribute('data-tgl-pinjam') || '';
+
+        var elNama = document.getElementById('perbaharui-peminjam-nama');
+        if (elNama) elNama.textContent = nama;
+
+        var elNip = document.getElementById('perbaharui-peminjam-nip');
+        if (elNip) elNip.textContent = nip;
+
+        var elJab = document.getElementById('perbaharui-peminjam-jabatan');
+        if (elJab) elJab.textContent = jabatan;
+
+        var elSurat = document.getElementById('perbaharui-surat-lama');
+        if (elSurat) elSurat.textContent = surat;
+
+        var elTgl = document.getElementById('perbaharui-tgl-lama');
+        if (elTgl) elTgl.textContent = tglPinjam ? tglPinjam : '-';
+
+        // Render rincian aset yang diperpanjang
+        var rawItems = btn.getAttribute('data-items-json') || '[]';
+        var items = [];
+        try { items = JSON.parse(rawItems); } catch(e) {}
+        var listEl = document.getElementById('perbaharui-aset-list');
+        if (listEl) {
+            if (items && items.length > 0) {
+                var html = '<div class="font-weight-bold text-primary mb-1"><i class="fas fa-boxes mr-1"></i> Aset yang Diperpanjang (' + items.length + ' Unit):</div><ol class="pl-3 mb-0">';
+                items.forEach(function(it) {
+                    html += '<li><strong>' + (it.nama_barang || '-') + '</strong> (NUP: ' + (it.nup || '-') + (it.kode_barang ? (', Kode: ' + it.kode_barang) : '') + ')</li>';
+                });
+                html += '</ol>';
+                listEl.innerHTML = html;
+                listEl.style.display = 'block';
+            } else {
+                listEl.style.display = 'none';
+                listEl.innerHTML = '';
+            }
+        }
+
+        // Tentukan tahun pembaruan default (misal awal tahun berikutnya jika pinjaman dari tahun lalu, atau tahun ini)
+        var oldYear = tglPinjam ? (new Date(tglPinjam)).getFullYear() : (new Date()).getFullYear();
+        var currentYear = (new Date()).getFullYear();
+        var targetYear = oldYear < currentYear ? currentYear : (currentYear + 1);
+        if (isNaN(targetYear)) targetYear = currentYear;
+
+        // Default tanggal pinjam baru: 02 Januari {targetYear} atau hari ini jika tahun target sama dengan tahun berjalan
+        var defaultNewDate = targetYear + '-01-02';
+        var defaultEndDate = targetYear + '-12-31';
+
+        var inputTgl = document.getElementById('perbaharui-tgl-pinjam');
+        if (inputTgl) {
+            inputTgl.value = defaultNewDate;
+        }
+
+        var inputTglKembali = document.getElementById('perbaharui-tgl-kembali');
+        if (inputTglKembali) {
+            inputTglKembali.value = defaultEndDate;
+        }
+
+        var inputKeperluan = document.getElementById('perbaharui-keperluan');
+        if (inputKeperluan) {
+            inputKeperluan.value = btn.getAttribute('data-keperluan') || '';
+        }
+
+        var inputKondisi = document.getElementById('perbaharui-kondisi-pinjam');
+        if (inputKondisi) {
+            inputKondisi.value = btn.getAttribute('data-kondisi') || 'baik';
+        }
+
+        var inputKelengkapan = document.getElementById('perbaharui-kelengkapan');
+        if (inputKelengkapan) {
+            inputKelengkapan.value = btn.getAttribute('data-kelengkapan') || '';
+        }
+
+        var inputCatatan = document.getElementById('perbaharui-catatan');
+        if (inputCatatan) {
+            inputCatatan.value = 'Pembaruan dari Surat ' + surat;
+        }
+
+        var elKop = document.getElementById('perbaharui-kop-surat-id');
+        if (elKop) {
+            var kopId = btn.getAttribute('data-kop-id') || '';
+            if (kopId) elKop.value = kopId;
+        }
+
+        // Ambil nomor surat baru untuk tahun target
+        fetchNextNoSurat(targetYear, function(newNo) {
+            var elNoSurat = document.getElementById('perbaharui-no-surat');
+            if (elNoSurat) elNoSurat.value = newNo;
+        });
+    }
+
+    // Listener saat tanggal pinjam baru diubah di modal pembaruan
+    var inputPerbaharuiTgl = document.getElementById('perbaharui-tgl-pinjam');
+    if (inputPerbaharuiTgl) {
+        inputPerbaharuiTgl.addEventListener('change', function() {
+            var val = this.value;
+            var year = val ? (new Date(val)).getFullYear() : (new Date()).getFullYear();
+            if (!isNaN(year)) {
+                fetchNextNoSurat(year, function(newNo) {
+                    var elNoSurat = document.getElementById('perbaharui-no-surat');
+                    if (elNoSurat) elNoSurat.value = newNo;
+                });
+                var inputEnd = document.getElementById('perbaharui-tgl-kembali');
+                if (inputEnd && !inputEnd.value) {
+                    inputEnd.value = year + '-12-31';
+                }
+            }
+        });
+    }
+
+    // 8c. POPULATE QUICK UPLOAD MODAL
+    function populateQuickUploadModal(btn) {
+        if (!btn) return;
+        var id = btn.getAttribute('data-id') || '';
+        var surat = btn.getAttribute('data-surat') || '';
+        var peminjam = btn.getAttribute('data-peminjam') || '';
+
+        var form = document.getElementById('form-quick-upload');
+        if (form && id) {
+            form.action = '<?= site_url('admin/inventaris/pinjam-pakai'); ?>/' + id + '/upload-berkas';
+        }
+
+        var elSurat = document.getElementById('quick-upload-surat');
+        if (elSurat) elSurat.textContent = surat ? surat : '(Tanpa No. Surat)';
+
+        var elPeminjam = document.getElementById('quick-upload-peminjam');
+        if (elPeminjam) elPeminjam.textContent = peminjam;
+    }
+
     // 9. EVENT LISTENERS (DELEGASI UNTUK DATATABLES SORT & PAGING)
     document.addEventListener('click', function(e) {
         var editBtn = e.target.closest('.btn-edit-pinjam');
         if (editBtn) {
             populateEditModal(editBtn);
+        }
+
+        var perbaharuiBtn = e.target.closest('.btn-perbaharui-pinjam');
+        if (perbaharuiBtn) {
+            populatePerbaharuiModal(perbaharuiBtn);
+        }
+
+        var quickUploadBtn = e.target.closest('.btn-quick-upload');
+        if (quickUploadBtn) {
+            populateQuickUploadModal(quickUploadBtn);
         }
 
         var kembaliBtn = e.target.closest('.btn-kembalikan-pinjam');
@@ -1479,6 +1915,16 @@ document.addEventListener('DOMContentLoaded', function() {
             initSelect2ForModals();
             var btn = e.relatedTarget;
             if (btn) populateEditModal(btn);
+        });
+
+        $('#modal-perbaharui-pinjam').on('show.bs.modal', function(e) {
+            var btn = e.relatedTarget;
+            if (btn) populatePerbaharuiModal(btn);
+        });
+
+        $('#modal-quick-upload').on('show.bs.modal', function(e) {
+            var btn = e.relatedTarget;
+            if (btn) populateQuickUploadModal(btn);
         });
 
         $('#modal-kembalikan-pinjam').on('show.bs.modal', function(e) {

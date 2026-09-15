@@ -445,6 +445,10 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('inventaris/pinjam-pakai/(:num)/delete', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
 	$routes->get('inventaris/pinjam-pakai/(:num)/hapus', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
 	$routes->get('inventaris/pinjam-pakai/(:num)/cetak-pdf', 'Admin\InventarisPinjamPakai::cetakSuratPdf/$1');
+	$routes->post('inventaris/pinjam-pakai/(:num)/perbaharui', 'Admin\InventarisPinjamPakai::perbaharuiPinjam/$1');
+	$routes->get('inventaris/pinjam-pakai/(:num)/perbaharui', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
+	$routes->post('inventaris/pinjam-pakai/(:num)/upload-berkas', 'Admin\InventarisPinjamPakai::uploadBerkas/$1');
+	$routes->get('inventaris/pinjam-pakai/(:num)/upload-berkas', static fn() => redirect()->to('/admin/inventaris/pinjam-pakai'));
 	$routes->get('inventaris/pinjam-pakai/export-excel', 'Admin\InventarisPinjamPakai::exportExcel');
 	$routes->get('inventaris/pinjam-pakai/get-next-no-surat', 'Admin\InventarisPinjamPakai::getNextNoSurat');
 

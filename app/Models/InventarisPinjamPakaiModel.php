@@ -77,7 +77,7 @@ class InventarisPinjamPakaiModel extends Model
             ->join('mst_jabatan ju', 'ju.id = peg.jabatan_utama_id', 'left')
             ->join('kop_surat ks', 'ks.id = p.kop_surat_id', 'left');
 
-        if ($statusFilter && in_array($statusFilter, ['dipinjam', 'dikembalikan'], true)) {
+        if ($statusFilter && in_array($statusFilter, ['dipinjam', 'dikembalikan', 'diperbaharui'], true)) {
             $builder->where('p.status', $statusFilter);
         }
 
@@ -234,8 +234,9 @@ class InventarisPinjamPakaiModel extends Model
     {
         $db = $this->db;
 
-        // Total transaksi selesai dan peminjam unik
+        // Total transaksi selesai, diperbaharui, dan peminjam unik
         $totalDikembalikan = (int) $db->table($this->table)->where('status', 'dikembalikan')->countAllResults();
+        $totalDiperbaharui = (int) $db->table($this->table)->where('status', 'diperbaharui')->countAllResults();
         $totalPeminjamUnik = (int) $db->table($this->table)->where('status', 'dipinjam')->select('nama_peminjam')->distinct()->countAllResults();
         if ($totalPeminjamUnik === 0) {
             $totalPeminjamUnik = (int) $db->table($this->table)->select('nama_peminjam')->distinct()->countAllResults();
@@ -272,6 +273,7 @@ class InventarisPinjamPakaiModel extends Model
         return [
             'total_dipinjam'       => $totalDipinjam,
             'total_dikembalikan'   => $totalDikembalikan,
+            'total_diperbaharui'   => $totalDiperbaharui,
             'total_peminjam'       => $totalPeminjamUnik,
             'total_peminjam_unik'  => $totalPeminjamUnik,
             'total_nilai_dipinjam' => $totalNilaiDipinjam,
@@ -307,6 +309,137 @@ class InventarisPinjamPakaiModel extends Model
 
         $nextNum = $maxNum + 1;
         return $prefix . str_pad((string) $nextNum, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Memperbaharui pinjam pakai aset BMN (Annual Renewal / Perpanjangan Awal Tahun)
+     * - Membuat record transaksi baru dengan status 'dipinjam' dan nomor surat baru berjalan
+     * - Menyalin seluruh child items ke transaksi baru
+     * - Mengubah status transaksi lama menjadi 'diperbaharui'
+     * - Memastikan status aset master di trn_inventaris_satker tetap 'Dipinjam Pakai'
+     */
+    public function perbaharuiPinjam(int $oldId, array $data, int $userId = 0): int
+    {
+        $oldLoan = $this->getPinjamDetail($oldId);
+        if (! is_array($oldLoan) || ($oldLoan['status'] ?? '') !== 'dipinjam') {
+            throw new \RuntimeException('Data pinjam pakai tidak ditemukan atau statusnya tidak sedang dipinjam.');
+        }
+
+        $items = ! empty($oldLoan['items']) ? $oldLoan['items'] : [];
+        if (empty($items) && ! empty($oldLoan['inventaris_id'])) {
+            $items = [['inventaris_id' => $oldLoan['inventaris_id'], 'kondisi_pinjam' => $oldLoan['kondisi_pinjam'] ?? 'baik']];
+        }
+
+        if (empty($items)) {
+            throw new \RuntimeException('Tidak ada aset BMN pada transaksi pinjam pakai ini.');
+        }
+
+        $tglPinjamBaru = trim((string) ($data['tgl_pinjam'] ?? date('Y-m-d')));
+        $tahunTarget = (int) date('Y', strtotime($tglPinjamBaru));
+        $noSuratBaru = trim((string) ($data['no_surat'] ?? ''));
+        if ($tahunTarget >= 2026 || empty($noSuratBaru)) {
+            $noSuratBaru = $this->generateNextNoSurat($tahunTarget);
+        }
+
+        $this->db->transStart();
+
+        $oldNoSuratText = ! empty($oldLoan['no_surat']) ? $oldLoan['no_surat'] : "ID #{$oldId}";
+        $catatanBaru = trim((string) ($data['catatan'] ?? ''));
+        $catatanPembaruan = "Pembaruan dari Surat " . $oldNoSuratText . ($catatanBaru !== '' ? " | " . $catatanBaru : '');
+
+        // 1. Insert header pinjaman baru
+        $newLoanData = [
+            'inventaris_id'        => $items[0]['inventaris_id'],
+            'pegawai_id'           => $oldLoan['pegawai_id'],
+            'nama_peminjam'        => $oldLoan['nama_peminjam'],
+            'nip_peminjam'         => $oldLoan['nip_peminjam'],
+            'jabatan_peminjam'     => $oldLoan['jabatan_peminjam'],
+            'kontak_peminjam'      => $oldLoan['kontak_peminjam'],
+            'no_surat'             => $noSuratBaru,
+            'kop_surat_id'         => ! empty($data['kop_surat_id']) ? (int) $data['kop_surat_id'] : ($oldLoan['kop_surat_id'] ?? null),
+            'tgl_pinjam'           => $tglPinjamBaru,
+            'tgl_kembali_rencana'  => ! empty($data['tgl_kembali_rencana']) ? trim((string) $data['tgl_kembali_rencana']) : null,
+            'keperluan'            => ! empty($data['keperluan']) ? trim((string) $data['keperluan']) : $oldLoan['keperluan'],
+            'kondisi_pinjam'       => ! empty($data['kondisi_pinjam']) ? trim((string) $data['kondisi_pinjam']) : ($oldLoan['kondisi_pinjam'] ?? 'baik'),
+            'kelengkapan'          => isset($data['kelengkapan']) ? trim((string) $data['kelengkapan']) : ($oldLoan['kelengkapan'] ?? null),
+            'catatan'              => $catatanPembaruan,
+            'file_surat'           => ! empty($data['file_surat']) ? $data['file_surat'] : null,
+            'status'               => 'dipinjam',
+            'created_by'           => $userId ?: null,
+            'updated_by'           => $userId ?: null,
+        ];
+
+        $newPinjamId = (int) $this->insert($newLoanData, true);
+        if (! $newPinjamId) {
+            $this->db->transRollback();
+            throw new \RuntimeException('Gagal menyimpan transaksi pembaruan pinjam pakai.');
+        }
+
+        // 2. Insert items ke pinjaman baru
+        $kondisiPinjamBaru = $newLoanData['kondisi_pinjam'];
+        $now = date('Y-m-d H:i:s');
+        $newItemRows = [];
+        $inventarisIds = [];
+        foreach ($items as $it) {
+            $invId = (int) $it['inventaris_id'];
+            $inventarisIds[] = $invId;
+            $newItemRows[] = [
+                'pinjam_pakai_id' => $newPinjamId,
+                'inventaris_id'   => $invId,
+                'kondisi_pinjam'  => $kondisiPinjamBaru,
+                'kondisi_kembali' => null,
+                'catatan'         => "Pembaruan dari Surat " . $oldNoSuratText,
+                'status'          => 'dipinjam',
+                'created_at'      => $now,
+                'updated_at'      => $now,
+            ];
+        }
+
+        if ($this->db->tableExists('trn_inventaris_pinjam_pakai_item') && ! empty($newItemRows)) {
+            $this->db->table('trn_inventaris_pinjam_pakai_item')->insertBatch($newItemRows);
+        }
+
+        // 3. Update record lama
+        $oldCatatan = (string) ($oldLoan['catatan'] ?? '');
+        $updatedOldCatatan = ($oldCatatan !== '' ? $oldCatatan . " | " : '') . "Diperbaharui ke Surat No. " . $noSuratBaru . " (ID #{$newPinjamId})";
+        $this->update($oldId, [
+            'status'                => 'diperbaharui',
+            'tgl_kembali_realisasi' => $tglPinjamBaru,
+            'kondisi_kembali'       => $kondisiPinjamBaru,
+            'catatan'               => $updatedOldCatatan,
+            'updated_by'            => $userId ?: null,
+        ]);
+
+        // 4. Update child items di record lama menjadi 'dikembalikan'
+        if ($this->db->tableExists('trn_inventaris_pinjam_pakai_item')) {
+            $this->db->table('trn_inventaris_pinjam_pakai_item')
+                ->where('pinjam_pakai_id', $oldId)
+                ->update([
+                    'status'          => 'dikembalikan',
+                    'kondisi_kembali' => $kondisiPinjamBaru,
+                    'catatan'         => "Diperbaharui ke Surat No. " . $noSuratBaru,
+                    'updated_at'      => $now,
+                ]);
+        }
+
+        // 5. Pastikan master inventaris satker tetap 'Dipinjam Pakai'
+        if (! empty($inventarisIds)) {
+            $satkerModel = new \App\Models\InventarisSatkerModel();
+            $satkerModel->whereIn('id', array_unique($inventarisIds))->set([
+                'status_bmn'     => 'Dipinjam Pakai',
+                'lokasi_ruangan' => 'Pinjam Pakai: ' . $oldLoan['nama_peminjam'],
+                'kondisi'        => $kondisiPinjamBaru,
+                'updated_by'     => $userId ?: null,
+            ])->update();
+        }
+
+        $this->db->transComplete();
+
+        if ($this->db->transStatus() === false) {
+            throw new \RuntimeException('Transaksi database gagal saat memperbaharui pinjam pakai.');
+        }
+
+        return $newPinjamId;
     }
 }
 

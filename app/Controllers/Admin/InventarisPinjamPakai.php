@@ -66,7 +66,7 @@ class InventarisPinjamPakai extends BaseController
         $db = db_connect();
 
         $filterStatus = trim((string) ($this->request->getGet('status') ?? ''));
-        if (! in_array($filterStatus, ['dipinjam', 'dikembalikan'], true)) {
+        if (! in_array($filterStatus, ['dipinjam', 'dikembalikan', 'diperbaharui'], true)) {
             $filterStatus = null;
         }
 
@@ -596,6 +596,135 @@ class InventarisPinjamPakai extends BaseController
 
         $cntAset = count($itemIds);
         return redirect()->to('/admin/inventaris/pinjam-pakai')->with('message', "Sebanyak {$cntAset} unit aset berhasil dikembalikan oleh {$existing['nama_peminjam']} dan status barang telah aktif kembali.");
+    }
+
+    public function perbaharuiPinjam(int $id)
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (! (bool) ($menuPermissions['edit'] ?? false) && ! (bool) ($menuPermissions['add'] ?? false)) {
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Anda tidak memiliki hak akses untuk memperbaharui pinjam pakai.');
+        }
+
+        $pinjamModel = new InventarisPinjamPakaiModel();
+        $existing = $pinjamModel->find($id);
+        if (! is_array($existing)) {
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Data pinjam pakai tidak ditemukan.');
+        }
+
+        if (($existing['status'] ?? '') !== 'dipinjam') {
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Hanya transaksi pinjam pakai yang sedang aktif yang dapat diperbaharui.');
+        }
+
+        $rules = [
+            'tgl_pinjam'     => 'required|valid_date',
+            'keperluan'      => 'required',
+            'kondisi_pinjam' => 'permit_empty|in_list[baik,rusak_ringan,rusak_berat]',
+        ];
+
+        if (! $this->validate($rules)) {
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->withInput()->with('error', 'Tanggal mulai pinjam baru dan keperluan dinas wajib diisi.');
+        }
+
+        // Handle upload berkas scan surat jika diisi
+        $fileSuratPath = null;
+        $file = $this->request->getFile('file_surat');
+        if ($file && $file->isValid() && ! $file->hasMoved()) {
+            $ext = strtolower($file->getClientExtension());
+            if ($ext !== 'pdf') {
+                return redirect()->to('/admin/inventaris/pinjam-pakai')->withInput()->with('error', 'File scan surat pinjam harus berformat PDF.');
+            }
+            if ($file->getSizeByUnit('mb') > 10) {
+                return redirect()->to('/admin/inventaris/pinjam-pakai')->withInput()->with('error', 'Ukuran file surat pinjam maksimal 10 MB.');
+            }
+            $uploadDir = FCPATH . 'uploads/inventaris/surat_pinjam';
+            if (! is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            $newName = 'SPP_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.pdf';
+            $file->move($uploadDir, $newName);
+            $fileSuratPath = 'uploads/inventaris/surat_pinjam/' . $newName;
+        }
+
+        $userId = (int) (session()->get('userId') ?? 0);
+        $tglPinjam = trim((string) $this->request->getPost('tgl_pinjam'));
+        $targetYear = (int) date('Y', strtotime($tglPinjam));
+        $noSuratInput = trim((string) $this->request->getPost('no_surat'));
+
+        $data = [
+            'tgl_pinjam'          => $tglPinjam,
+            'tgl_kembali_rencana' => trim((string) $this->request->getPost('tgl_kembali_rencana')) ?: null,
+            'no_surat'            => $noSuratInput,
+            'kop_surat_id'        => (int) $this->request->getPost('kop_surat_id') ?: null,
+            'keperluan'           => trim((string) $this->request->getPost('keperluan')),
+            'kondisi_pinjam'      => trim((string) $this->request->getPost('kondisi_pinjam')) ?: 'baik',
+            'kelengkapan'         => trim((string) $this->request->getPost('kelengkapan')) ?: null,
+            'catatan'             => trim((string) $this->request->getPost('catatan')) ?: null,
+            'file_surat'          => $fileSuratPath,
+        ];
+
+        try {
+            $newPinjamId = $pinjamModel->perbaharuiPinjam($id, $data, $userId);
+            $newLoan = $pinjamModel->find($newPinjamId);
+            $newNoSurat = ! empty($newLoan['no_surat']) ? $newLoan['no_surat'] : "ID #{$newPinjamId}";
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('message', "Peminjaman aset BMN berhasil diperbaharui ke tahun {$targetYear} dengan Nomor Surat baru: {$newNoSurat}.");
+        } catch (\Throwable $e) {
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->withInput()->with('error', 'Gagal memperbaharui pinjam pakai: ' . $e->getMessage());
+        }
+    }
+
+    public function uploadBerkas(int $id)
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (! (bool) ($menuPermissions['edit'] ?? false)) {
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Anda tidak memiliki hak akses untuk mengunggah dokumen.');
+        }
+
+        $pinjamModel = new InventarisPinjamPakaiModel();
+        $existing = $pinjamModel->find($id);
+        if (! is_array($existing)) {
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Data pinjam pakai tidak ditemukan.');
+        }
+
+        $file = $this->request->getFile('file_surat');
+        if (! $file || ! $file->isValid()) {
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Silakan pilih file PDF scan surat pinjam.');
+        }
+
+        $ext = strtolower($file->getClientExtension());
+        if ($ext !== 'pdf') {
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'File scan surat pinjam harus berformat PDF.');
+        }
+
+        if ($file->getSizeByUnit('mb') > 10) {
+            return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Ukuran file surat pinjam maksimal 10 MB.');
+        }
+
+        $uploadDir = FCPATH . 'uploads/inventaris/surat_pinjam';
+        if (! is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $newName = 'SPP_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.pdf';
+        $file->move($uploadDir, $newName);
+        $fileSuratPath = 'uploads/inventaris/surat_pinjam/' . $newName;
+        $userId = (int) (session()->get('userId') ?? 0);
+
+        $pinjamModel->update($id, [
+            'file_surat' => $fileSuratPath,
+            'updated_by' => $userId ?: null,
+        ]);
+
+        return redirect()->to('/admin/inventaris/pinjam-pakai')->with('message', 'Berkas scan tanda tangan PDF berhasil diunggah.');
     }
 
     public function deletePinjam(int $id)
