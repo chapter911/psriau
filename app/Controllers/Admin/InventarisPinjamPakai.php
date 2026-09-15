@@ -682,8 +682,9 @@ class InventarisPinjamPakai extends BaseController
         $tglTerbilang = ucfirst(strtolower($this->terbilangAngka($d)));
         $blnNama = $bulan[$m] ?? date('F', $ts);
         $thnTerbilang = ucfirst(strtolower($this->terbilangAngka($y)));
+        $tglFormatted = date('d-m-Y', $ts);
 
-        return "Hari ini {$hariNama} tanggal {$tglTerbilang} bulan {$blnNama} tahun {$thnTerbilang} (" . date('d/m/Y', $ts) . "), kami yang bertandatangan di bawah ini :";
+        return "Pada hari ini <strong>{$hariNama}</strong> tanggal <strong>{$tglTerbilang}</strong> bulan <strong>{$blnNama}</strong> tahun <strong>{$thnTerbilang} ({$tglFormatted})</strong>, kami yang bertandatangan di bawah ini:";
     }
 
     public function cetakSuratPdf(int $id)
