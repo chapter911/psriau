@@ -177,48 +177,12 @@ class InventarisPengaturanModel extends Model
     // ==========================================
 
     /**
-     * Memeriksa apakah peminjam sama dengan Kasatker.
-     * Jika sama, PIHAK PERTAMA dialihkan secara hukum ke Pengurus Barang Pengguna (a.n. KPB).
+     * Resolusi Pejabat Penyerah BMN (PIHAK PERTAMA).
+     * Sesuai ketentuan, penerima dan penyerah diperbolehkan sama (Kasatker menandatangani sebagai kedua pihak jika meminjam BMN).
      */
-    public function resolvePihakPertama(string $peminjamNama, ?string $peminjamNip = null, ?string $tanggalPinjam = null): array
+    public function resolvePihakPertama(string $peminjamNama = '', ?string $peminjamNip = null, ?string $tanggalPinjam = null): array
     {
         $kasatker = $this->getKasatkerByDate($tanggalPinjam);
-        $delegasi = $this->getDelegasi();
-
-        $isConflict = false;
-
-        // 1. Cek kesamaan NIP
-        $nipKasatkerClean = preg_replace('/[^0-9]/', '', (string) ($kasatker['nip'] ?? ''));
-        $nipPeminjamClean = preg_replace('/[^0-9]/', '', (string) $peminjamNip);
-
-        if (! empty($nipKasatkerClean) && ! empty($nipPeminjamClean) && $nipKasatkerClean === $nipPeminjamClean) {
-            $isConflict = true;
-        }
-
-        // 2. Cek kesamaan Nama jika NIP tidak cocok/kosong
-        if (! $isConflict && ! empty($peminjamNama)) {
-            $cleanKasatker = strtolower(preg_replace('/[^a-zA-Z]/', '', $kasatker['nama'] ?? ''));
-            $cleanPeminjam = strtolower(preg_replace('/[^a-zA-Z]/', '', $peminjamNama));
-
-            // Jika kata kunci nama inti cocok (misal: "muhammadyudiprasetya")
-            if (str_contains($cleanPeminjam, 'yudiprasetya') || str_contains($cleanPeminjam, 'muhammadyudi')) {
-                $isConflict = true;
-            } elseif ($cleanKasatker !== '' && $cleanPeminjam !== '' && (str_contains($cleanKasatker, $cleanPeminjam) || str_contains($cleanPeminjam, $cleanKasatker))) {
-                $isConflict = true;
-            }
-        }
-
-        if ($isConflict) {
-            return [
-                'is_delegasi'       => true,
-                'nama'              => $delegasi['nama'] ?? 'Hendrick Bastiar',
-                'nip'               => $delegasi['nip'] ?? '197810162025211023',
-                'jabatan'           => ($delegasi['jabatan_bmn'] ?? 'Pengurus Barang Pengguna') . ' selaku Kuasa Pengguna Barang (a.n. Kuasa Pengguna Barang)',
-                'jabatan_singkat'   => $delegasi['jabatan_bmn'] ?? 'Pengurus Barang Pengguna',
-                'format_header_ttd' => "a.n. Kuasa Pengguna Barang,\n" . ($delegasi['jabatan_bmn'] ?? 'Pengurus Barang Pengguna') . ',',
-                'kasatker_asli'     => $kasatker,
-            ];
-        }
 
         return [
             'is_delegasi'       => false,

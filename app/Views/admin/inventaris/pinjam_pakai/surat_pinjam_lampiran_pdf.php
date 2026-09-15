@@ -127,21 +127,13 @@
             <td style="width: 50%; text-align: center; vertical-align: top;">
                 <strong>PIHAK KEDUA</strong><br>
                 Yang menerima,
-                <?php if (! empty($isDelegasi)): ?>
-                    <br><?= esc($loan['jabatan_peminjam'] ?? 'Kepala Satuan Kerja'); ?>
-                <?php endif; ?>
             </td>
             <td style="width: 50%; text-align: center; vertical-align: top;">
                 <strong>PIHAK PERTAMA</strong><br>
                 Yang menyerahkan,<br>
-                <?php if (! empty($isDelegasi)): ?>
-                    a.n. Kuasa Pengguna Barang<br>
-                    <?= esc($pihakPertama['jabatan_singkat'] ?? 'Pengurus Barang Pengguna'); ?>,
-                <?php else: ?>
-                    Selaku Kuasa Penguna Barang,<br>
-                    Kepala Satuan Kerja<br>
-                    Pelaksanaan Prasarana Strategis Riau
-                <?php endif; ?>
+                Selaku Kuasa Penguna Barang,<br>
+                Kepala Satuan Kerja<br>
+                Pelaksanaan Prasarana Strategis Riau
             </td>
         </tr>
         <tr>

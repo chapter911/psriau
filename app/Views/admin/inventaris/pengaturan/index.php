@@ -5,7 +5,7 @@
     <div class="row mb-3">
         <div class="col-sm-6">
             <h4 class="m-0 font-weight-bold text-dark"><i class="fas fa-sliders-h mr-2 text-primary"></i> <?= esc($pageTitle); ?></h4>
-            <p class="text-muted small mb-0">Konfigurasi Kop Surat, Masa Jabatan Kasatker, dan Delegasi Penandatangan Dokumen BMN</p>
+            <p class="text-muted small mb-0">Konfigurasi Kop Surat dan Riwayat Jabatan Kasatker BMN</p>
         </div>
         <div class="col-sm-6 text-right">
             <a href="<?= site_url('admin/inventaris/pinjam-pakai'); ?>" class="btn btn-outline-secondary btn-sm shadow-sm">
@@ -45,11 +45,6 @@
                 <li class="nav-item">
                     <a class="nav-link <?= $activeTab === 'kasatker' ? 'active' : ''; ?> font-weight-bold" id="tab-kasatker-link" data-toggle="pill" href="#tab-kasatker" role="tab" aria-controls="tab-kasatker" aria-selected="<?= $activeTab === 'kasatker' ? 'true' : 'false'; ?>">
                         <i class="fas fa-user-tie mr-1 text-warning"></i> 2. Riwayat Jabatan Kasatker (KPB)
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= $activeTab === 'delegasi' ? 'active' : ''; ?> font-weight-bold" id="tab-delegasi-link" data-toggle="pill" href="#tab-delegasi" role="tab" aria-controls="tab-delegasi" aria-selected="<?= $activeTab === 'delegasi' ? 'true' : 'false'; ?>">
-                        <i class="fas fa-user-shield mr-1 text-success"></i> 3. Delegasi Penyerah BMN (a.n. KPB)
                     </a>
                 </li>
             </ul>
@@ -217,94 +212,6 @@
                                 <?php endif; ?>
                             </tbody>
                         </table>
-                    </div>
-                </div>
-
-                <!-- ================= TAB 3: DELEGASI PENANDATANGAN ================= -->
-                <div class="tab-pane fade <?= $activeTab === 'delegasi' ? 'show active' : ''; ?>" id="tab-delegasi" role="tabpanel" aria-labelledby="tab-delegasi-link">
-                    <div class="alert alert-info border-0 shadow-sm mb-4">
-                        <div class="d-flex">
-                            <div class="mr-3">
-                                <i class="fas fa-info-circle fa-2x"></i>
-                            </div>
-                            <div>
-                                <h6 class="font-weight-bold mb-1">Mekanisme Penanganan Benturan Kepentingan (Self-Contracting)</h6>
-                                <p class="small mb-0">
-                                    Ketika <strong>Kepala Satuan Kerja (Kuasa Pengguna Barang)</strong> meminjam aset BMN untuk keperluan dinas pribadinya, sistem secara otomatis mengalihkan <strong>PIHAK PERTAMA (Yang Menyerahkan)</strong> kepada <strong>Pengurus Barang Pengguna</strong> atas nama Kuasa Pengguna Barang (<em>a.n. Kuasa Pengguna Barang</em>) agar penandatanganan perjanjian pinjam pakai sah secara hukum dan memenuhi tertib administrasi audit BPK/Itjen.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row justify-content-center">
-                        <div class="col-lg-8 col-md-10">
-                            <div class="card card-outline card-success shadow-sm">
-                                <div class="card-header">
-                                    <h5 class="card-title font-weight-bold m-0"><i class="fas fa-user-edit mr-1 text-success"></i> Konfigurasi Pejabat Penyerah Alternatif (a.n. KPB)</h5>
-                                </div>
-                                <form action="<?= site_url('admin/inventaris/pengaturan/delegasi/save'); ?>" method="post">
-                                    <?= csrf_field(); ?>
-                                    <div class="card-body">
-                                        <div class="form-group">
-                                            <label for="pilih_pegawai_delegasi" class="font-weight-bold">Pilih dari Master Pegawai (Opsional untuk isi cepat)</label>
-                                            <select id="pilih_pegawai_delegasi" class="form-control" onchange="onSelectDelegasiPegawai(this)">
-                                                <option value="">-- Pilih Pegawai --</option>
-                                                <?php foreach ($pegawaiList as $peg): ?>
-                                                    <option value="<?= $peg['id']; ?>" 
-                                                            data-nama="<?= esc($peg['nama']); ?>" 
-                                                            data-nip="<?= esc($peg['nip']); ?>" 
-                                                            data-jabatan="<?= esc($peg['jabatan_label'] ?? ''); ?>"
-                                                            <?= ($delegasi['pegawai_id'] ?? null) == $peg['id'] ? 'selected' : ''; ?>>
-                                                        <?= esc($peg['nama']); ?> (NIP: <?= esc($peg['nip'] ?? '-'); ?>) - <?= esc($peg['jabatan_label'] ?? ''); ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <input type="hidden" id="delegasi_pegawai_id" name="pegawai_id" value="<?= esc($delegasi['pegawai_id'] ?? ''); ?>">
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-md-6 form-group">
-                                                <label for="delegasi_nama" class="font-weight-bold">Nama Lengkap &amp; Gelar Pejabat Penyerah <span class="text-danger">*</span></label>
-                                                <input type="text" id="delegasi_nama" name="nama" class="form-control" value="<?= esc($delegasi['nama'] ?? 'Hendrick Bastiar'); ?>" required>
-                                            </div>
-                                            <div class="col-md-6 form-group">
-                                                <label for="delegasi_nip" class="font-weight-bold">NIP Pejabat Penyerah</label>
-                                                <input type="text" id="delegasi_nip" name="nip" class="form-control" value="<?= esc($delegasi['nip'] ?? '197810162025211023'); ?>">
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-md-6 form-group">
-                                                <label for="delegasi_jabatan_struktural" class="font-weight-bold">Jabatan Struktural / Staf</label>
-                                                <input type="text" id="delegasi_jabatan_struktural" name="jabatan_struktural" class="form-control" value="<?= esc($delegasi['jabatan_struktural'] ?? 'Staf Tata Usaha'); ?>" placeholder="Contoh: Staf Tata Usaha / PPK">
-                                            </div>
-                                            <div class="col-md-6 form-group">
-                                                <label for="delegasi_jabatan_bmn" class="font-weight-bold">Jabatan Fungsional BMN <span class="text-danger">*</span></label>
-                                                <input type="text" id="delegasi_jabatan_bmn" name="jabatan_bmn" class="form-control" value="<?= esc($delegasi['jabatan_bmn'] ?? 'Pengurus Barang Pengguna'); ?>" required placeholder="Contoh: Pengurus Barang Pengguna">
-                                            </div>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label for="delegasi_format_ttd" class="font-weight-bold">Format Teks Header Tanda Tangan PIHAK PERTAMA</label>
-                                            <textarea id="delegasi_format_ttd" name="format_ttd" class="form-control" rows="2" required><?= esc($delegasi['format_ttd'] ?? "a.n. Kuasa Pengguna Barang,\nPengurus Barang Pengguna"); ?></textarea>
-                                            <small class="text-muted">Teks ini akan tercetak di atas ruang tanda tangan penyerah jika terjadi delegasi.</small>
-                                        </div>
-
-                                        <div class="form-check">
-                                            <input type="checkbox" id="delegasi_is_active" name="is_active" value="1" class="form-check-input" <?= ($delegasi['is_active'] ?? 1) ? 'checked' : ''; ?>>
-                                            <label class="form-check-label font-weight-bold" for="delegasi_is_active">Aktifkan Fitur Delegasi Otomatis saat Kasatker Meminjam BMN</label>
-                                        </div>
-                                    </div>
-                                    <div class="card-footer text-right">
-                                        <?php if ($menuPermissions['edit'] ?? false): ?>
-                                            <button type="submit" class="btn btn-success shadow-sm font-weight-bold px-4">
-                                                <i class="fas fa-save mr-1"></i> Simpan Pengaturan Delegasi
-                                            </button>
-                                        <?php endif; ?>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -496,18 +403,6 @@ function editKasatker(data) {
 
     document.getElementById('modalKasatkerLabel').innerHTML = '<i class="fas fa-pencil-alt mr-1"></i> Ubah Data Pejabat Kasatker';
     $('#modalKasatker').modal('show');
-}
-
-function onSelectDelegasiPegawai(selectEl) {
-    var selectedOpt = selectEl.options[selectEl.selectedIndex];
-    if (selectedOpt && selectedOpt.value) {
-        document.getElementById('delegasi_pegawai_id').value = selectedOpt.value;
-        document.getElementById('delegasi_nama').value = selectedOpt.getAttribute('data-nama') || '';
-        document.getElementById('delegasi_nip').value = selectedOpt.getAttribute('data-nip') || '';
-        document.getElementById('delegasi_jabatan_struktural').value = selectedOpt.getAttribute('data-jabatan') || '';
-    } else {
-        document.getElementById('delegasi_pegawai_id').value = '';
-    }
 }
 </script>
 <?= $this->endSection(); ?>

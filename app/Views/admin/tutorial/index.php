@@ -491,7 +491,6 @@ graph TD
 
     B7 --> I1["Pengaturan Masa Berlaku Kop Surat BMN (Auto-Select Sesuai Tanggal Transaksi Surat)"]
     B7 --> I2["Riwayat Masa Jabatan Kasatker Kuasa Pengguna Barang (Sinkronisasi Otomatis Dokumen Lintas Periode)"]
-    B7 --> I3["Delegasi Penandatangan BMN a.n. KPB (Pengalihan Otomatis ke Pengurus Barang saat Kasatker Meminjam Aset)"]
                 </pre>
             </div>
         </div>
@@ -879,7 +878,7 @@ graph TD
                                     <li>Masuk ke menu <strong>Inventarisasi &gt; Pengaturan Dokumen</strong>. Modul ini dikhususkan untuk mengelola konfigurasi penerbitan berkas resmi BMN (Surat Perjanjian Pinjam Pakai, DBR, dan BAP Audit) secara mandiri di dalam modul Inventarisasi tanpa bercampur dengan Master Data umum instansi.</li>
                                     <li><strong>Tab 1: Masa Berlaku Kop Surat BMN:</strong> Mengelola berkas gambar Kop Surat resmi instansi lengkap dengan rentang tanggal berlaku (<em>Berlaku Dari</em> s/d <em>Berlaku Sampai</em>). Sistem secara cerdas memilih kop surat yang sesuai dengan tanggal transaksi surat saat formulir dibuka atau dicetak.</li>
                                     <li><strong>Tab 2: Riwayat Jabatan Kasatker (Kuasa Pengguna Barang):</strong> Mencatat daftar nama pejabat Kasatker, NIP, gelar, jabatan resmi, dan rentang masa jabatan (TMT Mulai s/d TMT Selesai). Berkas arsip transaksi masa lampau yang dicetak ulang otomatis mencantumkan nama Kasatker yang menjabat pada masa tersebut, bukan pejabat saat ini.</li>
-                                    <li><strong>Tab 3: Delegasi Penyerah BMN (Solusi Benturan Kepentingan Kasatker Pinjam BMN):</strong> Berdasarkan tata kelola BMN Kementerian PU, jika <em>Kepala Satuan Kerja (Kuasa Pengguna Barang)</em> meminjam aset untuk keperluan operasional dinasnya, maka pihak penyerah BMN (PIHAK PERTAMA) secara hukum tidak boleh ditandatangani oleh dirinya sendiri (mencegah <em>self-contracting</em>). Sistem secara otomatis mendeteksi kondisi ini dan mengalihkan PIHAK PERTAMA kepada <strong>Pengurus Barang Pengguna</strong> atas nama Kuasa Pengguna Barang (<em>a.n. Kuasa Pengguna Barang</em>), lengkap dengan format tanda tangan dan identitas pejabat yang dapat dikonfigurasi di tab ini.</li>
+                                    <li><strong>Ketentuan Penandatanganan Dokumen Pinjam Pakai:</strong> Tanda tangan penerima (PIHAK KEDUA) dan penyerah (PIHAK PERTAMA) diperbolehkan sama. Apabila <em>Kepala Satuan Kerja (Kuasa Pengguna Barang)</em> meminjam aset BMN untuk keperluan operasional kedinasannya, dokumen perjanjian pinjam pakai langsung ditandatangani oleh Kasatker selaku Kuasa Pengguna Barang pada kedua belah pihak tanpa memerlukan delegasi ke pejabat lain.</li>
                                 </ol>
                             </div>
                         </div>

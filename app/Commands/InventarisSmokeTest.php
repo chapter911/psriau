@@ -1100,10 +1100,10 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::error("  [FAIL] Validasi penyesuaian TTD / NIP Konsultan gagal.");
             }
 
-            // 4c. Uji Delegasi Penandatangan BMN saat Kasatker Meminjam BMN (Solusi Benturan Kepentingan)
+            // 4c. Uji Tanda Tangan Penerima & Penyerah Diperbolehkan Sama (Kasatker Meminjam Aset BMN)
             $pengaturanModel = new \App\Models\InventarisPengaturanModel();
-            $resolusiDelegasi = $pengaturanModel->resolvePihakPertama('Muhammad Yudi Prasetya, ST.', '198002142014121002', '2026-02-01');
-            $isConflictDetected = ($resolusiDelegasi['is_delegasi'] === true);
+            $resolusiKasatker = $pengaturanModel->resolvePihakPertama('Muhammad Yudi Prasetya, ST.', '198002142014121002', '2026-02-01');
+            $isSameSignerAllowed = ($resolusiKasatker['is_delegasi'] === false && ! empty($resolusiKasatker['nama']));
 
             $kasatkerLoanDetail = $loanDetail;
             $kasatkerLoanDetail['nama_peminjam'] = 'Muhammad Yudi Prasetya, ST.';
@@ -1112,8 +1112,8 @@ class InventarisSmokeTest extends BaseCommand
 
             $pdfDataKasatker = $pdfDataSurat;
             $pdfDataKasatker['loan'] = $kasatkerLoanDetail;
-            $pdfDataKasatker['pihakPertama'] = $resolusiDelegasi;
-            $pdfDataKasatker['isDelegasi'] = true;
+            $pdfDataKasatker['pihakPertama'] = $resolusiKasatker;
+            $pdfDataKasatker['isDelegasi'] = false;
             $pdfDataKasatker['isKonsultan'] = false;
             $pdfDataKasatker['nipPeminjamDisplay'] = '198002142014121002';
             $pdfDataKasatker['nipPeminjamTtd'] = 'NIP. 198002142014121002';
@@ -1121,15 +1121,14 @@ class InventarisSmokeTest extends BaseCommand
             $htmlSuratKasatker = view('admin/inventaris/pinjam_pakai/surat_pinjam_pdf', $pdfDataKasatker);
             $htmlLampiranKasatker = view('admin/inventaris/pinjam_pakai/surat_pinjam_lampiran_pdf', $pdfDataKasatker);
 
-            $hasDelegasiAnPage1 = (strpos($htmlSuratKasatker, 'a.n. Kuasa Pengguna Barang') !== false);
-            $hasDelegasiAnPage2 = (strpos($htmlSuratKasatker, 'a.n. Kuasa Pengguna Barang') !== false);
-            $hasDelegasiAnPage3 = (strpos($htmlLampiranKasatker, 'a.n. Kuasa Pengguna Barang') !== false);
-            $hasDelegasiNama = (strpos($htmlSuratKasatker, $resolusiDelegasi['nama']) !== false);
+            $hasKasatkerPihakPertama = (strpos($htmlSuratKasatker, 'Selaku Kuasa Penguna Barang') !== false);
+            $hasKasatkerPihakKedua = (strpos($htmlSuratKasatker, 'PIHAK KEDUA') !== false);
+            $hasLampiranPihakPertama = (strpos($htmlLampiranKasatker, 'Selaku Kuasa Penguna Barang') !== false);
 
-            if ($isConflictDetected && $hasDelegasiAnPage1 && $hasDelegasiAnPage2 && $hasDelegasiAnPage3 && $hasDelegasiNama) {
-                CLI::write("  [OK] Delegasi Penandatangan BMN teruji sukses: Deteksi otomatis peminjam Kasatker, pengalihan PIHAK PERTAMA ke 'a.n. Kuasa Pengguna Barang ({$resolusiDelegasi['nama']})', dan bebas benturan kepentingan", "green");
+            if ($isSameSignerAllowed && $hasKasatkerPihakPertama && $hasKasatkerPihakKedua && $hasLampiranPihakPertama) {
+                CLI::write("  [OK] Validasi TTD Penerima & Penyerah Sama teruji sukses: Kasatker dapat menandatangani sebagai PIHAK PERTAMA dan PIHAK KEDUA tanpa delegasi", "green");
             } else {
-                CLI::error("  [FAIL] Delegasi penandatangan BMN gagal terverifikasi.");
+                CLI::error("  [FAIL] Validasi penandatangan sama Kasatker gagal terverifikasi.");
             }
 
             // 4c. Uji Penomoran Otomatis Berjalan (Auto Increment 001 -> 002)

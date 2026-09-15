@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 0.8cm 2.0cm 1.0cm 2.5cm;
+            margin: 0.8cm 2.0cm 0.8cm 2.5cm;
         }
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -39,7 +39,7 @@
             border-bottom: 2px solid #000;
             padding-bottom: 1px;
             margin-top: 0;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .kop-table td {
             vertical-align: middle;
@@ -79,8 +79,8 @@
         /* JUDUL & NO SURAT */
         .title-box {
             text-align: center;
-            margin-bottom: 9px;
-            margin-top: 9px;
+            margin-bottom: 5px;
+            margin-top: 5px;
         }
         .title-text {
             font-size: 12pt;
@@ -121,8 +121,8 @@
         .pasal-title {
             text-align: center;
             font-size: 12pt;
-            margin-top: 9px;
-            margin-bottom: 9pt; /* 1 baris kosong setelah Pasal */
+            margin-top: 5px;
+            margin-bottom: 8pt; /* 1 baris kosong setelah Pasal */
             line-height: 1.12;
         }
         .pasal-content {
@@ -204,7 +204,7 @@
             <td style="text-align: justify;"><?= esc($pihakPertama['jabatan'] ?? 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau selaku Kuasa Penguna Barang Milik Negara'); ?>, yang bertindak untuk atas nama Satuan Kerja Pelaksanaan Prasarana Strategis Riau,<br>Yang selanjutnya disebut <strong>PIHAK PERTAMA</strong>.</td>
         </tr>
         <tr>
-            <td colspan="4" style="height: 6px;"></td>
+            <td colspan="4" style="height: 4px;"></td>
         </tr>
         <tr>
             <td>2.</td>
@@ -226,7 +226,7 @@
         </tr>
     </table>
 
-    <div class="intro-text" style="margin-bottom: 8px;">
+    <div class="intro-text" style="margin-bottom: 4px;">
         Kedua belah pihak sepakat untuk membuat Perjanjian Pinjam Pakai Barang Milik Negara sebagaimana tercantum pada Lampiran Surat Perjanjian ini, dengan ketentuan sebagai berikut:
     </div>
 
@@ -295,21 +295,13 @@
             <td style="width: 50%; text-align: center; vertical-align: top;">
                 <strong>PIHAK KEDUA</strong><br>
                 Yang menerima,
-                <?php if (! empty($isDelegasi)): ?>
-                    <br><?= esc($loan['jabatan_peminjam'] ?? 'Kepala Satuan Kerja'); ?>
-                <?php endif; ?>
             </td>
             <td style="width: 50%; text-align: center; vertical-align: top;">
                 <strong>PIHAK PERTAMA</strong><br>
                 Yang menyerahkan,<br>
-                <?php if (! empty($isDelegasi)): ?>
-                    a.n. Kuasa Pengguna Barang<br>
-                    <?= esc($pihakPertama['jabatan_singkat'] ?? 'Pengurus Barang Pengguna'); ?>,
-                <?php else: ?>
-                    Selaku Kuasa Penguna Barang,<br>
-                    Kepala Satuan Kerja<br>
-                    Pelaksanaan Prasarana Strategis Riau
-                <?php endif; ?>
+                Selaku Kuasa Penguna Barang,<br>
+                Kepala Satuan Kerja<br>
+                Pelaksanaan Prasarana Strategis Riau
             </td>
         </tr>
         <tr>

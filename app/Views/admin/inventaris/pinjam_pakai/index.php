@@ -516,11 +516,6 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                 </select>
                             </div>
 
-                            <div id="tambah-delegasi-alert" class="alert alert-warning py-2 px-3 small mb-3 shadow-sm" style="display: none; border-left: 4px solid #f59e0b; border-radius: 6px;">
-                                <i class="fas fa-exclamation-triangle text-warning mr-1"></i>
-                                <strong>Perhatian Tertib Administrasi BMN:</strong> Peminjam adalah <strong>Kepala Satuan Kerja (Kuasa Pengguna Barang)</strong>. Penyerah BMN (PIHAK PERTAMA) otomatis dialihkan kepada <strong>Pengurus Barang Pengguna (a.n. Kuasa Pengguna Barang)</strong> pada dokumen perjanjian pinjam pakai untuk mencegah benturan kepentingan (<em>self-contracting</em>).
-                            </div>
-
                             <div class="row">
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Nama Lengkap Peminjam <span class="text-danger">*</span></label>
@@ -710,11 +705,6 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                            </div>
-
-                            <div id="edit-delegasi-alert" class="alert alert-warning py-2 px-3 small mb-3 shadow-sm" style="display: none; border-left: 4px solid #f59e0b; border-radius: 6px;">
-                                <i class="fas fa-exclamation-triangle text-warning mr-1"></i>
-                                <strong>Perhatian Tertib Administrasi BMN:</strong> Peminjam adalah <strong>Kepala Satuan Kerja (Kuasa Pengguna Barang)</strong>. Penyerah BMN (PIHAK PERTAMA) otomatis dialihkan kepada <strong>Pengurus Barang Pengguna (a.n. Kuasa Pengguna Barang)</strong> pada berkas cetak resmi.
                             </div>
 
                             <div class="row">
@@ -1069,11 +1059,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('tambah-jabatan-peminjam').value = opt.getAttribute('data-jabatan') || '';
                     document.getElementById('tambah-kontak-peminjam').value = opt.getAttribute('data-kontak') || '';
 
-                    checkConflictAndKop(
-                        opt.getAttribute('data-nama') || '',
-                        nipVal,
+                    syncKopSuratByDate(
                         document.getElementById('tambah-tgl-pinjam') ? document.getElementById('tambah-tgl-pinjam').value : '',
-                        'tambah-delegasi-alert',
                         'tambah-kop-surat-id'
                     );
                 }
@@ -1088,35 +1075,25 @@ document.addEventListener('DOMContentLoaded', function() {
         var tglTambahEl = document.getElementById('tambah-tgl-pinjam');
         if (tglTambahEl) {
             tglTambahEl.addEventListener('change', function() {
-                var nama = document.getElementById('tambah-nama-peminjam') ? document.getElementById('tambah-nama-peminjam').value : '';
-                var nip = document.getElementById('tambah-nip-peminjam') ? document.getElementById('tambah-nip-peminjam').value : '';
-                checkConflictAndKop(nama, nip, this.value, 'tambah-delegasi-alert', 'tambah-kop-surat-id');
+                syncKopSuratByDate(this.value, 'tambah-kop-surat-id');
             });
         }
     }
 
-    function checkConflictAndKop(nama, nip, tgl, alertId, kopSelectId) {
-        if (!nama && !nip && !tgl) {
-            var alertEl = document.getElementById(alertId);
-            if (alertEl) alertEl.style.display = 'none';
-            return;
-        }
-        var url = '<?= site_url("admin/inventaris/pengaturan/check-conflict"); ?>?nama=' + encodeURIComponent(nama || '') + '&nip=' + encodeURIComponent(nip || '') + '&tanggal_pinjam=' + encodeURIComponent(tgl || '');
+    function syncKopSuratByDate(tgl, kopSelectId) {
+        if (!tgl || !kopSelectId) return;
+        var url = '<?= site_url("admin/inventaris/pengaturan/check-conflict"); ?>?tanggal_pinjam=' + encodeURIComponent(tgl || '');
         fetch(url)
             .then(function(res) { return res.json(); })
             .then(function(data) {
-                var alertEl = document.getElementById(alertId);
-                if (alertEl) {
-                    alertEl.style.display = data.is_delegasi ? 'block' : 'none';
-                }
-                if (data.kop_surat && data.kop_surat.id && kopSelectId) {
+                if (data.kop_surat && data.kop_surat.id) {
                     var kopEl = document.getElementById(kopSelectId);
                     if (kopEl) {
                         kopEl.value = data.kop_surat.id;
                     }
                 }
             })
-            .catch(function(err) { console.error('Error check conflict:', err); });
+            .catch(function(err) { console.error('Error matching kop:', err); });
     }
 
     var btnClearTambahPeg = document.getElementById('btn-clear-tambah-pegawai');
@@ -1132,8 +1109,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('tambah-nip-peminjam').value = '';
             document.getElementById('tambah-jabatan-peminjam').value = '';
             document.getElementById('tambah-kontak-peminjam').value = '';
-            var alertEl = document.getElementById('tambah-delegasi-alert');
-            if (alertEl) alertEl.style.display = 'none';
         });
     }
 
@@ -1155,11 +1130,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('edit-jabatan-peminjam').value = opt.getAttribute('data-jabatan') || '';
                     document.getElementById('edit-kontak-peminjam').value = opt.getAttribute('data-kontak') || '';
 
-                    checkConflictAndKop(
-                        opt.getAttribute('data-nama') || '',
-                        nipVal,
+                    syncKopSuratByDate(
                         document.getElementById('edit-tgl-pinjam') ? document.getElementById('edit-tgl-pinjam').value : '',
-                        'edit-delegasi-alert',
                         'edit-kop-surat-id'
                     );
                 }
@@ -1174,9 +1146,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var tglEditEl = document.getElementById('edit-tgl-pinjam');
         if (tglEditEl) {
             tglEditEl.addEventListener('change', function() {
-                var nama = document.getElementById('edit-nama-peminjam') ? document.getElementById('edit-nama-peminjam').value : '';
-                var nip = document.getElementById('edit-nip-peminjam') ? document.getElementById('edit-nip-peminjam').value : '';
-                checkConflictAndKop(nama, nip, this.value, 'edit-delegasi-alert', 'edit-kop-surat-id');
+                syncKopSuratByDate(this.value, 'edit-kop-surat-id');
             });
         }
     }
