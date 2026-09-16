@@ -90,23 +90,41 @@ class InventarisPinjamPakai extends BaseController
             $pegawaiList = $builder->orderBy('p.nama', 'ASC')->get()->getResultArray();
         }
 
-        // Ambil daftar Kop Surat (prioritas pengaturan dokumen BMN)
+        // Ambil daftar Kop Surat (prioritas pengaturan dokumen BMN, digabung dengan master umum agar ID lama tetap valid)
         $kopSuratList = [];
+        $existingKopIds = [];
         if ($db->tableExists('cfg_inventaris_kop_surat')) {
-            $kopSuratList = $db->table('cfg_inventaris_kop_surat')
+            $rowsCfg = $db->table('cfg_inventaris_kop_surat')
                 ->select('id, nama_kop AS nama, berlaku_dari, berlaku_sampai, is_active')
                 ->orderBy('is_active', 'DESC')
                 ->orderBy('berlaku_dari', 'DESC')
                 ->orderBy('id', 'DESC')
                 ->get()
                 ->getResultArray();
-        } elseif ($db->tableExists('kop_surat')) {
-            $kopSuratList = $db->table('kop_surat')
+            foreach ($rowsCfg as $rCfg) {
+                $kopSuratList[] = $rCfg;
+                $existingKopIds[] = (int) $rCfg['id'];
+            }
+        }
+        if ($db->tableExists('kop_surat')) {
+            $rowsKs = $db->table('kop_surat')
                 ->select('id, title AS nama, is_active')
                 ->orderBy('is_active', 'DESC')
                 ->orderBy('id', 'DESC')
                 ->get()
                 ->getResultArray();
+            foreach ($rowsKs as $rKs) {
+                if (! in_array((int) $rKs['id'], $existingKopIds, true)) {
+                    $kopSuratList[] = [
+                        'id'             => (int) $rKs['id'],
+                        'nama'           => $rKs['nama'],
+                        'berlaku_dari'   => null,
+                        'berlaku_sampai' => null,
+                        'is_active'      => (int) ($rKs['is_active'] ?? 0),
+                    ];
+                    $existingKopIds[] = (int) $rKs['id'];
+                }
+            }
         }
 
         $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
@@ -522,7 +540,21 @@ class InventarisPinjamPakai extends BaseController
             }
         }
 
-        return redirect()->to('/admin/inventaris/pinjam-pakai')->with('message', 'Data pinjam pakai berhasil diperbarui.');
+        $redirectUrl = '/admin/inventaris/pinjam-pakai';
+        $params = [];
+        $fTahun = trim((string) ($this->request->getPost('filter_tahun') ?? ''));
+        $fStatus = trim((string) ($this->request->getPost('filter_status') ?? ''));
+        if ($fTahun !== '') {
+            $params['tahun'] = $fTahun;
+        }
+        if ($fStatus !== '') {
+            $params['status'] = $fStatus;
+        }
+        if (! empty($params)) {
+            $redirectUrl .= '?' . http_build_query($params);
+        }
+
+        return redirect()->to($redirectUrl)->with('message', 'Data pinjam pakai berhasil diperbarui.');
     }
 
     public function kembalikanAset(int $id)

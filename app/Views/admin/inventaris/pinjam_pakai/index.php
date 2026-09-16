@@ -830,6 +830,8 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
             </div>
             <form id="form-edit-pinjam" action="" method="post" enctype="multipart/form-data">
                 <?= csrf_field(); ?>
+                <input type="hidden" name="filter_tahun" value="<?= esc((string) ($filterTahun ?? ''), 'attr'); ?>">
+                <input type="hidden" name="filter_status" value="<?= esc((string) ($filterStatus ?? ''), 'attr'); ?>">
                 <div class="modal-body py-4 px-4">
 
                     <!-- Info Banner Aset Terkait (Read Only) -->
@@ -1516,11 +1518,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('edit-nip-peminjam').value = nipVal;
                     document.getElementById('edit-jabatan-peminjam').value = opt.getAttribute('data-jabatan') || '';
                     document.getElementById('edit-kontak-peminjam').value = opt.getAttribute('data-kontak') || '';
-
-                    syncKopSuratByDate(
-                        document.getElementById('edit-tgl-pinjam') ? document.getElementById('edit-tgl-pinjam').value : '',
-                        'edit-kop-surat-id'
-                    );
                 }
             }
         };
@@ -1528,13 +1525,6 @@ document.addEventListener('DOMContentLoaded', function() {
         selectEditPeg.addEventListener('change', handlerEdit);
         if (typeof $ !== 'undefined') {
             $('#edit-pegawai-select').on('change', handlerEdit);
-        }
-
-        var tglEditEl = document.getElementById('edit-tgl-pinjam');
-        if (tglEditEl) {
-            tglEditEl.addEventListener('change', function() {
-                syncKopSuratByDate(this.value, 'edit-kop-surat-id');
-            });
         }
     }
 
@@ -1760,8 +1750,27 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('edit-kontak-peminjam').value = btn.getAttribute('data-kontak') || '';
         document.getElementById('edit-no-surat').value = btn.getAttribute('data-surat') || '';
         var elKop = document.getElementById('edit-kop-surat-id');
+        var savedKopId = btn.getAttribute('data-kop-id') || '';
         if (elKop) {
-            elKop.value = btn.getAttribute('data-kop-id') || '';
+            elKop.value = savedKopId;
+            if (savedKopId !== '' && String(elKop.value) !== String(savedKopId)) {
+                var optExists = false;
+                for (var i = 0; i < elKop.options.length; i++) {
+                    if (String(elKop.options[i].value) === String(savedKopId)) {
+                        optExists = true;
+                        elKop.selectedIndex = i;
+                        break;
+                    }
+                }
+                if (!optExists) {
+                    var newOpt = document.createElement('option');
+                    newOpt.value = savedKopId;
+                    newOpt.textContent = 'Kop Surat #' + savedKopId + ' (Tersimpan)';
+                    newOpt.selected = true;
+                    elKop.appendChild(newOpt);
+                    elKop.value = savedKopId;
+                }
+            }
         }
         document.getElementById('edit-tgl-pinjam').value = btn.getAttribute('data-tgl-pinjam') || '';
         document.getElementById('edit-tgl-kembali-rencana').value = btn.getAttribute('data-tgl-kembali') || '';
@@ -1935,6 +1944,24 @@ document.addEventListener('DOMContentLoaded', function() {
         if (elKop) {
             var kopId = btn.getAttribute('data-kop-id') || '';
             elKop.value = kopId;
+            if (kopId !== '' && String(elKop.value) !== String(kopId)) {
+                var optExistsPerb = false;
+                for (var j = 0; j < elKop.options.length; j++) {
+                    if (String(elKop.options[j].value) === String(kopId)) {
+                        optExistsPerb = true;
+                        elKop.selectedIndex = j;
+                        break;
+                    }
+                }
+                if (!optExistsPerb) {
+                    var newOptPerb = document.createElement('option');
+                    newOptPerb.value = kopId;
+                    newOptPerb.textContent = 'Kop Surat #' + kopId + ' (Tersimpan)';
+                    newOptPerb.selected = true;
+                    elKop.appendChild(newOptPerb);
+                    elKop.value = kopId;
+                }
+            }
         }
 
         // Ambil nomor surat baru untuk tahun target
@@ -2019,12 +2046,18 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#modal-edit-pinjam').on('shown.bs.modal', function(e) {
             initSelect2ForModals();
             var btn = e.relatedTarget;
-            if (btn) populateEditModal(btn);
+            if (btn) {
+                var actualBtn = (btn.closest && btn.closest('.btn-edit-pinjam')) ? btn.closest('.btn-edit-pinjam') : btn;
+                populateEditModal(actualBtn);
+            }
         });
 
         $('#modal-perbaharui-pinjam').on('show.bs.modal', function(e) {
             var btn = e.relatedTarget;
-            if (btn) populatePerbaharuiModal(btn);
+            if (btn) {
+                var actualBtn = (btn.closest && btn.closest('.btn-perbaharui-pinjam')) ? btn.closest('.btn-perbaharui-pinjam') : btn;
+                populatePerbaharuiModal(actualBtn);
+            }
         });
 
         $('#modal-quick-upload').on('show.bs.modal', function(e) {
