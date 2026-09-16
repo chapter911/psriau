@@ -308,11 +308,12 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                     $loanItems = ! empty($p['items']) ? $p['items'] : [];
                                     if (empty($loanItems) && ! empty($p['inventaris_id'])) {
                                         $loanItems = [[
-                                            'nama_barang' => $p['nama_barang'] ?? '-',
-                                            'nup' => $p['nup'] ?? '-',
-                                            'kode_barang' => $p['kode_barang'] ?? '-',
-                                            'merk_tipe' => $p['merk_tipe'] ?? '',
-                                            'kondisi_pinjam' => $p['kondisi_pinjam'] ?? 'baik',
+                                            'inventaris_id'   => $p['inventaris_id'],
+                                            'nama_barang'     => $p['nama_barang'] ?? '-',
+                                            'nup'             => $p['nup'] ?? '-',
+                                            'kode_barang'     => $p['kode_barang'] ?? '-',
+                                            'merk_tipe'       => $p['merk_tipe'] ?? '',
+                                            'kondisi_pinjam'  => $p['kondisi_pinjam'] ?? 'baik',
                                             'kondisi_kembali' => $p['kondisi_kembali'] ?? null,
                                         ]];
                                     }
@@ -833,31 +834,53 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                 <input type="hidden" name="filter_status" value="<?= esc((string) ($filterStatus ?? ''), 'attr'); ?>">
                 <div class="modal-body py-4 px-4">
 
-                    <!-- Info Banner Aset Terkait (Read Only) -->
-                    <div class="alert alert-light border mb-3 py-2 px-3 shadow-none" style="border-radius: 8px; background: #f0f7ff; border-left: 4px solid #007bff !important;">
-                        <div class="d-flex align-items-center">
-                            <div class="mr-3 text-primary" style="font-size: 1.6rem;">
-                                <i class="fas fa-box-open"></i>
+                    <!-- Section 1: Informasi Aset BMN yang Dipinjamkan -->
+                    <div class="card border mb-3 shadow-none" style="border-radius: 8px; border-color: #e2e8f0; background: #fafbfc;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge badge-info rounded-circle mr-2 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.75rem;">1</span>
+                                <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">Informasi Aset BMN yang Dipinjamkan</h6>
                             </div>
-                            <div class="flex-grow-1">
-                                <div class="small text-muted font-weight-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Aset BMN yang Dipinjam:</div>
-                                <div class="font-weight-bold text-dark" id="edit-aset-nama" style="font-size: 0.98rem;">-</div>
-                                <div class="small text-muted mt-1">
-                                    <span>Kode: <strong id="edit-aset-kode">-</strong></span> | 
-                                    <span>NUP: <span class="badge badge-primary px-2 py-0" id="edit-aset-nup">-</span></span> | 
-                                    <span>Status: <span class="badge badge-warning px-2 py-0" id="edit-aset-status">-</span></span>
-                                </div>
+
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold small text-dark mb-1">
+                                    Pilih &amp; Kelola Aset BMN yang Dipinjam <span class="text-danger">*</span>
+                                    <span class="badge badge-info ml-1" style="font-size: 0.72rem;">Bisa Tambah / Kurang (Minimal 1 Aset)</span>
+                                </label>
+                                <select name="inventaris_ids[]" id="edit-inventaris-select" class="form-control" multiple="multiple" required style="width: 100%;">
+                                    <?php foreach (($availableAssets ?? []) as $ast): ?>
+                                        <?php
+                                            $astNama = clean_inventaris_text($ast['nama_barang'] ?? '');
+                                            $astMerk = clean_inventaris_text($ast['merk_tipe'] ?? '');
+                                            $extraMerk = ($astMerk !== '' && strcasecmp($astMerk, $astNama) !== 0 && stripos($astNama, $astMerk) === false) ? ' - ' . $astMerk : '';
+                                        ?>
+                                        <option value="<?= esc($ast['id']); ?>">
+                                            [NUP <?= esc($ast['nup']); ?>] <?= esc($astNama); ?><?= esc($extraMerk); ?> (<?= esc($ast['kode_barang']); ?>) - Kondisi: <?= esc(ucwords(str_replace('_', ' ', $ast['kondisi'] ?? 'baik'))); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted mt-1 d-block">
+                                    <i class="fas fa-info-circle mr-1 text-primary"></i>Klik tanda silang (x) pada tag aset untuk mengurangi, atau cari dan pilih aset lain yang tersedia untuk menambahkan ke peminjaman ini. <strong>Minimal wajib ada 1 aset terpilih.</strong>
+                                </small>
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label class="font-weight-bold small text-dark mb-1">Kondisi Fisik Saat Dipinjam <span class="text-danger">*</span></label>
+                                <select name="kondisi_pinjam" id="edit-kondisi-pinjam" class="form-control" required style="border-radius: 6px; font-size: 0.9rem;">
+                                    <option value="baik">Baik</option>
+                                    <option value="rusak_ringan">Rusak Ringan</option>
+                                    <option value="rusak_berat">Rusak Berat</option>
+                                </select>
                             </div>
                         </div>
-                        <div id="edit-aset-list" class="mt-2 pt-2 border-top small" style="display: none; max-height: 120px; overflow-y: auto;"></div>
                     </div>
 
-                    <!-- Section 1: Identitas Pegawai Peminjam -->
+                    <!-- Section 2: Identitas Pegawai Peminjam -->
                     <div class="card border mb-3 shadow-none" style="border-radius: 8px; border-color: #e2e8f0; background: #fafbfc;">
                         <div class="card-body p-3">
                             <div class="d-flex align-items-center justify-content-between mb-3">
                                 <div class="d-flex align-items-center">
-                                    <span class="badge badge-info rounded-circle mr-2 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.75rem;">1</span>
+                                    <span class="badge badge-info rounded-circle mr-2 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.75rem;">2</span>
                                     <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">Identitas Pegawai Peminjam</h6>
                                 </div>
                                 <button type="button" class="btn btn-link btn-xs text-danger p-0 font-weight-bold" id="btn-clear-edit-pegawai" style="font-size: 0.75rem; text-decoration: none;">
@@ -911,12 +934,12 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                         </div>
                     </div>
 
-                    <!-- Section 2: Administrasi Surat & Kondisi -->
+                    <!-- Section 3: Administrasi Surat & Dokumen -->
                     <div class="card border mb-0 shadow-none" style="border-radius: 8px; border-color: #e2e8f0; background: #fafbfc;">
                         <div class="card-body p-3">
                             <div class="d-flex align-items-center mb-3">
-                                <span class="badge badge-info rounded-circle mr-2 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.75rem;">2</span>
-                                <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">Dokumen &amp; Kondisi</h6>
+                                <span class="badge badge-info rounded-circle mr-2 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.75rem;">3</span>
+                                <h6 class="font-weight-bold text-dark mb-0" style="font-size: 0.95rem;">Dokumen &amp; Waktu Peminjaman</h6>
                             </div>
 
                             <div class="row">
@@ -961,15 +984,6 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                     <label class="font-weight-bold small text-dark mb-1">Rencana Kembali</label>
                                     <input type="date" name="tgl_kembali_rencana" id="edit-tgl-kembali-rencana" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
                                 </div>
-                            </div>
-
-                            <div class="form-group mb-2">
-                                <label class="font-weight-bold small text-dark mb-1">Kondisi Fisik Saat Pinjam</label>
-                                <select name="kondisi_pinjam" id="edit-kondisi-pinjam" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
-                                    <option value="baik">Baik</option>
-                                    <option value="rusak_ringan">Rusak Ringan</option>
-                                    <option value="rusak_berat">Rusak Berat</option>
-                                </select>
                             </div>
 
                             <div class="form-group mb-2">
@@ -1395,6 +1409,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // Modal Edit: dropdownParent = #modal-edit-pinjam
         var $modalEdit = $('#modal-edit-pinjam');
         if ($modalEdit.length) {
+            var $selAssetEdit = $('#edit-inventaris-select');
+            if ($selAssetEdit.length && ! $selAssetEdit.data('select2')) {
+                $selAssetEdit.select2({
+                    theme: 'bootstrap4',
+                    dropdownParent: $modalEdit,
+                    width: '100%',
+                    placeholder: '-- Pilih satu atau beberapa Aset BMN yang Dipinjam --',
+                    allowClear: true,
+                    closeOnSelect: false,
+                    templateResult: formatAssetOption
+                });
+            }
+
             var $selPegEdit = $('#edit-pegawai-select');
             if ($selPegEdit.length && ! $selPegEdit.data('select2')) {
                 $selPegEdit.select2({
@@ -1709,42 +1736,50 @@ document.addEventListener('DOMContentLoaded', function() {
             form.action = '<?= site_url('admin/inventaris/pinjam-pakai'); ?>/' + id + '/edit';
         }
 
-        // Info Banner Aset Terkait
-        var barang = btn.getAttribute('data-barang') || '-';
-        var nup = btn.getAttribute('data-nup') || '-';
-        var kode = btn.getAttribute('data-kode') || '-';
-        var status = btn.getAttribute('data-status') || 'dipinjam';
-
-        var elNama = document.getElementById('edit-aset-nama');
-        if (elNama) elNama.textContent = barang;
-
-        var elNup = document.getElementById('edit-aset-nup');
-        if (elNup) elNup.textContent = nup !== 'Multi-NUP' ? ('NUP ' + nup) : nup;
-
-        var elKode = document.getElementById('edit-aset-kode');
-        if (elKode) elKode.textContent = kode;
-
-        var elStatus = document.getElementById('edit-aset-status');
-        if (elStatus) elStatus.textContent = status === 'dipinjam' ? 'Sedang Dipinjam' : 'Dikembalikan';
-
-        // Render rincian aset jika multi-item
+        // 1. Populasi Aset BMN yang Dipinjamkan
         var rawEditItems = btn.getAttribute('data-items-json') || '[]';
         var editItems = [];
         try { editItems = JSON.parse(rawEditItems); } catch(e) {}
-        var editListEl = document.getElementById('edit-aset-list');
-        if (editListEl) {
-            if (editItems && editItems.length > 1) {
-                var html = '<div class="font-weight-bold text-primary mb-1"><i class="fas fa-boxes mr-1"></i> Rincian ' + editItems.length + ' Unit Aset yang Dipinjam:</div><ol class="pl-3 mb-0">';
+
+        var primaryInvId = btn.getAttribute('data-inventaris') || '';
+        if ((!editItems || editItems.length === 0) && primaryInvId) {
+            editItems = [{
+                inventaris_id: primaryInvId,
+                nama_barang: btn.getAttribute('data-barang') || '-',
+                nup: btn.getAttribute('data-nup') || '-',
+                kode_barang: btn.getAttribute('data-kode') || '-',
+                kondisi_pinjam: btn.getAttribute('data-kondisi') || 'baik'
+            }];
+        }
+
+        var $editAssetSelect = $('#edit-inventaris-select');
+        if ($editAssetSelect.length) {
+            // Bersihkan opsi dinamis dari peminjaman sebelumnya agar tidak menumpuk
+            $editAssetSelect.find('option.dynamic-loan-asset').remove();
+
+            var selectedAssetIds = [];
+            if (Array.isArray(editItems)) {
                 editItems.forEach(function(it) {
-                    html += '<li><strong>' + (it.nama_barang || '-') + '</strong> (NUP: ' + (it.nup || '-') + (it.kode_barang ? (', Kode: ' + it.kode_barang) : '') + ')</li>';
+                    var aid = String(it.inventaris_id || it.id || '');
+                    if (aid && aid !== '0') {
+                        selectedAssetIds.push(aid);
+                        // Jika opsi belum ada di select (karena sedang dipinjam), tambahkan sebagai dynamic option
+                        if ($editAssetSelect.find('option[value="' + aid + '"]').length === 0) {
+                            var nupStr = (it.nup && it.nup !== 'Multi-NUP' && it.nup !== '-') ? ('[NUP ' + it.nup + '] ') : '';
+                            var merkStr = (it.merk_tipe && it.merk_tipe !== '-') ? (' - ' + it.merk_tipe) : '';
+                            var kodeStr = (it.kode_barang && it.kode_barang !== '-') ? (' (' + it.kode_barang + ')') : '';
+                            var kondisiStr = it.kondisi_pinjam ? (' - Kondisi: ' + it.kondisi_pinjam.replace(/_/g, ' ')) : '';
+                            var optText = nupStr + (it.nama_barang || 'Aset BMN') + merkStr + kodeStr + kondisiStr;
+
+                            var newOpt = new Option(optText, aid, true, true);
+                            $(newOpt).addClass('dynamic-loan-asset');
+                            $editAssetSelect.append(newOpt);
+                        }
+                    }
                 });
-                html += '</ol>';
-                editListEl.innerHTML = html;
-                editListEl.style.display = 'block';
-            } else {
-                editListEl.style.display = 'none';
-                editListEl.innerHTML = '';
             }
+
+            $editAssetSelect.val(selectedAssetIds).trigger('change');
         }
 
         var pegSelect = document.getElementById('edit-pegawai-select');
@@ -2107,6 +2142,24 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#modal-delete-pinjam').on('show.bs.modal', function(e) {
             var btn = e.relatedTarget;
             if (btn) populateDeleteModal(btn);
+        });
+
+        $('#form-edit-pinjam').on('submit', function(e) {
+            var selectedAssets = $('#edit-inventaris-select').val();
+            if (!selectedAssets || !selectedAssets.length) {
+                e.preventDefault();
+                alert('Pilih minimal satu aset BMN yang dipinjam.');
+                return false;
+            }
+        });
+
+        $('#form-tambah-pinjam').on('submit', function(e) {
+            var selectedAssets = $('#tambah-inventaris-select').val();
+            if (!selectedAssets || !selectedAssets.length) {
+                e.preventDefault();
+                alert('Pilih minimal satu aset BMN yang akan dipinjamkan.');
+                return false;
+            }
         });
     }
 });

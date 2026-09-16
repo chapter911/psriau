@@ -506,6 +506,20 @@ class InventarisPinjamPakai extends BaseController
             return redirect()->to('/admin/inventaris/pinjam-pakai')->with('error', 'Data pinjam pakai tidak ditemukan.');
         }
 
+        $redirectUrl = '/admin/inventaris/pinjam-pakai';
+        $params = [];
+        $fTahun = trim((string) ($this->request->getPost('filter_tahun') ?? ''));
+        $fStatus = trim((string) ($this->request->getPost('filter_status') ?? ''));
+        if ($fTahun !== '') {
+            $params['tahun'] = $fTahun;
+        }
+        if ($fStatus !== '') {
+            $params['status'] = $fStatus;
+        }
+        if (! empty($params)) {
+            $redirectUrl .= '?' . http_build_query($params);
+        }
+
         $rules = [
             'nama_peminjam'  => 'required|max_length[150]',
             'no_surat'       => 'permit_empty|max_length[100]',
@@ -516,7 +530,82 @@ class InventarisPinjamPakai extends BaseController
         ];
 
         if (! $this->validate($rules)) {
-            return redirect()->to('/admin/inventaris/pinjam-pakai')->withInput()->with('error', 'Mohon lengkapi seluruh field wajib dengan benar.');
+            return redirect()->to($redirectUrl)->withInput()->with('error', 'Mohon lengkapi seluruh field wajib dengan benar.');
+        }
+
+        // Mendukung pemilihan multi-aset (array) atau single aset (fallback)
+        $rawIds = $this->request->getPost('inventaris_ids');
+        if (empty($rawIds)) {
+            $singleId = $this->request->getPost('inventaris_id');
+            if (! empty($singleId)) {
+                $rawIds = [$singleId];
+            }
+        }
+
+        $inventarisIds = [];
+        if (is_array($rawIds)) {
+            foreach ($rawIds as $rid) {
+                $rid = (int) $rid;
+                if ($rid > 0) {
+                    $inventarisIds[] = $rid;
+                }
+            }
+        }
+        $inventarisIds = array_values(array_unique($inventarisIds));
+
+        if (empty($inventarisIds)) {
+            return redirect()->to($redirectUrl)->withInput()->with('error', 'Pilih minimal satu aset BMN yang dipinjam.');
+        }
+
+        $satkerModel = new InventarisSatkerModel();
+        $assets = $satkerModel->whereIn('id', $inventarisIds)->findAll();
+
+        if (empty($assets) || count($assets) !== count($inventarisIds)) {
+            return redirect()->to($redirectUrl)->withInput()->with('error', 'Salah satu atau beberapa aset BMN yang dipilih tidak ditemukan.');
+        }
+
+        $db = db_connect();
+
+        // Ambil daftar aset yang saat ini terdaftar pada transaksi ini
+        $existingItems = $pinjamModel->getItemsByPinjamId($id);
+        $oldAssetIds = array_map('intval', array_column($existingItems, 'inventaris_id'));
+        if (empty($oldAssetIds) && ! empty($existing['inventaris_id'])) {
+            $oldAssetIds = [(int) $existing['inventaris_id']];
+        }
+        $oldAssetIds = array_values(array_unique(array_filter($oldAssetIds)));
+
+        $removedAssetIds = array_values(array_diff($oldAssetIds, $inventarisIds));
+        $addedAssetIds   = array_values(array_diff($inventarisIds, $oldAssetIds));
+
+        // Periksa apakah ada aset baru yang sedang dipinjam aktif pada transaksi lain
+        if (! empty($addedAssetIds)) {
+            $activeLoans = [];
+            if ($db->tableExists('trn_inventaris_pinjam_pakai_item')) {
+                $activeRows = $db->table('trn_inventaris_pinjam_pakai_item itm')
+                    ->select('itm.inventaris_id, p.nama_peminjam')
+                    ->join('trn_inventaris_pinjam_pakai p', 'p.id = itm.pinjam_pakai_id', 'left')
+                    ->whereIn('itm.inventaris_id', $addedAssetIds)
+                    ->where('itm.status', 'dipinjam')
+                    ->where('itm.pinjam_pakai_id !=', $id)
+                    ->get()
+                    ->getResultArray();
+                if (! empty($activeRows)) {
+                    $activeLoans = $activeRows;
+                }
+            }
+            if (empty($activeLoans)) {
+                $activeParent = $pinjamModel->whereIn('inventaris_id', $addedAssetIds)
+                    ->where('status', 'dipinjam')
+                    ->where('id !=', $id)
+                    ->findAll();
+                if (! empty($activeParent)) {
+                    $activeLoans = $activeParent;
+                }
+            }
+
+            if (! empty($activeLoans)) {
+                return redirect()->to($redirectUrl)->withInput()->with('error', 'Salah satu atau beberapa aset yang ditambahkan sedang dalam status dipinjam oleh pegawai lain.');
+            }
         }
 
         $pegawaiId = (int) $this->request->getPost('pegawai_id') ?: null;
@@ -528,7 +617,6 @@ class InventarisPinjamPakai extends BaseController
 
         // Otomatisasi NIP untuk Konsultan menjadi "Tenaga Penunjang Kegiatan"
         if ($pegawaiId !== null && $pegawaiId > 0) {
-            $db = db_connect();
             if ($db->tableExists('mst_pegawai')) {
                 $peg = $db->table('mst_pegawai p')
                     ->select('p.id, p.nama, p.nip, p.jenis_pegawai, ju.jabatan AS jabatan')
@@ -550,7 +638,7 @@ class InventarisPinjamPakai extends BaseController
         if ($file && $file->isValid() && ! $file->hasMoved()) {
             $ext = strtolower($file->getClientExtension());
             if ($ext !== 'pdf') {
-                return redirect()->to('/admin/inventaris/pinjam-pakai')->withInput()->with('error', 'File scan surat pinjam harus berformat PDF.');
+                return redirect()->to($redirectUrl)->withInput()->with('error', 'File scan surat pinjam harus berformat PDF.');
             }
 
             $uploadDir = FCPATH . 'uploads/inventaris/surat_pinjam';
@@ -597,7 +685,6 @@ class InventarisPinjamPakai extends BaseController
 
         $isNullable = true;
         try {
-            $db = db_connect();
             $fieldData = $db->getFieldData('trn_inventaris_pinjam_pakai');
             foreach ($fieldData as $f) {
                 if ($f->name === 'no_surat') {
@@ -616,7 +703,10 @@ class InventarisPinjamPakai extends BaseController
             }
         }
 
+        $kondisiPinjam = trim((string) $this->request->getPost('kondisi_pinjam')) ?: 'baik';
+
         $pinjamModel->update($id, [
+            'inventaris_id'       => $inventarisIds[0], // simpan aset pertama untuk backward compatibility
             'pegawai_id'          => $pegawaiId,
             'nama_peminjam'       => $namaPeminjam,
             'nip_peminjam'        => $nipPeminjam,
@@ -627,41 +717,88 @@ class InventarisPinjamPakai extends BaseController
             'tgl_pinjam'          => $tglPinjamEdit,
             'tgl_kembali_rencana' => trim((string) $this->request->getPost('tgl_kembali_rencana')) ?: null,
             'keperluan'           => trim((string) $this->request->getPost('keperluan')),
-            'kondisi_pinjam'      => trim((string) $this->request->getPost('kondisi_pinjam')) ?: 'baik',
+            'kondisi_pinjam'      => $kondisiPinjam,
             'kelengkapan'         => trim((string) $this->request->getPost('kelengkapan')) ?: null,
             'catatan'             => trim((string) $this->request->getPost('catatan')) ?: null,
             'file_surat'          => $fileSuratPath,
             'updated_by'          => $userId ?: null,
         ]);
 
-        // Jika statusnya masih dipinjam, sinkronkan nama peminjam ke lokasi_ruangan seluruh aset terkait
-        if ($existing['status'] === 'dipinjam') {
-            $items = $pinjamModel->getItemsByPinjamId($id);
-            $itemIds = array_column($items, 'inventaris_id');
-            if (empty($itemIds) && ! empty($existing['inventaris_id'])) {
-                $itemIds = [(int) $existing['inventaris_id']];
+        $now = date('Y-m-d H:i:s');
+        if ($db->tableExists('trn_inventaris_pinjam_pakai_item')) {
+            // Ambil seluruh item yang saat ini ada di database untuk peminjaman ini
+            $existingDbItems = $db->table('trn_inventaris_pinjam_pakai_item')
+                ->select('inventaris_id')
+                ->where('pinjam_pakai_id', $id)
+                ->get()
+                ->getResultArray();
+            $existingDbItemIds = array_map('intval', array_column($existingDbItems, 'inventaris_id'));
+
+            $needDeleteIds = array_values(array_diff($existingDbItemIds, $inventarisIds));
+            $needInsertIds = array_values(array_diff($inventarisIds, $existingDbItemIds));
+
+            if (! empty($needDeleteIds)) {
+                $db->table('trn_inventaris_pinjam_pakai_item')
+                    ->where('pinjam_pakai_id', $id)
+                    ->whereIn('inventaris_id', $needDeleteIds)
+                    ->delete();
             }
-            if (! empty($itemIds)) {
-                $satkerModel = new InventarisSatkerModel();
-                $satkerModel->whereIn('id', $itemIds)->set([
-                    'lokasi_ruangan' => 'Pinjam Pakai: ' . $namaPeminjam,
+
+            if (! empty($needInsertIds)) {
+                $insertRows = [];
+                foreach ($needInsertIds as $nid) {
+                    $insertRows[] = [
+                        'pinjam_pakai_id' => $id,
+                        'inventaris_id'   => $nid,
+                        'kondisi_pinjam'  => $kondisiPinjam,
+                        'kondisi_kembali' => null,
+                        'catatan'         => null,
+                        'status'          => $existing['status'],
+                        'created_at'      => $now,
+                        'updated_at'      => $now,
+                    ];
+                }
+                $db->table('trn_inventaris_pinjam_pakai_item')->insertBatch($insertRows);
+            }
+
+            // Perbarui kondisi pinjam pada seluruh item aktif
+            $db->table('trn_inventaris_pinjam_pakai_item')
+                ->where('pinjam_pakai_id', $id)
+                ->whereIn('inventaris_id', $inventarisIds)
+                ->update([
+                    'kondisi_pinjam' => $kondisiPinjam,
+                    'updated_at'     => $now,
+                ]);
+        }
+
+        // Sinkronisasi status fisik ke trn_inventaris_satker jika status transaksi sedang dipinjam
+        if ($existing['status'] === 'dipinjam') {
+            // 1. Aset yang dihapus dari peminjaman dipulihkan statusnya menjadi Digunakan Sendiri
+            if (! empty($removedAssetIds)) {
+                $satkerModel->whereIn('id', $removedAssetIds)->set([
+                    'status_bmn'     => 'Digunakan Sendiri',
+                    'lokasi_ruangan' => 'Belum berlokasi',
                     'updated_by'     => $userId ?: null,
                 ])->update();
             }
-        }
 
-        $redirectUrl = '/admin/inventaris/pinjam-pakai';
-        $params = [];
-        $fTahun = trim((string) ($this->request->getPost('filter_tahun') ?? ''));
-        $fStatus = trim((string) ($this->request->getPost('filter_status') ?? ''));
-        if ($fTahun !== '') {
-            $params['tahun'] = $fTahun;
-        }
-        if ($fStatus !== '') {
-            $params['status'] = $fStatus;
-        }
-        if (! empty($params)) {
-            $redirectUrl .= '?' . http_build_query($params);
+            // 2. Aset yang baru ditambahkan diubah menjadi Dipinjam Pakai
+            if (! empty($addedAssetIds)) {
+                $satkerModel->whereIn('id', $addedAssetIds)->set([
+                    'status_bmn'     => 'Dipinjam Pakai',
+                    'lokasi_ruangan' => 'Pinjam Pakai: ' . $namaPeminjam,
+                    'kondisi'        => $kondisiPinjam,
+                    'updated_by'     => $userId ?: null,
+                ])->update();
+            }
+
+            // 3. Seluruh aset terpilih yang saat ini dipinjam disinkronkan lokasi dan kondisinya
+            $satkerModel->whereIn('id', $inventarisIds)->set([
+                'status_bmn'     => 'Dipinjam Pakai',
+                'lokasi_ruangan' => 'Pinjam Pakai: ' . $namaPeminjam,
+                'kondisi'        => $kondisiPinjam,
+                'updated_by'     => $userId ?: null,
+            ])->update();
         }
 
         return redirect()->to($redirectUrl)->with('message', 'Data pinjam pakai berhasil diperbarui.');

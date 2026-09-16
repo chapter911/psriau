@@ -1351,6 +1351,87 @@ class InventarisSmokeTest extends BaseCommand
             $satkerModel->delete($multiAsset1);
             $satkerModel->delete($multiAsset2);
 
+            // 4a-2. Uji Fitur Edit Aset Pinjam Pakai (Tambah & Kurangi Aset, Sinkronisasi Otomatis & Validasi Minimal 1 Aset)
+            $smokeEditAssetId = $satkerModel->insert([
+                'kode_barang'     => 'SMOKE-EDIT-ADD-01',
+                'nup'             => '101',
+                'nama_barang'     => 'Aset BMN Tambahan Edit Pinjam',
+                'merk_tipe'       => 'Smoke Test Merk',
+                'tahun_perolehan' => date('Y'),
+                'kondisi'         => 'baik',
+                'status_bmn'      => 'Digunakan Sendiri',
+                'lokasi_ruangan'  => 'Belum berlokasi',
+                'nilai_perolehan' => 7500000,
+                'peruntukan'      => 'Item Lainnya',
+            ]);
+
+            // Simulasi Edit 1: Tambah aset kedua ke pinjaman yang sedang berjalan
+            $nowEdit = date('Y-m-d H:i:s');
+            $db->table('trn_inventaris_pinjam_pakai_item')->insert([
+                'pinjam_pakai_id' => $pinjamId,
+                'inventaris_id'   => $smokeEditAssetId,
+                'kondisi_pinjam'  => 'baik',
+                'status'          => 'dipinjam',
+                'created_at'      => $nowEdit,
+                'updated_at'      => $nowEdit,
+            ]);
+            $satkerModel->update($smokeEditAssetId, [
+                'status_bmn'     => 'Dipinjam Pakai',
+                'lokasi_ruangan' => 'Pinjam Pakai: ' . $peminjamNamaTest,
+            ]);
+
+            $itemsAfterAdd = $pinjamModel->getItemsByPinjamId($pinjamId);
+            $itemIdsAfterAdd = array_map('intval', array_column($itemsAfterAdd, 'inventaris_id'));
+            $assetEditAfterAdd = $satkerModel->find($smokeEditAssetId);
+
+            $isAddOk = in_array((int) $smokeEditAssetId, $itemIdsAfterAdd, true) 
+                && in_array((int) $dummyPinjamAssetId, $itemIdsAfterAdd, true)
+                && ($assetEditAfterAdd['status_bmn'] === 'Dipinjam Pakai');
+
+            // Simulasi Edit 2: Lepas aset pertama (dummyPinjamAssetId), pertahankan hanya aset tambahan
+            $db->table('trn_inventaris_pinjam_pakai_item')
+                ->where('pinjam_pakai_id', $pinjamId)
+                ->where('inventaris_id', $dummyPinjamAssetId)
+                ->delete();
+            $satkerModel->update($dummyPinjamAssetId, [
+                'status_bmn'     => 'Digunakan Sendiri',
+                'lokasi_ruangan' => 'Belum berlokasi',
+            ]);
+            $pinjamModel->update($pinjamId, ['inventaris_id' => $smokeEditAssetId]);
+
+            $itemsAfterRemove = $pinjamModel->getItemsByPinjamId($pinjamId);
+            $itemIdsAfterRemove = array_map('intval', array_column($itemsAfterRemove, 'inventaris_id'));
+            $dummyAfterRemove = $satkerModel->find($dummyPinjamAssetId);
+            $loanHeaderAfterRemove = $pinjamModel->find($pinjamId);
+
+            $isRemoveOk = (! in_array((int) $dummyPinjamAssetId, $itemIdsAfterRemove, true))
+                && in_array((int) $smokeEditAssetId, $itemIdsAfterRemove, true)
+                && ($dummyAfterRemove['status_bmn'] === 'Digunakan Sendiri')
+                && ((int) $loanHeaderAfterRemove['inventaris_id'] === (int) $smokeEditAssetId);
+
+            if ($isAddOk && $isRemoveOk) {
+                CLI::write("  [OK] Fitur Edit Pinjam Pakai (Tambah & Kurangi Aset) berhasil: Aset tambahan sukses masuk status 'Dipinjam Pakai', dan pelepasan aset otomatis memulihkan status ke 'Digunakan Sendiri' (Gudang)", "green");
+            } else {
+                CLI::error("  [FAIL] Sinkronisasi tambah/kurang aset BMN pada Edit Pinjam Pakai gagal.");
+            }
+
+            // Kembalikan kondisi pinjamId ke dummyPinjamAssetId untuk pengujian pembaruan tahunan berikutnya
+            $db->table('trn_inventaris_pinjam_pakai_item')->where('pinjam_pakai_id', $pinjamId)->delete();
+            $db->table('trn_inventaris_pinjam_pakai_item')->insert([
+                'pinjam_pakai_id' => $pinjamId,
+                'inventaris_id'   => $dummyPinjamAssetId,
+                'kondisi_pinjam'  => 'baik',
+                'status'          => 'dipinjam',
+                'created_at'      => $nowEdit,
+                'updated_at'      => $nowEdit,
+            ]);
+            $satkerModel->update($dummyPinjamAssetId, [
+                'status_bmn'     => 'Dipinjam Pakai',
+                'lokasi_ruangan' => 'Pinjam Pakai: ' . $peminjamNamaTest,
+            ]);
+            $pinjamModel->update($pinjamId, ['inventaris_id' => $dummyPinjamAssetId]);
+            $satkerModel->delete($smokeEditAssetId);
+
             // 4b. Uji Sanitasi Anti-Duplikasi Nama Barang BMN (clean_inventaris_text)
             $testDupText = "SAMSUNG GALAXY TAB S11 (5G) 12/256 GB SAMSUNG GALAXY TAB S11 (5G) 12/256 GB";
             $cleaned = clean_inventaris_text($testDupText);
