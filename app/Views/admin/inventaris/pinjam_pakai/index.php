@@ -749,7 +749,6 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Pilih Kop Surat Instansi</label>
                                     <select name="kop_surat_id" id="tambah-kop-surat-id" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
-                                        <option value="">-- Otomatis (Sesuai Periode Tanggal Pinjam) --</option>
                                         <?php if (! empty($kopSuratList)): ?>
                                             <?php foreach ($kopSuratList as $kop): ?>
                                                 <option value="<?= (int) $kop['id']; ?>" <?= ! empty($kop['is_active']) ? 'selected' : ''; ?>>
@@ -757,7 +756,7 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                                 </option>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <option value="">-- Kop Surat Standar Satker PPS Riau --</option>
+                                            <option value="">Kop Surat Standar Satker PPS Riau</option>
                                         <?php endif; ?>
                                     </select>
                                     <small class="text-muted">Kop surat yang akan dicetak pada dokumen PDF.</small>
@@ -939,15 +938,14 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Pilih Kop Surat Instansi</label>
                                     <select name="kop_surat_id" id="edit-kop-surat-id" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
-                                        <option value="">-- Otomatis (Sesuai Periode Tanggal Pinjam) --</option>
                                         <?php if (! empty($kopSuratList)): ?>
                                             <?php foreach ($kopSuratList as $kop): ?>
-                                                <option value="<?= (int) $kop['id']; ?>">
+                                                <option value="<?= (int) $kop['id']; ?>" <?= ! empty($kop['is_active']) ? 'selected' : ''; ?>>
                                                     <?= esc($kop['nama']); ?> <?= ! empty($kop['is_active']) ? '(Aktif)' : ''; ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <option value="">-- Kop Surat Standar Satker PPS Riau --</option>
+                                            <option value="">Kop Surat Standar Satker PPS Riau</option>
                                         <?php endif; ?>
                                     </select>
                                     <small class="text-muted">Kop surat yang akan dicetak pada dokumen PDF.</small>
@@ -1206,9 +1204,8 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                         Pilihan Kop Surat Instansi
                                     </label>
                                     <select name="kop_surat_id" id="perbaharui-kop-surat-id" class="form-control" style="border-radius: 6px; font-size: 0.88rem;">
-                                        <option value="">-- Otomatis (Sesuai Periode Tanggal Pinjam) --</option>
                                         <?php foreach (($kopSuratList ?? []) as $kop): ?>
-                                            <option value="<?= $kop['id']; ?>">
+                                            <option value="<?= $kop['id']; ?>" <?= ! empty($kop['is_active']) ? 'selected' : ''; ?>>
                                                 <?= esc($kop['nama']); ?> <?= ! empty($kop['is_active']) ? '(Aktif)' : ''; ?>
                                             </option>
                                         <?php endforeach; ?>
@@ -1469,7 +1466,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function syncKopSuratByDate(tgl, kopSelectId, setSelected) {
+    function syncKopSuratByDate(tgl, kopSelectId) {
         if (!tgl || !kopSelectId) return;
         var url = '<?= site_url("admin/inventaris/pengaturan/check-conflict"); ?>?tanggal_pinjam=' + encodeURIComponent(tgl || '');
         fetch(url)
@@ -1479,28 +1476,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     var kopEl = document.getElementById(kopSelectId);
                     if (kopEl) {
                         var kopNama = data.kop_surat.nama_kop || data.kop_surat.nama || data.kop_surat.title || '';
-                        if (kopEl.options && kopEl.options.length > 0 && kopEl.options[0].value === '') {
-                            kopEl.options[0].textContent = '-- Otomatis: ' + (kopNama || 'Sesuai Periode Tanggal Pinjam') + ' --';
-                        }
-                        if (setSelected !== false) {
-                            kopEl.value = data.kop_surat.id;
-                            if (String(kopEl.value) !== String(data.kop_surat.id)) {
-                                var optFound = false;
-                                for (var k = 0; k < kopEl.options.length; k++) {
-                                    if (String(kopEl.options[k].value) === String(data.kop_surat.id)) {
-                                        optFound = true;
-                                        kopEl.selectedIndex = k;
-                                        break;
-                                    }
+                        kopEl.value = data.kop_surat.id;
+                        if (String(kopEl.value) !== String(data.kop_surat.id)) {
+                            var optFound = false;
+                            for (var k = 0; k < kopEl.options.length; k++) {
+                                if (String(kopEl.options[k].value) === String(data.kop_surat.id)) {
+                                    optFound = true;
+                                    kopEl.selectedIndex = k;
+                                    break;
                                 }
-                                if (!optFound) {
-                                    var newOpt = document.createElement('option');
-                                    newOpt.value = data.kop_surat.id;
-                                    newOpt.textContent = kopNama || ('Kop Surat #' + data.kop_surat.id);
-                                    newOpt.selected = true;
-                                    kopEl.appendChild(newOpt);
-                                    kopEl.value = data.kop_surat.id;
-                                }
+                            }
+                            if (!optFound) {
+                                var newOpt = document.createElement('option');
+                                newOpt.value = data.kop_surat.id;
+                                newOpt.textContent = kopNama || ('Kop Surat #' + data.kop_surat.id);
+                                newOpt.selected = true;
+                                kopEl.appendChild(newOpt);
+                                kopEl.value = data.kop_surat.id;
                             }
                         }
                     }
@@ -1777,28 +1769,28 @@ document.addEventListener('DOMContentLoaded', function() {
         var savedKopId = btn.getAttribute('data-kop-id') || '';
         var tglPinjamVal = btn.getAttribute('data-tgl-pinjam') || '';
         if (elKop) {
-            elKop.value = savedKopId;
-            if (savedKopId !== '' && String(elKop.value) !== String(savedKopId)) {
-                var optExists = false;
-                for (var i = 0; i < elKop.options.length; i++) {
-                    if (String(elKop.options[i].value) === String(savedKopId)) {
-                        optExists = true;
-                        elKop.selectedIndex = i;
-                        break;
+            if (savedKopId !== '') {
+                elKop.value = savedKopId;
+                if (String(elKop.value) !== String(savedKopId)) {
+                    var optExists = false;
+                    for (var i = 0; i < elKop.options.length; i++) {
+                        if (String(elKop.options[i].value) === String(savedKopId)) {
+                            optExists = true;
+                            elKop.selectedIndex = i;
+                            break;
+                        }
+                    }
+                    if (!optExists) {
+                        var newOpt = document.createElement('option');
+                        newOpt.value = savedKopId;
+                        newOpt.textContent = 'Kop Surat #' + savedKopId;
+                        newOpt.selected = true;
+                        elKop.appendChild(newOpt);
+                        elKop.value = savedKopId;
                     }
                 }
-                if (!optExists) {
-                    var newOpt = document.createElement('option');
-                    newOpt.value = savedKopId;
-                    newOpt.textContent = 'Kop Surat #' + savedKopId + ' (Tersimpan)';
-                    newOpt.selected = true;
-                    elKop.appendChild(newOpt);
-                    elKop.value = savedKopId;
-                }
-            }
-            if (tglPinjamVal) {
-                // Perbarui label opsi otomatis dan sinkronkan jika belum ada ID spesifik terpilih
-                syncKopSuratByDate(tglPinjamVal, 'edit-kop-surat-id', !savedKopId);
+            } else if (tglPinjamVal) {
+                syncKopSuratByDate(tglPinjamVal, 'edit-kop-surat-id');
             }
         }
         document.getElementById('edit-tgl-pinjam').value = tglPinjamVal;
@@ -1812,9 +1804,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (tglEditInput && !tglEditInput._hasKopListener) {
             tglEditInput._hasKopListener = true;
             tglEditInput.addEventListener('change', function() {
-                var currentKop = document.getElementById('edit-kop-surat-id');
-                var isAuto = currentKop && (!currentKop.value || currentKop.selectedIndex === 0);
-                syncKopSuratByDate(this.value, 'edit-kop-surat-id', isAuto);
+                syncKopSuratByDate(this.value, 'edit-kop-surat-id');
             });
         }
     }
@@ -1982,27 +1972,28 @@ document.addEventListener('DOMContentLoaded', function() {
         var elKop = document.getElementById('perbaharui-kop-surat-id');
         if (elKop) {
             var kopId = btn.getAttribute('data-kop-id') || '';
-            elKop.value = kopId;
-            if (kopId !== '' && String(elKop.value) !== String(kopId)) {
-                var optExistsPerb = false;
-                for (var j = 0; j < elKop.options.length; j++) {
-                    if (String(elKop.options[j].value) === String(kopId)) {
-                        optExistsPerb = true;
-                        elKop.selectedIndex = j;
-                        break;
+            if (kopId !== '') {
+                elKop.value = kopId;
+                if (String(elKop.value) !== String(kopId)) {
+                    var optExistsPerb = false;
+                    for (var j = 0; j < elKop.options.length; j++) {
+                        if (String(elKop.options[j].value) === String(kopId)) {
+                            optExistsPerb = true;
+                            elKop.selectedIndex = j;
+                            break;
+                        }
+                    }
+                    if (!optExistsPerb) {
+                        var newOptPerb = document.createElement('option');
+                        newOptPerb.value = kopId;
+                        newOptPerb.textContent = 'Kop Surat #' + kopId;
+                        newOptPerb.selected = true;
+                        elKop.appendChild(newOptPerb);
+                        elKop.value = kopId;
                     }
                 }
-                if (!optExistsPerb) {
-                    var newOptPerb = document.createElement('option');
-                    newOptPerb.value = kopId;
-                    newOptPerb.textContent = 'Kop Surat #' + kopId + ' (Tersimpan)';
-                    newOptPerb.selected = true;
-                    elKop.appendChild(newOptPerb);
-                    elKop.value = kopId;
-                }
-            }
-            if (defaultNewDate) {
-                syncKopSuratByDate(defaultNewDate, 'perbaharui-kop-surat-id', !kopId);
+            } else if (defaultNewDate) {
+                syncKopSuratByDate(defaultNewDate, 'perbaharui-kop-surat-id');
             }
         }
 
@@ -2024,6 +2015,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     var elNoSurat = document.getElementById('perbaharui-no-surat');
                     if (elNoSurat) elNoSurat.value = newNo;
                 });
+                syncKopSuratByDate(val, 'perbaharui-kop-surat-id');
                 var inputEnd = document.getElementById('perbaharui-tgl-kembali');
                 if (inputEnd && !inputEnd.value) {
                     inputEnd.value = year + '-12-31';
