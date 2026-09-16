@@ -147,6 +147,24 @@ class InventarisPinjamPakaiModel extends Model
             ->get()
             ->getResultArray();
 
+        foreach ($loans as &$loan) {
+            if (empty($loan['kop_surat_id']) || empty($loan['kop_surat_title'])) {
+                $eff = $this->resolveEffectiveKop($loan['tgl_pinjam'] ?? null);
+                if ($eff) {
+                    if (empty($loan['kop_surat_id'])) {
+                        $loan['kop_surat_id'] = $eff['id'];
+                    }
+                    if (empty($loan['kop_surat_title'])) {
+                        $loan['kop_surat_title'] = $eff['nama'];
+                    }
+                    if (empty($loan['kop_surat_image_url'])) {
+                        $loan['kop_surat_image_url'] = $eff['image_url'];
+                    }
+                }
+            }
+        }
+        unset($loan);
+
         if (! empty($loans) && $this->db->tableExists('trn_inventaris_pinjam_pakai_item')) {
             $loanIds = array_column($loans, 'id');
             $allItems = $this->db->table('trn_inventaris_pinjam_pakai_item itm')
@@ -238,6 +256,21 @@ class InventarisPinjamPakaiModel extends Model
             ->getRowArray();
 
         if (is_array($loan)) {
+            if (empty($loan['kop_surat_id']) || empty($loan['kop_surat_title'])) {
+                $eff = $this->resolveEffectiveKop($loan['tgl_pinjam'] ?? null);
+                if ($eff) {
+                    if (empty($loan['kop_surat_id'])) {
+                        $loan['kop_surat_id'] = $eff['id'];
+                    }
+                    if (empty($loan['kop_surat_title'])) {
+                        $loan['kop_surat_title'] = $eff['nama'];
+                    }
+                    if (empty($loan['kop_surat_image_url'])) {
+                        $loan['kop_surat_image_url'] = $eff['image_url'];
+                    }
+                }
+            }
+
             $items = $this->getItemsByPinjamId($id);
             if (empty($items) && ! empty($loan['inventaris_id'])) {
                 $items = [[
@@ -261,6 +294,62 @@ class InventarisPinjamPakaiModel extends Model
         }
 
         return $loan;
+    }
+
+    /**
+     * Menyelesaikan Kop Surat yang aktif / sesuai periode tanggal pinjam
+     */
+    public function resolveEffectiveKop(?string $date = null): ?array
+    {
+        $row = null;
+        if ($this->db->tableExists('cfg_inventaris_kop_surat')) {
+            if (! empty($date)) {
+                $row = $this->db->table('cfg_inventaris_kop_surat')
+                    ->where('is_active', 1)
+                    ->groupStart()
+                        ->where('berlaku_dari <=', $date)
+                        ->orWhere('berlaku_dari IS NULL')
+                    ->groupEnd()
+                    ->groupStart()
+                        ->where('berlaku_sampai >=', $date)
+                        ->orWhere('berlaku_sampai IS NULL')
+                    ->groupEnd()
+                    ->orderBy('berlaku_dari', 'DESC')
+                    ->orderBy('id', 'DESC')
+                    ->limit(1)
+                    ->get()
+                    ->getRowArray();
+            }
+
+            if (! is_array($row)) {
+                $row = $this->db->table('cfg_inventaris_kop_surat')
+                    ->where('is_active', 1)
+                    ->orderBy('id', 'DESC')
+                    ->limit(1)
+                    ->get()
+                    ->getRowArray();
+            }
+        }
+
+        if (! is_array($row) && $this->db->tableExists('kop_surat')) {
+            $row = $this->db->table('kop_surat')
+                ->select('id, title AS nama_kop, image_url, is_active')
+                ->where('is_active', 1)
+                ->orderBy('id', 'DESC')
+                ->limit(1)
+                ->get()
+                ->getRowArray();
+        }
+
+        if (is_array($row)) {
+            return [
+                'id'        => (int) $row['id'],
+                'nama'      => $row['nama_kop'] ?? ($row['nama'] ?? 'Kop Surat Instansi'),
+                'image_url' => $row['image_url'] ?? '',
+            ];
+        }
+
+        return null;
     }
 
     /**

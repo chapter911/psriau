@@ -38,6 +38,64 @@ class InventarisPinjamPakai extends BaseController
         }
     }
 
+    /**
+     * Menyelesaikan Kop Surat yang aktif / sesuai periode tanggal pinjam
+     */
+    private function resolveKopSuratByDate(?string $date = null): ?array
+    {
+        $db = db_connect();
+        $row = null;
+
+        if ($db->tableExists('cfg_inventaris_kop_surat')) {
+            if (! empty($date)) {
+                $row = $db->table('cfg_inventaris_kop_surat')
+                    ->where('is_active', 1)
+                    ->groupStart()
+                        ->where('berlaku_dari <=', $date)
+                        ->orWhere('berlaku_dari IS NULL')
+                    ->groupEnd()
+                    ->groupStart()
+                        ->where('berlaku_sampai >=', $date)
+                        ->orWhere('berlaku_sampai IS NULL')
+                    ->groupEnd()
+                    ->orderBy('berlaku_dari', 'DESC')
+                    ->orderBy('id', 'DESC')
+                    ->limit(1)
+                    ->get()
+                    ->getRowArray();
+            }
+
+            if (! is_array($row)) {
+                $row = $db->table('cfg_inventaris_kop_surat')
+                    ->where('is_active', 1)
+                    ->orderBy('id', 'DESC')
+                    ->limit(1)
+                    ->get()
+                    ->getRowArray();
+            }
+        }
+
+        if (! is_array($row) && $db->tableExists('kop_surat')) {
+            $row = $db->table('kop_surat')
+                ->select('id, title AS nama_kop, image_url, is_active')
+                ->where('is_active', 1)
+                ->orderBy('id', 'DESC')
+                ->limit(1)
+                ->get()
+                ->getRowArray();
+        }
+
+        if (is_array($row)) {
+            return [
+                'id'        => (int) $row['id'],
+                'nama'      => $row['nama_kop'] ?? ($row['nama'] ?? 'Kop Surat Instansi'),
+                'image_url' => $row['image_url'] ?? '',
+            ];
+        }
+
+        return null;
+    }
+
     private function ensureKopSuratIdColumn(): void
     {
         try {
@@ -45,6 +103,27 @@ class InventarisPinjamPakai extends BaseController
             if ($db->tableExists('trn_inventaris_pinjam_pakai')) {
                 if (! $db->fieldExists('kop_surat_id', 'trn_inventaris_pinjam_pakai')) {
                     $db->query("ALTER TABLE trn_inventaris_pinjam_pakai ADD COLUMN kop_surat_id INT UNSIGNED NULL AFTER no_surat");
+                }
+
+                // Backfill data lama yang kop_surat_id masih NULL atau 0
+                $unlinked = $db->table('trn_inventaris_pinjam_pakai')
+                    ->select('id, tgl_pinjam')
+                    ->groupStart()
+                        ->where('kop_surat_id IS NULL')
+                        ->orWhere('kop_surat_id', 0)
+                    ->groupEnd()
+                    ->get()
+                    ->getResultArray();
+
+                if (! empty($unlinked)) {
+                    foreach ($unlinked as $row) {
+                        $matched = $this->resolveKopSuratByDate($row['tgl_pinjam'] ?? null);
+                        if ($matched && ! empty($matched['id'])) {
+                            $db->table('trn_inventaris_pinjam_pakai')
+                                ->where('id', $row['id'])
+                                ->update(['kop_surat_id' => (int) $matched['id']]);
+                        }
+                    }
                 }
             }
         } catch (\Throwable $e) {
@@ -75,6 +154,23 @@ class InventarisPinjamPakai extends BaseController
 
         $availableYears = $pinjamModel->getAvailableYears();
         $pinjamList = $pinjamModel->getPinjamWithRelations($filterStatus, $filterTahun);
+        foreach ($pinjamList as &$pItem) {
+            if (empty($pItem['kop_surat_id']) || empty($pItem['kop_surat_title'])) {
+                $matchedKop = $this->resolveKopSuratByDate($pItem['tgl_pinjam'] ?? null);
+                if ($matchedKop) {
+                    if (empty($pItem['kop_surat_id'])) {
+                        $pItem['kop_surat_id'] = (int) $matchedKop['id'];
+                    }
+                    if (empty($pItem['kop_surat_title'])) {
+                        $pItem['kop_surat_title'] = $matchedKop['nama'];
+                    }
+                    if (empty($pItem['kop_surat_image_url'])) {
+                        $pItem['kop_surat_image_url'] = $matchedKop['image_url'];
+                    }
+                }
+            }
+        }
+        unset($pItem);
         $summary = $pinjamModel->getSummaryStats($filterTahun);
         $availableAssets = $pinjamModel->getAvailableAssetsForLoan();
 
@@ -321,6 +417,13 @@ class InventarisPinjamPakai extends BaseController
 
         $noSuratVal = ($rawNoSurat !== null && $rawNoSurat !== '') ? $rawNoSurat : ($isNullable ? null : '');
 
+        if ($kopSuratId === null) {
+            $matchedKop = $this->resolveKopSuratByDate($tglPinjamInput);
+            if ($matchedKop && ! empty($matchedKop['id'])) {
+                $kopSuratId = (int) $matchedKop['id'];
+            }
+        }
+
         // Simpan header transaksi pinjam pakai
         $pinjamId = $pinjamModel->insert([
             'inventaris_id'        => $assets[0]['id'], // Simpan aset pertama untuk backward compatibility
@@ -505,6 +608,13 @@ class InventarisPinjamPakai extends BaseController
         } catch (\Throwable $e) {}
 
         $noSuratEdit = ($rawNoSuratEdit !== null && $rawNoSuratEdit !== '') ? $rawNoSuratEdit : ($isNullable ? null : '');
+
+        if ($kopSuratId === null) {
+            $matchedKop = $this->resolveKopSuratByDate($tglPinjamEdit);
+            if ($matchedKop && ! empty($matchedKop['id'])) {
+                $kopSuratId = (int) $matchedKop['id'];
+            }
+        }
 
         $pinjamModel->update($id, [
             'pegawai_id'          => $pegawaiId,
@@ -693,12 +803,19 @@ class InventarisPinjamPakai extends BaseController
         $tglPinjam = trim((string) $this->request->getPost('tgl_pinjam'));
         $targetYear = (int) date('Y', strtotime($tglPinjam));
         $noSuratInput = trim((string) $this->request->getPost('no_surat'));
+        $kopSuratIdRenew = (int) $this->request->getPost('kop_surat_id') ?: null;
+        if ($kopSuratIdRenew === null) {
+            $matchedKop = $this->resolveKopSuratByDate($tglPinjam);
+            if ($matchedKop && ! empty($matchedKop['id'])) {
+                $kopSuratIdRenew = (int) $matchedKop['id'];
+            }
+        }
 
         $data = [
             'tgl_pinjam'          => $tglPinjam,
             'tgl_kembali_rencana' => trim((string) $this->request->getPost('tgl_kembali_rencana')) ?: null,
             'no_surat'            => $noSuratInput,
-            'kop_surat_id'        => (int) $this->request->getPost('kop_surat_id') ?: null,
+            'kop_surat_id'        => $kopSuratIdRenew,
             'keperluan'           => trim((string) $this->request->getPost('keperluan')),
             'kondisi_pinjam'      => trim((string) $this->request->getPost('kondisi_pinjam')) ?: 'baik',
             'kelengkapan'         => trim((string) $this->request->getPost('kelengkapan')) ?: null,

@@ -1469,7 +1469,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function syncKopSuratByDate(tgl, kopSelectId) {
+    function syncKopSuratByDate(tgl, kopSelectId, setSelected) {
         if (!tgl || !kopSelectId) return;
         var url = '<?= site_url("admin/inventaris/pengaturan/check-conflict"); ?>?tanggal_pinjam=' + encodeURIComponent(tgl || '');
         fetch(url)
@@ -1478,7 +1478,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.kop_surat && data.kop_surat.id) {
                     var kopEl = document.getElementById(kopSelectId);
                     if (kopEl) {
-                        kopEl.value = data.kop_surat.id;
+                        var kopNama = data.kop_surat.nama_kop || data.kop_surat.nama || data.kop_surat.title || '';
+                        if (kopEl.options && kopEl.options.length > 0 && kopEl.options[0].value === '') {
+                            kopEl.options[0].textContent = '-- Otomatis: ' + (kopNama || 'Sesuai Periode Tanggal Pinjam') + ' --';
+                        }
+                        if (setSelected !== false) {
+                            kopEl.value = data.kop_surat.id;
+                            if (String(kopEl.value) !== String(data.kop_surat.id)) {
+                                var optFound = false;
+                                for (var k = 0; k < kopEl.options.length; k++) {
+                                    if (String(kopEl.options[k].value) === String(data.kop_surat.id)) {
+                                        optFound = true;
+                                        kopEl.selectedIndex = k;
+                                        break;
+                                    }
+                                }
+                                if (!optFound) {
+                                    var newOpt = document.createElement('option');
+                                    newOpt.value = data.kop_surat.id;
+                                    newOpt.textContent = kopNama || ('Kop Surat #' + data.kop_surat.id);
+                                    newOpt.selected = true;
+                                    kopEl.appendChild(newOpt);
+                                    kopEl.value = data.kop_surat.id;
+                                }
+                            }
+                        }
                     }
                 }
             })
@@ -1751,6 +1775,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('edit-no-surat').value = btn.getAttribute('data-surat') || '';
         var elKop = document.getElementById('edit-kop-surat-id');
         var savedKopId = btn.getAttribute('data-kop-id') || '';
+        var tglPinjamVal = btn.getAttribute('data-tgl-pinjam') || '';
         if (elKop) {
             elKop.value = savedKopId;
             if (savedKopId !== '' && String(elKop.value) !== String(savedKopId)) {
@@ -1771,13 +1796,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     elKop.value = savedKopId;
                 }
             }
+            if (tglPinjamVal) {
+                // Perbarui label opsi otomatis dan sinkronkan jika belum ada ID spesifik terpilih
+                syncKopSuratByDate(tglPinjamVal, 'edit-kop-surat-id', !savedKopId);
+            }
         }
-        document.getElementById('edit-tgl-pinjam').value = btn.getAttribute('data-tgl-pinjam') || '';
+        document.getElementById('edit-tgl-pinjam').value = tglPinjamVal;
         document.getElementById('edit-tgl-kembali-rencana').value = btn.getAttribute('data-tgl-kembali') || '';
         document.getElementById('edit-keperluan').value = btn.getAttribute('data-keperluan') || '';
         document.getElementById('edit-kondisi-pinjam').value = btn.getAttribute('data-kondisi') || 'baik';
         document.getElementById('edit-catatan').value = btn.getAttribute('data-catatan') || '';
         updateNoSuratStateEdit();
+
+        var tglEditInput = document.getElementById('edit-tgl-pinjam');
+        if (tglEditInput && !tglEditInput._hasKopListener) {
+            tglEditInput._hasKopListener = true;
+            tglEditInput.addEventListener('change', function() {
+                var currentKop = document.getElementById('edit-kop-surat-id');
+                var isAuto = currentKop && (!currentKop.value || currentKop.selectedIndex === 0);
+                syncKopSuratByDate(this.value, 'edit-kop-surat-id', isAuto);
+            });
+        }
     }
 
     // 7. POPULATE KEMBALIKAN MODAL
@@ -1961,6 +2000,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     elKop.appendChild(newOptPerb);
                     elKop.value = kopId;
                 }
+            }
+            if (defaultNewDate) {
+                syncKopSuratByDate(defaultNewDate, 'perbaharui-kop-surat-id', !kopId);
             }
         }
 

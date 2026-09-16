@@ -34,49 +34,79 @@ class InventarisPengaturanModel extends Model
 
     public function getKopSuratByDate(?string $date = null): ?array
     {
-        if (! $this->db->tableExists('cfg_inventaris_kop_surat')) {
-            return null;
-        }
+        if ($this->db->tableExists('cfg_inventaris_kop_surat')) {
+            if (! empty($date)) {
+                $matched = $this->db->table('cfg_inventaris_kop_surat')
+                    ->where('is_active', 1)
+                    ->groupStart()
+                        ->where('berlaku_dari <=', $date)
+                        ->orWhere('berlaku_dari IS NULL')
+                    ->groupEnd()
+                    ->groupStart()
+                        ->where('berlaku_sampai >=', $date)
+                        ->orWhere('berlaku_sampai IS NULL')
+                    ->groupEnd()
+                    ->orderBy('berlaku_dari', 'DESC')
+                    ->orderBy('id', 'DESC')
+                    ->get()
+                    ->getRowArray();
 
-        if (! empty($date)) {
-            $matched = $this->db->table('cfg_inventaris_kop_surat')
+                if ($matched) {
+                    return $matched;
+                }
+            }
+
+            // Fallback: Kop aktif terbaru di cfg_inventaris_kop_surat
+            $rowCfg = $this->db->table('cfg_inventaris_kop_surat')
                 ->where('is_active', 1)
-                ->groupStart()
-                    ->where('berlaku_dari <=', $date)
-                    ->orWhere('berlaku_dari IS NULL')
-                ->groupEnd()
-                ->groupStart()
-                    ->where('berlaku_sampai >=', $date)
-                    ->orWhere('berlaku_sampai IS NULL')
-                ->groupEnd()
-                ->orderBy('berlaku_dari', 'DESC')
                 ->orderBy('id', 'DESC')
                 ->get()
                 ->getRowArray();
-
-            if ($matched) {
-                return $matched;
+            if ($rowCfg) {
+                return $rowCfg;
             }
         }
 
-        // Fallback: Kop aktif terbaru
-        return $this->db->table('cfg_inventaris_kop_surat')
-            ->where('is_active', 1)
-            ->orderBy('id', 'DESC')
-            ->get()
-            ->getRowArray();
+        // Fallback: master umum kop_surat
+        if ($this->db->tableExists('kop_surat')) {
+            $rowKs = $this->db->table('kop_surat')
+                ->select('id, title AS nama_kop, image_url, is_active')
+                ->where('is_active', 1)
+                ->orderBy('id', 'DESC')
+                ->get()
+                ->getRowArray();
+            if ($rowKs) {
+                return $rowKs;
+            }
+        }
+
+        return null;
     }
 
     public function getKopSuratById(int $id): ?array
     {
-        if (! $this->db->tableExists('cfg_inventaris_kop_surat')) {
-            return null;
+        if ($this->db->tableExists('cfg_inventaris_kop_surat')) {
+            $row = $this->db->table('cfg_inventaris_kop_surat')
+                ->where('id', $id)
+                ->get()
+                ->getRowArray();
+            if ($row) {
+                return $row;
+            }
         }
 
-        return $this->db->table('cfg_inventaris_kop_surat')
-            ->where('id', $id)
-            ->get()
-            ->getRowArray();
+        if ($this->db->tableExists('kop_surat')) {
+            $rowKs = $this->db->table('kop_surat')
+                ->select('id, title AS nama_kop, image_url, is_active')
+                ->where('id', $id)
+                ->get()
+                ->getRowArray();
+            if ($rowKs) {
+                return $rowKs;
+            }
+        }
+
+        return null;
     }
 
     // ==========================================
