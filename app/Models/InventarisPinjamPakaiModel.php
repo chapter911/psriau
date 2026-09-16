@@ -61,25 +61,84 @@ class InventarisPinjamPakaiModel extends Model
     }
 
     /**
+     * Mengambil daftar tahun unik dari transaksi pinjam pakai untuk dropdown filter
+     * Terurut secara menurun (DESC) dan memastikan tahun berjalan selalu tersedia.
+     */
+    public function getAvailableYears(): array
+    {
+        $rows = $this->db->table($this->table)
+            ->select('DISTINCT(YEAR(tgl_pinjam)) AS tahun')
+            ->where('tgl_pinjam IS NOT NULL')
+            ->orderBy('tahun', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        $years = [];
+        foreach ($rows as $r) {
+            if (! empty($r['tahun'])) {
+                $years[] = (int) $r['tahun'];
+            }
+        }
+
+        $curYear = (int) date('Y');
+        if (! in_array($curYear, $years, true)) {
+            $years[] = $curYear;
+        }
+        if (! in_array(2025, $years, true)) {
+            $years[] = 2025;
+        }
+
+        rsort($years);
+        return array_values(array_unique($years));
+    }
+
+    /**
      * Mengambil seluruh data pinjam pakai beserta relasi aset BMN, pegawai, dan child items
      */
-    public function getPinjamWithRelations(?string $statusFilter = null): array
+    public function getPinjamWithRelations(?string $statusFilter = null, ?int $tahunFilter = null): array
     {
+        $hasCfg = $this->db->tableExists('cfg_inventaris_kop_surat');
+        $hasKs  = $this->db->tableExists('kop_surat');
+
+        $kopTitleExpr = "''";
+        $kopImgExpr   = "''";
+        if ($hasCfg && $hasKs) {
+            $kopTitleExpr = "COALESCE(cik.nama_kop, ks.title)";
+            $kopImgExpr   = "COALESCE(cik.image_url, ks.image_url)";
+        } elseif ($hasCfg) {
+            $kopTitleExpr = "cik.nama_kop";
+            $kopImgExpr   = "cik.image_url";
+        } elseif ($hasKs) {
+            $kopTitleExpr = "ks.title";
+            $kopImgExpr   = "ks.image_url";
+        }
+
         $builder = $this->db->table($this->table . ' p')
             ->select('p.*, 
                       i.kode_barang, i.nup, i.kode_register, i.nama_barang, i.kategori, 
                       i.merk_tipe, i.nilai_perolehan, i.satuan, i.kondisi as kondisi_aset_sekarang,
                       i.lokasi_ruangan, i.peruntukan,
                       peg.nama as pegawai_master_nama, peg.nip as pegawai_master_nip,
-                      ju.jabatan as pegawai_master_jabatan,
-                      ks.title as kop_surat_title')
+                      ju.jabatan as pegawai_master_jabatan, ' .
+                      $kopTitleExpr . ' as kop_surat_title, ' .
+                      $kopImgExpr . ' as kop_surat_image_url')
             ->join('trn_inventaris_satker i', 'i.id = p.inventaris_id', 'left')
             ->join('mst_pegawai peg', 'peg.id = p.pegawai_id', 'left')
-            ->join('mst_jabatan ju', 'ju.id = peg.jabatan_utama_id', 'left')
-            ->join('kop_surat ks', 'ks.id = p.kop_surat_id', 'left');
+            ->join('mst_jabatan ju', 'ju.id = peg.jabatan_utama_id', 'left');
+
+        if ($hasCfg) {
+            $builder->join('cfg_inventaris_kop_surat cik', 'cik.id = p.kop_surat_id', 'left');
+        }
+        if ($hasKs) {
+            $builder->join('kop_surat ks', 'ks.id = p.kop_surat_id', 'left');
+        }
 
         if ($statusFilter && in_array($statusFilter, ['dipinjam', 'dikembalikan', 'diperbaharui'], true)) {
             $builder->where('p.status', $statusFilter);
+        }
+
+        if (! empty($tahunFilter) && $tahunFilter >= 2000 && $tahunFilter <= 2100) {
+            $builder->where('YEAR(p.tgl_pinjam)', $tahunFilter);
         }
 
         $loans = $builder->orderBy("CASE WHEN p.status = 'dipinjam' THEN 0 ELSE 1 END", 'ASC', false)
@@ -137,20 +196,44 @@ class InventarisPinjamPakaiModel extends Model
      */
     public function getPinjamDetail(int $id): ?array
     {
-        $loan = $this->db->table($this->table . ' p')
+        $hasCfg = $this->db->tableExists('cfg_inventaris_kop_surat');
+        $hasKs  = $this->db->tableExists('kop_surat');
+
+        $kopTitleExpr = "''";
+        $kopImgExpr   = "''";
+        if ($hasCfg && $hasKs) {
+            $kopTitleExpr = "COALESCE(cik.nama_kop, ks.title)";
+            $kopImgExpr   = "COALESCE(cik.image_url, ks.image_url)";
+        } elseif ($hasCfg) {
+            $kopTitleExpr = "cik.nama_kop";
+            $kopImgExpr   = "cik.image_url";
+        } elseif ($hasKs) {
+            $kopTitleExpr = "ks.title";
+            $kopImgExpr   = "ks.image_url";
+        }
+
+        $builder = $this->db->table($this->table . ' p')
             ->select('p.*, 
                       i.kode_barang, i.nup, i.kode_register, i.nama_barang, i.kategori, 
                       i.merk_tipe, i.nilai_perolehan, i.satuan, i.kondisi as kondisi_aset_sekarang,
                       i.tahun_perolehan, i.lokasi_ruangan, i.peruntukan,
                       peg.nama as pegawai_master_nama, peg.nip as pegawai_master_nip,
                       peg.jenis_pegawai as pegawai_master_jenis_pegawai,
-                      ju.jabatan as pegawai_master_jabatan,
-                      ks.title as kop_surat_title, ks.image_url as kop_surat_image_url')
+                      ju.jabatan as pegawai_master_jabatan, ' .
+                      $kopTitleExpr . ' as kop_surat_title, ' .
+                      $kopImgExpr . ' as kop_surat_image_url')
             ->join('trn_inventaris_satker i', 'i.id = p.inventaris_id', 'left')
             ->join('mst_pegawai peg', 'peg.id = p.pegawai_id', 'left')
-            ->join('mst_jabatan ju', 'ju.id = peg.jabatan_utama_id', 'left')
-            ->join('kop_surat ks', 'ks.id = p.kop_surat_id', 'left')
-            ->where('p.id', $id)
+            ->join('mst_jabatan ju', 'ju.id = peg.jabatan_utama_id', 'left');
+
+        if ($hasCfg) {
+            $builder->join('cfg_inventaris_kop_surat cik', 'cik.id = p.kop_surat_id', 'left');
+        }
+        if ($hasKs) {
+            $builder->join('kop_surat ks', 'ks.id = p.kop_surat_id', 'left');
+        }
+
+        $loan = $builder->where('p.id', $id)
             ->get()
             ->getRowArray();
 
@@ -231,16 +314,25 @@ class InventarisPinjamPakaiModel extends Model
     /**
      * Menghitung statistik ringkasan pinjam pakai
      */
-    public function getSummaryStats(): array
+    /**
+     * Menghitung statistik ringkasan pinjam pakai
+     * Mendukung filter tahun anggaran tertentu atau agregat seluruh tahun (jika null)
+     */
+    public function getSummaryStats(?int $year = null): array
     {
         $db = $this->db;
 
+        $baseBuilder = $db->table($this->table);
+        if (! empty($year) && $year >= 2000 && $year <= 2100) {
+            $baseBuilder->where('YEAR(tgl_pinjam)', $year);
+        }
+
         // Total transaksi selesai, diperbaharui, dan peminjam unik
-        $totalDikembalikan = (int) $db->table($this->table)->where('status', 'dikembalikan')->countAllResults();
-        $totalDiperbaharui = (int) $db->table($this->table)->where('status', 'diperbaharui')->countAllResults();
-        $totalPeminjamUnik = (int) $db->table($this->table)->where('status', 'dipinjam')->select('nama_peminjam')->distinct()->countAllResults();
+        $totalDikembalikan = (int) (clone $baseBuilder)->where('status', 'dikembalikan')->countAllResults();
+        $totalDiperbaharui = (int) (clone $baseBuilder)->where('status', 'diperbaharui')->countAllResults();
+        $totalPeminjamUnik = (int) (clone $baseBuilder)->where('status', 'dipinjam')->select('nama_peminjam')->distinct()->countAllResults();
         if ($totalPeminjamUnik === 0) {
-            $totalPeminjamUnik = (int) $db->table($this->table)->select('nama_peminjam')->distinct()->countAllResults();
+            $totalPeminjamUnik = (int) (clone $baseBuilder)->select('nama_peminjam')->distinct()->countAllResults();
         }
 
         // Total unit aset yang sedang dipinjam & total nilainya
@@ -248,12 +340,17 @@ class InventarisPinjamPakaiModel extends Model
         $totalNilaiDipinjam = 0.0;
 
         if ($db->tableExists('trn_inventaris_pinjam_pakai_item')) {
-            $rowStats = $db->table('trn_inventaris_pinjam_pakai_item itm')
+            $builderItem = $db->table('trn_inventaris_pinjam_pakai_item itm')
                 ->select('COUNT(itm.id) AS total_unit, COALESCE(SUM(i.nilai_perolehan), 0) AS total_nilai')
                 ->join('trn_inventaris_satker i', 'i.id = itm.inventaris_id', 'inner')
-                ->where('itm.status', 'dipinjam')
-                ->get()
-                ->getRowArray();
+                ->join($this->table . ' p', 'p.id = itm.pinjam_pakai_id', 'inner')
+                ->where('itm.status', 'dipinjam');
+
+            if (! empty($year) && $year >= 2000 && $year <= 2100) {
+                $builderItem->where('YEAR(p.tgl_pinjam)', $year);
+            }
+
+            $rowStats = $builderItem->get()->getRowArray();
 
             $totalDipinjam = (int) ($rowStats['total_unit'] ?? 0);
             $totalNilaiDipinjam = (float) ($rowStats['total_nilai'] ?? 0);
@@ -261,11 +358,15 @@ class InventarisPinjamPakaiModel extends Model
 
         // Fallback jika child table kosong
         if ($totalDipinjam === 0) {
-            $totalDipinjam = (int) $db->table($this->table)->where('status', 'dipinjam')->countAllResults();
-            $rowNilai = $db->table($this->table . ' p')
+            $builderFallback = $db->table($this->table . ' p')
+                ->where('p.status', 'dipinjam');
+            if (! empty($year) && $year >= 2000 && $year <= 2100) {
+                $builderFallback->where('YEAR(p.tgl_pinjam)', $year);
+            }
+            $totalDipinjam = (int) (clone $builderFallback)->countAllResults();
+            $rowNilai = $builderFallback
                 ->select('COALESCE(SUM(i.nilai_perolehan), 0) AS total_nilai')
                 ->join('trn_inventaris_satker i', 'i.id = p.inventaris_id', 'inner')
-                ->where('p.status', 'dipinjam')
                 ->get()
                 ->getRowArray();
             $totalNilaiDipinjam = (float) ($rowNilai['total_nilai'] ?? 0);

@@ -242,23 +242,31 @@ if (! function_exists('kop_surat_url')) {
     {
         try {
             $db = db_connect();
-            if (! $db->tableExists('kop_surat')) {
-                return '';
-            }
-
             $row = null;
 
             if ($kopSuratId !== null && $kopSuratId > 0) {
-                $row = $db->table('kop_surat')
-                    ->where('id', $kopSuratId)
-                    ->where('image_url IS NOT NULL')
-                    ->where("TRIM(image_url) != ''")
-                    ->limit(1)
-                    ->get()
-                    ->getRowArray();
+                if ($db->tableExists('kop_surat')) {
+                    $row = $db->table('kop_surat')
+                        ->where('id', $kopSuratId)
+                        ->where('image_url IS NOT NULL')
+                        ->where("TRIM(image_url) != ''")
+                        ->limit(1)
+                        ->get()
+                        ->getRowArray();
+                }
+                // Jika tidak ditemukan di kop_surat, cari di cfg_inventaris_kop_surat
+                if (! is_array($row) && $db->tableExists('cfg_inventaris_kop_surat')) {
+                    $row = $db->table('cfg_inventaris_kop_surat')
+                        ->where('id', $kopSuratId)
+                        ->where('image_url IS NOT NULL')
+                        ->where("TRIM(image_url) != ''")
+                        ->limit(1)
+                        ->get()
+                        ->getRowArray();
+                }
             }
 
-            if (! is_array($row)) {
+            if (! is_array($row) && $db->tableExists('kop_surat')) {
                 $row = $db->table('kop_surat')
                     ->where('is_active', 1)
                     ->where('image_url IS NOT NULL')
@@ -269,7 +277,18 @@ if (! function_exists('kop_surat_url')) {
                     ->getRowArray();
             }
 
-            if (! is_array($row)) {
+            if (! is_array($row) && $db->tableExists('cfg_inventaris_kop_surat')) {
+                $row = $db->table('cfg_inventaris_kop_surat')
+                    ->where('is_active', 1)
+                    ->where('image_url IS NOT NULL')
+                    ->where("TRIM(image_url) != ''")
+                    ->orderBy('id', 'DESC')
+                    ->limit(1)
+                    ->get()
+                    ->getRowArray();
+            }
+
+            if (! is_array($row) && $db->tableExists('kop_surat')) {
                 $row = $db->table('kop_surat')
                     ->where('image_url IS NOT NULL')
                     ->where("TRIM(image_url) != ''")
@@ -320,6 +339,160 @@ if (! function_exists('kop_surat_img_tag')) {
                 // Hindari request ke localhost saat render Dompdf.
                 $src = 'data:' . $mime . ';base64,' . base64_encode($binary);
             }
+        }
+
+        if ($src === '') {
+            $src = function_exists('media_url') ? media_url($url) : base_url($cleanUrl);
+        }
+
+        if ($src === '') {
+            return '';
+        }
+
+        $attributes = [
+            'src' => $src,
+            'alt' => $alt,
+        ];
+
+        if ($class !== '') {
+            $attributes['class'] = $class;
+        }
+
+        $html = '<img';
+        foreach ($attributes as $name => $value) {
+            $html .= ' ' . $name . '="' . esc($value, 'attr') . '"';
+        }
+
+        if ($style !== '') {
+            $html .= ' style="' . esc($style, 'attr') . '"';
+        }
+
+        $html .= '>';
+
+        return $html;
+    }
+}
+
+if (! function_exists('inventaris_kop_surat_url')) {
+    /**
+     * Ambil path/URL kop surat untuk dokumen modul inventarisasi (prioritas cfg_inventaris_kop_surat).
+     */
+    function inventaris_kop_surat_url(?int $kopSuratId = null, ?string $date = null): string
+    {
+        try {
+            $db = db_connect();
+            $row = null;
+
+            // 1. Jika ID spesifik dipilih
+            if ($kopSuratId !== null && $kopSuratId > 0) {
+                if ($db->tableExists('cfg_inventaris_kop_surat')) {
+                    $row = $db->table('cfg_inventaris_kop_surat')
+                        ->where('id', $kopSuratId)
+                        ->where('image_url IS NOT NULL')
+                        ->where("TRIM(image_url) != ''")
+                        ->limit(1)
+                        ->get()
+                        ->getRowArray();
+                }
+                if (! is_array($row) && $db->tableExists('kop_surat')) {
+                    $row = $db->table('kop_surat')
+                        ->where('id', $kopSuratId)
+                        ->where('image_url IS NOT NULL')
+                        ->where("TRIM(image_url) != ''")
+                        ->limit(1)
+                        ->get()
+                        ->getRowArray();
+                }
+            }
+
+            // 2. Jika ID tidak ada, cari berdasarkan tanggal pinjam / berlaku
+            if (! is_array($row) && ! empty($date) && $db->tableExists('cfg_inventaris_kop_surat')) {
+                $row = $db->table('cfg_inventaris_kop_surat')
+                    ->where('is_active', 1)
+                    ->groupStart()
+                        ->where('berlaku_dari <=', $date)
+                        ->orWhere('berlaku_dari IS NULL')
+                    ->groupEnd()
+                    ->groupStart()
+                        ->where('berlaku_sampai >=', $date)
+                        ->orWhere('berlaku_sampai IS NULL')
+                    ->groupEnd()
+                    ->orderBy('berlaku_dari', 'DESC')
+                    ->orderBy('id', 'DESC')
+                    ->limit(1)
+                    ->get()
+                    ->getRowArray();
+            }
+
+            // 3. Fallback: kop aktif terbaru di cfg_inventaris_kop_surat
+            if (! is_array($row) && $db->tableExists('cfg_inventaris_kop_surat')) {
+                $row = $db->table('cfg_inventaris_kop_surat')
+                    ->where('is_active', 1)
+                    ->where('image_url IS NOT NULL')
+                    ->where("TRIM(image_url) != ''")
+                    ->orderBy('id', 'DESC')
+                    ->limit(1)
+                    ->get()
+                    ->getRowArray();
+            }
+
+            // 4. Fallback terakhir: tabel kop_surat master umum
+            if (! is_array($row) && $db->tableExists('kop_surat')) {
+                $row = $db->table('kop_surat')
+                    ->where('is_active', 1)
+                    ->where('image_url IS NOT NULL')
+                    ->where("TRIM(image_url) != ''")
+                    ->orderBy('id', 'DESC')
+                    ->limit(1)
+                    ->get()
+                    ->getRowArray();
+            }
+
+            if (is_array($row) && ! empty($row['image_url'])) {
+                return (string) $row['image_url'];
+            }
+        } catch (\Throwable $e) {
+            return '';
+        }
+
+        return '';
+    }
+}
+
+if (! function_exists('inventaris_kop_surat_img_tag')) {
+    /**
+     * Render tag <img> kop surat untuk dokumen modul inventarisasi (Base64 data URI aman untuk Dompdf).
+     */
+    function inventaris_kop_surat_img_tag(?int $kopSuratId = null, ?string $date = null, string $style = 'width: 100%; max-height: 105px; object-fit: contain;', string $alt = 'Kop Surat Instansi', string $class = ''): string
+    {
+        $url = inventaris_kop_surat_url($kopSuratId, $date);
+        if ($url === '') {
+            return '';
+        }
+
+        $cleanUrl = ltrim($url, '/');
+        if (preg_match('#^https?://[^/]+/(.*)$#i', $url, $m)) {
+            $cleanUrl = ltrim($m[1], '/');
+        }
+
+        $localPath = FCPATH . str_replace('/', DIRECTORY_SEPARATOR, $cleanUrl);
+        $src = '';
+        if (is_file($localPath)) {
+            $mime = 'image/png';
+            $detectedMime = @mime_content_type($localPath);
+            if (is_string($detectedMime) && $detectedMime !== '') {
+                $mime = $detectedMime;
+            }
+
+            $binary = @file_get_contents($localPath);
+            if ($binary !== false && $binary !== '') {
+                // Hindari request ke localhost saat render Dompdf
+                $src = 'data:' . $mime . ';base64,' . base64_encode($binary);
+            }
+        }
+
+        if ($src === '') {
+            $src = function_exists('media_url') ? media_url($url) : base_url($cleanUrl);
         }
 
         if ($src === '') {

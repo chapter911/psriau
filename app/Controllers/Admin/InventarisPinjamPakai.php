@@ -65,13 +65,17 @@ class InventarisPinjamPakai extends BaseController
         $pinjamModel = new InventarisPinjamPakaiModel();
         $db = db_connect();
 
+        $rawTahun = $this->request->getGet('tahun');
+        $filterTahun = (is_numeric($rawTahun) && (int) $rawTahun >= 2000 && (int) $rawTahun <= 2100) ? (int) $rawTahun : null;
+
         $filterStatus = trim((string) ($this->request->getGet('status') ?? ''));
         if (! in_array($filterStatus, ['dipinjam', 'dikembalikan', 'diperbaharui'], true)) {
             $filterStatus = null;
         }
 
-        $pinjamList = $pinjamModel->getPinjamWithRelations($filterStatus);
-        $summary = $pinjamModel->getSummaryStats();
+        $availableYears = $pinjamModel->getAvailableYears();
+        $pinjamList = $pinjamModel->getPinjamWithRelations($filterStatus, $filterTahun);
+        $summary = $pinjamModel->getSummaryStats($filterTahun);
         $availableAssets = $pinjamModel->getAvailableAssetsForLoan();
 
         // Ambil daftar pegawai aktif dari master pegawai
@@ -119,6 +123,9 @@ class InventarisPinjamPakai extends BaseController
             'nextNoSurat'      => $nextNoSurat,
             'tahunIni'         => (int) date('Y'),
             'currentFilter'    => $filterStatus,
+            'filterStatus'     => $filterStatus,
+            'filterTahun'      => $filterTahun,
+            'availableYears'   => $availableYears,
             'can_add'          => (bool) ($menuPermissions['add'] ?? false),
             'can_edit'         => (bool) ($menuPermissions['edit'] ?? false),
             'can_delete'       => (bool) ($menuPermissions['delete'] ?? false),
@@ -813,22 +820,15 @@ class InventarisPinjamPakai extends BaseController
 
         $pengaturanModel = new \App\Models\InventarisPengaturanModel();
 
-        // 1. Ambil Kop Surat: Jika ada kop_surat_id spesifik gunakan itu, jika tidak cari berdasarkan tanggal pinjam
+        // 1. Ambil Kop Surat: Jika ada kop_surat_id spesifik gunakan itu, jika tidak cari berdasarkan tanggal pinjam (Base64 aman untuk Dompdf)
         $kopSuratId = ! empty($loan['kop_surat_id']) ? (int) $loan['kop_surat_id'] : null;
+        $tglPinjam = $loan['tgl_pinjam'] ?? null;
         $kopSuratImg = '';
 
-        if (! empty($kopSuratId)) {
-            if (function_exists('kop_surat_img_tag')) {
-                $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 105px; object-fit: contain;', 'Kop Surat Instansi', $kopSuratId);
-            }
-        } else {
-            $matchedKop = $pengaturanModel->getKopSuratByDate($loan['tgl_pinjam'] ?? null);
-            if ($matchedKop && ! empty($matchedKop['image_url'])) {
-                $kopUrl = media_url((string) $matchedKop['image_url']);
-                $kopSuratImg = '<img src="' . esc($kopUrl) . '" alt="' . esc($matchedKop['nama_kop'] ?? 'Kop Surat') . '" style="width: 100%; max-height: 105px; object-fit: contain;" />';
-            } elseif (function_exists('kop_surat_img_tag')) {
-                $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 105px; object-fit: contain;', 'Kop Surat Instansi');
-            }
+        if (function_exists('inventaris_kop_surat_img_tag')) {
+            $kopSuratImg = inventaris_kop_surat_img_tag($kopSuratId, $tglPinjam, 'width: 100%; max-height: 105px; object-fit: contain;', 'Kop Surat Instansi');
+        } elseif (function_exists('kop_surat_img_tag')) {
+            $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 105px; object-fit: contain;', 'Kop Surat Instansi', $kopSuratId);
         }
 
         // Logo PU Base64 (Fallback jika master kop tidak ada)
@@ -1016,12 +1016,15 @@ class InventarisPinjamPakai extends BaseController
         }
 
         $pinjamModel = new InventarisPinjamPakaiModel();
+        $rawTahun = $this->request->getGet('tahun');
+        $filterTahun = (is_numeric($rawTahun) && (int) $rawTahun >= 2000 && (int) $rawTahun <= 2100) ? (int) $rawTahun : null;
+
         $filterStatus = trim((string) ($this->request->getGet('status') ?? ''));
-        if (! in_array($filterStatus, ['dipinjam', 'dikembalikan'], true)) {
+        if (! in_array($filterStatus, ['dipinjam', 'dikembalikan', 'diperbaharui'], true)) {
             $filterStatus = null;
         }
 
-        $list = $pinjamModel->getPinjamWithRelations($filterStatus);
+        $list = $pinjamModel->getPinjamWithRelations($filterStatus, $filterTahun);
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -1033,7 +1036,12 @@ class InventarisPinjamPakai extends BaseController
         $sheet->mergeCells('A2:P2');
         $sheet->setCellValue('A2', 'SATUAN KERJA PELAKSANAAN PRASARANA PERMUKIMAN STRATEGIS PROVINSI RIAU');
         $sheet->mergeCells('A3:P3');
-        $sheet->setCellValue('A3', 'Status Data: ' . ($filterStatus ? ucfirst($filterStatus) : 'Semua Status') . ' | Diekspor pada: ' . date('d/m/Y H:i') . ' WIB');
+        $subTitle = 'Status Data: ' . ($filterStatus ? ucfirst($filterStatus) : 'Semua Status');
+        if (! empty($filterTahun)) {
+            $subTitle .= ' | Tahun Pinjam: ' . $filterTahun;
+        }
+        $subTitle .= ' | Diekspor pada: ' . date('d/m/Y H:i') . ' WIB';
+        $sheet->setCellValue('A3', $subTitle);
 
         $sheet->getStyle('A1:P2')->getFont()->setBold(true)->setSize(12);
         $sheet->getStyle('A3')->getFont()->setItalic(true)->setSize(9);

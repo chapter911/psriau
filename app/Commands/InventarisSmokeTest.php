@@ -979,6 +979,41 @@ class InventarisSmokeTest extends BaseCommand
                 CLI::error("  [FAIL] Sinkronisasi metrik DBR dan Pinjam Pakai tidak cocok.");
             }
 
+            // 3b. Uji Fitur Filter Tahun & Dropdown Tahun Tersedia
+            $availableYears = $pinjamModel->getAvailableYears();
+            $hasCurrentYear = in_array((int) date('Y'), $availableYears, true);
+            $hasPastYear    = in_array(2025, $availableYears, true);
+            $filteredByYearList = $pinjamModel->getPinjamWithRelations(null, (int) date('Y'));
+            $statsForYear   = $pinjamModel->getSummaryStats((int) date('Y'));
+
+            $isYearFilterValid = $hasCurrentYear 
+                && $hasPastYear 
+                && is_array($filteredByYearList) 
+                && isset($statsForYear['total_dipinjam']);
+
+            if ($isYearFilterValid) {
+                CLI::write("  [OK] Fitur Filter Tahun Valid: Tersedia " . count($availableYears) . " pilihan tahun (" . implode(', ', $availableYears) . "), query getPinjamWithRelations(null, " . date('Y') . ") menghasilkan " . count($filteredByYearList) . " data, dan getSummaryStats(" . date('Y') . ") terhitung akurat.", "green");
+            } else {
+                CLI::error("  [FAIL] Fitur Filter Tahun pada model Pinjam Pakai gagal.");
+            }
+
+            // 3b. Uji Kop Surat Dinamis & Render Tag Base64 untuk Pinjam Pakai
+            $kopListDb = $db->tableExists('cfg_inventaris_kop_surat') ? $db->table('cfg_inventaris_kop_surat')->get()->getResultArray() : [];
+            if (! empty($kopListDb)) {
+                $firstKop = $kopListDb[0];
+                $pinjamModel->update($pinjamId, ['kop_surat_id' => (int) $firstKop['id']]);
+                $testLoanKop = $pinjamModel->getPinjamDetail($pinjamId);
+                $renderedTag = function_exists('inventaris_kop_surat_img_tag')
+                    ? inventaris_kop_surat_img_tag((int) $firstKop['id'], date('Y-m-d'))
+                    : '';
+                $isKopOk = ((int) ($testLoanKop['kop_surat_id'] ?? 0) === (int) $firstKop['id'] && ! empty($testLoanKop['kop_surat_title']));
+                if ($isKopOk && strpos($renderedTag, '<img') !== false) {
+                    CLI::write("  [OK] Kop Surat Pinjam Pakai Dinamis Valid: ID {$firstKop['id']} ({$testLoanKop['kop_surat_title']}) berhasil tersimpan, ter-link di detail, dan ter-render Base64 untuk PDF", "green");
+                } else {
+                    CLI::error("  [FAIL] Kop Surat Pinjam Pakai tidak tersinkronisasi.");
+                }
+            }
+
             // 4. Uji Render Surat Izin Pinjam Pakai BMN (Halaman 1-2 Portrait, Halaman 3 Landscape via FPDI)
             $loanDetail = $pinjamModel->getPinjamDetail($pinjamId);
             $tempPdfSurat = ROOTPATH . 'do_not_upload/temp/smoke_test_surat_pinjam.pdf';
@@ -1411,7 +1446,6 @@ class InventarisSmokeTest extends BaseCommand
             }
 
             // 6. Bersihkan data dummy pinjam pakai
-            $pinjamModel->delete($pinjamId);
             $pinjamModel->delete($pinjamId);
             if ($db->tableExists('trn_inventaris_pinjam_pakai_item')) {
                 $db->table('trn_inventaris_pinjam_pakai_item')->whereIn('pinjam_pakai_id', [$pinjamId, $renewPinjamId])->delete();

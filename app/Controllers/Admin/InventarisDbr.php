@@ -847,13 +847,10 @@ class InventarisDbr extends BaseController
             $totalNilai += (float) ($it['total_nilai'] ?? 0);
         }
 
-        // Ambil Kop Surat dari Master Pengaturan Dokumen BMN
-        $pengaturanModel = new \App\Models\InventarisPengaturanModel();
-        $matchedKop = $pengaturanModel->getKopSuratByDate(date('Y-m-d'));
+        // Ambil Kop Surat dari Master Pengaturan Dokumen BMN (Base64 aman untuk Dompdf)
         $kopSuratImg = '';
-        if ($matchedKop && ! empty($matchedKop['image_url'])) {
-            $kopUrl = media_url((string) $matchedKop['image_url']);
-            $kopSuratImg = '<img src="' . esc($kopUrl) . '" alt="' . esc($matchedKop['nama_kop'] ?? 'Kop Surat') . '" style="width: 100%; max-height: 115px; object-fit: contain;" />';
+        if (function_exists('inventaris_kop_surat_img_tag')) {
+            $kopSuratImg = inventaris_kop_surat_img_tag(null, date('Y-m-d'), 'width: 100%; max-height: 115px; object-fit: contain;', 'Kop Surat Instansi');
         } elseif (function_exists('kop_surat_img_tag')) {
             $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 115px; object-fit: contain;', 'Kop Surat Instansi');
         }
@@ -1488,13 +1485,10 @@ class InventarisDbr extends BaseController
             $groupedRooms[$roomId]['items'][] = $it;
         }
 
-        // Ambil Kop Surat dari Master Pengaturan Dokumen BMN
-        $pengaturanModel = new \App\Models\InventarisPengaturanModel();
-        $matchedKop = $pengaturanModel->getKopSuratByDate(date('Y-m-d'));
+        // Ambil Kop Surat dari Master Pengaturan Dokumen BMN (Base64 aman untuk Dompdf)
         $kopSuratImg = '';
-        if ($matchedKop && ! empty($matchedKop['image_url'])) {
-            $kopUrl = media_url((string) $matchedKop['image_url']);
-            $kopSuratImg = '<img src="' . esc($kopUrl) . '" alt="' . esc($matchedKop['nama_kop'] ?? 'Kop Surat') . '" style="width: 100%; max-height: 115px; object-fit: contain;" />';
+        if (function_exists('inventaris_kop_surat_img_tag')) {
+            $kopSuratImg = inventaris_kop_surat_img_tag(null, date('Y-m-d'), 'width: 100%; max-height: 115px; object-fit: contain;', 'Kop Surat Instansi');
         } elseif (function_exists('kop_surat_img_tag')) {
             $kopSuratImg = kop_surat_img_tag('', 'width: 100%; max-height: 115px; object-fit: contain;', 'Kop Surat Instansi');
         }

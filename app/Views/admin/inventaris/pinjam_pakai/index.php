@@ -126,7 +126,9 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
             <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #ffc107;">
                 <span class="info-box-icon bg-warning elevation-1 text-white" style="border-radius: 8px;"><i class="fas fa-hand-holding"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text text-muted font-weight-bold">Sedang Dipinjam</span>
+                    <span class="info-box-text text-muted font-weight-bold">
+                        Sedang Dipinjam<?= ! empty($filterTahun) ? ' <span class="badge badge-warning text-white" style="font-size: 0.68rem; vertical-align: middle;">' . $filterTahun . '</span>' : ''; ?>
+                    </span>
                     <span class="info-box-number text-dark" style="font-size: 1.35rem;"><?= number_format($cntDipinjam); ?> Aset</span>
                 </div>
             </div>
@@ -135,7 +137,9 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
             <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #28a745;">
                 <span class="info-box-icon bg-success elevation-1" style="border-radius: 8px;"><i class="fas fa-check-circle"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text text-muted font-weight-bold">Telah Dikembalikan</span>
+                    <span class="info-box-text text-muted font-weight-bold">
+                        Telah Dikembalikan<?= ! empty($filterTahun) ? ' <span class="badge badge-success" style="font-size: 0.68rem; vertical-align: middle;">' . $filterTahun . '</span>' : ''; ?>
+                    </span>
                     <span class="info-box-number text-success" style="font-size: 1.35rem;"><?= number_format($cntDikembalikan); ?> Selesai</span>
                 </div>
             </div>
@@ -144,7 +148,9 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
             <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #17a2b8;">
                 <span class="info-box-icon bg-info elevation-1" style="border-radius: 8px;"><i class="fas fa-users"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text text-muted font-weight-bold">Pegawai Peminjam</span>
+                    <span class="info-box-text text-muted font-weight-bold">
+                        Pegawai Peminjam<?= ! empty($filterTahun) ? ' <span class="badge badge-info" style="font-size: 0.68rem; vertical-align: middle;">' . $filterTahun . '</span>' : ''; ?>
+                    </span>
                     <span class="info-box-number text-info" style="font-size: 1.35rem;"><?= number_format($cntPeminjam); ?> Orang</span>
                 </div>
             </div>
@@ -153,10 +159,71 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
             <div class="info-box shadow-sm mb-3" style="border-radius: 10px; border-left: 4px solid #6c757d;">
                 <span class="info-box-icon bg-secondary elevation-1" style="border-radius: 8px;"><i class="fas fa-coins"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text text-muted font-weight-bold">Nilai Aset Dipinjam</span>
+                    <span class="info-box-text text-muted font-weight-bold">
+                        Nilai Aset Dipinjam<?= ! empty($filterTahun) ? ' <span class="badge badge-secondary" style="font-size: 0.68rem; vertical-align: middle;">' . $filterTahun . '</span>' : ''; ?>
+                    </span>
                     <span class="info-box-number text-dark" style="font-size: 1.15rem;">Rp <?= number_format($valDipinjam, 0, ',', '.'); ?></span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card shadow-sm mb-3" style="border-radius: 10px; border: 1px solid #e9eef5;">
+        <div class="card-body py-3">
+            <form method="get" action="<?= site_url('admin/inventaris/pinjam-pakai'); ?>" id="formFilterPinjam">
+                <div class="row align-items-end">
+                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                        <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-calendar-alt mr-1 text-primary"></i> Filter Tahun</label>
+                        <select name="tahun" class="form-control form-control-sm" style="border-radius: 6px;" onchange="this.form.submit()">
+                            <option value="">-- Semua Tahun --</option>
+                            <?php foreach (($availableYears ?? []) as $y): ?>
+                                <option value="<?= (int) $y; ?>" <?= (! empty($filterTahun) && (int) $filterTahun === (int) $y) ? 'selected' : ''; ?>>
+                                    Tahun <?= (int) $y; ?><?= ((int) $y === (int) date('Y')) ? ' (Tahun Berjalan)' : ''; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                        <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-flag mr-1 text-warning"></i> Status Peminjaman</label>
+                        <select name="status" class="form-control form-control-sm" style="border-radius: 6px;" onchange="this.form.submit()">
+                            <option value="">-- Semua Status --</option>
+                            <option value="dipinjam" <?= (($filterStatus ?? '') === 'dipinjam') ? 'selected' : ''; ?>>Sedang Dipinjam</option>
+                            <option value="dikembalikan" <?= (($filterStatus ?? '') === 'dikembalikan') ? 'selected' : ''; ?>>Telah Dikembalikan</option>
+                            <option value="diperbaharui" <?= (($filterStatus ?? '') === 'diperbaharui') ? 'selected' : ''; ?>>Diperbaharui (Perpanjangan)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                        <?php if (! empty($filterTahun) || ! empty($filterStatus)): ?>
+                            <div class="small text-muted mb-1"><i class="fas fa-info-circle mr-1 text-info"></i> Status Filter</div>
+                            <div class="d-flex flex-wrap align-items-center" style="gap: 4px;">
+                                <?php if (! empty($filterTahun)): ?>
+                                    <span class="badge badge-primary px-2 py-1" style="font-size: 0.78rem;">
+                                        <i class="fas fa-calendar mr-1"></i> Tahun <?= $filterTahun; ?>
+                                    </span>
+                                <?php endif; ?>
+                                <?php if (! empty($filterStatus)): ?>
+                                    <span class="badge badge-secondary px-2 py-1" style="font-size: 0.78rem;">
+                                        <i class="fas fa-tag mr-1"></i> <?= ucfirst($filterStatus); ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        <?php else: ?>
+                            <small class="text-muted d-block" style="font-size: 0.8rem; line-height: 1.4;">
+                                Menampilkan rekapitulasi data peminjaman aset BMN seluruh tahun anggaran.
+                            </small>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-3 col-sm-6 d-flex justify-content-md-end" style="gap: 6px;">
+                        <button type="submit" class="btn btn-primary btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 6px;">
+                            <i class="fas fa-filter mr-1"></i> Saring
+                        </button>
+                        <a href="<?= site_url('admin/inventaris/pinjam-pakai'); ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm" style="border-radius: 6px;" title="Reset Filter ke Semua Data">
+                            <i class="fas fa-undo mr-1"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -180,8 +247,14 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                     <a href="<?= site_url('admin/inventaris/satker'); ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm" style="border-radius: 6px;">
                         <i class="fas fa-boxes mr-1"></i> Daftar Barang
                     </a>
+                    <?php 
+                        $exportParams = [];
+                        if (! empty($filterTahun)) { $exportParams['tahun'] = $filterTahun; }
+                        if (! empty($filterStatus)) { $exportParams['status'] = $filterStatus; }
+                        $exportExcelUrl = site_url('admin/inventaris/pinjam-pakai/export-excel') . (! empty($exportParams) ? '?' . http_build_query($exportParams) : '');
+                    ?>
                     <?php if (! empty($can_export)): ?>
-                        <a href="<?= site_url('admin/inventaris/pinjam-pakai/export-excel'); ?>" class="btn btn-success btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 6px;" title="Export Rekap Pinjam Pakai ke Excel">
+                        <a href="<?= $exportExcelUrl; ?>" class="btn btn-success btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 6px;" title="Export Rekap Pinjam Pakai ke Excel (Sesuai Filter)">
                             <i class="fas fa-file-excel mr-1"></i> Export Excel
                         </a>
                     <?php endif; ?>
@@ -676,6 +749,7 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Pilih Kop Surat Instansi</label>
                                     <select name="kop_surat_id" id="tambah-kop-surat-id" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
+                                        <option value="">-- Otomatis (Sesuai Periode Tanggal Pinjam) --</option>
                                         <?php if (! empty($kopSuratList)): ?>
                                             <?php foreach ($kopSuratList as $kop): ?>
                                                 <option value="<?= (int) $kop['id']; ?>" <?= ! empty($kop['is_active']) ? 'selected' : ''; ?>>
@@ -863,6 +937,7 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                 <div class="col-md-6 form-group mb-2">
                                     <label class="font-weight-bold small text-dark mb-1">Pilih Kop Surat Instansi</label>
                                     <select name="kop_surat_id" id="edit-kop-surat-id" class="form-control" style="border-radius: 6px; font-size: 0.9rem;">
+                                        <option value="">-- Otomatis (Sesuai Periode Tanggal Pinjam) --</option>
                                         <?php if (! empty($kopSuratList)): ?>
                                             <?php foreach ($kopSuratList as $kop): ?>
                                                 <option value="<?= (int) $kop['id']; ?>">
@@ -1129,9 +1204,9 @@ $valDipinjam = (float) ($stats['total_nilai_dipinjam'] ?? $summary['total_nilai_
                                         Pilihan Kop Surat Instansi
                                     </label>
                                     <select name="kop_surat_id" id="perbaharui-kop-surat-id" class="form-control" style="border-radius: 6px; font-size: 0.88rem;">
-                                        <option value="">-- Gunakan Kop Aktif Default --</option>
+                                        <option value="">-- Otomatis (Sesuai Periode Tanggal Pinjam) --</option>
                                         <?php foreach (($kopSuratList ?? []) as $kop): ?>
-                                            <option value="<?= $kop['id']; ?>" <?= ! empty($kop['is_active']) ? 'selected' : ''; ?>>
+                                            <option value="<?= $kop['id']; ?>">
                                                 <?= esc($kop['nama']); ?> <?= ! empty($kop['is_active']) ? '(Aktif)' : ''; ?>
                                             </option>
                                         <?php endforeach; ?>
@@ -1859,7 +1934,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var elKop = document.getElementById('perbaharui-kop-surat-id');
         if (elKop) {
             var kopId = btn.getAttribute('data-kop-id') || '';
-            if (kopId) elKop.value = kopId;
+            elKop.value = kopId;
         }
 
         // Ambil nomor surat baru untuk tahun target
