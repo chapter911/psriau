@@ -5,6 +5,11 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\KopSuratModel;
 use CodeIgniter\HTTP\RedirectResponse;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\Shared\Converter;
+use PhpOffice\PhpWord\SimpleType\Jc;
+use PhpOffice\PhpWord\SimpleType\JcTable;
 
 class KopSurat extends BaseController
 {
@@ -22,10 +27,14 @@ class KopSurat extends BaseController
             ->orderBy('id', 'DESC')
             ->findAll();
 
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK_KOP_SURAT);
+
         return view('admin/kop_surat/index', [
             'pageTitle' => 'Kop Surat',
             'items' => $items,
             'can_edit' => $this->canManageKopSurat(),
+            'menuPermissions' => $menuPermissions,
+            'can_export' => (bool) ($menuPermissions['export'] ?? false),
         ]);
     }
 
@@ -132,6 +141,200 @@ class KopSurat extends BaseController
             : 'Kop surat berhasil dinonaktifkan.';
 
         return redirect()->to('/admin/master/kop-surat')->with('message', $message);
+    }
+
+    public function downloadWord(?int $id = null)
+    {
+        $forbidden = $this->denyIfNoMenuAccess();
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK_KOP_SURAT);
+        if (! (bool) ($menuPermissions['export'] ?? false)) {
+            return redirect()->to('/admin/master/kop-surat')->with('error', 'Anda tidak memiliki izin ekspor pada menu Kop Surat.');
+        }
+
+        $model = new KopSuratModel();
+        $item = null;
+
+        if ($id !== null && $id > 0) {
+            $item = $model->find($id);
+        } else {
+            $item = $model->where('is_active', 1)->orderBy('id', 'DESC')->first();
+            if (! is_array($item)) {
+                $item = $model->orderBy('id', 'DESC')->first();
+            }
+        }
+
+        if (! is_array($item)) {
+            return redirect()->to('/admin/master/kop-surat')->with('error', 'Data kop surat tidak ditemukan.');
+        }
+
+        $imageUrl = (string) ($item['image_url'] ?? '');
+        if (trim($imageUrl) === '') {
+            return redirect()->to('/admin/master/kop-surat')->with('error', 'File gambar kop surat belum diunggah.');
+        }
+
+        $cleanUrl = ltrim($imageUrl, '/');
+        if (preg_match('#^https?://[^/]+/(.*)$#i', $imageUrl, $m)) {
+            $cleanUrl = ltrim($m[1], '/');
+        }
+
+        $localImagePath = FCPATH . str_replace('/', DIRECTORY_SEPARATOR, $cleanUrl);
+        if (! is_file($localImagePath)) {
+            return redirect()->to('/admin/master/kop-surat')->with('error', 'Berkas fisik kop surat tidak ditemukan pada server.');
+        }
+
+        $tempDir = FCPATH . '../do_not_upload/temp';
+        if (! is_dir($tempDir)) {
+            @mkdir($tempDir, 0755, true);
+        }
+
+        $imageToUse = $localImagePath;
+        $tempConvertedImage = null;
+        $ext = strtolower(pathinfo($localImagePath, PATHINFO_EXTENSION));
+
+        if ($ext === 'webp' && function_exists('imagecreatefromwebp') && function_exists('imagepng')) {
+            $im = @imagecreatefromwebp($localImagePath);
+            if ($im !== false) {
+                $tempConvertedImage = $tempDir . '/kop_' . uniqid('', true) . '.png';
+                imagepng($im, $tempConvertedImage);
+                imagedestroy($im);
+                $imageToUse = $tempConvertedImage;
+            }
+        }
+
+        $imgSize = @getimagesize($imageToUse);
+        $aspect = 0.2;
+        if (is_array($imgSize) && ($imgSize[0] ?? 0) > 0) {
+            $aspect = $imgSize[1] / $imgSize[0];
+        }
+
+        $phpWord = new PhpWord();
+        $phpWord->setDefaultFontName('Arial');
+        $phpWord->setDefaultFontSize(11);
+
+        $section = $phpWord->addSection([
+            'paperSize' => 'A4',
+            'marginLeft' => Converter::cmToTwip(2.0),
+            'marginRight' => Converter::cmToTwip(2.0),
+            'marginTop' => Converter::cmToTwip(1.5),
+            'marginBottom' => Converter::cmToTwip(2.0),
+        ]);
+
+        $targetWidthPt = Converter::cmToPoint(17.0);
+        $targetHeightPt = $targetWidthPt * $aspect;
+
+        $section->addImage($imageToUse, [
+            'width' => $targetWidthPt,
+            'height' => $targetHeightPt,
+            'alignment' => Jc::CENTER,
+        ]);
+
+        $section->addTextBreak(1);
+
+        $table = $section->addTable([
+            'alignment' => JcTable::CENTER,
+            'cellMargin' => 0,
+            'borderSize' => 0,
+            'borderColor' => 'FFFFFF',
+        ]);
+
+        $col1Width = Converter::cmToTwip(10.5);
+        $col2Width = Converter::cmToTwip(6.5);
+
+        $row = $table->addRow();
+        $cell1 = $row->addCell($col1Width);
+        $cell2 = $row->addCell($col2Width);
+
+        $bulanIndo = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $tanggalFormatted = date('d') . ' ' . ($bulanIndo[(int) date('n')] ?? date('F')) . ' ' . date('Y');
+
+        $cell1->addText('Nomor       :   .../SATKER-PPS/RIAU/' . date('Y'), ['size' => 11, 'name' => 'Arial']);
+        $cell1->addText('Sifat          :   Biasa', ['size' => 11, 'name' => 'Arial']);
+        $cell1->addText('Lampiran  :   -', ['size' => 11, 'name' => 'Arial']);
+        $cell1->addText('Hal            :   [Perihal Surat]', ['bold' => true, 'size' => 11, 'name' => 'Arial']);
+
+        $cell2->addText('Pekanbaru, ' . $tanggalFormatted, ['size' => 11, 'name' => 'Arial']);
+        $cell2->addTextBreak(1);
+        $cell2->addText('Kepada Yth.', ['size' => 11, 'name' => 'Arial']);
+        $cell2->addText('[Nama Penerima / Jabatan]', ['bold' => true, 'size' => 11, 'name' => 'Arial']);
+        $cell2->addText('di -', ['size' => 11, 'name' => 'Arial']);
+        $cell2->addText('    [Tempat / Kota]', ['size' => 11, 'name' => 'Arial']);
+
+        $section->addTextBreak(1);
+
+        $section->addText('Dengan hormat,', ['size' => 11, 'name' => 'Arial']);
+        $section->addText(
+            'Sehubungan dengan pelaksanaan kegiatan pada Satuan Kerja Pelaksanaan Prasarana Strategis Provinsi Riau, bersama ini kami sampaikan hal-hal sebagai berikut:',
+            ['size' => 11, 'name' => 'Arial'],
+            ['alignment' => Jc::BOTH, 'spaceAfter' => Converter::pointToTwip(6)]
+        );
+
+        $section->addText(
+            '1. [Poin penjelasan atau dasar pelaksanaan kegiatan].',
+            ['size' => 11, 'name' => 'Arial'],
+            ['alignment' => Jc::BOTH, 'spaceAfter' => Converter::pointToTwip(4)]
+        );
+        $section->addText(
+            '2. [Rincian informasi, data pendukung, atau instruksi teknis].',
+            ['size' => 11, 'name' => 'Arial'],
+            ['alignment' => Jc::BOTH, 'spaceAfter' => Converter::pointToTwip(6)]
+        );
+
+        $section->addText(
+            'Demikian kami sampaikan, atas perhatian dan kerja samanya diucapkan terima kasih.',
+            ['size' => 11, 'name' => 'Arial'],
+            ['alignment' => Jc::BOTH, 'spaceAfter' => Converter::pointToTwip(12)]
+        );
+
+        $section->addTextBreak(1);
+
+        $ttdTable = $section->addTable([
+            'alignment' => JcTable::CENTER,
+            'cellMargin' => 0,
+            'borderSize' => 0,
+            'borderColor' => 'FFFFFF',
+        ]);
+        $ttdRow = $ttdTable->addRow();
+        $ttdCellLeft = $ttdRow->addCell(Converter::cmToTwip(9.5));
+        $ttdCellRight = $ttdRow->addCell(Converter::cmToTwip(7.5));
+
+        $ttdCellRight->addText('Kepala Satuan Kerja Pelaksanaan', ['size' => 11, 'name' => 'Arial'], ['alignment' => Jc::CENTER]);
+        $ttdCellRight->addText('Prasarana Strategis Provinsi Riau,', ['size' => 11, 'name' => 'Arial'], ['alignment' => Jc::CENTER]);
+        $ttdCellRight->addTextBreak(3);
+        $ttdCellRight->addText('[ Nama Pejabat / Kasatker ]', ['bold' => true, 'underline' => 'single', 'size' => 11, 'name' => 'Arial'], ['alignment' => Jc::CENTER]);
+        $ttdCellRight->addText('NIP. ....................................................', ['size' => 11, 'name' => 'Arial'], ['alignment' => Jc::CENTER]);
+
+        $section->addTextBreak(1);
+        $section->addText('Tembusan Yth.:', ['italic' => true, 'size' => 10, 'name' => 'Arial']);
+        $section->addText('1. Direktur Prasarana Strategis, Ditjen Cipta Karya / Prasarana Strategis;', ['size' => 10, 'name' => 'Arial']);
+        $section->addText('2. Pertinggal.', ['size' => 10, 'name' => 'Arial']);
+
+        $tempDocx = $tempDir . '/template_kop_' . uniqid('', true) . '.docx';
+        $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
+        $objWriter->save($tempDocx);
+
+        if ($tempConvertedImage !== null && is_file($tempConvertedImage)) {
+            @unlink($tempConvertedImage);
+        }
+
+        $safeTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) ($item['title'] ?? 'Kop_Surat'));
+        $downloadFilename = 'Template_Word_' . trim($safeTitle, '_') . '.docx';
+
+        $content = file_get_contents($tempDocx);
+        @unlink($tempDocx);
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $downloadFilename . '"')
+            ->setHeader('Cache-Control', 'max-age=0')
+            ->setBody($content);
     }
 
     private function saveData(?int $id = null, ?array $existing = null, bool $isAJAX = false)
@@ -386,5 +589,49 @@ class KopSurat extends BaseController
         }
 
         return null;
+    }
+
+    private function resolveMenuPermissions(string $menuLink): array
+    {
+        $default = [
+            'add' => false,
+            'edit' => false,
+            'delete' => false,
+            'export' => false,
+            'import' => false,
+            'approval' => false,
+        ];
+
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return $default;
+        }
+
+        $roleId = $this->resolveRoleId((string) session()->get('role'), $db);
+        $menuId = $this->resolveMenuIdByLink($menuLink, $db);
+        if ($roleId === null || $menuId === null) {
+            return $default;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        $row = $db->table('menu_akses')
+            ->select('FiturAdd, FiturEdit, FiturDelete, FiturExport, FiturImport, FiturApproval')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($row)) {
+            return $default;
+        }
+
+        return [
+            'add' => (bool) ((int) ($row['FiturAdd'] ?? 0)),
+            'edit' => (bool) ((int) ($row['FiturEdit'] ?? 0)),
+            'delete' => (bool) ((int) ($row['FiturDelete'] ?? 0)),
+            'export' => (bool) ((int) ($row['FiturExport'] ?? 0)),
+            'import' => (bool) ((int) ($row['FiturImport'] ?? 0)),
+            'approval' => (bool) ((int) ($row['FiturApproval'] ?? 0)),
+        ];
     }
 }

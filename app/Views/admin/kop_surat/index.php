@@ -6,17 +6,26 @@ $menuPermissions = is_array($currentMenuPermissions ?? null) ? $currentMenuPermi
 $canEditBase = (bool) ($can_edit ?? false);
 $canAddFeature = (bool) ($menuPermissions['add'] ?? false);
 $canEditFeature = (bool) ($menuPermissions['edit'] ?? false);
+$canExportFeature = (bool) ($menuPermissions['export'] ?? false);
 $canAdd = $canEditBase && $canAddFeature;
 $canEditAction = $canEditBase && $canEditFeature;
+$canExport = $canExportFeature;
 ?>
 <div class="card">
-    <div class="card-header">
-        <h2 class="card-title">Daftar Kop Surat</h2>
-        <?php if ($canAdd): ?>
-            <div class="float-right">
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-kop-surat">Tambah Kop Surat</button>
-            </div>
-        <?php endif; ?>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h2 class="card-title font-weight-bold m-0">Daftar Kop Surat</h2>
+        <div class="card-tools d-flex align-items-center" style="gap: 8px;">
+            <?php if ($canExport): ?>
+                <a href="<?= site_url('/admin/master/kop-surat/unduh-word'); ?>" class="btn btn-info shadow-sm" title="Unduh File Word (.docx) dengan Kop Surat Aktif">
+                    <i class="fas fa-file-word mr-1"></i> Unduh Template Word
+                </a>
+            <?php endif; ?>
+            <?php if ($canAdd): ?>
+                <button type="button" class="btn btn-primary shadow-sm" data-toggle="modal" data-target="#modal-tambah-kop-surat">
+                    <i class="fas fa-plus mr-1"></i> Tambah Kop Surat
+                </button>
+            <?php endif; ?>
+        </div>
     </div>
     <div class="card-body">
         <table class="table table-bordered table-striped w-100 nowrap js-datatable">
@@ -24,7 +33,7 @@ $canEditAction = $canEditBase && $canEditFeature;
                 <tr style="white-space: nowrap;">
                     <th class="text-center">#</th>
                     <th class="text-center">JUDUL</th>
-                    <th class="text-center">GAMBAR</th>
+                    <th class="text-center">GAMBAR / DOKUMEN</th>
                     <th class="text-center">STATUS</th>
                     <?php if ($canEditAction): ?>
                         <th class="text-center">ACTION</th>
@@ -37,16 +46,29 @@ $canEditAction = $canEditBase && $canEditFeature;
                         <td><?= esc((string) $i++); ?></td>
                         <td>
                             <div class="font-weight-bold"><?= esc((string) ($item['title'] ?? '-')); ?></div>
+                            <?php if (! empty($item['description'] ?? '')): ?>
+                                <small class="text-muted"><?= esc((string) $item['description']); ?></small>
+                            <?php endif; ?>
                         </td>
                         <td class="text-center">
                             <?php if (! empty($item['image_url'] ?? '')): ?>
-                                <button
-                                    type="button"
-                                    class="btn btn-info btn-sm js-preview-kop-surat"
-                                    title="Lihat"
-                                    data-image-url="<?= esc(base_url((string) ($item['image_url'] ?? '')), 'attr'); ?>"
-                                    data-title="<?= esc((string) ($item['title'] ?? 'Kop Surat'), 'attr'); ?>"
-                                ><i class="fas fa-eye"></i></button>
+                                <div class="btn-group" role="group">
+                                    <button
+                                        type="button"
+                                        class="btn btn-info btn-sm js-preview-kop-surat"
+                                        title="Lihat Pratinjau Gambar"
+                                        data-id="<?= esc((string) ((int) ($item['id'] ?? 0))); ?>"
+                                        data-image-url="<?= esc(base_url((string) ($item['image_url'] ?? '')), 'attr'); ?>"
+                                        data-title="<?= esc((string) ($item['title'] ?? 'Kop Surat'), 'attr'); ?>"
+                                    ><i class="fas fa-eye"></i></button>
+                                    <?php if ($canExport): ?>
+                                        <a
+                                            href="<?= site_url('/admin/master/kop-surat/' . (int) ($item['id'] ?? 0) . '/unduh-word'); ?>"
+                                            class="btn btn-primary btn-sm"
+                                            title="Unduh File Word (.docx) dengan Kop Surat ini"
+                                        ><i class="fas fa-file-word mr-1"></i> Word</a>
+                                    <?php endif; ?>
+                                </div>
                             <?php else: ?>
                                 -
                             <?php endif; ?>
@@ -116,14 +138,22 @@ $canEditAction = $canEditBase && $canEditFeature;
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body text-center">
+            <div class="modal-body text-center bg-light p-3">
                 <img
                     id="modal-lihat-kop-surat-image"
                     src=""
                     alt="Preview Kop Surat"
-                    class="img-fluid"
-                    style="max-height: 75vh;"
+                    class="img-fluid rounded border shadow-sm"
+                    style="max-height: 65vh;"
                 >
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <?php if ($canExport): ?>
+                    <a href="#" id="modal-lihat-kop-surat-download" class="btn btn-primary" title="Unduh File Word dengan Kop Surat ini">
+                        <i class="fas fa-file-word mr-1"></i> Unduh File Word (.docx)
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -230,6 +260,7 @@ $canEditAction = $canEditBase && $canEditFeature;
     (function () {
         const modalTitle = document.getElementById('modal-lihat-kop-surat-title');
         const modalImage = document.getElementById('modal-lihat-kop-surat-image');
+        const modalDownload = document.getElementById('modal-lihat-kop-surat-download');
         const modalElement = document.getElementById('modal-lihat-kop-surat');
 
         if (modalTitle && modalImage && modalElement) {
@@ -239,10 +270,20 @@ $canEditAction = $canEditBase && $canEditFeature;
 
                 const imageUrl = trigger.getAttribute('data-image-url') || '';
                 const title = trigger.getAttribute('data-title') || 'Preview Kop Surat';
+                const id = trigger.getAttribute('data-id') || '';
 
                 modalTitle.textContent = title;
                 modalImage.src = imageUrl;
                 modalImage.alt = 'Preview ' + title;
+
+                if (modalDownload) {
+                    if (id) {
+                        modalDownload.href = '<?= site_url('/admin/master/kop-surat'); ?>/' + id + '/unduh-word';
+                        modalDownload.style.display = 'inline-block';
+                    } else {
+                        modalDownload.style.display = 'none';
+                    }
+                }
 
                 if (window.jQuery && window.jQuery.fn && window.jQuery.fn.modal) {
                     window.jQuery('#modal-lihat-kop-surat').modal('show');

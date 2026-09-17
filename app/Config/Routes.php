@@ -158,6 +158,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('kontrak/simak/konsultasi/(:num)/export/zip', 'Admin\\Kontrak::downloadSimakKonsultasiZip/$1');
 	
 	$routes->get('master/kop-surat', 'Admin\\KopSurat::index');
+	$routes->get('master/kop-surat/unduh-word', 'Admin\\KopSurat::downloadWord');
+	$routes->get('master/kop-surat/(:num)/unduh-word', 'Admin\\KopSurat::downloadWord/$1');
 	$routes->match(['get', 'post'], 'master/kop-surat/tambah', 'Admin\\KopSurat::create');
 	$routes->match(['get', 'post'], 'master/kop-surat/(:num)/ubah', 'Admin\\KopSurat::edit/$1');
 	$routes->post('master/kop-surat/(:num)/status', 'Admin\\KopSurat::updateStatus/$1');

@@ -399,9 +399,11 @@ graph TD
     A[Buka Manajemen User & Role] --> B[Atur Hak Akses RBAC & Menu Akses]
     B --> C[Audit Log & Riwayat Login]
     C --> D[Konfigurasi KOP Surat & Pengaturan Sistem Global]
+    D --> E["Unduh File Word (.docx) Template Kop Surat Resmi"]
                 </pre>
             </div>
         </div>
+    </div>
     <!-- FLOWCHART 6: JADWAL & KLASEMEN GATEBALL -->
     <div class="flowchart-card role-section" data-roles="all,admin,super_administrator,staf_pelaksana,ppk_kasatker">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
@@ -714,6 +716,15 @@ graph TD
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-database mr-1"></i> Database Merge & Extract</h6>
                                 <p class="small text-muted mb-2"><code>/admin/pengaturan/application</code></p>
                                 <p class="small mb-0">Ekstraksi dan penggabungan skema database serta sinkronisasi aplikasi.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-file-image mr-1"></i> Master Kop Surat & Unduh Template Word (.docx)</h6>
+                                <p class="small text-muted mb-2"><code>/admin/master/kop-surat</code></p>
+                                <p class="small mb-0">Pengelolaan berkas kop surat resmi Satker PPS Riau (unggah gambar banner, pratinjau resolusi penuh, dan aktivasi kop instansi). Dilengkapi fitur <strong>Unduh File Word (.docx)</strong> baik langsung melalui tombol di header halaman (mengunduh kop surat aktif), tombol baris tabel per kop surat, maupun tombol aksi di dalam modal pratinjau. Dokumen Word yang diunduh berformat A4 dengan margin standar kedinasan (Top 1.5 cm, Left/Right/Bottom 2.0 cm), gambar banner kop surat proporsional resolusi tajam, serta draf surat kedinasan lengkap (Nomor, Sifat, Lampiran, Hal, Tanggal, Tujuan Yth., Salam Pembuka, Poin Isi Surat, Penutup, Blok Tanda Tangan Kasatker, dan Tembusan) yang <em>100% editable</em> di Microsoft Word.</p>
                             </div>
                         </div>
                     </div>
