@@ -5,11 +5,7 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\KopSuratModel;
 use CodeIgniter\HTTP\RedirectResponse;
-use PhpOffice\PhpWord\IOFactory;
-use PhpOffice\PhpWord\PhpWord;
-use PhpOffice\PhpWord\Shared\Converter;
-use PhpOffice\PhpWord\SimpleType\Jc;
-use PhpOffice\PhpWord\SimpleType\JcTable;
+use ZipArchive;
 
 class KopSurat extends BaseController
 {
@@ -186,149 +182,91 @@ class KopSurat extends BaseController
             return redirect()->to('/admin/master/kop-surat')->with('error', 'Berkas fisik kop surat tidak ditemukan pada server.');
         }
 
+        $templatePath = APPPATH . 'Views/admin/kop_surat/template_kop_surat.docx';
+        if (! is_file($templatePath)) {
+            return redirect()->to('/admin/master/kop-surat')->with('error', 'Berkas template dokumen Word tidak ditemukan pada server.');
+        }
+
+        if (! class_exists(ZipArchive::class)) {
+            return redirect()->to('/admin/master/kop-surat')->with('error', 'Ekstensi PHP ZipArchive tidak tersedia pada server.');
+        }
+
         $tempDir = FCPATH . '../do_not_upload/temp';
         if (! is_dir($tempDir)) {
             @mkdir($tempDir, 0755, true);
         }
 
-        $imageToUse = $localImagePath;
-        $tempConvertedImage = null;
-        $ext = strtolower(pathinfo($localImagePath, PATHINFO_EXTENSION));
+        $tempDocx = $tempDir . '/template_kop_' . uniqid('', true) . '.docx';
+        if (! @copy($templatePath, $tempDocx)) {
+            return redirect()->to('/admin/master/kop-surat')->with('error', 'Gagal memproses template dokumen Word.');
+        }
 
-        if ($ext === 'webp' && function_exists('imagecreatefromwebp') && function_exists('imagepng')) {
-            $im = @imagecreatefromwebp($localImagePath);
+        $zip = new ZipArchive();
+        if ($zip->open($tempDocx) !== true) {
+            @unlink($tempDocx);
+            return redirect()->to('/admin/master/kop-surat')->with('error', 'Gagal membuka berkas dokumen Word.');
+        }
+
+        $imageBinary = @file_get_contents($localImagePath);
+        if ($imageBinary === false || $imageBinary === '') {
+            $zip->close();
+            @unlink($tempDocx);
+            return redirect()->to('/admin/master/kop-surat')->with('error', 'Gagal membaca berkas gambar kop surat.');
+        }
+
+        $ext = strtolower(pathinfo($localImagePath, PATHINFO_EXTENSION));
+        if ($ext !== 'png' && function_exists('imagecreatefromstring') && function_exists('imagepng')) {
+            $im = @imagecreatefromstring($imageBinary);
             if ($im !== false) {
-                $tempConvertedImage = $tempDir . '/kop_' . uniqid('', true) . '.png';
-                imagepng($im, $tempConvertedImage);
+                ob_start();
+                imagepng($im);
+                $converted = ob_get_clean();
+                if ($converted !== false && $converted !== '') {
+                    $imageBinary = $converted;
+                }
                 imagedestroy($im);
-                $imageToUse = $tempConvertedImage;
             }
         }
 
-        $imgSize = @getimagesize($imageToUse);
+        $imgSize = @getimagesizefromstring($imageBinary) ?: @getimagesize($localImagePath);
         $aspect = 0.2;
         if (is_array($imgSize) && ($imgSize[0] ?? 0) > 0) {
             $aspect = $imgSize[1] / $imgSize[0];
         }
 
-        $phpWord = new PhpWord();
-        $phpWord->setDefaultFontName('Arial');
-        $phpWord->setDefaultFontSize(11);
+        $targetWidthPt = 481.89; // 17.0 cm in points
+        $targetHeightPt = round($targetWidthPt * $aspect, 2);
 
-        $section = $phpWord->addSection([
-            'paperSize' => 'A4',
-            'marginLeft' => Converter::cmToTwip(2.0),
-            'marginRight' => Converter::cmToTwip(2.0),
-            'marginTop' => Converter::cmToTwip(1.5),
-            'marginBottom' => Converter::cmToTwip(2.0),
-        ]);
+        $zip->addFromString('word/media/section_image1.png', $imageBinary);
 
-        $targetWidthPt = Converter::cmToPoint(17.0);
-        $targetHeightPt = $targetWidthPt * $aspect;
+        $xml = $zip->getFromName('word/document.xml');
+        if ($xml !== false) {
+            $xml = preg_replace('/style="width:[^;]+; height:[^;]+;/', 'style="width:481.89pt; height:' . $targetHeightPt . 'pt;', $xml);
 
-        $section->addImage($imageToUse, [
-            'width' => $targetWidthPt,
-            'height' => $targetHeightPt,
-            'alignment' => Jc::CENTER,
-        ]);
+            $bulanIndo = [
+                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            ];
+            $tanggalFormatted = date('d') . ' ' . ($bulanIndo[(int) date('n')] ?? date('F')) . ' ' . date('Y');
 
-        $section->addTextBreak(1);
+            $xml = str_replace('[TANGGAL_SURAT]', $tanggalFormatted, $xml);
+            $xml = str_replace('[TAHUN]', date('Y'), $xml);
 
-        $table = $section->addTable([
-            'alignment' => JcTable::CENTER,
-            'cellMargin' => 0,
-            'borderSize' => 0,
-            'borderColor' => 'FFFFFF',
-        ]);
+            $zip->addFromString('word/document.xml', $xml);
+        }
 
-        $col1Width = Converter::cmToTwip(10.5);
-        $col2Width = Converter::cmToTwip(6.5);
+        $zip->close();
 
-        $row = $table->addRow();
-        $cell1 = $row->addCell($col1Width);
-        $cell2 = $row->addCell($col2Width);
+        $content = @file_get_contents($tempDocx);
+        @unlink($tempDocx);
 
-        $bulanIndo = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-        ];
-        $tanggalFormatted = date('d') . ' ' . ($bulanIndo[(int) date('n')] ?? date('F')) . ' ' . date('Y');
-
-        $cell1->addText('Nomor       :   .../SATKER-PPS/RIAU/' . date('Y'), ['size' => 11, 'name' => 'Arial']);
-        $cell1->addText('Sifat          :   Biasa', ['size' => 11, 'name' => 'Arial']);
-        $cell1->addText('Lampiran  :   -', ['size' => 11, 'name' => 'Arial']);
-        $cell1->addText('Hal            :   [Perihal Surat]', ['bold' => true, 'size' => 11, 'name' => 'Arial']);
-
-        $cell2->addText('Pekanbaru, ' . $tanggalFormatted, ['size' => 11, 'name' => 'Arial']);
-        $cell2->addTextBreak(1);
-        $cell2->addText('Kepada Yth.', ['size' => 11, 'name' => 'Arial']);
-        $cell2->addText('[Nama Penerima / Jabatan]', ['bold' => true, 'size' => 11, 'name' => 'Arial']);
-        $cell2->addText('di -', ['size' => 11, 'name' => 'Arial']);
-        $cell2->addText('    [Tempat / Kota]', ['size' => 11, 'name' => 'Arial']);
-
-        $section->addTextBreak(1);
-
-        $section->addText('Dengan hormat,', ['size' => 11, 'name' => 'Arial']);
-        $section->addText(
-            'Sehubungan dengan pelaksanaan kegiatan pada Satuan Kerja Pelaksanaan Prasarana Strategis Provinsi Riau, bersama ini kami sampaikan hal-hal sebagai berikut:',
-            ['size' => 11, 'name' => 'Arial'],
-            ['alignment' => Jc::BOTH, 'spaceAfter' => Converter::pointToTwip(6)]
-        );
-
-        $section->addText(
-            '1. [Poin penjelasan atau dasar pelaksanaan kegiatan].',
-            ['size' => 11, 'name' => 'Arial'],
-            ['alignment' => Jc::BOTH, 'spaceAfter' => Converter::pointToTwip(4)]
-        );
-        $section->addText(
-            '2. [Rincian informasi, data pendukung, atau instruksi teknis].',
-            ['size' => 11, 'name' => 'Arial'],
-            ['alignment' => Jc::BOTH, 'spaceAfter' => Converter::pointToTwip(6)]
-        );
-
-        $section->addText(
-            'Demikian kami sampaikan, atas perhatian dan kerja samanya diucapkan terima kasih.',
-            ['size' => 11, 'name' => 'Arial'],
-            ['alignment' => Jc::BOTH, 'spaceAfter' => Converter::pointToTwip(12)]
-        );
-
-        $section->addTextBreak(1);
-
-        $ttdTable = $section->addTable([
-            'alignment' => JcTable::CENTER,
-            'cellMargin' => 0,
-            'borderSize' => 0,
-            'borderColor' => 'FFFFFF',
-        ]);
-        $ttdRow = $ttdTable->addRow();
-        $ttdCellLeft = $ttdRow->addCell(Converter::cmToTwip(9.5));
-        $ttdCellRight = $ttdRow->addCell(Converter::cmToTwip(7.5));
-
-        $ttdCellRight->addText('Kepala Satuan Kerja Pelaksanaan', ['size' => 11, 'name' => 'Arial'], ['alignment' => Jc::CENTER]);
-        $ttdCellRight->addText('Prasarana Strategis Provinsi Riau,', ['size' => 11, 'name' => 'Arial'], ['alignment' => Jc::CENTER]);
-        $ttdCellRight->addTextBreak(3);
-        $ttdCellRight->addText('[ Nama Pejabat / Kasatker ]', ['bold' => true, 'underline' => 'single', 'size' => 11, 'name' => 'Arial'], ['alignment' => Jc::CENTER]);
-        $ttdCellRight->addText('NIP. ....................................................', ['size' => 11, 'name' => 'Arial'], ['alignment' => Jc::CENTER]);
-
-        $section->addTextBreak(1);
-        $section->addText('Tembusan Yth.:', ['italic' => true, 'size' => 10, 'name' => 'Arial']);
-        $section->addText('1. Direktur Prasarana Strategis, Ditjen Cipta Karya / Prasarana Strategis;', ['size' => 10, 'name' => 'Arial']);
-        $section->addText('2. Pertinggal.', ['size' => 10, 'name' => 'Arial']);
-
-        $tempDocx = $tempDir . '/template_kop_' . uniqid('', true) . '.docx';
-        $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
-        $objWriter->save($tempDocx);
-
-        if ($tempConvertedImage !== null && is_file($tempConvertedImage)) {
-            @unlink($tempConvertedImage);
+        if ($content === false || $content === '') {
+            return redirect()->to('/admin/master/kop-surat')->with('error', 'Gagal menghasilkan berkas Word.');
         }
 
         $safeTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) ($item['title'] ?? 'Kop_Surat'));
         $downloadFilename = 'Template_Word_' . trim($safeTitle, '_') . '.docx';
-
-        $content = file_get_contents($tempDocx);
-        @unlink($tempDocx);
 
         return $this->response
             ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
