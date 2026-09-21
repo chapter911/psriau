@@ -304,9 +304,16 @@
                         <td><?= esc((string) ($item['nama'] ?? '-')); ?></td>
                         <td class="text-center">
                             <?php if ($idCardVal !== ''): ?>
-                                <span class="badge badge-info" style="font-family: monospace; font-size: 0.82rem; letter-spacing: 0.5px; padding: 4px 6px;">
+                                <span class="badge badge-info" style="font-family: monospace; font-size: 0.82rem; letter-spacing: 0.5px; padding: 4px 6px;" title="Nomor RFID Terdaftar">
                                     <i class="fas fa-id-badge mr-1"></i><?= esc($idCardVal); ?>
                                 </span>
+                                <?php if (! empty($item['rfid_counterpart'])): ?>
+                                    <div class="mt-1" style="font-family: monospace; font-size: 0.72rem;">
+                                        <span class="badge badge-light border text-muted" style="font-size: 0.7rem; font-weight: 500;" title="Padanan Konversi Otomatis (Reader USB / NFC Android)">
+                                            <i class="fas fa-sync-alt mr-1 text-info"></i><?= esc($item['rfid_counterpart_label'] ?? $item['rfid_counterpart']); ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
                             <?php else: ?>
                                 <span class="text-muted">-</span>
                             <?php endif; ?>
@@ -459,8 +466,28 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label><i class="fas fa-id-card text-info mr-1"></i> ID Card (RFID)</label>
-                            <input type="text" name="id_card" class="form-control" maxlength="100" placeholder="Nomor / UID Kartu RFID">
-                            <small class="text-muted">Nomor serial/kartu RFID pegawai</small>
+                            <input type="text" id="add_id_card" name="id_card" class="form-control font-monospace" maxlength="100" placeholder="Nomor / UID Kartu RFID">
+                            <small class="text-muted d-block">Mendukung format USB Reader (10 digit desimal) &amp; NFC Android (Hex).</small>
+                            <div id="add_rfid_helper" class="mt-2 p-2 border rounded bg-light" style="display:none; font-size: 0.8rem;">
+                                <div class="d-flex align-items-center justify-content-between mb-1 pb-1 border-bottom">
+                                    <span class="font-weight-bold text-dark"><i class="fas fa-microchip text-info mr-1"></i> Deteksi Format RFID Mifare</span>
+                                    <span class="badge badge-success" id="add_rfid_badge">Mifare 4-Byte</span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <div class="mr-2 text-truncate">
+                                        <span class="text-muted">Reader USB (Desimal):</span>
+                                        <strong id="add_rfid_dec" class="text-primary font-monospace ml-1">-</strong>
+                                    </div>
+                                    <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 flex-shrink-0" id="add_btn_use_dec" title="Gunakan format desimal ini">Pilih</button>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="mr-2 text-truncate">
+                                        <span class="text-muted">NFC Android (Hex):</span>
+                                        <strong id="add_rfid_hex" class="text-success font-monospace ml-1">-</strong>
+                                    </div>
+                                    <button type="button" class="btn btn-xs btn-outline-success py-0 px-2 flex-shrink-0" id="add_btn_use_hex" title="Gunakan format hex ini">Pilih</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group col-md-6">
                             <label>Foto ID Card</label>
@@ -571,8 +598,28 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label><i class="fas fa-id-card text-info mr-1"></i> ID Card (RFID)</label>
-                            <input type="text" id="edit_id_card" name="id_card" class="form-control" maxlength="100" placeholder="Nomor / UID Kartu RFID">
-                            <small class="text-muted">Nomor serial/kartu RFID pegawai</small>
+                            <input type="text" id="edit_id_card" name="id_card" class="form-control font-monospace" maxlength="100" placeholder="Nomor / UID Kartu RFID">
+                            <small class="text-muted d-block">Mendukung format USB Reader (10 digit desimal) &amp; NFC Android (Hex).</small>
+                            <div id="edit_rfid_helper" class="mt-2 p-2 border rounded bg-light" style="display:none; font-size: 0.8rem;">
+                                <div class="d-flex align-items-center justify-content-between mb-1 pb-1 border-bottom">
+                                    <span class="font-weight-bold text-dark"><i class="fas fa-microchip text-info mr-1"></i> Deteksi Format RFID Mifare</span>
+                                    <span class="badge badge-success" id="edit_rfid_badge">Mifare 4-Byte</span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <div class="mr-2 text-truncate">
+                                        <span class="text-muted">Reader USB (Desimal):</span>
+                                        <strong id="edit_rfid_dec" class="text-primary font-monospace ml-1">-</strong>
+                                    </div>
+                                    <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 flex-shrink-0" id="edit_btn_use_dec" title="Gunakan format desimal ini">Pilih</button>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="mr-2 text-truncate">
+                                        <span class="text-muted">NFC Android (Hex):</span>
+                                        <strong id="edit_rfid_hex" class="text-success font-monospace ml-1">-</strong>
+                                    </div>
+                                    <button type="button" class="btn btn-xs btn-outline-success py-0 px-2 flex-shrink-0" id="edit_btn_use_hex" title="Gunakan format hex ini">Pilih</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group col-md-6">
                             <label>Foto ID Card</label>
@@ -809,7 +856,10 @@
             fieldNip.value = trigger.getAttribute('data-nip') || '';
             fieldNama.value = trigger.getAttribute('data-nama') || '';
             if (fieldEmail) fieldEmail.value = trigger.getAttribute('data-email') || '';
-            if (fieldIdCard) fieldIdCard.value = trigger.getAttribute('data-id_card') || '';
+            if (fieldIdCard) {
+                fieldIdCard.value = trigger.getAttribute('data-id_card') || '';
+                fieldIdCard.dispatchEvent(new Event('input'));
+            }
             fieldJabatanUtama.value = trigger.getAttribute('data-jabatan_utama_id') || '';
             fieldJabatanPerbend.value = trigger.getAttribute('data-jabatan_perbendaharaan_id') || '';
             fieldJenisPegawai.value = (trigger.getAttribute('data-jenis_pegawai') || 'pns').toLowerCase();
@@ -1197,5 +1247,135 @@
             $('.js-pegawai-table').DataTable().draw();
         }
     });
+    // RFID Live Converter Helper for Tambah & Ubah Modal
+    (function () {
+        function parseRfid(val) {
+            if (!val) return null;
+            val = val.trim();
+            if (!val) return null;
+
+            // Numeric decimal (e.g. 3188450969)
+            if (/^\d+$/.test(val)) {
+                const num = Number(val);
+                if (num >= 0 && num <= 4294967295) {
+                    const hex = num.toString(16).padStart(8, '0');
+                    const b3 = hex.substr(0, 2);
+                    const b2 = hex.substr(2, 2);
+                    const b1 = hex.substr(4, 2);
+                    const b0 = hex.substr(6, 2);
+                    const nfcHex = `${b0}:${b1}:${b2}:${b3}`.toUpperCase();
+                    return {
+                        type: 'decimal',
+                        decimal: String(num),
+                        hex: nfcHex,
+                        badgeText: 'Mifare 4-Byte'
+                    };
+                }
+            }
+
+            // Hex (e.g. 99:e6:0b:be or 99e60bbe or 99-e6-0b-be)
+            const cleanHex = val.replace(/[^0-9a-fA-F]/g, '');
+            if (cleanHex.length === 8) {
+                const b0 = cleanHex.substr(0, 2);
+                const b1 = cleanHex.substr(2, 2);
+                const b2 = cleanHex.substr(4, 2);
+                const b3 = cleanHex.substr(6, 2);
+                const littleEndianHex = `${b3}${b2}${b1}${b0}`;
+                const dec = parseInt(littleEndianHex, 16);
+                const nfcHex = `${b0}:${b1}:${b2}:${b3}`.toUpperCase();
+                return {
+                    type: 'hex_4byte',
+                    decimal: String(dec),
+                    hex: nfcHex,
+                    badgeText: 'Mifare 4-Byte'
+                };
+            }
+
+            if (cleanHex.length === 14) {
+                const chunks = cleanHex.match(/.{1,2}/g) || [];
+                const nfcHex = chunks.join(':').toUpperCase();
+                return {
+                    type: 'hex_7byte',
+                    decimal: '-',
+                    hex: nfcHex,
+                    badgeText: 'Mifare 7-Byte'
+                };
+            }
+
+            return null;
+        }
+
+        function setupRfidHelper(inputId, helperId, decId, hexId, badgeId, btnDecId, btnHexId) {
+            const input = document.getElementById(inputId);
+            const helper = document.getElementById(helperId);
+            const decEl = document.getElementById(decId);
+            const hexEl = document.getElementById(hexId);
+            const badgeEl = document.getElementById(badgeId);
+            const btnDec = document.getElementById(btnDecId);
+            const btnHex = document.getElementById(btnHexId);
+
+            if (!input || !helper) return null;
+
+            function update() {
+                const res = parseRfid(input.value);
+                if (res) {
+                    helper.style.display = 'block';
+                    if (decEl) decEl.textContent = res.decimal;
+                    if (hexEl) hexEl.textContent = res.hex;
+                    if (badgeEl) badgeEl.textContent = res.badgeText;
+                    if (btnDec) btnDec.style.display = (res.decimal && res.decimal !== '-') ? 'inline-block' : 'none';
+                    if (btnHex) btnHex.style.display = res.hex ? 'inline-block' : 'none';
+                } else {
+                    helper.style.display = 'none';
+                }
+            }
+
+            input.addEventListener('input', update);
+            input.addEventListener('change', update);
+
+            if (btnDec) {
+                btnDec.addEventListener('click', function () {
+                    const res = parseRfid(input.value);
+                    if (res && res.decimal && res.decimal !== '-') {
+                        input.value = res.decimal;
+                        update();
+                    }
+                });
+            }
+
+            if (btnHex) {
+                btnHex.addEventListener('click', function () {
+                    const res = parseRfid(input.value);
+                    if (res && res.hex) {
+                        input.value = res.hex;
+                        update();
+                    }
+                });
+            }
+
+            return update;
+        }
+
+        const updateAdd = setupRfidHelper('add_id_card', 'add_rfid_helper', 'add_rfid_dec', 'add_rfid_hex', 'add_rfid_badge', 'add_btn_use_dec', 'add_btn_use_hex');
+        const updateEdit = setupRfidHelper('edit_id_card', 'edit_rfid_helper', 'edit_rfid_dec', 'edit_rfid_hex', 'edit_rfid_badge', 'edit_btn_use_dec', 'edit_btn_use_hex');
+
+        // Reset add helper on modal open
+        const modalAdd = document.getElementById('modal-tambah-pegawai');
+        if (modalAdd) {
+            modalAdd.addEventListener('show.bs.modal', function () {
+                setTimeout(function () {
+                    if (updateAdd) updateAdd();
+                }, 100);
+            });
+        }
+
+        // Trigger edit helper on modal edit open
+        const modalEdit = document.getElementById('modal-ubah-pegawai');
+        if (modalEdit) {
+            modalEdit.addEventListener('shown.bs.modal', function () {
+                if (updateEdit) updateEdit();
+            });
+        }
+    })();
 </script>
 <?= $this->endSection(); ?>

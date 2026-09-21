@@ -43,6 +43,7 @@ class Pegawai extends BaseController
                 ->getResultArray();
 
             $items = $this->applyMasaKerjaDefaults($items);
+            $items = $this->applyRfidConversion($items);
         }
 
         return view('admin/master/pegawai', [
@@ -119,6 +120,7 @@ class Pegawai extends BaseController
 
         $items = $builder->orderBy('p.nama', 'ASC')->get()->getResultArray();
         $items = $this->applyMasaKerjaDefaults($items);
+        $items = $this->applyRfidConversion($items);
 
         return [
             'items' => $items,
@@ -252,7 +254,11 @@ class Pegawai extends BaseController
             $sheet->setCellValue('A' . $row, $no++);
             $sheet->setCellValue('C' . $row, (string) ($item['nama'] ?? ''));
             $sheet->setCellValue('D' . $row, $displayNip);
-            $sheet->setCellValue('E' . $row, (string) ($item['id_card'] ?? ''));
+            $rfidExportVal = (string) ($item['id_card'] ?? '');
+            if ($rfidExportVal !== '' && ! empty($item['rfid_counterpart'])) {
+                $rfidExportVal .= ' (' . $item['rfid_counterpart'] . ')';
+            }
+            $sheet->setCellValue('E' . $row, $rfidExportVal);
             $sheet->setCellValue('F' . $row, (string) ($item['email'] ?? ''));
             $sheet->setCellValue('G' . $row, (string) ($item['jabatan_utama_label'] ?? ''));
             $sheet->setCellValue('H' . $row, (string) ($item['jabatan_perbendaharaan_label'] ?? ''));
@@ -614,15 +620,33 @@ class Pegawai extends BaseController
         }
 
         $idCard = $this->nullableString($this->request->getPost('id_card'));
-        if ($idCard !== null && $model->where('id_card', $idCard)->countAllResults() > 0) {
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'ID Card (RFID) sudah terdaftar pada pegawai lain.',
-                    'csrf_hash' => csrf_hash(),
-                ]);
+        if ($idCard !== null) {
+            $rfidInfo = $this->convertRfidUid($idCard);
+            $duplicateBuilder = $model->groupStart()->where('id_card', $idCard);
+            if ($rfidInfo['is_valid'] ?? false) {
+                $candidates = array_unique(array_filter([
+                    $rfidInfo['decimal'] ?? '',
+                    $rfidInfo['hex_nfc'] ?? '',
+                    $rfidInfo['hex_nfc_raw'] ?? '',
+                    strtolower($rfidInfo['hex_nfc'] ?? ''),
+                    strtolower($rfidInfo['hex_nfc_raw'] ?? ''),
+                ]));
+                if (! empty($candidates)) {
+                    $duplicateBuilder->orWhereIn('id_card', $candidates);
+                }
             }
-            return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'ID Card (RFID) sudah terdaftar pada pegawai lain.');
+            $duplicateBuilder->groupEnd();
+
+            if ($duplicateBuilder->countAllResults() > 0) {
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON([
+                        'status' => 'error',
+                        'message' => 'ID Card (RFID) sudah terdaftar pada pegawai lain (format sama atau padanan terdeteksi).',
+                        'csrf_hash' => csrf_hash(),
+                    ]);
+                }
+                return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'ID Card (RFID) sudah terdaftar pada pegawai lain (format sama atau padanan terdeteksi).');
+            }
         }
 
         $jabatanOptions = $this->resolveJabatanOptions();
@@ -791,16 +815,33 @@ class Pegawai extends BaseController
 
         $idCard = $this->nullableString($this->request->getPost('id_card'));
         if ($idCard !== null) {
-            $duplicateCard = $model->where('id_card', $idCard)->where('id !=', $id)->countAllResults();
-            if ($duplicateCard > 0) {
+            $rfidInfo = $this->convertRfidUid($idCard);
+            $duplicateBuilder = $model->where('id !=', $id)
+                ->groupStart()
+                ->where('id_card', $idCard);
+            if ($rfidInfo['is_valid'] ?? false) {
+                $candidates = array_unique(array_filter([
+                    $rfidInfo['decimal'] ?? '',
+                    $rfidInfo['hex_nfc'] ?? '',
+                    $rfidInfo['hex_nfc_raw'] ?? '',
+                    strtolower($rfidInfo['hex_nfc'] ?? ''),
+                    strtolower($rfidInfo['hex_nfc_raw'] ?? ''),
+                ]));
+                if (! empty($candidates)) {
+                    $duplicateBuilder->orWhereIn('id_card', $candidates);
+                }
+            }
+            $duplicateBuilder->groupEnd();
+
+            if ($duplicateBuilder->countAllResults() > 0) {
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON([
                         'status' => 'error',
-                        'message' => 'ID Card (RFID) sudah digunakan oleh pegawai lain.',
+                        'message' => 'ID Card (RFID) sudah digunakan oleh pegawai lain (format sama atau padanan terdeteksi).',
                         'csrf_hash' => csrf_hash(),
                     ]);
                 }
-                return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'ID Card (RFID) sudah digunakan oleh pegawai lain.');
+                return redirect()->to('/admin/master/pegawai')->withInput()->with('error', 'ID Card (RFID) sudah digunakan oleh pegawai lain (format sama atau padanan terdeteksi).');
             }
         }
 
@@ -1239,6 +1280,96 @@ class Pegawai extends BaseController
                 $item['masa_kerja'] = $computedMasaKerja;
             }
         }
+
+        return $items;
+    }
+
+    public function convertRfidUid(string $raw): array
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return ['is_valid' => false];
+        }
+
+        // Check if numeric decimal (e.g., 3188450969)
+        if (ctype_digit($raw) && (float) $raw <= 4294967295 && (float) $raw >= 0) {
+            $num = (int) $raw;
+            $hex = str_pad(dechex($num), 8, '0', STR_PAD_LEFT);
+            // Reverse Little-Endian bytes from USB Reader to get original NFC Big-Endian
+            $b3 = substr($hex, 0, 2);
+            $b2 = substr($hex, 2, 2);
+            $b1 = substr($hex, 4, 2);
+            $b0 = substr($hex, 6, 2);
+            $nfcHex = strtoupper("{$b0}:{$b1}:{$b2}:{$b3}");
+            $nfcHexRaw = strtoupper("{$b0}{$b1}{$b2}{$b3}");
+
+            return [
+                'is_valid' => true,
+                'type' => 'decimal',
+                'decimal' => (string) $raw,
+                'hex_nfc' => $nfcHex,
+                'hex_nfc_raw' => $nfcHexRaw,
+                'counterpart' => $nfcHex,
+                'counterpart_label' => 'NFC: ' . $nfcHex,
+            ];
+        }
+
+        // Check if 4-byte Hex (e.g., 99:e6:0b:be or 99e60bbe)
+        $cleanHex = strtolower((string) preg_replace('/[^0-9a-fA-F]/', '', $raw));
+        if (strlen($cleanHex) === 8) {
+            $b0 = substr($cleanHex, 0, 2);
+            $b1 = substr($cleanHex, 2, 2);
+            $b2 = substr($cleanHex, 4, 2);
+            $b3 = substr($cleanHex, 6, 2);
+            $littleEndianHex = "{$b3}{$b2}{$b1}{$b0}";
+            $dec = (string) hexdec($littleEndianHex);
+            $nfcHex = strtoupper("{$b0}:{$b1}:{$b2}:{$b3}");
+            $nfcHexRaw = strtoupper($cleanHex);
+
+            return [
+                'is_valid' => true,
+                'type' => 'hex_4byte',
+                'decimal' => $dec,
+                'hex_nfc' => $nfcHex,
+                'hex_nfc_raw' => $nfcHexRaw,
+                'counterpart' => $dec,
+                'counterpart_label' => 'USB: ' . $dec,
+            ];
+        }
+
+        // Check if 7-byte Hex (e.g. Mifare Ultralight / NTAG)
+        if (strlen($cleanHex) === 14) {
+            $chunks = str_split($cleanHex, 2);
+            $nfcHex = strtoupper(implode(':', $chunks));
+
+            return [
+                'is_valid' => true,
+                'type' => 'hex_7byte',
+                'decimal' => '',
+                'hex_nfc' => $nfcHex,
+                'hex_nfc_raw' => strtoupper($cleanHex),
+                'counterpart' => '',
+                'counterpart_label' => '',
+            ];
+        }
+
+        return ['is_valid' => false];
+    }
+
+    private function applyRfidConversion(array $items): array
+    {
+        foreach ($items as &$item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $idCard = trim((string) ($item['id_card'] ?? ''));
+            $rfidInfo = $this->convertRfidUid($idCard);
+            $item['rfid_info'] = $rfidInfo;
+            $item['rfid_counterpart'] = $rfidInfo['counterpart'] ?? '';
+            $item['rfid_counterpart_label'] = $rfidInfo['counterpart_label'] ?? '';
+        }
+        unset($item);
 
         return $items;
     }
