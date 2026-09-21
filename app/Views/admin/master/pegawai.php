@@ -466,7 +466,14 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label><i class="fas fa-id-card text-info mr-1"></i> ID Card (RFID)</label>
-                            <input type="text" id="add_id_card" name="id_card" class="form-control font-monospace" maxlength="100" placeholder="Nomor / UID Kartu RFID">
+                            <div class="input-group">
+                                <input type="text" id="add_id_card" name="id_card" class="form-control font-monospace" maxlength="100" placeholder="Nomor / UID Kartu RFID">
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-info js-btn-scan-nfc" data-target-input="#add_id_card" title="Scan kartu menggunakan sensor NFC Handphone">
+                                        <i class="fas fa-wifi mr-1"></i> Scan NFC
+                                    </button>
+                                </div>
+                            </div>
                             <small class="text-muted d-block">Mendukung format USB Reader (10 digit desimal) &amp; NFC Android (Hex).</small>
                             <div id="add_rfid_helper" class="mt-2 p-2 border rounded bg-light" style="display:none; font-size: 0.8rem;">
                                 <div class="d-flex align-items-center justify-content-between mb-1 pb-1 border-bottom">
@@ -598,7 +605,14 @@
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label><i class="fas fa-id-card text-info mr-1"></i> ID Card (RFID)</label>
-                            <input type="text" id="edit_id_card" name="id_card" class="form-control font-monospace" maxlength="100" placeholder="Nomor / UID Kartu RFID">
+                            <div class="input-group">
+                                <input type="text" id="edit_id_card" name="id_card" class="form-control font-monospace" maxlength="100" placeholder="Nomor / UID Kartu RFID">
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-info js-btn-scan-nfc" data-target-input="#edit_id_card" title="Scan kartu menggunakan sensor NFC Handphone">
+                                        <i class="fas fa-wifi mr-1"></i> Scan NFC
+                                    </button>
+                                </div>
+                            </div>
                             <small class="text-muted d-block">Mendukung format USB Reader (10 digit desimal) &amp; NFC Android (Hex).</small>
                             <div id="edit_rfid_helper" class="mt-2 p-2 border rounded bg-light" style="display:none; font-size: 0.8rem;">
                                 <div class="d-flex align-items-center justify-content-between mb-1 pb-1 border-bottom">
@@ -726,6 +740,35 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modal-nfc-scanner" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content text-center shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-body p-4">
+                <div class="nfc-pulse-wrapper mb-3" style="position: relative; display: inline-block; width: 80px; height: 80px;">
+                    <div class="nfc-pulse-ring" style="position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 3px solid #17a2b8; animation: nfcPulseAnim 1.8s infinite ease-out;"></div>
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: #e0f2fe; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-wifi text-info" style="font-size: 2.2rem; transform: rotate(45deg);"></i>
+                    </div>
+                </div>
+                <h5 class="font-weight-bold text-dark mb-1">Mendengarkan Kartu NFC...</h5>
+                <p class="text-muted small mb-3">Tempelkan kartu RFID / Mifare ke <strong>bodi belakang smartphone</strong> Anda.</p>
+                <div class="alert alert-info py-1 px-2 small mb-3" style="font-size: 0.78rem;">
+                    <i class="fas fa-info-circle mr-1"></i> Pastikan NFC aktif &amp; posisi kartu tepat.
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm px-4" id="btn-cancel-nfc" style="border-radius: 20px;">
+                    <i class="fas fa-times mr-1"></i> Batal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+@keyframes nfcPulseAnim {
+    0% { transform: scale(0.85); opacity: 0.9; }
+    100% { transform: scale(1.45); opacity: 0; }
+}
+</style>
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>
@@ -1376,6 +1419,117 @@
                 if (updateEdit) updateEdit();
             });
         }
+    })();
+
+    // Web NFC Scanner Integration for Smartphone Android
+    (function () {
+        let nfcAbortController = null;
+        let activeTargetInput = null;
+        const nfcModal = $('#modal-nfc-scanner');
+
+        $(document).on('click', '.js-btn-scan-nfc', async function () {
+            const targetSelector = $(this).data('target-input');
+            const targetInput = document.querySelector(targetSelector);
+            if (!targetInput) return;
+
+            activeTargetInput = targetInput;
+
+            // 1. Check if Web NFC (NDEFReader) is supported
+            if (!('NDEFReader' in window)) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Web NFC Tidak Didukung di Perangkat Ini',
+                        html: '<div class="text-left small" style="line-height:1.6;">' +
+                            '<p>Fitur <strong>Scan NFC langsung lewat browser</strong> membutuhkan:</p>' +
+                            '<ul>' +
+                            '<li><strong>Smartphone Android</strong> dengan sensor hardware NFC aktif.</li>' +
+                            '<li>Browser <strong>Google Chrome</strong>, <strong>Microsoft Edge</strong>, atau <strong>Samsung Internet</strong>.</li>' +
+                            '<li>Koneksi aman <strong>HTTPS</strong> (sudah terpenuhi).</li>' +
+                            '</ul>' +
+                            '<p class="mb-0 text-muted"><em>Catatan untuk Desktop/Laptop: Silakan gunakan alat USB RFID Reader (otomatis terdeteksi saat kartu di-tap) atau ketik nomor kartu secara manual.</em></p>' +
+                            '</div>',
+                        confirmButtonText: 'Mengerti',
+                        confirmButtonColor: '#17a2b8'
+                    });
+                } else {
+                    alert('Web NFC tidak didukung di perangkat ini. Pada PC/Laptop silakan gunakan USB RFID Reader.');
+                }
+                return;
+            }
+
+            // 2. Web NFC is supported, start scanning
+            try {
+                nfcAbortController = new AbortController();
+                const ndef = new NDEFReader();
+
+                nfcModal.modal('show');
+
+                await ndef.scan({ signal: nfcAbortController.signal });
+
+                ndef.onreading = (event) => {
+                    const serial = event.serialNumber;
+                    if (navigator.vibrate) {
+                        navigator.vibrate([100, 50, 100]);
+                    }
+
+                    if (activeTargetInput) {
+                        activeTargetInput.value = serial;
+                        activeTargetInput.dispatchEvent(new Event('input'));
+                        activeTargetInput.dispatchEvent(new Event('change'));
+                    }
+
+                    if (nfcAbortController) {
+                        nfcAbortController.abort();
+                        nfcAbortController = null;
+                    }
+                    nfcModal.modal('hide');
+
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('Kartu NFC berhasil terdeteksi: ' + serial, 'Scan NFC Berhasil');
+                    }
+                };
+
+                ndef.onreadingerror = () => {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning('Kartu terdeteksi tetapi gagal dibaca. Coba tempelkan kembali lebih dekat.', 'Peringatan');
+                    }
+                };
+
+            } catch (err) {
+                if (nfcAbortController) {
+                    nfcAbortController.abort();
+                    nfcAbortController = null;
+                }
+                nfcModal.modal('hide');
+
+                if (err.name !== 'AbortError') {
+                    console.error('NFC Scan Error:', err);
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(err.message || 'Gagal memulai pemindaian NFC. Pastikan NFC di HP Anda dalam kondisi aktif.', 'Error NFC');
+                    } else {
+                        alert('Gagal memulai pemindaian NFC: ' + (err.message || 'Pastikan NFC aktif.'));
+                    }
+                }
+            }
+        });
+
+        // Cancel button in NFC modal
+        $('#btn-cancel-nfc').on('click', function () {
+            if (nfcAbortController) {
+                nfcAbortController.abort();
+                nfcAbortController = null;
+            }
+            nfcModal.modal('hide');
+        });
+
+        // Abort scan when NFC modal is closed
+        nfcModal.on('hidden.bs.modal', function () {
+            if (nfcAbortController) {
+                nfcAbortController.abort();
+                nfcAbortController = null;
+            }
+        });
     })();
 </script>
 <?= $this->endSection(); ?>
