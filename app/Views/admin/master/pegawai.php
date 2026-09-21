@@ -85,24 +85,25 @@
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Daftar Pegawai</h3>
-        <?php if (! empty($can_add) || ! empty($can_import) || ! empty($can_export)): ?>
-            <div class="float-right">
-                <?php if (! empty($can_export)): ?>
-                    <a href="<?= site_url('/admin/master/pegawai/export'); ?>" class="btn btn-success mr-2" id="btn-export-excel" title="Export ke format Excel (.xlsx)">
-                        <i class="fas fa-file-excel mr-1"></i> Export Excel
-                    </a>
-                    <a href="<?= site_url('/admin/master/pegawai/export-pdf'); ?>" class="btn btn-danger mr-2" id="btn-export-pdf" target="_blank" title="Export ke format PDF (.pdf)">
-                        <i class="fas fa-file-pdf mr-1"></i> Export PDF
-                    </a>
-                <?php endif; ?>
-                <?php if (! empty($can_import)): ?>
-                    <button type="button" class="btn btn-info mr-2" data-toggle="modal" data-target="#modal-import-pegawai">Import Excel</button>
-                <?php endif; ?>
-                <?php if (! empty($can_add)): ?>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-pegawai">Tambah Pegawai</button>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>
+        <div class="float-right">
+            <button type="button" class="btn btn-outline-info mr-2 js-btn-search-nfc" title="Cari data pegawai dengan menempelkan kartu NFC ke HP">
+                <i class="fas fa-id-card-alt mr-1"></i> Cari via NFC
+            </button>
+            <?php if (! empty($can_export)): ?>
+                <a href="<?= site_url('/admin/master/pegawai/export'); ?>" class="btn btn-success mr-2" id="btn-export-excel" title="Export ke format Excel (.xlsx)">
+                    <i class="fas fa-file-excel mr-1"></i> Export Excel
+                </a>
+                <a href="<?= site_url('/admin/master/pegawai/export-pdf'); ?>" class="btn btn-danger mr-2" id="btn-export-pdf" target="_blank" title="Export ke format PDF (.pdf)">
+                    <i class="fas fa-file-pdf mr-1"></i> Export PDF
+                </a>
+            <?php endif; ?>
+            <?php if (! empty($can_import)): ?>
+                <button type="button" class="btn btn-info mr-2" data-toggle="modal" data-target="#modal-import-pegawai">Import Excel</button>
+            <?php endif; ?>
+            <?php if (! empty($can_add)): ?>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-pegawai">Tambah Pegawai</button>
+            <?php endif; ?>
+        </div>
     </div>
     <div class="card-body">
         <!-- Filter Panel -->
@@ -218,7 +219,16 @@
                         $displayNip = $isAsn ? trim((string) ($item['nip'] ?? '')) : '';
                         $idCardVal = trim((string) ($item['id_card'] ?? ''));
                     ?>
-                    <tr>
+                    <tr
+                        data-id_card="<?= esc($idCardVal, 'attr'); ?>"
+                        data-rfid_counterpart="<?= esc((string) ($item['rfid_counterpart'] ?? ''), 'attr'); ?>"
+                        data-nama="<?= esc((string) ($item['nama'] ?? ''), 'attr'); ?>"
+                        data-nip="<?= esc($displayNip, 'attr'); ?>"
+                        data-foto_url="<?= esc($fotoUrl, 'attr'); ?>"
+                        data-jabatan="<?= esc((string) ($item['jabatan_utama_label'] ?? '-'), 'attr'); ?>"
+                        data-jenis="<?= esc((string) ($item['jenis_pegawai'] ?? 'pns'), 'attr'); ?>"
+                        data-is_active="<?= $isActive ? '1' : '0'; ?>"
+                    >
                         <td><?= esc((string) $i++); ?></td>
                         <td class="text-center">
                             <?php if ($fotoUrl !== ''): ?>
@@ -751,8 +761,8 @@
                         <i class="fas fa-wifi text-info" style="font-size: 2.2rem; transform: rotate(45deg);"></i>
                     </div>
                 </div>
-                <h5 class="font-weight-bold text-dark mb-1">Mendengarkan Kartu NFC...</h5>
-                <p class="text-muted small mb-3">Tempelkan kartu RFID / Mifare ke <strong>bodi belakang smartphone</strong> Anda.</p>
+                <h5 class="font-weight-bold text-dark mb-1" id="nfc-modal-title">Mendengarkan Kartu NFC...</h5>
+                <p class="text-muted small mb-3" id="nfc-modal-desc">Tempelkan kartu RFID / Mifare ke <strong>bodi belakang smartphone</strong> Anda.</p>
                 <div class="alert alert-info py-1 px-2 small mb-3" style="font-size: 0.78rem;">
                     <i class="fas fa-info-circle mr-1"></i> Pastikan NFC aktif &amp; posisi kartu tepat.
                 </div>
@@ -1463,6 +1473,8 @@
                 nfcAbortController = new AbortController();
                 const ndef = new NDEFReader();
 
+                $('#nfc-modal-title').text('Mendengarkan Kartu NFC...');
+                $('#nfc-modal-desc').html('Tempelkan kartu RFID / Mifare ke <strong>bodi belakang smartphone</strong> Anda.');
                 nfcModal.modal('show');
 
                 await ndef.scan({ signal: nfcAbortController.signal });
@@ -1505,10 +1517,213 @@
 
                 if (err.name !== 'AbortError') {
                     console.error('NFC Scan Error:', err);
-                    if (typeof toastr !== 'undefined') {
-                        toastr.error(err.message || 'Gagal memulai pemindaian NFC. Pastikan NFC di HP Anda dalam kondisi aktif.', 'Error NFC');
+                    const isPermissionDenied = err.name === 'NotAllowedError' || (err.message && err.message.toLowerCase().includes('permission'));
+                    if (isPermissionDenied) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Izin NFC Belum Diizinkan',
+                                html: '<div class="text-left small" style="line-height: 1.6;">' +
+                                    '<p class="mb-2">Browser Chrome di HP Anda memblokir izin NFC untuk website ini (<em>permission request denied</em>).</p>' +
+                                    '<div class="p-2 bg-light border rounded mb-2">' +
+                                    '<strong>Cara Membuka Izin NFC di Chrome HP:</strong>' +
+                                    '<ol class="pl-3 mb-0 mt-1">' +
+                                    '<li>Lihat kolom alamat website (URL) di bagian paling atas Chrome.</li>' +
+                                    '<li>Klik ikon <strong>Gembok / Setelan Situs</strong> (di sebelah kiri tulisan <code>https://...</code>).</li>' +
+                                    '<li>Pilih menu <strong>Izin (Permissions)</strong> atau <strong>Setelan Situs</strong>.</li>' +
+                                    '<li>Cari item <strong>NFC</strong> lalu ubah menjadi <strong>Izinkan (Allow)</strong> atau klik <strong>Reset Izin</strong>.</li>' +
+                                    '<li>Muat ulang (refresh) halaman dan klik tombol <strong>Scan NFC</strong> kembali.</li>' +
+                                    '</ol>' +
+                                    '</div>' +
+                                    '<p class="mb-0 text-muted"><em>Pastikan juga sensor NFC di menu Pengaturan / Tirai Notifikasi HP sudah dalam kondisi Aktif (ON).</em></p>' +
+                                    '</div>',
+                                confirmButtonText: 'Saya Mengerti',
+                                confirmButtonColor: '#17a2b8'
+                            });
+                        } else if (typeof toastr !== 'undefined') {
+                            toastr.warning('Izin NFC diblokir di Chrome. Buka ikon gembok di sebelah URL untuk mengizinkan NFC.', 'Izin Ditolak');
+                        }
                     } else {
-                        alert('Gagal memulai pemindaian NFC: ' + (err.message || 'Pastikan NFC aktif.'));
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(err.message || 'Gagal memulai pemindaian NFC. Pastikan NFC di HP Anda dalam kondisi aktif.', 'Error NFC');
+                        } else {
+                            alert('Gagal memulai pemindaian NFC: ' + (err.message || 'Pastikan NFC aktif.'));
+                        }
+                    }
+                }
+            }
+        });
+
+        // Handler for "Cari via NFC" button
+        $(document).on('click', '.js-btn-search-nfc', async function () {
+            // 1. Check if Web NFC is supported
+            if (!('NDEFReader' in window)) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Pencarian Kartu di Komputer / Laptop',
+                        html: '<div class="text-left small" style="line-height:1.6;">' +
+                            '<p>Untuk mencari data pegawai menggunakan kartu RFID di <strong>Komputer / Laptop</strong>:</p>' +
+                            '<ol class="pl-3 mb-2">' +
+                            '<li>Klik kursor pada kotak <strong>"Cari:" (Search)</strong> di atas tabel pegawai.</li>' +
+                            '<li>Tempelkan kartu ke alat <strong>USB RFID Reader</strong>.</li>' +
+                            '<li>Alat akan otomatis mengetik nomor kartu dan tabel langsung menyaring pegawai yang bersangkutan.</li>' +
+                            '</ol>' +
+                            '<p class="mb-0 text-muted"><em>Tombol "Cari via NFC" langsung dari browser ini didukung pada smartphone Android ber-NFC via Google Chrome / Edge.</em></p>' +
+                            '</div>',
+                        confirmButtonText: 'Mengerti',
+                        confirmButtonColor: '#17a2b8'
+                    });
+                } else {
+                    alert('Di PC/Laptop, silakan klik kotak Cari dan tap kartu di USB RFID Reader.');
+                }
+                return;
+            }
+
+            // 2. Start scanning
+            try {
+                nfcAbortController = new AbortController();
+                const ndef = new NDEFReader();
+
+                $('#nfc-modal-title').text('Mencari Data Pegawai...');
+                $('#nfc-modal-desc').html('Tempelkan kartu pegawai ke <strong>bodi belakang smartphone</strong> untuk mencari data.');
+                nfcModal.modal('show');
+
+                await ndef.scan({ signal: nfcAbortController.signal });
+
+                ndef.onreading = (event) => {
+                    const serial = event.serialNumber;
+                    if (navigator.vibrate) {
+                        navigator.vibrate([100, 50, 100]);
+                    }
+
+                    if (nfcAbortController) {
+                        nfcAbortController.abort();
+                        nfcAbortController = null;
+                    }
+                    nfcModal.modal('hide');
+
+                    // Convert to get all equivalent representations
+                    const cleanSerial = serial.replace(/[^0-9a-fA-F]/g, '').toLowerCase();
+                    const rfidRes = parseRfid(serial);
+                    const candidates = [
+                        serial.toLowerCase().trim(),
+                        cleanSerial,
+                        rfidRes && rfidRes.decimal ? rfidRes.decimal : '',
+                        rfidRes && rfidRes.hex ? rfidRes.hex.toLowerCase().trim() : '',
+                        rfidRes && rfidRes.hex ? rfidRes.hex.replace(/[^0-9a-fA-F]/g, '').toLowerCase() : ''
+                    ].filter(Boolean);
+
+                    // Find matching row
+                    let matchedRow = null;
+                    $('.js-pegawai-table tbody tr').each(function () {
+                        const rowCard = ($(this).attr('data-id_card') || '').toLowerCase().trim();
+                        const rowCounterpart = ($(this).attr('data-rfid_counterpart') || '').toLowerCase().trim();
+                        const cleanRowCard = rowCard.replace(/[^0-9a-fA-F]/g, '');
+
+                        if (candidates.some(c => rowCard === c || rowCounterpart === c || cleanRowCard === c)) {
+                            matchedRow = $(this);
+                            return false;
+                        }
+                    });
+
+                    if (matchedRow && matchedRow.length > 0) {
+                        const nama = matchedRow.attr('data-nama') || 'Pegawai';
+                        const nip = matchedRow.attr('data-nip') || '';
+                        const fotoUrl = matchedRow.attr('data-foto_url') || '';
+                        const jabatan = matchedRow.attr('data-jabatan') || '-';
+                        const jenis = matchedRow.attr('data-jenis') || 'PNS';
+                        const isActive = matchedRow.attr('data-is_active') === '1';
+                        const rowCardVal = matchedRow.attr('data-id_card') || serial;
+
+                        // Filter the DataTables to show this pegawai
+                        if ($.fn.DataTable.isDataTable('.js-pegawai-table')) {
+                            $('.js-pegawai-table').DataTable().search(rowCardVal).draw();
+                        }
+
+                        // Show Quick Identity Card
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                title: '<span style="font-size:1.15rem;font-weight:700;"><i class="fas fa-id-badge text-info mr-1"></i> Data Pegawai Ditemukan</span>',
+                                html: '<div class="text-center p-2">' +
+                                    (fotoUrl ? '<img src="' + fotoUrl + '" style="width:85px;height:85px;border-radius:50%;object-fit:cover;border:3px solid #17a2b8;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,0.15);">' : '<div style="width:75px;height:75px;border-radius:50%;background:#e0f2fe;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;"><i class="fas fa-user text-info" style="font-size:2.2rem;"></i></div>') +
+                                    '<h5 class="font-weight-bold text-dark mb-1">' + nama + '</h5>' +
+                                    '<div class="text-muted small mb-2">' + (nip ? 'NIP: ' + nip : '<span class="badge badge-light border">Non-ASN</span>') + '</div>' +
+                                    '<div class="p-2 bg-light border rounded text-left small mb-2" style="font-size: 0.85rem; line-height: 1.6;">' +
+                                    '<div><span class="text-muted">Jabatan:</span> <strong>' + jabatan + '</strong></div>' +
+                                    '<div><span class="text-muted">Jenis:</span> <strong class="text-primary text-uppercase">' + jenis + '</strong></div>' +
+                                    '<div><span class="text-muted">ID Card (RFID):</span> <code class="text-info font-weight-bold">' + rowCardVal + '</code></div>' +
+                                    '<div><span class="text-muted">Status:</span> ' + (isActive ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-secondary">Nonaktif</span>') + '</div>' +
+                                    '</div>' +
+                                    '<div class="small text-muted font-italic"><i class="fas fa-check-circle text-success mr-1"></i>Tabel di bawah telah otomatis disaring menampilkan pegawai ini.</div>' +
+                                    '</div>',
+                                confirmButtonText: 'Tutup',
+                                confirmButtonColor: '#17a2b8'
+                            });
+                        }
+                    } else {
+                        // Card not found in database
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Pegawai Tidak Ditemukan',
+                                html: '<div class="small text-left">' +
+                                    '<p class="mb-2">Kartu RFID / Mifare dengan nomor berikut <strong>belum terdaftar</strong> pada database Master Pegawai:</p>' +
+                                    '<div class="p-2 bg-light border rounded text-center mb-2">' +
+                                    '<strong class="font-monospace text-primary" style="font-size:1.05rem;">' + serial + '</strong>' +
+                                    (rfidRes && rfidRes.decimal ? '<br><span class="text-muted small">Desimal USB: </span><strong class="font-monospace text-success">' + rfidRes.decimal + '</strong>' : '') +
+                                    '</div>' +
+                                    '<p class="mb-0 text-muted"><em>Silakan daftarkan kartu ini terlebih dahulu melalui tombol Tambah Pegawai atau Ubah data pegawai terkait.</em></p>' +
+                                    '</div>',
+                                confirmButtonText: 'Tutup',
+                                confirmButtonColor: '#17a2b8'
+                            });
+                        }
+                    }
+                };
+
+                ndef.onreadingerror = () => {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning('Kartu terdeteksi tetapi gagal dibaca. Coba tempelkan kembali lebih dekat.', 'Peringatan');
+                    }
+                };
+            } catch (err) {
+                if (nfcAbortController) {
+                    nfcAbortController.abort();
+                    nfcAbortController = null;
+                }
+                nfcModal.modal('hide');
+
+                if (err.name !== 'AbortError') {
+                    console.error('NFC Search Error:', err);
+                    const isPermissionDenied = err.name === 'NotAllowedError' || (err.message && err.message.toLowerCase().includes('permission'));
+                    if (isPermissionDenied) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Izin NFC Belum Diizinkan',
+                                html: '<div class="text-left small" style="line-height: 1.6;">' +
+                                    '<p class="mb-2">Browser Chrome di HP Anda memblokir izin NFC untuk website ini (<em>permission request denied</em>).</p>' +
+                                    '<div class="p-2 bg-light border rounded mb-2">' +
+                                    '<strong>Cara Membuka Izin NFC di Chrome HP:</strong>' +
+                                    '<ol class="pl-3 mb-0 mt-1">' +
+                                    '<li>Lihat kolom alamat website (URL) di bagian paling atas Chrome.</li>' +
+                                    '<li>Klik ikon <strong>Gembok / Setelan Situs</strong> (di sebelah kiri tulisan <code>https://...</code>).</li>' +
+                                    '<li>Pilih menu <strong>Izin (Permissions)</strong> atau <strong>Setelan Situs</strong>.</li>' +
+                                    '<li>Cari item <strong>NFC</strong> lalu ubah menjadi <strong>Izinkan (Allow)</strong> atau klik <strong>Reset Izin</strong>.</li>' +
+                                    '<li>Muat ulang (refresh) halaman dan klik tombol <strong>Cari via NFC</strong> kembali.</li>' +
+                                    '</ol>' +
+                                    '</div>' +
+                                    '<p class="mb-0 text-muted"><em>Pastikan juga sensor NFC di menu Pengaturan / Tirai Notifikasi HP sudah dalam kondisi Aktif (ON).</em></p>' +
+                                    '</div>',
+                                confirmButtonText: 'Saya Mengerti',
+                                confirmButtonColor: '#17a2b8'
+                            });
+                        }
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(err.message || 'Gagal memulai pemindaian NFC.', 'Error NFC');
+                        }
                     }
                 }
             }
