@@ -763,8 +763,11 @@
                 </div>
                 <h5 class="font-weight-bold text-dark mb-1" id="nfc-modal-title">Mendengarkan Kartu NFC...</h5>
                 <p class="text-muted small mb-3" id="nfc-modal-desc">Tempelkan kartu RFID / Mifare ke <strong>bodi belakang smartphone</strong> Anda.</p>
-                <div class="alert alert-info py-1 px-2 small mb-3" style="font-size: 0.78rem;">
-                    <i class="fas fa-info-circle mr-1"></i> Pastikan NFC aktif &amp; posisi kartu tepat.
+                <div class="alert alert-info py-1 px-2 small mb-2" style="font-size: 0.78rem;">
+                    <i class="fas fa-info-circle mr-1"></i> Pastikan NFC aktif &amp; posisi kartu tepat di bodi belakang HP.
+                </div>
+                <div class="text-muted small mb-3" style="font-size: 0.72rem; line-height: 1.4;">
+                    <i class="fas fa-question-circle mr-1 text-secondary"></i> Kartu Mifare tidak merespons? Web Chrome hanya membaca kartu berformat <strong>NDEF</strong>. Format kartu sekali via menu <em>Write &gt; Text</em> di aplikasi <strong>NFC Tools</strong>, atau gunakan scanner USB Reader di PC.
                 </div>
                 <button type="button" class="btn btn-secondary btn-sm px-4" id="btn-cancel-nfc" style="border-radius: 20px;">
                     <i class="fas fa-times mr-1"></i> Batal
