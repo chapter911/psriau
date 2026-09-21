@@ -1303,63 +1303,66 @@
             $('.js-pegawai-table').DataTable().draw();
         }
     });
-    // RFID Live Converter Helper for Tambah & Ubah Modal
-    (function () {
-        function parseRfid(val) {
-            if (!val) return null;
-            val = val.trim();
-            if (!val) return null;
+    // Global RFID Live Converter Function (Mifare 4-Byte Hex <-> USB Decimal Little-Endian)
+    window.parseRfid = function parseRfid(val) {
+        if (!val) return null;
+        val = String(val).trim();
+        if (!val) return null;
 
-            // Numeric decimal (e.g. 3188450969)
-            if (/^\d+$/.test(val)) {
-                const num = Number(val);
-                if (num >= 0 && num <= 4294967295) {
-                    const hex = num.toString(16).padStart(8, '0');
-                    const b3 = hex.substr(0, 2);
-                    const b2 = hex.substr(2, 2);
-                    const b1 = hex.substr(4, 2);
-                    const b0 = hex.substr(6, 2);
-                    const nfcHex = `${b0}:${b1}:${b2}:${b3}`.toUpperCase();
-                    return {
-                        type: 'decimal',
-                        decimal: String(num),
-                        hex: nfcHex,
-                        badgeText: 'Mifare 4-Byte'
-                    };
-                }
-            }
-
-            // Hex (e.g. 99:e6:0b:be or 99e60bbe or 99-e6-0b-be)
-            const cleanHex = val.replace(/[^0-9a-fA-F]/g, '');
-            if (cleanHex.length === 8) {
-                const b0 = cleanHex.substr(0, 2);
-                const b1 = cleanHex.substr(2, 2);
-                const b2 = cleanHex.substr(4, 2);
-                const b3 = cleanHex.substr(6, 2);
-                const littleEndianHex = `${b3}${b2}${b1}${b0}`;
-                const dec = parseInt(littleEndianHex, 16);
+        // Numeric decimal (e.g. 3188450969)
+        if (/^\d+$/.test(val)) {
+            const num = Number(val);
+            if (num >= 0 && num <= 4294967295) {
+                const hex = num.toString(16).padStart(8, '0');
+                const b3 = hex.substr(0, 2);
+                const b2 = hex.substr(2, 2);
+                const b1 = hex.substr(4, 2);
+                const b0 = hex.substr(6, 2);
                 const nfcHex = `${b0}:${b1}:${b2}:${b3}`.toUpperCase();
                 return {
-                    type: 'hex_4byte',
-                    decimal: String(dec),
+                    type: 'decimal',
+                    decimal: String(num),
                     hex: nfcHex,
                     badgeText: 'Mifare 4-Byte'
                 };
             }
-
-            if (cleanHex.length === 14) {
-                const chunks = cleanHex.match(/.{1,2}/g) || [];
-                const nfcHex = chunks.join(':').toUpperCase();
-                return {
-                    type: 'hex_7byte',
-                    decimal: '-',
-                    hex: nfcHex,
-                    badgeText: 'Mifare 7-Byte'
-                };
-            }
-
-            return null;
         }
+
+        // Hex (e.g. 99:e6:0b:be or 99e60bbe or 99-e6-0b-be)
+        const cleanHex = val.replace(/[^0-9a-fA-F]/g, '');
+        if (cleanHex.length === 8) {
+            const b0 = cleanHex.substr(0, 2);
+            const b1 = cleanHex.substr(2, 2);
+            const b2 = cleanHex.substr(4, 2);
+            const b3 = cleanHex.substr(6, 2);
+            const littleEndianHex = `${b3}${b2}${b1}${b0}`;
+            const dec = parseInt(littleEndianHex, 16);
+            const nfcHex = `${b0}:${b1}:${b2}:${b3}`.toUpperCase();
+            return {
+                type: 'hex_4byte',
+                decimal: String(dec),
+                hex: nfcHex,
+                badgeText: 'Mifare 4-Byte'
+            };
+        }
+
+        if (cleanHex.length === 14) {
+            const chunks = cleanHex.match(/.{1,2}/g) || [];
+            const nfcHex = chunks.join(':').toUpperCase();
+            return {
+                type: 'hex_7byte',
+                decimal: '-',
+                hex: nfcHex,
+                badgeText: 'Mifare 7-Byte'
+            };
+        }
+
+        return null;
+    };
+
+    // RFID Live Converter Helper for Tambah & Ubah Modal
+    (function () {
+        const parseRfid = window.parseRfid;
 
         function setupRfidHelper(inputId, helperId, decId, hexId, badgeId, btnDecId, btnHexId) {
             const input = document.getElementById(inputId);
@@ -1483,25 +1486,29 @@
                 await ndef.scan({ signal: nfcAbortController.signal });
 
                 ndef.onreading = (event) => {
-                    const serial = event.serialNumber;
-                    if (navigator.vibrate) {
-                        navigator.vibrate([100, 50, 100]);
-                    }
+                    try {
+                        const serial = (event.serialNumber || '').trim();
+                        if (navigator.vibrate) {
+                            navigator.vibrate([100, 50, 100]);
+                        }
 
-                    if (activeTargetInput) {
-                        activeTargetInput.value = serial;
-                        activeTargetInput.dispatchEvent(new Event('input'));
-                        activeTargetInput.dispatchEvent(new Event('change'));
-                    }
+                        if (activeTargetInput && serial) {
+                            activeTargetInput.value = serial;
+                            activeTargetInput.dispatchEvent(new Event('input'));
+                            activeTargetInput.dispatchEvent(new Event('change'));
+                        }
 
-                    if (nfcAbortController) {
-                        nfcAbortController.abort();
-                        nfcAbortController = null;
-                    }
-                    nfcModal.modal('hide');
+                        if (nfcAbortController) {
+                            nfcAbortController.abort();
+                            nfcAbortController = null;
+                        }
+                        nfcModal.modal('hide');
 
-                    if (typeof toastr !== 'undefined') {
-                        toastr.success('Kartu NFC berhasil terdeteksi: ' + serial, 'Scan NFC Berhasil');
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('Kartu NFC berhasil terdeteksi: ' + (serial || 'Berhasil dibaca'), 'Scan NFC Berhasil');
+                        }
+                    } catch (scanErr) {
+                        console.error('NFC Scan onreading error:', scanErr);
                     }
                 };
 
@@ -1594,93 +1601,194 @@
 
                 await ndef.scan({ signal: nfcAbortController.signal });
 
-                ndef.onreading = (event) => {
-                    const serial = event.serialNumber;
-                    if (navigator.vibrate) {
-                        navigator.vibrate([100, 50, 100]);
-                    }
-
-                    if (nfcAbortController) {
-                        nfcAbortController.abort();
-                        nfcAbortController = null;
-                    }
-                    nfcModal.modal('hide');
-
-                    // Convert to get all equivalent representations
-                    const cleanSerial = serial.replace(/[^0-9a-fA-F]/g, '').toLowerCase();
-                    const rfidRes = parseRfid(serial);
-                    const candidates = [
-                        serial.toLowerCase().trim(),
-                        cleanSerial,
-                        rfidRes && rfidRes.decimal ? rfidRes.decimal : '',
-                        rfidRes && rfidRes.hex ? rfidRes.hex.toLowerCase().trim() : '',
-                        rfidRes && rfidRes.hex ? rfidRes.hex.replace(/[^0-9a-fA-F]/g, '').toLowerCase() : ''
-                    ].filter(Boolean);
-
-                    // Find matching row
-                    let matchedRow = null;
-                    $('.js-pegawai-table tbody tr').each(function () {
-                        const rowCard = ($(this).attr('data-id_card') || '').toLowerCase().trim();
-                        const rowCounterpart = ($(this).attr('data-rfid_counterpart') || '').toLowerCase().trim();
-                        const cleanRowCard = rowCard.replace(/[^0-9a-fA-F]/g, '');
-
-                        if (candidates.some(c => rowCard === c || rowCounterpart === c || cleanRowCard === c)) {
-                            matchedRow = $(this);
-                            return false;
-                        }
-                    });
-
-                    if (matchedRow && matchedRow.length > 0) {
-                        const nama = matchedRow.attr('data-nama') || 'Pegawai';
-                        const nip = matchedRow.attr('data-nip') || '';
-                        const fotoUrl = matchedRow.attr('data-foto_url') || '';
-                        const jabatan = matchedRow.attr('data-jabatan') || '-';
-                        const jenis = matchedRow.attr('data-jenis') || 'PNS';
-                        const isActive = matchedRow.attr('data-is_active') === '1';
-                        const rowCardVal = matchedRow.attr('data-id_card') || serial;
-
-                        // Filter the DataTables to show this pegawai
-                        if ($.fn.DataTable.isDataTable('.js-pegawai-table')) {
-                            $('.js-pegawai-table').DataTable().search(rowCardVal).draw();
+                ndef.onreading = async (event) => {
+                    try {
+                        const serial = (event.serialNumber || '').trim();
+                        if (navigator.vibrate) {
+                            navigator.vibrate([100, 50, 100]);
                         }
 
-                        // Show Quick Identity Card
-                        if (typeof Swal !== 'undefined') {
-                            Swal.fire({
-                                title: '<span style="font-size:1.15rem;font-weight:700;"><i class="fas fa-id-badge text-info mr-1"></i> Data Pegawai Ditemukan</span>',
-                                html: '<div class="text-center p-2">' +
-                                    (fotoUrl ? '<img src="' + fotoUrl + '" style="width:85px;height:85px;border-radius:50%;object-fit:cover;border:3px solid #17a2b8;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,0.15);">' : '<div style="width:75px;height:75px;border-radius:50%;background:#e0f2fe;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;"><i class="fas fa-user text-info" style="font-size:2.2rem;"></i></div>') +
-                                    '<h5 class="font-weight-bold text-dark mb-1">' + nama + '</h5>' +
-                                    '<div class="text-muted small mb-2">' + (nip ? 'NIP: ' + nip : '<span class="badge badge-light border">Non-ASN</span>') + '</div>' +
-                                    '<div class="p-2 bg-light border rounded text-left small mb-2" style="font-size: 0.85rem; line-height: 1.6;">' +
-                                    '<div><span class="text-muted">Jabatan:</span> <strong>' + jabatan + '</strong></div>' +
-                                    '<div><span class="text-muted">Jenis:</span> <strong class="text-primary text-uppercase">' + jenis + '</strong></div>' +
-                                    '<div><span class="text-muted">ID Card (RFID):</span> <code class="text-info font-weight-bold">' + rowCardVal + '</code></div>' +
-                                    '<div><span class="text-muted">Status:</span> ' + (isActive ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-secondary">Nonaktif</span>') + '</div>' +
-                                    '</div>' +
-                                    '<div class="small text-muted font-italic"><i class="fas fa-check-circle text-success mr-1"></i>Tabel di bawah telah otomatis disaring menampilkan pegawai ini.</div>' +
-                                    '</div>',
-                                confirmButtonText: 'Tutup',
-                                confirmButtonColor: '#17a2b8'
+                        if (nfcAbortController) {
+                            nfcAbortController.abort();
+                            nfcAbortController = null;
+                        }
+
+                        // Close scan modal safely and wait for Bootstrap modal fade-out to finish
+                        // to prevent SweetAlert2 backdrop conflict
+                        await new Promise(function (resolve) {
+                            if (nfcModal.hasClass('show')) {
+                                nfcModal.one('hidden.bs.modal', function () {
+                                    setTimeout(resolve, 80);
+                                });
+                                nfcModal.modal('hide');
+                                setTimeout(resolve, 400); // Safety fallback timeout
+                            } else {
+                                nfcModal.modal('hide');
+                                resolve();
+                            }
+                        });
+
+                        if (!serial) {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'UID Kartu Tidak Terdeteksi',
+                                    text: 'Kartu berhasil dibaca namun browser tidak menerima UID kartu. Coba tempelkan kembali.',
+                                    confirmButtonText: 'Tutup'
+                                });
+                            } else {
+                                alert('UID Kartu tidak terdeteksi.');
+                            }
+                            return;
+                        }
+
+                        // Convert to get all equivalent representations (Hex Big-Endian <-> Decimal Little-Endian)
+                        const cleanSerial = serial.replace(/[^0-9a-fA-F]/g, '').toLowerCase();
+                        const rfidRes = typeof window.parseRfid === 'function' ? window.parseRfid(serial) : null;
+
+                        const candidateSet = new Set();
+                        candidateSet.add(serial.toLowerCase());
+                        candidateSet.add(serial.toUpperCase());
+                        if (cleanSerial) {
+                            candidateSet.add(cleanSerial.toLowerCase());
+                            candidateSet.add(cleanSerial.toUpperCase());
+                        }
+                        if (rfidRes) {
+                            if (rfidRes.decimal && rfidRes.decimal !== '-') {
+                                candidateSet.add(String(rfidRes.decimal).trim());
+                            }
+                            if (rfidRes.hex) {
+                                candidateSet.add(rfidRes.hex.toLowerCase().trim());
+                                candidateSet.add(rfidRes.hex.toUpperCase().trim());
+                                const cleanHex = rfidRes.hex.replace(/[^0-9a-fA-F]/g, '');
+                                candidateSet.add(cleanHex.toLowerCase());
+                                candidateSet.add(cleanHex.toUpperCase());
+                            }
+                        }
+                        const candidates = Array.from(candidateSet);
+
+                        // Find matching row across ALL pages/records in DataTables
+                        let matchedData = null;
+
+                        function evaluateRow(el) {
+                            const $row = $(el);
+                            const rowCard = ($row.attr('data-id_card') || '').trim();
+                            const rowCounterpart = ($row.attr('data-rfid_counterpart') || '').trim();
+                            const cleanRowCard = rowCard.replace(/[^0-9a-fA-F]/g, '');
+                            const cleanRowCounterpart = rowCounterpart.replace(/[^0-9a-fA-F]/g, '');
+
+                            const rowValues = [
+                                rowCard.toLowerCase(),
+                                rowCard.toUpperCase(),
+                                rowCounterpart.toLowerCase(),
+                                rowCounterpart.toUpperCase(),
+                                cleanRowCard.toLowerCase(),
+                                cleanRowCard.toUpperCase(),
+                                cleanRowCounterpart.toLowerCase(),
+                                cleanRowCounterpart.toUpperCase()
+                            ].filter(Boolean);
+
+                            const isMatch = candidates.some(c => rowValues.includes(c));
+                            if (isMatch) {
+                                return {
+                                    nama: $row.attr('data-nama') || 'Pegawai',
+                                    nip: $row.attr('data-nip') || '',
+                                    fotoUrl: $row.attr('data-foto_url') || '',
+                                    jabatan: $row.attr('data-jabatan') || '-',
+                                    jenis: $row.attr('data-jenis') || 'PNS',
+                                    isActive: $row.attr('data-is_active') === '1',
+                                    rowCardVal: rowCard || serial
+                                };
+                            }
+                            return null;
+                        }
+
+                        if ($.fn.DataTable && $.fn.DataTable.isDataTable('.js-pegawai-table')) {
+                            const dt = $('.js-pegawai-table').DataTable();
+                            dt.rows().every(function () {
+                                const node = this.node();
+                                if (node && !matchedData) {
+                                    const found = evaluateRow(node);
+                                    if (found) matchedData = found;
+                                }
                             });
                         }
-                    } else {
-                        // Card not found in database
+
+                        if (!matchedData) {
+                            $('.js-pegawai-table tbody tr').each(function () {
+                                const found = evaluateRow(this);
+                                if (found) {
+                                    matchedData = found;
+                                    return false;
+                                }
+                            });
+                        }
+
+                        if (matchedData) {
+                            // Reset custom select dropdown filters so the row is definitely not excluded
+                            $('#filter-jenis-pegawai').val(null).trigger('change');
+                            $('#filter-eselon').val('');
+                            $('#filter-golongan').val('');
+                            $('#filter-status').val('');
+                            if (typeof updatePegawaiFilterIndicator === 'function') {
+                                updatePegawaiFilterIndicator();
+                            }
+
+                            // Filter the DataTables to show this pegawai
+                            if ($.fn.DataTable && $.fn.DataTable.isDataTable('.js-pegawai-table')) {
+                                $('.js-pegawai-table').DataTable().search(matchedData.rowCardVal).draw();
+                            }
+
+                            // Show Quick Identity Card
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    title: '<span style="font-size:1.15rem;font-weight:700;"><i class="fas fa-id-badge text-info mr-1"></i> Data Pegawai Ditemukan</span>',
+                                    html: '<div class="text-center p-2">' +
+                                        (matchedData.fotoUrl ? '<img src="' + matchedData.fotoUrl + '" style="width:85px;height:85px;border-radius:50%;object-fit:cover;border:3px solid #17a2b8;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,0.15);">' : '<div style="width:75px;height:75px;border-radius:50%;background:#e0f2fe;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;"><i class="fas fa-user text-info" style="font-size:2.2rem;"></i></div>') +
+                                        '<h5 class="font-weight-bold text-dark mb-1">' + matchedData.nama + '</h5>' +
+                                        '<div class="text-muted small mb-2">' + (matchedData.nip ? 'NIP: ' + matchedData.nip : '<span class="badge badge-light border">Non-ASN</span>') + '</div>' +
+                                        '<div class="p-2 bg-light border rounded text-left small mb-2" style="font-size: 0.85rem; line-height: 1.6;">' +
+                                        '<div><span class="text-muted">Jabatan:</span> <strong>' + matchedData.jabatan + '</strong></div>' +
+                                        '<div><span class="text-muted">Jenis:</span> <strong class="text-primary text-uppercase">' + matchedData.jenis + '</strong></div>' +
+                                        '<div><span class="text-muted">ID Card (RFID):</span> <code class="text-info font-weight-bold">' + matchedData.rowCardVal + '</code></div>' +
+                                        '<div><span class="text-muted">Status:</span> ' + (matchedData.isActive ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-secondary">Nonaktif</span>') + '</div>' +
+                                        '</div>' +
+                                        '<div class="small text-muted font-italic"><i class="fas fa-check-circle text-success mr-1"></i>Tabel di bawah telah otomatis disaring menampilkan pegawai ini.</div>' +
+                                        '</div>',
+                                    confirmButtonText: 'Tutup',
+                                    confirmButtonColor: '#17a2b8'
+                                });
+                            }
+                        } else {
+                            // Card not found in database
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Pegawai Tidak Ditemukan',
+                                    html: '<div class="small text-left">' +
+                                        '<p class="mb-2">Kartu RFID / Mifare dengan nomor berikut <strong>belum terdaftar</strong> pada database Master Pegawai:</p>' +
+                                        '<div class="p-2 bg-light border rounded text-center mb-2">' +
+                                        '<strong class="font-monospace text-primary" style="font-size:1.05rem;">' + serial + '</strong>' +
+                                        (rfidRes && rfidRes.decimal && rfidRes.decimal !== '-' ? '<br><span class="text-muted small">Desimal USB: </span><strong class="font-monospace text-success">' + rfidRes.decimal + '</strong>' : '') +
+                                        '</div>' +
+                                        '<p class="mb-0 text-muted"><em>Silakan daftarkan kartu ini terlebih dahulu melalui tombol Tambah Pegawai atau Ubah data pegawai terkait.</em></p>' +
+                                        '</div>',
+                                    confirmButtonText: 'Tutup',
+                                    confirmButtonColor: '#17a2b8'
+                                });
+                            }
+                        }
+                    } catch (readingErr) {
+                        console.error('NFC Search onreading error:', readingErr);
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
-                                icon: 'warning',
-                                title: 'Pegawai Tidak Ditemukan',
-                                html: '<div class="small text-left">' +
-                                    '<p class="mb-2">Kartu RFID / Mifare dengan nomor berikut <strong>belum terdaftar</strong> pada database Master Pegawai:</p>' +
-                                    '<div class="p-2 bg-light border rounded text-center mb-2">' +
-                                    '<strong class="font-monospace text-primary" style="font-size:1.05rem;">' + serial + '</strong>' +
-                                    (rfidRes && rfidRes.decimal ? '<br><span class="text-muted small">Desimal USB: </span><strong class="font-monospace text-success">' + rfidRes.decimal + '</strong>' : '') +
-                                    '</div>' +
-                                    '<p class="mb-0 text-muted"><em>Silakan daftarkan kartu ini terlebih dahulu melalui tombol Tambah Pegawai atau Ubah data pegawai terkait.</em></p>' +
-                                    '</div>',
-                                confirmButtonText: 'Tutup',
-                                confirmButtonColor: '#17a2b8'
+                                icon: 'error',
+                                title: 'Gagal Memproses Data Kartu',
+                                text: 'Terjadi kendala: ' + (readingErr.message || readingErr),
+                                confirmButtonText: 'Tutup'
                             });
+                        } else {
+                            alert('Gagal memproses kartu: ' + (readingErr.message || readingErr));
                         }
                     }
                 };
@@ -1746,6 +1854,10 @@
             if (nfcAbortController) {
                 nfcAbortController.abort();
                 nfcAbortController = null;
+            }
+            // If another modal is open, keep 'modal-open' on body for proper scrolling
+            if ($('.modal.show').length > 0) {
+                $('body').addClass('modal-open');
             }
         });
     })();
