@@ -371,7 +371,7 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A["Kelola Master Data: Pegawai (Pencarian Cepat via Tap NFC HP & Quick Profile Card, Scan Form NFC Web API, RFID Dual-Format Reader USB 10-Digit & NFC Android Hex Converter, Masa Kerja TMT CPNS, Foto ID Card), Tanggal Merah, Struktur Organisasi, MAK, Dasar SPT"] --> B[Kelola Paket Pekerjaan SIMAK Fisik & Konsultasi]
+    A["Kelola Master Data: Pegawai (Pencarian Cepat via Tap NFC HP & Quick Profile Card, Scan Form NFC Web API, RFID Dual-Format Reader USB 10-Digit & NFC Android Hex Converter, Masa Kerja TMT CPNS, Foto ID Card), Tanggal Merah & Libur SKB 3 Menteri (Pilih Tahun Dinamis & Sinkronisasi API), Struktur Organisasi, MAK, Dasar SPT"] --> B[Kelola Paket Pekerjaan SIMAK Fisik & Konsultasi]
     B --> C[Kelola RAB Gedung Strategis]
     C --> D[Pantau Rekap Mingguan & Dokumentasi Lapangan]
                 </pre>
@@ -688,7 +688,7 @@ graph TD
                             <div class="card-body">
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-calendar-alt mr-1"></i> Master Tanggal Merah & Kalender Libur</h6>
                                 <p class="small text-muted mb-2"><code>/admin/master/tanggal-merah</code></p>
-                                <p class="small mb-0">Pengelolaan kalender hari libur nasional & cuti bersama terintegrasi live dengan API <code>https://tanggalmerah.upset.dev/api/holidays?year={year}</code>. Dilengkapi <strong>Dropdown Pemilihan Tahun</strong>, tombol <strong>Tarik Data API</strong> dengan modal preview konfirmasi (pembeda data baru vs data yang sudah tersimpan), tampilan <strong>Kalender Interaktif 12 Bulan</strong> (highlight merah untuk Libur Nasional & oranye/amber untuk Cuti Bersama serta klik tanggal untuk detail/tambah), tampilan <strong>Tabel Data</strong>, penambahan/perubahan manual, pembersihan data tahun berjalan, dan ekspor Excel.</p>
+                                <p class="small mb-0">Pengelolaan kalender hari libur nasional & cuti bersama terintegrasi live dengan API <code>https://tanggalmerah.upset.dev/api/holidays?year={year}</code> serta <em>fallback</em> resmi ketetapan SKB 3 Menteri (termasuk tahun 2027: 18 Libur Nasional & 8 Cuti Bersama). Dilengkapi <strong>Dropdown Pemilihan Tahun di Toolbar & Langsung di Dalam Modal Tarik Data</strong>, tombol <strong>Tarik Data API</strong> dengan modal preview konfirmasi dinamis (pembeda data baru vs data yang sudah tersimpan), tampilan <strong>Kalender Interaktif 12 Bulan</strong> (highlight merah untuk Libur Nasional & oranye/amber untuk Cuti Bersama serta klik tanggal untuk detail/tambah), tampilan <strong>Tabel Data</strong>, penambahan/perubahan manual, pembersihan data tahun berjalan, dan ekspor Excel.</p>
                             </div>
                         </div>
                     </div>

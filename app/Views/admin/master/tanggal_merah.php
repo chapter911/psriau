@@ -388,13 +388,35 @@
 <div class="modal fade" id="modal-preview-api" tabindex="-1" role="dialog" aria-labelledby="modalPreviewApiLabel" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
         <div class="modal-content" style="border-radius: 14px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-            <div class="modal-header bg-primary text-white py-3">
-                <h5 class="modal-title font-weight-bold" id="modalPreviewApiLabel">
-                    <i class="fas fa-cloud-arrow-down mr-2"></i> Preview Sinkronisasi Data Tanggal Merah API Tahun <span id="previewModalYear"></span>
-                </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+            <div class="modal-header bg-primary text-white py-2 px-3 d-flex align-items-center justify-content-between flex-wrap" style="gap: 10px;">
+                <div class="d-flex align-items-center">
+                    <h5 class="modal-title font-weight-bold mb-0" id="modalPreviewApiLabel" style="font-size: 1.15rem;">
+                        <i class="fas fa-cloud-arrow-down mr-2"></i> Tarik Data Tanggal Merah &amp; Libur
+                    </h5>
+                </div>
+                
+                <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                    <div class="d-flex align-items-center bg-white py-1 px-2 rounded shadow-sm">
+                        <label for="modalSelectYear" class="mb-0 mr-2 small font-weight-bold text-dark text-nowrap">
+                            <i class="far fa-calendar-alt text-primary mr-1"></i> Pilih Tahun:
+                        </label>
+                        <select id="modalSelectYear" class="form-control form-control-sm font-weight-bold text-primary border-0" style="width: 105px; cursor: pointer; background: transparent;">
+                            <?php foreach ($yearOptions as $yr): ?>
+                                <option value="<?= esc($yr); ?>" <?= $yr === $selectedYear ? 'selected' : ''; ?>>
+                                    <?= esc($yr); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <button type="button" class="btn btn-light btn-sm font-weight-bold text-primary shadow-sm" id="btnRefreshModalApi" title="Muat Ulang Data Tahun Terpilih" style="border-radius: 6px;">
+                        <i class="fas fa-sync-alt mr-1"></i> Muat Data
+                    </button>
+
+                    <button type="button" class="close text-white ml-2" data-dismiss="modal" aria-label="Close" style="opacity: 0.9;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Loading Spinner State -->
@@ -402,20 +424,34 @@
                 <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status">
                     <span class="sr-only">Loading...</span>
                 </div>
-                <h5 class="font-weight-bold text-dark">Menghubungkan ke API Tanggal Merah...</h5>
-                <p class="text-muted small mb-0">Mengambil data resmi dari <code>https://tanggalmerah.upset.dev/api/holidays?year=<span class="apiTargetYear"></span></code></p>
+                <h5 class="font-weight-bold text-dark">Mengambil Data Tanggal Merah Tahun <span class="apiTargetYear font-weight-bold text-primary"></span>...</h5>
+                <p class="text-muted small mb-0">Menghubungkan ke API resmi / penetapan SKB 3 Menteri...</p>
             </div>
 
             <!-- Error State -->
             <div id="previewErrorState" class="modal-body py-4 text-center" style="display: none;">
                 <div class="alert alert-danger mb-0 text-left">
-                    <h5 class="alert-heading font-weight-bold"><i class="fas fa-exclamation-triangle mr-2"></i> Gagal Mengambil Data API</h5>
-                    <p id="previewErrorMessage" class="mb-0"></p>
+                    <h5 class="alert-heading font-weight-bold"><i class="fas fa-exclamation-triangle mr-2"></i> Gagal Mengambil Data Tahun <span class="apiTargetYear"></span></h5>
+                    <p id="previewErrorMessage" class="mb-2"></p>
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="btnRetryFetchApi">
+                        <i class="fas fa-redo mr-1"></i> Coba Lagi
+                    </button>
                 </div>
             </div>
 
             <!-- Success Content State -->
             <div id="previewContentState" class="modal-body p-3" style="display: none;">
+                <!-- Info Header with Year & Source -->
+                <div class="d-flex flex-wrap align-items-center justify-content-between p-2 mb-3 bg-light rounded border" style="gap: 8px;">
+                    <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                        <span class="font-weight-bold text-dark">
+                            <i class="fas fa-calendar-check text-primary mr-1"></i> Pratinjau Data Tahun <span class="badge badge-primary px-2 py-1" id="previewBadgeYear" style="font-size: 0.95rem;"></span>
+                        </span>
+                        <span class="badge badge-info px-2 py-1" id="previewSourceBadge" style="display: none;"></span>
+                    </div>
+                    <small class="text-muted font-italic" id="previewSourceNote"></small>
+                </div>
+
                 <!-- Summary Meta Bar -->
                 <div class="row mb-3">
                     <div class="col-md-3 col-6 mb-2 mb-md-0">
@@ -807,102 +843,147 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // 4. Tarik Data API Button Click
+    // 4. Tarik Data API Modal & Fetch Handler
     const btnFetchApi = document.getElementById('btnFetchApi');
     const modalPreviewApi = $('#modal-preview-api');
+    const modalSelectYear = document.getElementById('modalSelectYear');
+    const btnRefreshModalApi = document.getElementById('btnRefreshModalApi');
+    const btnRetryFetchApi = document.getElementById('btnRetryFetchApi');
+
+    let activeApiYear = currentSelectedYear;
+
+    function fetchApiData(targetYear) {
+        activeApiYear = parseInt(targetYear, 10) || currentSelectedYear;
+
+        if (modalSelectYear) {
+            modalSelectYear.value = activeApiYear;
+        }
+
+        $('#previewModalYear').text(activeApiYear);
+        $('.apiTargetYear').text(activeApiYear);
+        $('#previewBadgeYear').text(activeApiYear);
+
+        $('#previewLoadingState').show();
+        $('#previewErrorState').hide();
+        $('#previewContentState').hide();
+        $('#btnConfirmSaveApi').prop('disabled', true);
+
+        // Send AJAX POST
+        $.ajax({
+            url: fetchApiUrl,
+            type: 'POST',
+            data: { year: activeApiYear },
+            dataType: 'json',
+            success: function (res) {
+                $('#previewLoadingState').hide();
+
+                if (! res.success) {
+                    $('#previewErrorMessage').text(res.message || 'Gagal memuat data dari API.');
+                    $('#previewErrorState').show();
+                    return;
+                }
+
+                cachedFetchedData = res.data || [];
+
+                // Update source badge and note
+                if (res.source_note) {
+                    $('#previewSourceBadge').text(res.source_note).show();
+                    $('#previewSourceNote').text('Ketetapan Resmi ' + res.source_note);
+                } else {
+                    $('#previewSourceBadge').hide();
+                    $('#previewSourceNote').text('');
+                }
+
+                // Populate summary numbers
+                $('#previewTotalCount').text(res.total_count || 0);
+                $('#previewNationalCount').text((res.meta && res.meta.total_holidays) ? res.meta.total_holidays : 0);
+                $('#previewLeaveCount').text((res.meta && res.meta.total_leave) ? res.meta.total_leave : 0);
+                $('#previewNewCount').text(res.new_count || 0);
+
+                // Render Preview Table Rows
+                const tbody = document.getElementById('previewTableBody');
+                tbody.innerHTML = '';
+
+                if (cachedFetchedData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data tanggal merah ditemukan untuk tahun ' + activeApiYear + '.</td></tr>';
+                } else {
+                    cachedFetchedData.forEach((item, idx) => {
+                        const tr = document.createElement('tr');
+                        const isLeave = item.type === 'leave';
+
+                        let diffNote = '';
+                        if (item.is_different) {
+                            diffNote = `<div class="small text-danger"><i class="fas fa-info-circle mr-1"></i> Data di DB: ${item.existing_name} (${item.existing_type === 'leave' ? 'Cuti' : 'Libur'})</div>`;
+                        }
+
+                        tr.innerHTML = `
+                            <td class="text-center align-middle">
+                                <input type="checkbox" class="check-holiday-item" data-index="${idx}" checked>
+                            </td>
+                            <td class="text-center align-middle font-weight-bold">
+                                <span class="badge badge-light border p-1">${item.date}</span>
+                                <div class="small text-muted">${item.date_indo || ''}</div>
+                            </td>
+                            <td class="text-center align-middle font-weight-bold text-secondary">
+                                ${item.day || '-'}
+                            </td>
+                            <td class="align-middle font-weight-bold">
+                                <span class="${isLeave ? 'text-warning' : 'text-danger'}">
+                                    <i class="${isLeave ? 'fas fa-umbrella-beach' : 'fas fa-flag'} mr-1"></i>
+                                </span>
+                                ${item.name || '-'}
+                                ${diffNote}
+                            </td>
+                            <td class="text-center align-middle">
+                                <span class="badge ${isLeave ? 'badge-warning' : 'badge-danger'} px-2 py-1">
+                                    ${item.type_label || (isLeave ? 'Cuti Bersama' : 'Libur Nasional')}
+                                </span>
+                            </td>
+                            <td class="text-center align-middle">
+                                <span class="badge ${item.status_badge || 'badge-secondary'} px-2 py-1">
+                                    ${item.status_label || '-'}
+                                </span>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                $('#previewContentState').show();
+                $('#btnConfirmSaveApi').prop('disabled', cachedFetchedData.length === 0);
+            },
+            error: function (xhr) {
+                $('#previewLoadingState').hide();
+                $('#previewErrorMessage').text('Terjadi kesalahan jaringan atau server (HTTP ' + xhr.status + ').');
+                $('#previewErrorState').show();
+            }
+        });
+    }
 
     if (btnFetchApi) {
         btnFetchApi.addEventListener('click', function () {
-            $('#previewModalYear').text(currentSelectedYear);
-            $('.apiTargetYear').text(currentSelectedYear);
-
-            $('#previewLoadingState').show();
-            $('#previewErrorState').hide();
-            $('#previewContentState').hide();
-            $('#btnConfirmSaveApi').prop('disabled', true);
-
             modalPreviewApi.modal('show');
+            fetchApiData(currentSelectedYear);
+        });
+    }
 
-            // Send AJAX POST
-            $.ajax({
-                url: fetchApiUrl,
-                type: 'POST',
-                data: { year: currentSelectedYear },
-                dataType: 'json',
-                success: function (res) {
-                    $('#previewLoadingState').hide();
+    if (modalSelectYear) {
+        modalSelectYear.addEventListener('change', function () {
+            fetchApiData(this.value);
+        });
+    }
 
-                    if (! res.success) {
-                        $('#previewErrorMessage').text(res.message || 'Gagal memuat data dari API.');
-                        $('#previewErrorState').show();
-                        return;
-                    }
+    if (btnRefreshModalApi) {
+        btnRefreshModalApi.addEventListener('click', function () {
+            const yr = modalSelectYear ? modalSelectYear.value : activeApiYear;
+            fetchApiData(yr);
+        });
+    }
 
-                    cachedFetchedData = res.data || [];
-
-                    // Populate summary numbers
-                    $('#previewTotalCount').text(res.total_count || 0);
-                    $('#previewNationalCount').text((res.meta && res.meta.total_holidays) ? res.meta.total_holidays : 0);
-                    $('#previewLeaveCount').text((res.meta && res.meta.total_leave) ? res.meta.total_leave : 0);
-                    $('#previewNewCount').text(res.new_count || 0);
-
-                    // Render Preview Table Rows
-                    const tbody = document.getElementById('previewTableBody');
-                    tbody.innerHTML = '';
-
-                    if (cachedFetchedData.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">Tidak ada data tanggal merah ditemukan untuk tahun ini.</td></tr>';
-                    } else {
-                        cachedFetchedData.forEach((item, idx) => {
-                            const tr = document.createElement('tr');
-                            const isLeave = item.type === 'leave';
-
-                            let diffNote = '';
-                            if (item.is_different) {
-                                diffNote = `<div class="small text-danger"><i class="fas fa-info-circle mr-1"></i> Data di DB: ${item.existing_name} (${item.existing_type === 'leave' ? 'Cuti' : 'Libur'})</div>`;
-                            }
-
-                            tr.innerHTML = `
-                                <td class="text-center align-middle">
-                                    <input type="checkbox" class="check-holiday-item" data-index="${idx}" checked>
-                                </td>
-                                <td class="text-center align-middle font-weight-bold">
-                                    <span class="badge badge-light border p-1">${item.date}</span>
-                                    <div class="small text-muted">${item.date_indo || ''}</div>
-                                </td>
-                                <td class="text-center align-middle font-weight-bold text-secondary">
-                                    ${item.day || '-'}
-                                </td>
-                                <td class="align-middle font-weight-bold">
-                                    <span class="${isLeave ? 'text-warning' : 'text-danger'}">
-                                        <i class="${isLeave ? 'fas fa-umbrella-beach' : 'fas fa-flag'} mr-1"></i>
-                                    </span>
-                                    ${item.name || '-'}
-                                    ${diffNote}
-                                </td>
-                                <td class="text-center align-middle">
-                                    <span class="badge ${isLeave ? 'badge-warning' : 'badge-danger'} px-2 py-1">
-                                        ${item.type_label || (isLeave ? 'Cuti Bersama' : 'Libur Nasional')}
-                                    </span>
-                                </td>
-                                <td class="text-center align-middle">
-                                    <span class="badge ${item.status_badge || 'badge-secondary'} px-2 py-1">
-                                        ${item.status_label || '-'}
-                                    </span>
-                                </td>
-                            `;
-                            tbody.appendChild(tr);
-                        });
-                    }
-
-                    $('#previewContentState').show();
-                    $('#btnConfirmSaveApi').prop('disabled', cachedFetchedData.length === 0);
-                },
-                error: function (xhr) {
-                    $('#previewLoadingState').hide();
-                    $('#previewErrorMessage').text('Terjadi kesalahan jaringan (HTTP ' + xhr.status + ').');
-                    $('#previewErrorState').show();
-                }
-            });
+    if (btnRetryFetchApi) {
+        btnRetryFetchApi.addEventListener('click', function () {
+            const yr = modalSelectYear ? modalSelectYear.value : activeApiYear;
+            fetchApiData(yr);
         });
     }
 
@@ -958,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 url: saveBatchUrl,
                 type: 'POST',
                 data: {
-                    year: currentSelectedYear,
+                    year: activeApiYear,
                     holidays_json: JSON.stringify(selectedItems),
                     mode: syncMode
                 },
@@ -966,7 +1047,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 success: function (res) {
                     if (res.success) {
                         modalPreviewApi.modal('hide');
-                        window.location.reload();
+                        window.location.href = res.redirect_url || (baseEditUrl + '?year=' + encodeURIComponent(activeApiYear));
                     } else {
                         btnConfirmSaveApi.disabled = false;
                         btnConfirmSaveApi.innerHTML = '<i class="fas fa-save mr-1"></i> Konfirmasi & Simpan ke Database';

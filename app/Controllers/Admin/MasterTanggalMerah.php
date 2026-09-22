@@ -36,6 +36,41 @@ class MasterTanggalMerah extends BaseController
         12 => 'Desember',
     ];
 
+    /**
+     * Jadwal Resmi Hari Libur Nasional & Cuti Bersama 2027 berdasarkan
+     * Surat Keputusan Bersama (SKB) Menteri Agama, Menteri Ketenagakerjaan,
+     * dan Menteri PANRB No. 1205/2026, No. 3/2026, No. 2/2026 (15 September 2026)
+     * Total: 26 hari (18 Libur Nasional + 8 Cuti Bersama)
+     */
+    private const OFFICIAL_HOLIDAYS_2027 = [
+        ['date' => '2027-01-01', 'name' => 'Tahun Baru 2027 Masehi', 'type' => 'holiday', 'day' => 'Jumat'],
+        ['date' => '2027-01-05', 'name' => 'Isra Mikraj Nabi Muhammad SAW', 'type' => 'holiday', 'day' => 'Selasa'],
+        ['date' => '2027-02-05', 'name' => 'Tahun Baru Imlek 2578 Kongzili', 'type' => 'leave', 'day' => 'Jumat'],
+        ['date' => '2027-02-06', 'name' => 'Tahun Baru Imlek 2578 Kongzili', 'type' => 'holiday', 'day' => 'Sabtu'],
+        ['date' => '2027-03-08', 'name' => 'Hari Suci Nyepi (Tahun Baru Saka 1949)', 'type' => 'holiday', 'day' => 'Senin'],
+        ['date' => '2027-03-09', 'name' => 'Hari Raya Idul Fitri 1448 Hijriah', 'type' => 'leave', 'day' => 'Selasa'],
+        ['date' => '2027-03-10', 'name' => 'Hari Raya Idul Fitri 1448 Hijriah', 'type' => 'holiday', 'day' => 'Rabu'],
+        ['date' => '2027-03-11', 'name' => 'Hari Raya Idul Fitri 1448 Hijriah', 'type' => 'holiday', 'day' => 'Kamis'],
+        ['date' => '2027-03-12', 'name' => 'Hari Raya Idul Fitri 1448 Hijriah', 'type' => 'leave', 'day' => 'Jumat'],
+        ['date' => '2027-03-15', 'name' => 'Hari Raya Idul Fitri 1448 Hijriah', 'type' => 'leave', 'day' => 'Senin'],
+        ['date' => '2027-03-25', 'name' => 'Wafat Yesus Kristus', 'type' => 'leave', 'day' => 'Kamis'],
+        ['date' => '2027-03-26', 'name' => 'Wafat Yesus Kristus', 'type' => 'holiday', 'day' => 'Jumat'],
+        ['date' => '2027-03-28', 'name' => 'Hari Kebangkitan Yesus Kristus (Paskah)', 'type' => 'holiday', 'day' => 'Minggu'],
+        ['date' => '2027-05-01', 'name' => 'Hari Buruh Internasional', 'type' => 'holiday', 'day' => 'Sabtu'],
+        ['date' => '2027-05-06', 'name' => 'Kenaikan Yesus Kristus', 'type' => 'holiday', 'day' => 'Kamis'],
+        ['date' => '2027-05-17', 'name' => 'Hari Raya Idul Adha 1448 Hijriah', 'type' => 'holiday', 'day' => 'Senin'],
+        ['date' => '2027-05-18', 'name' => 'Hari Raya Idul Adha 1448 Hijriah', 'type' => 'leave', 'day' => 'Selasa'],
+        ['date' => '2027-05-19', 'name' => 'Hari Raya Waisak 2571 BE', 'type' => 'leave', 'day' => 'Rabu'],
+        ['date' => '2027-05-20', 'name' => 'Hari Raya Waisak 2571 BE', 'type' => 'holiday', 'day' => 'Kamis'],
+        ['date' => '2027-06-01', 'name' => 'Hari Lahir Pancasila', 'type' => 'holiday', 'day' => 'Selasa'],
+        ['date' => '2027-06-06', 'name' => '1 Muharam Tahun Baru Islam 1449 Hijriah', 'type' => 'holiday', 'day' => 'Minggu'],
+        ['date' => '2027-08-15', 'name' => 'Maulid Nabi Muhammad SAW', 'type' => 'holiday', 'day' => 'Minggu'],
+        ['date' => '2027-08-17', 'name' => 'Proklamasi Kemerdekaan Republik Indonesia', 'type' => 'holiday', 'day' => 'Selasa'],
+        ['date' => '2027-12-24', 'name' => 'Kelahiran Yesus Kristus (Hari Raya Natal)', 'type' => 'leave', 'day' => 'Jumat'],
+        ['date' => '2027-12-25', 'name' => 'Kelahiran Yesus Kristus (Hari Raya Natal)', 'type' => 'holiday', 'day' => 'Sabtu'],
+        ['date' => '2027-12-26', 'name' => 'Isra Mikraj Nabi Muhammad SAW', 'type' => 'holiday', 'day' => 'Minggu'],
+    ];
+
     public function index()
     {
         $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
@@ -98,60 +133,85 @@ class MasterTanggalMerah extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Tahun tidak valid.']);
         }
 
-        $apiUrl = "https://tanggalmerah.upset.dev/api/holidays?year={$year}";
-
         try {
-            $client = \Config\Services::curlrequest([
-                'timeout'         => 15,
-                'connect_timeout' => 10,
-                'http_errors'     => false,
-                'headers'         => [
-                    'Accept'     => 'application/json',
-                    'User-Agent' => 'SatkerPPS-Client/1.0',
-                ],
-            ]);
+            $apiUrl = "https://tanggalmerah.upset.dev/api/holidays?year={$year}";
+            $apiHolidays = null;
+            $meta = null;
+            $sourceNote = 'API (tanggalmerah.upset.dev)';
 
-            $apiResponse = $client->get($apiUrl);
-            $statusCode = $apiResponse->getStatusCode();
-            $body = (string) $apiResponse->getBody();
-
-            if ($statusCode !== 200) {
-                // Fallback to file_get_contents with stream context if cURL fails
-                $ctx = stream_context_create([
-                    'http' => [
-                        'timeout' => 15,
-                        'header'  => "Accept: application/json\r\nUser-Agent: SatkerPPS-Client/1.0\r\n",
+            try {
+                $client = \Config\Services::curlrequest([
+                    'timeout'         => 12,
+                    'connect_timeout' => 8,
+                    'http_errors'     => false,
+                    'headers'         => [
+                        'Accept'     => 'application/json',
+                        'User-Agent' => 'SatkerPPS-Client/1.0',
                     ],
                 ]);
-                $fallbackBody = @file_get_contents($apiUrl, false, $ctx);
-                if ($fallbackBody !== false) {
-                    $body = $fallbackBody;
-                    $statusCode = 200;
+
+                $apiResponse = $client->get($apiUrl);
+                $statusCode = $apiResponse->getStatusCode();
+                $body = (string) $apiResponse->getBody();
+
+                if ($statusCode !== 200) {
+                    $ctx = stream_context_create([
+                        'http' => [
+                            'timeout' => 8,
+                            'header'  => "Accept: application/json\r\nUser-Agent: SatkerPPS-Client/1.0\r\n",
+                        ],
+                    ]);
+                    $fallbackBody = @file_get_contents($apiUrl, false, $ctx);
+                    if ($fallbackBody !== false) {
+                        $body = $fallbackBody;
+                        $statusCode = 200;
+                    }
+                }
+
+                if ($statusCode === 200) {
+                    $json = json_decode($body, true);
+                    if (is_array($json) && ! empty($json['success']) && isset($json['data']) && is_array($json['data'])) {
+                        $apiHolidays = $json['data'];
+                        $meta = $json['meta'] ?? null;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Ignore connection errors and fall back gracefully below
+            }
+
+            // Fallback: If external API doesn't have data (e.g. 404 for 2027) but official SKB 3 Menteri dataset exists
+            if ($apiHolidays === null) {
+                if ($year === 2027) {
+                    $apiHolidays = self::OFFICIAL_HOLIDAYS_2027;
+                    $sourceNote = 'SKB 3 Menteri No. 1205/2026, No. 3/2026, No. 2/2026';
                 }
             }
 
-            if ($statusCode !== 200) {
+            if ($apiHolidays === null) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => "Gagal mengambil data dari API Tanggal Merah (HTTP status {$statusCode}). Silakan coba sesaat lagi.",
+                    'message' => "Data hari libur untuk tahun {$year} belum tersedia di API Tanggal Merah maupun ketetapan SKB resmi. Silakan coba tahun lain atau gunakan tombol Tambah Manual.",
                 ]);
             }
 
-            $json = json_decode($body, true);
-            if (! is_array($json) || empty($json['success']) || ! isset($json['data']) || ! is_array($json['data'])) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Format respons dari API Tanggal Merah tidak valid atau tidak memiliki data.',
-                ]);
+            $totalHolidaysCount = 0;
+            $totalLeaveCount = 0;
+            foreach ($apiHolidays as $hItem) {
+                if (($hItem['type'] ?? '') === 'leave') {
+                    $totalLeaveCount++;
+                } else {
+                    $totalHolidaysCount++;
+                }
             }
 
-            $apiHolidays = $json['data'];
-            $meta = $json['meta'] ?? [
-                'total'          => count($apiHolidays),
-                'total_holidays' => 0,
-                'total_leave'    => 0,
-                'year'           => $year,
-            ];
+            if (! is_array($meta)) {
+                $meta = [
+                    'total'          => count($apiHolidays),
+                    'total_holidays' => $totalHolidaysCount,
+                    'total_leave'    => $totalLeaveCount,
+                    'year'           => $year,
+                ];
+            }
 
             // Compare with existing DB records
             $model = new MstTanggalMerahModel();
@@ -227,6 +287,7 @@ class MasterTanggalMerah extends BaseController
             return $this->response->setJSON([
                 'success'        => true,
                 'year'           => $year,
+                'source_note'    => $sourceNote,
                 'meta'           => $meta,
                 'data'           => $previewData,
                 'total_count'    => count($previewData),
@@ -238,7 +299,7 @@ class MasterTanggalMerah extends BaseController
         } catch (\Throwable $e) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Terjadi kesalahan koneksi saat mengakses API: ' . $e->getMessage(),
+                'message' => 'Terjadi kesalahan sistem saat memproses data: ' . $e->getMessage(),
             ]);
         }
     }
@@ -361,6 +422,8 @@ class MasterTanggalMerah extends BaseController
             'saved_count'   => $savedCount,
             'updated_count' => $updatedCount,
             'total'         => $totalProcessed,
+            'year'          => $year,
+            'redirect_url'  => site_url('/admin/master/tanggal-merah?year=' . $year),
         ]);
     }
 
