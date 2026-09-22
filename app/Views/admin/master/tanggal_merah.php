@@ -41,6 +41,12 @@
                         </button>
                     </div>
 
+                    <!-- Rekomendasi Cuti Button -->
+                    <button type="button" class="btn btn-sm px-3 shadow-sm font-weight-bold" id="btnRekomendasiCuti" data-toggle="modal" data-target="#modal-rekomendasi-cuti" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff !important; border: none; border-radius: 6px;" title="Lihat Rekomendasi Cuti Strategis & Harpitnas">
+                        <i class="fas fa-lightbulb mr-1 text-white"></i> Rekomendasi Cuti
+                        <span class="badge badge-light text-dark ml-1" id="badgeRecCount"><?= count($leaveRecommendations ?? []); ?></span>
+                    </button>
+
                     <?php if (! empty($can_add)): ?>
                         <!-- Tarik Data API Button -->
                         <button type="button" class="btn btn-gradient-primary btn-sm px-3 shadow-sm font-weight-bold text-white" id="btnFetchApi" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); border-radius: 6px;">
@@ -162,6 +168,12 @@
                         <span class="d-inline-block rounded-circle mr-2" style="width: 14px; height: 14px; background-color: #e3f2fd; border: 1px solid #bbdefb;"></span>
                         <span class="small font-weight-bold text-secondary">Hari Sabtu</span>
                     </div>
+                    <div class="d-flex align-items-center">
+                        <span class="d-inline-flex align-items-center justify-content-center mr-2 rounded" style="width: 16px; height: 16px; background-color: #fffbeb; border: 1.5px dashed #f59e0b; color: #d97706; font-size: 10px;">
+                            <i class="fas fa-lightbulb"></i>
+                        </span>
+                        <span class="small font-weight-bold text-secondary">Rekomendasi Cuti (Harpitnas)</span>
+                    </div>
                 </div>
 
                 <!-- 12 Months Grid -->
@@ -221,10 +233,14 @@
                                                                     $isLeave = $holData && ($holData['tipe'] ?? '') === 'leave';
                                                                     $isSunday = ! empty($dayObj['is_sunday']);
                                                                     $isSaturday = ! empty($dayObj['is_saturday']);
+                                                                    $isRecLeave = ! empty($dayObj['is_rec_leave']);
+                                                                    $recLeaveData = $dayObj['rec_leave'] ?? null;
 
                                                                     $cellClass = 'calendar-day-cell ';
                                                                     if ($isHol) {
                                                                         $cellClass .= $isLeave ? 'cell-leave ' : 'cell-holiday ';
+                                                                    } elseif ($isRecLeave) {
+                                                                        $cellClass .= 'cell-rec-leave ';
                                                                     } elseif ($isSunday) {
                                                                         $cellClass .= 'cell-sunday ';
                                                                     } elseif ($isSaturday) {
@@ -235,6 +251,8 @@
                                                                     if ($isHol) {
                                                                         $prefix = $isLeave ? '[Cuti Bersama] ' : '[Libur Nasional] ';
                                                                         $tooltipText = $prefix . esc((string) ($holData['nama_libur'] ?? ''));
+                                                                    } elseif ($isRecLeave && $recLeaveData) {
+                                                                        $tooltipText = '💡 Rekomendasi Cuti: Ambil hari ini untuk libur ' . $recLeaveData['total_consecutive_days'] . ' hari beruntun!';
                                                                     }
                                                                 ?>
                                                                 <td class="<?= esc($cellClass); ?>"
@@ -245,6 +263,10 @@
                                                                     data-holiday-type="<?= esc((string) ($holData['tipe'] ?? 'holiday')); ?>"
                                                                     data-holiday-day="<?= esc((string) ($holData['hari'] ?? '')); ?>"
                                                                     data-holiday-source="<?= esc((string) ($holData['sumber'] ?? '')); ?>"
+                                                                    data-is-rec-leave="<?= $isRecLeave ? '1' : '0'; ?>"
+                                                                    data-rec-consecutive="<?= esc((string) ($recLeaveData['total_consecutive_days'] ?? '')); ?>"
+                                                                    data-rec-range="<?= esc((string) (($recLeaveData['start_date_indo'] ?? '') . ' s/d ' . ($recLeaveData['end_date_indo'] ?? ''))); ?>"
+                                                                    data-rec-holidays="<?= esc(implode(', ', $recLeaveData['holidays_involved'] ?? [])); ?>"
                                                                     data-toggle="tooltip"
                                                                     data-placement="top"
                                                                     title="<?= esc($tooltipText); ?>"
@@ -254,6 +276,10 @@
                                                                     </div>
                                                                     <?php if ($isHol): ?>
                                                                         <div class="holiday-dot-indicator" style="width: 6px; height: 6px; border-radius: 50%; margin: 1px auto 0; background-color: <?= $isLeave ? '#ff9800' : '#dc3545'; ?>;"></div>
+                                                                    <?php elseif ($isRecLeave): ?>
+                                                                        <div class="rec-leave-indicator text-warning" style="font-size: 0.65rem; line-height: 1; margin-top: 1px;">
+                                                                            <i class="fas fa-lightbulb"></i>
+                                                                        </div>
                                                                     <?php endif; ?>
                                                                 </td>
                                                             <?php endif; ?>
@@ -712,10 +738,216 @@
                     </button>
                 </div>
             </form>
+</div>
+<?php endif; ?>
+
+<!-- ======================================================= -->
+<!-- MODAL 6: REKOMENDASI STRATEGIS AMBIL CUTI (HARPITNAS)    -->
+<!-- ======================================================= -->
+<?php
+    $recCount = count($leaveRecommendations ?? []);
+    $recMaxConsecutive = 0;
+    $recBestMultiplier = 0;
+    foreach (($leaveRecommendations ?? []) as $r) {
+        if ($r['total_consecutive_days'] > $recMaxConsecutive) {
+            $recMaxConsecutive = $r['total_consecutive_days'];
+        }
+        if ($r['multiplier'] > $recBestMultiplier) {
+            $recBestMultiplier = $r['multiplier'];
+        }
+    }
+?>
+<div class="modal fade" id="modal-rekomendasi-cuti" tabindex="-1" role="dialog" aria-labelledby="modalRekomendasiCutiLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 14px; overflow: hidden; border: none; box-shadow: 0 10px 35px rgba(0,0,0,0.25);">
+            <div class="modal-header text-white py-2 px-3 d-flex align-items-center justify-content-between flex-wrap" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); gap: 10px;">
+                <div class="d-flex align-items-center">
+                    <h5 class="modal-title font-weight-bold mb-0 text-white" id="modalRekomendasiCutiLabel" style="font-size: 1.15rem;">
+                        <i class="fas fa-lightbulb mr-2 text-warning"></i> Rekomendasi Cuti Strategis Tahun <span class="recModalYear"><?= esc($selectedYear); ?></span>
+                    </h5>
+                </div>
+                <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                    <div class="d-flex align-items-center bg-white py-1 px-2 rounded shadow-sm">
+                        <label for="recModalSelectYear" class="mb-0 mr-2 small font-weight-bold text-dark text-nowrap">
+                            <i class="far fa-calendar-alt text-warning mr-1"></i> Pilih Tahun:
+                        </label>
+                        <select id="recModalSelectYear" class="form-control form-control-sm font-weight-bold text-warning border-0" style="width: 105px; cursor: pointer; background: transparent; color: #b45309 !important;">
+                            <?php foreach ($yearOptions as $yr): ?>
+                                <option value="<?= esc($yr); ?>" <?= $yr === $selectedYear ? 'selected' : ''; ?>>
+                                    <?= esc($yr); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <button type="button" class="close text-white ml-2" data-dismiss="modal" aria-label="Close" style="opacity: 0.9;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-body p-4 bg-light" style="max-height: 75vh; overflow-y: auto;">
+                <!-- Summary Banner Cards -->
+                <div class="row mb-4" id="recSummaryRow">
+                    <div class="col-md-4 col-sm-6 mb-2 mb-md-0">
+                        <div class="card h-100 border-0 shadow-sm" style="border-radius: 10px; border-left: 4px solid #f59e0b !important;">
+                            <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="small text-muted font-weight-bold text-uppercase d-block">Peluang Harpitnas</span>
+                                    <h4 class="mb-0 font-weight-bold" id="recStatTotalCount" style="color: #b45309 !important;">
+                                        <?= $recCount; ?> <span class="small font-weight-normal text-muted" style="font-size: 0.85rem;">Peluang</span>
+                                    </h4>
+                                    <small class="text-secondary">Tahun <span class="recModalYear"><?= esc($selectedYear); ?></span></small>
+                                </div>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(245, 158, 11, 0.15);">
+                                    <i class="fas fa-calendar-plus text-warning fa-lg" style="color: #b45309 !important;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6 mb-2 mb-md-0">
+                        <div class="card h-100 border-0 shadow-sm" style="border-radius: 10px; border-left: 4px solid #dc3545 !important;">
+                            <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="small text-muted font-weight-bold text-uppercase d-block">Libur Beruntun Terpanjang</span>
+                                    <h4 class="mb-0 font-weight-bold text-danger" id="recStatMaxConsecutive">
+                                        <?= $recMaxConsecutive; ?> <span class="small font-weight-normal text-muted" style="font-size: 0.85rem;">Hari Beruntun</span>
+                                    </h4>
+                                    <small class="text-secondary">Peluang Libur Maksimal</small>
+                                </div>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(220, 53, 69, 0.12);">
+                                    <i class="fas fa-plane-departure text-danger fa-lg"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-12">
+                        <div class="card h-100 border-0 shadow-sm" style="border-radius: 10px; border-left: 4px solid #10b981 !important;">
+                            <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="small text-muted font-weight-bold text-uppercase d-block">Efisiensi Cuti Terbaik</span>
+                                    <h4 class="mb-0 font-weight-bold text-success" id="recStatBestMultiplier">
+                                        <?= $recBestMultiplier; ?>x <span class="small font-weight-normal text-muted" style="font-size: 0.85rem;">Multiplier</span>
+                                    </h4>
+                                    <small class="text-secondary">Rasio Hari Cuti vs Libur</small>
+                                </div>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(16, 185, 129, 0.12);">
+                                    <i class="fas fa-bolt text-success fa-lg"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guidance Callout -->
+                <div class="alert alert-warning border-0 shadow-sm mb-4 d-flex align-items-center" style="background: #fffbeb; border-left: 4px solid #f59e0b !important; border-radius: 8px;">
+                    <i class="fas fa-info-circle fa-2x text-warning mr-3" style="color: #d97706 !important;"></i>
+                    <div class="small text-dark mb-0">
+                        <strong>Tips Optimalisasi Cuti:</strong> Ambil cuti tahunan pada hari kerja yang "terjepit" antara akhir pekan dan hari libur resmi untuk mendapatkan rangkaian libur panjang tanpa menghabiskan banyak jatah cuti tahunan.
+                    </div>
+                </div>
+
+                <!-- Recommendation Cards Container -->
+                <div id="recCardsContainer">
+                    <?php if (empty($leaveRecommendations)): ?>
+                        <div class="text-center py-5 bg-white rounded border">
+                            <i class="fas fa-calendar-day fa-3x text-muted mb-3 d-block"></i>
+                            <h5 class="font-weight-bold text-dark">Belum Ada Rekomendasi Cuti untuk Tahun Ini</h5>
+                            <p class="text-muted small mb-0">Pastikan data hari libur nasional tahun ini telah tersimpan di database.</p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($leaveRecommendations as $rec): ?>
+                            <div class="card mb-3 border-0 shadow-sm rec-card-item" style="border-radius: 12px; overflow: hidden;">
+                                <div class="card-header bg-white py-3 px-4 d-flex flex-wrap align-items-center justify-content-between border-bottom" style="gap: 10px;">
+                                    <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
+                                        <span class="badge <?= esc($rec['badge_class']); ?> px-2 py-1 font-weight-bold" style="font-size: 0.85rem;">
+                                            <i class="fas fa-umbrella-beach mr-1"></i> <?= esc($rec['badge']); ?>
+                                        </span>
+                                        <h6 class="mb-0 font-weight-bold text-dark" style="font-size: 1.05rem;">
+                                            Periode: <?= esc($rec['start_date_indo']); ?> s/d <?= esc($rec['end_date_indo']); ?>
+                                        </h6>
+                                    </div>
+                                    <div>
+                                        <span class="badge badge-pill badge-light border px-3 py-2 font-weight-bold text-success" style="font-size: 0.85rem; background: #ecfdf5; border-color: #a7f3d0 !important;">
+                                            <i class="fas fa-chart-line mr-1"></i> Efisiensi <?= esc((string) $rec['multiplier']); ?>x (Ambil <?= $rec['leave_count']; ?> Hari Cuti = <?= $rec['total_consecutive_days']; ?> Hari Libur)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body p-4 bg-white">
+                                    <div class="row align-items-center">
+                                        <div class="col-lg-8 mb-3 mb-lg-0">
+                                            <div class="d-flex align-items-start mb-2">
+                                                <i class="fas fa-calendar-check text-warning fa-lg mr-2 mt-1" style="color: #d97706 !important;"></i>
+                                                <div>
+                                                    <span class="font-weight-bold text-dark d-block">
+                                                        Saran Ambil Cuti: <span class="font-weight-bold" style="color: #d97706 !important;"><?= esc(implode(' & ', $rec['leave_dates_indo'])); ?></span> (<?= $rec['leave_count']; ?> Hari Kerja)
+                                                    </span>
+                                                    <small class="text-muted">
+                                                        Menghubungkan hari libur resmi: <strong><?= esc(implode(', ', $rec['holidays_involved'])); ?></strong> dengan akhir pekan.
+                                                    </small>
+                                                </div>
+                                            </div>
+
+                                            <!-- Timeline Strip -->
+                                            <div class="mt-3">
+                                                <span class="small font-weight-bold text-secondary d-block mb-1">Rangkaian Libur Beruntun (<?= $rec['total_consecutive_days']; ?> Hari):</span>
+                                                <div class="d-flex flex-wrap align-items-center" style="gap: 6px;">
+                                                    <?php foreach ($rec['timeline'] as $tItem): ?>
+                                                        <?php
+                                                            $isTarget = $tItem['role'] === 'target';
+                                                            $isHol = $tItem['type'] === 'holiday';
+                                                            $isCb = $tItem['type'] === 'leave';
+                                                            $isWk = $tItem['type'] === 'weekend';
+
+                                                            $boxBg = '#f1f5f9';
+                                                            $boxColor = '#334155';
+                                                            $boxBorder = '#cbd5e1';
+
+                                                            if ($isTarget) {
+                                                                $boxBg = '#fef3c7';
+                                                                $boxColor = '#92400e';
+                                                                $boxBorder = '#f59e0b';
+                                                            } elseif ($isHol) {
+                                                                $boxBg = '#fee2e2';
+                                                                $boxColor = '#991b1b';
+                                                                $boxBorder = '#ef4444';
+                                                            } elseif ($isCb) {
+                                                                $boxBg = '#ffedd5';
+                                                                $boxColor = '#9a3412';
+                                                                $boxBorder = '#f97316';
+                                                            } elseif ($isWk) {
+                                                                $boxBg = '#e0f2fe';
+                                                                $boxColor = '#0369a1';
+                                                                $boxBorder = '#38bdf8';
+                                                            }
+                                                        ?>
+                                                        <div class="p-1 px-2 text-center rounded" style="background: <?= $boxBg; ?>; color: <?= $boxColor; ?>; border: 1.5px <?= $isTarget ? 'dashed' : 'solid'; ?> <?= $boxBorder; ?>; min-width: 65px;" title="<?= esc($tItem['name']); ?>">
+                                                            <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;"><?= esc(substr($tItem['day'], 0, 3)); ?></div>
+                                                            <div style="font-size: 0.8rem; font-weight: 800;"><?= esc(date('d M', strtotime($tItem['date']))); ?></div>
+                                                            <div style="font-size: 0.65rem; font-weight: 600;"><?= $isTarget ? 'CUTI' : ($isHol ? 'LIBUR' : ($isCb ? 'CUTI BERSAMA' : 'WEEKEND')); ?></div>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4 text-lg-right mt-3 mt-lg-0">
+                                            <a href="<?= site_url('/admin/surat/cuti?mulai=' . urlencode($rec['leave_dates'][0]) . '&selesai=' . urlencode(end($rec['leave_dates']))); ?>" class="btn btn-sm font-weight-bold px-3 py-2 shadow-sm" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff !important; border: none; border-radius: 8px;">
+                                                <i class="fas fa-paper-plane mr-1"></i> Ajukan Cuti Ini
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-white py-2">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            </div>
         </div>
     </div>
 </div>
-<?php endif; ?>
 
 <style>
 /* Modern Calendar Styling */
@@ -751,6 +983,15 @@
 }
 .cell-leave:hover {
     background-color: #fde68a !important;
+}
+.cell-rec-leave {
+    background-color: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1.5px dashed #f59e0b !important;
+    font-weight: 700;
+}
+.cell-rec-leave:hover {
+    background-color: #fef3c7 !important;
 }
 .cell-sunday {
     background-color: #fff1f2;
@@ -1119,6 +1360,32 @@ document.addEventListener('DOMContentLoaded', function () {
                 <?php endif; ?>
 
                 footerEl.innerHTML = actionHtml;
+            } else if (this.getAttribute('data-is-rec-leave') === '1') {
+                const recConsecutive = this.getAttribute('data-rec-consecutive') || '';
+                const recRange = this.getAttribute('data-rec-range') || '';
+                const recHolidays = this.getAttribute('data-rec-holidays') || '';
+
+                headerEl.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                titleEl.innerHTML = '<i class="fas fa-lightbulb mr-1 text-warning"></i> Rekomendasi Ambil Cuti!';
+
+                bodyEl.innerHTML = `
+                    <div class="badge badge-warning p-2 mb-2 font-weight-bold text-dark" style="font-size: 0.95rem;">
+                        <i class="far fa-calendar-alt mr-1"></i> ${date} (Hari Kejepit)
+                    </div>
+                    <h5 class="font-weight-bold text-dark mb-2">Potensi Libur ${recConsecutive} Hari Beruntun</h5>
+                    <p class="small text-muted mb-2">
+                        Mengambil cuti di tanggal ini akan menghubungkan hari libur resmi (<strong>${recHolidays}</strong>) dengan akhir pekan dari <strong>${recRange}</strong>!
+                    </p>
+                `;
+
+                let actionHtml = `
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Tutup</button>
+                    <a href="<?= site_url('/admin/surat/cuti'); ?>?mulai=${encodeURIComponent(date)}&selesai=${encodeURIComponent(date)}" class="btn btn-warning btn-sm font-weight-bold text-white shadow-sm" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none;">
+                        <i class="fas fa-paper-plane mr-1"></i> Ajukan Cuti Ini
+                    </a>
+                `;
+
+                footerEl.innerHTML = actionHtml;
             } else {
                 headerEl.style.background = '#1e293b';
                 titleEl.innerHTML = '<i class="far fa-calendar mr-1"></i> Tanggal Biasa / Kerja';
@@ -1186,6 +1453,118 @@ document.addEventListener('DOMContentLoaded', function () {
         const tipe = $(this).attr('data-tipe');
         openEditModal(id, tanggal, nama, tipe);
     });
+
+    // 10. Handler for Rekomendasi Cuti Modal Year Selector
+    const recModalSelectYear = document.getElementById('recModalSelectYear');
+    if (recModalSelectYear) {
+        recModalSelectYear.addEventListener('change', function () {
+            const yr = this.value;
+            $('.recModalYear').text(yr);
+
+            // Fetch recommendations via AJAX
+            $.ajax({
+                url: <?= json_encode(site_url('/admin/master/tanggal-merah/rekomendasi-cuti')); ?>,
+                type: 'GET',
+                data: { year: yr },
+                dataType: 'json',
+                success: function (res) {
+                    if (! res.success) return;
+                    $('#recStatTotalCount').html(res.total_count + ' <span class="small font-weight-normal text-muted" style="font-size: 0.85rem;">Peluang</span>');
+                    $('#recStatMaxConsecutive').html(res.max_consecutive + ' <span class="small font-weight-normal text-muted" style="font-size: 0.85rem;">Hari Beruntun</span>');
+                    $('#recStatBestMultiplier').html(res.best_multiplier + 'x <span class="small font-weight-normal text-muted" style="font-size: 0.85rem;">Multiplier</span>');
+
+                    const container = document.getElementById('recCardsContainer');
+                    container.innerHTML = '';
+
+                    if (! res.data || res.data.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-5 bg-white rounded border">
+                                <i class="fas fa-calendar-day fa-3x text-muted mb-3 d-block"></i>
+                                <h5 class="font-weight-bold text-dark">Belum Ada Rekomendasi Cuti untuk Tahun ${yr}</h5>
+                                <p class="text-muted small mb-0">Tarik data hari libur nasional atau tambahkan tanggal merah terlebih dahulu.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    res.data.forEach(rec => {
+                        let timelineHtml = '';
+                        (rec.timeline || []).forEach(t => {
+                            const isTarget = t.role === 'target';
+                            const isHol = t.type === 'holiday';
+                            const isCb = t.type === 'leave';
+                            const isWk = t.type === 'weekend';
+
+                            let boxBg = '#f1f5f9', boxColor = '#334155', boxBorder = '#cbd5e1';
+                            if (isTarget) { boxBg = '#fef3c7'; boxColor = '#92400e'; boxBorder = '#f59e0b'; }
+                            else if (isHol) { boxBg = '#fee2e2'; boxColor = '#991b1b'; boxBorder = '#ef4444'; }
+                            else if (isCb) { boxBg = '#ffedd5'; boxColor = '#9a3412'; boxBorder = '#f97316'; }
+                            else if (isWk) { boxBg = '#e0f2fe'; boxColor = '#0369a1'; boxBorder = '#38bdf8'; }
+
+                            timelineHtml += `
+                                <div class="p-1 px-2 text-center rounded" style="background: ${boxBg}; color: ${boxColor}; border: 1.5px ${isTarget ? 'dashed' : 'solid'} ${boxBorder}; min-width: 65px;" title="${t.name || ''}">
+                                    <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">${(t.day || '').substring(0, 3)}</div>
+                                    <div style="font-size: 0.8rem; font-weight: 800;">${t.date.split('-').slice(1).reverse().join('/')}</div>
+                                    <div style="font-size: 0.65rem; font-weight: 600;">${isTarget ? 'CUTI' : (isHol ? 'LIBUR' : (isCb ? 'CUTI BERSAMA' : 'WEEKEND'))}</div>
+                                </div>
+                            `;
+                        });
+
+                        const cutiLink = <?= json_encode(site_url('/admin/surat/cuti')); ?> + '?mulai=' + encodeURIComponent(rec.leave_dates[0]) + '&selesai=' + encodeURIComponent(rec.leave_dates[rec.leave_dates.length - 1]);
+
+                        const cardHtml = `
+                            <div class="card mb-3 border-0 shadow-sm rec-card-item" style="border-radius: 12px; overflow: hidden;">
+                                <div class="card-header bg-white py-3 px-4 d-flex flex-wrap align-items-center justify-content-between border-bottom" style="gap: 10px;">
+                                    <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
+                                        <span class="badge ${rec.badge_class} px-2 py-1 font-weight-bold" style="font-size: 0.85rem;">
+                                            <i class="fas fa-umbrella-beach mr-1"></i> ${rec.badge}
+                                        </span>
+                                        <h6 class="mb-0 font-weight-bold text-dark" style="font-size: 1.05rem;">
+                                            Periode: ${rec.start_date_indo} s/d ${rec.end_date_indo}
+                                        </h6>
+                                    </div>
+                                    <div>
+                                        <span class="badge badge-pill badge-light border px-3 py-2 font-weight-bold text-success" style="font-size: 0.85rem; background: #ecfdf5; border-color: #a7f3d0 !important;">
+                                            <i class="fas fa-chart-line mr-1"></i> Efisiensi ${rec.multiplier}x (Ambil ${rec.leave_count} Hari Cuti = ${rec.total_consecutive_days} Hari Libur)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body p-4 bg-white">
+                                    <div class="row align-items-center">
+                                        <div class="col-lg-8 mb-3 mb-lg-0">
+                                            <div class="d-flex align-items-start mb-2">
+                                                <i class="fas fa-calendar-check text-warning fa-lg mr-2 mt-1" style="color: #d97706 !important;"></i>
+                                                <div>
+                                                    <span class="font-weight-bold text-dark d-block">
+                                                        Saran Ambil Cuti: <span class="font-weight-bold" style="color: #d97706 !important;">${(rec.leave_dates_indo || []).join(' & ')}</span> (${rec.leave_count} Hari Kerja)
+                                                    </span>
+                                                    <small class="text-muted">
+                                                        Menghubungkan hari libur resmi: <strong>${(rec.holidays_involved || []).join(', ')}</strong> dengan akhir pekan.
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <span class="small font-weight-bold text-secondary d-block mb-1">Rangkaian Libur Beruntun (${rec.total_consecutive_days} Hari):</span>
+                                                <div class="d-flex flex-wrap align-items-center" style="gap: 6px;">
+                                                    ${timelineHtml}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4 text-lg-right mt-3 mt-lg-0">
+                                            <a href="${cutiLink}" class="btn btn-warning btn-sm font-weight-bold px-3 py-2 shadow-sm text-white" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff !important; border: none; border-radius: 8px;">
+                                                <i class="fas fa-paper-plane mr-1"></i> Ajukan Cuti Ini
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.insertAdjacentHTML('beforeend', cardHtml);
+                    });
+                }
+            });
+        });
+    }
 });
 </script>
 <?= $this->endSection(); ?>

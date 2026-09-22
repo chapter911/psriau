@@ -88,8 +88,17 @@ class MasterTanggalMerah extends BaseController
         $stats = $model->getStatsByYear($selectedYear);
         $calendarMap = $model->getCalendarMapByYear($selectedYear);
 
-        // Build 12 months calendar structure
-        $calendarMonths = $this->buildYearCalendar($selectedYear, $calendarMap);
+        // Compute strategic leave recommendations (Harpitnas & long weekend optimizer)
+        $leaveRecommendations = $this->computeLeaveRecommendations($selectedYear, $calendarMap);
+        $recommendedLeaveMap = [];
+        foreach ($leaveRecommendations as $rec) {
+            foreach ($rec['leave_dates'] as $lDate) {
+                $recommendedLeaveMap[$lDate] = $rec;
+            }
+        }
+
+        // Build 12 months calendar structure with leave recommendation flags
+        $calendarMonths = $this->buildYearCalendar($selectedYear, $calendarMap, $recommendedLeaveMap);
 
         // Available years for dropdown
         $currentYear = (int) date('Y');
@@ -103,18 +112,61 @@ class MasterTanggalMerah extends BaseController
         $canManage = $this->canManageMasterData();
 
         return view('admin/master/tanggal_merah', [
-            'pageTitle'       => 'Master Tanggal Merah & Hari Libur',
-            'selectedYear'    => $selectedYear,
-            'yearOptions'     => $yearOptions,
-            'items'           => $items,
-            'stats'           => $stats,
-            'calendarMap'     => $calendarMap,
-            'calendarMonths'  => $calendarMonths,
-            'indoMonths'      => self::INDO_MONTHS,
-            'can_add'         => $canManage && (bool) ($menuPermissions['add'] ?? false),
-            'can_edit'        => $canManage && (bool) ($menuPermissions['edit'] ?? false),
-            'can_delete'      => $canManage && (bool) ($menuPermissions['delete'] ?? false),
-            'can_export'      => $canManage && (bool) ($menuPermissions['export'] ?? false),
+            'pageTitle'            => 'Master Tanggal Merah & Hari Libur',
+            'selectedYear'         => $selectedYear,
+            'yearOptions'          => $yearOptions,
+            'items'                => $items,
+            'stats'                => $stats,
+            'calendarMap'          => $calendarMap,
+            'calendarMonths'       => $calendarMonths,
+            'indoMonths'           => self::INDO_MONTHS,
+            'leaveRecommendations' => $leaveRecommendations,
+            'recommendedLeaveMap'  => $recommendedLeaveMap,
+            'can_add'              => $canManage && (bool) ($menuPermissions['add'] ?? false),
+            'can_edit'             => $canManage && (bool) ($menuPermissions['edit'] ?? false),
+            'can_delete'           => $canManage && (bool) ($menuPermissions['delete'] ?? false),
+            'can_export'           => $canManage && (bool) ($menuPermissions['export'] ?? false),
+        ]);
+    }
+
+    /**
+     * AJAX endpoint to get leave recommendations for a specific year
+     */
+    public function rekomendasiCuti(): ResponseInterface
+    {
+        $forbidden = $this->denyIfNoMenuAccess(self::MENU_LINK);
+        if ($forbidden instanceof RedirectResponse) {
+            return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'Akses ditolak.']);
+        }
+
+        $year = (int) ($this->request->getGet('year') ?? $this->request->getPost('year') ?? date('Y'));
+        if ($year < 2000 || $year > 2099) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Tahun tidak valid.']);
+        }
+
+        $model = new MstTanggalMerahModel();
+        $calendarMap = $model->getCalendarMapByYear($year);
+
+        $recommendations = $this->computeLeaveRecommendations($year, $calendarMap);
+
+        $maxConsecutive = 0;
+        $bestMultiplier = 0;
+        foreach ($recommendations as $rec) {
+            if ($rec['total_consecutive_days'] > $maxConsecutive) {
+                $maxConsecutive = $rec['total_consecutive_days'];
+            }
+            if ($rec['multiplier'] > $bestMultiplier) {
+                $bestMultiplier = $rec['multiplier'];
+            }
+        }
+
+        return $this->response->setJSON([
+            'success'         => true,
+            'year'            => $year,
+            'total_count'     => count($recommendations),
+            'max_consecutive' => $maxConsecutive,
+            'best_multiplier' => $bestMultiplier,
+            'data'            => $recommendations,
         ]);
     }
 
@@ -659,7 +711,7 @@ class MasterTanggalMerah extends BaseController
     /**
      * Build 12 calendar month matrices for interactive calendar rendering
      */
-    private function buildYearCalendar(int $year, array $calendarMap): array
+    private function buildYearCalendar(int $year, array $calendarMap, array $recommendedLeaveMap = []): array
     {
         $months = [];
 
@@ -674,12 +726,14 @@ class MasterTanggalMerah extends BaseController
             // Pad blank cells before first day of month
             for ($pad = 0; $pad < $startDayOfWeek; $pad++) {
                 $currentWeek[] = [
-                    'is_padding' => true,
-                    'day_number' => '',
-                    'date'       => '',
-                    'is_sunday'  => ($pad === 0),
-                    'is_holiday' => false,
-                    'holiday'    => null,
+                    'is_padding'   => true,
+                    'day_number'   => '',
+                    'date'         => '',
+                    'is_sunday'    => ($pad === 0),
+                    'is_holiday'   => false,
+                    'holiday'      => null,
+                    'is_rec_leave' => false,
+                    'rec_leave'    => null,
                 ];
             }
 
@@ -692,15 +746,18 @@ class MasterTanggalMerah extends BaseController
 
                 $holidayInfo = $calendarMap[$dateStr] ?? null;
                 $isHoliday = ($holidayInfo !== null);
+                $recLeave = $recommendedLeaveMap[$dateStr] ?? null;
 
                 $currentWeek[] = [
-                    'is_padding'  => false,
-                    'day_number'  => $day,
-                    'date'        => $dateStr,
-                    'is_sunday'   => $isSunday,
-                    'is_saturday' => $isSaturday,
-                    'is_holiday'  => $isHoliday,
-                    'holiday'     => $holidayInfo,
+                    'is_padding'   => false,
+                    'day_number'   => $day,
+                    'date'         => $dateStr,
+                    'is_sunday'    => $isSunday,
+                    'is_saturday'  => $isSaturday,
+                    'is_holiday'   => $isHoliday,
+                    'holiday'      => $holidayInfo,
+                    'is_rec_leave' => ($recLeave !== null && ! $isHoliday),
+                    'rec_leave'    => $recLeave,
                 ];
 
                 if (count($currentWeek) === 7) {
@@ -713,12 +770,14 @@ class MasterTanggalMerah extends BaseController
             if (! empty($currentWeek)) {
                 while (count($currentWeek) < 7) {
                     $currentWeek[] = [
-                        'is_padding' => true,
-                        'day_number' => '',
-                        'date'       => '',
-                        'is_sunday'  => (count($currentWeek) === 0),
-                        'is_holiday' => false,
-                        'holiday'    => null,
+                        'is_padding'   => true,
+                        'day_number'   => '',
+                        'date'         => '',
+                        'is_sunday'    => (count($currentWeek) === 0),
+                        'is_holiday'   => false,
+                        'holiday'      => null,
+                        'is_rec_leave' => false,
+                        'rec_leave'    => null,
                     ];
                 }
                 $weeks[] = $currentWeek;
@@ -732,6 +791,192 @@ class MasterTanggalMerah extends BaseController
         }
 
         return $months;
+    }
+
+    /**
+     * Compute strategic leave recommendations (Harpitnas & long weekend optimizer)
+     */
+    private function computeLeaveRecommendations(int $year, array $calendarMap): array
+    {
+        $holidaysMap = $calendarMap;
+
+        // If no holidays in DB yet for 2027, use predefined official SKB dataset
+        if (empty($holidaysMap) && $year === 2027) {
+            foreach (self::OFFICIAL_HOLIDAYS_2027 as $h) {
+                $holidaysMap[$h['date']] = $h;
+            }
+        }
+
+        if (empty($holidaysMap)) {
+            return [];
+        }
+
+        // Build day-by-day status from Dec 20 prev year to Jan 10 next year
+        $start = new \DateTime(($year - 1) . '-12-20');
+        $end = new \DateTime(($year + 1) . '-01-10');
+        $interval = new \DateInterval('P1D');
+        $period = new \DatePeriod($start, $interval, (clone $end)->modify('+1 day'));
+
+        $daysMap = [];
+        foreach ($period as $dt) {
+            $dateStr = $dt->format('Y-m-d');
+            $dow = (int) $dt->format('w'); // 0=Sun, 6=Sat
+            $isWeekend = ($dow === 0 || $dow === 6);
+            $isHoliday = isset($holidaysMap[$dateStr]);
+            $type = 'workday';
+            $name = '';
+            if ($isHoliday) {
+                $type = $holidaysMap[$dateStr]['tipe'] ?? ($holidaysMap[$dateStr]['type'] ?? 'holiday');
+                $name = $holidaysMap[$dateStr]['nama_libur'] ?? ($holidaysMap[$dateStr]['name'] ?? 'Hari Libur');
+            } elseif ($isWeekend) {
+                $type = 'weekend';
+                $name = ($dow === 0) ? 'Minggu' : 'Sabtu';
+            }
+
+            $daysMap[$dateStr] = [
+                'date'     => $dateStr,
+                'is_off'   => ($isWeekend || $isHoliday),
+                'type'     => $type,
+                'name'     => $name,
+                'dow'      => $dow,
+                'day_name' => $this->getIndonesianDayName($dateStr),
+            ];
+        }
+
+        $dates = array_keys($daysMap);
+        $totalDates = count($dates);
+        $recommendations = [];
+
+        for ($i = 0; $i < $totalDates; $i++) {
+            $curDate = $dates[$i];
+            $curYear = (int) substr($curDate, 0, 4);
+
+            if ($curYear !== $year) {
+                continue;
+            }
+
+            if ($daysMap[$curDate]['is_off']) {
+                continue;
+            }
+
+            $workBlock = [$curDate];
+            $j = $i + 1;
+            while ($j < $totalDates && ! $daysMap[$dates[$j]]['is_off']) {
+                $workBlock[] = $dates[$j];
+                $j++;
+            }
+
+            $k = count($workBlock);
+            if ($k <= 2) {
+                $beforeIdx = $i - 1;
+                $beforeOff = [];
+                while ($beforeIdx >= 0 && $daysMap[$dates[$beforeIdx]]['is_off']) {
+                    $beforeOff[] = $daysMap[$dates[$beforeIdx]];
+                    $beforeIdx--;
+                }
+                $beforeOff = array_reverse($beforeOff);
+
+                $afterIdx = $j;
+                $afterOff = [];
+                while ($afterIdx < $totalDates && $daysMap[$dates[$afterIdx]]['is_off']) {
+                    $afterOff[] = $daysMap[$dates[$afterIdx]];
+                    $afterIdx++;
+                }
+
+                if (! empty($beforeOff) && ! empty($afterOff)) {
+                    $hasHoliday = false;
+                    foreach (array_merge($beforeOff, $afterOff) as $off) {
+                        if ($off['type'] === 'holiday' || $off['type'] === 'leave') {
+                            $hasHoliday = true;
+                            break;
+                        }
+                    }
+
+                    if ($hasHoliday) {
+                        $totalConsecutive = count($beforeOff) + $k + count($afterOff);
+                        if ($totalConsecutive >= 4) {
+                            $startDate = $beforeOff[0]['date'];
+                            $endDate = end($afterOff)['date'];
+
+                            $timeline = [];
+                            foreach ($beforeOff as $b) {
+                                $timeline[] = [
+                                    'date'      => $b['date'],
+                                    'date_indo' => $this->formatIndoDate($b['date']),
+                                    'day'       => $b['day_name'],
+                                    'type'      => $b['type'],
+                                    'name'      => $b['name'],
+                                    'role'      => 'holiday',
+                                ];
+                            }
+                            foreach ($workBlock as $w) {
+                                $timeline[] = [
+                                    'date'      => $w,
+                                    'date_indo' => $this->formatIndoDate($w),
+                                    'day'       => $daysMap[$w]['day_name'],
+                                    'type'      => 'leave_target',
+                                    'name'      => 'Ambil Cuti',
+                                    'role'      => 'target',
+                                ];
+                            }
+                            foreach ($afterOff as $a) {
+                                $timeline[] = [
+                                    'date'      => $a['date'],
+                                    'date_indo' => $this->formatIndoDate($a['date']),
+                                    'day'       => $a['day_name'],
+                                    'type'      => $a['type'],
+                                    'name'      => $a['name'],
+                                    'role'      => 'holiday',
+                                ];
+                            }
+
+                            $holidayNames = [];
+                            foreach (array_merge($beforeOff, $afterOff) as $off) {
+                                if (($off['type'] === 'holiday' || $off['type'] === 'leave') && ! empty($off['name'])) {
+                                    $holidayNames[$off['name']] = true;
+                                }
+                            }
+
+                            $multiplier = round($totalConsecutive / $k, 1);
+                            $badge = 'Long Weekend (' . $totalConsecutive . ' Hari)';
+                            $badgeClass = 'badge-primary';
+                            if ($totalConsecutive >= 9) {
+                                $badge = 'Super Long Break (' . $totalConsecutive . ' Hari)';
+                                $badgeClass = 'badge-danger';
+                            } elseif ($totalConsecutive >= 5) {
+                                $badge = 'Golden Opportunity (' . $totalConsecutive . ' Hari)';
+                                $badgeClass = 'badge-warning';
+                            }
+
+                            $leaveDatesIndo = array_map(function ($d) {
+                                return $this->getIndonesianDayName($d) . ', ' . $this->formatIndoDate($d);
+                            }, $workBlock);
+
+                            $recommendations[] = [
+                                'id'                     => 'rec_' . str_replace('-', '', $workBlock[0]),
+                                'leave_dates'            => $workBlock,
+                                'leave_dates_indo'       => $leaveDatesIndo,
+                                'leave_count'            => $k,
+                                'start_date'             => $startDate,
+                                'start_date_indo'        => $this->formatIndoDate($startDate),
+                                'end_date'               => $endDate,
+                                'end_date_indo'          => $this->formatIndoDate($endDate),
+                                'total_consecutive_days' => $totalConsecutive,
+                                'multiplier'             => $multiplier,
+                                'badge'                  => $badge,
+                                'badge_class'            => $badgeClass,
+                                'holidays_involved'      => array_keys($holidayNames),
+                                'timeline'               => $timeline,
+                            ];
+                        }
+                    }
+                }
+            }
+
+            $i = $j - 1;
+        }
+
+        return $recommendations;
     }
 
     private function getIndonesianDayName(string $date): string

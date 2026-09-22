@@ -237,6 +237,45 @@ graph TD
         </div>
     </div>
 
+    <!-- FLOWCHART 0C: MASTER TANGGAL MERAH & REKOMENDASI AMBIL CUTI -->
+    <?php if ($canRenderForUser(['admin', 'super_administrator'])): ?>
+    <div class="flowchart-card role-section" data-roles="admin,super_administrator,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-calendar-alt mr-2"></i> Alur Master Tanggal Merah, Sinkronisasi API &amp; Rekomendasi Ambil Cuti</h5>
+                <small class="text-muted">Manajemen kalender hari libur nasional SKB 3 Menteri, sinkronisasi API antar-tahun, serta fitur rekomendasi ambil cuti (Harpitnas Optimizer) terhubung ke formulir cuti.</small>
+            </div>
+            <div>
+                <span class="badge badge-primary">Admin &amp; Super Admin</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu Master Tanggal Merah (/admin/master/tanggal-merah)"] --> B["Pilih Tahun Kalender (Toolbar / Modal)"]
+    B --> C1["Tarik Data API / SKB 3 Menteri"]
+    B --> C2["Eksplorasi Kalender Interaktif 12 Bulan"]
+    B --> C3["Buka Fitur Rekomendasi Ambil Cuti"]
+
+    C1 --> D1["Sistem Cek API Live / Fallback Otomatis SKB 3 Menteri (misal 2027: 18 Libur &amp; 8 Cuti Bersama)"]
+    D1 --> D2["Pratinjau Data Baru vs Data Tersimpan di Modal"]
+    D2 --> D3["Klik Simpan Data ke Database Satker"]
+
+    C3 --> E1["Klik Tombol 'Rekomendasi Cuti' (Badge Indikator Total Peluang Emas)"]
+    E1 --> E2["Sistem Menganalisis Harpitnas (Hari Kejepit) &amp; Jembatan Libur Terpanjang"]
+    E2 --> E3["Modal Rekomendasi Cuti: Metrik Total Libur, Hemat Hari Cuti &amp; Efisiensi Multiplier"]
+    E3 --> E4["Visual Timeline Strip (Hari Libur, Cuti Bersama, Weekend, &amp; Target Cuti)"]
+    E4 --> E5["Klik Tombol 'Ajukan Cuti Ini' -> Otomatis Navigasi ke Form Pengajuan Cuti (/admin/surat/cuti)"]
+
+    C2 --> F1["Indikator Khusus Sel Kalender: Ikon Bohlam 💡 &amp; Border Emas pada Hari Kejepit"]
+    F1 --> F2["Klik Tanggal Harpitnas -> Modal Rincian Efisiensi &amp; Shortcut Ajukan Cuti"]
+                </pre>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- FLOWCHART 1: STAF / PELAKSANA - PENGAJUAN DISPOSISI & PELAPORAN PERJADIN -->
     <?php if ($canRenderForUser(['staf_pelaksana'])): ?>
     <div class="flowchart-card role-section" data-roles="staf_pelaksana,all">
@@ -288,6 +327,8 @@ graph TD
 graph TD
     A[Buka Menu Surat-Surat -> Cuti] --> B[Klik Tombol Ajukan Cuti]
     A --> B2[Klik Tombol Form Cuti Kosong .docx]
+    A --> B3[Lihat Rekomendasi Cuti di Master Tanggal Merah]
+    B3 --> B
     B2 --> H2[Unduh Langsung Template Word Kosong Resmi]
     B --> C[Sistem Otomatis Mengisi Tanggal Pengajuan Terkunci & Data Pegawai]
     C --> D[Pilih Jenis Cuti, Alasan, Lamanya Cuti & Tanggal Mulai-Selesai]
@@ -371,7 +412,7 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A["Kelola Master Data: Pegawai (Pencarian Cepat via Tap NFC HP & Quick Profile Card, Scan Form NFC Web API, RFID Dual-Format Reader USB 10-Digit & NFC Android Hex Converter, Masa Kerja TMT CPNS, Foto ID Card), Tanggal Merah & Libur SKB 3 Menteri (Pilih Tahun Dinamis & Sinkronisasi API), Struktur Organisasi, MAK, Dasar SPT"] --> B[Kelola Paket Pekerjaan SIMAK Fisik & Konsultasi]
+    A["Kelola Master Data: Pegawai (Pencarian Cepat via Tap NFC HP & Quick Profile Card, Scan Form NFC Web API, RFID Dual-Format Reader USB 10-Digit & NFC Android Hex Converter, Masa Kerja TMT CPNS, Foto ID Card), Tanggal Merah & Libur SKB 3 Menteri (Pilih Tahun Dinamis, Sinkronisasi API & Rekomendasi Cuti Harpitnas), Struktur Organisasi, MAK, Dasar SPT"] --> B[Kelola Paket Pekerjaan SIMAK Fisik & Konsultasi]
     B --> C[Kelola RAB Gedung Strategis]
     C --> D[Pantau Rekap Mingguan & Dokumentasi Lapangan]
                 </pre>
@@ -686,9 +727,16 @@ graph TD
                     <div class="col-md-6 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="font-weight-bold text-primary"><i class="fas fa-calendar-alt mr-1"></i> Master Tanggal Merah & Kalender Libur</h6>
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-calendar-alt mr-1"></i> Master Tanggal Merah, Kalender Libur &amp; Rekomendasi Cuti</h6>
                                 <p class="small text-muted mb-2"><code>/admin/master/tanggal-merah</code></p>
-                                <p class="small mb-0">Pengelolaan kalender hari libur nasional & cuti bersama terintegrasi live dengan API <code>https://tanggalmerah.upset.dev/api/holidays?year={year}</code> serta <em>fallback</em> resmi ketetapan SKB 3 Menteri (termasuk tahun 2027: 18 Libur Nasional & 8 Cuti Bersama). Dilengkapi <strong>Dropdown Pemilihan Tahun di Toolbar & Langsung di Dalam Modal Tarik Data</strong>, tombol <strong>Tarik Data API</strong> dengan modal preview konfirmasi dinamis (pembeda data baru vs data yang sudah tersimpan), tampilan <strong>Kalender Interaktif 12 Bulan</strong> (highlight merah untuk Libur Nasional & oranye/amber untuk Cuti Bersama serta klik tanggal untuk detail/tambah), tampilan <strong>Tabel Data</strong>, penambahan/perubahan manual, pembersihan data tahun berjalan, dan ekspor Excel.</p>
+                                <p class="small mb-1">Pengelolaan kalender hari libur nasional &amp; cuti bersama terintegrasi live dengan API <code>https://tanggalmerah.upset.dev/api/holidays?year={year}</code> serta <em>fallback</em> resmi ketetapan SKB 3 Menteri (termasuk tahun 2027: 18 Libur Nasional &amp; 8 Cuti Bersama). Dilengkapi fitur unggulan:</p>
+                                <ul class="pl-3 small mb-0">
+                                    <li><strong>Dropdown Pemilihan Tahun di Toolbar &amp; Modal:</strong> Memilih tahun secara fleksibel (2023 s/d 2027+) langsung dari header halaman maupun switcher tahun di dalam modal Tarik Data API dan modal Rekomendasi Cuti.</li>
+                                    <li><strong>Tarik Data API &amp; Fallback SKB 3 Menteri:</strong> Sinkronisasi data otomatis dengan modal preview konfirmasi dinamis (pembeda data baru vs data yang sudah tersimpan). Jika API eksternal belum merilis data (seperti tahun 2027), sistem secara cerdas menggunakan dataset resmi SKB 3 Menteri (No. 1205/2026, No. 3/2026, No. 2/2026).</li>
+                                    <li><strong>💡 Fitur Rekomendasi Ambil Cuti (Harpitnas &amp; Long Weekend Optimizer):</strong> Fitur cerdas yang otomatis menganalisis pola hari kejepit nasional (Harpitnas) dan jembatan libur akhir pekan/cuti bersama. Tombol <em>Rekomendasi Cuti</em> di toolbar dilengkapi badge counter jumlah peluang emas. Menampilkan modal interaktif dengan metrik ringkasan (Total Hari Libur Diperoleh, Hari Cuti Terpakai, Efisiensi Rata-Rata Multiplier hingga 5.0x&ndash;9.0x) serta kartu visual berisi timeline strip hari per hari. Dilengkapi tombol <em>Ajukan Cuti Ini</em> yang langsung mengarahkan pengguna ke formulir pengajuan cuti (<code>/admin/surat/cuti</code>).</li>
+                                    <li><strong>Indikator Kalender Interaktif 12 Bulan:</strong> Sel kalender hari kejepit yang direkomendasikan diberi tanda khusus (ikon 💡 dan border putus-putus emas). Saat sel diklik, sistem menampilkan popup rincian kalkulasi efisiensi libur beserta tombol cepat untuk mengajukan cuti.</li>
+                                    <li><strong>Tabel Data, CRUD Manual &amp; Ekspor Excel:</strong> Tampilan tabel lengkap, penambahan/perubahan hari libur manual, pembersihan data tahun berjalan, serta ekspor file Excel.</li>
+                                </ul>
                             </div>
                         </div>
                     </div>

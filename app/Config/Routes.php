@@ -187,6 +187,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('master/tanggal-merah/(:num)/hapus', 'Admin\MasterTanggalMerah::delete/$1');
 	$routes->post('master/tanggal-merah/hapus-tahun/(:num)', 'Admin\MasterTanggalMerah::deleteYear/$1');
 	$routes->get('master/tanggal-merah/export', 'Admin\MasterTanggalMerah::export');
+	$routes->get('master/tanggal-merah/rekomendasi-cuti', 'Admin\MasterTanggalMerah::rekomendasiCuti');
 
 	// Master Transportasi Routes
 	$routes->get('master/transportasi', 'Admin\Transportasi::index');
