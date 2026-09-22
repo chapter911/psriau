@@ -738,6 +738,8 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
 </div>
 <?php endif; ?>
 
@@ -1454,7 +1456,13 @@ document.addEventListener('DOMContentLoaded', function () {
         openEditModal(id, tanggal, nama, tipe);
     });
 
-    // 10. Handler for Rekomendasi Cuti Modal Year Selector
+    // 10. Explicit click handler for Rekomendasi Cuti button & modal
+    $(document).on('click', '#btnRekomendasiCuti', function (e) {
+        e.preventDefault();
+        $('#modal-rekomendasi-cuti').modal('show');
+    });
+
+    // Handler for Rekomendasi Cuti Modal Year Selector
     const recModalSelectYear = document.getElementById('recModalSelectYear');
     if (recModalSelectYear) {
         recModalSelectYear.addEventListener('change', function () {
