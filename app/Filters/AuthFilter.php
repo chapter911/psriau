@@ -417,6 +417,8 @@ class AuthFilter implements FilterInterface
             'admin/pengaturan-home' => ['table' => 'home_settings', 'pk' => 'id'],
             'admin/pengaturan/application' => ['table' => 'app_settings', 'pk' => 'id'],
             'admin/pengaturan/menus' => ['table' => 'menu_dynamic', 'pk' => 'id'],
+            'admin/konsultan-individual/kontrak' => ['table' => 'trn_konsultan_kontrak', 'pk' => 'id'],
+            'admin/konsultan-individual/laporan-bulanan' => ['table' => 'trn_konsultan_laporan_bulanan', 'pk' => 'id'],
         ];
 
         $table = null;

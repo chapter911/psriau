@@ -543,6 +543,53 @@ graph TD
     </div>
     <?php endif; ?>
 
+    <!-- FLOWCHART 8: KONSULTAN INDIVIDUAL - KONTRAK & LAPORAN BULANAN -->
+    <?php if ($canRenderForUser(['all', 'admin', 'super_administrator', 'staf_pelaksana'])): ?>
+    <div class="flowchart-card role-section" data-roles="all,admin,super_administrator,staf_pelaksana">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-user-tie text-primary mr-2"></i>Flowchart: Alur Kerja Konsultan Individual (Kontrak &amp; Laporan Bulanan)
+            </h5>
+            <div>
+                <span class="badge badge-primary">Konsultan Individual</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Pengguna Masuk / Login"] --> B{"Jenis Pegawai Pengguna?"}
+    
+    B -- "Konsultan Individual" --> C["Akses Penuh Input Menu Konsultan Individual"]
+    B -- "Administrator / Pengawas" --> D["Akses Monitoring &amp; Unduh Berkas"]
+
+    C --> C1["1. Submenu Kontrak (/admin/konsultan-individual/kontrak)"]
+    C --> C2["2. Submenu Laporan Bulanan (/admin/konsultan-individual/laporan-bulanan)"]
+
+    C1 --> E1["Klik 'Unggah Kontrak Baru'"]
+    E1 --> E2["Input Periode: Tanggal Mulai s/d Tanggal Selesai (Tanpa Nomor Kontrak)"]
+    E2 --> E3["Pilih File PDF Kontrak (Maks 20MB) &amp; Keterangan"]
+    E3 --> E4["Validasi Berkas &amp; Simpan ke Sistem"]
+    E4 --> E5["Tersimpan Otomatis di Daftar Kontrak Pribadi"]
+
+    C2 --> F1["Klik 'Unggah Laporan Bulanan'"]
+    F1 --> F2["Pilih Periode: Bulan &amp; Tahun (Tanpa Judul Laporan)"]
+    F2 --> F3["Pilih Berkas PDF Laporan (Maks 20MB) &amp; Keterangan"]
+    F3 --> F4["Validasi Berkas &amp; Simpan ke Sistem"]
+    F4 --> F5["Tersimpan di Repositori Arsip Laporan Bulanan"]
+
+    D --> G1["Monitoring Arsip Kontrak Seluruh Konsultan"]
+    D --> G2["Monitoring Laporan Bulanan Seluruh Konsultan"]
+    G1 --> H1["Filter Berdasarkan Konsultan Individual"]
+    G2 --> H2["Filter Berdasarkan Tahun, Bulan, &amp; Konsultan"]
+    H1 --> I1["Pratinjau (Preview Modal) &amp; Unduh Dokumen PDF Resmi"]
+    H2 --> I1
+                </pre>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
 
     <!-- PANDUAN PENGGUNAAN SISTEM (ACCORDION STYLE) -->
     <div class="mt-4">
@@ -1010,9 +1057,55 @@ graph TD
                             </div>
                         </div>
                     </div>
+        <!-- MODUL KONSULTAN INDIVIDUAL -->
+        <?php if ($canRenderForUser(['all', 'admin', 'super_administrator', 'staf_pelaksana'])): ?>
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="all,admin,super_administrator,staf_pelaksana">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-user-tie mr-2 text-primary"></i> Modul Konsultan Individual: Kontrak Kerja &amp; Laporan Bulanan
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-file-contract mr-1"></i> 1. Pengelolaan Dokumen Kontrak</h6>
+                                <p class="small text-muted mb-2"><code>/admin/konsultan-individual/kontrak</code></p>
+                                <ol class="pl-3 small mb-0">
+                                    <li><strong>Ketentuan Akses Unggah:</strong> Formulir pengunggahan dokumen kontrak kerja hanya dapat diakses dan dieksekusi oleh pengguna yang terdaftar sebagai <strong>Konsultan Individual</strong>. Pengguna Administrator dan peran lainnya bertindak sebagai pengawas yang dapat memantau dan mengunduh berkas.</li>
+                                    <li>Klik tombol <strong>Unggah Kontrak Baru</strong> pada sudut kanan atas.</li>
+                                    <li>Data nama dan NIP konsultan otomatis terisi sesuai akun login yang aktif.</li>
+                                    <li>Isi <strong>Tanggal Mulai Kontrak</strong> dan <strong>Tanggal Selesai Kontrak</strong>. (Catatan: Sesuai ketentuan, kolom nomor kontrak tidak diperlukan).</li>
+                                    <li>Pilih berkas dokumen fisik dalam format <strong>PDF</strong> (maksimum 20 MB).</li>
+                                    <li>Tambahkan catatan keterangan atau addendum jika diperlukan, lalu klik <strong>Simpan &amp; Unggah</strong>.</li>
+                                    <li>Sistem secara otomatis menghitung durasi kontrak serta menampilkan indikator status aktif (<em>Aktif</em>, <em>Akan Datang</em>, atau <em>Berakhir</em>).</li>
+                                    <li>Klik tombol <strong>Lihat</strong> untuk pratinjau PDF langsung di peramban atau tombol <strong>Unduh</strong> untuk menyimpan berkas.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-info"><i class="fas fa-calendar-check mr-1"></i> 2. Pengelolaan Laporan Bulanan</h6>
+                                <p class="small text-muted mb-2"><code>/admin/konsultan-individual/laporan-bulanan</code></p>
+                                <ol class="pl-3 small mb-0">
+                                    <li><strong>Ketentuan Akses Unggah:</strong> Formulir pengunggahan laporan bulanan dikhususkan bagi pegawai berjenis <strong>Konsultan Individual</strong> untuk pelaporan progres kerja berkala.</li>
+                                    <li>Klik tombol <strong>Unggah Laporan Bulanan</strong> pada sudut kanan atas.</li>
+                                    <li>Data identitas konsultan otomatis terisi dari sesi pengguna aktif.</li>
+                                    <li>Pilih <strong>Bulan Laporan</strong> (Januari s/d Desember) dan <strong>Tahun Anggaran</strong>.</li>
+                                    <li>Unggah berkas dokumen laporan kegiatan dalam format <strong>PDF</strong> (maksimum 20 MB). <em>(Catatan: Sesuai ketentuan, formulir laporan bulanan tidak menggunakan judul laporan).</em></li>
+                                    <li>Isi keterangan singkat (opsional), lalu klik <strong>Simpan &amp; Unggah</strong>. Dokumen langsung tersimpan rapi dalam repositori arsip berkas tanpa memerlukan alur persetujuan (approval) berjenjang.</li>
+                                    <li>Gunakan filter <strong>Tahun</strong>, <strong>Bulan</strong>, dan <strong>Konsultan</strong> pada bagian atas tabel untuk mempermudah penelusuran arsip laporan bulanan.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        <?php endif; ?>
 
     </div>
 </div>

@@ -275,6 +275,21 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('kontrak/ki/(:num)/import', 'Admin\\Kontrak::importKi/$1');
 	$routes->get('kontrak/ki/(:num)/export', 'Admin\\Kontrak::exportKi/$1');
 
+	// Konsultan Individual Routes
+	$routes->get('konsultan-individual/kontrak', 'Admin\\KonsultanIndividual::kontrak');
+	$routes->get('konsultan-individual/kontrak/data', 'Admin\\KonsultanIndividual::kontrakData');
+	$routes->post('konsultan-individual/kontrak/tambah', 'Admin\\KonsultanIndividual::kontrakUpload');
+	$routes->post('konsultan-individual/kontrak/(:num)/hapus', 'Admin\\KonsultanIndividual::kontrakDelete/$1');
+	$routes->get('konsultan-individual/kontrak/(:num)/preview', 'Admin\\KonsultanIndividual::kontrakPreview/$1');
+	$routes->get('konsultan-individual/kontrak/(:num)/download', 'Admin\\KonsultanIndividual::kontrakDownload/$1');
+
+	$routes->get('konsultan-individual/laporan-bulanan', 'Admin\\KonsultanIndividual::laporanBulanan');
+	$routes->get('konsultan-individual/laporan-bulanan/data', 'Admin\\KonsultanIndividual::laporanBulananData');
+	$routes->post('konsultan-individual/laporan-bulanan/tambah', 'Admin\\KonsultanIndividual::laporanBulananUpload');
+	$routes->post('konsultan-individual/laporan-bulanan/(:num)/hapus', 'Admin\\KonsultanIndividual::laporanBulananDelete/$1');
+	$routes->get('konsultan-individual/laporan-bulanan/(:num)/preview', 'Admin\\KonsultanIndividual::laporanBulananPreview/$1');
+	$routes->get('konsultan-individual/laporan-bulanan/(:num)/download', 'Admin\\KonsultanIndividual::laporanBulananDownload/$1');
+
 	$routes->get('laporan', 'Admin\\Laporan::index');
 	$routes->get('laporan/harian', 'Admin\\Laporan::harian');
 	$routes->get('laporan/harian/(:num)', 'Admin\\Laporan::harianDetail/$1');
