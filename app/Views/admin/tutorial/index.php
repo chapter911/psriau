@@ -568,13 +568,13 @@ graph TD
 
     C1 --> E1["Klik 'Unggah Kontrak Baru'"]
     E1 --> E2["Input Periode: Tanggal Mulai s/d Tanggal Selesai (Tanpa Nomor Kontrak)"]
-    E2 --> E3["Pilih File PDF Kontrak (Maks 20MB) &amp; Keterangan"]
+    E2 --> E3["Pilih File PDF Kontrak (Maks 20MB, Validasi Otomatis &amp; Preview Berkas) &amp; Keterangan"]
     E3 --> E4["Validasi Berkas &amp; Simpan ke Sistem"]
     E4 --> E5["Tersimpan Otomatis di Daftar Kontrak Pribadi"]
 
     C2 --> F1["Klik 'Unggah Laporan Bulanan'"]
     F1 --> F2["Pilih Periode: Bulan &amp; Tahun (Tanpa Judul Laporan)"]
-    F2 --> F3["Pilih Berkas PDF Laporan (Maks 20MB) &amp; Keterangan"]
+    F2 --> F3["Pilih Berkas PDF Laporan (Maks 20MB, Validasi Otomatis &amp; Preview Berkas) &amp; Keterangan"]
     F3 --> F4["Validasi Berkas &amp; Simpan ke Sistem"]
     F4 --> F5["Tersimpan di Repositori Arsip Laporan Bulanan"]
 
@@ -1077,7 +1077,7 @@ graph TD
                                     <li>Klik tombol <strong>Unggah Kontrak Baru</strong> pada sudut kanan atas.</li>
                                     <li>Data nama dan NIP konsultan otomatis terisi sesuai akun login yang aktif.</li>
                                     <li>Isi <strong>Tanggal Mulai Kontrak</strong> dan <strong>Tanggal Selesai Kontrak</strong>. (Catatan: Sesuai ketentuan, kolom nomor kontrak tidak diperlukan).</li>
-                                    <li>Pilih berkas dokumen fisik dalam format <strong>PDF</strong> (maksimum 20 MB).</li>
+                                    <li>Pilih berkas dokumen fisik dalam format <strong>PDF</strong> (maksimum 20 MB). Sistem dilengkapi penampil informasi berkas otomatis (nama file, kalkulasi ukuran berkas, serta tombol reset/hapus jika ingin mengganti berkas yang dipilih).</li>
                                     <li>Tambahkan catatan keterangan atau addendum jika diperlukan, lalu klik <strong>Simpan &amp; Unggah</strong>.</li>
                                     <li>Sistem secara otomatis menghitung durasi kontrak serta menampilkan indikator status aktif (<em>Aktif</em>, <em>Akan Datang</em>, atau <em>Berakhir</em>).</li>
                                     <li>Klik tombol <strong>Lihat</strong> untuk pratinjau PDF langsung di peramban atau tombol <strong>Unduh</strong> untuk menyimpan berkas.</li>
@@ -1095,7 +1095,7 @@ graph TD
                                     <li>Klik tombol <strong>Unggah Laporan Bulanan</strong> pada sudut kanan atas.</li>
                                     <li>Data identitas konsultan otomatis terisi dari sesi pengguna aktif.</li>
                                     <li>Pilih <strong>Bulan Laporan</strong> (Januari s/d Desember) dan <strong>Tahun Anggaran</strong>.</li>
-                                    <li>Unggah berkas dokumen laporan kegiatan dalam format <strong>PDF</strong> (maksimum 20 MB). <em>(Catatan: Sesuai ketentuan, formulir laporan bulanan tidak menggunakan judul laporan).</em></li>
+                                    <li>Unggah berkas dokumen laporan kegiatan dalam format <strong>PDF</strong> (maksimum 20 MB). Sistem secara interaktif menampilkan label nama berkas, rincian ukuran file, dan tombol batal/hapus berkas sebelum disimpan. <em>(Catatan: Sesuai ketentuan, formulir laporan bulanan tidak menggunakan judul laporan).</em></li>
                                     <li>Isi keterangan singkat (opsional), lalu klik <strong>Simpan &amp; Unggah</strong>. Dokumen langsung tersimpan rapi dalam repositori arsip berkas tanpa memerlukan alur persetujuan (approval) berjenjang.</li>
                                     <li>Gunakan filter <strong>Tahun</strong>, <strong>Bulan</strong>, dan <strong>Konsultan</strong> pada bagian atas tabel untuk mempermudah penelusuran arsip laporan bulanan.</li>
                                 </ol>

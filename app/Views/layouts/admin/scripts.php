@@ -6,8 +6,15 @@
 <script src="<?= esc(media_url('assets/adminlte/plugins/datatables-responsive/js/responsive.bootstrap4.min.js')); ?>"></script>
 <script src="<?= esc(media_url('assets/adminlte/plugins/select2/js/select2.full.min.js')); ?>"></script>
 <script src="<?= esc(media_url('assets/adminlte/dist/js/adminlte.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/bs-custom-file-input/bs-custom-file-input.min.js')); ?>"></script>
 <script src="<?= esc(media_url('assets/adminlte/plugins/sweetalert2/sweetalert2.all.min.js')); ?>"></script>
 <script>
+    $(document).ready(function () {
+        if (typeof bsCustomFileInput !== 'undefined') {
+            bsCustomFileInput.init();
+        }
+    });
+
     (() => {
         const passwordWarning = <?= json_encode(session()->getFlashdata('password_warning'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
         if (!passwordWarning || typeof passwordWarning !== 'object') {
@@ -498,3 +505,4 @@
     })();
 </script>
 <?= $this->renderSection('pageScripts'); ?>
+<?= $this->renderSection('scripts'); ?>

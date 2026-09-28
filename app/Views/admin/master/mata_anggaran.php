@@ -247,7 +247,7 @@
 <?php endif; ?>
 <?= $this->endSection(); ?>
 
-<?= $this->section('scripts'); ?>
+<?= $this->section('pageScripts'); ?>
 <script>
     $(document).ready(function () {
         if ($.fn.DataTable && ! $.fn.DataTable.isDataTable('.js-datatable')) {

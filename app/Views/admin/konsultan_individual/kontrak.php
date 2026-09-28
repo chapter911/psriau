@@ -106,7 +106,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="formUploadKontrak" enctype="multipart/form-data">
+            <form id="formUploadKontrak" enctype="multipart/form-data" data-skip-confirm="1">
                 <?= csrf_field(); ?>
                 <div class="modal-body p-4">
                     <!-- Info Pegawai -->
@@ -144,9 +144,23 @@
                         </label>
                         <div class="custom-file">
                             <input type="file" class="custom-file-input" id="file_pdf" name="file_pdf" accept=".pdf,application/pdf" required>
-                            <label class="custom-file-label" for="file_pdf" id="file_pdf_label">Pilih file PDF...</label>
+                            <label class="custom-file-label text-truncate" for="file_pdf" id="file_pdf_label" data-browse="Pilih Berkas">Pilih file PDF...</label>
                         </div>
-                        <small class="form-text text-muted">Hanya menerima format <strong>PDF</strong>. Ukuran maksimum: <strong>20 MB</strong>.</small>
+                        <div id="file_pdf_info" class="mt-2 d-none">
+                            <div class="alert alert-light border d-flex align-items-center justify-content-between p-2 mb-0" style="border-radius: 8px; background-color: #f8fafc;">
+                                <div class="d-flex align-items-center text-truncate mr-2">
+                                    <i class="fas fa-file-pdf text-danger fa-2x mr-2 flex-shrink-0"></i>
+                                    <div class="text-truncate">
+                                        <span id="file_pdf_name" class="font-weight-bold d-block text-truncate text-dark small"></span>
+                                        <span id="file_pdf_size" class="text-muted" style="font-size: 0.75rem;"></span>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-danger btn-xs ml-2" id="btn_clear_file_kontrak" title="Hapus file terpilih">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted mt-1">Hanya menerima format <strong>PDF</strong>. Ukuran maksimum: <strong>20 MB</strong>.</small>
                         <small class="text-danger d-none" data-error="file_pdf"></small>
                     </div>
 
@@ -200,7 +214,7 @@
 
 <?= $this->endSection(); ?>
 
-<?= $this->section('scripts'); ?>
+<?= $this->section('pageScripts'); ?>
 <script>
 $(document).ready(function() {
     // 1. Initialize DataTable
@@ -252,10 +266,40 @@ $(document).ready(function() {
         table.ajax.reload();
     });
 
-    // Custom file input label update
+    // Helper format file size
+    function formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Reset file input helper
+    function resetFileInputKontrak() {
+        $('#file_pdf').val('');
+        $('#file_pdf_label').text('Pilih file PDF...');
+        $('#file_pdf_info').addClass('d-none');
+        $('#file_pdf_name').text('');
+        $('#file_pdf_size').text('');
+    }
+
+    // Custom file input handler with validation & preview
     $('#file_pdf').on('change', function() {
-        const file = this.files[0];
+        const file = this.files && this.files[0];
         if (file) {
+            const fileName = file.name || '';
+            const isPdf = fileName.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf';
+            if (!isPdf) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Format Berkas Tidak Sesuai',
+                    text: 'Hanya berkas format PDF yang diperbolehkan.'
+                });
+                resetFileInputKontrak();
+                return;
+            }
+
             // Check size max 20MB
             if (file.size > 20 * 1024 * 1024) {
                 Swal.fire({
@@ -263,14 +307,29 @@ $(document).ready(function() {
                     title: 'Ukuran Berkas Terlalu Besar',
                     text: 'Ukuran berkas melebihi batas maksimal 20 MB.'
                 });
-                $(this).val('');
-                $('#file_pdf_label').text('Pilih file PDF...');
+                resetFileInputKontrak();
                 return;
             }
+
             $('#file_pdf_label').text(file.name);
+            $('#file_pdf_name').text(file.name);
+            $('#file_pdf_size').text(formatFileSize(file.size));
+            $('#file_pdf_info').removeClass('d-none');
         } else {
-            $('#file_pdf_label').text('Pilih file PDF...');
+            resetFileInputKontrak();
         }
+    });
+
+    // Clear file button
+    $('#btn_clear_file_kontrak').on('click', function(e) {
+        e.preventDefault();
+        resetFileInputKontrak();
+    });
+
+    // Reset file and errors when modal is hidden
+    $('#modalUploadKontrak').on('hidden.bs.modal', function() {
+        resetFileInputKontrak();
+        $('[data-error]').addClass('d-none').text('');
     });
 
     // Handle AJAX Form Upload
@@ -308,7 +367,7 @@ $(document).ready(function() {
             success: function(res) {
                 $('#modalUploadKontrak').modal('hide');
                 $('#formUploadKontrak')[0].reset();
-                $('#file_pdf_label').text('Pilih file PDF...');
+                resetFileInputKontrak();
                 $progress.addClass('d-none');
                 $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Simpan & Unggah');
 
