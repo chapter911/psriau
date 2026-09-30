@@ -307,8 +307,10 @@
                                             <label for="lingkup_jasa" class="font-weight-bold">
                                                 Lingkup Jasa <span class="text-danger">*</span>
                                             </label>
-                                            <input type="text" class="form-control" id="lingkup_jasa" name="lingkup_jasa" 
-                                                   value="Manajemen Konstruksi" placeholder="Contoh: Manajemen Konstruksi" required>
+                                            <select class="form-control font-weight-bold" id="lingkup_jasa" name="lingkup_jasa" required>
+                                                <option value="Manajemen Konstruksi" selected>Manajemen Konstruksi</option>
+                                                <option value="Fisik">Fisik</option>
+                                            </select>
                                         </div>
 
                                         <div class="col-md-6 form-group">
@@ -320,19 +322,33 @@
                                         </div>
 
                                         <div class="col-md-6 form-group">
-                                            <label for="nomor_tanggal_kontrak" class="font-weight-bold">
-                                                Nomor &amp; Tanggal Kontrak <span class="text-danger">*</span>
+                                            <label for="nomor_kontrak" class="font-weight-bold">
+                                                Nomor Kontrak <span class="text-danger">*</span>
                                             </label>
-                                            <input type="text" class="form-control" id="nomor_tanggal_kontrak" name="nomor_tanggal_kontrak" 
-                                                   placeholder="Contoh: HK.02.01/SP/PPS-RIAU/01/2026 tanggal 15 Januari 2026" required>
+                                            <input type="text" class="form-control" id="nomor_kontrak" name="nomor_kontrak" 
+                                                   placeholder="Contoh: HK.02.01/SP/PPS-RIAU/01/2026" required>
+                                        </div>
+
+                                        <div class="col-md-6 form-group">
+                                            <label for="tanggal_kontrak" class="font-weight-bold">
+                                                Tanggal Kontrak <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="date" class="form-control" id="tanggal_kontrak" name="tanggal_kontrak" 
+                                                   value="<?= date('Y-m-d'); ?>" required>
                                         </div>
 
                                         <div class="col-md-6 form-group">
                                             <label for="nilai_kontrak" class="font-weight-bold">
                                                 Nilai Kontrak (termasuk addendum bila ada) <span class="text-danger">*</span>
                                             </label>
-                                            <input type="text" class="form-control" id="nilai_kontrak" name="nilai_kontrak" 
-                                                   placeholder="Contoh: Rp 1.450.000.000,-" required>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text font-weight-bold bg-light">Rp</span>
+                                                </div>
+                                                <input type="text" class="form-control font-weight-bold" id="nilai_kontrak" name="nilai_kontrak" 
+                                                       placeholder="Contoh: 1.450.000.000" required>
+                                            </div>
+                                            <small class="form-text text-muted">Input angka saja (format Rupiah otomatis terbentuk).</small>
                                         </div>
 
                                         <div class="col-md-6 form-group">
@@ -344,19 +360,33 @@
                                         </div>
 
                                         <div class="col-md-6 form-group">
-                                            <label for="masa_penugasan" class="font-weight-bold">
+                                            <label for="masa_penugasan_hari" class="font-weight-bold">
                                                 Masa Penugasan Tenaga Ahli <span class="text-danger">*</span>
                                             </label>
-                                            <input type="text" class="form-control" id="masa_penugasan" name="masa_penugasan" 
-                                                   placeholder="Contoh: 01 Februari 2026 s.d. 31 Juli 2026 (6 Bulan)" required>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="masa_penugasan_hari" name="masa_penugasan_hari" 
+                                                       min="1" placeholder="Contoh: 180" required>
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text bg-light font-weight-bold">Hari</span>
+                                                </div>
+                                            </div>
+                                            <small class="form-text text-muted">Input angka dalam jumlah hari (contoh: 180 Hari).</small>
                                         </div>
 
-                                        <div class="col-md-6 form-group mb-md-0">
-                                            <label for="status_pekerjaan" class="font-weight-bold">
+                                        <div class="col-md-6 form-group">
+                                            <label for="status_persen" class="font-weight-bold">
                                                 Status Pekerjaan <span class="text-danger">*</span>
                                             </label>
-                                            <input type="text" class="form-control" id="status_pekerjaan" name="status_pekerjaan" 
-                                                   value="selesai 100%" required>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="status_persen" name="status_persen" 
+                                                       min="0" max="100" value="100" placeholder="100" required>
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text bg-light font-weight-bold">%</span>
+                                                </div>
+                                            </div>
+                                            <small class="form-text text-muted">
+                                                Teks tercetak: <span class="badge badge-success font-weight-bold" id="badge_status_preview">Selesai</span> <span class="text-secondary">(100% tercetak "Selesai")</span>
+                                            </small>
                                         </div>
 
                                         <div class="col-md-6 form-group mb-0">
@@ -574,6 +604,41 @@ $(document).ready(function () {
 
     $('[data-toggle="tooltip"]').tooltip();
 
+    // Helper Format Rupiah Input
+    function formatRupiahDisplay(angka) {
+        let number_string = (angka || '').toString().replace(/[^0-9]/g, '');
+        let split = number_string.split(',');
+        let sisa = split[0].length % 3;
+        let rupiah = split[0].substr(0, sisa);
+        let ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+        if (ribuan) {
+            let separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
+        }
+        return rupiah;
+    }
+
+    // Helper Badge Status Pekerjaan
+    function updateStatusBadge(val) {
+        let p = parseInt(val, 10);
+        if (isNaN(p) || p < 0) p = 0;
+        if (p > 100) p = 100;
+        if (p >= 100) {
+            $('#badge_status_preview').removeClass('badge-info badge-secondary badge-warning').addClass('badge-success').text('Selesai');
+        } else {
+            $('#badge_status_preview').removeClass('badge-success badge-secondary').addClass('badge-info').text(p + '%');
+        }
+    }
+
+    $('#nilai_kontrak').on('input keyup', function () {
+        $(this).val(formatRupiahDisplay($(this).val()));
+    });
+
+    $('#status_persen').on('input change keyup', function () {
+        updateStatusBadge($(this).val());
+    });
+
     // 2. Preset Paket dropdown listener
     $('#pilih_paket_preset').on('change', function() {
         const selectedOption = $(this).find('option:selected');
@@ -607,6 +672,12 @@ $(document).ready(function () {
         $('#surket_id').val('');
         $('#pilih_paket_preset').val('');
         $('#paket_id').val('');
+        $('#lingkup_jasa').val('Manajemen Konstruksi');
+        $('#tanggal_kontrak').val('<?= date('Y-m-d'); ?>');
+        $('#tanggal_surat').val('<?= date('Y-m-d'); ?>');
+        $('#status_persen').val(100);
+        updateStatusBadge(100);
+        $('#penilaian_keseluruhan').val('Sangat Baik');
         $('#modalFormSurketLabel').html('<i class="fas fa-plus-circle mr-2"></i>Buat Surket Kinerja TA Baru');
         $('#btnSubmitForm').html('<i class="fas fa-save mr-2"></i>Simpan Dokumen');
         $('#formAlertContainer').addClass('d-none').html('');
@@ -716,14 +787,44 @@ $(document).ready(function () {
                     $('#paket_id').val(d.paket_id || '');
                     $('#pilih_paket_preset').val(d.paket_id || '');
                     $('#nama_paket').val(d.nama_paket);
-                    $('#lingkup_jasa').val(d.lingkup_jasa);
+                    $('#lingkup_jasa').val(d.lingkup_jasa || 'Manajemen Konstruksi');
                     $('#lokasi_pekerjaan').val(d.lokasi_pekerjaan);
-                    $('#nomor_tanggal_kontrak').val(d.nomor_tanggal_kontrak);
-                    $('#nilai_kontrak').val(d.nilai_kontrak);
+
+                    // Nomor & Tanggal Kontrak Terpisah
+                    let nomorK = d.nomor_kontrak || '';
+                    let tglK = d.tanggal_kontrak || '';
+                    if (!nomorK && d.nomor_tanggal_kontrak) {
+                        if (d.nomor_tanggal_kontrak.indexOf(' tanggal ') !== -1) {
+                            nomorK = d.nomor_tanggal_kontrak.split(' tanggal ')[0];
+                        } else {
+                            nomorK = d.nomor_tanggal_kontrak;
+                        }
+                    }
+                    $('#nomor_kontrak').val(nomorK);
+                    $('#tanggal_kontrak').val(tglK || '<?= date('Y-m-d'); ?>');
+
+                    // Nilai Kontrak (format Rupiah)
+                    let rawNilai = (d.nilai_kontrak || '').replace(/[^0-9]/g, '');
+                    $('#nilai_kontrak').val(formatRupiahDisplay(rawNilai));
+
                     $('#sumber_dana').val(d.sumber_dana);
-                    $('#masa_penugasan').val(d.masa_penugasan);
-                    $('#status_pekerjaan').val(d.status_pekerjaan);
-                    $('#penilaian_keseluruhan').val(d.penilaian_keseluruhan);
+
+                    // Masa Penugasan (Hari angka)
+                    let hariVal = d.masa_penugasan_hari;
+                    if (!hariVal && d.masa_penugasan) {
+                        let match = d.masa_penugasan.match(/\d+/);
+                        hariVal = match ? match[0] : '';
+                    }
+                    $('#masa_penugasan_hari').val(hariVal || '');
+
+                    // Status Pekerjaan (% dan preview Selesai jika 100%)
+                    let persenVal = (d.status_persen !== null && d.status_persen !== undefined && d.status_persen !== '')
+                        ? d.status_persen
+                        : (d.status_pekerjaan === 'Selesai' ? 100 : (parseInt(d.status_pekerjaan, 10) || 100));
+                    $('#status_persen').val(persenVal);
+                    updateStatusBadge(persenVal);
+
+                    $('#penilaian_keseluruhan').val(d.penilaian_keseluruhan || 'Sangat Baik');
 
                     $('#modalFormSurket').modal('show');
                 } else {

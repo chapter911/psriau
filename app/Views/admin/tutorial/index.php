@@ -608,7 +608,7 @@ graph TD
     A["Buka Menu: Kontrak > SURKET KINERJA TA (/admin/kontrak/surket-kinerja-ta)"] --> B["Klik 'Buat Surket Kinerja TA Baru'"]
     B --> C["1. Isi Data Tenaga Ahli &amp; Badan Usaha (Nama TA, Jabatan, Nama PT/CV, Alamat)"]
     B --> D["2. Tentukan Pejabat PPK (Default Nurhidayat Nugroho / Pilih Pegawai) &amp; Nomor Surat"]
-    B --> E["3. Isi Data Paket Pekerjaan (Pilih Master Paket / Manual, Lingkup Jasa, Nilai, Durasi, Penilaian)"]
+    B --> E["3. Isi Data Paket &amp; Kontrak (Dropdown Lingkup: MK/Fisik, No &amp; Tgl Kontrak Terpisah, Nilai Rp, Masa dlm Hari, Status dlm % / Selesai)"]
     C --> F["Validasi Form &amp; Simpan ke Sistem"]
     D --> F
     E --> F
@@ -1175,10 +1175,14 @@ graph TD
                             <li><strong>Bagian 3 - Paket Pekerjaan &amp; Penugasan Kontrak:</strong>
                                 <ul>
                                     <li>Pilih dari dropdown <strong>Master Paket</strong> untuk pengisian cepat otomatis nama paket, atau pilih <em>Ketik Nama Paket Manual</em> jika paket belum terdaftar.</li>
-                                    <li>Isi <strong>Lingkup Jasa</strong> (default: <em>Manajemen Konstruksi</em>).</li>
-                                    <li>Isi <strong>Lokasi Pekerjaan</strong>, <strong>Nomor &amp; Tanggal Kontrak</strong>, <strong>Nilai Kontrak</strong> (termasuk addendum), dan <strong>Sumber Dana</strong> (default: <em>APBN DIPA Satker PPS Riau</em>).</li>
-                                    <li>Isi <strong>Masa Penugasan Tenaga Ahli</strong> (contoh: <em>01 Februari 2026 s.d. 31 Juli 2026 (6 Bulan)</em>).</li>
-                                    <li>Pilih <strong>Status Pekerjaan</strong> (default: <em>selesai 100%</em>) dan <strong>Penilaian Keseluruhan</strong> (<em>Sangat Baik</em>, <em>Baik</em>, <em>Cukup</em>, atau <em>Kurang</em>).</li>
+                                    <li>Pilih <strong>Lingkup Jasa</strong> melalui dropdown: <em>Manajemen Konstruksi</em> atau <em>Fisik</em>.</li>
+                                    <li>Isi <strong>Lokasi Pekerjaan</strong>.</li>
+                                    <li>Isi <strong>Nomor Kontrak</strong> dan <strong>Tanggal Kontrak</strong> secara terpisah (format tanggal otomatis dirangkai dengan penanggalan resmi Indonesia).</li>
+                                    <li>Isi <strong>Nilai Kontrak</strong> (termasuk addendum bila ada) berupa angka (format mata uang Rupiah <code>Rp X.XXX.XXX,-</code> otomatis terbentuk).</li>
+                                    <li>Isi <strong>Sumber Dana</strong> (default: <em>APBN DIPA Satker Pelaksanaan Prasarana Strategis Riau</em>).</li>
+                                    <li>Isi <strong>Masa Penugasan Tenaga Ahli</strong> berupa angka jumlah hari (contoh: <code>180</code> Hari).</li>
+                                    <li>Isi <strong>Status Pekerjaan</strong> dalam angka persen (0-100%). Jika diisi <code>100%</code> maka pada surat keterangan akan otomatis tercetak teks <strong>"Selesai"</strong> (jika di bawah 100% akan tercetak persentasenya).</li>
+                                    <li>Pilih <strong>Penilaian Keseluruhan</strong> (<em>Sangat Baik</em>, <em>Baik</em>, <em>Cukup</em>, atau <em>Kurang</em>).</li>
                                 </ul>
                             </li>
                             <li><strong>Simpan Data:</strong> Klik tombol <strong>"Simpan Dokumen"</strong>. Sistem memvalidasi kelengkapan form dan menyimpan berkas tanpa notifikasi ganda.</li>
