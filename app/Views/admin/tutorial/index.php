@@ -605,7 +605,9 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A["Buka Menu: Kontrak > SURKET KINERJA TA (/admin/kontrak/surket-kinerja-ta)"] --> B1["Klik 'Buat Surket Kinerja TA Baru' (Form Baru)"]
+    A["Buka Menu: Kontrak > SURKET KINERJA TA (/admin/kontrak/surket-kinerja-ta)"] --> FL["Filter Data: Dropdown Paket &amp; Lingkup Jasa (Terapkan / Reset)"]
+    FL --> TBL["Daftar Data Tersaring pada Tabel"]
+    A --> B1["Klik 'Buat Surket Kinerja TA Baru' (Form Baru)"]
     A --> B2["Klik Ikon 'Duplikat' di Tabel atau Modal Pratinjau (Salin Data Eksisting)"]
     B1 --> C["Isi / Sesuaikan Data Tenaga Ahli &amp; Badan Usaha"]
     B2 --> C
@@ -617,6 +619,7 @@ graph TD
     G --> H2["Cetak / Pratinjau PDF Resmi (Tata Letak Presisi Pas Tepat 1 Halaman)"]
     G --> H3["Pratinjau Detail Modal, Duplikat Data, Ubah, atau Hapus"]
     H3 -.-> B2
+    TBL -.-> H3
                 </pre>
             </div>
         </div>
@@ -1157,6 +1160,13 @@ graph TD
                         <p class="small text-muted mb-2"><code>/admin/kontrak/surket-kinerja-ta</code></p>
                         <ol class="pl-3 small mb-0">
                             <li><strong>Akses Menu:</strong> Buka menu samping <strong>Kontrak &gt; SURKET KINERJA TA</strong>.</li>
+                            <li><strong>Filter Data (Paket &amp; Lingkup Jasa):</strong> Di bagian atas tabel disediakan filter untuk menyaring data dengan cepat:
+                                <ul>
+                                    <li><strong>Filter Paket:</strong> Menyaring berdasarkan paket pekerjaan yang dipilih (misal: <em>Riau 2</em>, <em>Riau 3</em>, dst.).</li>
+                                    <li><strong>Filter Lingkup Jasa:</strong> Menyaring berdasarkan lingkup penugasan (<em>Manajemen Konstruksi</em> atau <em>Fisik</em>).</li>
+                                    <li><strong>Interaksi Cepat:</strong> Tabel otomatis memfilter saat opsi dropdown dipilih, atau dengan menekan tombol <strong>"Terapkan"</strong>. Untuk mengembalikan ke seluruh data, klik tombol <strong>"Reset"</strong> atau tombol <strong>"Hapus Filter"</strong> pada notifikasi filter aktif.</li>
+                                </ul>
+                            </li>
                             <li><strong>Buat Dokumen Baru:</strong> Klik tombol biru <strong>"Buat Surket Kinerja TA Baru"</strong> di sudut kanan atas halaman.</li>
                             <li><strong>Bagian 1 - Identitas Tenaga Ahli &amp; Badan Usaha:</strong>
                                 <ul>

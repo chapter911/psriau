@@ -2,8 +2,9 @@
 
 <?= $this->section('content'); ?>
 <div class="container-fluid px-0">
-    <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; overflow: hidden;">
-        <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between">
+    <!-- Header Card -->
+    <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header bg-white border-bottom-0 py-3 d-flex flex-wrap align-items-center justify-content-between">
             <div>
                 <h4 class="font-weight-bold text-dark mb-1">
                     <i class="fas fa-file-signature text-primary mr-2"></i>Surat Keterangan Kinerja Tenaga Ahli (SURKET KINERJA TA)
@@ -20,7 +21,82 @@
                 <?php endif; ?>
             </div>
         </div>
+    </div>
 
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px; background: #ffffff; border: 1px solid #e9eef5;">
+        <div class="card-body py-3 px-4">
+            <form method="get" action="<?= site_url('admin/kontrak/surket-kinerja-ta'); ?>" id="formFilterSurket">
+                <div class="row align-items-end">
+                    <div class="col-md-5 col-sm-6 mb-2 mb-md-0">
+                        <label class="small font-weight-bold text-muted mb-1">
+                            <i class="fas fa-cube text-primary mr-1"></i> Filter Paket Pekerjaan
+                        </label>
+                        <select name="paket_id" id="filter_paket" class="form-control form-control-sm" style="border-radius: 8px;">
+                            <option value="">-- Semua Paket --</option>
+                            <?php foreach ($paketList as $p): ?>
+                                <option value="<?= esc($p['id']); ?>" <?= ($filterPaketId == $p['id']) ? 'selected' : ''; ?>>
+                                    <?= esc($p['nama_paket']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 col-sm-6 mb-2 mb-md-0">
+                        <label class="small font-weight-bold text-muted mb-1">
+                            <i class="fas fa-layer-group text-info mr-1"></i> Filter Lingkup Jasa
+                        </label>
+                        <select name="lingkup_jasa" id="filter_lingkup_jasa" class="form-control form-control-sm" style="border-radius: 8px;">
+                            <option value="">-- Semua Lingkup Jasa --</option>
+                            <option value="Manajemen Konstruksi" <?= ($filterLingkup === 'Manajemen Konstruksi') ? 'selected' : ''; ?>>Manajemen Konstruksi</option>
+                            <option value="Fisik" <?= ($filterLingkup === 'Fisik') ? 'selected' : ''; ?>>Fisik</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 col-sm-12 d-flex mt-2 mt-md-0" style="gap: 8px;">
+                        <button type="submit" class="btn btn-primary btn-sm flex-fill font-weight-bold shadow-sm" style="border-radius: 8px;">
+                            <i class="fas fa-filter mr-1"></i> Terapkan
+                        </button>
+                        <a href="<?= site_url('admin/kontrak/surket-kinerja-ta'); ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm" style="border-radius: 8px;" title="Reset Filter">
+                            <i class="fas fa-undo mr-1"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <?php if (! empty($filterPaketId) || ! empty($filterLingkup)): ?>
+        <?php
+            $activePaketName = '';
+            if (! empty($filterPaketId)) {
+                foreach ($paketList as $p) {
+                    if ($p['id'] == $filterPaketId) {
+                        $activePaketName = $p['nama_paket'];
+                        break;
+                    }
+                }
+            }
+        ?>
+        <div class="alert alert-light border shadow-sm py-2 px-3 mb-3 d-flex flex-wrap align-items-center justify-content-between" style="border-radius: 8px; border-left: 4px solid #007bff !important;">
+            <div class="small my-1">
+                <i class="fas fa-filter text-primary mr-1"></i>
+                <strong>Filter Aktif:</strong>
+                <?php if (! empty($filterPaketId)): ?>
+                    <span class="badge badge-primary px-2 py-1 mr-1">Paket: <?= esc($activePaketName ?: $filterPaketId); ?></span>
+                <?php endif; ?>
+                <?php if (! empty($filterLingkup)): ?>
+                    <span class="badge badge-info px-2 py-1 mr-1">Lingkup: <?= esc($filterLingkup); ?></span>
+                <?php endif; ?>
+                <span class="text-muted ml-1">(Ditemukan <strong><?= count($surketList); ?></strong> data)</span>
+            </div>
+            <a href="<?= site_url('admin/kontrak/surket-kinerja-ta'); ?>" class="btn btn-sm btn-outline-danger py-0 px-2 font-weight-bold my-1" style="font-size: 0.8rem; border-radius: 6px;">
+                <i class="fas fa-times mr-1"></i> Hapus Filter
+            </a>
+        </div>
+    <?php endif; ?>
+
+    <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; overflow: hidden;">
         <div class="card-body p-4">
             <div class="table-responsive">
                 <table class="table table-hover table-striped w-100 align-middle" id="tableSurket" style="font-size: 0.92rem;">
@@ -624,6 +700,11 @@ $(document).ready(function () {
                 previous: "Sebelumnya"
             }
         }
+    });
+
+    // Auto-submit filter on change
+    $('#filter_paket, #filter_lingkup_jasa').on('change', function() {
+        $('#formFilterSurket').submit();
     });
 
     $('[data-toggle="tooltip"]').tooltip();

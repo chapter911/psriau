@@ -29,8 +29,15 @@ class SurketKinerjaTa extends BaseController
      */
     public function index()
     {
-        $permissions = $this->resolveMenuAksesPermissions('admin/kontrak/surket-kinerja-ta');
-        $surketList  = $this->surketModel->getList();
+        $permissions   = $this->resolveMenuAksesPermissions('admin/kontrak/surket-kinerja-ta');
+        $filterPaketId = trim((string) ($this->request->getGet('paket_id') ?? ''));
+        $filterLingkup = trim((string) ($this->request->getGet('lingkup_jasa') ?? ''));
+
+        $surketList  = $this->surketModel->getList(
+            null,
+            ($filterPaketId !== '' && $filterPaketId !== '*') ? (int) $filterPaketId : null,
+            ($filterLingkup !== '' && $filterLingkup !== '*') ? $filterLingkup : null
+        );
         $paketList   = $this->paketModel->where('is_active', 1)->orderBy('nama_paket', 'ASC')->findAll();
         $pegawaiList = $this->pegawaiModel->where('is_active', 1)->orderBy('nama', 'ASC')->findAll();
 
@@ -71,14 +78,16 @@ class SurketKinerjaTa extends BaseController
         }
 
         return view('admin/kontrak/surket_kinerja_ta/index', [
-            'title'        => 'Surat Keterangan Kinerja Tenaga Ahli',
-            'surketList'   => $surketList,
-            'paketList'    => $paketList,
-            'pegawaiList'  => $pegawaiList,
-            'defaultPpk'   => $defaultPpk,
-            'kopSuratList' => $kopSuratList,
-            'defaultKop'   => $defaultKop,
-            'permissions'  => $permissions,
+            'title'         => 'Surat Keterangan Kinerja Tenaga Ahli',
+            'surketList'    => $surketList,
+            'paketList'     => $paketList,
+            'pegawaiList'   => $pegawaiList,
+            'defaultPpk'    => $defaultPpk,
+            'kopSuratList'  => $kopSuratList,
+            'defaultKop'    => $defaultKop,
+            'permissions'   => $permissions,
+            'filterPaketId' => $filterPaketId,
+            'filterLingkup' => $filterLingkup,
         ]);
     }
 
@@ -87,8 +96,15 @@ class SurketKinerjaTa extends BaseController
      */
     public function data()
     {
-        $search = trim((string) ($this->request->getGet('search')['value'] ?? ''));
-        $data   = $this->surketModel->getList($search);
+        $search      = trim((string) ($this->request->getGet('search')['value'] ?? ''));
+        $paketId     = trim((string) ($this->request->getGet('paket_id') ?? ''));
+        $lingkupJasa = trim((string) ($this->request->getGet('lingkup_jasa') ?? ''));
+
+        $data = $this->surketModel->getList(
+            $search !== '' ? $search : null,
+            ($paketId !== '' && $paketId !== '*') ? (int) $paketId : null,
+            ($lingkupJasa !== '' && $lingkupJasa !== '*') ? $lingkupJasa : null
+        );
 
         return $this->response->setJSON([
             'data' => $data,

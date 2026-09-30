@@ -51,9 +51,9 @@ class SurketKinerjaTaModel extends Model
     protected $updatedField     = 'updated_at';
 
     /**
-     * Get records with optional search and joins
+     * Get records with optional search, paket, lingkup jasa, and joins
      */
-    public function getList(?string $search = null)
+    public function getList(?string $search = null, ?int $paketId = null, ?string $lingkupJasa = null)
     {
         $builder = $this->builder();
         $builder->select('trn_surket_kinerja_ta.*, mp.nama_paket AS master_nama_paket, ks.title AS kop_surat_title');
@@ -69,6 +69,14 @@ class SurketKinerjaTaModel extends Model
             $builder->orLike('trn_surket_kinerja_ta.nomor_surat', $search);
             $builder->orLike('trn_surket_kinerja_ta.nomor_tanggal_kontrak', $search);
             $builder->groupEnd();
+        }
+
+        if (! empty($paketId)) {
+            $builder->where('trn_surket_kinerja_ta.paket_id', (int) $paketId);
+        }
+
+        if (! empty($lingkupJasa)) {
+            $builder->where('trn_surket_kinerja_ta.lingkup_jasa', trim($lingkupJasa));
         }
 
         $builder->orderBy('trn_surket_kinerja_ta.id', 'DESC');
