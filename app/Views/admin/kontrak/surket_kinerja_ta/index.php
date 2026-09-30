@@ -368,21 +368,7 @@
                                                    value="APBN DIPA Satker Pelaksanaan Prasarana Strategis Riau" required>
                                         </div>
 
-                                        <div class="col-md-6 form-group mb-0">
-                                            <label for="masa_penugasan_hari" class="font-weight-bold">
-                                                Masa Penugasan Tenaga Ahli <span class="text-danger">*</span>
-                                            </label>
-                                            <div class="input-group">
-                                                <input type="number" class="form-control" id="masa_penugasan_hari" name="masa_penugasan_hari" 
-                                                       min="1" placeholder="Contoh: 180" required>
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text bg-light font-weight-bold">Hari</span>
-                                                </div>
-                                            </div>
-                                            <small class="form-text text-muted">Input angka dalam jumlah hari (contoh: 180 Hari).</small>
-                                        </div>
-
-                                        <div class="col-md-6 form-group mb-0">
+                                        <div class="col-md-6 form-group">
                                             <label for="status_persen" class="font-weight-bold">
                                                 Status Pekerjaan <span class="text-danger">*</span>
                                             </label>
@@ -396,6 +382,46 @@
                                             <small class="form-text text-muted">
                                                 Teks tercetak: <span class="badge badge-success font-weight-bold" id="badge_status_preview">Selesai</span> <span class="text-secondary">(100% tercetak "Selesai")</span>
                                             </small>
+                                        </div>
+
+                                        <!-- Masa Penugasan Tenaga Ahli (Dari Tanggal s.d. Tanggal & Total Hari) -->
+                                        <div class="col-12 form-group mb-0 border-top pt-3">
+                                            <label class="font-weight-bold d-block text-dark mb-2">
+                                                <i class="far fa-calendar-alt text-primary mr-1"></i>Masa Penugasan Tenaga Ahli <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="row">
+                                                <div class="col-md-4 form-group mb-2">
+                                                    <label for="tanggal_mulai_penugasan" class="small font-weight-bold text-muted mb-1">
+                                                        Dari Tanggal (Mulai) <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="date" class="form-control" id="tanggal_mulai_penugasan" name="tanggal_mulai_penugasan" required>
+                                                </div>
+                                                <div class="col-md-4 form-group mb-2">
+                                                    <label for="tanggal_selesai_penugasan" class="small font-weight-bold text-muted mb-1">
+                                                        Hingga Tanggal (Selesai) <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="date" class="form-control" id="tanggal_selesai_penugasan" name="tanggal_selesai_penugasan" required>
+                                                </div>
+                                                <div class="col-md-4 form-group mb-2">
+                                                    <label for="masa_penugasan_hari" class="small font-weight-bold text-muted mb-1">
+                                                        Total Masa Penugasan <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="masa_penugasan_hari" name="masa_penugasan_hari" 
+                                                               min="1" placeholder="Contoh: 180" required>
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text bg-light font-weight-bold">Hari</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="alert alert-light border py-2 px-3 mb-0 small text-muted">
+                                                        <i class="fas fa-eye text-info mr-1"></i>Teks tercetak pada dokumen: 
+                                                        <strong class="text-dark ml-1" id="preview_masa_penugasan_live">-</strong>
+                                                        <span class="text-secondary ml-1" id="keterangan_hari_penugasan"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -637,6 +663,69 @@ $(document).ready(function () {
         updateStatusBadge($(this).val());
     });
 
+    // Helper Format Tanggal Indonesia
+    const NAMA_BULAN_ID = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+
+    function formatTanggalIndo(dateStr) {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const y = parts[0];
+            const m = parseInt(parts[1], 10) - 1;
+            const d = parts[2];
+            if (m >= 0 && m < 12) {
+                return `${d} ${NAMA_BULAN_ID[m]} ${y}`;
+            }
+        }
+        return dateStr;
+    }
+
+    // Helper Preview Masa Penugasan
+    function updatePreviewMasaPenugasan() {
+        const tglMulai = $('#tanggal_mulai_penugasan').val();
+        const tglSelesai = $('#tanggal_selesai_penugasan').val();
+        const hari = $('#masa_penugasan_hari').val();
+
+        if (tglMulai && tglSelesai) {
+            const strMulai = formatTanggalIndo(tglMulai);
+            const strSelesai = formatTanggalIndo(tglSelesai);
+            const strHari = hari ? ` (${hari} Hari)` : '';
+            $('#preview_masa_penugasan_live').text(`${strMulai} s.d. ${strSelesai}${strHari}`);
+        } else if (hari) {
+            $('#preview_masa_penugasan_live').text(`${hari} Hari`);
+        } else {
+            $('#preview_masa_penugasan_live').text('-');
+        }
+    }
+
+    $('#tanggal_mulai_penugasan, #tanggal_selesai_penugasan').on('change input', function() {
+        const tglMulai = $('#tanggal_mulai_penugasan').val();
+        const tglSelesai = $('#tanggal_selesai_penugasan').val();
+
+        if (tglMulai && tglSelesai) {
+            const d1 = new Date(tglMulai + 'T00:00:00');
+            const d2 = new Date(tglSelesai + 'T00:00:00');
+            if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
+                if (d2 >= d1) {
+                    const diffTime = d2.getTime() - d1.getTime();
+                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                    $('#masa_penugasan_hari').val(diffDays);
+                    $('#keterangan_hari_penugasan').text(`(Otomatis dihitung: ${diffDays} hari kalender inklusif)`);
+                } else {
+                    $('#keterangan_hari_penugasan').text('(Perhatian: tanggal selesai mendahului tanggal mulai)');
+                }
+            }
+        }
+        updatePreviewMasaPenugasan();
+    });
+
+    $('#masa_penugasan_hari').on('input change keyup', function() {
+        updatePreviewMasaPenugasan();
+    });
+
     // 2. Preset Paket dropdown listener
     $('#pilih_paket_preset').on('change', function() {
         const selectedOption = $(this).find('option:selected');
@@ -674,6 +763,11 @@ $(document).ready(function () {
         $('#lingkup_jasa').val('Manajemen Konstruksi');
         $('#tanggal_kontrak').val('<?= date('Y-m-d'); ?>');
         $('#tanggal_surat').val('<?= date('Y-m-d'); ?>');
+        $('#tanggal_mulai_penugasan').val('');
+        $('#tanggal_selesai_penugasan').val('');
+        $('#masa_penugasan_hari').val('');
+        $('#preview_masa_penugasan_live').text('-');
+        $('#keterangan_hari_penugasan').text('');
         $('#status_persen').val(100);
         updateStatusBadge(100);
         $('#modalFormSurketLabel').html('<i class="fas fa-plus-circle mr-2"></i>Buat Surket Kinerja TA Baru');
@@ -818,13 +912,18 @@ $(document).ready(function () {
 
                     $('#sumber_dana').val(d.sumber_dana);
 
-                    // Masa Penugasan (Hari angka)
+                    // Masa Penugasan (Dari Tanggal s.d. Tanggal & Total Hari)
+                    $('#tanggal_mulai_penugasan').val(d.tanggal_mulai_penugasan || '');
+                    $('#tanggal_selesai_penugasan').val(d.tanggal_selesai_penugasan || '');
+
                     let hariVal = d.masa_penugasan_hari;
                     if (!hariVal && d.masa_penugasan) {
                         let match = d.masa_penugasan.match(/\d+/);
                         hariVal = match ? match[0] : '';
                     }
                     $('#masa_penugasan_hari').val(hariVal || '');
+                    $('#keterangan_hari_penugasan').text('');
+                    updatePreviewMasaPenugasan();
 
                     // Status Pekerjaan (% dan preview Selesai jika 100%)
                     let persenVal = (d.status_persen !== null && d.status_persen !== undefined && d.status_persen !== '')

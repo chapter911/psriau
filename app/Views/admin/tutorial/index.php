@@ -610,7 +610,7 @@ graph TD
     B1 --> C["Isi / Sesuaikan Data Tenaga Ahli &amp; Badan Usaha"]
     B2 --> C
     C --> D["Pilih Kop Surat Resmi (Default: Kop Aktif) &amp; Tentukan Pejabat PPK"]
-    D --> E["Isi / Sesuaikan Paket &amp; Kontrak (Dropdown Lingkup: Fisik / Manajemen Konstruksi, No/Tgl Kontrak, Nilai Rp, Masa Hari, Status %)"]
+    D --> E["Isi / Sesuaikan Paket &amp; Kontrak (Dropdown Lingkup, No/Tgl Kontrak, Nilai Rp, Masa Dari s.d. Tgl &amp; Total Hari, Status %)"]
     E --> F["Validasi Form &amp; Simpan Dokumen (Insert Data Baru)"]
     F --> G["Data Tersimpan di Database (Teks Pengantar &amp; Penutup Otomatis)"]
     G --> H1["Unduh Word (.docx) Format Presisi &amp; Indentasi Masuk Sesuai Standar"]
@@ -1187,7 +1187,13 @@ graph TD
                                     <li>Isi <strong>Nomor Kontrak</strong> dan <strong>Tanggal Kontrak</strong> secara terpisah (format tanggal otomatis dirangkai dengan penanggalan resmi Indonesia).</li>
                                     <li>Isi <strong>Nilai Kontrak</strong> (termasuk addendum bila ada) berupa angka (format mata uang Rupiah <code>Rp X.XXX.XXX,-</code> otomatis terbentuk).</li>
                                     <li>Isi <strong>Sumber Dana</strong> (default: <em>APBN DIPA Satker Pelaksanaan Prasarana Strategis Riau</em>).</li>
-                                    <li>Isi <strong>Masa Penugasan Tenaga Ahli</strong> berupa angka jumlah hari (contoh: <code>180</code> Hari).</li>
+                                    <li>Isi <strong>Masa Penugasan Tenaga Ahli</strong>:
+                                        <ul>
+                                            <li>Tentukan <strong>Dari Tanggal (Mulai)</strong> dan <strong>Hingga Tanggal (Selesai)</strong> penugasan.</li>
+                                            <li>Sistem secara otomatis menghitung <strong>Total Masa Penugasan</strong> dalam jumlah hari (kalender inklusif), dan angka ini tetap dapat disesuaikan manual bila penugasan dihitung berdasarkan hari kerja.</li>
+                                            <li>Format teks tercetak pada seluruh dokumen resmi (Word, PDF, Pratinjau, dan Tabel) otomatis dirangkai rapi: <code>[Tanggal Mulai] s.d. [Tanggal Selesai] ([X] Hari)</code> (contoh: <em>01 Februari 2026 s.d. 31 Juli 2026 (180 Hari)</em>).</li>
+                                        </ul>
+                                    </li>
                                     <li>Isi <strong>Status Pekerjaan</strong> dalam angka persen (0-100%). Jika diisi <code>100%</code> maka pada surat keterangan akan otomatis tercetak teks <strong>"Selesai"</strong> (jika di bawah 100% akan tercetak persentasenya).</li>
                                     <li><em>(Catatan: Bagian Penilaian Keseluruhan telah dihilangkan sesuai ketentuan format resmi).</em></li>
                                 </ul>

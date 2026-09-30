@@ -118,14 +118,16 @@ class SurketKinerjaTa extends BaseController
             'lokasi_pekerjaan'      => ['label' => 'Lokasi Pekerjaan', 'rules' => 'required'],
             'nomor_kontrak'         => ['label' => 'Nomor Kontrak', 'rules' => 'required'],
             'tanggal_kontrak'       => ['label' => 'Tanggal Kontrak', 'rules' => 'required|valid_date'],
-            'nilai_kontrak'         => ['label' => 'Nilai Kontrak', 'rules' => 'required'],
-            'sumber_dana'           => ['label' => 'Sumber Dana', 'rules' => 'required'],
-            'masa_penugasan_hari'   => ['label' => 'Masa Penugasan (Hari)', 'rules' => 'required|numeric|greater_than[0]'],
-            'status_persen'         => ['label' => 'Status Pekerjaan (%)', 'rules' => 'required|numeric|greater_than_equal_to[0]|less_than_equal_to[100]'],
-            'ppk_nama'              => ['label' => 'Nama PPK', 'rules' => 'required'],
-            'ppk_nip'               => ['label' => 'NIP PPK', 'rules' => 'required'],
-            'ppk_jabatan'           => ['label' => 'Jabatan PPK', 'rules' => 'required'],
-            'ppk_satker'            => ['label' => 'Satuan Kerja PPK', 'rules' => 'required'],
+            'nilai_kontrak'             => ['label' => 'Nilai Kontrak', 'rules' => 'required'],
+            'sumber_dana'               => ['label' => 'Sumber Dana', 'rules' => 'required'],
+            'tanggal_mulai_penugasan'   => ['label' => 'Tanggal Mulai Penugasan', 'rules' => 'required|valid_date'],
+            'tanggal_selesai_penugasan' => ['label' => 'Tanggal Selesai Penugasan', 'rules' => 'required|valid_date'],
+            'masa_penugasan_hari'       => ['label' => 'Total Hari Penugasan', 'rules' => 'required|numeric|greater_than[0]'],
+            'status_persen'             => ['label' => 'Status Pekerjaan (%)', 'rules' => 'required|numeric|greater_than_equal_to[0]|less_than_equal_to[100]'],
+            'ppk_nama'                  => ['label' => 'Nama PPK', 'rules' => 'required'],
+            'ppk_nip'                   => ['label' => 'NIP PPK', 'rules' => 'required'],
+            'ppk_jabatan'               => ['label' => 'Jabatan PPK', 'rules' => 'required'],
+            'ppk_satker'                => ['label' => 'Satuan Kerja PPK', 'rules' => 'required'],
         ];
 
         if (! $this->validate($rules)) {
@@ -148,9 +150,25 @@ class SurketKinerjaTa extends BaseController
         $rawNilai = preg_replace('/[^0-9]/', '', (string) ($post['nilai_kontrak'] ?? ''));
         $formattedNilai = $rawNilai !== '' ? 'Rp ' . number_format((float) $rawNilai, 0, ',', '.') . ',-' : trim((string) $post['nilai_kontrak']);
 
-        // Masa Penugasan Hari
+        // Masa Penugasan (Dari Tanggal s.d. Tanggal & Total Hari)
+        $tglMulai = ! empty($post['tanggal_mulai_penugasan']) ? $post['tanggal_mulai_penugasan'] : null;
+        $tglSelesai = ! empty($post['tanggal_selesai_penugasan']) ? $post['tanggal_selesai_penugasan'] : null;
         $hari = (int) ($post['masa_penugasan_hari'] ?? 0);
-        $masaPenugasan = $hari > 0 ? ($hari . ' Hari') : trim((string) ($post['masa_penugasan'] ?? ''));
+
+        if ($tglMulai && $tglSelesai) {
+            if ($hari <= 0) {
+                $diff = strtotime($tglSelesai) - strtotime($tglMulai);
+                $hari = max(1, (int) round($diff / 86400) + 1);
+            }
+            $strMulai = tanggal_indonesia($tglMulai);
+            $strSelesai = tanggal_indonesia($tglSelesai);
+            $hariStr = ($hari > 0) ? " ({$hari} Hari)" : '';
+            $masaPenugasan = "{$strMulai} s.d. {$strSelesai}{$hariStr}";
+        } elseif ($hari > 0) {
+            $masaPenugasan = "{$hari} Hari";
+        } else {
+            $masaPenugasan = trim((string) ($post['masa_penugasan'] ?? ''));
+        }
 
         // Status Pekerjaan (Jika 100% -> 'Selesai', selain itu angka %)
         $persen = (int) ($post['status_persen'] ?? 100);
@@ -164,34 +182,36 @@ class SurketKinerjaTa extends BaseController
             : $nomorKontrak;
 
         $insertData = [
-            'nomor_surat'           => trim((string) ($post['nomor_surat'] ?? '')),
-            'tanggal_surat'         => ! empty($post['tanggal_surat']) ? $post['tanggal_surat'] : date('Y-m-d'),
-            'kota_surat'            => trim((string) ($post['kota_surat'] ?? 'Pekanbaru')) ?: 'Pekanbaru',
-            'kop_surat_id'          => $kopSuratId,
-            'ppk_pegawai_id'        => $ppkPegawaiId,
-            'ppk_nama'              => trim((string) ($post['ppk_nama'] ?? '')),
-            'ppk_nip'               => trim((string) ($post['ppk_nip'] ?? '')),
-            'ppk_jabatan'           => trim((string) ($post['ppk_jabatan'] ?? '')),
-            'ppk_satker'            => trim((string) ($post['ppk_satker'] ?? '')),
-            'ppk_alamat'            => trim((string) ($post['ppk_alamat'] ?? '')),
-            'nama_tenaga_ahli'      => trim((string) ($post['nama_tenaga_ahli'] ?? '')),
-            'jabatan_pekerjaan'     => trim((string) ($post['jabatan_pekerjaan'] ?? '')),
-            'nama_badan_usaha'      => trim((string) ($post['nama_badan_usaha'] ?? '')),
-            'alamat_badan_usaha'    => trim((string) ($post['alamat_badan_usaha'] ?? '')),
-            'paket_id'              => $paketId,
-            'nama_paket'            => trim((string) ($post['nama_paket'] ?? '')),
-            'lingkup_jasa'          => trim((string) ($post['lingkup_jasa'] ?? 'Manajemen Konstruksi')),
-            'lokasi_pekerjaan'      => trim((string) ($post['lokasi_pekerjaan'] ?? '')),
-            'nomor_kontrak'         => $nomorKontrak,
-            'tanggal_kontrak'       => $tanggalKontrak,
-            'nomor_tanggal_kontrak' => $nomorTanggalKontrak,
-            'nilai_kontrak'         => $formattedNilai,
-            'sumber_dana'           => trim((string) ($post['sumber_dana'] ?? '')),
-            'masa_penugasan_hari'   => $hari,
-            'masa_penugasan'        => $masaPenugasan,
-            'status_persen'         => $persen,
-            'status_pekerjaan'      => $statusPekerjaan,
-            'created_by'            => (string) (session()->get('username') ?? 'admin'),
+            'nomor_surat'               => trim((string) ($post['nomor_surat'] ?? '')),
+            'tanggal_surat'             => ! empty($post['tanggal_surat']) ? $post['tanggal_surat'] : date('Y-m-d'),
+            'kota_surat'                => trim((string) ($post['kota_surat'] ?? 'Pekanbaru')) ?: 'Pekanbaru',
+            'kop_surat_id'              => $kopSuratId,
+            'ppk_pegawai_id'            => $ppkPegawaiId,
+            'ppk_nama'                  => trim((string) ($post['ppk_nama'] ?? '')),
+            'ppk_nip'                   => trim((string) ($post['ppk_nip'] ?? '')),
+            'ppk_jabatan'               => trim((string) ($post['ppk_jabatan'] ?? '')),
+            'ppk_satker'                => trim((string) ($post['ppk_satker'] ?? '')),
+            'ppk_alamat'                => trim((string) ($post['ppk_alamat'] ?? '')),
+            'nama_tenaga_ahli'          => trim((string) ($post['nama_tenaga_ahli'] ?? '')),
+            'jabatan_pekerjaan'         => trim((string) ($post['jabatan_pekerjaan'] ?? '')),
+            'nama_badan_usaha'          => trim((string) ($post['nama_badan_usaha'] ?? '')),
+            'alamat_badan_usaha'        => trim((string) ($post['alamat_badan_usaha'] ?? '')),
+            'paket_id'                  => $paketId,
+            'nama_paket'                => trim((string) ($post['nama_paket'] ?? '')),
+            'lingkup_jasa'              => trim((string) ($post['lingkup_jasa'] ?? 'Manajemen Konstruksi')),
+            'lokasi_pekerjaan'          => trim((string) ($post['lokasi_pekerjaan'] ?? '')),
+            'nomor_kontrak'             => $nomorKontrak,
+            'tanggal_kontrak'           => $tanggalKontrak,
+            'nomor_tanggal_kontrak'     => $nomorTanggalKontrak,
+            'nilai_kontrak'             => $formattedNilai,
+            'sumber_dana'               => trim((string) ($post['sumber_dana'] ?? '')),
+            'tanggal_mulai_penugasan'   => $tglMulai,
+            'tanggal_selesai_penugasan' => $tglSelesai,
+            'masa_penugasan_hari'       => $hari,
+            'masa_penugasan'            => $masaPenugasan,
+            'status_persen'             => $persen,
+            'status_pekerjaan'          => $statusPekerjaan,
+            'created_by'                => (string) (session()->get('username') ?? 'admin'),
         ];
 
         $insertId = $this->surketModel->insert($insertData);
@@ -267,14 +287,16 @@ class SurketKinerjaTa extends BaseController
             'lokasi_pekerjaan'      => ['label' => 'Lokasi Pekerjaan', 'rules' => 'required'],
             'nomor_kontrak'         => ['label' => 'Nomor Kontrak', 'rules' => 'required'],
             'tanggal_kontrak'       => ['label' => 'Tanggal Kontrak', 'rules' => 'required|valid_date'],
-            'nilai_kontrak'         => ['label' => 'Nilai Kontrak', 'rules' => 'required'],
-            'sumber_dana'           => ['label' => 'Sumber Dana', 'rules' => 'required'],
-            'masa_penugasan_hari'   => ['label' => 'Masa Penugasan (Hari)', 'rules' => 'required|numeric|greater_than[0]'],
-            'status_persen'         => ['label' => 'Status Pekerjaan (%)', 'rules' => 'required|numeric|greater_than_equal_to[0]|less_than_equal_to[100]'],
-            'ppk_nama'              => ['label' => 'Nama PPK', 'rules' => 'required'],
-            'ppk_nip'               => ['label' => 'NIP PPK', 'rules' => 'required'],
-            'ppk_jabatan'           => ['label' => 'Jabatan PPK', 'rules' => 'required'],
-            'ppk_satker'            => ['label' => 'Satuan Kerja PPK', 'rules' => 'required'],
+            'nilai_kontrak'             => ['label' => 'Nilai Kontrak', 'rules' => 'required'],
+            'sumber_dana'               => ['label' => 'Sumber Dana', 'rules' => 'required'],
+            'tanggal_mulai_penugasan'   => ['label' => 'Tanggal Mulai Penugasan', 'rules' => 'required|valid_date'],
+            'tanggal_selesai_penugasan' => ['label' => 'Tanggal Selesai Penugasan', 'rules' => 'required|valid_date'],
+            'masa_penugasan_hari'       => ['label' => 'Total Hari Penugasan', 'rules' => 'required|numeric|greater_than[0]'],
+            'status_persen'             => ['label' => 'Status Pekerjaan (%)', 'rules' => 'required|numeric|greater_than_equal_to[0]|less_than_equal_to[100]'],
+            'ppk_nama'                  => ['label' => 'Nama PPK', 'rules' => 'required'],
+            'ppk_nip'                   => ['label' => 'NIP PPK', 'rules' => 'required'],
+            'ppk_jabatan'               => ['label' => 'Jabatan PPK', 'rules' => 'required'],
+            'ppk_satker'                => ['label' => 'Satuan Kerja PPK', 'rules' => 'required'],
         ];
 
         if (! $this->validate($rules)) {
@@ -297,9 +319,25 @@ class SurketKinerjaTa extends BaseController
         $rawNilai = preg_replace('/[^0-9]/', '', (string) ($post['nilai_kontrak'] ?? ''));
         $formattedNilai = $rawNilai !== '' ? 'Rp ' . number_format((float) $rawNilai, 0, ',', '.') . ',-' : trim((string) $post['nilai_kontrak']);
 
-        // Masa Penugasan Hari
+        // Masa Penugasan (Dari Tanggal s.d. Tanggal & Total Hari)
+        $tglMulai = ! empty($post['tanggal_mulai_penugasan']) ? $post['tanggal_mulai_penugasan'] : null;
+        $tglSelesai = ! empty($post['tanggal_selesai_penugasan']) ? $post['tanggal_selesai_penugasan'] : null;
         $hari = (int) ($post['masa_penugasan_hari'] ?? 0);
-        $masaPenugasan = $hari > 0 ? ($hari . ' Hari') : trim((string) ($post['masa_penugasan'] ?? ''));
+
+        if ($tglMulai && $tglSelesai) {
+            if ($hari <= 0) {
+                $diff = strtotime($tglSelesai) - strtotime($tglMulai);
+                $hari = max(1, (int) round($diff / 86400) + 1);
+            }
+            $strMulai = tanggal_indonesia($tglMulai);
+            $strSelesai = tanggal_indonesia($tglSelesai);
+            $hariStr = ($hari > 0) ? " ({$hari} Hari)" : '';
+            $masaPenugasan = "{$strMulai} s.d. {$strSelesai}{$hariStr}";
+        } elseif ($hari > 0) {
+            $masaPenugasan = "{$hari} Hari";
+        } else {
+            $masaPenugasan = trim((string) ($post['masa_penugasan'] ?? ''));
+        }
 
         // Status Pekerjaan (Jika 100% -> 'Selesai', selain itu angka %)
         $persen = (int) ($post['status_persen'] ?? 100);
@@ -313,34 +351,36 @@ class SurketKinerjaTa extends BaseController
             : $nomorKontrak;
 
         $updateData = [
-            'nomor_surat'           => trim((string) ($post['nomor_surat'] ?? '')),
-            'tanggal_surat'         => ! empty($post['tanggal_surat']) ? $post['tanggal_surat'] : date('Y-m-d'),
-            'kota_surat'            => trim((string) ($post['kota_surat'] ?? 'Pekanbaru')) ?: 'Pekanbaru',
-            'kop_surat_id'          => $kopSuratId,
-            'ppk_pegawai_id'        => $ppkPegawaiId,
-            'ppk_nama'              => trim((string) ($post['ppk_nama'] ?? '')),
-            'ppk_nip'               => trim((string) ($post['ppk_nip'] ?? '')),
-            'ppk_jabatan'           => trim((string) ($post['ppk_jabatan'] ?? '')),
-            'ppk_satker'            => trim((string) ($post['ppk_satker'] ?? '')),
-            'ppk_alamat'            => trim((string) ($post['ppk_alamat'] ?? '')),
-            'nama_tenaga_ahli'      => trim((string) ($post['nama_tenaga_ahli'] ?? '')),
-            'jabatan_pekerjaan'     => trim((string) ($post['jabatan_pekerjaan'] ?? '')),
-            'nama_badan_usaha'      => trim((string) ($post['nama_badan_usaha'] ?? '')),
-            'alamat_badan_usaha'    => trim((string) ($post['alamat_badan_usaha'] ?? '')),
-            'paket_id'              => $paketId,
-            'nama_paket'            => trim((string) ($post['nama_paket'] ?? '')),
-            'lingkup_jasa'          => trim((string) ($post['lingkup_jasa'] ?? 'Manajemen Konstruksi')),
-            'lokasi_pekerjaan'      => trim((string) ($post['lokasi_pekerjaan'] ?? '')),
-            'nomor_kontrak'         => $nomorKontrak,
-            'tanggal_kontrak'       => $tanggalKontrak,
-            'nomor_tanggal_kontrak' => $nomorTanggalKontrak,
-            'nilai_kontrak'         => $formattedNilai,
-            'sumber_dana'           => trim((string) ($post['sumber_dana'] ?? '')),
-            'masa_penugasan_hari'   => $hari,
-            'masa_penugasan'        => $masaPenugasan,
-            'status_persen'         => $persen,
-            'status_pekerjaan'      => $statusPekerjaan,
-            'updated_by'            => (string) (session()->get('username') ?? 'admin'),
+            'nomor_surat'               => trim((string) ($post['nomor_surat'] ?? '')),
+            'tanggal_surat'             => ! empty($post['tanggal_surat']) ? $post['tanggal_surat'] : date('Y-m-d'),
+            'kota_surat'                => trim((string) ($post['kota_surat'] ?? 'Pekanbaru')) ?: 'Pekanbaru',
+            'kop_surat_id'              => $kopSuratId,
+            'ppk_pegawai_id'            => $ppkPegawaiId,
+            'ppk_nama'                  => trim((string) ($post['ppk_nama'] ?? '')),
+            'ppk_nip'                   => trim((string) ($post['ppk_nip'] ?? '')),
+            'ppk_jabatan'               => trim((string) ($post['ppk_jabatan'] ?? '')),
+            'ppk_satker'                => trim((string) ($post['ppk_satker'] ?? '')),
+            'ppk_alamat'                => trim((string) ($post['ppk_alamat'] ?? '')),
+            'nama_tenaga_ahli'          => trim((string) ($post['nama_tenaga_ahli'] ?? '')),
+            'jabatan_pekerjaan'         => trim((string) ($post['jabatan_pekerjaan'] ?? '')),
+            'nama_badan_usaha'          => trim((string) ($post['nama_badan_usaha'] ?? '')),
+            'alamat_badan_usaha'        => trim((string) ($post['alamat_badan_usaha'] ?? '')),
+            'paket_id'                  => $paketId,
+            'nama_paket'                => trim((string) ($post['nama_paket'] ?? '')),
+            'lingkup_jasa'              => trim((string) ($post['lingkup_jasa'] ?? 'Manajemen Konstruksi')),
+            'lokasi_pekerjaan'          => trim((string) ($post['lokasi_pekerjaan'] ?? '')),
+            'nomor_kontrak'             => $nomorKontrak,
+            'tanggal_kontrak'           => $tanggalKontrak,
+            'nomor_tanggal_kontrak'     => $nomorTanggalKontrak,
+            'nilai_kontrak'             => $formattedNilai,
+            'sumber_dana'               => trim((string) ($post['sumber_dana'] ?? '')),
+            'tanggal_mulai_penugasan'   => $tglMulai,
+            'tanggal_selesai_penugasan' => $tglSelesai,
+            'masa_penugasan_hari'       => $hari,
+            'masa_penugasan'            => $masaPenugasan,
+            'status_persen'             => $persen,
+            'status_pekerjaan'          => $statusPekerjaan,
+            'updated_by'                => (string) (session()->get('username') ?? 'admin'),
         ];
 
         $this->surketModel->update($id, $updateData);

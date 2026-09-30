@@ -34,6 +34,8 @@ class SurketKinerjaTaModel extends Model
         'nomor_tanggal_kontrak',
         'nilai_kontrak',
         'sumber_dana',
+        'tanggal_mulai_penugasan',
+        'tanggal_selesai_penugasan',
         'masa_penugasan',
         'masa_penugasan_hari',
         'status_pekerjaan',
