@@ -148,7 +148,8 @@
 <!-- ============================================================ -->
 <div class="modal fade" id="modalFormSurket" tabindex="-1" role="dialog" aria-labelledby="modalFormSurketLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+        <form id="formSurket" autocomplete="off" class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            <input type="hidden" name="id" id="surket_id" value="">
             <div class="modal-header bg-primary text-white py-3">
                 <h5 class="modal-title font-weight-bold" id="modalFormSurketLabel">
                     <i class="fas fa-file-signature mr-2"></i>Form Surat Keterangan Kinerja Tenaga Ahli
@@ -157,9 +158,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="formSurket" autocomplete="off">
-                <input type="hidden" name="id" id="surket_id" value="">
-                <div class="modal-body p-4" style="background-color: #f8f9fa;">
+            <div class="modal-body p-4" style="background-color: #f8f9fa; max-height: calc(100vh - 200px); overflow-y: auto;">
                     
                     <!-- ALERT VALIDATION JS -->
                     <div id="formAlertContainer" class="d-none"></div>
@@ -386,8 +385,7 @@
                         <i class="fas fa-save mr-2"></i>Simpan Dokumen
                     </button>
                 </div>
-            </form>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -405,7 +403,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body p-4 bg-light">
+            <div class="modal-body p-4 bg-light" style="max-height: calc(100vh - 200px); overflow-y: auto;">
                 <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: 8px; font-family: Arial, sans-serif;">
                     <div class="text-center pb-2 mb-3 border-bottom">
                         <h6 class="font-weight-bold text-uppercase mb-0" style="letter-spacing: 0.5px;">SURAT KETERANGAN / REFERENSI KINERJA</h6>
