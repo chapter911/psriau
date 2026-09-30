@@ -613,6 +613,116 @@ class SurketKinerjaTa extends BaseController
     }
 
     /**
+     * Export Seluruh Dokumen PDF Sekaligus Berdasarkan Filter
+     */
+    public function exportPdf()
+    {
+        $permissions = $this->resolveMenuAksesPermissions('admin/kontrak/surket-kinerja-ta');
+        if (! ($permissions['export'] ?? false)) {
+            return redirect()->to(site_url('admin/kontrak/surket-kinerja-ta'))->with('error', 'Anda tidak memiliki hak akses untuk mengekspor PDF.');
+        }
+
+        $filterPaketId = trim((string) ($this->request->getGet('paket_id') ?? ''));
+        $filterLingkup = trim((string) ($this->request->getGet('lingkup_jasa') ?? ''));
+
+        $items = $this->surketModel->getList(
+            null,
+            ($filterPaketId !== '' && $filterPaketId !== '*') ? (int) $filterPaketId : null,
+            ($filterLingkup !== '' && $filterLingkup !== '*') ? $filterLingkup : null
+        );
+
+        if (empty($items)) {
+            return redirect()->to(site_url('admin/kontrak/surket-kinerja-ta'))->with('error', 'Tidak ada data Surat Keterangan Kinerja TA yang cocok dengan filter untuk diekspor.');
+        }
+
+        helper('custom');
+
+        $kopCache = [];
+        $records  = [];
+
+        foreach ($items as $row) {
+            $isFisik = (trim((string) ($row['lingkup_jasa'] ?? '')) === 'Fisik');
+            $teksPengantar = $isFisik 
+                ? 'telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:'
+                : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:';
+
+            $teksPenutup = $isFisik
+                ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi.'
+                : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.';
+
+            $kopSuratId = ! empty($row['kop_surat_id']) ? (int) $row['kop_surat_id'] : 0;
+            if (! isset($kopCache[$kopSuratId])) {
+                $kopLocalPath = null;
+                $kopUrl = $kopSuratId > 0 ? kop_surat_url($kopSuratId) : null;
+                if (! empty($kopUrl)) {
+                    $cleanUrl = ltrim($kopUrl, '/');
+                    if (preg_match('#^https?://[^/]+/(.*)$#i', $kopUrl, $m)) {
+                        $cleanUrl = ltrim($m[1], '/');
+                    }
+                    $candidate = FCPATH . str_replace('/', DIRECTORY_SEPARATOR, $cleanUrl);
+                    if (file_exists($candidate)) {
+                        $kopLocalPath = $candidate;
+                    }
+                }
+                if (! $kopLocalPath) {
+                    $fallback = FCPATH . 'uploads/kop_surat/kop_surket_ta.png';
+                    if (file_exists($fallback)) {
+                        $kopLocalPath = $fallback;
+                    }
+                }
+
+                $base64 = '';
+                if ($kopLocalPath && file_exists($kopLocalPath)) {
+                    $mime = mime_content_type($kopLocalPath) ?: 'image/png';
+                    $base64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($kopLocalPath));
+                }
+                $kopCache[$kopSuratId] = $base64;
+            }
+
+            $kota = ! empty($row['kota_surat']) ? $row['kota_surat'] : 'Pekanbaru';
+            $tglStr = ! empty($row['tanggal_surat']) ? tanggal_indonesia($row['tanggal_surat']) : tanggal_indonesia(date('Y-m-d'));
+
+            $records[] = [
+                'row'           => $row,
+                'kopBase64'     => $kopCache[$kopSuratId],
+                'teksPengantar' => $teksPengantar,
+                'teksPenutup'   => $teksPenutup,
+                'kota'          => $kota,
+                'tglStr'        => $tglStr,
+            ];
+        }
+
+        $html = view('admin/kontrak/surket_kinerja_ta/export_all_pdf', [
+            'records'       => $records,
+            'filterPaketId' => $filterPaketId,
+            'filterLingkup' => $filterLingkup,
+        ]);
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filenameSuffix = '';
+        if (! empty($filterPaketId)) {
+            $filenameSuffix .= '_Paket' . $filterPaketId;
+        }
+        if (! empty($filterLingkup)) {
+            $filenameSuffix .= '_' . preg_replace('/[^A-Za-z0-9]/', '', $filterLingkup);
+        }
+        $filename = 'Surket_Kinerja_TA_Konsolidasi' . $filenameSuffix . '_' . date('Ymd_His') . '.pdf';
+
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->setBody($dompdf->output());
+    }
+
+    /**
      * Proses template DOCX dengan keamanan karakter XML & Penggantian Kop Surat Dinamis
      */
     private function renderDocxFromTemplate(string $templateFile, array $replacements, ?string $kopImagePath = null): ?string

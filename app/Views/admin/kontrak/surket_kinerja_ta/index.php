@@ -13,7 +13,21 @@
                     Pengelolaan dan penerbitan berkas resmi Surat Keterangan / Referensi Kinerja Tenaga Ahli Konsultansi Konstruksi
                 </small>
             </div>
-            <div class="mt-2 mt-md-0">
+            <div class="mt-2 mt-md-0 d-flex flex-wrap align-items-center" style="gap: 10px;">
+                <?php 
+                    $exportUrl = site_url('admin/kontrak/surket-kinerja-ta/export-pdf') . (! empty($filterPaketId) || ! empty($filterLingkup) ? '?' . http_build_query(array_filter(['paket_id' => $filterPaketId, 'lingkup_jasa' => $filterLingkup])) : '');
+                ?>
+                <?php if ($permissions['export'] ?? false): ?>
+                    <a href="<?= $exportUrl; ?>" 
+                       target="_blank" 
+                       class="btn btn-danger font-weight-bold shadow-sm px-3 py-2" 
+                       style="border-radius: 8px;"
+                       id="btnExportSemuaPdf"
+                       title="Export Seluruh Berkas PDF Sekaligus Berdasarkan Filter">
+                        <i class="fas fa-file-pdf mr-2"></i>Export Semua PDF (<?= count($surketList); ?>)
+                    </a>
+                <?php endif; ?>
+
                 <?php if ($permissions['add'] ?? false): ?>
                     <button type="button" class="btn btn-primary font-weight-bold shadow-sm px-3 py-2" id="btnTambahSurket" style="border-radius: 8px;">
                         <i class="fas fa-plus-circle mr-2"></i>Buat Surket Kinerja TA Baru
@@ -90,9 +104,20 @@
                 <?php endif; ?>
                 <span class="text-muted ml-1">(Ditemukan <strong><?= count($surketList); ?></strong> data)</span>
             </div>
-            <a href="<?= site_url('admin/kontrak/surket-kinerja-ta'); ?>" class="btn btn-sm btn-outline-danger py-0 px-2 font-weight-bold my-1" style="font-size: 0.8rem; border-radius: 6px;">
-                <i class="fas fa-times mr-1"></i> Hapus Filter
-            </a>
+            <div class="d-flex align-items-center my-1" style="gap: 8px;">
+                <?php if ($permissions['export'] ?? false): ?>
+                    <a href="<?= $exportUrl; ?>" 
+                       target="_blank" 
+                       class="btn btn-sm btn-outline-danger font-weight-bold" 
+                       style="border-radius: 6px;"
+                       title="Cetak Seluruh <?= count($surketList); ?> Berkas PDF Hasil Filter">
+                        <i class="fas fa-file-pdf mr-1"></i> Cetak Hasil Filter (<?= count($surketList); ?>)
+                    </a>
+                <?php endif; ?>
+                <a href="<?= site_url('admin/kontrak/surket-kinerja-ta'); ?>" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.85rem; border-radius: 6px;">
+                    <i class="fas fa-times mr-1"></i> Hapus Filter
+                </a>
+            </div>
         </div>
     <?php endif; ?>
 
@@ -681,7 +706,7 @@ $(document).ready(function () {
     const tableSurket = $('#tableSurket').DataTable({
         responsive: true,
         ordering: true,
-        order: [[0, 'asc']],
+        order: [],
         columnDefs: [
             { orderable: false, targets: [5] }
         ],

@@ -79,7 +79,11 @@ class SurketKinerjaTaModel extends Model
             $builder->where('trn_surket_kinerja_ta.lingkup_jasa', trim($lingkupJasa));
         }
 
-        $builder->orderBy('trn_surket_kinerja_ta.id', 'DESC');
+        // Urutkan berdasarkan: 1. Paket, 2. Lingkup Jasa, 3. Nama Tenaga Ahli
+        $builder->orderBy("CASE WHEN trn_surket_kinerja_ta.paket_id IS NULL OR trn_surket_kinerja_ta.paket_id = 0 THEN 9999 ELSE trn_surket_kinerja_ta.paket_id END", 'ASC', false);
+        $builder->orderBy('trn_surket_kinerja_ta.nama_paket', 'ASC');
+        $builder->orderBy('trn_surket_kinerja_ta.lingkup_jasa', 'ASC');
+        $builder->orderBy('trn_surket_kinerja_ta.nama_tenaga_ahli', 'ASC');
 
         return $builder->get()->getResultArray();
     }

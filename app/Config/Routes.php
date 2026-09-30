@@ -160,6 +160,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	// SURKET KINERJA TA Routes
 	$routes->get('kontrak/surket-kinerja-ta', 'Admin\\SurketKinerjaTa::index');
 	$routes->get('kontrak/surket-kinerja-ta/data', 'Admin\\SurketKinerjaTa::data');
+	$routes->get('kontrak/surket-kinerja-ta/export-pdf', 'Admin\\SurketKinerjaTa::exportPdf');
 	$routes->post('kontrak/surket-kinerja-ta/simpan', 'Admin\\SurketKinerjaTa::simpan');
 	$routes->get('kontrak/surket-kinerja-ta/(:num)/detail', 'Admin\\SurketKinerjaTa::detail/$1');
 	$routes->post('kontrak/surket-kinerja-ta/(:num)/ubah', 'Admin\\SurketKinerjaTa::ubah/$1');

@@ -606,8 +606,9 @@ graph TD
                 <pre class="mermaid">
 graph TD
     A["Buka Menu: Kontrak > SURKET KINERJA TA (/admin/kontrak/surket-kinerja-ta)"] --> FL["Filter Data: Dropdown Paket &amp; Lingkup Jasa (Terapkan / Reset)"]
-    FL --> TBL["Daftar Data Tersaring pada Tabel"]
-    A --> B1["Klik 'Buat Surket Kinerja TA Baru' (Form Baru)"]
+    FL --> TBL["Daftar Data Tersaring (Terurut: Paket > Lingkup Jasa > Nama Tenaga Ahli)"]
+    TBL --> EXP["Export Semua PDF Sekaligus (Konsolidasi Multi-Halaman Sesuai Filter)"]
+    A --> B1["Klik 'Buat Surket Kinerja TA Baru' di Pojok Kanan (Form Baru)"]
     A --> B2["Klik Ikon 'Duplikat' di Tabel atau Modal Pratinjau (Salin Data Eksisting)"]
     B1 --> C["Isi / Sesuaikan Data Tenaga Ahli &amp; Badan Usaha"]
     B2 --> C
@@ -616,7 +617,7 @@ graph TD
     E --> F["Validasi Form &amp; Simpan Dokumen (Insert Data Baru)"]
     F --> G["Data Tersimpan di Database (Teks Pengantar &amp; Penutup Otomatis)"]
     G --> H1["Unduh Word (.docx) Format Presisi, Indentasi Masuk &amp; Pas Tepat 1 Halaman"]
-    G --> H2["Cetak / Pratinjau PDF Resmi (Tata Letak Presisi Pas Tepat 1 Halaman)"]
+    G --> H2["Cetak / Pratinjau PDF Satuan (Tata Letak Presisi Pas Tepat 1 Halaman)"]
     G --> H3["Pratinjau Detail Modal, Duplikat Data, Ubah, atau Hapus"]
     H3 -.-> B2
     TBL -.-> H3
@@ -1160,14 +1161,21 @@ graph TD
                         <p class="small text-muted mb-2"><code>/admin/kontrak/surket-kinerja-ta</code></p>
                         <ol class="pl-3 small mb-0">
                             <li><strong>Akses Menu:</strong> Buka menu samping <strong>Kontrak &gt; SURKET KINERJA TA</strong>.</li>
-                            <li><strong>Filter Data (Paket &amp; Lingkup Jasa):</strong> Di bagian atas tabel disediakan filter untuk menyaring data dengan cepat:
+                            <li><strong>Filter &amp; Pengurutan Data (Paket, Lingkup Jasa &amp; Nama Tenaga Ahli):</strong>
                                 <ul>
+                                    <li><strong>Urutan Data Otomatis:</strong> Daftar data dalam tabel secara default terurut rapi bertingkat berdasarkan: <strong>1. Paket Pekerjaan</strong>, kemudian <strong>2. Lingkup Jasa</strong> (Fisik / Manajemen Konstruksi), lalu <strong>3. Nama Tenaga Ahli</strong> secara alfabetis (A-Z).</li>
                                     <li><strong>Filter Paket:</strong> Menyaring berdasarkan paket pekerjaan yang dipilih (misal: <em>Riau 2</em>, <em>Riau 3</em>, dst.).</li>
                                     <li><strong>Filter Lingkup Jasa:</strong> Menyaring berdasarkan lingkup penugasan (<em>Manajemen Konstruksi</em> atau <em>Fisik</em>).</li>
                                     <li><strong>Interaksi Cepat:</strong> Tabel otomatis memfilter saat opsi dropdown dipilih, atau dengan menekan tombol <strong>"Terapkan"</strong>. Untuk mengembalikan ke seluruh data, klik tombol <strong>"Reset"</strong> atau tombol <strong>"Hapus Filter"</strong> pada notifikasi filter aktif.</li>
                                 </ul>
                             </li>
-                            <li><strong>Buat Dokumen Baru:</strong> Klik tombol biru <strong>"Buat Surket Kinerja TA Baru"</strong> di sudut kanan atas halaman.</li>
+                            <li><strong>Export PDF Sekaligus (Konsolidasi Sesuai Filter):</strong>
+                                <ul>
+                                    <li>Pengguna dapat mengunduh seluruh berkas surat keterangan yang sedang ditampilkan sekaligus melalui tombol merah <strong>"Export Semua PDF"</strong> di header atas atau <strong>"Cetak Hasil Filter"</strong> pada banner filter aktif.</li>
+                                    <li>Sistem menyatukan seluruh berkas ke dalam 1 dokumen PDF konsolidasi di mana setiap surat keterangan tetap tampil presisi dalam <strong>tepat 1 halaman per lembar</strong>.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Buat Dokumen Baru:</strong> Klik tombol biru <strong>"Buat Surket Kinerja TA Baru"</strong> yang terletak di <strong>pojok kanan atas</strong> halaman.</li>
                             <li><strong>Bagian 1 - Identitas Tenaga Ahli &amp; Badan Usaha:</strong>
                                 <ul>
                                     <li>Isi <strong>Nama Tenaga Ahli</strong> lengkap beserta gelar akademis/profesi.</li>
