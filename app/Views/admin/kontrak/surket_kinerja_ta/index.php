@@ -36,17 +36,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (empty($surketList)): ?>
-                            <tr>
-                                <td colspan="7" class="text-center py-5 text-muted">
-                                    <i class="fas fa-folder-open fa-3x mb-3 text-secondary d-block" style="opacity: 0.4;"></i>
-                                    Belum ada data Surat Keterangan Kinerja Tenaga Ahli.<br>
-                                    <?php if ($permissions['add'] ?? false): ?>
-                                        Silakan klik tombol <strong>"Buat Surket Kinerja TA Baru"</strong> untuk menambahkan data.
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php else: ?>
+                        <?php if (! empty($surketList)): ?>
                             <?php $no = 1; foreach ($surketList as $item): ?>
                                 <tr>
                                     <td class="text-center font-weight-bold text-muted"><?= $no++; ?></td>
@@ -564,12 +554,16 @@ $(document).ready(function () {
         responsive: true,
         ordering: true,
         order: [[0, 'asc']],
+        columnDefs: [
+            { orderable: false, targets: [6] }
+        ],
         language: {
             search: "Cari:",
             lengthMenu: "Tampilkan _MENU_ data per halaman",
-            zeroRecords: "Tidak ada data yang ditemukan",
-            info: "Menampilkan halaman _PAGE_ dari _PAGES_",
-            infoEmpty: "Tidak ada data tersedia",
+            zeroRecords: "Tidak ada data yang cocok dengan pencarian",
+            emptyTable: "Belum ada data Surat Keterangan Kinerja Tenaga Ahli",
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
             infoFiltered: "(disaring dari _MAX_ total data)",
             paginate: {
                 first: "Pertama",
