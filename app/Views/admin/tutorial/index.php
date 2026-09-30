@@ -605,17 +605,18 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A["Buka Menu: Kontrak > SURKET KINERJA TA (/admin/kontrak/surket-kinerja-ta)"] --> B["Klik 'Buat Surket Kinerja TA Baru'"]
-    B --> C["1. Isi Data Tenaga Ahli &amp; Badan Usaha (Nama TA, Jabatan, Nama PT/CV, Alamat)"]
-    B --> D["2. Tentukan Pejabat PPK (Default Nurhidayat Nugroho / Pilih Pegawai) &amp; Nomor Surat"]
-    B --> E["3. Isi Data Paket &amp; Kontrak (Dropdown Lingkup: MK/Fisik, No &amp; Tgl Kontrak Terpisah, Nilai Rp, Masa dlm Hari, Status dlm % / Selesai)"]
-    C --> F["Validasi Form &amp; Simpan ke Sistem"]
-    D --> F
-    E --> F
-    F --> G["Data Tersimpan di Database &amp; Ditampilkan di Tabel"]
-    G --> H1["Unduh Dokumen Word (.docx) Format Resmi Template"]
-    G --> H2["Cetak / Pratinjau Dokumen PDF Resmi"]
-    G --> H3["Pratinjau Detail Modal, Ubah Data, atau Hapus"]
+    A["Buka Menu: Kontrak > SURKET KINERJA TA (/admin/kontrak/surket-kinerja-ta)"] --> B1["Klik 'Buat Surket Kinerja TA Baru' (Form Baru)"]
+    A --> B2["Klik Ikon 'Duplikat' di Tabel atau Modal Pratinjau (Salin Data Eksisting)"]
+    B1 --> C["Isi / Sesuaikan Data Tenaga Ahli &amp; Badan Usaha"]
+    B2 --> C
+    C --> D["Pilih Kop Surat Resmi (Default: Kop Aktif) &amp; Tentukan Pejabat PPK"]
+    D --> E["Isi / Sesuaikan Paket &amp; Kontrak (Dropdown Lingkup: Fisik / Manajemen Konstruksi, No/Tgl Kontrak, Nilai Rp, Masa Hari, Status %)"]
+    E --> F["Validasi Form &amp; Simpan Dokumen (Insert Data Baru)"]
+    F --> G["Data Tersimpan di Database (Teks Pengantar &amp; Penutup Otomatis)"]
+    G --> H1["Unduh Word (.docx) Format Presisi &amp; Indentasi Masuk Sesuai Standar"]
+    G --> H2["Cetak / Pratinjau PDF Resmi"]
+    G --> H3["Pratinjau Detail Modal, Duplikat Data, Ubah, atau Hapus"]
+    H3 -.-> B2
                 </pre>
             </div>
         </div>
@@ -1165,8 +1166,9 @@ graph TD
                                     <li>Isi <strong>Alamat Badan Usaha</strong> secara lengkap.</li>
                                 </ul>
                             </li>
-                            <li><strong>Bagian 2 - Nomor Surat &amp; Pejabat Penandatangan (PPK):</strong>
+                            <li><strong>Bagian 2 - Nomor Surat, Kop Surat &amp; Pejabat Penandatangan (PPK):</strong>
                                 <ul>
+                                    <li><strong>Kop Surat Resmi:</strong> Dapat dipilih dari master Kop Surat instansi, secara default otomatis memilih kop surat yang berstatus aktif. Kop ini akan diterapkan baik pada pratinjau, cetak PDF, maupun unduhan Word (.docx).</li>
                                     <li>Nomor Surat ter-prefill dan dapat diisi sesuai agenda penomoran resmi kantor.</li>
                                     <li>Tanggal Surat otomatis menggunakan tanggal hari ini (dapat disesuaikan jika surat diterbitkan tanggal lain).</li>
                                     <li>Pihak Penandatangan (PPK) otomatis ter-default atas nama <strong>Nurhidayat Nugroho, S.Ars (NIP. 199012212018021001)</strong> sebagai PPK Pelaksanaan Prasarana Strategis Riau, dan dapat dipilih dari daftar Master Pegawai jika diperlukan pergantian pejabat.</li>
@@ -1175,22 +1177,34 @@ graph TD
                             <li><strong>Bagian 3 - Paket Pekerjaan &amp; Penugasan Kontrak:</strong>
                                 <ul>
                                     <li>Pilih dari dropdown <strong>Master Paket</strong> untuk pengisian cepat otomatis nama paket, atau pilih <em>Ketik Nama Paket Manual</em> jika paket belum terdaftar.</li>
-                                    <li>Pilih <strong>Lingkup Jasa</strong> melalui dropdown: <em>Manajemen Konstruksi</em> atau <em>Fisik</em>.</li>
+                                    <li>Pilih <strong>Lingkup Jasa</strong> melalui dropdown:
+                                        <ul>
+                                            <li><strong>Fisik:</strong> Teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:"</em> dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi."</em></li>
+                                            <li><strong>Manajemen Konstruksi:</strong> Teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:"</em> dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi."</em></li>
+                                        </ul>
+                                    </li>
                                     <li>Isi <strong>Lokasi Pekerjaan</strong>.</li>
                                     <li>Isi <strong>Nomor Kontrak</strong> dan <strong>Tanggal Kontrak</strong> secara terpisah (format tanggal otomatis dirangkai dengan penanggalan resmi Indonesia).</li>
                                     <li>Isi <strong>Nilai Kontrak</strong> (termasuk addendum bila ada) berupa angka (format mata uang Rupiah <code>Rp X.XXX.XXX,-</code> otomatis terbentuk).</li>
                                     <li>Isi <strong>Sumber Dana</strong> (default: <em>APBN DIPA Satker Pelaksanaan Prasarana Strategis Riau</em>).</li>
                                     <li>Isi <strong>Masa Penugasan Tenaga Ahli</strong> berupa angka jumlah hari (contoh: <code>180</code> Hari).</li>
                                     <li>Isi <strong>Status Pekerjaan</strong> dalam angka persen (0-100%). Jika diisi <code>100%</code> maka pada surat keterangan akan otomatis tercetak teks <strong>"Selesai"</strong> (jika di bawah 100% akan tercetak persentasenya).</li>
-                                    <li>Pilih <strong>Penilaian Keseluruhan</strong> (<em>Sangat Baik</em>, <em>Baik</em>, <em>Cukup</em>, atau <em>Kurang</em>).</li>
+                                    <li><em>(Catatan: Bagian Penilaian Keseluruhan telah dihilangkan sesuai ketentuan format resmi).</em></li>
                                 </ul>
                             </li>
-                            <li><strong>Simpan Data:</strong> Klik tombol <strong>"Simpan Dokumen"</strong>. Sistem memvalidasi kelengkapan form dan menyimpan berkas tanpa notifikasi ganda.</li>
+                            <li><strong>Fitur Duplikat / Salin Data (Quick Duplicate):</strong>
+                                <ul>
+                                    <li>Untuk menerbitkan surat baru menggunakan data yang sudah pernah diinput sebelumnya (misal paket sama namun tenaga ahli beda, atau perpanjangan penugasan), klik tombol hijau <strong>Duplikat</strong> (<i class="fas fa-copy text-success"></i>) pada tabel data atau tombol <strong>Duplikat Data</strong> di dalam modal Pratinjau.</li>
+                                    <li>Seluruh data otomatis tersalin ke form modal dan judul form berganti menjadi <em>"Duplikat Surket Kinerja TA (Data Baru)"</em>.</li>
+                                    <li>Pengguna hanya perlu menyesuaikan data yang ingin diubah (misal nama tenaga ahli atau nomor surat) kemudian klik <strong>"Simpan Sebagai Data Baru"</strong>. Sistem akan menyimpannya sebagai rekaman data baru tanpa menimpa data aslinya.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Simpan Data:</strong> Klik tombol <strong>"Simpan Dokumen"</strong> (atau <strong>"Simpan Sebagai Data Baru"</strong> saat duplikasi). Sistem memvalidasi kelengkapan form dan menyimpan berkas tanpa notifikasi ganda.</li>
                             <li><strong>Unduh &amp; Cetak Dokumen Resmi:</strong>
                                 <ul>
-                                    <li><i class="fas fa-file-word text-primary mr-1"></i><strong>Unduh Word (.docx):</strong> Menghasilkan berkas Word yang 100% presisi dan identik dengan template resmi Satker PPS (termasuk Kop Surat, format tabel, font Arial, dan garis penandatangan).</li>
-                                    <li><i class="fas fa-file-pdf text-danger mr-1"></i><strong>Cetak PDF (.pdf):</strong> Membuka pratinjau dokumen PDF resmi beresolusi tinggi siap cetak langsung di peramban.</li>
-                                    <li><i class="fas fa-eye text-info mr-1"></i><strong>Pratinjau (Preview Modal):</strong> Menampilkan ringkasan surat langsung di halaman tanpa harus mengunduh file terlebih dahulu.</li>
+                                    <li><i class="fas fa-file-word text-primary mr-1"></i><strong>Unduh Word (.docx):</strong> Menghasilkan berkas Word yang 100% presisi dan identik dengan template resmi Satker PPS (termasuk pergantian Kop Surat dinamis dari master, format tabel dengan indentasi masuk ke dalam yang rapi, teks dinamis berdasarkan lingkup jasa, dan blok tanda tangan PPK).</li>
+                                    <li><i class="fas fa-file-pdf text-danger mr-1"></i><strong>Cetak PDF (.pdf):</strong> Membuka pratinjau dokumen PDF resmi beresolusi tinggi siap cetak langsung di peramban dengan layout tabel yang masuk ke dalam (indented) dan teks dinamis yang sesuai.</li>
+                                    <li><i class="fas fa-eye text-info mr-1"></i><strong>Pratinjau (Preview Modal):</strong> Menampilkan ringkasan surat langsung di halaman tanpa harus mengunduh file terlebih dahulu, serta dilengkapi tombol cepat <strong>Duplikat Data</strong>, <strong>Unduh Word</strong>, dan <strong>Cetak PDF</strong>.</li>
                                 </ul>
                             </li>
                         </ol>

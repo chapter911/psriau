@@ -43,12 +43,41 @@ class SurketKinerjaTa extends BaseController
             }
         }
 
+        // Master Kop Surat
+        $db = \Config\Database::connect();
+        $kopSuratList = [];
+        $defaultKop = null;
+        try {
+            if ($db->tableExists('kop_surat')) {
+                $kopSuratList = $db->table('kop_surat')
+                    ->select('id, title, image_url, is_active')
+                    ->orderBy('is_active', 'DESC')
+                    ->orderBy('id', 'DESC')
+                    ->get()
+                    ->getResultArray();
+
+                foreach ($kopSuratList as $k) {
+                    if (! empty($k['is_active'])) {
+                        $defaultKop = $k;
+                        break;
+                    }
+                }
+                if (! $defaultKop && ! empty($kopSuratList)) {
+                    $defaultKop = $kopSuratList[0];
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fallback empty
+        }
+
         return view('admin/kontrak/surket_kinerja_ta/index', [
             'title'        => 'Surat Keterangan Kinerja Tenaga Ahli',
             'surketList'   => $surketList,
             'paketList'    => $paketList,
             'pegawaiList'  => $pegawaiList,
             'defaultPpk'   => $defaultPpk,
+            'kopSuratList' => $kopSuratList,
+            'defaultKop'   => $defaultKop,
             'permissions'  => $permissions,
         ]);
     }
@@ -93,7 +122,6 @@ class SurketKinerjaTa extends BaseController
             'sumber_dana'           => ['label' => 'Sumber Dana', 'rules' => 'required'],
             'masa_penugasan_hari'   => ['label' => 'Masa Penugasan (Hari)', 'rules' => 'required|numeric|greater_than[0]'],
             'status_persen'         => ['label' => 'Status Pekerjaan (%)', 'rules' => 'required|numeric|greater_than_equal_to[0]|less_than_equal_to[100]'],
-            'penilaian_keseluruhan' => ['label' => 'Penilaian Keseluruhan', 'rules' => 'required'],
             'ppk_nama'              => ['label' => 'Nama PPK', 'rules' => 'required'],
             'ppk_nip'               => ['label' => 'NIP PPK', 'rules' => 'required'],
             'ppk_jabatan'           => ['label' => 'Jabatan PPK', 'rules' => 'required'],
@@ -114,6 +142,7 @@ class SurketKinerjaTa extends BaseController
 
         $paketId = ! empty($post['paket_id']) ? (int) $post['paket_id'] : null;
         $ppkPegawaiId = ! empty($post['ppk_pegawai_id']) ? (int) $post['ppk_pegawai_id'] : null;
+        $kopSuratId = ! empty($post['kop_surat_id']) ? (int) $post['kop_surat_id'] : null;
 
         // Format Nilai Kontrak Rupiah
         $rawNilai = preg_replace('/[^0-9]/', '', (string) ($post['nilai_kontrak'] ?? ''));
@@ -138,6 +167,7 @@ class SurketKinerjaTa extends BaseController
             'nomor_surat'           => trim((string) ($post['nomor_surat'] ?? '')),
             'tanggal_surat'         => ! empty($post['tanggal_surat']) ? $post['tanggal_surat'] : date('Y-m-d'),
             'kota_surat'            => trim((string) ($post['kota_surat'] ?? 'Pekanbaru')) ?: 'Pekanbaru',
+            'kop_surat_id'          => $kopSuratId,
             'ppk_pegawai_id'        => $ppkPegawaiId,
             'ppk_nama'              => trim((string) ($post['ppk_nama'] ?? '')),
             'ppk_nip'               => trim((string) ($post['ppk_nip'] ?? '')),
@@ -161,7 +191,6 @@ class SurketKinerjaTa extends BaseController
             'masa_penugasan'        => $masaPenugasan,
             'status_persen'         => $persen,
             'status_pekerjaan'      => $statusPekerjaan,
-            'penilaian_keseluruhan' => trim((string) ($post['penilaian_keseluruhan'] ?? 'Sangat Baik')),
             'created_by'            => (string) (session()->get('username') ?? 'admin'),
         ];
 
@@ -192,6 +221,14 @@ class SurketKinerjaTa extends BaseController
                 'message' => 'Data Surat Keterangan Kinerja TA tidak ditemukan.',
             ]);
         }
+
+        $isFisik = (trim((string) ($row['lingkup_jasa'] ?? '')) === 'Fisik');
+        $row['teks_pengantar'] = $isFisik 
+            ? 'telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:'
+            : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:';
+        $row['teks_penutup'] = $isFisik
+            ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi.'
+            : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.';
 
         return $this->response->setJSON([
             'success' => true,
@@ -234,7 +271,6 @@ class SurketKinerjaTa extends BaseController
             'sumber_dana'           => ['label' => 'Sumber Dana', 'rules' => 'required'],
             'masa_penugasan_hari'   => ['label' => 'Masa Penugasan (Hari)', 'rules' => 'required|numeric|greater_than[0]'],
             'status_persen'         => ['label' => 'Status Pekerjaan (%)', 'rules' => 'required|numeric|greater_than_equal_to[0]|less_than_equal_to[100]'],
-            'penilaian_keseluruhan' => ['label' => 'Penilaian Keseluruhan', 'rules' => 'required'],
             'ppk_nama'              => ['label' => 'Nama PPK', 'rules' => 'required'],
             'ppk_nip'               => ['label' => 'NIP PPK', 'rules' => 'required'],
             'ppk_jabatan'           => ['label' => 'Jabatan PPK', 'rules' => 'required'],
@@ -255,6 +291,7 @@ class SurketKinerjaTa extends BaseController
 
         $paketId = ! empty($post['paket_id']) ? (int) $post['paket_id'] : null;
         $ppkPegawaiId = ! empty($post['ppk_pegawai_id']) ? (int) $post['ppk_pegawai_id'] : null;
+        $kopSuratId = ! empty($post['kop_surat_id']) ? (int) $post['kop_surat_id'] : null;
 
         // Format Nilai Kontrak Rupiah
         $rawNilai = preg_replace('/[^0-9]/', '', (string) ($post['nilai_kontrak'] ?? ''));
@@ -279,6 +316,7 @@ class SurketKinerjaTa extends BaseController
             'nomor_surat'           => trim((string) ($post['nomor_surat'] ?? '')),
             'tanggal_surat'         => ! empty($post['tanggal_surat']) ? $post['tanggal_surat'] : date('Y-m-d'),
             'kota_surat'            => trim((string) ($post['kota_surat'] ?? 'Pekanbaru')) ?: 'Pekanbaru',
+            'kop_surat_id'          => $kopSuratId,
             'ppk_pegawai_id'        => $ppkPegawaiId,
             'ppk_nama'              => trim((string) ($post['ppk_nama'] ?? '')),
             'ppk_nip'               => trim((string) ($post['ppk_nip'] ?? '')),
@@ -302,7 +340,6 @@ class SurketKinerjaTa extends BaseController
             'masa_penugasan'        => $masaPenugasan,
             'status_persen'         => $persen,
             'status_pekerjaan'      => $statusPekerjaan,
-            'penilaian_keseluruhan' => trim((string) ($post['penilaian_keseluruhan'] ?? 'Sangat Baik')),
             'updated_by'            => (string) (session()->get('username') ?? 'admin'),
         ];
 
@@ -365,6 +402,15 @@ class SurketKinerjaTa extends BaseController
 
         helper('custom');
 
+        $isFisik = (trim((string) ($row['lingkup_jasa'] ?? '')) === 'Fisik');
+        $teksPengantar = $isFisik 
+            ? 'telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:'
+            : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:';
+
+        $teksPenutup = $isFisik
+            ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi.'
+            : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.';
+
         $tglSuratStr = ! empty($row['tanggal_surat']) ? tanggal_indonesia($row['tanggal_surat']) : tanggal_indonesia(date('Y-m-d'));
         $kotaSurat   = ! empty($row['kota_surat']) ? $row['kota_surat'] : 'Pekanbaru';
         $kotaTanggal = $kotaSurat . ', ' . $tglSuratStr;
@@ -379,6 +425,7 @@ class SurketKinerjaTa extends BaseController
             'jabatan_pekerjaan'         => $row['jabatan_pekerjaan'] ?: '-',
             'nama_badan_usaha'          => $row['nama_badan_usaha'] ?: '-',
             'alamat_badan_usaha'        => $row['alamat_badan_usaha'] ?: '-',
+            'teks_pengantar_pekerjaan'  => $teksPengantar,
             'nama_paket'                => $row['nama_paket'] ?: '-',
             'lingkup_jasa'              => $row['lingkup_jasa'] ?: 'Manajemen Konstruksi',
             'lokasi_pekerjaan'          => $row['lokasi_pekerjaan'] ?: '-',
@@ -386,8 +433,8 @@ class SurketKinerjaTa extends BaseController
             'nilai_kontrak'             => $row['nilai_kontrak'] ?: 'Rp .',
             'sumber_dana'               => $row['sumber_dana'] ?: 'APBN DIPA Satker Pelaksanaan Prasarana Strategis Riau',
             'masa_penugasan'            => $row['masa_penugasan'] ?: '-',
-            'status_pekerjaan'          => $row['status_pekerjaan'] ?: 'selesai 100%',
-            'penilaian_keseluruhan'     => $row['penilaian_keseluruhan'] ?: 'Sangat Baik',
+            'status_pekerjaan'          => $row['status_pekerjaan'] ?: 'Selesai',
+            'teks_penutup_surat'        => $teksPenutup,
             'kota_tanggal_surat'        => $kotaTanggal,
             'ppk_tanda_tangan_jabatan1' => ($row['ppk_jabatan'] ?: 'PPK Pelaksanaan Prasarana Strategis') . ',',
             'ppk_tanda_tangan_jabatan2' => $row['ppk_satker'] ?: 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau',
@@ -395,7 +442,28 @@ class SurketKinerjaTa extends BaseController
             'ppk_tanda_tangan_nip'      => $row['ppk_nip'] ?: '199012212018021001',
         ];
 
-        $docxBinary = $this->renderDocxFromTemplate($templateFile, $replacements);
+        // Resolusi berkas kop surat
+        $kopLocalPath = null;
+        $kopSuratId = ! empty($row['kop_surat_id']) ? (int) $row['kop_surat_id'] : null;
+        $kopUrl = kop_surat_url($kopSuratId);
+        if (! empty($kopUrl)) {
+            $cleanUrl = ltrim($kopUrl, '/');
+            if (preg_match('#^https?://[^/]+/(.*)$#i', $kopUrl, $m)) {
+                $cleanUrl = ltrim($m[1], '/');
+            }
+            $candidate = FCPATH . str_replace('/', DIRECTORY_SEPARATOR, $cleanUrl);
+            if (file_exists($candidate)) {
+                $kopLocalPath = $candidate;
+            }
+        }
+        if (! $kopLocalPath) {
+            $fallback = FCPATH . 'uploads/kop_surat/kop_surket_ta.png';
+            if (file_exists($fallback)) {
+                $kopLocalPath = $fallback;
+            }
+        }
+
+        $docxBinary = $this->renderDocxFromTemplate($templateFile, $replacements, $kopLocalPath);
         if (! $docxBinary) {
             return redirect()->to(site_url('admin/kontrak/surket-kinerja-ta'))->with('error', 'Gagal memproses dokumen Word.');
         }
@@ -427,16 +495,47 @@ class SurketKinerjaTa extends BaseController
 
         helper('custom');
 
-        // Siapkan logo kop surat dalam base64 data URI
-        $kopPath = FCPATH . 'uploads/kop_surat/kop_surket_ta.png';
+        $isFisik = (trim((string) ($row['lingkup_jasa'] ?? '')) === 'Fisik');
+        $teksPengantar = $isFisik 
+            ? 'telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:'
+            : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:';
+
+        $teksPenutup = $isFisik
+            ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi.'
+            : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.';
+
+        // Resolusi berkas kop surat untuk PDF Base64
+        $kopLocalPath = null;
+        $kopSuratId = ! empty($row['kop_surat_id']) ? (int) $row['kop_surat_id'] : null;
+        $kopUrl = kop_surat_url($kopSuratId);
+        if (! empty($kopUrl)) {
+            $cleanUrl = ltrim($kopUrl, '/');
+            if (preg_match('#^https?://[^/]+/(.*)$#i', $kopUrl, $m)) {
+                $cleanUrl = ltrim($m[1], '/');
+            }
+            $candidate = FCPATH . str_replace('/', DIRECTORY_SEPARATOR, $cleanUrl);
+            if (file_exists($candidate)) {
+                $kopLocalPath = $candidate;
+            }
+        }
+        if (! $kopLocalPath) {
+            $fallback = FCPATH . 'uploads/kop_surat/kop_surket_ta.png';
+            if (file_exists($fallback)) {
+                $kopLocalPath = $fallback;
+            }
+        }
+
         $kopBase64 = '';
-        if (file_exists($kopPath)) {
-            $kopBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($kopPath));
+        if ($kopLocalPath && file_exists($kopLocalPath)) {
+            $mime = mime_content_type($kopLocalPath) ?: 'image/png';
+            $kopBase64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($kopLocalPath));
         }
 
         $html = view('admin/kontrak/surket_kinerja_ta/cetak_pdf', [
-            'row'       => $row,
-            'kopBase64' => $kopBase64,
+            'row'           => $row,
+            'kopBase64'     => $kopBase64,
+            'teksPengantar' => $teksPengantar,
+            'teksPenutup'   => $teksPenutup,
         ]);
 
         $options = new Options();
@@ -458,9 +557,9 @@ class SurketKinerjaTa extends BaseController
     }
 
     /**
-     * Proses template DOCX dengan keamanan karakter XML
+     * Proses template DOCX dengan keamanan karakter XML & Penggantian Kop Surat Dinamis
      */
-    private function renderDocxFromTemplate(string $templateFile, array $replacements): ?string
+    private function renderDocxFromTemplate(string $templateFile, array $replacements, ?string $kopImagePath = null): ?string
     {
         if (! file_exists($templateFile)) {
             return null;
@@ -477,6 +576,15 @@ class SurketKinerjaTa extends BaseController
 
                 $tempPath = WRITEPATH . 'uploads/' . uniqid('surket_ta_', true) . '.docx';
                 $processor->saveAs($tempPath);
+
+                if ($kopImagePath && file_exists($kopImagePath)) {
+                    $zip = new \ZipArchive();
+                    if ($zip->open($tempPath) === true) {
+                        $zip->addFile($kopImagePath, 'word/media/image1.png');
+                        $zip->close();
+                    }
+                }
+
                 $content = file_get_contents($tempPath);
                 @unlink($tempPath);
                 return $content ?: null;
@@ -512,6 +620,11 @@ class SurketKinerjaTa extends BaseController
             }
 
             $zip->addFromString('word/document.xml', $xml);
+
+            if ($kopImagePath && file_exists($kopImagePath)) {
+                $zip->addFile($kopImagePath, 'word/media/image1.png');
+            }
+
             $zip->close();
 
             $content = file_get_contents($tempPath);

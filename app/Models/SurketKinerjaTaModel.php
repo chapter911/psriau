@@ -14,6 +14,7 @@ class SurketKinerjaTaModel extends Model
         'nomor_surat',
         'tanggal_surat',
         'kota_surat',
+        'kop_surat_id',
         'ppk_pegawai_id',
         'ppk_nama',
         'ppk_nip',
@@ -53,8 +54,9 @@ class SurketKinerjaTaModel extends Model
     public function getList(?string $search = null)
     {
         $builder = $this->builder();
-        $builder->select('trn_surket_kinerja_ta.*, mp.nama_paket AS master_nama_paket');
+        $builder->select('trn_surket_kinerja_ta.*, mp.nama_paket AS master_nama_paket, ks.title AS kop_surat_title');
         $builder->join('mst_paket mp', 'mp.id = trn_surket_kinerja_ta.paket_id', 'left');
+        $builder->join('kop_surat ks', 'ks.id = trn_surket_kinerja_ta.kop_surat_id', 'left');
 
         if (! empty($search)) {
             $builder->groupStart();

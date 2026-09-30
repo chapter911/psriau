@@ -27,11 +27,10 @@
                     <thead class="bg-light text-dark font-weight-bold">
                         <tr>
                             <th style="width: 4%; text-align: center;">No</th>
-                            <th style="width: 20%;">Tenaga Ahli</th>
-                            <th style="width: 18%;">Badan Usaha</th>
-                            <th style="width: 22%;">Paket Pekerjaan</th>
-                            <th style="width: 16%;">Kontrak &amp; Penugasan</th>
-                            <th style="width: 8%; text-align: center;">Penilaian</th>
+                            <th style="width: 22%;">Tenaga Ahli</th>
+                            <th style="width: 20%;">Badan Usaha</th>
+                            <th style="width: 24%;">Paket Pekerjaan</th>
+                            <th style="width: 18%;">Kontrak &amp; Penugasan</th>
                             <th style="width: 12%; text-align: center;">Aksi</th>
                         </tr>
                     </thead>
@@ -71,21 +70,6 @@
                                         </small>
                                     </td>
                                     <td class="text-center">
-                                        <?php
-                                            $nilai = trim((string) ($item['penilaian_keseluruhan'] ?? ''));
-                                            $badgeClass = match ($nilai) {
-                                                'Sangat Baik' => 'badge-success',
-                                                'Baik'        => 'badge-primary',
-                                                'Cukup'       => 'badge-warning',
-                                                'Kurang'      => 'badge-danger',
-                                                default       => 'badge-secondary',
-                                            };
-                                        ?>
-                                        <span class="badge <?= $badgeClass; ?> px-2 py-1 shadow-xs font-weight-normal" style="font-size: 0.85rem;">
-                                            <?= esc($nilai ?: 'Sangat Baik'); ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
                                         <div class="btn-group btn-group-sm" role="group">
                                             <?php if ($permissions['export'] ?? false): ?>
                                                 <a href="<?= site_url('admin/kontrak/surket-kinerja-ta/' . $item['id'] . '/unduh-docx'); ?>" 
@@ -110,6 +94,16 @@
                                                     data-toggle="tooltip">
                                                 <i class="fas fa-eye"></i>
                                             </button>
+
+                                            <?php if ($permissions['add'] ?? false): ?>
+                                                <button type="button" 
+                                                        class="btn btn-outline-success btn-copy-surket" 
+                                                        data-id="<?= $item['id']; ?>" 
+                                                        title="Duplikat / Salin Data Sebagai Dokumen Baru"
+                                                        data-toggle="tooltip">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            <?php endif; ?>
 
                                             <?php if ($permissions['edit'] ?? false): ?>
                                                 <button type="button" 
@@ -225,6 +219,21 @@
                                             <input type="date" class="form-control" id="tanggal_surat" name="tanggal_surat" 
                                                    value="<?= date('Y-m-d'); ?>">
                                         </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="kop_surat_id" class="font-weight-bold">
+                                            Kop Surat Resmi <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-control font-weight-bold" id="kop_surat_id" name="kop_surat_id">
+                                            <?php foreach ($kopSuratList as $kop): ?>
+                                                <?php $isDef = ($defaultKop && $defaultKop['id'] == $kop['id']); ?>
+                                                <option value="<?= $kop['id']; ?>" <?= $isDef ? 'selected' : ''; ?>>
+                                                    <?= esc($kop['title']); ?> <?= ! empty($kop['is_active']) ? '(Aktif)' : ''; ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <small class="form-text text-muted">Secara default menggunakan kop surat aktif dari Master Kop Surat.</small>
                                     </div>
 
                                     <div class="form-group">
@@ -359,7 +368,7 @@
                                                    value="APBN DIPA Satker Pelaksanaan Prasarana Strategis Riau" required>
                                         </div>
 
-                                        <div class="col-md-6 form-group">
+                                        <div class="col-md-6 form-group mb-0">
                                             <label for="masa_penugasan_hari" class="font-weight-bold">
                                                 Masa Penugasan Tenaga Ahli <span class="text-danger">*</span>
                                             </label>
@@ -373,7 +382,7 @@
                                             <small class="form-text text-muted">Input angka dalam jumlah hari (contoh: 180 Hari).</small>
                                         </div>
 
-                                        <div class="col-md-6 form-group">
+                                        <div class="col-md-6 form-group mb-0">
                                             <label for="status_persen" class="font-weight-bold">
                                                 Status Pekerjaan <span class="text-danger">*</span>
                                             </label>
@@ -387,18 +396,6 @@
                                             <small class="form-text text-muted">
                                                 Teks tercetak: <span class="badge badge-success font-weight-bold" id="badge_status_preview">Selesai</span> <span class="text-secondary">(100% tercetak "Selesai")</span>
                                             </small>
-                                        </div>
-
-                                        <div class="col-md-6 form-group mb-0">
-                                            <label for="penilaian_keseluruhan" class="font-weight-bold">
-                                                Penilaian Keseluruhan <span class="text-danger">*</span>
-                                            </label>
-                                            <select class="form-control font-weight-bold" id="penilaian_keseluruhan" name="penilaian_keseluruhan" required>
-                                                <option value="Sangat Baik" selected>Sangat Baik</option>
-                                                <option value="Baik">Baik</option>
-                                                <option value="Cukup">Cukup</option>
-                                                <option value="Kurang">Kurang</option>
-                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -442,8 +439,8 @@
                         <div class="small" id="preview_nomor_surat">Nomor: -</div>
                     </div>
 
-                    <p class="small mb-1">Yang bertanda tangan di bawah ini:</p>
-                    <table class="table table-sm table-borderless small mb-2">
+                    <p class="small mb-1 font-weight-bold">Yang bertanda tangan di bawah ini:</p>
+                    <table class="table table-sm table-borderless small mb-2" style="margin-left: 25px; width: calc(100% - 25px);">
                         <tr>
                             <td style="width: 32%;">Nama</td>
                             <td style="width: 3%;">:</td>
@@ -466,8 +463,8 @@
                         </tr>
                     </table>
 
-                    <p class="small mb-1">Dengan ini menerangkan bahwa:</p>
-                    <table class="table table-sm table-borderless small mb-2">
+                    <p class="small mb-1 font-weight-bold">Dengan ini menerangkan bahwa:</p>
+                    <table class="table table-sm table-borderless small mb-2" style="margin-left: 25px; width: calc(100% - 25px);">
                         <tr>
                             <td style="width: 32%;">Nama Tenaga Ahli</td>
                             <td style="width: 3%;">:</td>
@@ -490,8 +487,8 @@
                         </tr>
                     </table>
 
-                    <p class="small mb-1">telah melaksanakan pekerjaan jasa konsultansi konstruksi dengan data sebagai berikut:</p>
-                    <table class="table table-sm table-borderless small mb-3">
+                    <p class="small mb-1 font-weight-bold" id="preview_teks_pengantar">telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:</p>
+                    <table class="table table-sm table-borderless small mb-3" style="margin-left: 25px; width: calc(100% - 25px);">
                         <tr>
                             <td style="width: 32%;">Nama Paket Pekerjaan</td>
                             <td style="width: 3%;">:</td>
@@ -534,12 +531,8 @@
                         </tr>
                     </table>
 
-                    <div class="small font-weight-bold mb-3">
-                        Penilaian keseluruhan: <span id="preview_penilaian_keseluruhan" class="badge badge-success px-2 py-1">-</span>
-                    </div>
-
-                    <div class="small text-muted mb-4" style="line-height: 1.5;">
-                        Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi konstruksi.
+                    <div class="small text-muted mb-4" id="preview_teks_penutup" style="line-height: 1.5;">
+                        Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.
                     </div>
 
                     <div class="row small">
@@ -558,6 +551,11 @@
             <div class="modal-footer bg-white border-top py-3 d-flex justify-content-between">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
                 <div>
+                    <?php if ($permissions['add'] ?? false): ?>
+                        <button type="button" id="previewBtnCopy" class="btn btn-outline-success font-weight-bold mr-2" data-id="">
+                            <i class="fas fa-copy mr-1"></i>Duplikat Data
+                        </button>
+                    <?php endif; ?>
                     <?php if ($permissions['export'] ?? false): ?>
                         <a href="#" id="previewBtnWord" class="btn btn-primary font-weight-bold mr-2">
                             <i class="fas fa-file-word mr-1"></i>Unduh Word (.docx)
@@ -583,7 +581,7 @@ $(document).ready(function () {
         ordering: true,
         order: [[0, 'asc']],
         columnDefs: [
-            { orderable: false, targets: [6] }
+            { orderable: false, targets: [5] }
         ],
         language: {
             search: "Cari:",
@@ -670,6 +668,7 @@ $(document).ready(function () {
     $('#btnTambahSurket').on('click', function() {
         $('#formSurket')[0].reset();
         $('#surket_id').val('');
+        $('#kop_surat_id').val('<?= $defaultKop['id'] ?? ''; ?>');
         $('#pilih_paket_preset').val('');
         $('#paket_id').val('');
         $('#lingkup_jasa').val('Manajemen Konstruksi');
@@ -677,7 +676,6 @@ $(document).ready(function () {
         $('#tanggal_surat').val('<?= date('Y-m-d'); ?>');
         $('#status_persen').val(100);
         updateStatusBadge(100);
-        $('#penilaian_keseluruhan').val('Sangat Baik');
         $('#modalFormSurketLabel').html('<i class="fas fa-plus-circle mr-2"></i>Buat Surket Kinerja TA Baru');
         $('#btnSubmitForm').html('<i class="fas fa-save mr-2"></i>Simpan Dokumen');
         $('#formAlertContainer').addClass('d-none').html('');
@@ -754,9 +752,8 @@ $(document).ready(function () {
         });
     });
 
-    // 6. Tombol Ubah / Edit
-    $(document).on('click', '.btn-edit-surket', function() {
-        const id = $(this).data('id');
+    // 6. Helper Muat Form Surket (Ubah atau Duplikat)
+    function loadSurketForm(id, isDuplicate) {
         const detailUrl = '<?= site_url('admin/kontrak/surket-kinerja-ta'); ?>/' + id + '/detail';
 
         $.ajax({
@@ -767,16 +764,28 @@ $(document).ready(function () {
                 if (res.success && res.data) {
                     const d = res.data;
                     $('#formSurket')[0].reset();
-                    $('#surket_id').val(d.id);
-                    $('#modalFormSurketLabel').html('<i class="fas fa-edit mr-2"></i>Ubah Data Surket Kinerja TA');
-                    $('#btnSubmitForm').html('<i class="fas fa-save mr-2"></i>Simpan Perubahan');
+                    $('#surket_id').val(isDuplicate ? '' : d.id);
+                    $('#kop_surat_id').val(d.kop_surat_id || '<?= $defaultKop['id'] ?? ''; ?>');
+
+                    if (isDuplicate) {
+                        $('#modalFormSurketLabel').html('<i class="fas fa-copy mr-2"></i>Duplikat Surket Kinerja TA (Data Baru)');
+                        $('#btnSubmitForm').html('<i class="fas fa-save mr-2"></i>Simpan Sebagai Data Baru');
+                        $('#formAlertContainer').removeClass('d-none').html(
+                            '<div class="alert alert-info py-2 px-3 mb-0 small"><i class="fas fa-info-circle mr-1"></i>Menyalin data dari <strong>' + 
+                            $('<div>').text(d.nama_tenaga_ahli || '').html() + '</strong>. Silakan ubah data yang diperlukan, lalu klik <strong>Simpan Sebagai Data Baru</strong>.</div>'
+                        );
+                    } else {
+                        $('#modalFormSurketLabel').html('<i class="fas fa-edit mr-2"></i>Ubah Data Surket Kinerja TA');
+                        $('#btnSubmitForm').html('<i class="fas fa-save mr-2"></i>Simpan Perubahan');
+                        $('#formAlertContainer').addClass('d-none').html('');
+                    }
 
                     $('#nama_tenaga_ahli').val(d.nama_tenaga_ahli);
                     $('#jabatan_pekerjaan').val(d.jabatan_pekerjaan);
                     $('#nama_badan_usaha').val(d.nama_badan_usaha);
                     $('#alamat_badan_usaha').val(d.alamat_badan_usaha);
                     $('#nomor_surat').val(d.nomor_surat);
-                    $('#tanggal_surat').val(d.tanggal_surat);
+                    $('#tanggal_surat').val(isDuplicate ? '<?= date('Y-m-d'); ?>' : (d.tanggal_surat || '<?= date('Y-m-d'); ?>'));
                     $('#ppk_pegawai_id').val(d.ppk_pegawai_id || '');
                     $('#pilih_ppk_preset').val(d.ppk_pegawai_id || '');
                     $('#ppk_nama').val(d.ppk_nama);
@@ -824,8 +833,6 @@ $(document).ready(function () {
                     $('#status_persen').val(persenVal);
                     updateStatusBadge(persenVal);
 
-                    $('#penilaian_keseluruhan').val(d.penilaian_keseluruhan || 'Sangat Baik');
-
                     $('#modalFormSurket').modal('show');
                 } else {
                     Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'Gagal mengambil data.' });
@@ -835,6 +842,25 @@ $(document).ready(function () {
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Koneksi ke server bermasalah.' });
             }
         });
+    }
+
+    // Tombol Ubah / Edit
+    $(document).on('click', '.btn-edit-surket', function() {
+        loadSurketForm($(this).data('id'), false);
+    });
+
+    // Tombol Duplikat / Copy dari Tabel
+    $(document).on('click', '.btn-copy-surket', function() {
+        loadSurketForm($(this).data('id'), true);
+    });
+
+    // Tombol Duplikat dari Modal Pratinjau
+    $('#previewBtnCopy').on('click', function() {
+        const id = $(this).data('id');
+        if (id) {
+            $('#modalPreviewSurket').modal('hide');
+            loadSurketForm(id, true);
+        }
     });
 
     // 7. Tombol Pratinjau Detail
@@ -849,6 +875,7 @@ $(document).ready(function () {
             success: function(res) {
                 if (res.success && res.data) {
                     const d = res.data;
+                    $('#previewBtnCopy').data('id', d.id);
                     $('#preview_nomor_surat').text('Nomor: ' + (d.nomor_surat || '..........................................'));
                     $('#preview_ppk_nama').text(d.ppk_nama || '-');
                     $('#preview_ppk_jabatan').text(d.ppk_jabatan || '-');
@@ -860,6 +887,7 @@ $(document).ready(function () {
                     $('#preview_nama_badan_usaha').text(d.nama_badan_usaha || '-');
                     $('#preview_alamat_badan_usaha').text(d.alamat_badan_usaha || '-');
 
+                    $('#preview_teks_pengantar').text(d.teks_pengantar || 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:');
                     $('#preview_nama_paket').text(d.nama_paket || '-');
                     $('#preview_lingkup_jasa').text(d.lingkup_jasa || '-');
                     $('#preview_lokasi_pekerjaan').text(d.lokasi_pekerjaan || '-');
@@ -868,7 +896,7 @@ $(document).ready(function () {
                     $('#preview_sumber_dana').text(d.sumber_dana || '-');
                     $('#preview_masa_penugasan').text(d.masa_penugasan || '-');
                     $('#preview_status_pekerjaan').text(d.status_pekerjaan || '-');
-                    $('#preview_penilaian_keseluruhan').text(d.penilaian_keseluruhan || '-');
+                    $('#preview_teks_penutup').text(d.teks_penutup || 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.');
 
                     $('#preview_kota_tanggal').text((d.kota_surat || 'Pekanbaru') + ', ' + (d.tanggal_surat || ''));
                     $('#preview_ppk_jabatan_ttd').text((d.ppk_jabatan || 'PPK Pelaksanaan Prasarana Strategis') + ',');

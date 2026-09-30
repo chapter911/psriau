@@ -56,7 +56,8 @@
             margin-bottom: 4px;
         }
         table.data-table {
-            width: 100%;
+            width: 93%;
+            margin-left: 28px;
             border-collapse: collapse;
             margin-bottom: 6px;
         }
@@ -176,7 +177,7 @@
         </tr>
     </table>
 
-    <div class="section-intro">telah melaksanakan pekerjaan jasa konsultansi konstruksi dengan data sebagai berikut:</div>
+    <div class="section-intro"><?= esc($teksPengantar ?? 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:'); ?></div>
     <table class="data-table">
         <tr>
             <td class="col-label">Nama Paket Pekerjaan</td>
@@ -216,16 +217,12 @@
         <tr>
             <td class="col-label">Status Pekerjaan</td>
             <td class="col-colon">:</td>
-            <td class="col-val"><?= esc($row['status_pekerjaan'] ?: 'selesai 100%'); ?></td>
+            <td class="col-val"><?= esc($row['status_pekerjaan'] ?: 'Selesai'); ?></td>
         </tr>
     </table>
 
-    <div class="penilaian-box">
-        Penilaian keseluruhan: <strong><?= esc($row['penilaian_keseluruhan'] ?: 'Sangat Baik'); ?></strong>
-    </div>
-
     <div class="closing-text">
-        Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi konstruksi.
+        <?= esc($teksPenutup ?? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.'); ?>
     </div>
 
     <?php
