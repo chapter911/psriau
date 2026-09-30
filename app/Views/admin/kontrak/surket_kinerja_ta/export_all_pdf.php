@@ -24,12 +24,13 @@
         }
         .header-kop {
             text-align: center;
+            width: 100%;
             margin-bottom: 4px;
             padding-bottom: 0;
         }
         .header-kop img {
             width: 100%;
-            max-height: 88px;
+            height: auto;
             display: block;
             margin: 0 auto;
         }
