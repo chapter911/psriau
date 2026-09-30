@@ -6,34 +6,34 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 1.5cm 2cm 1.8cm 2cm;
+            margin: 0.8cm 1.6cm 0.8cm 1.8cm;
         }
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 10pt;
-            line-height: 1.35;
+            font-size: 9.5pt;
+            line-height: 1.25;
             color: #000;
             margin: 0;
             padding: 0;
         }
         .header-kop {
             text-align: center;
-            margin-bottom: 8px;
-            padding-bottom: 2px;
+            margin-bottom: 4px;
+            padding-bottom: 0;
         }
         .header-kop img {
             width: 100%;
-            max-height: 95px;
+            max-height: 88px;
             display: block;
             margin: 0 auto;
         }
         .title-block {
             text-align: center;
-            margin-top: 10px;
-            margin-bottom: 12px;
+            margin-top: 6px;
+            margin-bottom: 8px;
         }
         .title-block .doc-title {
-            font-size: 11pt;
+            font-size: 10.5pt;
             font-weight: bold;
             text-decoration: underline;
             margin: 0;
@@ -41,30 +41,33 @@
             letter-spacing: 0.5px;
         }
         .title-block .doc-subtitle {
-            font-size: 10.5pt;
+            font-size: 10pt;
             font-weight: bold;
             margin: 1px 0;
             padding: 0;
             letter-spacing: 0.5px;
         }
         .title-block .doc-number {
-            font-size: 10pt;
-            margin-top: 4px;
+            font-size: 9.5pt;
+            margin-top: 2px;
         }
         .section-intro {
-            margin-top: 8px;
-            margin-bottom: 4px;
+            margin-top: 5px;
+            margin-bottom: 2px;
+            font-size: 9.5pt;
         }
         table.data-table {
-            width: 93%;
-            margin-left: 28px;
+            width: 94%;
+            margin-left: 24px;
             border-collapse: collapse;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
+            page-break-inside: avoid;
         }
         table.data-table td {
             vertical-align: top;
-            padding: 2px 0;
-            font-size: 10pt;
+            padding: 1.5px 0;
+            font-size: 9.5pt;
+            line-height: 1.25;
         }
         table.data-table td.col-label {
             width: 33%;
@@ -77,24 +80,18 @@
         table.data-table td.col-val {
             width: 64%;
         }
-        .penilaian-box {
-            margin-top: 8px;
-            margin-bottom: 8px;
-            font-size: 10pt;
-        }
-        .penilaian-box strong {
-            font-weight: bold;
-        }
         .closing-text {
             text-align: justify;
-            margin-top: 8px;
-            margin-bottom: 15px;
-            line-height: 1.4;
+            margin-top: 5px;
+            margin-bottom: 8px;
+            font-size: 9.5pt;
+            line-height: 1.3;
         }
         .signature-table {
             width: 100%;
-            margin-top: 15px;
+            margin-top: 8px;
             border-collapse: collapse;
+            page-break-inside: avoid;
         }
         .signature-table td {
             vertical-align: top;
@@ -104,9 +101,11 @@
             text-align: left;
             width: 55%;
             margin-left: auto;
+            font-size: 9.5pt;
+            line-height: 1.25;
         }
         .signature-space {
-            height: 60px;
+            height: 48px;
         }
         .signature-name {
             font-weight: bold;

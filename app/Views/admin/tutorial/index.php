@@ -613,8 +613,8 @@ graph TD
     D --> E["Isi / Sesuaikan Paket &amp; Kontrak (Dropdown Lingkup, No/Tgl Kontrak, Nilai Rp, Masa Dari s.d. Tgl &amp; Total Hari, Status %)"]
     E --> F["Validasi Form &amp; Simpan Dokumen (Insert Data Baru)"]
     F --> G["Data Tersimpan di Database (Teks Pengantar &amp; Penutup Otomatis)"]
-    G --> H1["Unduh Word (.docx) Format Presisi &amp; Indentasi Masuk Sesuai Standar"]
-    G --> H2["Cetak / Pratinjau PDF Resmi"]
+    G --> H1["Unduh Word (.docx) Format Presisi, Indentasi Masuk &amp; Pas Tepat 1 Halaman"]
+    G --> H2["Cetak / Pratinjau PDF Resmi (Tata Letak Presisi Pas Tepat 1 Halaman)"]
     G --> H3["Pratinjau Detail Modal, Duplikat Data, Ubah, atau Hapus"]
     H3 -.-> B2
                 </pre>
@@ -1206,10 +1206,10 @@ graph TD
                                 </ul>
                             </li>
                             <li><strong>Simpan Data:</strong> Klik tombol <strong>"Simpan Dokumen"</strong> (atau <strong>"Simpan Sebagai Data Baru"</strong> saat duplikasi). Sistem memvalidasi kelengkapan form dan menyimpan berkas tanpa notifikasi ganda.</li>
-                            <li><strong>Unduh &amp; Cetak Dokumen Resmi:</strong>
+                            <li><strong>Unduh &amp; Cetak Dokumen Resmi (Format Pas 1 Halaman):</strong>
                                 <ul>
-                                    <li><i class="fas fa-file-word text-primary mr-1"></i><strong>Unduh Word (.docx):</strong> Menghasilkan berkas Word yang 100% presisi dan identik dengan template resmi Satker PPS (termasuk pergantian Kop Surat dinamis dari master, format tabel dengan indentasi masuk ke dalam yang rapi, teks dinamis berdasarkan lingkup jasa, dan blok tanda tangan PPK).</li>
-                                    <li><i class="fas fa-file-pdf text-danger mr-1"></i><strong>Cetak PDF (.pdf):</strong> Membuka pratinjau dokumen PDF resmi beresolusi tinggi siap cetak langsung di peramban dengan layout tabel yang masuk ke dalam (indented) dan teks dinamis yang sesuai.</li>
+                                    <li><i class="fas fa-file-word text-primary mr-1"></i><strong>Unduh Word (.docx):</strong> Menghasilkan berkas Word yang 100% presisi dan identik dengan template resmi Satker PPS (termasuk kop surat dinamis dari master, tabel dengan indentasi masuk ke dalam yang rapi, teks dinamis berdasarkan lingkup jasa, dan blok tanda tangan PPK). Berkas telah dioptimasi tata letak dan spasingnya sehingga <strong>pasti muat dalam tepat 1 halaman A4</strong> tanpa sisa paragraf kosong atau halaman kedua.</li>
+                                    <li><i class="fas fa-file-pdf text-danger mr-1"></i><strong>Cetak PDF (.pdf):</strong> Membuka pratinjau dokumen PDF resmi beresolusi tinggi siap cetak langsung di peramban dengan layout tabel yang masuk ke dalam (indented) dan teks dinamis yang sesuai. Margin dan ukuran font telah disesuaikan agar <strong>seluruh dokumen tampil tuntas dalam 1 halaman utuh</strong>.</li>
                                     <li><i class="fas fa-eye text-info mr-1"></i><strong>Pratinjau (Preview Modal):</strong> Menampilkan ringkasan surat langsung di halaman tanpa harus mengunduh file terlebih dahulu, serta dilengkapi tombol cepat <strong>Duplikat Data</strong>, <strong>Unduh Word</strong>, dan <strong>Cetak PDF</strong>.</li>
                                 </ul>
                             </li>
