@@ -590,6 +590,38 @@ graph TD
     </div>
     <?php endif; ?>
 
+    <!-- FLOWCHART 9: KONTRAK - SURKET KINERJA TENAGA AHLI -->
+    <?php if ($canRenderForUser(['admin', 'super_administrator', 'editor'])): ?>
+    <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-file-signature text-primary mr-2"></i>Flowchart: Alur Kerja Surat Keterangan Kinerja Tenaga Ahli (SURKET KINERJA TA)
+            </h5>
+            <div>
+                <span class="badge badge-primary">Kontrak</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu: Kontrak > SURKET KINERJA TA (/admin/kontrak/surket-kinerja-ta)"] --> B["Klik 'Buat Surket Kinerja TA Baru'"]
+    B --> C["1. Isi Data Tenaga Ahli &amp; Badan Usaha (Nama TA, Jabatan, Nama PT/CV, Alamat)"]
+    B --> D["2. Tentukan Pejabat PPK (Default Nurhidayat Nugroho / Pilih Pegawai) &amp; Nomor Surat"]
+    B --> E["3. Isi Data Paket Pekerjaan (Pilih Master Paket / Manual, Lingkup Jasa, Nilai, Durasi, Penilaian)"]
+    C --> F["Validasi Form &amp; Simpan ke Sistem"]
+    D --> F
+    E --> F
+    F --> G["Data Tersimpan di Database &amp; Ditampilkan di Tabel"]
+    G --> H1["Unduh Dokumen Word (.docx) Format Resmi Template"]
+    G --> H2["Cetak / Pratinjau Dokumen PDF Resmi"]
+    G --> H3["Pratinjau Detail Modal, Ubah Data, atau Hapus"]
+                </pre>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
 
     <!-- PANDUAN PENGGUNAAN SISTEM (ACCORDION STYLE) -->
     <div class="mt-4">
@@ -1101,6 +1133,63 @@ graph TD
                                 </ol>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- MODUL KONTRAK: SURKET KINERJA TA -->
+        <?php if ($canRenderForUser(['all', 'admin', 'super_administrator', 'editor'])): ?>
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="all,admin,super_administrator,editor">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-file-signature mr-2 text-primary"></i> Modul Kontrak: Surat Keterangan Kinerja Tenaga Ahli (SURKET KINERJA TA)
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-primary">
+                            <i class="fas fa-file-contract mr-1"></i> Penerbitan Surat Keterangan / Referensi Kinerja Tenaga Ahli
+                        </h6>
+                        <p class="small text-muted mb-2"><code>/admin/kontrak/surket-kinerja-ta</code></p>
+                        <ol class="pl-3 small mb-0">
+                            <li><strong>Akses Menu:</strong> Buka menu samping <strong>Kontrak &gt; SURKET KINERJA TA</strong>.</li>
+                            <li><strong>Buat Dokumen Baru:</strong> Klik tombol biru <strong>"Buat Surket Kinerja TA Baru"</strong> di sudut kanan atas halaman.</li>
+                            <li><strong>Bagian 1 - Identitas Tenaga Ahli &amp; Badan Usaha:</strong>
+                                <ul>
+                                    <li>Isi <strong>Nama Tenaga Ahli</strong> lengkap beserta gelar akademis/profesi.</li>
+                                    <li>Isi <strong>Jabatan dalam Pekerjaan</strong> (contoh: <em>Ahli Struktur</em>, <em>Team Leader</em>, <em>Tenaga Pendukung</em>).</li>
+                                    <li>Isi <strong>Nama Badan Usaha</strong> konsultan penyedia jasa (PT/CV).</li>
+                                    <li>Isi <strong>Alamat Badan Usaha</strong> secara lengkap.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Bagian 2 - Nomor Surat &amp; Pejabat Penandatangan (PPK):</strong>
+                                <ul>
+                                    <li>Nomor Surat ter-prefill dan dapat diisi sesuai agenda penomoran resmi kantor.</li>
+                                    <li>Tanggal Surat otomatis menggunakan tanggal hari ini (dapat disesuaikan jika surat diterbitkan tanggal lain).</li>
+                                    <li>Pihak Penandatangan (PPK) otomatis ter-default atas nama <strong>Nurhidayat Nugroho, S.Ars (NIP. 199012212018021001)</strong> sebagai PPK Pelaksanaan Prasarana Strategis Riau, dan dapat dipilih dari daftar Master Pegawai jika diperlukan pergantian pejabat.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Bagian 3 - Paket Pekerjaan &amp; Penugasan Kontrak:</strong>
+                                <ul>
+                                    <li>Pilih dari dropdown <strong>Master Paket</strong> untuk pengisian cepat otomatis nama paket, atau pilih <em>Ketik Nama Paket Manual</em> jika paket belum terdaftar.</li>
+                                    <li>Isi <strong>Lingkup Jasa</strong> (default: <em>Manajemen Konstruksi</em>).</li>
+                                    <li>Isi <strong>Lokasi Pekerjaan</strong>, <strong>Nomor &amp; Tanggal Kontrak</strong>, <strong>Nilai Kontrak</strong> (termasuk addendum), dan <strong>Sumber Dana</strong> (default: <em>APBN DIPA Satker PPS Riau</em>).</li>
+                                    <li>Isi <strong>Masa Penugasan Tenaga Ahli</strong> (contoh: <em>01 Februari 2026 s.d. 31 Juli 2026 (6 Bulan)</em>).</li>
+                                    <li>Pilih <strong>Status Pekerjaan</strong> (default: <em>selesai 100%</em>) dan <strong>Penilaian Keseluruhan</strong> (<em>Sangat Baik</em>, <em>Baik</em>, <em>Cukup</em>, atau <em>Kurang</em>).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Simpan Data:</strong> Klik tombol <strong>"Simpan Dokumen"</strong>. Sistem memvalidasi kelengkapan form dan menyimpan berkas tanpa notifikasi ganda.</li>
+                            <li><strong>Unduh &amp; Cetak Dokumen Resmi:</strong>
+                                <ul>
+                                    <li><i class="fas fa-file-word text-primary mr-1"></i><strong>Unduh Word (.docx):</strong> Menghasilkan berkas Word yang 100% presisi dan identik dengan template resmi Satker PPS (termasuk Kop Surat, format tabel, font Arial, dan garis penandatangan).</li>
+                                    <li><i class="fas fa-file-pdf text-danger mr-1"></i><strong>Cetak PDF (.pdf):</strong> Membuka pratinjau dokumen PDF resmi beresolusi tinggi siap cetak langsung di peramban.</li>
+                                    <li><i class="fas fa-eye text-info mr-1"></i><strong>Pratinjau (Preview Modal):</strong> Menampilkan ringkasan surat langsung di halaman tanpa harus mengunduh file terlebih dahulu.</li>
+                                </ul>
+                            </li>
+                        </ol>
                     </div>
                 </div>
             </div>

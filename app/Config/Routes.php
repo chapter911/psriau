@@ -156,6 +156,16 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('kontrak/simak/konsultasi/(:num)/export/excel', 'Admin\\Kontrak::exportSimakKonsultasiDetailExcel/$1');
 	$routes->get('kontrak/simak/konsultasi/(:num)/export/html', 'Admin\\Kontrak::exportSimakKonsultasiDetailHtml/$1');
 	$routes->get('kontrak/simak/konsultasi/(:num)/export/zip', 'Admin\\Kontrak::downloadSimakKonsultasiZip/$1');
+
+	// SURKET KINERJA TA Routes
+	$routes->get('kontrak/surket-kinerja-ta', 'Admin\\SurketKinerjaTa::index');
+	$routes->get('kontrak/surket-kinerja-ta/data', 'Admin\\SurketKinerjaTa::data');
+	$routes->post('kontrak/surket-kinerja-ta/simpan', 'Admin\\SurketKinerjaTa::simpan');
+	$routes->get('kontrak/surket-kinerja-ta/(:num)/detail', 'Admin\\SurketKinerjaTa::detail/$1');
+	$routes->post('kontrak/surket-kinerja-ta/(:num)/ubah', 'Admin\\SurketKinerjaTa::ubah/$1');
+	$routes->post('kontrak/surket-kinerja-ta/(:num)/hapus', 'Admin\\SurketKinerjaTa::hapus/$1');
+	$routes->get('kontrak/surket-kinerja-ta/(:num)/unduh-docx', 'Admin\\SurketKinerjaTa::unduhDocx/$1');
+	$routes->get('kontrak/surket-kinerja-ta/(:num)/cetak-pdf', 'Admin\\SurketKinerjaTa::cetakPdf/$1');
 	
 	$routes->get('master/kop-surat', 'Admin\\KopSurat::index');
 	$routes->get('master/kop-surat/unduh-word', 'Admin\\KopSurat::downloadWord');
