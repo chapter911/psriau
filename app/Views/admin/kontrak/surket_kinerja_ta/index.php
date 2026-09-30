@@ -662,11 +662,11 @@
                         Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.
                     </div>
 
-                    <div class="row small">
-                        <div class="col-6"></div>
-                        <div class="col-6 text-left">
+                    <div class="row small mt-4 pt-2">
+                        <div class="col-5"></div>
+                        <div class="col-7 text-center">
                             <div id="preview_kota_tanggal">Pekanbaru, -</div>
-                            <div id="preview_ppk_jabatan_ttd">PPK Pelaksanaan Prasarana Strategis,</div>
+                            <div id="preview_ppk_jabatan_ttd">Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis,</div>
                             <div id="preview_ppk_satker_ttd">Satuan Kerja Pelaksanaan Prasarana Strategis Riau</div>
                             <div style="height: 50px;"></div>
                             <div id="preview_ppk_nama_ttd" class="font-weight-bold text-decoration-underline">-</div>

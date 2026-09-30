@@ -89,13 +89,13 @@
         .closing-text {
             text-align: justify;
             margin-top: 5px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-size: 9.5pt;
             line-height: 1.3;
         }
         .signature-table {
             width: 100%;
-            margin-top: 8px;
+            margin-top: 24px;
             border-collapse: collapse;
             page-break-inside: avoid;
         }
@@ -104,9 +104,8 @@
             padding: 0;
         }
         .signature-box {
-            text-align: left;
-            width: 55%;
-            margin-left: auto;
+            text-align: center;
+            width: 100%;
             font-size: 9.5pt;
             line-height: 1.25;
         }
@@ -243,11 +242,11 @@ foreach ($records as $index => $item):
 
         <table class="signature-table">
             <tr>
-                <td style="width: 45%;"></td>
-                <td style="width: 55%;">
+                <td style="width: 44%;"></td>
+                <td style="width: 56%; text-align: center;">
                     <div class="signature-box">
                         <div><?= esc($kota); ?>, <?= esc($tglStr); ?></div>
-                        <div><?= esc($row['ppk_jabatan'] ?: 'PPK Pelaksanaan Prasarana Strategis'); ?>,</div>
+                        <div><?= esc($row['ppk_jabatan'] ?: 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis'); ?>,</div>
                         <div><?= esc($row['ppk_satker'] ?: 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau'); ?></div>
                         <div class="signature-space"></div>
                         <div class="signature-name"><?= esc($row['ppk_nama'] ?: 'Nurhidayat Nugroho, S. Ars'); ?></div>
