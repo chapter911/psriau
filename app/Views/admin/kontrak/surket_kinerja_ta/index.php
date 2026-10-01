@@ -63,6 +63,7 @@
                         <select name="lingkup_jasa" id="filter_lingkup_jasa" class="form-control form-control-sm" style="border-radius: 8px;">
                             <option value="">-- Semua Lingkup Jasa --</option>
                             <option value="Manajemen Konstruksi" <?= ($filterLingkup === 'Manajemen Konstruksi') ? 'selected' : ''; ?>>Manajemen Konstruksi</option>
+                            <option value="Supervisi" <?= ($filterLingkup === 'Supervisi') ? 'selected' : ''; ?>>Supervisi</option>
                             <option value="Fisik" <?= ($filterLingkup === 'Fisik') ? 'selected' : ''; ?>>Fisik</option>
                         </select>
                     </div>
@@ -419,6 +420,7 @@
                                             </label>
                                             <select class="form-control font-weight-bold" id="lingkup_jasa" name="lingkup_jasa" required>
                                                 <option value="Manajemen Konstruksi" selected>Manajemen Konstruksi</option>
+                                                <option value="Supervisi">Supervisi</option>
                                                 <option value="Fisik">Fisik</option>
                                             </select>
                                         </div>

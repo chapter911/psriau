@@ -1165,7 +1165,7 @@ graph TD
                                 <ul>
                                     <li><strong>Urutan Data Otomatis:</strong> Daftar data dalam tabel secara default terurut rapi bertingkat berdasarkan: <strong>1. Paket Pekerjaan</strong>, kemudian <strong>2. Lingkup Jasa</strong> (Fisik / Manajemen Konstruksi), lalu <strong>3. Nama Tenaga Ahli</strong> secara alfabetis (A-Z).</li>
                                     <li><strong>Filter Paket:</strong> Menyaring berdasarkan paket pekerjaan yang dipilih (misal: <em>Riau 2</em>, <em>Riau 3</em>, dst.).</li>
-                                    <li><strong>Filter Lingkup Jasa:</strong> Menyaring berdasarkan lingkup penugasan (<em>Manajemen Konstruksi</em> atau <em>Fisik</em>).</li>
+                                    <li><strong>Filter Lingkup Jasa:</strong> Menyaring berdasarkan lingkup penugasan (<em>Manajemen Konstruksi</em>, <em>Supervisi</em>, atau <em>Fisik</em>).</li>
                                     <li><strong>Interaksi Cepat:</strong> Tabel otomatis memfilter saat opsi dropdown dipilih, atau dengan menekan tombol <strong>"Terapkan"</strong>. Untuk mengembalikan ke seluruh data, klik tombol <strong>"Reset"</strong> atau tombol <strong>"Hapus Filter"</strong> pada notifikasi filter aktif.</li>
                                 </ul>
                             </li>
@@ -1197,7 +1197,7 @@ graph TD
                                     <li>Pilih <strong>Lingkup Jasa</strong> melalui dropdown:
                                         <ul>
                                             <li><strong>Fisik:</strong> Teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:"</em> dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi."</em></li>
-                                            <li><strong>Manajemen Konstruksi:</strong> Teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:"</em> dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi."</em></li>
+                                            <li><strong>Manajemen Konstruksi / Supervisi:</strong> Teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:"</em> dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi."</em></li>
                                         </ul>
                                     </li>
                                     <li>Isi <strong>Lokasi Pekerjaan</strong>.</li>
