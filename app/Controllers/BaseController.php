@@ -166,7 +166,7 @@ abstract class BaseController extends Controller
                         'id'             => $menuId,
                         'label'          => (string) $row['label'],
                         'url'            => $row['link'],
-                        'icon'           => 'far fa-circle',
+                        'icon'           => ! empty($row['icon']) ? $row['icon'] : 'far fa-circle',
                         'active_pattern' => $this->toActivePattern($row['link']),
                         'children'       => $lv3ByHeader[$menuId] ?? [],
                     ];

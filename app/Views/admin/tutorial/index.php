@@ -627,6 +627,51 @@ graph TD
     </div>
     <?php endif; ?>
 
+    <!-- FLOWCHART 10: KOMPU - KOMUNIKASI PUBLIK, AKUN SOSMED & PENGATURAN AKSES -->
+    <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-bullhorn text-primary mr-2"></i>Flowchart: Alur Kerja Modul KOMPU, Kredensial Medsos &amp; Otorisasi Pengguna
+            </h5>
+            <div>
+                <span class="badge badge-primary">KOMPU</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu Utama: KOMPU"] --> B{"Pilih Submenu"}
+    B -->|Media Sosial Satker| C["Akses Daftar Akun (/admin/kompu/sosmed)"]
+    B -->|Log Pengiriman Kredensial| D["Akses Riwayat Log (/admin/kompu/log-kredensial)"]
+    B -->|Pengaturan (Khusus Super Admin)| E["Akses Konfigurasi (/admin/kompu/pengaturan)"]
+
+    C --> C1["Lihat Direktori Akun (Instagram, Threads, TikTok, X, FB, YouTube, Email)"]
+    C1 --> C2["Salin Username / Email Terkait dengan 1 Klik"]
+    C1 --> C3{"Permintaan Password Kredensial"}
+    C3 -->|Akun SSO / Gmail| C4["Info: Login Otomatis via Akun Google Satker"]
+    C3 -->|Akun dengan Password Mandiri| C5["Klik Tombol 'Kirim ke Email'"]
+    C5 --> C6{"Pengecekan Email Login di Data Pegawai"}
+    C6 -->|Email Belum Terdaftar| C7["Notifikasi Peringatan: Lengkapi Profil Pegawai Terlebih Dahulu"]
+    C6 -->|Email Valid &amp; Aktif| C8["Sistem Mengirim Email Kredensial Terenkripsi via SMTP"]
+    C8 --> C9{"Status Pengiriman"}
+    C9 -->|Berhasil| C10["Pesan Sukses: Password Terkirim ke Inbox Email Pegawai"]
+    C9 -->|Gagal Kirim| C11["Pesan Error: Detail Kegagalan SMTP &amp; Catat di Log Audit"]
+    C10 --> LOG["Catat Otomatis ke Tabel Log Audit Trail"]
+    C11 --> LOG
+
+    D --> D1["Monitoring Seluruh Aktivitas Permintaan Password (Waktu, Akun, Pegawai, IP)"]
+    D1 --> D2["Filter Status (Sukses / Gagal) &amp; Pencarian Kata Kunci"]
+    D1 --> D3["Export Rekaman Log Audit ke Berkas CSV"]
+
+    E --> E1["Otorisasi Pengguna: Pilih Pegawai yang Berhak Mengakses Modul KOMPU"]
+    E --> E2["Matriks Hak Akses Role: Konfigurasi Fitur View, Add, Edit, Delete, Export di menu_akses"]
+    E --> E3["Pemeriksaan Konfigurasi Server SMTP &amp; Uji Coba Pengiriman Email Langsung"]
+                </pre>
+            </div>
+        </div>
+    </div>
+
 
     <!-- PANDUAN PENGGUNAAN SISTEM (ACCORDION STYLE) -->
     <div class="mt-4">
@@ -1236,6 +1281,53 @@ graph TD
             </div>
         </div>
         <?php endif; ?>
+
+        <!-- MODUL KOMPU (KOMUNIKASI PUBLIK) -->
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,editor,all">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-bullhorn mr-2"></i> Modul KOMPU: Media Sosial Satker, Kredensial &amp; Otorisasi Pengguna
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Modul KOMPU (Komunikasi Publik) dirancang khusus untuk mengelola seluruh aset akun media sosial dan platform publikasi resmi Satker Prasarana Strategis Provinsi Riau secara terpusat, aman, dan akuntabel.
+                </p>
+
+                <h6 class="font-weight-bold text-dark mt-3"><i class="fas fa-hashtag text-info mr-1"></i> 1. Submenu: Media Sosial Satker</h6>
+                <ol class="text-secondary pl-3">
+                    <li><strong>Melihat Daftar Akun:</strong> Seluruh media sosial resmi Satker (Instagram, Threads, TikTok, X/Twitter, Facebook, YouTube, dan Email Satker) ditampilkan lengkap dengan username, email login, metode akses, tautan profil, dan keterangan.</li>
+                    <li><strong>Fitur Salin Cepat:</strong> Klik pada label username atau email login untuk langsung menyalin ke clipboard tanpa perlu seleksi manual.</li>
+                    <li><strong>Pengamanan Password Kredensial:</strong>
+                        <ul>
+                            <li>Password seluruh akun dirahasiakan (hidden/masked sebagai <code>••••••••</code>) di halaman antarmuka demi mencegah kebocoran visual.</li>
+                            <li>Untuk mengetahui password, pegawai yang sedang login cukup menekan tombol <strong>"Kirim ke Email"</strong>.</li>
+                            <li>Sistem secara otomatis mendeteksi alamat email kedinasan pegawai yang sedang login (berdasarkan NIP / Nama di data master kepegawaian).</li>
+                            <li>Jika email belum terdaftar di profil pegawai, sistem akan memberi informasi jelas agar pegawai melengkapi profilnya terlebih dahulu.</li>
+                            <li>Jika pengiriman berhasil, sistem memberikan notifikasi sukses dan mengirimkan format kredensial resmi ke kotak masuk email.</li>
+                            <li>Jika pengiriman gagal (misal kendala jaringan/server SMTP), sistem akan menampilkan pesan peringatan kegagalan secara transparan tanpa notifikasi ganda.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Kelola Data Akun (Add/Edit/Delete):</strong> Pengguna dengan hak akses yang diizinkan dapat menambah akun publikasi baru, memperbarui tautan profil, atau mengubah data login melalui modal form.</li>
+                    <li><strong>Ekspor Data:</strong> Daftar akun dapat diunduh dalam format CSV dengan password tetap dirahasiakan (masked).</li>
+                </ol>
+
+                <h6 class="font-weight-bold text-dark mt-3"><i class="fas fa-envelope-open-text text-warning mr-1"></i> 2. Submenu: Log Pengiriman Kredensial</h6>
+                <ol class="text-secondary pl-3">
+                    <li><strong>Audit Trail Otomatis:</strong> Setiap ada pegawai yang meminta password akun medsos, sistem mencatat waktu permintaan, nama platform, nama &amp; NIP pegawai, email tujuan, status (Sukses / Gagal), keterangan respon server, dan alamat IP.</li>
+                    <li><strong>Filter &amp; Monitoring:</strong> Petugas dapat menyaring riwayat berdasarkan status keberhasilan atau mencari berdasarkan nama/NIP pegawai.</li>
+                    <li><strong>Ekspor Log:</strong> Rekaman audit log dapat diekspor ke berkas CSV sebagai bukti akuntabilitas pemanfaatan akun resmi instansi.</li>
+                </ol>
+
+                <h6 class="font-weight-bold text-dark mt-3"><i class="fas fa-user-shield text-danger mr-1"></i> 3. Submenu: Pengaturan (Eksklusif Super Administrator)</h6>
+                <ol class="text-secondary pl-3">
+                    <li><strong>Akses Terproteksi Khusus:</strong> Submenu ini hanya dapat dilihat dan diakses oleh pengguna dengan role <strong>Super Administrator</strong>. Pengguna lain akan otomatis dialihkan jika mencoba mengakses URL ini.</li>
+                    <li><strong>Otorisasi Pengguna Spesifik:</strong> Super Administrator dapat menentukan secara spesifik pegawai mana saja yang diizinkan mengakses menu KOMPU serta memberikan izin khusus untuk melihat seluruh log audit trail.</li>
+                    <li><strong>Matriks Hak Akses Role (menu_akses):</strong> Super Administrator dapat mengatur hak akses fitur (View, Add, Edit, Delete, Export) untuk masing-masing role pengguna secara dinamis dan tersimpan di database <code>menu_akses</code>.</li>
+                    <li><strong>Server Email &amp; Uji Coba:</strong> Menyediakan pemantauan konfigurasi SMTP dan fitur uji coba pengiriman email langsung untuk memastikan fungsi pengiriman password selalu siap digunakan.</li>
+                </ol>
+            </div>
+        </div>
 
     </div>
 </div>

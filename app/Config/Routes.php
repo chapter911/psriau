@@ -525,6 +525,22 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'inventaris/pengaturan/kasatker/(:num)/delete', 'Admin\InventarisPengaturan::deleteKasatker/$1');
 	$routes->post('inventaris/pengaturan/delegasi/save', 'Admin\InventarisPengaturan::saveDelegasi');
 	$routes->get('inventaris/pengaturan/check-conflict', 'Admin\InventarisPengaturan::ajaxCheckConflict');
+
+	// Modul KOMPU (Komunikasi Publik)
+	$routes->get('kompu', static fn() => redirect()->to('/admin/kompu/sosmed'));
+	$routes->get('kompu/sosmed', 'Admin\Kompu::sosmedIndex');
+	$routes->post('kompu/sosmed/simpan', 'Admin\Kompu::saveSosmed');
+	$routes->post('kompu/sosmed/(:num)/hapus', 'Admin\Kompu::deleteSosmed/$1');
+	$routes->post('kompu/sosmed/kirim-password', 'Admin\Kompu::sendPassword');
+	$routes->get('kompu/sosmed/export', 'Admin\Kompu::exportSosmed');
+
+	$routes->get('kompu/log-kredensial', 'Admin\Kompu::logIndex');
+	$routes->get('kompu/log-kredensial/export', 'Admin\Kompu::exportLog');
+
+	$routes->get('kompu/pengaturan', 'Admin\Kompu::pengaturanIndex');
+	$routes->post('kompu/pengaturan/user-access', 'Admin\Kompu::saveUserAccess');
+	$routes->post('kompu/pengaturan/role-permissions', 'Admin\Kompu::saveRolePermissions');
+	$routes->post('kompu/pengaturan/test-email', 'Admin\Kompu::testEmail');
 });
 
 
