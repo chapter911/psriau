@@ -138,7 +138,16 @@
         <tr>
             <td class="col-label">Jabatan</td>
             <td class="col-colon">:</td>
-            <td class="col-val"><?= esc($row['ppk_jabatan'] ?: 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis'); ?></td>
+            <td class="col-val">
+                <?php
+                    $defaultJabatan = 'Pejabat Penanda Tangan Kontrak Pelaksanaan Prasarana Strategis, Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
+                    $ppkJabatan = trim((string)($row['ppk_jabatan'] ?? ''));
+                    if (empty($ppkJabatan) || $ppkJabatan === 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis' || $ppkJabatan === 'PPK Pelaksanaan Prasarana Strategis') {
+                        $ppkJabatan = $defaultJabatan;
+                    }
+                ?>
+                <?= esc($ppkJabatan); ?>
+            </td>
         </tr>
         <tr>
             <td class="col-label">Satker</td>
@@ -196,7 +205,26 @@
         <tr>
             <td class="col-label">Nomor &amp; Tanggal Kontrak</td>
             <td class="col-colon">:</td>
-            <td class="col-val"><?= esc($row['nomor_tanggal_kontrak'] ?: '-'); ?></td>
+            <td class="col-val">
+                <?php
+                    $nomorKontrak = trim((string)($row['nomor_kontrak'] ?? ''));
+                    $tglKontrak = !empty($row['tanggal_kontrak']) ? tanggal_indonesia($row['tanggal_kontrak']) : '';
+                    if (empty($nomorKontrak) || empty($tglKontrak)) {
+                        $rawNoTgl = trim((string)($row['nomor_tanggal_kontrak'] ?? ''));
+                        if (stripos($rawNoTgl, ' tanggal ') !== false) {
+                            $parts = preg_split('/ tanggal /i', $rawNoTgl, 2);
+                            if (empty($nomorKontrak)) $nomorKontrak = trim($parts[0] ?? '');
+                            if (empty($tglKontrak)) $tglKontrak = trim($parts[1] ?? '');
+                        } elseif (empty($nomorKontrak)) {
+                            $nomorKontrak = $rawNoTgl;
+                        }
+                    }
+                ?>
+                <?= esc($nomorKontrak ?: '-'); ?>
+                <?php if (!empty($tglKontrak)): ?>
+                    <br><?= esc($tglKontrak); ?>
+                <?php endif; ?>
+            </td>
         </tr>
         <tr>
             <td class="col-label">Nilai Kontrak (termasuk addendum bila ada)</td>
@@ -234,7 +262,7 @@
             <td style="width: 56%; text-align: center;">
                 <div class="signature-box">
                     <div><?= esc($kota); ?>, <?= esc($tglStr); ?></div>
-                    <div><?= esc($row['ppk_jabatan'] ?: 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis'); ?>,</div>
+                    <div>PPK Pelaksanaan Prasarana Strategis</div>
                     <div><?= esc($row['ppk_satker'] ?: 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau'); ?></div>
                     <div class="signature-space"></div>
                     <div class="signature-name"><?= esc($row['ppk_nama'] ?: 'Nurhidayat Nugroho, S. Ars'); ?></div>

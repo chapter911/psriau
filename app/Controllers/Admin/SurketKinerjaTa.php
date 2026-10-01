@@ -266,6 +266,27 @@ class SurketKinerjaTa extends BaseController
             ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi.'
             : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.';
 
+        $nomorKontrak = trim((string) ($row['nomor_kontrak'] ?? ''));
+        $tglKontrak   = ! empty($row['tanggal_kontrak']) ? tanggal_indonesia($row['tanggal_kontrak']) : '';
+        if (empty($nomorKontrak) || empty($tglKontrak)) {
+            $rawNoTgl = trim((string) ($row['nomor_tanggal_kontrak'] ?? ''));
+            if (stripos($rawNoTgl, ' tanggal ') !== false) {
+                $parts = preg_split('/ tanggal /i', $rawNoTgl, 2);
+                if (empty($nomorKontrak)) $nomorKontrak = trim($parts[0] ?? '');
+                if (empty($tglKontrak)) $tglKontrak = trim($parts[1] ?? '');
+            } elseif (empty($nomorKontrak)) {
+                $nomorKontrak = $rawNoTgl;
+            }
+        }
+        $row['nomor_kontrak_clean'] = $nomorKontrak;
+        $row['tanggal_kontrak_clean'] = $tglKontrak;
+
+        $defaultJabatan = 'Pejabat Penanda Tangan Kontrak Pelaksanaan Prasarana Strategis, Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
+        $ppkJabatan = trim((string)($row['ppk_jabatan'] ?? ''));
+        if (empty($ppkJabatan) || $ppkJabatan === 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis' || $ppkJabatan === 'PPK Pelaksanaan Prasarana Strategis') {
+            $row['ppk_jabatan'] = $defaultJabatan;
+        }
+
         return $this->response->setJSON([
             'success' => true,
             'data'    => $row,
@@ -471,10 +492,33 @@ class SurketKinerjaTa extends BaseController
         $kotaSurat   = ! empty($row['kota_surat']) ? $row['kota_surat'] : 'Pekanbaru';
         $kotaTanggal = $kotaSurat . ', ' . $tglSuratStr;
 
+        $nomorKontrak = trim((string) ($row['nomor_kontrak'] ?? ''));
+        $tglKontrak   = ! empty($row['tanggal_kontrak']) ? tanggal_indonesia($row['tanggal_kontrak']) : '';
+        if (empty($nomorKontrak) || empty($tglKontrak)) {
+            $rawNoTgl = trim((string) ($row['nomor_tanggal_kontrak'] ?? ''));
+            if (stripos($rawNoTgl, ' tanggal ') !== false) {
+                $parts = preg_split('/ tanggal /i', $rawNoTgl, 2);
+                if (empty($nomorKontrak)) $nomorKontrak = trim($parts[0] ?? '');
+                if (empty($tglKontrak)) $tglKontrak = trim($parts[1] ?? '');
+            } elseif (empty($nomorKontrak)) {
+                $nomorKontrak = $rawNoTgl;
+            }
+        }
+        $formattedNoTglKontrak = $nomorKontrak ?: '-';
+        if (! empty($tglKontrak)) {
+            $formattedNoTglKontrak .= "\n" . $tglKontrak;
+        }
+
+        $defaultJabatan = 'Pejabat Penanda Tangan Kontrak Pelaksanaan Prasarana Strategis, Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
+        $ppkJabatan = trim((string)($row['ppk_jabatan'] ?? ''));
+        if (empty($ppkJabatan) || $ppkJabatan === 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis' || $ppkJabatan === 'PPK Pelaksanaan Prasarana Strategis') {
+            $ppkJabatan = $defaultJabatan;
+        }
+
         $replacements = [
             'nomor_surat'               => $row['nomor_surat'] ?: '...............',
             'ppk_nama'                  => $row['ppk_nama'] ?: 'Nurhidayat Nugroho, S.Ars',
-            'ppk_jabatan'               => $row['ppk_jabatan'] ?: 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis',
+            'ppk_jabatan'               => $ppkJabatan,
             'ppk_satker'                => $row['ppk_satker'] ?: 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau',
             'ppk_alamat'                => $row['ppk_alamat'] ?: 'Jl. Datuk Setia Maharaja No. 1 Pekanbaru',
             'nama_tenaga_ahli'          => $row['nama_tenaga_ahli'] ?: '-',
@@ -485,14 +529,14 @@ class SurketKinerjaTa extends BaseController
             'nama_paket'                => $row['nama_paket'] ?: '-',
             'lingkup_jasa'              => $row['lingkup_jasa'] ?: 'Manajemen Konstruksi',
             'lokasi_pekerjaan'          => $row['lokasi_pekerjaan'] ?: '-',
-            'nomor_tanggal_kontrak'     => $row['nomor_tanggal_kontrak'] ?: '-',
+            'nomor_tanggal_kontrak'     => $formattedNoTglKontrak,
             'nilai_kontrak'             => $row['nilai_kontrak'] ?: 'Rp .',
             'sumber_dana'               => $row['sumber_dana'] ?: 'APBN DIPA Satker Pelaksanaan Prasarana Strategis Riau',
             'masa_penugasan'            => $row['masa_penugasan'] ?: '-',
             'status_pekerjaan'          => $row['status_pekerjaan'] ?: 'Selesai',
             'teks_penutup_surat'        => $teksPenutup,
             'kota_tanggal_surat'        => $kotaTanggal,
-            'ppk_tanda_tangan_jabatan1' => ($row['ppk_jabatan'] ?: 'PPK Pelaksanaan Prasarana Strategis') . ',',
+            'ppk_tanda_tangan_jabatan1' => 'PPK Pelaksanaan Prasarana Strategis',
             'ppk_tanda_tangan_jabatan2' => $row['ppk_satker'] ?: 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau',
             'ppk_tanda_tangan_nama'     => $row['ppk_nama'] ?: 'Nurhidayat Nugroho, S. Ars',
             'ppk_tanda_tangan_nip'      => $row['ppk_nip'] ?: '199012212018021001',
@@ -782,6 +826,7 @@ class SurketKinerjaTa extends BaseController
             foreach ($replacements as $key => $val) {
                 $search = '${' . $key . '}';
                 $escaped = htmlspecialchars((string) $val, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+                $escaped = str_replace(["\r\n", "\r", "\n"], '</w:t><w:br/><w:t>', $escaped);
                 $xml = str_replace($search, $escaped, $xml);
             }
 

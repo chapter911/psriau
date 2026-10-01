@@ -373,7 +373,7 @@
                                     <div class="form-group mb-0">
                                         <label for="ppk_jabatan" class="font-weight-bold">Jabatan PPK <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="ppk_jabatan" name="ppk_jabatan" 
-                                               value="PPK Pelaksanaan Prasarana Strategis" required>
+                                               value="Pejabat Penanda Tangan Kontrak Pelaksanaan Prasarana Strategis, Satuan Kerja Pelaksanaan Prasarana Strategis Riau" required>
                                     </div>
                                     <input type="hidden" name="ppk_satker" id="ppk_satker" value="Satuan Kerja Pelaksanaan Prasarana Strategis Riau">
                                     <input type="hidden" name="ppk_alamat" id="ppk_alamat" value="Jl. Datuk Setia Maharaja No. 1 Pekanbaru">
@@ -666,7 +666,7 @@
                         <div class="col-5"></div>
                         <div class="col-7 text-center">
                             <div id="preview_kota_tanggal">Pekanbaru, -</div>
-                            <div id="preview_ppk_jabatan_ttd">Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis,</div>
+                            <div id="preview_ppk_jabatan_ttd">PPK Pelaksanaan Prasarana Strategis</div>
                             <div id="preview_ppk_satker_ttd">Satuan Kerja Pelaksanaan Prasarana Strategis Riau</div>
                             <div style="height: 50px;"></div>
                             <div id="preview_ppk_nama_ttd" class="font-weight-bold text-decoration-underline">-</div>
@@ -881,6 +881,7 @@ $(document).ready(function () {
         $('#formAlertContainer').addClass('d-none').html('');
         
         // Reset default PPK
+        $('#ppk_jabatan').val('Pejabat Penanda Tangan Kontrak Pelaksanaan Prasarana Strategis, Satuan Kerja Pelaksanaan Prasarana Strategis Riau');
         const defaultPpkOpt = $('#pilih_ppk_preset option[selected]');
         if (defaultPpkOpt.length) {
             $('#pilih_ppk_preset').val(defaultPpkOpt.val()).trigger('change');
@@ -1096,7 +1097,23 @@ $(document).ready(function () {
                     $('#preview_nama_paket').text(d.nama_paket || '-');
                     $('#preview_lingkup_jasa').text(d.lingkup_jasa || '-');
                     $('#preview_lokasi_pekerjaan').text(d.lokasi_pekerjaan || '-');
-                    $('#preview_nomor_tanggal_kontrak').text(d.nomor_tanggal_kontrak || '-');
+                    var noKontrak = d.nomor_kontrak_clean || d.nomor_kontrak || '';
+                    var tglKontrak = d.tanggal_kontrak_clean || '';
+                    if (!noKontrak && !tglKontrak) {
+                        var rawNoTgl = d.nomor_tanggal_kontrak || '-';
+                        if (rawNoTgl.toLowerCase().indexOf(' tanggal ') !== -1) {
+                            var parts = rawNoTgl.split(/ tanggal /i);
+                            noKontrak = parts[0].trim();
+                            tglKontrak = parts[1].trim();
+                        } else {
+                            noKontrak = rawNoTgl;
+                        }
+                    }
+                    var formattedNoTgl = $('<div>').text(noKontrak || '-').html();
+                    if (tglKontrak) {
+                        formattedNoTgl += '<br>' + $('<div>').text(tglKontrak).html();
+                    }
+                    $('#preview_nomor_tanggal_kontrak').html(formattedNoTgl);
                     $('#preview_nilai_kontrak').text(d.nilai_kontrak || '-');
                     $('#preview_sumber_dana').text(d.sumber_dana || '-');
                     $('#preview_masa_penugasan').text(d.masa_penugasan || '-');
@@ -1104,7 +1121,7 @@ $(document).ready(function () {
                     $('#preview_teks_penutup').text(d.teks_penutup || 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.');
 
                     $('#preview_kota_tanggal').text((d.kota_surat || 'Pekanbaru') + ', ' + (d.tanggal_surat || ''));
-                    $('#preview_ppk_jabatan_ttd').text((d.ppk_jabatan || 'PPK Pelaksanaan Prasarana Strategis') + ',');
+                    $('#preview_ppk_jabatan_ttd').text('PPK Pelaksanaan Prasarana Strategis');
                     $('#preview_ppk_satker_ttd').text(d.ppk_satker || 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau');
                     $('#preview_ppk_nama_ttd').text(d.ppk_nama || '-');
                     $('#preview_ppk_nip_ttd').text('NIP. ' + (d.ppk_nip || '-'));

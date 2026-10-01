@@ -1188,8 +1188,7 @@ graph TD
                                 <ul>
                                     <li><strong>Kop Surat Resmi:</strong> Dapat dipilih dari master Kop Surat instansi, secara default otomatis memilih kop surat yang berstatus aktif. Kop ini akan diterapkan baik pada pratinjau, cetak PDF, maupun unduhan Word (.docx).</li>
                                     <li>Nomor Surat ter-prefill dan dapat diisi sesuai agenda penomoran resmi kantor.</li>
-                                    <li>Tanggal Surat otomatis menggunakan tanggal hari ini (dapat disesuaikan jika surat diterbitkan tanggal lain).</li>
-                                    <li>Pihak Penandatangan (PPK) otomatis ter-default atas nama <strong>Nurhidayat Nugroho, S.Ars (NIP. 199012212018021001)</strong> sebagai PPK Pelaksanaan Prasarana Strategis Riau, dan dapat dipilih dari daftar Master Pegawai jika diperlukan pergantian pejabat.</li>
+                                    <li>Pihak Penandatangan (PPK) otomatis ter-default atas nama <strong>Nurhidayat Nugroho, S.Ars (NIP. 199012212018021001)</strong> dengan Jabatan resmi <em>"Pejabat Penanda Tangan Kontrak Pelaksanaan Prasarana Strategis, Satuan Kerja Pelaksanaan Prasarana Strategis Riau"</em>, serta pada bagian blok tanda tangan tercetak rapi: <em>"PPK Pelaksanaan Prasarana Strategis"</em> (baris pertama) dan <em>"Satuan Kerja Pelaksanaan Prasarana Strategis Riau"</em> (baris kedua).</li>
                                 </ul>
                             </li>
                             <li><strong>Bagian 3 - Paket Pekerjaan &amp; Penugasan Kontrak:</strong>
@@ -1202,7 +1201,7 @@ graph TD
                                         </ul>
                                     </li>
                                     <li>Isi <strong>Lokasi Pekerjaan</strong>.</li>
-                                    <li>Isi <strong>Nomor Kontrak</strong> dan <strong>Tanggal Kontrak</strong> secara terpisah (format tanggal otomatis dirangkai dengan penanggalan resmi Indonesia).</li>
+                                    <li>Isi <strong>Nomor Kontrak</strong> dan <strong>Tanggal Kontrak</strong> secara terpisah (format tanggal otomatis dirangkai dengan penanggalan resmi Indonesia). Pada seluruh hasil ekspor (PDF satuan, PDF bulk/semua, Word .docx) dan pratinjau modal, tanggal kontrak otomatis ditampilkan di baris baru tepat di bawah nomor kontrak tanpa kata <em>"tanggal"</em>, sehingga susunan penomoran tampak rapi, proporsional, dan tidak terpotong canggung.</li>
                                     <li>Isi <strong>Nilai Kontrak</strong> (termasuk addendum bila ada) berupa angka (format mata uang Rupiah <code>Rp X.XXX.XXX,-</code> otomatis terbentuk).</li>
                                     <li>Isi <strong>Sumber Dana</strong> (default: <em>APBN DIPA Satker Pelaksanaan Prasarana Strategis Riau</em>).</li>
                                     <li>Isi <strong>Masa Penugasan Tenaga Ahli</strong>:
