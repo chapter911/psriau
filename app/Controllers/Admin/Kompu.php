@@ -239,8 +239,7 @@ class Kompu extends BaseController
 
             if (! $email->send()) {
                 $rawDebug = (string) $email->printDebugger(['headers', 'subject', 'body']);
-                $debugMessage = trim(strip_tags($rawDebug));
-                $debugShort = substr($debugMessage, 0, 300);
+                $parsedError = $this->parseSmtpError($rawDebug);
 
                 $this->logPengiriman(
                     $sosmedId,
@@ -250,14 +249,14 @@ class Kompu extends BaseController
                     $recipientName,
                     $recipientEmail,
                     'gagal',
-                    'SMTP Gagal: ' . ($debugShort ?: 'Gagal mengirim email'),
+                    $parsedError,
                     $ipAddress,
                     $userAgent
                 );
 
                 return $this->response->setStatusCode(500)->setJSON([
                     'status'  => 'error',
-                    'message' => 'Email gagal terkirim ke ' . esc($recipientEmail) . '. Detail: ' . esc($debugShort ?: 'Koneksi mail server bermasalah') . '. Silakan laporkan ke Super Administrator.',
+                    'message' => 'Email gagal terkirim ke ' . esc($recipientEmail) . '. ' . esc($parsedError),
                 ]);
             }
 
@@ -722,9 +721,11 @@ class Kompu extends BaseController
 
             if (! $email->send()) {
                 $rawDebug = (string) $email->printDebugger(['headers', 'subject', 'body']);
+                $parsedError = $this->parseSmtpError($rawDebug);
+
                 return $this->response->setStatusCode(500)->setJSON([
                     'status'  => 'error',
-                    'message' => 'Gagal mengirim email uji coba: ' . trim(strip_tags($rawDebug)),
+                    'message' => 'Gagal mengirim email uji coba: ' . esc($parsedError),
                 ]);
             }
 
@@ -972,22 +973,68 @@ class Kompu extends BaseController
         string $userAgent
     ): void {
         try {
-            $this->logModel->insert([
-                'sosmed_id'    => $sosmedId,
+            $db = \Config\Database::connect();
+            $db->table('trn_kompu_log_pengiriman')->insert([
+                'sosmed_id'    => $sosmedId > 0 ? $sosmedId : null,
                 'nama_sosmed'  => $namaSosmed,
-                'user_id'      => $userId,
-                'user_nip'     => $userNip,
+                'user_id'      => $userId > 0 ? $userId : null,
+                'user_nip'     => $userNip ?: null,
                 'user_name'    => $userName,
                 'email_tujuan' => $emailTujuan,
                 'status'       => $status,
-                'pesan_status' => $pesanStatus,
-                'ip_address'   => $ipAddress,
-                'user_agent'   => $userAgent,
+                'pesan_status' => substr($pesanStatus, 0, 500),
+                'ip_address'   => $ipAddress ?: null,
+                'user_agent'   => substr($userAgent, 0, 250),
                 'created_at'   => date('Y-m-d H:i:s'),
             ]);
         } catch (\Throwable $e) {
             log_message('error', 'Gagal menulis log pengiriman kredensial: ' . $e->getMessage());
         }
+    }
+
+    private function parseSmtpError(string $rawDebug): string
+    {
+        $clean = trim(strip_tags($rawDebug));
+
+        // 1. Password or Username authentication failure
+        if (str_contains($clean, '535') || stripos($clean, 'Incorrect authentication data') !== false) {
+            return 'Autentikasi SMTP Gagal (Error 535: Password atau Username akun SMTP salah/tidak cocok di server mail hosting). Silakan periksa kembali password akun email di cPanel / file .env.';
+        }
+
+        // 2. Relay denied / Sender address rejected
+        if (str_contains($clean, '550') || stripos($clean, 'relay') !== false) {
+            return 'Alamat email pengirim atau penerima ditolak oleh server hosting (Error 550: Relay access denied).';
+        }
+
+        // 3. Timeout
+        if (stripos($clean, 'timed out') !== false || stripos($clean, 'timeout') !== false) {
+            return 'Koneksi ke server mail SMTP timeout (Port 465 atau Host server tidak merespon).';
+        }
+
+        // 4. Connection refused
+        if (stripos($clean, 'Connection refused') !== false) {
+            return 'Koneksi ke server mail ditolak (Connection refused).';
+        }
+
+        // 5. Filter out initial greeting banner lines (220, 250, hello:) and headers
+        $lines = preg_split('/[\r\n]+/', $clean);
+        $errorLines = [];
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || str_starts_with($line, 'Date:') || str_starts_with($line, 'From:') || str_starts_with($line, 'To:') || str_starts_with($line, 'Subject:')) {
+                continue;
+            }
+            if (preg_match('/^(220[- ]|250[- ]|hello:|<pre>)/i', $line)) {
+                continue;
+            }
+            $errorLines[] = $line;
+        }
+
+        if (! empty($errorLines)) {
+            return implode(' — ', array_slice($errorLines, 0, 2));
+        }
+
+        return substr($clean, -250);
     }
 
     private function buildCredentialEmailHtml(array $sosmed, string $recipientName, string $recipientNip, string $password): string
