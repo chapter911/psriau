@@ -627,7 +627,45 @@ graph TD
     </div>
     <?php endif; ?>
 
-    <!-- FLOWCHART 10: KOMPU - KOMUNIKASI PUBLIK, AKUN SOSMED & PENGATURAN AKSES -->
+    <!-- FLOWCHART 10: KONTRAK - BERITA ACARA SERAH TERIMA (BAST) -->
+    <?php if ($canRenderForUser(['admin', 'super_administrator', 'editor'])): ?>
+    <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-file-contract text-primary mr-2"></i>Flowchart: Alur Kerja Berita Acara Serah Terima (BAST)
+            </h5>
+            <div>
+                <span class="badge badge-primary">Kontrak</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu: Kontrak > BAST (/admin/kontrak/bast)"] --> FL["Filter Data: Dropdown Paket &amp; Lingkup Jasa (Terapkan / Reset)"]
+    FL --> TBL["Daftar BAST Tersaring (Nomor, Paket, Para Pihak, Status &amp; Bayar)"]
+    TBL --> EXP["Export Semua PDF Sekaligus (Konsolidasi Multi-Halaman Sesuai Filter)"]
+    A --> B1["Klik 'Buat BAST Baru' di Pojok Kanan (Form Baru)"]
+    A --> B2["Klik Ikon 'Duplikat' di Tabel atau Modal Pratinjau (Salin Data Eksisting)"]
+    B1 --> C["Pilih Preset Paket: Auto-fill Penyedia, Jenis Pekerjaan &amp; Dasar Pelaksanaan dari SIMAK"]
+    B2 --> C
+    C --> D["Pilih Kop Surat Resmi (Default: Kop Aktif) &amp; Tentukan Pejabat PPK (Default: Nurhidayat Nugroho)"]
+    D --> E["Sesuaikan Dasar Pelaksanaan (+ Tambah / Hapus Butir Kontrak, SPMK, Addendum)"]
+    E --> F["Pasal 1: Isi Rincian Hasil Pekerjaan (+ Tambah Baris / Klik 'Muat Preset Standar MK')"]
+    F --> G["Pasal 2 &amp; 3: Tentukan Kesesuaian Pekerjaan (Telah Sesuai) &amp; Persentase Pembayaran (100%)"]
+    G --> H["Validasi Form &amp; Simpan BAST ke Database (AJAX Single Notification)"]
+    H --> I1["Unduh Word (.docx) Format Presisi Sesuai Dokumen Acuan BAST MK"]
+    H --> I2["Cetak / Pratinjau PDF Satuan (Layout Resmi dengan Kop Surat &amp; Tanda Tangan)"]
+    H --> I3["Pratinjau Detail Modal, Duplikat BAST, Ubah Data, atau Hapus"]
+    I3 -.-> B2
+    TBL -.-> I3
+                </pre>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- FLOWCHART 11: KOMPU - KOMUNIKASI PUBLIK, AKUN SOSMED & PENGATURAN AKSES -->
     <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <h5 class="mb-0 font-weight-bold text-dark">
@@ -1273,6 +1311,78 @@ graph TD
                                     <li><i class="fas fa-file-word text-primary mr-1"></i><strong>Unduh Word (.docx):</strong> Menghasilkan berkas Word yang 100% presisi dan identik dengan template resmi Satker PPS (termasuk kop surat dinamis dari master, tabel dengan indentasi masuk ke dalam yang rapi, teks dinamis berdasarkan lingkup jasa, dan blok tanda tangan PPK). Berkas telah dioptimasi tata letak dan spasingnya sehingga <strong>pasti muat dalam tepat 1 halaman A4</strong> tanpa sisa paragraf kosong atau halaman kedua.</li>
                                     <li><i class="fas fa-file-pdf text-danger mr-1"></i><strong>Cetak PDF (.pdf):</strong> Membuka pratinjau dokumen PDF resmi beresolusi tinggi siap cetak langsung di peramban dengan kop surat yang menjaga rasio gambar asli secara presisi (aspek rasio proporsional tanpa terdistorsi atau melebar), layout tabel yang masuk ke dalam (indented), blok tanda tangan PPK yang tertata rapi rata tengah (center-aligned) dengan jarak proporsional dan elegan dari paragraf penutup, serta teks dinamis yang sesuai. Margin dan ukuran spasi telah disesuaikan agar <strong>seluruh dokumen tampil tuntas dalam 1 halaman utuh</strong>.</li>
                                     <li><i class="fas fa-eye text-info mr-1"></i><strong>Pratinjau (Preview Modal):</strong> Menampilkan ringkasan surat langsung di halaman tanpa harus mengunduh file terlebih dahulu, serta dilengkapi tombol cepat <strong>Duplikat Data</strong>, <strong>Unduh Word</strong>, dan <strong>Cetak PDF</strong>.</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- SUB-TUTORIAL: BAST -->
+                <div class="card border-0 shadow-sm mt-3">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-primary">
+                            <i class="fas fa-file-contract mr-1"></i> Penerbitan Berita Acara Serah Terima (BAST)
+                        </h6>
+                        <p class="small text-muted mb-2"><code>/admin/kontrak/bast</code></p>
+                        <ol class="pl-3 small mb-0">
+                            <li><strong>Akses Menu:</strong> Buka menu samping <strong>Kontrak &gt; BAST</strong>.</li>
+                            <li><strong>Filter Data (Paket &amp; Lingkup Jasa):</strong>
+                                <ul>
+                                    <li>Saring daftar dokumen BAST berdasarkan paket pekerjaan yang dipilih atau lingkup jasa (<em>Manajemen Konstruksi</em>, <em>Supervisi</em>, <em>Fisik</em>, <em>Perencanaan</em>).</li>
+                                    <li>Klik tombol <strong>"Terapkan"</strong> untuk memfilter, atau tombol <strong>"Reset"</strong> untuk menampilkan kembali seluruh data.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Export PDF Sekaligus (Konsolidasi Berdasarkan Filter):</strong>
+                                <ul>
+                                    <li>Klik tombol merah <strong>"Export Semua PDF"</strong> di bagian header atau <strong>"Cetak Hasil Filter"</strong> pada banner filter untuk mengunduh satu berkas PDF gabungan seluruh dokumen BAST yang tersaring.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Buat Dokumen BAST Baru:</strong> Klik tombol biru <strong>"Buat BAST Baru"</strong> di pojok kanan atas halaman.</li>
+                            <li><strong>Bagian 1 - Identitas Dokumen &amp; Kop Surat:</strong>
+                                <ul>
+                                    <li>Isi <strong>Judul Berita Acara</strong> (default: <em>BERITA ACARA SERAH TERIMA I</em>, dapat disesuaikan untuk termin berikutnya atau BAST Akhir).</li>
+                                    <li>Isi <strong>Nomor BAST</strong> resmi kantor.</li>
+                                    <li>Tentukan <strong>Tanggal BAST</strong> dan <strong>Kota Penerbitan</strong> (default: <em>Pekanbaru</em>). Pada seluruh dokumen resmi (PDF dan Word), tanggal otomatis diterjemahkan ke format penanggalan terbilang lengkap: <code>Pada hari ini [Hari] tanggal [Tanggal Terbilang] bulan [Bulan Terbilang] tahun [Tahun Terbilang] (DD-MM-YYYY)</code>.</li>
+                                    <li>Pilih <strong>Kop Surat Resmi</strong> (otomatis memilih kop surat aktif).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Bagian 2 - Paket Pekerjaan &amp; Auto-fill SIMAK:</strong>
+                                <ul>
+                                    <li>Pilih paket dari dropdown <strong>Preset Paket</strong>. Sistem secara otomatis menarik nama penyedia (badan usaha / KSO), sub-judul pekerjaan, lingkup jasa, dan nomor kontrak dari modul SIMAK untuk mengisi formulir secara instan.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Bagian 3 - PIHAK PERTAMA (PPK):</strong>
+                                <ul>
+                                    <li>Otomatis ter-default atas nama <strong>Nurhidayat Nugroho, S.Ars (NIP. 199012212018021001)</strong> beserta jabatan resmi dan alamat satker.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Bagian 4 - PIHAK KEDUA (Penyedia Jasa):</strong>
+                                <ul>
+                                    <li>Isi / sesuaikan Nama Badan Usaha / KSO, Nama Direktur / Wakil Penandatangan, Jabatan (default: <em>Direktur Utama</em>), dan Alamat penyedia.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Bagian 5 - Dasar Pelaksanaan:</strong>
+                                <ul>
+                                    <li>Daftar nomor dan tanggal Kontrak, SPMK, serta Addendum Kontrak dapat ditambah atau dikurangi secara dinamis melalui tombol <strong>"+ Tambah Dasar"</strong>.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Bagian 6 - Pasal 1 (Rincian Hasil Pekerjaan):</strong>
+                                <ul>
+                                    <li>Tabel rincian barang/laporan bersifat dinamis (tambah baris / hapus baris).</li>
+                                    <li>Tersedia tombol kilat <strong>"Muat Preset Standar MK (6 Item)"</strong> untuk langsung mengisi 6 butir laporan standar (Laporan Mingguan, Bulanan, Akhir Pengawasan, Khusus Profil, Khusus SLF, dan SSD Eksternal) sesuai dokumen acuan resmi.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Bagian 7 - Pasal 2 &amp; 3 (Hasil Pemeriksaan &amp; Pembayaran):</strong>
+                                <ul>
+                                    <li>Pilih status pemeriksaan (<em>telah sesuai</em> / <em>belum sepenuhnya sesuai</em>).</li>
+                                    <li>Tentukan persentase pembayaran yang dapat diproses (default: <em>100%</em>).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Fitur Duplikat BAST:</strong> Klik tombol hijau <i class="fas fa-copy text-success"></i> untuk menyalin seluruh isi BAST menjadi dokumen baru secara instan.</li>
+                            <li><strong>Unduh Word (.docx) &amp; Cetak PDF (.pdf):</strong>
+                                <ul>
+                                    <li><i class="fas fa-file-word text-primary mr-1"></i><strong>Unduh Word (.docx):</strong> Dokumen Word presisi hasil generate dari template yang identik dengan berkas acuan Satker, lengkap dengan tabel hasil pekerjaan dinamis, dasar pelaksanaan, kop surat, dan blok tanda tangan dua pihak.</li>
+                                    <li><i class="fas fa-file-pdf text-danger mr-1"></i><strong>Cetak PDF (.pdf):</strong> Dokumen PDF resmi siap cetak dan pratinjau langsung di browser.</li>
                                 </ul>
                             </li>
                         </ol>

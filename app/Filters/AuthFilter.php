@@ -420,6 +420,7 @@ class AuthFilter implements FilterInterface
             'admin/konsultan-individual/kontrak' => ['table' => 'trn_konsultan_kontrak', 'pk' => 'id'],
             'admin/konsultan-individual/laporan-bulanan' => ['table' => 'trn_konsultan_laporan_bulanan', 'pk' => 'id'],
             'admin/kontrak/surket-kinerja-ta' => ['table' => 'trn_surket_kinerja_ta', 'pk' => 'id'],
+            'admin/kontrak/bast' => ['table' => 'trn_bast', 'pk' => 'id'],
         ];
 
         $table = null;

@@ -168,6 +168,18 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('kontrak/surket-kinerja-ta/(:num)/unduh-docx', 'Admin\\SurketKinerjaTa::unduhDocx/$1');
 	$routes->get('kontrak/surket-kinerja-ta/(:num)/cetak-pdf', 'Admin\\SurketKinerjaTa::cetakPdf/$1');
 	
+	// BAST Routes
+	$routes->get('kontrak/bast', 'Admin\\Bast::index');
+	$routes->get('kontrak/bast/data', 'Admin\\Bast::data');
+	$routes->get('kontrak/bast/export-pdf', 'Admin\\Bast::exportPdf');
+	$routes->post('kontrak/bast/simpan', 'Admin\\Bast::simpan');
+	$routes->get('kontrak/bast/(:num)/detail', 'Admin\\Bast::detail/$1');
+	$routes->post('kontrak/bast/(:num)/ubah', 'Admin\\Bast::ubah/$1');
+	$routes->post('kontrak/bast/(:num)/hapus', 'Admin\\Bast::hapus/$1');
+	$routes->get('kontrak/bast/(:num)/unduh-docx', 'Admin\\Bast::unduhDocx/$1');
+	$routes->get('kontrak/bast/(:num)/cetak-pdf', 'Admin\\Bast::cetakPdf/$1');
+	$routes->get('kontrak/bast/get-paket-info/(:num)', 'Admin\\Bast::getPaketInfo/$1');
+
 	$routes->get('master/kop-surat', 'Admin\\KopSurat::index');
 	$routes->get('master/kop-surat/unduh-word', 'Admin\\KopSurat::downloadWord');
 	$routes->get('master/kop-surat/(:num)/unduh-word', 'Admin\\KopSurat::downloadWord/$1');
