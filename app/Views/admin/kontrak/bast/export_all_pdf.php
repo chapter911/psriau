@@ -20,9 +20,6 @@
         .text-right { text-align: right; }
         .font-bold { font-weight: bold; }
         .uppercase { text-transform: uppercase; }
-        .page-break {
-            page-break-after: always;
-        }
         .kop-wrapper {
             text-align: center;
             margin-bottom: 12px;

@@ -655,8 +655,8 @@ graph TD
     E --> F["Pasal 1: Isi Rincian Hasil Pekerjaan (+ Tambah Baris / Klik 'Muat Preset Standar MK')"]
     F --> G["Pasal 2 &amp; 3: Tentukan Kesesuaian Pekerjaan (Telah Sesuai) &amp; Persentase Pembayaran (100%)"]
     G --> H["Validasi Form &amp; Simpan BAST ke Database (AJAX Single Notification)"]
-    H --> I1["Unduh Word (.docx) Format Presisi Sesuai Dokumen Acuan BAST MK"]
-    H --> I2["Cetak / Pratinjau PDF Satuan (Layout Resmi dengan Kop Surat &amp; Tanda Tangan)"]
+    H --> I1["Unduh Word (.docx) Format Presisi (Halaman Baru &amp; Tanda Tangan Sejajar)"]
+    H --> I2["Cetak / Pratinjau PDF Satuan (Layout 2 Halaman Resmi, Kop Surat &amp; Tanda Tangan Rapi)"]
     H --> I3["Pratinjau Detail Modal, Duplikat BAST, Ubah Data, atau Hapus"]
     I3 -.-> B2
     TBL -.-> I3
@@ -1380,8 +1380,8 @@ graph TD
                             <li><strong>Fitur Duplikat BAST:</strong> Klik tombol hijau <i class="fas fa-copy text-success"></i> untuk menyalin seluruh isi BAST menjadi dokumen baru secara instan.</li>
                             <li><strong>Unduh Word (.docx) &amp; Cetak PDF (.pdf):</strong>
                                 <ul>
-                                    <li><i class="fas fa-file-word text-primary mr-1"></i><strong>Unduh Word (.docx):</strong> Dokumen Word presisi hasil generate dari template yang identik dengan berkas acuan Satker, lengkap dengan tabel hasil pekerjaan dinamis, dasar pelaksanaan, kop surat, dan blok tanda tangan dua pihak.</li>
-                                    <li><i class="fas fa-file-pdf text-danger mr-1"></i><strong>Cetak PDF (.pdf):</strong> Dokumen PDF resmi siap cetak dan pratinjau langsung di browser.</li>
+                                    <li><i class="fas fa-file-word text-primary mr-1"></i><strong>Unduh Word (.docx):</strong> Dokumen Word presisi hasil generate dari template resmi Satker. Paragraf <em>"PARA PIHAK menyatakan sepakat sebagai berikut:"</em> otomatis dimulai pada halaman baru (Halaman 2), dan blok tanda tangan dua belah pihak diformat sejajar horizontal sempurna dengan spasi tanda tangan yang proporsional.</li>
+                                    <li><i class="fas fa-file-pdf text-danger mr-1"></i><strong>Cetak PDF (.pdf):</strong> Dokumen PDF resmi siap cetak dan pratinjau browser dengan struktur 2 halaman standar dokumen negara, kop surat resmi, pemisah halaman otomatis sebelum kesepakatan, dan blok tanda tangan PIHAK KEDUA serta PIHAK PERTAMA yang simetris dan rapi.</li>
                                 </ul>
                             </li>
                             <li><strong>Master Data BAST via Seeder (Database Seeder):</strong>

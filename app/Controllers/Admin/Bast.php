@@ -831,7 +831,7 @@ class Bast extends BaseController
      * Format Tanggal Terbilang Indonesia Resmi untuk BAST
      * Contoh: "Sabtu tanggal Tiga Puluh bulan Mei tahun Dua Ribu Dua Puluh Enam (30-05-2026)"
      */
-    private function formatTanggalTerbilangBAST(string $dateStr): string
+    public function formatTanggalTerbilangBAST(string $dateStr): string
     {
         helper('custom');
         $days = [
