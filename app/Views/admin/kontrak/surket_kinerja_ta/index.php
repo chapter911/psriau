@@ -564,7 +564,7 @@
                     <div class="text-center pb-2 mb-3 border-bottom">
                         <h6 class="font-weight-bold text-uppercase mb-0" style="letter-spacing: 0.5px;">SURAT KETERANGAN / REFERENSI KINERJA</h6>
                         <h6 class="font-weight-bold text-uppercase mb-0">TENAGA AHLI DAN PENDUKUNG</h6>
-                        <h6 class="font-weight-bold text-uppercase mb-1">KONSULTANSI KONSTRUKSI</h6>
+                        <h6 class="font-weight-bold text-uppercase mb-1" id="preview_sub_judul">KONSULTANSI KONSTRUKSI</h6>
                         <div class="small" id="preview_nomor_surat">Nomor: -</div>
                     </div>
 
@@ -1084,6 +1084,10 @@ $(document).ready(function () {
                 if (res.success && res.data) {
                     const d = res.data;
                     $('#previewBtnCopy').data('id', d.id);
+                    const isFisik = (d.is_fisik !== undefined) 
+                        ? Boolean(d.is_fisik) 
+                        : ((d.lingkup_jasa || '').toString().trim().toLowerCase() === 'fisik');
+                    $('#preview_sub_judul').text(d.sub_judul_2 || (isFisik ? 'KONSTRUKSI' : 'KONSULTANSI KONSTRUKSI'));
                     $('#preview_nomor_surat').text('Nomor: ' + (d.nomor_surat || '..........................................'));
                     $('#preview_ppk_nama').text(d.ppk_nama || '-');
                     $('#preview_ppk_jabatan').text(d.ppk_jabatan || '-');

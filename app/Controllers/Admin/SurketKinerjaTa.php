@@ -258,7 +258,9 @@ class SurketKinerjaTa extends BaseController
             ]);
         }
 
-        $isFisik = (trim((string) ($row['lingkup_jasa'] ?? '')) === 'Fisik');
+        $isFisik = (strcasecmp(trim((string) ($row['lingkup_jasa'] ?? '')), 'Fisik') === 0);
+        $row['is_fisik'] = $isFisik;
+        $row['sub_judul_2'] = $isFisik ? 'KONSTRUKSI' : 'KONSULTANSI KONSTRUKSI';
         $row['teks_pengantar'] = $isFisik 
             ? 'telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:'
             : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:';
@@ -563,7 +565,7 @@ class SurketKinerjaTa extends BaseController
             }
         }
 
-        $docxBinary = $this->renderDocxFromTemplate($templateFile, $replacements, $kopLocalPath);
+        $docxBinary = $this->renderDocxFromTemplate($templateFile, $replacements, $kopLocalPath, $isFisik);
         if (! $docxBinary) {
             return redirect()->to(site_url('admin/kontrak/surket-kinerja-ta'))->with('error', 'Gagal memproses dokumen Word.');
         }
@@ -636,6 +638,7 @@ class SurketKinerjaTa extends BaseController
             'kopBase64'     => $kopBase64,
             'teksPengantar' => $teksPengantar,
             'teksPenutup'   => $teksPenutup,
+            'isFisik'       => $isFisik,
         ]);
 
         $options = new Options();
@@ -733,6 +736,7 @@ class SurketKinerjaTa extends BaseController
                 'teksPenutup'   => $teksPenutup,
                 'kota'          => $kota,
                 'tglStr'        => $tglStr,
+                'isFisik'       => $isFisik,
             ];
         }
 
@@ -769,7 +773,7 @@ class SurketKinerjaTa extends BaseController
     /**
      * Proses template DOCX dengan keamanan karakter XML & Penggantian Kop Surat Dinamis
      */
-    private function renderDocxFromTemplate(string $templateFile, array $replacements, ?string $kopImagePath = null): ?string
+    private function renderDocxFromTemplate(string $templateFile, array $replacements, ?string $kopImagePath = null, bool $isFisik = false): ?string
     {
         if (! file_exists($templateFile)) {
             return null;
@@ -787,10 +791,20 @@ class SurketKinerjaTa extends BaseController
                 $tempPath = WRITEPATH . 'uploads/' . uniqid('surket_ta_', true) . '.docx';
                 $processor->saveAs($tempPath);
 
-                if ($kopImagePath && file_exists($kopImagePath)) {
+                $hasKopToEmbed = ($kopImagePath && file_exists($kopImagePath));
+                if ($hasKopToEmbed || $isFisik) {
                     $zip = new \ZipArchive();
                     if ($zip->open($tempPath) === true) {
-                        $zip->addFile($kopImagePath, 'word/media/image1.png');
+                        if ($hasKopToEmbed) {
+                            $zip->addFile($kopImagePath, 'word/media/image1.png');
+                        }
+                        if ($isFisik) {
+                            $xml = $zip->getFromName('word/document.xml');
+                            if ($xml !== false) {
+                                $xml = str_replace('KONSULTANSI KONSTRUKSI', 'KONSTRUKSI', $xml);
+                                $zip->addFromString('word/document.xml', $xml);
+                            }
+                        }
                         $zip->close();
                     }
                 }
@@ -828,6 +842,10 @@ class SurketKinerjaTa extends BaseController
                 $escaped = htmlspecialchars((string) $val, ENT_XML1 | ENT_QUOTES, 'UTF-8');
                 $escaped = str_replace(["\r\n", "\r", "\n"], '</w:t><w:br/><w:t>', $escaped);
                 $xml = str_replace($search, $escaped, $xml);
+            }
+
+            if ($isFisik) {
+                $xml = str_replace('KONSULTANSI KONSTRUKSI', 'KONSTRUKSI', $xml);
             }
 
             $zip->addFromString('word/document.xml', $xml);

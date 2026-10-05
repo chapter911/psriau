@@ -121,10 +121,13 @@
         <?php endif; ?>
     </div>
 
+    <?php
+        $isFisikSurket = isset($isFisik) ? (bool) $isFisik : (strcasecmp(trim((string) ($row['lingkup_jasa'] ?? '')), 'Fisik') === 0);
+    ?>
     <div class="title-block">
         <div class="doc-title">SURAT KETERANGAN / REFERENSI KINERJA</div>
         <div class="doc-subtitle">TENAGA AHLI DAN PENDUKUNG</div>
-        <div class="doc-subtitle">KONSULTANSI KONSTRUKSI</div>
+        <div class="doc-subtitle"><?= $isFisikSurket ? 'KONSTRUKSI' : 'KONSULTANSI KONSTRUKSI'; ?></div>
         <div class="doc-number">Nomor: <?= esc($row['nomor_surat'] ?: '..........................................'); ?></div>
     </div>
 

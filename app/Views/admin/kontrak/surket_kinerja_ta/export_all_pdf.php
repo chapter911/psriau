@@ -129,6 +129,7 @@ foreach ($records as $index => $item):
     $teksPenutup = $item['teksPenutup'];
     $kota = $item['kota'];
     $tglStr = $item['tglStr'];
+    $isFisikSurket = isset($item['isFisik']) ? (bool) $item['isFisik'] : (strcasecmp(trim((string) ($row['lingkup_jasa'] ?? '')), 'Fisik') === 0);
     $isLast = ($index === $totalRecords - 1);
 ?>
     <div class="page-container <?= ! $isLast ? 'page-break' : ''; ?>">
@@ -141,7 +142,7 @@ foreach ($records as $index => $item):
         <div class="title-block">
             <div class="doc-title">SURAT KETERANGAN / REFERENSI KINERJA</div>
             <div class="doc-subtitle">TENAGA AHLI DAN PENDUKUNG</div>
-            <div class="doc-subtitle">KONSULTANSI KONSTRUKSI</div>
+            <div class="doc-subtitle"><?= $isFisikSurket ? 'KONSTRUKSI' : 'KONSULTANSI KONSTRUKSI'; ?></div>
             <div class="doc-number">Nomor: <?= esc($row['nomor_surat'] ?: '..........................................'); ?></div>
         </div>
 

@@ -615,7 +615,7 @@ graph TD
     C --> D["Pilih Kop Surat Resmi (Default: Kop Aktif) &amp; Tentukan Pejabat PPK"]
     D --> E["Isi / Sesuaikan Paket &amp; Kontrak (Dropdown Lingkup, No/Tgl Kontrak, Nilai Rp, Masa Dari s.d. Tgl &amp; Total Hari, Status %)"]
     E --> F["Validasi Form &amp; Simpan Dokumen (Insert Data Baru)"]
-    F --> G["Data Tersimpan di Database (Teks Pengantar &amp; Penutup Otomatis)"]
+    F --> G["Data Tersimpan di Database (Sub-Judul, Teks Pengantar &amp; Penutup Otomatis Sesuai Lingkup Jasa)"]
     G --> H1["Unduh Word (.docx) Format Presisi, Indentasi Masuk &amp; Pas Tepat 1 Halaman"]
     G --> H2["Cetak / Pratinjau PDF Satuan (Tata Letak Presisi Pas Tepat 1 Halaman)"]
     G --> H3["Pratinjau Detail Modal, Duplikat Data, Ubah, atau Hapus"]
@@ -1241,8 +1241,8 @@ graph TD
                                     <li>Pilih dari dropdown <strong>Master Paket</strong> untuk pengisian cepat otomatis nama paket, atau pilih <em>Ketik Nama Paket Manual</em> jika paket belum terdaftar.</li>
                                     <li>Pilih <strong>Lingkup Jasa</strong> melalui dropdown:
                                         <ul>
-                                            <li><strong>Fisik:</strong> Teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:"</em> dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi."</em></li>
-                                            <li><strong>Manajemen Konstruksi / Supervisi:</strong> Teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:"</em> dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi."</em></li>
+                                            <li><strong>Fisik:</strong> Sub-judul dokumen otomatis menjadi <em>"TENAGA AHLI DAN PENDUKUNG KONSTRUKSI"</em>, teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:"</em>, dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi."</em></li>
+                                            <li><strong>Manajemen Konstruksi / Supervisi:</strong> Sub-judul dokumen otomatis menjadi <em>"TENAGA AHLI DAN PENDUKUNG KONSULTANSI KONSTRUKSI"</em>, teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:"</em>, dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi."</em></li>
                                         </ul>
                                     </li>
                                     <li>Isi <strong>Lokasi Pekerjaan</strong>.</li>
