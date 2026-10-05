@@ -977,6 +977,11 @@ $(document).ready(function() {
                         <div class="font-weight-bold mb-1 mt-2">Dasar pelaksanaan:</div>
                         <div class="mb-3">${dasarListHtml}</div>
 
+                        <div class="my-4 text-center">
+                            <div style="border-top: 2px dashed #007bff; margin-bottom: 8px;"></div>
+                            <span class="badge badge-primary px-3 py-1 font-weight-normal"><i class="fas fa-file-alt mr-1"></i>Halaman 2: Kesepakatan &amp; Tanda Tangan</span>
+                        </div>
+
                         <p class="text-justify mb-2">PARA PIHAK menyatakan sepakat sebagai berikut:</p>
 
                         <div class="text-center font-weight-bold mb-1">Pasal 1</div>
@@ -1006,7 +1011,36 @@ $(document).ready(function() {
                         <div class="text-center font-weight-bold mb-1">Pasal 5</div>
                         <p class="text-justify mb-2">Berita acara ini dibuat rangkap 2 (dua) bermeterai cukup, masing-masing mempunyai kekuatan hukum yang sama, satu untuk PIHAK PERTAMA dan satu untuk PIHAK KEDUA.</p>
 
-                        <p class="text-justify mt-3">Demikian ${d.judul_bast} ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya.</p>
+                        <p class="text-justify mt-3 mb-4">Demikian ${d.judul_bast} ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya.</p>
+
+                        <!-- TANDA TANGAN (DIRAPIKAN & SEJAJAR RATA SECARA HORIZONTAL) -->
+                        <table class="table table-borderless text-center mt-3 mb-2" style="font-size: 11pt; line-height: 1.35;">
+                            <tr>
+                                <td style="width: 50%; vertical-align: top;">
+                                    <div class="font-weight-bold">PIHAK KEDUA</div>
+                                    <div class="font-weight-bold">${d.penyedia_nama}</div>
+                                </td>
+                                <td style="width: 50%; vertical-align: top;">
+                                    <div class="font-weight-bold">PIHAK PERTAMA</div>
+                                    <div class="font-weight-bold">${d.ppk_tanda_tangan_jabatan1 || 'Pejabat Penandatangan Kontrak'}</div>
+                                    <div>${d.ppk_tanda_tangan_jabatan2 || 'Pelaksanaan Prasarana Strategis'}</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="height: 60px;"></td>
+                                <td style="height: 60px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="vertical-align: top;">
+                                    <div class="font-weight-bold" style="text-decoration: underline;">${d.penyedia_wakil || '-'}</div>
+                                    <div class="text-muted small mt-1">${d.penyedia_jabatan || '-'}</div>
+                                </td>
+                                <td style="vertical-align: top;">
+                                    <div class="font-weight-bold" style="text-decoration: underline;">${d.ppk_nama}</div>
+                                    <div class="text-muted small mt-1">NIP. ${d.ppk_nip}</div>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
                 `;
 

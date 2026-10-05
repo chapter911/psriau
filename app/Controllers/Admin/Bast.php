@@ -324,6 +324,20 @@ class Bast extends BaseController
         $row['is_fisik'] = $isFisik;
         $row['jenis_pekerjaan_singkat'] = $isFisik ? 'konstruksi' : 'jasa konsultansi';
 
+        $ppkJabatan = trim((string) ($row['ppk_jabatan'] ?? ''));
+        $ppkTtd1 = 'Pejabat Penandatangan Kontrak';
+        $ppkTtd2 = 'Pelaksanaan Prasarana Strategis';
+        if (! empty($ppkJabatan) && stripos($ppkJabatan, ',') !== false) {
+            $parts = explode(',', $ppkJabatan, 2);
+            $ppkTtd1 = trim($parts[0]);
+            $ppkTtd2 = trim($parts[1]);
+        } elseif (! empty($ppkJabatan)) {
+            $ppkTtd1 = $ppkJabatan;
+            $ppkTtd2 = trim((string) ($row['ppk_satker'] ?? 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau'));
+        }
+        $row['ppk_tanda_tangan_jabatan1'] = $ppkTtd1;
+        $row['ppk_tanda_tangan_jabatan2'] = $ppkTtd2;
+
         return $this->response->setJSON([
             'success' => true,
             'data'    => $row,

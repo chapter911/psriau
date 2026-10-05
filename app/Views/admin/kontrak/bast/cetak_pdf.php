@@ -89,21 +89,30 @@
             text-align: center;
             font-weight: bold;
         }
+        .page-break {
+            page-break-before: always;
+        }
         .table-ttd {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 25px;
+            margin-top: 20px;
             page-break-inside: avoid;
         }
         .table-ttd td {
             width: 50%;
-            vertical-align: top;
             text-align: center;
             font-size: 11pt;
-            line-height: 1.3;
+            line-height: 1.35;
+            padding: 0 8px;
         }
-        .space-ttd {
+        .table-ttd td.ttd-header {
+            vertical-align: top;
+        }
+        .table-ttd td.ttd-spacer {
             height: 65px;
+        }
+        .table-ttd td.ttd-person {
+            vertical-align: top;
         }
         p {
             margin: 4px 0;
@@ -214,7 +223,12 @@
         <p style="margin-left: 20px;">-</p>
     <?php endif; ?>
 
-    <p style="margin-top: 8px;">
+    <!-- ============================================================ -->
+    <!-- HALAMAN BARU: KESEPAKATAN PARA PIHAK & TANDA TANGAN          -->
+    <!-- ============================================================ -->
+    <div class="page-break"></div>
+
+    <p style="margin-top: 0; padding-top: 0;">
         PARA PIHAK menyatakan sepakat sebagai berikut:
     </p>
 
@@ -279,11 +293,11 @@
     </p>
 
     <!-- PENUTUP -->
-    <p style="margin-top: 8px;">
+    <p style="margin-top: 6px;">
         Demikian <?= esc($row['judul_bast'] ?: 'Berita Acara Serah Terima I'); ?> ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya.
     </p>
 
-    <!-- TANDA TANGAN -->
+    <!-- TANDA TANGAN (DIRAPIKAN & SEJAJAR RATA HORIZONTAL) -->
     <?php
         $ppkJabatan = trim((string) ($row['ppk_jabatan'] ?? ''));
         $ppkTtd1 = 'Pejabat Penandatangan Kontrak';
@@ -299,20 +313,28 @@
     ?>
     <table class="table-ttd">
         <tr>
-            <td>
+            <td class="ttd-header">
                 <div class="font-bold">PIHAK KEDUA</div>
-                <div class="font-bold" style="min-height: 32px;"><?= esc($row['penyedia_nama']); ?></div>
-                <div class="space-ttd"></div>
-                <div class="font-bold" style="text-decoration: underline;"><?= esc($row['penyedia_wakil']); ?></div>
-                <div><?= esc($row['penyedia_jabatan'] ?: '-'); ?></div>
+                <div class="font-bold"><?= esc($row['penyedia_nama']); ?></div>
             </td>
-            <td>
+            <td class="ttd-header">
                 <div class="font-bold">PIHAK PERTAMA</div>
                 <div class="font-bold"><?= esc($ppkTtd1); ?></div>
                 <div><?= esc($ppkTtd2); ?></div>
-                <div class="space-ttd"></div>
+            </td>
+        </tr>
+        <tr>
+            <td class="ttd-spacer"></td>
+            <td class="ttd-spacer"></td>
+        </tr>
+        <tr>
+            <td class="ttd-person">
+                <div class="font-bold" style="text-decoration: underline;"><?= esc($row['penyedia_wakil']); ?></div>
+                <div style="margin-top: 2px;"><?= esc($row['penyedia_jabatan'] ?: '-'); ?></div>
+            </td>
+            <td class="ttd-person">
                 <div class="font-bold" style="text-decoration: underline;"><?= esc($row['ppk_nama']); ?></div>
-                <div>NIP. <?= esc($row['ppk_nip']); ?></div>
+                <div style="margin-top: 2px;">NIP. <?= esc($row['ppk_nip']); ?></div>
             </td>
         </tr>
     </table>
