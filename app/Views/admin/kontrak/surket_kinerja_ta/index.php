@@ -1099,7 +1099,7 @@ $(document).ready(function () {
                     $('#preview_nama_badan_usaha').text(d.nama_badan_usaha || '-');
                     $('#preview_alamat_badan_usaha').text(d.alamat_badan_usaha || '-');
 
-                    $('#preview_teks_pengantar').text(d.teks_pengantar || 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:');
+                    $('#preview_teks_pengantar').text(d.teks_pengantar || (isFisik ? 'telah melaksanakan pekerjaan konstruksi dengan data sebagai berikut:' : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:'));
                     $('#preview_nama_paket').text(d.nama_paket || '-');
                     $('#preview_lingkup_jasa').text(d.lingkup_jasa || '-');
                     $('#preview_lokasi_pekerjaan').text(d.lokasi_pekerjaan || '-');
@@ -1124,7 +1124,7 @@ $(document).ready(function () {
                     $('#preview_sumber_dana').text(d.sumber_dana || '-');
                     $('#preview_masa_penugasan').text(d.masa_penugasan || '-');
                     $('#preview_status_pekerjaan').text(d.status_pekerjaan || '-');
-                    $('#preview_teks_penutup').text(d.teks_penutup || 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.');
+                    $('#preview_teks_penutup').text(d.teks_penutup || (isFisik ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan pekerjaan konstruksi.' : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.'));
 
                     $('#preview_kota_tanggal').text((d.kota_surat || 'Pekanbaru') + ', ' + (d.tanggal_surat || ''));
                     $('#preview_ppk_jabatan_ttd').text('PPK Pelaksanaan Prasarana Strategis');

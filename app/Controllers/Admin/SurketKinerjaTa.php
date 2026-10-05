@@ -262,10 +262,10 @@ class SurketKinerjaTa extends BaseController
         $row['is_fisik'] = $isFisik;
         $row['sub_judul_2'] = $isFisik ? 'KONSTRUKSI' : 'KONSULTANSI KONSTRUKSI';
         $row['teks_pengantar'] = $isFisik 
-            ? 'telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:'
+            ? 'telah melaksanakan pekerjaan konstruksi dengan data sebagai berikut:'
             : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:';
         $row['teks_penutup'] = $isFisik
-            ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi.'
+            ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan pekerjaan konstruksi.'
             : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.';
 
         $nomorKontrak = trim((string) ($row['nomor_kontrak'] ?? ''));
@@ -483,11 +483,11 @@ class SurketKinerjaTa extends BaseController
 
         $isFisik = (trim((string) ($row['lingkup_jasa'] ?? '')) === 'Fisik');
         $teksPengantar = $isFisik 
-            ? 'telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:'
+            ? 'telah melaksanakan pekerjaan konstruksi dengan data sebagai berikut:'
             : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:';
 
         $teksPenutup = $isFisik
-            ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi.'
+            ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan pekerjaan konstruksi.'
             : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.';
 
         $tglSuratStr = ! empty($row['tanggal_surat']) ? tanggal_indonesia($row['tanggal_surat']) : tanggal_indonesia(date('Y-m-d'));
@@ -599,11 +599,11 @@ class SurketKinerjaTa extends BaseController
 
         $isFisik = (trim((string) ($row['lingkup_jasa'] ?? '')) === 'Fisik');
         $teksPengantar = $isFisik 
-            ? 'telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:'
+            ? 'telah melaksanakan pekerjaan konstruksi dengan data sebagai berikut:'
             : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:';
 
         $teksPenutup = $isFisik
-            ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi.'
+            ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan pekerjaan konstruksi.'
             : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.';
 
         // Resolusi berkas kop surat untuk PDF Base64
@@ -690,11 +690,11 @@ class SurketKinerjaTa extends BaseController
         foreach ($items as $row) {
             $isFisik = (trim((string) ($row['lingkup_jasa'] ?? '')) === 'Fisik');
             $teksPengantar = $isFisik 
-                ? 'telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:'
+                ? 'telah melaksanakan pekerjaan konstruksi dengan data sebagai berikut:'
                 : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:';
 
             $teksPenutup = $isFisik
-                ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi.'
+                ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan pekerjaan konstruksi.'
                 : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.';
 
             $kopSuratId = ! empty($row['kop_surat_id']) ? (int) $row['kop_surat_id'] : 0;

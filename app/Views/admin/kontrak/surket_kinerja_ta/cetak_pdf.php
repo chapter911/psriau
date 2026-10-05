@@ -123,6 +123,12 @@
 
     <?php
         $isFisikSurket = isset($isFisik) ? (bool) $isFisik : (strcasecmp(trim((string) ($row['lingkup_jasa'] ?? '')), 'Fisik') === 0);
+        $defaultPengantar = $isFisikSurket 
+            ? 'telah melaksanakan pekerjaan konstruksi dengan data sebagai berikut:' 
+            : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:';
+        $defaultPenutup = $isFisikSurket
+            ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan pekerjaan konstruksi.'
+            : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.';
     ?>
     <div class="title-block">
         <div class="doc-title">SURAT KETERANGAN / REFERENSI KINERJA</div>
@@ -188,7 +194,7 @@
         </tr>
     </table>
 
-    <div class="section-intro"><?= esc($teksPengantar ?? 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:'); ?></div>
+    <div class="section-intro"><?= esc($teksPengantar ?? $defaultPengantar); ?></div>
     <table class="data-table">
         <tr>
             <td class="col-label">Nama Paket Pekerjaan</td>
@@ -252,7 +258,7 @@
     </table>
 
     <div class="closing-text">
-        <?= esc($teksPenutup ?? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.'); ?>
+        <?= esc($teksPenutup ?? $defaultPenutup); ?>
     </div>
 
     <?php

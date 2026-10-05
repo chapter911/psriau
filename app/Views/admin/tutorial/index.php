@@ -1241,7 +1241,7 @@ graph TD
                                     <li>Pilih dari dropdown <strong>Master Paket</strong> untuk pengisian cepat otomatis nama paket, atau pilih <em>Ketik Nama Paket Manual</em> jika paket belum terdaftar.</li>
                                     <li>Pilih <strong>Lingkup Jasa</strong> melalui dropdown:
                                         <ul>
-                                            <li><strong>Fisik:</strong> Sub-judul dokumen otomatis menjadi <em>"TENAGA AHLI DAN PENDUKUNG KONSTRUKSI"</em>, teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan jasa konstruksi dengan data sebagai berikut:"</em>, dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konstruksi."</em></li>
+                                            <li><strong>Fisik:</strong> Sub-judul dokumen otomatis menjadi <em>"TENAGA AHLI DAN PENDUKUNG KONSTRUKSI"</em>, teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan konstruksi dengan data sebagai berikut:"</em>, dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan pekerjaan konstruksi."</em></li>
                                             <li><strong>Manajemen Konstruksi / Supervisi:</strong> Sub-judul dokumen otomatis menjadi <em>"TENAGA AHLI DAN PENDUKUNG KONSULTANSI KONSTRUKSI"</em>, teks pengantar otomatis tercetak <em>"telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:"</em>, dan kalimat penutup otomatis <em>"...antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi."</em></li>
                                         </ul>
                                     </li>

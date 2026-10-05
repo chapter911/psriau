@@ -130,6 +130,12 @@ foreach ($records as $index => $item):
     $kota = $item['kota'];
     $tglStr = $item['tglStr'];
     $isFisikSurket = isset($item['isFisik']) ? (bool) $item['isFisik'] : (strcasecmp(trim((string) ($row['lingkup_jasa'] ?? '')), 'Fisik') === 0);
+    $defaultPengantar = $isFisikSurket 
+        ? 'telah melaksanakan pekerjaan konstruksi dengan data sebagai berikut:' 
+        : 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:';
+    $defaultPenutup = $isFisikSurket
+        ? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan pekerjaan konstruksi.'
+        : 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.';
     $isLast = ($index === $totalRecords - 1);
 ?>
     <div class="page-container <?= ! $isLast ? 'page-break' : ''; ?>">
@@ -203,7 +209,7 @@ foreach ($records as $index => $item):
             </tr>
         </table>
 
-        <div class="section-intro"><?= esc($teksPengantar ?? 'telah melaksanakan pekerjaan jasa konsultansi dengan data sebagai berikut:'); ?></div>
+        <div class="section-intro"><?= esc($teksPengantar ?? $defaultPengantar); ?></div>
         <table class="data-table">
             <tr>
                 <td class="col-label">Nama Paket Pekerjaan</td>
@@ -267,7 +273,7 @@ foreach ($records as $index => $item):
         </table>
 
         <div class="closing-text">
-            <?= esc($teksPenutup ?? 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, antara lain sebagai bukti pengalaman dalam proses pengadaan jasa konsultansi.'); ?>
+            <?= esc($teksPenutup ?? $defaultPenutup); ?>
         </div>
 
         <table class="signature-table">
