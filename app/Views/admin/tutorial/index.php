@@ -645,6 +645,7 @@ graph TD
     A["Buka Menu: Kontrak > BAST (/admin/kontrak/bast)"] --> FL["Filter Data: Dropdown Paket &amp; Lingkup Jasa (Terapkan / Reset)"]
     FL --> TBL["Daftar BAST Tersaring (Nomor, Paket, Para Pihak, Status &amp; Bayar)"]
     TBL --> EXP["Export Semua PDF Sekaligus (Konsolidasi Multi-Halaman Sesuai Filter)"]
+    SEED["Database Seeder (BastSeeder): 18 Berkas Kontrak Asli (9 Fisik, 8 MK, 1 SPV)"] -.->|Seed ke DB| TBL
     A --> B1["Klik 'Buat BAST Baru' di Pojok Kanan (Form Input Baru Kosong Bersih)"]
     A --> B2["Klik Ikon 'Duplikat' di Tabel atau Modal Pratinjau (Salin Data Eksisting)"]
     B1 --> C["Pilih Preset Paket SIMAK (Opsional Auto-fill) atau Input Manual Paket &amp; Lingkup"]
@@ -1381,6 +1382,12 @@ graph TD
                                 <ul>
                                     <li><i class="fas fa-file-word text-primary mr-1"></i><strong>Unduh Word (.docx):</strong> Dokumen Word presisi hasil generate dari template yang identik dengan berkas acuan Satker, lengkap dengan tabel hasil pekerjaan dinamis, dasar pelaksanaan, kop surat, dan blok tanda tangan dua pihak.</li>
                                     <li><i class="fas fa-file-pdf text-danger mr-1"></i><strong>Cetak PDF (.pdf):</strong> Dokumen PDF resmi siap cetak dan pratinjau langsung di browser.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Master Data BAST via Seeder (Database Seeder):</strong>
+                                <ul>
+                                    <li>Tersedia seeder resmi <code>BastSeeder</code> yang menginput otomatis 18 dokumen BAST lengkap hasil ekstraksi dokumen kontrak asli Satker PPS Riau: <strong>9 Paket Fisik (Riau 1 s/d 9)</strong>, <strong>8 Paket Manajemen Konstruksi (Riau 2 s/d 9)</strong>, dan <strong>1 Paket Supervisi (Riau 1)</strong>.</li>
+                                    <li>Perintah eksekusi seeder di terminal: <code>php spark db:seed BastSeeder</code>. Seeder bersifat idempoten (aman dijalankan berkali-kali tanpa menghasilkan data ganda).</li>
                                 </ul>
                             </li>
                         </ol>
