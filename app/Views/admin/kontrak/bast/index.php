@@ -273,26 +273,27 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="small font-weight-bold text-dark">Judul Berita Acara <span class="text-danger">*</span></label>
-                                <input type="text" name="judul_bast" id="judul_bast" class="form-control" value="BERITA ACARA SERAH TERIMA I" placeholder="Contoh: BERITA ACARA SERAH TERIMA I" required>
+                                <input type="text" name="judul_bast" id="judul_bast" class="form-control" value="" placeholder="Contoh: BERITA ACARA SERAH TERIMA I" required>
                                 <small class="text-muted">Misal: BERITA ACARA SERAH TERIMA I, BERITA ACARA SERAH TERIMA II, atau AKHIR</small>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="small font-weight-bold text-dark">Nomor BAST <span class="text-danger">*</span></label>
-                                <input type="text" name="nomor_bast" id="nomor_bast" class="form-control" placeholder="Contoh: BAST/MK-PHTC.06/Gs7/2026" required>
+                                <input type="text" name="nomor_bast" id="nomor_bast" class="form-control" value="" placeholder="Contoh: BAST/MK-PHTC.06/Gs7/2026" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="small font-weight-bold text-dark">Tanggal BAST <span class="text-danger">*</span></label>
-                                <input type="date" name="tanggal_bast" id="tanggal_bast" class="form-control" value="<?= date('Y-m-d'); ?>" required>
+                                <input type="date" name="tanggal_bast" id="tanggal_bast" class="form-control" value="" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="small font-weight-bold text-dark">Kota Penerbitan <span class="text-danger">*</span></label>
-                                <input type="text" name="kota_bast" id="kota_bast" class="form-control" value="Pekanbaru" required>
+                                <input type="text" name="kota_bast" id="kota_bast" class="form-control" value="" placeholder="Contoh: Pekanbaru" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="small font-weight-bold text-dark">Kop Surat Resmi <span class="text-danger">*</span></label>
-                                <select name="kop_surat_id" id="kop_surat_id" class="form-control">
+                                <select name="kop_surat_id" id="kop_surat_id" class="form-control" required>
+                                    <option value="" selected>-- Pilih Kop Surat --</option>
                                     <?php foreach ($kopSuratList as $kop): ?>
-                                        <option value="<?= esc($kop['id']); ?>" <?= (! empty($defaultKop['id']) && $defaultKop['id'] == $kop['id']) ? 'selected' : ''; ?>>
+                                        <option value="<?= esc($kop['id']); ?>">
                                             <?= esc($kop['title']); ?> <?= ! empty($kop['is_active']) ? '(Aktif)' : ''; ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -313,7 +314,7 @@
                             <div class="col-md-6 mb-3">
                                 <label class="small font-weight-bold text-dark">Pilih Preset Paket (Otomatis Isi)</label>
                                 <select id="pilih_paket_preset" class="form-control border-primary">
-                                    <option value="">-- Pilih Paket Dari Database SIMAK --</option>
+                                    <option value="" selected>-- Pilih Paket Dari Database SIMAK --</option>
                                     <?php foreach ($paketList as $p): ?>
                                         <option value="<?= esc($p['id']); ?>" data-nama="<?= esc($p['nama_paket']); ?>">
                                             <?= esc($p['nama_paket']); ?>
@@ -325,6 +326,7 @@
                             <div class="col-md-6 mb-3">
                                 <label class="small font-weight-bold text-dark">Lingkup Jasa <span class="text-danger">*</span></label>
                                 <select name="lingkup_jasa" id="lingkup_jasa" class="form-control" required>
+                                    <option value="" selected>-- Pilih Lingkup Jasa --</option>
                                     <option value="Manajemen Konstruksi">Manajemen Konstruksi</option>
                                     <option value="Supervisi">Supervisi</option>
                                     <option value="Fisik">Fisik</option>
@@ -337,7 +339,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="small font-weight-bold text-dark">Sub Judul Jenis Pekerjaan <span class="text-danger">*</span></label>
-                                <input type="text" name="jenis_pekerjaan" id="jenis_pekerjaan" class="form-control" value="PEKERJAAN JASA KONSULTANSI KONSTRUKSI" required>
+                                <input type="text" name="jenis_pekerjaan" id="jenis_pekerjaan" class="form-control" value="" placeholder="Contoh: PEKERJAAN JASA KONSULTANSI KONSTRUKSI" required>
                                 <small class="text-muted">Misal: PEKERJAAN JASA KONSULTANSI KONSTRUKSI atau PEKERJAAN KONSTRUKSI</small>
                             </div>
                         </div>
@@ -406,8 +408,8 @@
                                 <input type="text" name="penyedia_wakil" id="penyedia_wakil" class="form-control" placeholder="Contoh: Bambang Taidi, S.T" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="small font-weight-bold text-dark">Jabatan Wakil Penyedia <span class="text-danger">*</span></label>
-                                <input type="text" name="penyedia_jabatan" id="penyedia_jabatan" class="form-control" value="Direktur Utama" required>
+                                <label class="small font-weight-bold text-dark">Jabatan Penyedia <span class="text-danger">*</span></label>
+                                <input type="text" name="penyedia_jabatan" id="penyedia_jabatan" class="form-control" value="" placeholder="Contoh: Direktur / Direktur Utama" required>
                             </div>
                             <div class="col-md-12 mb-3">
                                 <label class="small font-weight-bold text-dark">Alamat Badan Usaha Penyedia</label>
@@ -614,7 +616,7 @@ $(document).ready(function() {
                 <div class="input-group-prepend">
                     <span class="input-group-text small bg-light"><i class="fas fa-file-signature"></i></span>
                 </div>
-                <input type="text" name="dasar_pelaksanaan[]" class="form-control" value="${val}" placeholder="Contoh: Kontrak/Surat Perjanjian Pekerjaan ... Nomor ... tanggal ..." required>
+                <input type="text" name="dasar_pelaksanaan[]" class="form-control" value="${val}" placeholder="Contoh: Kontrak/Surat Perjanjian Pekerjaan ... Nomor ... tanggal ...">
                 <div class="input-group-append">
                     <button type="button" class="btn btn-outline-danger btn-remove-dasar" title="Hapus Dasar Pelaksanaan">
                         <i class="fas fa-trash-alt"></i>
@@ -712,27 +714,41 @@ $(document).ready(function() {
         $('#formBast')[0].reset();
         $('#bast_id').val('');
         $('#modalFormBastLabel').html('<i class="fas fa-file-contract mr-2"></i>Buat Dokumen BAST Baru');
-        $('#judul_bast').val('BERITA ACARA SERAH TERIMA I');
-        $('#jenis_pekerjaan').val('PEKERJAAN JASA KONSULTANSI KONSTRUKSI');
-        $('#lingkup_jasa').val('Manajemen Konstruksi');
-        $('#tanggal_bast').val('<?= date('Y-m-d'); ?>');
-        $('#kota_bast').val('Pekanbaru');
-        $('#kop_surat_id').val('<?= $defaultKop['id'] ?? ''; ?>');
-        $('#pilih_ppk_preset').val('<?= $defaultPpk['id'] ?? ''; ?>').trigger('change');
+
+        // 1. Identitas Dokumen BAST & Kop Surat (Kosongkan)
+        $('#judul_bast').val('');
+        $('#nomor_bast').val('');
+        $('#tanggal_bast').val('');
+        $('#kota_bast').val('');
+        $('#kop_surat_id').val('');
+
+        // 2. Paket Pekerjaan & Lingkup Jasa (Kosongkan)
         $('#pilih_paket_preset').val('');
         $('#paket_id').val('');
-        $('#penyedia_jabatan').val('Direktur Utama');
+        $('#nama_paket').val('');
+        $('#lingkup_jasa').val('');
+        $('#jenis_pekerjaan').val('');
+
+        // 3. PIHAK PERTAMA (PPK)
+        $('#pilih_ppk_preset').val('<?= $defaultPpk['id'] ?? ''; ?>').trigger('change');
+
+        // 4. PIHAK KEDUA (Penyedia Jasa / Rekanan) (Kosongkan)
+        $('#penyedia_nama').val('');
+        $('#penyedia_wakil').val('');
+        $('#penyedia_jabatan').val('');
+        $('#penyedia_alamat').val('');
+
+        // Hasil Pemeriksaan & Pembayaran
         $('#kesesuaian_pekerjaan').val('telah sesuai');
         $('#persentase_pembayaran').val('100%');
 
-        // Reset dasar pelaksanaan
+        // 5. Dasar Pelaksanaan (Kosongkan)
         $('#containerDasarPelaksanaan').empty();
-        addDasarRow('Kontrak/Surat Perjanjian Pekerjaan ......................... Nomor ......................... tanggal .........................');
-        addDasarRow('Surat Perintah Mulai Kerja (SPMK) Nomor ........................., tanggal .........................');
+        addDasarRow('');
 
-        // Reset rincian tabel
+        // 6. Rincian Hasil Pekerjaan (Satu baris kosong awal)
         $('#tableInputRincian tbody').empty();
-        $('#btnLoadPresetMk').trigger('click');
+        addRincianRow('', '', '', '');
 
         $('#modalFormBast').modal('show');
     });
@@ -853,7 +869,7 @@ $(document).ready(function() {
 
                 $('#penyedia_nama').val(d.penyedia_nama || '');
                 $('#penyedia_wakil').val(d.penyedia_wakil || '');
-                $('#penyedia_jabatan').val(d.penyedia_jabatan || 'Direktur Utama');
+                $('#penyedia_jabatan').val(d.penyedia_jabatan || '');
                 $('#penyedia_alamat').val(d.penyedia_alamat || '');
 
                 $('#kesesuaian_pekerjaan').val(d.kesesuaian_pekerjaan || 'telah sesuai');
@@ -950,8 +966,8 @@ $(document).ready(function() {
 
                         <div class="font-weight-bold mb-1 mt-2">2. PIHAK KEDUA</div>
                         <table class="table table-sm table-borderless mb-2" style="font-size: 10.5pt;">
-                            <tr><td style="width: 15%;">Nama</td><td style="width: 2%;">:</td><td class="font-weight-bold">${d.penyedia_wakil}</td></tr>
-                            <tr><td>Jabatan</td><td>:</td><td>${d.penyedia_jabatan || 'Direktur Utama'}</td></tr>
+                            <tr><td style="width: 15%;">Nama</td><td style="width: 2%;">:</td><td class="font-weight-bold">${d.penyedia_wakil || '-'}</td></tr>
+                            <tr><td>Jabatan</td><td>:</td><td>${d.penyedia_jabatan || '-'}</td></tr>
                             <tr><td>Alamat</td><td>:</td><td>${d.penyedia_alamat || '-'}</td></tr>
                         </table>
                         <p class="text-justify mb-2">Dalam hal ini bertindak untuk dan atas nama ${d.penyedia_nama}, selanjutnya disebut <strong>PIHAK KEDUA</strong>.</p>

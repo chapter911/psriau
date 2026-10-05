@@ -645,12 +645,12 @@ graph TD
     A["Buka Menu: Kontrak > BAST (/admin/kontrak/bast)"] --> FL["Filter Data: Dropdown Paket &amp; Lingkup Jasa (Terapkan / Reset)"]
     FL --> TBL["Daftar BAST Tersaring (Nomor, Paket, Para Pihak, Status &amp; Bayar)"]
     TBL --> EXP["Export Semua PDF Sekaligus (Konsolidasi Multi-Halaman Sesuai Filter)"]
-    A --> B1["Klik 'Buat BAST Baru' di Pojok Kanan (Form Baru)"]
+    A --> B1["Klik 'Buat BAST Baru' di Pojok Kanan (Form Input Baru Kosong Bersih)"]
     A --> B2["Klik Ikon 'Duplikat' di Tabel atau Modal Pratinjau (Salin Data Eksisting)"]
-    B1 --> C["Pilih Preset Paket: Auto-fill Penyedia, Jenis Pekerjaan &amp; Dasar Pelaksanaan dari SIMAK"]
+    B1 --> C["Pilih Preset Paket SIMAK (Opsional Auto-fill) atau Input Manual Paket &amp; Lingkup"]
     B2 --> C
-    C --> D["Pilih Kop Surat Resmi (Default: Kop Aktif) &amp; Tentukan Pejabat PPK (Default: Nurhidayat Nugroho)"]
-    D --> E["Sesuaikan Dasar Pelaksanaan (+ Tambah / Hapus Butir Kontrak, SPMK, Addendum)"]
+    C --> D["Pilih Kop Surat Resmi, Isi Identitas BAST &amp; Tentukan Pejabat PPK"]
+    D --> E["Isi Pihak Kedua (Nama, Wakil, Jabatan Penyedia, Alamat) &amp; Tambah Dasar Pelaksanaan"]
     E --> F["Pasal 1: Isi Rincian Hasil Pekerjaan (+ Tambah Baris / Klik 'Muat Preset Standar MK')"]
     F --> G["Pasal 2 &amp; 3: Tentukan Kesesuaian Pekerjaan (Telah Sesuai) &amp; Persentase Pembayaran (100%)"]
     G --> H["Validasi Form &amp; Simpan BAST ke Database (AJAX Single Notification)"]
@@ -1340,15 +1340,13 @@ graph TD
                             <li><strong>Buat Dokumen BAST Baru:</strong> Klik tombol biru <strong>"Buat BAST Baru"</strong> di pojok kanan atas halaman.</li>
                             <li><strong>Bagian 1 - Identitas Dokumen &amp; Kop Surat:</strong>
                                 <ul>
-                                    <li>Isi <strong>Judul Berita Acara</strong> (default: <em>BERITA ACARA SERAH TERIMA I</em>, dapat disesuaikan untuk termin berikutnya atau BAST Akhir).</li>
-                                    <li>Isi <strong>Nomor BAST</strong> resmi kantor.</li>
-                                    <li>Tentukan <strong>Tanggal BAST</strong> dan <strong>Kota Penerbitan</strong> (default: <em>Pekanbaru</em>). Pada seluruh dokumen resmi (PDF dan Word), tanggal otomatis diterjemahkan ke format penanggalan terbilang lengkap: <code>Pada hari ini [Hari] tanggal [Tanggal Terbilang] bulan [Bulan Terbilang] tahun [Tahun Terbilang] (DD-MM-YYYY)</code>.</li>
-                                    <li>Pilih <strong>Kop Surat Resmi</strong> (otomatis memilih kop surat aktif).</li>
+                                    <li>Formulir dimulai dalam kondisi bersih (kosong). Isi <strong>Judul Berita Acara</strong> (misal: <em>BERITA ACARA SERAH TERIMA I</em> atau <em>BAST AKHIR</em>), <strong>Nomor BAST</strong> resmi kantor, <strong>Tanggal BAST</strong>, dan <strong>Kota Penerbitan</strong> (misal: <em>Pekanbaru</em>). Pada seluruh dokumen resmi (PDF dan Word), tanggal otomatis diterjemahkan ke format penanggalan terbilang lengkap: <code>Pada hari ini [Hari] tanggal [Tanggal Terbilang] bulan [Bulan Terbilang] tahun [Tahun Terbilang] (DD-MM-YYYY)</code>.</li>
+                                    <li>Pilih <strong>Kop Surat Resmi</strong> dari dropdown.</li>
                                 </ul>
                             </li>
-                            <li><strong>Bagian 2 - Paket Pekerjaan &amp; Auto-fill SIMAK:</strong>
+                            <li><strong>Bagian 2 - Paket Pekerjaan &amp; Lingkup Jasa:</strong>
                                 <ul>
-                                    <li>Pilih paket dari dropdown <strong>Preset Paket</strong>. Sistem secara otomatis menarik nama penyedia (badan usaha / KSO), sub-judul pekerjaan, lingkup jasa, dan nomor kontrak dari modul SIMAK untuk mengisi formulir secara instan.</li>
+                                    <li>Formulir dimulai dalam kondisi kosong. Anda dapat menginput nama paket, memilih <strong>Lingkup Jasa</strong> (<em>Manajemen Konstruksi</em>, <em>Supervisi</em>, <em>Fisik</em>, <em>Perencanaan</em>), dan sub-judul jenis pekerjaan secara manual, atau memilih paket dari dropdown <strong>Preset Paket</strong> untuk auto-fill instan dari data SIMAK.</li>
                                 </ul>
                             </li>
                             <li><strong>Bagian 3 - PIHAK PERTAMA (PPK):</strong>
@@ -1356,14 +1354,14 @@ graph TD
                                     <li>Otomatis ter-default atas nama <strong>Nurhidayat Nugroho, S.Ars (NIP. 199012212018021001)</strong> beserta jabatan resmi dan alamat satker.</li>
                                 </ul>
                             </li>
-                            <li><strong>Bagian 4 - PIHAK KEDUA (Penyedia Jasa):</strong>
+                            <li><strong>Bagian 4 - PIHAK KEDUA (Penyedia Jasa / Rekanan):</strong>
                                 <ul>
-                                    <li>Isi / sesuaikan Nama Badan Usaha / KSO, Nama Direktur / Wakil Penandatangan, Jabatan (default: <em>Direktur Utama</em>), dan Alamat penyedia.</li>
+                                    <li>Formulir dimulai dalam kondisi kosong. Isi Nama Badan Usaha / KSO, Nama Direktur / Wakil Penandatangan, <strong>Jabatan Penyedia</strong> (misal: <em>Direktur</em>, <em>Direktur Utama</em>, <em>Kuasa KSO</em>), dan Alamat penyedia.</li>
                                 </ul>
                             </li>
                             <li><strong>Bagian 5 - Dasar Pelaksanaan:</strong>
                                 <ul>
-                                    <li>Daftar nomor dan tanggal Kontrak, SPMK, serta Addendum Kontrak dapat ditambah atau dikurangi secara dinamis melalui tombol <strong>"+ Tambah Dasar"</strong>.</li>
+                                    <li>Dimulai dalam kondisi kosong bersih. Nomor dan tanggal Kontrak, SPMK, serta Addendum Kontrak dapat ditambahkan secara fleksibel melalui tombol <strong>"+ Tambah Dasar"</strong>.</li>
                                 </ul>
                             </li>
                             <li><strong>Bagian 6 - Pasal 1 (Rincian Hasil Pekerjaan):</strong>

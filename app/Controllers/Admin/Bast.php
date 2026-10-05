@@ -211,7 +211,7 @@ class Bast extends BaseController
             'ppk_satker'        => ['label' => 'Satker PPK', 'rules' => 'required'],
             'penyedia_nama'     => ['label' => 'Nama Penyedia (Badan Usaha / KSO)', 'rules' => 'required'],
             'penyedia_wakil'    => ['label' => 'Nama Wakil / Direktur Penyedia', 'rules' => 'required'],
-            'penyedia_jabatan'  => ['label' => 'Jabatan Wakil Penyedia', 'rules' => 'required'],
+            'penyedia_jabatan'  => ['label' => 'Jabatan Penyedia', 'rules' => 'required'],
         ];
 
         if (! $this->validate($rules)) {
@@ -261,9 +261,9 @@ class Bast extends BaseController
 
         $insertData = [
             'nomor_bast'              => trim((string) ($post['nomor_bast'] ?? '')),
-            'judul_bast'              => trim((string) ($post['judul_bast'] ?? 'BERITA ACARA SERAH TERIMA I')),
-            'jenis_pekerjaan'         => trim((string) ($post['jenis_pekerjaan'] ?? 'PEKERJAAN JASA KONSULTANSI KONSTRUKSI')),
-            'lingkup_jasa'            => trim((string) ($post['lingkup_jasa'] ?? 'Manajemen Konstruksi')),
+            'judul_bast'              => trim((string) ($post['judul_bast'] ?? '')) ?: 'BERITA ACARA SERAH TERIMA',
+            'jenis_pekerjaan'         => trim((string) ($post['jenis_pekerjaan'] ?? '')),
+            'lingkup_jasa'            => trim((string) ($post['lingkup_jasa'] ?? '')),
             'paket_id'                => ! empty($post['paket_id']) ? (int) $post['paket_id'] : null,
             'nama_paket'              => trim((string) ($post['nama_paket'] ?? '')),
             'tanggal_bast'            => ! empty($post['tanggal_bast']) ? $post['tanggal_bast'] : date('Y-m-d'),
@@ -277,7 +277,7 @@ class Bast extends BaseController
             'ppk_alamat'              => trim((string) ($post['ppk_alamat'] ?? '')),
             'penyedia_nama'           => trim((string) ($post['penyedia_nama'] ?? '')),
             'penyedia_wakil'          => trim((string) ($post['penyedia_wakil'] ?? '')),
-            'penyedia_jabatan'        => trim((string) ($post['penyedia_jabatan'] ?? 'Direktur Utama')),
+            'penyedia_jabatan'        => trim((string) ($post['penyedia_jabatan'] ?? '')),
             'penyedia_alamat'         => trim((string) ($post['penyedia_alamat'] ?? '')),
             'dasar_pelaksanaan'       => ! empty($dasarArr) ? json_encode($dasarArr, JSON_UNESCAPED_UNICODE) : null,
             'rincian_hasil_pekerjaan' => ! empty($rincianArr) ? json_encode($rincianArr, JSON_UNESCAPED_UNICODE) : null,
@@ -365,7 +365,7 @@ class Bast extends BaseController
             'ppk_satker'        => ['label' => 'Satker PPK', 'rules' => 'required'],
             'penyedia_nama'     => ['label' => 'Nama Penyedia (Badan Usaha / KSO)', 'rules' => 'required'],
             'penyedia_wakil'    => ['label' => 'Nama Wakil / Direktur Penyedia', 'rules' => 'required'],
-            'penyedia_jabatan'  => ['label' => 'Jabatan Wakil Penyedia', 'rules' => 'required'],
+            'penyedia_jabatan'  => ['label' => 'Jabatan Penyedia', 'rules' => 'required'],
         ];
 
         if (! $this->validate($rules)) {
@@ -415,9 +415,9 @@ class Bast extends BaseController
 
         $updateData = [
             'nomor_bast'              => trim((string) ($post['nomor_bast'] ?? '')),
-            'judul_bast'              => trim((string) ($post['judul_bast'] ?? 'BERITA ACARA SERAH TERIMA I')),
-            'jenis_pekerjaan'         => trim((string) ($post['jenis_pekerjaan'] ?? 'PEKERJAAN JASA KONSULTANSI KONSTRUKSI')),
-            'lingkup_jasa'            => trim((string) ($post['lingkup_jasa'] ?? 'Manajemen Konstruksi')),
+            'judul_bast'              => trim((string) ($post['judul_bast'] ?? '')) ?: 'BERITA ACARA SERAH TERIMA',
+            'jenis_pekerjaan'         => trim((string) ($post['jenis_pekerjaan'] ?? '')),
+            'lingkup_jasa'            => trim((string) ($post['lingkup_jasa'] ?? '')),
             'paket_id'                => ! empty($post['paket_id']) ? (int) $post['paket_id'] : null,
             'nama_paket'              => trim((string) ($post['nama_paket'] ?? '')),
             'tanggal_bast'            => ! empty($post['tanggal_bast']) ? $post['tanggal_bast'] : date('Y-m-d'),
@@ -431,7 +431,7 @@ class Bast extends BaseController
             'ppk_alamat'              => trim((string) ($post['ppk_alamat'] ?? '')),
             'penyedia_nama'           => trim((string) ($post['penyedia_nama'] ?? '')),
             'penyedia_wakil'          => trim((string) ($post['penyedia_wakil'] ?? '')),
-            'penyedia_jabatan'        => trim((string) ($post['penyedia_jabatan'] ?? 'Direktur Utama')),
+            'penyedia_jabatan'        => trim((string) ($post['penyedia_jabatan'] ?? '')),
             'penyedia_alamat'         => trim((string) ($post['penyedia_alamat'] ?? '')),
             'dasar_pelaksanaan'       => ! empty($dasarArr) ? json_encode($dasarArr, JSON_UNESCAPED_UNICODE) : null,
             'rincian_hasil_pekerjaan' => ! empty($rincianArr) ? json_encode($rincianArr, JSON_UNESCAPED_UNICODE) : null,

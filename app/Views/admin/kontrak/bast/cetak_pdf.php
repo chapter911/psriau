@@ -186,7 +186,7 @@
         <tr>
             <td>Jabatan</td>
             <td>:</td>
-            <td><?= esc($row['penyedia_jabatan'] ?: 'Direktur Utama'); ?></td>
+            <td><?= esc($row['penyedia_jabatan'] ?: '-'); ?></td>
         </tr>
         <tr>
             <td>Alamat</td>
@@ -304,7 +304,7 @@
                 <div class="font-bold" style="min-height: 32px;"><?= esc($row['penyedia_nama']); ?></div>
                 <div class="space-ttd"></div>
                 <div class="font-bold" style="text-decoration: underline;"><?= esc($row['penyedia_wakil']); ?></div>
-                <div><?= esc($row['penyedia_jabatan'] ?: 'Direktur Utama'); ?></div>
+                <div><?= esc($row['penyedia_jabatan'] ?: '-'); ?></div>
             </td>
             <td>
                 <div class="font-bold">PIHAK PERTAMA</div>
