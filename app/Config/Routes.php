@@ -383,6 +383,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 
 	// Surat Routes - Cuti
 	$routes->get('surat/cuti', 'Admin\SuratCuti::index');
+	$routes->match(['get', 'post'], 'surat/cuti/hitung-hari', 'Admin\SuratCuti::hitungHari');
 	$routes->match(['get', 'post'], 'surat/cuti/buat', 'Admin\SuratCuti::buat');
 	$routes->get('surat/cuti/(:num)/detail', 'Admin\SuratCuti::detail/$1');
 	$routes->match(['get', 'post'], 'surat/cuti/(:num)/ubah', 'Admin\SuratCuti::ubah/$1');

@@ -6,6 +6,7 @@ use App\Controllers\BaseController;
 use App\Models\SuratCutiModel;
 use App\Models\MstPegawaiModel;
 use CodeIgniter\HTTP\RedirectResponse;
+use CodeIgniter\HTTP\ResponseInterface;
 use Dompdf\Dompdf;
 
 class SuratCuti extends BaseController
@@ -160,6 +161,28 @@ class SuratCuti extends BaseController
         ]);
     }
 
+    /**
+     * AJAX endpoint untuk menghitung total hari kerja efektif cuti
+     * Aturan: Tidak menghitung Sabtu, Minggu, Libur Nasional, dan Cuti Bersama
+     */
+    public function hitungHari(): ResponseInterface
+    {
+        if (! $this->canAccess()) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'success' => false,
+                'message' => 'Akses ditolak.',
+                'total_hari' => 0,
+            ]);
+        }
+
+        $mulai = trim((string) ($this->request->getGet('mulai') ?? $this->request->getPost('mulai') ?? ''));
+        $selesai = trim((string) ($this->request->getGet('selesai') ?? $this->request->getPost('selesai') ?? ''));
+
+        $res = $this->hitungHariKerja($mulai, $selesai);
+
+        return $this->response->setJSON($res);
+    }
+
     public function buat()
     {
         if (! $this->canAccess()) {
@@ -228,6 +251,17 @@ class SuratCuti extends BaseController
         }
         if ($tanggalMulai === '' || $tanggalSelesai === '') {
             $errors[] = 'Tanggal mulai dan selesai cuti wajib diisi.';
+        } elseif ($tanggalSelesai < $tanggalMulai) {
+            $errors[] = 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.';
+        } elseif ($lamaSatuan === 'Hari') {
+            $calc = $this->hitungHariKerja($tanggalMulai, $tanggalSelesai);
+            if (! $calc['success']) {
+                $errors[] = $calc['message'] ?? 'Gagal menghitung hari cuti.';
+            } elseif ($calc['total_hari'] <= 0) {
+                $errors[] = 'Periode cuti yang dipilih tidak memiliki hari kerja aktif (seluruh hari bertepatan dengan akhir pekan, libur nasional, atau cuti bersama).';
+            } else {
+                $lamaJumlah = $calc['total_hari'];
+            }
         }
 
         if ($errors !== []) {
@@ -326,6 +360,26 @@ class SuratCuti extends BaseController
         $lamaSatuan = trim((string) $this->request->getPost('lama_cuti_satuan')) ?: 'Hari';
         $tanggalMulai = trim((string) $this->request->getPost('tanggal_mulai'));
         $tanggalSelesai = trim((string) $this->request->getPost('tanggal_selesai'));
+
+        if ($tanggalMulai === '' || $tanggalSelesai === '') {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Tanggal mulai dan selesai cuti wajib diisi.');
+        }
+
+        if ($tanggalSelesai < $tanggalMulai) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.');
+        }
+
+        if ($lamaSatuan === 'Hari') {
+            $calc = $this->hitungHariKerja($tanggalMulai, $tanggalSelesai);
+            if (! $calc['success']) {
+                return redirect()->to(site_url('admin/surat/cuti'))->with('error', $calc['message'] ?? 'Gagal menghitung hari cuti.');
+            }
+            if ($calc['total_hari'] <= 0) {
+                return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Periode cuti yang dipilih tidak memiliki hari kerja aktif (seluruh hari bertepatan dengan akhir pekan, libur nasional, atau cuti bersama).');
+            }
+            $lamaJumlah = $calc['total_hari'];
+        }
+
         $alamat = trim((string) $this->request->getPost('alamat_selama_cuti'));
         $telepon = trim((string) $this->request->getPost('telepon'));
 
@@ -613,6 +667,154 @@ class SuratCuti extends BaseController
         }
 
         return implode(' ', $parts);
+    }
+
+    /**
+     * Hitung hari kerja efektif antara tanggal mulai dan tanggal selesai
+     * Aturan:
+     * - Sabtu & Minggu tidak dihitung (akhir pekan)
+     * - Tanggal Merah / Libur Nasional (holiday) tidak dihitung
+     * - Cuti Bersama (leave) tidak dihitung
+     */
+    public function hitungHariKerja(?string $tanggalMulai, ?string $tanggalSelesai): array
+    {
+        if (empty($tanggalMulai) || empty($tanggalSelesai)) {
+            return [
+                'success' => false,
+                'message' => 'Tanggal mulai dan tanggal selesai wajib diisi.',
+                'total_hari' => 0,
+            ];
+        }
+
+        try {
+            $start = new \DateTimeImmutable($tanggalMulai);
+            $end = new \DateTimeImmutable($tanggalSelesai);
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'message' => 'Format tanggal tidak valid.',
+                'total_hari' => 0,
+            ];
+        }
+
+        if ($end < $start) {
+            return [
+                'success' => false,
+                'message' => 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.',
+                'total_hari' => 0,
+            ];
+        }
+
+        $db = db_connect();
+        $holidays = [];
+        if ($db->tableExists('mst_tanggal_merah')) {
+            $rows = $db->table('mst_tanggal_merah')
+                ->select('tanggal, nama_libur, tipe')
+                ->where('tanggal >=', $start->format('Y-m-d'))
+                ->where('tanggal <=', $end->format('Y-m-d'))
+                ->get()
+                ->getResultArray();
+
+            foreach ($rows as $r) {
+                $holidays[$r['tanggal']] = [
+                    'nama' => $r['nama_libur'],
+                    'tipe' => $r['tipe'] ?? 'holiday',
+                ];
+            }
+        }
+
+        $interval = new \DateInterval('P1D');
+        // DateTimePeriod end is exclusive, so modify +1 day to make end date inclusive
+        $period = new \DatePeriod($start, $interval, $end->modify('+1 day'));
+
+        $totalHariKerja = 0;
+        $totalKalender = 0;
+        $weekendCount = 0;
+        $holidayCount = 0;
+        $leaveCount = 0;
+        $excludedList = [];
+        $workingList = [];
+
+        foreach ($period as $dt) {
+            $totalKalender++;
+            $dateStr = $dt->format('Y-m-d');
+            $dayOfWeek = (int) $dt->format('N'); // 1 (Senin) s/d 7 (Minggu)
+            $isWeekend = ($dayOfWeek === 6 || $dayOfWeek === 7);
+            $dayNameIndo = match ($dayOfWeek) {
+                1 => 'Senin',
+                2 => 'Selasa',
+                3 => 'Rabu',
+                4 => 'Kamis',
+                5 => 'Jumat',
+                6 => 'Sabtu',
+                7 => 'Minggu',
+                default => '',
+            };
+
+            $hasHoliday = isset($holidays[$dateStr]);
+
+            if ($isWeekend) {
+                $weekendCount++;
+                $alasan = ($dayOfWeek === 6 ? 'Sabtu (Akhir Pekan)' : 'Minggu (Akhir Pekan)');
+                if ($hasHoliday) {
+                    $h = $holidays[$dateStr];
+                    $hTypeLabel = ($h['tipe'] === 'leave') ? 'Cuti Bersama' : 'Libur Nasional';
+                    $alasan .= ' & ' . $hTypeLabel . ' (' . $h['nama'] . ')';
+                }
+                $excludedList[] = [
+                    'tanggal'    => $dateStr,
+                    'hari'       => $dayNameIndo,
+                    'kategori'   => 'weekend',
+                    'keterangan' => $alasan,
+                ];
+            } elseif ($hasHoliday) {
+                $h = $holidays[$dateStr];
+                $isCutiBersama = ($h['tipe'] === 'leave');
+                if ($isCutiBersama) {
+                    $leaveCount++;
+                } else {
+                    $holidayCount++;
+                }
+                $excludedList[] = [
+                    'tanggal'    => $dateStr,
+                    'hari'       => $dayNameIndo,
+                    'kategori'   => $h['tipe'],
+                    'keterangan' => ($isCutiBersama ? 'Cuti Bersama: ' : 'Libur Nasional: ') . $h['nama'],
+                ];
+            } else {
+                $totalHariKerja++;
+                $workingList[] = [
+                    'tanggal' => $dateStr,
+                    'hari'    => $dayNameIndo,
+                ];
+            }
+        }
+
+        $summaryParts = [];
+        if ($weekendCount > 0) {
+            $summaryParts[] = $weekendCount . ' hari akhir pekan (Sabtu/Minggu)';
+        }
+        if ($holidayCount > 0) {
+            $summaryParts[] = $holidayCount . ' hari libur nasional';
+        }
+        if ($leaveCount > 0) {
+            $summaryParts[] = $leaveCount . ' hari cuti bersama';
+        }
+
+        $keteranganDikecualikan = ($summaryParts !== []) ? implode(', ', $summaryParts) : 'Tidak ada';
+
+        return [
+            'success'                 => true,
+            'total_hari'              => $totalHariKerja,
+            'total_kalender'          => $totalKalender,
+            'total_dikecualikan'      => count($excludedList),
+            'weekend_count'           => $weekendCount,
+            'holiday_count'           => $holidayCount,
+            'leave_count'             => $leaveCount,
+            'keterangan_dikecualikan' => $keteranganDikecualikan,
+            'excluded_list'           => $excludedList,
+            'working_list'            => $workingList,
+        ];
     }
 
     public function exportWord(int $id)

@@ -315,7 +315,7 @@ graph TD
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="font-weight-bold mb-1 text-primary"><i class="far fa-calendar-alt mr-2"></i> Alur Kerja Pengajuan & Approval Cuti Pegawai</h5>
-                <small class="text-muted">Proses pengajuan cuti melalui modal, ekspor form Word (.docx) kosong resmi, tanggal pengajuan otomatis terkunci, hingga ekspor dokumen Word (.docx) dan PDF terisi.</small>
+                <small class="text-muted">Proses pengajuan cuti melalui modal, kalkulasi otomatis hari kerja efektif (mengecualikan Sabtu, Minggu, Hari Libur Nasional & Cuti Bersama SKB 3 Menteri), ekspor form Word (.docx) kosong resmi, tanggal pengajuan otomatis terkunci, hingga ekspor dokumen Word (.docx) dan PDF terisi.</small>
             </div>
             <div>
                 <span class="badge badge-primary">Staf & Admin</span>
@@ -328,14 +328,21 @@ graph TD
     A[Buka Menu Surat-Surat -> Cuti] --> B[Klik Tombol Ajukan Cuti]
     A --> B2[Klik Tombol Form Cuti Kosong .docx]
     A --> B3[Lihat Rekomendasi Cuti di Master Tanggal Merah]
-    B3 --> B
+    B3 -->|Klik Ajukan Cuti Ini| B4[Otomatis Buka Modal & Isi Tanggal Cuti]
+    B4 --> D1
     B2 --> H2[Unduh Langsung Template Word Kosong Resmi]
     B --> C[Sistem Otomatis Mengisi Tanggal Pengajuan Terkunci & Data Pegawai]
-    C --> D[Pilih Jenis Cuti, Alasan, Lamanya Cuti & Tanggal Mulai-Selesai]
-    D --> E[Isi Alamat & Kontak Selama Cuti]
+    C --> D[Pilih Jenis Cuti & Alasan Cuti]
+    D --> D1[Pilih Tanggal Mulai & Tanggal Selesai Cuti]
+    D1 --> D2[Sistem Otomatis Menghitung Total Hari Kerja: Mengecualikan Sabtu, Minggu, Libur Nasional & Cuti Bersama]
+    D2 --> D3{Validasi Hari Kerja Aktif}
+    D3 -->|Hari Kerja > 0| E[Isi Alamat & Kontak Selama Cuti]
+    D3 -->|Hari Kerja = 0 / Libur Semua| D4[Peringatan: Seluruh Tanggal Libur/Akhir Pekan]
+    D4 --> D1
     E --> F[Klik Simpan Pengajuan Cuti]
     F --> G{Persetujuan Atasan / Admin}
     G -->|Disetujui| H[Ekspor Dokumen Terisi: Word .docx & PDF Form Surat Cuti]
+    G -->|Ditolak| I[Status Ditolak]
                 </pre>
             </div>
         </div>
@@ -812,11 +819,12 @@ graph TD
                                 <p class="small text-muted mb-2"><code>/admin/surat/cuti</code></p>
                                 <ol class="pl-3 small mb-0">
                                     <li>Klik tombol <strong>Form Cuti Kosong (.docx)</strong> di bagian atas untuk mengunduh template formulir cuti kosong resmi Satker PPS Riau (format Word .docx).</li>
-                                    <li>Klik tombol <strong>Ajukan Cuti</strong> untuk membuat permohonan cuti baru secara digital.</li>
+                                    <li>Klik tombol <strong>Ajukan Cuti</strong> untuk membuat permohonan cuti baru secara digital, atau klik tombol <em>Ajukan Cuti Ini</em> pada rekomendasi Harpitnas di Master Tanggal Merah untuk otomatis mengisi tanggal permohonan.</li>
                                     <li><strong>Tanggal Pengajuan</strong> otomatis terkunci pada tanggal hari ini.</li>
                                     <li>Data pegawai (Nama, NIP, Jabatan, dan kalkulasi Masa Kerja real-time dari NIP TMT CPNS) terisi secara otomatis.</li>
-                                    <li>Pilih <strong>Jenis Cuti</strong> (Tahunan, Besar, Sakit, Melahirkan, Alasan Penting, atau Luar Tanggungan).</li>
-                                    <li>Isi Alasan, Periode Tanggal Cuti, Alamat & Telepon selama cuti.</li>
+                                    <li>Pilih <strong>Jenis Cuti</strong> (Tahunan, Besar, Sakit, Melahirkan, Alasan Penting, atau Luar Tanggungan) dan isi alasan cuti.</li>
+                                    <li><strong>Kalkulasi Otomatis Hari Kerja Efektif:</strong> Pilih <em>Mulai Tanggal</em> dan <em>s/d Tanggal</em>. Sistem secara otomatis menghitung jumlah hari cuti aktif pada satuan Hari dengan <strong>mengecualikan hari Sabtu, Minggu (akhir pekan), Tanggal Merah (hari libur nasional), dan Cuti Bersama</strong> sesuai SKB 3 Menteri di database master kalender. Dilengkapi tombol <em>Rincian Hari Dikecualikan</em> serta validasi jika seluruh tanggal yang dipilih adalah hari libur.</li>
+                                    <li>Isi Alamat & Telepon selama menjalankan cuti.</li>
                                     <li>Klik <strong>Simpan Pengajuan Cuti</strong>.</li>
                                     <li>Gunakan tombol <strong>Word</strong> atau <strong>PDF</strong> pada tabel untuk mengekspor formulir cuti resmi yang telah terisi data permohonan dan persetujuan.</li>
                                 </ol>

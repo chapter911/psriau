@@ -234,8 +234,23 @@
 
                     <div class="row">
                         <div class="col-md-3 form-group">
-                            <label class="font-weight-bold">Jumlah</label>
-                            <input type="number" class="form-control" id="lama_cuti_jumlah" name="lama_cuti_jumlah" min="1" value="1" required>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="font-weight-bold mb-0">Jumlah <span class="text-danger">*</span></label>
+                                <span id="badgeOtomatis" class="badge badge-success px-2 py-1" style="font-size: 0.7rem; border-radius: 4px;" title="Total hari kerja dihitung otomatis tanpa akhir pekan & hari libur">
+                                    <i class="fas fa-magic mr-1"></i>Otomatis
+                                </span>
+                            </div>
+                            <div class="input-group">
+                                <input type="number" class="form-control font-weight-bold text-primary" id="lama_cuti_jumlah" name="lama_cuti_jumlah" min="1" value="1" required readonly style="background-color: #f8fafc; font-size: 1.05rem;">
+                                <div class="input-group-append" id="wrapperBtnRecalc">
+                                    <button class="btn btn-outline-secondary" type="button" id="btnRecalculateCuti" title="Hitung Ulang Hari Kerja" style="border-color: #ced4da;">
+                                        <i class="fas fa-sync-alt text-muted" id="iconRecalc"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-1" id="hintLamaCuti" style="font-size: 0.78rem;">
+                                <i class="fas fa-info-circle mr-1 text-info"></i>Dihitung otomatis (tanpa Sabtu, Minggu & Libur)
+                            </small>
                         </div>
                         <div class="col-md-3 form-group">
                             <label class="font-weight-bold">Satuan</label>
@@ -254,6 +269,9 @@
                             <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai" required>
                         </div>
                     </div>
+
+                    <!-- Container Info Kalkulasi Otomatis Hari Kerja Cuti -->
+                    <div id="cutiKalkulasiBox" class="mb-3" style="display: none;"></div>
 
                     <!-- Section V: ALAMAT SELAMA MENJALANKAN CUTI -->
                     <div class="form-section-title">
@@ -455,6 +473,203 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // -------------------------------------------------------------
+    // Kalkulasi Otomatis Total Hari Cuti (Excluding Weekend & Holidays)
+    // -------------------------------------------------------------
+    let isCalculating = false;
+
+    function formatTanggalIndo(tglStr) {
+        if (!tglStr) return '-';
+        const parts = tglStr.split('-');
+        if (parts.length !== 3) return tglStr;
+        const bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        return parts[2] + ' ' + (bulanNames[parseInt(parts[1], 10)] || parts[1]) + ' ' + parts[0];
+    }
+
+    function syncSatuanCutiUI() {
+        const satuan = $('#lama_cuti_satuan').val();
+        if (satuan === 'Hari') {
+            $('#lama_cuti_jumlah').prop('readonly', true).css('background-color', '#f8fafc');
+            $('#badgeOtomatis').show();
+            $('#wrapperBtnRecalc').show();
+            $('#hintLamaCuti').html('<i class="fas fa-info-circle mr-1 text-info"></i>Dihitung otomatis (tanpa Sabtu, Minggu & Libur)');
+        } else {
+            $('#lama_cuti_jumlah').prop('readonly', false).css('background-color', '#ffffff');
+            $('#badgeOtomatis').hide();
+            $('#wrapperBtnRecalc').hide();
+            $('#hintLamaCuti').html('<i class="fas fa-pen mr-1 text-secondary"></i>Input manual jumlah ' + (satuan ? satuan.toLowerCase() : 'hari'));
+            $('#cutiKalkulasiBox').hide().empty();
+        }
+    }
+
+    function kalkulasiHariCuti() {
+        const satuan = $('#lama_cuti_satuan').val();
+        if (satuan !== 'Hari') {
+            syncSatuanCutiUI();
+            return;
+        }
+
+        const mulai = $('#tanggal_mulai').val();
+        const selesai = $('#tanggal_selesai').val();
+
+        if (!mulai || !selesai) {
+            $('#cutiKalkulasiBox').hide().empty();
+            return;
+        }
+
+        if (selesai < mulai) {
+            $('#lama_cuti_jumlah').val(0);
+            $('#cutiKalkulasiBox').html(`
+                <div class="alert alert-danger py-2 px-3 mb-2 small shadow-sm d-flex align-items-center" style="border-radius: 6px;">
+                    <i class="fas fa-times-circle fa-lg mr-2 text-danger"></i>
+                    <div>
+                        <strong>Tanggal Tidak Valid:</strong> Tanggal selesai (${formatTanggalIndo(selesai)}) tidak boleh lebih awal dari tanggal mulai (${formatTanggalIndo(mulai)}).
+                    </div>
+                </div>
+            `).show();
+            return;
+        }
+
+        if (isCalculating) return;
+        isCalculating = true;
+
+        $('#iconRecalc').addClass('fa-spin');
+        $('#cutiKalkulasiBox').html(`
+            <div class="alert alert-light py-2 px-3 mb-2 small border shadow-sm text-muted d-flex align-items-center" style="border-radius: 6px;">
+                <span class="spinner-border spinner-border-sm text-primary mr-2" role="status" aria-hidden="true"></span>
+                <span>Menghitung hari kerja aktif & mengecek kalender hari libur nasional...</span>
+            </div>
+        `).show();
+
+        $.ajax({
+            url: "<?= site_url('admin/surat/cuti/hitung-hari'); ?>",
+            type: "GET",
+            data: { mulai: mulai, selesai: selesai },
+            dataType: "json",
+            success: function (res) {
+                $('#iconRecalc').removeClass('fa-spin');
+                isCalculating = false;
+
+                if (!res || !res.success) {
+                    $('#cutiKalkulasiBox').html(`
+                        <div class="alert alert-warning py-2 px-3 mb-2 small shadow-sm" style="border-radius: 6px;">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> ${res.message || 'Gagal menghitung hari kerja.'}
+                        </div>
+                    `).show();
+                    return;
+                }
+
+                $('#lama_cuti_jumlah').val(res.total_hari);
+
+                if (res.total_hari <= 0) {
+                    let rincianHtml = '';
+                    if (res.excluded_list && res.excluded_list.length > 0) {
+                        rincianHtml = '<ul class="mb-0 mt-2 pl-3 small">';
+                        res.excluded_list.forEach(item => {
+                            const badgeColor = item.kategori === 'weekend' ? 'badge-secondary' : (item.kategori === 'leave' ? 'badge-warning text-dark' : 'badge-danger');
+                            rincianHtml += `<li><strong>${item.hari}, ${formatTanggalIndo(item.tanggal)}</strong>: <span class="badge ${badgeColor}">${item.keterangan}</span></li>`;
+                        });
+                        rincianHtml += '</ul>';
+                    }
+
+                    $('#cutiKalkulasiBox').html(`
+                        <div class="alert alert-warning border-0 shadow-sm py-2 px-3 mb-2" style="background: #fffbeb; border-left: 4px solid #f59e0b !important; border-radius: 6px;">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-exclamation-triangle text-warning fa-lg mr-2 mt-1"></i>
+                                <div class="w-100">
+                                    <strong class="text-dark">Tidak Ada Hari Kerja Aktif (0 Hari)</strong>
+                                    <div class="small text-muted mt-1">
+                                        Seluruh tanggal pada rentang yang dipilih (${formatTanggalIndo(mulai)} s/d ${formatTanggalIndo(selesai)}) bertepatan dengan akhir pekan, libur nasional, atau cuti bersama. Silakan periksa kembali rentang tanggal cuti.
+                                    </div>
+                                    ${rincianHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `).show();
+                } else {
+                    let rincianHtml = '';
+                    if (res.excluded_list && res.excluded_list.length > 0) {
+                        rincianHtml = `
+                            <div class="mt-2 pt-2 border-top" id="boxRincianLibur" style="display: none;">
+                                <div class="font-weight-bold small text-dark mb-1"><i class="fas fa-calendar-times mr-1 text-danger"></i> Daftar Hari yang Dikecualikan (Tidak Dihitung Cuti):</div>
+                                <div class="d-flex flex-wrap" style="gap: 6px;">
+                        `;
+                        res.excluded_list.forEach(item => {
+                            const badgeClass = item.kategori === 'weekend' ? 'badge-light text-secondary border' : (item.kategori === 'leave' ? 'badge-warning text-dark' : 'badge-danger');
+                            rincianHtml += `<span class="badge ${badgeClass} p-1" style="font-size: 0.78rem;" title="${item.keterangan}"><i class="far fa-calendar mr-1"></i>${item.hari}, ${formatTanggalIndo(item.tanggal)}: ${item.keterangan}</span>`;
+                        });
+                        rincianHtml += `
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    const excludedBtn = res.total_dikecualikan > 0
+                        ? `<button type="button" class="btn btn-xs btn-outline-info font-weight-bold ml-2" id="btnToggleRincianLibur" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 4px;">
+                            <i class="fas fa-list-ul mr-1"></i> Rincian ${res.total_dikecualikan} Hari Dikecualikan
+                           </button>`
+                        : '';
+
+                    $('#cutiKalkulasiBox').html(`
+                        <div class="alert alert-success border-0 shadow-sm py-2 px-3 mb-2" style="background: #f0fdf4; border-left: 4px solid #10b981 !important; border-radius: 6px;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-success font-weight-bold" style="font-size: 0.95rem;">
+                                        <i class="fas fa-check-circle mr-1"></i> Total Cuti: <span class="badge badge-success px-2 py-1" style="font-size: 0.9rem;">${res.total_hari} Hari Kerja Efektif</span>
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        Rentang kalender: <strong>${res.total_kalender} hari</strong> | Dikecualikan: <strong>${res.total_dikecualikan} hari</strong> (${res.keterangan_dikecualikan}).
+                                    </div>
+                                </div>
+                                <div>
+                                    ${excludedBtn}
+                                </div>
+                            </div>
+                            ${rincianHtml}
+                        </div>
+                    `).show();
+
+                    $('#btnToggleRincianLibur').off('click').on('click', function(e) {
+                        e.preventDefault();
+                        $('#boxRincianLibur').slideToggle(200);
+                    });
+                }
+            },
+            error: function () {
+                $('#iconRecalc').removeClass('fa-spin');
+                isCalculating = false;
+                $('#cutiKalkulasiBox').html(`
+                    <div class="alert alert-warning py-2 px-3 mb-2 small shadow-sm" style="border-radius: 6px;">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> Tidak dapat terhubung ke server untuk menghitung hari libur secara live.
+                    </div>
+                `).show();
+            }
+        });
+    }
+
+    $('#tanggal_mulai, #tanggal_selesai').on('change input', function () {
+        kalkulasiHariCuti();
+    });
+
+    $('#lama_cuti_satuan').on('change', function () {
+        syncSatuanCutiUI();
+        kalkulasiHariCuti();
+    });
+
+    $('#btnRecalculateCuti').on('click', function () {
+        kalkulasiHariCuti();
+    });
+
+    $('#formCuti').on('submit', function (e) {
+        const satuan = $('#lama_cuti_satuan').val();
+        const jumlah = parseInt($('#lama_cuti_jumlah').val(), 10);
+        if (satuan === 'Hari' && (isNaN(jumlah) || jumlah <= 0)) {
+            e.preventDefault();
+            alert('Pengajuan cuti tidak valid: Periode cuti yang dipilih tidak memiliki hari kerja aktif (0 hari). Silakan periksa kembali tanggal mulai dan tanggal selesai.');
+            return false;
+        }
+    });
+
     // Open Modal Create
     $('#btnOpenModalBuat').on('click', function () {
         $('#formCuti')[0].reset();
@@ -463,8 +678,23 @@ document.addEventListener("DOMContentLoaded", function () {
         $('#modalCutiLabel').html('<i class="far fa-paper-plane mr-2"></i> Formulir Permintaan dan Pemberian Cuti');
         $('.jenis-cuti-item').removeClass('selected');
         $('.jenis-cuti-item input[value="Cuti Tahunan"]').prop('checked', true).closest('.jenis-cuti-item').addClass('selected');
+        $('#cutiKalkulasiBox').hide().empty();
+        syncSatuanCutiUI();
         $('#modalCuti').modal('show');
     });
+
+    // Check URL parameters for direct leave request from Master Tanggal Merah
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramMulai = urlParams.get('mulai');
+    const paramSelesai = urlParams.get('selesai');
+    if (paramMulai && paramSelesai) {
+        if ($('#btnOpenModalBuat').length > 0) {
+            $('#btnOpenModalBuat').trigger('click');
+            $('#tanggal_mulai').val(paramMulai);
+            $('#tanggal_selesai').val(paramSelesai);
+            kalkulasiHariCuti();
+        }
+    }
 
     // Edit button click handler
     $('#tableCuti').on('click', '.btn-edit', function () {
@@ -503,6 +733,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     $('#formCuti').attr('action', "<?= site_url('admin/surat/cuti'); ?>/" + id + "/ubah");
                     $('#modalCutiLabel').html('<i class="fas fa-edit mr-2"></i> Edit Pengajuan Cuti');
+                    syncSatuanCutiUI();
+                    if (data.tanggal_mulai && data.tanggal_selesai && (data.lama_cuti_satuan || 'Hari') === 'Hari') {
+                        kalkulasiHariCuti();
+                    } else {
+                        $('#cutiKalkulasiBox').hide().empty();
+                    }
                     $('#modalCuti').modal('show');
                 }
             }
