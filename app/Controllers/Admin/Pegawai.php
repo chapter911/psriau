@@ -634,6 +634,10 @@ class Pegawai extends BaseController
                 if (! empty($candidates)) {
                     $duplicateBuilder->orWhereIn('id_card', $candidates);
                 }
+                if (($rfidInfo['type'] ?? '') === 'decimal' && ! empty($rfidInfo['hex_nfc'])) {
+                    $duplicateBuilder->orLike('id_card', $rfidInfo['hex_nfc'], 'after')
+                        ->orLike('id_card', strtolower($rfidInfo['hex_nfc']), 'after');
+                }
             }
             $duplicateBuilder->groupEnd();
 
@@ -829,6 +833,10 @@ class Pegawai extends BaseController
                 ]));
                 if (! empty($candidates)) {
                     $duplicateBuilder->orWhereIn('id_card', $candidates);
+                }
+                if (($rfidInfo['type'] ?? '') === 'decimal' && ! empty($rfidInfo['hex_nfc'])) {
+                    $duplicateBuilder->orLike('id_card', $rfidInfo['hex_nfc'], 'after')
+                        ->orLike('id_card', strtolower($rfidInfo['hex_nfc']), 'after');
                 }
             }
             $duplicateBuilder->groupEnd();
@@ -1341,15 +1349,22 @@ class Pegawai extends BaseController
         if (strlen($cleanHex) === 14) {
             $chunks = str_split($cleanHex, 2);
             $nfcHex = strtoupper(implode(':', $chunks));
+            // First 4 bytes Little-Endian (Standard 8H10D USB Reader conversion)
+            $b0 = $chunks[0];
+            $b1 = $chunks[1];
+            $b2 = $chunks[2];
+            $b3 = $chunks[3];
+            $littleEndianHex = "{$b3}{$b2}{$b1}{$b0}";
+            $dec = (string) hexdec($littleEndianHex);
 
             return [
                 'is_valid' => true,
                 'type' => 'hex_7byte',
-                'decimal' => '',
+                'decimal' => $dec,
                 'hex_nfc' => $nfcHex,
                 'hex_nfc_raw' => strtoupper($cleanHex),
-                'counterpart' => '',
-                'counterpart_label' => '',
+                'counterpart' => $dec,
+                'counterpart_label' => 'USB: ' . $dec,
             ];
         }
 

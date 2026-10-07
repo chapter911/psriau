@@ -1349,9 +1349,16 @@
         if (cleanHex.length === 14) {
             const chunks = cleanHex.match(/.{1,2}/g) || [];
             const nfcHex = chunks.join(':').toUpperCase();
+            // First 4 bytes Little-Endian (Standard 8H10D USB Reader conversion for 7-byte cards)
+            const b0 = cleanHex.substr(0, 2);
+            const b1 = cleanHex.substr(2, 2);
+            const b2 = cleanHex.substr(4, 2);
+            const b3 = cleanHex.substr(6, 2);
+            const littleEndianHex = `${b3}${b2}${b1}${b0}`;
+            const dec = parseInt(littleEndianHex, 16);
             return {
                 type: 'hex_7byte',
-                decimal: '-',
+                decimal: String(dec),
                 hex: nfcHex,
                 badgeText: 'Mifare 7-Byte'
             };
@@ -1492,8 +1499,12 @@
                             navigator.vibrate([100, 50, 100]);
                         }
 
-                        if (activeTargetInput && serial) {
-                            activeTargetInput.value = serial;
+                        // Convert NFC serial (Hex) to standard 10-digit decimal format (e.g. 3184350777 / 3124826372)
+                        const rfidParsed = typeof window.parseRfid === 'function' ? window.parseRfid(serial) : null;
+                        const finalVal = (rfidParsed && rfidParsed.decimal && rfidParsed.decimal !== '-') ? rfidParsed.decimal : serial;
+
+                        if (activeTargetInput && finalVal) {
+                            activeTargetInput.value = finalVal;
                             activeTargetInput.dispatchEvent(new Event('input'));
                             activeTargetInput.dispatchEvent(new Event('change'));
                         }
@@ -1505,7 +1516,8 @@
                         nfcModal.modal('hide');
 
                         if (typeof toastr !== 'undefined') {
-                            toastr.success('Kartu NFC berhasil terdeteksi: ' + (serial || 'Berhasil dibaca'), 'Scan NFC Berhasil');
+                            const successDetail = (rfidParsed && rfidParsed.hex) ? `${finalVal} (${rfidParsed.hex})` : (finalVal || 'Berhasil dibaca');
+                            toastr.success('Kartu NFC berhasil terdeteksi: ' + successDetail, 'Scan NFC Berhasil');
                         }
                     } catch (scanErr) {
                         console.error('NFC Scan onreading error:', scanErr);
@@ -1664,6 +1676,15 @@
                                 candidateSet.add(cleanHex.toLowerCase());
                                 candidateSet.add(cleanHex.toUpperCase());
                             }
+                        }
+                        if (cleanSerial.length === 14) {
+                            const p4 = cleanSerial.substr(0, 8);
+                            candidateSet.add(p4.toLowerCase());
+                            candidateSet.add(p4.toUpperCase());
+                            const p4Chunks = p4.match(/.{1,2}/g) || [];
+                            const p4Colons = p4Chunks.join(':');
+                            candidateSet.add(p4Colons.toLowerCase());
+                            candidateSet.add(p4Colons.toUpperCase());
                         }
                         const candidates = Array.from(candidateSet);
 
