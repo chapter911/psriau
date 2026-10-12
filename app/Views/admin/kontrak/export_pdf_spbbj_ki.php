@@ -76,7 +76,7 @@ $tanggal_surat = tanggal_indonesia($data->tanggal_surat_penawaran);
         /* Blok Tembusan */
         .cc-block {
             clear: both;
-            font-size: 12pt;
+            font-size: 10pt;
             margin-top: 20px;
         }
         ol {
