@@ -297,6 +297,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('kontrak/ki/(:num)/(:num)/ubah', 'Admin\\Kontrak::updateKi/$1/$2');
 	$routes->post('kontrak/ki/(:num)/import', 'Admin\\Kontrak::importKi/$1');
 	$routes->get('kontrak/ki/(:num)/export', 'Admin\\Kontrak::exportKi/$1');
+	$routes->post('kontrak/ki/(:num)/export-batch', 'Admin\\Kontrak::exportBatchKi/$1');
 
 	// Konsultan Individual Routes
 	$routes->get('konsultan-individual/kontrak', 'Admin\\KonsultanIndividual::kontrak');
@@ -404,6 +405,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/disposisi/(:num)/tolak', 'Admin\DisposisiPerjalananDinas::tolak/$1');
 	$routes->get('surat/perjalanan-dinas/disposisi/(:num)/kirim-email', 'Admin\DisposisiPerjalananDinas::kirimEmail/$1');
 
+	$routes->get('kontrak/export/word/(:segment)/(:num)', 'Admin\\Kontrak::exportDocumentWord/$1/$2');
 	$routes->get('kontrak/export/(:any)/(:num)', 'Admin\\Kontrak::exportDocument/$1/$2');
 	$routes->post('slide/tambah', 'Admin\\HomeSetting::createSlide');
 	$routes->post('slide/(:num)/ubah', 'Admin\\HomeSetting::updateSlide/$1');

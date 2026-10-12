@@ -620,6 +620,257 @@ class Kontrak extends BaseController
             ->setBody($binary === false ? '' : $binary);
     }
 
+    public function exportBatchKi(int $paketId)
+    {
+        if (! $this->canViewKontrak()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        if (! $this->isKontrakTableReady()) {
+            return redirect()->to(site_url('admin/kontrak/paket'))->with('error', 'Tabel kontrak belum tersedia.');
+        }
+
+        $permissions = $this->resolveMenuPermissions('admin/kontrak/paket');
+        if (! ($permissions['export'] ?? false)) {
+            return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Anda tidak memiliki akses untuk export data.');
+        }
+
+        if (! class_exists(\ZipArchive::class)) {
+            return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Ekstensi PHP ZipArchive tidak tersedia pada server.');
+        }
+
+        $db = db_connect();
+        $paketSelect = ['id', 'nama_paket'];
+        if ($this->tableHasColumn('trn_kontrak_paket', 'kop_surat_id')) {
+            $paketSelect[] = 'kop_surat_id';
+        }
+
+        $paketBuilder = $db->table('trn_kontrak_paket')->select($paketSelect);
+        $this->applyNotDeletedWhere($paketBuilder, 'trn_kontrak_paket');
+        $paket = $paketBuilder->where('id', $paketId)->get()->getRowArray();
+
+        if (! is_array($paket)) {
+            return redirect()->to(site_url('admin/kontrak/paket'))->with('error', 'Paket tidak ditemukan.');
+        }
+
+        $selectedDocs = (array) ($this->request->getPost('documents') ?? []);
+        $targetMembers = (string) ($this->request->getPost('target_members') ?? 'all');
+        $selectedKiIds = (array) ($this->request->getPost('ki_ids') ?? []);
+        $folderPerPerson = (bool) ($this->request->getPost('folder_per_person') ?? true);
+        $exportFormat = strtolower(trim((string) ($this->request->getPost('export_format') ?? 'pdf'))); // 'pdf', 'word', 'both'
+
+        $validDocTypes = [
+            'penawaran' => ['template' => 'admin/kontrak/export_pdf_penawaran', 'ext' => 'pdf', 'name' => 'PENAWARAN'],
+            'pakta-integritas' => ['template' => 'admin/kontrak/export_pdf_pakta_integritas_ki', 'ext' => 'pdf', 'name' => 'PAKTA_INTEGRITAS'],
+            'kualifikasi' => ['template' => 'admin/kontrak/export_pdf_kualifikasi_ki', 'ext' => 'pdf', 'name' => 'KUALIFIKASI'],
+            'kesediaan' => ['template' => 'admin/kontrak/export_pdf_kesediaan_ki', 'ext' => 'pdf', 'name' => 'KESEDIAAN'],
+            'spbbj' => ['template' => 'admin/kontrak/export_pdf_spbbj_ki', 'ext' => 'pdf', 'name' => 'SPBBJ'],
+            'baphp' => ['template' => 'admin/kontrak/export_pdf_baphp_ki', 'ext' => 'pdf', 'name' => 'BAPHP'],
+            'bast' => ['template' => 'admin/kontrak/export_pdf_bast_ki', 'ext' => 'pdf', 'name' => 'BAST'],
+            'spmk' => ['template' => 'admin/kontrak/export_pdf_spmk_ki', 'ext' => 'pdf', 'name' => 'SPMK'],
+            'spk' => ['template' => 'admin/kontrak/export_pdf_spk_ki', 'ext' => 'pdf', 'name' => 'SPK'],
+            'boq' => ['template' => 'admin/kontrak/export_boq', 'ext' => 'xlsx', 'name' => 'BOQ'],
+            'evaluasi' => ['template' => 'admin/kontrak/export_evaluasi', 'ext' => 'xlsx', 'name' => 'EVALUASI'],
+        ];
+
+        $activeDocs = [];
+        foreach ($selectedDocs as $dType) {
+            $dType = strtolower(trim((string) $dType));
+            if (isset($validDocTypes[$dType])) {
+                $activeDocs[$dType] = $validDocTypes[$dType];
+            }
+        }
+
+        if (empty($activeDocs)) {
+            return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Pilih minimal satu jenis dokumen yang ingin diexport.');
+        }
+
+        $kiBuilder = $db->table('trn_kontrak_ki')
+            ->select('*')
+            ->where('paket', (string) $paketId);
+        $this->applyNotDeletedWhere($kiBuilder, 'trn_kontrak_ki');
+
+        if ($targetMembers === 'selected') {
+            $cleanKiIds = array_map('intval', array_filter($selectedKiIds, 'is_numeric'));
+            if (empty($cleanKiIds)) {
+                return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Pilih minimal satu anggota yang ingin diexport.');
+            }
+            $kiBuilder->whereIn('id', $cleanKiIds);
+        }
+
+        $kiMembers = $kiBuilder->orderBy('id', 'ASC')->get()->getResultArray();
+        if (empty($kiMembers)) {
+            return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Tidak ada data anggota KI yang dipilih.');
+        }
+
+        $tempDir = ROOTPATH . 'do_not_upload/temp';
+        if (! is_dir($tempDir) && ! @mkdir($tempDir, 0775, true) && ! is_dir($tempDir)) {
+            return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Folder sementara tidak dapat dibuat.');
+        }
+
+        $sanitize = function (string $input) {
+            $tmp = trim($input);
+            $tmp = preg_replace('/[\\\\\/\:\*\?\"\<\>\|]+/', '-', $tmp);
+            $tmp = preg_replace('/[\x00-\x1F\x7F]/u', '', $tmp);
+            $tmp = preg_replace('/[^A-Za-z0-9\-_. ]+/', '-', $tmp);
+            return preg_replace('/\s+/', ' ', $tmp);
+        };
+
+        try {
+            $randomSuffix = bin2hex(random_bytes(3));
+        } catch (\Throwable $e) {
+            $randomSuffix = (string) mt_rand(100, 999);
+        }
+
+        $zipFileName = 'export_batch_ki_' . $paketId . '_' . date('Ymd_His') . '_' . $randomSuffix . '.zip';
+        $zipFilePath = $tempDir . DIRECTORY_SEPARATOR . $zipFileName;
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipFilePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Gagal membuat file arsip ZIP.');
+        }
+
+        @ini_set('max_execution_time', '300');
+        @ini_set('memory_limit', '512M');
+        helper('custom');
+        date_default_timezone_set('Asia/Jakarta');
+
+        $totalAdded = 0;
+        $createdTempFiles = [];
+
+        foreach ($kiMembers as $kiData) {
+            $memberName = trim((string) ($kiData['nama'] ?? 'Anggota_' . $kiData['id']));
+            $memberCleanName = $sanitize($memberName !== '' ? $memberName : 'Anggota_' . $kiData['id']);
+            $kontrakClean = $sanitize((string) ($kiData['nomor_kontrak'] ?? ''));
+
+            $folderName = $memberCleanName . ($kontrakClean !== '' ? ' (' . $kontrakClean . ')' : '');
+
+            $data = (object) array_merge($kiData, [
+                'nama_paket' => $paket['nama_paket'] ?? '',
+                'kop_surat_id' => isset($paket['kop_surat_id']) ? (int) $paket['kop_surat_id'] : null,
+            ]);
+
+            foreach ($activeDocs as $docType => $cfg) {
+                $viewData = ['data' => $data];
+
+                if ($docType === 'spk') {
+                    $emptySyaratUmum = (object) [
+                        'laporan' => '',
+                        'hasil' => '',
+                        'tugas_tanggung_jawab' => '',
+                    ];
+                    $viewData['syarat_umum'] = $emptySyaratUmum;
+                    if ($db->tableExists('trn_syarat_umum_kontrak_ki')) {
+                        $jabatanName = trim((string) ($kiData['jabatan'] ?? ''));
+                        if ($jabatanName !== '') {
+                            $syaratRow = $db->table('trn_syarat_umum_kontrak_ki')
+                                ->where('paket_id', (int) $paketId)
+                                ->where('jabatan_name', $jabatanName)
+                                ->get()
+                                ->getRowArray();
+                            if (is_array($syaratRow)) {
+                                $viewData['syarat_umum'] = (object) $syaratRow;
+                            }
+                        }
+                    }
+                }
+
+                if ($docType === 'baphp') {
+                    if ($db->tableExists('trn_kontrak_ki_pekerjaan_baphp')) {
+                        $pekerjaanBuilder = $db->table('trn_kontrak_ki_pekerjaan_baphp')
+                            ->select('pekerjaan')
+                            ->where('id_kontrak_paket', (string) $paketId)
+                            ->orderBy('id', 'ASC');
+                        $this->applyNotDeletedWhere($pekerjaanBuilder, 'trn_kontrak_ki_pekerjaan_baphp');
+                        $viewData['pekerjaan_baphp'] = $pekerjaanBuilder->get()->getResult();
+                    } else {
+                        $viewData['pekerjaan_baphp'] = [];
+                    }
+                }
+
+                $docTitle = $cfg['name'];
+                $ext = $cfg['ext'];
+
+                if ($folderPerPerson) {
+                    $entryPath = $folderName . '/' . $docTitle . '_' . $memberCleanName . '.' . $ext;
+                } else {
+                    $entryPath = $memberCleanName . ' - ' . $docTitle . '.' . $ext;
+                }
+
+                if ($ext === 'xlsx') {
+                    $tempExcel = $tempDir . DIRECTORY_SEPARATOR . 'tmp_' . $docType . '_' . $kiData['id'] . '_' . uniqid() . '.xlsx';
+                    $viewData['savePath'] = $tempExcel;
+                    view($cfg['template'], $viewData);
+                    if (is_file($tempExcel)) {
+                        $zip->addFile($tempExcel, $entryPath);
+                        $createdTempFiles[] = $tempExcel;
+                        $totalAdded++;
+                    }
+                } else {
+                    $html = view($cfg['template'], $viewData);
+
+                    if ($exportFormat === 'word' || $exportFormat === 'both') {
+                        $docHtml = $this->wrapHtmlForWord($html, $docTitle . ' - ' . $memberCleanName);
+                        $entryPathDoc = $folderPerPerson 
+                            ? ($folderName . '/' . $docTitle . '_' . $memberCleanName . '.doc') 
+                            : ($memberCleanName . ' - ' . $docTitle . '.doc');
+                        $zip->addFromString($entryPathDoc, $docHtml);
+                        $totalAdded++;
+                    }
+
+                    if ($exportFormat === 'pdf' || $exportFormat === 'both') {
+                        $domOptions = new \Dompdf\Options();
+                        $domOptions->set('isRemoteEnabled', true);
+                        $dompdf = new \Dompdf\Dompdf($domOptions);
+                        $dompdf->loadHtml($html);
+                        $dompdf->setPaper('A4', 'portrait');
+                        $dompdf->render();
+                        $entryPathPdf = $folderPerPerson 
+                            ? ($folderName . '/' . $docTitle . '_' . $memberCleanName . '.pdf') 
+                            : ($memberCleanName . ' - ' . $docTitle . '.pdf');
+                        $zip->addFromString($entryPathPdf, $dompdf->output());
+                        $totalAdded++;
+                    }
+                }
+            }
+        }
+
+        $zip->close();
+
+        // Bersihkan file excel sementara
+        foreach ($createdTempFiles as $tmpFile) {
+            if (is_file($tmpFile)) {
+                @unlink($tmpFile);
+            }
+        }
+
+        if ($totalAdded === 0 || ! is_file($zipFilePath)) {
+            @unlink($zipFilePath);
+            return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Gagal memproses berkas dokumen.');
+        }
+
+        $safePaketName = $sanitize((string) ($paket['nama_paket'] ?? 'Paket_' . $paketId));
+        $downloadName = 'Export_Batch_KI_' . $safePaketName . '_' . date('Ymd_His') . '.zip';
+
+        register_shutdown_function(function () use ($zipFilePath) {
+            if (is_file($zipFilePath)) {
+                @unlink($zipFilePath);
+            }
+        });
+
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+        header('Content-Length: ' . filesize($zipFilePath));
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        readfile($zipFilePath);
+        exit;
+    }
+
     public function updateKi(int $paketId, int $kiId)
     {
         $permissions = $this->resolveMenuPermissions('admin/kontrak/paket');
@@ -7045,8 +7296,27 @@ class Kontrak extends BaseController
                 return view($config['template'], $viewData);
             }
 
-            // PDF Export with Dompdf
+            $forcedFormat = strtolower((string) ($this->request->getGet('format') ?? ''));
             $html = view($config['template'], $viewData);
+
+            if ($forcedFormat === 'word' || $forcedFormat === 'doc') {
+                $docHtml = $this->wrapHtmlForWord($html, strtoupper($type) . ' - ' . ($data->nama ?? ''));
+                $filename = str_replace('-', '_', strtolower($type)) . '_' . $kiId . '.doc';
+
+                if (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
+
+                return $this->response
+                    ->setHeader('Content-Type', 'application/vnd.ms-word; charset=utf-8')
+                    ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                    ->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
+                    ->setHeader('Expires', '0')
+                    ->setHeader('Pragma', 'public')
+                    ->setBody($docHtml);
+            }
+
+            // PDF Export with Dompdf
             $options = new \Dompdf\Options();
             $options->set('isRemoteEnabled', true);
             $dompdf = new \Dompdf\Dompdf($options);
@@ -7063,6 +7333,60 @@ class Kontrak extends BaseController
         } catch (\Exception $e) {
             return redirect()->to(site_url('admin/kontrak/paket'))->with('error', 'Error: ' . $e->getMessage());
         }
+    }
+
+    public function exportDocumentWord(string $type, int $kiId)
+    {
+        $_GET['format'] = 'word';
+        return $this->exportDocument($type, $kiId);
+    }
+
+    private function wrapHtmlForWord(string $html, string $title = 'Dokumen'): string
+    {
+        if (stripos($html, '<html') !== false) {
+            $html = preg_replace('/<html[^>]*>/i', '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">', $html);
+        } else {
+            $html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>' . htmlspecialchars($title) . '</title></head><body>' . $html . '</body></html>';
+        }
+
+        $wordXml = '
+<!--[if gte mso 9]>
+<xml>
+ <w:WordDocument>
+  <w:View>Print</w:View>
+  <w:Zoom>100</w:Zoom>
+  <w:DoNotOptimizeForBrowser/>
+ </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+@page {
+    size: 21.0cm 29.7cm;
+    margin: 2.0cm 2.0cm 2.0cm 2.0cm;
+    mso-page-orientation: portrait;
+}
+@page Section1 {
+    size: 21.0cm 29.7cm;
+    margin: 2.0cm 2.0cm 2.0cm 2.0cm;
+    mso-header-margin: 1.0cm;
+    mso-footer-margin: 1.0cm;
+}
+div.Section1 {
+    page: Section1;
+}
+body, table, td, p {
+    font-family: Arial, sans-serif;
+}
+</style>
+';
+
+        if (stripos($html, '</head>') !== false) {
+            $html = str_ireplace('</head>', $wordXml . '</head>', $html);
+        } elseif (stripos($html, '<body') !== false) {
+            $html = preg_replace('/<body[^>]*>/i', '<head>' . $wordXml . '</head><body>', $html);
+        }
+
+        return $html;
     }
 
     private function tableHasColumn(string $table, string $column): bool

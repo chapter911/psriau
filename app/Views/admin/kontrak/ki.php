@@ -10,6 +10,9 @@
                 <button type="button" class="btn btn-outline-secondary" id="btnKolomSemua">Show All</button>
             </div>
 
+            <?php if (($can_export ?? true) === true): ?>
+                <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#modalExportBatchKi"><i class="fas fa-file-archive mr-1"></i> Export Batch</button>
+            <?php endif; ?>
             <?php if (($can_import ?? $can_edit ?? false) === true): ?>
                 <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#modalImportKi"><i class="fas fa-file-excel mr-1"></i> Import Excel</button>
             <?php endif; ?>
@@ -135,19 +138,48 @@
                                         <button type="button" class="btn btn-success btn-sm dropdown-toggle dropdown-icon" data-toggle="dropdown">
                                             <span class="sr-only">Toggle Dropdown</span>
                                         </button>
-                                        <div class="dropdown-menu" role="menu">
-                                            <a href="<?= site_url('admin/kontrak/export/penawaran/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">PENAWARAN</a>
-                                            <a href="<?= site_url('admin/kontrak/export/pakta-integritas/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">PAKTA INTEGRITAS</a>
-                                            <a href="<?= site_url('admin/kontrak/export/kualifikasi/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">KUALIFIKASI</a>
-                                            <a href="<?= site_url('admin/kontrak/export/boq/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">BOQ</a>
-                                            <a href="<?= site_url('admin/kontrak/export/kesediaan/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">KESEDIAAN</a>
-                                            <a href="<?= site_url('admin/kontrak/export/spbbj/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">SPBBJ</a>
-                                            <a href="<?= site_url('admin/kontrak/export/evaluasi/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">Evaluasi</a>
-                                            <a href="<?= site_url('admin/kontrak/export/baphp/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">BAPHP</a>
-                                            <a href="<?= site_url('admin/kontrak/export/bast/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">BAST</a>
-                                            <div class="dropdown-divider"></div>
-                                            <a href="<?= site_url('admin/kontrak/export/spmk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">SPMK</a>
-                                            <a href="<?= site_url('admin/kontrak/export/spk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">SPK</a>
+                                        <div class="dropdown-menu dropdown-menu-right" role="menu" style="max-height: 440px; overflow-y: auto; min-width: 270px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
+                                            <!-- PDF SECTION -->
+                                            <div class="px-3 py-1 font-weight-bold text-danger small bg-light d-flex align-items-center justify-content-between">
+                                                <span><i class="fas fa-file-pdf mr-1"></i> EXPORT PDF</span>
+                                                <span class="badge badge-danger">PDF</span>
+                                            </div>
+                                            <a href="<?= site_url('admin/kontrak/export/penawaran/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">PENAWARAN</a>
+                                            <a href="<?= site_url('admin/kontrak/export/pakta-integritas/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">PAKTA INTEGRITAS</a>
+                                            <a href="<?= site_url('admin/kontrak/export/kualifikasi/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">KUALIFIKASI</a>
+                                            <a href="<?= site_url('admin/kontrak/export/kesediaan/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">KESEDIAAN</a>
+                                            <a href="<?= site_url('admin/kontrak/export/spbbj/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">SPBBJ</a>
+                                            <a href="<?= site_url('admin/kontrak/export/baphp/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">BAPHP</a>
+                                            <a href="<?= site_url('admin/kontrak/export/bast/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">BAST</a>
+                                            <a href="<?= site_url('admin/kontrak/export/spmk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">SPMK</a>
+                                            <a href="<?= site_url('admin/kontrak/export/spk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">SPK</a>
+
+                                            <div class="dropdown-divider my-1"></div>
+
+                                            <!-- WORD SECTION -->
+                                            <div class="px-3 py-1 font-weight-bold text-primary small bg-light d-flex align-items-center justify-content-between">
+                                                <span><i class="fas fa-file-word mr-1"></i> EXPORT WORD</span>
+                                                <span class="badge badge-primary">DOC</span>
+                                            </div>
+                                            <a href="<?= site_url('admin/kontrak/export/word/penawaran/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">PENAWARAN <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/pakta-integritas/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">PAKTA INTEGRITAS <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/kualifikasi/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">KUALIFIKASI <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/kesediaan/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">KESEDIAAN <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/spbbj/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">SPBBJ <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/baphp/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">BAPHP <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/bast/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">BAST <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/spmk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">SPMK <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/spk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">SPK <small class="text-muted">(.doc)</small></a>
+
+                                            <div class="dropdown-divider my-1"></div>
+
+                                            <!-- EXCEL SECTION -->
+                                            <div class="px-3 py-1 font-weight-bold text-success small bg-light d-flex align-items-center justify-content-between">
+                                                <span><i class="fas fa-file-excel mr-1"></i> EXPORT EXCEL</span>
+                                                <span class="badge badge-success">XLSX</span>
+                                            </div>
+                                            <a href="<?= site_url('admin/kontrak/export/boq/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">BOQ (Excel)</a>
+                                            <a href="<?= site_url('admin/kontrak/export/evaluasi/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">Evaluasi (Excel)</a>
                                         </div>
                                     </div>
                                 <?php endif; ?>
@@ -197,6 +229,225 @@
         </table>
     </div>
 </div>
+
+<?php if (($can_export ?? true) === true): ?>
+<div class="modal fade" id="modalExportBatchKi" tabindex="-1" role="dialog" aria-labelledby="modalExportBatchKiLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title font-weight-bold" id="modalExportBatchKiLabel">
+                    <i class="fas fa-file-archive mr-2"></i>Export Batch Dokumen Kontrak KI
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="formExportBatchKi" action="<?= site_url('admin/kontrak/ki/' . (int) ($paket['id'] ?? 0) . '/export-batch'); ?>" method="post">
+                <?= csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="alert alert-light border mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-folder-open text-warning fa-2x mr-3"></i>
+                            <div>
+                                <div class="text-muted small">Paket Pekerjaan:</div>
+                                <div class="font-weight-bold text-dark"><?= esc((string) ($paket['nama_paket'] ?? '-')); ?></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PILIH DOKUMEN -->
+                    <div class="card mb-3 border">
+                        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                            <span class="font-weight-bold text-dark"><i class="fas fa-file-alt mr-1 text-primary"></i> 1. Pilih Dokumen yang Ingin Diexport</span>
+                            <div>
+                                <button type="button" class="btn btn-xs btn-outline-primary" id="btnSelectAllBatchDocs">Pilih Semua</button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary" id="btnUnselectAllBatchDocs">Kosongkan</button>
+                            </div>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input batch-doc-item" id="batchDocPenawaran" name="documents[]" value="penawaran" checked>
+                                        <label class="custom-control-label font-weight-normal" for="batchDocPenawaran">
+                                            <strong>Penawaran</strong> <span class="badge badge-danger">PDF</span>
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input batch-doc-item" id="batchDocPakta" name="documents[]" value="pakta-integritas" checked>
+                                        <label class="custom-control-label font-weight-normal" for="batchDocPakta">
+                                            <strong>Pakta Integritas</strong> <span class="badge badge-danger">PDF</span>
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input batch-doc-item" id="batchDocKualifikasi" name="documents[]" value="kualifikasi" checked>
+                                        <label class="custom-control-label font-weight-normal" for="batchDocKualifikasi">
+                                            <strong>Kualifikasi</strong> <span class="badge badge-danger">PDF</span>
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input batch-doc-item" id="batchDocKesediaan" name="documents[]" value="kesediaan" checked>
+                                        <label class="custom-control-label font-weight-normal" for="batchDocKesediaan">
+                                            <strong>Kesediaan</strong> <span class="badge badge-danger">PDF</span>
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input batch-doc-item" id="batchDocSpbbj" name="documents[]" value="spbbj" checked>
+                                        <label class="custom-control-label font-weight-normal" for="batchDocSpbbj">
+                                            <strong>SPBBJ</strong> <span class="badge badge-danger">PDF</span>
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input batch-doc-item" id="batchDocBaphp" name="documents[]" value="baphp" checked>
+                                        <label class="custom-control-label font-weight-normal" for="batchDocBaphp">
+                                            <strong>BAPHP</strong> <span class="badge badge-danger">PDF</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input batch-doc-item" id="batchDocBast" name="documents[]" value="bast" checked>
+                                        <label class="custom-control-label font-weight-normal" for="batchDocBast">
+                                            <strong>BAST</strong> <span class="badge badge-danger">PDF</span>
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input batch-doc-item" id="batchDocSpmk" name="documents[]" value="spmk" checked>
+                                        <label class="custom-control-label font-weight-normal" for="batchDocSpmk">
+                                            <strong>SPMK</strong> <span class="badge badge-danger">PDF</span>
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input batch-doc-item" id="batchDocSpk" name="documents[]" value="spk" checked>
+                                        <label class="custom-control-label font-weight-normal" for="batchDocSpk">
+                                            <strong>SPK</strong> <span class="badge badge-danger">PDF</span>
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input batch-doc-item" id="batchDocBoq" name="documents[]" value="boq" checked>
+                                        <label class="custom-control-label font-weight-normal" for="batchDocBoq">
+                                            <strong>BOQ</strong> <span class="badge badge-success">Excel</span>
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input batch-doc-item" id="batchDocEvaluasi" name="documents[]" value="evaluasi" checked>
+                                        <label class="custom-control-label font-weight-normal" for="batchDocEvaluasi">
+                                            <strong>Evaluasi</strong> <span class="badge badge-success">Excel</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PILIH ANGGOTA -->
+                    <div class="card mb-3 border">
+                        <div class="card-header bg-light py-2">
+                            <span class="font-weight-bold text-dark"><i class="fas fa-users mr-1 text-info"></i> 2. Pilih Anggota / Personil</span>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="mb-2">
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" id="batchMemberAll" name="target_members" value="all" class="custom-control-input" checked>
+                                    <label class="custom-control-label font-weight-bold" for="batchMemberAll">
+                                        Semua Anggota (<?= count($data ?? []); ?> Personil)
+                                    </label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" id="batchMemberSelected" name="target_members" value="selected" class="custom-control-input">
+                                    <label class="custom-control-label font-weight-bold" for="batchMemberSelected">
+                                        Pilih Anggota Tertentu
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="batchMemberListWrapper" class="mt-2" style="display: none;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">Centang anggota yang ingin diexport:</small>
+                                    <div>
+                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnSelectAllBatchMembers">Pilih Semua</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnUnselectAllBatchMembers">Kosongkan</button>
+                                    </div>
+                                </div>
+                                <div class="border rounded p-2" style="max-height: 180px; overflow-y: auto; background-color: #fcfcfc;">
+                                    <?php if (! empty($data)): ?>
+                                        <?php foreach ($data as $m): ?>
+                                            <div class="custom-control custom-checkbox mb-1">
+                                                <input type="checkbox" class="custom-control-input batch-member-item" id="batchMember_<?= (int) ($m['id'] ?? 0); ?>" name="ki_ids[]" value="<?= (int) ($m['id'] ?? 0); ?>" checked>
+                                                <label class="custom-control-label font-weight-normal small" for="batchMember_<?= (int) ($m['id'] ?? 0); ?>">
+                                                    <strong><?= esc((string) ($m['nama'] ?? '-')); ?></strong> 
+                                                    <span class="text-muted">(<?= esc((string) ($m['nomor_kontrak'] ?? '-')); ?> - <?= esc((string) ($m['jabatan'] ?? '-')); ?>)</span>
+                                                </label>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <div class="text-muted small">Belum ada data anggota KI.</div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PILIH FORMAT DOKUMEN -->
+                    <div class="card mb-3 border">
+                        <div class="card-header bg-light py-2">
+                            <span class="font-weight-bold text-dark"><i class="fas fa-file-invoice mr-1 text-secondary"></i> 3. Format Dokumen</span>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="formatPdf" name="export_format" value="pdf" class="custom-control-input" checked>
+                                        <label class="custom-control-label font-weight-bold" for="formatPdf">
+                                            <i class="fas fa-file-pdf text-danger mr-1"></i> PDF (.pdf)
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="formatWord" name="export_format" value="word" class="custom-control-input">
+                                        <label class="custom-control-label font-weight-bold" for="formatWord">
+                                            <i class="fas fa-file-word text-primary mr-1"></i> Word (.doc)
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="formatBoth" name="export_format" value="both" class="custom-control-input">
+                                        <label class="custom-control-label font-weight-bold" for="formatBoth">
+                                            <i class="fas fa-copy text-info mr-1"></i> Keduanya (PDF & Word)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-1">*Catatan: Berkas BOQ dan Evaluasi tetap diekspor dalam format spreadsheet Excel (.xlsx).</small>
+                        </div>
+                    </div>
+
+                    <!-- PENGATURAN STRUKTUR ZIP -->
+                    <div class="card mb-0 border">
+                        <div class="card-body py-2">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="folderPerPerson" name="folder_per_person" value="1" checked>
+                                <label class="custom-control-label font-weight-normal" for="folderPerPerson">
+                                    <strong>Kelompokkan berkas ke dalam folder per personil di dalam file ZIP</strong>
+                                    <br><small class="text-muted">Contoh: <code>Nama_Personil/PENAWARAN_Nama_Personil.pdf</code></small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success font-weight-bold" id="btnSubmitBatchExport">
+                        <i class="fas fa-download mr-1"></i> Download ZIP
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php if (($can_import ?? $can_edit ?? false) === true): ?>
 <div class="modal fade" id="modalImportKi" tabindex="-1" role="dialog" aria-hidden="true">
@@ -751,6 +1002,73 @@
                     didOpen: () => Swal.showLoading()
                 });
             }
+        });
+    })();
+    // Handler Modal Export Batch KI
+    (() => {
+        if (typeof $ === 'undefined') return;
+
+        // Toggle Member List
+        $('input[name="target_members"]').on('change', function () {
+            if ($(this).val() === 'selected') {
+                $('#batchMemberListWrapper').slideDown(200);
+            } else {
+                $('#batchMemberListWrapper').slideUp(200);
+            }
+        });
+
+        // Quick buttons Documents
+        $('#btnSelectAllBatchDocs').on('click', function () {
+            $('.batch-doc-item').prop('checked', true);
+        });
+        $('#btnUnselectAllBatchDocs').on('click', function () {
+            $('.batch-doc-item').prop('checked', false);
+        });
+
+        // Quick buttons Members
+        $('#btnSelectAllBatchMembers').on('click', function () {
+            $('.batch-member-item').prop('checked', true);
+        });
+        $('#btnUnselectAllBatchMembers').on('click', function () {
+            $('.batch-member-item').prop('checked', false);
+        });
+
+        // Validation & Submit handling
+        $('#formExportBatchKi').on('submit', function (e) {
+            const checkedDocs = $('.batch-doc-item:checked').length;
+            if (checkedDocs === 0) {
+                e.preventDefault();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Pilih minimal satu jenis dokumen yang ingin diexport.', confirmButtonText: 'OK' });
+                } else {
+                    alert('Pilih minimal satu jenis dokumen yang ingin diexport.');
+                }
+                return false;
+            }
+
+            const targetMembers = $('input[name="target_members"]:checked').val();
+            if (targetMembers === 'selected') {
+                const checkedMembers = $('.batch-member-item:checked').length;
+                if (checkedMembers === 0) {
+                    e.preventDefault();
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Pilih minimal satu personil/anggota yang ingin diexport.', confirmButtonText: 'OK' });
+                    } else {
+                        alert('Pilih minimal satu personil/anggota yang ingin diexport.');
+                    }
+                    return false;
+                }
+            }
+
+            const $btn = $('#btnSubmitBatchExport');
+            const originalHtml = $btn.html();
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Sedang Menyiapkan ZIP...');
+
+            // Karena proses download ZIP via attachment tidak reload halaman, re-enable button setelah 3.5 detik
+            setTimeout(() => {
+                $btn.prop('disabled', false).html(originalHtml);
+                $('#modalExportBatchKi').modal('hide');
+            }, 3500);
         });
     })();
 </script>

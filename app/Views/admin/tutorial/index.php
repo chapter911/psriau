@@ -693,10 +693,19 @@ graph TD
     C --> V1["Opsi Tampilan: Beralih Antara 'Tampilan Utama' &amp; 'Show All' Kolom"]
     C --> V2["Opsi Import: Klik 'Import Excel' (.xls / .xlsx) dengan Format Baku"]
     C --> V3["Opsi Tambah: Klik 'Tambah Data' (Modal Form 5 Tab Lengkap)"]
+    C --> V4["Opsi Export Batch: Klik 'Export Batch' (Modal Dialog Terintegrasi)"]
     C --> TBL["Tabel Daftar Kontrak KI (Nomor Kontrak, Personil, Anggaran, Dokumen)"]
     
+    V4 --> MOD_BATCH["Modal Export Batch Terbuka:"]
+    MOD_BATCH --> B1["Pilih Dokumen: Checklist 11 Berkas (Penawaran, Pakta Integritas, Kualifikasi, BOQ, Kesediaan, SPBBJ, Evaluasi, BAPHP, BAST, SPMK, SPK)"]
+    MOD_BATCH --> B2["Pilih Personil: Opsi 'Semua Anggota' atau Centang Anggota Tertentu"]
+    MOD_BATCH --> B3["Pilih Format: PDF (.pdf), Word (.doc), atau Keduanya"]
+    MOD_BATCH --> B4["Opsi Struktur: Folder Per Personil di Dalam ZIP"]
+    MOD_BATCH --> SUBMIT_BATCH["Klik 'Download ZIP' -> POST /admin/kontrak/ki/{paketId}/export-batch"]
+    SUBMIT_BATCH --> ZIP_GEN["Sistem Generate Seluruh File (Dompdf, Word/HTML &amp; PhpSpreadsheet)"]
+    ZIP_GEN --> ZIP_DL["Arsip ZIP Terunduh Otomatis &amp; File Sementara Dibersihkan"]
+
     TBL --> ACT1["Kolom ACTION: Klik Tombol 'EDIT' (Warna Kuning)"]
-    ACT1 --> MOD["Modal Form Edit Data KI Terbuka Otomatis Terisi Lengkap:"]
     MOD --> M1["Tab 1 (Utama &amp; Personil): No/Tgl Kontrak, Kode, Nama, Jabatan, Durasi, Tgl Awal/Akhir, Pekerjaan, Kategori"]
     MOD --> M2["Tab 2 (DIPA &amp; Anggaran): No/Tgl DIPA, Mata/Tahun Anggaran, Total Penawaran, Nilai Kontrak, HPS, Jenis Bayar"]
     MOD --> M3["Tab 3 (Dokumen &amp; Kontrak): Undangan, BAP, Penawaran, SPPBJ, SPMK, BAPHP, BAST, Permohonan"]
@@ -708,7 +717,7 @@ graph TD
     DB --> DONE["Data Kontrak KI Berhasil Diperbarui &amp; Tampil di Tabel"]
     
     TBL --> ACT2["Kolom ACTION: Tombol 'Export' Dropdown"]
-    ACT2 --> EXP["Export Berkas: Penawaran, Pakta Integritas, Kualifikasi, BOQ, Kesediaan, SPBBJ, Evaluasi, BAPHP, BAST, SPMK, SPK"]
+    ACT2 --> EXP["Export Berkas Satuan: Pilihan PDF, Word (.doc), atau Excel (.xlsx)"]
                 </pre>
             </div>
         </div>
@@ -1481,8 +1490,27 @@ graph TD
                                     <li>Klik tombol <strong>"Import Excel"</strong> untuk mengunggah file spreadsheet (.xlsx/.xls) massal setelah mengunduh template format baku melalui tautan <strong>"Download Format (XLSX)"</strong>.</li>
                                 </ul>
                             </li>
-                            <li><strong>Export Dokumen Kontrak KI:</strong> Pada kolom <strong>ACTION</strong>, klik dropdown hijau <strong>Export</strong> untuk mengunduh 11 jenis berkas resmi satuan: Penawaran, Pakta Integritas, Kualifikasi, BOQ, Kesediaan, SPBBJ, Evaluasi, BAPHP, BAST, SPMK, dan SPK.</li>
-                            <li><strong>Otorisasi Hak Akses (menu_akses):</strong> Fitur Tambah, Edit, dan Import diproteksi secara dinamis mengikuti matriks hak akses peran pengguna (<code>FiturAdd</code>, <code>FiturEdit</code>, <code>FiturImport</code>, <code>FiturExport</code>) pada menu Paket Kontrak.</li>
+                            <li><strong>Export Dokumen Kontrak KI (Satuan &amp; Batch):</strong>
+                                <ul>
+                                    <li><strong>Export Dokumen Satuan (PDF, Word, Excel):</strong> Pada kolom <strong>ACTION</strong> di tabel kontrak, klik dropdown hijau <strong>Export</strong>. Menu terbagi rapi menjadi 3 kelompok format:
+                                        <ul>
+                                            <li><strong>Bagian PDF:</strong> Mengunduh dokumen resmi format PDF (Penawaran, Pakta Integritas, Kualifikasi, Kesediaan, SPBBJ, BAPHP, BAST, SPMK, SPK).</li>
+                                            <li><strong>Bagian Word (.doc):</strong> Mengunduh dokumen yang sama dalam format Microsoft Word (.doc) yang dapat langsung diedit di aplikasi Word, lengkap dengan tata letak, kop, dan tabel yang presisi.</li>
+                                            <li><strong>Bagian Excel:</strong> Mengunduh berkas tabel kalkulasi dalam format Excel .xlsx (BOQ dan Evaluasi).</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Export Batch (Kolektif Seluruh / Pilihan Anggota):</strong> Klik tombol hijau <strong><i class="fas fa-file-archive mr-1"></i> Export Batch</strong> di bilah atas halaman untuk membuka dialog pengunduhan massal dalam format <strong>ZIP</strong>:
+                                        <ul>
+                                            <li><strong>Pilihan Dokumen:</strong> Centang dokumen yang diinginkan dari 11 tipe dokumen resmi (dilengkapi tombol jalan pintas <em>Pilih Semua</em> dan <em>Kosongkan</em>).</li>
+                                            <li><strong>Pilihan Anggota:</strong> Pilih opsi <em>"Semua Anggota"</em> untuk mengekspor seluruh personil di paket tersebut, atau beralih ke <em>"Pilih Anggota Tertentu"</em> untuk mencentang nama personil secara spesifik.</li>
+                                            <li><strong>Pilihan Format Dokumen:</strong> Tersedia opsi radio untuk memilih output berkas berupa <strong>PDF (.pdf)</strong>, <strong>Word (.doc)</strong>, atau <strong>Keduanya (PDF &amp; Word)</strong>. Berkas BOQ dan Evaluasi otomatis tetap diekspor sebagai Excel (.xlsx).</li>
+                                            <li><strong>Struktur Folder ZIP:</strong> Berkas dapat dikelompokkan secara rapi ke dalam folder per personil (misal: <code>[Nama Personil]/PENAWARAN_[Nama].doc</code>) atau flat file.</li>
+                                            <li>Arsip ZIP dibuat otomatis dan file sementara langsung dibersihkan oleh sistem.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li><strong>Otorisasi Hak Akses (menu_akses):</strong> Fitur Tambah, Edit, Import, dan Export diproteksi secara dinamis mengikuti matriks hak akses peran pengguna (<code>FiturAdd</code>, <code>FiturEdit</code>, <code>FiturImport</code>, <code>FiturExport</code>) pada menu Paket Kontrak.</li>
                         </ol>
                     </div>
                 </div>

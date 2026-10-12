@@ -22,7 +22,7 @@ $tanggal_surat = tanggal_indonesia($data->tanggal_surat_penawaran);
         }
 
         body {
-            font-size: 11pt;
+            font-size: 10pt;
             line-height: 1;
             margin: 0;
         }

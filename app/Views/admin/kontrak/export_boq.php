@@ -473,6 +473,10 @@ $sheet3->getStyle('A'.$startRow.':F'.$row)->applyFromArray($styleBorder);
 
 // Output File
 $writer = new Xlsx($spreadsheet);
+if (isset($savePath) && is_string($savePath) && $savePath !== '') {
+    $writer->save($savePath);
+    return;
+}
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 $safePaket = preg_replace('/[^A-Za-z0-9_-]/', '_', strtoupper($namaPaket !== '' ? $namaPaket : 'KONTRAK'));
 header('Content-Disposition: attachment;filename="BOQ_' . $tahunAnggaran . '_' . $safePaket . '.xlsx"');

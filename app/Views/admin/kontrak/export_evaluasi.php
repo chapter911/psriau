@@ -69,6 +69,10 @@ $sheet->setCellValue('E' . $row, '=SUM(E8:E' . ($row - 1) . ')');
 $sheet->getStyle('B' . $row . ':E' . $row)->getFont()->setBold(true);
 
 $writer = new Xlsx($spreadsheet);
+if (isset($savePath) && is_string($savePath) && $savePath !== '') {
+    $writer->save($savePath);
+    return;
+}
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment; filename="evaluasi-' . $data->id . '.xlsx"');
 header('Cache-Control: max-age=0');
