@@ -66,18 +66,16 @@ $tanggal_surat = tanggal_indonesia($data->tanggal_surat_penawaran);
 
         /* Blok Tanda Tangan */
         .signature-block {
-            float: left;
             width: 60%;
             text-align: left;
-            margin-top: 20px;
-            margin-bottom: 20px;
+            margin-top: 15px;
+            margin-bottom: 15px;
         }
 
         /* Blok Tembusan */
         .cc-block {
-            clear: both;
             font-size: 10pt;
-            margin-top: 20px;
+            margin-top: 15px;
         }
         ol {
             margin-top: 0;
@@ -129,9 +127,7 @@ $tanggal_surat = tanggal_indonesia($data->tanggal_surat_penawaran);
         Kepada Yth.<br>
         <b><?= htmlspecialchars($data->nama, ENT_QUOTES, 'UTF-8'); ?></b><br>
         Di -<br>
-        <div class="ml-2">
-            Tempat
-        </div>
+        <span style="padding-left: 20px;">Tempat</span>
     </div>
 
     <div class="mb-2">
@@ -162,7 +158,7 @@ $tanggal_surat = tanggal_indonesia($data->tanggal_surat_penawaran);
         <div class="bold">Pejabat Pembuat Komitmen</div>
         <div class="bold">Pelaksanaan Prasarana Strategis Riau</div>
         <div class="bold">Tahun Anggaran <?= $data->tahun_anggaran; ?></div>
-        <br><br><br><br><br><br>
+        <div style="height: 50px;"></div>
         <div class="bold underline"><?= $data->pejabat_ppk; ?></div>
         <div>NIP. <?= $data->nip_pejabat_ppk; ?></div>
     </div>

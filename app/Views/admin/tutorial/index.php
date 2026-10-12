@@ -1495,7 +1495,7 @@ graph TD
                                     <li><strong>Export Dokumen Satuan (PDF, Word, Excel):</strong> Pada kolom <strong>ACTION</strong> di tabel kontrak, klik dropdown hijau <strong>Export</strong>. Menu terbagi rapi menjadi 3 kelompok format:
                                         <ul>
                                             <li><strong>Bagian PDF:</strong> Mengunduh dokumen resmi format PDF (Penawaran, Pakta Integritas, Kualifikasi, Kesediaan, SPBBJ, BAPHP, BAST, SPMK, SPK).</li>
-                                            <li><strong>Bagian Word (.doc):</strong> Mengunduh dokumen yang sama dalam format Microsoft Word (.doc) yang dapat langsung diedit di aplikasi Word, lengkap dengan tata letak, kop, dan tabel yang presisi.</li>
+                                            <li><strong>Bagian Word (.doc):</strong> Mengunduh dokumen yang sama dalam format Microsoft Word (.doc / MHTML multipart self-contained) yang dapat langsung diedit di aplikasi Word, lengkap dengan gambar kop surat embedded yang jernih, margin halaman A4 presisi, spasi paragraf teratur, tabel borderless, dan posisi tanda tangan yang rapi sesuai tampilan PDF asli.</li>
                                             <li><strong>Bagian Excel:</strong> Mengunduh berkas tabel kalkulasi dalam format Excel .xlsx (BOQ dan Evaluasi).</li>
                                         </ul>
                                     </li>

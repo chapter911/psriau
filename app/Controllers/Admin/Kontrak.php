@@ -7353,15 +7353,154 @@ class Kontrak extends BaseController
 
     private function wrapHtmlForWord(string $html, string $title = 'Dokumen'): string
     {
-        if (stripos($html, '<html') !== false) {
-            $html = preg_replace('/<html[^>]*>/i', '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">', $html);
-        } else {
-            $html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>' . htmlspecialchars($title) . '</title></head><body>' . $html . '</body></html>';
+        // 1. Bersihkan elemen-elemen trik dompdf (fixed position / mask) yang merusak layout Word
+        $html = preg_replace('/<div[^>]*class=["\'][^"\']*(?:first-page-cover|first-page-footer-blocker|page-border|last-page-mask)[^"\']*["\'][^>]*>\s*<\/div>/i', '', $html);
+        $html = preg_replace('/<div[^>]*class=["\'][^"\']*footer-paraf[^"\']*["\'][^>]*>.*?<\/div>\s*<\/div>/is', '', $html);
+
+        // 2. Normalisasi Float Tanda Tangan untuk Word
+        // Jika ada .signature-block yang float: right (Penawaran, Pakta Integritas, Kesediaan, Formulir Kualifikasi)
+        // Ubah menjadi tabel layout 2 kolom Word (kiri kosong 50%, kanan isi tanda tangan 50%) agar di Word tetap di kanan
+        if (preg_match('/\.signature-block\s*\{[^}]*float:\s*right/i', $html)) {
+            $html = preg_replace_callback(
+                '/(<div[^>]*class=["\'][^"\']*signature-block[^"\']*["\'][^>]*>)(.*?)(<\/div>)/is',
+                function ($matches) {
+                    $inner = $matches[2];
+                    return '<table width="100%" style="width: 100%; border-collapse: collapse; border: none; margin-top: 15pt; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">'
+                        . '<tr>'
+                        . '<td width="50%" style="width: 50%; border: none; padding: 0;"></td>'
+                        . '<td width="50%" style="width: 50%; border: none; padding: 0; text-align: center;">'
+                        . $inner
+                        . '</td>'
+                        . '</tr>'
+                        . '</table>';
+                },
+                $html
+            );
         }
 
-        $wordXml = '
+        // 3. Tangani list CSS counter pada SPK jika ada (ol.syarat-list) karena Word tidak mendukung CSS ::before counter
+        if (stripos($html, 'syarat-list') !== false) {
+            $html = preg_replace_callback(
+                '/<ol([^>]*class=["\'][^"\']*syarat-list([^"\']*)["\'][^>]*)>(.*?)<\/ol>/is',
+                function ($matches) {
+                    $classExtra = strtolower($matches[2]);
+                    $innerOl = $matches[3];
+
+                    $startNum = 1;
+                    if (strpos($classExtra, 'continue7') !== false) {
+                        $startNum = 22;
+                    } elseif (strpos($classExtra, 'continue6') !== false) {
+                        $startNum = 21;
+                    } elseif (strpos($classExtra, 'continue5') !== false) {
+                        $startNum = 18;
+                    } elseif (strpos($classExtra, 'continue4') !== false) {
+                        $startNum = 15;
+                    } elseif (strpos($classExtra, 'continue3') !== false) {
+                        $startNum = 14;
+                    } elseif (strpos($classExtra, 'continue2') !== false) {
+                        $startNum = 11;
+                    } elseif (strpos($classExtra, 'continue') !== false) {
+                        $startNum = 6;
+                    }
+
+                    $currentNum = $startNum;
+                    $processedInner = preg_replace_callback(
+                        '/<li([^>]*)>(.*?)<\/li>/is',
+                        function ($liMatches) use (&$currentNum) {
+                            $liAttr = $liMatches[1];
+                            $liContent = $liMatches[2];
+                            if (! preg_match('/^\s*(?:<b>)?\d+\./i', $liContent)) {
+                                $liContent = '<b>' . $currentNum . '. </b>' . $liContent;
+                                $currentNum++;
+                            }
+                            return '<li' . $liAttr . ' style="list-style: none; margin-bottom: 4pt; text-align: justify;">' . $liContent . '</li>';
+                        },
+                        $innerOl
+                    );
+
+                    return '<ol style="list-style: none; padding-left: 0; margin: 0;">' . $processedInner . '</ol>';
+                },
+                $html
+            );
+        }
+
+        // 4. Pastikan .page-break menjadi Word page break
+        $html = preg_replace(
+            '/<div[^>]*class=["\'][^"\']*page-break[^"\']*["\'][^>]*>\s*<\/div>/i',
+            '<br clear="all" style="mso-special-character:line-break; page-break-before:always;">',
+            $html
+        );
+
+        // 5. Ekstrak gambar (base64 dan file lokal) untuk MHTML multipart agar gambar kop surat tampil di Word
+        $images = [];
+        $imgIndex = 1;
+
+        $html = preg_replace_callback('/<img([^>]+)src=["\']([^"\']+)["\']([^>]*)>/i', function ($matches) use (&$images, &$imgIndex) {
+            $pre = $matches[1];
+            $src = $matches[2];
+            $post = $matches[3];
+
+            $mime = 'image/png';
+            $binary = null;
+            $ext = 'png';
+
+            if (str_starts_with($src, 'data:')) {
+                if (preg_match('#^data:([^;]+);base64,(.+)$#is', $src, $m)) {
+                    $mime = trim($m[1]);
+                    $binary = base64_decode($m[2]);
+                }
+            } elseif (preg_match('#^https?://#i', $src)) {
+                // Gambar URL remote: coba ambil jika file lokal di server
+                $parsed = parse_url($src, PHP_URL_PATH);
+                if (is_string($parsed) && $parsed !== '') {
+                    $local = FCPATH . ltrim($parsed, '/');
+                    if (is_file($local)) {
+                        $mime = @mime_content_type($local) ?: 'image/png';
+                        $binary = @file_get_contents($local);
+                    }
+                }
+            } else {
+                $local = FCPATH . ltrim($src, '/');
+                if (is_file($local)) {
+                    $mime = @mime_content_type($local) ?: 'image/png';
+                    $binary = @file_get_contents($local);
+                }
+            }
+
+            if ($binary !== null && $binary !== '') {
+                if (stripos($mime, 'jpeg') !== false || stripos($mime, 'jpg') !== false) {
+                    $ext = 'jpg';
+                } elseif (stripos($mime, 'gif') !== false) {
+                    $ext = 'gif';
+                }
+
+                $imgName = 'image_' . $imgIndex . '.' . $ext;
+                $imgIndex++;
+
+                $images[] = [
+                    'name' => $imgName,
+                    'mime' => $mime,
+                    'data' => base64_encode($binary),
+                ];
+
+                $extraStyle = '';
+                if (stripos($pre . $post, 'header-img') !== false || stripos($pre . $post, 'kop') !== false) {
+                    $extraStyle = ' width="650" style="width: 100%; max-width: 650px; height: auto;"';
+                }
+
+                return '<img' . $pre . 'src="' . $imgName . '"' . $extraStyle . $post . '>';
+            }
+
+            return $matches[0];
+        }, $html);
+
+        // 6. Buat styling MSO Word presisi
+        $msoStyles = '
 <!--[if gte mso 9]>
 <xml>
+ <o:OfficeDocumentSettings>
+  <o:AllowPNG/>
+ </o:OfficeDocumentSettings>
  <w:WordDocument>
   <w:View>Print</w:View>
   <w:Zoom>100</w:Zoom>
@@ -7372,28 +7511,137 @@ class Kontrak extends BaseController
 <style>
 @page {
     size: 21.0cm 29.7cm;
-    margin: 2.0cm 2.0cm 2.0cm 2.0cm;
+    margin: 1.5cm 2.0cm 2.0cm 2.0cm;
     mso-page-orientation: portrait;
 }
 @page Section1 {
     size: 21.0cm 29.7cm;
-    margin: 2.0cm 2.0cm 2.0cm 2.0cm;
+    margin: 1.5cm 2.0cm 2.0cm 2.0cm;
     mso-header-margin: 1.0cm;
     mso-footer-margin: 1.0cm;
 }
 div.Section1 {
     page: Section1;
 }
-body, table, td, p {
-    font-family: Arial, sans-serif;
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+    line-height: 1.15;
+    margin: 0cm;
+    padding: 0cm !important;
+}
+
+p, div, td, th, li {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    mso-style-priority: 99;
+    mso-margin-top-alt: 0pt;
+    mso-margin-bottom-alt: 0pt;
+    margin-top: 0pt;
+    margin-bottom: 0pt;
+}
+
+p {
+    margin-bottom: 6pt;
+    line-height: 1.15;
+}
+
+table {
+    border-collapse: collapse;
+    mso-table-lspace: 0pt;
+    mso-table-rspace: 0pt;
+    mso-padding-alt: 2pt 4pt 2pt 4pt;
+}
+
+.content-div {
+    margin-bottom: 8pt !important;
+    mso-margin-bottom-alt: 8pt !important;
+    text-indent: 36.0pt !important;
+    text-align: justify;
+    line-height: 1.15;
+}
+
+.mb-1 {
+    margin-bottom: 5pt !important;
+    mso-margin-bottom-alt: 5pt !important;
+}
+
+.mb-2 {
+    margin-bottom: 12pt !important;
+    mso-margin-bottom-alt: 12pt !important;
+}
+
+.signature-block {
+    margin-top: 15pt !important;
+    margin-bottom: 15pt !important;
+}
+
+.cc-block {
+    margin-top: 10pt !important;
+    clear: both;
+}
+
+.first-page-cover, .first-page-footer-blocker, .page-border, .footer-paraf, .last-page-mask {
+    display: none !important;
+    mso-hide: all !important;
 }
 </style>
 ';
 
+        // Bungkus isi <body> dengan <div class="Section1">
+        if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $html, $bMatches)) {
+            $innerBody = $bMatches[1];
+            $html = preg_replace(
+                '/<body[^>]*>(.*?)<\/body>/is',
+                '<body><div class="Section1">' . $innerBody . '</div></body>',
+                $html
+            );
+        }
+
+        if (stripos($html, '<html') !== false) {
+            $html = preg_replace(
+                '/<html[^>]*>/i',
+                '<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns:m="http://schemas.microsoft.com/office/2004/12/omml" xmlns="http://www.w3.org/TR/REC-html40">',
+                $html
+            );
+        } else {
+            $html = '<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns:m="http://schemas.microsoft.com/office/2004/12/omml" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>' . htmlspecialchars($title) . '</title></head><body><div class="Section1">' . $html . '</div></body></html>';
+        }
+
         if (stripos($html, '</head>') !== false) {
-            $html = str_ireplace('</head>', $wordXml . '</head>', $html);
+            $html = str_ireplace('</head>', $msoStyles . '</head>', $html);
         } elseif (stripos($html, '<body') !== false) {
-            $html = preg_replace('/<body[^>]*>/i', '<head>' . $wordXml . '</head><body>', $html);
+            $html = preg_replace('/<body[^>]*>/i', '<head>' . $msoStyles . '</head><body>', $html);
+        }
+
+        // 7. Jika ada gambar yang diekstrak, kembalikan format dokumen MHTML multipart (Word 100% support)
+        if (! empty($images)) {
+            $boundary = '----=_NextPart_DOC_' . md5(uniqid((string) mt_rand(), true));
+
+            $mhtml = "MIME-Version: 1.0\r\n";
+            $mhtml .= "Content-Type: multipart/related; boundary=\"{$boundary}\"\r\n\r\n";
+
+            // Part Utama (HTML)
+            $mhtml .= "--{$boundary}\r\n";
+            $mhtml .= "Content-Location: document.html\r\n";
+            $mhtml .= "Content-Transfer-Encoding: 8bit\r\n";
+            $mhtml .= "Content-Type: text/html; charset=\"utf-8\"\r\n\r\n";
+            $mhtml .= $html . "\r\n\r\n";
+
+            // Part Gambar (Embed Base64)
+            foreach ($images as $img) {
+                $mhtml .= "--{$boundary}\r\n";
+                $mhtml .= "Content-Location: {$img['name']}\r\n";
+                $mhtml .= "Content-Transfer-Encoding: base64\r\n";
+                $mhtml .= "Content-Type: {$img['mime']}\r\n\r\n";
+                $mhtml .= chunk_split($img['data']) . "\r\n";
+            }
+
+            $mhtml .= "--{$boundary}--\r\n";
+
+            return $mhtml;
         }
 
         return $html;
