@@ -7189,7 +7189,7 @@ class Kontrak extends BaseController
     }
 
 
-    public function exportDocument(string $type, int $kiId)
+    public function exportDocument(string $type, int $kiId, string $forcedFormat = '')
     {
         if (! $this->canViewKontrak()) {
             return redirect()->to(site_url('/admin'));
@@ -7296,24 +7296,35 @@ class Kontrak extends BaseController
                 return view($config['template'], $viewData);
             }
 
-            $forcedFormat = strtolower((string) ($this->request->getGet('format') ?? ''));
+            if (str_starts_with(strtolower($type), 'word/')) {
+                $forcedFormat = 'word';
+                $type = substr($type, 5);
+            }
+
+            if ($forcedFormat === '') {
+                $forcedFormat = strtolower((string) ($this->request->getGet('format') ?? ''));
+            }
+
             $html = view($config['template'], $viewData);
 
             if ($forcedFormat === 'word' || $forcedFormat === 'doc') {
-                $docHtml = $this->wrapHtmlForWord($html, strtoupper($type) . ' - ' . ($data->nama ?? ''));
-                $filename = str_replace('-', '_', strtolower($type)) . '_' . $kiId . '.doc';
+                $cleanMemberName = preg_replace('/[^A-Za-z0-9_\-]/', '_', (string) ($data->nama ?? ''));
+                $cleanDocType = preg_replace('/[^A-Za-z0-9_\-]/', '_', strtoupper($type));
+                $docHtml = $this->wrapHtmlForWord($html, $cleanDocType . ' - ' . ($data->nama ?? ''));
+                $filename = $cleanDocType . '_' . ($cleanMemberName !== '' ? $cleanMemberName . '_' : '') . $kiId . '.doc';
 
                 if (ob_get_level() > 0) {
                     ob_end_clean();
                 }
 
-                return $this->response
-                    ->setHeader('Content-Type', 'application/vnd.ms-word; charset=utf-8')
-                    ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
-                    ->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
-                    ->setHeader('Expires', '0')
-                    ->setHeader('Pragma', 'public')
-                    ->setBody($docHtml);
+                header('Content-Type: application/msword; charset=utf-8');
+                header('Content-Disposition: attachment; filename="' . $filename . '"');
+                header('Content-Length: ' . strlen($docHtml));
+                header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+                header('Expires: 0');
+                header('Pragma: public');
+                echo $docHtml;
+                exit;
             }
 
             // PDF Export with Dompdf
@@ -7337,8 +7348,7 @@ class Kontrak extends BaseController
 
     public function exportDocumentWord(string $type, int $kiId)
     {
-        $_GET['format'] = 'word';
-        return $this->exportDocument($type, $kiId);
+        return $this->exportDocument($type, $kiId, 'word');
     }
 
     private function wrapHtmlForWord(string $html, string $title = 'Dokumen'): string

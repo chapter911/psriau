@@ -161,15 +161,15 @@
                                                 <span><i class="fas fa-file-word mr-1"></i> EXPORT WORD</span>
                                                 <span class="badge badge-primary">DOC</span>
                                             </div>
-                                            <a href="<?= site_url('admin/kontrak/export/word/penawaran/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">PENAWARAN <small class="text-muted">(.doc)</small></a>
-                                            <a href="<?= site_url('admin/kontrak/export/word/pakta-integritas/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">PAKTA INTEGRITAS <small class="text-muted">(.doc)</small></a>
-                                            <a href="<?= site_url('admin/kontrak/export/word/kualifikasi/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">KUALIFIKASI <small class="text-muted">(.doc)</small></a>
-                                            <a href="<?= site_url('admin/kontrak/export/word/kesediaan/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">KESEDIAAN <small class="text-muted">(.doc)</small></a>
-                                            <a href="<?= site_url('admin/kontrak/export/word/spbbj/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">SPBBJ <small class="text-muted">(.doc)</small></a>
-                                            <a href="<?= site_url('admin/kontrak/export/word/baphp/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">BAPHP <small class="text-muted">(.doc)</small></a>
-                                            <a href="<?= site_url('admin/kontrak/export/word/bast/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">BAST <small class="text-muted">(.doc)</small></a>
-                                            <a href="<?= site_url('admin/kontrak/export/word/spmk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">SPMK <small class="text-muted">(.doc)</small></a>
-                                            <a href="<?= site_url('admin/kontrak/export/word/spk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item py-1" target="_blank">SPK <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/penawaran/' . (int) ($d['id'] ?? 0)); ?>?format=word" class="dropdown-item py-1" target="_blank">PENAWARAN <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/pakta-integritas/' . (int) ($d['id'] ?? 0)); ?>?format=word" class="dropdown-item py-1" target="_blank">PAKTA INTEGRITAS <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/kualifikasi/' . (int) ($d['id'] ?? 0)); ?>?format=word" class="dropdown-item py-1" target="_blank">KUALIFIKASI <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/kesediaan/' . (int) ($d['id'] ?? 0)); ?>?format=word" class="dropdown-item py-1" target="_blank">KESEDIAAN <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/spbbj/' . (int) ($d['id'] ?? 0)); ?>?format=word" class="dropdown-item py-1" target="_blank">SPBBJ <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/baphp/' . (int) ($d['id'] ?? 0)); ?>?format=word" class="dropdown-item py-1" target="_blank">BAPHP <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/bast/' . (int) ($d['id'] ?? 0)); ?>?format=word" class="dropdown-item py-1" target="_blank">BAST <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/spmk/' . (int) ($d['id'] ?? 0)); ?>?format=word" class="dropdown-item py-1" target="_blank">SPMK <small class="text-muted">(.doc)</small></a>
+                                            <a href="<?= site_url('admin/kontrak/export/word/spk/' . (int) ($d['id'] ?? 0)); ?>?format=word" class="dropdown-item py-1" target="_blank">SPK <small class="text-muted">(.doc)</small></a>
 
                                             <div class="dropdown-divider my-1"></div>
 
