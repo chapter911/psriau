@@ -424,6 +424,91 @@
                         </div>
                     </div>
 
+                    <!-- PENGATURAN HALAMAN DOKUMEN -->
+                    <div class="card mb-3 border">
+                        <div class="card-header bg-light py-2">
+                            <span class="font-weight-bold text-dark"><i class="fas fa-file-alt mr-1 text-primary"></i> 4. Pilihan Halaman Dokumen</span>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="mb-2">
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" id="batchPagesAll" name="page_mode" value="all" class="custom-control-input" checked>
+                                    <label class="custom-control-label font-weight-bold" for="batchPagesAll">
+                                        <i class="fas fa-layer-group text-secondary mr-1"></i> Semua Halaman (Lengkap)
+                                    </label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" id="batchPagesCustom" name="page_mode" value="custom" class="custom-control-input">
+                                    <label class="custom-control-label font-weight-bold" for="batchPagesCustom">
+                                        <i class="fas fa-filter text-success mr-1"></i> Halaman Tertentu Saja (Misal: Halaman 3 SPK)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="batchPagesDetailWrapper" class="mt-2 pt-2 border-top" style="display: none;">
+                                <div class="form-group mb-2">
+                                    <label class="font-weight-bold small mb-1">Target Dokumen:</label>
+                                    <div>
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" id="pageTargetSpk" name="page_target" value="spk_only" class="custom-control-input" checked>
+                                            <label class="custom-control-label small" for="pageTargetSpk">
+                                                <strong>Khusus Dokumen SPK</strong> <span class="text-muted">(Rekomendasi - dokumen multi-halaman inti & tanda tangan)</span>
+                                            </label>
+                                        </div>
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" id="pageTargetAll" name="page_target" value="all_docs" class="custom-control-input">
+                                            <label class="custom-control-label small" for="pageTargetAll">
+                                                <strong>Semua Berkas Terpilih</strong> <span class="text-muted">(Jika berkas memiliki halaman tersebut)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group mb-2">
+                                    <label class="font-weight-bold small mb-1">Pilihan Cepat (Preset Halaman SPK):</label>
+                                    <div class="btn-group-toggle d-flex flex-wrap">
+                                        <button type="button" class="btn btn-xs btn-success mr-1 mb-1 btn-page-preset" data-range="3">
+                                            <i class="fas fa-signature mr-1"></i> Halaman 3 Saja (Lembar TTD SPK)
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary mr-1 mb-1 btn-page-preset" data-range="1-3">
+                                            <i class="fas fa-file-contract mr-1"></i> Halaman 1-3 (SPK Inti: Cover s/d TTD)
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary mr-1 mb-1 btn-page-preset" data-range="1">
+                                            <i class="fas fa-book-open mr-1"></i> Halaman 1 (Cover Saja)
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary mb-1 btn-page-preset" data-range="4-11">
+                                            <i class="fas fa-list-ol mr-1"></i> Halaman 4-Selesai (Syarat Umum)
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="form-group mb-1">
+                                    <label for="batchPageRange" class="font-weight-bold small mb-1">Nomor / Rentang Halaman yang Diexport:</label>
+                                    <div class="input-group input-group-sm" style="max-width: 320px;">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                                        </div>
+                                        <input type="text" class="form-control form-control-sm font-weight-bold text-primary" id="batchPageRange" name="page_range" value="3" placeholder="Contoh: 3 atau 1-3 atau 1,3">
+                                    </div>
+                                    <small class="text-muted mt-1 d-block">
+                                        Format: Masukkan angka halaman tunggal (contoh: <code>3</code>) atau rentang halaman (contoh: <code>1-3</code> atau <code>1,3</code>).
+                                    </small>
+                                </div>
+
+                                <div class="alert alert-light border small text-muted py-1 px-2 mb-0 mt-2">
+                                    <i class="fas fa-info-circle text-info mr-1"></i>
+                                    <strong>Panduan Halaman Dokumen SPK:</strong>
+                                    <ul class="mb-0 pl-3">
+                                        <li><strong>Hal 1:</strong> Cover Judul SPK</li>
+                                        <li><strong>Hal 2:</strong> Data Surat Perjanjian Kerja (Pihak Pertama & Kedua)</li>
+                                        <li><strong>Hal 3:</strong> <u>Sumber Dana, Nilai Kontrak, Pembayaran, dan Lembar Tanda Tangan PPK & Penyedia</u></li>
+                                        <li><strong>Hal 4 dst:</strong> Syarat-Syarat Umum Kontrak (SSUK)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- PENGATURAN STRUKTUR ZIP -->
                     <div class="card mb-0 border">
                         <div class="card-body py-2">
@@ -1031,6 +1116,23 @@
         });
         $('#btnUnselectAllBatchMembers').on('click', function () {
             $('.batch-member-item').prop('checked', false);
+        });
+
+        // Toggle Pilihan Halaman Dokumen
+        $('input[name="page_mode"]').on('change', function () {
+            if ($(this).val() === 'custom') {
+                $('#batchPagesDetailWrapper').slideDown(200);
+            } else {
+                $('#batchPagesDetailWrapper').slideUp(200);
+            }
+        });
+
+        // Presets Halaman
+        $('.btn-page-preset').on('click', function () {
+            const range = $(this).data('range');
+            $('#batchPageRange').val(range);
+            $('.btn-page-preset').removeClass('btn-success btn-primary btn-info btn-secondary').addClass('btn-outline-secondary');
+            $(this).removeClass('btn-outline-secondary').addClass('btn-success');
         });
 
         // Validation & Submit handling

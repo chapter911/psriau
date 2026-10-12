@@ -658,6 +658,14 @@ class Kontrak extends BaseController
         $selectedKiIds = (array) ($this->request->getPost('ki_ids') ?? []);
         $folderPerPerson = (bool) ($this->request->getPost('folder_per_person') ?? true);
         $exportFormat = strtolower(trim((string) ($this->request->getPost('export_format') ?? 'pdf'))); // 'pdf', 'word', 'both'
+        $pageMode = strtolower(trim((string) ($this->request->getPost('page_mode') ?? 'all'))); // 'all' atau 'custom'
+        $pageRangeStr = trim((string) ($this->request->getPost('page_range') ?? ''));
+        $pageTarget = strtolower(trim((string) ($this->request->getPost('page_target') ?? 'spk_only')));
+
+        $pagesToKeep = [];
+        if ($pageMode === 'custom' && $pageRangeStr !== '') {
+            $pagesToKeep = $this->parsePageRange($pageRangeStr);
+        }
 
         $validDocTypes = [
             'penawaran' => ['template' => 'admin/kontrak/export_pdf_penawaran', 'ext' => 'pdf', 'name' => 'PENAWARAN'],
@@ -791,10 +799,20 @@ class Kontrak extends BaseController
                 $docTitle = $cfg['name'];
                 $ext = $cfg['ext'];
 
+                $applyPageFilter = ($pageMode === 'custom' && ! empty($pagesToKeep) && ($pageTarget === 'all_docs' || $docType === 'spk'));
+
+                $pageSuffix = '';
+                if ($applyPageFilter) {
+                    $cleanRange = preg_replace('/[^0-9\-,]/', '', $pageRangeStr);
+                    $pageSuffix = '_Hal' . ($cleanRange !== '' ? $cleanRange : implode('-', $pagesToKeep));
+                }
+
+                $docTitleWithPage = $docTitle . $pageSuffix;
+
                 if ($folderPerPerson) {
-                    $entryPath = $folderName . '/' . $docTitle . '_' . $memberCleanName . '.' . $ext;
+                    $entryPath = $folderName . '/' . $docTitleWithPage . '_' . $memberCleanName . '.' . $ext;
                 } else {
-                    $entryPath = $memberCleanName . ' - ' . $docTitle . '.' . $ext;
+                    $entryPath = $memberCleanName . ' - ' . $docTitleWithPage . '.' . $ext;
                 }
 
                 if ($ext === 'xlsx') {
@@ -810,10 +828,11 @@ class Kontrak extends BaseController
                     $html = view($cfg['template'], $viewData);
 
                     if ($exportFormat === 'word' || $exportFormat === 'both') {
-                        $docHtml = $this->wrapHtmlForWord($html, $docTitle . ' - ' . $memberCleanName);
+                        $htmlForWord = $applyPageFilter ? $this->filterHtmlByPageNumbers($html, $pagesToKeep) : $html;
+                        $docHtml = $this->wrapHtmlForWord($htmlForWord, $docTitleWithPage . ' - ' . $memberCleanName);
                         $entryPathDoc = $folderPerPerson 
-                            ? ($folderName . '/' . $docTitle . '_' . $memberCleanName . '.doc') 
-                            : ($memberCleanName . ' - ' . $docTitle . '.doc');
+                            ? ($folderName . '/' . $docTitleWithPage . '_' . $memberCleanName . '.doc') 
+                            : ($memberCleanName . ' - ' . $docTitleWithPage . '.doc');
                         $zip->addFromString($entryPathDoc, $docHtml);
                         $totalAdded++;
                     }
@@ -825,10 +844,16 @@ class Kontrak extends BaseController
                         $dompdf->loadHtml($html);
                         $dompdf->setPaper('A4', 'portrait');
                         $dompdf->render();
+
+                        $pdfBinary = $dompdf->output();
+                        if ($applyPageFilter) {
+                            $pdfBinary = $this->extractPdfPages($pdfBinary, $pagesToKeep);
+                        }
+
                         $entryPathPdf = $folderPerPerson 
-                            ? ($folderName . '/' . $docTitle . '_' . $memberCleanName . '.pdf') 
-                            : ($memberCleanName . ' - ' . $docTitle . '.pdf');
-                        $zip->addFromString($entryPathPdf, $dompdf->output());
+                            ? ($folderName . '/' . $docTitleWithPage . '_' . $memberCleanName . '.pdf') 
+                            : ($memberCleanName . ' - ' . $docTitleWithPage . '.pdf');
+                        $zip->addFromString($entryPathPdf, $pdfBinary);
                         $totalAdded++;
                     }
                 }
@@ -7307,11 +7332,23 @@ class Kontrak extends BaseController
 
             $html = view($config['template'], $viewData);
 
+            $pageParam = trim((string) ($this->request->getGet('page') ?? ''));
+            $pagesToKeep = [];
+            if ($pageParam !== '') {
+                $pagesToKeep = $this->parsePageRange($pageParam);
+            }
+            $pageSuffix = '';
+            if (! empty($pagesToKeep)) {
+                $cleanRange = preg_replace('/[^0-9\-,]/', '', $pageParam);
+                $pageSuffix = '_Hal' . ($cleanRange !== '' ? $cleanRange : implode('-', $pagesToKeep));
+            }
+
             if ($forcedFormat === 'word' || $forcedFormat === 'doc') {
                 $cleanMemberName = preg_replace('/[^A-Za-z0-9_\-]/', '_', (string) ($data->nama ?? ''));
                 $cleanDocType = preg_replace('/[^A-Za-z0-9_\-]/', '_', strtoupper($type));
-                $docHtml = $this->wrapHtmlForWord($html, $cleanDocType . ' - ' . ($data->nama ?? ''));
-                $filename = $cleanDocType . '_' . ($cleanMemberName !== '' ? $cleanMemberName . '_' : '') . $kiId . '.doc';
+                $htmlForWord = ! empty($pagesToKeep) ? $this->filterHtmlByPageNumbers($html, $pagesToKeep) : $html;
+                $docHtml = $this->wrapHtmlForWord($htmlForWord, $cleanDocType . $pageSuffix . ' - ' . ($data->nama ?? ''));
+                $filename = $cleanDocType . $pageSuffix . '_' . ($cleanMemberName !== '' ? $cleanMemberName . '_' : '') . $kiId . '.doc';
 
                 if (ob_get_level() > 0) {
                     ob_end_clean();
@@ -7335,11 +7372,22 @@ class Kontrak extends BaseController
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
-            $filename = str_replace('-', '_', strtolower($type)) . '_' . $kiId . '.pdf';
+            $pdfBinary = $dompdf->output();
+            if (! empty($pagesToKeep)) {
+                $pdfBinary = $this->extractPdfPages($pdfBinary, $pagesToKeep);
+            }
+
+            $filename = str_replace('-', '_', strtolower($type)) . ($pageSuffix !== '' ? strtolower($pageSuffix) : '') . '_' . $kiId . '.pdf';
             if (ob_get_level() > 0) {
                 ob_end_clean();
             }
-            $dompdf->stream($filename, ['Attachment' => 0]);
+
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: inline; filename="' . $filename . '"');
+            header('Content-Length: ' . strlen($pdfBinary));
+            header('Cache-Control: private, max-age=0, must-revalidate');
+            header('Pragma: public');
+            echo $pdfBinary;
             exit;
         } catch (\Exception $e) {
             return redirect()->to(site_url('admin/kontrak/paket'))->with('error', 'Error: ' . $e->getMessage());
@@ -7645,6 +7693,127 @@ table {
         }
 
         return $html;
+    }
+
+    private function parsePageRange(string $rangeStr): array
+    {
+        $rangeStr = trim($rangeStr);
+        if ($rangeStr === '' || strtolower($rangeStr) === 'all') {
+            return [];
+        }
+
+        $pages = [];
+        $parts = explode(',', $rangeStr);
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if ($part === '') {
+                continue;
+            }
+            if (str_contains($part, '-')) {
+                $rangeParts = explode('-', $part, 2);
+                $start = (int) trim($rangeParts[0]);
+                $end = (int) trim($rangeParts[1]);
+                if ($start > 0 && $end >= $start) {
+                    for ($p = $start; $p <= $end; $p++) {
+                        $pages[] = $p;
+                    }
+                } elseif ($start > 0) {
+                    $pages[] = $start;
+                }
+            } else {
+                $val = (int) $part;
+                if ($val > 0) {
+                    $pages[] = $val;
+                }
+            }
+        }
+
+        $pages = array_unique($pages);
+        sort($pages);
+
+        return $pages;
+    }
+
+    private function filterHtmlByPageNumbers(string $html, array $pagesToKeep): string
+    {
+        if (empty($pagesToKeep)) {
+            return $html;
+        }
+
+        if (! preg_match('/^(.*?<body[^>]*>)(.*?)(<\/body>.*)$/is', $html, $matches)) {
+            return $html;
+        }
+
+        $preBody = $matches[1];
+        $innerBody = $matches[2];
+        $postBody = $matches[3];
+
+        $sections = preg_split('/<div[^>]*class=["\'][^"\']*page-break[^"\']*["\'][^>]*>\s*<\/div>/i', $innerBody);
+        if (count($sections) <= 1) {
+            return $html;
+        }
+
+        $keptSections = [];
+        foreach ($pagesToKeep as $pageNo) {
+            $idx = $pageNo - 1;
+            if (isset($sections[$idx])) {
+                $keptSections[] = trim($sections[$idx]);
+            }
+        }
+
+        if (empty($keptSections)) {
+            return $html;
+        }
+
+        $newInnerBody = implode("\n<div class=\"page-break\"></div>\n", $keptSections);
+
+        return $preBody . $newInnerBody . $postBody;
+    }
+
+    private function extractPdfPages(string $pdfBinary, array $pagesToKeep): string
+    {
+        if (empty($pagesToKeep)) {
+            return $pdfBinary;
+        }
+
+        try {
+            $tempInput = tempnam(sys_get_temp_dir(), 'fpdi_in_');
+            file_put_contents($tempInput, $pdfBinary);
+
+            $fpdi = new \setasign\Fpdi\Fpdi();
+            $pageCount = $fpdi->setSourceFile($tempInput);
+
+            $validPages = [];
+            foreach ($pagesToKeep as $p) {
+                if ($p >= 1 && $p <= $pageCount) {
+                    $validPages[] = $p;
+                }
+            }
+
+            if (empty($validPages)) {
+                @unlink($tempInput);
+                return $pdfBinary;
+            }
+
+            $fpdiOut = new \setasign\Fpdi\Fpdi();
+            $fpdiOut->setSourceFile($tempInput);
+
+            foreach ($validPages as $pageNo) {
+                $templateId = $fpdiOut->importPage($pageNo);
+                $size = $fpdiOut->getTemplateSize($templateId);
+                $orientation = $size['width'] > $size['height'] ? 'L' : 'P';
+                $fpdiOut->AddPage($orientation, [$size['width'], $size['height']]);
+                $fpdiOut->useTemplate($templateId);
+            }
+
+            $output = $fpdiOut->Output('S');
+            @unlink($tempInput);
+
+            return $output;
+        } catch (\Throwable $e) {
+            log_message('error', 'FPDI Extract Pages Error: ' . $e->getMessage());
+            return $pdfBinary;
+        }
     }
 
     private function tableHasColumn(string $table, string $column): bool
