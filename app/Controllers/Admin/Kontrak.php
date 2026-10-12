@@ -274,17 +274,24 @@ class Kontrak extends BaseController
         $this->applyNotDeletedWhere($kiBuilder, 'trn_kontrak_ki', 'k.deleted_at');
         $rows = $kiBuilder->get()->getResultArray();
 
+        $permissions = $this->resolveMenuPermissions('admin/kontrak/paket');
+
         return view('admin/kontrak/ki', [
             'title' => 'Daftar Kontrak KI',
             'paket' => $paket,
             'data' => $rows,
-            'can_edit' => $this->canManageKontrak(),
+            'can_add' => $permissions['add'],
+            'can_edit' => $permissions['edit'],
+            'can_delete' => $permissions['delete'],
+            'can_export' => $permissions['export'],
+            'can_import' => $permissions['import'],
         ]);
     }
 
     public function createKi(int $paketId)
     {
-        if (! $this->canManageKontrak()) {
+        $permissions = $this->resolveMenuPermissions('admin/kontrak/paket');
+        if (! $permissions['add']) {
             return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Anda tidak memiliki akses untuk menambah data KI.');
         }
 
@@ -369,7 +376,8 @@ class Kontrak extends BaseController
 
     public function importKi(int $paketId)
     {
-        if (! $this->canManageKontrak()) {
+        $permissions = $this->resolveMenuPermissions('admin/kontrak/paket');
+        if (! $permissions['import']) {
             return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Anda tidak memiliki akses untuk import data KI.');
         }
 
@@ -614,7 +622,8 @@ class Kontrak extends BaseController
 
     public function updateKi(int $paketId, int $kiId)
     {
-        if (! $this->canManageKontrak()) {
+        $permissions = $this->resolveMenuPermissions('admin/kontrak/paket');
+        if (! $permissions['edit']) {
             return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Anda tidak memiliki akses untuk mengubah data KI.');
         }
 
@@ -6779,6 +6788,132 @@ class Kontrak extends BaseController
     {
         $role = strtolower((string) session()->get('role'));
         return in_array($role, ['admin', 'editor', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+    }
+
+    private function resolveRoleId(string $role, $db): ?int
+    {
+        $normalized = strtolower(trim($role));
+        if ($normalized === '') {
+            return null;
+        }
+
+        if ($db->tableExists('access_roles')) {
+            $variants = [$normalized];
+            if (strpos($normalized, 'super') !== false) {
+                $variants[] = 'super administrator';
+                $variants[] = 'super_administrator';
+                $variants[] = 'super-admin';
+                $variants[] = 'superadmin';
+            }
+
+            $row = $db->table('access_roles')
+                ->select('id')
+                ->whereIn('role_key', array_values(array_unique($variants)))
+                ->where('is_active', 1)
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (int) $row['id'];
+            }
+        }
+
+        return match ($normalized) {
+            'admin' => 1,
+            'editor' => 2,
+            default => null,
+        };
+    }
+
+    private function resolveMenuIdByLink(string $menuLink, $db): ?string
+    {
+        foreach (['menu_lv3', 'menu_lv2', 'menu_lv1'] as $table) {
+            if (! $db->tableExists($table)) {
+                continue;
+            }
+
+            $row = $db->table($table)
+                ->select('id')
+                ->where('LOWER(link)', strtolower(trim($menuLink)))
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (string) $row['id'];
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveMenuPermissions(string $menuLink = 'admin/kontrak/paket'): array
+    {
+        $default = [
+            'add' => false,
+            'edit' => false,
+            'delete' => false,
+            'export' => false,
+            'import' => false,
+            'approval' => false,
+        ];
+
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            $can = $this->canManageKontrak();
+            return [
+                'add' => $can,
+                'edit' => $can,
+                'delete' => $can,
+                'export' => true,
+                'import' => $can,
+                'approval' => $can,
+            ];
+        }
+
+        $roleId = $this->resolveRoleId((string) session()->get('role'), $db);
+        $menuId = $this->resolveMenuIdByLink($menuLink, $db);
+        if ($roleId === null || $menuId === null) {
+            $can = $this->canManageKontrak();
+            return [
+                'add' => $can,
+                'edit' => $can,
+                'delete' => $can,
+                'export' => true,
+                'import' => $can,
+                'approval' => $can,
+            ];
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        $row = $db->table('menu_akses')
+            ->select('FiturAdd, FiturEdit, FiturDelete, FiturExport, FiturImport, FiturApproval')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($row)) {
+            $can = $this->canManageKontrak();
+            return [
+                'add' => $can,
+                'edit' => $can,
+                'delete' => $can,
+                'export' => true,
+                'import' => $can,
+                'approval' => $can,
+            ];
+        }
+
+        return [
+            'add' => (bool) ((int) ($row['FiturAdd'] ?? 0)),
+            'edit' => (bool) ((int) ($row['FiturEdit'] ?? 0)),
+            'delete' => (bool) ((int) ($row['FiturDelete'] ?? 0)),
+            'export' => (bool) ((int) ($row['FiturExport'] ?? 0)),
+            'import' => (bool) ((int) ($row['FiturImport'] ?? 0)),
+            'approval' => (bool) ((int) ($row['FiturApproval'] ?? 0)),
+        ];
     }
 
     private function canManageKontrak(): bool

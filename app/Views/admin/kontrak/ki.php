@@ -10,9 +10,11 @@
                 <button type="button" class="btn btn-outline-secondary" id="btnKolomSemua">Show All</button>
             </div>
 
-            <?php if (($can_edit ?? false) === true): ?>
-                <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#modalImportKi">Import Excel</button>
-                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalTambahKi">Tambah Data</button>
+            <?php if (($can_import ?? $can_edit ?? false) === true): ?>
+                <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#modalImportKi"><i class="fas fa-file-excel mr-1"></i> Import Excel</button>
+            <?php endif; ?>
+            <?php if (($can_add ?? $can_edit ?? false) === true): ?>
+                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalTambahKi"><i class="fas fa-plus mr-1"></i> Tambah Data</button>
             <?php endif; ?>
         </div>
     </div>
@@ -65,82 +67,94 @@
                 <?php $i = 1; foreach (($data ?? []) as $d): ?>
                     <tr>
                         <td class="text-center"><?= esc((string) $i++); ?></td>
-                        <td class="text-center">
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-success btn-sm" data-toggle="dropdown">Export</button>
-                                <button type="button" class="btn btn-success btn-sm dropdown-toggle dropdown-icon" data-toggle="dropdown">
-                                    <span class="sr-only">Toggle Dropdown</span>
-                                </button>
-                                <div class="dropdown-menu" role="menu">
-                                    <a href="<?= site_url('admin/kontrak/export/penawaran/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">PENAWARAN</a>
-                                    <a href="<?= site_url('admin/kontrak/export/pakta-integritas/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">PAKTA INTEGRITAS</a>
-                                    <a href="<?= site_url('admin/kontrak/export/kualifikasi/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">KUALIFIKASI</a>
-                                    <a href="<?= site_url('admin/kontrak/export/boq/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">BOQ</a>
-                                    <a href="<?= site_url('admin/kontrak/export/kesediaan/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">KESEDIAAN</a>
-                                    <a href="<?= site_url('admin/kontrak/export/spbbj/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">SPBBJ</a>
-                                    <a href="<?= site_url('admin/kontrak/export/evaluasi/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">Evaluasi</a>
-                                    <a href="<?= site_url('admin/kontrak/export/baphp/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">BAPHP</a>
-                                    <a href="<?= site_url('admin/kontrak/export/bast/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">BAST</a>
-                                    <div class="dropdown-divider"></div>
-                                    <a href="<?= site_url('admin/kontrak/export/spmk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">SPMK</a>
-                                    <a href="<?= site_url('admin/kontrak/export/spk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">SPK</a>
-                                </div>
+                        <td class="text-center" style="white-space: nowrap;">
+                            <div class="d-inline-flex align-items-center" style="gap: 5px;">
+                                <?php if (($can_edit ?? false) === true): ?>
+                                    <button type="button" class="btn btn-warning btn-sm edit-ki-btn" 
+                                            title="Edit Data KI"
+                                            data-id="<?= esc((string) ($d['id'] ?? '')); ?>"
+                                            data-nomor-kontrak="<?= esc((string) ($d['nomor_kontrak'] ?? '')); ?>"
+                                            data-tanggal-kontrak="<?= esc((string) ($d['tanggal_kontrak'] ?? '')); ?>"
+                                            data-kode-personil="<?= esc((string) ($d['kode_personil'] ?? '')); ?>"
+                                            data-nama="<?= esc((string) ($d['nama'] ?? '')); ?>"
+                                            data-alamat="<?= esc((string) ($d['alamat'] ?? '')); ?>"
+                                            data-nik="<?= esc((string) ($d['nik'] ?? '')); ?>"
+                                            data-npwp="<?= esc((string) ($d['npwp'] ?? '')); ?>"
+                                            data-jabatan="<?= esc((string) ($d['jabatan'] ?? '')); ?>"
+                                            data-durasi-pelaksanaan="<?= esc((string) ($d['durasi_pelaksanaan'] ?? '')); ?>"
+                                            data-tanggal-awal="<?= esc((string) ($d['tanggal_awal'] ?? '')); ?>"
+                                            data-tanggal-akhir="<?= esc((string) ($d['tanggal_akhir'] ?? '')); ?>"
+                                            data-nama-pekerjaan="<?= esc((string) ($d['nama_pekerjaan'] ?? '')); ?>"
+                                            data-nomor-dipa="<?= esc((string) ($d['nomor_dipa'] ?? '')); ?>"
+                                            data-tanggal-dipa="<?= esc((string) ($d['tanggal_dipa'] ?? '')); ?>"
+                                            data-mata-anggaran="<?= esc((string) ($d['mata_anggaran'] ?? '')); ?>"
+                                            data-nomor-surat-undangan-pengadaan="<?= esc((string) ($d['nomor_surat_undangan_pengadaan'] ?? '')); ?>"
+                                            data-tanggal-surat-undangan-pengadaan="<?= esc((string) ($d['tanggal_surat_undangan_pengadaan'] ?? '')); ?>"
+                                            data-nomor-surat-berita-acara-pengadaan="<?= esc((string) ($d['nomor_surat_berita_acara_pengadaan'] ?? '')); ?>"
+                                            data-tanggal-surat-berita-acara-pengadaan="<?= esc((string) ($d['tanggal_surat_berita_acara_pengadaan'] ?? '')); ?>"
+                                            data-nomor-surat-penawaran="<?= esc((string) ($d['nomor_surat_penawaran'] ?? '')); ?>"
+                                            data-tanggal-surat-penawaran="<?= esc((string) ($d['tanggal_surat_penawaran'] ?? '')); ?>"
+                                            data-nomor-undangan="<?= esc((string) ($d['nomor_undangan'] ?? '')); ?>"
+                                            data-total-penawaran="<?= esc((string) ($d['total_penawaran'] ?? '')); ?>"
+                                            data-tahun-anggaran="<?= esc((string) ($d['tahun_anggaran'] ?? '')); ?>"
+                                            data-no-sppbj="<?= esc((string) ($d['no_sppbj'] ?? '')); ?>"
+                                            data-tanggal-sppbj="<?= esc((string) ($d['tanggal_sppbj'] ?? '')); ?>"
+                                            data-pejabat-ppk="<?= esc((string) ($d['pejabat_ppk'] ?? '')); ?>"
+                                            data-nip-pejabat-ppk="<?= esc((string) ($d['nip_pejabat_ppk'] ?? '')); ?>"
+                                            data-kedudukan-pejabat-ppk="<?= esc((string) ($d['kedudukan_pejabat_ppk'] ?? '')); ?>"
+                                            data-nomor-surat-keputusan-menteri="<?= esc((string) ($d['nomor_surat_keputusan_menteri'] ?? '')); ?>"
+                                            data-tanggal-surat-keputusan-menteri="<?= esc((string) ($d['tanggal_surat_keputusan_menteri'] ?? '')); ?>"
+                                            data-nomor-perubahan-keputusan-menteri="<?= esc((string) ($d['nomor_perubahan_keputusan_menteri'] ?? '')); ?>"
+                                            data-bank-nomor-rekening="<?= esc((string) ($d['bank_nomor_rekening'] ?? '')); ?>"
+                                            data-bank-nama="<?= esc((string) ($d['bank_nama'] ?? '')); ?>"
+                                            data-bank-atas-nama="<?= esc((string) ($d['bank_atas_nama'] ?? '')); ?>"
+                                            data-bank-pembayaran="<?= esc((string) ($d['bank_pembayaran'] ?? '')); ?>"
+                                            data-kategori="<?= esc((string) ($d['kategori'] ?? '')); ?>"
+                                            data-nomor-telefon-ki="<?= esc((string) ($d['nomor_telefon_ki'] ?? '')); ?>"
+                                            data-email-ki="<?= esc((string) ($d['email_ki'] ?? '')); ?>"
+                                            data-nominal-kontrak="<?= esc((string) ($d['nominal_kontrak'] ?? '')); ?>"
+                                            data-nominal-hps="<?= esc((string) ($d['nominal_hps'] ?? '')); ?>"
+                                            data-nomor-spmk="<?= esc((string) ($d['nomor_spmk'] ?? '')); ?>"
+                                            data-tanggal-spmk="<?= esc((string) ($d['tanggal_spmk'] ?? '')); ?>"
+                                            data-nomor-baphp="<?= esc((string) ($d['nomor_baphp'] ?? '')); ?>"
+                                            data-nomor-surat-permohonan="<?= esc((string) ($d['nomor_surat_permohonan'] ?? '')); ?>"
+                                            data-tanggal-surat-permohonan="<?= esc((string) ($d['tanggal_surat_permohonan'] ?? '')); ?>"
+                                            data-nama-pekerjaan="<?= esc((string) ($d['nama_pekerjaan'] ?? '')); ?>"
+                                            data-jenis-pembayaran="<?= esc((string) ($d['jenis_pembayaran'] ?? '')); ?>"
+                                            data-nomor-bast="<?= esc((string) ($d['nomor_bast'] ?? '')); ?>"
+                                            data-pendidikan="<?= esc((string) ($d['pendidikan'] ?? '')); ?>"
+                                            data-sertifikat="<?= esc((string) ($d['sertifikat'] ?? '')); ?>"
+                                            data-toggle="modal" data-target="#modalTambahKi">
+                                        <i class="fas fa-edit mr-1"></i> Edit
+                                    </button>
+                                <?php endif; ?>
+
+                                <?php if (($can_export ?? true) === true): ?>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-sm" data-toggle="dropdown"><i class="fas fa-file-export mr-1"></i> Export</button>
+                                        <button type="button" class="btn btn-success btn-sm dropdown-toggle dropdown-icon" data-toggle="dropdown">
+                                            <span class="sr-only">Toggle Dropdown</span>
+                                        </button>
+                                        <div class="dropdown-menu" role="menu">
+                                            <a href="<?= site_url('admin/kontrak/export/penawaran/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">PENAWARAN</a>
+                                            <a href="<?= site_url('admin/kontrak/export/pakta-integritas/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">PAKTA INTEGRITAS</a>
+                                            <a href="<?= site_url('admin/kontrak/export/kualifikasi/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">KUALIFIKASI</a>
+                                            <a href="<?= site_url('admin/kontrak/export/boq/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">BOQ</a>
+                                            <a href="<?= site_url('admin/kontrak/export/kesediaan/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">KESEDIAAN</a>
+                                            <a href="<?= site_url('admin/kontrak/export/spbbj/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">SPBBJ</a>
+                                            <a href="<?= site_url('admin/kontrak/export/evaluasi/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">Evaluasi</a>
+                                            <a href="<?= site_url('admin/kontrak/export/baphp/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">BAPHP</a>
+                                            <a href="<?= site_url('admin/kontrak/export/bast/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">BAST</a>
+                                            <div class="dropdown-divider"></div>
+                                            <a href="<?= site_url('admin/kontrak/export/spmk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">SPMK</a>
+                                            <a href="<?= site_url('admin/kontrak/export/spk/' . (int) ($d['id'] ?? 0)); ?>" class="dropdown-item" target="_blank">SPK</a>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-block btn-warning btn-sm edit-ki-btn" 
-                                    data-id="<?= esc((string) ($d['id'] ?? '')); ?>"
-                                    data-nomor-kontrak="<?= esc((string) ($d['nomor_kontrak'] ?? '')); ?>"
-                                    data-tanggal-kontrak="<?= esc((string) ($d['tanggal_kontrak'] ?? '')); ?>"
-                                    data-kode-personil="<?= esc((string) ($d['kode_personil'] ?? '')); ?>"
-                                    data-nama="<?= esc((string) ($d['nama'] ?? '')); ?>"
-                                    data-alamat="<?= esc((string) ($d['alamat'] ?? '')); ?>"
-                                    data-nik="<?= esc((string) ($d['nik'] ?? '')); ?>"
-                                    data-npwp="<?= esc((string) ($d['npwp'] ?? '')); ?>"
-                                    data-jabatan="<?= esc((string) ($d['jabatan'] ?? '')); ?>"
-                                    data-durasi-pelaksanaan="<?= esc((string) ($d['durasi_pelaksanaan'] ?? '')); ?>"
-                                    data-nomor-dipa="<?= esc((string) ($d['nomor_dipa'] ?? '')); ?>"
-                                    data-tanggal-dipa="<?= esc((string) ($d['tanggal_dipa'] ?? '')); ?>"
-                                    data-mata-anggaran="<?= esc((string) ($d['mata_anggaran'] ?? '')); ?>"
-                                    data-nomor-surat-undangan-pengadaan="<?= esc((string) ($d['nomor_surat_undangan_pengadaan'] ?? '')); ?>"
-                                    data-tanggal-surat-undangan-pengadaan="<?= esc((string) ($d['tanggal_surat_undangan_pengadaan'] ?? '')); ?>"
-                                    data-nomor-surat-berita-acara-pengadaan="<?= esc((string) ($d['nomor_surat_berita_acara_pengadaan'] ?? '')); ?>"
-                                    data-tanggal-surat-berita-acara-pengadaan="<?= esc((string) ($d['tanggal_surat_berita_acara_pengadaan'] ?? '')); ?>"
-                                    data-nomor-surat-penawaran="<?= esc((string) ($d['nomor_surat_penawaran'] ?? '')); ?>"
-                                    data-tanggal-surat-penawaran="<?= esc((string) ($d['tanggal_surat_penawaran'] ?? '')); ?>"
-                                    data-nomor-undangan="<?= esc((string) ($d['nomor_undangan'] ?? '')); ?>"
-                                    data-total-penawaran="<?= esc((string) ($d['total_penawaran'] ?? '')); ?>"
-                                    data-tahun-anggaran="<?= esc((string) ($d['tahun_anggaran'] ?? '')); ?>"
-                                    data-no-sppbj="<?= esc((string) ($d['no_sppbj'] ?? '')); ?>"
-                                    data-tanggal-sppbj="<?= esc((string) ($d['tanggal_sppbj'] ?? '')); ?>"
-                                    data-pejabat-ppk="<?= esc((string) ($d['pejabat_ppk'] ?? '')); ?>"
-                                    data-nip-pejabat-ppk="<?= esc((string) ($d['nip_pejabat_ppk'] ?? '')); ?>"
-                                    data-kedudukan-pejabat-ppk="<?= esc((string) ($d['kedudukan_pejabat_ppk'] ?? '')); ?>"
-                                    data-nomor-surat-keputusan-menteri="<?= esc((string) ($d['nomor_surat_keputusan_menteri'] ?? '')); ?>"
-                                    data-tanggal-surat-keputusan-menteri="<?= esc((string) ($d['tanggal_surat_keputusan_menteri'] ?? '')); ?>"
-                                    data-nomor-perubahan-keputusan-menteri="<?= esc((string) ($d['nomor_perubahan_keputusan_menteri'] ?? '')); ?>"
-                                    data-bank-nomor-rekening="<?= esc((string) ($d['bank_nomor_rekening'] ?? '')); ?>"
-                                    data-bank-nama="<?= esc((string) ($d['bank_nama'] ?? '')); ?>"
-                                    data-bank-atas-nama="<?= esc((string) ($d['bank_atas_nama'] ?? '')); ?>"
-                                    data-bank-pembayaran="<?= esc((string) ($d['bank_pembayaran'] ?? '')); ?>"
-                                    data-kategori="<?= esc((string) ($d['kategori'] ?? '')); ?>"
-                                    data-nomor-telefon-ki="<?= esc((string) ($d['nomor_telefon_ki'] ?? '')); ?>"
-                                    data-email-ki="<?= esc((string) ($d['email_ki'] ?? '')); ?>"
-                                    data-nominal-kontrak="<?= esc((string) ($d['nominal_kontrak'] ?? '')); ?>"
-                                    data-nominal-hps="<?= esc((string) ($d['nominal_hps'] ?? '')); ?>"
-                                    data-nomor-spmk="<?= esc((string) ($d['nomor_spmk'] ?? '')); ?>"
-                                    data-tanggal-spmk="<?= esc((string) ($d['tanggal_spmk'] ?? '')); ?>"
-                                    data-nomor-baphp="<?= esc((string) ($d['nomor_baphp'] ?? '')); ?>"
-                                    data-nomor-surat-permohonan="<?= esc((string) ($d['nomor_surat_permohonan'] ?? '')); ?>"
-                                    data-tanggal-surat-permohonan="<?= esc((string) ($d['tanggal_surat_permohonan'] ?? '')); ?>"
-                                    data-nama-pekerjaan="<?= esc((string) ($d['nama_pekerjaan'] ?? '')); ?>"
-                                    data-jenis-pembayaran="<?= esc((string) ($d['jenis_pembayaran'] ?? '')); ?>"
-                                    data-nomor-bast="<?= esc((string) ($d['nomor_bast'] ?? '')); ?>"
-                                    data-pendidikan="<?= esc((string) ($d['pendidikan'] ?? '')); ?>"
-                                    data-sertifikat="<?= esc((string) ($d['sertifikat'] ?? '')); ?>"
-                                    data-toggle="modal" data-target="#modalTambahKi">
-                                <?= esc((string) ($d['nomor_kontrak'] ?? '')); ?>
-                            </button>
+                        <td class="text-center font-weight-bold">
+                            <?= esc((string) ($d['nomor_kontrak'] ?? '')); ?>
                         </td>
                         <td class="text-center"><?= esc((string) ($d['tanggal_kontrak'] ?? '')); ?></td>
                         <td class="text-center"><?= esc((string) ($d['kode_personil'] ?? '')); ?></td>
@@ -184,12 +198,12 @@
     </div>
 </div>
 
-<?php if (($can_edit ?? false) === true): ?>
+<?php if (($can_import ?? $can_edit ?? false) === true): ?>
 <div class="modal fade" id="modalImportKi" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Import Data KI</h5>
+                <h5 class="modal-title"><i class="fas fa-file-excel mr-1 text-success"></i> Import Data KI</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -221,7 +235,9 @@
         </div>
     </div>
 </div>
+<?php endif; ?>
 
+<?php if (($can_add ?? false) === true || ($can_edit ?? false) === true): ?>
 <div class="modal fade" id="modalTambahKi" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
@@ -237,19 +253,19 @@
                 <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
                     <ul class="nav nav-tabs" id="tambahKiTab" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" id="tab-utama" data-toggle="tab" href="#pane-utama" role="tab">Utama</a>
+                            <a class="nav-link active" id="tab-utama" data-toggle="tab" href="#pane-utama" role="tab"><i class="fas fa-id-card mr-1"></i> Utama & Personil</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="tab-anggaran" data-toggle="tab" href="#pane-anggaran" role="tab">DIPA & Anggaran</a>
+                            <a class="nav-link" id="tab-anggaran" data-toggle="tab" href="#pane-anggaran" role="tab"><i class="fas fa-money-bill-wave mr-1"></i> DIPA & Anggaran</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="tab-dokumen" data-toggle="tab" href="#pane-dokumen" role="tab">Dokumen</a>
+                            <a class="nav-link" id="tab-dokumen" data-toggle="tab" href="#pane-dokumen" role="tab"><i class="fas fa-file-alt mr-1"></i> Dokumen Pengadaan & Kontrak</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="tab-pejabat" data-toggle="tab" href="#pane-pejabat" role="tab">Pejabat</a>
+                            <a class="nav-link" id="tab-pejabat" data-toggle="tab" href="#pane-pejabat" role="tab"><i class="fas fa-user-shield mr-1"></i> Pejabat PPK & SK</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="tab-bank" data-toggle="tab" href="#pane-bank" role="tab">Bank & Kontak</a>
+                            <a class="nav-link" id="tab-bank" data-toggle="tab" href="#pane-bank" role="tab"><i class="fas fa-address-book mr-1"></i> Data Diri, Bank & Kontak</a>
                         </li>
                     </ul>
 
@@ -257,16 +273,44 @@
                         <div class="tab-pane fade show active" id="pane-utama" role="tabpanel">
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label for="nomor_kontrak">Nomor Kontrak</label>
+                                    <label for="nomor_kontrak">Nomor Kontrak <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="nomor_kontrak" name="nomor_kontrak" required>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="tanggal_kontrak">Tanggal Kontrak</label>
                                     <input type="date" class="form-control" id="tanggal_kontrak" name="tanggal_kontrak">
                                 </div>
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-4">
+                                    <label for="kode_personil">Kode Personil</label>
+                                    <input type="text" class="form-control" id="kode_personil" name="kode_personil">
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="nama">Nama Personil <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="nama" name="nama" required>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="jabatan">Jabatan</label>
+                                    <input type="text" class="form-control" id="jabatan" name="jabatan">
+                                </div>
+                                <div class="form-group col-md-4">
                                     <label for="durasi_pelaksanaan">Durasi Pelaksanaan</label>
                                     <input type="text" class="form-control" id="durasi_pelaksanaan" name="durasi_pelaksanaan">
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="tanggal_awal">Tanggal Awal</label>
+                                    <input type="date" class="form-control" id="tanggal_awal" name="tanggal_awal">
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="tanggal_akhir">Tanggal Akhir</label>
+                                    <input type="date" class="form-control" id="tanggal_akhir" name="tanggal_akhir">
+                                </div>
+                                <div class="form-group col-md-8">
+                                    <label for="nama_pekerjaan">Nama Pekerjaan</label>
+                                    <input type="text" class="form-control" id="nama_pekerjaan" name="nama_pekerjaan">
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="kategori">Kategori</label>
+                                    <input type="text" class="form-control" id="kategori" name="kategori">
                                 </div>
                             </div>
                         </div>
@@ -292,17 +336,21 @@
                             </div>
                             <hr>
                             <div class="form-row">
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-4">
                                     <label for="total_penawaran">Total Penawaran</label>
                                     <input type="number" class="form-control" id="total_penawaran" name="total_penawaran" min="0" step="0.01">
                                 </div>
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-4">
                                     <label for="nominal_kontrak">Nominal Kontrak</label>
                                     <input type="number" class="form-control" id="nominal_kontrak" name="nominal_kontrak" min="0" step="0.01">
                                 </div>
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-4">
                                     <label for="nominal_hps">Nominal HPS</label>
                                     <input type="number" class="form-control" id="nominal_hps" name="nominal_hps" min="0" step="0.01">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="jenis_pembayaran">Jenis Pembayaran</label>
+                                    <input type="text" class="form-control" id="jenis_pembayaran" name="jenis_pembayaran">
                                 </div>
                             </div>
                         </div>
@@ -361,6 +409,10 @@
                                     <input type="text" class="form-control" id="nomor_baphp" name="nomor_baphp">
                                 </div>
                                 <div class="form-group col-md-6">
+                                    <label for="nomor_bast">Nomor BAST</label>
+                                    <input type="text" class="form-control" id="nomor_bast" name="nomor_bast">
+                                </div>
+                                <div class="form-group col-md-6">
                                     <label for="nomor_surat_permohonan">Nomor Surat Permohonan</label>
                                     <input type="text" class="form-control" id="nomor_surat_permohonan" name="nomor_surat_permohonan">
                                 </div>
@@ -368,19 +420,11 @@
                                     <label for="tanggal_surat_permohonan">Tanggal Surat Permohonan</label>
                                     <input type="date" class="form-control" id="tanggal_surat_permohonan" name="tanggal_surat_permohonan">
                                 </div>
-                                <div class="form-group col-md-6">
-                                    <label for="nomor_bast">Nomor BAST</label>
-                                    <input type="text" class="form-control" id="nomor_bast" name="nomor_bast">
-                                </div>
                             </div>
                         </div>
 
                         <div class="tab-pane fade" id="pane-pejabat" role="tabpanel">
                             <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label for="jabatan">Jabatan</label>
-                                    <input type="text" class="form-control" id="jabatan" name="jabatan">
-                                </div>
                                 <div class="form-group col-md-6">
                                     <label for="pejabat_ppk">Pejabat PPK</label>
                                     <input type="text" class="form-control" id="pejabat_ppk" name="pejabat_ppk">
@@ -411,18 +455,6 @@
                         <div class="tab-pane fade" id="pane-bank" role="tabpanel">
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label for="nama">Nama</label>
-                                    <input type="text" class="form-control" id="nama" name="nama" required>
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label for="alamat">Alamat</label>
-                                    <input type="text" class="form-control" id="alamat" name="alamat">
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label for="kode_personil">Kode Personil</label>
-                                    <input type="text" class="form-control" id="kode_personil" name="kode_personil">
-                                </div>
-                                <div class="form-group col-md-6">
                                     <label for="nik">NIK</label>
                                     <input type="text" class="form-control" id="nik" name="nik">
                                 </div>
@@ -430,13 +462,25 @@
                                     <label for="npwp">NPWP</label>
                                     <input type="text" class="form-control" id="npwp" name="npwp">
                                 </div>
+                                <div class="form-group col-md-12">
+                                    <label for="alamat">Alamat</label>
+                                    <textarea class="form-control" id="alamat" name="alamat" rows="2"></textarea>
+                                </div>
                                 <div class="form-group col-md-6">
-                                    <label for="bank_nomor_rekening">Bank Nomor Rekening</label>
-                                    <input type="text" class="form-control" id="bank_nomor_rekening" name="bank_nomor_rekening">
+                                    <label for="pendidikan">Pendidikan</label>
+                                    <input type="text" class="form-control" id="pendidikan" name="pendidikan">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="sertifikat">Sertifikat</label>
+                                    <input type="text" class="form-control" id="sertifikat" name="sertifikat">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="bank_nama">Bank Nama</label>
                                     <input type="text" class="form-control" id="bank_nama" name="bank_nama">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="bank_nomor_rekening">Bank Nomor Rekening</label>
+                                    <input type="text" class="form-control" id="bank_nomor_rekening" name="bank_nomor_rekening">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="bank_atas_nama">Bank Atas Nama</label>
@@ -447,10 +491,6 @@
                                     <input type="text" class="form-control" id="bank_pembayaran" name="bank_pembayaran">
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="kategori">Kategori</label>
-                                    <input type="text" class="form-control" id="kategori" name="kategori">
-                                </div>
-                                <div class="form-group col-md-6">
                                     <label for="nomor_telefon_ki">Nomor Telepon KI</label>
                                     <input type="text" class="form-control" id="nomor_telefon_ki" name="nomor_telefon_ki">
                                 </div>
@@ -458,25 +498,13 @@
                                     <label for="email_ki">Email KI</label>
                                     <input type="email" class="form-control" id="email_ki" name="email_ki">
                                 </div>
-                                <div class="form-group col-md-6">
-                                    <label for="jenis_pembayaran">Jenis Pembayaran</label>
-                                    <input type="text" class="form-control" id="jenis_pembayaran" name="jenis_pembayaran">
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label for="pendidikan">Pendidikan</label>
-                                    <input type="text" class="form-control" id="pendidikan" name="pendidikan">
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label for="sertifikat">Sertifikat</label>
-                                    <input type="text" class="form-control" id="sertifikat" name="sertifikat">
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitKi">Simpan</button>
                 </div>
             </form>
         </div>
@@ -552,6 +580,7 @@
         const $modal = $('#modalTambahKi');
         const $form = $('#formTambahKi');
         const $title = $('#modalTambahKiTitle');
+        const $btnSubmit = $('#btnSubmitKi');
         const $kiEditId = $('#kiEditId');
 
         const fieldMapping = {
@@ -564,6 +593,9 @@
             'data-npwp': 'npwp',
             'data-jabatan': 'jabatan',
             'data-durasi-pelaksanaan': 'durasi_pelaksanaan',
+            'data-tanggal-awal': 'tanggal_awal',
+            'data-tanggal-akhir': 'tanggal_akhir',
+            'data-nama-pekerjaan': 'nama_pekerjaan',
             'data-nomor-dipa': 'nomor_dipa',
             'data-tanggal-dipa': 'tanggal_dipa',
             'data-mata-anggaran': 'mata_anggaran',
@@ -598,7 +630,6 @@
             'data-nomor-baphp': 'nomor_baphp',
             'data-nomor-surat-permohonan': 'nomor_surat_permohonan',
             'data-tanggal-surat-permohonan': 'tanggal_surat_permohonan',
-            'data-nama-pekerjaan': 'nama_pekerjaan',
             'data-jenis-pembayaran': 'jenis_pembayaran',
             'data-nomor-bast': 'nomor_bast',
             'data-pendidikan': 'pendidikan',
@@ -608,6 +639,10 @@
         $(document).on('click', '.edit-ki-btn', function () {
             const $btn = $(this);
             const kiId = $btn.data('id');
+            const nomorKontrak = $btn.attr('data-nomor-kontrak') || '';
+
+            // Reset tab to first tab
+            $('#tambahKiTab a[href="#pane-utama"]').tab('show');
 
             // Populate form fields
             Object.entries(fieldMapping).forEach(([attr, fieldName]) => {
@@ -624,8 +659,9 @@
             // Update form action
             $form.attr('action', `<?= site_url('admin/kontrak/ki/'); ?>${paketId}/${kiId}/ubah`);
 
-            // Update modal title
-            $title.text('Edit Data KI');
+            // Update modal title & button text
+            $title.html(`<i class="fas fa-edit mr-1 text-warning"></i> Edit Data KI <span class="badge badge-secondary ml-1">${nomorKontrak}</span>`);
+            $btnSubmit.text('Simpan Perubahan');
         });
 
         // Reset form when modal is closed
@@ -634,6 +670,8 @@
             $kiEditId.val('');
             $form.attr('action', `<?= site_url('admin/kontrak/ki/'); ?>${paketId}/tambah`);
             $title.text('Tambah Data KI');
+            $btnSubmit.text('Simpan');
+            $('#tambahKiTab a[href="#pane-utama"]').tab('show');
         });
     })();
 

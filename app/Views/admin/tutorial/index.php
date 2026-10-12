@@ -673,7 +673,49 @@ graph TD
     </div>
     <?php endif; ?>
 
-    <!-- FLOWCHART 11: KOMPU - KOMUNIKASI PUBLIK, AKUN SOSMED & PENGATURAN AKSES -->
+    <!-- FLOWCHART 11: KONTRAK - KONTRAK KI (KONSULTAN INDIVIDUAL PAKET) -->
+    <?php if ($canRenderForUser(['admin', 'super_administrator', 'editor'])): ?>
+    <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-file-invoice text-primary mr-2"></i>Flowchart: Alur Kerja Kontrak KI (Konsultan Individual) &amp; Pengelolaan Data
+            </h5>
+            <div>
+                <span class="badge badge-primary">Kontrak</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu: Kontrak > Paket (/admin/kontrak/paket)"] --> B["Pilih Paket &amp; Klik Tombol 'DETAIL'"]
+    B --> C["Halaman Daftar Kontrak KI Paket (/admin/kontrak/ki/{paketId})"]
+    C --> V1["Opsi Tampilan: Beralih Antara 'Tampilan Utama' &amp; 'Show All' Kolom"]
+    C --> V2["Opsi Import: Klik 'Import Excel' (.xls / .xlsx) dengan Format Baku"]
+    C --> V3["Opsi Tambah: Klik 'Tambah Data' (Modal Form 5 Tab Lengkap)"]
+    C --> TBL["Tabel Daftar Kontrak KI (Nomor Kontrak, Personil, Anggaran, Dokumen)"]
+    
+    TBL --> ACT1["Kolom ACTION: Klik Tombol 'EDIT' (Warna Kuning)"]
+    ACT1 --> MOD["Modal Form Edit Data KI Terbuka Otomatis Terisi Lengkap:"]
+    MOD --> M1["Tab 1 (Utama &amp; Personil): No/Tgl Kontrak, Kode, Nama, Jabatan, Durasi, Tgl Awal/Akhir, Pekerjaan, Kategori"]
+    MOD --> M2["Tab 2 (DIPA &amp; Anggaran): No/Tgl DIPA, Mata/Tahun Anggaran, Total Penawaran, Nilai Kontrak, HPS, Jenis Bayar"]
+    MOD --> M3["Tab 3 (Dokumen &amp; Kontrak): Undangan, BAP, Penawaran, SPPBJ, SPMK, BAPHP, BAST, Permohonan"]
+    MOD --> M4["Tab 4 (Pejabat PPK &amp; SK): Pejabat PPK, NIP, Kedudukan, SK Menteri &amp; Tgl, Perubahan SK"]
+    MOD --> M5["Tab 5 (Data Diri, Bank &amp; Kontak): NIK, NPWP, Alamat, Pendidikan, Sertifikat, Bank &amp; Rekening, Telp, Email"]
+    
+    MOD --> SAVE["Klik 'Simpan Perubahan' -> POST /admin/kontrak/ki/{paketId}/{kiId}/ubah"]
+    SAVE --> DB["Validasi Hak Akses menu_akses (FiturEdit) &amp; Update Database"]
+    DB --> DONE["Data Kontrak KI Berhasil Diperbarui &amp; Tampil di Tabel"]
+    
+    TBL --> ACT2["Kolom ACTION: Tombol 'Export' Dropdown"]
+    ACT2 --> EXP["Export Berkas: Penawaran, Pakta Integritas, Kualifikasi, BOQ, Kesediaan, SPBBJ, Evaluasi, BAPHP, BAST, SPMK, SPK"]
+                </pre>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- FLOWCHART 12: KOMPU - KOMUNIKASI PUBLIK, AKUN SOSMED & PENGATURAN AKSES -->
     <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <h5 class="mb-0 font-weight-bold text-dark">
@@ -1398,6 +1440,49 @@ graph TD
                                     <li>Perintah eksekusi seeder di terminal: <code>php spark db:seed BastSeeder</code>. Seeder bersifat idempoten (aman dijalankan berkali-kali tanpa menghasilkan data ganda).</li>
                                 </ul>
                             </li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- SUB-TUTORIAL: KONTRAK KI -->
+                <div class="card border-0 shadow-sm mt-3">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-primary">
+                            <i class="fas fa-file-invoice mr-1"></i> Pengelolaan Kontrak KI (Konsultan Individual) &amp; Fitur Edit Data
+                        </h6>
+                        <p class="small text-muted mb-2"><code>/admin/kontrak/ki/{paket_id}</code></p>
+                        <ol class="pl-3 small mb-0">
+                            <li><strong>Akses Menu:</strong> Buka menu samping <strong>Kontrak &gt; Paket</strong> (<code>/admin/kontrak/paket</code>), lalu pada paket pekerjaan yang diinginkan klik tombol hijau <strong>DETAIL</strong> untuk masuk ke daftar kontrak KI paket tersebut (<code>/admin/kontrak/ki/{id}</code>).</li>
+                            <li><strong>Pengaturan Tampilan Kolom:</strong>
+                                <ul>
+                                    <li>Klik tombol <strong>"Tampilan Utama"</strong> untuk menyaring tabel agar hanya menampilkan informasi inti (Nomor Kontrak, Tanggal, Personil, NIK/NPWP, Jabatan, DIPA).</li>
+                                    <li>Klik tombol <strong>"Show All"</strong> untuk membuka seluruh kolom detail kontrak (hingga 38 kolom komprehensif).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Fitur Edit Data KI (Tabel Kolom ACTION):</strong>
+                                <ul>
+                                    <li>Pada kolom <strong>ACTION</strong> di setiap baris kontrak KI, klik tombol kuning <strong><i class="fas fa-edit mr-1"></i> Edit</strong>.</li>
+                                    <li>Modal interaktif <strong>Edit Data KI</strong> akan terbuka dengan judul berlabel nomor kontrak yang sedang diedit dan tombol simpan berubah menjadi <strong>"Simpan Perubahan"</strong>.</li>
+                                    <li>Seluruh data kontrak terisi otomatis ke dalam 5 tab formulir:
+                                        <ul>
+                                            <li><strong>Tab Utama &amp; Personil:</strong> Nomor &amp; Tanggal Kontrak, Kode Personil, Nama Personil, Jabatan, Durasi Pelaksanaan, Tanggal Awal &amp; Akhir, Nama Pekerjaan, dan Kategori.</li>
+                                            <li><strong>Tab DIPA &amp; Anggaran:</strong> Nomor &amp; Tanggal DIPA, Mata Anggaran, Tahun Anggaran, Total Penawaran, Nominal Kontrak, Nominal HPS, dan Jenis Pembayaran.</li>
+                                            <li><strong>Tab Dokumen Pengadaan &amp; Kontrak:</strong> Nomor &amp; Tanggal Undangan, Berita Acara Pengadaan, Surat Penawaran, Nomor Undangan, SPPBJ, SPMK, BAPHP, Surat Permohonan, dan BAST.</li>
+                                            <li><strong>Tab Pejabat PPK &amp; SK:</strong> Pejabat PPK, NIP, Kedudukan, Nomor &amp; Tanggal SK Menteri, serta Nomor Perubahan SK.</li>
+                                            <li><strong>Tab Data Diri, Bank &amp; Kontak:</strong> NIK, NPWP, Alamat, Pendidikan, Sertifikat, Nama Bank, Nomor Rekening, Atas Nama, Bank Pembayaran, Nomor Telepon, dan Email KI.</li>
+                                        </ul>
+                                    </li>
+                                    <li>Sesuaikan kolom yang ingin diperbarui lalu klik tombol <strong>"Simpan Perubahan"</strong>. Perubahan akan disimpan ke database secara aman dan notifikasi sukses akan ditampilkan.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Fitur Tambah Data &amp; Import Excel:</strong>
+                                <ul>
+                                    <li>Klik tombol <strong>"Tambah Data"</strong> di header untuk menambahkan personil kontrak KI baru dengan formulir modal 5 tab yang sama.</li>
+                                    <li>Klik tombol <strong>"Import Excel"</strong> untuk mengunggah file spreadsheet (.xlsx/.xls) massal setelah mengunduh template format baku melalui tautan <strong>"Download Format (XLSX)"</strong>.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Export Dokumen Kontrak KI:</strong> Pada kolom <strong>ACTION</strong>, klik dropdown hijau <strong>Export</strong> untuk mengunduh 11 jenis berkas resmi satuan: Penawaran, Pakta Integritas, Kualifikasi, BOQ, Kesediaan, SPBBJ, Evaluasi, BAPHP, BAST, SPMK, dan SPK.</li>
+                            <li><strong>Otorisasi Hak Akses (menu_akses):</strong> Fitur Tambah, Edit, dan Import diproteksi secara dinamis mengikuti matriks hak akses peran pengguna (<code>FiturAdd</code>, <code>FiturEdit</code>, <code>FiturImport</code>, <code>FiturExport</code>) pada menu Paket Kontrak.</li>
                         </ol>
                     </div>
                 </div>
