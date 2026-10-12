@@ -18,7 +18,7 @@ $tanggal_surat = tanggal_indonesia($data->tanggal_surat_penawaran);
     <style>
         /* Pengaturan Font Global untuk seluruh dokumen */
         body, table, td, th, div, span, li, p, b, i, u {
-            font-family: "Times New Roman", serif;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
         body {

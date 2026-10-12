@@ -1472,7 +1472,7 @@ graph TD
                                             <li><strong>Tab Data Diri, Bank &amp; Kontak:</strong> NIK, NPWP, Alamat, Pendidikan, Sertifikat, Nama Bank, Nomor Rekening, Atas Nama, Bank Pembayaran, Nomor Telepon, dan Email KI.</li>
                                         </ul>
                                     </li>
-                                    <li>Sesuaikan kolom yang ingin diperbarui lalu klik tombol <strong>"Simpan Perubahan"</strong>. Perubahan akan disimpan ke database secara aman dan notifikasi sukses akan ditampilkan.</li>
+                                    <li>Sesuaikan kolom yang ingin diperbarui lalu klik tombol <strong>"Simpan Perubahan"</strong>. Sistem akan memvalidasi bahwa <em>Nomor Kontrak</em> dan <em>Nama Personil</em> terisi — jika kosong, modal akan berpindah ke tab yang bermasalah dan menampilkan peringatan. Jika valid, muncul animasi <em>loading</em> dan data disimpan ke database; notifikasi sukses akan tampil setelah halaman diperbarui.</li>
                                 </ul>
                             </li>
                             <li><strong>Fitur Tambah Data &amp; Import Excel:</strong>

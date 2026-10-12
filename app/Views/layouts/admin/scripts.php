@@ -457,7 +457,7 @@
         }
 
         if (!perms.edit) {
-            hideBySelector('a[href*="/ubah"], form[action*="/ubah"], form[action*="/update"], form[action*="/status"], form[action*="/save"], button[id*="ubah"], button[id*="Ubah"], button[class*="edit"], button[class*="Edit"]');
+            hideBySelector('a[href*="/ubah"], form[action*="/ubah"], form[action*="/update"], form[action*="/status"], form[action*="/save"], button[id*="ubah"], button[id*="Ubah"], button[data-perm="edit"]');
         }
 
         if (!perms.delete) {

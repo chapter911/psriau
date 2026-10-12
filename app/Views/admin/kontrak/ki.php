@@ -124,7 +124,7 @@
                                             data-nomor-bast="<?= esc((string) ($d['nomor_bast'] ?? '')); ?>"
                                             data-pendidikan="<?= esc((string) ($d['pendidikan'] ?? '')); ?>"
                                             data-sertifikat="<?= esc((string) ($d['sertifikat'] ?? '')); ?>"
-                                            data-toggle="modal" data-target="#modalTambahKi">
+>
                                         <i class="fas fa-edit mr-1"></i> Edit
                                     </button>
                                 <?php endif; ?>
@@ -247,7 +247,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="formTambahKi" action="<?= site_url('admin/kontrak/ki/' . (int) ($paket['id'] ?? 0) . '/tambah'); ?>" method="post">
+            <form id="formTambahKi" action="<?= site_url('admin/kontrak/ki/' . (int) ($paket['id'] ?? 0) . '/tambah'); ?>" method="post" novalidate>
                 <?= csrf_field(); ?>
                 <input type="hidden" id="kiEditId" name="ki_id" value="">
                 <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
@@ -338,15 +338,15 @@
                             <div class="form-row">
                                 <div class="form-group col-md-4">
                                     <label for="total_penawaran">Total Penawaran</label>
-                                    <input type="number" class="form-control" id="total_penawaran" name="total_penawaran" min="0" step="0.01">
+                                    <input type="text" class="form-control" id="total_penawaran" name="total_penawaran" placeholder="0">
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label for="nominal_kontrak">Nominal Kontrak</label>
-                                    <input type="number" class="form-control" id="nominal_kontrak" name="nominal_kontrak" min="0" step="0.01">
+                                    <input type="text" class="form-control" id="nominal_kontrak" name="nominal_kontrak" placeholder="0">
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label for="nominal_hps">Nominal HPS</label>
-                                    <input type="number" class="form-control" id="nominal_hps" name="nominal_hps" min="0" step="0.01">
+                                    <input type="text" class="form-control" id="nominal_hps" name="nominal_hps" placeholder="0">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="jenis_pembayaran">Jenis Pembayaran</label>
@@ -496,7 +496,7 @@
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="email_ki">Email KI</label>
-                                    <input type="email" class="form-control" id="email_ki" name="email_ki">
+                                    <input type="text" class="form-control" id="email_ki" name="email_ki" placeholder="contoh@email.com">
                                 </div>
                             </div>
                         </div>
@@ -574,14 +574,14 @@
         applyColumnView(false);
     })();
 
-    // Edit KI functionality
+    // Edit KI: populate & show modal
     (() => {
         const paketId = <?= (int) ($paket['id'] ?? 0); ?>;
-        const $modal = $('#modalTambahKi');
-        const $form = $('#formTambahKi');
-        const $title = $('#modalTambahKiTitle');
+        const $modal  = $('#modalTambahKi');
+        const $form   = $('#formTambahKi');
+        const $title  = $('#modalTambahKiTitle');
         const $btnSubmit = $('#btnSubmitKi');
-        const $kiEditId = $('#kiEditId');
+        const $kiEditId  = $('#kiEditId');
 
         const fieldMapping = {
             'data-nomor-kontrak': 'nomor_kontrak',
@@ -636,77 +636,122 @@
             'data-sertifikat': 'sertifikat'
         };
 
+        // Klik tombol Edit: isi form lalu buka modal secara programatik
         $(document).on('click', '.edit-ki-btn', function () {
-            const $btn = $(this);
-            const kiId = $btn.data('id');
+            const $btn         = $(this);
+            const kiId         = $btn.data('id');
             const nomorKontrak = $btn.attr('data-nomor-kontrak') || '';
 
-            // Reset tab to first tab
+            // Reset form & tab
+            $form[0].reset();
+            $kiEditId.val('');
             $('#tambahKiTab a[href="#pane-utama"]').tab('show');
 
-            // Populate form fields
+            // Isi semua field dari data-attributes
             Object.entries(fieldMapping).forEach(([attr, fieldName]) => {
-                const value = $btn.attr(attr) || '';
-                const $field = $(`[name="${fieldName}"]`);
+                const val    = $btn.attr(attr) || '';
+                const $field = $form.find(`[name="${fieldName}"]`);
                 if ($field.length) {
-                    $field.val(value);
+                    $field.val(val);
                 }
             });
 
-            // Set hidden KI ID
+            // Set ID & action
             $kiEditId.val(kiId);
+            $form.attr('action', `<?= rtrim(site_url('admin/kontrak/ki'), '/'); ?>/${paketId}/${kiId}/ubah`);
 
-            // Update form action
-            $form.attr('action', `<?= site_url('admin/kontrak/ki/'); ?>${paketId}/${kiId}/ubah`);
-
-            // Update modal title & button text
+            // Judul & label tombol
             $title.html(`<i class="fas fa-edit mr-1 text-warning"></i> Edit Data KI <span class="badge badge-secondary ml-1">${nomorKontrak}</span>`);
-            $btnSubmit.text('Simpan Perubahan');
+            $btnSubmit.text('Simpan Perubahan').prop('disabled', false);
+
+            // Buka modal
+            $modal.modal('show');
         });
 
-        // Reset form when modal is closed
+        // Reset saat modal ditutup
         $modal.on('hidden.bs.modal', function () {
-            $form.trigger('reset');
+            $form[0].reset();
             $kiEditId.val('');
-            $form.attr('action', `<?= site_url('admin/kontrak/ki/'); ?>${paketId}/tambah`);
+            $form.attr('action', `<?= rtrim(site_url('admin/kontrak/ki'), '/'); ?>/${paketId}/tambah`);
             $title.text('Tambah Data KI');
-            $btnSubmit.text('Simpan');
+            $btnSubmit.text('Simpan').prop('disabled', false);
             $('#tambahKiTab a[href="#pane-utama"]').tab('show');
         });
-    })();
 
-    // SweetAlert loading for submit actions
-    (() => {
-        if (typeof $ === 'undefined') {
-            return;
-        }
+        // ---------------------------------------------------------------
+        // Submit handler: validasi manual (nomor_kontrak & nama wajib),
+        // tampilkan Swal loading, lalu submit via native HTMLFormElement
+        // agar tidak terhambat oleh disabled-button atau HTML5 validation.
+        // ---------------------------------------------------------------
+        $form.on('submit', function (e) {
+            e.preventDefault(); // selalu cegah submit default
 
-        const bindLoadingOnSubmit = (selector, titleText) => {
-            const $form = $(selector);
-            if (! $form.length) {
+            const nomorKontrak = $form.find('[name="nomor_kontrak"]').val();
+            const nama         = $form.find('[name="nama"]').val();
+
+            if (!nomorKontrak || !nomorKontrak.trim()) {
+                // Pindah ke tab Utama & fokus ke field
+                $('#tambahKiTab a[href="#pane-utama"]').tab('show');
+                $form.find('#nomor_kontrak').focus();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Nomor Kontrak wajib diisi.', confirmButtonText: 'OK' });
+                } else {
+                    alert('Nomor Kontrak wajib diisi.');
+                }
                 return;
             }
 
-            $form.on('submit', function () {
-                const $submitButton = $(this).find('button[type="submit"]');
-                $submitButton.prop('disabled', true);
-
+            if (!nama || !nama.trim()) {
+                $('#tambahKiTab a[href="#pane-utama"]').tab('show');
+                $form.find('#nama').focus();
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        title: titleText,
-                        text: 'Mohon tunggu...',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
+                    Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Nama Personil wajib diisi.', confirmButtonText: 'OK' });
+                } else {
+                    alert('Nama Personil wajib diisi.');
                 }
-            });
-        };
+                return;
+            }
 
-        bindLoadingOnSubmit('#formTambahKi', 'Memproses Data');
-        bindLoadingOnSubmit('#formImportKi', 'Memproses Data');
+            // Tampilkan loading
+            $btnSubmit.prop('disabled', true);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Memproses Data',
+                    text: 'Mohon tunggu...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            }
+
+            // Submit via native method (melewati disabled-button blocking)
+            const formEl = $form[0];
+            setTimeout(() => {
+                HTMLFormElement.prototype.submit.call(formEl);
+            }, 50);
+        });
+    })();
+
+    // SweetAlert loading untuk form Import (tetap gunakan submit event biasa)
+    (() => {
+        if (typeof $ === 'undefined') return;
+
+        const $formImport = $('#formImportKi');
+        if (! $formImport.length) return;
+
+        $formImport.on('submit', function () {
+            const $btn = $(this).find('button[type="submit"]');
+            $btn.prop('disabled', true);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Memproses Import',
+                    text: 'Mohon tunggu...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            }
+        });
     })();
 </script>
 <?= $this->endSection(); ?>
