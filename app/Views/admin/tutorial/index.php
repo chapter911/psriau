@@ -701,10 +701,10 @@ graph TD
     MOD_BATCH --> B2["Pilih Personil: Opsi 'Semua Anggota' atau Centang Anggota Tertentu"]
     MOD_BATCH --> B3["Pilih Format: PDF (.pdf), Word (.doc), atau Keduanya"]
     MOD_BATCH --> B4["Pilihan Halaman: Semua Halaman (Lengkap) atau Halaman Tertentu (Preset Hal 3 Lembar TTD SPK, Hal 1-3 Inti, atau Rentang Kustom)"]
-    MOD_BATCH --> B5["Opsi Struktur: Folder Per Personil di Dalam ZIP"]
-    MOD_BATCH --> SUBMIT_BATCH["Klik 'Download ZIP' -> POST /admin/kontrak/ki/{paketId}/export-batch"]
-    SUBMIT_BATCH --> ZIP_GEN["Sistem Generate Seluruh File (Dompdf, Word/HTML &amp; PhpSpreadsheet)"]
-    ZIP_GEN --> ZIP_DL["Arsip ZIP Terunduh Otomatis &amp; File Sementara Dibersihkan"]
+    MOD_BATCH --> B5["Bentuk Hasil Berkas: Arsip ZIP (Berkas Terpisah) ATAU Gabung Menjadi 1 File Saja Siap Cetak (Single File PDF/Word)"]
+    B5 --> SUBMIT_BATCH["Klik 'Download ZIP' atau 'Download 1 File Gabungan' -> POST /admin/kontrak/ki/{paketId}/export-batch"]
+    SUBMIT_BATCH --> ZIP_GEN["Sistem Generate &amp; Gabungkan File (FPDI Merged PDF / Multipart Word DOC / ZIP)"]
+    ZIP_GEN --> ZIP_DL["Berkas Terunduh Otomatis (1 File Gabungan atau Arsip ZIP) &amp; File Temp Dibersihkan"]
 
     TBL --> ACT1["Kolom ACTION: Klik Tombol 'EDIT' (Warna Kuning)"]
     MOD --> M1["Tab 1 (Utama &amp; Personil): No/Tgl Kontrak, Kode, Nama, Jabatan, Durasi, Tgl Awal/Akhir, Pekerjaan, Kategori"]
@@ -1500,19 +1500,24 @@ graph TD
                                             <li><strong>Bagian Excel:</strong> Mengunduh berkas tabel kalkulasi dalam format Excel .xlsx (BOQ dan Evaluasi).</li>
                                         </ul>
                                     </li>
-                                    <li><strong>Export Batch (Kolektif Seluruh / Pilihan Anggota):</strong> Klik tombol hijau <strong><i class="fas fa-file-archive mr-1"></i> Export Batch</strong> di bilah atas halaman untuk membuka dialog pengunduhan massal dalam format <strong>ZIP</strong>:
+                                    <li><strong>Export Batch (Kolektif Seluruh / Pilihan Anggota):</strong> Klik tombol hijau <strong><i class="fas fa-file-archive mr-1"></i> Export Batch</strong> di bilah atas halaman untuk membuka dialog pengunduhan massal terintegrasi:
                                         <ul>
                                             <li><strong>Pilihan Dokumen:</strong> Centang dokumen yang diinginkan dari 11 tipe dokumen resmi (dilengkapi tombol jalan pintas <em>Pilih Semua</em> dan <em>Kosongkan</em>).</li>
                                             <li><strong>Pilihan Anggota:</strong> Pilih opsi <em>"Semua Anggota"</em> untuk mengekspor seluruh personil di paket tersebut, atau beralih ke <em>"Pilih Anggota Tertentu"</em> untuk mencentang nama personil secara spesifik.</li>
-                                            <li><strong>Pilihan Format Dokumen:</strong> Tersedia opsi radio untuk memilih output berkas berupa <strong>PDF (.pdf)</strong>, <strong>Word (.doc)</strong>, atau <strong>Keduanya (PDF &amp; Word)</strong>. Berkas BOQ dan Evaluasi otomatis tetap diekspor sebagai Excel (.xlsx).</li>
+                                            <li><strong>Pilihan Format Dokumen:</strong> Tersedia opsi radio untuk memilih format berkas berupa <strong>PDF (.pdf)</strong>, <strong>Word (.doc)</strong>, atau <strong>Keduanya (PDF &amp; Word)</strong>. Berkas BOQ dan Evaluasi otomatis tetap diekspor sebagai Excel (.xlsx).</li>
                                             <li><strong>Pilihan Halaman Dokumen (Semua Halaman vs Halaman Tertentu):</strong>
                                                 <ul class="mt-1">
                                                     <li><em>Semua Halaman (Lengkap):</em> Mengekspor seluruh lembar dokumen secara utuh.</li>
                                                     <li><em>Halaman Tertentu Saja:</em> Mengunduh lembar dokumen spesifik yang diinginkan (baik dalam format PDF via FPDI maupun Word via section-split). Tersedia tombol jalan pintas preset khusus dokumen SPK seperti <strong>Halaman 3 Saja (Lembar Tanda Tangan SPK &amp; Sumber Dana)</strong>, <strong>Halaman 1–3 (SPK Inti: Cover s/d Tanda Tangan tanpa SSUK)</strong>, <strong>Halaman 1 (Cover Saja)</strong>, atau rentang kustom (contoh: <code>3</code> atau <code>1-3</code>). Nama berkas otomatis diberi tanda pengenal (contoh: <code>SPK_Hal3_[Nama].pdf</code>).</li>
                                                 </ul>
                                             </li>
-                                            <li><strong>Struktur Folder ZIP:</strong> Berkas dapat dikelompokkan secara rapi ke dalam folder per personil (misal: <code>[Nama Personil]/PENAWARAN_[Nama].doc</code>) atau flat file.</li>
-                                            <li>Arsip ZIP dibuat otomatis dan file sementara langsung dibersihkan oleh sistem.</li>
+                                            <li><strong>Bentuk Hasil Berkas (Arsip ZIP vs 1 File Saja Siap Cetak):</strong>
+                                                <ul class="mt-1">
+                                                    <li><em>Arsip ZIP (File Terpisah per Dokumen / Personil):</em> Berkas disimpan terpisah-pisah dan dapat dikelompokkan ke dalam folder per personil di dalam satu file ZIP (misal: <code>[Nama Personil]/PENAWARAN_[Nama].doc</code>).</li>
+                                                    <li><em>Simpan / Gabung Menjadi 1 File Saja Siap Cetak (Single File):</em> Seluruh berkas dokumen untuk personil yang dipilih otomatis digabungkan secara berurutan menjadi <strong>1 file dokumen tunggal</strong> (PDF via FPDI atau Word .doc via MHTML). Sangat praktis untuk kebutuhan cetak massal (misalnya: mencetak lembar Halaman 3 Tanda Tangan SPK untuk 10 personil langsung dalam 1 file PDF 10 halaman siap cetak tanpa harus ekstrak ZIP satu per satu).</li>
+                                                </ul>
+                                            </li>
+                                            <li>Seluruh berkas diproses secara instan dan aman, serta file sementara di server langsung dibersihkan otomatis.</li>
                                         </ul>
                                     </li>
                                 </ul>

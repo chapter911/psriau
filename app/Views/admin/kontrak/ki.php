@@ -509,15 +509,39 @@
                         </div>
                     </div>
 
-                    <!-- PENGATURAN STRUKTUR ZIP -->
+                    <!-- PENGATURAN BENTUK HASIL BERKAS -->
                     <div class="card mb-0 border">
+                        <div class="card-header bg-light py-2">
+                            <span class="font-weight-bold text-dark"><i class="fas fa-box-open mr-1 text-primary"></i> 5. Bentuk Hasil Berkas</span>
+                        </div>
                         <div class="card-body py-2">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="folderPerPerson" name="folder_per_person" value="1" checked>
-                                <label class="custom-control-label font-weight-normal" for="folderPerPerson">
-                                    <strong>Kelompokkan berkas ke dalam folder per personil di dalam file ZIP</strong>
-                                    <br><small class="text-muted">Contoh: <code>Nama_Personil/PENAWARAN_Nama_Personil.pdf</code></small>
-                                </label>
+                            <div class="mb-2">
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="outputModeZip" name="output_mode" value="zip" class="custom-control-input" checked>
+                                    <label class="custom-control-label font-weight-bold" for="outputModeZip">
+                                        <i class="fas fa-file-archive text-warning mr-1"></i> Arsip ZIP (File Terpisah per Dokumen / Personil)
+                                    </label>
+                                    <div id="zipStructureWrapper" class="ml-4 mt-1">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="folderPerPerson" name="folder_per_person" value="1" checked>
+                                            <label class="custom-control-label font-weight-normal small" for="folderPerPerson">
+                                                Kelompokkan berkas ke dalam folder per personil di dalam file ZIP
+                                                <span class="text-muted">(Contoh: <code>[Nama]/PENAWARAN_[Nama].pdf</code>)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="border-top pt-2">
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="outputModeMerged" name="output_mode" value="merged" class="custom-control-input">
+                                    <label class="custom-control-label font-weight-bold text-success" for="outputModeMerged">
+                                        <i class="fas fa-file-pdf text-danger mr-1"></i> Simpan / Gabung Menjadi 1 File Saja Siap Cetak (Single File)
+                                    </label>
+                                    <small class="text-muted d-block ml-4 mt-1">
+                                        Seluruh berkas dokumen dari seluruh anggota yang dipilih akan digabungkan secara berurutan menjadi <strong>1 file dokumen tunggal</strong> (format <code>.pdf</code> atau <code>.doc</code>). Anda dapat langsung mencetak seluruhnya sekaligus dalam 1 kali perintah print (sangat praktis, contoh: mencetak lembar Halaman 3 SPK semua personil).
+                                    </small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -525,7 +549,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-success font-weight-bold" id="btnSubmitBatchExport">
-                        <i class="fas fa-download mr-1"></i> Download ZIP
+                        <i class="fas fa-file-archive mr-1"></i> Download ZIP
                     </button>
                 </div>
             </form>
@@ -1135,6 +1159,17 @@
             $(this).removeClass('btn-outline-secondary').addClass('btn-success');
         });
 
+        // Toggle Bentuk Hasil Berkas (ZIP vs 1 File Gabungan)
+        $('input[name="output_mode"]').on('change', function () {
+            if ($(this).val() === 'merged') {
+                $('#zipStructureWrapper').slideUp(150);
+                $('#btnSubmitBatchExport').html('<i class="fas fa-file-download mr-1"></i> Download 1 File Gabungan');
+            } else {
+                $('#zipStructureWrapper').slideDown(150);
+                $('#btnSubmitBatchExport').html('<i class="fas fa-file-archive mr-1"></i> Download ZIP');
+            }
+        });
+
         // Validation & Submit handling
         $('#formExportBatchKi').on('submit', function (e) {
             const checkedDocs = $('.batch-doc-item:checked').length;
@@ -1162,11 +1197,10 @@
                 }
             }
 
-            const $btn = $('#btnSubmitBatchExport');
-            const originalHtml = $btn.html();
-            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Sedang Menyiapkan ZIP...');
+            const isMerged = $('input[name="output_mode"]:checked').val() === 'merged';
+            $btn.prop('disabled', true).html(isMerged ? '<i class="fas fa-spinner fa-spin mr-1"></i> Sedang Menggabungkan Berkas...' : '<i class="fas fa-spinner fa-spin mr-1"></i> Sedang Menyiapkan ZIP...');
 
-            // Karena proses download ZIP via attachment tidak reload halaman, re-enable button setelah 3.5 detik
+            // Karena proses download berkas via attachment tidak reload halaman, re-enable button setelah 3.5 detik
             setTimeout(() => {
                 $btn.prop('disabled', false).html(originalHtml);
                 $('#modalExportBatchKi').modal('hide');

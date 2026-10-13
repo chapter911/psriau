@@ -661,6 +661,7 @@ class Kontrak extends BaseController
         $pageMode = strtolower(trim((string) ($this->request->getPost('page_mode') ?? 'all'))); // 'all' atau 'custom'
         $pageRangeStr = trim((string) ($this->request->getPost('page_range') ?? ''));
         $pageTarget = strtolower(trim((string) ($this->request->getPost('page_target') ?? 'spk_only')));
+        $outputMode = strtolower(trim((string) ($this->request->getPost('output_mode') ?? 'zip'))); // 'zip' atau 'merged'
 
         $pagesToKeep = [];
         if ($pageMode === 'custom' && $pageRangeStr !== '') {
@@ -682,10 +683,14 @@ class Kontrak extends BaseController
         ];
 
         $activeDocs = [];
+        $hasExcelDocs = false;
         foreach ($selectedDocs as $dType) {
             $dType = strtolower(trim((string) $dType));
             if (isset($validDocTypes[$dType])) {
                 $activeDocs[$dType] = $validDocTypes[$dType];
+                if ($validDocTypes[$dType]['ext'] === 'xlsx') {
+                    $hasExcelDocs = true;
+                }
             }
         }
 
@@ -730,12 +735,19 @@ class Kontrak extends BaseController
             $randomSuffix = (string) mt_rand(100, 999);
         }
 
-        $zipFileName = 'export_batch_ki_' . $paketId . '_' . date('Ymd_His') . '_' . $randomSuffix . '.zip';
-        $zipFilePath = $tempDir . DIRECTORY_SEPARATOR . $zipFileName;
+        $safePaketName = $sanitize((string) ($paket['nama_paket'] ?? 'Paket_' . $paketId));
 
-        $zip = new \ZipArchive();
-        if ($zip->open($zipFilePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
-            return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Gagal membuat file arsip ZIP.');
+        $zip = null;
+        $zipFilePath = null;
+        $needZip = ($outputMode === 'zip' || $hasExcelDocs || $exportFormat === 'both');
+
+        if ($needZip) {
+            $zipFileName = 'export_batch_ki_' . $paketId . '_' . date('Ymd_His') . '_' . $randomSuffix . '.zip';
+            $zipFilePath = $tempDir . DIRECTORY_SEPARATOR . $zipFileName;
+            $zip = new \ZipArchive();
+            if ($zip->open($zipFilePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+                return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Gagal membuat file arsip ZIP.');
+            }
         }
 
         @ini_set('max_execution_time', '300');
@@ -745,6 +757,11 @@ class Kontrak extends BaseController
 
         $totalAdded = 0;
         $createdTempFiles = [];
+        $collectedPdfs = [];
+        $collectedHtmls = [];
+        $lastDocType = '';
+        $lastDocTitle = '';
+        $lastPageSuffix = '';
 
         foreach ($kiMembers as $kiData) {
             $memberName = trim((string) ($kiData['nama'] ?? 'Anggota_' . $kiData['id']));
@@ -798,6 +815,8 @@ class Kontrak extends BaseController
 
                 $docTitle = $cfg['name'];
                 $ext = $cfg['ext'];
+                $lastDocType = $docType;
+                $lastDocTitle = $docTitle;
 
                 $applyPageFilter = ($pageMode === 'custom' && ! empty($pagesToKeep) && ($pageTarget === 'all_docs' || $docType === 'spk'));
 
@@ -806,61 +825,174 @@ class Kontrak extends BaseController
                     $cleanRange = preg_replace('/[^0-9\-,]/', '', $pageRangeStr);
                     $pageSuffix = '_Hal' . ($cleanRange !== '' ? $cleanRange : implode('-', $pagesToKeep));
                 }
+                $lastPageSuffix = $pageSuffix;
 
                 $docTitleWithPage = $docTitle . $pageSuffix;
-
-                if ($folderPerPerson) {
-                    $entryPath = $folderName . '/' . $docTitleWithPage . '_' . $memberCleanName . '.' . $ext;
-                } else {
-                    $entryPath = $memberCleanName . ' - ' . $docTitleWithPage . '.' . $ext;
-                }
 
                 if ($ext === 'xlsx') {
                     $tempExcel = $tempDir . DIRECTORY_SEPARATOR . 'tmp_' . $docType . '_' . $kiData['id'] . '_' . uniqid() . '.xlsx';
                     $viewData['savePath'] = $tempExcel;
                     view($cfg['template'], $viewData);
                     if (is_file($tempExcel)) {
-                        $zip->addFile($tempExcel, $entryPath);
+                        if ($zip !== null) {
+                            $entryPath = $folderPerPerson 
+                                ? ($folderName . '/' . $docTitleWithPage . '_' . $memberCleanName . '.xlsx') 
+                                : ($memberCleanName . ' - ' . $docTitleWithPage . '.xlsx');
+                            $zip->addFile($tempExcel, $entryPath);
+                        }
                         $createdTempFiles[] = $tempExcel;
                         $totalAdded++;
                     }
                 } else {
                     $html = view($cfg['template'], $viewData);
 
-                    if ($exportFormat === 'word' || $exportFormat === 'both') {
-                        $htmlForWord = $applyPageFilter ? $this->filterHtmlByPageNumbers($html, $pagesToKeep) : $html;
-                        $docHtml = $this->wrapHtmlForWord($htmlForWord, $docTitleWithPage . ' - ' . $memberCleanName);
-                        $entryPathDoc = $folderPerPerson 
-                            ? ($folderName . '/' . $docTitleWithPage . '_' . $memberCleanName . '.doc') 
-                            : ($memberCleanName . ' - ' . $docTitleWithPage . '.doc');
-                        $zip->addFromString($entryPathDoc, $docHtml);
-                        $totalAdded++;
-                    }
-
-                    if ($exportFormat === 'pdf' || $exportFormat === 'both') {
-                        $domOptions = new \Dompdf\Options();
-                        $domOptions->set('isRemoteEnabled', true);
-                        $dompdf = new \Dompdf\Dompdf($domOptions);
-                        $dompdf->loadHtml($html);
-                        $dompdf->setPaper('A4', 'portrait');
-                        $dompdf->render();
-
-                        $pdfBinary = $dompdf->output();
-                        if ($applyPageFilter) {
-                            $pdfBinary = $this->extractPdfPages($pdfBinary, $pagesToKeep);
+                    if ($outputMode === 'merged') {
+                        // Kumpulkan untuk 1 file gabungan
+                        if ($exportFormat === 'word' || $exportFormat === 'both') {
+                            $htmlForWord = $applyPageFilter ? $this->filterHtmlByPageNumbers($html, $pagesToKeep) : $html;
+                            $collectedHtmls[] = $htmlForWord;
+                            $totalAdded++;
                         }
 
-                        $entryPathPdf = $folderPerPerson 
-                            ? ($folderName . '/' . $docTitleWithPage . '_' . $memberCleanName . '.pdf') 
-                            : ($memberCleanName . ' - ' . $docTitleWithPage . '.pdf');
-                        $zip->addFromString($entryPathPdf, $pdfBinary);
-                        $totalAdded++;
+                        if ($exportFormat === 'pdf' || $exportFormat === 'both') {
+                            $domOptions = new \Dompdf\Options();
+                            $domOptions->set('isRemoteEnabled', true);
+                            $dompdf = new \Dompdf\Dompdf($domOptions);
+                            $dompdf->loadHtml($html);
+                            $dompdf->setPaper('A4', 'portrait');
+                            $dompdf->render();
+
+                            $pdfBinary = $dompdf->output();
+                            if ($applyPageFilter) {
+                                $pdfBinary = $this->extractPdfPages($pdfBinary, $pagesToKeep);
+                            }
+                            $collectedPdfs[] = $pdfBinary;
+                            $totalAdded++;
+                        }
+                    } else {
+                        // Output ZIP: file terpisah per personil/dokumen
+                        if ($exportFormat === 'word' || $exportFormat === 'both') {
+                            $htmlForWord = $applyPageFilter ? $this->filterHtmlByPageNumbers($html, $pagesToKeep) : $html;
+                            $docHtml = $this->wrapHtmlForWord($htmlForWord, $docTitleWithPage . ' - ' . $memberCleanName);
+                            $entryPathDoc = $folderPerPerson 
+                                ? ($folderName . '/' . $docTitleWithPage . '_' . $memberCleanName . '.doc') 
+                                : ($memberCleanName . ' - ' . $docTitleWithPage . '.doc');
+                            $zip->addFromString($entryPathDoc, $docHtml);
+                            $totalAdded++;
+                        }
+
+                        if ($exportFormat === 'pdf' || $exportFormat === 'both') {
+                            $domOptions = new \Dompdf\Options();
+                            $domOptions->set('isRemoteEnabled', true);
+                            $dompdf = new \Dompdf\Dompdf($domOptions);
+                            $dompdf->loadHtml($html);
+                            $dompdf->setPaper('A4', 'portrait');
+                            $dompdf->render();
+
+                            $pdfBinary = $dompdf->output();
+                            if ($applyPageFilter) {
+                                $pdfBinary = $this->extractPdfPages($pdfBinary, $pagesToKeep);
+                            }
+
+                            $entryPathPdf = $folderPerPerson 
+                                ? ($folderName . '/' . $docTitleWithPage . '_' . $memberCleanName . '.pdf') 
+                                : ($memberCleanName . ' - ' . $docTitleWithPage . '.pdf');
+                            $zip->addFromString($entryPathPdf, $pdfBinary);
+                            $totalAdded++;
+                        }
                     }
                 }
             }
         }
 
-        $zip->close();
+        // Tentukan label judul dokumen gabungan
+        $docSummaryLabel = count($activeDocs) === 1 ? $lastDocTitle : 'DOKUMEN_KONTRAK';
+        $pageSummaryLabel = $lastPageSuffix;
+
+        // Penanganan output 1 FILE GABUNGAN MURNI (PDF)
+        if ($outputMode === 'merged' && ! $hasExcelDocs && $exportFormat === 'pdf' && ! empty($collectedPdfs)) {
+            $mergedPdf = $this->mergePdfBinaries($collectedPdfs);
+
+            // Bersihkan file sementara
+            foreach ($createdTempFiles as $tmpFile) {
+                if (is_file($tmpFile)) {
+                    @unlink($tmpFile);
+                }
+            }
+            if ($zipFilePath !== null && is_file($zipFilePath)) {
+                @unlink($zipFilePath);
+            }
+
+            if ($mergedPdf === '') {
+                return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Gagal menggabungkan berkas PDF.');
+            }
+
+            $downloadName = 'GABUNGAN_' . $docSummaryLabel . $pageSummaryLabel . '_' . $safePaketName . '_' . date('Ymd_His') . '.pdf';
+
+            if (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+            header('Content-Length: ' . strlen($mergedPdf));
+            header('Cache-Control: private, max-age=0, must-revalidate');
+            header('Pragma: public');
+            echo $mergedPdf;
+            exit;
+        }
+
+        // Penanganan output 1 FILE GABUNGAN MURNI (Word .doc)
+        if ($outputMode === 'merged' && ! $hasExcelDocs && $exportFormat === 'word' && ! empty($collectedHtmls)) {
+            $mergedHtml = $this->mergeHtmlBodies($collectedHtmls);
+            $mergedDoc = $this->wrapHtmlForWord($mergedHtml, 'GABUNGAN ' . $docSummaryLabel . ' - ' . $safePaketName);
+
+            // Bersihkan file sementara
+            foreach ($createdTempFiles as $tmpFile) {
+                if (is_file($tmpFile)) {
+                    @unlink($tmpFile);
+                }
+            }
+            if ($zipFilePath !== null && is_file($zipFilePath)) {
+                @unlink($zipFilePath);
+            }
+
+            if ($mergedDoc === '') {
+                return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Gagal menggabungkan berkas Word.');
+            }
+
+            $downloadName = 'GABUNGAN_' . $docSummaryLabel . $pageSummaryLabel . '_' . $safePaketName . '_' . date('Ymd_His') . '.doc';
+
+            if (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
+            header('Content-Type: application/msword; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+            header('Content-Length: ' . strlen($mergedDoc));
+            header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+            header('Expires: 0');
+            header('Pragma: public');
+            echo $mergedDoc;
+            exit;
+        }
+
+        // Jika mode merged tapi ada Excel atau format Both, masukkan berkas gabungan ke dalam ZIP
+        if ($outputMode === 'merged' && $zip !== null) {
+            if (! empty($collectedPdfs)) {
+                $mergedPdf = $this->mergePdfBinaries($collectedPdfs);
+                $zip->addFromString('GABUNGAN_' . $docSummaryLabel . $pageSummaryLabel . '.pdf', $mergedPdf);
+            }
+            if (! empty($collectedHtmls)) {
+                $mergedHtml = $this->mergeHtmlBodies($collectedHtmls);
+                $mergedDoc = $this->wrapHtmlForWord($mergedHtml, 'GABUNGAN ' . $docSummaryLabel . ' - ' . $safePaketName);
+                $zip->addFromString('GABUNGAN_' . $docSummaryLabel . $pageSummaryLabel . '.doc', $mergedDoc);
+            }
+        }
+
+        if ($zip !== null) {
+            $zip->close();
+        }
 
         // Bersihkan file excel sementara
         foreach ($createdTempFiles as $tmpFile) {
@@ -869,12 +1001,13 @@ class Kontrak extends BaseController
             }
         }
 
-        if ($totalAdded === 0 || ! is_file($zipFilePath)) {
-            @unlink($zipFilePath);
+        if ($totalAdded === 0 || $zipFilePath === null || ! is_file($zipFilePath)) {
+            if ($zipFilePath !== null && is_file($zipFilePath)) {
+                @unlink($zipFilePath);
+            }
             return redirect()->to(site_url('admin/kontrak/ki/' . $paketId))->with('error', 'Gagal memproses berkas dokumen.');
         }
 
-        $safePaketName = $sanitize((string) ($paket['nama_paket'] ?? 'Paket_' . $paketId));
         $downloadName = 'Export_Batch_KI_' . $safePaketName . '_' . date('Ymd_His') . '.zip';
 
         register_shutdown_function(function () use ($zipFilePath) {
@@ -7814,6 +7947,101 @@ table {
             log_message('error', 'FPDI Extract Pages Error: ' . $e->getMessage());
             return $pdfBinary;
         }
+    }
+
+    private function mergePdfBinaries(array $pdfBinaries): string
+    {
+        if (empty($pdfBinaries)) {
+            return '';
+        }
+
+        $tempFiles = [];
+        try {
+            $fpdi = new \setasign\Fpdi\Fpdi();
+
+            foreach ($pdfBinaries as $idx => $binary) {
+                if (! is_string($binary) || $binary === '') {
+                    continue;
+                }
+                $tempPath = tempnam(sys_get_temp_dir(), 'fpdi_merge_' . $idx . '_');
+                file_put_contents($tempPath, $binary);
+                $tempFiles[] = $tempPath;
+
+                $pageCount = $fpdi->setSourceFile($tempPath);
+                for ($p = 1; $p <= $pageCount; $p++) {
+                    $templateId = $fpdi->importPage($p);
+                    $size = $fpdi->getTemplateSize($templateId);
+                    $orientation = $size['width'] > $size['height'] ? 'L' : 'P';
+                    $fpdiOutPageSize = [$size['width'], $size['height']];
+                    $fpdi->AddPage($orientation, $fpdiOutPageSize);
+                    $fpdi->useTemplate($templateId);
+                }
+            }
+
+            $mergedOutput = $fpdi->Output('S');
+
+            foreach ($tempFiles as $tFile) {
+                if (is_file($tFile)) {
+                    @unlink($tFile);
+                }
+            }
+
+            return $mergedOutput;
+        } catch (\Throwable $e) {
+            log_message('error', 'FPDI Merge Error: ' . $e->getMessage());
+            foreach ($tempFiles as $tFile) {
+                if (is_file($tFile)) {
+                    @unlink($tFile);
+                }
+            }
+            return '';
+        }
+    }
+
+    private function mergeHtmlBodies(array $htmlList): string
+    {
+        if (empty($htmlList)) {
+            return '';
+        }
+
+        $allBodies = [];
+        $collectedStyles = '';
+
+        foreach ($htmlList as $html) {
+            if (! is_string($html) || trim($html) === '') {
+                continue;
+            }
+
+            // Kumpulkan styles CSS
+            if (preg_match_all('/<style[^>]*>(.*?)<\/style>/is', $html, $styleMatches)) {
+                foreach ($styleMatches[1] as $s) {
+                    $collectedStyles .= "\n" . $s;
+                }
+            }
+
+            // Ekstrak isi body
+            if (preg_match('/<body[^>]*>(.*?)<\/body>/is', $html, $bMatches)) {
+                $bodyContent = trim($bMatches[1]);
+            } else {
+                $bodyContent = trim($html);
+            }
+
+            if ($bodyContent !== '') {
+                $allBodies[] = $bodyContent;
+            }
+        }
+
+        if (empty($allBodies)) {
+            return '';
+        }
+
+        $combinedBody = implode("\n<div class=\"page-break\"></div>\n", $allBodies);
+
+        return '<!DOCTYPE html><html><head><meta charset="utf-8">'
+            . ($collectedStyles !== '' ? '<style>' . $collectedStyles . '</style>' : '')
+            . '</head><body>'
+            . $combinedBody
+            . '</body></html>';
     }
 
     private function tableHasColumn(string $table, string $column): bool
