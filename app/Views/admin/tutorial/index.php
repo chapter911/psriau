@@ -790,7 +790,7 @@ graph TD
     <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <h5 class="mb-0 font-weight-bold text-dark">
-                <i class="fas fa-stamp text-primary mr-2"></i>Flowchart: Alur Pembuatan Watermark Foto Multi-Format Ala TimeMark (EXIF Time Offset, Bulk &amp; ZIP Upload, Folder Server)
+                <i class="fas fa-stamp text-primary mr-2"></i>Flowchart: Alur Pembuatan Watermark Foto Multi-Format Ala TimeMark (EXIF Auto-Detect, Edit Metadata, Penulisan EXIF Biner PEL, Bulk &amp; ZIP)
             </h5>
             <div>
                 <span class="badge badge-success">Dokumentasi</span>
@@ -807,30 +807,37 @@ graph TD
     B -->|Format 3| E["Gaya Modern Badge: Kartu Melayang Elegan di Sudut Foto"]
     B -->|Format 4| F["Gaya Bottom Strip: Banner Bawah Bersih &amp; Garis Aksen Emas"]
 
-    C --> G["Unggah Foto Dokumentasi (JPG, PNG, WebP, HEIC/HEIF, atau ZIP)"]
+    C --> G["Unggah Foto Dokumentasi (JPG, PNG, WebP, iPhone HEIC, atau ZIP)"]
     D --> G
     E --> G
     F --> G
 
-    G --> PREV["Interactive Live Simulator: Pratinjau Watermark Real-Time di Kanvas Kanan"]
+    G --> EXIF_IN["Deteksi Instan EXIF Klien (exifr): Ekstrak Waktu Asli &amp; GPS Foto"]
+    EXIF_IN --> PREV["Interactive Live Simulator: Pratinjau Watermark Real-Time di Kanvas Kanan"]
 
-    G --> W2["Langkah 2: Pengaturan Waktu &amp; Lokasi GPS"]
-    W2 --> L{"Pengaturan Waktu &amp; EXIF"}
-    L -->|Deteksi EXIF Aktif| M["Sistem Otomatis Ekstrak Waktu &amp; Tanggal Asli Kamera"]
-    L -->|Fallback / Manual| N["Gunakan Tanggal &amp; Jam Manual yang Ditetapkan"]
+    G --> W2["Langkah 2: Pengaturan Waktu, Lokasi &amp; Metadata EXIF"]
+    W2 --> EDIT_META["Pengeditan Metadata Bebas: Sesuaikan Tanggal, Jam, Lokasi, GPS &amp; Catatan"]
+    EDIT_META --> L{"Pengaturan Waktu &amp; Tanggal"}
+    L -->|Deteksi EXIF| M["Gunakan Tanggal &amp; Jam Asli Foto / Pulihkan ke EXIF"]
+    L -->|Ubah Manual| N["Ketik Tanggal &amp; Jam Manual atau Tombol 'Set Sekarang'"]
     M --> O{"Terapkan Penyesuaian Jam (Offset)"}
     N --> O
-    O -->|Tombol Cepat| P["Pilih Offset: +0j, +1j, +2j, +3 Jam, +5 Jam, atau Kustom"]
+    O -->|Tombol Cepat| P["Pilih Offset: -1j, +0j, +1j, +2j, +3j, +5j, atau Kustom"]
 
     P --> Q{"Penentuan Lokasi &amp; Koordinat GPS"}
-    Q -->|Opsi A: Otomatis EXIF GPS| Q0["Ambil Teks Lokasi Otomatis dari Koordinat EXIF Foto Saja (Per File)"]
-    Q -->|Opsi B: Popup Peta Leaflet| Q2["Buka Popup Peta Interaktif Leaflet &amp; OpenStreetMap"]
-    Q -->|Opsi C: Ketik Manual / GPS Saya| Q1["Ketik Lokasi Manual atau Deteksi Cepat via 'GPS Saya'"]
+    Q -->|Otomatis Reverse Geocoding| Q0["Nama Alamat Lengkap &amp; Koordinat dari EXIF Foto"]
+    Q -->|Popup Peta Leaflet| Q2["Pilih Titik di Peta Interaktif Leaflet &amp; OpenStreetMap"]
+    Q -->|Deteksi Cepat| Q1["Deteksi Koordinat via Tombol 'GPS Saya'"]
+    Q -->|Edit Manual| Q_MAN["Ketik Bebas Nama Lokasi / Alamat &amp; Koordinat"]
     Q2 --> Q3["Terapkan Koordinat GPS / Alamat ke Formulir"]
-
     Q0 --> PREV
     Q1 --> PREV
     Q3 --> PREV
+    Q_MAN --> PREV
+
+    W2 --> EXIF_TOGGLE{"Opsi Penulisan Metadata EXIF Berkas (PEL)"}
+    EXIF_TOGGLE -->|Centang Aktif| EXIF_ON["Sinkronisasi Aktif: Tanggal, GPS &amp; Deskripsi Ditulis ke File JPEG"]
+    EXIF_TOGGLE -->|Nonaktif| EXIF_OFF["Hanya Watermark Visual Tanpa Mengubah Tag EXIF File"]
 
     PREV --> W3["Langkah 3: Opsi Simpan Server &amp; Logo Kustom"]
     W3 --> R{"Opsi Penyimpanan Server"}
@@ -840,12 +847,12 @@ graph TD
     S --> U["Klik 'Proses Watermark Sekarang'"]
     T --> U
 
-    U --> V["Sistem Merender Watermark Resolusi Tinggi Berbasis GD"]
+    U --> V["Sistem Merender Watermark Resolusi Tinggi &amp; Menyematkan Tag EXIF Biner (PEL)"]
     V --> VIEW["Dual-View: Otomatis Beralih ke Tab 'Hasil Akhir'"]
     VIEW --> W{"Hasil Pemrosesan"}
-    W -->|Foto Tunggal| X["Tampilkan Pratinjau Resolusi Penuh &amp; Tombol 'Download Foto'"]
-    W -->|Banyak Foto / ZIP| Y["Kemasan Otomatis: Tombol 'Download Semua (ZIP)' + Galeri Mini Grid"]
-    S -.-> Z["Salinan Permanen Tersimpan di Folder Server dan Dapat Diakses Kapan Saja"]
+    W -->|Foto Tunggal| X["Pratinjau Resolusi Penuh &amp; Unduh Foto Ber-EXIF Lengkap"]
+    W -->|Banyak Foto / ZIP| Y["Kemasan Otomatis: Unduh Semua (ZIP) + Galeri Mini Grid"]
+    S -.-> Z["Salinan Permanen Ber-EXIF Tersimpan di Folder Server"]
                 </pre>
             </div>
         </div>
@@ -1723,32 +1730,40 @@ graph TD
                                     <li><strong>Gaya Clean Bottom Strip:</strong> Banner horizontal elegan di sepanjang tepi bawah foto dengan garis aksen emas dan tata letak minimalis yang tidak menutupi objek foto.</li>
                                 </ul>
                             </li>
-                            <li><strong>Ekstraksi Waktu Otomatis dari EXIF &amp; Penyesuaian Offset:</strong>
+                            <li><strong>Ekstraksi EXIF Otomatis &amp; Fleksibilitas Pengeditan Waktu:</strong>
                                 <ul>
-                                    <li>Sistem secara otomatis membaca metadata <em>EXIF DateTimeOriginal</em> dari file foto yang diambil kamera/ponsel di lapangan.</li>
-                                    <li>Tersedia tombol penyesuaian jam instan (<strong>+1 Jam, +2 Jam, +3 Jam, +5 Jam, -1 Jam</strong>, atau kustom menit) untuk mengoreksi waktu jika jam kamera berbeda atau zona waktu berubah.</li>
-                                    <li>Tersedia kolom tanggal &amp; jam manual sebagai fallback jika foto tidak memiliki metadata EXIF.</li>
+                                    <li><strong>Deteksi Instan Client-Side:</strong> Menggunakan pustaka <code>exifr</code> pada peramban untuk membaca metadata <em>DateTimeOriginal</em> langsung dari berkas asli (JPEG maupun iPhone HEIC) sebelum diproses, memastikan waktu pemotretan asli terdeteksi 100%.</li>
+                                    <li><strong>Pengeditan Tanggal &amp; Jam Bebas:</strong> Pengguna dapat dengan bebas mengubah tanggal dan jam foto melalui input yang tersedia, atau menekan tombol <strong>"Set Sekarang"</strong> untuk menggunakan waktu terkini.</li>
+                                    <li><strong>Pulihkan Waktu EXIF:</strong> Jika tanggal/jam telah diubah dan pengguna ingin mengembalikan ke waktu asli kamera, cukup tekan tombol <strong>"Pulihkan Waktu EXIF"</strong>.</li>
+                                    <li><strong>Tombol Penyesuaian Offset Cepat:</strong> Tersedia tombol cepat (<strong>-1j, +0j, +1j, +2j, +3j, +5j</strong>, atau offset kustom jam/menit) untuk mengoreksi zona waktu atau deviasi jam kamera.</li>
                                 </ul>
                             </li>
-                            <li><strong>Otomatisasi Lokasi dari Koordinat EXIF &amp; Popup Peta Interaktif (Leaflet):</strong>
+                            <li><strong>Deteksi Koordinat GPS, Reverse Geocoding &amp; Pengeditan Lokasi:</strong>
                                 <ul>
-                                    <li><strong>Ambil Teks Lokasi Otomatis dari Koordinat EXIF Saja:</strong> Tersedia saklar <em>"Ambil Teks Lokasi Otomatis dari Koordinat EXIF Foto Saja"</em>. Jika aktif, stempel teks lokasi pada watermark akan otomatis menggunakan koordinat GPS asli (misal: <code>0.507068° N, 101.447779° E</code>) yang dibaca dari EXIF masing-masing foto. Sangat praktis saat mengunggah banyak foto / arsip ZIP di mana setiap foto memiliki titik koordinat berbeda.</li>
-                                    <li><strong>Popup Peta Interaktif:</strong> Tekan tombol <strong>"Pilih dari Peta (Popup)"</strong> untuk membuka peta digital interaktif berbasis Leaflet &amp; OpenStreetMap.</li>
-                                    <li><strong>Pilihan Format Teks:</strong> Pada jendela popup peta, pengguna dapat memilih apakah ingin menerapkan <strong>"Koordinat Saja"</strong> atau <strong>"Nama Alamat Lengkap"</strong> hasil <em>reverse geocoding</em>.</li>
-                                    <li><strong>Arahkan Peta ke EXIF Foto:</strong> Tersedia tombol <strong>"EXIF Foto"</strong> di popup peta untuk langsung melompat dan memusatkan penanda peta ke titik koordinat EXIF foto yang baru diunggah.</li>
-                                    <li><strong>Pencarian Tempat &amp; Deteksi GPS:</strong> Didukung kolom pencarian nama jalan/gedung dan tombol <strong>"Lokasi Saya"</strong> untuk mendeteksi GPS perangkat secara langsung.</li>
+                                    <li><strong>Otomatisasi Nama Lokasi dari GPS Foto:</strong> Koordinat GPS yang terbaca dari EXIF foto langsung diproses dengan <em>Reverse Geocoding</em> (OpenStreetMap) untuk otomatis mengisi nama jalan, kelurahan, dan kota pada kolom nama lokasi.</li>
+                                    <li><strong>Pengeditan Bebas:</strong> Pengguna dapat secara leluasa mengetikkan nama lokasi kustom atau mengedit koordinat GPS sesuai kebutuhan lapangan.</li>
+                                    <li><strong>Pulihkan GPS EXIF:</strong> Tersedia tombol <strong>"Pulihkan GPS EXIF"</strong> untuk mengembalikan titik koordinat ke posisi GPS asli berkas foto.</li>
+                                    <li><strong>Pilihan Peta Interaktif Leaflet:</strong> Pengguna dapat membuka jendela popup peta interaktif untuk menggeser pin lokasi secara visual atau memanfaatkan tombol <strong>"GPS Saya"</strong> untuk mendeteksi GPS perangkat secara langsung.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Penulisan &amp; Sinkronisasi Metadata EXIF Berkas Foto Hasil (PEL Library):</strong>
+                                <ul>
+                                    <li><strong>Tulis EXIF Biner ke File JPEG:</strong> Berbeda dengan watermark gambar konvensional yang menghapus EXIF, sistem ini didukung library murni PHP <code>lsolesen/pel</code> yang menuliskan kembali tag EXIF internal berstandar internasional ke berkas JPEG hasil.</li>
+                                    <li><strong>Tag EXIF yang Diperbarui:</strong> Mencakup <code>DateTimeOriginal</code> (tanggal &amp; jam asli), <code>DateTimeDigitized</code>, <code>GPSLatitude</code> &amp; <code>GPSLongitude</code> (koordinat GPS desimal &amp; DMS), <code>ImageDescription</code> (nama lokasi &amp; catatan proyek), serta <code>Software</code> (identitas resmi TimeMark Satker PPS Riau).</li>
+                                    <li><strong>Pratinjau Live Metadata:</strong> Pada Langkah 2 formulir, tersedia kartu <em>Pratinjau Metadata yang Akan Disimpan</em> yang memperlihatkan nilai string tag EXIF secara langsung (real-time) sebelum berkas diproses atau diunduh.</li>
+                                    <li><strong>Saklar Kontrol:</strong> Tersedia saklar <em>"Tulis &amp; Sinkronkan Metadata EXIF ke Berkas Foto"</em> yang dapat dinonaktifkan jika pengguna hanya ingin stempel visual tanpa memodifikasi metadata internal file.</li>
                                 </ul>
                             </li>
                             <li><strong>Unggah Fleksibel (Foto Tunggal, Multi-Foto, HEIC/HEIF iPhone, dan Arsip ZIP):</strong>
                                 <ul>
                                     <li><strong>Dukungan Format Luas:</strong> Mendukung berkas foto standar (<strong>JPG, JPEG, PNG, WebP</strong>) serta format resolusi tinggi Apple iPhone / iOS (<strong>HEIC dan HEIF</strong>).</li>
-                                    <li><strong>Konversi Ganda (Client-Side &amp; Server-Side):</strong> Berkas foto HEIC iPhone otomatis dikonversi ke JPEG secara instan melalui WebAssembly <code>heic2any</code> pada peramban sehingga pratinjau dan metadata langsung terbaca. Di sisi server, sistem didukung konverter multi-strategi (<code>sips</code> macOS, <code>heif-convert</code> Linux, atau ImageMagick).</li>
+                                    <li><strong>Konversi Ganda (Client-Side &amp; Server-Side):</strong> Berkas foto HEIC iPhone otomatis dikonversi ke JPEG secara instan melalui WebAssembly <code>heic-to</code> pada peramban sehingga pratinjau dan metadata langsung terbaca. Di sisi server, sistem didukung konverter multi-strategi (<code>sips</code> macOS, <code>heif-convert</code> Linux, atau ImageMagick).</li>
                                     <li><strong>Dukungan Arsip ZIP:</strong> Dapat mengunggah satu file arsip <strong>.ZIP</strong> (yang berisi foto JPEG, PNG, maupun berkas HEIC). Sistem secara otomatis mengekstrak, mengonversi foto HEIC, dan merender watermark untuk seluruh isi arsip sekaligus.</li>
                                 </ul>
                             </li>
                             <li><strong>Penyimpanan Folder Server &amp; Unduh Massal (ZIP):</strong>
                                 <ul>
-                                    <li><strong>Unduh ZIP Langsung:</strong> Untuk pemrosesan banyak foto / ZIP, sistem otomatis mengemas seluruh foto hasil watermark ke dalam 1 file ZIP yang siap diunduh sekali klik.</li>
+                                    <li><strong>Unduh ZIP Langsung:</strong> Untuk pemrosesan banyak foto / ZIP, sistem otomatis mengemas seluruh foto hasil watermark ke dalam 1 file ZIP yang siap diunduh sekali klik. Setiap foto di dalam ZIP telah memuat tag EXIF yang diperbarui.</li>
                                     <li><strong>Opsi Simpan ke Folder Server:</strong> Centang opsi simpan ke server untuk menyimpan salinan hasil foto ke direktori <code>/uploads/watermark_hasil/{nama_folder}/</code> sehingga foto tersimpan permanen dan dapat diakses kapan saja.</li>
                                 </ul>
                             </li>

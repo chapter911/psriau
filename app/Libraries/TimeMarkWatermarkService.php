@@ -89,24 +89,27 @@ class TimeMarkWatermarkService
 
         $dateTimeMeta = $this->resolveDateTime($exifData, $sourcePath, $useExifTime, $offsetHours, $offsetMinutes, $manualDate, $manualTime);
 
-        // 3. Tentukan Koordinat GPS (dari input atau ekstraksi EXIF)
+        // 3. Tentukan Koordinat GPS (Prioritas: input user -> EXIF foto)
         $useExifLocation = (bool) ($options['use_exif_location'] ?? true);
         $coordinates = trim((string) ($options['coordinates'] ?? ''));
         $exifCoords = null;
         if (is_array($exifData)) {
             $exifCoords = $this->extractGpsCoordinates($exifData);
         }
-        if ($coordinates === '' && $exifCoords !== null) {
+        if ($coordinates === '' && $useExifLocation && $exifCoords !== null) {
             $coordinates = $exifCoords;
         }
 
-        // 4. Data Teks Lokasi (Ambil koordinat EXIF jika use_exif_location aktif dan koordinat tersedia)
+        // 4. Data Teks Lokasi (Prioritas: input user/geocoded -> koordinat -> default)
         $lokasi = trim((string) ($options['location'] ?? ''));
-        if ($useExifLocation && $exifCoords !== null) {
-            $lokasi = $exifCoords;
-            $coordinates = $exifCoords;
-        } elseif ($lokasi === '') {
-            $lokasi = ($coordinates !== '') ? $coordinates : ($exifCoords ?? 'Balai Pelaksanaan Prasarana Permukiman Wilayah Riau');
+        if ($lokasi === '') {
+            if ($useExifLocation && $exifCoords !== null) {
+                $lokasi = $exifCoords;
+            } elseif ($coordinates !== '') {
+                $lokasi = $coordinates;
+            } else {
+                $lokasi = 'Balai Pelaksanaan Prasarana Permukiman Wilayah Riau';
+            }
         }
         $notes = trim((string) ($options['notes'] ?? ''));
 
@@ -141,6 +144,7 @@ class TimeMarkWatermarkService
         $saveToPath = $options['save_to_path'] ?? null;
         $savedPath = null;
         $outputQuality = max(70, min(100, (int) ($options['output_quality'] ?? 92)));
+        $updateExif = (bool) ($options['update_exif'] ?? true);
 
         if ($saveToPath !== null) {
             $saveDir = dirname($saveToPath);
@@ -152,21 +156,34 @@ class TimeMarkWatermarkService
             $saved = $this->writeImageToFile($sourceImage, $saveToPath, $mimeType, $outputQuality);
             if ($saved) {
                 $savedPath = $saveToPath;
+                // Tulis / perbarui metadata EXIF biner langsung pada file JPEG hasil
+                if ($updateExif && ($mimeType === 'image/jpeg' || in_array(strtolower(pathinfo($savedPath, PATHINFO_EXTENSION)), ['jpg', 'jpeg'], true))) {
+                    $this->embedExifMetadata($savedPath, $dateTimeMeta, $coordinates, $lokasi, $notes);
+                }
             }
         }
 
         // Generate base64 Data URI untuk preview instan di browser
-        ob_start();
-        if ($mimeType === 'image/png') {
-            imagepng($sourceImage);
-        } elseif ($mimeType === 'image/webp') {
-            imagewebp($sourceImage, null, $outputQuality);
-        } else {
-            imagejpeg($sourceImage, null, $outputQuality);
+        $rawBytes = false;
+        if ($savedPath !== null && is_file($savedPath)) {
+            $rawBytes = @file_get_contents($savedPath);
         }
-        $rawBytes = ob_get_clean();
 
-        imagedestroy($sourceImage);
+        if ($rawBytes === false || $rawBytes === '') {
+            ob_start();
+            if ($mimeType === 'image/png') {
+                imagepng($sourceImage);
+            } elseif ($mimeType === 'image/webp') {
+                imagewebp($sourceImage, null, $outputQuality);
+            } else {
+                imagejpeg($sourceImage, null, $outputQuality);
+            }
+            $rawBytes = ob_get_clean();
+        }
+
+        if (is_resource($sourceImage) || (is_object($sourceImage) && $sourceImage instanceof \GdImage)) {
+            imagedestroy($sourceImage);
+        }
 
         if ($rawBytes === false || $rawBytes === '') {
             return ['success' => false, 'error' => 'Gagal merender output gambar ber-watermark.', 'data_uri' => null, 'saved_path' => $savedPath, 'meta' => []];
@@ -275,13 +292,16 @@ class TimeMarkWatermarkService
         $longDate = $dt->format('j') . ' ' . $monthName . ' ' . $dt->format('Y');
 
         return [
-            'date' => $dateFormatted,
-            'time' => $timeFormatted,
-            'time_full' => $timeWithSec,
-            'day' => $dayName,
-            'long_date' => $longDate,
-            'raw_ymd' => $dt->format('Y-m-d'),
-            'raw_his' => $dt->format('H:i:s'),
+            'date'          => $dateFormatted,
+            'time'          => $timeFormatted,
+            'time_full'     => $timeWithSec,
+            'day'           => $dayName,
+            'long_date'     => $longDate,
+            'raw_ymd'       => $dt->format('Y-m-d'),
+            'raw_his'       => $dt->format('H:i:s'),
+            'timestamp'     => $dt->getTimestamp(),
+            'datetime_obj'  => $dt,
+            'exif_datetime' => $dt->format('Y:m:d H:i:s'),
         ];
     }
 
@@ -1189,6 +1209,179 @@ class TimeMarkWatermarkService
             }
         }
         return null;
+    }
+
+    /**
+     * Parsing string koordinat (format DMS, Cardinal Decimal, atau Standar Decimal) menjadi array [lat, lng].
+     */
+    public function parseCoordinateString(?string $coordStr): ?array
+    {
+        if ($coordStr === null) {
+            return null;
+        }
+        $s = trim($coordStr);
+        if ($s === '') {
+            return null;
+        }
+
+        // Cek format DMS: contoh: 0° 31' 59.99" N, 101° 27' 0.00" E
+        if (preg_match('/(\d+)\s*°\s*(\d+)\s*[\x27\x60\x{2019}]\s*([\d\.]+)\s*[\x22\x{201D}]\s*([NSns])[,\s]+(\d+)\s*°\s*(\d+)\s*[\x27\x60\x{2019}]\s*([\d\.]+)\s*[\x22\x{201D}]\s*([EWew])/u', $s, $dms)) {
+            $lat = (int) $dms[1] + ((int) $dms[2] / 60) + ((float) $dms[3] / 3600);
+            if (strtoupper($dms[4]) === 'S') {
+                $lat = -$lat;
+            }
+            $lng = (int) $dms[5] + ((int) $dms[6] / 60) + ((float) $dms[7] / 3600);
+            if (strtoupper($dms[8]) === 'W') {
+                $lng = -$lng;
+            }
+            return ['lat' => $lat, 'lng' => $lng];
+        }
+
+        // Format Cardinal Decimal: contoh: "0.533333° N, 101.450000° E" atau "0.533333 N, 101.450000 E"
+        if (preg_match('/([\d\.\-]+)\s*°?\s*([NSns])?[,\s]+([\d\.\-]+)\s*°?\s*([EWew])?/u', $s, $m)) {
+            $lat = (float) $m[1];
+            if (isset($m[2]) && strtoupper($m[2]) === 'S' && $lat > 0) {
+                $lat = -$lat;
+            }
+            $lng = (float) $m[3];
+            if (isset($m[4]) && strtoupper($m[4]) === 'W' && $lng > 0) {
+                $lng = -$lng;
+            }
+            return ['lat' => $lat, 'lng' => $lng];
+        }
+
+        // Format Decimal Standar: contoh: "0.533333, 101.450000" atau "-0.533333, 101.450000"
+        if (preg_match('/^([+-]?\d+(?:\.\d+)?)[,\s]+([+-]?\d+(?:\.\d+)?)$/', $s, $m)) {
+            return ['lat' => (float) $m[1], 'lng' => (float) $m[2]];
+        }
+
+        return null;
+    }
+
+    /**
+     * Menyematkan / memperbarui metadata EXIF biner langsung ke dalam file JPEG menggunakan library PEL (lsolesen/pel).
+     * Tag yang diperbarui:
+     * - IFD0: DateTime, Software, ImageDescription
+     * - ExifSubIFD: DateTimeOriginal, DateTimeDigitized
+     * - GpsIFD: GPSLatitude, GPSLatitudeRef, GPSLongitude, GPSLongitudeRef, GPSDateStamp, GPSTimeStamp
+     *
+     * @param string $filePath Jalur absolut file JPEG di server
+     * @param array $dateTimeMeta Array metadata waktu dari resolveDateTime()
+     * @param string|null $coordinates String koordinat GPS
+     * @param string $lokasi Teks nama lokasi / alamat kegiatan
+     * @param string $notes Catatan kegiatan proyek
+     * @return bool True jika sukses atau file bukan JPEG dilewati
+     */
+    public function embedExifMetadata(string $filePath, array $dateTimeMeta, ?string $coordinates = null, string $lokasi = '', string $notes = ''): bool
+    {
+        if (! is_file($filePath)) {
+            return false;
+        }
+
+        // Pastikan file berformat JPEG
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        if (! in_array($ext, ['jpg', 'jpeg'], true)) {
+            return false;
+        }
+
+        try {
+            $jpeg = new \lsolesen\pel\PelJpeg($filePath);
+            $exif = $jpeg->getExif();
+            if ($exif === null) {
+                $exif = new \lsolesen\pel\PelExif();
+                $jpeg->setExif($exif);
+            }
+
+            $tiff = $exif->getTiff();
+            if ($tiff === null) {
+                $tiff = new \lsolesen\pel\PelTiff();
+                $exif->setTiff($tiff);
+            }
+
+            $ifd0 = $tiff->getIfd();
+            if ($ifd0 === null) {
+                $ifd0 = new \lsolesen\pel\PelIfd(\lsolesen\pel\PelIfd::IFD0);
+                $tiff->setIfd($ifd0);
+            }
+
+            // 1. Timestamp Waktu (DateTime, Software, ImageDescription)
+            $timestamp = $dateTimeMeta['timestamp'] ?? time();
+
+            // Set IFD0 Date Time
+            $ifd0->addEntry(new \lsolesen\pel\PelEntryTime(\lsolesen\pel\PelTag::DATE_TIME, $timestamp));
+
+            // Set IFD0 Software
+            $ifd0->addEntry(new \lsolesen\pel\PelEntryAscii(\lsolesen\pel\PelTag::SOFTWARE, 'TimeMark Camera & Satker PPS Riau'));
+
+            // Set IFD0 ImageDescription
+            $descParts = [];
+            if ($lokasi !== '') {
+                $descParts[] = 'Lokasi: ' . $lokasi;
+            }
+            if ($notes !== '') {
+                $descParts[] = 'Catatan: ' . $notes;
+            }
+            if ($coordinates !== null && $coordinates !== '') {
+                $descParts[] = 'GPS: ' . $coordinates;
+            }
+            $description = ! empty($descParts) ? implode(' | ', $descParts) : 'Dokumentasi Lapangan Satker PPS Riau';
+            $ifd0->addEntry(new \lsolesen\pel\PelEntryAscii(\lsolesen\pel\PelTag::IMAGE_DESCRIPTION, $description));
+
+            // 2. ExifSubIFD: DateTimeOriginal & DateTimeDigitized
+            $subIfd = $ifd0->getSubIfd(\lsolesen\pel\PelIfd::EXIF);
+            if ($subIfd === null) {
+                $subIfd = new \lsolesen\pel\PelIfd(\lsolesen\pel\PelIfd::EXIF);
+                $ifd0->addSubIfd($subIfd);
+            }
+            $subIfd->addEntry(new \lsolesen\pel\PelEntryTime(\lsolesen\pel\PelTag::DATE_TIME_ORIGINAL, $timestamp));
+            $subIfd->addEntry(new \lsolesen\pel\PelEntryTime(\lsolesen\pel\PelTag::DATE_TIME_DIGITIZED, $timestamp));
+
+            // 3. GpsIFD: GPS Coordinates & Timestamps
+            $parsedCoords = $this->parseCoordinateString($coordinates);
+            if ($parsedCoords !== null) {
+                $gpsIfd = $ifd0->getSubIfd(\lsolesen\pel\PelIfd::GPS);
+                if ($gpsIfd === null) {
+                    $gpsIfd = new \lsolesen\pel\PelIfd(\lsolesen\pel\PelIfd::GPS);
+                    $ifd0->addSubIfd($gpsIfd);
+                }
+
+                $gpsIfd->addEntry(new \lsolesen\pel\PelEntryByte(\lsolesen\pel\PelTag::GPS_VERSION_ID, 2, 2, 0, 0));
+
+                $lat = $parsedCoords['lat'];
+                $lng = $parsedCoords['lng'];
+                $latRef = ($lat >= 0) ? 'N' : 'S';
+                $lngRef = ($lng >= 0) ? 'E' : 'W';
+                $lat = abs($lat);
+                $lng = abs($lng);
+
+                $latDeg = floor($lat);
+                $latMin = floor(($lat - $latDeg) * 60);
+                $latSec = round(($lat - $latDeg - $latMin / 60) * 3600 * 1000);
+
+                $lngDeg = floor($lng);
+                $lngMin = floor(($lng - $lngDeg) * 60);
+                $lngSec = round(($lng - $lngDeg - $lngMin / 60) * 3600 * 1000);
+
+                $gpsIfd->addEntry(new \lsolesen\pel\PelEntryAscii(\lsolesen\pel\PelTag::GPS_LATITUDE_REF, $latRef));
+                $gpsIfd->addEntry(new \lsolesen\pel\PelEntryRational(\lsolesen\pel\PelTag::GPS_LATITUDE, [(int) $latDeg, 1], [(int) $latMin, 1], [(int) $latSec, 1000]));
+                $gpsIfd->addEntry(new \lsolesen\pel\PelEntryAscii(\lsolesen\pel\PelTag::GPS_LONGITUDE_REF, $lngRef));
+                $gpsIfd->addEntry(new \lsolesen\pel\PelEntryRational(\lsolesen\pel\PelTag::GPS_LONGITUDE, [(int) $lngDeg, 1], [(int) $lngMin, 1], [(int) $lngSec, 1000]));
+
+                // Tanggal & Jam GPS UTC
+                $gpsDate = date('Y:m:d', $timestamp);
+                $gpsIfd->addEntry(new \lsolesen\pel\PelEntryAscii(\lsolesen\pel\PelTag::GPS_DATE_STAMP, $gpsDate));
+                $h = (int) gmdate('H', $timestamp);
+                $i = (int) gmdate('i', $timestamp);
+                $s = (int) gmdate('s', $timestamp);
+                $gpsIfd->addEntry(new \lsolesen\pel\PelEntryRational(\lsolesen\pel\PelTag::GPS_TIME_STAMP, [$h, 1], [$i, 1], [$s, 1]));
+            }
+
+            $jpeg->saveFile($filePath);
+            return true;
+        } catch (\Throwable $e) {
+            log_message('error', 'Gagal menyematkan metadata EXIF pada ' . $filePath . ': ' . $e->getMessage());
+            return false;
+        }
     }
 }
 

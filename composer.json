@@ -15,6 +15,7 @@
         "codeigniter4/framework": "^4.7",
         "dompdf/dompdf": "^3.1",
         "google/apiclient": "^2.15",
+        "lsolesen/pel": "^0.9.12",
         "phpoffice/phpspreadsheet": "^5.5",
         "phpoffice/phpword": "^1.4",
         "setasign/fpdf": "^1.9",

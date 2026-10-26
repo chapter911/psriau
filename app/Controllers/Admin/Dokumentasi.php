@@ -1147,6 +1147,7 @@ class Dokumentasi extends BaseController
 
         $useExifTime = (int) ($this->request->getPost('use_exif_time') ?? 1) === 1;
         $useExifLocation = (int) ($this->request->getPost('use_exif_location') ?? 1) === 1;
+        $updateExif = (int) ($this->request->getPost('update_exif') ?? 1) === 1;
         $offsetHours = (int) ($this->request->getPost('offset_hours') ?? 0);
         $offsetMinutes = (int) ($this->request->getPost('offset_minutes') ?? 0);
         $manualDate = trim((string) $this->request->getPost('manual_date'));
@@ -1314,6 +1315,7 @@ class Dokumentasi extends BaseController
                     'offset_minutes'    => $offsetMinutes,
                     'use_exif_time'     => $useExifTime,
                     'use_exif_location' => $useExifLocation,
+                    'update_exif'       => $updateExif,
                     'location'          => $lokasi,
                     'coordinates'       => $koordinat !== '' ? $koordinat : null,
                     'notes'             => $catatan !== '' ? $catatan : null,

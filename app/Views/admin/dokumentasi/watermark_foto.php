@@ -190,28 +190,55 @@
                     </div>
 
                     <!-- ======================================================= -->
-                    <!-- LANGKAH 2: PENGATURAN WAKTU & LOKASI GPS                -->
+                    <!-- LANGKAH 2: PENGATURAN WAKTU, LOKASI & METADATA EXIF    -->
                     <!-- ======================================================= -->
                     <div class="wizard-step-pane d-none" id="wizardStepPane2">
-                        <!-- 2.1 Pengaturan Waktu & Offset -->
-                        <div class="card bg-light border-0 rounded-lg p-3 mb-3">
+                        <!-- Alert Status EXIF Auto-Detect -->
+                        <div class="alert alert-info py-2 px-3 small mb-3 border-0 shadow-xs" id="exifStatusAlert">
+                            <i class="fas fa-magic mr-1"></i> <strong>Deteksi Otomatis:</strong> Sistem membaca tanggal, jam, dan lokasi GPS dari EXIF file foto. Anda dapat menyesuaikan atau mengubah tanggal, jam, alamat, atau koordinat di bawah ini.
+                        </div>
+
+                        <!-- 2.1 Pengaturan Tanggal & Waktu Foto -->
+                        <div class="card bg-light border-0 rounded-lg p-3 mb-3 shadow-xs">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="font-weight-bold text-dark small">
-                                    <i class="fas fa-clock text-warning mr-1"></i> Deteksi Waktu Foto &amp; Offset Jam
+                                    <i class="fas fa-calendar-alt text-warning mr-1"></i> Tanggal &amp; Waktu Foto
                                 </span>
-                                <div class="custom-control custom-switch">
-                                    <input type="checkbox" class="custom-control-input" id="useExifTime" name="use_exif_time" value="1" checked>
-                                    <label class="custom-control-label font-weight-bold small text-dark" for="useExifTime">Baca Waktu EXIF</label>
+                                <div class="d-flex align-items-center">
+                                    <button type="button" class="btn btn-outline-info btn-xs mr-2 font-weight-bold d-none" id="btnTimeFromExif" title="Kembalikan tanggal & jam sesuai EXIF foto">
+                                        <i class="fas fa-undo mr-1"></i> Pulihkan Waktu EXIF
+                                    </button>
+                                    <button type="button" class="btn btn-link btn-xs p-0 text-primary small font-weight-bold" id="btnNow">
+                                        <i class="fas fa-clock mr-1"></i> Set Sekarang
+                                    </button>
                                 </div>
                             </div>
 
-                            <div class="alert alert-info py-2 px-3 small mb-2" id="exifStatusAlert">
-                                <i class="fas fa-magic mr-1"></i> <strong>Deteksi Otomatis:</strong> Sistem akan membaca waktu asli dari metadata EXIF file foto.
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <label for="manualDate" class="small text-muted mb-1" style="font-size: 11px;">Tanggal Foto:</label>
+                                    <input type="date" class="form-control form-control-sm" id="manualDate" name="manual_date" value="<?= date('Y-m-d') ?>">
+                                </div>
+                                <div class="col-6">
+                                    <label for="manualTime" class="small text-muted mb-1" style="font-size: 11px;">Jam Foto:</label>
+                                    <input type="time" class="form-control form-control-sm" id="manualTime" name="manual_time" value="<?= date('H:i') ?>">
+                                </div>
+                            </div>
+
+                            <!-- Opsi Khusus Multi-Foto: Gunakan Waktu EXIF Masing-Masing File -->
+                            <div class="custom-control custom-switch mb-2 bg-white p-2 rounded border">
+                                <input type="checkbox" class="custom-control-input" id="useExifTime" name="use_exif_time" value="1" checked>
+                                <label class="custom-control-label font-weight-bold text-dark small" for="useExifTime">
+                                    Pertahankan Waktu EXIF Asli per Foto (Batch Multi-Foto)
+                                </label>
+                                <small class="d-block text-muted" style="font-size: 10px;">
+                                    Jika aktif pada banyak foto sekaligus, setiap foto akan memakai waktu pemotretannya masing-masing ditambah offset jam.
+                                </small>
                             </div>
 
                             <!-- Tombol Cepat Offset Jam -->
                             <label class="font-weight-bold small text-dark mb-1">
-                                Penyesuaian Jam (Offset):
+                                Penyesuaian Offset Jam:
                                 <span class="badge badge-info ml-1" id="currentOffsetBadge">+0 Jam</span>
                             </label>
                             <div class="btn-group btn-group-toggle w-100 mb-2 flex-wrap shadow-xs" data-toggle="buttons">
@@ -235,16 +262,16 @@
                                 </label>
                             </div>
 
-                            <!-- Custom Offset & Fallback Inputs -->
+                            <!-- Custom Offset Inputs -->
                             <div class="row">
-                                <div class="col-6 mb-2">
-                                    <label for="offsetHours" class="small text-muted mb-0" style="font-size: 11px;">Offset Jam Kustom</label>
+                                <div class="col-6 mb-1">
+                                    <label for="offsetHours" class="small text-muted mb-0" style="font-size: 11px;">Offset Jam Manual</label>
                                     <div class="input-group input-group-sm">
                                         <input type="number" class="form-control" id="offsetHours" name="offset_hours" value="0" step="1">
                                         <div class="input-group-append"><span class="input-group-text">Jam</span></div>
                                     </div>
                                 </div>
-                                <div class="col-6 mb-2">
+                                <div class="col-6 mb-1">
                                     <label for="offsetMinutes" class="small text-muted mb-0" style="font-size: 11px;">Offset Menit</label>
                                     <div class="input-group input-group-sm">
                                         <input type="number" class="form-control" id="offsetMinutes" name="offset_minutes" value="0" step="1" min="-59" max="59">
@@ -252,48 +279,37 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Fallback Manual Date & Time -->
-                            <div class="border-top pt-2 mt-1">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <small class="text-muted font-weight-bold">Waktu Manual (Fallback jika EXIF kosong):</small>
-                                    <button type="button" class="btn btn-link btn-xs p-0 text-primary small font-weight-bold" id="btnNow">Set Sekarang</button>
-                                </div>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <input type="date" class="form-control form-control-sm" id="manualDate" name="manual_date" value="<?= date('Y-m-d') ?>">
-                                    </div>
-                                    <div class="col-6">
-                                        <input type="time" class="form-control form-control-sm" id="manualTime" name="manual_time" value="<?= date('H:i') ?>">
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
                         <!-- 2.2 Lokasi Kegiatan, Koordinat & Catatan -->
-                        <div class="card bg-light border-0 rounded-lg p-3 mb-3">
+                        <div class="card bg-light border-0 rounded-lg p-3 mb-3 shadow-xs">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="font-weight-bold text-dark small">
                                     <i class="fas fa-map-marker-alt text-danger mr-1"></i> Lokasi Kegiatan &amp; Koordinat GPS
                                 </span>
+                                <div>
+                                    <button type="button" class="btn btn-outline-info btn-xs font-weight-bold d-none" id="btnGpsFromExif" title="Kembalikan koordinat sesuai EXIF foto">
+                                        <i class="fas fa-satellite-dish mr-1"></i> Pulihkan GPS EXIF
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Opsi Ambil Lokasi dari EXIF -->
                             <div class="custom-control custom-switch mb-2 bg-white p-2 rounded border">
                                 <input type="checkbox" class="custom-control-input" id="useExifLocation" name="use_exif_location" value="1" checked>
                                 <label class="custom-control-label font-weight-bold text-dark small" for="useExifLocation">
-                                    <i class="fas fa-satellite-dish text-primary mr-1"></i> Teks Lokasi Otomatis dari Koordinat EXIF Foto
+                                    <i class="fas fa-satellite-dish text-primary mr-1"></i> Utamakan Koordinat GPS dari EXIF Foto
                                 </label>
-                                <small class="d-block text-muted" style="font-size: 11px;">
-                                    Jika aktif, stempel lokasi otomatis memakai koordinat GPS asli dari kamera/HP tiap foto.
+                                <small class="d-block text-muted" style="font-size: 10px;">
+                                    Jika aktif dan file foto memiliki koordinat GPS, stempel lokasi otomatis mengikuti GPS asli foto.
                                 </small>
                             </div>
 
-                            <!-- Input Lokasi dengan 1 Tombol Peta & 1 Tombol GPS -->
+                            <!-- Input Lokasi dengan Tombol Buka Peta & GPS Saya -->
                             <div class="form-group mb-2">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <label for="lokasi" class="small font-weight-bold text-dark mb-0">Nama Lokasi / Fallback:</label>
-                                    <button type="button" class="btn btn-link btn-xs p-0 text-success font-weight-bold" id="btnGpsQuickFromForm" title="Ambil GPS perangkat Anda">
+                                    <label for="lokasi" class="small font-weight-bold text-dark mb-0">Nama Lokasi / Alamat:</label>
+                                    <button type="button" class="btn btn-link btn-xs p-0 text-success font-weight-bold" id="btnGpsQuickFromForm" title="Ambil GPS perangkat Anda saat ini">
                                         <i class="fas fa-location-arrow mr-1"></i> GPS Saya
                                     </button>
                                 </div>
@@ -309,15 +325,40 @@
 
                             <div class="row">
                                 <div class="col-md-6 form-group mb-2">
-                                    <label for="koordinat" class="small font-weight-bold text-dark mb-1">Koordinat GPS (Opsional):</label>
-                                    <input type="text" class="form-control form-control-sm" id="koordinat" name="koordinat" placeholder="Otomatis jika dikosongkan">
-                                    <small class="text-muted" style="font-size: 10px;">Contoh: 0.5071° N, 101.4478° E</small>
+                                    <label for="koordinat" class="small font-weight-bold text-dark mb-1">Koordinat GPS (Lat, Lng):</label>
+                                    <input type="text" class="form-control form-control-sm" id="koordinat" name="koordinat" placeholder="Contoh: 0.5071, 101.4478">
+                                    <small class="text-muted" style="font-size: 10px;">Format desimal atau derajat (bisa diedit bebas)</small>
                                 </div>
                                 <div class="col-md-6 form-group mb-2">
-                                    <label for="catatan" class="small font-weight-bold text-dark mb-1">Catatan / Proyek (Opsional):</label>
+                                    <label for="catatan" class="small font-weight-bold text-dark mb-1">Catatan Kegiatan / Proyek:</label>
                                     <input type="text" class="form-control form-control-sm" id="catatan" name="catatan" placeholder="Contoh: Rehabilitasi Gedung Balai">
-                                    <small class="text-muted" style="font-size: 10px;">Ditampilkan pada format Grid &amp; Klasik</small>
+                                    <small class="text-muted" style="font-size: 10px;">Disematkan pada watermark dan metadata foto</small>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- 2.3 Penulisan & Sinkronisasi Metadata EXIF Berkas Foto -->
+                        <div class="card border border-primary-light bg-white rounded-lg p-3 mb-3 shadow-xs">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="font-weight-bold text-dark small">
+                                    <i class="fas fa-tags text-primary mr-1"></i> Tulis &amp; Sinkronkan Metadata EXIF ke Berkas Foto
+                                </span>
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="updateExif" name="update_exif" value="1" checked>
+                                    <label class="custom-control-label font-weight-bold small text-primary" for="updateExif">Tulis ke File</label>
+                                </div>
+                            </div>
+                            <p class="small text-muted mb-2" style="font-size: 11px;">
+                                Setiap perubahan tanggal, jam, koordinat GPS, dan catatan kegiatan di atas akan <strong>otomatis ditulis langsung ke metadata internal file JPEG</strong> (tag EXIF DateTimeOriginal, GPSLatitude, GPSLongitude, ImageDescription) saat foto disimpan atau diunduh.
+                            </p>
+                            <div class="p-2 bg-light rounded border small" style="font-size: 11px;" id="exifLiveSummaryBox">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted font-weight-bold"><i class="fas fa-info-circle mr-1 text-primary"></i> Pratinjau Metadata yang Akan Disimpan:</span>
+                                    <span class="badge badge-success" id="metaExifStatusBadge"><i class="fas fa-check-circle mr-1"></i> Sinkronisasi EXIF Aktif</span>
+                                </div>
+                                <div class="text-truncate mb-1"><i class="fas fa-calendar-alt text-secondary mr-1"></i> <strong>EXIF Waktu:</strong> <span id="metaExifTimeSummary" class="text-dark font-weight-bold">-</span></div>
+                                <div class="text-truncate mb-1"><i class="fas fa-map-marker-alt text-danger mr-1"></i> <strong>EXIF GPS:</strong> <span id="metaExifGpsSummary" class="text-dark font-weight-bold">-</span></div>
+                                <div class="text-truncate"><i class="fas fa-file-alt text-info mr-1"></i> <strong>EXIF Deskripsi:</strong> <span id="metaExifDescSummary" class="text-dark font-weight-bold">-</span></div>
                             </div>
                         </div>
 
@@ -380,6 +421,7 @@
                                 <div class="col-6 mb-1">File Terpilih: <strong class="text-dark" id="summaryFiles">0 Berkas</strong></div>
                                 <div class="col-6 mb-1">Penyesuaian Jam: <strong class="text-dark" id="summaryOffset">+0 Jam</strong></div>
                                 <div class="col-6 mb-1">Simpan Server: <strong class="text-dark" id="summarySave">Ya</strong></div>
+                                <div class="col-12 mb-1">Tulis EXIF Berkas: <strong class="text-success" id="summaryExif">Ya (Tanggal, GPS &amp; Catatan)</strong></div>
                             </div>
                         </div>
 
@@ -933,6 +975,7 @@
 
 <?= $this->section('pageScripts'); ?>
 <script src="<?= esc(media_url('assets/leaflet/leaflet.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/exif/exifr.full.umd.js')); ?>"></script>
 <script src="<?= esc(media_url('assets/heic/heic-to.min.js')); ?>"></script>
 <script src="<?= esc(media_url('assets/heic/heic2any.min.js')); ?>"></script>
 <script>
@@ -949,6 +992,8 @@ $(function() {
     // Base Date & Time state for Live Simulator
     var baseDate = '<?= date('Y-m-d') ?>';
     var baseTime = '<?= date('H:i') ?>';
+    var lastExifDate = null;
+    var lastExifTime = null;
     var lastExifCoordinates = null;
 
     // Helper cek file HEIC / HEIF
@@ -1066,16 +1111,95 @@ $(function() {
         return Promise.reject(new Error('Decoder HEIC tidak tersedia di peramban.'));
     }
 
+    // -------------------------------------------------------------------------
+    // 3.1 CLIENT-SIDE EXIF EXTRACTION (INSTANT & PRESERVES RAW EXIF)
+    // -------------------------------------------------------------------------
+    function extractExifClientSide(file) {
+        if (typeof exifr === 'undefined' || !file) return;
+
+        exifr.parse(file, {
+            gps: true,
+            tiff: true,
+            exif: true
+        }).then(function(exif) {
+            if (!exif) return;
+            var hasExif = false;
+
+            // 1. Tanggal & Jam Asli Foto dari EXIF
+            var dtOrig = exif.DateTimeOriginal || exif.CreateDate || exif.ModifyDate;
+            if (dtOrig) {
+                var dt = (dtOrig instanceof Date) ? dtOrig : new Date(dtOrig);
+                if (!isNaN(dt.getTime())) {
+                    var yyyy = dt.getFullYear();
+                    var mm = String(dt.getMonth() + 1).padStart(2, '0');
+                    var dd = String(dt.getDate()).padStart(2, '0');
+                    var hh = String(dt.getHours()).padStart(2, '0');
+                    var ii = String(dt.getMinutes()).padStart(2, '0');
+
+                    lastExifDate = yyyy + '-' + mm + '-' + dd;
+                    lastExifTime = hh + ':' + ii;
+                    baseDate = lastExifDate;
+                    baseTime = lastExifTime;
+
+                    $('#manualDate').val(lastExifDate);
+                    $('#manualTime').val(lastExifTime);
+                    $('#btnTimeFromExif').removeClass('d-none').show();
+                    hasExif = true;
+                }
+            }
+
+            // 2. Koordinat GPS dari EXIF
+            if (typeof exif.latitude === 'number' && typeof exif.longitude === 'number') {
+                var lat = exif.latitude;
+                var lng = exif.longitude;
+                var coordsStr = lat.toFixed(6) + ', ' + lng.toFixed(6);
+                lastExifCoordinates = coordsStr;
+
+                $('#koordinat').val(coordsStr);
+                $('#btnGpsFromExif').removeClass('d-none').show();
+                setMarkerLocation(lat, lng, true);
+
+                // Otomatis lakukan reverse geocoding untuk mengisi nama alamat/lokasi
+                reverseGeocode(lat, lng, true);
+                hasExif = true;
+            }
+
+            // 3. Deskripsi jika tersedia
+            if (exif.ImageDescription && (! $('#catatan').val() || $('#catatan').val().trim() === '')) {
+                $('#catatan').val(exif.ImageDescription);
+            }
+
+            if (hasExif) {
+                var alertHtml = '<i class="fas fa-check-circle text-success mr-1"></i> <strong>EXIF Foto Terdeteksi:</strong> ';
+                if (lastExifDate) alertHtml += 'Waktu: ' + lastExifDate + ' ' + lastExifTime + ' ';
+                if (lastExifCoordinates) alertHtml += '| GPS: <code>' + lastExifCoordinates + '</code> ';
+                alertHtml += '<span class="text-success font-weight-bold ml-1">(Lokasi &amp; waktu otomatis diisi)</span>';
+                $('#exifStatusAlert').removeClass('alert-info alert-warning alert-danger').addClass('alert-success').html(alertHtml).show();
+            }
+
+            updateLiveSimulator();
+            updateExifSummaryDisplay();
+        }).catch(function(err) {
+            console.warn('Gagal membaca EXIF foto di browser:', err);
+        });
+    }
+
     function handleSelectedFiles(filesList) {
         var rawFiles = Array.from(filesList);
         var heicFiles = rawFiles.filter(isHeic);
 
-        // Jika terdapat file HEIC (iPhone) dan library decoder tersedia, konversi client-side
+        // Ekstraksi EXIF langsung dari file foto pertama secara client-side sebelum konversi kanvas
+        var firstImage = rawFiles.find(function(f) {
+            return !f.name.toLowerCase().endsWith('.zip');
+        });
+        if (firstImage) {
+            extractExifClientSide(firstImage);
+        }
+
+        // Jika terdapat file HEIC (iPhone) dan library decoder tersedia, konversi client-side ke JPEG untuk preview
         if (heicFiles.length > 0 && (typeof HeicTo === 'function' || typeof heic2any === 'function')) {
             $('#fileCountBadge').removeClass('badge-secondary badge-primary badge-success').addClass('badge-warning')
                 .html('<i class="fas fa-magic fa-spin mr-1"></i> Mengonversi Format iPhone...');
-            $('#exifStatusAlert').removeClass('alert-danger alert-info alert-success').addClass('alert-warning')
-                .html('<i class="fas fa-magic fa-spin mr-1"></i> <strong>Format Foto iPhone (.HEIC) Terdeteksi:</strong> Mengonversi ' + heicFiles.length + ' foto ke JPEG resolusi penuh...').show();
 
             var convertPromises = rawFiles.map(function(f) {
                 if (isHeic(f)) {
@@ -1120,8 +1244,6 @@ $(function() {
         } else if (total === 1 && hasRawHeic) {
             $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-success').addClass('badge-info').html('<i class="fas fa-apple-alt mr-1"></i> 1 Foto HEIC');
             $('#summaryFiles').text('1 Foto (HEIC iPhone)');
-            $('#exifStatusAlert').removeClass('alert-danger alert-warning alert-success').addClass('alert-info')
-                .html('<i class="fas fa-server mr-1"></i> <strong>Foto iPhone (.HEIC):</strong> Sistem membaca metadata dan menyiapkan pratinjau via modul server...').show();
         } else if (total === 1) {
             $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-success').addClass('badge-primary').html('<i class="fas fa-image mr-1"></i> 1 Foto');
             $('#summaryFiles').text('1 Foto');
@@ -1151,10 +1273,12 @@ $(function() {
             }
         }
 
-        // Ekstrak metadata EXIF jika single image
+        // Ekstrak metadata EXIF server-side jika single image (fallback & thumbnail preview)
         if (total === 1 && !hasZip) {
             extractExifPreview(selectedFiles[0]);
         }
+        updateSummaryCard();
+        updateExifSummaryDisplay();
     }
 
     function extractExifPreview(file) {
@@ -1179,21 +1303,28 @@ $(function() {
                         $('#simulatorCanvasBg').css('background-image', 'url(' + resp.preview_data_uri + ')');
                         $('#simBackgroundInfo').text('Foto iPhone (' + file.name + ')');
                     }
-                    if (resp.date) {
+                    if (resp.date && !lastExifDate) {
+                        lastExifDate = resp.date;
                         baseDate = resp.date;
                         $('#manualDate').val(resp.date);
+                        $('#btnTimeFromExif').removeClass('d-none').show();
                     }
-                    if (resp.time) {
+                    if (resp.time && !lastExifTime) {
+                        lastExifTime = resp.time;
                         baseTime = resp.time;
                         $('#manualTime').val(resp.time);
                     }
-                    if (resp.coordinates) {
+                    if (resp.coordinates && !$('#koordinat').val()) {
                         lastExifCoordinates = resp.coordinates;
                         $('#koordinat').val(resp.coordinates);
-                        $('#btnGpsFromExif').show();
+                        $('#btnGpsFromExif').removeClass('d-none').show();
 
                         if ($('#useExifLocation').is(':checked') || !$('#lokasi').val() || $('#lokasi').val().trim() === '') {
                             $('#lokasi').val(resp.coordinates);
+                            var parts = resp.coordinates.split(',');
+                            if (parts.length === 2) {
+                                reverseGeocode(parseFloat(parts[0]), parseFloat(parts[1]), true);
+                            }
                         }
                     }
                     var statusHtml = '';
@@ -1202,25 +1333,18 @@ $(function() {
                         if (resp.coordinates) {
                             statusHtml += ' | <i class="fas fa-satellite-dish text-success ml-1"></i> GPS: <code>' + resp.coordinates + '</code>';
                         }
-                    } else {
-                        statusHtml = '<i class="fas fa-info-circle mr-1"></i> <strong>Foto Terbaca:</strong> Metadata waktu/GPS foto siap disematkan watermark.';
+                        $('#exifStatusAlert').removeClass('alert-info alert-warning').addClass('alert-success').html(statusHtml);
                     }
-                    $('#exifStatusAlert').removeClass('alert-info alert-warning').addClass('alert-success').html(statusHtml);
                     updateLiveSimulator();
-                } else {
-                    $('#exifStatusAlert').removeClass('alert-warning alert-success').addClass('alert-info')
-                        .html('<i class="fas fa-info-circle mr-1"></i> ' + (resp.message || 'File foto siap diproses.'));
+                    updateExifSummaryDisplay();
                 }
             },
-            error: function() {
-                $('#exifStatusAlert').removeClass('alert-warning alert-success').addClass('alert-info')
-                    .html('<i class="fas fa-info-circle mr-1"></i> Foto siap diproses.');
-            }
+            error: function() {}
         });
     }
 
     // -------------------------------------------------------------------------
-    // 4. OFFSET WAKTU & LIVE SIMULATOR UPDATER
+    // 4. OFFSET WAKTU, METADATA EDITOR & LIVE SIMULATOR UPDATER
     // -------------------------------------------------------------------------
     $('input[name="quick_offset"]').on('change', function() {
         var val = parseInt($(this).val(), 10);
@@ -1228,6 +1352,7 @@ $(function() {
         $('#offsetMinutes').val(0);
         updateOffsetBadge(val, 0);
         updateLiveSimulator();
+        updateExifSummaryDisplay();
     });
 
     $('#offsetHours, #offsetMinutes').on('input change', function() {
@@ -1235,6 +1360,7 @@ $(function() {
         var m = parseInt($('#offsetMinutes').val(), 10) || 0;
         updateOffsetBadge(h, m);
         updateLiveSimulator();
+        updateExifSummaryDisplay();
     });
 
     function updateOffsetBadge(h, m) {
@@ -1258,16 +1384,59 @@ $(function() {
         $('#manualDate').val(baseDate);
         $('#manualTime').val(baseTime);
         updateLiveSimulator();
+        updateExifSummaryDisplay();
+
+        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1800 });
+        Toast.fire({ icon: 'info', title: 'Tanggal & jam disetel ke waktu sekarang!' });
+    });
+
+    $('#btnTimeFromExif').on('click', function() {
+        if (lastExifDate) {
+            baseDate = lastExifDate;
+            $('#manualDate').val(lastExifDate);
+        }
+        if (lastExifTime) {
+            baseTime = lastExifTime;
+            $('#manualTime').val(lastExifTime);
+        }
+        $('#offsetHours').val(0);
+        $('#offsetMinutes').val(0);
+        updateOffsetBadge(0, 0);
+        $('input[name="quick_offset"][value="0"]').prop('checked', true).parent().addClass('active').siblings().removeClass('active');
+        updateLiveSimulator();
+        updateExifSummaryDisplay();
+
+        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+        Toast.fire({ icon: 'info', title: 'Tanggal & jam dipulihkan ke waktu asli EXIF foto!' });
+    });
+
+    $('#btnGpsFromExif').on('click', function() {
+        if (lastExifCoordinates) {
+            $('#koordinat').val(lastExifCoordinates);
+            var parsed = parseExistingCoords(lastExifCoordinates);
+            if (parsed) {
+                setMarkerLocation(parsed.lat, parsed.lng, true);
+                reverseGeocode(parsed.lat, parsed.lng, true);
+            }
+            updateLiveSimulator();
+            updateExifSummaryDisplay();
+
+            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+            Toast.fire({ icon: 'info', title: 'Koordinat GPS dipulihkan ke GPS asli EXIF foto!' });
+        }
     });
 
     $('#manualDate, #manualTime').on('input change', function() {
         baseDate = $('#manualDate').val() || '<?= date('Y-m-d') ?>';
         baseTime = $('#manualTime').val() || '<?= date('H:i') ?>';
         updateLiveSimulator();
+        updateExifSummaryDisplay();
     });
 
-    $('#lokasi, #koordinat, #catatan, #useExifLocation, #useExifTime').on('input change', function() {
+    $('#lokasi, #koordinat, #catatan, #useExifLocation, #useExifTime, #updateExif').on('input change', function() {
         updateLiveSimulator();
+        updateExifSummaryDisplay();
+        updateSummaryCard();
     });
 
     var daysIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -1278,7 +1447,9 @@ $(function() {
         var m = parseInt($('#offsetMinutes').val(), 10) || 0;
 
         // Hitung effective date & time
-        var calcDate = new Date(baseDate + 'T' + (baseTime.length === 5 ? baseTime + ':00' : baseTime));
+        var curDate = $('#manualDate').val() || baseDate;
+        var curTime = $('#manualTime').val() || baseTime;
+        var calcDate = new Date(curDate + 'T' + (curTime.length === 5 ? curTime + ':00' : curTime));
         if (isNaN(calcDate.getTime())) {
             calcDate = new Date();
         }
@@ -1297,7 +1468,7 @@ $(function() {
         var notesInput = $('#catatan').val() || 'Dokumentasi Lapangan';
 
         var effectiveLoc = locInput.trim() !== '' ? locInput : (coordsInput ? coordsInput : 'Kantor Balai PPS Riau');
-        var effectiveCoords = coordsInput.trim() !== '' ? coordsInput : '0.507068° N, 101.447779° E';
+        var effectiveCoords = coordsInput.trim() !== '' ? coordsInput : (lastExifCoordinates ? lastExifCoordinates : '0.507068° N, 101.447779° E');
 
         // 1. Classic Template
         $('#simClassicClock').text(timeStr);
@@ -1333,6 +1504,61 @@ $(function() {
         else if (selectedTemplate === 'table') $('#simTableOverlay').removeClass('d-none');
         else if (selectedTemplate === 'badge') $('#simBadgeOverlay').removeClass('d-none');
         else if (selectedTemplate === 'strip') $('#simStripOverlay').removeClass('d-none');
+
+        updateExifSummaryDisplay();
+    }
+
+    function updateExifSummaryDisplay() {
+        var isExifEnabled = $('#updateExif').is(':checked');
+        if (!isExifEnabled) {
+            $('#metaExifStatusBadge').removeClass('badge-success').addClass('badge-secondary').html('<i class="fas fa-ban mr-1"></i> Penulisan EXIF Dinonaktifkan');
+            $('#metaExifTimeSummary').html('<span class="text-muted font-italic">Tidak disinkronkan ke berkas</span>');
+            $('#metaExifGpsSummary').html('<span class="text-muted font-italic">Tidak disinkronkan ke berkas</span>');
+            $('#metaExifDescSummary').html('<span class="text-muted font-italic">Tidak disinkronkan ke berkas</span>');
+            $('#summaryExif').removeClass('text-success').addClass('text-muted').text('Tidak (Dinonaktifkan)');
+            return;
+        }
+
+        $('#metaExifStatusBadge').removeClass('badge-secondary').addClass('badge-success').html('<i class="fas fa-check-circle mr-1"></i> Sinkronisasi EXIF Aktif');
+        $('#summaryExif').removeClass('text-muted').addClass('text-success').text('Ya (Tanggal, GPS & Catatan)');
+
+        // Tanggal & Jam yang akan disematkan
+        var h = parseInt($('#offsetHours').val(), 10) || 0;
+        var m = parseInt($('#offsetMinutes').val(), 10) || 0;
+        var curDate = $('#manualDate').val() || baseDate;
+        var curTime = $('#manualTime').val() || baseTime;
+        var calcDate = new Date(curDate + 'T' + (curTime.length === 5 ? curTime + ':00' : curTime));
+        if (isNaN(calcDate.getTime())) calcDate = new Date();
+        calcDate.setHours(calcDate.getHours() + h);
+        calcDate.setMinutes(calcDate.getMinutes() + m);
+
+        var yyyy = calcDate.getFullYear();
+        var mm = String(calcDate.getMonth() + 1).padStart(2, '0');
+        var dd = String(calcDate.getDate()).padStart(2, '0');
+        var hh = String(calcDate.getHours()).padStart(2, '0');
+        var ii = String(calcDate.getMinutes()).padStart(2, '0');
+        var exifDtStr = yyyy + ':' + mm + ':' + dd + ' ' + hh + ':' + ii + ':00';
+        $('#metaExifTimeSummary').html('<code>' + exifDtStr + '</code> <small class="text-muted">(' + dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + ii + ' WIB)</small>');
+
+        // GPS
+        var coordVal = ($('#koordinat').val() || '').trim();
+        if (coordVal) {
+            $('#metaExifGpsSummary').html('<code>' + coordVal + '</code>');
+        } else if (lastExifCoordinates) {
+            $('#metaExifGpsSummary').html('<code>' + lastExifCoordinates + '</code> <small class="text-success">(dari EXIF foto)</small>');
+        } else {
+            $('#metaExifGpsSummary').html('<span class="text-muted font-italic">0.507068, 101.447779 (Default Kantor)</span>');
+        }
+
+        // Deskripsi
+        var locVal = ($('#lokasi').val() || '').trim();
+        var catVal = ($('#catatan').val() || '').trim();
+        var desc = [];
+        if (locVal) desc.push('Lokasi: ' + locVal);
+        if (catVal) desc.push('Catatan: ' + catVal);
+        if (coordVal) desc.push('GPS: ' + coordVal);
+        var descStr = desc.length > 0 ? desc.join(' | ') : 'Dokumentasi Lapangan Satker PPS Riau';
+        $('#metaExifDescSummary').text(descStr);
     }
 
     function updateSummaryCard() {
@@ -1419,6 +1645,7 @@ $(function() {
         formData.append('template', $('input[name="template"]:checked').val() || 'classic');
         formData.append('use_exif_time', $('#useExifTime').is(':checked') ? '1' : '0');
         formData.append('use_exif_location', $('#useExifLocation').is(':checked') ? '1' : '0');
+        formData.append('update_exif', $('#updateExif').is(':checked') ? '1' : '0');
         formData.append('offset_hours', $('#offsetHours').val() || '0');
         formData.append('offset_minutes', $('#offsetMinutes').val() || '0');
         formData.append('manual_date', $('#manualDate').val() || '');
@@ -1727,7 +1954,7 @@ $(function() {
         }
     }
 
-    function reverseGeocode(lat, lng) {
+    function reverseGeocode(lat, lng, updateInput) {
         if (geocodeTimeout) clearTimeout(geocodeTimeout);
         $('#selectedAddressText').html('<i class="fas fa-spinner fa-spin text-primary"></i> Mengambil nama tempat...');
 
@@ -1756,10 +1983,20 @@ $(function() {
                         currentSelectedAddress = 'Lokasi Lapangan (' + formatCoordinates(lat, lng) + ')';
                     }
                     $('#selectedAddressText').text(currentSelectedAddress);
+                    if (updateInput) {
+                        $('#lokasi').val(currentSelectedAddress);
+                        updateLiveSimulator();
+                        updateExifSummaryDisplay();
+                    }
                 },
                 error: function() {
                     currentSelectedAddress = $('#lokasi').val() || ('Lokasi Koordinat ' + formatCoordinates(lat, lng));
                     $('#selectedAddressText').text(currentSelectedAddress);
+                    if (updateInput && (! $('#lokasi').val() || $('#lokasi').val().trim() === '')) {
+                        $('#lokasi').val(currentSelectedAddress);
+                        updateLiveSimulator();
+                        updateExifSummaryDisplay();
+                    }
                 }
             });
         }, 350);
@@ -1998,6 +2235,7 @@ $(function() {
     // Initial trigger to render live simulator with defaults
     updateLiveSimulator();
     updateSummaryCard();
+    updateExifSummaryDisplay();
 });
 </script>
 <?= $this->endSection(); ?>
