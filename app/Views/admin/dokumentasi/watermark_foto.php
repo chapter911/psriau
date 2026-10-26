@@ -933,6 +933,7 @@
 
 <?= $this->section('pageScripts'); ?>
 <script src="<?= esc(media_url('assets/leaflet/leaflet.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/heic/heic-to.min.js')); ?>"></script>
 <script src="<?= esc(media_url('assets/heic/heic2any.min.js')); ?>"></script>
 <script>
 $(function() {
@@ -1046,30 +1047,41 @@ $(function() {
         }
     });
 
+    function convertSingleHeic(file) {
+        if (typeof HeicTo === 'function') {
+            return HeicTo({ blob: file, type: 'image/jpeg', quality: 0.92 })
+                .then(function(blob) {
+                    var newName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+                    return new File([blob], newName, { type: 'image/jpeg' });
+                });
+        }
+        if (typeof heic2any === 'function') {
+            return heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92, multiple: true })
+                .then(function(result) {
+                    var singleBlob = Array.isArray(result) ? result[0] : result;
+                    var newName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+                    return new File([singleBlob], newName, { type: 'image/jpeg' });
+                });
+        }
+        return Promise.reject(new Error('Decoder HEIC tidak tersedia di peramban.'));
+    }
+
     function handleSelectedFiles(filesList) {
         var rawFiles = Array.from(filesList);
         var heicFiles = rawFiles.filter(isHeic);
 
-        // Jika terdapat file HEIC (iPhone) dan library heic2any tersedia, coba konversi client-side
-        if (heicFiles.length > 0 && typeof heic2any === 'function') {
+        // Jika terdapat file HEIC (iPhone) dan library decoder tersedia, konversi client-side
+        if (heicFiles.length > 0 && (typeof HeicTo === 'function' || typeof heic2any === 'function')) {
             $('#fileCountBadge').removeClass('badge-secondary badge-primary badge-success').addClass('badge-warning')
-                .html('<i class="fas fa-magic fa-spin mr-1"></i> Memeriksa Format iPhone...');
+                .html('<i class="fas fa-magic fa-spin mr-1"></i> Mengonversi Format iPhone...');
             $('#exifStatusAlert').removeClass('alert-danger alert-info alert-success').addClass('alert-warning')
-                .html('<i class="fas fa-magic fa-spin mr-1"></i> <strong>Format Foto iPhone (.HEIC) Terdeteksi:</strong> Menyiapkan ' + heicFiles.length + ' foto...').show();
+                .html('<i class="fas fa-magic fa-spin mr-1"></i> <strong>Format Foto iPhone (.HEIC) Terdeteksi:</strong> Mengonversi ' + heicFiles.length + ' foto ke JPEG resolusi penuh...').show();
 
             var convertPromises = rawFiles.map(function(f) {
                 if (isHeic(f)) {
-                    // Beri opsi multiple: true untuk mendukung Live Photos, burst shots, dan depth images Apple
-                    return heic2any({ blob: f, toType: 'image/jpeg', quality: 0.92, multiple: true })
-                        .then(function(result) {
-                            var singleBlob = Array.isArray(result) ? result[0] : result;
-                            var newName = f.name.replace(/\.(heic|heif)$/i, '.jpg');
-                            return new File([singleBlob], newName, { type: 'image/jpeg' });
-                        })
+                    return convertSingleHeic(f)
                         .catch(function(err) {
-                            // Jika format HEIC spesifik (misal HDR/10-bit) tidak didukung libheif client,
-                            // file asli tetap diteruskan untuk dikonversi secara akurat oleh server
-                            console.info('Format HEIC dialihkan ke konversi server:', err && err.message ? err.message : err);
+                            console.info('Konversi HEIC client dilewati (dialihkan ke server):', err && err.message ? err.message : err);
                             return f;
                         });
                 }

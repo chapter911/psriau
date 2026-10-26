@@ -1291,6 +1291,7 @@ class Dokumentasi extends BaseController
             $processedResults = [];
             $totalImages = count($imageFilesToProcess);
             $isBatchMode = ($totalImages > 1 || $isZip);
+            $lastFailError = null;
 
             $outputTempDir = $tempWorkingDir . DIRECTORY_SEPARATOR . 'output';
             @mkdir($outputTempDir, 0775, true);
@@ -1322,6 +1323,7 @@ class Dokumentasi extends BaseController
 
                 $res = $watermarkService->processImage($sourceImgPath, $processOptions);
                 if (! $res['success']) {
+                    $lastFailError = $res['error'] ?? ('Gagal memproses foto ' . $origName);
                     continue;
                 }
 
@@ -1344,7 +1346,8 @@ class Dokumentasi extends BaseController
             }
 
             if (empty($processedResults)) {
-                return $sendError(500, 'Gagal memproses watermark pada foto-foto yang diunggah.');
+                $errMsg = $lastFailError ?? 'Gagal memproses watermark pada foto-foto yang diunggah.';
+                return $sendError(422, $errMsg);
             }
 
             // 8. Buat ZIP Download untuk Batch Mode
