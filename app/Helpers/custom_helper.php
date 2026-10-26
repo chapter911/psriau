@@ -844,9 +844,9 @@ if (! function_exists('format_inventaris_merk')) {
 if (! function_exists('format_nup_range_summary')) {
     /**
      * Memformat array NUP (misal [1,2,3,4,5, 11,12, 15,16,17]) menjadi representasi rentang ringkas
-     * contoh: "1 - 5, 11 - 12 & 15 - 17" atau "1 - 35" atau "1 - 12 & 15 - 36".
+     * contoh: "1-5, 11-12 & 15-17" atau "1-35" atau "1-12 & 15-36" atau "1-2".
      */
-    function format_nup_range_summary(array $nups): string
+    function format_nup_range_summary(array $nups, string $separator = '-'): string
     {
         $nums = [];
         foreach ($nups as $n) {
@@ -873,7 +873,11 @@ if (! function_exists('format_nup_range_summary')) {
         }
 
         if (empty($nums)) {
-            return ! empty($nups) ? implode(', ', array_unique($nups)) : '-';
+            $cleanNups = [];
+            foreach (array_unique($nups) as $un) {
+                $cleanNups[] = preg_replace('/\s*[-–—]\s*/', $separator, trim((string) $un));
+            }
+            return ! empty($cleanNups) ? implode(', ', $cleanNups) : '-';
         }
 
         $nums = array_values(array_unique($nums));
@@ -887,12 +891,12 @@ if (! function_exists('format_nup_range_summary')) {
             if ($nums[$i] === $prev + 1) {
                 $prev = $nums[$i];
             } else {
-                $ranges[] = ($start === $prev) ? (string) $start : ($start . ' - ' . $prev);
+                $ranges[] = ($start === $prev) ? (string) $start : ($start . $separator . $prev);
                 $start = $nums[$i];
                 $prev  = $nums[$i];
             }
         }
-        $ranges[] = ($start === $prev) ? (string) $start : ($start . ' - ' . $prev);
+        $ranges[] = ($start === $prev) ? (string) $start : ($start . $separator . $prev);
 
         if (count($ranges) === 1) {
             return $ranges[0];

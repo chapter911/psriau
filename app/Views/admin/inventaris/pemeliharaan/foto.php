@@ -9,7 +9,7 @@
                     <i class="fas fa-camera text-info mr-2"></i>Kelola Lampiran Foto Pemeliharaan Aset
                 </h1>
                 <p class="text-muted small mb-0 mt-1">
-                    Input bertahap foto fisik 4 sudut (Depan, Atas, Bawah, Belakang) ber-watermark resmi TimeMark PU untuk Surat No: <strong><?= esc($pemeliharaan['no_surat']); ?></strong>
+                    Input bertahap foto fisik 4 sudut (Depan, Atas, Bawah, Belakang) untuk Surat No: <strong><?= esc($pemeliharaan['no_surat']); ?></strong>
                 </p>
             </div>
             <div class="col-sm-5 text-sm-right mt-2 mt-sm-0">
@@ -30,7 +30,7 @@
     <div class="container-fluid">
 
         <!-- KARTU RINGKASAN SURAT & PROGRESS KELENGKAPAN FOTO -->
-        <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; overflow: hidden;">
+        <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px; overflow: hidden;">
             <div class="card-header bg-white py-3 border-bottom">
                 <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 10px;">
                     <div>
@@ -93,127 +93,275 @@
             </div>
         </div>
 
-        <!-- PANDUAN PENGISIAN BERTAHAP -->
-        <div class="alert alert-light border border-info shadow-sm d-flex align-items-center mb-4" style="border-radius: 10px;">
-            <i class="fas fa-info-circle fa-2x mr-3 text-info"></i>
-            <div>
-                <div class="font-weight-bold text-dark">Alur Pengambilan Foto Fisik Bertahap</div>
-                <small class="text-muted">
-                    Setiap barang/kelompok membutuhkan 4 foto fisik (<strong>Tampak Depan, Tampak Atas, Tampak Bawah, Tampak Belakang</strong>). 
-                    Anda dapat mencicil foto kapan saja saat melakukan pengecekan di lapangan. Setiap foto langsung tersimpan otomatis ke server dan disematkan watermark resmi TimeMark instansi.
-                </small>
+        <!-- PANDUAN WARNA & INDIKATOR TOMBOL ICON -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap mb-3" style="gap: 10px;">
+            <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                <span class="small font-weight-bold text-dark mr-1">Petunjuk Status:</span>
+                <span class="badge badge-success px-2.5 py-1.5 shadow-sm font-weight-bold" style="font-size: 0.76rem;">
+                    <i class="fas fa-check-circle mr-1"></i>Hijau = Foto Tersedia (Klik untuk Pratinjau &amp; Update)
+                </span>
+                <span class="badge badge-danger px-2.5 py-1.5 shadow-sm font-weight-bold" style="font-size: 0.76rem;">
+                    <i class="fas fa-camera mr-1"></i>Merah = Belum Ada Foto (Klik untuk Ambil / Upload Foto)
+                </span>
+            </div>
+            <div class="small text-muted">
+                <i class="fas fa-info-circle mr-1 text-info"></i>Setiap foto tersimpan otomatis secara instan.
             </div>
         </div>
 
-        <!-- DAFTAR KELOMPOK BARANG & FORMULIR 4 FOTO -->
-        <?php if (empty($fotos)): ?>
-            <div class="card shadow-sm border-0 py-5 text-center text-muted" style="border-radius: 10px;">
-                <i class="fas fa-images fa-3x mb-2 text-secondary" style="opacity: 0.3;"></i>
-                <h6 class="font-weight-bold">Tidak Ada Kelompok Barang pada Surat Ini</h6>
-                <small>Pastikan surat sudah memiliki daftar barang di langkah input surat.</small>
-            </div>
-        <?php else: ?>
-            <?php foreach ($fotos as $idx => $f): ?>
-                <?php
-                    $fId = (int) $f['id'];
-                    $kKey = $f['kelompok_key'];
-                    $gFilled = (int) ($f['group_filled'] ?? 0);
-                    $gStatus = $f['group_status'] ?? 'danger';
-                    $gStatusClass = ($gStatus === 'success') ? 'border-success' : (($gStatus === 'warning') ? 'border-warning' : 'border-danger');
-                ?>
-                <div class="card shadow-sm border mb-4 photo-group-card <?= $gStatusClass; ?>" id="groupCard_<?= $fId; ?>" style="border-radius: 12px; border-width: 1.5px !important; overflow: hidden;">
-                    <div class="card-header bg-white py-2.5 px-3 d-flex justify-content-between align-items-center flex-wrap" style="gap: 10px;">
-                        <div>
-                            <span class="badge badge-dark px-2 py-0.5 mr-1" style="font-size: 0.75rem;">
-                                Kelompok #<?= $f['urutan']; ?>
-                            </span>
-                            <span class="font-weight-bold text-dark" style="font-size: 1rem;">
-                                <?= esc($f['nama_barang']); ?>
-                            </span>
-                            <span class="badge badge-light border text-primary font-weight-bold px-2 py-0.5 ml-1" style="font-size: 0.78rem;">
-                                NUP: <?= esc($f['nup_gabungan'] ?: '-'); ?>
-                            </span>
-                        </div>
-                        <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
-                            <span class="badge badge-<?= $gStatus; ?> px-2.5 py-1.5 font-weight-bold group-status-badge" id="groupBadge_<?= $fId; ?>" style="font-size: 0.78rem;">
-                                <?= $gFilled; ?> / 4 Foto Terisi
-                            </span>
-                            <button type="button" class="btn btn-primary btn-sm rounded-pill shadow-sm font-weight-bold px-3 btn-start-group-wizard" data-foto-id="<?= $fId; ?>" data-key="<?= esc($kKey); ?>" data-nama="<?= esc($f['nama_barang']); ?>" data-nup="<?= esc($f['nup_gabungan']); ?>">
-                                <i class="fas fa-camera mr-1"></i>Foto Kamera 4 Sudut (Wizard)
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body p-3">
-                        <div class="row">
-                            <?php
-                                $angles = [
-                                    'depan'    => ['label' => '1. Tampak Depan', 'col' => 'foto_depan'],
-                                    'atas'     => ['label' => '2. Tampak Atas', 'col' => 'foto_atas'],
-                                    'bawah'    => ['label' => '3. Tampak Bawah', 'col' => 'foto_bawah'],
-                                    'belakang' => ['label' => '4. Tampak Belakang', 'col' => 'foto_belakang'],
-                                ];
-                            ?>
-                            <?php foreach ($angles as $pos => $cfg): ?>
+        <!-- TABEL KELOMPOK BARANG & 4 TOMBOL ICON SUDUT FOTO -->
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; overflow: hidden;">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle mb-0" id="tableFotoPemeliharaan" style="font-size: 0.88rem;">
+                        <thead class="thead-light text-center">
+                            <tr>
+                                <th style="width: 40px;" class="align-middle">No</th>
+                                <th class="align-middle text-left">Nama Barang</th>
+                                <th style="width: 140px;" class="align-middle">Kategori</th>
+                                <th style="width: 160px;" class="align-middle text-left">Merek / Tipe / Spesifikasi</th>
+                                <th style="width: 110px;" class="align-middle">Rentang NUP</th>
+                                <th style="width: 68px;" class="align-middle" title="Tampak Depan">Depan</th>
+                                <th style="width: 68px;" class="align-middle" title="Tampak Atas">Atas</th>
+                                <th style="width: 68px;" class="align-middle" title="Tampak Bawah">Bawah</th>
+                                <th style="width: 68px;" class="align-middle" title="Tampak Belakang">Belakang</th>
+                                <th style="width: 135px;" class="align-middle">Kelengkapan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($fotos)): ?>
+                                <tr>
+                                    <td colspan="10" class="text-center py-5 text-muted">
+                                        <i class="fas fa-boxes fa-3x mb-2 text-secondary" style="opacity: 0.3;"></i>
+                                        <div class="font-weight-bold">Tidak Ada Barang pada Surat Ini</div>
+                                        <small>Pastikan surat sudah memiliki daftar barang di langkah input surat.</small>
+                                    </td>
+                                </tr>
+                            <?php else: ?>
                                 <?php
-                                    $colName = $cfg['col'];
-                                    $filePath = $f[$colName] ?? null;
-                                    $hasPhoto = ! empty($filePath) && is_file(FCPATH . ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $filePath), DIRECTORY_SEPARATOR));
-                                    $fullUrl = $hasPhoto ? base_url($filePath) : '';
+                                    $angleLabels = [
+                                        'depan'    => 'Tampak Depan',
+                                        'atas'     => 'Tampak Atas',
+                                        'bawah'    => 'Tampak Bawah',
+                                        'belakang' => 'Tampak Belakang',
+                                    ];
                                 ?>
-                                <div class="col-md-3 col-6 mb-3">
-                                    <div class="border rounded p-2 text-center bg-light h-100 d-flex flex-column justify-content-between slot-container" id="slotContainer_<?= $fId; ?>_<?= $pos; ?>" style="border-radius: 8px;">
-                                        <div class="small font-weight-bold text-dark mb-1.5 pb-1 border-bottom d-flex justify-content-between align-items-center">
-                                            <span><?= $cfg['label']; ?></span>
-                                            <span class="slot-status-icon" id="slotStatusIcon_<?= $fId; ?>_<?= $pos; ?>">
-                                                <?php if ($hasPhoto): ?>
-                                                    <i class="fas fa-check-circle text-success" title="Foto Tersedia"></i>
-                                                <?php else: ?>
-                                                    <i class="fas fa-times-circle text-danger" title="Belum Ada Foto"></i>
-                                                <?php endif; ?>
-                                            </span>
-                                        </div>
+                                <?php foreach ($fotos as $idx => $f): ?>
+                                    <?php
+                                        $fId = (int) $f['id'];
+                                        $kKey = $f['kelompok_key'];
+                                        $gFilled = (int) ($f['group_filled'] ?? 0);
+                                        $gStatus = $f['group_status'] ?? 'danger';
+                                    ?>
+                                    <tr id="rowGroup_<?= $fId; ?>">
+                                        <!-- 1. No -->
+                                        <td class="text-center text-muted font-weight-bold align-middle">
+                                            <?= $idx + 1; ?>
+                                        </td>
 
-                                        <div class="preview-box my-1" id="previewBox_<?= $fId; ?>_<?= $pos; ?>">
-                                            <?php if ($hasPhoto): ?>
-                                                <div class="position-relative d-inline-block">
-                                                    <img src="<?= $fullUrl; ?>" class="img-thumbnail shadow-sm cursor-pointer img-preview-clickable" data-src="<?= $fullUrl; ?>" data-title="<?= esc($f['nama_barang']) . ' - ' . $cfg['label']; ?>" style="max-height: 120px; max-width: 100%; object-fit: contain; border-radius: 6px;" alt="<?= $cfg['label']; ?>">
-                                                    <span class="badge badge-warning text-dark font-weight-bold shadow-sm" style="position: absolute; bottom: 4px; right: 4px; font-size: 0.62rem;">
-                                                        <i class="fas fa-certificate mr-0.5"></i>TimeMark
-                                                    </span>
-                                                </div>
-                                            <?php else: ?>
-                                                <div class="py-4 border border-dashed rounded bg-white text-muted" style="border-style: dashed !important; border-color: #cbd5e1 !important;">
-                                                    <i class="fas fa-camera fa-2x mb-1 text-secondary" style="opacity: 0.35;"></i>
-                                                    <div class="small font-weight-bold text-muted">Belum Ada Foto</div>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-
-                                        <div class="mt-2 pt-1 border-top action-btn-group">
-                                            <div class="btn-group btn-group-sm w-100">
-                                                <button type="button" class="btn btn-outline-primary btn-xs py-1 btn-snap-single" data-foto-id="<?= $fId; ?>" data-pos="<?= $pos; ?>" data-label="<?= $cfg['label']; ?>" data-nama="<?= esc($f['nama_barang']); ?>" data-nup="<?= esc($f['nup_gabungan']); ?>" title="Foto Langsung Kamera">
-                                                    <i class="fas fa-camera mr-0.5"></i>Foto
-                                                </button>
-                                                <button type="button" class="btn btn-outline-info btn-xs py-1 btn-trigger-upload" data-foto-id="<?= $fId; ?>" data-pos="<?= $pos; ?>" title="Unggah File Gambar">
-                                                    <i class="fas fa-upload mr-0.5"></i>Unggah
-                                                </button>
-                                                <?php if ($hasPhoto): ?>
-                                                    <button type="button" class="btn btn-outline-danger btn-xs py-1 btn-delete-single" data-foto-id="<?= $fId; ?>" data-pos="<?= $pos; ?>" data-label="<?= $cfg['label']; ?>" title="Hapus Foto">
-                                                        <i class="fas fa-trash-alt"></i>
-                                                    </button>
-                                                <?php endif; ?>
+                                        <!-- 2. Nama Barang -->
+                                        <td class="align-middle">
+                                            <div class="font-weight-bold text-dark">
+                                                <?= esc($f['nama_barang']); ?>
                                             </div>
-                                            <!-- Hidden File Input untuk slot ini -->
-                                            <input type="file" class="d-none slot-file-input" id="fileInput_<?= $fId; ?>_<?= $pos; ?>" data-foto-id="<?= $fId; ?>" data-pos="<?= $pos; ?>" accept="image/*,.heic,.heif">
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
+                                            <?php if (! empty($f['kode_barang'])): ?>
+                                                <small class="text-muted font-weight-bold">
+                                                    <code><?= esc($f['kode_barang']); ?></code>
+                                                </small>
+                                            <?php endif; ?>
+                                        </td>
+
+                                        <!-- 3. Kategori -->
+                                        <td class="text-center align-middle">
+                                            <span class="badge badge-light border text-dark font-weight-bold px-2 py-1" style="font-size: 0.74rem;">
+                                                <?= esc($f['kategori'] ?? 'MESIN PERALATAN NON TIK'); ?>
+                                            </span>
+                                        </td>
+
+                                        <!-- 4. Merek / Tipe / Spesifikasi -->
+                                        <td class="align-middle text-secondary small">
+                                            <?= esc($f['merk_tipe'] ?: '-'); ?>
+                                        </td>
+
+                                        <!-- 5. Rentang NUP -->
+                                        <td class="text-center align-middle">
+                                            <span class="badge badge-light border text-primary font-weight-bold px-2 py-1" style="font-size: 0.76rem;">
+                                                <?= esc($f['nup_gabungan'] ?: '-'); ?>
+                                            </span>
+                                        </td>
+
+                                        <!-- 6. Tampak Depan -->
+                                        <?php
+                                            $pathDepan = $f['foto_depan'] ?? null;
+                                            $hasDepan = ! empty($pathDepan) && is_file(FCPATH . ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $pathDepan), DIRECTORY_SEPARATOR));
+                                        ?>
+                                        <td class="text-center align-middle" id="cellSlot_<?= $fId; ?>_depan">
+                                            <?php if ($hasDepan): ?>
+                                                <button type="button" class="btn btn-success btn-sm btn-slot-photo shadow-sm"
+                                                    id="btnSlot_<?= $fId; ?>_depan"
+                                                    data-foto-id="<?= $fId; ?>"
+                                                    data-pos="depan"
+                                                    data-status="filled"
+                                                    data-src="<?= base_url($pathDepan); ?>"
+                                                    data-nama="<?= esc($f['nama_barang']); ?>"
+                                                    data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-label="Tampak Depan"
+                                                    title="Tampak Depan: Foto Tersedia (Klik untuk Pratinjau & Update)"
+                                                    style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                                    <i class="fas fa-check-circle" style="font-size: 1.1rem;"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-outline-danger btn-sm btn-slot-photo shadow-sm"
+                                                    id="btnSlot_<?= $fId; ?>_depan"
+                                                    data-foto-id="<?= $fId; ?>"
+                                                    data-pos="depan"
+                                                    data-status="empty"
+                                                    data-src=""
+                                                    data-nama="<?= esc($f['nama_barang']); ?>"
+                                                    data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-label="Tampak Depan"
+                                                    title="Tampak Depan: Belum Ada Foto (Klik untuk Ambil / Upload Foto)"
+                                                    style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                                    <i class="fas fa-camera text-danger" style="font-size: 1.05rem;"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                        </td>
+
+                                        <!-- 7. Tampak Atas -->
+                                        <?php
+                                            $pathAtas = $f['foto_atas'] ?? null;
+                                            $hasAtas = ! empty($pathAtas) && is_file(FCPATH . ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $pathAtas), DIRECTORY_SEPARATOR));
+                                        ?>
+                                        <td class="text-center align-middle" id="cellSlot_<?= $fId; ?>_atas">
+                                            <?php if ($hasAtas): ?>
+                                                <button type="button" class="btn btn-success btn-sm btn-slot-photo shadow-sm"
+                                                    id="btnSlot_<?= $fId; ?>_atas"
+                                                    data-foto-id="<?= $fId; ?>"
+                                                    data-pos="atas"
+                                                    data-status="filled"
+                                                    data-src="<?= base_url($pathAtas); ?>"
+                                                    data-nama="<?= esc($f['nama_barang']); ?>"
+                                                    data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-label="Tampak Atas"
+                                                    title="Tampak Atas: Foto Tersedia (Klik untuk Pratinjau & Update)"
+                                                    style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                                    <i class="fas fa-check-circle" style="font-size: 1.1rem;"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-outline-danger btn-sm btn-slot-photo shadow-sm"
+                                                    id="btnSlot_<?= $fId; ?>_atas"
+                                                    data-foto-id="<?= $fId; ?>"
+                                                    data-pos="atas"
+                                                    data-status="empty"
+                                                    data-src=""
+                                                    data-nama="<?= esc($f['nama_barang']); ?>"
+                                                    data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-label="Tampak Atas"
+                                                    title="Tampak Atas: Belum Ada Foto (Klik untuk Ambil / Upload Foto)"
+                                                    style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                                    <i class="fas fa-camera text-danger" style="font-size: 1.05rem;"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                        </td>
+
+                                        <!-- 8. Tampak Bawah -->
+                                        <?php
+                                            $pathBawah = $f['foto_bawah'] ?? null;
+                                            $hasBawah = ! empty($pathBawah) && is_file(FCPATH . ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $pathBawah), DIRECTORY_SEPARATOR));
+                                        ?>
+                                        <td class="text-center align-middle" id="cellSlot_<?= $fId; ?>_bawah">
+                                            <?php if ($hasBawah): ?>
+                                                <button type="button" class="btn btn-success btn-sm btn-slot-photo shadow-sm"
+                                                    id="btnSlot_<?= $fId; ?>_bawah"
+                                                    data-foto-id="<?= $fId; ?>"
+                                                    data-pos="bawah"
+                                                    data-status="filled"
+                                                    data-src="<?= base_url($pathBawah); ?>"
+                                                    data-nama="<?= esc($f['nama_barang']); ?>"
+                                                    data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-label="Tampak Bawah"
+                                                    title="Tampak Bawah: Foto Tersedia (Klik untuk Pratinjau & Update)"
+                                                    style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                                    <i class="fas fa-check-circle" style="font-size: 1.1rem;"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-outline-danger btn-sm btn-slot-photo shadow-sm"
+                                                    id="btnSlot_<?= $fId; ?>_bawah"
+                                                    data-foto-id="<?= $fId; ?>"
+                                                    data-pos="bawah"
+                                                    data-status="empty"
+                                                    data-src=""
+                                                    data-nama="<?= esc($f['nama_barang']); ?>"
+                                                    data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-label="Tampak Bawah"
+                                                    title="Tampak Bawah: Belum Ada Foto (Klik untuk Ambil / Upload Foto)"
+                                                    style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                                    <i class="fas fa-camera text-danger" style="font-size: 1.05rem;"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                        </td>
+
+                                        <!-- 9. Tampak Belakang -->
+                                        <?php
+                                            $pathBelakang = $f['foto_belakang'] ?? null;
+                                            $hasBelakang = ! empty($pathBelakang) && is_file(FCPATH . ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $pathBelakang), DIRECTORY_SEPARATOR));
+                                        ?>
+                                        <td class="text-center align-middle" id="cellSlot_<?= $fId; ?>_belakang">
+                                            <?php if ($hasBelakang): ?>
+                                                <button type="button" class="btn btn-success btn-sm btn-slot-photo shadow-sm"
+                                                    id="btnSlot_<?= $fId; ?>_belakang"
+                                                    data-foto-id="<?= $fId; ?>"
+                                                    data-pos="belakang"
+                                                    data-status="filled"
+                                                    data-src="<?= base_url($pathBelakang); ?>"
+                                                    data-nama="<?= esc($f['nama_barang']); ?>"
+                                                    data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-label="Tampak Belakang"
+                                                    title="Tampak Belakang: Foto Tersedia (Klik untuk Pratinjau & Update)"
+                                                    style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                                    <i class="fas fa-check-circle" style="font-size: 1.1rem;"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-outline-danger btn-sm btn-slot-photo shadow-sm"
+                                                    id="btnSlot_<?= $fId; ?>_belakang"
+                                                    data-foto-id="<?= $fId; ?>"
+                                                    data-pos="belakang"
+                                                    data-status="empty"
+                                                    data-src=""
+                                                    data-nama="<?= esc($f['nama_barang']); ?>"
+                                                    data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-label="Tampak Belakang"
+                                                    title="Tampak Belakang: Belum Ada Foto (Klik untuk Ambil / Upload Foto)"
+                                                    style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                                    <i class="fas fa-camera text-danger" style="font-size: 1.05rem;"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                        </td>
+
+                                        <!-- 10. Kelengkapan & Tombol Wizard 4 Sudut -->
+                                        <td class="text-center align-middle">
+                                            <div class="d-flex flex-column align-items-center" style="gap: 4px;">
+                                                <span class="badge badge-<?= $gStatus; ?> px-2 py-1 font-weight-bold group-status-badge" id="groupBadge_<?= $fId; ?>" style="font-size: 0.74rem;">
+                                                    <?= $gFilled; ?> / 4 Terisi
+                                                </span>
+                                                <button type="button" class="btn btn-outline-primary btn-xs font-weight-bold rounded-pill px-2 py-0.5 btn-start-group-wizard shadow-sm"
+                                                    data-foto-id="<?= $fId; ?>"
+                                                    data-key="<?= esc($kKey); ?>"
+                                                    data-nama="<?= esc($f['nama_barang']); ?>"
+                                                    data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    title="Jepret 4 Sudut Berurutan (Wizard)">
+                                                    <i class="fas fa-camera mr-0.5"></i>4 Sudut
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
+            </div>
+        </div>
 
         <div class="card shadow-sm border-0 mb-5 text-center p-3 bg-white" style="border-radius: 12px;">
             <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 10px;">
@@ -223,7 +371,7 @@
                 </div>
                 <div>
                     <a href="<?= site_url('admin/inventaris/pemeliharaan'); ?>" class="btn btn-outline-secondary btn-sm px-4 rounded-pill mr-2">
-                        <i class="fas fa-check mr-1"></i>Selesai & Kembali ke Arsip
+                        <i class="fas fa-check mr-1"></i>Selesai &amp; Kembali ke Arsip
                     </a>
                     <?php if (! empty($permissions['can_export'])): ?>
                         <a href="<?= site_url('admin/inventaris/pemeliharaan/' . $pemeliharaan['id'] . '/cetak-pdf'); ?>" target="_blank" class="btn btn-danger btn-sm px-4 rounded-pill font-weight-bold shadow-sm">
@@ -237,7 +385,71 @@
     </div>
 </section>
 
-<!-- MODAL KAMERA BERURUTAN TERPANDU (SEQUENTIAL CAMERA WIZARD) -->
+<!-- MODAL 1: PRATINJAU FOTO & TOMBOL UPDATE (UNTUK TOMBOL HIJAU) -->
+<div class="modal fade" id="modalPhotoPreview" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 14px; overflow: hidden;">
+            <div class="modal-header bg-success text-white py-2.5 px-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="modal-title font-weight-bold mb-0" id="previewModalTitle">Pratinjau Foto</h6>
+                    <small class="text-white opacity-9" id="previewModalSubtitle">-</small>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-3 text-center bg-dark position-relative">
+                <div class="position-relative d-inline-block" style="max-height: 400px; width: 100%;">
+                    <img id="previewModalImg" src="" style="max-height: 380px; max-width: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" alt="Foto Lampiran">
+                    <span class="badge badge-warning text-dark font-weight-bold shadow" style="position: absolute; bottom: 8px; right: 8px; font-size: 0.72rem;">
+                        <i class="fas fa-certificate mr-1"></i>TimeMark Resmi PU
+                    </span>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2.5 px-3 d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
+                <button type="button" class="btn btn-outline-danger btn-sm" id="btnPreviewDelete" title="Hapus foto ini">
+                    <i class="fas fa-trash-alt mr-1"></i>Hapus Foto
+                </button>
+                <div class="d-flex align-items-center" style="gap: 6px;">
+                    <button type="button" class="btn btn-outline-primary btn-sm font-weight-bold" id="btnPreviewRetakeCamera">
+                        <i class="fas fa-camera mr-1"></i>Foto Ulang Kamera
+                    </button>
+                    <button type="button" class="btn btn-outline-info btn-sm font-weight-bold" id="btnPreviewUploadNew">
+                        <i class="fas fa-upload mr-1"></i>Unggah File Baru
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: PILIHAN INPUT FOTO (UNTUK TOMBOL MERAH) -->
+<div class="modal fade" id="modalEmptyAction" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 14px; overflow: hidden;">
+            <div class="modal-header bg-primary text-white py-2.5 px-3">
+                <div>
+                    <h6 class="modal-title font-weight-bold mb-0" id="emptyActionTitle">Ambil / Unggah Foto</h6>
+                    <small class="text-white opacity-9" id="emptyActionSubtitle">-</small>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-3">
+                <p class="small text-muted mb-3 text-center">Pilih metode pengambilan foto fisik untuk sudut ini:</p>
+                <button type="button" class="btn btn-primary btn-block py-2 mb-2 font-weight-bold shadow-sm d-flex align-items-center justify-content-center" id="btnEmptyChooseCamera" style="border-radius: 8px;">
+                    <i class="fas fa-camera fa-lg mr-2"></i>Foto Langsung Kamera
+                </button>
+                <button type="button" class="btn btn-outline-info btn-block py-2 font-weight-bold shadow-sm d-flex align-items-center justify-content-center" id="btnEmptyChooseUpload" style="border-radius: 8px;">
+                    <i class="fas fa-upload fa-lg mr-2"></i>Unggah File Gambar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL KAMERA BERURUTAN TERPANDU (SEQUENTIAL CAMERA WIZARD & SINGLE SNAP) -->
 <div class="modal fade" id="modalCameraWizard" data-backdrop="static" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
         <div class="modal-content shadow-lg border-0" style="border-radius: 14px; overflow: hidden;">
@@ -315,7 +527,7 @@
                         <i class="fas fa-redo mr-1"></i>Ulangi
                     </button>
                     <button type="button" class="btn btn-success btn-sm rounded-pill px-4 font-weight-bold" id="btnAcceptCurrentAngle">
-                        <i class="fas fa-check mr-1"></i>Gunakan &amp; Lanjut
+                        <i class="fas fa-check mr-1"></i>Gunakan &amp; Simpan
                     </button>
                 </div>
             </div>
@@ -323,22 +535,9 @@
     </div>
 </div>
 
-<!-- MODAL PERBESAR FOTO -->
-<div class="modal fade" id="modalEnlargePhoto" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content shadow-lg border-0 bg-dark text-white" style="border-radius: 12px; overflow: hidden;">
-            <div class="modal-header py-2 px-3 border-secondary">
-                <h6 class="modal-title font-weight-bold" id="enlargePhotoTitle">Pratinjau Foto</h6>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body p-0 text-center bg-black">
-                <img id="enlargePhotoImg" src="" style="width: 100%; max-height: 520px; object-fit: contain;" alt="Pratinjau">
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Global Hidden File Input untuk Unggah Cepat -->
+<input type="file" id="globalSlotFileInput" class="d-none" accept="image/*,.heic,.heif">
+
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>
@@ -347,19 +546,28 @@ $(document).ready(function() {
     var pemeliharaanId = <?= (int) $pemeliharaan['id']; ?>;
     var baseUrl = '<?= rtrim(site_url(), "/"); ?>';
 
-    // State Kamera Wizard
+    // State Aktif
     var activeFotoId = null;
-    var activeGroupKey = '';
+    var activePos = '';
+    var activeLabel = '';
     var activeItemNama = '';
     var activeItemNup = '';
-    var singleModeAngle = null; // Jika non-null, hanya memotret 1 sudut spesifik
+    var activeSrc = '';
+    var singleModeAngle = null;
     var currentAngleIndex = 0;
     var angleOrder = ['depan', 'atas', 'bawah', 'belakang'];
     var currentAngle = 'depan';
     var videoStream = null;
     var currentFacingMode = 'environment';
     var userGpsCoordinates = '';
-    var capturedSessionImages = {}; // Format: { depan: dataUri, atas: ..., ... }
+    var capturedSessionImages = {};
+
+    var angleLabels = {
+        'depan': 'Tampak Depan',
+        'atas': 'Tampak Atas',
+        'bawah': 'Tampak Bawah',
+        'belakang': 'Tampak Belakang'
+    };
 
     // Dapatkan Koordinat GPS Real-time untuk Watermark
     if (navigator.geolocation) {
@@ -374,39 +582,100 @@ $(document).ready(function() {
         });
     }
 
-    // Modal Perbesar Foto
-    $(document).on('click', '.img-preview-clickable', function() {
-        var src = $(this).data('src');
-        var title = $(this).data('title');
-        $('#enlargePhotoImg').attr('src', src);
-        $('#enlargePhotoTitle').text(title || 'Pratinjau Foto');
-        $('#modalEnlargePhoto').modal('show');
+    // Klik tombol slot foto di tabel (Bisa Hijau atau Merah)
+    $(document).on('click', '.btn-slot-photo', function() {
+        var btn = $(this);
+        activeFotoId = btn.data('foto-id');
+        activePos = btn.data('pos');
+        activeLabel = btn.data('label') || angleLabels[activePos];
+        activeItemNama = btn.data('nama');
+        activeItemNup = btn.data('nup');
+        activeSrc = btn.data('src');
+        var status = btn.data('status');
+
+        if (status === 'filled') {
+            // FOTO SUDAH ADA (HIJAU): Buka Modal Pratinjau & Tombol Update
+            $('#previewModalTitle').text(activeItemNama + ' - ' + activeLabel);
+            $('#previewModalSubtitle').text('NUP: ' + (activeItemNup || '-'));
+            $('#previewModalImg').attr('src', activeSrc);
+            $('#modalPhotoPreview').modal('show');
+        } else {
+            // BELUM ADA FOTO (MERAH): Buka Modal Pilihan Ambil Kamera / Unggah
+            $('#emptyActionTitle').text(activeItemNama + ' - ' + activeLabel);
+            $('#emptyActionSubtitle').text('NUP: ' + (activeItemNup || '-'));
+            $('#modalEmptyAction').modal('show');
+        }
     });
 
-    // Trigger Upload File Spesifik
-    $(document).on('click', '.btn-trigger-upload', function() {
-        var fotoId = $(this).data('foto-id');
-        var pos = $(this).data('pos');
-        $('#fileInput_' + fotoId + '_' + pos).click();
+    // Pilihan dari Modal Merah: Ambil Kamera
+    $('#btnEmptyChooseCamera').on('click', function() {
+        $('#modalEmptyAction').modal('hide');
+        startSingleCameraSnap(activeFotoId, activePos, activeLabel, activeItemNama, activeItemNup);
     });
 
-    // Handle Upload File Gambar per Sudut
-    $(document).on('change', '.slot-file-input', function(e) {
+    // Pilihan dari Modal Merah: Unggah File
+    $('#btnEmptyChooseUpload').on('click', function() {
+        $('#modalEmptyAction').modal('hide');
+        $('#globalSlotFileInput').click();
+    });
+
+    // Pilihan dari Modal Hijau: Foto Ulang Kamera
+    $('#btnPreviewRetakeCamera').on('click', function() {
+        $('#modalPhotoPreview').modal('hide');
+        startSingleCameraSnap(activeFotoId, activePos, activeLabel, activeItemNama, activeItemNup);
+    });
+
+    // Pilihan dari Modal Hijau: Ganti File Unggah
+    $('#btnPreviewUploadNew').on('click', function() {
+        $('#modalPhotoPreview').modal('hide');
+        $('#globalSlotFileInput').click();
+    });
+
+    // Pilihan dari Modal Hijau: Hapus Foto
+    $('#btnPreviewDelete').on('click', function() {
+        if (!confirm('Apakah Anda yakin ingin menghapus foto ' + activeLabel + ' ini?')) {
+            return;
+        }
+
+        var btn = $('#btnSlot_' + activeFotoId + '_' + activePos);
+        var oldBtnHtml = btn.html();
+        btn.html('<i class="fas fa-spinner fa-spin"></i>');
+
+        $.ajax({
+            url: baseUrl + '/admin/inventaris/pemeliharaan/' + pemeliharaanId + '/foto/ajax-delete-single',
+            type: 'POST',
+            data: { foto_id: activeFotoId, posisi: activePos },
+            dataType: 'json',
+            success: function(res) {
+                if (res.success) {
+                    $('#modalPhotoPreview').modal('hide');
+                    setSlotToEmpty(activeFotoId, activePos, activeLabel, activeItemNama, activeItemNup);
+                    updateStatsUI(res);
+                } else {
+                    alert('Gagal menghapus foto: ' + (res.error || 'Terjadi kesalahan'));
+                    btn.html(oldBtnHtml);
+                }
+            },
+            error: function() {
+                alert('Gagal menghapus foto dari server.');
+                btn.html(oldBtnHtml);
+            }
+        });
+    });
+
+    // Handle Input File Global (Unggah Langsung)
+    $('#globalSlotFileInput').on('change', function(e) {
         var file = this.files[0];
-        if (!file) return;
-
-        var fotoId = $(this).data('foto-id');
-        var pos = $(this).data('pos');
-        var inputElem = $(this);
+        if (!file || !activeFotoId || !activePos) return;
 
         var formData = new FormData();
-        formData.append('foto_id', fotoId);
-        formData.append('posisi', pos);
+        formData.append('foto_id', activeFotoId);
+        formData.append('posisi', activePos);
         formData.append('image_file', file);
 
-        var previewBox = $('#previewBox_' + fotoId + '_' + pos);
-        var oldHtml = previewBox.html();
-        previewBox.html('<div class="py-4 text-center text-info"><i class="fas fa-spinner fa-spin fa-2x mb-1"></i><div class="small font-weight-bold">Mengunggah foto...</div></div>');
+        var btn = $('#btnSlot_' + activeFotoId + '_' + activePos);
+        var oldBtnHtml = btn.html();
+        btn.html('<i class="fas fa-spinner fa-spin"></i>');
 
         $.ajax({
             url: baseUrl + '/admin/inventaris/pemeliharaan/' + pemeliharaanId + '/foto/ajax-save-single',
@@ -417,68 +686,51 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(res) {
                 if (res.success) {
-                    renderSlotPhotoAvailable(fotoId, pos, res.photo_url);
+                    setSlotToFilled(activeFotoId, activePos, activeLabel, activeItemNama, activeItemNup, res.photo_url);
                     updateStatsUI(res);
                 } else {
                     alert('Gagal mengunggah foto: ' + (res.error || 'Terjadi kesalahan'));
-                    previewBox.html(oldHtml);
+                    btn.html(oldBtnHtml);
                 }
             },
-            error: function(xhr) {
+            error: function() {
                 alert('Gagal mengunggah foto ke server.');
-                previewBox.html(oldHtml);
+                btn.html(oldBtnHtml);
             },
             complete: function() {
-                inputElem.val('');
+                $('#globalSlotFileInput').val('');
             }
         });
     });
 
-    // Handle Hapus Foto per Sudut
-    $(document).on('click', '.btn-delete-single', function() {
-        var fotoId = $(this).data('foto-id');
-        var pos = $(this).data('pos');
-        var label = $(this).data('label');
+    // Mulai Kamera Single Angle
+    function startSingleCameraSnap(fotoId, pos, label, nama, nup) {
+        activeFotoId = fotoId;
+        activePos = pos;
+        activeLabel = label;
+        activeItemNama = nama;
+        activeItemNup = nup;
+        singleModeAngle = pos;
 
-        if (!confirm('Apakah Anda yakin ingin menghapus foto ' + label + '?')) {
-            return;
-        }
+        $('#cameraWizardTitle').text('Foto ' + label);
+        $('#cameraWizardSubtitle').text(nama + ' (NUP: ' + (nup || '-') + ')');
+        $('.wizard-steps-bar').hide();
 
-        var previewBox = $('#previewBox_' + fotoId + '_' + pos);
-        var oldHtml = previewBox.html();
-        previewBox.html('<div class="py-4 text-center text-danger"><i class="fas fa-spinner fa-spin fa-2x mb-1"></i><div class="small font-weight-bold">Menghapus foto...</div></div>');
+        capturedSessionImages = {};
+        $('#modalCameraWizard').modal('show');
+        switchCameraStep(pos);
+        startCameraStream();
+    }
 
-        $.ajax({
-            url: baseUrl + '/admin/inventaris/pemeliharaan/' + pemeliharaanId + '/foto/ajax-delete-single',
-            type: 'POST',
-            data: { foto_id: fotoId, posisi: pos },
-            dataType: 'json',
-            success: function(res) {
-                if (res.success) {
-                    renderSlotPhotoEmpty(fotoId, pos, label);
-                    updateStatsUI(res);
-                } else {
-                    alert('Gagal menghapus foto: ' + (res.error || 'Terjadi kesalahan'));
-                    previewBox.html(oldHtml);
-                }
-            },
-            error: function(xhr) {
-                alert('Gagal menghapus foto dari server.');
-                previewBox.html(oldHtml);
-            }
-        });
-    });
-
-    // Start Sequential Wizard 4 Sudut
+    // Start Sequential Wizard 4 Sudut dari tombol di kolom tabel
     $(document).on('click', '.btn-start-group-wizard', function() {
         activeFotoId = $(this).data('foto-id');
-        activeGroupKey = $(this).data('key');
         activeItemNama = $(this).data('nama');
         activeItemNup = $(this).data('nup');
         singleModeAngle = null;
 
         $('#cameraWizardTitle').text('Pemotretan Terpandu 4 Sudut');
-        $('#cameraWizardSubtitle').text(activeItemNama + ' (NUP: ' + activeItemNup + ')');
+        $('#cameraWizardSubtitle').text(activeItemNama + ' (NUP: ' + (activeItemNup || '-') + ')');
         $('.wizard-steps-bar').show();
 
         capturedSessionImages = {};
@@ -487,37 +739,10 @@ $(document).ready(function() {
         startCameraStream();
     });
 
-    // Start Single Angle Camera Snap
-    $(document).on('click', '.btn-snap-single', function() {
-        activeFotoId = $(this).data('foto-id');
-        activeGroupKey = '';
-        activeItemNama = $(this).data('nama');
-        activeItemNup = $(this).data('nup');
-        var pos = $(this).data('pos');
-        var label = $(this).data('label');
-        singleModeAngle = pos;
-
-        $('#cameraWizardTitle').text('Foto ' + label);
-        $('#cameraWizardSubtitle').text(activeItemNama + ' (NUP: ' + activeItemNup + ')');
-        $('.wizard-steps-bar').hide();
-
-        capturedSessionImages = {};
-        $('#modalCameraWizard').modal('show');
-        switchCameraStep(pos);
-        startCameraStream();
-    });
-
     // Beralih Sudut Kamera
     function switchCameraStep(angle) {
         currentAngle = angle;
         currentAngleIndex = angleOrder.indexOf(angle);
-
-        var angleLabels = {
-            'depan': 'Tampak DEPAN',
-            'atas': 'Tampak ATAS',
-            'bawah': 'Tampak BAWAH',
-            'belakang': 'Tampak BELAKANG'
-        };
 
         $('.step-badge').removeClass('badge-warning text-dark font-weight-bold').addClass('badge-secondary');
         $('#stepBadge_' + angle).removeClass('badge-secondary').addClass('badge-warning text-dark font-weight-bold');
@@ -530,7 +755,7 @@ $(document).ready(function() {
         $('#cameraControlsReview').hide();
     }
 
-    // Mulai Stream Kamera
+    // Mulai Stream Kamera WebRTC
     function startCameraStream() {
         stopCameraStream();
 
@@ -604,13 +829,6 @@ $(document).ready(function() {
         $('#cameraControlsCapture').hide();
         $('#cameraControlsReview').hide();
 
-        var angleLabels = {
-            'depan': 'Tampak Depan',
-            'atas': 'Tampak Atas',
-            'bawah': 'Tampak Bawah',
-            'belakang': 'Tampak Belakang'
-        };
-
         // Kirim ke server untuk Watermark TimeMark Resmi PU
         $.ajax({
             url: baseUrl + '/admin/inventaris/pemeliharaan/apply-watermark',
@@ -657,8 +875,11 @@ $(document).ready(function() {
         var finalDataUri = capturedSessionImages[currentAngle];
         if (!finalDataUri) return;
 
+        var targetAngle = currentAngle;
+        var targetFotoId = activeFotoId;
+
         // Auto-Save instan ke backend untuk sudut ini
-        saveCapturedImageToSlot(activeFotoId, currentAngle, finalDataUri);
+        saveCapturedImageToSlot(targetFotoId, targetAngle, finalDataUri);
 
         if (singleModeAngle !== null) {
             // Selesai mode single
@@ -677,10 +898,10 @@ $(document).ready(function() {
         }
     });
 
-    // Kirim AJAX Save Single Foto ke Server
+    // Kirim AJAX Save Single Foto ke Server dari Kamera
     function saveCapturedImageToSlot(fotoId, pos, dataUri) {
-        var previewBox = $('#previewBox_' + fotoId + '_' + pos);
-        previewBox.html('<div class="py-4 text-center text-info"><i class="fas fa-spinner fa-spin fa-2x mb-1"></i><div class="small font-weight-bold">Menyimpan foto...</div></div>');
+        var btn = $('#btnSlot_' + fotoId + '_' + pos);
+        btn.html('<i class="fas fa-spinner fa-spin"></i>');
 
         $.ajax({
             url: baseUrl + '/admin/inventaris/pemeliharaan/' + pemeliharaanId + '/foto/ajax-save-single',
@@ -693,62 +914,69 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(res) {
                 if (res.success) {
-                    renderSlotPhotoAvailable(fotoId, pos, res.photo_url || dataUri);
+                    setSlotToFilled(fotoId, pos, angleLabels[pos], activeItemNama, activeItemNup, res.photo_url || dataUri);
                     updateStatsUI(res);
                 } else {
                     alert('Gagal menyimpan foto: ' + (res.error || 'Terjadi kesalahan'));
-                    renderSlotPhotoEmpty(fotoId, pos, pos);
+                    setSlotToEmpty(fotoId, pos, angleLabels[pos], activeItemNama, activeItemNup);
                 }
             },
             error: function() {
-                renderSlotPhotoAvailable(fotoId, pos, dataUri);
+                setSlotToFilled(fotoId, pos, angleLabels[pos], activeItemNama, activeItemNup, dataUri);
             }
         });
     }
 
-    // Render Tampilan Slot yang Memiliki Foto
-    function renderSlotPhotoAvailable(fotoId, pos, photoUrl) {
-        var container = $('#slotContainer_' + fotoId + '_' + pos);
-        var previewBox = $('#previewBox_' + fotoId + '_' + pos);
-        var statusIcon = $('#slotStatusIcon_' + fotoId + '_' + pos);
-
-        statusIcon.html('<i class="fas fa-check-circle text-success" title="Foto Tersedia"></i>');
-
-        previewBox.html(
-            '<div class="position-relative d-inline-block">' +
-                '<img src="' + photoUrl + '" class="img-thumbnail shadow-sm cursor-pointer img-preview-clickable" data-src="' + photoUrl + '" style="max-height: 120px; max-width: 100%; object-fit: contain; border-radius: 6px;">' +
-                '<span class="badge badge-warning text-dark font-weight-bold shadow-sm" style="position: absolute; bottom: 4px; right: 4px; font-size: 0.62rem;">' +
-                    '<i class="fas fa-certificate mr-0.5"></i>TimeMark' +
-                '</span>' +
-            '</div>'
+    // Ubah status tombol slot di tabel menjadi HIJAU (Foto Tersedia)
+    function setSlotToFilled(fotoId, pos, label, nama, nup, photoUrl) {
+        var cell = $('#cellSlot_' + fotoId + '_' + pos);
+        cell.html(
+            '<button type="button" class="btn btn-success btn-sm btn-slot-photo shadow-sm"' +
+                ' id="btnSlot_' + fotoId + '_' + pos + '"' +
+                ' data-foto-id="' + fotoId + '"' +
+                ' data-pos="' + pos + '"' +
+                ' data-status="filled"' +
+                ' data-src="' + photoUrl + '"' +
+                ' data-nama="' + escapeHtml(nama) + '"' +
+                ' data-nup="' + escapeHtml(nup) + '"' +
+                ' data-label="' + escapeHtml(label) + '"' +
+                ' title="' + escapeHtml(label) + ': Foto Tersedia (Klik untuk Pratinjau & Update)"' +
+                ' style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">' +
+                '<i class="fas fa-check-circle" style="font-size: 1.1rem;"></i>' +
+            '</button>'
         );
-
-        var actionBtns = container.find('.action-btn-group .btn-group');
-        if (actionBtns.find('.btn-delete-single').length === 0) {
-            actionBtns.append(
-                '<button type="button" class="btn btn-outline-danger btn-xs py-1 btn-delete-single" data-foto-id="' + fotoId + '" data-pos="' + pos + '" title="Hapus Foto">' +
-                    '<i class="fas fa-trash-alt"></i>' +
-                '</button>'
-            );
-        }
+        recalculateRowBadge(fotoId);
     }
 
-    // Render Tampilan Slot yang Kosong
-    function renderSlotPhotoEmpty(fotoId, pos, label) {
-        var container = $('#slotContainer_' + fotoId + '_' + pos);
-        var previewBox = $('#previewBox_' + fotoId + '_' + pos);
-        var statusIcon = $('#slotStatusIcon_' + fotoId + '_' + pos);
-
-        statusIcon.html('<i class="fas fa-times-circle text-danger" title="Belum Ada Foto"></i>');
-
-        previewBox.html(
-            '<div class="py-4 border border-dashed rounded bg-white text-muted" style="border-style: dashed !important; border-color: #cbd5e1 !important;">' +
-                '<i class="fas fa-camera fa-2x mb-1 text-secondary" style="opacity: 0.35;"></i>' +
-                '<div class="small font-weight-bold text-muted">Belum Ada Foto</div>' +
-            '</div>'
+    // Ubah status tombol slot di tabel menjadi MERAH (Belum Ada Foto)
+    function setSlotToEmpty(fotoId, pos, label, nama, nup) {
+        var cell = $('#cellSlot_' + fotoId + '_' + pos);
+        cell.html(
+            '<button type="button" class="btn btn-outline-danger btn-sm btn-slot-photo shadow-sm"' +
+                ' id="btnSlot_' + fotoId + '_' + pos + '"' +
+                ' data-foto-id="' + fotoId + '"' +
+                ' data-pos="' + pos + '"' +
+                ' data-status="empty"' +
+                ' data-src=""' +
+                ' data-nama="' + escapeHtml(nama) + '"' +
+                ' data-nup="' + escapeHtml(nup) + '"' +
+                ' data-label="' + escapeHtml(label) + '"' +
+                ' title="' + escapeHtml(label) + ': Belum Ada Foto (Klik untuk Ambil / Upload Foto)"' +
+                ' style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">' +
+                '<i class="fas fa-camera text-danger" style="font-size: 1.05rem;"></i>' +
+            '</button>'
         );
+        recalculateRowBadge(fotoId);
+    }
 
-        container.find('.action-btn-group .btn-delete-single').remove();
+    // Rekalkulasi badge kelengkapan baris tabel
+    function recalculateRowBadge(fId) {
+        var filledCount = $('#rowGroup_' + fId + ' .btn-success').length;
+        var gStatus = (filledCount === 4) ? 'success' : ((filledCount > 0) ? 'warning' : 'danger');
+
+        var badge = $('#groupBadge_' + fId);
+        badge.removeClass('badge-success badge-warning badge-danger').addClass('badge-' + gStatus);
+        badge.text(filledCount + ' / 4 Terisi');
     }
 
     // Update Metrik Statistik & Progress Bar Real-Time
@@ -774,25 +1002,16 @@ $(document).ready(function() {
         var overallBadge = $('#badgeOverallStatus');
         overallBadge.removeClass('badge-success badge-warning badge-danger').addClass('badge-' + res.status_color);
         $('#labelOverallStatus').text(res.status_label || (percentage + '%'));
-
-        // Update badge kelompok yang bersangkutan
-        if (activeFotoId) {
-            recalculateGroupBadge(activeFotoId);
-        }
     }
 
-    // Rekalkulasi badge kelompok tertentu
-    function recalculateGroupBadge(fId) {
-        var totalInGroup = 4;
-        var filledInGroup = $('#groupCard_' + fId + ' .slot-status-icon .fa-check-circle').length;
-        var gStatus = (filledInGroup === 4) ? 'success' : ((filledInGroup > 0) ? 'warning' : 'danger');
-
-        var badge = $('#groupBadge_' + fId);
-        badge.removeClass('badge-success badge-warning badge-danger').addClass('badge-' + gStatus);
-        badge.text(filledInGroup + ' / 4 Foto Terisi');
-
-        var card = $('#groupCard_' + fId);
-        card.removeClass('border-success border-warning border-danger').addClass('border-' + gStatus);
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 });
 </script>

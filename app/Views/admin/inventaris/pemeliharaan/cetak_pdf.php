@@ -263,12 +263,103 @@
             </tr>
         </thead>
         <tbody>
-            <?php if (empty($items)): ?>
+            <?php
+                // Pastikan item dikelompokkan berdasarkan 4 kriteria:
+                // 1. Jenis Barang
+                // 2. Kode Barang
+                // 3. Nama Barang
+                // 4. Merk
+                $tableItems = [];
+                $tableGroups = [];
+
+                foreach ($items ?? [] as $it) {
+                    $jenis = clean_inventaris_text((string) ($it['jenis_barang'] ?? 'MESIN PERALATAN NON TIK'));
+                    if ($jenis === '') {
+                        $jenis = 'MESIN PERALATAN NON TIK';
+                    }
+                    $kode = trim((string) ($it['kode_barang'] ?? ''));
+                    $nama = clean_inventaris_text((string) ($it['nama_barang'] ?? ''));
+                    $merk = clean_inventaris_text((string) ($it['merk_tipe'] ?? ''));
+
+                    $gKey = mb_strtolower($jenis) . '::' . mb_strtolower($kode) . '::' . mb_strtolower($nama) . '::' . mb_strtolower($merk);
+
+                    if (! isset($tableGroups[$gKey])) {
+                        $tableGroups[$gKey] = [
+                            'jenis_barang'    => $jenis,
+                            'kode_barang'     => $kode,
+                            'nama_barang'     => $nama,
+                            'merk_tipe'       => $merk ?: '-',
+                            'nups'            => [],
+                            'kondisi'         => [],
+                            'tahun_perolehan' => [],
+                        ];
+                    }
+
+                    if (! empty($it['nup'])) {
+                        $tableGroups[$gKey]['nups'][] = $it['nup'];
+                    }
+                    if (! empty($it['kondisi'])) {
+                        $tableGroups[$gKey]['kondisi'][] = trim((string) $it['kondisi']);
+                    }
+                    if (! empty($it['tahun_perolehan'])) {
+                        $tableGroups[$gKey]['tahun_perolehan'][] = trim((string) $it['tahun_perolehan']);
+                    }
+                }
+
+                foreach ($tableGroups as $tg) {
+                    $nupStr = format_nup_range_summary($tg['nups'], '-');
+                    $nupStr = preg_replace('/\s*[-–—]\s*/', '-', $nupStr);
+
+                    $kondisiUniq = array_values(array_filter(array_unique($tg['kondisi'])));
+                    $kondisiStr  = ! empty($kondisiUniq) ? implode(', ', $kondisiUniq) : 'Baik';
+
+                    $tahunUniq = array_values(array_filter(array_unique($tg['tahun_perolehan'])));
+                    $tahunStr  = ! empty($tahunUniq) ? implode(', ', $tahunUniq) : '-';
+
+                    $tableItems[] = [
+                        'jenis_barang'    => $tg['jenis_barang'],
+                        'kode_barang'     => $tg['kode_barang'],
+                        'nama_barang'     => $tg['nama_barang'],
+                        'merk_tipe'       => $tg['merk_tipe'],
+                        'nup'             => $nupStr ?: '-',
+                        'kondisi'         => $kondisiStr,
+                        'tahun_perolehan' => $tahunStr,
+                    ];
+                }
+
+                // Urutkan data tabel rekapitulasi surat resmi berdasarkan: 1. Nama Barang ASC, 2. NUP ASC (numerik)
+                usort($tableItems, function ($a, $b) {
+                    $cmpNama = strcasecmp(trim((string) ($a['nama_barang'] ?? '')), trim((string) ($b['nama_barang'] ?? '')));
+                    if ($cmpNama !== 0) {
+                        return $cmpNama;
+                    }
+
+                    $numA = preg_match('/\d+/', (string) ($a['nup'] ?? ''), $mA) ? (int) $mA[0] : 0;
+                    $numB = preg_match('/\d+/', (string) ($b['nup'] ?? ''), $mB) ? (int) $mB[0] : 0;
+
+                    if ($numA !== $numB) {
+                        return $numA <=> $numB;
+                    }
+
+                    $cmpNup = strnatcasecmp((string) ($a['nup'] ?? ''), (string) ($b['nup'] ?? ''));
+                    if ($cmpNup !== 0) {
+                        return $cmpNup;
+                    }
+
+                    $cmpMerk = strcasecmp(trim((string) ($a['merk_tipe'] ?? '')), trim((string) ($b['merk_tipe'] ?? '')));
+                    if ($cmpMerk !== 0) {
+                        return $cmpMerk;
+                    }
+
+                    return strcasecmp(trim((string) ($a['kode_barang'] ?? '')), trim((string) ($b['kode_barang'] ?? '')));
+                });
+            ?>
+            <?php if (empty($tableItems)): ?>
                 <tr>
                     <td colspan="8" class="text-center" style="padding: 15px;">Tidak ada data barang.</td>
                 </tr>
             <?php else: ?>
-                <?php foreach ($items as $idx => $it): ?>
+                <?php foreach ($tableItems as $idx => $it): ?>
                     <tr>
                         <td class="text-center"><?= $idx + 1; ?></td>
                         <td class="text-center" style="font-size: 8pt;"><?= esc($it['jenis_barang'] ?: 'MESIN PERALATAN NON TIK'); ?></td>
@@ -370,6 +461,26 @@
             </tr>
         </thead>
         <tbody>
+            <?php
+                if (! empty($fotos)) {
+                    // Urutkan lampiran foto berdasarkan: 1. Nama Barang ASC, 2. NUP ASC (numerik)
+                    usort($fotos, function ($a, $b) {
+                        $cmpNama = strcasecmp(trim((string) ($a['nama_barang'] ?? '')), trim((string) ($b['nama_barang'] ?? '')));
+                        if ($cmpNama !== 0) {
+                            return $cmpNama;
+                        }
+
+                        $numA = preg_match('/\d+/', (string) ($a['nup_gabungan'] ?? ''), $mA) ? (int) $mA[0] : 0;
+                        $numB = preg_match('/\d+/', (string) ($b['nup_gabungan'] ?? ''), $mB) ? (int) $mB[0] : 0;
+
+                        if ($numA !== $numB) {
+                            return $numA <=> $numB;
+                        }
+
+                        return strnatcasecmp((string) ($a['nup_gabungan'] ?? ''), (string) ($b['nup_gabungan'] ?? ''));
+                    });
+                }
+            ?>
             <?php if (empty($fotos)): ?>
                 <tr>
                     <td colspan="7" class="text-center" style="padding: 20px;">Belum ada lampiran foto yang diunggah.</td>
@@ -382,7 +493,7 @@
                             <div class="font-bold"><?= esc($f['nama_barang']); ?></div>
                         </td>
                         <td class="text-center font-bold">
-                            <?= esc($f['nup_gabungan'] ?: '-'); ?>
+                            <?= esc(preg_replace('/\s*[-–—]\s*/', '-', (string) ($f['nup_gabungan'] ?: '-'))); ?>
                         </td>
                         <!-- Foto Depan -->
                         <td class="text-center">

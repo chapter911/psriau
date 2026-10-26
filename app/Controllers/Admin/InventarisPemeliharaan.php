@@ -612,6 +612,7 @@ class InventarisPemeliharaan extends BaseController
         // Konversi foto lampiran ke base64 agar aman di Dompdf
         $fotos = $pemeliharaan['fotos'] ?? [];
         foreach ($fotos as &$f) {
+            $f['nup_gabungan'] = preg_replace('/\s*[-–—]\s*/', '-', (string) ($f['nup_gabungan'] ?? ''));
             foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
                 $f[$pos . '_base64'] = '';
                 if (! empty($f[$pos])) {
@@ -629,9 +630,117 @@ class InventarisPemeliharaan extends BaseController
         }
         unset($f);
 
+        // Kelompokkan barang untuk tabel surat resmi (Halaman 1) berdasarkan:
+        // 1. Jenis Barang
+        // 2. Kode Barang
+        // 3. Nama Barang
+        // 4. Merk / Tipe
+        $rawItems = $pemeliharaan['items'] ?? [];
+        $groupedItems = [];
+        $groups = [];
+
+        foreach ($rawItems as $it) {
+            $jenis = clean_inventaris_text((string) ($it['jenis_barang'] ?? 'MESIN PERALATAN NON TIK'));
+            if ($jenis === '') {
+                $jenis = 'MESIN PERALATAN NON TIK';
+            }
+            $kode = trim((string) ($it['kode_barang'] ?? ''));
+            $nama = clean_inventaris_text((string) ($it['nama_barang'] ?? ''));
+            $merk = clean_inventaris_text((string) ($it['merk_tipe'] ?? ''));
+
+            $groupKey = mb_strtolower($jenis) . '::' . mb_strtolower($kode) . '::' . mb_strtolower($nama) . '::' . mb_strtolower($merk);
+
+            if (! isset($groups[$groupKey])) {
+                $groups[$groupKey] = [
+                    'jenis_barang'    => $jenis,
+                    'kode_barang'     => $kode,
+                    'nama_barang'     => $nama,
+                    'merk_tipe'       => $merk ?: '-',
+                    'nups'            => [],
+                    'kondisi'         => [],
+                    'tahun_perolehan' => [],
+                ];
+            }
+
+            if (! empty($it['nup'])) {
+                $groups[$groupKey]['nups'][] = $it['nup'];
+            }
+            if (! empty($it['kondisi'])) {
+                $groups[$groupKey]['kondisi'][] = trim((string) $it['kondisi']);
+            }
+            if (! empty($it['tahun_perolehan'])) {
+                $groups[$groupKey]['tahun_perolehan'][] = trim((string) $it['tahun_perolehan']);
+            }
+        }
+
+        foreach ($groups as $g) {
+            $nupFormatted = format_nup_range_summary($g['nups'], '-');
+            $nupFormatted = preg_replace('/\s*[-–—]\s*/', '-', $nupFormatted);
+
+            $kondisiUniq = array_values(array_filter(array_unique($g['kondisi'])));
+            $kondisiText = ! empty($kondisiUniq) ? implode(', ', $kondisiUniq) : 'Baik';
+
+            $tahunUniq = array_values(array_filter(array_unique($g['tahun_perolehan'])));
+            $tahunText = ! empty($tahunUniq) ? implode(', ', $tahunUniq) : '-';
+
+            $groupedItems[] = [
+                'jenis_barang'    => $g['jenis_barang'],
+                'kode_barang'     => $g['kode_barang'],
+                'nama_barang'     => $g['nama_barang'],
+                'merk_tipe'       => $g['merk_tipe'],
+                'nup'             => $nupFormatted ?: '-',
+                'kondisi'         => $kondisiText,
+                'tahun_perolehan' => $tahunText,
+            ];
+        }
+
+        // Urutkan data tabel rekapitulasi surat resmi berdasarkan: 1. Nama Barang ASC, 2. NUP ASC (numerik)
+        usort($groupedItems, function ($a, $b) {
+            $cmpNama = strcasecmp(trim((string) ($a['nama_barang'] ?? '')), trim((string) ($b['nama_barang'] ?? '')));
+            if ($cmpNama !== 0) {
+                return $cmpNama;
+            }
+
+            $numA = preg_match('/\d+/', (string) ($a['nup'] ?? ''), $mA) ? (int) $mA[0] : 0;
+            $numB = preg_match('/\d+/', (string) ($b['nup'] ?? ''), $mB) ? (int) $mB[0] : 0;
+
+            if ($numA !== $numB) {
+                return $numA <=> $numB;
+            }
+
+            $cmpNup = strnatcasecmp((string) ($a['nup'] ?? ''), (string) ($b['nup'] ?? ''));
+            if ($cmpNup !== 0) {
+                return $cmpNup;
+            }
+
+            $cmpMerk = strcasecmp(trim((string) ($a['merk_tipe'] ?? '')), trim((string) ($b['merk_tipe'] ?? '')));
+            if ($cmpMerk !== 0) {
+                return $cmpMerk;
+            }
+
+            return strcasecmp(trim((string) ($a['kode_barang'] ?? '')), trim((string) ($b['kode_barang'] ?? '')));
+        });
+
+        // Urutkan lampiran foto berdasarkan: 1. Nama Barang ASC, 2. NUP ASC (numerik)
+        usort($fotos, function ($a, $b) {
+            $cmpNama = strcasecmp(trim((string) ($a['nama_barang'] ?? '')), trim((string) ($b['nama_barang'] ?? '')));
+            if ($cmpNama !== 0) {
+                return $cmpNama;
+            }
+
+            $numA = preg_match('/\d+/', (string) ($a['nup_gabungan'] ?? ''), $mA) ? (int) $mA[0] : 0;
+            $numB = preg_match('/\d+/', (string) ($b['nup_gabungan'] ?? ''), $mB) ? (int) $mB[0] : 0;
+
+            if ($numA !== $numB) {
+                return $numA <=> $numB;
+            }
+
+            return strnatcasecmp((string) ($a['nup_gabungan'] ?? ''), (string) ($b['nup_gabungan'] ?? ''));
+        });
+
         $data = [
             'p'           => $pemeliharaan,
-            'items'       => $pemeliharaan['items'] ?? [],
+            'items'       => $groupedItems,
             'fotos'       => $fotos,
             'kopSuratImg' => $kopSuratImg,
             'tglIndo'     => $tglIndo,
@@ -684,7 +793,26 @@ class InventarisPemeliharaan extends BaseController
         $totalSlots = $totalGroups * 4;
         $filledSlots = 0;
 
+        // Map kategori, kode_barang, merk_tipe dari item surat
+        $itemsByGroup = [];
+        foreach ($pemeliharaan['items'] ?? [] as $it) {
+            $gKey = $it['kelompok_key'] ?? '';
+            if ($gKey !== '' && ! isset($itemsByGroup[$gKey])) {
+                $itemsByGroup[$gKey] = [
+                    'kategori'    => $it['jenis_barang'] ?? 'MESIN PERALATAN NON TIK',
+                    'kode_barang' => $it['kode_barang'] ?? '',
+                    'merk_tipe'   => $it['merk_tipe'] ?? '-',
+                ];
+            }
+        }
+
         foreach ($fotos as &$f) {
+            $kKey = $f['kelompok_key'];
+            $f['kategori'] = $itemsByGroup[$kKey]['kategori'] ?? 'MESIN PERALATAN NON TIK';
+            $f['kode_barang'] = $itemsByGroup[$kKey]['kode_barang'] ?? '';
+            $f['merk_tipe'] = ! empty($itemsByGroup[$kKey]['merk_tipe']) ? $itemsByGroup[$kKey]['merk_tipe'] : '-';
+            $f['nup_gabungan'] = preg_replace('/\s*[-–—]\s*/', '-', (string) ($f['nup_gabungan'] ?? ''));
+
             $groupFilled = 0;
             foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
                 if (! empty($f[$pos])) {
@@ -702,6 +830,23 @@ class InventarisPemeliharaan extends BaseController
             $f['group_status'] = ($groupFilled === 4) ? 'success' : (($groupFilled > 0) ? 'warning' : 'danger');
         }
         unset($f);
+
+        // Urutkan daftar foto tabel kelola foto berdasarkan: 1. Nama Barang ASC, 2. NUP ASC (numerik)
+        usort($fotos, function ($a, $b) {
+            $cmpNama = strcasecmp(trim((string) ($a['nama_barang'] ?? '')), trim((string) ($b['nama_barang'] ?? '')));
+            if ($cmpNama !== 0) {
+                return $cmpNama;
+            }
+
+            $numA = preg_match('/\d+/', (string) ($a['nup_gabungan'] ?? ''), $mA) ? (int) $mA[0] : 0;
+            $numB = preg_match('/\d+/', (string) ($b['nup_gabungan'] ?? ''), $mB) ? (int) $mB[0] : 0;
+
+            if ($numA !== $numB) {
+                return $numA <=> $numB;
+            }
+
+            return strnatcasecmp((string) ($a['nup_gabungan'] ?? ''), (string) ($b['nup_gabungan'] ?? ''));
+        });
 
         $percentage = $totalSlots > 0 ? (int) round(($filledSlots / $totalSlots) * 100) : 0;
         $statusColor = ($filledSlots >= $totalSlots && $totalSlots > 0) ? 'success' : (($filledSlots > 0) ? 'warning' : 'danger');

@@ -1880,8 +1880,8 @@ class InventarisSmokeTest extends BaseCommand
             helper('custom');
             $testNups = [1, 2, 3, 5, 7, 8, 9, 10, 15];
             $rangeSummary = format_nup_range_summary($testNups);
-            if ($rangeSummary === '1 - 3, 5, 7 - 10 & 15') {
-                CLI::write("  [OK] Helper format_nup_range_summary akurat merangkum rentang NUP: [1,2,3,5,7,8,9,10,15] -> '{$rangeSummary}'", "green");
+            if ($rangeSummary === '1-3, 5, 7-10 & 15') {
+                CLI::write("  [OK] Helper format_nup_range_summary akurat merangkum rentang NUP kompak: [1,2,3,5,7,8,9,10,15] -> '{$rangeSummary}'", "green");
             } else {
                 throw new \Exception("Helper format_nup_range_summary tidak sesuai: '{$rangeSummary}'");
             }
@@ -1947,16 +1947,17 @@ class InventarisSmokeTest extends BaseCommand
             }
 
             $kKey = md5('3.10.01.02.001::A.C. SPLIT::1/2 PK');
+            $kKeyZ = md5('3.10.02.01.001::Z - LEMARI ARSIP::2 PINTU');
             $pmlhItemModel->insert([
                 'pemeliharaan_id' => $dummyPemeliharaanId,
                 'jenis_barang'    => 'MESIN PERALATAN NON TIK',
-                'kode_barang'     => '3.10.01.02.001',
-                'nama_barang'     => 'A.C. SPLIT',
-                'merk_tipe'       => '1/2 PK',
+                'kode_barang'     => '3.10.02.01.001',
+                'nama_barang'     => 'Z - LEMARI ARSIP',
+                'merk_tipe'       => '2 PINTU',
                 'nup'             => '1',
                 'kondisi'         => 'Baik',
-                'tahun_perolehan' => '2024',
-                'kelompok_key'    => $kKey,
+                'tahun_perolehan' => '2023',
+                'kelompok_key'    => $kKeyZ,
                 'urutan'          => 1,
             ]);
             $pmlhItemModel->insert([
@@ -1971,22 +1972,45 @@ class InventarisSmokeTest extends BaseCommand
                 'kelompok_key'    => $kKey,
                 'urutan'          => 2,
             ]);
+            $pmlhItemModel->insert([
+                'pemeliharaan_id' => $dummyPemeliharaanId,
+                'jenis_barang'    => 'MESIN PERALATAN NON TIK',
+                'kode_barang'     => '3.10.01.02.001',
+                'nama_barang'     => 'A.C. SPLIT',
+                'merk_tipe'       => '1/2 PK',
+                'nup'             => '1',
+                'kondisi'         => 'Baik',
+                'tahun_perolehan' => '2024',
+                'kelompok_key'    => $kKey,
+                'urutan'          => 3,
+            ]);
 
+            $pmlhFotoModel->insert([
+                'pemeliharaan_id' => $dummyPemeliharaanId,
+                'kelompok_key'    => $kKeyZ,
+                'nama_barang'     => 'Z - LEMARI ARSIP',
+                'nup_gabungan'    => '1',
+                'foto_depan'      => 'uploads/inventaris/pemeliharaan/dummy_z_depan.jpg',
+                'foto_atas'       => 'uploads/inventaris/pemeliharaan/dummy_z_atas.jpg',
+                'foto_bawah'      => 'uploads/inventaris/pemeliharaan/dummy_z_bawah.jpg',
+                'foto_belakang'   => 'uploads/inventaris/pemeliharaan/dummy_z_belakang.jpg',
+                'urutan'          => 1,
+            ]);
             $pmlhFotoModel->insert([
                 'pemeliharaan_id' => $dummyPemeliharaanId,
                 'kelompok_key'    => $kKey,
                 'nama_barang'     => 'A.C. SPLIT',
-                'nup_gabungan'    => '1 - 2',
+                'nup_gabungan'    => '1-2',
                 'foto_depan'      => 'uploads/inventaris/pemeliharaan/dummy_depan.jpg',
                 'foto_atas'       => 'uploads/inventaris/pemeliharaan/dummy_atas.jpg',
                 'foto_bawah'      => 'uploads/inventaris/pemeliharaan/dummy_bawah.jpg',
                 'foto_belakang'   => 'uploads/inventaris/pemeliharaan/dummy_belakang.jpg',
-                'urutan'          => 1,
+                'urutan'          => 2,
             ]);
 
             // 5. Uji Detail & Kalkulasi Warna/Kelengkapan Foto
             $detail = $pmlhModel->getDetail($dummyPemeliharaanId);
-            if (! $detail || count($detail['items']) !== 2 || count($detail['fotos']) !== 1) {
+            if (! $detail || count($detail['items']) !== 3 || count($detail['fotos']) !== 2) {
                 throw new \Exception("getDetail() pemeliharaan tidak mengembalikan relasi item dan foto secara tepat.");
             }
 
@@ -1996,7 +2020,7 @@ class InventarisSmokeTest extends BaseCommand
             }
             CLI::write("  [OK] Status kelengkapan foto terverifikasi akurat: {$listRow[0]['foto_label']} dengan status color '{$listRow[0]['foto_color']}' (Hijau)", "green");
 
-            // 6. Uji Rendering PDF Resmi (A4 Portrait 3 Halaman)
+            // 6. Uji Rendering PDF Resmi dengan Pengelompokan & Pengurutan (Nama Barang & NUP)
             $pdfData = [
                 'p'           => $detail,
                 'items'       => $detail['items'],
@@ -2005,6 +2029,21 @@ class InventarisSmokeTest extends BaseCommand
                 'tglIndo'     => '26 Oktober 2026',
             ];
             $pdfHtml = view('admin/inventaris/pemeliharaan/cetak_pdf', $pdfData);
+
+            if (strpos($pdfHtml, '1-2') !== false) {
+                CLI::write("  [OK] Dokumen PDF Surat Pemeliharaan sukses mengelompokkan 2 unit aset menjadi 1 baris rekapitulasi dengan NUP berformat kompak: '1-2'", "green");
+            } else {
+                throw new \Exception("Dokumen PDF tidak menampilkan format rentang NUP '1-2' hasil pengelompokan.");
+            }
+
+            // Uji Pengurutan: A.C. SPLIT harus muncul sebelum Z - LEMARI ARSIP pada tabel
+            $posAcSplit = strpos($pdfHtml, 'A.C. SPLIT');
+            $posZLemari = strpos($pdfHtml, 'Z - LEMARI ARSIP');
+            if ($posAcSplit !== false && $posZLemari !== false && $posAcSplit < $posZLemari) {
+                CLI::write("  [OK] Pengurutan tabel PDF teruji presisi: 'A.C. SPLIT' tampil lebih dahulu sebelum 'Z - LEMARI ARSIP' (Urut Nama Barang ASC & NUP)", "green");
+            } else {
+                throw new \Exception("Pengurutan tabel PDF gagal: Posisi Nama Barang tidak sesuai urutan alfabetis.");
+            }
 
             $pdfOptions = new \Dompdf\Options();
             $pdfOptions->set('isRemoteEnabled', true);
