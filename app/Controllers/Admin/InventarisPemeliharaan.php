@@ -71,6 +71,7 @@ class InventarisPemeliharaan extends BaseController
             'totalPages'  => $totalPages,
             'totalRows'   => $totalRows,
             'perPage'     => $perPage,
+            'offset'      => $offset,
             'tahunList'   => $tahunList,
             'permissions' => $permissions,
         ];

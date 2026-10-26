@@ -106,7 +106,7 @@
                                     </td>
                                 </tr>
                             <?php else: ?>
-                                <?php $no = $offset + 1; ?>
+                                <?php $no = (isset($offset) ? $offset : ((($currentPage ?? 1) - 1) * ($perPage ?? 15))) + 1; ?>
                                 <?php foreach ($list as $row): ?>
                                     <tr>
                                         <td class="text-center text-muted"><?= $no++; ?></td>
