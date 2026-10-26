@@ -800,28 +800,23 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A["Buka Menu: Dokumentasi &gt; Watermark Foto (/admin/dokumentasi/watermark-foto)"] --> B{"Pilih Format Template TimeMark"}
-    B -->|Format 1| C["Gaya Klasik TimeMark: Jam Besar, Garis Kuning, Kapsul Logo PU"]
+    A["Buka Menu: Dokumentasi &gt; Watermark Foto (/admin/dokumentasi/watermark-foto)"] --> W1["Langkah 1: Format &amp; Unggah Foto"]
+    W1 --> B{"Pilih Format Template TimeMark"}
+    B -->|Format 1| C["Gaya Klasik PU: Jam Besar, Garis Kuning, Kapsul Logo PU"]
     B -->|Format 2| D["Gaya Grid Inspeksi: Tabel Resmi PU Kotak Lapangan &amp; GPS"]
     B -->|Format 3| E["Gaya Modern Badge: Kartu Melayang Elegan di Sudut Foto"]
     B -->|Format 4| F["Gaya Bottom Strip: Banner Bawah Bersih &amp; Garis Aksen Emas"]
 
-    C --> G["Unggah Foto Dokumentasi"]
+    C --> G["Unggah Foto Dokumentasi (JPG, PNG, WebP, HEIC/HEIF, atau ZIP)"]
     D --> G
     E --> G
     F --> G
 
-    G --> H{"Metode Unggah File"}
-    H -->|Foto Tunggal / Multi-Foto| I["Unggah Foto (JPG, PNG, WebP, atau iPhone HEIC/HEIF)"]
-    H -->|Arsip ZIP| K["Unggah 1 File .ZIP Berisi Kumpulan Foto (Mendukung File HEIC di dalam ZIP)"]
-    I --> H1{"Format HEIC Terdeteksi?"}
-    H1 -->|Ya (iPhone HEIC)| H2["Konversi Otomatis ke JPEG (Browser via heic2any / Server via sips/heif-convert)"]
-    H1 -->|Format Standar (JPG/PNG/WebP)| L{"Pengaturan Waktu &amp; EXIF"}
-    H2 --> L
-    K --> H3["Ekstrak Seluruh Isi ZIP &amp; Konversi Otomatis File HEIC ke JPEG"]
-    H3 --> L
+    G --> PREV["Interactive Live Simulator: Pratinjau Watermark Real-Time di Kanvas Kanan"]
 
-    L -->|Deteksi EXIF Aktif| M["Sistem Otomatis Ekstrak Waktu &amp; Tanggal Asli Kamera Tiap Foto"]
+    G --> W2["Langkah 2: Pengaturan Waktu &amp; Lokasi GPS"]
+    W2 --> L{"Pengaturan Waktu &amp; EXIF"}
+    L -->|Deteksi EXIF Aktif| M["Sistem Otomatis Ekstrak Waktu &amp; Tanggal Asli Kamera"]
     L -->|Fallback / Manual| N["Gunakan Tanggal &amp; Jam Manual yang Ditetapkan"]
     M --> O{"Terapkan Penyesuaian Jam (Offset)"}
     N --> O
@@ -829,21 +824,26 @@ graph TD
 
     P --> Q{"Penentuan Lokasi &amp; Koordinat GPS"}
     Q -->|Opsi A: Otomatis EXIF GPS| Q0["Ambil Teks Lokasi Otomatis dari Koordinat EXIF Foto Saja (Per File)"]
-    Q -->|Opsi B: Popup Peta Leaflet| Q2["Buka Popup Peta Interaktif (Pilihan: Koordinat Saja / Alamat Lengkap)"]
-    Q -->|Opsi C: Ketik Manual| Q1["Ketik Nama Lokasi &amp; Catatan Proyek Manual"]
-    Q0 --> R{"Opsi Penyimpanan Server"}
-    Q1 --> R
-    Q2 --> Q3["Otomatis Terapkan Koordinat GPS / Alamat ke Formulir"]
-    Q3 --> R
+    Q -->|Opsi B: Popup Peta Leaflet| Q2["Buka Popup Peta Interaktif Leaflet &amp; OpenStreetMap"]
+    Q -->|Opsi C: Ketik Manual / GPS Saya| Q1["Ketik Lokasi Manual atau Deteksi Cepat via 'GPS Saya'"]
+    Q2 --> Q3["Terapkan Koordinat GPS / Alamat ke Formulir"]
+
+    Q0 --> PREV
+    Q1 --> PREV
+    Q3 --> PREV
+
+    PREV --> W3["Langkah 3: Opsi Simpan Server &amp; Logo Kustom"]
+    W3 --> R{"Opsi Penyimpanan Server"}
     R -->|Centang Simpan ke Server| S["Tentukan Nama Folder (Default: /uploads/watermark_hasil/Dokumentasi_YYYYMMDD)"]
     R -->|Tidak Disimpan ke Server| T["Hanya Diproses Sementara di Memori/Temp"]
 
-    S --> U["Klik 'Proses Watermark TimeMark'"]
+    S --> U["Klik 'Proses Watermark Sekarang'"]
     T --> U
 
-    U --> V["Sistem Merender Watermark Secara Proporsional Berbasis GD"]
-    V --> W{"Hasil Pemrosesan"}
-    W -->|Foto Tunggal| X["Tampilkan Preview Langsung &amp; Tombol 'Download Foto'"]
+    U --> V["Sistem Merender Watermark Resolusi Tinggi Berbasis GD"]
+    V --> VIEW["Dual-View: Otomatis Beralih ke Tab 'Hasil Akhir'"]
+    VIEW --> W{"Hasil Pemrosesan"}
+    W -->|Foto Tunggal| X["Tampilkan Pratinjau Resolusi Penuh &amp; Tombol 'Download Foto'"]
     W -->|Banyak Foto / ZIP| Y["Kemasan Otomatis: Tombol 'Download Semua (ZIP)' + Galeri Mini Grid"]
     S -.-> Z["Salinan Permanen Tersimpan di Folder Server dan Dapat Diakses Kapan Saja"]
                 </pre>
@@ -1702,6 +1702,19 @@ graph TD
                         <h6 class="font-weight-bold text-primary"><i class="fas fa-camera mr-1"></i> Alur Kerja &amp; Fitur Unggulan Watermark Foto</h6>
                         <p class="small text-muted mb-2"><code>/admin/dokumentasi/watermark-foto</code></p>
                         <ol class="pl-3 small mb-0 text-secondary">
+                            <li><strong>Antarmuka Studio Modern Berbasis Tab Langkah (Step Wizard):</strong>
+                                <ul>
+                                    <li><strong>Langkah 1 (Foto &amp; Format):</strong> Memilih salah satu dari 4 gaya template TimeMark dan memilih/tarik-lepas file foto (JPG, PNG, WebP, iPhone HEIC, atau ZIP).</li>
+                                    <li><strong>Langkah 2 (Waktu &amp; Lokasi):</strong> Pengaturan deteksi EXIF kamera, tombol penyesuaian offset jam (+1j, +2j, +3j, +5j, -1j, kustom), dan penentuan titik lokasi kegiatan serta koordinat GPS via popup peta interaktif Leaflet.</li>
+                                    <li><strong>Langkah 3 (Simpan &amp; Proses):</strong> Penentuan folder penyimpanan server <code>/uploads/watermark_hasil/</code>, unggah logo instansi kustom opsional, serta tinjauan ringkasan sebelum memproses.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Interactive Live Preview Simulator (Real-Time Canvas):</strong>
+                                <ul>
+                                    <li>Menyediakan simulator visual realistis di panel kanan yang langsung memperbarui stempel watermark, teks jam (+offset terhitung), hari, tanggal bahasa Indonesia, dan lokasi secara instan saat formulir diedit sebelum tombol proses ditekan.</li>
+                                    <li>Dilengkapi <strong>Dual-View Switcher</strong> (<em>Simulasi Live</em> vs <em>Hasil Akhir</em>). Ketika pemrosesan selesai, sistem otomatis beralih menampilkan pratinjau resolusi asli atau galeri unduh ZIP.</li>
+                                </ul>
+                            </li>
                             <li><strong>Pilihan 4 Format Watermark TimeMark:</strong>
                                 <ul>
                                     <li><strong>Gaya Klasik TimeMark:</strong> Format signature Kementerian PU dengan angka jam besar tebal, bilah aksen kuning vertikal, tanggal &amp; nama hari Indonesia, kapsul logo resmi, serta alamat lengkap berlatar gradien lembut.</li>

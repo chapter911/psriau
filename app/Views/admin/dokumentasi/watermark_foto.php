@@ -2,20 +2,34 @@
 
 <?= $this->section('content'); ?>
 <link rel="stylesheet" href="<?= esc(media_url('assets/leaflet/leaflet.css')); ?>">
+
+<!-- HEADER SECTION -->
 <div class="row mb-3">
     <div class="col-12">
-        <div class="card card-outline card-primary shadow-sm mb-3">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <div>
-                    <h3 class="card-title font-weight-bold text-dark mb-0">
-                        <i class="fas fa-camera text-primary mr-2"></i> Watermark Foto (TimeMark Camera Style)
-                    </h3>
-                    <div class="text-muted small mt-1">
-                        Sematkan stempel waktu, tanggal, lokasi GPS, dan identitas instansi ke foto dokumentasi lapangan secara otomatis dengan dukungan upload massal & ZIP.
+        <div class="card shadow-sm border-0 header-banner-card">
+            <div class="card-body p-3 p-md-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                <div class="mb-2 mb-md-0">
+                    <div class="d-flex align-items-center">
+                        <div class="header-icon-box mr-3">
+                            <i class="fas fa-camera-retro"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-weight-bold text-dark mb-1 h5 h4-md">
+                                Watermark Foto Lapangan <span class="badge badge-primary font-weight-normal ml-2">TimeMark Studio</span>
+                            </h3>
+                            <p class="text-muted small mb-0">
+                                Sematkan stempel waktu, tanggal, lokasi GPS, dan identitas instansi secara profesional dengan dukungan batch upload &amp; ZIP.
+                            </p>
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <span class="badge badge-primary px-3 py-2"><i class="fas fa-shield-alt mr-1"></i> Hak Akses: <?= !empty($permissions['add']) || !empty($permissions['edit']) ? 'Pemroses Aktif' : 'Hanya Lihat' ?></span>
+                <div class="d-flex align-items-center">
+                    <span class="badge badge-light border text-dark px-3 py-2 shadow-xs mr-2">
+                        <i class="fas fa-shield-alt text-primary mr-1"></i> Hak Akses: <?= !empty($permissions['add']) || !empty($permissions['edit']) ? 'Pemroses Aktif' : 'Hanya Lihat' ?>
+                    </span>
+                    <a href="<?= site_url('/admin/tutorial'); ?>" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-question-circle mr-1"></i> Tutorial
+                    </a>
                 </div>
             </div>
         </div>
@@ -25,356 +39,567 @@
 <form id="watermarkForm" enctype="multipart/form-data">
     <?= csrf_field() ?>
     <div class="row">
-        <!-- KOLOM KIRI: KONFIGURASI WATERMARK -->
-        <div class="col-lg-6">
-            <!-- 1. PILIHAN TEMPLATE TIMEMARK -->
-            <div class="card card-outline card-info shadow-sm mb-3">
-                <div class="card-header bg-light py-2">
-                    <h5 class="card-title font-weight-bold text-dark mb-0" style="font-size: 1rem;">
-                        <i class="fas fa-palette text-info mr-2"></i> 1. Pilih Format Watermark TimeMark
-                    </h5>
-                </div>
-                <div class="card-body p-3">
-                    <div class="row">
-                        <!-- Template 1: Classic -->
-                        <div class="col-6 mb-2">
-                            <label class="template-card active w-100 p-2 border rounded text-left cursor-pointer position-relative mb-0" data-val="classic">
-                                <input type="radio" name="template" value="classic" checked class="d-none">
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <span class="font-weight-bold text-primary small"><i class="fas fa-signature mr-1"></i> Klasik TimeMark</span>
-                                    <span class="badge badge-primary check-badge"><i class="fas fa-check"></i></span>
-                                </div>
-                                <div class="template-mini-preview bg-dark text-white p-2 rounded small" style="font-size: 10px; line-height: 1.2;">
-                                    <div class="text-warning font-weight-bold" style="font-size: 14px;">15:06 <span class="text-white" style="font-size: 10px;">| 26/10/2026</span></div>
-                                    <div class="text-truncate text-light mt-1"><i class="fas fa-map-marker-alt text-danger"></i> Kantor Balai PPS</div>
-                                </div>
-                                <small class="text-muted d-block mt-1" style="font-size: 11px;">Gaya khas PU: Jam besar, garis kuning, kapsul logo.</small>
-                            </label>
-                        </div>
-
-                        <!-- Template 2: Table / Grid -->
-                        <div class="col-6 mb-2">
-                            <label class="template-card w-100 p-2 border rounded text-left cursor-pointer position-relative mb-0" data-val="table">
-                                <input type="radio" name="template" value="table" class="d-none">
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <span class="font-weight-bold text-dark small"><i class="fas fa-table mr-1"></i> Grid Inspeksi</span>
-                                    <span class="badge badge-secondary check-badge d-none"><i class="fas fa-check"></i></span>
-                                </div>
-                                <div class="template-mini-preview bg-dark text-white p-2 rounded small" style="font-size: 10px; line-height: 1.2;">
-                                    <div class="border-bottom border-secondary pb-1 font-weight-bold text-info">PU SATKER RIAU</div>
-                                    <div class="d-flex justify-content-between text-warning pt-1"><span>WAKTU</span><span>15:06 WIB</span></div>
-                                    <div class="d-flex justify-content-between text-light"><span>LOKASI</span><span class="text-truncate">Pekanbaru</span></div>
-                                </div>
-                                <small class="text-muted d-block mt-1" style="font-size: 11px;">Tabel resmi kotak inspeksi proyek konstruksi.</small>
-                            </label>
-                        </div>
-
-                        <!-- Template 3: Badge / Modern Card -->
-                        <div class="col-6 mb-2">
-                            <label class="template-card w-100 p-2 border rounded text-left cursor-pointer position-relative mb-0" data-val="badge">
-                                <input type="radio" name="template" value="badge" class="d-none">
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <span class="font-weight-bold text-dark small"><i class="fas fa-id-badge mr-1"></i> Modern Badge</span>
-                                    <span class="badge badge-secondary check-badge d-none"><i class="fas fa-check"></i></span>
-                                </div>
-                                <div class="template-mini-preview bg-dark text-white p-2 rounded small" style="font-size: 10px; line-height: 1.2;">
-                                    <div class="badge badge-warning text-dark mb-1" style="font-size: 8px;">KEMENTERIAN PU</div>
-                                    <div class="font-weight-bold text-white" style="font-size: 14px;">15:06</div>
-                                    <div class="text-muted" style="font-size: 9px;"><i class="fas fa-map-pin text-danger"></i> Pekanbaru, Riau</div>
-                                </div>
-                                <small class="text-muted d-block mt-1" style="font-size: 11px;">Kartu melayang modern di sudut foto.</small>
-                            </label>
-                        </div>
-
-                        <!-- Template 4: Clean Bottom Strip -->
-                        <div class="col-6 mb-2">
-                            <label class="template-card w-100 p-2 border rounded text-left cursor-pointer position-relative mb-0" data-val="strip">
-                                <input type="radio" name="template" value="strip" class="d-none">
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <span class="font-weight-bold text-dark small"><i class="fas fa-bars mr-1"></i> Bottom Strip</span>
-                                    <span class="badge badge-secondary check-badge d-none"><i class="fas fa-check"></i></span>
-                                </div>
-                                <div class="template-mini-preview bg-dark text-white p-2 rounded small" style="font-size: 10px; line-height: 1.2;">
-                                    <div class="border-top border-warning pt-1 d-flex justify-content-between align-items-center">
-                                        <div class="font-weight-bold text-warning" style="font-size: 12px;">15:06</div>
-                                        <div class="text-truncate text-light ml-1" style="font-size: 9px;">PPS Riau</div>
-                                    </div>
-                                </div>
-                                <small class="text-muted d-block mt-1" style="font-size: 11px;">Banner hitam elegan di sepanjang tepi bawah.</small>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2. UPLOAD FOTO / MULTI-FOTO / ZIP -->
-            <div class="card card-outline card-primary shadow-sm mb-3">
-                <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title font-weight-bold text-dark mb-0" style="font-size: 1rem;">
-                        <i class="fas fa-cloud-upload-alt text-primary mr-2"></i> 2. Unggah Foto atau Arsip ZIP
-                    </h5>
-                    <span class="badge badge-secondary" id="fileCountBadge">Belum ada file</span>
-                </div>
-                <div class="card-body p-3">
-                    <div class="upload-dropzone border border-primary border-dashed rounded p-4 text-center bg-light cursor-pointer" id="dropzoneArea">
-                        <i class="fas fa-images fa-3x text-primary mb-2"></i>
-                        <h6 class="font-weight-bold mb-1">Pilih Foto atau Tarik (Drag & Drop) File ke Sini</h6>
-                        <p class="text-muted small mb-2">Mendukung format <strong>JPG, PNG, WebP, HEIC/HEIF (iPhone)</strong>, multi-foto, atau file <strong>.ZIP</strong></p>
-                        <button type="button" class="btn btn-outline-primary btn-sm px-3" onclick="$('#fileInput').click()">
-                            <i class="fas fa-folder-open mr-1"></i> Jelajahi File Komputer
+        <!-- =================================================================== -->
+        <!-- KOLOM KIRI: WIZARD STEP CONTROL PANEL (OPSI 1)                     -->
+        <!-- =================================================================== -->
+        <div class="col-lg-6 col-xl-6 mb-4">
+            <div class="card shadow-sm border-0 studio-control-card">
+                <!-- WIZARD STEP NAVIGATION TABS -->
+                <div class="card-header bg-white border-bottom p-2 p-md-3">
+                    <div class="wizard-steps-nav d-flex" role="tablist">
+                        <button type="button" class="wizard-step-btn flex-fill btn btn-sm active" data-step="1" id="tabBtnStep1">
+                            <span class="step-num mr-1">1</span>
+                            <span class="step-label">Foto &amp; Format</span>
                         </button>
-                        <input type="file" id="fileInput" name="foto_upload[]" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.HEIC,.heif,.HEIF,.zip" class="d-none">
-                    </div>
-                    <div id="fileSelectedList" class="mt-2 text-muted small" style="display: none;"></div>
-                    <small class="text-muted d-block mt-2">
-                        <i class="fas fa-info-circle text-info mr-1"></i> Jika mengunggah file ZIP, seluruh foto di dalam arsip akan diekstrak dan diberi watermark secara otomatis.
-                    </small>
-                </div>
-            </div>
-
-            <!-- 3. DETEKSI WAKTU EXIF & PENYESUAIAN JAM (OFFSET) -->
-            <div class="card card-outline card-warning shadow-sm mb-3">
-                <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title font-weight-bold text-dark mb-0" style="font-size: 1rem;">
-                        <i class="fas fa-clock text-warning mr-2"></i> 3. Pengaturan Waktu & Penyesuaian (+Jam)
-                    </h5>
-                    <div class="custom-control custom-switch">
-                        <input type="checkbox" class="custom-control-input" id="useExifTime" name="use_exif_time" value="1" checked>
-                        <label class="custom-control-label font-weight-bold small text-dark" for="useExifTime">Ambil Waktu dari EXIF Foto</label>
+                        <button type="button" class="wizard-step-btn flex-fill btn btn-sm text-muted" data-step="2" id="tabBtnStep2">
+                            <span class="step-num mr-1">2</span>
+                            <span class="step-label">Waktu &amp; Lokasi</span>
+                        </button>
+                        <button type="button" class="wizard-step-btn flex-fill btn btn-sm text-muted" data-step="3" id="tabBtnStep3">
+                            <span class="step-num mr-1">3</span>
+                            <span class="step-label">Simpan &amp; Proses</span>
+                        </button>
                     </div>
                 </div>
-                <div class="card-body p-3">
-                    <div class="alert alert-info py-2 px-3 small mb-3" id="exifStatusAlert">
-                        <i class="fas fa-magic mr-1"></i> <strong>Deteksi Otomatis:</strong> Sistem akan membaca waktu pengambilan asli langsung dari metadata EXIF tiap file foto.
-                    </div>
 
-                    <!-- OFFSET BUTTONS -->
-                    <label class="font-weight-bold small text-dark mb-1">
-                        Penyesuaian Jam (Offset):
-                        <span class="badge badge-info ml-1" id="currentOffsetBadge">+0 Jam</span>
-                    </label>
-                    <div class="btn-group btn-group-toggle w-100 mb-3 flex-wrap" data-toggle="buttons">
-                        <label class="btn btn-outline-secondary btn-sm active flex-fill">
-                            <input type="radio" name="quick_offset" value="0" checked> Asli (+0j)
-                        </label>
-                        <label class="btn btn-outline-secondary btn-sm flex-fill">
-                            <input type="radio" name="quick_offset" value="1"> +1 Jam
-                        </label>
-                        <label class="btn btn-outline-secondary btn-sm flex-fill">
-                            <input type="radio" name="quick_offset" value="2"> +2 Jam
-                        </label>
-                        <label class="btn btn-outline-primary btn-sm flex-fill font-weight-bold">
-                            <input type="radio" name="quick_offset" value="3"> +3 Jam
-                        </label>
-                        <label class="btn btn-outline-primary btn-sm flex-fill font-weight-bold">
-                            <input type="radio" name="quick_offset" value="5"> +5 Jam
-                        </label>
-                        <label class="btn btn-outline-secondary btn-sm flex-fill">
-                            <input type="radio" name="quick_offset" value="-1"> -1 Jam
-                        </label>
-                    </div>
-
-                    <!-- Custom Offset Input -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="offsetHours" class="small text-muted mb-1">Offset Jam Kustom</label>
-                            <div class="input-group input-group-sm">
-                                <input type="number" class="form-control" id="offsetHours" name="offset_hours" value="0" step="1">
-                                <div class="input-group-append"><span class="input-group-text">Jam</span></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="offsetMinutes" class="small text-muted mb-1">Offset Menit Kustom</label>
-                            <div class="input-group input-group-sm">
-                                <input type="number" class="form-control" id="offsetMinutes" name="offset_minutes" value="0" step="1" min="-59" max="59">
-                                <div class="input-group-append"><span class="input-group-text">Menit</span></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Manual Date & Time Fallback -->
-                    <div class="border rounded p-2 bg-light">
+                <div class="card-body p-3 p-md-4">
+                    <!-- ======================================================= -->
+                    <!-- LANGKAH 1: PILIH FORMAT & UNGGAH FOTO                   -->
+                    <!-- ======================================================= -->
+                    <div class="wizard-step-pane active" id="wizardStepPane1">
+                        <!-- 1.1 Format Template TimeMark -->
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="small font-weight-bold text-dark"><i class="fas fa-edit mr-1"></i> Waktu / Tanggal Manual (Fallback jika EXIF kosong)</span>
-                            <button type="button" class="btn btn-link btn-sm p-0 text-primary small" id="btnNow">Set Sekarang</button>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label for="manualDate" class="small text-muted mb-1">Tanggal</label>
-                                <input type="date" class="form-control form-control-sm" id="manualDate" name="manual_date" value="<?= date('Y-m-d') ?>">
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label for="manualTime" class="small text-muted mb-1">Jam (HH:MM)</label>
-                                <input type="time" class="form-control form-control-sm" id="manualTime" name="manual_time" value="<?= date('H:i') ?>">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. LOKASI, KOORDINAT, CATATAN & LOGO -->
-            <div class="card card-outline card-secondary shadow-sm mb-3">
-                <div class="card-header bg-light py-2">
-                    <h5 class="card-title font-weight-bold text-dark mb-0" style="font-size: 1rem;">
-                        <i class="fas fa-map-marker-alt text-danger mr-2"></i> 4. Informasi Lokasi & Keterangan Lapangan
-                    </h5>
-                </div>
-                <div class="card-body p-3">
-                    <!-- OPSI AMBIL LOKASI DARI KOORDINAT EXIF -->
-                    <div class="custom-control custom-switch mb-3 bg-light p-2 rounded border">
-                        <input type="checkbox" class="custom-control-input" id="useExifLocation" name="use_exif_location" value="1" checked>
-                        <label class="custom-control-label font-weight-bold text-dark small" for="useExifLocation">
-                            <i class="fas fa-satellite-dish text-primary mr-1"></i> Ambil Teks Lokasi Otomatis dari Koordinat EXIF Foto Saja
-                        </label>
-                        <small class="d-block text-muted" style="font-size: 11px;">
-                            Bila foto memiliki koordinat EXIF GPS dari kamera/HP, teks lokasi pada watermark akan otomatis menggunakan koordinat GPS dari foto tersebut (koordinatnya saja). Jika foto tidak memiliki EXIF GPS, teks lokasi akan menggunakan input di bawah.
-                        </small>
-                    </div>
-
-                    <div class="form-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label for="lokasi" class="small font-weight-bold text-dark mb-0">
-                                Lokasi Kegiatan / Cadangan (Fallback)
-                                <span class="badge badge-light border text-muted ml-1" style="font-size: 10px;">Otomatis dari EXIF</span>
+                            <label class="font-weight-bold text-dark small mb-0">
+                                <i class="fas fa-palette text-primary mr-1"></i> Pilih Format Watermark:
                             </label>
-                            <button type="button" class="btn btn-outline-primary btn-xs py-0 px-2 font-weight-bold" id="btnBukaPetaModal">
-                                <i class="fas fa-map-marked-alt mr-1"></i> Pilih dari Peta (Popup)
+                            <span class="badge badge-light border text-muted" id="activeTemplateBadge">Klasik TimeMark</span>
+                        </div>
+
+                        <div class="row mb-3">
+                            <!-- Template 1: Classic -->
+                            <div class="col-6 mb-2">
+                                <label class="template-card active w-100 p-2 border rounded text-left cursor-pointer position-relative mb-0 shadow-xs" data-val="classic">
+                                    <input type="radio" name="template" value="classic" checked class="d-none">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="font-weight-bold text-primary small"><i class="fas fa-signature mr-1"></i> Klasik PU</span>
+                                        <span class="badge badge-primary check-badge"><i class="fas fa-check"></i></span>
+                                    </div>
+                                    <div class="template-mini-preview bg-dark text-white p-2 rounded small">
+                                        <div class="text-warning font-weight-bold" style="font-size: 13px;">15:06 <span class="text-white small" style="font-size: 9px;">| 27/10/2026</span></div>
+                                        <div class="text-truncate text-light mt-1" style="font-size: 10px;"><i class="fas fa-map-marker-alt text-danger"></i> Kantor Balai PPS</div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-1">
+                                        <span class="badge badge-warning text-dark font-weight-bold" style="font-size: 8px;">POPULER</span>
+                                        <small class="text-muted" style="font-size: 10px;">Jam besar khas PU</small>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Template 2: Table / Grid -->
+                            <div class="col-6 mb-2">
+                                <label class="template-card w-100 p-2 border rounded text-left cursor-pointer position-relative mb-0 shadow-xs" data-val="table">
+                                    <input type="radio" name="template" value="table" class="d-none">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="font-weight-bold text-dark small"><i class="fas fa-table mr-1"></i> Grid Inspeksi</span>
+                                        <span class="badge badge-secondary check-badge d-none"><i class="fas fa-check"></i></span>
+                                    </div>
+                                    <div class="template-mini-preview bg-dark text-white p-2 rounded small">
+                                        <div class="border-bottom border-secondary pb-1 font-weight-bold text-info" style="font-size: 10px;">PU SATKER RIAU</div>
+                                        <div class="d-flex justify-content-between text-warning pt-1" style="font-size: 9px;"><span>WAKTU</span><span>15:06 WIB</span></div>
+                                        <div class="d-flex justify-content-between text-light" style="font-size: 9px;"><span>LOKASI</span><span class="text-truncate">Pekanbaru</span></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-1">
+                                        <span class="badge badge-info text-white" style="font-size: 8px;">RESMI</span>
+                                        <small class="text-muted" style="font-size: 10px;">Kotak proyek teknis</small>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Template 3: Badge / Modern Card -->
+                            <div class="col-6 mb-2">
+                                <label class="template-card w-100 p-2 border rounded text-left cursor-pointer position-relative mb-0 shadow-xs" data-val="badge">
+                                    <input type="radio" name="template" value="badge" class="d-none">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="font-weight-bold text-dark small"><i class="fas fa-id-badge mr-1"></i> Modern Badge</span>
+                                        <span class="badge badge-secondary check-badge d-none"><i class="fas fa-check"></i></span>
+                                    </div>
+                                    <div class="template-mini-preview bg-dark text-white p-2 rounded small">
+                                        <div class="badge badge-warning text-dark mb-1" style="font-size: 7px;">KEMENTERIAN PU</div>
+                                        <div class="font-weight-bold text-white" style="font-size: 13px;">15:06</div>
+                                        <div class="text-muted text-truncate" style="font-size: 9px;"><i class="fas fa-map-pin text-danger"></i> Pekanbaru, Riau</div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-1">
+                                        <span class="badge badge-success text-white" style="font-size: 8px;">MODERN</span>
+                                        <small class="text-muted" style="font-size: 10px;">Kartu melayang</small>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Template 4: Clean Bottom Strip -->
+                            <div class="col-6 mb-2">
+                                <label class="template-card w-100 p-2 border rounded text-left cursor-pointer position-relative mb-0 shadow-xs" data-val="strip">
+                                    <input type="radio" name="template" value="strip" class="d-none">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="font-weight-bold text-dark small"><i class="fas fa-bars mr-1"></i> Bottom Strip</span>
+                                        <span class="badge badge-secondary check-badge d-none"><i class="fas fa-check"></i></span>
+                                    </div>
+                                    <div class="template-mini-preview bg-dark text-white p-2 rounded small">
+                                        <div class="border-top border-warning pt-1 d-flex justify-content-between align-items-center">
+                                            <div class="font-weight-bold text-warning" style="font-size: 12px;">15:06</div>
+                                            <div class="text-truncate text-light ml-1" style="font-size: 9px;">Satker PPS Riau</div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-1">
+                                        <span class="badge badge-secondary text-white" style="font-size: 8px;">MINIMALIS</span>
+                                        <small class="text-muted" style="font-size: 10px;">Banner tepi bawah</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 1.2 Area Unggah Foto / File ZIP -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="font-weight-bold text-dark small mb-0">
+                                <i class="fas fa-cloud-upload-alt text-primary mr-1"></i> Unggah Foto Dokumentasi:
+                            </label>
+                            <span class="badge badge-secondary" id="fileCountBadge">Belum ada file</span>
+                        </div>
+
+                        <div class="upload-dropzone border border-dashed rounded p-3 text-center cursor-pointer mb-2" id="dropzoneArea">
+                            <div class="dropzone-icon mb-2">
+                                <i class="fas fa-images fa-2x text-primary"></i>
+                            </div>
+                            <h6 class="font-weight-bold mb-1 text-dark" style="font-size: 0.95rem;">Tarik &amp; Lepas Foto ke Sini</h6>
+                            <p class="text-muted small mb-2" style="font-size: 11px;">
+                                Format didukung: <strong>JPG, PNG, WebP, iPhone (HEIC/HEIF)</strong>, multi-foto, atau arsip <strong>.ZIP</strong>
+                            </p>
+                            <button type="button" class="btn btn-outline-primary btn-sm px-3 shadow-xs" onclick="$('#fileInput').click()">
+                                <i class="fas fa-folder-open mr-1"></i> Pilih Berkas Foto
+                            </button>
+                            <input type="file" id="fileInput" name="foto_upload[]" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.HEIC,.heif,.HEIF,.zip" class="d-none">
+                        </div>
+
+                        <div id="fileSelectedList" class="alert alert-light border py-2 px-3 small text-muted mb-3" style="display: none;"></div>
+
+                        <!-- Navigasi Langkah 1 -->
+                        <div class="d-flex justify-content-end mt-3 pt-2 border-top">
+                            <button type="button" class="btn btn-primary px-4 font-weight-bold btn-next-step" data-target="2">
+                                Lanjut: Waktu &amp; Lokasi <i class="fas fa-arrow-right ml-1"></i>
                             </button>
                         </div>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="lokasi" name="lokasi" placeholder="Otomatis dari koordinat EXIF foto, atau isi nama lokasi / pilih dari peta">
-                            <div class="input-group-append">
-                                <button type="button" class="btn btn-primary" id="btnBukaPetaModal2" title="Pilih Lokasi dari Peta">
-                                    <i class="fas fa-map-marker-alt mr-1"></i> Peta
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 form-group mb-2">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label for="koordinat" class="small font-weight-bold text-dark mb-0">Koordinat GPS (Opsional)</label>
-                                <button type="button" class="btn btn-link btn-xs p-0 text-primary small" id="btnGpsQuickFromForm" title="Ambil GPS perangkat Anda">
-                                    <i class="fas fa-location-arrow"></i> GPS Saya
-                                </button>
-                            </div>
-                            <input type="text" class="form-control form-control-sm" id="koordinat" name="koordinat" placeholder="Otomatis dari EXIF jika dikosongkan">
-                            <small class="text-muted" style="font-size: 11px;">Contoh: 0.5071° N, 101.4478° E</small>
-                        </div>
-                        <div class="col-md-6 form-group mb-2">
-                            <label for="catatan" class="small font-weight-bold text-dark mb-1">Catatan / Proyek (Opsional)</label>
-                            <input type="text" class="form-control form-control-sm" id="catatan" name="catatan" placeholder="Contoh: Rekonstruksi & Rehabilitasi Gedung">
-                        </div>
-                    </div>
-
-                    <div class="form-group mb-2">
-                        <label for="logo" class="small font-weight-bold text-dark mb-1">Logo Instansi Kustom (Opsional)</label>
-                        <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="logo" name="logo" accept="image/png,image/jpeg,image/webp">
-                            <label class="custom-file-label small" for="logo">Pilih logo (PNG/JPG)...</label>
-                        </div>
-                        <small class="text-muted" style="font-size: 11px;">Jika dikosongkan, logo default Kementerian PU / Satker PPS akan digunakan.</small>
-                    </div>
-
-                    <!-- 5. OPSI SIMPAN KE FOLDER SERVER -->
-                    <div class="border rounded p-3 mt-3 bg-light">
-                        <div class="custom-control custom-checkbox mb-2">
-                            <input type="checkbox" class="custom-control-input" id="saveToFolder" name="save_to_folder" value="1" checked>
-                            <label class="custom-control-label font-weight-bold text-dark" for="saveToFolder">
-                                <i class="fas fa-folder-plus text-warning mr-1"></i> Simpan juga salinan foto ke folder server
-                            </label>
-                        </div>
-                        <div id="folderInputContainer">
-                            <label for="targetFolderName" class="small text-muted mb-1">Nama Folder di Server:</label>
-                            <div class="input-group input-group-sm">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fas fa-folder text-warning"></i> /uploads/watermark_hasil/</span>
+                    <!-- ======================================================= -->
+                    <!-- LANGKAH 2: PENGATURAN WAKTU & LOKASI GPS                -->
+                    <!-- ======================================================= -->
+                    <div class="wizard-step-pane d-none" id="wizardStepPane2">
+                        <!-- 2.1 Pengaturan Waktu & Offset -->
+                        <div class="card bg-light border-0 rounded-lg p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="font-weight-bold text-dark small">
+                                    <i class="fas fa-clock text-warning mr-1"></i> Deteksi Waktu Foto &amp; Offset Jam
+                                </span>
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="useExifTime" name="use_exif_time" value="1" checked>
+                                    <label class="custom-control-label font-weight-bold small text-dark" for="useExifTime">Baca Waktu EXIF</label>
                                 </div>
-                                <input type="text" class="form-control" id="targetFolderName" name="target_folder_name" value="Dokumentasi_<?= date('Ymd_His') ?>" placeholder="Nama folder...">
                             </div>
-                            <small class="text-muted" style="font-size: 11px;">Hasil foto ber-watermark akan tersimpan rapi di direktori server dan bisa diunduh kapan pun.</small>
+
+                            <div class="alert alert-info py-2 px-3 small mb-2" id="exifStatusAlert">
+                                <i class="fas fa-magic mr-1"></i> <strong>Deteksi Otomatis:</strong> Sistem akan membaca waktu asli dari metadata EXIF file foto.
+                            </div>
+
+                            <!-- Tombol Cepat Offset Jam -->
+                            <label class="font-weight-bold small text-dark mb-1">
+                                Penyesuaian Jam (Offset):
+                                <span class="badge badge-info ml-1" id="currentOffsetBadge">+0 Jam</span>
+                            </label>
+                            <div class="btn-group btn-group-toggle w-100 mb-2 flex-wrap shadow-xs" data-toggle="buttons">
+                                <label class="btn btn-outline-secondary btn-sm active flex-fill">
+                                    <input type="radio" name="quick_offset" value="0" checked> Asli (+0j)
+                                </label>
+                                <label class="btn btn-outline-secondary btn-sm flex-fill">
+                                    <input type="radio" name="quick_offset" value="1"> +1 Jam
+                                </label>
+                                <label class="btn btn-outline-secondary btn-sm flex-fill">
+                                    <input type="radio" name="quick_offset" value="2"> +2 Jam
+                                </label>
+                                <label class="btn btn-outline-primary btn-sm flex-fill font-weight-bold">
+                                    <input type="radio" name="quick_offset" value="3"> +3 Jam
+                                </label>
+                                <label class="btn btn-outline-primary btn-sm flex-fill font-weight-bold">
+                                    <input type="radio" name="quick_offset" value="5"> +5 Jam
+                                </label>
+                                <label class="btn btn-outline-secondary btn-sm flex-fill">
+                                    <input type="radio" name="quick_offset" value="-1"> -1 Jam
+                                </label>
+                            </div>
+
+                            <!-- Custom Offset & Fallback Inputs -->
+                            <div class="row">
+                                <div class="col-6 mb-2">
+                                    <label for="offsetHours" class="small text-muted mb-0" style="font-size: 11px;">Offset Jam Kustom</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control" id="offsetHours" name="offset_hours" value="0" step="1">
+                                        <div class="input-group-append"><span class="input-group-text">Jam</span></div>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label for="offsetMinutes" class="small text-muted mb-0" style="font-size: 11px;">Offset Menit</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control" id="offsetMinutes" name="offset_minutes" value="0" step="1" min="-59" max="59">
+                                        <div class="input-group-append"><span class="input-group-text">Mnt</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fallback Manual Date & Time -->
+                            <div class="border-top pt-2 mt-1">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted font-weight-bold">Waktu Manual (Fallback jika EXIF kosong):</small>
+                                    <button type="button" class="btn btn-link btn-xs p-0 text-primary small font-weight-bold" id="btnNow">Set Sekarang</button>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <input type="date" class="form-control form-control-sm" id="manualDate" name="manual_date" value="<?= date('Y-m-d') ?>">
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="time" class="form-control form-control-sm" id="manualTime" name="manual_time" value="<?= date('H:i') ?>">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2.2 Lokasi Kegiatan, Koordinat & Catatan -->
+                        <div class="card bg-light border-0 rounded-lg p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="font-weight-bold text-dark small">
+                                    <i class="fas fa-map-marker-alt text-danger mr-1"></i> Lokasi Kegiatan &amp; Koordinat GPS
+                                </span>
+                            </div>
+
+                            <!-- Opsi Ambil Lokasi dari EXIF -->
+                            <div class="custom-control custom-switch mb-2 bg-white p-2 rounded border">
+                                <input type="checkbox" class="custom-control-input" id="useExifLocation" name="use_exif_location" value="1" checked>
+                                <label class="custom-control-label font-weight-bold text-dark small" for="useExifLocation">
+                                    <i class="fas fa-satellite-dish text-primary mr-1"></i> Teks Lokasi Otomatis dari Koordinat EXIF Foto
+                                </label>
+                                <small class="d-block text-muted" style="font-size: 11px;">
+                                    Jika aktif, stempel lokasi otomatis memakai koordinat GPS asli dari kamera/HP tiap foto.
+                                </small>
+                            </div>
+
+                            <!-- Input Lokasi dengan 1 Tombol Peta & 1 Tombol GPS -->
+                            <div class="form-group mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label for="lokasi" class="small font-weight-bold text-dark mb-0">Nama Lokasi / Fallback:</label>
+                                    <button type="button" class="btn btn-link btn-xs p-0 text-success font-weight-bold" id="btnGpsQuickFromForm" title="Ambil GPS perangkat Anda">
+                                        <i class="fas fa-location-arrow mr-1"></i> GPS Saya
+                                    </button>
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="lokasi" name="lokasi" placeholder="Otomatis dari EXIF, atau ketik nama lokasi / pilih peta">
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-primary" id="btnBukaPetaModal" title="Pilih Lokasi dari Peta">
+                                            <i class="fas fa-map-marked-alt mr-1"></i> Buka Peta
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-2">
+                                    <label for="koordinat" class="small font-weight-bold text-dark mb-1">Koordinat GPS (Opsional):</label>
+                                    <input type="text" class="form-control form-control-sm" id="koordinat" name="koordinat" placeholder="Otomatis jika dikosongkan">
+                                    <small class="text-muted" style="font-size: 10px;">Contoh: 0.5071° N, 101.4478° E</small>
+                                </div>
+                                <div class="col-md-6 form-group mb-2">
+                                    <label for="catatan" class="small font-weight-bold text-dark mb-1">Catatan / Proyek (Opsional):</label>
+                                    <input type="text" class="form-control form-control-sm" id="catatan" name="catatan" placeholder="Contoh: Rehabilitasi Gedung Balai">
+                                    <small class="text-muted" style="font-size: 10px;">Ditampilkan pada format Grid &amp; Klasik</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Navigasi Langkah 2 -->
+                        <div class="d-flex justify-content-between mt-3 pt-2 border-top">
+                            <button type="button" class="btn btn-outline-secondary px-3 btn-prev-step" data-target="1">
+                                <i class="fas fa-arrow-left mr-1"></i> Kembali
+                            </button>
+                            <button type="button" class="btn btn-primary px-4 font-weight-bold btn-next-step" data-target="3">
+                                Lanjut: Simpan &amp; Proses <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- TOMBOL PROSES -->
-            <div class="form-group mb-4">
-                <button type="submit" class="btn btn-primary btn-lg btn-block shadow font-weight-bold py-3" id="btnProses">
-                    <i class="fas fa-stamp mr-2"></i> Proses Watermark TimeMark
-                </button>
-            </div>
-        </div>
-
-        <!-- KOLOM KANAN: PREVIEW HASIL & PENGUNDUHAN -->
-        <div class="col-lg-6">
-            <div class="card card-outline card-success shadow-sm sticky-top" style="top: 20px; z-index: 10;">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
-                    <h5 class="card-title font-weight-bold text-dark mb-0" style="font-size: 1rem;">
-                        <i class="fas fa-eye text-success mr-2"></i> Hasil Pemrosesan Foto
-                    </h5>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnResetAll" style="display: none;">
-                        <i class="fas fa-redo mr-1"></i> Reset
-                    </button>
-                </div>
-                <div class="card-body p-3">
-                    <!-- LOADING STATE -->
-                    <div id="loadingContainer" class="text-center py-5" style="display: none;">
-                        <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
-                        <h6 class="font-weight-bold text-dark mb-1">Sedang Memproses Foto...</h6>
-                        <p class="text-muted small mb-0">Menerapkan format watermark, ekstraksi EXIF, dan menyusun hasil.</p>
-                    </div>
-
-                    <!-- EMPTY PLACEHOLDER -->
-                    <div id="placeholderContainer" class="text-center py-5 text-muted">
-                        <div class="my-4">
-                            <i class="fas fa-images fa-4x text-black-50 mb-3"></i>
-                            <h6 class="font-weight-bold text-secondary">Belum Ada Hasil Foto</h6>
-                            <p class="small text-muted mb-0">Pilih format watermark, upload foto atau file ZIP di kolom kiri, lalu klik <strong>Proses Watermark TimeMark</strong>.</p>
-                        </div>
-                    </div>
-
-                    <!-- HASIL BATCH / ZIP CONTAINER -->
-                    <div id="batchResultContainer" style="display: none;">
-                        <div class="alert alert-success d-flex align-items-center justify-content-between p-3 mb-3">
-                            <div>
-                                <h6 class="font-weight-bold mb-1"><i class="fas fa-check-circle mr-1"></i> <span id="batchCountText">0</span> Foto Berhasil Diproses!</h6>
-                                <small class="text-dark" id="batchFolderInfo" style="display: none;">
-                                    <i class="fas fa-folder-check mr-1 text-primary"></i> Tersimpan di server: <code id="batchFolderText" class="font-weight-bold"></code>
+                    <!-- ======================================================= -->
+                    <!-- LANGKAH 3: SIMPAN SERVER & PROSES WATERMARK             -->
+                    <!-- ======================================================= -->
+                    <div class="wizard-step-pane d-none" id="wizardStepPane3">
+                        <!-- 3.1 Simpan ke Folder Server -->
+                        <div class="card bg-light border-0 rounded-lg p-3 mb-3">
+                            <div class="custom-control custom-checkbox mb-2">
+                                <input type="checkbox" class="custom-control-input" id="saveToFolder" name="save_to_folder" value="1" checked>
+                                <label class="custom-control-label font-weight-bold text-dark small" for="saveToFolder">
+                                    <i class="fas fa-folder-plus text-warning mr-1"></i> Simpan Salinan Foto ke Direktori Server
+                                </label>
+                            </div>
+                            <div id="folderInputContainer">
+                                <label for="targetFolderName" class="small text-muted mb-1">Nama Folder Penyimpanan:</label>
+                                <div class="input-group input-group-sm mb-1">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-folder text-warning"></i> /uploads/watermark_hasil/</span>
+                                    </div>
+                                    <input type="text" class="form-control" id="targetFolderName" name="target_folder_name" value="Dokumentasi_<?= date('Ymd_His') ?>" placeholder="Nama folder...">
+                                </div>
+                                <small class="text-muted" style="font-size: 11px;">
+                                    Foto yang diproses akan tersimpan aman di server dan dapat diakses kembali sewaktu-waktu.
                                 </small>
                             </div>
                         </div>
 
-                        <!-- TOMBOL DOWNLOAD BATCH ZIP -->
-                        <div class="mb-3" id="batchZipDownloadAction" style="display: none;">
-                            <a href="#" id="linkDownloadBatchZip" class="btn btn-success btn-block btn-lg font-weight-bold shadow-sm">
-                                <i class="fas fa-file-archive mr-2"></i> Download Semua Foto (File ZIP)
-                            </a>
+                        <!-- 3.2 Logo Kustom Instansi (Opsional) -->
+                        <div class="card bg-light border-0 rounded-lg p-3 mb-3">
+                            <label for="logo" class="small font-weight-bold text-dark mb-1">
+                                <i class="fas fa-shield-alt text-info mr-1"></i> Logo Instansi Kustom (Opsional):
+                            </label>
+                            <div class="custom-file mb-1">
+                                <input type="file" class="custom-file-input" id="logo" name="logo" accept="image/png,image/jpeg,image/webp">
+                                <label class="custom-file-label small" for="logo">Pilih logo instansi (PNG/JPG)...</label>
+                            </div>
+                            <small class="text-muted" style="font-size: 11px;">
+                                Jika dikosongkan, logo default resmi <strong>Kementerian PU / Satker PPS</strong> akan digunakan secara otomatis.
+                            </small>
                         </div>
 
-                        <!-- GALLERY GRID MINI PREVIEWS -->
-                        <label class="font-weight-bold small text-dark mb-2">Daftar Foto Berhasil:</label>
-                        <div class="row" id="batchGalleryGrid" style="max-height: 480px; overflow-y: auto;"></div>
+                        <!-- 3.3 Ringkasan Konfigurasi Sebelum Proses -->
+                        <div class="card border rounded-lg p-3 mb-3 shadow-none bg-white">
+                            <h6 class="font-weight-bold text-dark small mb-2"><i class="fas fa-clipboard-check text-success mr-1"></i> Ringkasan Pengaturan Watermark:</h6>
+                            <div class="row small text-muted">
+                                <div class="col-6 mb-1">Format: <strong class="text-dark" id="summaryTemplate">Klasik PU</strong></div>
+                                <div class="col-6 mb-1">File Terpilih: <strong class="text-dark" id="summaryFiles">0 Berkas</strong></div>
+                                <div class="col-6 mb-1">Penyesuaian Jam: <strong class="text-dark" id="summaryOffset">+0 Jam</strong></div>
+                                <div class="col-6 mb-1">Simpan Server: <strong class="text-dark" id="summarySave">Ya</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Tombol Submit Utama -->
+                        <div class="form-group mb-2">
+                            <button type="submit" class="btn btn-primary btn-lg btn-block shadow font-weight-bold py-3" id="btnProses">
+                                <i class="fas fa-stamp mr-2"></i> Proses Watermark Sekarang
+                            </button>
+                        </div>
+
+                        <!-- Navigasi Langkah 3 -->
+                        <div class="d-flex justify-content-start mt-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-3 btn-prev-step" data-target="2">
+                                <i class="fas fa-arrow-left mr-1"></i> Kembali ke Waktu &amp; Lokasi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- KOLOM KANAN: LIVE SIMULATOR & HASIL AKHIR (OPSI 2: YA)             -->
+        <!-- =================================================================== -->
+        <div class="col-lg-6 col-xl-6 mb-4">
+            <div class="card shadow-sm border-0 sticky-top studio-preview-card" style="top: 20px; z-index: 10;">
+                <!-- HEADER TAB KANAN: DUAL VIEW (SIMULASI LIVE vs HASIL PEMROSESAN) -->
+                <div class="card-header bg-white border-bottom p-2 p-md-3 d-flex justify-content-between align-items-center">
+                    <div class="btn-group btn-group-sm p-1 bg-light rounded-pill" role="group">
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 font-weight-bold" id="btnTabSimulator">
+                            <i class="fas fa-eye mr-1"></i> Simulasi Live <span class="badge badge-light text-primary ml-1" style="font-size: 9px;">Real-time</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light rounded-pill px-3 font-weight-bold text-muted" id="btnTabResult">
+                            <i class="fas fa-check-circle mr-1"></i> Hasil Akhir <span class="badge badge-secondary ml-1 d-none" id="resultCountBadge">0</span>
+                        </button>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-xs py-1 px-2" id="btnResetAll" style="display: none;">
+                        <i class="fas fa-redo mr-1"></i> Reset
+                    </button>
+                </div>
+
+                <div class="card-body p-3">
+                    <!-- VIEW 1: LIVE INTERACTIVE WATERMARK SIMULATOR -->
+                    <div id="liveSimulatorSection">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small font-weight-bold text-dark">
+                                <i class="fas fa-satellite-dish text-success mr-1"></i> Kanvas Simulasi Pratinjau:
+                            </span>
+                            <span class="badge badge-success px-2 py-1" style="font-size: 10px;">
+                                <i class="fas fa-bolt mr-1"></i> Sinkronisasi Otomatis
+                            </span>
+                        </div>
+
+                        <!-- LIVE CANVAS CONTAINER -->
+                        <div class="simulator-viewport rounded shadow-sm position-relative overflow-hidden mb-2" id="simulatorViewport">
+                            <!-- Background Image (Sample or Uploaded) -->
+                            <div class="simulator-canvas-bg" id="simulatorCanvasBg"></div>
+
+                            <!-- Live Mockup Overlay -->
+                            <div class="simulator-overlay-wrapper" id="simulatorOverlayWrapper">
+                                <!-- TEMPLATE OVERLAY: CLASSIC -->
+                                <div class="sim-template-box sim-classic" id="simClassicOverlay">
+                                    <div class="sim-classic-top d-flex align-items-baseline">
+                                        <div class="sim-clock-big" id="simClassicClock">15:06</div>
+                                        <div class="sim-divider-line mx-2"></div>
+                                        <div class="sim-date-block">
+                                            <div class="sim-day-name font-weight-bold" id="simClassicDay">Selasa</div>
+                                            <div class="sim-date-text" id="simClassicDate">27 Okt 2026 | WIB</div>
+                                        </div>
+                                    </div>
+                                    <div class="sim-classic-bottom mt-2 d-flex align-items-center">
+                                        <div class="sim-accent-bar mr-2"></div>
+                                        <div class="sim-info-content">
+                                            <div class="sim-logo-tag badge badge-warning text-dark font-weight-bold mb-1" id="simClassicLogoTag">
+                                                <i class="fas fa-building mr-1"></i> PU SATKER RIAU
+                                            </div>
+                                            <div class="sim-location-text font-weight-bold text-white text-truncate" id="simClassicLocation">
+                                                0.507068° N, 101.447779° E
+                                            </div>
+                                            <div class="sim-coords-text small text-warning" id="simClassicCoords">
+                                                Pekanbaru, Riau
+                                            </div>
+                                            <div class="sim-notes-text small text-light text-truncate" id="simClassicNotes">
+                                                Dokumentasi Lapangan
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TEMPLATE OVERLAY: TABLE / GRID -->
+                                <div class="sim-template-box sim-table d-none" id="simTableOverlay">
+                                    <div class="sim-table-inner border border-secondary rounded p-2">
+                                        <div class="sim-table-header text-info font-weight-bold border-bottom border-secondary pb-1 mb-1 d-flex justify-content-between">
+                                            <span><i class="fas fa-hard-hat mr-1"></i> INSPEKSI PU RIAU</span>
+                                            <span class="badge badge-warning text-dark" style="font-size: 8px;">KEMENTERIAN PU</span>
+                                        </div>
+                                        <div class="sim-table-row d-flex justify-content-between text-warning small py-0">
+                                            <span class="text-muted">WAKTU</span>
+                                            <span class="font-weight-bold" id="simTableTime">15:06 WIB</span>
+                                        </div>
+                                        <div class="sim-table-row d-flex justify-content-between text-light small py-0">
+                                            <span class="text-muted">TANGGAL</span>
+                                            <span id="simTableDate">27 Okt 2026</span>
+                                        </div>
+                                        <div class="sim-table-row d-flex justify-content-between text-light small py-0">
+                                            <span class="text-muted">LOKASI</span>
+                                            <span class="text-truncate text-right ml-2" id="simTableLocation">Pekanbaru</span>
+                                        </div>
+                                        <div class="sim-table-row d-flex justify-content-between text-light small py-0">
+                                            <span class="text-muted">GPS</span>
+                                            <span id="simTableCoords">0.507068° N, 101.447779° E</span>
+                                        </div>
+                                        <div class="sim-table-row d-flex justify-content-between text-light small py-0" id="simTableNotesRow">
+                                            <span class="text-muted">PROYEK</span>
+                                            <span class="text-truncate text-right ml-2" id="simTableNotes">Kegiatan Lapangan</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TEMPLATE OVERLAY: BADGE / FLOATING CARD -->
+                                <div class="sim-template-box sim-badge d-none" id="simBadgeOverlay">
+                                    <div class="sim-badge-card rounded p-2 border border-secondary">
+                                        <div class="badge badge-warning text-dark font-weight-bold mb-1" style="font-size: 8px;">
+                                            <i class="fas fa-shield-alt mr-1"></i> KEMENTERIAN PU
+                                        </div>
+                                        <div class="sim-clock-badge font-weight-bold text-white" id="simBadgeClock">15:06</div>
+                                        <div class="text-warning small" id="simBadgeDate">Selasa, 27 Okt 2026</div>
+                                        <div class="text-white small text-truncate mt-1" id="simBadgeLocation">
+                                            <i class="fas fa-map-marker-alt text-danger mr-1"></i> <span id="simBadgeLocationText">Pekanbaru, Riau</span>
+                                        </div>
+                                        <div class="text-muted small" id="simBadgeCoords" style="font-size: 9px;">0.507068° N, 101.447779° E</div>
+                                    </div>
+                                </div>
+
+                                <!-- TEMPLATE OVERLAY: BOTTOM STRIP -->
+                                <div class="sim-template-box sim-strip d-none" id="simStripOverlay">
+                                    <div class="sim-strip-banner p-2 border-top border-warning d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="text-warning font-weight-bold h6 mb-0" id="simStripClock">15:06 WIB</div>
+                                            <small class="text-light" id="simStripDate">27 Okt 2026 | PPS Riau</small>
+                                        </div>
+                                        <div class="text-right text-truncate ml-2" style="max-width: 60%;">
+                                            <div class="text-white small font-weight-bold text-truncate" id="simStripLocation">Pekanbaru, Riau</div>
+                                            <small class="text-warning text-truncate d-block" id="simStripCoords">0.507068° N, 101.447779° E</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted" style="font-size: 11px;">
+                                <i class="fas fa-info-circle text-info mr-1"></i> Simulasi render live. Saat diproses, server akan merender font resolusi tinggi asli kamera.
+                            </small>
+                            <span class="badge badge-light border text-muted" id="simBackgroundInfo">Foto Sampel</span>
+                        </div>
                     </div>
 
-                    <!-- HASIL SINGLE CONTAINER -->
-                    <div id="singleResultContainer" style="display: none;">
-                        <div class="text-center mb-3">
-                            <img id="singlePreviewImage" src="" alt="Watermark Preview" class="img-fluid rounded shadow border" style="max-height: 420px; object-fit: contain;">
+                    <!-- VIEW 2: HASIL PEMROSESAN (HIDDEN BY DEFAULT UNTIL PROCESSED) -->
+                    <div id="resultSection" style="display: none;">
+                        <!-- LOADING STATE -->
+                        <div id="loadingContainer" class="text-center py-5" style="display: none;">
+                            <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
+                            <h6 class="font-weight-bold text-dark mb-1">Sedang Memproses Watermark Foto...</h6>
+                            <p class="text-muted small mb-0">Menerapkan format watermark, ekstraksi EXIF, dan mengompilasi berkas.</p>
                         </div>
 
-                        <div class="alert alert-info py-2 px-3 small mb-3" id="singleServerSavedAlert" style="display: none;">
-                            <i class="fas fa-folder text-warning mr-1"></i> Salinan file tersimpan di server: <strong id="singleServerSavedPath"></strong>
+                        <!-- EMPTY PLACEHOLDER -->
+                        <div id="placeholderContainer" class="text-center py-5 text-muted">
+                            <div class="my-4">
+                                <i class="fas fa-images fa-4x text-black-50 mb-3"></i>
+                                <h6 class="font-weight-bold text-secondary">Belum Ada Foto Diproses</h6>
+                                <p class="small text-muted mb-0">Atur form di kolom kiri lalu klik tombol <strong>Proses Watermark Sekarang</strong>.</p>
+                            </div>
                         </div>
 
-                        <div class="d-flex justify-content-between">
-                            <button type="button" class="btn btn-success font-weight-bold flex-fill mr-2" id="btnDownloadSingle">
-                                <i class="fas fa-download mr-1"></i> Download Foto
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" id="btnResetSingle">
-                                <i class="fas fa-redo mr-1"></i> Reset
-                            </button>
+                        <!-- HASIL BATCH / ZIP CONTAINER -->
+                        <div id="batchResultContainer" style="display: none;">
+                            <div class="alert alert-success d-flex align-items-center justify-content-between p-3 mb-3">
+                                <div>
+                                    <h6 class="font-weight-bold mb-1"><i class="fas fa-check-circle mr-1"></i> <span id="batchCountText">0</span> Foto Berhasil Diproses!</h6>
+                                    <small class="text-dark" id="batchFolderInfo" style="display: none;">
+                                        <i class="fas fa-folder-check mr-1 text-primary"></i> Tersimpan di server: <code id="batchFolderText" class="font-weight-bold"></code>
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- TOMBOL DOWNLOAD BATCH ZIP -->
+                            <div class="mb-3" id="batchZipDownloadAction" style="display: none;">
+                                <a href="#" id="linkDownloadBatchZip" class="btn btn-success btn-block btn-lg font-weight-bold shadow-sm">
+                                    <i class="fas fa-file-archive mr-2"></i> Download Semua Foto (File ZIP)
+                                </a>
+                            </div>
+
+                            <!-- GALLERY GRID MINI PREVIEWS -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="font-weight-bold small text-dark mb-0">Galeri Foto Hasil:</label>
+                                <span class="badge badge-light border text-muted">Klik foto untuk perbesar</span>
+                            </div>
+                            <div class="row" id="batchGalleryGrid" style="max-height: 480px; overflow-y: auto;"></div>
+                        </div>
+
+                        <!-- HASIL SINGLE CONTAINER -->
+                        <div id="singleResultContainer" style="display: none;">
+                            <div class="text-center mb-3">
+                                <img id="singlePreviewImage" src="" alt="Watermark Preview" class="img-fluid rounded shadow border cursor-pointer" style="max-height: 400px; object-fit: contain;" title="Klik untuk perbesar">
+                            </div>
+
+                            <div class="alert alert-info py-2 px-3 small mb-3" id="singleServerSavedAlert" style="display: none;">
+                                <i class="fas fa-folder text-warning mr-1"></i> Salinan file tersimpan di server: <strong id="singleServerSavedPath"></strong>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-success font-weight-bold flex-fill mr-2 py-2" id="btnDownloadSingle">
+                                    <i class="fas fa-download mr-1"></i> Download Foto
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary py-2" id="btnResetSingle">
+                                    <i class="fas fa-redo mr-1"></i> Reset
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -386,19 +611,19 @@
 <!-- MODAL IMAGE ZOOM VIEWER -->
 <div class="modal fade" id="modalZoomPhoto" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header py-2">
-                <h6 class="modal-title font-weight-bold" id="modalZoomTitle">Detail Foto</h6>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header py-2 bg-dark text-white">
+                <h6 class="modal-title font-weight-bold" id="modalZoomTitle">Detail Foto Watermark</h6>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body text-center p-2 bg-dark">
                 <img id="modalZoomImg" src="" alt="Zoom" class="img-fluid rounded" style="max-height: 80vh;">
             </div>
-            <div class="modal-footer py-2 d-flex justify-content-between">
+            <div class="modal-footer py-2 bg-dark text-white d-flex justify-content-between border-top border-secondary">
                 <span class="small text-muted" id="modalZoomMeta"></span>
-                <a href="#" id="modalZoomDownload" class="btn btn-success btn-sm" download>
+                <a href="#" id="modalZoomDownload" class="btn btn-success btn-sm font-weight-bold" download>
                     <i class="fas fa-download mr-1"></i> Download File Ini
                 </a>
             </div>
@@ -406,7 +631,7 @@
     </div>
 </div>
 
-<!-- MODAL MAP PICKER (POPUP PETA LEAFLET) -->
+<!-- MODAL MAP PICKER (POPUP PETA LEAFLET DENGAN DESAIN BERSIH) -->
 <div class="modal fade" id="modalPilihPeta" tabindex="-1" role="dialog" aria-labelledby="modalPilihPetaTitle" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document" style="max-width: 880px;">
         <div class="modal-content shadow-lg border-0">
@@ -494,18 +719,80 @@
 </div>
 
 <style>
+/* Header Card */
+.header-banner-card {
+    border-radius: 12px;
+    background: #ffffff;
+    border-top: 4px solid var(--app-primary, #0A66C2) !important;
+}
+.header-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(10, 102, 194, 0.1);
+    color: var(--app-primary, #0A66C2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+/* Wizard Step Navigation */
+.studio-control-card, .studio-preview-card {
+    border-radius: 12px;
+}
+.wizard-steps-nav {
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 10px;
+    gap: 4px;
+}
+.wizard-step-btn {
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 6px 10px;
+    transition: all 0.2s ease;
+    border: none;
+    color: #64748b;
+    background: transparent;
+}
+.wizard-step-btn.active {
+    background: #ffffff !important;
+    color: var(--app-primary, #0A66C2) !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.wizard-step-btn .step-num {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 11px;
+    text-align: center;
+}
+.wizard-step-btn.active .step-num {
+    background: var(--app-primary, #0A66C2);
+    color: #ffffff;
+}
+
+/* Template Cards */
 .template-card {
     transition: all 0.2s ease-in-out;
     background-color: #fff;
+    border-color: #e2e8f0 !important;
 }
 .template-card:hover {
-    border-color: #007bff !important;
-    background-color: #f8f9fa;
+    border-color: var(--app-primary, #0A66C2) !important;
+    transform: translateY(-2px);
 }
 .template-card.active {
-    border-color: #007bff !important;
+    border-color: var(--app-primary, #0A66C2) !important;
     border-width: 2px !important;
     background-color: #f0f7ff;
+    box-shadow: 0 4px 10px rgba(10, 102, 194, 0.12);
 }
 .cursor-pointer {
     cursor: pointer;
@@ -514,8 +801,132 @@
     border-style: dashed !important;
     border-width: 2px !important;
 }
-.upload-dropzone:hover {
-    background-color: #eef6ff !important;
+.upload-dropzone {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    transition: all 0.2s ease;
+}
+.upload-dropzone:hover, .upload-dropzone.bg-white {
+    background-color: #f0f7ff !important;
+    border-color: var(--app-primary, #0A66C2) !important;
+}
+
+/* Live Simulator Canvas */
+.simulator-viewport {
+    width: 100%;
+    height: 380px;
+    background-color: #1e293b;
+    position: relative;
+    border: 1px solid #334155;
+}
+.simulator-canvas-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('https://images.unsplash.com/photo-1541888946425-d0fbb186156f?q=80&w=1200&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.92);
+}
+.simulator-overlay-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 16px;
+}
+.sim-template-box {
+    animation: fadeInOverlay 0.3s ease;
+}
+@keyframes fadeInOverlay {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Template 1: Classic */
+.sim-classic {
+    background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%);
+    padding: 12px 14px;
+    border-radius: 8px;
+    max-width: 90%;
+    backdrop-filter: blur(2px);
+}
+.sim-clock-big {
+    font-size: 28px;
+    font-weight: 800;
+    color: #facc15;
+    line-height: 1;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+.sim-divider-line {
+    width: 2px;
+    height: 24px;
+    background: rgba(255,255,255,0.4);
+}
+.sim-day-name {
+    font-size: 11px;
+    color: #ffffff;
+    line-height: 1.1;
+}
+.sim-date-text {
+    font-size: 10px;
+    color: #cbd5e1;
+}
+.sim-accent-bar {
+    width: 3px;
+    height: 38px;
+    background: #facc15;
+    border-radius: 2px;
+}
+.sim-location-text {
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+/* Template 2: Table */
+.sim-table {
+    max-width: 95%;
+}
+.sim-table-inner {
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* Template 3: Badge */
+.sim-badge {
+    max-width: 80%;
+}
+.sim-badge-card {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+}
+.sim-clock-badge {
+    font-size: 22px;
+    line-height: 1;
+    letter-spacing: 0.5px;
+}
+
+/* Template 4: Strip */
+.sim-strip {
+    margin: -16px;
+}
+.sim-strip-banner {
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(4px);
+}
+
+.shadow-xs {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 </style>
 <?= $this->endSection(); ?>
@@ -532,6 +943,12 @@ $(function() {
     var singleGeneratedUri = null;
     var currentZipDownloadUrl = null;
     var isProcessing = false;
+    var currentStep = 1;
+
+    // Base Date & Time state for Live Simulator
+    var baseDate = '<?= date('Y-m-d') ?>';
+    var baseTime = '<?= date('H:i') ?>';
+    var lastExifCoordinates = null;
 
     // Helper cek file HEIC / HEIF
     function isHeic(f) {
@@ -540,7 +957,49 @@ $(function() {
         return name.endsWith('.heic') || name.endsWith('.heif') || f.type === 'image/heic' || f.type === 'image/heif';
     }
 
-    // 1. Template Card Selection
+    // -------------------------------------------------------------------------
+    // 1. WIZARD STEP NAVIGATION (OPSI 1)
+    // -------------------------------------------------------------------------
+    function goToStep(step) {
+        currentStep = parseInt(step, 10);
+        $('.wizard-step-btn').removeClass('active').addClass('text-muted');
+        $('#tabBtnStep' + currentStep).addClass('active').removeClass('text-muted');
+
+        $('.wizard-step-pane').addClass('d-none').removeClass('active');
+        $('#wizardStepPane' + currentStep).removeClass('d-none').addClass('active');
+
+        // Scroll smooth to top of form on mobile
+        if ($(window).width() < 768) {
+            $('html, body').animate({ scrollTop: $('#watermarkForm').offset().top - 20 }, 250);
+        }
+        updateSummaryCard();
+    }
+
+    $('.wizard-step-btn').on('click', function() {
+        var targetStep = $(this).data('step');
+        goToStep(targetStep);
+    });
+
+    $('.btn-next-step').on('click', function() {
+        var target = $(this).data('target');
+        goToStep(target);
+    });
+
+    $('.btn-prev-step').on('click', function() {
+        var target = $(this).data('target');
+        goToStep(target);
+    });
+
+    // -------------------------------------------------------------------------
+    // 2. TEMPLATE CARD SELECTION
+    // -------------------------------------------------------------------------
+    var templateLabels = {
+        'classic': 'Klasik PU',
+        'table': 'Grid Inspeksi',
+        'badge': 'Modern Badge',
+        'strip': 'Bottom Strip'
+    };
+
     $('.template-card').on('click', function() {
         $('.template-card').removeClass('active');
         $('.template-card').find('.check-badge').addClass('d-none');
@@ -548,9 +1007,17 @@ $(function() {
         $(this).addClass('active');
         $(this).find('input[type="radio"]').prop('checked', true);
         $(this).find('.check-badge').removeClass('d-none');
+
+        var val = $(this).data('val');
+        $('#activeTemplateBadge').text(templateLabels[val] || val);
+        $('#summaryTemplate').text(templateLabels[val] || val);
+
+        updateLiveSimulator();
     });
 
-    // 2. Dropzone & File Input Handling
+    // -------------------------------------------------------------------------
+    // 3. DROPZONE & FILE INPUT HANDLING
+    // -------------------------------------------------------------------------
     var $dropzone = $('#dropzoneArea');
     var $fileInput = $('#fileInput');
 
@@ -588,7 +1055,7 @@ $(function() {
             $('#fileCountBadge').removeClass('badge-secondary badge-primary badge-success').addClass('badge-warning')
                 .html('<i class="fas fa-magic fa-spin mr-1"></i> Mengonversi HEIC...');
             $('#exifStatusAlert').removeClass('alert-danger alert-info alert-success').addClass('alert-warning')
-                .html('<i class="fas fa-magic fa-spin mr-1"></i> <strong>Format Foto iPhone (.HEIC) Terdeteksi:</strong> Mengonversi ' + heicFiles.length + ' file HEIC ke format JPEG...').show();
+                .html('<i class="fas fa-magic fa-spin mr-1"></i> <strong>Foto iPhone (.HEIC) Terdeteksi:</strong> Mengonversi ' + heicFiles.length + ' file HEIC ke format JPEG...').show();
 
             var convertPromises = rawFiles.map(function(f) {
                 if (isHeic(f)) {
@@ -599,7 +1066,7 @@ $(function() {
                         })
                         .catch(function(err) {
                             console.warn('Konversi HEIC client dilewati, diproses server-side:', err);
-                            return f; // fallback ke server converter
+                            return f;
                         });
                 }
                 return Promise.resolve(f);
@@ -628,26 +1095,40 @@ $(function() {
         });
 
         if (total === 1 && hasZip) {
-            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary badge-success').addClass('badge-warning').html('<i class="fas fa-file-archive mr-1"></i> 1 File ZIP');
+            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary badge-success').addClass('badge-warning').html('<i class="fas fa-file-archive mr-1"></i> 1 Arsip ZIP');
+            $('#summaryFiles').text('1 File ZIP');
         } else if (total === 1) {
-            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-success').addClass('badge-primary').html('<i class="fas fa-image mr-1"></i> 1 Foto Dipilih');
+            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-success').addClass('badge-primary').html('<i class="fas fa-image mr-1"></i> 1 Foto');
+            $('#summaryFiles').text('1 Foto');
         } else {
-            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary').addClass('badge-success').html('<i class="fas fa-images mr-1"></i> ' + total + ' Foto Dipilih');
+            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary').addClass('badge-success').html('<i class="fas fa-images mr-1"></i> ' + total + ' Foto');
+            $('#summaryFiles').text(total + ' Foto');
         }
 
         var previewText = fileNames.slice(0, 3).join(', ');
         if (total > 3) {
             previewText += ' dan ' + (total - 3) + ' file lainnya';
         }
-        $('#fileSelectedList').html('<strong>File:</strong> ' + previewText).show();
+        $('#fileSelectedList').html('<strong><i class="fas fa-check-circle text-success mr-1"></i> File Siap:</strong> ' + previewText).fadeIn();
 
-        // Jika single image yang diupload, coba ekstrak metadata EXIF via AJAX
+        // Update background of Live Simulator jika single image
+        if (total >= 1 && !hasZip) {
+            var firstImg = selectedFiles[0];
+            if (firstImg.type.startsWith('image/')) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#simulatorCanvasBg').css('background-image', 'url(' + e.target.result + ')');
+                    $('#simBackgroundInfo').text('Foto Anda (' + firstImg.name + ')');
+                };
+                reader.readAsDataURL(firstImg);
+            }
+        }
+
+        // Ekstrak metadata EXIF jika single image
         if (total === 1 && !hasZip) {
             extractExifPreview(selectedFiles[0]);
         }
     }
-
-    var lastExifCoordinates = null;
 
     function extractExifPreview(file) {
         var formData = new FormData();
@@ -667,9 +1148,11 @@ $(function() {
                 }
                 if (resp.status === 'ok') {
                     if (resp.date) {
+                        baseDate = resp.date;
                         $('#manualDate').val(resp.date);
                     }
                     if (resp.time) {
+                        baseTime = resp.time;
                         $('#manualTime').val(resp.time);
                     }
                     if (resp.coordinates) {
@@ -677,53 +1160,50 @@ $(function() {
                         $('#koordinat').val(resp.coordinates);
                         $('#btnGpsFromExif').show();
 
-                        // Jika opsi useExifLocation aktif atau kolom lokasi masih kosong, isi dengan koordinat EXIF
                         if ($('#useExifLocation').is(':checked') || !$('#lokasi').val() || $('#lokasi').val().trim() === '') {
                             $('#lokasi').val(resp.coordinates);
                         }
                     }
                     if (resp.has_exif) {
-                        var statusHtml = '<i class="fas fa-check-circle mr-1"></i> <strong>EXIF Terdeteksi:</strong> Waktu foto ' + resp.day + ', ' + resp.date + ' ' + resp.time;
+                        var statusHtml = '<i class="fas fa-check-circle mr-1"></i> <strong>EXIF Terdeteksi:</strong> Waktu foto ' + (resp.day || '') + ', ' + (resp.date || '') + ' ' + (resp.time || '');
                         if (resp.coordinates) {
-                            statusHtml += ' | <i class="fas fa-satellite-dish text-success ml-1"></i> GPS: <code>' + resp.coordinates + '</code> (koordinat digunakan sebagai teks lokasi)';
+                            statusHtml += ' | <i class="fas fa-satellite-dish text-success ml-1"></i> GPS: <code>' + resp.coordinates + '</code>';
                         }
-                        $('#exifStatusAlert').removeClass('alert-info').addClass('alert-success').html(statusHtml);
+                        $('#exifStatusAlert').removeClass('alert-info alert-warning').addClass('alert-success').html(statusHtml);
                     }
+                    updateLiveSimulator();
                 }
             }
         });
     }
 
-    // Toggle useExifLocation listener
-    $('#useExifLocation').on('change', function() {
-        if ($(this).is(':checked') && lastExifCoordinates) {
-            $('#lokasi').val(lastExifCoordinates);
-        }
-    });
-
-    // 3. Offset Buttons Handling
+    // -------------------------------------------------------------------------
+    // 4. OFFSET WAKTU & LIVE SIMULATOR UPDATER
+    // -------------------------------------------------------------------------
     $('input[name="quick_offset"]').on('change', function() {
         var val = parseInt($(this).val(), 10);
         $('#offsetHours').val(val);
         $('#offsetMinutes').val(0);
         updateOffsetBadge(val, 0);
+        updateLiveSimulator();
     });
 
     $('#offsetHours, #offsetMinutes').on('input change', function() {
         var h = parseInt($('#offsetHours').val(), 10) || 0;
         var m = parseInt($('#offsetMinutes').val(), 10) || 0;
         updateOffsetBadge(h, m);
+        updateLiveSimulator();
     });
 
     function updateOffsetBadge(h, m) {
         var text = (h >= 0 ? '+' : '') + h + ' Jam';
         if (m !== 0) {
-            text += ' ' + (m >= 0 ? '+' : '') + m + ' Menit';
+            text += ' ' + (m >= 0 ? '+' : '') + m + ' Mnt';
         }
         $('#currentOffsetBadge').text(text);
+        $('#summaryOffset').text(text);
     }
 
-    // Set Sekarang Button
     $('#btnNow').on('click', function() {
         var now = new Date();
         var yyyy = now.getFullYear();
@@ -731,26 +1211,139 @@ $(function() {
         var dd = String(now.getDate()).padStart(2, '0');
         var hh = String(now.getHours()).padStart(2, '0');
         var min = String(now.getMinutes()).padStart(2, '0');
-        $('#manualDate').val(yyyy + '-' + mm + '-' + dd);
-        $('#manualTime').val(hh + ':' + min);
+        baseDate = yyyy + '-' + mm + '-' + dd;
+        baseTime = hh + ':' + min;
+        $('#manualDate').val(baseDate);
+        $('#manualTime').val(baseTime);
+        updateLiveSimulator();
     });
 
-    // Custom File Label
-    $('#logo').on('change', function() {
-        var fileName = $(this).val().split('\\').pop();
-        $(this).next('.custom-file-label').html(fileName || 'Pilih logo (PNG/JPG)...');
+    $('#manualDate, #manualTime').on('input change', function() {
+        baseDate = $('#manualDate').val() || '<?= date('Y-m-d') ?>';
+        baseTime = $('#manualTime').val() || '<?= date('H:i') ?>';
+        updateLiveSimulator();
     });
 
-    // Toggle Save To Folder Input
+    $('#lokasi, #koordinat, #catatan, #useExifLocation, #useExifTime').on('input change', function() {
+        updateLiveSimulator();
+    });
+
+    var daysIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    var monthsIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    function updateLiveSimulator() {
+        var h = parseInt($('#offsetHours').val(), 10) || 0;
+        var m = parseInt($('#offsetMinutes').val(), 10) || 0;
+
+        // Hitung effective date & time
+        var calcDate = new Date(baseDate + 'T' + (baseTime.length === 5 ? baseTime + ':00' : baseTime));
+        if (isNaN(calcDate.getTime())) {
+            calcDate = new Date();
+        }
+        calcDate.setHours(calcDate.getHours() + h);
+        calcDate.setMinutes(calcDate.getMinutes() + m);
+
+        var hh = String(calcDate.getHours()).padStart(2, '0');
+        var mm = String(calcDate.getMinutes()).padStart(2, '0');
+        var timeStr = hh + ':' + mm;
+        var dayName = daysIndo[calcDate.getDay()] || 'Senin';
+        var dateFormatted = calcDate.getDate() + ' ' + (monthsIndo[calcDate.getMonth()] || '') + ' ' + calcDate.getFullYear();
+        var fullDateStr = dayName + ', ' + dateFormatted;
+
+        var locInput = $('#lokasi').val() || '';
+        var coordsInput = $('#koordinat').val() || '';
+        var notesInput = $('#catatan').val() || 'Dokumentasi Lapangan';
+
+        var effectiveLoc = locInput.trim() !== '' ? locInput : (coordsInput ? coordsInput : 'Kantor Balai PPS Riau');
+        var effectiveCoords = coordsInput.trim() !== '' ? coordsInput : '0.507068° N, 101.447779° E';
+
+        // 1. Classic Template
+        $('#simClassicClock').text(timeStr);
+        $('#simClassicDay').text(dayName);
+        $('#simClassicDate').text(dateFormatted + ' | WIB');
+        $('#simClassicLocation').text(effectiveLoc);
+        $('#simClassicCoords').text(effectiveCoords);
+        $('#simClassicNotes').text(notesInput);
+
+        // 2. Table Template
+        $('#simTableTime').text(timeStr + ' WIB');
+        $('#simTableDate').text(dateFormatted);
+        $('#simTableLocation').text(effectiveLoc);
+        $('#simTableCoords').text(effectiveCoords);
+        $('#simTableNotes').text(notesInput);
+
+        // 3. Badge Template
+        $('#simBadgeClock').text(timeStr);
+        $('#simBadgeDate').text(fullDateStr);
+        $('#simBadgeLocationText').text(effectiveLoc);
+        $('#simBadgeCoords').text(effectiveCoords);
+
+        // 4. Strip Template
+        $('#simStripClock').text(timeStr + ' WIB');
+        $('#simStripDate').text(dateFormatted + ' | PPS Riau');
+        $('#simStripLocation').text(effectiveLoc);
+        $('#simStripCoords').text(effectiveCoords);
+
+        // Ganti overlay aktif sesuai radio template
+        var selectedTemplate = $('input[name="template"]:checked').val() || 'classic';
+        $('.sim-template-box').addClass('d-none');
+        if (selectedTemplate === 'classic') $('#simClassicOverlay').removeClass('d-none');
+        else if (selectedTemplate === 'table') $('#simTableOverlay').removeClass('d-none');
+        else if (selectedTemplate === 'badge') $('#simBadgeOverlay').removeClass('d-none');
+        else if (selectedTemplate === 'strip') $('#simStripOverlay').removeClass('d-none');
+    }
+
+    function updateSummaryCard() {
+        var tpl = $('input[name="template"]:checked').val() || 'classic';
+        $('#summaryTemplate').text(templateLabels[tpl] || tpl);
+        var total = selectedFiles.length;
+        $('#summaryFiles').text(total > 0 ? (total + ' Berkas') : 'Belum dipilih');
+        var h = parseInt($('#offsetHours').val(), 10) || 0;
+        var m = parseInt($('#offsetMinutes').val(), 10) || 0;
+        updateOffsetBadge(h, m);
+        $('#summarySave').text($('#saveToFolder').is(':checked') ? 'Ya (/uploads/watermark_hasil/)' : 'Tidak (Unduh Langsung)');
+    }
+
+    // Toggle save to folder container
     $('#saveToFolder').on('change', function() {
         if ($(this).is(':checked')) {
             $('#folderInputContainer').slideDown();
         } else {
             $('#folderInputContainer').slideUp();
         }
+        updateSummaryCard();
     });
 
-    // 4. Form Submit & AJAX Watermark Processing
+    // Logo label update
+    $('#logo').on('change', function() {
+        var fileName = $(this).val().split('\\').pop();
+        $(this).next('.custom-file-label').html(fileName || 'Pilih logo instansi (PNG/JPG)...');
+    });
+
+    // -------------------------------------------------------------------------
+    // 5. DUAL VIEW SWITCHER: SIMULATOR vs HASIL
+    // -------------------------------------------------------------------------
+    $('#btnTabSimulator').on('click', function() {
+        $('#btnTabSimulator').addClass('btn-primary').removeClass('btn-light text-muted');
+        $('#btnTabResult').addClass('btn-light text-muted').removeClass('btn-primary');
+        $('#resultSection').hide();
+        $('#liveSimulatorSection').fadeIn(150);
+    });
+
+    $('#btnTabResult').on('click', function() {
+        $('#btnTabResult').addClass('btn-primary').removeClass('btn-light text-muted');
+        $('#btnTabSimulator').addClass('btn-light text-muted').removeClass('btn-primary');
+        $('#liveSimulatorSection').hide();
+        $('#resultSection').fadeIn(150);
+    });
+
+    function switchToResultView() {
+        $('#btnTabResult').click();
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. FORM SUBMIT & AJAX PROSES WATERMARK
+    // -------------------------------------------------------------------------
     $('#watermarkForm').on('submit', function(e) {
         e.preventDefault();
 
@@ -760,15 +1353,15 @@ $(function() {
             Swal.fire({
                 icon: 'warning',
                 title: 'File Belum Dipilih',
-                text: 'Silakan pilih foto atau file ZIP terlebih dahulu.'
+                text: 'Silakan pilih foto atau arsip ZIP pada Langkah 1 terlebih dahulu.'
             });
+            goToStep(1);
             return;
         }
 
         var formData = new FormData();
         var totalSize = 0;
 
-        // Cek jika ada single ZIP atau multi image
         if (selectedFiles.length === 1 && selectedFiles[0].name.toLowerCase().endsWith('.zip')) {
             formData.append('zip_file', selectedFiles[0]);
         } else if (selectedFiles.length === 1) {
@@ -802,8 +1395,9 @@ $(function() {
 
         formData.append('<?= csrf_token() ?>', $('input[name="<?= csrf_token() ?>"]').val());
 
-        // UI Loading State
+        // Beralih ke View Hasil & Tampilkan Loading
         isProcessing = true;
+        switchToResultView();
         var $btn = $('#btnProses');
         var originalBtnHtml = $btn.html();
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Sedang Memproses Watermark...');
@@ -830,8 +1424,10 @@ $(function() {
                     $('#loadingContainer').hide();
                     $('#btnResetAll').show();
 
+                    var countTotal = resp.total_processed || 1;
+                    $('#resultCountBadge').text(countTotal).removeClass('d-none');
+
                     if (resp.mode === 'single' && resp.image_data) {
-                        // Tampilkan Single Preview
                         singleGeneratedUri = resp.image_data;
                         $('#singlePreviewImage').attr('src', resp.image_data);
                         if (resp.server_folder) {
@@ -842,7 +1438,6 @@ $(function() {
                         }
                         $('#singleResultContainer').fadeIn();
                     } else if (resp.mode === 'batch' || resp.images) {
-                        // Tampilkan Batch Result
                         $('#batchCountText').text(resp.total_processed);
                         if (resp.server_folder) {
                             $('#batchFolderText').text(resp.server_folder);
@@ -859,11 +1454,10 @@ $(function() {
                             $('#batchZipDownloadAction').hide();
                         }
 
-                        // Render Gallery Grid
                         var $grid = $('#batchGalleryGrid');
                         $grid.empty();
 
-                        resp.images.forEach(function(img, idx) {
+                        resp.images.forEach(function(img) {
                             var thumbSrc = img.data_uri ? img.data_uri : (img.server_file ? img.server_file : '');
                             var col = $('<div>').addClass('col-4 col-sm-3 mb-3');
                             var card = $('<div>').addClass('border rounded overflow-hidden shadow-sm bg-light text-center p-1 position-relative');
@@ -901,7 +1495,7 @@ $(function() {
                         $('#batchResultContainer').fadeIn();
                     }
 
-                    // Notifikasi Sukses Tunggal (Rule #1)
+                    // Notifikasi Tunggal (Rule #1: tidak double)
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil!',
@@ -954,7 +1548,9 @@ $(function() {
         });
     });
 
-    // 5. Download Single Image
+    // -------------------------------------------------------------------------
+    // 7. DOWNLOAD SINGLE & RESET
+    // -------------------------------------------------------------------------
     $('#btnDownloadSingle').on('click', function() {
         if (!singleGeneratedUri) return;
         var a = document.createElement('a');
@@ -965,7 +1561,15 @@ $(function() {
         document.body.removeChild(a);
     });
 
-    // 6. Reset Handlers
+    $('#singlePreviewImage').on('click', function() {
+        if (!singleGeneratedUri) return;
+        $('#modalZoomImg').attr('src', singleGeneratedUri);
+        $('#modalZoomTitle').text('Foto Hasil Watermark');
+        $('#modalZoomMeta').text('Resolusi kamera penuh');
+        $('#modalZoomDownload').attr('href', singleGeneratedUri).attr('download', 'foto-watermark.jpg');
+        $('#modalZoomPhoto').modal('show');
+    });
+
     $('#btnResetAll, #btnResetSingle').on('click', function() {
         selectedFiles = [];
         singleGeneratedUri = null;
@@ -978,14 +1582,22 @@ $(function() {
         $('#loadingContainer').hide();
         $('#placeholderContainer').fadeIn();
         $('#btnResetAll').hide();
+        $('#resultCountBadge').addClass('d-none').text('0');
+
+        // Kembalikan background live simulator ke default
+        $('#simulatorCanvasBg').css('background-image', "url('https://images.unsplash.com/photo-1541888946425-d0fbb186156f?q=80&w=1200&auto=format&fit=crop')");
+        $('#simBackgroundInfo').text('Foto Sampel');
+
+        $('#btnTabSimulator').click();
+        goToStep(1);
     });
 
     // -------------------------------------------------------------------------
-    // 7. LEAFLET MAP PICKER MODAL (PILIH LOKASI DARI POPUP PETA)
+    // 8. LEAFLET MAP PICKER MODAL (POPUP PETA INTERAKTIF)
     // -------------------------------------------------------------------------
     var pickerMap = null;
     var pickerMarker = null;
-    var currentLat = 0.507068; // Default: Pekanbaru / Balai PPS Riau
+    var currentLat = 0.507068;
     var currentLng = 101.447779;
     var currentSelectedAddress = 'Balai Pelaksanaan Prasarana Permukiman Wilayah Riau';
     var geocodeTimeout = null;
@@ -1075,7 +1687,6 @@ $(function() {
 
     function reverseGeocode(lat, lng) {
         if (geocodeTimeout) clearTimeout(geocodeTimeout);
-
         $('#selectedAddressText').html('<i class="fas fa-spinner fa-spin text-primary"></i> Mengambil nama tempat...');
 
         geocodeTimeout = setTimeout(function() {
@@ -1157,7 +1768,7 @@ $(function() {
     }
 
     // Modal Trigger
-    $('#btnBukaPetaModal, #btnBukaPetaModal2').on('click', function(e) {
+    $('#btnBukaPetaModal').on('click', function(e) {
         e.preventDefault();
         $('#modalPilihPeta').modal('show');
     });
@@ -1190,7 +1801,6 @@ $(function() {
         }
     });
 
-    // Tombol lompat ke EXIF foto di dalam popup peta
     $('#btnGpsFromExif').on('click', function() {
         if (!lastExifCoordinates) return;
         var parsed = parseExistingCoords(lastExifCoordinates);
@@ -1211,7 +1821,6 @@ $(function() {
         }
     });
 
-    // Search Trigger
     $('#btnSearchMap').on('click', function() {
         searchMapLocation($('#mapSearchInput').val());
     });
@@ -1222,7 +1831,6 @@ $(function() {
         }
     });
 
-    // GPS Current Location Button in Modal
     $('#btnGpsCurrentLocation').on('click', function() {
         if (!navigator.geolocation) {
             Swal.fire({ icon: 'warning', title: 'GPS Tidak Didukung', text: 'Perangkat atau browser Anda tidak mendukung fitur lokasi GPS.', timer: 2500, showConfirmButton: false });
@@ -1258,7 +1866,7 @@ $(function() {
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
         navigator.geolocation.getCurrentPosition(function(pos) {
-            $btn.prop('disabled', false).html('<i class="fas fa-location-arrow"></i> GPS Saya');
+            $btn.prop('disabled', false).html('<i class="fas fa-location-arrow mr-1"></i> GPS Saya');
             var coordsStr = formatCoordinates(pos.coords.latitude, pos.coords.longitude);
             $('#koordinat').val(coordsStr);
 
@@ -1282,6 +1890,10 @@ $(function() {
                             $('#lokasi').val(parts.join(', '));
                         }
                     }
+                    updateLiveSimulator();
+                },
+                error: function() {
+                    updateLiveSimulator();
                 }
             });
 
@@ -1297,7 +1909,7 @@ $(function() {
                 title: 'Koordinat GPS perangkat berhasil diambil!'
             });
         }, function() {
-            $btn.prop('disabled', false).html('<i class="fas fa-location-arrow"></i> GPS Saya');
+            $btn.prop('disabled', false).html('<i class="fas fa-location-arrow mr-1"></i> GPS Saya');
             Swal.fire({
                 icon: 'info',
                 title: 'Akses Lokasi Ditolak',
@@ -1326,6 +1938,7 @@ $(function() {
         }
 
         $('#modalPilihPeta').modal('hide');
+        updateLiveSimulator();
 
         const Toast = Swal.mixin({
             toast: true,
@@ -1339,6 +1952,10 @@ $(function() {
             title: useOnlyCoords ? 'Koordinat GPS diterapkan ke teks lokasi!' : 'Lokasi & koordinat peta berhasil diterapkan!'
         });
     });
+
+    // Initial trigger to render live simulator with defaults
+    updateLiveSimulator();
+    updateSummaryCard();
 });
 </script>
 <?= $this->endSection(); ?>
