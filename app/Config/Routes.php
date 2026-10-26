@@ -395,6 +395,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('surat/cuti/(:num)/export-word', 'Admin\SuratCuti::exportWord/$1');
 	$routes->get('surat/cuti/export-word-kosong', 'Admin\SuratCuti::exportWordKosong');
 	$routes->match(['get', 'post'], 'surat/cuti/export-excel', 'Admin\SuratCuti::exportExcel');
+	$routes->match(['get', 'post'], 'surat/cuti/preview-rekap', 'Admin\SuratCuti::previewRekap');
 
 	// Surat Routes - Disposisi Perjalanan Dinas
 	$routes->get('surat/perjalanan-dinas/disposisi', 'Admin\DisposisiPerjalananDinas::index');

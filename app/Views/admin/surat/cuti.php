@@ -59,6 +59,111 @@
         overflow-y: auto !important;
         max-height: calc(100vh - 180px) !important;
     }
+
+    /* Matrix Preview Styles */
+    .table-matrix {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: max-content;
+        font-size: 11.5px;
+    }
+    .table-matrix th, .table-matrix td {
+        border-right: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 5px 6px;
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .table-matrix thead tr.row-month th {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: #0f172a;
+        color: #fff;
+        font-weight: 700;
+    }
+    .table-matrix thead tr.row-day th {
+        position: sticky;
+        top: 27px;
+        z-index: 20;
+        font-size: 10px;
+        font-weight: 700;
+        color: #fff;
+    }
+    .table-matrix thead tr.row-date th {
+        position: sticky;
+        top: 47px;
+        z-index: 20;
+        font-size: 11px;
+        font-weight: 700;
+        color: #fff;
+    }
+    .table-matrix thead th.sticky-fixed {
+        position: sticky;
+        z-index: 30;
+        background: #1e293b !important;
+        color: #fff !important;
+    }
+    .table-matrix tbody td.sticky-fixed {
+        position: sticky;
+        z-index: 10;
+        background: #ffffff;
+    }
+    .table-matrix tbody tr:hover td.sticky-fixed {
+        background: #f1f5f9;
+    }
+    .table-matrix tbody tr:hover td {
+        filter: brightness(0.97);
+    }
+    .table-matrix .col-no { left: 0; min-width: 42px; max-width: 42px; }
+    .table-matrix .col-nip { left: 42px; min-width: 175px; max-width: 175px; text-align: left !important; }
+    .table-matrix .col-nama { left: 217px; min-width: 220px; max-width: 220px; text-align: left !important; }
+    .table-matrix .col-total {
+        left: 437px;
+        min-width: 75px;
+        max-width: 75px;
+        box-shadow: 3px 0 6px rgba(0,0,0,0.06);
+        border-right: 2px solid #cbd5e1 !important;
+        font-weight: 700;
+    }
+    .table-matrix tfoot tr td {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        background: #f1f5f9;
+        font-weight: 700;
+        border-top: 2px solid #cbd5e1;
+    }
+    .table-matrix tfoot td.sticky-fixed {
+        z-index: 25;
+        background: #e2e8f0;
+    }
+    .cell-cuti {
+        background-color: #dc2626 !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .cell-leave {
+        background-color: #fde047 !important;
+        color: #854d0e !important;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .cell-holiday {
+        background-color: #fca5a5 !important;
+        color: #991b1b !important;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .cell-weekend {
+        background-color: #e2e8f0 !important;
+        color: #94a3b8 !important;
+    }
+    .cell-normal {
+        background-color: #ffffff;
+    }
 </style>
 
 <div class="container-fluid">
@@ -442,15 +547,135 @@
                     </small>
                 </div>
             </div>
-            <div class="modal-footer bg-light">
+            <div class="modal-footer bg-light d-flex justify-content-between align-items-center">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">
                     <i class="fas fa-times mr-1"></i> Batal
                 </button>
-                <button type="submit" class="btn btn-success font-weight-bold" id="btnSubmitExportExcel">
-                    <i class="fas fa-download mr-1"></i> Unduh File Excel (.xlsx)
-                </button>
+                <div class="d-flex" style="gap: 8px;">
+                    <button type="button" class="btn btn-info font-weight-bold shadow-sm" id="btnTriggerPreview">
+                        <i class="fas fa-eye mr-1"></i> Pratinjau (Preview) Matriks
+                    </button>
+                    <button type="submit" class="btn btn-success font-weight-bold shadow-sm" id="btnSubmitExportExcel">
+                        <i class="fas fa-download mr-1"></i> Unduh File Excel (.xlsx)
+                    </button>
+                </div>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modal Preview Matriks Rekap Cuti -->
+<div class="modal fade" id="modalPreviewRekapCuti" tabindex="-1" role="dialog" aria-labelledby="modalPreviewRekapCutiLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 96vw; width: 96vw; margin: 15px auto;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; height: calc(100vh - 30px); display: flex; flex-direction: column;">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); flex-shrink: 0; padding: 12px 20px;">
+                <div>
+                    <h5 class="modal-title font-weight-bold mb-1" id="modalPreviewRekapCutiLabel" style="font-size: 1.1rem;">
+                        <i class="far fa-calendar-alt text-warning mr-2"></i> Pratinjau Matriks Rekapitulasi Cuti Pegawai
+                    </h5>
+                    <div id="previewHeaderBadges" class="d-flex flex-wrap align-items-center" style="gap: 6px;">
+                        <span class="badge badge-light" id="previewBadgePeriod">-</span>
+                        <span class="badge badge-info" id="previewBadgeStatus">-</span>
+                        <span class="badge badge-primary" id="previewBadgePegawai">-</span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center" style="gap: 8px;">
+                    <button type="button" class="btn btn-sm btn-outline-light" id="btnBackToFilter">
+                        <i class="fas fa-sliders-h mr-1"></i> Ubah Filter
+                    </button>
+                    <button type="button" class="btn btn-sm btn-success font-weight-bold" id="btnDownloadFromPreview">
+                        <i class="fas fa-download mr-1"></i> Unduh Excel (.xlsx)
+                    </button>
+                    <button type="button" class="close text-white ml-2" data-dismiss="modal" aria-label="Close" style="opacity: 0.9;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-body p-3" style="flex: 1 1 auto; overflow: hidden; display: flex; flex-direction: column; background: #f8fafc;">
+                <!-- Loading State -->
+                <div id="previewLoading" class="text-center py-5 my-auto">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                        <span class="sr-only">Memuat pratinjau...</span>
+                    </div>
+                    <h6 class="font-weight-bold text-dark mt-3">Menyusun Matriks Kalender Rekapitulasi Cuti...</h6>
+                    <small class="text-muted">Menganalisis pengajuan cuti, kalender hari libur SKB 3 menteri &amp; hari kerja efektif.</small>
+                </div>
+
+                <!-- Error State -->
+                <div id="previewError" class="alert alert-danger d-none my-auto text-center p-4">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2 text-danger d-block"></i>
+                    <strong id="previewErrorMsg" class="d-block mb-2 font-weight-bold">Terjadi kesalahan.</strong>
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-2" id="btnRetryFilter">
+                        <i class="fas fa-arrow-left mr-1"></i> Kembali ke Pengaturan Filter
+                    </button>
+                </div>
+
+                <!-- Main Content Container -->
+                <div id="previewContainer" class="d-none" style="height: 100%; display: flex; flex-direction: column;">
+                    <!-- Top Stats & Legend Bar -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2" style="gap: 10px; flex-shrink: 0;">
+                        <!-- Summary Stats Cards -->
+                        <div class="d-flex flex-wrap" style="gap: 6px;">
+                            <span class="badge badge-pill badge-primary px-3 py-2 font-weight-bold" style="font-size: 11.5px;">
+                                <i class="fas fa-users mr-1"></i> Pegawai: <span id="statPegawaiCount">0</span>
+                            </span>
+                            <span class="badge badge-pill badge-danger px-3 py-2 font-weight-bold" style="font-size: 11.5px;">
+                                <i class="fas fa-calendar-check mr-1"></i> Total Hari Cuti: <span id="statHariCutiCount">0</span> Hari
+                            </span>
+                            <span class="badge badge-pill badge-warning text-dark px-3 py-2 font-weight-bold" style="font-size: 11.5px;">
+                                <i class="fas fa-sun mr-1"></i> Libur &amp; Cuti Bersama: <span id="statLiburCount">0</span> Hari
+                            </span>
+                            <span class="badge badge-pill badge-secondary px-3 py-2 font-weight-bold" style="font-size: 11.5px;">
+                                <i class="fas fa-calendar mr-1"></i> Kalender: <span id="statKalenderCount">0</span> Hari
+                            </span>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="d-flex flex-wrap align-items-center" style="gap: 6px;">
+                            <span class="badge" style="background-color: #DC2626; color: #fff; font-size: 11px; padding: 4px 7px;">
+                                <i class="fas fa-square mr-1"></i> Cuti Diambil (C)
+                            </span>
+                            <span class="badge" style="background-color: #FDE047; color: #854D0E; font-size: 11px; padding: 4px 7px;">
+                                <i class="fas fa-square mr-1"></i> Cuti Bersama (CB)
+                            </span>
+                            <span class="badge" style="background-color: #FCA5A5; color: #991B1B; font-size: 11px; padding: 4px 7px;">
+                                <i class="fas fa-square mr-1"></i> Libur Nasional (LN)
+                            </span>
+                            <span class="badge" style="background-color: #E2E8F0; color: #64748B; font-size: 11px; padding: 4px 7px;">
+                                <i class="fas fa-square mr-1"></i> Akhir Pekan (-)
+                            </span>
+                            <span class="badge bg-white border text-dark" style="font-size: 11px; padding: 4px 7px;">
+                                Normal
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Table Matrix Container with Sticky Freeze Panes -->
+                    <div class="matrix-wrapper" style="flex: 1 1 auto; overflow: auto; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px;">
+                        <table class="table-matrix" id="tableMatrixPreview">
+                            <thead id="matrixThead"></thead>
+                            <tbody id="matrixTbody"></tbody>
+                            <tfoot id="matrixTfoot"></tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light py-2 px-3 d-flex justify-content-between align-items-center" style="flex-shrink: 0;">
+                <div class="small text-muted">
+                    <i class="fas fa-info-circle mr-1 text-primary"></i> <strong>Arahkan kursor (hover)</strong> pada sel tanggal cuti/libur untuk melihat rincian alasan dan keterangan lengkap.
+                </div>
+                <div class="d-flex" style="gap: 8px;">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Tutup
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm font-weight-bold" id="btnDownloadFromPreviewBottom">
+                        <i class="fas fa-download mr-1"></i> Unduh File Excel (.xlsx)
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <?php endif; ?>
@@ -917,6 +1142,174 @@ document.addEventListener("DOMContentLoaded", function () {
             $(this).removeClass('btn-outline-secondary').addClass('btn-secondary text-white');
         }
     });
+
+    // Trigger preview button
+    $('#btnTriggerPreview').on('click', function () {
+        const mulai = $('#excel_tanggal_mulai').val();
+        const selesai = $('#excel_tanggal_selesai').val();
+        const status = $('#excel_status').val();
+        const filterPegawai = $('#excel_filter_pegawai').val();
+
+        if (!mulai || !selesai) {
+            alert('Harap tentukan tanggal mulai dan tanggal selesai.');
+            return;
+        }
+
+        $('#modalExportExcelCuti').modal('hide');
+        $('#modalPreviewRekapCuti').modal('show');
+
+        loadMatrixPreview(mulai, selesai, status, filterPegawai);
+    });
+
+    // Back to filter modal button
+    $('#btnBackToFilter, #btnRetryFilter').on('click', function () {
+        $('#modalPreviewRekapCuti').modal('hide');
+        setTimeout(function () {
+            $('#modalExportExcelCuti').modal('show');
+        }, 300);
+    });
+
+    // Download from preview button
+    $('#btnDownloadFromPreview, #btnDownloadFromPreviewBottom').on('click', function () {
+        const mulai = $('#excel_tanggal_mulai').val();
+        const selesai = $('#excel_tanggal_selesai').val();
+        const status = $('#excel_status').val();
+        const filterPegawai = $('#excel_filter_pegawai').val();
+
+        const url = "<?= site_url('admin/surat/cuti/export-excel'); ?>?" + $.param({
+            tanggal_mulai: mulai,
+            tanggal_selesai: selesai,
+            status: status,
+            filter_pegawai: filterPegawai
+        });
+
+        window.open(url, '_blank');
+    });
+
+    function loadMatrixPreview(mulai, selesai, status, filterPegawai) {
+        $('#previewLoading').removeClass('d-none');
+        $('#previewError').addClass('d-none');
+        $('#previewContainer').addClass('d-none');
+
+        $.ajax({
+            url: "<?= site_url('admin/surat/cuti/preview-rekap'); ?>",
+            type: "GET",
+            data: {
+                tanggal_mulai: mulai,
+                tanggal_selesai: selesai,
+                status: status,
+                filter_pegawai: filterPegawai
+            },
+            dataType: "json",
+            success: function (res) {
+                $('#previewLoading').addClass('d-none');
+                if (!res.success) {
+                    $('#previewErrorMsg').text(res.message || 'Terjadi kesalahan saat memuat pratinjau.');
+                    $('#previewError').removeClass('d-none');
+                    return;
+                }
+
+                renderMatrixTable(res);
+                $('#previewContainer').removeClass('d-none');
+            },
+            error: function (xhr) {
+                $('#previewLoading').addClass('d-none');
+                $('#previewErrorMsg').text('Gagal memuat pratinjau dari server (' + xhr.status + ': ' + xhr.statusText + ').');
+                $('#previewError').removeClass('d-none');
+            }
+        });
+    }
+
+    function renderMatrixTable(data) {
+        $('#previewBadgePeriod').text('Periode: ' + data.period_label);
+        $('#previewBadgeStatus').text(data.status_label);
+        $('#previewBadgePegawai').text(data.pegawai_label);
+
+        $('#statPegawaiCount').text(data.stats.total_pegawai || 0);
+        $('#statHariCutiCount').text(data.stats.total_hari_cuti || 0);
+        $('#statLiburCount').text((data.stats.total_libur_nasional || 0) + (data.stats.total_cuti_bersama || 0));
+        $('#statKalenderCount').text(data.stats.total_kalender || 0);
+
+        // 1. Build Thead
+        let theadHtml = '';
+        theadHtml += '<tr class="row-month">';
+        theadHtml += '<th rowspan="3" class="sticky-fixed col-no">No</th>';
+        theadHtml += '<th rowspan="3" class="sticky-fixed col-nip">NIP</th>';
+        theadHtml += '<th rowspan="3" class="sticky-fixed col-nama">Nama Pegawai</th>';
+        theadHtml += '<th rowspan="3" class="sticky-fixed col-total">Total Cuti</th>';
+
+        data.month_groups.forEach(function (mg) {
+            theadHtml += '<th colspan="' + mg.col_count + '" style="background:#0f172a; color:#fff; font-size:11px; padding:6px; text-transform:uppercase; letter-spacing:0.5px;">' + mg.label + '</th>';
+        });
+        theadHtml += '</tr>';
+
+        // Row Day Name
+        theadHtml += '<tr class="row-day">';
+        data.days.forEach(function (d) {
+            let bg = '#1e293b';
+            if (d.is_holiday) bg = '#b91c1c';
+            else if (d.is_leave) bg = '#d97706';
+            else if (d.is_weekend) bg = '#475569';
+
+            theadHtml += '<th style="background:' + bg + ';" title="' + (d.holiday_name ? (d.is_leave ? 'Cuti Bersama: ' : 'Libur: ') + d.holiday_name : d.day_name) + '">' + d.day_name + '</th>';
+        });
+        theadHtml += '</tr>';
+
+        // Row Date Number
+        theadHtml += '<tr class="row-date">';
+        data.days.forEach(function (d) {
+            let bg = '#1e293b';
+            if (d.is_holiday) bg = '#b91c1c';
+            else if (d.is_leave) bg = '#d97706';
+            else if (d.is_weekend) bg = '#475569';
+
+            theadHtml += '<th style="background:' + bg + ';" title="' + (d.holiday_name ? (d.is_leave ? 'Cuti Bersama: ' : 'Libur: ') + d.holiday_name : d.day_num) + '">' + d.day_num + '</th>';
+        });
+        theadHtml += '</tr>';
+        $('#matrixThead').html(theadHtml);
+
+        // 2. Build Tbody
+        let tbodyHtml = '';
+        data.employees.forEach(function (emp) {
+            tbodyHtml += '<tr>';
+            tbodyHtml += '<td class="sticky-fixed col-no font-weight-bold text-muted">' + emp.no + '</td>';
+            tbodyHtml += '<td class="sticky-fixed col-nip"><small class="text-muted">' + emp.nip + '</small></td>';
+            tbodyHtml += '<td class="sticky-fixed col-nama font-weight-bold text-dark"><span class="d-block text-truncate" style="max-width:210px;" title="' + emp.nama + '">' + emp.nama + '</span></td>';
+            tbodyHtml += '<td class="sticky-fixed col-total ' + (emp.total_cuti > 0 ? 'text-danger font-weight-bold' : 'text-muted') + '">' + emp.total_cuti + '</td>';
+
+            emp.cells.forEach(function (c) {
+                let cellClass = 'cell-normal';
+                if (c.type === 'cuti') cellClass = 'cell-cuti';
+                else if (c.type === 'leave') cellClass = 'cell-leave';
+                else if (c.type === 'holiday') cellClass = 'cell-holiday';
+                else if (c.type === 'weekend') cellClass = 'cell-weekend';
+
+                const safeTitle = c.tooltip ? $('<div>').text(c.tooltip).html().replace(/"/g, '&quot;') : '';
+                const tooltipAttr = safeTitle ? ' data-toggle="tooltip" data-placement="top" title="' + safeTitle + '"' : '';
+                tbodyHtml += '<td class="' + cellClass + '"' + tooltipAttr + '>' + (c.code || '') + '</td>';
+            });
+            tbodyHtml += '</tr>';
+        });
+        $('#matrixTbody').html(tbodyHtml);
+
+        // 3. Build Tfoot
+        let tfootHtml = '<tr>';
+        tfootHtml += '<td colspan="3" class="sticky-fixed text-right font-weight-bold px-3">TOTAL PEGAWAI CUTI PER HARI</td>';
+        tfootHtml += '<td class="sticky-fixed col-total font-weight-bold text-primary">' + data.total_akumulasi_cuti + '</td>';
+
+        data.summary_per_day.forEach(function (cnt) {
+            const highlight = cnt > 0 ? 'background-color: #fee2e2; color: #dc2626; font-weight:700;' : '';
+            tfootHtml += '<td style="' + highlight + '">' + cnt + '</td>';
+        });
+        tfootHtml += '</tr>';
+        $('#matrixTfoot').html(tfootHtml);
+
+        // Tooltips
+        $('#tableMatrixPreview [data-toggle="tooltip"]').tooltip({
+            container: 'body',
+            html: true
+        });
+    }
 });
 </script>
 <?= $this->endSection(); ?>

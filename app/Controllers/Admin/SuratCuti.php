@@ -1515,6 +1515,342 @@ class SuratCuti extends BaseController
         exit;
     }
 
+    /**
+     * Preview Matriks Rekapitulasi Cuti Pegawai (AJAX JSON)
+     * Mengembalikan data matriks kalender horizontal dan statistik untuk ditampilkan
+     * langsung pada antarmuka web tanpa harus mengunduh file Excel terlebih dahulu.
+     */
+    public function previewRekap(): ResponseInterface
+    {
+        if (! $this->canAccess()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk melihat data ini.',
+            ]);
+        }
+
+        $tglMulaiInput = trim((string) ($this->request->getGet('tanggal_mulai') ?? $this->request->getPost('tanggal_mulai')));
+        $tglSelesaiInput = trim((string) ($this->request->getGet('tanggal_selesai') ?? $this->request->getPost('tanggal_selesai')));
+        $statusFilter = strtolower(trim((string) ($this->request->getGet('status') ?? $this->request->getPost('status'))));
+        if (! in_array($statusFilter, ['disetujui', 'semua'], true)) {
+            $statusFilter = 'disetujui';
+        }
+
+        $filterPegawai = strtolower(trim((string) ($this->request->getGet('filter_pegawai') ?? $this->request->getPost('filter_pegawai'))));
+        if (! in_array($filterPegawai, ['cuti_saja', 'semua'], true)) {
+            $filterPegawai = 'cuti_saja';
+        }
+
+        if (empty($tglMulaiInput)) {
+            $tglMulaiInput = date('Y-m-01');
+        }
+        if (empty($tglSelesaiInput)) {
+            $tglSelesaiInput = date('Y-m-t');
+        }
+
+        try {
+            $startDate = new \DateTimeImmutable($tglMulaiInput);
+            $endDate = new \DateTimeImmutable($tglSelesaiInput);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Format rentang tanggal tidak valid.',
+            ]);
+        }
+
+        if ($endDate < $startDate) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.',
+            ]);
+        }
+
+        $diffDays = (int) $startDate->diff($endDate)->days + 1;
+        if ($diffDays > 366) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Rentang tanggal maksimal adalah 1 tahun (366 hari) agar pratinjau optimal.',
+            ]);
+        }
+
+        $db = db_connect();
+
+        // 1. Ambil Hari Libur Nasional & Cuti Bersama
+        $holidays = [];
+        if ($db->tableExists('mst_tanggal_merah')) {
+            $hRows = $db->table('mst_tanggal_merah')
+                ->select('tanggal, nama_libur, tipe')
+                ->where('tanggal >=', $startDate->format('Y-m-d'))
+                ->where('tanggal <=', $endDate->format('Y-m-d'))
+                ->get()
+                ->getResultArray();
+
+            foreach ($hRows as $hr) {
+                $holidays[$hr['tanggal']] = [
+                    'nama' => $hr['nama_libur'],
+                    'tipe' => $hr['tipe'] ?? 'holiday',
+                ];
+            }
+        }
+
+        // 2. Ambil Daftar Pegawai
+        $employees = [];
+        if ($db->tableExists('mst_pegawai')) {
+            $builder = $db->table('mst_pegawai');
+            $builder->select('mst_pegawai.id, mst_pegawai.nip, mst_pegawai.nama, ju.jabatan AS jabatan_label');
+            $builder->join('mst_jabatan ju', 'ju.id = mst_pegawai.jabatan_utama_id', 'left');
+            $builder->where('mst_pegawai.is_active', 1);
+            $builder->orderBy('mst_pegawai.nama', 'ASC');
+            $employees = $builder->get()->getResultArray();
+        }
+
+        // 3. Ambil Pengajuan Cuti
+        $cutiRows = [];
+        if ($db->tableExists('surat_cuti')) {
+            $cBuilder = $db->table('surat_cuti')
+                ->select('id, pegawai_id, nip, nama, jabatan, jenis_cuti, alasan_cuti, tanggal_mulai, tanggal_selesai, status')
+                ->where('tanggal_mulai <=', $endDate->format('Y-m-d'))
+                ->where('tanggal_selesai >=', $startDate->format('Y-m-d'));
+
+            if ($statusFilter === 'disetujui') {
+                $cBuilder->where('status', 'disetujui');
+            } else {
+                $cBuilder->whereIn('status', ['disetujui', 'pending']);
+            }
+
+            $cutiRows = $cBuilder->get()->getResultArray();
+        }
+
+        $empByPegawaiId = [];
+        $empByNip = [];
+        foreach ($employees as $idx => $emp) {
+            if (! empty($emp['id'])) {
+                $empByPegawaiId[(int) $emp['id']] = $idx;
+            }
+            $cleanNip = preg_replace('/\s+/', '', (string) ($emp['nip'] ?? ''));
+            if ($cleanNip !== '') {
+                $empByNip[$cleanNip] = $idx;
+            }
+        }
+
+        $empLeaves = [];
+        foreach ($cutiRows as $cRow) {
+            $cPegId = ! empty($cRow['pegawai_id']) ? (int) $cRow['pegawai_id'] : null;
+            $cNip = preg_replace('/\s+/', '', (string) ($cRow['nip'] ?? ''));
+
+            $idx = null;
+            if ($cPegId !== null && isset($empByPegawaiId[$cPegId])) {
+                $idx = $empByPegawaiId[$cPegId];
+            } elseif ($cNip !== '' && isset($empByNip[$cNip])) {
+                $idx = $empByNip[$cNip];
+            }
+
+            if ($idx === null) {
+                $newIdx = count($employees);
+                $employees[$newIdx] = [
+                    'id'            => $cPegId,
+                    'nip'           => $cRow['nip'] ?? '-',
+                    'nama'          => $cRow['nama'] ?? 'Pegawai',
+                    'jabatan_label' => $cRow['jabatan'] ?? '-',
+                ];
+                if ($cPegId !== null) {
+                    $empByPegawaiId[$cPegId] = $newIdx;
+                }
+                if ($cNip !== '') {
+                    $empByNip[$cNip] = $newIdx;
+                }
+                $idx = $newIdx;
+            }
+
+            $empLeaves[$idx][] = $cRow;
+        }
+
+        // Filter: Hanya tampilkan pegawai yang mengambil cuti pada periode ini
+        if ($filterPegawai === 'cuti_saja') {
+            $onlyCutiEmployees = [];
+            $newEmpLeaves = [];
+            foreach ($employees as $idx => $emp) {
+                if (! empty($empLeaves[$idx])) {
+                    $newIdx = count($onlyCutiEmployees);
+                    $onlyCutiEmployees[$newIdx] = $emp;
+                    $newEmpLeaves[$newIdx] = $empLeaves[$idx];
+                }
+            }
+            $employees = $onlyCutiEmployees;
+            $empLeaves = $newEmpLeaves;
+
+            if (empty($employees)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Tidak ditemukan pegawai yang mengambil cuti pada rentang tanggal ' . $startDate->format('d/m/Y') . ' s/d ' . $endDate->format('d/m/Y') . '.',
+                ]);
+            }
+        }
+
+        // 4. Susun Kalender Hari & Grouping Bulan
+        $period = new \DatePeriod($startDate, new \DateInterval('P1D'), $endDate->modify('+1 day'));
+        $days = [];
+        $monthGroups = [];
+        $holidayCount = 0;
+        $leaveCount = 0;
+        $weekendCount = 0;
+
+        foreach ($period as $dt) {
+            $dateStr = $dt->format('Y-m-d');
+            $dayOfWeek = (int) $dt->format('N');
+            $isWeekend = ($dayOfWeek === 6 || $dayOfWeek === 7);
+            if ($isWeekend) {
+                $weekendCount++;
+            }
+
+            $dayNameIndo = match ($dayOfWeek) {
+                1 => 'Sen',
+                2 => 'Sel',
+                3 => 'Rab',
+                4 => 'Kam',
+                5 => 'Jum',
+                6 => 'Sab',
+                7 => 'Min',
+                default => '',
+            };
+
+            $holiday = $holidays[$dateStr] ?? null;
+            $isHoliday = ($holiday !== null && ($holiday['tipe'] ?? 'holiday') === 'holiday');
+            $isLeave = ($holiday !== null && ($holiday['tipe'] ?? '') === 'leave');
+
+            if ($isHoliday) {
+                $holidayCount++;
+            } elseif ($isLeave) {
+                $leaveCount++;
+            }
+
+            $mKey = $dt->format('Y-m');
+            if (! isset($monthGroups[$mKey])) {
+                $monthGroups[$mKey] = [
+                    'label'     => strtoupper($this->bulanIndo((int) $dt->format('m'))) . ' ' . $dt->format('Y'),
+                    'col_count' => 1,
+                ];
+            } else {
+                $monthGroups[$mKey]['col_count']++;
+            }
+
+            $days[] = [
+                'date'         => $dateStr,
+                'day_num'      => $dt->format('d'),
+                'month_num'    => $dt->format('m'),
+                'year'         => $dt->format('Y'),
+                'day_name'     => $dayNameIndo,
+                'day_of_week'  => $dayOfWeek,
+                'is_weekend'   => $isWeekend,
+                'is_holiday'   => $isHoliday,
+                'is_leave'     => $isLeave,
+                'holiday_name' => $holiday['nama'] ?? '',
+            ];
+        }
+
+        // 5. Susun Matriks Pegawai
+        $matrixEmployees = [];
+        $summaryPerDay = array_fill(0, count($days), 0);
+        $totalAkumulasiCuti = 0;
+
+        foreach ($employees as $empIdx => $emp) {
+            $totalCutiPegawai = 0;
+            $cells = [];
+
+            foreach ($days as $dIdx => $d) {
+                if ($d['is_holiday']) {
+                    $cells[] = [
+                        'type'    => 'holiday',
+                        'code'    => 'LN',
+                        'tooltip' => 'Libur Nasional: ' . $d['holiday_name'],
+                    ];
+                } elseif ($d['is_leave']) {
+                    $cells[] = [
+                        'type'    => 'leave',
+                        'code'    => 'CB',
+                        'tooltip' => 'Cuti Bersama: ' . $d['holiday_name'],
+                    ];
+                } elseif ($d['is_weekend']) {
+                    $cells[] = [
+                        'type'    => 'weekend',
+                        'code'    => '-',
+                        'tooltip' => ($d['day_of_week'] === 6 ? 'Sabtu' : 'Minggu') . ' (Akhir Pekan)',
+                    ];
+                } else {
+                    $takenLeave = null;
+                    if (! empty($empLeaves[$empIdx])) {
+                        foreach ($empLeaves[$empIdx] as $lv) {
+                            if ($lv['tanggal_mulai'] <= $d['date'] && $lv['tanggal_selesai'] >= $d['date']) {
+                                $takenLeave = $lv;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($takenLeave !== null) {
+                        $cutiCode = match (trim((string) $takenLeave['jenis_cuti'])) {
+                            'Cuti Tahunan'                  => 'CT',
+                            'Cuti Sakit'                    => 'CS',
+                            'Cuti Melahirkan'               => 'CM',
+                            'Cuti Karena Alasan Penting'    => 'CAP',
+                            'Cuti Besar'                    => 'CBK',
+                            'Cuti di Luar Tanggungan Negara' => 'CLTN',
+                            default                         => 'C',
+                        };
+
+                        $totalCutiPegawai++;
+                        $totalAkumulasiCuti++;
+                        $summaryPerDay[$dIdx]++;
+
+                        $cells[] = [
+                            'type'    => 'cuti',
+                            'code'    => $cutiCode,
+                            'tooltip' => "{$emp['nama']}\n{$takenLeave['jenis_cuti']} ({$takenLeave['tanggal_mulai']} s/d {$takenLeave['tanggal_selesai']})\nAlasan: {$takenLeave['alasan_cuti']}\nStatus: " . ucfirst($takenLeave['status']),
+                        ];
+                    } else {
+                        $cells[] = [
+                            'type'    => 'normal',
+                            'code'    => '',
+                            'tooltip' => 'Hari Kerja Normal',
+                        ];
+                    }
+                }
+            }
+
+            $matrixEmployees[] = [
+                'no'         => $empIdx + 1,
+                'nip'        => $emp['nip'] ?? '-',
+                'nama'       => $emp['nama'],
+                'jabatan'    => $emp['jabatan_label'] ?: '-',
+                'total_cuti' => $totalCutiPegawai,
+                'cells'      => $cells,
+            ];
+        }
+
+        $statusLabel = ($statusFilter === 'disetujui') ? 'Hanya Cuti Disetujui' : 'Semua Pengajuan Aktif';
+        $pegawaiLabel = ($filterPegawai === 'cuti_saja') ? 'Hanya Pegawai Cuti' : 'Seluruh Pegawai Aktif';
+
+        return $this->response->setJSON([
+            'success'              => true,
+            'period_label'         => $startDate->format('d/m/Y') . ' s/d ' . $endDate->format('d/m/Y'),
+            'status_label'         => $statusLabel,
+            'pegawai_label'        => $pegawaiLabel,
+            'month_groups'         => array_values($monthGroups),
+            'days'                 => $days,
+            'employees'            => $matrixEmployees,
+            'summary_per_day'      => $summaryPerDay,
+            'total_akumulasi_cuti' => $totalAkumulasiCuti,
+            'stats'                => [
+                'total_pegawai'        => count($matrixEmployees),
+                'total_hari_cuti'      => $totalAkumulasiCuti,
+                'total_kalender'       => count($days),
+                'total_libur_nasional' => $holidayCount,
+                'total_cuti_bersama'   => $leaveCount,
+                'total_weekend'        => $weekendCount,
+            ],
+        ]);
+    }
+
     private function bulanIndo(int $bulan): string
     {
         return match ($bulan) {

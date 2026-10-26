@@ -327,13 +327,15 @@ graph TD
 graph TD
     A[Buka Menu Surat-Surat -> Cuti] --> B[Klik Tombol Ajukan Cuti]
     A --> B2[Klik Tombol Form Cuti Kosong .docx]
+    B2 --> H2[Unduh Langsung Template Word Kosong Resmi]
     A --> B5[Klik Tombol Rekap Cuti .xlsx]
     A --> B3[Lihat Rekomendasi Cuti di Master Tanggal Merah]
     B3 -->|Klik Ajukan Cuti Ini| B4[Otomatis Buka Modal & Isi Tanggal Cuti]
     B4 --> D1
-    B2 --> H2[Unduh Langsung Template Word Kosong Resmi]
     B5 --> B6[Pilih Rentang Tanggal, Filter Pegawai Cuti Saja / Semua & Status]
-    B6 --> H3[Unduh Matriks Horizontal Excel .xlsx: Highlight Cuti Diambil, Cuti Bersama, Tanggal Merah & Akhir Pekan]
+    B6 --> B7[Klik Pratinjau Matriks: Tampilan Interaktif di Browser dengan Sticky Freeze Panes, Badges & Tooltips]
+    B6 --> H3[Unduh Langsung File Excel .xlsx]
+    B7 --> H3
     B --> C[Sistem Otomatis Mengisi Tanggal Pengajuan Terkunci & Data Pegawai]
     C --> D[Pilih Jenis Cuti & Alasan Cuti]
     D --> D1[Pilih Tanggal Mulai & Tanggal Selesai Cuti]
@@ -936,7 +938,7 @@ graph TD
                                 <p class="small text-muted mb-2"><code>/admin/surat/cuti</code></p>
                                 <ol class="pl-3 small mb-0">
                                     <li>Klik tombol <strong>Form Cuti Kosong (.docx)</strong> di bagian atas untuk mengunduh template formulir cuti kosong resmi Satker PPS Riau (format Word .docx).</li>
-                                    <li>Klik tombol <strong>Rekap Cuti (.xlsx)</strong> di bagian atas untuk mengekspor rekapitulasi permohonan cuti dalam format matriks horizontal memanjang ke samping berdasarkan rentang tanggal fleksibel (dilengkapi pilihan cepat Bulan Ini, Bulan Lalu, Bulan Depan, 1 Tahun Berjalan, opsi daftar pegawai: <strong>Hanya Pegawai yang Mengambil Cuti Saja</strong> atau <strong>Semua Pegawai Aktif</strong>, serta filter status cuti). File Excel dilengkapi <em>Freeze Panes</em> (identitas pegawai di sisi kiri dan tanggal di baris atas terkunci otomatis saat menggulir layar), penandaan warna cerdas (merah untuk tanggal cuti yang diambil, kuning untuk cuti bersama SKB 3 Menteri, merah muda untuk tanggal merah/libur nasional, dan abu-abu untuk akhir pekan), rincian jenis/alasan cuti pada komentar sel, serta formula kalkulasi otomatis total hari cuti pegawai dan total pegawai cuti harian.</li>
+                                    <li>Klik tombol <strong>Rekap Cuti (.xlsx)</strong> di bagian atas untuk mengekspor atau melihat rekapitulasi permohonan cuti dalam format matriks horizontal memanjang ke samping berdasarkan rentang tanggal fleksibel (dilengkapi pilihan cepat Bulan Ini, Bulan Lalu, Bulan Depan, 1 Tahun Berjalan, opsi daftar pegawai: <strong>Hanya Pegawai yang Mengambil Cuti Saja</strong> atau <strong>Semua Pegawai Aktif</strong>, serta filter status cuti). Pengguna dapat mengklik tombol <strong>Pratinjau (Preview) Matriks</strong> untuk langsung melihat tabel visual kalender secara interaktif di layar browser tanpa harus mendownload file Excel terlebih dahulu (dilengkapi <em>Sticky Freeze Panes</em>, kartu statistik ringkas, indikator warna kalender, dan rincian permohonan saat kursor diarahkan ke sel tanggal), atau mengklik tombol <strong>Unduh File Excel (.xlsx)</strong> untuk mengunduh spreadsheet resmi.</li>
                                     <li>Klik tombol <strong>Ajukan Cuti</strong> untuk membuat permohonan cuti baru secara digital, atau klik tombol <em>Ajukan Cuti Ini</em> pada rekomendasi Harpitnas di Master Tanggal Merah untuk otomatis mengisi tanggal permohonan.</li>
                                     <li><strong>Tanggal Pengajuan</strong> otomatis terkunci pada tanggal hari ini.</li>
                                     <li>Data pegawai (Nama, NIP, Jabatan, dan kalkulasi Masa Kerja real-time dari NIP TMT CPNS) terisi secara otomatis.</li>
