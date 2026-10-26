@@ -153,12 +153,10 @@
                                                 $fotoLbl = $row['foto_label'] ?? 'Belum Ada Foto';
                                                 $iconColorClass = ($fotoCol === 'success') ? 'text-success' : (($fotoCol === 'warning') ? 'text-warning' : 'text-danger');
                                             ?>
-                                            <div class="d-flex align-items-center justify-content-center" title="<?= esc($fotoLbl); ?>">
-                                                <i class="fas fa-camera <?= $iconColorClass; ?> mr-1.5" style="font-size: 1.15rem;"></i>
-                                                <span class="badge badge-<?= $fotoCol; ?> px-2 py-1 font-weight-bold" style="border-radius: 4px; font-size: 0.74rem;">
-                                                    <?= esc($fotoLbl); ?>
-                                                </span>
-                                            </div>
+                                            <a href="<?= site_url('admin/inventaris/pemeliharaan/' . $row['id'] . '/foto'); ?>" class="btn btn-outline-<?= $fotoCol; ?> btn-xs px-2 py-1 font-weight-bold shadow-sm d-inline-flex align-items-center" title="Kelola / Input Foto Bertahap (Klik untuk membuka)">
+                                                <i class="fas fa-camera <?= $iconColorClass; ?> mr-1.5"></i>
+                                                <?= esc($fotoLbl); ?>
+                                            </a>
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm" role="group">
@@ -168,7 +166,10 @@
                                                     </a>
                                                 <?php endif; ?>
                                                 <?php if (! empty($permissions['can_edit'])): ?>
-                                                    <a href="<?= site_url('admin/inventaris/pemeliharaan/' . $row['id'] . '/ubah'); ?>" class="btn btn-outline-primary shadow-sm" title="Ubah Surat & Kelola Foto">
+                                                    <a href="<?= site_url('admin/inventaris/pemeliharaan/' . $row['id'] . '/foto'); ?>" class="btn btn-outline-info shadow-sm" title="Kelola / Input Foto Lampiran Bertahap">
+                                                        <i class="fas fa-camera mr-1"></i>Foto
+                                                    </a>
+                                                    <a href="<?= site_url('admin/inventaris/pemeliharaan/' . $row['id'] . '/ubah'); ?>" class="btn btn-outline-primary shadow-sm" title="Ubah Rincian Surat & Barang">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                 <?php endif; ?>

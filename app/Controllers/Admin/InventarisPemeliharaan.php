@@ -657,6 +657,311 @@ class InventarisPemeliharaan extends BaseController
             ->setBody($dompdf->output());
     }
 
+    /**
+     * Halaman Khusus Pengelolaan Foto Lampiran (Dapat Diinput Bertahap).
+     */
+    public function foto(int $id)
+    {
+        $forbidden = $this->checkAccess();
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $permissions = $this->resolvePermissions();
+        $model = new InventarisPemeliharaanModel();
+        $pemeliharaan = $model->getDetail($id);
+
+        if (! $pemeliharaan) {
+            return redirect()->to('/admin/inventaris/pemeliharaan')->with('error', 'Data surat pemeliharaan tidak ditemukan.');
+        }
+
+        $fotoModel = new InventarisPemeliharaanFotoModel();
+        $fotos = $fotoModel->where('pemeliharaan_id', $id)->orderBy('urutan', 'ASC')->findAll();
+
+        // Hitung statistik kelengkapan foto
+        $totalGroups = count($fotos);
+        $totalSlots = $totalGroups * 4;
+        $filledSlots = 0;
+
+        foreach ($fotos as &$f) {
+            $groupFilled = 0;
+            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
+                if (! empty($f[$pos])) {
+                    $cleanPos = ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $f[$pos]), DIRECTORY_SEPARATOR);
+                    if (is_file(FCPATH . $cleanPos)) {
+                        $filledSlots++;
+                        $groupFilled++;
+                    } else {
+                        $f[$pos] = null; // Reset jika file fisiknya hilang
+                    }
+                }
+            }
+            $f['group_filled'] = $groupFilled;
+            $f['group_target'] = 4;
+            $f['group_status'] = ($groupFilled === 4) ? 'success' : (($groupFilled > 0) ? 'warning' : 'danger');
+        }
+        unset($f);
+
+        $percentage = $totalSlots > 0 ? (int) round(($filledSlots / $totalSlots) * 100) : 0;
+        $statusColor = ($filledSlots >= $totalSlots && $totalSlots > 0) ? 'success' : (($filledSlots > 0) ? 'warning' : 'danger');
+        $statusLabel = ($filledSlots >= $totalSlots && $totalSlots > 0) ? 'Lengkap (100%)' : (($filledSlots > 0) ? 'Sebagian (' . $percentage . '%)' : 'Belum Ada Foto (0%)');
+
+        $data = [
+            'title'        => 'Kelola Lampiran Foto - ' . esc($pemeliharaan['no_surat']),
+            'pemeliharaan' => $pemeliharaan,
+            'fotos'        => $fotos,
+            'stats'        => [
+                'total_groups' => $totalGroups,
+                'total_slots'  => $totalSlots,
+                'filled_slots' => $filledSlots,
+                'empty_slots'  => max(0, $totalSlots - $filledSlots),
+                'percentage'   => $percentage,
+                'status_color' => $statusColor,
+                'status_label' => $statusLabel,
+            ],
+            'permissions'  => $permissions,
+        ];
+
+        return view('admin/inventaris/pemeliharaan/foto', $data);
+    }
+
+    /**
+     * Simpan Perubahan Lampiran Foto secara Menyeluruh / Formulir Standar.
+     */
+    public function updateFoto(int $id)
+    {
+        $forbidden = $this->checkAccess();
+        if ($forbidden instanceof RedirectResponse) {
+            return $forbidden;
+        }
+
+        $permissions = $this->resolvePermissions();
+        if (empty($permissions['can_edit'])) {
+            return redirect()->to('/admin/inventaris/pemeliharaan')->with('error', 'Anda tidak memiliki hak akses untuk mengubah foto.');
+        }
+
+        $model = new InventarisPemeliharaanModel();
+        $pemeliharaan = $model->find($id);
+        if (! $pemeliharaan) {
+            return redirect()->to('/admin/inventaris/pemeliharaan')->with('error', 'Data surat pemeliharaan tidak ditemukan.');
+        }
+
+        $fotoModel = new InventarisPemeliharaanFotoModel();
+        $fotos = $fotoModel->where('pemeliharaan_id', $id)->findAll();
+
+        $uploadDir = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'inventaris' . DIRECTORY_SEPARATOR . 'pemeliharaan';
+        if (! is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0775, true);
+        }
+
+        $updatedCount = 0;
+        foreach ($fotos as $f) {
+            $fId = (int) $f['id'];
+            $kKey = $f['kelompok_key'];
+            $updateData = [];
+
+            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
+                $posShort = str_replace('foto_', '', $pos);
+                $base64Input = $this->request->getPost('foto_base64_' . $fId . '_' . $posShort);
+                if (! empty($base64Input) && strpos($base64Input, 'data:image') === 0) {
+                    if (! empty($f[$pos])) {
+                        $delOld = FCPATH . ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $f[$pos]), DIRECTORY_SEPARATOR);
+                        if (is_file($delOld)) @unlink($delOld);
+                    }
+                    $savedRel = $this->saveBase64Image($base64Input, $id, $kKey, $pos, $uploadDir);
+                    if ($savedRel) {
+                        $updateData[$pos] = $savedRel;
+                        $updatedCount++;
+                    }
+                } else {
+                    $file = $this->request->getFile('foto_' . $fId . '_' . $posShort);
+                    if ($file && $file->isValid() && ! $file->hasMoved()) {
+                        if (! empty($f[$pos])) {
+                            $delOld = FCPATH . ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $f[$pos]), DIRECTORY_SEPARATOR);
+                            if (is_file($delOld)) @unlink($delOld);
+                        }
+                        $savedRel = $this->processAndSaveUploadedImage($file, $id, $kKey, $pos, $uploadDir);
+                        if ($savedRel) {
+                            $updateData[$pos] = $savedRel;
+                            $updatedCount++;
+                        }
+                    }
+                }
+            }
+
+            if (! empty($updateData)) {
+                $fotoModel->update($fId, $updateData);
+            }
+        }
+
+        return redirect()->to('/admin/inventaris/pemeliharaan/' . $id . '/foto')->with('success', 'Lampiran foto surat pemeliharaan berhasil diperbarui.');
+    }
+
+    /**
+     * AJAX Instant-Save untuk 1 Foto Sudut Spesifik (Auto-Save Pemotretan Kamera / File Upload Cepat).
+     */
+    public function ajaxSaveSingleFoto(int $id)
+    {
+        try {
+            $forbidden = $this->checkAccess();
+            if ($forbidden instanceof RedirectResponse) {
+                return $this->response->setJSON(['success' => false, 'error' => 'Akses ditolak: sesi login Anda tidak memiliki izin.']);
+            }
+
+            $permissions = $this->resolvePermissions();
+            if (empty($permissions['can_edit'])) {
+                return $this->response->setJSON(['success' => false, 'error' => 'Anda tidak memiliki hak akses untuk mengubah foto.']);
+            }
+
+            $fotoId = (int) $this->request->getPost('foto_id');
+            $posisi = trim((string) $this->request->getPost('posisi'));
+            if (strpos($posisi, 'foto_') !== 0) {
+                $posisi = 'foto_' . $posisi;
+            }
+
+            if (! in_array($posisi, ['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'], true)) {
+                return $this->response->setJSON(['success' => false, 'error' => 'Posisi sudut foto tidak valid.']);
+            }
+
+            $fotoModel = new InventarisPemeliharaanFotoModel();
+            $fotoRow = $fotoModel->where('pemeliharaan_id', $id)->find($fotoId);
+            if (! $fotoRow) {
+                return $this->response->setJSON(['success' => false, 'error' => 'Data kelompok foto tidak ditemukan.']);
+            }
+
+            $uploadDir = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'inventaris' . DIRECTORY_SEPARATOR . 'pemeliharaan';
+            if (! is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0775, true);
+            }
+
+            $base64Input = (string) $this->request->getPost('image_base64');
+            $file = $this->request->getFile('image_file');
+            $savedRelPath = null;
+
+            if (! empty($base64Input) && strpos($base64Input, 'data:image') === 0) {
+                if (! empty($fotoRow[$posisi])) {
+                    $oldFull = FCPATH . ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $fotoRow[$posisi]), DIRECTORY_SEPARATOR);
+                    if (is_file($oldFull)) @unlink($oldFull);
+                }
+                $savedRelPath = $this->saveBase64Image($base64Input, $id, $fotoRow['kelompok_key'], $posisi, $uploadDir);
+            } elseif ($file && $file->isValid() && ! $file->hasMoved()) {
+                if (! empty($fotoRow[$posisi])) {
+                    $oldFull = FCPATH . ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $fotoRow[$posisi]), DIRECTORY_SEPARATOR);
+                    if (is_file($oldFull)) @unlink($oldFull);
+                }
+                $savedRelPath = $this->processAndSaveUploadedImage($file, $id, $fotoRow['kelompok_key'], $posisi, $uploadDir);
+            } else {
+                return $this->response->setJSON(['success' => false, 'error' => 'Tidak ada file gambar atau data foto yang dikirim.']);
+            }
+
+            if (! $savedRelPath) {
+                return $this->response->setJSON(['success' => false, 'error' => 'Gagal menyimpan file foto ke server.']);
+            }
+
+            $fotoModel->update($fotoId, [$posisi => $savedRelPath]);
+
+            // Hitung ulang statistik progres kelengkapan
+            $allFotos = $fotoModel->where('pemeliharaan_id', $id)->findAll();
+            $totalSlots = count($allFotos) * 4;
+            $filledSlots = 0;
+            foreach ($allFotos as $af) {
+                foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $p) {
+                    if (! empty($af[$p])) $filledSlots++;
+                }
+            }
+            $percentage = $totalSlots > 0 ? (int) round(($filledSlots / $totalSlots) * 100) : 0;
+            $statusColor = ($filledSlots >= $totalSlots && $totalSlots > 0) ? 'success' : (($filledSlots > 0) ? 'warning' : 'danger');
+            $statusLabel = ($filledSlots >= $totalSlots && $totalSlots > 0) ? 'Lengkap (' . $filledSlots . '/' . $totalSlots . ')' : (($filledSlots > 0) ? 'Sebagian (' . $filledSlots . '/' . $totalSlots . ')' : 'Belum Ada Foto');
+
+            return $this->response->setJSON([
+                'success'      => true,
+                'message'      => 'Foto berhasil disimpan secara instan.',
+                'file_path'    => $savedRelPath,
+                'photo_url'    => base_url($savedRelPath),
+                'filled_slots' => $filledSlots,
+                'total_slots'  => $totalSlots,
+                'percentage'   => $percentage,
+                'status_color' => $statusColor,
+                'status_label' => $statusLabel,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', '[ajaxSaveSingleFoto] ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * AJAX Hapus 1 Foto Sudut Spesifik.
+     */
+    public function ajaxDeleteSingleFoto(int $id)
+    {
+        try {
+            $forbidden = $this->checkAccess();
+            if ($forbidden instanceof RedirectResponse) {
+                return $this->response->setJSON(['success' => false, 'error' => 'Akses ditolak: sesi login Anda tidak memiliki izin.']);
+            }
+
+            $permissions = $this->resolvePermissions();
+            if (empty($permissions['can_edit'])) {
+                return $this->response->setJSON(['success' => false, 'error' => 'Anda tidak memiliki hak akses untuk menghapus foto.']);
+            }
+
+            $fotoId = (int) $this->request->getPost('foto_id');
+            $posisi = trim((string) $this->request->getPost('posisi'));
+            if (strpos($posisi, 'foto_') !== 0) {
+                $posisi = 'foto_' . $posisi;
+            }
+
+            if (! in_array($posisi, ['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'], true)) {
+                return $this->response->setJSON(['success' => false, 'error' => 'Posisi sudut foto tidak valid.']);
+            }
+
+            $fotoModel = new InventarisPemeliharaanFotoModel();
+            $fotoRow = $fotoModel->where('pemeliharaan_id', $id)->find($fotoId);
+            if (! $fotoRow) {
+                return $this->response->setJSON(['success' => false, 'error' => 'Data kelompok foto tidak ditemukan.']);
+            }
+
+            if (! empty($fotoRow[$posisi])) {
+                $oldFull = FCPATH . ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $fotoRow[$posisi]), DIRECTORY_SEPARATOR);
+                if (is_file($oldFull)) @unlink($oldFull);
+            }
+
+            $fotoModel->update($fotoId, [$posisi => null]);
+
+            $allFotos = $fotoModel->where('pemeliharaan_id', $id)->findAll();
+            $totalSlots = count($allFotos) * 4;
+            $filledSlots = 0;
+            foreach ($allFotos as $af) {
+                foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $p) {
+                    if (! empty($af[$p])) $filledSlots++;
+                }
+            }
+            $percentage = $totalSlots > 0 ? (int) round(($filledSlots / $totalSlots) * 100) : 0;
+            $statusColor = ($filledSlots >= $totalSlots && $totalSlots > 0) ? 'success' : (($filledSlots > 0) ? 'warning' : 'danger');
+            $statusLabel = ($filledSlots >= $totalSlots && $totalSlots > 0) ? 'Lengkap (' . $filledSlots . '/' . $totalSlots . ')' : (($filledSlots > 0) ? 'Sebagian (' . $filledSlots . '/' . $totalSlots . ')' : 'Belum Ada Foto');
+
+            return $this->response->setJSON([
+                'success'      => true,
+                'message'      => 'Foto berhasil dihapus.',
+                'filled_slots' => $filledSlots,
+                'total_slots'  => $totalSlots,
+                'percentage'   => $percentage,
+                'status_color' => $statusColor,
+                'status_label' => $statusLabel,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', '[ajaxDeleteSingleFoto] ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ]);
+        }
+    }
+
     public function ajaxSearchBarang()
     {
         try {

@@ -298,12 +298,12 @@
                 </div>
             </div>
 
-            <!-- BAGIAN 3: LAMPIRAN FOTO FISIK (4 SUDUT PER KELOMPOK BARANG) -->
+            <!-- BAGIAN 3: LAMPIRAN FOTO FISIK (OPSIONAL / BISA DIISI BERTAHAP) -->
             <div class="card shadow-sm border-0 mb-4" style="border-radius: 10px;">
                 <div class="card-header bg-white border-bottom py-2.5 d-flex justify-content-between align-items-center flex-wrap">
                     <div>
                         <h6 class="m-0 font-weight-bold text-dark">
-                            <i class="fas fa-camera text-info mr-2"></i>3. Lampiran Foto Fisik (4 Sudut: Depan, Atas, Bawah, Belakang)
+                            <i class="fas fa-camera text-info mr-2"></i>3. Lampiran Foto Fisik (Opsional / Bisa Diinput Bertahap Belakangan)
                         </h6>
                         <small class="text-muted">
                             Tersedia opsi <strong>Unggah File</strong> dan <strong>Foto Langsung Kamera</strong> dengan watermark resmi instansi (PU TimeMark).
@@ -319,6 +319,15 @@
                     </div>
                 </div>
                 <div class="card-body p-3">
+                    <div class="alert alert-light border border-info shadow-sm d-flex align-items-center mb-3" style="border-radius: 8px;">
+                        <i class="fas fa-info-circle fa-2x mr-3 text-info"></i>
+                        <div>
+                            <div class="font-weight-bold text-dark">Foto Bersifat Fleksibel &amp; Dapat Diinput Belakangan</div>
+                            <small class="text-muted">
+                                Tidak perlu khawatir jika foto belum lengkap saat ini. Anda dapat menyimpan surat terlebih dahulu, dan menginput / mencicil foto 4 sudut secara bertahap kapan saja melalui tombol <strong class="text-info"><i class="fas fa-camera mr-1"></i>Foto</strong> di daftar arsip surat.
+                            </small>
+                        </div>
+                    </div>
                     <div id="containerPhotoGroups">
                         <!-- Kartu upload 4 foto per kelompok barang di-generate otomatis via JS -->
                         <div class="text-center py-4 text-muted" id="emptyPhotoNotice">

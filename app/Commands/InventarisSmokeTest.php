@@ -1844,7 +1844,7 @@ class InventarisSmokeTest extends BaseCommand
         try {
             // 1. Validasi keberadaan Controller dan methods
             $refPmlh = new \ReflectionClass(\App\Controllers\Admin\InventarisPemeliharaan::class);
-            $requiredMethods = ['index', 'create', 'store', 'edit', 'update', 'delete', 'cetakPdf', 'ajaxSearchBarang', 'applyWatermark'];
+            $requiredMethods = ['index', 'create', 'store', 'edit', 'update', 'delete', 'cetakPdf', 'foto', 'updateFoto', 'ajaxSaveSingleFoto', 'ajaxDeleteSingleFoto', 'ajaxSearchBarang', 'applyWatermark'];
             $missingMethods = [];
             foreach ($requiredMethods as $m) {
                 if (! $refPmlh->hasMethod($m)) {
@@ -1852,7 +1852,7 @@ class InventarisSmokeTest extends BaseCommand
                 }
             }
             if (empty($missingMethods)) {
-                CLI::write("  [OK] Controller InventarisPemeliharaan memiliki seluruh method utama: " . implode(', ', $requiredMethods), "green");
+                CLI::write("  [OK] Controller InventarisPemeliharaan memiliki seluruh method utama (termasuk kelola foto bertahap): " . implode(', ', $requiredMethods), "green");
             } else {
                 throw new \Exception("Method controller InventarisPemeliharaan hilang: " . implode(', ', $missingMethods));
             }
@@ -2028,6 +2028,19 @@ class InventarisSmokeTest extends BaseCommand
             if (is_file($tempPdfPath)) {
                 unlink($tempPdfPath);
                 CLI::write("  [CLEANUP] File sementara {$tempPdfPath} telah dihapus sesuai Rule 3.", "yellow");
+            }
+
+            // 7. Uji Keberadaan & Sintaks View Halaman Khusus Kelola Foto (Input Bertahap)
+            $fotoViewPath = APPPATH . 'Views/admin/inventaris/pemeliharaan/foto.php';
+            if (is_file($fotoViewPath)) {
+                $fotoFileContent = file_get_contents($fotoViewPath);
+                if (strpos($fotoFileContent, 'Pemotretan Terpandu 4 Sudut') !== false && strpos($fotoFileContent, 'ajax-save-single') !== false) {
+                    CLI::write("  [OK] Halaman khusus kelola foto lampiran bertahap (app/Views/admin/inventaris/pemeliharaan/foto.php) terverifikasi lengkap dengan wizard kamera & auto-save", "green");
+                } else {
+                    throw new \Exception("File view foto.php tidak memiliki komponen wizard atau auto-save yang valid.");
+                }
+            } else {
+                throw new \Exception("File view admin/inventaris/pemeliharaan/foto.php tidak ditemukan.");
             }
 
             // Cleanup data dummy pemeliharaan cascade

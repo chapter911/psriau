@@ -553,6 +553,10 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('inventaris/pemeliharaan/(:num)/ubah', 'Admin\InventarisPemeliharaan::update/$1');
 	$routes->post('inventaris/pemeliharaan/(:num)/hapus', 'Admin\InventarisPemeliharaan::delete/$1');
 	$routes->get('inventaris/pemeliharaan/(:num)/cetak-pdf', 'Admin\InventarisPemeliharaan::cetakPdf/$1');
+	$routes->get('inventaris/pemeliharaan/(:num)/foto', 'Admin\InventarisPemeliharaan::foto/$1');
+	$routes->post('inventaris/pemeliharaan/(:num)/foto', 'Admin\InventarisPemeliharaan::updateFoto/$1');
+	$routes->post('inventaris/pemeliharaan/(:num)/foto/ajax-save-single', 'Admin\InventarisPemeliharaan::ajaxSaveSingleFoto/$1');
+	$routes->post('inventaris/pemeliharaan/(:num)/foto/ajax-delete-single', 'Admin\InventarisPemeliharaan::ajaxDeleteSingleFoto/$1');
 	$routes->get('inventaris/pemeliharaan/ajax-search-barang', 'Admin\InventarisPemeliharaan::ajaxSearchBarang');
 	$routes->post('inventaris/pemeliharaan/apply-watermark', 'Admin\InventarisPemeliharaan::applyWatermark');
 

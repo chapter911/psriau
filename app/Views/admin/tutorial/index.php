@@ -552,15 +552,16 @@ graph TD
     B7 --> I2["Riwayat Masa Jabatan Kasatker Kuasa Pengguna Barang (Sinkronisasi Otomatis Dokumen Lintas Periode)"]
 
     B8 --> J1["Pencatatan Surat Keterangan Pemeliharaan Peralatan &amp; Mesin (TIK / Non-TIK / Umum)"]
-    B8 --> J2["Pemilihan Barang BMN Fleksibel: Filter Peruntukan (Aset Kantor vs Mobiler Sekolah) &amp; Auto-Grouping"]
+    B8 --> J2["Pemilihan Barang BMN Fleksibel: Filter Peruntukan (Aset Kantor vs Mobiler Sekolah) &amp; Auto-Grouping 6 Kriteria"]
     B8 --> J3["Format Ringkas NUP Cerdas (Rentang Otomatis: e.g. '1 - 35' atau '1 - 12 &amp; 15 - 36')"]
-    B8 --> J4["Dua Opsi Akuisisi Foto: Unggah Berkas &amp; Pemotretan Langsung (Kamera HP/Webcam)"]
-    B8 --> J5["Wizard Kamera Terpandu Berurutan: Pengambilan 4 Sudut Terarah (Depan &rarr; Atas &rarr; Bawah &rarr; Belakang)"]
-    B8 --> J6["Watermark TimeMark Otomatis pada Pemotretan Langsung: Logo PU, Waktu Nyata, Koordinat GPS, dan Identitas Aset"]
-    B8 --> J7["Indikator Visual Status Kelengkapan Foto: Hijau (Lengkap 4/4), Kuning (Belum Lengkap), Merah (Belum Ada)"]
-    B8 --> J8["Dukungan Komprehensif Format Foto (JPG, PNG, WebP, dan iPhone HEIC/HEIF Auto-Convert)"]
-    B8 --> J9["Penerbitan Surat Resmi PDF A4 Portrait 3 Halaman (Hlm 1-2 Surat Pernyataan &amp; Rekap, Hlm 3+ Lampiran Foto)"]
-    B8 --> J10["Shortcut Terintegrasi 1-Klik dari Menu Daftar Barang (/admin/inventaris/barang)"]
+    B8 --> J4["Penginputan Foto Bertahap: Form Buat Surat Opsional &amp; Tombol Cepat 'Kelola Foto' (/admin/inventaris/pemeliharaan/{id}/foto)"]
+    B8 --> J5["Dua Opsi Akuisisi Foto: Unggah Berkas &amp; Pemotretan Langsung Kamera Ber-Watermark Real-time"]
+    B8 --> J6["Wizard Kamera Terpandu Berurutan: Pengambilan 4 Sudut Terarah (Depan &rarr; Atas &rarr; Bawah &rarr; Belakang)"]
+    B8 --> J7["Watermark TimeMark Otomatis: Logo PU, Tanggal/Jam Nyata, Koordinat GPS, Identitas Aset &amp; NUP"]
+    B8 --> J8["Indikator Visual Status Kelengkapan Foto: Hijau (Lengkap 4/4), Kuning (Sebagian), Merah (Kosong)"]
+    B8 --> J9["Auto-Save Instan per Sudut Kamera &amp; Konversi Format (JPG, PNG, WebP, HEIC/HEIF)"]
+    B8 --> J10["Penerbitan Surat Resmi PDF A4 Portrait 3 Halaman (Hlm 1-2 Surat Pernyataan &amp; Rekap, Hlm 3+ Lampiran Foto)"]
+    B8 --> J11["Shortcut Terintegrasi 1-Klik dari Menu Daftar Barang (/admin/inventaris/barang)"]
                 </pre>
             </div>
         </div>
@@ -1281,6 +1282,7 @@ graph TD
                                     <li><strong>Shortcut 1-Klik dari Menu Daftar Barang:</strong> Pada menu <em>Daftar Barang</em> (<code>/admin/inventaris/barang</code>), pengguna dapat mencentang beberapa aset BMN yang akan diajukan pemeliharaannya melalui checkbox tabel, lalu mengeklik tombol biru <strong>Buat Surat Pemeliharaan</strong> pada toolbar melayang. Seluruh aset terpilih langsung otomatis terisi ke formulir surat baru.</li>
                                     <li><strong>Pemilihan Barang &amp; Pengelompokan Cerdas (6 Kriteria):</strong> Tersedia tombol <strong>Pilih dari Inventaris Satker</strong> yang dilengkapi filter peruntukan cepat (<em>Aset Kantor (DBR)</em>, <em>Mobiler Sekolah</em>, <em>Aset Lainnya</em>, atau <em>Semua Barang</em>). Tabel modal disajikan secara terkelompok rapi berdasarkan 6 kriteria utama: <strong>Peruntukan</strong>, <strong>Kode Barang</strong>, <strong>Nama Barang</strong>, <strong>Merk / Tipe / Spesifikasi</strong>, <strong>Rentang NUP</strong>, dan <strong>Jumlah Barang</strong>. Setiap kelompok dilengkapi tombol accordion <span class="badge badge-outline-info px-1.5"><i class="fas fa-list-ol mr-0.5"></i>NUP</span> untuk melihat atau memilih unit NUP spesifik. Tersedia pula tombol <strong>Tambah Manual</strong> untuk penambahan baris secara mandiri.</li>
                                     <li><strong>Format Ringkas NUP &amp; Sinkronisasi Otomatis:</strong> Sistem secara otomatis merangkum daftar NUP ke dalam representasi rentang ringkas baku pemerintah (misal NUP <code>1 - 35</code> atau <code>1 - 12 &amp; 15 - 36</code>). Centang pada checkbox kelompok akan memilih seluruh unit di dalamnya sekaligus memetakan 1 kartu kelompok foto pada form surat.</li>
+                                    <li><strong>Input Foto Bertahap &amp; Fleksibel:</strong> Pengguna tidak diwajibkan mengunggah foto sekaligus saat pembuatan surat baru. Surat dapat disimpan terlebih dahulu, dan penginputan foto fisik 4 sudut dapat dicicil secara bertahap kapan saja melalui tombol khusus <span class="badge badge-outline-info px-1.5"><i class="fas fa-camera mr-0.5"></i>Foto</span> di tabel arsip surat (<code>/admin/inventaris/pemeliharaan/{id}/foto</code>). Di halaman khusus ini, setiap foto yang diambil atau diunggah langsung tersimpan secara instan (<em>auto-save</em>) lengkap dengan progress bar persentase kelengkapan foto.</li>
                                     <li><strong>Dua Pilihan Akuisisi Foto (Unggah File &amp; Pemotretan Langsung):</strong> Setiap kelompok barang memerlukan 1 set berisi 4 foto fisik (<em>Tampak Depan, Tampak Atas, Tampak Bawah, Tampak Belakang</em>). Pengguna dapat memilih untuk mengunggah file gambar (JPG, PNG, WebP, atau iPhone HEIC/HEIF yang dikonversi otomatis) atau menggunakan tombol <strong>Foto Langsung Berurutan</strong> untuk memotret menggunakan kamera HP / Webcam laptop secara instan.</li>
                                     <li><strong>Wizard Pemotretan Terpandu Berurutan &amp; Watermark TimeMark Otomatis:</strong> Saat menggunakan fitur foto langsung, sistem memandu pengguna secara terarah langkah demi langkah:
                                         <ul class="pl-3 mt-1 mb-1">
