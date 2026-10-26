@@ -8,6 +8,13 @@ use App\Models\MstPegawaiModel;
 use CodeIgniter\HTTP\RedirectResponse;
 use CodeIgniter\HTTP\ResponseInterface;
 use Dompdf\Dompdf;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 class SuratCuti extends BaseController
 {
@@ -1005,6 +1012,501 @@ class SuratCuti extends BaseController
             ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
             ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->setBody($fileContent);
+    }
+
+    /**
+     * Export Matriks Horizontal Rekapitulasi Cuti Pegawai (Excel .xlsx)
+     * Matriks tanggal memanjang ke samping dengan pewarnaan:
+     * - Merah (#DC2626): Tanggal Cuti yang Diambil Pegawai
+     * - Kuning/Emas (#FDE047): Cuti Bersama SKB 3 Menteri
+     * - Merah Muda (#FCA5A5): Tanggal Merah / Libur Nasional
+     * - Abu-abu (#E2E8F0): Akhir Pekan (Sabtu / Minggu)
+     * - Putih (#FFFFFF): Hari Kerja Efektif Normal
+     * Dilengkapi Freeze Panes & Formula Total Otomatis.
+     */
+    public function exportExcel()
+    {
+        if (! $this->canAccess()) {
+            return redirect()->to(site_url('/admin'));
+        }
+
+        if (! ($this->getPermissions()['export'] ?? false)) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Anda tidak memiliki hak akses untuk export data.');
+        }
+
+        $tglMulaiInput = trim((string) ($this->request->getGet('tanggal_mulai') ?? $this->request->getPost('tanggal_mulai')));
+        $tglSelesaiInput = trim((string) ($this->request->getGet('tanggal_selesai') ?? $this->request->getPost('tanggal_selesai')));
+        $statusFilter = strtolower(trim((string) ($this->request->getGet('status') ?? $this->request->getPost('status'))));
+        if (! in_array($statusFilter, ['disetujui', 'semua'], true)) {
+            $statusFilter = 'disetujui';
+        }
+
+        // Default rentang tanggal: Bulan berjalan (1 s/d akhir bulan)
+        if (empty($tglMulaiInput)) {
+            $tglMulaiInput = date('Y-m-01');
+        }
+        if (empty($tglSelesaiInput)) {
+            $tglSelesaiInput = date('Y-m-t');
+        }
+
+        try {
+            $startDate = new \DateTimeImmutable($tglMulaiInput);
+            $endDate = new \DateTimeImmutable($tglSelesaiInput);
+        } catch (\Throwable $e) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Format rentang tanggal tidak valid.');
+        }
+
+        if ($endDate < $startDate) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.');
+        }
+
+        // Batasi rentang maksimal 366 hari (1 tahun penuh) untuk menjaga performa dan keterbacaan matriks
+        $diffDays = (int) $startDate->diff($endDate)->days + 1;
+        if ($diffDays > 366) {
+            return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Rentang tanggal maksimal adalah 1 tahun (366 hari) agar file Excel optimal.');
+        }
+
+        $db = db_connect();
+
+        // 1. Ambil Hari Libur Nasional & Cuti Bersama
+        $holidays = [];
+        if ($db->tableExists('mst_tanggal_merah')) {
+            $hRows = $db->table('mst_tanggal_merah')
+                ->select('tanggal, nama_libur, tipe')
+                ->where('tanggal >=', $startDate->format('Y-m-d'))
+                ->where('tanggal <=', $endDate->format('Y-m-d'))
+                ->get()
+                ->getResultArray();
+
+            foreach ($hRows as $hr) {
+                $holidays[$hr['tanggal']] = [
+                    'nama' => $hr['nama_libur'],
+                    'tipe' => $hr['tipe'] ?? 'holiday',
+                ];
+            }
+        }
+
+        // 2. Ambil Daftar Pegawai Aktif
+        $employees = [];
+        if ($db->tableExists('mst_pegawai')) {
+            $builder = $db->table('mst_pegawai');
+            $builder->select('mst_pegawai.id, mst_pegawai.nip, mst_pegawai.nama, ju.jabatan AS jabatan_label');
+            $builder->join('mst_jabatan ju', 'ju.id = mst_pegawai.jabatan_utama_id', 'left');
+            $builder->where('mst_pegawai.is_active', 1);
+            $builder->orderBy('mst_pegawai.nama', 'ASC');
+            $employees = $builder->get()->getResultArray();
+        }
+
+        // 3. Ambil Rekap Pengajuan Cuti dalam Rentang Tanggal
+        $cutiRows = [];
+        if ($db->tableExists('surat_cuti')) {
+            $cBuilder = $db->table('surat_cuti')
+                ->select('id, pegawai_id, nip, nama, jabatan, jenis_cuti, alasan_cuti, tanggal_mulai, tanggal_selesai, status')
+                ->where('tanggal_mulai <=', $endDate->format('Y-m-d'))
+                ->where('tanggal_selesai >=', $startDate->format('Y-m-d'));
+
+            if ($statusFilter === 'disetujui') {
+                $cBuilder->where('status', 'disetujui');
+            } else {
+                $cBuilder->whereIn('status', ['disetujui', 'pending']);
+            }
+
+            $cutiRows = $cBuilder->get()->getResultArray();
+        }
+
+        // Index pegawai berdasarkan ID & NIP
+        $empByPegawaiId = [];
+        $empByNip = [];
+        foreach ($employees as $idx => $emp) {
+            if (! empty($emp['id'])) {
+                $empByPegawaiId[(int) $emp['id']] = $idx;
+            }
+            $cleanNip = preg_replace('/\s+/', '', (string) ($emp['nip'] ?? ''));
+            if ($cleanNip !== '') {
+                $empByNip[$cleanNip] = $idx;
+            }
+        }
+
+        // Hubungkan data cuti ke pegawai (tambahkan jika ada pemohon cuti yang belum terdaftar di mst_pegawai aktif)
+        $empLeaves = [];
+        foreach ($cutiRows as $cRow) {
+            $cPegId = ! empty($cRow['pegawai_id']) ? (int) $cRow['pegawai_id'] : null;
+            $cNip = preg_replace('/\s+/', '', (string) ($cRow['nip'] ?? ''));
+
+            $idx = null;
+            if ($cPegId !== null && isset($empByPegawaiId[$cPegId])) {
+                $idx = $empByPegawaiId[$cPegId];
+            } elseif ($cNip !== '' && isset($empByNip[$cNip])) {
+                $idx = $empByNip[$cNip];
+            }
+
+            if ($idx === null) {
+                $newIdx = count($employees);
+                $employees[$newIdx] = [
+                    'id'            => $cPegId,
+                    'nip'           => $cRow['nip'] ?? '-',
+                    'nama'          => $cRow['nama'] ?? 'Pegawai',
+                    'jabatan_label' => $cRow['jabatan'] ?? '-',
+                ];
+                if ($cPegId !== null) {
+                    $empByPegawaiId[$cPegId] = $newIdx;
+                }
+                if ($cNip !== '') {
+                    $empByNip[$cNip] = $newIdx;
+                }
+                $idx = $newIdx;
+            }
+
+            $empLeaves[$idx][] = $cRow;
+        }
+
+        // 4. Susun Daftar Hari Kalender
+        $period = new \DatePeriod($startDate, new \DateInterval('P1D'), $endDate->modify('+1 day'));
+        $days = [];
+        foreach ($period as $dt) {
+            $dateStr = $dt->format('Y-m-d');
+            $dayOfWeek = (int) $dt->format('N'); // 1 = Senin, 7 = Minggu
+            $isWeekend = ($dayOfWeek === 6 || $dayOfWeek === 7);
+            $dayNameIndo = match ($dayOfWeek) {
+                1 => 'Sen',
+                2 => 'Sel',
+                3 => 'Rab',
+                4 => 'Kam',
+                5 => 'Jum',
+                6 => 'Sab',
+                7 => 'Min',
+                default => '',
+            };
+
+            $holiday = $holidays[$dateStr] ?? null;
+            $isHoliday = ($holiday !== null && ($holiday['tipe'] ?? 'holiday') === 'holiday');
+            $isLeave = ($holiday !== null && ($holiday['tipe'] ?? '') === 'leave');
+
+            $days[] = [
+                'date'         => $dateStr,
+                'day_num'      => $dt->format('d'),
+                'month_num'    => $dt->format('m'),
+                'month_name'   => $this->bulanIndo((int) $dt->format('m')),
+                'year'         => $dt->format('Y'),
+                'day_name'     => $dayNameIndo,
+                'day_of_week'  => $dayOfWeek,
+                'is_weekend'   => $isWeekend,
+                'is_holiday'   => $isHoliday,
+                'is_leave'     => $isLeave,
+                'holiday_name' => $holiday['nama'] ?? '',
+            ];
+        }
+
+        // 5. Inisialisasi PhpSpreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Rekap Cuti Pegawai');
+
+        // Header Dokumen
+        $sheet->setCellValue('A1', 'KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(11)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('0F172A'));
+
+        $sheet->setCellValue('A2', 'SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS PROVINSI RIAU');
+        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(11)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('334155'));
+
+        $sheet->setCellValue('A3', 'REKAPITULASI CUTI PEGAWAI');
+        $sheet->getStyle('A3')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('0A66C2'));
+
+        $filterLabel = ($statusFilter === 'disetujui') ? 'Hanya Cuti Disetujui' : 'Semua Pengajuan Aktif (Disetujui & Pending)';
+        $sheet->setCellValue('A4', 'Periode: ' . $startDate->format('d/m/Y') . ' s/d ' . $endDate->format('d/m/Y') . ' (' . $filterLabel . ')');
+        $sheet->getStyle('A4')->getFont()->setItalic(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('64748B'));
+
+        // Legend / Keterangan Warna
+        $sheet->setCellValue('B6', 'Keterangan Warna:');
+        $sheet->getStyle('B6')->getFont()->setBold(true)->setSize(9);
+
+        // 1. Cuti Diambil
+        $sheet->setCellValue('C6', ' C ');
+        $sheet->getStyle('C6')->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFF'));
+        $sheet->getStyle('C6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFDC2626');
+        $sheet->getStyle('C6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->setCellValue('D6', 'Cuti Diambil Pegawai');
+        $sheet->getStyle('D6')->getFont()->setSize(9);
+
+        // 2. Cuti Bersama
+        $sheet->setCellValue('F6', ' CB ');
+        $sheet->getStyle('F6')->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('854D0E'));
+        $sheet->getStyle('F6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFDE047');
+        $sheet->getStyle('F6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->setCellValue('G6', 'Cuti Bersama SKB 3 Menteri');
+        $sheet->getStyle('G6')->getFont()->setSize(9);
+
+        // 3. Tanggal Merah / Libur Nasional
+        $sheet->setCellValue('I6', ' LN ');
+        $sheet->getStyle('I6')->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('991B1B'));
+        $sheet->getStyle('I6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFCA5A5');
+        $sheet->getStyle('I6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->setCellValue('J6', 'Tanggal Merah / Libur Nasional');
+        $sheet->getStyle('J6')->getFont()->setSize(9);
+
+        // 4. Akhir Pekan
+        $sheet->setCellValue('L6', ' - ');
+        $sheet->getStyle('L6')->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('64748B'));
+        $sheet->getStyle('L6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE2E8F0');
+        $sheet->getStyle('L6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->setCellValue('M6', 'Akhir Pekan (Sabtu / Minggu)');
+        $sheet->getStyle('M6')->getFont()->setSize(9);
+
+        // 5. Normal
+        $sheet->setCellValue('O6', ' ');
+        $sheet->getStyle('O6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFFFFFF');
+        $sheet->getStyle('O6')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setARGB('FFCBD5E1');
+        $sheet->setCellValue('P6', 'Hari Kerja Normal');
+        $sheet->getStyle('P6')->getFont()->setSize(9);
+
+        // Header Tabel Tetap (Kolom A-E)
+        $sheet->mergeCells('A8:A10');
+        $sheet->setCellValue('A8', 'No');
+        $sheet->mergeCells('B8:B10');
+        $sheet->setCellValue('B8', 'NIP');
+        $sheet->mergeCells('C8:C10');
+        $sheet->setCellValue('C8', 'Nama Pegawai');
+        $sheet->mergeCells('D8:D10');
+        $sheet->setCellValue('D8', 'Jabatan');
+        $sheet->mergeCells('E8:E10');
+        $sheet->setCellValue('E8', 'Total Cuti');
+
+        $sheet->getStyle('A8:E10')->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFF'));
+        $sheet->getStyle('A8:E10')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF1E293B');
+        $sheet->getStyle('A8:E10')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+
+        $sheet->getColumnDimension('A')->setWidth(5.5);
+        $sheet->getColumnDimension('B')->setWidth(21);
+        $sheet->getColumnDimension('C')->setWidth(32);
+        $sheet->getColumnDimension('D')->setWidth(28);
+        $sheet->getColumnDimension('E')->setWidth(12);
+
+        // Header Kolom Tanggal (Mulai dari Kolom F)
+        $colIdx = 6;
+        $monthGroups = [];
+
+        foreach ($days as $d) {
+            $colLetter = Coordinate::stringFromColumnIndex($colIdx);
+            $sheet->getColumnDimension($colLetter)->setWidth(5.0);
+
+            // Grouping Bulan
+            $mKey = $d['year'] . '-' . $d['month_num'];
+            if (! isset($monthGroups[$mKey])) {
+                $monthGroups[$mKey] = [
+                    'startCol' => $colIdx,
+                    'endCol'   => $colIdx,
+                    'label'    => strtoupper($d['month_name']) . ' ' . $d['year'],
+                ];
+            } else {
+                $monthGroups[$mKey]['endCol'] = $colIdx;
+            }
+
+            // Baris 9: Nama Hari
+            $sheet->setCellValue($colLetter . '9', $d['day_name']);
+            // Baris 10: Angka Tanggal
+            $sheet->setCellValue($colLetter . '10', $d['day_num']);
+
+            // Warna Header Tanggal
+            if ($d['is_holiday']) {
+                $hColor = 'FFB91C1C';
+                if ($d['holiday_name']) {
+                    $sheet->getComment($colLetter . '10')->getText()->createTextRun('Libur Nasional: ' . $d['holiday_name']);
+                }
+            } elseif ($d['is_leave']) {
+                $hColor = 'FFD97706';
+                if ($d['holiday_name']) {
+                    $sheet->getComment($colLetter . '10')->getText()->createTextRun('Cuti Bersama: ' . $d['holiday_name']);
+                }
+            } elseif ($d['is_weekend']) {
+                $hColor = 'FF475569';
+            } else {
+                $hColor = 'FF1E293B';
+            }
+
+            $sheet->getStyle($colLetter . '9:' . $colLetter . '10')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($hColor);
+            $sheet->getStyle($colLetter . '9:' . $colLetter . '10')->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFF'))->setSize(8);
+            $sheet->getStyle($colLetter . '9:' . $colLetter . '10')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+
+            $colIdx++;
+        }
+
+        $lastColIdx = $colIdx - 1;
+        $lastColLetter = Coordinate::stringFromColumnIndex($lastColIdx);
+
+        // Render Baris 8: Pengelompokan Bulan
+        foreach ($monthGroups as $mg) {
+            $startLetter = Coordinate::stringFromColumnIndex($mg['startCol']);
+            $endLetter = Coordinate::stringFromColumnIndex($mg['endCol']);
+            if ($startLetter !== $endLetter) {
+                $sheet->mergeCells($startLetter . '8:' . $endLetter . '8');
+            }
+            $sheet->setCellValue($startLetter . '8', $mg['label']);
+            $sheet->getStyle($startLetter . '8:' . $endLetter . '8')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF0F172A');
+            $sheet->getStyle($startLetter . '8:' . $endLetter . '8')->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFF'))->setSize(9);
+            $sheet->getStyle($startLetter . '8:' . $endLetter . '8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        }
+
+        // 6. Data Baris Pegawai
+        $rowNum = 11;
+        $no = 1;
+
+        foreach ($employees as $empIdx => $emp) {
+            $sheet->setCellValue('A' . $rowNum, $no);
+            $sheet->setCellValueExplicit('B' . $rowNum, (string) ($emp['nip'] ?? '-'), DataType::TYPE_STRING);
+            $sheet->setCellValue('C' . $rowNum, $emp['nama']);
+            $sheet->setCellValue('D' . $rowNum, $emp['jabatan_label'] ?: '-');
+
+            $sheet->getStyle('A' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('B' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+            $sheet->getStyle('C' . $rowNum)->getFont()->setBold(true);
+
+            // Formula Total Hari Cuti
+            $sheet->setCellValue('E' . $rowNum, '=COUNTIF(F' . $rowNum . ':' . $lastColLetter . $rowNum . ', "C*")');
+            $sheet->getStyle('E' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E' . $rowNum)->getFont()->setBold(true);
+
+            $cColIdx = 6;
+            foreach ($days as $d) {
+                $cellCoord = Coordinate::stringFromColumnIndex($cColIdx) . $rowNum;
+
+                if ($d['is_holiday']) {
+                    $sheet->setCellValue($cellCoord, 'LN');
+                    $sheet->getStyle($cellCoord)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFCA5A5');
+                    $sheet->getStyle($cellCoord)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('991B1B'))->setSize(8);
+                    if ($d['holiday_name']) {
+                        $sheet->getComment($cellCoord)->getText()->createTextRun('Libur Nasional: ' . $d['holiday_name']);
+                    }
+                } elseif ($d['is_leave']) {
+                    $sheet->setCellValue($cellCoord, 'CB');
+                    $sheet->getStyle($cellCoord)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFDE047');
+                    $sheet->getStyle($cellCoord)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('854D0E'))->setSize(8);
+                    if ($d['holiday_name']) {
+                        $sheet->getComment($cellCoord)->getText()->createTextRun('Cuti Bersama: ' . $d['holiday_name']);
+                    }
+                } elseif ($d['is_weekend']) {
+                    $sheet->setCellValue($cellCoord, '-');
+                    $sheet->getStyle($cellCoord)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE2E8F0');
+                    $sheet->getStyle($cellCoord)->getFont()->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('94A3B8'))->setSize(8);
+                } else {
+                    // Hari kerja: periksa apakah pegawai mengambil cuti
+                    $takenLeave = null;
+                    if (! empty($empLeaves[$empIdx])) {
+                        foreach ($empLeaves[$empIdx] as $lv) {
+                            if ($lv['tanggal_mulai'] <= $d['date'] && $lv['tanggal_selesai'] >= $d['date']) {
+                                $takenLeave = $lv;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($takenLeave !== null) {
+                        $cutiCode = match (trim((string) $takenLeave['jenis_cuti'])) {
+                            'Cuti Tahunan'                  => 'CT',
+                            'Cuti Sakit'                    => 'CS',
+                            'Cuti Melahirkan'               => 'CM',
+                            'Cuti Karena Alasan Penting'    => 'CAP',
+                            'Cuti Besar'                    => 'CBK',
+                            'Cuti di Luar Tanggungan Negara' => 'CLTN',
+                            default                         => 'C',
+                        };
+
+                        $sheet->setCellValue($cellCoord, $cutiCode);
+                        $sheet->getStyle($cellCoord)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFDC2626');
+                        $sheet->getStyle($cellCoord)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFF'))->setSize(8);
+
+                        $commentText = "Pegawai: {$emp['nama']}\nJenis Cuti: {$takenLeave['jenis_cuti']}\nPeriode: {$takenLeave['tanggal_mulai']} s/d {$takenLeave['tanggal_selesai']}\nAlasan: {$takenLeave['alasan_cuti']}\nStatus: " . ucfirst($takenLeave['status']);
+                        $sheet->getComment($cellCoord)->getText()->createTextRun($commentText);
+                    } else {
+                        $sheet->setCellValue($cellCoord, '');
+                    }
+                }
+
+                $sheet->getStyle($cellCoord)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $cColIdx++;
+            }
+
+            $rowNum++;
+            $no++;
+        }
+
+        $lastEmpRow = $rowNum - 1;
+
+        // 7. Baris Rekapitulasi Total (Footer)
+        $summaryRow = $rowNum;
+        $sheet->mergeCells('A' . $summaryRow . ':D' . $summaryRow);
+        $sheet->setCellValue('A' . $summaryRow, 'TOTAL PEGAWAI CUTI PER HARI');
+        $sheet->getStyle('A' . $summaryRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A' . $summaryRow . ':D' . $summaryRow)->getFont()->setBold(true)->setSize(9);
+        $sheet->getStyle('A' . $summaryRow . ':D' . $summaryRow)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
+
+        // Total akumulasi seluruh hari cuti yang diambil
+        $sheet->setCellValue('E' . $summaryRow, '=SUM(E11:E' . $lastEmpRow . ')');
+        $sheet->getStyle('E' . $summaryRow)->getFont()->setBold(true)->setSize(10);
+        $sheet->getStyle('E' . $summaryRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('E' . $summaryRow)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE2E8F0');
+
+        // Total pegawai cuti per kolom tanggal
+        $cColIdx = 6;
+        foreach ($days as $d) {
+            $colLetter = Coordinate::stringFromColumnIndex($cColIdx);
+            $cellCoord = $colLetter . $summaryRow;
+
+            $sheet->setCellValue($cellCoord, '=COUNTIF(' . $colLetter . '11:' . $colLetter . $lastEmpRow . ', "C*")');
+            $sheet->getStyle($cellCoord)->getFont()->setBold(true)->setSize(8);
+            $sheet->getStyle($cellCoord)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+            $sheet->getStyle($cellCoord)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
+            $cColIdx++;
+        }
+
+        // Format Garis Border Seluruh Tabel
+        $borderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color'       => ['argb' => 'FFCBD5E1'],
+                ],
+            ],
+        ];
+        $sheet->getStyle('A8:' . $lastColLetter . $summaryRow)->applyFromArray($borderStyle);
+
+        // Freeze Panes (Header baris 1-10 & Kolom Identitas Pegawai A-E tetap terkunci saat scroll)
+        $sheet->freezePane('F11');
+
+        // Tampilkan Gridlines
+        $sheet->setShowGridLines(true);
+
+        // Atur Halaman Cetak Landscape
+        $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+        $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
+
+        $filename = 'Rekap_Cuti_Pegawai_' . $startDate->format('Ymd') . '_sd_' . $endDate->format('Ymd') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
+
+    private function bulanIndo(int $bulan): string
+    {
+        return match ($bulan) {
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+            default => '',
+        };
     }
 
     /**

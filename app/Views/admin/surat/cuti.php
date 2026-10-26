@@ -70,6 +70,9 @@
             </div>
             <div class="d-flex align-items-center" style="gap: 8px;">
                 <?php if ($can_export ?? false): ?>
+                    <button type="button" class="btn btn-success font-weight-bold shadow-sm" id="btnOpenModalExportExcel" data-toggle="modal" data-target="#modalExportExcelCuti" title="Export Rekapitulasi Matriks Cuti Pegawai (.xlsx)">
+                        <i class="fas fa-file-excel mr-1"></i> Rekap Cuti (.xlsx)
+                    </button>
                     <a href="<?= site_url('admin/surat/cuti/export-word-kosong'); ?>" class="btn btn-outline-light font-weight-bold shadow-sm" id="btnExportWordKosong" title="Unduh Formulir Permintaan dan Pemberian Cuti Kosong (.docx)">
                         <i class="fas fa-file-word mr-1 text-info"></i> Form Cuti Kosong (.docx)
                     </a>
@@ -352,6 +355,95 @@
             </form>
         </div>
     </div>
+
+<?php if ($can_export ?? false): ?>
+<!-- Modal Export Excel Rekap Cuti -->
+<div class="modal fade" id="modalExportExcelCuti" tabindex="-1" role="dialog" aria-labelledby="modalExportExcelCutiLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 580px;">
+        <form action="<?= site_url('admin/surat/cuti/export-excel'); ?>" method="get" target="_blank" class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+                <h5 class="modal-title font-weight-bold" id="modalExportExcelCutiLabel">
+                    <i class="fas fa-file-excel mr-2"></i> Export Rekapitulasi Cuti Pegawai (.xlsx)
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-3">
+                    Laporan diekspor dalam <strong>format matriks horizontal memanjang ke samping</strong>. Baris atas memuat tanggal kalender, sisi kiri daftar nama pegawai, dengan penanda warna untuk tanggal cuti yang diambil, cuti bersama SKB 3 Menteri, tanggal merah/libur nasional, dan akhir pekan.
+                </p>
+
+                <!-- Quick Presets -->
+                <div class="mb-3">
+                    <label class="font-weight-bold text-dark small text-uppercase mb-2 d-block">Pilihan Cepat Periode:</label>
+                    <div class="btn-group btn-group-sm w-100 flex-wrap" role="group">
+                        <button type="button" class="btn btn-secondary text-white btn-quick-period" data-period="this_month">Bulan Ini</button>
+                        <button type="button" class="btn btn-outline-secondary btn-quick-period" data-period="last_month">Bulan Lalu</button>
+                        <button type="button" class="btn btn-outline-secondary btn-quick-period" data-period="next_month">Bulan Depan</button>
+                        <button type="button" class="btn btn-outline-secondary btn-quick-period" data-period="this_year">Tahun Berjalan (1 Thn)</button>
+                    </div>
+                </div>
+
+                <!-- Date Range Inputs -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold text-dark small">Dari Tanggal <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="tanggal_mulai" id="excel_tanggal_mulai" value="<?= date('Y-m-01'); ?>" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold text-dark small">Sampai Tanggal <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="tanggal_selesai" id="excel_tanggal_selesai" value="<?= date('Y-m-t'); ?>" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold text-dark small">Filter Status Pengajuan</label>
+                    <select name="status" class="form-control" id="excel_status">
+                        <option value="disetujui" selected>Hanya Pengajuan yang Disetujui (Rekomendasi)</option>
+                        <option value="semua">Semua Pengajuan Aktif (Disetujui &amp; Menunggu Persetujuan)</option>
+                    </select>
+                </div>
+
+                <!-- Visual Legend Preview Box -->
+                <div class="card bg-light border-0 p-3 mt-3">
+                    <div class="font-weight-bold text-dark small mb-2"><i class="fas fa-palette mr-1 text-primary"></i> Penandaan Warna pada Excel:</div>
+                    <div class="d-flex flex-wrap" style="gap: 8px;">
+                        <span class="badge" style="background-color: #DC2626; color: #fff; font-size: 11px; padding: 5px 8px;">
+                            <i class="fas fa-square mr-1"></i> Cuti Diambil (Merah)
+                        </span>
+                        <span class="badge" style="background-color: #FDE047; color: #854D0E; font-size: 11px; padding: 5px 8px;">
+                            <i class="fas fa-square mr-1"></i> Cuti Bersama (Kuning)
+                        </span>
+                        <span class="badge" style="background-color: #FCA5A5; color: #991B1B; font-size: 11px; padding: 5px 8px;">
+                            <i class="fas fa-square mr-1"></i> Libur Nasional / Tanggal Merah
+                        </span>
+                        <span class="badge" style="background-color: #E2E8F0; color: #64748B; font-size: 11px; padding: 5px 8px;">
+                            <i class="fas fa-square mr-1"></i> Akhir Pekan (Sabtu/Minggu)
+                        </span>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        <i class="fas fa-thumbtack mr-1 text-info"></i> <strong>Freeze Panes:</strong> Kolom nama pegawai &amp; baris tanggal otomatis terkunci saat Anda menggulir tabel ke kanan atau bawah.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Batal
+                </button>
+                <button type="submit" class="btn btn-success font-weight-bold" id="btnSubmitExportExcel">
+                    <i class="fas fa-download mr-1"></i> Unduh File Excel (.xlsx)
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<?php endif; ?>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -778,6 +870,41 @@ document.addEventListener("DOMContentLoaded", function () {
                 '</form>');
             $('body').append(form);
             form.submit();
+        }
+    });
+
+    // Quick period buttons in Export Excel modal
+    $(document).on('click', '.btn-quick-period', function () {
+        const period = $(this).data('period');
+        const now = new Date();
+        let start, end;
+
+        if (period === 'this_month') {
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        } else if (period === 'last_month') {
+            start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            end = new Date(now.getFullYear(), now.getMonth(), 0);
+        } else if (period === 'next_month') {
+            start = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+        } else if (period === 'this_year') {
+            start = new Date(now.getFullYear(), 0, 1);
+            end = new Date(now.getFullYear(), 11, 31);
+        }
+
+        const formatYmd = function (d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        };
+
+        if (start && end) {
+            $('#excel_tanggal_mulai').val(formatYmd(start));
+            $('#excel_tanggal_selesai').val(formatYmd(end));
+            $('.btn-quick-period').removeClass('btn-secondary text-white').addClass('btn-outline-secondary');
+            $(this).removeClass('btn-outline-secondary').addClass('btn-secondary text-white');
         }
     });
 });

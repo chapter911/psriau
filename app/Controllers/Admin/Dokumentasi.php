@@ -994,486 +994,574 @@ class Dokumentasi extends BaseController
         return $dateOnly >= date('Y-m-d');
     }
 
-    public function watermarkFoto(): string
+    public function watermarkFoto()
     {
+        if (! $this->canAccessWatermarkMenu()) {
+            return redirect()->to('/admin')->with('error', 'Akses ditolak. Anda tidak memiliki izin untuk mengakses halaman Watermark Foto.');
+        }
+
+        $permissions = $this->getWatermarkPermissions();
+
         return view('admin/dokumentasi/watermark_foto', [
-            'pageTitle' => 'Watermark Foto',
+            'pageTitle'   => 'Watermark Foto (TimeMark Style)',
+            'permissions' => $permissions,
         ]);
     }
 
-    public function prosesWatermark()
+    /**
+     * AJAX endpoint untuk mengekstrak metadata EXIF (waktu asli & koordinat) dari foto secara instan.
+     */
+    public function extractMeta()
     {
         if (! $this->request->isAJAX()) {
             return $this->response->setStatusCode(400)->setJSON([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Permintaan tidak valid.',
             ]);
         }
 
         $foto = $this->request->getFile('foto');
-        $logo = $this->request->getFile('logo');
-        $jam = trim((string) $this->request->getPost('jam'));
-        $tanggal = trim((string) $this->request->getPost('tanggal'));
-        $lokasi = trim((string) $this->request->getPost('lokasi'));
+        if ($foto === null || ! $foto->isValid()) {
+            return $this->response->setJSON([
+                'status'    => 'error',
+                'has_exif'  => false,
+                'message'   => 'File tidak valid atau tidak terbaca.',
+                'csrf_token'=> csrf_token(),
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $tempDir = ROOTPATH . 'do_not_upload/temp/meta_' . bin2hex(random_bytes(4));
+        if (! is_dir($tempDir)) {
+            @mkdir($tempDir, 0775, true);
+        }
+
+        $tempPath = $tempDir . DIRECTORY_SEPARATOR . 'sample.' . strtolower($foto->getClientExtension());
+        try {
+            $foto->move($tempDir, 'sample.' . strtolower($foto->getClientExtension()));
+
+            $service = new \App\Libraries\TimeMarkWatermarkService();
+            $metaPath = $tempPath;
+            if ($service->isHeicFile($tempPath)) {
+                $converted = $service->convertHeicToJpeg($tempPath);
+                if ($converted !== null) {
+                    $metaPath = $converted;
+                }
+            }
+
+            $exif = @exif_read_data($metaPath);
+            $hasExif = is_array($exif) && (! empty($exif['DateTimeOriginal']) || ! empty($exif['DateTime']));
+
+            $metaDt = $service->resolveDateTime($exif, $metaPath, true, 0, 0);
+            $coords = is_array($exif) ? $service->extractGpsCoordinates($exif) : null;
+
+            return $this->response->setJSON([
+                'status'      => 'ok',
+                'has_exif'    => $hasExif,
+                'has_gps'     => ($coords !== null && $coords !== ''),
+                'date'        => $metaDt['raw_ymd'],
+                'time'        => $metaDt['time'],
+                'day'         => $metaDt['day'],
+                'coordinates' => $coords ?? '',
+                'csrf_token'  => csrf_token(),
+                'csrf_hash'   => csrf_hash(),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status'    => 'error',
+                'has_exif'  => false,
+                'message'   => $e->getMessage(),
+                'csrf_token'=> csrf_token(),
+                'csrf_hash' => csrf_hash(),
+            ]);
+        } finally {
+            $this->cleanUpDirectory($tempDir);
+        }
+    }
+
+    /**
+     * Memproses watermark foto (single image, multiple images, atau file ZIP).
+     */
+    public function prosesWatermark()
+    {
+        if (! $this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status'  => 'error',
+                'message' => 'Permintaan tidak valid.',
+            ]);
+        }
 
         $sendError = function (int $code, string $message) {
             return $this->response->setStatusCode($code)->setJSON([
-                'status' => 'error',
-                'message' => $message,
+                'status'     => 'error',
+                'message'    => $message,
                 'csrf_token' => csrf_token(),
-                'csrf_hash' => csrf_hash(),
+                'csrf_hash'  => csrf_hash(),
             ]);
         };
 
-        // Validasi foto
-        if ($foto === null || ! $foto->isValid()) {
-            return $sendError(422, 'Foto wajib diupload atau ukurannya melebihi batas server.');
+        // 1. Cek Hak Akses menu_akses
+        if (! $this->canAccessWatermarkMenu()) {
+            return $sendError(403, 'Akses ditolak. Anda tidak memiliki izin untuk mengakses menu Watermark Foto.');
         }
 
-        if ($foto->getSize() > 15 * 1024 * 1024) {
-            return $sendError(422, 'Ukuran foto maksimal adalah 15MB.');
+        $perms = $this->getWatermarkPermissions();
+        if (! $perms['add'] && ! $perms['edit']) {
+            return $sendError(403, 'Akses ditolak. Role Anda tidak memiliki izin (FiturAdd/FiturEdit) untuk memproses watermark.');
         }
 
-        $mimeType = strtolower((string) $foto->getMimeType());
-        if (! str_starts_with($mimeType, 'image/')) {
-            return $sendError(422, 'File yang diupload harus berupa gambar.');
+        // 2. Ambil Parameter Form
+        $template = trim((string) $this->request->getPost('template'));
+        if (! in_array($template, ['classic', 'table', 'badge', 'strip'], true)) {
+            $template = 'classic';
         }
 
-        $extension = strtolower((string) $foto->getClientExtension());
-        if (! in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true)) {
-            return $sendError(422, 'Format foto tidak didukung. Gunakan JPG, PNG, atau WebP.');
+        $useExifTime = (int) ($this->request->getPost('use_exif_time') ?? 1) === 1;
+        $useExifLocation = (int) ($this->request->getPost('use_exif_location') ?? 1) === 1;
+        $offsetHours = (int) ($this->request->getPost('offset_hours') ?? 0);
+        $offsetMinutes = (int) ($this->request->getPost('offset_minutes') ?? 0);
+        $manualDate = trim((string) $this->request->getPost('manual_date'));
+        $manualTime = trim((string) $this->request->getPost('manual_time'));
+        $lokasi = trim((string) $this->request->getPost('lokasi'));
+        $koordinat = trim((string) $this->request->getPost('koordinat'));
+        $catatan = trim((string) $this->request->getPost('catatan'));
+        $saveToFolder = (int) ($this->request->getPost('save_to_folder') ?? 0) === 1;
+        $targetFolderName = trim((string) $this->request->getPost('target_folder_name'));
+
+        // Jika opsi ambil koordinat EXIF tidak aktif dan lokasi kosong, gunakan default
+        if (! $useExifLocation && $lokasi === '' && $koordinat === '') {
+            $lokasi = 'Kantor Balai PPS Riau';
         }
 
-        // Validasi jam
-        if ($jam === '') {
-            return $sendError(422, 'Jam wajib diisi.');
+        // 3. Siapkan Direktori Kerja Sementara di do_not_upload/temp (Rule #3)
+        $workId = bin2hex(random_bytes(6));
+        $tempWorkingDir = ROOTPATH . 'do_not_upload/temp/watermark_' . $workId;
+        if (! is_dir($tempWorkingDir) && ! @mkdir($tempWorkingDir, 0775, true) && ! is_dir($tempWorkingDir)) {
+            return $sendError(500, 'Gagal membuat folder kerja sementara.');
         }
 
-        // Validasi tanggal
-        if ($tanggal === '') {
-            return $sendError(422, 'Tanggal wajib diisi.');
+        $inputDir = $tempWorkingDir . DIRECTORY_SEPARATOR . 'input';
+        $extractDir = $tempWorkingDir . DIRECTORY_SEPARATOR . 'extract';
+        @mkdir($inputDir, 0775, true);
+        @mkdir($extractDir, 0775, true);
+
+        // 4. Periksa File Logo Opsional
+        $customLogoPath = null;
+        $logoFile = $this->request->getFile('logo');
+        if ($logoFile !== null && $logoFile->isValid() && ! $logoFile->hasMoved()) {
+            $logoExt = strtolower($logoFile->getClientExtension());
+            if (in_array($logoExt, ['png', 'jpg', 'jpeg', 'webp'], true)) {
+                $logoName = 'logo_' . $workId . '.' . $logoExt;
+                $logoFile->move($tempWorkingDir, $logoName);
+                $customLogoPath = $tempWorkingDir . DIRECTORY_SEPARATOR . $logoName;
+            }
         }
 
-        // Validasi lokasi
-        if ($lokasi === '') {
-            return $sendError(422, 'Lokasi wajib diisi.');
-        }
-
-        // Simpan file sementara
-        $tempDir = WRITEPATH . 'temp_watermark';
-        if (! is_dir($tempDir) && ! @mkdir($tempDir, 0775, true) && ! is_dir($tempDir)) {
-            return $sendError(500, 'Gagal membuat folder sementara.');
-        }
+        // 5. Kumpulkan File Gambar (Single, Multiple, atau ZIP)
+        $imageFilesToProcess = [];
 
         try {
-            $fotoName = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
-            $fotoPath = $tempDir . DIRECTORY_SEPARATOR . $fotoName;
-            $foto->move($tempDir, $fotoName);
-        } catch (\Throwable $e) {
-            return $sendError(500, 'Gagal menyimpan foto sementara.');
-        }
+            // Cek jika ada file ZIP yang diupload
+            $zipFile = $this->request->getFile('zip_file');
+            $fotoSingle = $this->request->getFile('foto');
+            $fotosMultiple = $this->request->getFileMultiple('fotos');
 
-        // Proses watermark
-        $result = $this->applyWatermark($fotoPath, $logo, $jam, $tanggal, $lokasi);
+            $isZip = false;
+            $zipToExtract = null;
 
-        // Hapus foto asli
-        @unlink($fotoPath);
+            if ($zipFile !== null && $zipFile->isValid() && strtolower($zipFile->getClientExtension()) === 'zip') {
+                $isZip = true;
+                $zipToExtract = $zipFile;
+            } elseif ($fotoSingle !== null && $fotoSingle->isValid() && strtolower($fotoSingle->getClientExtension()) === 'zip') {
+                $isZip = true;
+                $zipToExtract = $fotoSingle;
+            }
 
-        if ($result['error'] !== null) {
-            return $sendError(500, $result['error']);
-        }
+            if ($isZip && $zipToExtract !== null) {
+                // Ekstraksi ZIP
+                $zipPath = $tempWorkingDir . DIRECTORY_SEPARATOR . 'source.zip';
+                $zipToExtract->move($tempWorkingDir, 'source.zip');
 
-        return $this->response->setJSON([
-            'status' => 'ok',
-            'message' => 'Watermark berhasil diterapkan.',
-            'image_data' => $result['data'],
-            'csrf_token' => csrf_token(),
-            'csrf_hash' => csrf_hash(),
-        ]);
-    }
-
-    private function applyWatermark(string $imagePath, $logoFile, string $jam, string $tanggal, string $lokasi): array
-    {
-        // Dapatkan informasi gambar
-        $imageInfo = @getimagesize($imagePath);
-        if ($imageInfo === false) {
-            return ['data' => null, 'error' => 'Tidak dapat membaca file gambar.'];
-        }
-
-        $mimeType = $imageInfo['mime'];
-
-        // Buat resource gambar dari file asli
-        switch ($mimeType) {
-            case 'image/jpeg':
-            case 'image/jpg':
-                $sourceImage = @imagecreatefromjpeg($imagePath);
-                break;
-            case 'image/png':
-                $sourceImage = @imagecreatefrompng($imagePath);
-                break;
-            case 'image/webp':
-                $sourceImage = @imagecreatefromwebp($imagePath);
-                break;
-            default:
-                return ['data' => null, 'error' => 'Format gambar tidak didukung.'];
-        }
-
-        if ($sourceImage === false) {
-            return ['data' => null, 'error' => 'Gagal memuat gambar.'];
-        }
-
-        // --- Fix Image Orientation based on EXIF ---
-        if ($mimeType === 'image/jpeg' || $mimeType === 'image/jpg') {
-            $exif = @exif_read_data($imagePath);
-            if (!empty($exif['Orientation'])) {
-                switch ($exif['Orientation']) {
-                    case 3:
-                        $sourceImage = imagerotate($sourceImage, 180, 0);
-                        break;
-                    case 6:
-                        $sourceImage = imagerotate($sourceImage, -90, 0);
-                        break;
-                    case 8:
-                        $sourceImage = imagerotate($sourceImage, 90, 0);
-                        break;
+                $zip = new \ZipArchive();
+                if ($zip->open($zipPath) === true) {
+                    $zip->extractTo($extractDir);
+                    $zip->close();
+                } else {
+                    return $sendError(422, 'Gagal membuka file ZIP. Pastikan file arsip ZIP tidak rusak.');
                 }
-            }
-        }
 
-        $width = imagesx($sourceImage);
-        $height = imagesy($sourceImage);
-
-        // --- Konfigurasi Watermark ---
-        $scale = max(0.5, $width / 1080);
-        
-        $fontBold = $this->getCustomFontPath('Bold');
-        $fontMedium = $this->getCustomFontPath('Medium');
-        $fontRegular = $this->getCustomFontPath('Regular');
-
-        // Spacing dan Padding
-        $paddingX = (int) (60 * $scale);
-        $paddingY = (int) (60 * $scale);
-
-        // Font Sizes
-        $timeFontSize = (int) (80 * $scale);
-        if ($timeFontSize < 24) $timeFontSize = 24;
-
-        $dateFontSize = (int) (24 * $scale);
-        if ($dateFontSize < 10) $dateFontSize = 10;
-
-        $addressFontSize = (int) (22 * $scale);
-        if ($addressFontSize < 10) $addressFontSize = 10;
-        $addressLineHeight = (int) ($addressFontSize * 1.4);
-
-        $capsuleFontSize = (int) (12 * $scale);
-        if ($capsuleFontSize < 8) $capsuleFontSize = 8;
-
-        // --- 1. Soft Vertical Gradient Overlay at Bottom ---
-        $gradientStart = (int) ($height * 0.60);
-        $gradientEnd = $height;
-        for ($y = $gradientStart; $y < $gradientEnd; $y++) {
-            $ratio = ($y - $gradientStart) / ($gradientEnd - $gradientStart);
-            $alpha = 127 - (int) ($ratio * 72); // 127 (transparent) to 55 (semi-transparent)
-            $color = imagecolorallocatealpha($sourceImage, 0, 0, 0, $alpha);
-            imageline($sourceImage, 0, $y, $width, $y, $color);
-        }
-
-        // --- 2. Load Logo (Uploaded or Default) ---
-        $logoImage = null;
-        if ($logoFile !== null && $logoFile->isValid() && !$logoFile->hasMoved()) {
-            $logoMime = strtolower((string) $logoFile->getMimeType());
-            $logoExtension = strtolower((string) $logoFile->getClientExtension());
-            if ($logoExtension === 'png' || $logoMime === 'image/png') {
-                $logoImage = @imagecreatefrompng($logoFile->getTempName());
-            } elseif (in_array($logoExtension, ['jpg', 'jpeg']) || $logoMime === 'image/jpeg') {
-                $logoImage = @imagecreatefromjpeg($logoFile->getTempName());
-            } elseif ($logoExtension === 'webp' || $logoMime === 'image/webp') {
-                $logoImage = @imagecreatefromwebp($logoFile->getTempName());
-            }
-        }
-
-        // Jika tidak ada logo yang diupload, gunakan logo instansi dari database
-        if ($logoImage === null) {
-            try {
-                $homeSettingModel = new \App\Models\HomeSettingModel();
-                $homeSetting = $homeSettingModel->first();
-                if ($homeSetting && !empty($homeSetting['logo_url'])) {
-                    $defaultLogoPath = FCPATH . ltrim($homeSetting['logo_url'], '/');
-                    if (is_file($defaultLogoPath) && is_readable($defaultLogoPath)) {
-                        $ext = strtolower(pathinfo($defaultLogoPath, PATHINFO_EXTENSION));
-                        if ($ext === 'png') {
-                            $logoImage = @imagecreatefrompng($defaultLogoPath);
-                        } elseif ($ext === 'jpg' || $ext === 'jpeg') {
-                            $logoImage = @imagecreatefromjpeg($defaultLogoPath);
-                        } elseif ($ext === 'webp') {
-                            $logoImage = @imagecreatefromwebp($defaultLogoPath);
+                // Cari semua file gambar dalam hasil ekstrak (abaikan __MACOSX dan .DS_Store)
+                $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($extractDir, \FilesystemIterator::SKIP_DOTS));
+                foreach ($iterator as $item) {
+                    if ($item->isFile()) {
+                        $filePath = $item->getPathname();
+                        if (strpos($filePath, '__MACOSX') !== false || strpos($item->getFilename(), '._') === 0) {
+                            continue;
+                        }
+                        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+                        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
+                            $imageFilesToProcess[] = [
+                                'path' => $filePath,
+                                'original_name' => $item->getFilename(),
+                            ];
                         }
                     }
                 }
-            } catch (\Throwable $e) {
-                // Proceed without default logo on failure
+            } elseif (! empty($fotosMultiple)) {
+                // Multiple Files Upload
+                $idx = 0;
+                foreach ($fotosMultiple as $multiFile) {
+                    if ($multiFile->isValid() && ! $multiFile->hasMoved()) {
+                        $ext = strtolower($multiFile->getClientExtension());
+                        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
+                            $name = 'photo_' . (++$idx) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                            $multiFile->move($inputDir, $name);
+                            $imageFilesToProcess[] = [
+                                'path' => $inputDir . DIRECTORY_SEPARATOR . $name,
+                                'original_name' => $multiFile->getClientName(),
+                            ];
+                        }
+                    }
+                }
+            } elseif ($fotoSingle !== null && $fotoSingle->isValid() && ! $fotoSingle->hasMoved()) {
+                // Single File Upload
+                $ext = strtolower($fotoSingle->getClientExtension());
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
+                    $name = 'single_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                    $fotoSingle->move($inputDir, $name);
+                    $imageFilesToProcess[] = [
+                        'path' => $inputDir . DIRECTORY_SEPARATOR . $name,
+                        'original_name' => $fotoSingle->getClientName(),
+                    ];
+                }
+            }
+
+            if (empty($imageFilesToProcess)) {
+                return $sendError(422, 'Tidak ada foto valid yang ditemukan. Format yang didukung: JPG, PNG, WebP, HEIC/HEIF, atau ZIP berisi gambar.');
+            }
+
+            // 6. Siapkan Folder Server jika Opsi "Simpan ke Folder" Diaktifkan
+            $serverDestinationDir = null;
+            $serverRelativeFolder = null;
+            if ($saveToFolder) {
+                $cleanFolder = preg_replace('/[^a-zA-Z0-9_\-\s]/', '', $targetFolderName);
+                $cleanFolder = trim(preg_replace('/\s+/', '_', $cleanFolder));
+                if ($cleanFolder === '') {
+                    $cleanFolder = 'Watermark_' . date('Ymd_His');
+                }
+
+                $serverDestinationDir = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'watermark_hasil' . DIRECTORY_SEPARATOR . $cleanFolder;
+                if (! is_dir($serverDestinationDir) && ! @mkdir($serverDestinationDir, 0775, true) && ! is_dir($serverDestinationDir)) {
+                    return $sendError(500, 'Gagal membuat folder penyimpanan di server: ' . $cleanFolder);
+                }
+                $serverRelativeFolder = '/uploads/watermark_hasil/' . $cleanFolder;
+            }
+
+            // 7. Proses Watermark untuk Setiap Gambar Menggunakan TimeMarkWatermarkService
+            $watermarkService = new \App\Libraries\TimeMarkWatermarkService();
+            $processedResults = [];
+            $totalImages = count($imageFilesToProcess);
+            $isBatchMode = ($totalImages > 1 || $isZip);
+
+            $outputTempDir = $tempWorkingDir . DIRECTORY_SEPARATOR . 'output';
+            @mkdir($outputTempDir, 0775, true);
+
+            foreach ($imageFilesToProcess as $index => $item) {
+                $sourceImgPath = $item['path'];
+                $origName = $item['original_name'];
+                $baseNameWithoutExt = pathinfo($origName, PATHINFO_FILENAME);
+                $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+
+                $outFileName = 'watermark_' . $baseNameWithoutExt . '_' . ($index + 1) . '.' . ($ext === 'png' ? 'png' : 'jpg');
+                $outTempPath = $outputTempDir . DIRECTORY_SEPARATOR . $outFileName;
+
+                $processOptions = [
+                    'template'          => $template,
+                    'logo_path'         => $customLogoPath,
+                    'manual_date'       => $manualDate,
+                    'manual_time'       => $manualTime,
+                    'offset_hours'      => $offsetHours,
+                    'offset_minutes'    => $offsetMinutes,
+                    'use_exif_time'     => $useExifTime,
+                    'use_exif_location' => $useExifLocation,
+                    'location'          => $lokasi,
+                    'coordinates'       => $koordinat !== '' ? $koordinat : null,
+                    'notes'             => $catatan !== '' ? $catatan : null,
+                    'save_to_path'      => $outTempPath,
+                    'output_quality'    => 92,
+                ];
+
+                $res = $watermarkService->processImage($sourceImgPath, $processOptions);
+                if (! $res['success']) {
+                    continue;
+                }
+
+                // Jika disimpan ke folder server, copy dari temp ke direktori server
+                $savedServerFile = null;
+                if ($serverDestinationDir !== null) {
+                    $serverFilePath = $serverDestinationDir . DIRECTORY_SEPARATOR . $outFileName;
+                    @copy($outTempPath, $serverFilePath);
+                    $savedServerFile = $serverRelativeFolder . '/' . $outFileName;
+                }
+
+                $processedResults[] = [
+                    'file_name'   => $outFileName,
+                    'orig_name'   => $origName,
+                    'data_uri'    => ($totalImages <= 10) ? $res['data_uri'] : null, // kirim preview untuk max 10 gambar agar ringan
+                    'server_file' => $savedServerFile,
+                    'meta'        => $res['meta'],
+                    'temp_path'   => $outTempPath,
+                ];
+            }
+
+            if (empty($processedResults)) {
+                return $sendError(500, 'Gagal memproses watermark pada foto-foto yang diunggah.');
+            }
+
+            // 8. Buat ZIP Download untuk Batch Mode
+            $zipDownloadUrl = null;
+            if ($isBatchMode || count($processedResults) > 1) {
+                $batchToken = date('YmdHis') . '_' . bin2hex(random_bytes(4));
+                $downloadsDir = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'watermark_hasil' . DIRECTORY_SEPARATOR . 'downloads';
+                if (! is_dir($downloadsDir)) {
+                    @mkdir($downloadsDir, 0775, true);
+                }
+
+                $zipOutPath = $downloadsDir . DIRECTORY_SEPARATOR . 'watermark_batch_' . $batchToken . '.zip';
+                $zipBatch = new \ZipArchive();
+                if ($zipBatch->open($zipOutPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+                    foreach ($processedResults as $pRes) {
+                        if (is_file($pRes['temp_path'])) {
+                            $zipBatch->addFile($pRes['temp_path'], $pRes['file_name']);
+                        }
+                    }
+                    $zipBatch->close();
+                    $zipDownloadUrl = site_url('/admin/dokumentasi/watermark-foto/download-batch-zip/' . $batchToken);
+                }
+            }
+
+            // Single Preview Data
+            $singleImageData = null;
+            if (! $isBatchMode && isset($processedResults[0]['data_uri'])) {
+                $singleImageData = $processedResults[0]['data_uri'];
+            }
+
+            return $this->response->setJSON([
+                'status'           => 'ok',
+                'message'          => count($processedResults) . ' foto berhasil diberi watermark ala TimeMark!',
+                'mode'             => $isBatchMode ? 'batch' : 'single',
+                'total_processed'  => count($processedResults),
+                'image_data'       => $singleImageData,
+                'download_zip_url' => $zipDownloadUrl,
+                'server_folder'    => $serverRelativeFolder,
+                'images'           => array_map(static fn ($r) => [
+                    'file_name'   => $r['file_name'],
+                    'orig_name'   => $r['orig_name'],
+                    'data_uri'    => $r['data_uri'],
+                    'server_file' => $r['server_file'],
+                    'date'        => $r['meta']['datetime']['date'] ?? '',
+                    'time'        => $r['meta']['datetime']['time'] ?? '',
+                    'day'         => $r['meta']['datetime']['day'] ?? '',
+                ], $processedResults),
+                'csrf_token'       => csrf_token(),
+                'csrf_hash'        => csrf_hash(),
+            ]);
+        } catch (\Throwable $e) {
+            return $sendError(500, 'Terjadi kendala saat memproses watermark: ' . $e->getMessage());
+        } finally {
+            // Bersihkan semua folder kerja sementara di do_not_upload/temp (Rule #3)
+            $this->cleanUpDirectory($tempWorkingDir);
+        }
+    }
+
+    /**
+     * Download hasil pemrosesan foto dalam bentuk ZIP.
+     */
+    public function downloadBatchZip(string $token)
+    {
+        if (! preg_match('/^[a-zA-Z0-9_]+$/', $token)) {
+            return redirect()->to('/admin/dokumentasi/watermark-foto')->with('error', 'Token download tidak valid.');
+        }
+
+        $zipPath = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'watermark_hasil' . DIRECTORY_SEPARATOR . 'downloads' . DIRECTORY_SEPARATOR . 'watermark_batch_' . $token . '.zip';
+        if (! is_file($zipPath) || ! is_readable($zipPath)) {
+            return redirect()->to('/admin/dokumentasi/watermark-foto')->with('error', 'File download ZIP sudah kedaluwarsa atau tidak ditemukan.');
+        }
+
+        $downloadName = 'foto-timemark-' . date('YmdHis') . '.zip';
+        return $this->response->download($zipPath, null)->setFileName($downloadName);
+    }
+
+    // =========================================================================
+    // HAK AKSES & PERMISSION HELPER (RULE #4)
+    // =========================================================================
+
+    private function canAccessWatermarkMenu(): bool
+    {
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return true;
+        }
+
+        $role = (string) (session()->get('role') ?? '');
+        $roleId = $this->resolveWatermarkRoleId($role, $db);
+        if ($roleId === null) {
+            return false;
+        }
+
+        $menuId = $this->resolveWatermarkMenuId('admin/dokumentasi/watermark-foto', $db);
+        if ($menuId === null) {
+            return true;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        return (int) $db->table('menu_akses')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->countAllResults() > 0;
+    }
+
+    private function getWatermarkPermissions(): array
+    {
+        $default = [
+            'add'      => true,
+            'edit'     => true,
+            'export'   => true,
+            'delete'   => false,
+            'import'   => false,
+            'approval' => false,
+        ];
+
+        $rawRole = (string) (session()->get('role') ?? '');
+        $normalizedRole = strtolower(trim($rawRole));
+
+        if (in_array($normalizedRole, ['super administrator', 'super_administrator', 'superadmin', 'super-admin', 'admin', 'administrator'], true)) {
+            return $default;
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return $default;
+        }
+
+        $roleId = $this->resolveWatermarkRoleId($rawRole, $db);
+        $menuId = $this->resolveWatermarkMenuId('admin/dokumentasi/watermark-foto', $db);
+        if ($roleId === null || $menuId === null) {
+            return $default;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        $row = $db->table('menu_akses')
+            ->select('FiturAdd, FiturEdit, FiturDelete, FiturExport, FiturImport, FiturApproval')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($row)) {
+            return $default;
+        }
+
+        return [
+            'add'      => (int) ($row['FiturAdd'] ?? 0) === 1,
+            'edit'     => (int) ($row['FiturEdit'] ?? 0) === 1,
+            'export'   => (int) ($row['FiturExport'] ?? 0) === 1,
+            'delete'   => (int) ($row['FiturDelete'] ?? 0) === 1,
+            'import'   => (int) ($row['FiturImport'] ?? 0) === 1,
+            'approval' => (int) ($row['FiturApproval'] ?? 0) === 1,
+        ];
+    }
+
+    private function resolveWatermarkRoleId(string $role, $db): ?int
+    {
+        $normalized = strtolower(trim($role));
+        if ($normalized === '') {
+            return null;
+        }
+
+        try {
+            if ($db->tableExists('access_roles')) {
+                $variants = [$normalized];
+                if (strpos($normalized, 'super') !== false) {
+                    $variants[] = 'super administrator';
+                    $variants[] = 'super_administrator';
+                    $variants[] = 'superadmin';
+                    $variants[] = 'super-admin';
+                }
+
+                $row = $db->table('access_roles')
+                    ->select('id')
+                    ->whereIn('role_key', array_values(array_unique($variants)))
+                    ->where('is_active', 1)
+                    ->orderBy('id', 'ASC')
+                    ->get()
+                    ->getRowArray();
+
+                if (is_array($row) && isset($row['id'])) {
+                    return (int) $row['id'];
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fallback
+        }
+
+        if (in_array($normalized, ['admin', 'administrator'], true)) {
+            return 1;
+        }
+        if ($normalized === 'editor') {
+            return 2;
+        }
+
+        return null;
+    }
+
+    private function resolveWatermarkMenuId(string $menuLink, $db): ?string
+    {
+        $normalizedLink = trim(strtolower($menuLink), '/');
+        $tables = ['menu_lv2', 'menu_lv1', 'menu_lv3'];
+
+        foreach ($tables as $tbl) {
+            if (! $db->tableExists($tbl)) {
+                continue;
+            }
+
+            $row = $db->table($tbl)
+                ->select('id')
+                ->where('LOWER(link)', $normalizedLink)
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (string) $row['id'];
             }
         }
 
-        // --- 3. Warna Teks dan Shadow ---
-        $colorWhite = imagecolorallocate($sourceImage, 255, 255, 255);
-        $colorDark = imagecolorallocate($sourceImage, 0, 0, 0);
-        $colorBar = imagecolorallocate($sourceImage, 253, 184, 19); // PU Yellow / Orange
-        $colorNavy = imagecolorallocate($sourceImage, 12, 53, 106); // PU Dark Navy
-        $colorCapsuleBg = imagecolorallocate($sourceImage, 255, 255, 255);
-
-        // Shadow offset
-        $shadowOffset = (int) max(1, 2 * $scale);
-
-        // --- 4. Render Alamat/Lokasi (Bawah) ---
-        $maxAddressWidth = (int) ($width * 0.65);
-        $addressLines = $this->wrapText($addressFontSize, 0, $fontRegular, $lokasi, $maxAddressWidth);
-        $numLines = count($addressLines);
-        $addressBlockHeight = $numLines * $addressLineHeight;
-
-        $y_address_bottom = $height - $paddingY;
-        for ($i = 0; $i < $numLines; $i++) {
-            $lineText = $addressLines[$i];
-            $y_line = $y_address_bottom - (($numLines - 1 - $i) * $addressLineHeight);
-            $this->drawTextWithShadow($sourceImage, $addressFontSize, 0, $paddingX, $y_line, $colorWhite, $colorDark, $fontRegular, $lineText, $shadowOffset);
-        }
-
-        // --- 5. Render Jam, Vertical Bar, Tanggal & Hari (Tengah) ---
-        $y_address_top = $y_address_bottom - $addressBlockHeight + $addressFontSize;
-        $sectionSpacing = (int) (40 * $scale);
-        $y_time = $y_address_top - $sectionSpacing;
-
-        // Hitung bounding box jam
-        $timeBox = @imagettfbbox($timeFontSize, 0, $fontBold, $jam);
-        $timeWidth = $timeBox[2] - $timeBox[0];
-        $timeHeight = $timeBox[1] - $timeBox[7];
-
-        // Draw Jam
-        $this->drawTextWithShadow($sourceImage, $timeFontSize, 0, $paddingX, $y_time, $colorWhite, $colorDark, $fontBold, $jam, $shadowOffset);
-
-        // Posisi & dimensi vertical bar
-        $barX1 = $paddingX + $timeWidth + (25 * $scale);
-        $barX2 = $barX1 + (6 * $scale);
-        $barTop = $y_time + $timeBox[7] - (2 * $scale);
-        $barBottom = $y_time + $timeBox[1] + (2 * $scale);
-
-        // Draw Vertical Bar dengan shadow
-        imagefilledrectangle($sourceImage, (int)($barX1 + $shadowOffset), (int)($barTop + $shadowOffset), (int)($barX2 + $shadowOffset), (int)($barBottom + $shadowOffset), $colorDark);
-        imagefilledrectangle($sourceImage, (int)$barX1, (int)$barTop, (int)$barX2, (int)$barBottom, $colorBar);
-
-        // Draw Tanggal & Hari
-        $dateStr = date('d/m/Y', strtotime($tanggal));
-        $dayStr = $this->getIndonesianDayName($tanggal);
-        $dateX = $barX2 + (25 * $scale);
-
-        $dateBox = @imagettfbbox($dateFontSize, 0, $fontMedium, $dateStr);
-        $dateHeight = $dateBox[1] - $dateBox[7];
-
-        $y_date = $y_time + $timeBox[7] + $dateHeight + (4 * $scale);
-        $y_day = $y_time + $timeBox[1] - (2 * $scale);
-
-        $this->drawTextWithShadow($sourceImage, $dateFontSize, 0, $dateX, $y_date, $colorWhite, $colorDark, $fontMedium, $dateStr, $shadowOffset);
-        $this->drawTextWithShadow($sourceImage, $dateFontSize, 0, $dateX, $y_day, $colorWhite, $colorDark, $fontMedium, $dayStr, $shadowOffset);
-
-        // --- 6. Render Logo Capsule (Atas) ---
-        $y_time_top = $y_time + $timeBox[7];
-        $capsuleSpacing = (int) (35 * $scale);
-        $capsuleBottom = $y_time_top - $capsuleSpacing;
-        $capsuleHeight = (int) (65 * $scale);
-        if ($capsuleHeight < 36) $capsuleHeight = 36;
-        $capsuleTop = $capsuleBottom - $capsuleHeight;
-        $capsuleLeft = $paddingX;
-
-        $logoSize = (int) (45 * $scale);
-        if ($logoSize < 24) $logoSize = 24;
-
-        $logoX = $capsuleLeft + (15 * $scale);
-        $logoY = $capsuleTop + (($capsuleHeight - $logoSize) / 2);
-
-        $hasLogo = ($logoImage !== null);
-        if ($hasLogo) {
-            $textX = $logoX + $logoSize + (15 * $scale);
-        } else {
-            $textX = $capsuleLeft + (20 * $scale);
-        }
-
-        // Bounding box teks capsule
-        $cBox1 = @imagettfbbox($capsuleFontSize, 0, $fontBold, "KEMENTERIAN");
-        $cBox2 = @imagettfbbox($capsuleFontSize, 0, $fontBold, "PEKERJAAN UMUM");
-        $cW1 = $cBox1[2] - $cBox1[0];
-        $cW2 = $cBox2[2] - $cBox2[0];
-        $cTextWidth = max($cW1, $cW2);
-        $cTextHeight = $cBox1[1] - $cBox1[7];
-
-        $capsuleRight = $textX + $cTextWidth + (20 * $scale);
-
-        // Draw Capsule Background (dengan shadow)
-        $this->drawFilledRoundedRectangle($sourceImage, (int)($capsuleLeft + $shadowOffset), (int)($capsuleTop + $shadowOffset), (int)($capsuleRight + $shadowOffset), (int)($capsuleBottom + $shadowOffset), (int)($capsuleHeight / 2), $colorDark);
-        $this->drawFilledRoundedRectangle($sourceImage, (int)$capsuleLeft, (int)$capsuleTop, (int)$capsuleRight, (int)$capsuleBottom, (int)($capsuleHeight / 2), $colorCapsuleBg);
-
-        // Draw Logo Image
-        if ($hasLogo) {
-            $logoWidth = imagesx($logoImage);
-            $logoHeight = imagesy($logoImage);
-
-            $resizedLogo = imagecreatetruecolor($logoSize, $logoSize);
-            imagealphablending($resizedLogo, false);
-            imagesavealpha($resizedLogo, true);
-            $transparent = imagecolorallocatealpha($resizedLogo, 0, 0, 0, 127);
-            imagefill($resizedLogo, 0, 0, $transparent);
-            imagecopyresampled($resizedLogo, $logoImage, 0, 0, 0, 0, $logoSize, $logoSize, $logoWidth, $logoHeight);
-
-            imagecopy($sourceImage, $resizedLogo, (int)$logoX, (int)$logoY, 0, 0, $logoSize, $logoSize);
-            imagedestroy($resizedLogo);
-            imagedestroy($logoImage);
-        }
-
-        // Draw Capsule Text
-        $capsuleLineSpacing = (int) (3 * $scale);
-        $totalCapsuleTextHeight = (2 * $cTextHeight) + $capsuleLineSpacing;
-        $capsuleTextY = $capsuleTop + (($capsuleHeight - $totalCapsuleTextHeight) / 2) + $cTextHeight;
-
-        @imagettftext($sourceImage, $capsuleFontSize, 0, (int)$textX, (int)$capsuleTextY, $colorNavy, $fontBold, "KEMENTERIAN");
-        @imagettftext($sourceImage, $capsuleFontSize, 0, (int)$textX, (int)($capsuleTextY + $cTextHeight + $capsuleLineSpacing), $colorNavy, $fontBold, "PEKERJAAN UMUM");
-
-        // Konversi ke base64
-        ob_start();
-        if ($mimeType === 'image/png') {
-            imagepng($sourceImage);
-        } elseif ($mimeType === 'image/webp') {
-            imagewebp($sourceImage, null, 90);
-        } else {
-            imagejpeg($sourceImage, null, 95);
-        }
-        $imageData = ob_get_clean();
-
-        imagedestroy($sourceImage);
-
-        if ($imageData === false || $imageData === '') {
-            return ['data' => null, 'error' => 'Gagal menghasilkan gambar dengan watermark.'];
-        }
-
-        $base64 = base64_encode($imageData);
-        $dataUri = 'data:' . $mimeType . ';base64,' . $base64;
-
-        return ['data' => $dataUri, 'error' => null];
+        return null;
     }
 
-    private function getCustomFontPath(string $style = 'Regular'): string
+    private function cleanUpDirectory(string $dir): void
     {
-        $path = FCPATH . 'assets/fonts/Barlow-' . $style . '.ttf';
-        if (is_file($path) && is_readable($path)) {
-            return $path;
-        }
-        return $this->getFontPath();
-    }
-
-    private function getIndonesianDayName(string $dateStr): string
-    {
-        $dayOfWeek = date('N', strtotime($dateStr));
-        $days = [
-            1 => 'Senin',
-            2 => 'Selasa',
-            3 => 'Rabu',
-            4 => 'Kamis',
-            5 => 'Jumat',
-            6 => 'Sabtu',
-            7 => 'Minggu'
-        ];
-        return $days[$dayOfWeek] ?? '';
-    }
-
-    private function drawTextWithShadow($image, $size, $angle, $x, $y, $colorText, $colorShadow, $fontFile, $text, $offset = 2)
-    {
-        @imagettftext($image, $size, $angle, $x + $offset, $y + $offset, $colorShadow, $fontFile, $text);
-        @imagettftext($image, $size, $angle, $x, $y, $colorText, $fontFile, $text);
-    }
-
-    private function drawFilledRoundedRectangle($image, $x1, $y1, $x2, $y2, $radius, $color)
-    {
-        $radius = max(0, $radius);
-        $width = $x2 - $x1;
-        $height = $y2 - $y1;
-        
-        if ($radius * 2 > $width) $radius = (int) ($width / 2);
-        if ($radius * 2 > $height) $radius = (int) ($height / 2);
-        
-        if ($radius <= 0) {
-            imagefilledrectangle($image, $x1, $y1, $x2, $y2, $color);
+        if (! is_dir($dir)) {
             return;
         }
 
-        imagefilledrectangle($image, $x1 + $radius, $y1, $x2 - $radius, $y2, $color);
-        imagefilledrectangle($image, $x1, $y1 + $radius, $x1 + $radius, $y2 - $radius, $color);
-        imagefilledrectangle($image, $x2 - $radius, $y1 + $radius, $x2, $y2 - $radius, $color);
-        
-        imagefilledarc($image, $x1 + $radius, $y1 + $radius, $radius * 2, $radius * 2, 180, 270, $color, IMG_ARC_PIE);
-        imagefilledarc($image, $x2 - $radius, $y1 + $radius, $radius * 2, $radius * 2, 270, 360, $color, IMG_ARC_PIE);
-        imagefilledarc($image, $x2 - $radius, $y2 - $radius, $radius * 2, $radius * 2, 0, 90, $color, IMG_ARC_PIE);
-        imagefilledarc($image, $x1 + $radius, $y2 - $radius, $radius * 2, $radius * 2, 90, 180, $color, IMG_ARC_PIE);
-    }
+        try {
+            $files = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::CHILD_FIRST
+            );
 
-    private function wrapText(float $fontSize, float $angle, string $fontFace, string $string, int $maxWidth): array
-    {
-        $words = explode(' ', $string);
-        $lines = [];
-        $currentLine = '';
-        foreach ($words as $word) {
-            $testLine = $currentLine === '' ? $word : $currentLine . ' ' . $word;
-            $testBox = @imagettfbbox($fontSize, $angle, $fontFace, $testLine);
-            if ($testBox !== false) {
-                $textWidth = $testBox[2] - $testBox[0];
-                if ($textWidth > $maxWidth) {
-                    if ($currentLine !== '') {
-                        $lines[] = $currentLine;
-                        $currentLine = $word;
-                    } else {
-                        $lines[] = $word;
-                        $currentLine = '';
-                    }
+            foreach ($files as $fileinfo) {
+                if ($fileinfo->isDir()) {
+                    @rmdir($fileinfo->getRealPath());
                 } else {
-                    $currentLine = $testLine;
+                    @unlink($fileinfo->getRealPath());
                 }
-            } else {
-                $currentLine = $testLine;
             }
+            @rmdir($dir);
+        } catch (\Throwable $e) {
+            // Ignore clean-up failures
         }
-        if ($currentLine !== '') {
-            $lines[] = $currentLine;
-        }
-        return $lines;
-    }
-
-    private function getFontPath(): string
-    {
-        // Lokasi font yang akan dicek
-        $fontPaths = [
-            // WRITEPATH - ini selalu bisa ditulis
-            WRITEPATH . 'fonts/DejaVuSans.ttf',
-            WRITEPATH . 'fonts/arial.ttf',
-            // Public fonts
-            FCPATH . 'fonts/DejaVuSans.ttf',
-            FCPATH . 'fonts/arial.ttf',
-            // APPPATH relative
-            APPPATH . '../public/fonts/DejaVuSans.ttf',
-            APPPATH . '../public/fonts/arial.ttf',
-            // Server system fonts
-            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-            '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-            '/usr/share/fonts/TTF/DejaVuSans.ttf',
-            // Common cPanel paths
-            '/home/agun9011/public_html/satkerpps/public/fonts/DejaVuSans.ttf',
-        ];
-
-        foreach ($fontPaths as $path) {
-            $realPath = realpath($path);
-            if ($realPath !== false && is_file($realPath) && is_readable($realPath)) {
-                return $realPath;
-            }
-        }
-
-        return '';
     }
 
     private function deleteLocalImage(?string $path): void

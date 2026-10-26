@@ -394,6 +394,7 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('surat/cuti/(:num)/export-pdf', 'Admin\SuratCuti::exportPdf/$1');
 	$routes->get('surat/cuti/(:num)/export-word', 'Admin\SuratCuti::exportWord/$1');
 	$routes->get('surat/cuti/export-word-kosong', 'Admin\SuratCuti::exportWordKosong');
+	$routes->match(['get', 'post'], 'surat/cuti/export-excel', 'Admin\SuratCuti::exportExcel');
 
 	// Surat Routes - Disposisi Perjalanan Dinas
 	$routes->get('surat/perjalanan-dinas/disposisi', 'Admin\DisposisiPerjalananDinas::index');
@@ -423,6 +424,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	// Watermark Foto
 	$routes->get('dokumentasi/watermark-foto', 'Admin\\Dokumentasi::watermarkFoto');
 	$routes->post('dokumentasi/watermark-foto/proses', 'Admin\\Dokumentasi::prosesWatermark');
+	$routes->post('dokumentasi/watermark-foto/extract-meta', 'Admin\\Dokumentasi::extractMeta');
+	$routes->get('dokumentasi/watermark-foto/download-batch-zip/(:segment)', 'Admin\\Dokumentasi::downloadBatchZip/$1');
 
 	$routes->get('acara', 'Admin\\Event::index');
 	$routes->match(['get', 'post'], 'acara/tambah', 'Admin\\Event::create');

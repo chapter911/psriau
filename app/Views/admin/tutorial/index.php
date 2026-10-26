@@ -315,7 +315,7 @@ graph TD
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="font-weight-bold mb-1 text-primary"><i class="far fa-calendar-alt mr-2"></i> Alur Kerja Pengajuan & Approval Cuti Pegawai</h5>
-                <small class="text-muted">Proses pengajuan cuti melalui modal, kalkulasi otomatis hari kerja efektif (mengecualikan Sabtu, Minggu, Hari Libur Nasional & Cuti Bersama SKB 3 Menteri), ekspor form Word (.docx) kosong resmi, tanggal pengajuan otomatis terkunci, hingga ekspor dokumen Word (.docx) dan PDF terisi.</small>
+                <small class="text-muted">Proses pengajuan cuti melalui modal, kalkulasi otomatis hari kerja efektif (mengecualikan Sabtu, Minggu, Hari Libur Nasional & Cuti Bersama SKB 3 Menteri), ekspor form Word (.docx) kosong resmi, ekspor matriks horizontal rekapitulasi cuti pegawai (.xlsx) dengan indikator warna kalender &amp; freeze panes, hingga ekspor dokumen Word (.docx) dan PDF terisi.</small>
             </div>
             <div>
                 <span class="badge badge-primary">Staf & Admin</span>
@@ -327,10 +327,13 @@ graph TD
 graph TD
     A[Buka Menu Surat-Surat -> Cuti] --> B[Klik Tombol Ajukan Cuti]
     A --> B2[Klik Tombol Form Cuti Kosong .docx]
+    A --> B5[Klik Tombol Rekap Cuti .xlsx]
     A --> B3[Lihat Rekomendasi Cuti di Master Tanggal Merah]
     B3 -->|Klik Ajukan Cuti Ini| B4[Otomatis Buka Modal & Isi Tanggal Cuti]
     B4 --> D1
     B2 --> H2[Unduh Langsung Template Word Kosong Resmi]
+    B5 --> B6[Pilih Rentang Tanggal Mulai s/d Selesai & Filter Status]
+    B6 --> H3[Unduh Matriks Horizontal Excel .xlsx: Highlight Cuti Diambil, Cuti Bersama, Tanggal Merah & Akhir Pekan]
     B --> C[Sistem Otomatis Mengisi Tanggal Pengajuan Terkunci & Data Pegawai]
     C --> D[Pilih Jenis Cuti & Alasan Cuti]
     D --> D1[Pilih Tanggal Mulai & Tanggal Selesai Cuti]
@@ -768,8 +771,70 @@ graph TD
                 </pre>
             </div>
         </div>
-    </div>
+    <!-- FLOWCHART 13: DOKUMENTASI - WATERMARK FOTO MULTI-FORMAT ALA TIMEMARK -->
+    <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-stamp text-primary mr-2"></i>Flowchart: Alur Pembuatan Watermark Foto Multi-Format Ala TimeMark (EXIF Time Offset, Bulk &amp; ZIP Upload, Folder Server)
+            </h5>
+            <div>
+                <span class="badge badge-success">Dokumentasi</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu: Dokumentasi &gt; Watermark Foto (/admin/dokumentasi/watermark-foto)"] --> B{"Pilih Format Template TimeMark"}
+    B -->|Format 1| C["Gaya Klasik TimeMark: Jam Besar, Garis Kuning, Kapsul Logo PU"]
+    B -->|Format 2| D["Gaya Grid Inspeksi: Tabel Resmi PU Kotak Lapangan &amp; GPS"]
+    B -->|Format 3| E["Gaya Modern Badge: Kartu Melayang Elegan di Sudut Foto"]
+    B -->|Format 4| F["Gaya Bottom Strip: Banner Bawah Bersih &amp; Garis Aksen Emas"]
 
+    C --> G["Unggah Foto Dokumentasi"]
+    D --> G
+    E --> G
+    F --> G
+
+    G --> H{"Metode Unggah File"}
+    H -->|Foto Tunggal / Multi-Foto| I["Unggah Foto (JPG, PNG, WebP, atau iPhone HEIC/HEIF)"]
+    H -->|Arsip ZIP| K["Unggah 1 File .ZIP Berisi Kumpulan Foto (Mendukung File HEIC di dalam ZIP)"]
+    I --> H1{"Format HEIC Terdeteksi?"}
+    H1 -->|Ya (iPhone HEIC)| H2["Konversi Otomatis ke JPEG (Browser via heic2any / Server via sips/heif-convert)"]
+    H1 -->|Format Standar (JPG/PNG/WebP)| L{"Pengaturan Waktu &amp; EXIF"}
+    H2 --> L
+    K --> H3["Ekstrak Seluruh Isi ZIP &amp; Konversi Otomatis File HEIC ke JPEG"]
+    H3 --> L
+
+    L -->|Deteksi EXIF Aktif| M["Sistem Otomatis Ekstrak Waktu &amp; Tanggal Asli Kamera Tiap Foto"]
+    L -->|Fallback / Manual| N["Gunakan Tanggal &amp; Jam Manual yang Ditetapkan"]
+    M --> O{"Terapkan Penyesuaian Jam (Offset)"}
+    N --> O
+    O -->|Tombol Cepat| P["Pilih Offset: +0j, +1j, +2j, +3 Jam, +5 Jam, atau Kustom"]
+
+    P --> Q{"Penentuan Lokasi &amp; Koordinat GPS"}
+    Q -->|Opsi A: Otomatis EXIF GPS| Q0["Ambil Teks Lokasi Otomatis dari Koordinat EXIF Foto Saja (Per File)"]
+    Q -->|Opsi B: Popup Peta Leaflet| Q2["Buka Popup Peta Interaktif (Pilihan: Koordinat Saja / Alamat Lengkap)"]
+    Q -->|Opsi C: Ketik Manual| Q1["Ketik Nama Lokasi &amp; Catatan Proyek Manual"]
+    Q0 --> R{"Opsi Penyimpanan Server"}
+    Q1 --> R
+    Q2 --> Q3["Otomatis Terapkan Koordinat GPS / Alamat ke Formulir"]
+    Q3 --> R
+    R -->|Centang Simpan ke Server| S["Tentukan Nama Folder (Default: /uploads/watermark_hasil/Dokumentasi_YYYYMMDD)"]
+    R -->|Tidak Disimpan ke Server| T["Hanya Diproses Sementara di Memori/Temp"]
+
+    S --> U["Klik 'Proses Watermark TimeMark'"]
+    T --> U
+
+    U --> V["Sistem Merender Watermark Secara Proporsional Berbasis GD"]
+    V --> W{"Hasil Pemrosesan"}
+    W -->|Foto Tunggal| X["Tampilkan Preview Langsung &amp; Tombol 'Download Foto'"]
+    W -->|Banyak Foto / ZIP| Y["Kemasan Otomatis: Tombol 'Download Semua (ZIP)' + Galeri Mini Grid"]
+    S -.-> Z["Salinan Permanen Tersimpan di Folder Server dan Dapat Diakses Kapan Saja"]
+                </pre>
+            </div>
+        </div>
+    </div>
 
     <!-- PANDUAN PENGGUNAAN SISTEM (ACCORDION STYLE) -->
     <div class="mt-4">
@@ -871,6 +936,7 @@ graph TD
                                 <p class="small text-muted mb-2"><code>/admin/surat/cuti</code></p>
                                 <ol class="pl-3 small mb-0">
                                     <li>Klik tombol <strong>Form Cuti Kosong (.docx)</strong> di bagian atas untuk mengunduh template formulir cuti kosong resmi Satker PPS Riau (format Word .docx).</li>
+                                    <li>Klik tombol <strong>Rekap Cuti (.xlsx)</strong> di bagian atas untuk mengekspor rekapitulasi permohonan cuti seluruh pegawai dalam format matriks horizontal memanjang ke samping berdasarkan rentang tanggal fleksibel (dilengkapi pilihan cepat Bulan Ini, Bulan Lalu, Bulan Depan, 1 Tahun Berjalan, serta filter status cuti). File Excel dilengkapi <em>Freeze Panes</em> (identitas pegawai di sisi kiri dan tanggal di baris atas terkunci otomatis saat menggulir layar), penandaan warna cerdas (merah untuk tanggal cuti yang diambil, kuning untuk cuti bersama SKB 3 Menteri, merah muda untuk tanggal merah/libur nasional, dan abu-abu untuk akhir pekan), rincian jenis/alasan cuti pada komentar sel, serta formula kalkulasi otomatis total hari cuti pegawai dan total pegawai cuti harian.</li>
                                     <li>Klik tombol <strong>Ajukan Cuti</strong> untuk membuat permohonan cuti baru secara digital, atau klik tombol <em>Ajukan Cuti Ini</em> pada rekomendasi Harpitnas di Master Tanggal Merah untuk otomatis mengisi tanggal permohonan.</li>
                                     <li><strong>Tanggal Pengajuan</strong> otomatis terkunci pada tanggal hari ini.</li>
                                     <li>Data pegawai (Nama, NIP, Jabatan, dan kalkulasi Masa Kerja real-time dari NIP TMT CPNS) terisi secara otomatis.</li>
@@ -1574,6 +1640,67 @@ graph TD
                     <li><strong>Matriks Hak Akses Role (menu_akses):</strong> Super Administrator dapat mengatur hak akses fitur (View, Add, Edit, Delete, Export) untuk masing-masing role pengguna secara dinamis dan tersimpan di database <code>menu_akses</code>.</li>
                     <li><strong>Server Email &amp; Uji Coba:</strong> Menyediakan pemantauan konfigurasi SMTP dan fitur uji coba pengiriman email langsung untuk memastikan fungsi pengiriman password selalu siap digunakan.</li>
                 </ol>
+            </div>
+        </div>
+
+        <!-- MODUL DOKUMENTASI: WATERMARK FOTO MULTI-FORMAT ALA TIMEMARK -->
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,editor,all">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-stamp mr-2"></i> Modul Dokumentasi: Watermark Foto Multi-Format Ala TimeMark
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-primary"><i class="fas fa-camera mr-1"></i> Alur Kerja &amp; Fitur Unggulan Watermark Foto</h6>
+                        <p class="small text-muted mb-2"><code>/admin/dokumentasi/watermark-foto</code></p>
+                        <ol class="pl-3 small mb-0 text-secondary">
+                            <li><strong>Pilihan 4 Format Watermark TimeMark:</strong>
+                                <ul>
+                                    <li><strong>Gaya Klasik TimeMark:</strong> Format signature Kementerian PU dengan angka jam besar tebal, bilah aksen kuning vertikal, tanggal &amp; nama hari Indonesia, kapsul logo resmi, serta alamat lengkap berlatar gradien lembut.</li>
+                                    <li><strong>Gaya Grid Inspeksi Proyek:</strong> Format tabel/grid resmi kotak inspeksi lapangan yang memuat baris Waktu &amp; Tanggal, Lokasi, Koordinat GPS, dan Catatan Proyek.</li>
+                                    <li><strong>Gaya Modern Floating Badge:</strong> Kartu melayang (floating card) berlatar semi-transparan modern dengan tag instansi, jam digital besar, dan pin GPS di sudut foto.</li>
+                                    <li><strong>Gaya Clean Bottom Strip:</strong> Banner horizontal elegan di sepanjang tepi bawah foto dengan garis aksen emas dan tata letak minimalis yang tidak menutupi objek foto.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Ekstraksi Waktu Otomatis dari EXIF &amp; Penyesuaian Offset:</strong>
+                                <ul>
+                                    <li>Sistem secara otomatis membaca metadata <em>EXIF DateTimeOriginal</em> dari file foto yang diambil kamera/ponsel di lapangan.</li>
+                                    <li>Tersedia tombol penyesuaian jam instan (<strong>+1 Jam, +2 Jam, +3 Jam, +5 Jam, -1 Jam</strong>, atau kustom menit) untuk mengoreksi waktu jika jam kamera berbeda atau zona waktu berubah.</li>
+                                    <li>Tersedia kolom tanggal &amp; jam manual sebagai fallback jika foto tidak memiliki metadata EXIF.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Otomatisasi Lokasi dari Koordinat EXIF &amp; Popup Peta Interaktif (Leaflet):</strong>
+                                <ul>
+                                    <li><strong>Ambil Teks Lokasi Otomatis dari Koordinat EXIF Saja:</strong> Tersedia saklar <em>"Ambil Teks Lokasi Otomatis dari Koordinat EXIF Foto Saja"</em>. Jika aktif, stempel teks lokasi pada watermark akan otomatis menggunakan koordinat GPS asli (misal: <code>0.507068° N, 101.447779° E</code>) yang dibaca dari EXIF masing-masing foto. Sangat praktis saat mengunggah banyak foto / arsip ZIP di mana setiap foto memiliki titik koordinat berbeda.</li>
+                                    <li><strong>Popup Peta Interaktif:</strong> Tekan tombol <strong>"Pilih dari Peta (Popup)"</strong> untuk membuka peta digital interaktif berbasis Leaflet &amp; OpenStreetMap.</li>
+                                    <li><strong>Pilihan Format Teks:</strong> Pada jendela popup peta, pengguna dapat memilih apakah ingin menerapkan <strong>"Koordinat Saja"</strong> atau <strong>"Nama Alamat Lengkap"</strong> hasil <em>reverse geocoding</em>.</li>
+                                    <li><strong>Arahkan Peta ke EXIF Foto:</strong> Tersedia tombol <strong>"EXIF Foto"</strong> di popup peta untuk langsung melompat dan memusatkan penanda peta ke titik koordinat EXIF foto yang baru diunggah.</li>
+                                    <li><strong>Pencarian Tempat &amp; Deteksi GPS:</strong> Didukung kolom pencarian nama jalan/gedung dan tombol <strong>"Lokasi Saya"</strong> untuk mendeteksi GPS perangkat secara langsung.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Unggah Fleksibel (Foto Tunggal, Multi-Foto, HEIC/HEIF iPhone, dan Arsip ZIP):</strong>
+                                <ul>
+                                    <li><strong>Dukungan Format Luas:</strong> Mendukung berkas foto standar (<strong>JPG, JPEG, PNG, WebP</strong>) serta format resolusi tinggi Apple iPhone / iOS (<strong>HEIC dan HEIF</strong>).</li>
+                                    <li><strong>Konversi Ganda (Client-Side &amp; Server-Side):</strong> Berkas foto HEIC iPhone otomatis dikonversi ke JPEG secara instan melalui WebAssembly <code>heic2any</code> pada peramban sehingga pratinjau dan metadata langsung terbaca. Di sisi server, sistem didukung konverter multi-strategi (<code>sips</code> macOS, <code>heif-convert</code> Linux, atau ImageMagick).</li>
+                                    <li><strong>Dukungan Arsip ZIP:</strong> Dapat mengunggah satu file arsip <strong>.ZIP</strong> (yang berisi foto JPEG, PNG, maupun berkas HEIC). Sistem secara otomatis mengekstrak, mengonversi foto HEIC, dan merender watermark untuk seluruh isi arsip sekaligus.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Penyimpanan Folder Server &amp; Unduh Massal (ZIP):</strong>
+                                <ul>
+                                    <li><strong>Unduh ZIP Langsung:</strong> Untuk pemrosesan banyak foto / ZIP, sistem otomatis mengemas seluruh foto hasil watermark ke dalam 1 file ZIP yang siap diunduh sekali klik.</li>
+                                    <li><strong>Opsi Simpan ke Folder Server:</strong> Centang opsi simpan ke server untuk menyimpan salinan hasil foto ke direktori <code>/uploads/watermark_hasil/{nama_folder}/</code> sehingga foto tersimpan permanen dan dapat diakses kapan saja.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Proteksi Otorisasi Hak Akses (menu_akses):</strong>
+                                <ul>
+                                    <li>Akses menu dan fitur pemrosesan terintegrasi penuh dengan tabel <code>menu_akses</code> (izin <code>FiturAdd</code> dan <code>FiturEdit</code>), mencegah akses tak terotorisasi secara aman.</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
             </div>
         </div>
 

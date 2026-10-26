@@ -152,5 +152,7 @@ error_state.png
 # Foto perjalanan dinas: abaikan semua file kecuali index.html
 /public/uploads/laporan/perjalanan_dinas/*
 !/public/uploads/laporan/perjalanan_dinas/index.html
+/public/uploads/watermark_hasil/*
+!/public/uploads/watermark_hasil/.gitkeep
 google-service-account.json
 /do_not_upload/
