@@ -662,7 +662,9 @@ class InventarisPemeliharaan extends BaseController
         try {
             $q = trim((string) ($this->request->getGet('q') ?? ''));
             $kategori = trim((string) ($this->request->getGet('kategori') ?? ''));
+            $peruntukan = trim((string) ($this->request->getGet('peruntukan') ?? ''));
             $ruanganId = trim((string) ($this->request->getGet('ruangan_id') ?? ''));
+            $limit = max(1, min(2500, (int) ($this->request->getGet('limit') ?? 1000)));
 
             $satkerModel = new InventarisSatkerModel();
             $builder = $satkerModel->builder();
@@ -681,13 +683,17 @@ class InventarisPemeliharaan extends BaseController
                 $builder->where('kategori', $kategori);
             }
 
+            if ($peruntukan !== '' && $peruntukan !== 'all') {
+                $builder->where('peruntukan', $peruntukan);
+            }
+
             if ($ruanganId !== '' && $ruanganId !== 'all') {
                 $builder->where('ruangan_id', (int) $ruanganId);
             }
 
             $rows = $builder->orderBy('nama_barang', 'ASC')
                 ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
-                ->limit(100)
+                ->limit($limit)
                 ->get()
                 ->getResultArray();
 
@@ -704,6 +710,7 @@ class InventarisPemeliharaan extends BaseController
                     'kondisi'         => (string) ($r['kondisi'] ?? 'Baik'),
                     'tahun_perolehan' => (string) ($r['tahun_perolehan'] ?? date('Y')),
                     'lokasi_ruangan'  => (string) ($r['lokasi_ruangan'] ?? '-'),
+                    'peruntukan'      => (string) ($r['peruntukan'] ?? 'kantor'),
                     'jenis_barang'    => 'MESIN PERALATAN NON TIK',
                 ];
             }

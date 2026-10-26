@@ -1857,15 +1857,23 @@ class InventarisSmokeTest extends BaseCommand
                 throw new \Exception("Method controller InventarisPemeliharaan hilang: " . implode(', ', $missingMethods));
             }
 
-            // 1b. Uji Endpoint ajaxSearchBarang
+            // 1b. Uji Endpoint ajaxSearchBarang (termasuk filter peruntukan kantor vs mobiler)
             $dummyCtrl = new \App\Controllers\Admin\InventarisPemeliharaan();
             $dummyCtrl->initController(service('request'), service('response'), service('logger'));
-            $searchRes = $dummyCtrl->ajaxSearchBarang();
-            $searchJson = json_decode($searchRes->getBody(), true);
-            if (! empty($searchJson['success'])) {
-                CLI::write("  [OK] Endpoint ajaxSearchBarang sukses dieksekusi (Total item: " . count($searchJson['data'] ?? []) . ") tanpa database exception", "green");
+
+            $_GET['peruntukan'] = 'kantor';
+            $searchResKantor = $dummyCtrl->ajaxSearchBarang();
+            $jsonKantor = json_decode($searchResKantor->getBody(), true);
+
+            $_GET['peruntukan'] = 'mobiler';
+            $searchResMobiler = $dummyCtrl->ajaxSearchBarang();
+            $jsonMobiler = json_decode($searchResMobiler->getBody(), true);
+            unset($_GET['peruntukan']);
+
+            if (! empty($jsonKantor['success']) && ! empty($jsonMobiler['success'])) {
+                CLI::write("  [OK] Endpoint ajaxSearchBarang sukses memfilter peruntukan: Kantor (" . count($jsonKantor['data'] ?? []) . " aset) & Mobiler Sekolah (" . count($jsonMobiler['data'] ?? []) . " aset)", "green");
             } else {
-                throw new \Exception("ajaxSearchBarang gagal: " . ($searchJson['error'] ?? 'Unknown error'));
+                throw new \Exception("ajaxSearchBarang peruntukan gagal: " . ($jsonKantor['error'] ?? $jsonMobiler['error'] ?? 'Unknown'));
             }
 
             // 2. Uji Helper format_nup_range_summary

@@ -388,6 +388,36 @@
                 </button>
             </div>
             <div class="modal-body p-3">
+                <!-- PILIHAN PERUNTUKAN ASET: KANTOR (DBR) VS MOBILER SEKOLAH VS LAINNYA VS SEMUA -->
+                <div class="p-2 mb-3 bg-light rounded border d-flex justify-content-between align-items-center flex-wrap" style="gap: 10px;">
+                    <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                        <span class="small font-weight-bold text-dark"><i class="fas fa-layer-group text-primary mr-1"></i>Pilih Peruntukan:</span>
+                        <div class="btn-group btn-group-sm btn-group-toggle shadow-sm" data-toggle="buttons" id="pickerPeruntukanToggle">
+                            <label class="btn btn-outline-primary active font-weight-bold" id="lblPeruntukanKantor" style="cursor: pointer;">
+                                <input type="radio" name="picker_peruntukan" value="kantor" checked autocomplete="off">
+                                <i class="fas fa-building mr-1"></i>Aset Kantor (DBR)
+                            </label>
+                            <label class="btn btn-outline-warning text-dark font-weight-bold" id="lblPeruntukanMobiler" style="cursor: pointer;">
+                                <input type="radio" name="picker_peruntukan" value="mobiler" autocomplete="off">
+                                <i class="fas fa-school mr-1 text-warning"></i>Mobiler Sekolah
+                            </label>
+                            <label class="btn btn-outline-secondary font-weight-bold" id="lblPeruntukanLainnya" style="cursor: pointer;">
+                                <input type="radio" name="picker_peruntukan" value="lainnya" autocomplete="off">
+                                <i class="fas fa-archive mr-1"></i>Aset Lainnya
+                            </label>
+                            <label class="btn btn-outline-dark font-weight-bold" id="lblPeruntukanAll" style="cursor: pointer;">
+                                <input type="radio" name="picker_peruntukan" value="all" autocomplete="off">
+                                <i class="fas fa-globe mr-1"></i>Semua Barang
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge badge-info px-2.5 py-1.5 font-weight-bold shadow-sm" id="badgeTotalLoaded">
+                            <i class="fas fa-spinner fa-spin mr-1"></i>Memuat...
+                        </span>
+                    </div>
+                </div>
+
                 <div class="row mb-3">
                     <div class="col-md-6 mb-2 mb-md-0">
                         <div class="input-group input-group-sm">
@@ -395,11 +425,17 @@
                                 <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
                             </div>
                             <input type="text" id="pickerSearchInput" class="form-control" placeholder="Cari nama barang, merk, kode barang, atau NUP...">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary" id="pickerBtnClearSearch" title="Hapus kata kunci">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-3 col-6 mb-2 mb-md-0">
                         <select id="pickerKategoriSelect" class="form-control form-control-sm">
                             <option value="">Semua Kategori</option>
+                            <option value="MESIN PERALATAN NON TIK">Mesin Peralatan Non TIK</option>
                             <option value="Peralatan & Mesin">Peralatan & Mesin</option>
                             <option value="Gedung & Bangunan">Gedung & Bangunan</option>
                             <option value="Jaringan">Jaringan</option>
@@ -407,7 +443,7 @@
                         </select>
                     </div>
                     <div class="col-md-3 col-6 text-right">
-                        <button type="button" id="pickerBtnSearch" class="btn btn-info btn-sm shadow-sm">
+                        <button type="button" id="pickerBtnSearch" class="btn btn-primary btn-sm shadow-sm font-weight-bold">
                             <i class="fas fa-search mr-1"></i>Cari
                         </button>
                         <button type="button" id="pickerBtnSelectAll" class="btn btn-outline-secondary btn-sm shadow-sm ml-1">
@@ -416,23 +452,24 @@
                     </div>
                 </div>
 
-                <div class="table-responsive" style="max-height: 420px;">
+                <div class="table-responsive" style="max-height: 440px;">
                     <table class="table table-sm table-hover table-bordered mb-0" style="font-size: 0.82rem;">
                         <thead class="thead-light text-center sticky-top">
                             <tr>
                                 <th style="width: 35px;"><input type="checkbox" id="checkAllPicker"></th>
+                                <th style="width: 95px;">Peruntukan</th>
                                 <th style="width: 105px;">Kode</th>
                                 <th>Nama Barang</th>
                                 <th>Merk / Tipe / Spesifikasi</th>
                                 <th style="width: 75px;">NUP</th>
-                                <th style="width: 80px;">Kondisi</th>
-                                <th style="width: 75px;">Tahun</th>
+                                <th style="width: 75px;">Kondisi</th>
+                                <th style="width: 65px;">Tahun</th>
                                 <th style="width: 130px;">Lokasi Ruangan</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyPickerResults">
                             <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">
+                                <td colspan="9" class="text-center py-4 text-muted">
                                     <i class="fas fa-spinner fa-spin mr-1"></i>Memuat data inventaris satker...
                                 </td>
                             </tr>
@@ -1252,35 +1289,52 @@ function applyCapturedSessionToForm(key) {
 function loadPickerData() {
     var q = $('#pickerSearchInput').val();
     var kat = $('#pickerKategoriSelect').val();
+    var peruntukan = $('input[name="picker_peruntukan"]:checked').val() || 'kantor';
     var tbody = $('#tbodyPickerResults');
-    tbody.html('<tr><td colspan="8" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Mencari barang inventaris...</td></tr>');
+    var badge = $('#badgeTotalLoaded');
+
+    tbody.html('<tr><td colspan="9" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Memuat daftar barang inventaris...</td></tr>');
+    badge.html('<i class="fas fa-spinner fa-spin mr-1"></i>Memuat...');
 
     $.ajax({
         url: baseUrl + '/admin/inventaris/pemeliharaan/ajax-search-barang',
         type: 'GET',
-        data: { q: q, kategori: kat },
+        data: { q: q, kategori: kat, peruntukan: peruntukan, limit: 1500 },
         dataType: 'json',
         success: function(res) {
             tbody.empty();
             if (!res.success || !res.data || res.data.length === 0) {
-                tbody.html('<tr><td colspan="8" class="text-center py-4 text-muted"><i class="fas fa-info-circle mr-1"></i>Tidak ada barang yang cocok dengan kata kunci.</td></tr>');
+                tbody.html('<tr><td colspan="9" class="text-center py-4 text-muted"><i class="fas fa-info-circle mr-1"></i>Tidak ada barang yang cocok dengan filter atau kata kunci ini.</td></tr>');
+                badge.removeClass('badge-info badge-danger').addClass('badge-secondary').text('0 Barang Ditemukan');
                 return;
             }
+
+            var totalItems = res.data.length;
+            var peruntukanLabel = peruntukan === 'kantor' ? 'Aset Kantor' : (peruntukan === 'mobiler' ? 'Mobiler Sekolah' : (peruntukan === 'lainnya' ? 'Aset Lainnya' : 'Semua'));
+            badge.removeClass('badge-secondary badge-danger').addClass('badge-info').text(totalItems + ' Barang (' + peruntukanLabel + ')');
 
             res.data.forEach(function(row) {
                 var isChecked = selectedItems.some(function(it) {
                     return it.inventaris_id && it.inventaris_id === row.id;
                 });
 
+                var pBadge = '<span class="badge badge-primary px-1.5 py-0.5" style="font-size: 0.72rem;"><i class="fas fa-building mr-0.5"></i>Kantor</span>';
+                if (row.peruntukan === 'mobiler') {
+                    pBadge = '<span class="badge badge-warning text-dark px-1.5 py-0.5 font-weight-bold" style="font-size: 0.72rem;"><i class="fas fa-school mr-0.5"></i>Mobiler</span>';
+                } else if (row.peruntukan === 'lainnya') {
+                    pBadge = '<span class="badge badge-secondary px-1.5 py-0.5" style="font-size: 0.72rem;"><i class="fas fa-archive mr-0.5"></i>Lainnya</span>';
+                }
+
                 var tr = $('<tr style="cursor: pointer;"></tr>');
-                tr.append('<td class="text-center"><input type="checkbox" class="picker-row-checkbox" data-json=\'' + JSON.stringify(row).replace(/'/g, "&apos;") + '\'' + (isChecked ? ' checked' : '') + '></td>');
-                tr.append('<td class="font-weight-bold text-muted">' + escapeHtml(row.kode_barang || '-') + '</td>');
-                tr.append('<td class="font-weight-bold text-dark">' + escapeHtml(row.nama_barang) + '</td>');
-                tr.append('<td>' + escapeHtml(row.merk_tipe || '-') + '</td>');
-                tr.append('<td class="text-center font-weight-bold text-primary">' + escapeHtml(row.nup || '-') + '</td>');
-                tr.append('<td class="text-center"><span class="badge badge-light border">' + escapeHtml(row.kondisi || 'Baik') + '</span></td>');
-                tr.append('<td class="text-center text-muted">' + escapeHtml(row.tahun_perolehan || '-') + '</td>');
-                tr.append('<td class="small text-muted">' + escapeHtml(row.lokasi_ruangan || '-') + '</td>');
+                tr.append('<td class="text-center align-middle"><input type="checkbox" class="picker-row-checkbox" data-json=\'' + JSON.stringify(row).replace(/'/g, "&apos;") + '\'' + (isChecked ? ' checked' : '') + '></td>');
+                tr.append('<td class="text-center align-middle">' + pBadge + '</td>');
+                tr.append('<td class="font-weight-bold text-muted align-middle">' + escapeHtml(row.kode_barang || '-') + '</td>');
+                tr.append('<td class="font-weight-bold text-dark align-middle">' + escapeHtml(row.nama_barang) + '</td>');
+                tr.append('<td class="align-middle">' + escapeHtml(row.merk_tipe || '-') + '</td>');
+                tr.append('<td class="text-center font-weight-bold text-primary align-middle">' + escapeHtml(row.nup || '-') + '</td>');
+                tr.append('<td class="text-center align-middle"><span class="badge badge-light border">' + escapeHtml(row.kondisi || 'Baik') + '</span></td>');
+                tr.append('<td class="text-center text-muted align-middle">' + escapeHtml(row.tahun_perolehan || '-') + '</td>');
+                tr.append('<td class="small text-muted align-middle">' + escapeHtml(row.lokasi_ruangan || '-') + '</td>');
 
                 tr.on('click', function(e) {
                     if (e.target.tagName !== 'INPUT') {
@@ -1294,8 +1348,13 @@ function loadPickerData() {
 
             updatePickerCounter();
         },
-        error: function() {
-            tbody.html('<tr><td colspan="8" class="text-center py-4 text-danger"><i class="fas fa-exclamation-circle mr-1"></i>Gagal memuat data dari server.</td></tr>');
+        error: function(xhr) {
+            var errMsg = 'Gagal memuat data dari server.';
+            if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+                errMsg += ' (' + xhr.responseJSON.error + ')';
+            }
+            tbody.html('<tr><td colspan="9" class="text-center py-4 text-danger"><i class="fas fa-exclamation-circle mr-1"></i>' + escapeHtml(errMsg) + '</td></tr>');
+            badge.removeClass('badge-info').addClass('badge-danger').text('Gagal memuat');
         }
     });
 }
@@ -1304,6 +1363,18 @@ function updatePickerCounter() {
     var count = $('.picker-row-checkbox:checked').length;
     $('#pickerSelectedCount').text(count + ' barang terpilih');
 }
+
+// Event listener ganti peruntukan & filter
+$('input[name="picker_peruntukan"]').on('change', function() {
+    loadPickerData();
+});
+$('#pickerKategoriSelect').on('change', function() {
+    loadPickerData();
+});
+$('#pickerBtnClearSearch').on('click', function() {
+    $('#pickerSearchInput').val('');
+    loadPickerData();
+});
 
 $(document).on('change', '.picker-row-checkbox', function() {
     updatePickerCounter();
