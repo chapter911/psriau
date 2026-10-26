@@ -691,33 +691,79 @@ class InventarisPemeliharaan extends BaseController
                 $builder->where('ruangan_id', (int) $ruanganId);
             }
 
-            $rows = $builder->orderBy('nama_barang', 'ASC')
+            $rows = $builder->select('id, peruntukan, kode_barang, nama_barang, merk_tipe, merk, nup, kondisi, tahun_perolehan, lokasi_ruangan')
+                ->orderBy('peruntukan', 'ASC')
+                ->orderBy('nama_barang', 'ASC')
+                ->orderBy('kode_barang', 'ASC')
+                ->orderBy('merk_tipe', 'ASC')
                 ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
-                ->limit($limit)
+                ->limit(5000)
                 ->get()
                 ->getResultArray();
 
-            $results = [];
+            helper('custom');
+
+            // Pengelompokan cerdas berdasarkan: peruntukan + kode_barang + nama_barang + merk_tipe
+            $groups = [];
             foreach ($rows as $r) {
-                $namaClean = clean_inventaris_text((string) ($r['nama_barang'] ?? ''));
-                $merkClean = clean_inventaris_text((string) ($r['merk_tipe'] ?? ($r['merk'] ?? '')));
-                $results[] = [
+                $p    = trim((string) ($r['peruntukan'] ?? 'kantor')) ?: 'kantor';
+                $kode = trim((string) ($r['kode_barang'] ?? ''));
+                $nama = clean_inventaris_text((string) ($r['nama_barang'] ?? ''));
+                $merk = clean_inventaris_text((string) ($r['merk_tipe'] ?? ($r['merk'] ?? '')));
+                $nup  = trim((string) ($r['nup'] ?? ''));
+
+                $gKey = md5($p . '::' . $kode . '::' . $nama . '::' . $merk);
+
+                if (! isset($groups[$gKey])) {
+                    $groups[$gKey] = [
+                        'group_key'      => $gKey,
+                        'peruntukan'     => $p,
+                        'kode_barang'    => $kode,
+                        'nama_barang'    => $nama,
+                        'merk_tipe'      => $merk,
+                        'nups'           => [],
+                        'rentang_nup'    => '',
+                        'jumlah_barang'  => 0,
+                        'sample_kondisi' => (string) ($r['kondisi'] ?? 'Baik'),
+                        'sample_tahun'   => (string) ($r['tahun_perolehan'] ?? date('Y')),
+                        'sample_lokasi'  => (string) ($r['lokasi_ruangan'] ?? '-'),
+                        'items'          => [],
+                    ];
+                }
+
+                if ($nup !== '') {
+                    $groups[$gKey]['nups'][] = $nup;
+                }
+
+                $groups[$gKey]['items'][] = [
                     'id'              => (int) $r['id'],
-                    'kode_barang'     => (string) ($r['kode_barang'] ?? ''),
-                    'nama_barang'     => $namaClean,
-                    'merk_tipe'       => $merkClean,
-                    'nup'             => (string) ($r['nup'] ?? ''),
+                    'kode_barang'     => $kode,
+                    'nama_barang'     => $nama,
+                    'merk_tipe'       => $merk,
+                    'nup'             => $nup,
                     'kondisi'         => (string) ($r['kondisi'] ?? 'Baik'),
                     'tahun_perolehan' => (string) ($r['tahun_perolehan'] ?? date('Y')),
                     'lokasi_ruangan'  => (string) ($r['lokasi_ruangan'] ?? '-'),
-                    'peruntukan'      => (string) ($r['peruntukan'] ?? 'kantor'),
+                    'peruntukan'      => $p,
                     'jenis_barang'    => 'MESIN PERALATAN NON TIK',
                 ];
             }
 
+            // Hitung rentang nup ringkas dan total jumlah barang per kelompok
+            $groupedResults = [];
+            $totalUnitAll = 0;
+            foreach ($groups as $g) {
+                $g['rentang_nup'] = format_nup_range_summary($g['nups']);
+                $g['jumlah_barang'] = count($g['items']);
+                $totalUnitAll += $g['jumlah_barang'];
+                $groupedResults[] = $g;
+            }
+
             return $this->response->setJSON([
-                'success' => true,
-                'data'    => $results,
+                'success'      => true,
+                'data'         => $groupedResults,
+                'total_groups' => count($groupedResults),
+                'total_items'  => $totalUnitAll,
             ]);
         } catch (\Throwable $e) {
             log_message('error', '[ajaxSearchBarang] ' . $e->getMessage());

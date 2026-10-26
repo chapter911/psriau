@@ -456,21 +456,20 @@
                     <table class="table table-sm table-hover table-bordered mb-0" style="font-size: 0.82rem;">
                         <thead class="thead-light text-center sticky-top">
                             <tr>
-                                <th style="width: 35px;"><input type="checkbox" id="checkAllPicker"></th>
-                                <th style="width: 95px;">Peruntukan</th>
-                                <th style="width: 105px;">Kode</th>
+                                <th style="width: 35px;"><input type="checkbox" id="checkAllPicker" title="Pilih / Batalkan Semua Kelompok"></th>
+                                <th style="width: 100px;">Peruntukan</th>
+                                <th style="width: 110px;">Kode Barang</th>
                                 <th>Nama Barang</th>
                                 <th>Merk / Tipe / Spesifikasi</th>
-                                <th style="width: 75px;">NUP</th>
-                                <th style="width: 75px;">Kondisi</th>
-                                <th style="width: 65px;">Tahun</th>
-                                <th style="width: 130px;">Lokasi Ruangan</th>
+                                <th style="width: 140px;">Rentang NUP</th>
+                                <th style="width: 95px;">Jumlah Barang</th>
+                                <th style="width: 85px;">Rincian</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyPickerResults">
                             <tr>
-                                <td colspan="9" class="text-center py-4 text-muted">
-                                    <i class="fas fa-spinner fa-spin mr-1"></i>Memuat data inventaris satker...
+                                <td colspan="8" class="text-center py-4 text-muted">
+                                    <i class="fas fa-spinner fa-spin mr-1"></i>Memuat kelompok barang inventaris satker...
                                 </td>
                             </tr>
                         </tbody>
@@ -1285,7 +1284,10 @@ function applyCapturedSessionToForm(key) {
     refreshGroupCardStatus(key);
 }
 
-// Load data picker dari server via AJAX
+// Variable global untuk menampung grup barang yang sedang dimuat di picker
+var pickerLoadedGroups = [];
+
+// Load data picker dari server via AJAX (Terkelompok Cerdas)
 function loadPickerData() {
     var q = $('#pickerSearchInput').val();
     var kat = $('#pickerKategoriSelect').val();
@@ -1293,57 +1295,115 @@ function loadPickerData() {
     var tbody = $('#tbodyPickerResults');
     var badge = $('#badgeTotalLoaded');
 
-    tbody.html('<tr><td colspan="9" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Memuat daftar barang inventaris...</td></tr>');
+    tbody.html('<tr><td colspan="8" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Memuat kelompok barang inventaris satker...</td></tr>');
     badge.html('<i class="fas fa-spinner fa-spin mr-1"></i>Memuat...');
 
     $.ajax({
         url: baseUrl + '/admin/inventaris/pemeliharaan/ajax-search-barang',
         type: 'GET',
-        data: { q: q, kategori: kat, peruntukan: peruntukan, limit: 1500 },
+        data: { q: q, kategori: kat, peruntukan: peruntukan, limit: 2500 },
         dataType: 'json',
         success: function(res) {
             tbody.empty();
-            if (!res.success || !res.data || res.data.length === 0) {
-                tbody.html('<tr><td colspan="9" class="text-center py-4 text-muted"><i class="fas fa-info-circle mr-1"></i>Tidak ada barang yang cocok dengan filter atau kata kunci ini.</td></tr>');
-                badge.removeClass('badge-info badge-danger').addClass('badge-secondary').text('0 Barang Ditemukan');
+            pickerLoadedGroups = (res && res.data) ? res.data : [];
+
+            if (!res.success || !pickerLoadedGroups || pickerLoadedGroups.length === 0) {
+                tbody.html('<tr><td colspan="8" class="text-center py-4 text-muted"><i class="fas fa-info-circle mr-1"></i>Tidak ada kelompok barang yang cocok dengan filter atau kata kunci ini.</td></tr>');
+                badge.removeClass('badge-info badge-danger').addClass('badge-secondary').text('0 Kelompok Ditemukan');
+                updatePickerCounter();
                 return;
             }
 
-            var totalItems = res.data.length;
+            var totalGroups = pickerLoadedGroups.length;
+            var totalItems = res.total_items || 0;
             var peruntukanLabel = peruntukan === 'kantor' ? 'Aset Kantor' : (peruntukan === 'mobiler' ? 'Mobiler Sekolah' : (peruntukan === 'lainnya' ? 'Aset Lainnya' : 'Semua'));
-            badge.removeClass('badge-secondary badge-danger').addClass('badge-info').text(totalItems + ' Barang (' + peruntukanLabel + ')');
+            badge.removeClass('badge-secondary badge-danger').addClass('badge-info')
+                 .html('<i class="fas fa-check-circle mr-1"></i>' + totalItems + ' Unit (' + totalGroups + ' Kelompok - ' + peruntukanLabel + ')');
 
-            res.data.forEach(function(row) {
-                var isChecked = selectedItems.some(function(it) {
-                    return it.inventaris_id && it.inventaris_id === row.id;
-                });
+            pickerLoadedGroups.forEach(function(g) {
+                // Periksa apakah item-item dalam kelompok ini sudah ada di form
+                var preSelectedCount = (g.items || []).filter(function(it) {
+                    return selectedItems.some(function(s) {
+                        return s.inventaris_id && s.inventaris_id === it.id;
+                    });
+                }).length;
+                var totalGItems = (g.items || []).length;
+                var isAllPreSelected = totalGItems > 0 && preSelectedCount === totalGItems;
+                var isSomePreSelected = preSelectedCount > 0 && preSelectedCount < totalGItems;
 
+                // Badge peruntukan
                 var pBadge = '<span class="badge badge-primary px-1.5 py-0.5" style="font-size: 0.72rem;"><i class="fas fa-building mr-0.5"></i>Kantor</span>';
-                if (row.peruntukan === 'mobiler') {
+                if (g.peruntukan === 'mobiler') {
                     pBadge = '<span class="badge badge-warning text-dark px-1.5 py-0.5 font-weight-bold" style="font-size: 0.72rem;"><i class="fas fa-school mr-0.5"></i>Mobiler</span>';
-                } else if (row.peruntukan === 'lainnya') {
+                } else if (g.peruntukan === 'lainnya') {
                     pBadge = '<span class="badge badge-secondary px-1.5 py-0.5" style="font-size: 0.72rem;"><i class="fas fa-archive mr-0.5"></i>Lainnya</span>';
                 }
 
-                var tr = $('<tr style="cursor: pointer;"></tr>');
-                tr.append('<td class="text-center align-middle"><input type="checkbox" class="picker-row-checkbox" data-json=\'' + JSON.stringify(row).replace(/'/g, "&apos;") + '\'' + (isChecked ? ' checked' : '') + '></td>');
-                tr.append('<td class="text-center align-middle">' + pBadge + '</td>');
-                tr.append('<td class="font-weight-bold text-muted align-middle">' + escapeHtml(row.kode_barang || '-') + '</td>');
-                tr.append('<td class="font-weight-bold text-dark align-middle">' + escapeHtml(row.nama_barang) + '</td>');
-                tr.append('<td class="align-middle">' + escapeHtml(row.merk_tipe || '-') + '</td>');
-                tr.append('<td class="text-center font-weight-bold text-primary align-middle">' + escapeHtml(row.nup || '-') + '</td>');
-                tr.append('<td class="text-center align-middle"><span class="badge badge-light border">' + escapeHtml(row.kondisi || 'Baik') + '</span></td>');
-                tr.append('<td class="text-center text-muted align-middle">' + escapeHtml(row.tahun_perolehan || '-') + '</td>');
-                tr.append('<td class="small text-muted align-middle">' + escapeHtml(row.lokasi_ruangan || '-') + '</td>');
-
-                tr.on('click', function(e) {
-                    if (e.target.tagName !== 'INPUT') {
-                        var cb = $(this).find('.picker-row-checkbox');
-                        cb.prop('checked', !cb.prop('checked')).trigger('change');
-                    }
-                });
+                // Baris Utama Kelompok (6 kriteria pengelompokan yang diminta user)
+                var tr = $('<tr class="picker-group-row" data-group-key="' + g.group_key + '" style="cursor: pointer;"></tr>');
+                
+                // 1. Checkbox Kelompok
+                tr.append('<td class="text-center align-middle" style="width: 35px;"><input type="checkbox" class="picker-group-checkbox" data-group-key="' + g.group_key + '"' + (isAllPreSelected ? ' checked' : '') + '></td>');
+                // 2. Peruntukan
+                tr.append('<td class="text-center align-middle" style="width: 100px;">' + pBadge + '</td>');
+                // 3. Kode Barang
+                tr.append('<td class="align-middle font-weight-bold text-muted small" style="width: 110px;">' + escapeHtml(g.kode_barang || '-') + '</td>');
+                // 4. Nama Barang
+                tr.append('<td class="align-middle font-weight-bold text-dark">' + escapeHtml(g.nama_barang) + '</td>');
+                // 5. Merk / Tipe / Spesifikasi
+                tr.append('<td class="align-middle text-secondary small">' + escapeHtml(g.merk_tipe || '-') + '</td>');
+                // 6. Rentang NUP
+                tr.append('<td class="align-middle text-center" style="width: 140px;"><span class="badge badge-light border text-primary font-weight-bold px-2 py-1" style="font-size: 0.78rem;">' + escapeHtml(g.rentang_nup || '-') + '</span></td>');
+                // 7. Jumlah Barang
+                tr.append('<td class="align-middle text-center" style="width: 95px;"><span class="badge badge-info px-2 py-1 font-weight-bold shadow-sm" style="font-size: 0.78rem;">' + g.jumlah_barang + ' Unit</span></td>');
+                // 8. Rincian / Detail NUP Button
+                tr.append('<td class="align-middle text-center" style="width: 85px;"><button type="button" class="btn btn-outline-info btn-xs rounded-pill btn-toggle-detail px-2" data-group-key="' + g.group_key + '" title="Lihat Rincian NUP"><i class="fas fa-list-ol mr-1"></i>NUP <i class="fas fa-chevron-down arrow-icon ml-0.5" style="font-size: 0.65rem;"></i></button></td>');
 
                 tbody.append(tr);
+
+                // Baris Sub-Detail Rincian NUP (Accordion)
+                var detailTr = $('<tr id="detailRow_' + g.group_key + '" class="group-detail-row bg-light" style="display: none;"></tr>');
+                var detailTd = $('<td colspan="8" class="p-2.5 border-top-0"></td>');
+
+                var detailWrapper = $('<div class="card card-body p-2 border shadow-sm mb-0 bg-white" style="border-radius: 8px;"></div>');
+                var detailHeader = $(
+                    '<div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">' +
+                        '<div class="small font-weight-bold text-muted">' +
+                            '<i class="fas fa-barcode text-primary mr-1"></i>Rincian NUP: <span class="text-dark font-weight-bold">' + escapeHtml(g.nama_barang) + '</span>' +
+                            ' <span class="text-secondary">(' + g.jumlah_barang + ' Unit)</span>' +
+                        '</div>' +
+                        '<div class="btn-group btn-group-xs">' +
+                            '<button type="button" class="btn btn-outline-primary btn-xs py-0 px-2 btn-check-all-group-nups" data-group-key="' + g.group_key + '"><i class="fas fa-check-square mr-1"></i>Pilih Semua NUP</button>' +
+                            '<button type="button" class="btn btn-outline-secondary btn-xs py-0 px-2 btn-uncheck-all-group-nups" data-group-key="' + g.group_key + '"><i class="fas fa-square mr-1"></i>Batal Pilih</button>' +
+                        '</div>' +
+                    '</div>'
+                );
+                detailWrapper.append(detailHeader);
+
+                var chipsContainer = $('<div class="d-flex flex-wrap" style="gap: 6px; max-height: 180px; overflow-y: auto;"></div>');
+                (g.items || []).forEach(function(it) {
+                    var isItemChecked = isAllPreSelected || selectedItems.some(function(s) {
+                        return s.inventaris_id && s.inventaris_id === it.id;
+                    });
+
+                    var chip = $(
+                        '<label class="btn btn-sm btn-outline-secondary mb-0 py-0.5 px-2 d-inline-flex align-items-center picker-nup-chip' + (isItemChecked ? ' active text-primary font-weight-bold' : '') + '" style="font-size: 0.74rem; cursor: pointer; border-radius: 6px;">' +
+                            '<input type="checkbox" class="picker-item-checkbox mr-1" id="cb_item_' + it.id + '" data-group-key="' + g.group_key + '" data-item-id="' + it.id + '"' + (isItemChecked ? ' checked' : '') + '>' +
+                            '<span>NUP <strong>' + escapeHtml(it.nup || '-') + '</strong> <small class="text-muted ml-0.5">(' + escapeHtml(it.kondisi || 'Baik') + ')</small></span>' +
+                        '</label>'
+                    );
+                    chipsContainer.append(chip);
+                });
+
+                detailWrapper.append(chipsContainer);
+                detailTd.append(detailWrapper);
+                detailTr.append(detailTd);
+                tbody.append(detailTr);
+
+                // Atur status indeterminate jika sebagian item sudah terpilih
+                if (isSomePreSelected) {
+                    tr.find('.picker-group-checkbox').prop('indeterminate', true);
+                }
             });
 
             updatePickerCounter();
@@ -1353,16 +1413,102 @@ function loadPickerData() {
             if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
                 errMsg += ' (' + xhr.responseJSON.error + ')';
             }
-            tbody.html('<tr><td colspan="9" class="text-center py-4 text-danger"><i class="fas fa-exclamation-circle mr-1"></i>' + escapeHtml(errMsg) + '</td></tr>');
+            tbody.html('<tr><td colspan="8" class="text-center py-4 text-danger"><i class="fas fa-exclamation-circle mr-1"></i>' + escapeHtml(errMsg) + '</td></tr>');
             badge.removeClass('badge-info').addClass('badge-danger').text('Gagal memuat');
         }
     });
 }
 
+// Update counter di footer modal
 function updatePickerCounter() {
-    var count = $('.picker-row-checkbox:checked').length;
-    $('#pickerSelectedCount').text(count + ' barang terpilih');
+    var checkedItems = $('.picker-item-checkbox:checked').length;
+    var checkedGroupKeys = new Set();
+    $('.picker-item-checkbox:checked').each(function() {
+        checkedGroupKeys.add($(this).data('group-key'));
+    });
+    var groupCount = checkedGroupKeys.size;
+
+    $('#pickerSelectedCount').html('<strong>' + checkedItems + '</strong> barang (' + groupCount + ' kelompok) terpilih');
 }
+
+// Toggle accordion rincian NUP
+$(document).on('click', '.btn-toggle-detail', function(e) {
+    e.stopPropagation();
+    var gKey = $(this).data('group-key');
+    var targetRow = $('#detailRow_' + gKey);
+    var icon = $(this).find('.arrow-icon');
+
+    targetRow.toggle();
+    if (targetRow.is(':visible')) {
+        icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+    } else {
+        icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+    }
+});
+
+// Klik baris kelompok (kecuali kolom checkbox & tombol rincian) untuk buka/tutup rincian
+$(document).on('click', '.picker-group-row td', function(e) {
+    if ($(this).find('.picker-group-checkbox').length > 0 || $(this).find('.btn-toggle-detail').length > 0 || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') {
+        return;
+    }
+    var gKey = $(this).closest('.picker-group-row').data('group-key');
+    $(this).closest('.picker-group-row').find('.btn-toggle-detail').trigger('click');
+});
+
+// Checkbox Kelompok: Centang/Lepas semua NUP di dalam kelompok tersebut
+$(document).on('change', '.picker-group-checkbox', function(e) {
+    e.stopPropagation();
+    var gKey = $(this).data('group-key');
+    var isChecked = $(this).is(':checked');
+    $(this).prop('indeterminate', false);
+
+    var itemCbs = $('.picker-item-checkbox[data-group-key="' + gKey + '"]');
+    itemCbs.prop('checked', isChecked);
+    itemCbs.closest('.picker-nup-chip').toggleClass('active text-primary font-weight-bold', isChecked);
+
+    updatePickerCounter();
+});
+
+// Checkbox Item NUP: Perbarui status checkbox kelompok induknya
+$(document).on('change', '.picker-item-checkbox', function() {
+    var gKey = $(this).data('group-key');
+    var isChecked = $(this).is(':checked');
+    $(this).closest('.picker-nup-chip').toggleClass('active text-primary font-weight-bold', isChecked);
+
+    var allInGroup = $('.picker-item-checkbox[data-group-key="' + gKey + '"]');
+    var checkedInGroup = allInGroup.filter(':checked');
+    var groupCb = $('.picker-group-checkbox[data-group-key="' + gKey + '"]');
+
+    if (checkedInGroup.length === allInGroup.length && allInGroup.length > 0) {
+        groupCb.prop({ checked: true, indeterminate: false });
+    } else if (checkedInGroup.length === 0) {
+        groupCb.prop({ checked: false, indeterminate: false });
+    } else {
+        groupCb.prop({ checked: false, indeterminate: true });
+    }
+
+    updatePickerCounter();
+});
+
+// Tombol Pilih Semua NUP di dalam satu kelompok
+$(document).on('click', '.btn-check-all-group-nups', function() {
+    var gKey = $(this).data('group-key');
+    var itemCbs = $('.picker-item-checkbox[data-group-key="' + gKey + '"]');
+    itemCbs.prop('checked', true);
+    itemCbs.closest('.picker-nup-chip').addClass('active text-primary font-weight-bold');
+    $('.picker-group-checkbox[data-group-key="' + gKey + '"]').prop({ checked: true, indeterminate: false });
+    updatePickerCounter();
+});
+
+// Tombol Batal Pilih NUP di dalam satu kelompok
+$(document).on('click', '.btn-uncheck-all-group-nups', function() {
+    var gKey = $(this).data('group-key');
+    var itemCbs = $('.picker-item-checkbox[data-group-key="' + gKey + '"]');
+    itemCbs.prop('checked', false);
+    itemCbs.closest('.picker-nup-chip').removeClass('active text-primary font-weight-bold');
+    $('.picker-group-checkbox[data-group-key="' + gKey + '"]').prop({ checked: false, indeterminate: false });
+    updatePickerCounter();
+});
 
 // Event listener ganti peruntukan & filter
 $('input[name="picker_peruntukan"]').on('change', function() {
@@ -1376,52 +1522,59 @@ $('#pickerBtnClearSearch').on('click', function() {
     loadPickerData();
 });
 
-$(document).on('change', '.picker-row-checkbox', function() {
-    updatePickerCounter();
-});
-
+// Check all kelompok dan semua unit di modal
 $('#checkAllPicker').on('change', function() {
     var checked = $(this).is(':checked');
-    $('.picker-row-checkbox').prop('checked', checked);
+    $('.picker-group-checkbox, .picker-item-checkbox').prop('checked', checked).prop('indeterminate', false);
+    $('.picker-nup-chip').toggleClass('active text-primary font-weight-bold', checked);
     updatePickerCounter();
 });
 
+// Tombol "Pilih Semua" di modal
 $('#pickerBtnSelectAll').on('click', function() {
-    $('.picker-row-checkbox').prop('checked', true);
+    $('.picker-group-checkbox, .picker-item-checkbox').prop('checked', true).prop('indeterminate', false);
+    $('.picker-nup-chip').addClass('active text-primary font-weight-bold');
     $('#checkAllPicker').prop('checked', true);
     updatePickerCounter();
 });
 
+// Tombol "Tambahkan ke Surat": masukkan semua item yang dicentang
 $('#btnInsertSelectedToForm').on('click', function() {
-    var checkedBoxes = $('.picker-row-checkbox:checked');
-    if (checkedBoxes.length === 0) {
-        alert('Pilih minimal satu barang dengan mencentang kotak di tabel.');
+    var checkedItemCbs = $('.picker-item-checkbox:checked');
+    if (checkedItemCbs.length === 0) {
+        alert('Pilih minimal satu barang atau kelompok barang dengan mencentang kotak di tabel.');
         return;
     }
 
-    checkedBoxes.each(function() {
-        var raw = $(this).data('json');
-        if (typeof raw === 'string') {
-            try { raw = JSON.parse(raw); } catch(e) {}
-        }
-        if (!raw) return;
+    var checkedIdSet = new Set();
+    checkedItemCbs.each(function() {
+        var id = $(this).data('item-id');
+        if (id) checkedIdSet.add(parseInt(id, 10));
+    });
 
-        var already = selectedItems.some(function(it) {
-            return it.inventaris_id && it.inventaris_id === raw.id;
+    var addedCount = 0;
+    pickerLoadedGroups.forEach(function(g) {
+        (g.items || []).forEach(function(it) {
+            if (checkedIdSet.has(parseInt(it.id, 10))) {
+                var already = selectedItems.some(function(sel) {
+                    return sel.inventaris_id && sel.inventaris_id === it.id;
+                });
+
+                if (!already) {
+                    selectedItems.push({
+                        inventaris_id: it.id,
+                        jenis_barang: it.jenis_barang || 'MESIN PERALATAN NON TIK',
+                        kode_barang: it.kode_barang || '',
+                        nama_barang: it.nama_barang || '',
+                        merk_tipe: it.merk_tipe || '',
+                        nup: it.nup || '',
+                        kondisi: it.kondisi || 'Baik',
+                        tahun_perolehan: it.tahun_perolehan || new Date().getFullYear().toString()
+                    });
+                    addedCount++;
+                }
+            }
         });
-
-        if (!already) {
-            selectedItems.push({
-                inventaris_id: raw.id,
-                jenis_barang: raw.jenis_barang || 'MESIN PERALATAN NON TIK',
-                kode_barang: raw.kode_barang || '',
-                nama_barang: raw.nama_barang || '',
-                merk_tipe: raw.merk_tipe || '',
-                nup: raw.nup || '',
-                kondisi: raw.kondisi || 'Baik',
-                tahun_perolehan: raw.tahun_perolehan || new Date().getFullYear().toString()
-            });
-        }
     });
 
     $('#modalBarangPicker').modal('hide');
