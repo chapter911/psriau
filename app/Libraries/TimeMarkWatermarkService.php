@@ -1087,10 +1087,7 @@ class TimeMarkWatermarkService
         $escapedOut = escapeshellarg($outputJpgPath);
 
         // Strategi 1: macOS native `sips`
-        $sipsBin = null;
-        if (PHP_OS_FAMILY === 'Darwin' || is_executable('/usr/bin/sips')) {
-            $sipsBin = is_executable('/usr/bin/sips') ? '/usr/bin/sips' : 'sips';
-        }
+        $sipsBin = (PHP_OS_FAMILY === 'Darwin') ? ($this->findCliBinary('sips') ?? 'sips') : null;
         if ($sipsBin !== null) {
             $cmd = "{$sipsBin} -s format jpeg {$escapedHeic} --out {$escapedOut} 2>&1";
             @exec($cmd, $output, $code);
@@ -1100,12 +1097,7 @@ class TimeMarkWatermarkService
         }
 
         // Strategi 2: Linux `heif-convert` (libheif-examples)
-        $heifConvert = null;
-        if (is_executable('/usr/bin/heif-convert')) {
-            $heifConvert = '/usr/bin/heif-convert';
-        } elseif (is_executable('/usr/local/bin/heif-convert')) {
-            $heifConvert = '/usr/local/bin/heif-convert';
-        }
+        $heifConvert = $this->findCliBinary('heif-convert');
         if ($heifConvert !== null) {
             $cmd = "{$heifConvert} -q 92 {$escapedHeic} {$escapedOut} 2>&1";
             @exec($cmd, $output, $code);
@@ -1115,16 +1107,7 @@ class TimeMarkWatermarkService
         }
 
         // Strategi 3: ImageMagick (magick / convert)
-        $magickBin = null;
-        if (is_executable('/usr/bin/magick')) {
-            $magickBin = '/usr/bin/magick';
-        } elseif (is_executable('/usr/local/bin/magick')) {
-            $magickBin = '/usr/local/bin/magick';
-        } elseif (is_executable('/usr/bin/convert')) {
-            $magickBin = '/usr/bin/convert';
-        } elseif (is_executable('/usr/local/bin/convert')) {
-            $magickBin = '/usr/local/bin/convert';
-        }
+        $magickBin = $this->findCliBinary('magick') ?? $this->findCliBinary('convert');
         if ($magickBin !== null) {
             $cmd = "{$magickBin} {$escapedHeic} {$escapedOut} 2>&1";
             @exec($cmd, $output, $code);
@@ -1180,6 +1163,32 @@ class TimeMarkWatermarkService
         }
 
         return false;
+    }
+
+    /**
+     * Mencari path file binary CLI yang dapat dieksekusi.
+     */
+    private function findCliBinary(string $name): ?string
+    {
+        $candidates = [
+            "/usr/bin/{$name}",
+            "/usr/local/bin/{$name}",
+            "/bin/{$name}",
+            "/opt/homebrew/bin/{$name}",
+        ];
+        foreach ($candidates as $cand) {
+            if (@is_file($cand) && @is_executable($cand)) {
+                return $cand;
+            }
+        }
+        $which = @shell_exec("which " . escapeshellarg($name) . " 2>/dev/null");
+        if ($which !== null) {
+            $trimmed = trim($which);
+            if ($trimmed !== '' && @is_file($trimmed) && @is_executable($trimmed)) {
+                return $trimmed;
+            }
+        }
+        return null;
     }
 }
 

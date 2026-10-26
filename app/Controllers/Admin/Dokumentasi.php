@@ -1055,16 +1055,45 @@ class Dokumentasi extends BaseController
             $metaDt = $service->resolveDateTime($exif, $metaPath, true, 0, 0);
             $coords = is_array($exif) ? $service->extractGpsCoordinates($exif) : null;
 
+            // Buat pratinjau thumbnail JPEG (maks 900px) agar Live Simulator di browser dapat langsung menampilkan foto,
+            // termasuk untuk format iPhone HEIC yang dikonversi di sisi server.
+            $previewDataUri = null;
+            if (is_file($metaPath)) {
+                $rawImg = @file_get_contents($metaPath);
+                if ($rawImg !== false) {
+                    $thumbRes = @imagecreatefromstring($rawImg);
+                    if ($thumbRes !== false) {
+                        $tw = imagesx($thumbRes);
+                        $th = imagesy($thumbRes);
+                        $maxDim = 900;
+                        if ($tw > $maxDim || $th > $maxDim) {
+                            $scale = min($maxDim / $tw, $maxDim / $th);
+                            $nw = (int) max(1, $tw * $scale);
+                            $nh = (int) max(1, $th * $scale);
+                            $resized = imagecreatetruecolor($nw, $nh);
+                            imagecopyresampled($resized, $thumbRes, 0, 0, 0, 0, $nw, $nh, $tw, $th);
+                            imagedestroy($thumbRes);
+                            $thumbRes = $resized;
+                        }
+                        ob_start();
+                        imagejpeg($thumbRes, null, 78);
+                        $previewDataUri = 'data:image/jpeg;base64,' . base64_encode(ob_get_clean());
+                        imagedestroy($thumbRes);
+                    }
+                }
+            }
+
             return $this->response->setJSON([
-                'status'      => 'ok',
-                'has_exif'    => $hasExif,
-                'has_gps'     => ($coords !== null && $coords !== ''),
-                'date'        => $metaDt['raw_ymd'],
-                'time'        => $metaDt['time'],
-                'day'         => $metaDt['day'],
-                'coordinates' => $coords ?? '',
-                'csrf_token'  => csrf_token(),
-                'csrf_hash'   => csrf_hash(),
+                'status'           => 'ok',
+                'has_exif'         => $hasExif,
+                'has_gps'          => ($coords !== null && $coords !== ''),
+                'date'             => $metaDt['raw_ymd'],
+                'time'             => $metaDt['time'],
+                'day'              => $metaDt['day'],
+                'coordinates'      => $coords ?? '',
+                'preview_data_uri' => $previewDataUri,
+                'csrf_token'       => csrf_token(),
+                'csrf_hash'        => csrf_hash(),
             ]);
         } catch (\Throwable $e) {
             return $this->response->setJSON([

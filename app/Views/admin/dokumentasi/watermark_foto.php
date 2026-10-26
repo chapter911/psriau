@@ -1050,22 +1050,26 @@ $(function() {
         var rawFiles = Array.from(filesList);
         var heicFiles = rawFiles.filter(isHeic);
 
-        // Jika terdapat file HEIC (iPhone) dan library heic2any tersedia, konversi client-side
+        // Jika terdapat file HEIC (iPhone) dan library heic2any tersedia, coba konversi client-side
         if (heicFiles.length > 0 && typeof heic2any === 'function') {
             $('#fileCountBadge').removeClass('badge-secondary badge-primary badge-success').addClass('badge-warning')
-                .html('<i class="fas fa-magic fa-spin mr-1"></i> Mengonversi HEIC...');
+                .html('<i class="fas fa-magic fa-spin mr-1"></i> Memeriksa Format iPhone...');
             $('#exifStatusAlert').removeClass('alert-danger alert-info alert-success').addClass('alert-warning')
-                .html('<i class="fas fa-magic fa-spin mr-1"></i> <strong>Foto iPhone (.HEIC) Terdeteksi:</strong> Mengonversi ' + heicFiles.length + ' file HEIC ke format JPEG...').show();
+                .html('<i class="fas fa-magic fa-spin mr-1"></i> <strong>Format Foto iPhone (.HEIC) Terdeteksi:</strong> Menyiapkan ' + heicFiles.length + ' foto...').show();
 
             var convertPromises = rawFiles.map(function(f) {
                 if (isHeic(f)) {
-                    return heic2any({ blob: f, toType: 'image/jpeg', quality: 0.94 })
-                        .then(function(convertedBlob) {
+                    // Beri opsi multiple: true untuk mendukung Live Photos, burst shots, dan depth images Apple
+                    return heic2any({ blob: f, toType: 'image/jpeg', quality: 0.92, multiple: true })
+                        .then(function(result) {
+                            var singleBlob = Array.isArray(result) ? result[0] : result;
                             var newName = f.name.replace(/\.(heic|heif)$/i, '.jpg');
-                            return new File([convertedBlob], newName, { type: 'image/jpeg' });
+                            return new File([singleBlob], newName, { type: 'image/jpeg' });
                         })
                         .catch(function(err) {
-                            console.warn('Konversi HEIC client dilewati, diproses server-side:', err);
+                            // Jika format HEIC spesifik (misal HDR/10-bit) tidak didukung libheif client,
+                            // file asli tetap diteruskan untuk dikonversi secara akurat oleh server
+                            console.info('Format HEIC dialihkan ke konversi server:', err && err.message ? err.message : err);
                             return f;
                         });
                 }
@@ -1086,10 +1090,14 @@ $(function() {
         var total = selectedFiles.length;
         var hasZip = false;
         var fileNames = [];
+        var hasRawHeic = false;
 
         selectedFiles.forEach(function(f) {
             if (f.name.toLowerCase().endsWith('.zip')) {
                 hasZip = true;
+            }
+            if (isHeic(f)) {
+                hasRawHeic = true;
             }
             fileNames.push(f.name);
         });
@@ -1097,6 +1105,11 @@ $(function() {
         if (total === 1 && hasZip) {
             $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary badge-success').addClass('badge-warning').html('<i class="fas fa-file-archive mr-1"></i> 1 Arsip ZIP');
             $('#summaryFiles').text('1 File ZIP');
+        } else if (total === 1 && hasRawHeic) {
+            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-success').addClass('badge-info').html('<i class="fas fa-apple-alt mr-1"></i> 1 Foto HEIC');
+            $('#summaryFiles').text('1 Foto (HEIC iPhone)');
+            $('#exifStatusAlert').removeClass('alert-danger alert-warning alert-success').addClass('alert-info')
+                .html('<i class="fas fa-server mr-1"></i> <strong>Foto iPhone (.HEIC):</strong> Sistem membaca metadata dan menyiapkan pratinjau via modul server...').show();
         } else if (total === 1) {
             $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-success').addClass('badge-primary').html('<i class="fas fa-image mr-1"></i> 1 Foto');
             $('#summaryFiles').text('1 Foto');
@@ -1111,16 +1124,18 @@ $(function() {
         }
         $('#fileSelectedList').html('<strong><i class="fas fa-check-circle text-success mr-1"></i> File Siap:</strong> ' + previewText).fadeIn();
 
-        // Update background of Live Simulator jika single image
+        // Update background of Live Simulator jika single image standar (bukan HEIC)
         if (total >= 1 && !hasZip) {
             var firstImg = selectedFiles[0];
-            if (firstImg.type.startsWith('image/')) {
+            if (!isHeic(firstImg) && firstImg.type && firstImg.type.startsWith('image/')) {
                 var reader = new FileReader();
                 reader.onload = function(e) {
                     $('#simulatorCanvasBg').css('background-image', 'url(' + e.target.result + ')');
                     $('#simBackgroundInfo').text('Foto Anda (' + firstImg.name + ')');
                 };
                 reader.readAsDataURL(firstImg);
+            } else if (isHeic(firstImg)) {
+                $('#simBackgroundInfo').text('Foto iPhone HEIC (' + firstImg.name + ')');
             }
         }
 
@@ -1147,6 +1162,11 @@ $(function() {
                     $('input[name="<?= csrf_token() ?>"]').val(resp.csrf_hash);
                 }
                 if (resp.status === 'ok') {
+                    // Jika server menghasilkan thumbnail JPEG (misal untuk HEIC yang didecode server-side)
+                    if (resp.preview_data_uri) {
+                        $('#simulatorCanvasBg').css('background-image', 'url(' + resp.preview_data_uri + ')');
+                        $('#simBackgroundInfo').text('Foto iPhone (' + file.name + ')');
+                    }
                     if (resp.date) {
                         baseDate = resp.date;
                         $('#manualDate').val(resp.date);
@@ -1164,15 +1184,25 @@ $(function() {
                             $('#lokasi').val(resp.coordinates);
                         }
                     }
+                    var statusHtml = '';
                     if (resp.has_exif) {
-                        var statusHtml = '<i class="fas fa-check-circle mr-1"></i> <strong>EXIF Terdeteksi:</strong> Waktu foto ' + (resp.day || '') + ', ' + (resp.date || '') + ' ' + (resp.time || '');
+                        statusHtml = '<i class="fas fa-check-circle mr-1"></i> <strong>EXIF Terdeteksi:</strong> Waktu foto ' + (resp.day || '') + ', ' + (resp.date || '') + ' ' + (resp.time || '');
                         if (resp.coordinates) {
                             statusHtml += ' | <i class="fas fa-satellite-dish text-success ml-1"></i> GPS: <code>' + resp.coordinates + '</code>';
                         }
-                        $('#exifStatusAlert').removeClass('alert-info alert-warning').addClass('alert-success').html(statusHtml);
+                    } else {
+                        statusHtml = '<i class="fas fa-info-circle mr-1"></i> <strong>Foto Terbaca:</strong> Metadata waktu/GPS foto siap disematkan watermark.';
                     }
+                    $('#exifStatusAlert').removeClass('alert-info alert-warning').addClass('alert-success').html(statusHtml);
                     updateLiveSimulator();
+                } else {
+                    $('#exifStatusAlert').removeClass('alert-warning alert-success').addClass('alert-info')
+                        .html('<i class="fas fa-info-circle mr-1"></i> ' + (resp.message || 'File foto siap diproses.'));
                 }
+            },
+            error: function() {
+                $('#exifStatusAlert').removeClass('alert-warning alert-success').addClass('alert-info')
+                    .html('<i class="fas fa-info-circle mr-1"></i> Foto siap diproses.');
             }
         });
     }
