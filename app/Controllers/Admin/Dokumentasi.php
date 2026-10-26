@@ -1049,11 +1049,17 @@ class Dokumentasi extends BaseController
                 }
             }
 
-            $exif = @exif_read_data($metaPath);
-            $hasExif = is_array($exif) && (! empty($exif['DateTimeOriginal']) || ! empty($exif['DateTime']));
+            // Baca EXIF dari file asli (termasuk HEIC) atau hasil konversi
+            $exif = $service->readExifData($tempPath);
+            if (! is_array($exif) || empty($exif)) {
+                $exif = $service->readExifData($metaPath);
+            }
 
+            $hasExif = is_array($exif) && (! empty($exif['DateTimeOriginal']) || ! empty($exif['DateTime']));
             $metaDt = $service->resolveDateTime($exif, $metaPath, true, 0, 0);
-            $coords = is_array($exif) ? $service->extractGpsCoordinates($exif) : null;
+            $coordsDms = is_array($exif) ? $service->extractGpsCoordinates($exif) : null;
+            $coordsDec = is_array($exif) ? $service->extractGpsDecimal($exif) : null;
+            $exifDesc = is_array($exif) && ! empty($exif['ImageDescription']) ? trim((string) $exif['ImageDescription']) : null;
 
             // Buat pratinjau thumbnail JPEG (maks 900px) agar Live Simulator di browser dapat langsung menampilkan foto,
             // termasuk untuk format iPhone HEIC yang dikonversi di sisi server.
@@ -1086,11 +1092,15 @@ class Dokumentasi extends BaseController
             return $this->response->setJSON([
                 'status'           => 'ok',
                 'has_exif'         => $hasExif,
-                'has_gps'          => ($coords !== null && $coords !== ''),
+                'has_gps'          => ($coordsDec !== null || ($coordsDms !== null && $coordsDms !== '')),
                 'date'             => $metaDt['raw_ymd'],
                 'time'             => $metaDt['time'],
                 'day'              => $metaDt['day'],
-                'coordinates'      => $coords ?? '',
+                'lat'              => $coordsDec['lat'] ?? null,
+                'lng'              => $coordsDec['lng'] ?? null,
+                'coordinates'      => $coordsDec ? ($coordsDec['lat'] . ', ' . $coordsDec['lng']) : ($coordsDms ?? ''),
+                'formatted_coords' => $coordsDms ?? '',
+                'description'      => $exifDesc,
                 'preview_data_uri' => $previewDataUri,
                 'csrf_token'       => csrf_token(),
                 'csrf_hash'        => csrf_hash(),

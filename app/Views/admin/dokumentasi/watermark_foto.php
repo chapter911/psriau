@@ -996,11 +996,43 @@ $(function() {
     var lastExifTime = null;
     var lastExifCoordinates = null;
 
+    // Raw original selected file before any client-side canvas conversion
+    var rawOriginalFirstFile = null;
+
     // Helper cek file HEIC / HEIF
     function isHeic(f) {
         if (!f) return false;
         var name = (f.name || '').toLowerCase();
         return name.endsWith('.heic') || name.endsWith('.heif') || f.type === 'image/heic' || f.type === 'image/heif';
+    }
+
+    // Patch exifr HEIC parser agar mengenali box ftyp iPhone modern (panjang box > 50 & brand compatible)
+    if (typeof exifr !== 'undefined' && exifr.fileParsers && exifr.fileParsers.has('heic')) {
+        try {
+            var heicParser = exifr.fileParsers.get('heic');
+            var origHeicCanHandle = heicParser.canHandle;
+            heicParser.canHandle = function(buffer, header) {
+                if (header === 0) {
+                    try {
+                        var box = buffer.getString(4, 4);
+                        if (box === 'ftyp') {
+                            var major = buffer.getString(8, 4);
+                            var brands = ['heic', 'heix', 'hevc', 'heim', 'heis', 'hevm', 'hevs', 'mif1', 'msf1', 'miaf'];
+                            if (brands.indexOf(major) !== -1) return true;
+                            var len = buffer.getUint32 ? buffer.getUint32(0) : buffer.getUint16(2);
+                            var maxCheck = Math.min(len || 256, 256);
+                            for (var off = 16; off < maxCheck; off += 4) {
+                                var brand = buffer.getString(off, 4);
+                                if (brands.indexOf(brand) !== -1) return true;
+                            }
+                        }
+                    } catch (e) {}
+                }
+                return origHeicCanHandle.call(this, buffer, header);
+            };
+        } catch (e) {
+            console.warn('Gagal patching exifr HEIC parser:', e);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -1115,72 +1147,82 @@ $(function() {
     // 3.1 CLIENT-SIDE EXIF EXTRACTION (INSTANT & PRESERVES RAW EXIF)
     // -------------------------------------------------------------------------
     function extractExifClientSide(file) {
-        if (typeof exifr === 'undefined' || !file) return;
+        if (!file) return;
+
+        // Jika library exifr belum termuat atau file bukan format biasa, langsung alihkan ke server
+        if (typeof exifr === 'undefined') {
+            extractExifPreview(file);
+            return;
+        }
 
         exifr.parse(file, {
             gps: true,
             tiff: true,
             exif: true
         }).then(function(exif) {
-            if (!exif) return;
             var hasExif = false;
+            if (exif) {
+                // 1. Tanggal & Jam Asli Foto dari EXIF
+                var dtOrig = exif.DateTimeOriginal || exif.CreateDate || exif.ModifyDate;
+                if (dtOrig) {
+                    var dt = (dtOrig instanceof Date) ? dtOrig : new Date(dtOrig);
+                    if (!isNaN(dt.getTime())) {
+                        var yyyy = dt.getFullYear();
+                        var mm = String(dt.getMonth() + 1).padStart(2, '0');
+                        var dd = String(dt.getDate()).padStart(2, '0');
+                        var hh = String(dt.getHours()).padStart(2, '0');
+                        var ii = String(dt.getMinutes()).padStart(2, '0');
 
-            // 1. Tanggal & Jam Asli Foto dari EXIF
-            var dtOrig = exif.DateTimeOriginal || exif.CreateDate || exif.ModifyDate;
-            if (dtOrig) {
-                var dt = (dtOrig instanceof Date) ? dtOrig : new Date(dtOrig);
-                if (!isNaN(dt.getTime())) {
-                    var yyyy = dt.getFullYear();
-                    var mm = String(dt.getMonth() + 1).padStart(2, '0');
-                    var dd = String(dt.getDate()).padStart(2, '0');
-                    var hh = String(dt.getHours()).padStart(2, '0');
-                    var ii = String(dt.getMinutes()).padStart(2, '0');
+                        lastExifDate = yyyy + '-' + mm + '-' + dd;
+                        lastExifTime = hh + ':' + ii;
+                        baseDate = lastExifDate;
+                        baseTime = lastExifTime;
 
-                    lastExifDate = yyyy + '-' + mm + '-' + dd;
-                    lastExifTime = hh + ':' + ii;
-                    baseDate = lastExifDate;
-                    baseTime = lastExifTime;
+                        $('#manualDate').val(lastExifDate);
+                        $('#manualTime').val(lastExifTime);
+                        $('#btnTimeFromExif').removeClass('d-none').show();
+                        hasExif = true;
+                    }
+                }
 
-                    $('#manualDate').val(lastExifDate);
-                    $('#manualTime').val(lastExifTime);
-                    $('#btnTimeFromExif').removeClass('d-none').show();
+                // 2. Koordinat GPS dari EXIF
+                if (typeof exif.latitude === 'number' && typeof exif.longitude === 'number') {
+                    var lat = exif.latitude;
+                    var lng = exif.longitude;
+                    var coordsStr = lat.toFixed(6) + ', ' + lng.toFixed(6);
+                    lastExifCoordinates = coordsStr;
+
+                    $('#koordinat').val(coordsStr);
+                    $('#btnGpsFromExif').removeClass('d-none').show();
+                    setMarkerLocation(lat, lng, true);
+
+                    // Otomatis lakukan reverse geocoding untuk mengisi nama alamat/lokasi
+                    reverseGeocode(lat, lng, true);
                     hasExif = true;
                 }
-            }
 
-            // 2. Koordinat GPS dari EXIF
-            if (typeof exif.latitude === 'number' && typeof exif.longitude === 'number') {
-                var lat = exif.latitude;
-                var lng = exif.longitude;
-                var coordsStr = lat.toFixed(6) + ', ' + lng.toFixed(6);
-                lastExifCoordinates = coordsStr;
-
-                $('#koordinat').val(coordsStr);
-                $('#btnGpsFromExif').removeClass('d-none').show();
-                setMarkerLocation(lat, lng, true);
-
-                // Otomatis lakukan reverse geocoding untuk mengisi nama alamat/lokasi
-                reverseGeocode(lat, lng, true);
-                hasExif = true;
-            }
-
-            // 3. Deskripsi jika tersedia
-            if (exif.ImageDescription && (! $('#catatan').val() || $('#catatan').val().trim() === '')) {
-                $('#catatan').val(exif.ImageDescription);
+                // 3. Deskripsi jika tersedia
+                if (exif.ImageDescription && (! $('#catatan').val() || $('#catatan').val().trim() === '')) {
+                    $('#catatan').val(exif.ImageDescription);
+                }
             }
 
             if (hasExif) {
                 var alertHtml = '<i class="fas fa-check-circle text-success mr-1"></i> <strong>EXIF Foto Terdeteksi:</strong> ';
-                if (lastExifDate) alertHtml += 'Waktu: ' + lastExifDate + ' ' + lastExifTime + ' ';
+                if (lastExifDate) alertHtml += 'Waktu: ' + lastExifDate + ' ' + (lastExifTime || '') + ' ';
                 if (lastExifCoordinates) alertHtml += '| GPS: <code>' + lastExifCoordinates + '</code> ';
                 alertHtml += '<span class="text-success font-weight-bold ml-1">(Lokasi &amp; waktu otomatis diisi)</span>';
                 $('#exifStatusAlert').removeClass('alert-info alert-warning alert-danger').addClass('alert-success').html(alertHtml).show();
+                updateLiveSimulator();
+                updateExifSummaryDisplay();
+            } else {
+                // Client-side tidak menemukan tag GPS/Tanggal, delegasikan ke ekstraksi server yang lebih mendalam
+                extractExifPreview(file);
             }
-
-            updateLiveSimulator();
-            updateExifSummaryDisplay();
         }).catch(function(err) {
-            console.warn('Gagal membaca EXIF foto di browser:', err);
+            console.info('Client-side EXIF inspection dilewati (dialihkan ke server fallback):', err && err.message ? err.message : err);
+            // Otomatis lakukan server-side inspection menggunakan file asli
+            extractExifPreview(file);
         });
     }
 
@@ -1188,12 +1230,14 @@ $(function() {
         var rawFiles = Array.from(filesList);
         var heicFiles = rawFiles.filter(isHeic);
 
-        // Ekstraksi EXIF langsung dari file foto pertama secara client-side sebelum konversi kanvas
-        var firstImage = rawFiles.find(function(f) {
+        // Simpan file foto mentah asli pertama sebelum konversi kanvas browser
+        rawOriginalFirstFile = rawFiles.find(function(f) {
             return !f.name.toLowerCase().endsWith('.zip');
-        });
-        if (firstImage) {
-            extractExifClientSide(firstImage);
+        }) || null;
+
+        // Ekstraksi EXIF langsung dari file mentah pertama
+        if (rawOriginalFirstFile) {
+            extractExifClientSide(rawOriginalFirstFile);
         }
 
         // Jika terdapat file HEIC (iPhone) dan library decoder tersedia, konversi client-side ke JPEG untuk preview
@@ -1273,15 +1317,17 @@ $(function() {
             }
         }
 
-        // Ekstrak metadata EXIF server-side jika single image (fallback & thumbnail preview)
-        if (total === 1 && !hasZip) {
-            extractExifPreview(selectedFiles[0]);
+        // Jika EXIF belum terbaca dan ada file mentah asli, panggil fallback server
+        if (rawOriginalFirstFile && !lastExifDate && !lastExifCoordinates) {
+            extractExifPreview(rawOriginalFirstFile);
         }
+
         updateSummaryCard();
         updateExifSummaryDisplay();
     }
 
     function extractExifPreview(file) {
+        if (!file) return;
         var formData = new FormData();
         formData.append('foto', file);
         formData.append('<?= csrf_token() ?>', $('input[name="<?= csrf_token() ?>"]').val());
@@ -1301,40 +1347,56 @@ $(function() {
                     // Jika server menghasilkan thumbnail JPEG (misal untuk HEIC yang didecode server-side)
                     if (resp.preview_data_uri) {
                         $('#simulatorCanvasBg').css('background-image', 'url(' + resp.preview_data_uri + ')');
-                        $('#simBackgroundInfo').text('Foto iPhone (' + file.name + ')');
+                        $('#simBackgroundInfo').text('Foto (' + file.name + ')');
                     }
-                    if (resp.date && !lastExifDate) {
+                    if (resp.date) {
                         lastExifDate = resp.date;
                         baseDate = resp.date;
                         $('#manualDate').val(resp.date);
                         $('#btnTimeFromExif').removeClass('d-none').show();
                     }
-                    if (resp.time && !lastExifTime) {
+                    if (resp.time) {
                         lastExifTime = resp.time;
                         baseTime = resp.time;
                         $('#manualTime').val(resp.time);
                     }
-                    if (resp.coordinates && !$('#koordinat').val()) {
+                    if (resp.lat != null && resp.lng != null) {
+                        var lat = parseFloat(resp.lat);
+                        var lng = parseFloat(resp.lng);
+                        var coordsStr = resp.coordinates || (lat.toFixed(6) + ', ' + lng.toFixed(6));
+                        lastExifCoordinates = coordsStr;
+                        $('#koordinat').val(coordsStr);
+                        $('#btnGpsFromExif').removeClass('d-none').show();
+                        setMarkerLocation(lat, lng, true);
+                        reverseGeocode(lat, lng, true);
+                    } else if (resp.coordinates) {
                         lastExifCoordinates = resp.coordinates;
                         $('#koordinat').val(resp.coordinates);
                         $('#btnGpsFromExif').removeClass('d-none').show();
-
-                        if ($('#useExifLocation').is(':checked') || !$('#lokasi').val() || $('#lokasi').val().trim() === '') {
-                            $('#lokasi').val(resp.coordinates);
-                            var parts = resp.coordinates.split(',');
-                            if (parts.length === 2) {
-                                reverseGeocode(parseFloat(parts[0]), parseFloat(parts[1]), true);
+                        var parts = resp.coordinates.split(',');
+                        if (parts.length === 2) {
+                            var pLat = parseFloat(parts[0]);
+                            var pLng = parseFloat(parts[1]);
+                            if (!isNaN(pLat) && !isNaN(pLng)) {
+                                setMarkerLocation(pLat, pLng, true);
+                                reverseGeocode(pLat, pLng, true);
                             }
                         }
                     }
-                    var statusHtml = '';
-                    if (resp.has_exif) {
-                        statusHtml = '<i class="fas fa-check-circle mr-1"></i> <strong>EXIF Terdeteksi:</strong> Waktu foto ' + (resp.day || '') + ', ' + (resp.date || '') + ' ' + (resp.time || '');
-                        if (resp.coordinates) {
-                            statusHtml += ' | <i class="fas fa-satellite-dish text-success ml-1"></i> GPS: <code>' + resp.coordinates + '</code>';
-                        }
-                        $('#exifStatusAlert').removeClass('alert-info alert-warning').addClass('alert-success').html(statusHtml);
+                    if (resp.description && (! $('#catatan').val() || $('#catatan').val().trim() === '')) {
+                        $('#catatan').val(resp.description);
                     }
+
+                    if (resp.has_exif) {
+                        var statusHtml = '<i class="fas fa-check-circle text-success mr-1"></i> <strong>EXIF Foto Terdeteksi (Server):</strong> ';
+                        if (lastExifDate) statusHtml += 'Waktu: ' + lastExifDate + ' ' + (lastExifTime || '') + ' ';
+                        if (lastExifCoordinates) statusHtml += '| GPS: <code>' + lastExifCoordinates + '</code> ';
+                        statusHtml += '<span class="text-success font-weight-bold ml-1">(Lokasi &amp; waktu otomatis diisi)</span>';
+                        $('#exifStatusAlert').removeClass('alert-info alert-warning alert-danger').addClass('alert-success').html(statusHtml).show();
+                    } else if (!lastExifDate && !lastExifCoordinates) {
+                        $('#exifStatusAlert').removeClass('alert-success alert-danger').addClass('alert-info').html('<i class="fas fa-info-circle mr-1"></i> Foto tidak memiliki metadata EXIF tanggal/GPS. Waktu otomatis diset saat ini, dan Anda dapat memilih lokasi pada peta di bawah.').show();
+                    }
+
                     updateLiveSimulator();
                     updateExifSummaryDisplay();
                 }

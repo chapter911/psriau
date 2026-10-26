@@ -72,7 +72,7 @@ class TimeMarkWatermarkService
             }
 
             // 1. Ekstraksi EXIF dan Perbaiki Orientasi
-            $exifData = ($mimeType === 'image/jpeg' || $mimeType === 'image/jpg') ? @exif_read_data($actualProcessPath) : false;
+            $exifData = $this->readExifData($isHeicTemp ? $sourcePath : $actualProcessPath);
             if (is_array($exifData) && ! empty($exifData['Orientation'])) {
                 $sourceImage = $this->fixOrientation($sourceImage, (int) $exifData['Orientation']);
             }
@@ -326,6 +326,116 @@ class TimeMarkWatermarkService
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /**
+     * Ekstraksi koordinat GPS dari EXIF menjadi array desimal signed numerik ['lat' => float, 'lng' => float].
+     */
+    public function extractGpsDecimal(array $exif): ?array
+    {
+        if (! isset($exif['GPSLatitude'], $exif['GPSLongitude'], $exif['GPSLatitudeRef'], $exif['GPSLongitudeRef'])) {
+            return null;
+        }
+
+        try {
+            $lat = $this->parseGpsCoordinate($exif['GPSLatitude'], $exif['GPSLatitudeRef']);
+            $lng = $this->parseGpsCoordinate($exif['GPSLongitude'], $exif['GPSLongitudeRef']);
+
+            if ($lat === null || $lng === null) {
+                return null;
+            }
+
+            return [
+                'lat' => round($lat, 6),
+                'lng' => round($lng, 6),
+            ];
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Membaca metadata EXIF dari file foto (mendukung format JPEG, TIFF, serta iPhone HEIC/HEIF).
+     */
+    public function readExifData(string $filePath): ?array
+    {
+        if (! is_file($filePath) || ! is_readable($filePath)) {
+            return null;
+        }
+
+        // 1. Coba baca via exif_read_data biasa (bekerja langsung untuk JPEG & TIFF)
+        $exif = @exif_read_data($filePath);
+        if (is_array($exif) && ! empty($exif)) {
+            return $exif;
+        }
+
+        // 2. Jika file adalah HEIC/HEIF
+        if ($this->isHeicFile($filePath)) {
+            // Coba ekstrak blok segmen TIFF dari berkas HEIC
+            $heicExif = $this->extractExifFromHeic($filePath);
+            if ($heicExif !== null) {
+                return $heicExif;
+            }
+
+            // Fallback: konversi sementara ke JPEG lalu baca EXIF dari hasil konversi
+            $tempJpg = $this->convertHeicToJpeg($filePath);
+            if ($tempJpg !== null && is_file($tempJpg)) {
+                $cExif = @exif_read_data($tempJpg);
+                @unlink($tempJpg);
+                if (is_array($cExif) && ! empty($cExif)) {
+                    return $cExif;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Mengekstrak metadata EXIF mentah dari kontainer file HEIC/HEIF (mencari marker TIFF/Exif).
+     */
+    public function extractExifFromHeic(string $heicPath): ?array
+    {
+        if (! is_file($heicPath) || ! is_readable($heicPath)) {
+            return null;
+        }
+
+        $f = @fopen($heicPath, 'rb');
+        if (! $f) {
+            return null;
+        }
+        $chunk = fread($f, 8 * 1024 * 1024); // Baca hingga 8MB pertama
+        fclose($f);
+
+        if ($chunk === false || strlen($chunk) < 64) {
+            return null;
+        }
+
+        $tiffData = null;
+        $pos = strpos($chunk, "Exif\x00\x00");
+        if ($pos !== false) {
+            $tiffData = substr($chunk, $pos + 6);
+        } else {
+            $posII = strpos($chunk, "II*\x00");
+            $posMM = strpos($chunk, "MM\x00*");
+            if ($posII !== false && ($posMM === false || $posII < $posMM)) {
+                $tiffData = substr($chunk, $posII);
+            } elseif ($posMM !== false) {
+                $tiffData = substr($chunk, $posMM);
+            }
+        }
+
+        if ($tiffData !== null && strlen($tiffData) > 32) {
+            $tmpTiff = tempnam(sys_get_temp_dir(), 'heic_exif_') . '.tif';
+            @file_put_contents($tmpTiff, $tiffData);
+            $exif = @exif_read_data($tmpTiff);
+            @unlink($tmpTiff);
+            if (is_array($exif) && ! empty($exif)) {
+                return $exif;
+            }
+        }
+
+        return null;
     }
 
     private function parseGpsCoordinate($coordinate, string $ref): ?float

@@ -812,7 +812,7 @@ graph TD
     E --> G
     F --> G
 
-    G --> EXIF_IN["Deteksi Instan EXIF Klien (exifr): Ekstrak Waktu Asli &amp; GPS Foto"]
+    G --> EXIF_IN["Deteksi Metadata EXIF Foto (Dual Pipeline: Browser exifr &amp; Fallback Server-Side)"]
     EXIF_IN --> PREV["Interactive Live Simulator: Pratinjau Watermark Real-Time di Kanvas Kanan"]
 
     G --> W2["Langkah 2: Pengaturan Waktu, Lokasi &amp; Metadata EXIF"]
@@ -1730,9 +1730,10 @@ graph TD
                                     <li><strong>Gaya Clean Bottom Strip:</strong> Banner horizontal elegan di sepanjang tepi bawah foto dengan garis aksen emas dan tata letak minimalis yang tidak menutupi objek foto.</li>
                                 </ul>
                             </li>
-                            <li><strong>Ekstraksi EXIF Otomatis &amp; Fleksibilitas Pengeditan Waktu:</strong>
+                            <li><strong>Ekstraksi EXIF Otomatis &amp; Fleksibilitas Pengeditan Waktu (Dual Pipeline):</strong>
                                 <ul>
-                                    <li><strong>Deteksi Instan Client-Side:</strong> Menggunakan pustaka <code>exifr</code> pada peramban untuk membaca metadata <em>DateTimeOriginal</em> langsung dari berkas asli (JPEG maupun iPhone HEIC) sebelum diproses, memastikan waktu pemotretan asli terdeteksi 100%.</li>
+                                    <li><strong>Deteksi Instan Client-Side (exifr):</strong> Menggunakan pustaka <code>exifr</code> pada peramban yang dipatch khusus agar mengenali kontainer <code>ftyp</code> iPhone modern. Metadata <em>DateTimeOriginal</em> dan <em>GPS</em> langsung dibaca dari berkas asli sebelum konversi kanvas.</li>
+                                    <li><strong>Fallback Ekstraksi Server-Side Otomatis:</strong> Apabila berkas foto memiliki format unik atau peramban tidak dapat mem-parsing (misal kesalahan <em>Unknown file format</em>), sistem secara otomatis mengalihkan ekstraksi ke server melalui endpoint <code>/admin/dokumentasi/watermark-foto/extract-meta</code> yang didukung parser biner TIFF dan modul konversi server, sehingga EXIF tetap terbaca 100%.</li>
                                     <li><strong>Pengeditan Tanggal &amp; Jam Bebas:</strong> Pengguna dapat dengan bebas mengubah tanggal dan jam foto melalui input yang tersedia, atau menekan tombol <strong>"Set Sekarang"</strong> untuk menggunakan waktu terkini.</li>
                                     <li><strong>Pulihkan Waktu EXIF:</strong> Jika tanggal/jam telah diubah dan pengguna ingin mengembalikan ke waktu asli kamera, cukup tekan tombol <strong>"Pulihkan Waktu EXIF"</strong>.</li>
                                     <li><strong>Tombol Penyesuaian Offset Cepat:</strong> Tersedia tombol cepat (<strong>-1j, +0j, +1j, +2j, +3j, +5j</strong>, atau offset kustom jam/menit) untuk mengoreksi zona waktu atau deviasi jam kamera.</li>
