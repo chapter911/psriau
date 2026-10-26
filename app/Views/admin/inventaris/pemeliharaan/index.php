@@ -251,13 +251,16 @@
     </div>
 </div>
 
+<?= $this->endSection(); ?>
+
+<?= $this->section('pageScripts'); ?>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+$(document).ready(function() {
     $('.btn-delete-surat').on('click', function() {
         var id = $(this).data('id');
         var noSurat = $(this).data('nosurat');
         var form = document.getElementById('formDeleteSurat');
-        form.action = '<?= site_url("admin/inventaris/pemeliharaan"); ?>/' + id + '/hapus';
+        form.action = '<?= rtrim(site_url("admin/inventaris/pemeliharaan"), "/"); ?>/' + id + '/hapus';
         document.getElementById('deleteSuratNotice').innerHTML = 'Surat nomor <strong>' + noSurat + '</strong> dan seluruh berkas foto lampirannya akan dihapus permanen.';
         $('#modalDeleteSurat').modal('show');
     });

@@ -564,11 +564,14 @@
     </div>
 </div>
 
+<?= $this->endSection(); ?>
+
+<?= $this->section('pageScripts'); ?>
 <script>
 // Data items dan fotos awal dari controller PHP
 var selectedItems = <?= json_encode($items ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?> || [];
 var existingFotos = <?= json_encode($fotos ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?> || [];
-var baseUrl = '<?= site_url(); ?>';
+var baseUrl = '<?= rtrim(site_url(), "/"); ?>';
 
 // State Kamera Wizard
 var activeCameraGroupKey = null;

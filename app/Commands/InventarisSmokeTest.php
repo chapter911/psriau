@@ -1857,6 +1857,17 @@ class InventarisSmokeTest extends BaseCommand
                 throw new \Exception("Method controller InventarisPemeliharaan hilang: " . implode(', ', $missingMethods));
             }
 
+            // 1b. Uji Endpoint ajaxSearchBarang
+            $dummyCtrl = new \App\Controllers\Admin\InventarisPemeliharaan();
+            $dummyCtrl->initController(service('request'), service('response'), service('logger'));
+            $searchRes = $dummyCtrl->ajaxSearchBarang();
+            $searchJson = json_decode($searchRes->getBody(), true);
+            if (! empty($searchJson['success'])) {
+                CLI::write("  [OK] Endpoint ajaxSearchBarang sukses dieksekusi (Total item: " . count($searchJson['data'] ?? []) . ") tanpa database exception", "green");
+            } else {
+                throw new \Exception("ajaxSearchBarang gagal: " . ($searchJson['error'] ?? 'Unknown error'));
+            }
+
             // 2. Uji Helper format_nup_range_summary
             helper('custom');
             $testNups = [1, 2, 3, 5, 7, 8, 9, 10, 15];

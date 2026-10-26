@@ -659,58 +659,66 @@ class InventarisPemeliharaan extends BaseController
 
     public function ajaxSearchBarang()
     {
-        $q = trim((string) ($this->request->getGet('q') ?? ''));
-        $kategori = trim((string) ($this->request->getGet('kategori') ?? ''));
-        $ruanganId = trim((string) ($this->request->getGet('ruangan_id') ?? ''));
+        try {
+            $q = trim((string) ($this->request->getGet('q') ?? ''));
+            $kategori = trim((string) ($this->request->getGet('kategori') ?? ''));
+            $ruanganId = trim((string) ($this->request->getGet('ruangan_id') ?? ''));
 
-        $satkerModel = new InventarisSatkerModel();
-        $builder = $satkerModel->builder();
+            $satkerModel = new InventarisSatkerModel();
+            $builder = $satkerModel->builder();
 
-        if ($q !== '') {
-            $builder->groupStart()
-                ->like('nama_barang', $q)
-                ->orLike('kode_barang', $q)
-                ->orLike('merk_tipe', $q)
-                ->orLike('merk', $q)
-                ->orLike('nup', $q)
-            ->groupEnd();
+            if ($q !== '') {
+                $builder->groupStart()
+                    ->like('nama_barang', $q)
+                    ->orLike('kode_barang', $q)
+                    ->orLike('merk_tipe', $q)
+                    ->orLike('merk', $q)
+                    ->orLike('nup', $q)
+                ->groupEnd();
+            }
+
+            if ($kategori !== '' && $kategori !== 'all') {
+                $builder->where('kategori', $kategori);
+            }
+
+            if ($ruanganId !== '' && $ruanganId !== 'all') {
+                $builder->where('ruangan_id', (int) $ruanganId);
+            }
+
+            $rows = $builder->orderBy('nama_barang', 'ASC')
+                ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
+                ->limit(100)
+                ->get()
+                ->getResultArray();
+
+            $results = [];
+            foreach ($rows as $r) {
+                $namaClean = clean_inventaris_text((string) ($r['nama_barang'] ?? ''));
+                $merkClean = clean_inventaris_text((string) ($r['merk_tipe'] ?? ($r['merk'] ?? '')));
+                $results[] = [
+                    'id'              => (int) $r['id'],
+                    'kode_barang'     => (string) ($r['kode_barang'] ?? ''),
+                    'nama_barang'     => $namaClean,
+                    'merk_tipe'       => $merkClean,
+                    'nup'             => (string) ($r['nup'] ?? ''),
+                    'kondisi'         => (string) ($r['kondisi'] ?? 'Baik'),
+                    'tahun_perolehan' => (string) ($r['tahun_perolehan'] ?? date('Y')),
+                    'lokasi_ruangan'  => (string) ($r['lokasi_ruangan'] ?? '-'),
+                    'jenis_barang'    => 'MESIN PERALATAN NON TIK',
+                ];
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data'    => $results,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', '[ajaxSearchBarang] ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ]);
         }
-
-        if ($kategori !== '' && $kategori !== 'all') {
-            $builder->where('kategori', $kategori);
-        }
-
-        if ($ruanganId !== '' && $ruanganId !== 'all') {
-            $builder->where('ruangan_id', (int) $ruanganId);
-        }
-
-        $rows = $builder->orderBy('nama_barang', 'ASC')
-            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC')
-            ->limit(100)
-            ->get()
-            ->getResultArray();
-
-        $results = [];
-        foreach ($rows as $r) {
-            $namaClean = clean_inventaris_text((string) ($r['nama_barang'] ?? ''));
-            $merkClean = clean_inventaris_text((string) ($r['merk_tipe'] ?? ($r['merk'] ?? '')));
-            $results[] = [
-                'id'              => (int) $r['id'],
-                'kode_barang'     => (string) ($r['kode_barang'] ?? ''),
-                'nama_barang'     => $namaClean,
-                'merk_tipe'       => $merkClean,
-                'nup'             => (string) ($r['nup'] ?? ''),
-                'kondisi'         => (string) ($r['kondisi'] ?? 'Baik'),
-                'tahun_perolehan' => (string) ($r['tahun_perolehan'] ?? date('Y')),
-                'lokasi_ruangan'  => (string) ($r['lokasi_ruangan'] ?? '-'),
-                'jenis_barang'    => 'MESIN PERALATAN NON TIK',
-            ];
-        }
-
-        return $this->response->setJSON([
-            'success' => true,
-            'data'    => $results,
-        ]);
     }
 
     /**
