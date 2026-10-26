@@ -545,6 +545,17 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('inventaris/pengaturan/delegasi/save', 'Admin\InventarisPengaturan::saveDelegasi');
 	$routes->get('inventaris/pengaturan/check-conflict', 'Admin\InventarisPengaturan::ajaxCheckConflict');
 
+	// Modul Inventarisasi - Surat Keterangan Pemeliharaan Peralatan & Mesin
+	$routes->get('inventaris/pemeliharaan', 'Admin\InventarisPemeliharaan::index');
+	$routes->get('inventaris/pemeliharaan/tambah', 'Admin\InventarisPemeliharaan::create');
+	$routes->post('inventaris/pemeliharaan/tambah', 'Admin\InventarisPemeliharaan::store');
+	$routes->get('inventaris/pemeliharaan/(:num)/ubah', 'Admin\InventarisPemeliharaan::edit/$1');
+	$routes->post('inventaris/pemeliharaan/(:num)/ubah', 'Admin\InventarisPemeliharaan::update/$1');
+	$routes->post('inventaris/pemeliharaan/(:num)/hapus', 'Admin\InventarisPemeliharaan::delete/$1');
+	$routes->get('inventaris/pemeliharaan/(:num)/cetak-pdf', 'Admin\InventarisPemeliharaan::cetakPdf/$1');
+	$routes->get('inventaris/pemeliharaan/ajax-search-barang', 'Admin\InventarisPemeliharaan::ajaxSearchBarang');
+	$routes->post('inventaris/pemeliharaan/apply-watermark', 'Admin\InventarisPemeliharaan::applyWatermark');
+
 	// Modul KOMPU (Komunikasi Publik)
 	$routes->get('kompu', static fn() => redirect()->to('/admin/kompu/sosmed'));
 	$routes->get('kompu/sosmed', 'Admin\Kompu::sosmedIndex');

@@ -123,6 +123,9 @@
                     <a href="<?= site_url('admin/inventaris/dbr'); ?>" class="btn btn-outline-info btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 8px;">
                         <i class="fas fa-door-open mr-1.5"></i> Ruangan (DBR)
                     </a>
+                    <a href="<?= site_url('admin/inventaris/pemeliharaan'); ?>" class="btn btn-outline-warning text-dark btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 8px;" title="Surat Keterangan Pemeliharaan Aset & Foto Fisik">
+                        <i class="fas fa-wrench text-warning mr-1.5"></i> Pemeliharaan Aset
+                    </a>
                     <?php if (! empty($can_import)): ?>
                         <button type="button" class="btn btn-outline-success btn-sm px-3 shadow-sm font-weight-bold" data-toggle="modal" data-target="#modal-import-siman" style="border-radius: 8px;">
                             <i class="fas fa-file-import mr-1.5"></i> Import SIMAN
@@ -353,6 +356,9 @@
                     </button>
                     <button type="button" class="btn btn-warning text-dark btn-sm font-weight-bold shadow-sm" id="btn-cetak-selected-stickers" style="border-radius: 6px;">
                         <i class="fas fa-qrcode mr-1.5 text-dark"></i> Cetak Sticker Terpilih (<span id="selected-sticker-count-btn">0</span>)
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm font-weight-bold shadow-sm" id="btn-buat-pemeliharaan-selected" style="border-radius: 6px;" title="Buat Surat Keterangan Pemeliharaan dari Aset Terpilih">
+                        <i class="fas fa-wrench mr-1.5 text-warning"></i> Buat Surat Pemeliharaan (<span id="selected-pemeliharaan-count-btn">0</span>)
                     </button>
                 </div>
             </div>
@@ -1745,9 +1751,11 @@ document.addEventListener('DOMContentLoaded', function() {
     var batchToolbar = document.getElementById('batch-sticker-toolbar');
     var selectedCountSpan = document.getElementById('selected-sticker-count');
     var selectedCountBtnSpan = document.getElementById('selected-sticker-count-btn');
+    var selectedPemeliharaanBtnSpan = document.getElementById('selected-pemeliharaan-count-btn');
     var modalCountSpans = document.querySelectorAll('.selected-modal-count');
     var btnUncheckAll = document.getElementById('btn-uncheck-all-stickers');
     var btnCetakSelected = document.getElementById('btn-cetak-selected-stickers');
+    var btnBuatPemeliharaan = document.getElementById('btn-buat-pemeliharaan-selected');
     var formCetakSticker = document.getElementById('form-cetak-sticker');
     var hiddenIdsInput = document.getElementById('modal-hidden-ids');
     var boxRangeInputs = document.getElementById('box-range-inputs');
@@ -1757,6 +1765,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var count = checkedItems.length;
         if (selectedCountSpan) selectedCountSpan.textContent = count;
         if (selectedCountBtnSpan) selectedCountBtnSpan.textContent = count;
+        if (selectedPemeliharaanBtnSpan) selectedPemeliharaanBtnSpan.textContent = count;
         modalCountSpans.forEach(function(el) { el.textContent = count; });
 
         if (batchToolbar) {
@@ -1811,6 +1820,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (radioSelected) radioSelected.checked = true;
             if (boxRangeInputs) boxRangeInputs.classList.add('d-none');
             $('#modal-cetak-sticker').modal('show');
+        });
+    }
+
+    if (btnBuatPemeliharaan) {
+        btnBuatPemeliharaan.addEventListener('click', function() {
+            var checkedItems = document.querySelectorAll('.check-sticker-item:checked');
+            if (checkedItems.length === 0) {
+                alert('Pilih minimal satu aset dengan mencentang checkbox untuk membuat surat pemeliharaan.');
+                return;
+            }
+
+            var ids = Array.from(checkedItems).map(function(cb) { return cb.value; });
+            window.location.href = '<?= site_url("admin/inventaris/pemeliharaan/tambah"); ?>?ids=' + ids.join(',');
         });
     }
 

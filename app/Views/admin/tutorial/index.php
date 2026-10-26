@@ -509,6 +509,7 @@ graph TD
     A --> B5["5. Aset Tidak Terdata (/admin/inventaris/tidak-terdata)"]
     A --> B6["6. Audit &amp; Stock Opname (/admin/inventaris/audit)"]
     A --> B7["7. Pengaturan Dokumen (/admin/inventaris/pengaturan)"]
+    A --> B8["8. Pemeliharaan Aset (/admin/inventaris/pemeliharaan)"]
 
     B1 --> C1["Klasifikasi Peruntukan Aset: Kantor (Satker), Mobiler (Sekolah), &amp; Item Lainnya (Peminjaman / Renovasi / Non-Ruangan)"]
     B1 --> C2["Standar BMN: 1 Kode Barang + 1 NUP = Tepat 1 Unit Fisik (Validasi Ketat Form &amp; Import)"]
@@ -549,6 +550,17 @@ graph TD
 
     B7 --> I1["Pengaturan Masa Berlaku Kop Surat BMN (Auto-Select Sesuai Tanggal Transaksi Surat)"]
     B7 --> I2["Riwayat Masa Jabatan Kasatker Kuasa Pengguna Barang (Sinkronisasi Otomatis Dokumen Lintas Periode)"]
+
+    B8 --> J1["Pencatatan Surat Keterangan Pemeliharaan Peralatan &amp; Mesin (TIK / Non-TIK / Umum)"]
+    B8 --> J2["Pemilihan Barang BMN dari Master Satker / Input Manual (Auto-Grouping Kode, Nama &amp; Merk)"]
+    B8 --> J3["Format Ringkas NUP Cerdas (Rentang Otomatis: e.g. '1 - 35' atau '1 - 12 &amp; 15 - 36')"]
+    B8 --> J4["Dua Opsi Akuisisi Foto: Unggah Berkas &amp; Pemotretan Langsung (Kamera HP/Webcam)"]
+    B8 --> J5["Wizard Kamera Terpandu Berurutan: Pengambilan 4 Sudut Terarah (Depan &rarr; Atas &rarr; Bawah &rarr; Belakang)"]
+    B8 --> J6["Watermark TimeMark Otomatis pada Pemotretan Langsung: Logo PU, Waktu Nyata, Koordinat GPS, dan Identitas Aset"]
+    B8 --> J7["Indikator Visual Status Kelengkapan Foto: Hijau (Lengkap 4/4), Kuning (Belum Lengkap), Merah (Belum Ada)"]
+    B8 --> J8["Dukungan Komprehensif Format Foto (JPG, PNG, WebP, dan iPhone HEIC/HEIF Auto-Convert)"]
+    B8 --> J9["Penerbitan Surat Resmi PDF A4 Portrait 3 Halaman (Hlm 1-2 Surat Pernyataan &amp; Rekap, Hlm 3+ Lampiran Foto)"]
+    B8 --> J10["Shortcut Terintegrasi 1-Klik dari Menu Daftar Barang (/admin/inventaris/barang)"]
                 </pre>
             </div>
         </div>
@@ -1245,7 +1257,7 @@ graph TD
                                 </ol>
                             </div>
                         </div>
-                    <div class="col-lg-12 col-md-12 mb-3">
+                    <div class="col-lg-6 col-md-12 mb-3">
                         <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #6366F1 !important;">
                             <div class="card-body">
                                 <h6 class="font-weight-bold" style="color: #4F46E5;"><i class="fas fa-sliders-h mr-1"></i> 7. Pengaturan Dokumen &amp; Pejabat BMN</h6>
@@ -1255,6 +1267,37 @@ graph TD
                                     <li><strong>Tab 1: Masa Berlaku Kop Surat BMN:</strong> Mengelola berkas gambar Kop Surat resmi instansi lengkap dengan rentang tanggal berlaku (<em>Berlaku Dari</em> s/d <em>Berlaku Sampai</em>). Sistem secara cerdas memilih kop surat yang sesuai dengan tanggal transaksi surat saat formulir dibuka atau dicetak.</li>
                                     <li><strong>Tab 2: Riwayat Jabatan Kasatker (Kuasa Pengguna Barang):</strong> Mencatat daftar nama pejabat Kasatker, NIP, gelar, jabatan resmi, dan rentang masa jabatan (TMT Mulai s/d TMT Selesai). Berkas arsip transaksi masa lampau yang dicetak ulang otomatis mencantumkan nama Kasatker yang menjabat pada masa tersebut, bukan pejabat saat ini.</li>
                                     <li><strong>Ketentuan Penandatanganan Dokumen Pinjam Pakai:</strong> Tanda tangan penerima (PIHAK KEDUA) dan penyerah (PIHAK PERTAMA) diperbolehkan sama. Apabila <em>Kepala Satuan Kerja (Kuasa Pengguna Barang)</em> meminjam aset BMN untuk keperluan operasional kedinasannya, dokumen perjanjian pinjam pakai langsung ditandatangani oleh Kasatker selaku Kuasa Pengguna Barang pada kedua belah pihak tanpa memerlukan delegasi ke pejabat lain.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12 mb-3">
+                        <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #f59e0b !important;">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold" style="color: #d97706;"><i class="fas fa-wrench mr-1"></i> 8. Pemeliharaan Aset BMN (Surat Keterangan &amp; Lampiran Foto Fisik)</h6>
+                                <p class="small text-muted mb-2"><code>/admin/inventaris/pemeliharaan</code> (Menu Lv2 Inventarisasi)</p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Pemeliharaan Aset</strong>. Modul ini difungsikan khusus untuk penatausahaan dan penerbitan <em>Surat Keterangan Pemeliharaan Peralatan &amp; Mesin (TIK / Non-TIK / Umum)</em> beserta berkas arsip dan lampiran foto fisik 4 sudut pengambilan.</li>
+                                    <li><strong>Shortcut 1-Klik dari Menu Daftar Barang:</strong> Pada menu <em>Daftar Barang</em> (<code>/admin/inventaris/barang</code>), pengguna dapat mencentang beberapa aset BMN yang akan diajukan pemeliharaannya melalui checkbox tabel, lalu mengeklik tombol biru <strong>Buat Surat Pemeliharaan</strong> pada toolbar melayang. Seluruh aset terpilih langsung otomatis terisi ke formulir surat baru.</li>
+                                    <li><strong>Pemilihan Barang &amp; Input Fleksibel:</strong> Tersedia tombol <strong>Pilih dari Inventaris Satker</strong> (modal picker pencarian interaktif multi-filter) serta tombol <strong>Tambah Manual</strong> untuk menambahkan baris aset secara mandiri.</li>
+                                    <li><strong>Pengelompokan Otomatis &amp; Format Ringkas NUP:</strong> Sistem secara cerdas mengelompokkan barang berdasarkan kesamaan Kode Barang, Nama Barang, dan Merk/Tipe, serta memformat nomor NUP ke dalam representasi rentang ringkas baku (misal NUP <code>1 - 35</code> atau <code>1 - 12 &amp; 15 - 36</code>).</li>
+                                    <li><strong>Dua Pilihan Akuisisi Foto (Unggah File &amp; Pemotretan Langsung):</strong> Setiap kelompok barang memerlukan 1 set berisi 4 foto fisik (<em>Tampak Depan, Tampak Atas, Tampak Bawah, Tampak Belakang</em>). Pengguna dapat memilih untuk mengunggah file gambar (JPG, PNG, WebP, atau iPhone HEIC/HEIF yang dikonversi otomatis) atau menggunakan tombol <strong>Foto Langsung Berurutan</strong> untuk memotret menggunakan kamera HP / Webcam laptop secara instan.</li>
+                                    <li><strong>Wizard Pemotretan Terpandu Berurutan &amp; Watermark TimeMark Otomatis:</strong> Saat menggunakan fitur foto langsung, sistem memandu pengguna secara terarah langkah demi langkah:
+                                        <ul class="pl-3 mt-1 mb-1">
+                                            <li>Alur pemotretan berurutan: <strong>1. Tampak Depan &rarr; 2. Tampak Atas &rarr; 3. Tampak Bawah &rarr; 4. Tampak Belakang</strong>.</li>
+                                            <li>Dilengkapi bingkai reticle pemandu posisi aset, tombol ganti kamera (depan/belakang), dan fallback kamera bawaan perangkat.</li>
+                                            <li><strong>Watermark TimeMark Resmi:</strong> Setiap jepretan foto langsung otomatis disematkan watermark standar dinas (Logo PU, stempel tanggal &amp; jam pemotretan real-time, koordinat GPS riil lokasi, serta nama aset &amp; NUP) persis seperti pada <em>Menu Watermark Foto</em> tanpa memerlukan edit manual.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Indikator Visual Warna Status Kelengkapan Foto:</strong> Baik pada daftar arsip maupun kartu kelompok di formulir input, sistem memberikan indikator warna dinamis:
+                                        <ul class="pl-3 mt-1 mb-1">
+                                            <li><span class="badge badge-success px-1.5"><i class="fas fa-check-circle mr-1"></i>Hijau</span>: Foto sudah lengkap (4 dari 4 sudut terisi).</li>
+                                            <li><span class="badge badge-warning text-dark px-1.5"><i class="fas fa-exclamation-circle mr-1"></i>Kuning</span>: Foto masih belum lengkap (1 sampai 3 sudut terisi).</li>
+                                            <li><span class="badge badge-danger px-1.5"><i class="fas fa-times-circle mr-1"></i>Merah</span>: Belum ada foto sama sekali (0 sudut terisi). Ikon kamera dan border kartu menyala merah.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Penerbitan Surat Resmi PDF (A4 Portrait Lengkap):</strong> Klik tombol <strong>PDF</strong> pada arsip surat untuk mencetak dokumen resmi 3 halaman persis standar dinas: Halaman 1-2 memuat Kop Surat resmi, Judul &amp; Nomor Surat, Data Pejabat Kasatker KPB, Tabel Rekapitulasi Aset, Poin Pernyataan &amp; Alasan Teknis Pemeliharaan, serta Kolom Tanda Tangan Kasatker (stempel &amp; meterai); Halaman 3+ memuat Lampiran Surat berisi tabel komparasi foto fisik 4 sudut per kelompok barang dengan resolusi optimal.</li>
+                                    <li><strong>Pengelolaan Arsip &amp; Izin Akses:</strong> Arsip surat yang tersimpan dapat diubah atau dihapus kapan saja oleh pengguna yang memiliki hak akses sesuai aturan tabel <code>menu_akses</code> (View, Add, Edit, Delete, Export).</li>
                                 </ol>
                             </div>
                         </div>

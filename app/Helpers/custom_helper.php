@@ -841,4 +841,68 @@ if (! function_exists('format_inventaris_merk')) {
     }
 }
 
+if (! function_exists('format_nup_range_summary')) {
+    /**
+     * Memformat array NUP (misal [1,2,3,4,5, 11,12, 15,16,17]) menjadi representasi rentang ringkas
+     * contoh: "1 - 5, 11 - 12 & 15 - 17" atau "1 - 35" atau "1 - 12 & 15 - 36".
+     */
+    function format_nup_range_summary(array $nups): string
+    {
+        $nums = [];
+        foreach ($nups as $n) {
+            $val = trim((string) $n);
+            if ($val === '') {
+                continue;
+            }
+            if (is_numeric($val)) {
+                $nums[] = (int) $val;
+            } elseif (preg_match('/^(\d+)\s*[-–—]\s*(\d+)$/u', $val, $m)) {
+                $start = min((int) $m[1], (int) $m[2]);
+                $end   = max((int) $m[1], (int) $m[2]);
+                for ($i = $start; $i <= $end; $i++) {
+                    $nums[] = $i;
+                }
+            } elseif (strpos($val, ',') !== false) {
+                foreach (explode(',', $val) as $part) {
+                    $part = trim($part);
+                    if (is_numeric($part)) {
+                        $nums[] = (int) $part;
+                    }
+                }
+            }
+        }
+
+        if (empty($nums)) {
+            return ! empty($nups) ? implode(', ', array_unique($nups)) : '-';
+        }
+
+        $nums = array_values(array_unique($nums));
+        sort($nums, SORT_NUMERIC);
+
+        $ranges = [];
+        $start = $nums[0];
+        $prev  = $nums[0];
+
+        for ($i = 1, $len = count($nums); $i < $len; $i++) {
+            if ($nums[$i] === $prev + 1) {
+                $prev = $nums[$i];
+            } else {
+                $ranges[] = ($start === $prev) ? (string) $start : ($start . ' - ' . $prev);
+                $start = $nums[$i];
+                $prev  = $nums[$i];
+            }
+        }
+        $ranges[] = ($start === $prev) ? (string) $start : ($start . ' - ' . $prev);
+
+        if (count($ranges) === 1) {
+            return $ranges[0];
+        }
+        if (count($ranges) === 2) {
+            return $ranges[0] . ' & ' . $ranges[1];
+        }
+
+        return implode(', ', array_slice($ranges, 0, -1)) . ' & ' . end($ranges);
+    }
+}
+
 

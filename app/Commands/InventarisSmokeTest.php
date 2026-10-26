@@ -36,13 +36,13 @@ class InventarisSmokeTest extends BaseCommand
         $pinjamModel = new InventarisPinjamPakaiModel();
 
         $passedTests = 0;
-        $totalTests = 10;
+        $totalTests = 11;
 
         // ---------------------------------------------------------------------
         // TEST 1: Cek Struktur Tabel Database
         // ---------------------------------------------------------------------
         CLI::write("\n[TEST 1] Memeriksa keberadaan tabel database...", "cyan");
-        $requiredTables = ['mst_ruangan', 'trn_inventaris_satker', 'trn_inventaris_pinjam_pakai', 'trn_inventaris_tidak_terdata', 'menu_lv1', 'menu_lv2', 'menu_akses'];
+        $requiredTables = ['mst_ruangan', 'trn_inventaris_satker', 'trn_inventaris_pinjam_pakai', 'trn_inventaris_tidak_terdata', 'trn_inventaris_pemeliharaan', 'trn_inventaris_pemeliharaan_item', 'trn_inventaris_pemeliharaan_foto', 'menu_lv1', 'menu_lv2', 'menu_akses'];
         $missingTables = [];
         foreach ($requiredTables as $table) {
             if (! $db->tableExists($table)) {
@@ -51,7 +51,7 @@ class InventarisSmokeTest extends BaseCommand
         }
 
         if (empty($missingTables)) {
-            CLI::write("  [OK] Seluruh tabel yang dibutuhkan tersedia: " . implode(', ', $requiredTables), "green");
+            CLI::write("  [OK] Seluruh tabel yang dibutuhkan tersedia (termasuk modul pemeliharaan): " . implode(', ', $requiredTables), "green");
             $passedTests++;
         } else {
             CLI::error("  [FAIL] Tabel berikut belum ada: " . implode(', ', $missingTables));
@@ -825,8 +825,9 @@ class InventarisSmokeTest extends BaseCommand
         $menuLv2Sekolah      = $db->table('menu_lv2')->where('id', '11-03')->get()->getRowArray();
         $menuLv2TidakTerdata = $db->table('menu_lv2')->where('id', '11-05')->get()->getRowArray();
         $menuLv2Pengaturan   = $db->table('menu_lv2')->where('id', '11-07')->get()->getRowArray();
+        $menuLv2Pemeliharaan = $db->table('menu_lv2')->where('id', '11-08')->get()->getRowArray();
 
-        $hierarchyOk = ($menuLv1 !== null && $menuLv2Barang !== null && $menuLv2Dbr !== null && $menuLv2Pinjam !== null && $menuLv2Sekolah !== null && $menuLv2TidakTerdata !== null && $menuLv2Pengaturan !== null);
+        $hierarchyOk = ($menuLv1 !== null && $menuLv2Barang !== null && $menuLv2Dbr !== null && $menuLv2Pinjam !== null && $menuLv2Sekolah !== null && $menuLv2TidakTerdata !== null && $menuLv2Pengaturan !== null && $menuLv2Pemeliharaan !== null);
 
         $aksesBarang       = $db->table('menu_akses')->where('menu_id', '11-01')->countAllResults();
         $aksesDbr          = $db->table('menu_akses')->where('menu_id', '11-02')->countAllResults();
@@ -834,12 +835,13 @@ class InventarisSmokeTest extends BaseCommand
         $aksesSekolah      = $db->table('menu_akses')->where('menu_id', '11-03')->countAllResults();
         $aksesTidakTerdata = $db->table('menu_akses')->where('menu_id', '11-05')->countAllResults();
         $aksesPengaturan   = $db->table('menu_akses')->where('menu_id', '11-07')->countAllResults();
+        $aksesPemeliharaan = $db->table('menu_akses')->where('menu_id', '11-08')->countAllResults();
 
         // Uji keberadaan kolom peruntukan di tabel trn_inventaris_satker
         $peruntukanColOk = $db->fieldExists('peruntukan', 'trn_inventaris_satker');
 
-        if ($hierarchyOk && $aksesBarang > 0 && $aksesDbr > 0 && $aksesPinjam > 0 && $aksesSekolah > 0 && $aksesTidakTerdata > 0 && $aksesPengaturan > 0 && $peruntukanColOk) {
-            CLI::write("  [OK] Hierarki Menu Inventarisasi Terstruktur Sempurna (Termasuk Menu 11-07 Pengaturan Dokumen):", "green");
+        if ($hierarchyOk && $aksesBarang > 0 && $aksesDbr > 0 && $aksesPinjam > 0 && $aksesSekolah > 0 && $aksesTidakTerdata > 0 && $aksesPengaturan > 0 && $aksesPemeliharaan > 0 && $peruntukanColOk) {
+            CLI::write("  [OK] Hierarki Menu Inventarisasi Terstruktur Sempurna (Termasuk Menu 11-07 Pengaturan Dokumen & 11-08 Pemeliharaan Aset):", "green");
             CLI::write("       - Lv1: {$menuLv1['label']} (ID: {$menuLv1['id']})", "green");
             CLI::write("         - Lv2: 1. {$menuLv2Barang['label']} (ID: {$menuLv2Barang['id']}, Link: {$menuLv2Barang['link']}) -> {$aksesBarang} Roles", "green");
             CLI::write("         - Lv2: 2. {$menuLv2Dbr['label']} (ID: {$menuLv2Dbr['id']}, Link: {$menuLv2Dbr['link']}) -> {$aksesDbr} Roles", "green");
@@ -847,6 +849,7 @@ class InventarisSmokeTest extends BaseCommand
             CLI::write("         - Lv2: 4. {$menuLv2Sekolah['label']} (ID: {$menuLv2Sekolah['id']}, Link: {$menuLv2Sekolah['link']}) -> {$aksesSekolah} Roles", "green");
             CLI::write("         - Lv2: 5. {$menuLv2TidakTerdata['label']} (ID: {$menuLv2TidakTerdata['id']}, Link: {$menuLv2TidakTerdata['link']}) -> {$aksesTidakTerdata} Roles", "green");
             CLI::write("         - Lv2: 7. {$menuLv2Pengaturan['label']} (ID: {$menuLv2Pengaturan['id']}, Link: {$menuLv2Pengaturan['link']}) -> {$aksesPengaturan} Roles", "green");
+            CLI::write("         - Lv2: 8. {$menuLv2Pemeliharaan['label']} (ID: {$menuLv2Pemeliharaan['id']}, Link: {$menuLv2Pemeliharaan['link']}) -> {$aksesPemeliharaan} Roles", "green");
             CLI::write("  [OK] Kolom 'peruntukan' (kantor / mobiler / lainnya) terdeteksi aktif pada tabel trn_inventaris_satker", "green");
             $passedTests++;
         } else {
@@ -1830,6 +1833,195 @@ class InventarisSmokeTest extends BaseCommand
             if (isset($dummyAuditId) && $dummyAuditId) {
                 $db->table('trn_inventaris_audit_item')->where('audit_id', $dummyAuditId)->delete();
                 $db->table('trn_inventaris_audit')->where('id', $dummyAuditId)->delete();
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // TEST 11: Modul Pemeliharaan Aset BMN (Surat Keterangan, Watermark & Lampiran Foto 4 Sudut)
+        // ---------------------------------------------------------------------
+        CLI::write("\n[TEST 11] Menguji Modul Pemeliharaan Aset BMN (Surat Keterangan, Watermark & Lampiran Foto 4 Sudut)...", "cyan");
+        $dummyPemeliharaanId = null;
+        try {
+            // 1. Validasi keberadaan Controller dan methods
+            $refPmlh = new \ReflectionClass(\App\Controllers\Admin\InventarisPemeliharaan::class);
+            $requiredMethods = ['index', 'create', 'store', 'edit', 'update', 'delete', 'cetakPdf', 'ajaxSearchBarang', 'applyWatermark'];
+            $missingMethods = [];
+            foreach ($requiredMethods as $m) {
+                if (! $refPmlh->hasMethod($m)) {
+                    $missingMethods[] = $m;
+                }
+            }
+            if (empty($missingMethods)) {
+                CLI::write("  [OK] Controller InventarisPemeliharaan memiliki seluruh method utama: " . implode(', ', $requiredMethods), "green");
+            } else {
+                throw new \Exception("Method controller InventarisPemeliharaan hilang: " . implode(', ', $missingMethods));
+            }
+
+            // 2. Uji Helper format_nup_range_summary
+            helper('custom');
+            $testNups = [1, 2, 3, 5, 7, 8, 9, 10, 15];
+            $rangeSummary = format_nup_range_summary($testNups);
+            if ($rangeSummary === '1 - 3, 5, 7 - 10 & 15') {
+                CLI::write("  [OK] Helper format_nup_range_summary akurat merangkum rentang NUP: [1,2,3,5,7,8,9,10,15] -> '{$rangeSummary}'", "green");
+            } else {
+                throw new \Exception("Helper format_nup_range_summary tidak sesuai: '{$rangeSummary}'");
+            }
+
+            // 3. Uji TimeMarkWatermarkService dengan template classic
+            $tempCanvasDir = FCPATH . 'do_not_upload' . DIRECTORY_SEPARATOR . 'temp';
+            if (! is_dir($tempCanvasDir)) {
+                @mkdir($tempCanvasDir, 0775, true);
+            }
+            $testCanvasPath = $tempCanvasDir . DIRECTORY_SEPARATOR . 'test_canvas_' . time() . '.jpg';
+            $gdImg = imagecreatetruecolor(400, 300);
+            $bgColor = imagecolorallocate($gdImg, 40, 50, 70);
+            imagefilledrectangle($gdImg, 0, 0, 400, 300, $bgColor);
+            imagejpeg($gdImg, $testCanvasPath, 90);
+            imagedestroy($gdImg);
+
+            $wmService = new \App\Libraries\TimeMarkWatermarkService();
+            $wmResult = $wmService->processImage($testCanvasPath, [
+                'template'       => 'classic',
+                'use_exif_time'  => false,
+                'location'       => 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau',
+                'coordinates'    => '0.4851° N, 101.4485° E',
+                'notes'          => 'PC UNIT (ACER VERITON) - Tampak Depan\nNUP: 1 - 5',
+                'output_quality' => 85,
+            ]);
+
+            if (is_file($testCanvasPath)) {
+                @unlink($testCanvasPath);
+            }
+
+            if (! empty($wmResult['success']) && ! empty($wmResult['data_uri']) && strpos($wmResult['data_uri'], 'data:image') === 0) {
+                CLI::write("  [OK] TimeMarkWatermarkService sukses menghasilkan watermark TimeMark resmi dengan template classic & koordinat GPS Pekanbaru", "green");
+            } else {
+                throw new \Exception("Watermark service gagal memproses gambar: " . ($wmResult['error'] ?? 'Unknown error'));
+            }
+
+            // 4. Uji Insert Transaksi Surat Pemeliharaan + Items + Foto
+            $pmlhModel = new \App\Models\InventarisPemeliharaanModel();
+            $pmlhItemModel = new \App\Models\InventarisPemeliharaanItemModel();
+            $pmlhFotoModel = new \App\Models\InventarisPemeliharaanFotoModel();
+
+            $dummyHeader = [
+                'no_surat'           => 'PS.03.02/B/Gs7/2026/TEST-001',
+                'judul_surat'        => 'SURAT KETERANGAN PEMELIHARAAN PERALATAN & MESIN TIK',
+                'jenis_pemeliharaan' => 'TIK',
+                'tanggal_surat'      => date('Y-m-d'),
+                'tempat_surat'       => 'Pekanbaru',
+                'nama_kasatker'      => 'Ahmad Kurnia, S.T., M.Tech.',
+                'nip_kasatker'       => '198001012005011001',
+                'jabatan_kasatker'   => 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau',
+                'unit_kerja'         => 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau',
+                'alasan_poin_a'      => 'BMN masih dalam kondisi baik dan masih layak untuk digunakan;',
+                'alasan_poin_b'      => '1. Memiliki spesifikasi dan fungsi yang masih sesuai dengan kebutuhan operasional unit kerja.\n2. Pemeliharaan rutin memastikan aset tetap dalam kondisi prima.',
+                'keterangan'         => 'Surat uji coba otomatis smoke test',
+                'total_item'         => 2,
+                'created_by'         => 1,
+                'updated_by'         => 1,
+            ];
+
+            $dummyPemeliharaanId = (int) $pmlhModel->insert($dummyHeader);
+            if (! $dummyPemeliharaanId) {
+                throw new \Exception("Gagal insert dummy trn_inventaris_pemeliharaan.");
+            }
+
+            $kKey = md5('3.10.01.02.001::A.C. SPLIT::1/2 PK');
+            $pmlhItemModel->insert([
+                'pemeliharaan_id' => $dummyPemeliharaanId,
+                'jenis_barang'    => 'MESIN PERALATAN NON TIK',
+                'kode_barang'     => '3.10.01.02.001',
+                'nama_barang'     => 'A.C. SPLIT',
+                'merk_tipe'       => '1/2 PK',
+                'nup'             => '1',
+                'kondisi'         => 'Baik',
+                'tahun_perolehan' => '2024',
+                'kelompok_key'    => $kKey,
+                'urutan'          => 1,
+            ]);
+            $pmlhItemModel->insert([
+                'pemeliharaan_id' => $dummyPemeliharaanId,
+                'jenis_barang'    => 'MESIN PERALATAN NON TIK',
+                'kode_barang'     => '3.10.01.02.001',
+                'nama_barang'     => 'A.C. SPLIT',
+                'merk_tipe'       => '1/2 PK',
+                'nup'             => '2',
+                'kondisi'         => 'Baik',
+                'tahun_perolehan' => '2024',
+                'kelompok_key'    => $kKey,
+                'urutan'          => 2,
+            ]);
+
+            $pmlhFotoModel->insert([
+                'pemeliharaan_id' => $dummyPemeliharaanId,
+                'kelompok_key'    => $kKey,
+                'nama_barang'     => 'A.C. SPLIT',
+                'nup_gabungan'    => '1 - 2',
+                'foto_depan'      => 'uploads/inventaris/pemeliharaan/dummy_depan.jpg',
+                'foto_atas'       => 'uploads/inventaris/pemeliharaan/dummy_atas.jpg',
+                'foto_bawah'      => 'uploads/inventaris/pemeliharaan/dummy_bawah.jpg',
+                'foto_belakang'   => 'uploads/inventaris/pemeliharaan/dummy_belakang.jpg',
+                'urutan'          => 1,
+            ]);
+
+            // 5. Uji Detail & Kalkulasi Warna/Kelengkapan Foto
+            $detail = $pmlhModel->getDetail($dummyPemeliharaanId);
+            if (! $detail || count($detail['items']) !== 2 || count($detail['fotos']) !== 1) {
+                throw new \Exception("getDetail() pemeliharaan tidak mengembalikan relasi item dan foto secara tepat.");
+            }
+
+            $listRow = $pmlhModel->getList(['q' => 'TEST-001'], 1, 0);
+            if (empty($listRow) || empty($listRow[0]['foto_color']) || $listRow[0]['foto_color'] !== 'success') {
+                throw new \Exception("foto_color status kelengkapan foto gagal terdeteksi sebagai 'success' (Hijau).");
+            }
+            CLI::write("  [OK] Status kelengkapan foto terverifikasi akurat: {$listRow[0]['foto_label']} dengan status color '{$listRow[0]['foto_color']}' (Hijau)", "green");
+
+            // 6. Uji Rendering PDF Resmi (A4 Portrait 3 Halaman)
+            $pdfData = [
+                'p'           => $detail,
+                'items'       => $detail['items'],
+                'fotos'       => $detail['fotos'],
+                'kopSuratImg' => '',
+                'tglIndo'     => '26 Oktober 2026',
+            ];
+            $pdfHtml = view('admin/inventaris/pemeliharaan/cetak_pdf', $pdfData);
+
+            $pdfOptions = new \Dompdf\Options();
+            $pdfOptions->set('isRemoteEnabled', true);
+            $pdfOptions->set('isHtml5ParserEnabled', true);
+            $dompdf = new \Dompdf\Dompdf($pdfOptions);
+            $dompdf->loadHtml($pdfHtml);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            $pdfBinary = $dompdf->output();
+
+            $tempPdfPath = $tempCanvasDir . DIRECTORY_SEPARATOR . 'smoke_test_pemeliharaan.pdf';
+            file_put_contents($tempPdfPath, $pdfBinary);
+
+            if (is_file($tempPdfPath) && filesize($tempPdfPath) > 5000) {
+                CLI::write("  [OK] Dokumen PDF Resmi Surat Pemeliharaan (Hlm 1-2 Surat + Hlm 3 Lampiran Foto 4 Sudut) berhasil dirender! Ukuran: " . number_format(filesize($tempPdfPath)) . " bytes", "green");
+            } else {
+                throw new \Exception("Gagal merender PDF Surat Pemeliharaan Aset.");
+            }
+
+            // Cleanup temp PDF file sesuai Rule 3
+            if (is_file($tempPdfPath)) {
+                unlink($tempPdfPath);
+                CLI::write("  [CLEANUP] File sementara {$tempPdfPath} telah dihapus sesuai Rule 3.", "yellow");
+            }
+
+            // Cleanup data dummy pemeliharaan cascade
+            $pmlhModel->delete($dummyPemeliharaanId);
+            CLI::write("  [CLEANUP] Data dummy transaksi pemeliharaan aset berhasil dibersihkan dari database.", "green");
+
+            $passedTests++;
+        } catch (\Throwable $e) {
+            CLI::error("  [FAIL] Exception saat uji coba Pemeliharaan Aset BMN: " . $e->getMessage() . " (Line " . $e->getLine() . " in " . $e->getFile() . ")");
+            if ($dummyPemeliharaanId) {
+                $db->table('trn_inventaris_pemeliharaan_foto')->where('pemeliharaan_id', $dummyPemeliharaanId)->delete();
+                $db->table('trn_inventaris_pemeliharaan_item')->where('pemeliharaan_id', $dummyPemeliharaanId)->delete();
+                $db->table('trn_inventaris_pemeliharaan')->where('id', $dummyPemeliharaanId)->delete();
             }
         }
 
