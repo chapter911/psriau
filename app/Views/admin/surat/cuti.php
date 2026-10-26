@@ -410,6 +410,16 @@
                     </select>
                 </div>
 
+                <!-- Filter Pegawai -->
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold text-dark small">Daftar Pegawai yang Ditampilkan</label>
+                    <select name="filter_pegawai" class="form-control" id="excel_filter_pegawai">
+                        <option value="cuti_saja" selected>Hanya Pegawai yang Mengambil Cuti Saja (Rekomendasi)</option>
+                        <option value="semua">Semua Pegawai Aktif Satker</option>
+                    </select>
+                    <small class="text-muted">Pilih "Hanya Pegawai yang Mengambil Cuti Saja" agar tabel Excel hanya memuat baris nama pegawai yang mengajukan cuti pada periode ini.</small>
+                </div>
+
                 <!-- Visual Legend Preview Box -->
                 <div class="card bg-light border-0 p-3 mt-3">
                     <div class="font-weight-bold text-dark small mb-2"><i class="fas fa-palette mr-1 text-primary"></i> Penandaan Warna pada Excel:</div>

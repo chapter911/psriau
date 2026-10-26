@@ -1041,6 +1041,11 @@ class SuratCuti extends BaseController
             $statusFilter = 'disetujui';
         }
 
+        $filterPegawai = strtolower(trim((string) ($this->request->getGet('filter_pegawai') ?? $this->request->getPost('filter_pegawai'))));
+        if (! in_array($filterPegawai, ['cuti_saja', 'semua'], true)) {
+            $filterPegawai = 'cuti_saja';
+        }
+
         // Default rentang tanggal: Bulan berjalan (1 s/d akhir bulan)
         if (empty($tglMulaiInput)) {
             $tglMulaiInput = date('Y-m-01');
@@ -1160,6 +1165,25 @@ class SuratCuti extends BaseController
             $empLeaves[$idx][] = $cRow;
         }
 
+        // Filter: Hanya tampilkan pegawai yang mengambil cuti pada periode ini
+        if ($filterPegawai === 'cuti_saja') {
+            $onlyCutiEmployees = [];
+            $newEmpLeaves = [];
+            foreach ($employees as $idx => $emp) {
+                if (! empty($empLeaves[$idx])) {
+                    $newIdx = count($onlyCutiEmployees);
+                    $onlyCutiEmployees[$newIdx] = $emp;
+                    $newEmpLeaves[$newIdx] = $empLeaves[$idx];
+                }
+            }
+            $employees = $onlyCutiEmployees;
+            $empLeaves = $newEmpLeaves;
+
+            if (empty($employees)) {
+                return redirect()->to(site_url('admin/surat/cuti'))->with('error', 'Tidak ditemukan pegawai yang mengambil cuti pada rentang tanggal ' . $startDate->format('d/m/Y') . ' s/d ' . $endDate->format('d/m/Y') . '.');
+            }
+        }
+
         // 4. Susun Daftar Hari Kalender
         $period = new \DatePeriod($startDate, new \DateInterval('P1D'), $endDate->modify('+1 day'));
         $days = [];
@@ -1212,8 +1236,9 @@ class SuratCuti extends BaseController
         $sheet->setCellValue('A3', 'REKAPITULASI CUTI PEGAWAI');
         $sheet->getStyle('A3')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('0A66C2'));
 
-        $filterLabel = ($statusFilter === 'disetujui') ? 'Hanya Cuti Disetujui' : 'Semua Pengajuan Aktif (Disetujui & Pending)';
-        $sheet->setCellValue('A4', 'Periode: ' . $startDate->format('d/m/Y') . ' s/d ' . $endDate->format('d/m/Y') . ' (' . $filterLabel . ')');
+        $statusLabel = ($statusFilter === 'disetujui') ? 'Hanya Cuti Disetujui' : 'Semua Pengajuan Aktif';
+        $pegawaiLabel = ($filterPegawai === 'cuti_saja') ? 'Hanya Pegawai Cuti' : 'Seluruh Pegawai Aktif';
+        $sheet->setCellValue('A4', 'Periode: ' . $startDate->format('d/m/Y') . ' s/d ' . $endDate->format('d/m/Y') . ' (' . $statusLabel . ' | ' . $pegawaiLabel . ')');
         $sheet->getStyle('A4')->getFont()->setItalic(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('64748B'));
 
         // Legend / Keterangan Warna
