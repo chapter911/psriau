@@ -179,7 +179,8 @@
                             <input type="file" id="fileInput" name="foto_upload[]" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.HEIC,.heif,.HEIF,.zip" class="d-none">
                         </div>
 
-                        <div id="fileSelectedList" class="alert alert-light border py-2 px-3 small text-muted mb-3" style="display: none;"></div>
+                        <div id="fileSelectedList" class="alert alert-light border py-2 px-3 small text-muted mb-2" style="display: none;"></div>
+                        <div id="largeFileAlert" class="alert alert-warning py-2 px-3 small text-dark mb-3 shadow-xs" style="display: none;"></div>
 
                         <!-- Navigasi Langkah 1 -->
                         <div class="d-flex justify-content-end mt-3 pt-2 border-top">
@@ -582,11 +583,14 @@
 
                     <!-- VIEW 2: HASIL PEMROSESAN (HIDDEN BY DEFAULT UNTIL PROCESSED) -->
                     <div id="resultSection" style="display: none;">
-                        <!-- LOADING STATE -->
+                        <!-- LOADING STATE & PROGRESS BAR -->
                         <div id="loadingContainer" class="text-center py-5" style="display: none;">
                             <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
-                            <h6 class="font-weight-bold text-dark mb-1">Sedang Memproses Watermark Foto...</h6>
-                            <p class="text-muted small mb-0">Menerapkan format watermark, ekstraksi EXIF, dan mengompilasi berkas.</p>
+                            <h6 class="font-weight-bold text-dark mb-1" id="loadingTitleText">Sedang Memproses Watermark Foto...</h6>
+                            <p class="text-muted small mb-2" id="uploadProgressText">Menerapkan format watermark, ekstraksi EXIF, dan mengompilasi berkas.</p>
+                            <div class="progress mx-auto mb-2" style="max-width: 380px; height: 18px; border-radius: 9px; background-color: #e9ecef;">
+                                <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary font-weight-bold" role="progressbar" style="width: 0%; font-size: 11px;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                            </div>
                         </div>
 
                         <!-- EMPTY PLACEHOLDER -->
@@ -1006,6 +1010,14 @@ $(function() {
         return name.endsWith('.heic') || name.endsWith('.heif') || f.type === 'image/heic' || f.type === 'image/heif';
     }
 
+    // Helper format ukuran file (Bytes -> KB / MB / GB)
+    function formatFileSize(bytes) {
+        if (!bytes || bytes <= 0) return '0 B';
+        var units = ['B', 'KB', 'MB', 'GB'];
+        var i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return (bytes / Math.pow(1024, i)).toFixed(i >= 2 ? 1 : 0) + ' ' + units[i];
+    }
+
     // Patch exifr HEIC parser agar mengenali box ftyp iPhone modern (panjang box > 50 & brand compatible)
     if (typeof exifr !== 'undefined' && exifr.fileParsers && exifr.fileParsers.has('heic')) {
         try {
@@ -1272,7 +1284,9 @@ $(function() {
         var fileNames = [];
         var hasRawHeic = false;
 
+        var totalSizeBytes = 0;
         selectedFiles.forEach(function(f) {
+            totalSizeBytes += (f.size || 0);
             if (f.name.toLowerCase().endsWith('.zip')) {
                 hasZip = true;
             }
@@ -1282,25 +1296,45 @@ $(function() {
             fileNames.push(f.name);
         });
 
+        var sizeFormatted = formatFileSize(totalSizeBytes);
+
         if (total === 1 && hasZip) {
-            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary badge-success').addClass('badge-warning').html('<i class="fas fa-file-archive mr-1"></i> 1 Arsip ZIP');
-            $('#summaryFiles').text('1 File ZIP');
+            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary badge-success').addClass('badge-warning').html('<i class="fas fa-file-archive mr-1"></i> 1 Arsip ZIP (' + sizeFormatted + ')');
+            $('#summaryFiles').text('1 File ZIP (' + sizeFormatted + ')');
         } else if (total === 1 && hasRawHeic) {
-            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-success').addClass('badge-info').html('<i class="fas fa-apple-alt mr-1"></i> 1 Foto HEIC');
-            $('#summaryFiles').text('1 Foto (HEIC iPhone)');
+            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-success').addClass('badge-info').html('<i class="fas fa-apple-alt mr-1"></i> 1 Foto HEIC (' + sizeFormatted + ')');
+            $('#summaryFiles').text('1 Foto HEIC (' + sizeFormatted + ')');
         } else if (total === 1) {
-            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-success').addClass('badge-primary').html('<i class="fas fa-image mr-1"></i> 1 Foto');
-            $('#summaryFiles').text('1 Foto');
+            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-success').addClass('badge-primary').html('<i class="fas fa-image mr-1"></i> 1 Foto (' + sizeFormatted + ')');
+            $('#summaryFiles').text('1 Foto (' + sizeFormatted + ')');
         } else {
-            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary').addClass('badge-success').html('<i class="fas fa-images mr-1"></i> ' + total + ' Foto');
-            $('#summaryFiles').text(total + ' Foto');
+            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary').addClass('badge-success').html('<i class="fas fa-images mr-1"></i> ' + total + ' Foto (' + sizeFormatted + ')');
+            $('#summaryFiles').text(total + ' Foto (' + sizeFormatted + ')');
         }
 
         var previewText = fileNames.slice(0, 3).join(', ');
         if (total > 3) {
             previewText += ' dan ' + (total - 3) + ' file lainnya';
         }
+        previewText += ' <span class="badge badge-secondary ml-1">' + sizeFormatted + '</span>';
         $('#fileSelectedList').html('<strong><i class="fas fa-check-circle text-success mr-1"></i> File Siap:</strong> ' + previewText).fadeIn();
+
+        // Peringatan jika total ukuran berkas di atas 100 MB
+        if (totalSizeBytes > 100 * 1024 * 1024) {
+            $('#largeFileAlert').html(
+                '<div class="d-flex align-items-start">' +
+                '<i class="fas fa-exclamation-triangle text-warning fa-lg mr-2 mt-1"></i>' +
+                '<div>' +
+                '<strong>Perhatian Ukuran Berkas Sangat Besar (' + sizeFormatted + '):</strong> ' +
+                'Server hosting umumnya membatasi ukuran unggahan per request (100 MB – 250 MB). ' +
+                'Mengunggah berkas sebesar <strong>' + sizeFormatted + '</strong> rentan memicu pemutusan koneksi (<em>ERR_HTTP2_PROTOCOL_ERROR</em> / Timeout).<br>' +
+                '<strong>Saran Praktis:</strong> Disarankan membagi foto menjadi beberapa file ZIP / batch lebih kecil (misalnya 20–30 foto per batch, sekitar 50–100 MB) agar pemrosesan berjalan cepat dan lancar.' +
+                '</div>' +
+                '</div>'
+            ).fadeIn();
+        } else {
+            $('#largeFileAlert').hide();
+        }
 
         // Update background of Live Simulator jika single image standar (bukan HEIC)
         if (total >= 1 && !hasZip) {
@@ -1727,6 +1761,36 @@ $(function() {
         formData.append('<?= csrf_token() ?>', $('input[name="<?= csrf_token() ?>"]').val());
 
         // Beralih ke View Hasil & Tampilkan Loading
+        // Konfirmasi peringatan jika ukuran berkas sangat besar (> 250 MB)
+        if (totalSize > 250 * 1024 * 1024) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Perhatian: File Sangat Besar',
+                html: '<div class="text-left">' +
+                      '<p>Total ukuran berkas yang akan diunggah adalah <strong class="text-danger">' + formatFileSize(totalSize) + '</strong>.</p>' +
+                      '<p class="small text-muted mb-2">Mengunggah berkas sebesar ini dalam satu permintaan HTTP sangat rentan terputus oleh web server hosting (<code>ERR_HTTP2_PROTOCOL_ERROR</code> / Timeout) jika koneksi internet mengalami fluktuasi atau melampaui batas server.</p>' +
+                      '<div class="alert alert-info py-2 px-3 small mb-0">' +
+                      '<strong>Saran Terbaik:</strong> Bagi foto menjadi 2 atau 3 file ZIP yang lebih kecil (misal per 20–30 foto). Atau lanjutkan jika server hosting Anda telah dikonfigurasi <code>upload_max_filesize 512M</code>.' +
+                      '</div>' +
+                      '</div>',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-upload mr-1"></i> Tetap Coba Unggah (' + formatFileSize(totalSize) + ')',
+                cancelButtonText: '<i class="fas fa-times mr-1"></i> Batal &amp; Bagi Berkas',
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d'
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    executeUploadProses(formData, totalSize);
+                }
+            });
+            return;
+        }
+
+        executeUploadProses(formData, totalSize);
+    });
+
+    function executeUploadProses(formData, totalSize) {
+        // Beralih ke View Hasil & Tampilkan Loading
         isProcessing = true;
         switchToResultView();
         var $btn = $('#btnProses');
@@ -1736,6 +1800,9 @@ $(function() {
         $('#placeholderContainer').hide();
         $('#singleResultContainer').hide();
         $('#batchResultContainer').hide();
+        $('#loadingTitleText').text('Sedang Mengunggah & Memproses Watermark...');
+        $('#uploadProgressBar').css('width', '0%').text('0%').removeClass('bg-success').addClass('bg-primary');
+        $('#uploadProgressText').text('Menyiapkan koneksi unggahan...');
         $('#loadingContainer').fadeIn(150);
 
         $.ajax({
@@ -1746,6 +1813,29 @@ $(function() {
             contentType: false,
             dataType: 'json',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            xhr: function() {
+                var xhr = new window.XMLHttpRequest();
+                if (xhr.upload) {
+                    xhr.upload.addEventListener('progress', function(evt) {
+                        if (evt.lengthComputable) {
+                            var percentComplete = Math.min(100, Math.round((evt.loaded / evt.total) * 100));
+                            var loadedFormatted = formatFileSize(evt.loaded);
+                            var totalFormatted = formatFileSize(evt.total);
+                            $('#uploadProgressBar').css('width', percentComplete + '%').text(percentComplete + '%');
+
+                            if (percentComplete < 100) {
+                                $('#loadingTitleText').text('Mengunggah Berkas ke Server (' + percentComplete + '%)...');
+                                $('#uploadProgressText').html('<i class="fas fa-arrow-up text-primary mr-1"></i> Mengunggah: <strong>' + percentComplete + '%</strong> (' + loadedFormatted + ' dari ' + totalFormatted + ')');
+                            } else {
+                                $('#loadingTitleText').text('Sedang Memproses Watermark & EXIF di Server...');
+                                $('#uploadProgressBar').removeClass('bg-primary').addClass('bg-success');
+                                $('#uploadProgressText').html('<i class="fas fa-cog fa-spin text-success mr-1"></i> Berkas 100% selesai diunggah. Server sedang mengekstrak, merender watermark, dan menyematkan metadata EXIF...');
+                            }
+                        }
+                    }, false);
+                }
+                return xhr;
+            },
             success: function(resp) {
                 if (resp.csrf_hash) {
                     $('input[name="<?= csrf_token() ?>"]').val(resp.csrf_hash);
@@ -1844,7 +1934,7 @@ $(function() {
                     });
                 }
             },
-            error: function(xhr) {
+            error: function(xhr, textStatus) {
                 $('#loadingContainer').hide();
                 $('#placeholderContainer').show();
 
@@ -1855,6 +1945,28 @@ $(function() {
                         text: 'Token sesi keamanan tidak valid atau izin ditolak. Halaman akan dimuat ulang.'
                     }).then(function() {
                         window.location.reload();
+                    });
+                    return;
+                }
+
+                // Penanganan Spesifik untuk Kasus Upload File Besar (ERR_HTTP2_PROTOCOL_ERROR / 413 Payload Too Large / Network Dropped)
+                if (xhr.status === 0 || xhr.status === 413 || textStatus === 'error' || textStatus === 'timeout') {
+                    var sizeInfo = formatFileSize(totalSize);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Koneksi Upload Terputus',
+                        html: '<div class="text-left">' +
+                              '<p class="mb-2">Proses unggah berkas (<strong class="text-danger">' + sizeInfo + '</strong>) terputus oleh web server (<em>ERR_HTTP2_PROTOCOL_ERROR</em> / Timeout).</p>' +
+                              '<div class="alert alert-warning py-2 px-3 small mb-2">' +
+                              '<strong>Penyebab:</strong> Ukuran file melebihi batas request web server hosting (standar LiteSpeed / PHP adalah 100 MB – 250 MB) atau koneksi timeout saat mentransfer data besar.' +
+                              '</div>' +
+                              '<div class="alert alert-info py-2 px-3 small mb-0">' +
+                              '<strong>Solusi yang Sangat Disarankan:</strong><br>' +
+                              '1. <strong>Bagi foto menjadi batch kecil:</strong> Pecah berkas ZIP atau pilih foto dalam kelompok 20–30 foto per unggahan (sekitar 50–100 MB).<br>' +
+                              '2. <strong>Konfigurasi cPanel:</strong> Jika Anda memiliki akses cPanel, buka <em>MultiPHP INI Editor</em> lalu naikkan <code>post_max_size</code> dan <code>upload_max_filesize</code> menjadi 512M.' +
+                              '</div>' +
+                              '</div>',
+                        confirmButtonText: '<i class="fas fa-check mr-1"></i> Mengerti'
                     });
                     return;
                 }

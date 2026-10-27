@@ -812,7 +812,10 @@ graph TD
     E --> G
     F --> G
 
-    G --> EXIF_IN["Deteksi Metadata EXIF Foto (Dual Pipeline: Browser exifr &amp; Fallback Server-Side)"]
+    G --> SIZE_CHK{"Pemeriksaan Ukuran Berkas"}
+    SIZE_CHK -->|Ukuran Normal &lt; 100MB| EXIF_IN["Deteksi Metadata EXIF Foto (Dual Pipeline: Browser exifr &amp; Fallback Server)"]
+    SIZE_CHK -->|Ukuran Besar &gt; 100MB| WARN_SIZE["Peringatan Dini Ukuran: Rekomendasi Split Batch 20-30 Foto"]
+    WARN_SIZE --> EXIF_IN
     EXIF_IN --> PREV["Interactive Live Simulator: Pratinjau Watermark Real-Time di Kanvas Kanan"]
 
     G --> W2["Langkah 2: Pengaturan Waktu, Lokasi &amp; Metadata EXIF"]
@@ -847,7 +850,8 @@ graph TD
     S --> U["Klik 'Proses Watermark Sekarang'"]
     T --> U
 
-    U --> V["Sistem Merender Watermark Resolusi Tinggi &amp; Menyematkan Tag EXIF Biner (PEL)"]
+    U --> PROG["Monitoring Upload: Progress Bar Real-Time Persentase &amp; MB"]
+    PROG --> V["Sistem Merender Watermark Resolusi Tinggi &amp; Menyematkan Tag EXIF Biner (PEL)"]
     V --> VIEW["Dual-View: Otomatis Beralih ke Tab 'Hasil Akhir'"]
     VIEW --> W{"Hasil Pemrosesan"}
     W -->|Foto Tunggal| X["Pratinjau Resolusi Penuh &amp; Unduh Foto Ber-EXIF Lengkap"]
@@ -1755,11 +1759,13 @@ graph TD
                                     <li><strong>Saklar Kontrol:</strong> Tersedia saklar <em>"Tulis &amp; Sinkronkan Metadata EXIF ke Berkas Foto"</em> yang dapat dinonaktifkan jika pengguna hanya ingin stempel visual tanpa memodifikasi metadata internal file.</li>
                                 </ul>
                             </li>
-                            <li><strong>Unggah Fleksibel (Foto Tunggal, Multi-Foto, HEIC/HEIF iPhone, dan Arsip ZIP):</strong>
+                            <li><strong>Unggah Fleksibel &amp; Monitoring Progress Upload (Single, Multi-Foto, HEIC, ZIP):</strong>
                                 <ul>
                                     <li><strong>Dukungan Format Luas:</strong> Mendukung berkas foto standar (<strong>JPG, JPEG, PNG, WebP</strong>) serta format resolusi tinggi Apple iPhone / iOS (<strong>HEIC dan HEIF</strong>).</li>
                                     <li><strong>Konversi Ganda (Client-Side &amp; Server-Side):</strong> Berkas foto HEIC iPhone otomatis dikonversi ke JPEG secara instan melalui WebAssembly <code>heic-to</code> pada peramban sehingga pratinjau dan metadata langsung terbaca. Di sisi server, sistem didukung konverter multi-strategi (<code>sips</code> macOS, <code>heif-convert</code> Linux, atau ImageMagick).</li>
                                     <li><strong>Dukungan Arsip ZIP:</strong> Dapat mengunggah satu file arsip <strong>.ZIP</strong> (yang berisi foto JPEG, PNG, maupun berkas HEIC). Sistem secara otomatis mengekstrak, mengonversi foto HEIC, dan merender watermark untuk seluruh isi arsip sekaligus.</li>
+                                    <li><strong>Monitoring Upload Real-Time:</strong> Saat mengunggah berkas besar, sistem menampilkan indikator progress bar persentase (0%–100%) dan perhitungan megabyte (MB) yang terunggah secara langsung.</li>
+                                    <li><strong>Manajemen Ukuran Berkas &amp; Pencegahan HTTP2 Protocol Error:</strong> Berkas ZIP dengan ukuran sangat besar (seperti 400 MB) dapat melampaui batas request server hosting atau memicu timeout (<code>ERR_HTTP2_PROTOCOL_ERROR</code>). Sistem menyediakan deteksi dini ukuran berkas dan merekomendasikan pengguna membagi foto ke dalam beberapa arsip ZIP / batch lebih kecil (sekitar 20–30 foto per unggahan, 50–100 MB) untuk performa tercepat dan terstabil.</li>
                                 </ul>
                             </li>
                             <li><strong>Penyimpanan Folder Server &amp; Unduh Massal (ZIP):</strong>

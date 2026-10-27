@@ -2,19 +2,38 @@
 
 Options -Indexes
 
-# PHP Configuration for multi-file uploads
+# PHP Configuration for multi-file and large ZIP uploads (up to 512MB)
 <IfModule LiteSpeed>
-    php_value max_file_uploads 100
+    php_value max_file_uploads 200
     php_value max_input_vars 5000
     php_value max_input_nesting_level 64
-    php_value post_max_size 100M
+    php_value post_max_size 512M
+    php_value upload_max_filesize 512M
+    php_value memory_limit 512M
+    php_value max_execution_time 600
+    php_value max_input_time 600
+</IfModule>
+
+<IfModule lsapi_module>
+    php_value max_file_uploads 200
+    php_value max_input_vars 5000
+    php_value max_input_nesting_level 64
+    php_value post_max_size 512M
+    php_value upload_max_filesize 512M
+    php_value memory_limit 512M
+    php_value max_execution_time 600
+    php_value max_input_time 600
 </IfModule>
 
 <IfModule mod_php.c>
-    php_value max_file_uploads 100
+    php_value max_file_uploads 200
     php_value max_input_vars 5000
     php_value max_input_nesting_level 64
-    php_value post_max_size 100M
+    php_value post_max_size 512M
+    php_value upload_max_filesize 512M
+    php_value memory_limit 512M
+    php_value max_execution_time 600
+    php_value max_input_time 600
 </IfModule>
 
 ## FallbackResource removed; rely on proper host rewrite configuration

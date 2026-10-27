@@ -1139,6 +1139,19 @@ class Dokumentasi extends BaseController
             ]);
         };
 
+        // 0. Tingkatkan batas waktu eksekusi dan memori untuk menangani pemrosesan batch foto berukuran besar
+        @set_time_limit(600);
+        @ini_set('memory_limit', '512M');
+        @ini_set('max_execution_time', '600');
+
+        // Deteksi jika ukuran request melebihi batas post_max_size PHP (di mana PHP mengosongkan $_POST dan $_FILES)
+        $contentLength = (int) ($this->request->getServer('CONTENT_LENGTH') ?? 0);
+        if ($contentLength > 0 && empty($_POST) && empty($_FILES)) {
+            $postMaxSize = ini_get('post_max_size') ?: '100M';
+            $mbSize = round($contentLength / (1024 * 1024), 1);
+            return $sendError(413, "Ukuran berkas ({$mbSize} MB) melebihi batas upload maksimal server (post_max_size: {$postMaxSize}). Silakan unggah foto dalam batch yang lebih kecil (misal 20–30 foto per file ZIP) atau tingkatkan batas post_max_size di cPanel hosting.");
+        }
+
         // 1. Cek Hak Akses menu_akses
         if (! $this->canAccessWatermarkMenu()) {
             return $sendError(403, 'Akses ditolak. Anda tidak memiliki izin untuk mengakses menu Watermark Foto.');
