@@ -232,9 +232,25 @@
         <span class="<?= $isLupaPulang ? '' : 'strike'; ?>">tidak mengisi daftar hadir kepulangan</span>*) karena:
     </div>
 
+    <?php
+    $rawAlasan = trim((string) ($alasan_detail ?? ''));
+    $cleanAlasan = trim((string) preg_replace('/\s*,\s*Pukul\s+\d{1,2}[:.]\d{2}(?::\d{2})?\s*$/i', '', $rawAlasan));
+    $jam24 = '';
+    $rawJam = trim((string) ($jam_absen ?? ''));
+    if ($rawJam !== '' && preg_match('/^(\d{1,2})[:.](\d{2})(?::\d{2})?$/', $rawJam, $jm)) {
+        $jam24 = sprintf('%02d:%02d', (int) $jm[1], (int) $jm[2]);
+    } elseif (preg_match('/,\s*Pukul\s+(\d{1,2})[:.](\d{2})/i', $rawAlasan, $jm)) {
+        $jam24 = sprintf('%02d:%02d', (int) $jm[1], (int) $jm[2]);
+    }
+    $alasanWithJam = $cleanAlasan;
+    if ($jam24 !== '') {
+        $alasanWithJam = $cleanAlasan !== '' ? ($cleanAlasan . ', Pukul ' . $jam24) : ('Pukul ' . $jam24);
+    }
+    ?>
+
     <!-- Detail Alasan dengan Garis Dotted -->
     <div class="reason-section">
-        <div class="reason-line"><?= esc($alasan_detail ?? ''); ?></div>
+        <div class="reason-line"><?= esc($alasanWithJam); ?></div>
         <div class="reason-line">&nbsp;</div>
         <div class="reason-line">&nbsp;</div>
     </div>

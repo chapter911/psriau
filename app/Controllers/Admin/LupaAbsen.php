@@ -17,34 +17,19 @@ class LupaAbsen extends BaseController
             return redirect()->to(site_url('/admin'));
         }
 
+        $db = db_connect();
+        $this->ensureLupaAbsenSchema($db);
+
         if ($this->request->isAJAX() || $this->isDataTableRequest()) {
             return $this->dataTable();
         }
 
+        $permissions = $this->getPermissions();
         $role = strtolower((string) session()->get('role'));
-        $canApprove = in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        $canApprove = ($permissions['approval'] ?? false) || in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
 
         // Get current employee data for modal display
         $pegawaiData = $this->getCurrentPegawaiData();
-
-        $db = db_connect();
-        
-        // Self-healing database migration
-        try {
-            $fields = $db->getFieldData('lupa_absen');
-            $hasKopSuratCol = false;
-            foreach ($fields as $f) {
-                if (strtolower((string) $f->name) === 'kop_surat_id') {
-                    $hasKopSuratCol = true;
-                    break;
-                }
-            }
-            if (! $hasKopSuratCol) {
-                $db->query("ALTER TABLE lupa_absen ADD COLUMN kop_surat_id INT UNSIGNED NULL AFTER jabatan_id;");
-            }
-        } catch (\Throwable $e) {
-            // Ignore if any DB exception occurs
-        }
 
         $kopSuratList = [];
         try {
@@ -62,7 +47,10 @@ class LupaAbsen extends BaseController
 
         return view('admin/surat/lupa_absen', [
             'title' => 'Lupa Absen',
-            'can_edit' => $this->canAccess(),
+            'can_add' => $permissions['add'] ?? true,
+            'can_edit' => $permissions['edit'] ?? true,
+            'can_delete' => $permissions['delete'] ?? true,
+            'can_export' => $permissions['export'] ?? true,
             'can_approve' => $canApprove,
             'current_pegawai' => $pegawaiData,
             'kop_surat_list' => $kopSuratList,
@@ -71,9 +59,12 @@ class LupaAbsen extends BaseController
 
     private function dataTable()
     {
-        $canEdit = $this->canAccess();
+        $permissions = $this->getPermissions();
+        $canEdit = $permissions['edit'] ?? true;
+        $canDelete = $permissions['delete'] ?? true;
+        $canExport = $permissions['export'] ?? true;
         $role = strtolower((string) session()->get('role'));
-        $canApprove = in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        $canApprove = ($permissions['approval'] ?? false) || in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
 
         $draw = $this->getDataTableDraw();
         $start = $this->getDataTableStart();
@@ -83,6 +74,7 @@ class LupaAbsen extends BaseController
         $orderDirection = $this->getDataTableOrderDirection();
 
         $db = db_connect();
+        $this->ensureLupaAbsenSchema($db);
 
         // Check if table exists
         if (! $db->tableExists('lupa_absen')) {
@@ -104,20 +96,21 @@ class LupaAbsen extends BaseController
             $builder->like('nip', $search);
             $builder->orLike('nama', $search);
             $builder->orLike('alasan_detail', $search);
+            $builder->orLike('jam_absen', $search);
             $builder->groupEnd();
         }
 
         $recordsFiltered = (int) $builder->countAllResults(false);
 
         // Order
-        $orderColumns = ['id', 'nip', 'nama', 'tanggal_absen', 'jenis_absen', 'alasan_detail', 'status', 'id'];
+        $orderColumns = ['id', 'nip', 'nama', 'tanggal_absen', 'jam_absen', 'jenis_absen', 'alasan_detail', 'status', 'id'];
         $orderColumn = $orderColumns[$orderIndex] ?? $orderColumns[0];
         $builder->orderBy($orderColumn, $orderDirection);
 
         $rows = $builder->limit($length, $start)->get()->getResultArray();
 
         // Map data
-        $data = array_map(function (array $row) use ($canEdit, $canApprove) {
+        $data = array_map(function (array $row) use ($canEdit, $canDelete, $canExport, $canApprove) {
             $status = trim((string) ($row['status'] ?? 'pending'));
             $statusBadge = match ($status) {
                 'disetujui' => '<span class="badge badge-success"><i class="fas fa-check"></i> Disetujui</span>',
@@ -128,20 +121,38 @@ class LupaAbsen extends BaseController
             $row['status_badge'] = $statusBadge;
             $row['tanggal_formatted'] = !empty($row['tanggal_absen']) ? date('d/m/Y', strtotime($row['tanggal_absen'])) : '-';
 
+            $rawAlasan = trim((string) ($row['alasan_detail'] ?? ''));
+            $jamNormalized = $this->normalizeJam24((string) ($row['jam_absen'] ?? ''));
+            if ($jamNormalized === null && preg_match('/,\s*Pukul\s+([0-2]\d:[0-5]\d)/i', $rawAlasan, $m)) {
+                $jamNormalized = $m[1];
+            }
+
+            $cleanAlasan = $this->stripJamFromAlasan($rawAlasan);
+            $row['alasan_raw'] = $cleanAlasan;
+            $row['jam_absen'] = $jamNormalized ?? '';
+            $row['jam_formatted'] = $jamNormalized !== null ? $jamNormalized : '-';
+            $row['alasan_detail'] = $this->formatAlasanWithJam($cleanAlasan, $jamNormalized);
+
             $jenis = strtolower(trim((string) ($row['jenis_absen'] ?? '')));
             $row['jenis_formatted'] = $jenis === 'masuk' ? '<span class="badge badge-info">Masuk</span>' : '<span class="badge badge-secondary">Pulang</span>';
 
             // Dokumen button
             $dokumenHtml = '<div class="doc-btn-group">';
-            $dokumenHtml .= '<a href="' . site_url('admin/surat/lupa-absen/' . (int) ($row['id'] ?? 0) . '/pdf') . '" class="btn btn-danger" title="Download PDF" target="_blank"><i class="fas fa-file-pdf"></i></a>';
+            if ($canExport) {
+                $dokumenHtml .= '<a href="' . site_url('admin/surat/lupa-absen/' . (int) ($row['id'] ?? 0) . '/pdf') . '" class="btn btn-danger" title="Download PDF" target="_blank"><i class="fas fa-file-pdf"></i></a>';
+            } else {
+                $dokumenHtml .= '<span class="text-muted">-</span>';
+            }
             $dokumenHtml .= '</div>';
             $row['dokumen_html'] = $dokumenHtml;
 
             $actions = '';
-            if (($canEdit || $canApprove) && $status === 'pending') {
+            if (($canEdit || $canDelete || $canApprove) && $status === 'pending') {
                 $actions .= '<div class="d-flex justify-content-center align-items-center" style="gap: 5px; white-space: nowrap;">';
                 if ($canEdit) {
                     $actions .= '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" data-id="' . (int) ($row['id'] ?? 0) . '" title="Edit"><i class="fas fa-edit"></i></button>';
+                }
+                if ($canDelete) {
                     $actions .= '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' . (int) ($row['id'] ?? 0) . '" title="Hapus"><i class="fas fa-trash"></i></button>';
                 }
                 if ($canApprove) {
@@ -165,7 +176,8 @@ class LupaAbsen extends BaseController
 
     public function buat()
     {
-        if (! $this->canAccess()) {
+        $permissions = $this->getPermissions();
+        if (! $this->canAccess() || ! ($permissions['add'] ?? true)) {
             return redirect()->to(site_url('/admin'));
         }
 
@@ -178,14 +190,22 @@ class LupaAbsen extends BaseController
 
     private function simpanLupaAbsen()
     {
+        $db = db_connect();
+        $this->ensureLupaAbsenSchema($db);
+
         $nama = trim((string) $this->request->getPost('nama'));
         $nip = trim((string) $this->request->getPost('nip'));
         $jabatanId = (int) $this->request->getPost('jabatan_id');
         $jabatan = trim((string) $this->request->getPost('jabatan') ?? '');
         $unitKerja = trim((string) $this->request->getPost('unit_kerja') ?? '');
         $tanggalAbsen = trim((string) $this->request->getPost('tanggal_absen'));
+        $jamAbsenRaw = trim((string) $this->request->getPost('jam_absen'));
+        if ($jamAbsenRaw === '' && $this->request->getPost('jam_hour') !== null && $this->request->getPost('jam_minute') !== null) {
+            $jamAbsenRaw = sprintf('%02d:%02d', (int) $this->request->getPost('jam_hour'), (int) $this->request->getPost('jam_minute'));
+        }
+        $jamAbsen = $this->normalizeJam24($jamAbsenRaw);
         $jenisAbsen = strtolower(trim((string) $this->request->getPost('jenis_absen')));
-        $alasanDetail = trim((string) $this->request->getPost('alasan_detail'));
+        $alasanDetail = $this->stripJamFromAlasan(trim((string) $this->request->getPost('alasan_detail')));
         $kopSuratId = (int) $this->request->getPost('kop_surat_id');
 
         $errors = [];
@@ -198,6 +218,9 @@ class LupaAbsen extends BaseController
         }
         if ($tanggalAbsen === '') {
             $errors[] = 'Tanggal absen wajib diisi.';
+        }
+        if ($jamAbsen === null) {
+            $errors[] = 'Jam absen wajib diisi dalam format 24 jam (HH:mm).';
         }
         if (! in_array($jenisAbsen, ['masuk', 'pulang'], true)) {
             $errors[] = 'Jenis absen tidak valid.';
@@ -221,6 +244,7 @@ class LupaAbsen extends BaseController
             'jabatan' => $jabatan,
             'unit_kerja' => $unitKerja,
             'tanggal_absen' => $tanggalAbsen,
+            'jam_absen' => $jamAbsen,
             'jenis_absen' => $jenisAbsen,
             'alasan_detail' => $alasanDetail,
             'nomor_surat' => null, // Akan di-generate saat PDF
@@ -242,9 +266,13 @@ class LupaAbsen extends BaseController
 
     public function ubah(int $id)
     {
-        if (! $this->canAccess()) {
+        $permissions = $this->getPermissions();
+        if (! $this->canAccess() || ! ($permissions['edit'] ?? true)) {
             return redirect()->to(site_url('/admin'));
         }
+
+        $db = db_connect();
+        $this->ensureLupaAbsenSchema($db);
 
         $model = new LupaAbsenModel();
         $existing = $model->find($id);
@@ -262,14 +290,22 @@ class LupaAbsen extends BaseController
         }
 
         $tanggalAbsen = trim((string) $this->request->getPost('tanggal_absen'));
+        $jamAbsenRaw = trim((string) $this->request->getPost('jam_absen'));
+        if ($jamAbsenRaw === '' && $this->request->getPost('jam_hour') !== null && $this->request->getPost('jam_minute') !== null) {
+            $jamAbsenRaw = sprintf('%02d:%02d', (int) $this->request->getPost('jam_hour'), (int) $this->request->getPost('jam_minute'));
+        }
+        $jamAbsen = $this->normalizeJam24($jamAbsenRaw);
         $jenisAbsen = strtolower(trim((string) $this->request->getPost('jenis_absen')));
-        $alasanDetail = trim((string) $this->request->getPost('alasan_detail'));
+        $alasanDetail = $this->stripJamFromAlasan(trim((string) $this->request->getPost('alasan_detail')));
         $kopSuratId = (int) $this->request->getPost('kop_surat_id');
 
         $errors = [];
 
         if ($tanggalAbsen === '') {
             $errors[] = 'Tanggal absen wajib diisi.';
+        }
+        if ($jamAbsen === null) {
+            $errors[] = 'Jam absen wajib diisi dalam format 24 jam (HH:mm).';
         }
         if (! in_array($jenisAbsen, ['masuk', 'pulang'], true)) {
             $errors[] = 'Jenis absen tidak valid.';
@@ -284,6 +320,7 @@ class LupaAbsen extends BaseController
 
         $data = [
             'tanggal_absen' => $tanggalAbsen,
+            'jam_absen' => $jamAbsen,
             'jenis_absen' => $jenisAbsen,
             'alasan_detail' => $alasanDetail,
             'updated_at' => date('Y-m-d H:i:s'),
@@ -299,9 +336,13 @@ class LupaAbsen extends BaseController
 
     public function pdf(int $id)
     {
-        if (! $this->canAccess()) {
+        $permissions = $this->getPermissions();
+        if (! $this->canAccess() || ! ($permissions['export'] ?? true)) {
             return redirect()->to(site_url('/admin'));
         }
+
+        $db = db_connect();
+        $this->ensureLupaAbsenSchema($db);
 
         $model = new LupaAbsenModel();
         $row = $model->find($id);
@@ -349,13 +390,20 @@ class LupaAbsen extends BaseController
         }
 
         // Fetch employee golongan from database
-        $db = db_connect();
         $pegawai = $db->table('mst_pegawai')
             ->select('golongan')
             ->where('nip', $row['nip'])
             ->get()
             ->getRowArray();
         $golongan = $pegawai['golongan'] ?? '';
+
+        $rawAlasan = trim((string) ($row['alasan_detail'] ?? ''));
+        $jamNormalized = $this->normalizeJam24((string) ($row['jam_absen'] ?? ''));
+        if ($jamNormalized === null && preg_match('/,\s*Pukul\s+([0-2]\d:[0-5]\d)/i', $rawAlasan, $m)) {
+            $jamNormalized = $m[1];
+        }
+        $cleanAlasan = $this->stripJamFromAlasan($rawAlasan);
+        $alasanDisplay = $this->formatAlasanWithJam($cleanAlasan, $jamNormalized);
 
         $data = [
             'app_name' => $appSetting['app_name'] ?? 'KEMENTERIAN PEKERJAAN UMUM',
@@ -368,8 +416,9 @@ class LupaAbsen extends BaseController
             'jabatan' => $row['jabatan'] ?? '',
             'unit_kerja' => $row['unit_kerja'] ?? '',
             'tanggal_absen' => $row['tanggal_absen'] ?? '',
+            'jam_absen' => $jamNormalized ?? '',
             'jenis_absen' => $row['jenis_absen'] ?? '',
-            'alasan_detail' => $row['alasan_detail'] ?? '',
+            'alasan_detail' => $alasanDisplay,
             'tanggal_surat' => !empty($row['created_at']) ? date('Y-m-d', strtotime($row['created_at'])) : date('Y-m-d'),
             'kop_surat_id' => isset($row['kop_surat_id']) ? (int) $row['kop_surat_id'] : null,
         ];
@@ -403,7 +452,8 @@ class LupaAbsen extends BaseController
 
     public function hapus(int $id): RedirectResponse
     {
-        if (! $this->canAccess()) {
+        $permissions = $this->getPermissions();
+        if (! $this->canAccess() || ! ($permissions['delete'] ?? true)) {
             return redirect()->to(site_url('/admin'));
         }
 
@@ -421,8 +471,10 @@ class LupaAbsen extends BaseController
 
     public function approve(int $id): RedirectResponse
     {
+        $permissions = $this->getPermissions();
         $role = strtolower((string) session()->get('role'));
-        if (! in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true)) {
+        $canApprove = ($permissions['approval'] ?? false) || in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        if (! $canApprove) {
             return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Anda tidak memiliki akses untuk menyetujui.');
         }
 
@@ -451,8 +503,10 @@ class LupaAbsen extends BaseController
 
     public function reject(int $id): RedirectResponse
     {
+        $permissions = $this->getPermissions();
         $role = strtolower((string) session()->get('role'));
-        if (! in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true)) {
+        $canApprove = ($permissions['approval'] ?? false) || in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        if (! $canApprove) {
             return redirect()->to(site_url('admin/surat/lupa-absen'))->with('error', 'Anda tidak memiliki akses untuk menolak.');
         }
 
@@ -477,6 +531,181 @@ class LupaAbsen extends BaseController
         ]);
 
         return redirect()->to(site_url('admin/surat/lupa-absen'))->with('success', 'Pengajuan lupa absen telah ditolak.');
+    }
+
+    private function ensureLupaAbsenSchema($db): void
+    {
+        try {
+            if (! $db->tableExists('lupa_absen')) {
+                return;
+            }
+            $fields = $db->getFieldData('lupa_absen');
+            $hasKopSuratCol = false;
+            $hasJamAbsenCol = false;
+            foreach ($fields as $f) {
+                $colName = strtolower((string) $f->name);
+                if ($colName === 'kop_surat_id') {
+                    $hasKopSuratCol = true;
+                } elseif ($colName === 'jam_absen') {
+                    $hasJamAbsenCol = true;
+                }
+            }
+            if (! $hasKopSuratCol) {
+                $db->query("ALTER TABLE lupa_absen ADD COLUMN kop_surat_id INT UNSIGNED NULL AFTER jabatan_id;");
+            }
+            if (! $hasJamAbsenCol) {
+                $db->query("ALTER TABLE lupa_absen ADD COLUMN jam_absen VARCHAR(10) NULL AFTER tanggal_absen;");
+            }
+        } catch (\Throwable $e) {
+            // Ignore if any DB exception occurs
+        }
+    }
+
+    private function normalizeJam24(?string $raw): ?string
+    {
+        $clean = trim((string) $raw);
+        if ($clean === '') {
+            return null;
+        }
+        $clean = str_replace('.', ':', $clean);
+        if (! preg_match('/^(\d{1,2}):(\d{2})(?::\d{2})?$/', $clean, $m)) {
+            return null;
+        }
+        $hour = (int) $m[1];
+        $minute = (int) $m[2];
+        if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
+            return null;
+        }
+        return sprintf('%02d:%02d', $hour, $minute);
+    }
+
+    private function stripJamFromAlasan(string $alasan): string
+    {
+        $cleaned = preg_replace('/\s*,\s*Pukul\s+\d{1,2}[:.]\d{2}(?::\d{2})?\s*$/i', '', trim($alasan));
+        return trim((string) $cleaned);
+    }
+
+    private function formatAlasanWithJam(string $alasan, ?string $jam): string
+    {
+        $cleanAlasan = $this->stripJamFromAlasan($alasan);
+        $jam24 = $this->normalizeJam24($jam);
+        if ($jam24 === null) {
+            return $cleanAlasan;
+        }
+        if ($cleanAlasan === '') {
+            return 'Pukul ' . $jam24;
+        }
+        return $cleanAlasan . ', Pukul ' . $jam24;
+    }
+
+    private function getPermissions(): array
+    {
+        $role = strtolower(trim((string) session()->get('role')));
+        $isSuperAdmin = in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+        $fallbackAllowed = $this->canAccess();
+
+        $default = [
+            'add' => $fallbackAllowed,
+            'edit' => $fallbackAllowed,
+            'delete' => $fallbackAllowed,
+            'export' => $fallbackAllowed,
+            'import' => $isSuperAdmin,
+            'approval' => $isSuperAdmin || $role === 'admin',
+        ];
+
+        try {
+            $db = db_connect();
+            if (! $db->tableExists('menu_akses')) {
+                return $default;
+            }
+
+            $roleId = $this->resolveRoleId((string) session()->get('role'), $db);
+            $menuId = $this->resolveMenuIdByLink('admin/surat/lupa-absen', $db);
+            if ($roleId === null || $menuId === null) {
+                return $default;
+            }
+
+            $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+            $row = $db->table('menu_akses')
+                ->select('FiturAdd, FiturEdit, FiturDelete, FiturExport, FiturImport, FiturApproval')
+                ->where($roleColumn, $roleId)
+                ->where('menu_id', $menuId)
+                ->get()
+                ->getRowArray();
+
+            if (! is_array($row)) {
+                return $default;
+            }
+
+            return [
+                'add' => $isSuperAdmin || (bool) ((int) ($row['FiturAdd'] ?? 0)),
+                'edit' => $isSuperAdmin || (bool) ((int) ($row['FiturEdit'] ?? 0)),
+                'delete' => $isSuperAdmin || (bool) ((int) ($row['FiturDelete'] ?? 0)),
+                'export' => $isSuperAdmin || (bool) ((int) ($row['FiturExport'] ?? 0)),
+                'import' => $isSuperAdmin || (bool) ((int) ($row['FiturImport'] ?? 0)),
+                'approval' => $isSuperAdmin || $role === 'admin' || (bool) ((int) ($row['FiturApproval'] ?? 0)),
+            ];
+        } catch (\Throwable $e) {
+            return $default;
+        }
+    }
+
+    private function resolveRoleId(string $role, $db): ?int
+    {
+        $normalized = strtolower(trim($role));
+        if ($normalized === '') {
+            return null;
+        }
+
+        if ($db->tableExists('access_roles')) {
+            $variants = [$normalized];
+            if (strpos($normalized, 'super') !== false) {
+                $variants[] = 'super administrator';
+                $variants[] = 'super_administrator';
+                $variants[] = 'super-admin';
+                $variants[] = 'superadmin';
+            }
+
+            $row = $db->table('access_roles')
+                ->select('id')
+                ->whereIn('role_key', array_values(array_unique($variants)))
+                ->where('is_active', 1)
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (int) $row['id'];
+            }
+        }
+
+        return match ($normalized) {
+            'admin' => 1,
+            'editor' => 2,
+            default => null,
+        };
+    }
+
+    private function resolveMenuIdByLink(string $menuLink, $db): ?string
+    {
+        foreach (['menu_lv3', 'menu_lv2', 'menu_lv1'] as $table) {
+            if (! $db->tableExists($table) || ! $db->fieldExists('link', $table)) {
+                continue;
+            }
+
+            $row = $db->table($table)
+                ->select('id')
+                ->where('LOWER(link)', strtolower(trim($menuLink)))
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (string) $row['id'];
+            }
+        }
+
+        return null;
     }
 
     /**

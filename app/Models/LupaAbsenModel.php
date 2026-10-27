@@ -16,6 +16,7 @@ class LupaAbsenModel extends Model
         'jabatan',
         'unit_kerja',
         'tanggal_absen',
+        'jam_absen',
         'jenis_absen',
         'alasan_detail',
         'nomor_surat',

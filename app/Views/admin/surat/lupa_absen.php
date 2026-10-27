@@ -2,6 +2,7 @@
 
 <?= $this->section('content'); ?>
 <?php
+    $canAdd = (bool) ($can_add ?? true);
     $canEdit = (bool) ($can_edit ?? false);
     $canApprove = (bool) ($can_approve ?? false);
     $currentPegawai = $current_pegawai ?? [];
@@ -38,16 +39,43 @@
         border-radius: 4px;
         font-size: 14px;
     }
+
+    .jam-24-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .jam-24-wrapper select.form-control {
+        width: 82px;
+        text-align: center;
+        font-weight: 600;
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+
+    .jam-24-sep {
+        font-weight: 700;
+        font-size: 16px;
+        color: #495057;
+    }
+
+    .jam-preset-btns .btn {
+        font-size: 11.5px;
+        padding: 2px 8px;
+    }
 </style>
 
 <div class="card">
     <div class="card-header d-flex align-items-center">
         <h3 class="card-title mb-0">Daftar Pengajuan Lupa Absen</h3>
+        <?php if ($canAdd): ?>
         <div class="card-tools ml-auto">
             <button type="button" class="btn btn-primary btn-sm" onclick="openCreateModal()">
                 <i class="fas fa-plus"></i> Ajukan Lupa Absen
             </button>
         </div>
+        <?php endif; ?>
     </div>
     <div class="card-body">
 
@@ -59,6 +87,7 @@
                         <th>NIP</th>
                         <th>Nama</th>
                         <th>Tanggal</th>
+                        <th>Jam (24J)</th>
                         <th>Jenis</th>
                         <th>Alasan</th>
                         <th>Status</th>
@@ -111,21 +140,63 @@
                         </div>
                     <?php endif; ?>
 
-                    <div class="form-group">
-                        <label for="tanggal_absen">Tanggal <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="tanggal_absen" name="tanggal_absen" required>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="tanggal_absen">Tanggal <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="tanggal_absen" name="tanggal_absen" required>
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="jenis_absen">Jenis Absen <span class="text-danger">*</span></label>
+                            <select class="form-control no-select2" id="jenis_absen" name="jenis_absen" required onchange="updateAlasanTemplate()">
+                                <option value="">-- Pilih --</option>
+                                <option value="masuk">Absen Masuk</option>
+                                <option value="pulang">Absen Pulang</option>
+                            </select>
+                        </div>
                     </div>
 
-                     <div class="form-group">
-                        <label for="jenis_absen">Jenis Absen <span class="text-danger">*</span></label>
-                        <select class="form-control no-select2" id="jenis_absen" name="jenis_absen" required onchange="updateAlasanTemplate()">
-                            <option value="">-- Pilih --</option>
-                            <option value="masuk">Absen Masuk</option>
-                            <option value="pulang">Absen Pulang</option>
-                        </select>
+                    <div class="form-group">
+                        <label for="jam_absen">Jam Absen (Format 24 Jam) <span class="text-danger">*</span></label>
+                        <div class="jam-24-wrapper">
+                            <select class="form-control no-select2" id="jam_hour" name="jam_hour" aria-label="Jam (00-23)" onchange="syncJamFromSelects()">
+                                <?php for ($h = 0; $h <= 23; $h++): ?>
+                                    <?php $hStr = sprintf('%02d', $h); ?>
+                                    <option value="<?= $hStr; ?>" <?= $h === 16 ? 'selected' : ''; ?>><?= $hStr; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <span class="jam-24-sep">:</span>
+                            <select class="form-control no-select2" id="jam_minute" name="jam_minute" aria-label="Menit (00-59)" onchange="syncJamFromSelects()">
+                                <?php for ($m = 0; $m <= 59; $m++): ?>
+                                    <?php $mStr = sprintf('%02d', $m); ?>
+                                    <option value="<?= $mStr; ?>" <?= $m === 0 ? 'selected' : ''; ?>><?= $mStr; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <input type="text"
+                                   class="form-control ml-2"
+                                   id="jam_absen"
+                                   name="jam_absen"
+                                   value="16:00"
+                                   placeholder="HH:mm (contoh: 16:00)"
+                                   maxlength="5"
+                                   pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                                   title="Gunakan format 24 jam HH:mm, contoh: 07:30 atau 16:00"
+                                   oninput="handleJamTextInput(this)"
+                                   onblur="normalizeJamTextInput(this)"
+                                   required>
+                        </div>
+                        <div class="jam-preset-btns mt-2 d-flex flex-wrap align-items-center" style="gap: 5px;">
+                            <small class="text-muted mr-1">Pilih Cepat (24 Jam):</small>
+                            <button type="button" class="btn btn-outline-secondary btn-xs" onclick="setJam24('07:30')">07:30</button>
+                            <button type="button" class="btn btn-outline-secondary btn-xs" onclick="setJam24('08:00')">08:00</button>
+                            <button type="button" class="btn btn-outline-secondary btn-xs" onclick="setJam24('12:00')">12:00</button>
+                            <button type="button" class="btn btn-outline-secondary btn-xs" onclick="setJam24('16:00')">16:00</button>
+                            <button type="button" class="btn btn-outline-secondary btn-xs" onclick="setJam24('16:30')">16:30</button>
+                            <button type="button" class="btn btn-outline-secondary btn-xs" onclick="setJam24('17:00')">17:00</button>
+                        </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mb-1">
                         <label for="alasan_detail">Alasan <span class="text-danger">*</span></label>
                         <select class="form-control no-select2" id="alasan_select" onchange="handleAlasanSelect()">
                             <option value="">-- Pilih Template --</option>
@@ -135,7 +206,11 @@
                             <option value="Pulang Sebelum Waktunya">Pulang Sebelum Waktunya</option>
                             <option value="__custom__">Ketik Manual...</option>
                         </select>
-                        <input type="text" class="form-control mt-2" id="alasan_custom" name="alasan_detail" placeholder="Ketik alasan di sini..." style="display: none;">
+                        <input type="text" class="form-control mt-2" id="alasan_custom" name="alasan_detail" placeholder="Ketik alasan di sini..." oninput="updatePdfReasonPreview()" style="display: none;">
+                        <div class="alert alert-light border mt-2 mb-0 py-2 px-3 small">
+                            <i class="fas fa-file-pdf text-danger mr-1"></i>
+                            Hasil pada Export PDF: <strong id="pdfReasonPreviewText" class="text-dark">-</strong>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -166,14 +241,88 @@
             </div>
         </div>
     </div>
+</div>
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>
 <script>
+function setJam24(jamStr) {
+    var clean = (jamStr || '').trim().replace('.', ':');
+    var match = clean.match(/^(\d{1,2}):(\d{2})/);
+    if (!match) {
+        return;
+    }
+    var h = Math.min(23, Math.max(0, parseInt(match[1], 10)));
+    var m = Math.min(59, Math.max(0, parseInt(match[2], 10)));
+    var hPad = (h < 10 ? '0' : '') + h;
+    var mPad = (m < 10 ? '0' : '') + m;
+    document.getElementById('jam_hour').value = hPad;
+    document.getElementById('jam_minute').value = mPad;
+    document.getElementById('jam_absen').value = hPad + ':' + mPad;
+    updatePdfReasonPreview();
+}
+
+function syncJamFromSelects() {
+    var h = document.getElementById('jam_hour').value || '00';
+    var m = document.getElementById('jam_minute').value || '00';
+    document.getElementById('jam_absen').value = h + ':' + m;
+    updatePdfReasonPreview();
+}
+
+function handleJamTextInput(inputEl) {
+    var val = inputEl.value.replace(/[^0-9:.]/g, '').replace('.', ':');
+    if (/^\d{3,4}$/.test(val)) {
+        val = val.slice(0, 2) + ':' + val.slice(2, 4);
+    }
+    inputEl.value = val;
+    var match = val.match(/^(\d{2}):(\d{2})$/);
+    if (match) {
+        var h = parseInt(match[1], 10);
+        var m = parseInt(match[2], 10);
+        if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+            document.getElementById('jam_hour').value = match[1];
+            document.getElementById('jam_minute').value = match[2];
+        }
+    }
+    updatePdfReasonPreview();
+}
+
+function normalizeJamTextInput(inputEl) {
+    var val = (inputEl.value || '').trim().replace('.', ':');
+    var match = val.match(/^(\d{1,2}):(\d{1,2})$/);
+    if (match) {
+        setJam24(match[1] + ':' + (match[2].length === 1 ? '0' + match[2] : match[2]));
+    } else {
+        syncJamFromSelects();
+    }
+}
+
+function updatePdfReasonPreview() {
+    var alasan = (document.getElementById('alasan_custom').value || '').trim();
+    alasan = alasan.replace(/\s*,\s*Pukul\s+\d{1,2}[:.]\d{2}(?::\d{2})?\s*$/i, '').trim();
+    var jam = (document.getElementById('jam_absen').value || '').trim();
+    var previewEl = document.getElementById('pdfReasonPreviewText');
+    if (!previewEl) {
+        return;
+    }
+    if (alasan === '' && jam === '') {
+        previewEl.textContent = '-';
+        return;
+    }
+    if (alasan !== '' && jam !== '') {
+        previewEl.textContent = alasan + ', Pukul ' + jam;
+    } else if (alasan !== '') {
+        previewEl.textContent = alasan;
+    } else {
+        previewEl.textContent = 'Pukul ' + jam;
+    }
+}
+
 function openCreateModal() {
     // Reset form
     document.getElementById('formLupaAbsen').reset();
     document.getElementById('alasan_custom').style.display = 'none';
+    document.getElementById('alasan_custom').value = '';
     document.getElementById('alasan_select').value = '';
     
     // Reset form action
@@ -186,6 +335,10 @@ function openCreateModal() {
     // Set default date to today
     var today = new Date().toISOString().split('T')[0];
     document.getElementById('tanggal_absen').value = today;
+
+    // Default jam 16:00 (24-hour format)
+    setJam24('16:00');
+    updatePdfReasonPreview();
 
     // Show modal
     $('#modalLupaAbsen').modal('show');
@@ -209,9 +362,23 @@ function openEditModal(data) {
     if (document.getElementById('kop_surat_id')) {
         document.getElementById('kop_surat_id').value = data.kop_surat_id || '';
     }
+
+    // Populate jam_absen (24h)
+    var jamVal = data.jam_absen || '';
+    if (!jamVal && data.alasan_detail) {
+        var mJam = String(data.alasan_detail).match(/Pukul\s+(\d{1,2}[:.]\d{2})/i);
+        if (mJam) {
+            jamVal = mJam[1];
+        }
+    }
+    if (jamVal) {
+        setJam24(jamVal);
+    } else {
+        setJam24(data.jenis_absen === 'masuk' ? '07:30' : '16:00');
+    }
     
     // Populate alasan
-    var alasan = data.alasan_detail;
+    var alasan = (data.alasan_raw !== undefined ? data.alasan_raw : (data.alasan_detail || '')).replace(/\s*,\s*Pukul\s+\d{1,2}[:.]\d{2}(?::\d{2})?\s*$/i, '').trim();
     var templates = ['Lupa Absen Masuk', 'Lupa Absen Pulang', 'Terlambat Masuk', 'Pulang Sebelum Waktunya'];
     var select = document.getElementById('alasan_select');
     var customInput = document.getElementById('alasan_custom');
@@ -227,6 +394,8 @@ function openEditModal(data) {
         customInput.style.display = 'block';
         customInput.required = true;
     }
+
+    updatePdfReasonPreview();
     
     // Show modal
     $('#modalLupaAbsen').modal('show');
@@ -235,11 +404,18 @@ function openEditModal(data) {
 function updateAlasanTemplate() {
     var jenis = document.getElementById('jenis_absen').value;
     var select = document.getElementById('alasan_select');
+    var currentJam = document.getElementById('jam_absen').value;
 
     if (jenis === 'masuk') {
         select.value = 'Lupa Absen Masuk';
+        if (!currentJam || currentJam === '16:00') {
+            setJam24('07:30');
+        }
     } else if (jenis === 'pulang') {
         select.value = 'Lupa Absen Pulang';
+        if (!currentJam || currentJam === '07:30') {
+            setJam24('16:00');
+        }
     }
 
     handleAlasanSelect();
@@ -260,9 +436,11 @@ function handleAlasanSelect() {
         customInput.style.display = 'none';
         customInput.required = false;
     } else {
+        customInput.value = '';
         customInput.style.display = 'none';
         customInput.required = false;
     }
+    updatePdfReasonPreview();
 }
 
 $(document).ready(function() {
@@ -286,6 +464,7 @@ $(document).ready(function() {
             { data: 'nip', className: 'text-center' },
             { data: 'nama' },
             { data: 'tanggal_formatted', className: 'text-center' },
+            { data: 'jam_formatted', className: 'text-center font-weight-bold' },
             { data: 'jenis_formatted', className: 'text-center' },
             { data: 'alasan_detail' },
             { data: 'status_badge', className: 'text-center', sortable: false, searchable: false },

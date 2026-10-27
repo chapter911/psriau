@@ -354,6 +354,37 @@ graph TD
     </div>
     <?php endif; ?>
 
+    <!-- FLOWCHART 1C: PENGAJUAN LUPA ABSEN PEGAWAI -->
+    <?php if ($canRenderForUser(['staf_pelaksana', 'admin'])): ?>
+    <div class="flowchart-card role-section" data-roles="staf_pelaksana,admin,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-user-clock mr-2"></i> Alur Kerja Pengajuan & Export PDF Lupa Absen (Format 24 Jam)</h5>
+                <small class="text-muted">Proses pengajuan lupa absen / izin terlambat / pulang cepat dengan input waktu 24 jam (HH:mm) dan pencetakan otomatis pada dokumen PDF resmi (contoh: "Lupa Absen Pulang, Pukul 16:00").</small>
+            </div>
+            <div>
+                <span class="badge badge-primary">Staf & Admin</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu Surat-Surat -> Lupa Absen (/admin/surat/lupa-absen)"] --> B["Klik Tombol Ajukan Lupa Absen"]
+    B --> C["Pilih Kop Surat, Tanggal Absen & Jenis Absen (Masuk / Pulang)"]
+    C --> D["Isi Jam Absen Format 24 Jam (HH:mm, contoh: 07:30 atau 16:00)"]
+    D --> E["Pilih Template Alasan (Lupa Absen Masuk / Lupa Absen Pulang / Terlambat Masuk / Pulang Sebelum Waktunya) atau Ketik Manual"]
+    E --> F["Pratinjau Otomatis Hasil PDF: 'Lupa Absen Pulang, Pukul 16:00'"]
+    F --> G["Klik Ajukan untuk Menyimpan"]
+    G --> H{"Persetujuan Admin / Atasan"}
+    H -->|Disetujui / Cetak| I["Klik Tombol PDF: Cetak Surat Permohonan Izin/Pemberitahuan Resmi Lengkap dengan Jam 24J"]
+    H -->|Ditolak| J["Status Ditolak"]
+                </pre>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- FLOWCHART 2: PPK & KASATKER - APPROVAL DISPOSISI & PENGESAHAN -->
     <?php if ($canRenderForUser(['ppk_kasatker'])): ?>
     <div class="flowchart-card role-section" data-roles="ppk_kasatker,all">
@@ -945,10 +976,11 @@ graph TD
                                 <p class="small text-muted mb-2"><code>/admin/surat/lupa-absen</code></p>
                                 <ol class="pl-3 small mb-0">
                                     <li>Klik <strong>Ajukan Lupa Absen</strong>.</li>
-                                    <li>Pilih Tanggal Absen, Jenis Absen (Masuk/Pulang), dan KOP Surat.</li>
-                                    <li>Pilih Template Alasan: <strong>Lupa Absen Masuk</strong>, <strong>Lupa Absen Pulang</strong>, <strong>Terlambat Masuk</strong>, atau <strong>Pulang Sebelum Waktunya</strong> (atau Ketik Manual).</li>
+                                    <li>Pilih Kop Surat, Tanggal Absen, dan Jenis Absen (Masuk/Pulang).</li>
+                                    <li>Isi <strong>Jam Absen (Format 24 Jam)</strong> (<code>00:00</code> s/d <code>23:59</code>, contoh: <code>07:30</code> atau <code>16:00</code>) melalui dropdown Jam &amp; Menit, ketik langsung, atau tombol pilih cepat.</li>
+                                    <li>Pilih Template Alasan: <strong>Lupa Absen Masuk</strong>, <strong>Lupa Absen Pulang</strong>, <strong>Terlambat Masuk</strong>, atau <strong>Pulang Sebelum Waktunya</strong> (atau Ketik Manual). Tersedia pratinjau hasil teks PDF secara langsung.</li>
                                     <li>Klik <strong>Ajukan</strong> untuk menyimpan.</li>
-                                    <li>Unduh PDF Surat Pernyataan resmi melalui tombol icon PDF (Format Nomor Surat: <code>KP0602/B/Gs7/{Tahun}/</code>).</li>
+                                    <li>Unduh PDF Surat Permohonan Izin/Pemberitahuan resmi melalui tombol ikon PDF (Format Nomor Surat: <code>KP0602/B/Gs7/{Tahun}/</code>, dengan hasil alasan tercetak otomatis seperti: <code>Lupa Absen Pulang, Pukul 16:00</code>).</li>
                                 </ol>
                             </div>
                         </div>
