@@ -1989,7 +1989,7 @@ $(function() {
                 $btn.prop('disabled', false).html(originalBtnHtml);
             }
         });
-    });
+    }
 
     // -------------------------------------------------------------------------
     // 7. DOWNLOAD SINGLE & RESET
