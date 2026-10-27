@@ -57,7 +57,7 @@
                         </button>
                         <button type="button" class="wizard-step-btn flex-fill btn btn-sm text-muted" data-step="3" id="tabBtnStep3">
                             <span class="step-num mr-1">3</span>
-                            <span class="step-label">Simpan &amp; Proses</span>
+                            <span class="step-label">Logo &amp; Proses</span>
                         </button>
                     </div>
                 </div>
@@ -207,34 +207,61 @@
                                 </span>
                                 <div class="d-flex align-items-center">
                                     <button type="button" class="btn btn-outline-info btn-xs mr-2 font-weight-bold d-none" id="btnTimeFromExif" title="Kembalikan tanggal & jam sesuai EXIF foto">
-                                        <i class="fas fa-undo mr-1"></i> Pulihkan Waktu EXIF
-                                    </button>
-                                    <button type="button" class="btn btn-link btn-xs p-0 text-primary small font-weight-bold" id="btnNow">
-                                        <i class="fas fa-clock mr-1"></i> Set Sekarang
+                                        <i class="fas fa-undo mr-1"></i> Pulihkan Waktu EXIF (Semua)
                                     </button>
                                 </div>
                             </div>
 
+                            <!-- Baris Input Tanggal & Jam dengan Opsi Independen -->
                             <div class="row mb-2">
+                                <!-- Kolom Pengaturan Tanggal -->
                                 <div class="col-6">
-                                    <label for="manualDate" class="small text-muted mb-1" style="font-size: 11px;">Tanggal Foto:</label>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label for="manualDate" class="small font-weight-bold text-dark mb-0" style="font-size: 11px;">
+                                            <i class="far fa-calendar-alt text-primary mr-1"></i> Tanggal Foto:
+                                        </label>
+                                        <button type="button" class="btn btn-link btn-xs p-0 text-info d-none font-weight-bold" id="btnRestoreDateExif" title="Kembalikan tanggal asli EXIF" style="font-size: 10px;">
+                                            <i class="fas fa-undo mr-1"></i>EXIF
+                                        </button>
+                                    </div>
                                     <input type="date" class="form-control form-control-sm" id="manualDate" name="manual_date" value="<?= date('Y-m-d') ?>">
+                                    <div class="custom-control custom-switch mt-1 pt-1 bg-white px-2 py-1 rounded border">
+                                        <input type="checkbox" class="custom-control-input" id="useExifDate" name="use_exif_date" value="1" checked>
+                                        <label class="custom-control-label small font-weight-bold text-muted" for="useExifDate" id="labelUseExifDate" style="font-size: 10.5px; cursor: pointer;">
+                                            Gunakan Tanggal EXIF
+                                        </label>
+                                    </div>
                                 </div>
+
+                                <!-- Kolom Pengaturan Jam -->
                                 <div class="col-6">
-                                    <label for="manualTime" class="small text-muted mb-1" style="font-size: 11px;">Jam Foto:</label>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label for="manualTime" class="small font-weight-bold text-dark mb-0" style="font-size: 11px;">
+                                            <i class="far fa-clock text-warning mr-1"></i> Jam Foto:
+                                        </label>
+                                        <div class="d-flex align-items-center">
+                                            <button type="button" class="btn btn-link btn-xs p-0 text-info mr-2 d-none font-weight-bold" id="btnRestoreTimeExif" title="Kembalikan jam asli EXIF" style="font-size: 10px;">
+                                                <i class="fas fa-undo mr-1"></i>EXIF
+                                            </button>
+                                            <button type="button" class="btn btn-link btn-xs p-0 text-primary font-weight-bold" id="btnNow" title="Set ke jam sekarang" style="font-size: 10px;">
+                                                <i class="fas fa-clock mr-1"></i>Sekarang
+                                            </button>
+                                        </div>
+                                    </div>
                                     <input type="time" class="form-control form-control-sm" id="manualTime" name="manual_time" value="<?= date('H:i') ?>">
+                                    <div class="custom-control custom-switch mt-1 pt-1 bg-white px-2 py-1 rounded border">
+                                        <input type="checkbox" class="custom-control-input" id="useExifTime" name="use_exif_time" value="1" checked>
+                                        <label class="custom-control-label small font-weight-bold text-muted" for="useExifTime" id="labelUseExifTime" style="font-size: 10.5px; cursor: pointer;">
+                                            Gunakan Jam EXIF
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Opsi Khusus Multi-Foto: Gunakan Waktu EXIF Masing-Masing File -->
-                            <div class="custom-control custom-switch mb-2 bg-white p-2 rounded border">
-                                <input type="checkbox" class="custom-control-input" id="useExifTime" name="use_exif_time" value="1" checked>
-                                <label class="custom-control-label font-weight-bold text-dark small" for="useExifTime">
-                                    Pertahankan Waktu EXIF Asli per Foto (Batch Multi-Foto)
-                                </label>
-                                <small class="d-block text-muted" style="font-size: 10px;">
-                                    Jika aktif pada banyak foto sekaligus, setiap foto akan memakai waktu pemotretannya masing-masing ditambah offset jam.
-                                </small>
+                            <!-- Banner Status Mode Waktu yang Dipilih -->
+                            <div class="alert alert-light border py-1 px-2 small mb-2 text-muted" id="dateTimeModeStatus" style="font-size: 11px;">
+                                <i class="fas fa-info-circle text-info mr-1"></i>
+                                <span id="dateTimeModeStatusText">Tanggal &amp; Jam disinkronkan dari EXIF asli foto masing-masing.</span>
                             </div>
 
                             <!-- Tombol Cepat Offset Jam -->
@@ -375,32 +402,10 @@
                     </div>
 
                     <!-- ======================================================= -->
-                    <!-- LANGKAH 3: SIMPAN SERVER & PROSES WATERMARK             -->
+                    <!-- LANGKAH 3: LOGO KUSTOM & PROSES WATERMARK               -->
                     <!-- ======================================================= -->
                     <div class="wizard-step-pane d-none" id="wizardStepPane3">
-                        <!-- 3.1 Simpan ke Folder Server -->
-                        <div class="card bg-light border-0 rounded-lg p-3 mb-3">
-                            <div class="custom-control custom-checkbox mb-2">
-                                <input type="checkbox" class="custom-control-input" id="saveToFolder" name="save_to_folder" value="1" checked>
-                                <label class="custom-control-label font-weight-bold text-dark small" for="saveToFolder">
-                                    <i class="fas fa-folder-plus text-warning mr-1"></i> Simpan Salinan Foto ke Direktori Server
-                                </label>
-                            </div>
-                            <div id="folderInputContainer">
-                                <label for="targetFolderName" class="small text-muted mb-1">Nama Folder Penyimpanan:</label>
-                                <div class="input-group input-group-sm mb-1">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-folder text-warning"></i> /uploads/watermark_hasil/</span>
-                                    </div>
-                                    <input type="text" class="form-control" id="targetFolderName" name="target_folder_name" value="Dokumentasi_<?= date('Ymd_His') ?>" placeholder="Nama folder...">
-                                </div>
-                                <small class="text-muted" style="font-size: 11px;">
-                                    Foto yang diproses akan tersimpan aman di server dan dapat diakses kembali sewaktu-waktu.
-                                </small>
-                            </div>
-                        </div>
-
-                        <!-- 3.2 Logo Kustom Instansi (Opsional) -->
+                        <!-- 3.1 Logo Kustom Instansi (Opsional) -->
                         <div class="card bg-light border-0 rounded-lg p-3 mb-3">
                             <label for="logo" class="small font-weight-bold text-dark mb-1">
                                 <i class="fas fa-shield-alt text-info mr-1"></i> Logo Instansi Kustom (Opsional):
@@ -414,14 +419,14 @@
                             </small>
                         </div>
 
-                        <!-- 3.3 Ringkasan Konfigurasi Sebelum Proses -->
+                        <!-- 3.2 Ringkasan Konfigurasi Sebelum Proses -->
                         <div class="card border rounded-lg p-3 mb-3 shadow-none bg-white">
                             <h6 class="font-weight-bold text-dark small mb-2"><i class="fas fa-clipboard-check text-success mr-1"></i> Ringkasan Pengaturan Watermark:</h6>
                             <div class="row small text-muted">
                                 <div class="col-6 mb-1">Format: <strong class="text-dark" id="summaryTemplate">Klasik PU</strong></div>
                                 <div class="col-6 mb-1">File Terpilih: <strong class="text-dark" id="summaryFiles">0 Berkas</strong></div>
-                                <div class="col-6 mb-1">Penyesuaian Jam: <strong class="text-dark" id="summaryOffset">+0 Jam</strong></div>
-                                <div class="col-6 mb-1">Simpan Server: <strong class="text-dark" id="summarySave">Ya</strong></div>
+                                <div class="col-12 mb-1">Mode Waktu: <strong class="text-dark" id="summaryWaktuMode">EXIF Kamera Asli</strong></div>
+                                <div class="col-12 mb-1">Penyesuaian Jam: <strong class="text-dark" id="summaryOffset">+0 Jam</strong></div>
                                 <div class="col-12 mb-1">Tulis EXIF Berkas: <strong class="text-success" id="summaryExif">Ya (Tanggal, GPS &amp; Catatan)</strong></div>
                             </div>
                         </div>
@@ -606,10 +611,7 @@
                         <div id="batchResultContainer" style="display: none;">
                             <div class="alert alert-success d-flex align-items-center justify-content-between p-3 mb-3">
                                 <div>
-                                    <h6 class="font-weight-bold mb-1"><i class="fas fa-check-circle mr-1"></i> <span id="batchCountText">0</span> Foto Berhasil Diproses!</h6>
-                                    <small class="text-dark" id="batchFolderInfo" style="display: none;">
-                                        <i class="fas fa-folder-check mr-1 text-primary"></i> Tersimpan di server: <code id="batchFolderText" class="font-weight-bold"></code>
-                                    </small>
+                                    <h6 class="font-weight-bold mb-0"><i class="fas fa-check-circle mr-1"></i> <span id="batchCountText">0</span> Foto Berhasil Diproses!</h6>
                                 </div>
                             </div>
 
@@ -634,9 +636,6 @@
                                 <img id="singlePreviewImage" src="" alt="Watermark Preview" class="img-fluid rounded shadow border cursor-pointer" style="max-height: 400px; object-fit: contain;" title="Klik untuk perbesar">
                             </div>
 
-                            <div class="alert alert-info py-2 px-3 small mb-3" id="singleServerSavedAlert" style="display: none;">
-                                <i class="fas fa-folder text-warning mr-1"></i> Salinan file tersimpan di server: <strong id="singleServerSavedPath"></strong>
-                            </div>
 
                             <div class="d-flex justify-content-between">
                                 <button type="button" class="btn btn-success font-weight-bold flex-fill mr-2 py-2" id="btnDownloadSingle">
@@ -982,6 +981,7 @@
 <script src="<?= esc(media_url('assets/exif/exifr.full.umd.js')); ?>"></script>
 <script src="<?= esc(media_url('assets/heic/heic-to.min.js')); ?>"></script>
 <script src="<?= esc(media_url('assets/heic/heic2any.min.js')); ?>"></script>
+<script src="<?= esc(media_url('assets/adminlte/plugins/jszip/jszip.min.js')); ?>"></script>
 <script>
 $(function() {
     'use strict';
@@ -989,6 +989,7 @@ $(function() {
     // State Variables
     var selectedFiles = [];
     var singleGeneratedUri = null;
+    var singleProcessedFileName = null;
     var currentZipDownloadUrl = null;
     var isProcessing = false;
     var currentStep = 1;
@@ -1192,7 +1193,12 @@ $(function() {
 
                         $('#manualDate').val(lastExifDate);
                         $('#manualTime').val(lastExifTime);
+                        $('#useExifDate').prop('checked', true);
+                        $('#useExifTime').prop('checked', true);
+                        $('#btnRestoreDateExif').removeClass('d-none').show();
+                        $('#btnRestoreTimeExif').removeClass('d-none').show();
                         $('#btnTimeFromExif').removeClass('d-none').show();
+                        updateDateTimeStatusText();
                         hasExif = true;
                     }
                 }
@@ -1250,7 +1256,50 @@ $(function() {
         // Ekstraksi EXIF langsung dari file mentah pertama
         if (rawOriginalFirstFile) {
             extractExifClientSide(rawOriginalFirstFile);
+        } else {
+            // Jika file yang dipilih adalah berkas arsip .ZIP, ekstrak sampel foto pertama via JSZip untuk EXIF & preview simulator
+            var zipFile = rawFiles.find(function(f) {
+                return f.name.toLowerCase().endsWith('.zip');
+            });
+
+            if (zipFile && typeof JSZip !== 'undefined') {
+                if (zipFile.size > 40 * 1024 * 1024) {
+                    console.info('Berkas ZIP berukuran besar (' + formatFileSize(zipFile.size) + '). Pembacaan sampel di browser dilewati untuk performa.');
+                    $('#simBackgroundInfo').text('Arsip ZIP (' + formatFileSize(zipFile.size) + ') - Diproses di Server');
+                } else {
+                    JSZip.loadAsync(zipFile).then(function(zip) {
+                    var firstImageEntry = null;
+                    zip.forEach(function(relativePath, zipEntry) {
+                        if (firstImageEntry) return;
+                        if (zipEntry.dir) return;
+                        if (relativePath.indexOf('__MACOSX') !== -1 || zipEntry.name.indexOf('._') === 0) return;
+                        if (/\.(jpe?g|png|webp|heic|heif)$/i.test(zipEntry.name)) {
+                            firstImageEntry = zipEntry;
+                        }
+                    });
+
+                    if (firstImageEntry) {
+                        firstImageEntry.async('blob').then(function(blob) {
+                            var sampleFile = new File([blob], firstImageEntry.name, {
+                                type: firstImageEntry.name.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg'
+                            });
+                            rawOriginalFirstFile = sampleFile;
+                            extractExifClientSide(sampleFile);
+
+                            // Pasang sampel foto dari ZIP ke Simulator Background
+                            var sampleUrl = URL.createObjectURL(blob);
+                            $('#simulatorCanvasBg').css('background-image', 'url(' + sampleUrl + ')');
+                            $('#simBackgroundInfo').text('Sampel ZIP (' + firstImageEntry.name + ')');
+                        }).catch(function(err) {
+                            console.info('Gagal membaca sampel gambar dari ZIP:', err);
+                        });
+                    }
+                }).catch(function(err) {
+                    console.info('Gagal membaca struktur ZIP client-side:', err);
+                });
+            }
         }
+    }
 
         // Jika terdapat file HEIC (iPhone) dan library decoder tersedia, konversi client-side ke JPEG untuk preview
         if (heicFiles.length > 0 && (typeof HeicTo === 'function' || typeof heic2any === 'function')) {
@@ -1387,13 +1436,19 @@ $(function() {
                         lastExifDate = resp.date;
                         baseDate = resp.date;
                         $('#manualDate').val(resp.date);
+                        $('#useExifDate').prop('checked', true);
+                        $('#btnRestoreDateExif').removeClass('d-none').show();
                         $('#btnTimeFromExif').removeClass('d-none').show();
                     }
                     if (resp.time) {
                         lastExifTime = resp.time;
                         baseTime = resp.time;
                         $('#manualTime').val(resp.time);
+                        $('#useExifTime').prop('checked', true);
+                        $('#btnRestoreTimeExif').removeClass('d-none').show();
+                        $('#btnTimeFromExif').removeClass('d-none').show();
                     }
+                    updateDateTimeStatusText();
                     if (resp.lat != null && resp.lng != null) {
                         var lat = parseFloat(resp.lat);
                         var lng = parseFloat(resp.lng);
@@ -1470,37 +1525,69 @@ $(function() {
 
     $('#btnNow').on('click', function() {
         var now = new Date();
-        var yyyy = now.getFullYear();
-        var mm = String(now.getMonth() + 1).padStart(2, '0');
-        var dd = String(now.getDate()).padStart(2, '0');
         var hh = String(now.getHours()).padStart(2, '0');
         var min = String(now.getMinutes()).padStart(2, '0');
-        baseDate = yyyy + '-' + mm + '-' + dd;
         baseTime = hh + ':' + min;
-        $('#manualDate').val(baseDate);
         $('#manualTime').val(baseTime);
+        $('#useExifTime').prop('checked', false);
+        updateDateTimeStatusText();
         updateLiveSimulator();
         updateExifSummaryDisplay();
+        updateSummaryCard();
 
         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1800 });
-        Toast.fire({ icon: 'info', title: 'Tanggal & jam disetel ke waktu sekarang!' });
+        Toast.fire({ icon: 'info', title: 'Jam disetel ke waktu sekarang (Ganti Jam Saja)!' });
+    });
+
+    $('#btnRestoreDateExif').on('click', function() {
+        if (lastExifDate) {
+            baseDate = lastExifDate;
+            $('#manualDate').val(lastExifDate);
+            $('#useExifDate').prop('checked', true);
+            updateDateTimeStatusText();
+            updateLiveSimulator();
+            updateExifSummaryDisplay();
+            updateSummaryCard();
+
+            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1800 });
+            Toast.fire({ icon: 'info', title: 'Tanggal dipulihkan ke tanggal asli EXIF foto!' });
+        }
+    });
+
+    $('#btnRestoreTimeExif').on('click', function() {
+        if (lastExifTime) {
+            baseTime = lastExifTime;
+            $('#manualTime').val(lastExifTime);
+            $('#useExifTime').prop('checked', true);
+            updateDateTimeStatusText();
+            updateLiveSimulator();
+            updateExifSummaryDisplay();
+            updateSummaryCard();
+
+            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1800 });
+            Toast.fire({ icon: 'info', title: 'Jam dipulihkan ke jam asli EXIF foto!' });
+        }
     });
 
     $('#btnTimeFromExif').on('click', function() {
         if (lastExifDate) {
             baseDate = lastExifDate;
             $('#manualDate').val(lastExifDate);
+            $('#useExifDate').prop('checked', true);
         }
         if (lastExifTime) {
             baseTime = lastExifTime;
             $('#manualTime').val(lastExifTime);
+            $('#useExifTime').prop('checked', true);
         }
         $('#offsetHours').val(0);
         $('#offsetMinutes').val(0);
         updateOffsetBadge(0, 0);
         $('input[name="quick_offset"][value="0"]').prop('checked', true).parent().addClass('active').siblings().removeClass('active');
+        updateDateTimeStatusText();
         updateLiveSimulator();
         updateExifSummaryDisplay();
+        updateSummaryCard();
 
         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
         Toast.fire({ icon: 'info', title: 'Tanggal & jam dipulihkan ke waktu asli EXIF foto!' });
@@ -1522,14 +1609,75 @@ $(function() {
         }
     });
 
-    $('#manualDate, #manualTime').on('input change', function() {
-        baseDate = $('#manualDate').val() || '<?= date('Y-m-d') ?>';
-        baseTime = $('#manualTime').val() || '<?= date('H:i') ?>';
+    // Perubahan input tanggal foto mandiri (ganti tanggal saja)
+    $('#manualDate').on('input change', function() {
+        $('#useExifDate').prop('checked', false);
+        baseDate = $(this).val() || '<?= date('Y-m-d') ?>';
+        updateDateTimeStatusText();
         updateLiveSimulator();
         updateExifSummaryDisplay();
+        updateSummaryCard();
     });
 
-    $('#lokasi, #koordinat, #catatan, #useExifLocation, #useExifTime, #updateExif').on('input change', function() {
+    // Perubahan input jam foto mandiri (ganti jam saja)
+    $('#manualTime').on('input change', function() {
+        $('#useExifTime').prop('checked', false);
+        baseTime = $(this).val() || '<?= date('H:i') ?>';
+        updateDateTimeStatusText();
+        updateLiveSimulator();
+        updateExifSummaryDisplay();
+        updateSummaryCard();
+    });
+
+    // Saklar independen Tanggal & Jam EXIF
+    $('#useExifDate, #useExifTime').on('change', function() {
+        if ($('#useExifDate').is(':checked') && lastExifDate) {
+            $('#manualDate').val(lastExifDate);
+            baseDate = lastExifDate;
+        }
+        if ($('#useExifTime').is(':checked') && lastExifTime) {
+            $('#manualTime').val(lastExifTime);
+            baseTime = lastExifTime;
+        }
+        updateDateTimeStatusText();
+        updateLiveSimulator();
+        updateExifSummaryDisplay();
+        updateSummaryCard();
+    });
+
+    function updateDateTimeStatusText() {
+        var isDateExif = $('#useExifDate').is(':checked');
+        var isTimeExif = $('#useExifTime').is(':checked');
+        var dVal = $('#manualDate').val() || '';
+        var tVal = $('#manualTime').val() || '';
+
+        var $box = $('#dateTimeModeStatus');
+        var $txt = $('#dateTimeModeStatusText');
+
+        if (isDateExif && isTimeExif) {
+            $box.removeClass('alert-warning alert-primary alert-danger').addClass('alert-light');
+            $txt.html('<i class="fas fa-magic text-success mr-1"></i> <strong>EXIF Asli:</strong> Tanggal &amp; jam mengikuti data kamera masing-masing foto (+ offset jika diatur).');
+            $('#labelUseExifDate').text('Gunakan Tanggal EXIF').removeClass('text-primary text-danger').addClass('text-muted');
+            $('#labelUseExifTime').text('Gunakan Jam EXIF').removeClass('text-warning text-danger').addClass('text-muted');
+        } else if (!isDateExif && isTimeExif) {
+            $box.removeClass('alert-light alert-warning alert-danger').addClass('alert-primary');
+            $txt.html('<i class="fas fa-calendar-day text-primary mr-1"></i> <strong>Ganti Tanggal Saja:</strong> Semua foto diubah ke tanggal <strong>' + (dVal || 'manual') + '</strong>, jam tetap mempertahankan jam asli kamera per foto.');
+            $('#labelUseExifDate').text('Tanggal Manual').removeClass('text-muted text-danger').addClass('text-primary font-weight-bold');
+            $('#labelUseExifTime').text('Gunakan Jam EXIF').removeClass('text-warning text-danger').addClass('text-muted');
+        } else if (isDateExif && !isTimeExif) {
+            $box.removeClass('alert-light alert-primary alert-danger').addClass('alert-warning');
+            $txt.html('<i class="fas fa-clock text-warning mr-1"></i> <strong>Ganti Jam Saja:</strong> Semua foto diubah ke jam <strong>' + (tVal || 'manual') + ' WIB</strong>, tanggal tetap mempertahankan tanggal asli kamera per foto.');
+            $('#labelUseExifDate').text('Gunakan Tanggal EXIF').removeClass('text-primary text-danger').addClass('text-muted');
+            $('#labelUseExifTime').text('Jam Manual').removeClass('text-muted text-danger').addClass('text-warning font-weight-bold');
+        } else {
+            $box.removeClass('alert-light alert-primary alert-warning').addClass('alert-danger');
+            $txt.html('<i class="fas fa-edit text-danger mr-1"></i> <strong>Ganti Tanggal &amp; Jam:</strong> Semua foto disetel manual ke tanggal <strong>' + (dVal || 'manual') + '</strong> jam <strong>' + (tVal || 'manual') + '</strong>.');
+            $('#labelUseExifDate').text('Tanggal Manual').removeClass('text-muted text-primary').addClass('text-danger font-weight-bold');
+            $('#labelUseExifTime').text('Jam Manual').removeClass('text-muted text-warning').addClass('text-danger font-weight-bold');
+        }
+    }
+
+    $('#lokasi, #koordinat, #catatan, #useExifLocation, #updateExif').on('input change', function() {
         updateLiveSimulator();
         updateExifSummaryDisplay();
         updateSummaryCard();
@@ -1539,12 +1687,12 @@ $(function() {
     var monthsIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
     function updateLiveSimulator() {
-        var h = parseInt($('#offsetHours').val(), 10) || 0;
-        var m = parseInt($('#offsetMinutes').val(), 10) || 0;
+        var isDateExif = $('#useExifDate').is(':checked') && lastExifDate;
+        var isTimeExif = $('#useExifTime').is(':checked') && lastExifTime;
 
         // Hitung effective date & time
-        var curDate = $('#manualDate').val() || baseDate;
-        var curTime = $('#manualTime').val() || baseTime;
+        var curDate = (!isDateExif) ? ($('#manualDate').val() || baseDate) : lastExifDate;
+        var curTime = (!isTimeExif) ? ($('#manualTime').val() || baseTime) : lastExifTime;
         var calcDate = new Date(curDate + 'T' + (curTime.length === 5 ? curTime + ':00' : curTime));
         if (isNaN(calcDate.getTime())) {
             calcDate = new Date();
@@ -1661,22 +1809,19 @@ $(function() {
         var tpl = $('input[name="template"]:checked').val() || 'classic';
         $('#summaryTemplate').text(templateLabels[tpl] || tpl);
         var total = selectedFiles.length;
-        $('#summaryFiles').text(total > 0 ? (total + ' Berkas') : 'Belum dipilih');
-        var h = parseInt($('#offsetHours').val(), 10) || 0;
-        var m = parseInt($('#offsetMinutes').val(), 10) || 0;
-        updateOffsetBadge(h, m);
-        $('#summarySave').text($('#saveToFolder').is(':checked') ? 'Ya (/uploads/watermark_hasil/)' : 'Tidak (Unduh Langsung)');
-    }
-
-    // Toggle save to folder container
-    $('#saveToFolder').on('change', function() {
-        if ($(this).is(':checked')) {
-            $('#folderInputContainer').slideDown();
-        } else {
-            $('#folderInputContainer').slideUp();
+        var isDateExif = $('#useExifDate').is(':checked');
+        var isTimeExif = $('#useExifTime').is(':checked');
+        var summaryWaktu = 'EXIF Kamera Asli';
+        if (!isDateExif && isTimeExif) {
+            summaryWaktu = 'Ganti Tanggal Saja (' + ($('#manualDate').val() || '') + ')';
+        } else if (isDateExif && !isTimeExif) {
+            summaryWaktu = 'Ganti Jam Saja (' + ($('#manualTime').val() || '') + ')';
+        } else if (!isDateExif && !isTimeExif) {
+            summaryWaktu = 'Tanggal & Jam Manual';
         }
-        updateSummaryCard();
-    });
+        $('#summaryWaktuMode').text(summaryWaktu);
+        updateOffsetBadge(h, m);
+    }
 
     // Logo label update
     $('#logo').on('change', function() {
@@ -1725,6 +1870,9 @@ $(function() {
 
         var formData = new FormData();
         var totalSize = 0;
+        selectedFiles.forEach(function(f) {
+            totalSize += (f.size || 0);
+        });
 
         if (selectedFiles.length === 1 && selectedFiles[0].name.toLowerCase().endsWith('.zip')) {
             formData.append('zip_file', selectedFiles[0]);
@@ -1733,12 +1881,12 @@ $(function() {
         } else {
             for (var i = 0; i < selectedFiles.length; i++) {
                 formData.append('fotos[]', selectedFiles[i]);
-                totalSize += selectedFiles[i].size;
             }
         }
 
         // Form Fields
         formData.append('template', $('input[name="template"]:checked').val() || 'classic');
+        formData.append('use_exif_date', $('#useExifDate').is(':checked') ? '1' : '0');
         formData.append('use_exif_time', $('#useExifTime').is(':checked') ? '1' : '0');
         formData.append('use_exif_location', $('#useExifLocation').is(':checked') ? '1' : '0');
         formData.append('update_exif', $('#updateExif').is(':checked') ? '1' : '0');
@@ -1749,8 +1897,7 @@ $(function() {
         formData.append('lokasi', $('#lokasi').val() || '');
         formData.append('koordinat', $('#koordinat').val() || '');
         formData.append('catatan', $('#catatan').val() || '');
-        formData.append('save_to_folder', $('#saveToFolder').is(':checked') ? '1' : '0');
-        formData.append('target_folder_name', $('#targetFolderName').val() || '');
+
 
         // Logo
         var logoInput = document.getElementById('logo');
@@ -1850,22 +1997,18 @@ $(function() {
 
                     if (resp.mode === 'single' && resp.image_data) {
                         singleGeneratedUri = resp.image_data;
-                        $('#singlePreviewImage').attr('src', resp.image_data);
-                        if (resp.server_folder) {
-                            $('#singleServerSavedPath').text(resp.server_folder);
-                            $('#singleServerSavedAlert').show();
-                        } else {
-                            $('#singleServerSavedAlert').hide();
+                        if (resp.images && resp.images[0] && resp.images[0].file_name) {
+                            singleProcessedFileName = resp.images[0].file_name;
+                        } else if (selectedFiles && selectedFiles[0]) {
+                            singleProcessedFileName = selectedFiles[0].name.replace(/\.(heic|heif)$/i, '.jpg');
                         }
+                        if (singleProcessedFileName) {
+                            singleProcessedFileName = singleProcessedFileName.replace(/^watermark[_\-\s]*/i, '');
+                        }
+                        $('#singlePreviewImage').attr('src', resp.image_data);
                         $('#singleResultContainer').fadeIn();
                     } else if (resp.mode === 'batch' || resp.images) {
                         $('#batchCountText').text(resp.total_processed);
-                        if (resp.server_folder) {
-                            $('#batchFolderText').text(resp.server_folder);
-                            $('#batchFolderInfo').show();
-                        } else {
-                            $('#batchFolderInfo').hide();
-                        }
 
                         if (resp.download_zip_url) {
                             currentZipDownloadUrl = resp.download_zip_url;
@@ -1879,19 +2022,34 @@ $(function() {
                         $grid.empty();
 
                         resp.images.forEach(function(img) {
-                            var thumbSrc = img.data_uri ? img.data_uri : (img.server_file ? img.server_file : '');
+                            var thumbSrc = img.data_uri || '';
                             var col = $('<div>').addClass('col-4 col-sm-3 mb-3');
                             var card = $('<div>').addClass('border rounded overflow-hidden shadow-sm bg-light text-center p-1 position-relative');
 
                             if (thumbSrc) {
                                 var imageEl = $('<img>').attr('src', thumbSrc)
+                                    .attr('alt', img.orig_name || img.file_name)
+                                    .attr('loading', 'lazy')
                                     .addClass('img-fluid rounded cursor-pointer')
-                                    .css({ 'height': '100px', 'width': '100%', 'object-fit': 'cover' })
+                                    .css({ 'height': '110px', 'width': '100%', 'object-fit': 'cover', 'display': 'block' })
                                     .on('click', function() {
+                                        var cleanTitle = (img.orig_name || img.file_name).replace(/^watermark[_\-\s]*/i, '');
                                         $('#modalZoomImg').attr('src', thumbSrc);
-                                        $('#modalZoomTitle').text(img.file_name);
-                                        $('#modalZoomMeta').text('Waktu: ' + (img.day || '') + ' ' + (img.date || '') + ' ' + (img.time || ''));
-                                        $('#modalZoomDownload').attr('href', thumbSrc).attr('download', img.file_name);
+                                        $('#modalZoomTitle').text(cleanTitle);
+                                        var metaText = 'Waktu: ' + (img.day || '') + ' ' + (img.date || '') + ' ' + (img.time || '');
+                                        if (img.sub_dir) {
+                                            metaText += ' | Folder: ' + img.sub_dir;
+                                        }
+                                        $('#modalZoomMeta').text(metaText);
+                                        var downloadUrl = img.download_url || thumbSrc;
+                                        $('#modalZoomDownload').attr('href', downloadUrl).attr('download', cleanTitle);
+                                        if (img.view_url) {
+                                            var hiRes = new Image();
+                                            hiRes.onload = function() {
+                                                $('#modalZoomImg').attr('src', hiRes.src);
+                                            };
+                                            hiRes.src = img.view_url;
+                                        }
                                         $('#modalZoomPhoto').modal('show');
                                     });
                                 card.append(imageEl);
@@ -1899,9 +2057,19 @@ $(function() {
                                 card.append('<div class="py-4 text-muted"><i class="fas fa-file-image fa-2x"></i></div>');
                             }
 
+                            if (img.sub_dir) {
+                                var folderBadge = $('<div>').addClass('badge badge-light border text-truncate text-secondary w-100 mt-1')
+                                    .css({ 'font-size': '9.5px', 'max-width': '100%', 'padding': '2px 4px' })
+                                    .attr('title', 'Folder: ' + img.sub_dir)
+                                    .html('<i class="fas fa-folder text-warning mr-1"></i>' + img.sub_dir);
+                                card.append(folderBadge);
+                            }
+
+                            var cleanDisplayName = (img.orig_name || img.file_name).replace(/^watermark[_\-\s]*/i, '');
                             var caption = $('<div>').addClass('text-truncate font-weight-bold mt-1 text-dark')
                                 .css('font-size', '11px')
-                                .text(img.orig_name || img.file_name);
+                                .attr('title', cleanDisplayName)
+                                .text(cleanDisplayName);
                             card.append(caption);
 
                             var timeText = (img.date && img.time) ? (img.date + ' ' + img.time) : '';
@@ -1949,21 +2117,42 @@ $(function() {
                     return;
                 }
 
-                // Penanganan Spesifik untuk Kasus Upload File Besar (ERR_HTTP2_PROTOCOL_ERROR / 413 Payload Too Large / Network Dropped)
-                if (xhr.status === 0 || xhr.status === 413 || textStatus === 'error' || textStatus === 'timeout') {
+                var serverMsg = null;
+                try {
+                    var parsed = JSON.parse(xhr.responseText);
+                    if (parsed && parsed.message) serverMsg = parsed.message;
+                    if (parsed && parsed.csrf_hash) $('input[name="<?= csrf_token() ?>"]').val(parsed.csrf_hash);
+                } catch (ex) {}
+
+                // 1. Jika ada balasan JSON eksplisit dari server (misal validasi 422, limit 413, disk space 507, atau exception 500)
+                if (serverMsg) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: (xhr.status === 413 || xhr.status === 507) ? 'Peringatan Server' : 'Gagal Memproses',
+                        text: serverMsg
+                    });
+                    return;
+                }
+
+                // 2. Penanganan Khusus untuk Kasus Unggahan Terputus (xhr.status === 0 / connection reset / timeout)
+                if (xhr.status === 0 || xhr.status === 413 || textStatus === 'timeout') {
                     var sizeInfo = formatFileSize(totalSize);
                     Swal.fire({
                         icon: 'error',
                         title: 'Koneksi Upload Terputus',
                         html: '<div class="text-left">' +
-                              '<p class="mb-2">Proses unggah berkas (<strong class="text-danger">' + sizeInfo + '</strong>) terputus oleh web server (<em>ERR_HTTP2_PROTOCOL_ERROR</em> / Timeout).</p>' +
+                              '<p class="mb-2">Proses unggah berkas (<strong class="text-danger">' + sizeInfo + '</strong>) terputus oleh web server (<em>ERR_HTTP2_PROTOCOL_ERROR</em> / Connection Reset / Timeout).</p>' +
                               '<div class="alert alert-warning py-2 px-3 small mb-2">' +
-                              '<strong>Penyebab:</strong> Ukuran file melebihi batas request web server hosting (standar LiteSpeed / PHP adalah 100 MB – 250 MB) atau koneksi timeout saat mentransfer data besar.' +
+                              '<strong>Kemungkinan Penyebab:</strong><br>' +
+                              '1. <strong>Kapasitas Hard Disk Server/Lokal Penuh:</strong> Jika ruang disk lokal atau server hampir habis (&lt; 1 GB tersisa), sistem operasi otomatis memutus koneksi saat mengekstrak berkas besar.<br>' +
+                              '2. <strong>Batas Ukuran Upload Web Server:</strong> Ukuran file melebihi batas request server hosting (standar PHP / LiteSpeed adalah 100 MB – 250 MB).<br>' +
+                              '3. <strong>Koneksi Timeout:</strong> Waktu transfer melebihi batas timeout server.' +
                               '</div>' +
                               '<div class="alert alert-info py-2 px-3 small mb-0">' +
                               '<strong>Solusi yang Sangat Disarankan:</strong><br>' +
                               '1. <strong>Bagi foto menjadi batch kecil:</strong> Pecah berkas ZIP atau pilih foto dalam kelompok 20–30 foto per unggahan (sekitar 50–100 MB).<br>' +
-                              '2. <strong>Konfigurasi cPanel:</strong> Jika Anda memiliki akses cPanel, buka <em>MultiPHP INI Editor</em> lalu naikkan <code>post_max_size</code> dan <code>upload_max_filesize</code> menjadi 512M.' +
+                              '2. <strong>Periksa &amp; Kosongkan Hard Disk:</strong> Kosongkan file sampah (Trash) atau berkas sementara pada komputer Anda agar tersisa minimal 3–5 GB.<br>' +
+                              '3. <strong>Konfigurasi cPanel:</strong> Jika di hosting cPanel, buka <em>MultiPHP INI Editor</em> lalu naikkan <code>post_max_size</code> dan <code>upload_max_filesize</code> menjadi 512M.' +
                               '</div>' +
                               '</div>',
                         confirmButtonText: '<i class="fas fa-check mr-1"></i> Mengerti'
@@ -1971,17 +2160,10 @@ $(function() {
                     return;
                 }
 
-                var errMsg = 'Terjadi kesalahan sistem saat memproses foto.';
-                try {
-                    var parsed = JSON.parse(xhr.responseText);
-                    if (parsed.message) errMsg = parsed.message;
-                    if (parsed.csrf_hash) $('input[name="<?= csrf_token() ?>"]').val(parsed.csrf_hash);
-                } catch (ex) {}
-
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal',
-                    text: errMsg
+                    text: 'Terjadi kesalahan sistem saat memproses foto (Status HTTP: ' + xhr.status + ').'
                 });
             },
             complete: function() {
@@ -1998,7 +2180,9 @@ $(function() {
         if (!singleGeneratedUri) return;
         var a = document.createElement('a');
         a.href = singleGeneratedUri;
-        a.download = 'foto-watermark-' + new Date().getTime() + '.jpg';
+        var downloadName = singleProcessedFileName || ((selectedFiles && selectedFiles.length === 1) ? selectedFiles[0].name.replace(/\.(heic|heif)$/i, '.jpg') : ('foto_' + new Date().getTime() + '.jpg'));
+        downloadName = downloadName.replace(/^watermark[_\-\s]*/i, '');
+        a.download = downloadName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2006,17 +2190,30 @@ $(function() {
 
     $('#singlePreviewImage').on('click', function() {
         if (!singleGeneratedUri) return;
+        var downloadName = singleProcessedFileName || ((selectedFiles && selectedFiles.length === 1) ? selectedFiles[0].name.replace(/\.(heic|heif)$/i, '.jpg') : 'foto.jpg');
+        downloadName = downloadName.replace(/^watermark[_\-\s]*/i, '');
         $('#modalZoomImg').attr('src', singleGeneratedUri);
-        $('#modalZoomTitle').text('Foto Hasil Watermark');
+        $('#modalZoomTitle').text(downloadName);
         $('#modalZoomMeta').text('Resolusi kamera penuh');
-        $('#modalZoomDownload').attr('href', singleGeneratedUri).attr('download', 'foto-watermark.jpg');
+        $('#modalZoomDownload').attr('href', singleGeneratedUri).attr('download', downloadName);
         $('#modalZoomPhoto').modal('show');
+    });
+
+    $('#modalZoomPhoto').on('hidden.bs.modal', function () {
+        $('#modalZoomImg').attr('src', '');
     });
 
     $('#btnResetAll, #btnResetSingle').on('click', function() {
         selectedFiles = [];
         singleGeneratedUri = null;
+        singleProcessedFileName = null;
         currentZipDownloadUrl = null;
+        $('#useExifDate').prop('checked', true);
+        $('#useExifTime').prop('checked', true);
+        $('#btnRestoreDateExif').addClass('d-none').hide();
+        $('#btnRestoreTimeExif').addClass('d-none').hide();
+        $('#btnTimeFromExif').addClass('d-none').hide();
+        updateDateTimeStatusText();
         $('#fileInput').val('');
         $('#fileCountBadge').removeClass('badge-primary badge-success badge-warning').addClass('badge-secondary').text('Belum ada file');
         $('#fileSelectedList').empty().hide();

@@ -1056,7 +1056,7 @@ class Dokumentasi extends BaseController
             }
 
             $hasExif = is_array($exif) && (! empty($exif['DateTimeOriginal']) || ! empty($exif['DateTime']));
-            $metaDt = $service->resolveDateTime($exif, $metaPath, true, 0, 0);
+            $metaDt = $service->resolveDateTime($exif, $metaPath, true, true, 0, 0);
             $coordsDms = is_array($exif) ? $service->extractGpsCoordinates($exif) : null;
             $coordsDec = is_array($exif) ? $service->extractGpsDecimal($exif) : null;
             $exifDesc = is_array($exif) && ! empty($exif['ImageDescription']) ? trim((string) $exif['ImageDescription']) : null;
@@ -1168,6 +1168,7 @@ class Dokumentasi extends BaseController
             $template = 'classic';
         }
 
+        $useExifDate = (int) ($this->request->getPost('use_exif_date') ?? 1) === 1;
         $useExifTime = (int) ($this->request->getPost('use_exif_time') ?? 1) === 1;
         $useExifLocation = (int) ($this->request->getPost('use_exif_location') ?? 1) === 1;
         $updateExif = (int) ($this->request->getPost('update_exif') ?? 1) === 1;
@@ -1178,8 +1179,6 @@ class Dokumentasi extends BaseController
         $lokasi = trim((string) $this->request->getPost('lokasi'));
         $koordinat = trim((string) $this->request->getPost('koordinat'));
         $catatan = trim((string) $this->request->getPost('catatan'));
-        $saveToFolder = (int) ($this->request->getPost('save_to_folder') ?? 0) === 1;
-        $targetFolderName = trim((string) $this->request->getPost('target_folder_name'));
 
         // Jika opsi ambil koordinat EXIF tidak aktif dan lokasi kosong, gunakan default
         if (! $useExifLocation && $lokasi === '' && $koordinat === '') {
@@ -1231,6 +1230,13 @@ class Dokumentasi extends BaseController
             }
 
             if ($isZip && $zipToExtract !== null) {
+                // Periksa kapasitas hard disk tersisa sebelum mengekstrak berkas besar
+                $freeSpace = @disk_free_space($tempWorkingDir);
+                if ($freeSpace !== false && $freeSpace < 250 * 1024 * 1024) {
+                    $freeMb = round($freeSpace / (1024 * 1024), 1);
+                    return $sendError(507, "Ruang penyimpanan hard disk tersisa sangat sedikit ({$freeMb} MB). Sistem membutuhkan minimal 250–500 MB ruang kosong untuk mengekstrak dan memproses foto. Silakan kosongkan penyimpanan disk (misal kosongkan Trash atau berkas sementara) terlebih dahulu.");
+                }
+
                 // Ekstraksi ZIP
                 $zipPath = $tempWorkingDir . DIRECTORY_SEPARATOR . 'source.zip';
                 $zipToExtract->move($tempWorkingDir, 'source.zip');
@@ -1239,6 +1245,8 @@ class Dokumentasi extends BaseController
                 if ($zip->open($zipPath) === true) {
                     $zip->extractTo($extractDir);
                     $zip->close();
+                    // Hapus source.zip segera setelah diekstrak untuk menghemat ruang disk (Rule #3)
+                    @unlink($zipPath);
                 } else {
                     return $sendError(422, 'Gagal membuka file ZIP. Pastikan file arsip ZIP tidak rusak.');
                 }
@@ -1248,14 +1256,25 @@ class Dokumentasi extends BaseController
                 foreach ($iterator as $item) {
                     if ($item->isFile()) {
                         $filePath = $item->getPathname();
-                        if (strpos($filePath, '__MACOSX') !== false || strpos($item->getFilename(), '._') === 0) {
+                        if (strpos($filePath, '__MACOSX') !== false || strpos($item->getFilename(), '._') === 0 || $item->getFilename() === '.DS_Store') {
                             continue;
                         }
                         $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
                         if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
+                            // Ekstrak relative path dari folder induk ZIP untuk mempertahankan sub-sub folder asli
+                            $rel = substr($filePath, strlen($extractDir));
+                            $rel = str_replace('\\', '/', $rel);
+                            $rel = ltrim($rel, '/');
+                            $subDir = dirname($rel);
+                            if ($subDir === '.' || $subDir === '/') {
+                                $subDir = null;
+                            }
+
                             $imageFilesToProcess[] = [
-                                'path' => $filePath,
+                                'path'          => $filePath,
                                 'original_name' => $item->getFilename(),
+                                'sub_dir'       => $subDir,
+                                'relative_path' => $rel,
                             ];
                         }
                     }
@@ -1270,8 +1289,10 @@ class Dokumentasi extends BaseController
                             $name = 'photo_' . (++$idx) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
                             $multiFile->move($inputDir, $name);
                             $imageFilesToProcess[] = [
-                                'path' => $inputDir . DIRECTORY_SEPARATOR . $name,
+                                'path'          => $inputDir . DIRECTORY_SEPARATOR . $name,
                                 'original_name' => $multiFile->getClientName(),
+                                'sub_dir'       => null,
+                                'relative_path' => $multiFile->getClientName(),
                             ];
                         }
                     }
@@ -1283,8 +1304,10 @@ class Dokumentasi extends BaseController
                     $name = 'single_' . bin2hex(random_bytes(4)) . '.' . $ext;
                     $fotoSingle->move($inputDir, $name);
                     $imageFilesToProcess[] = [
-                        'path' => $inputDir . DIRECTORY_SEPARATOR . $name,
+                        'path'          => $inputDir . DIRECTORY_SEPARATOR . $name,
                         'original_name' => $fotoSingle->getClientName(),
+                        'sub_dir'       => null,
+                        'relative_path' => $fotoSingle->getClientName(),
                     ];
                 }
             }
@@ -1293,24 +1316,7 @@ class Dokumentasi extends BaseController
                 return $sendError(422, 'Tidak ada foto valid yang ditemukan. Format yang didukung: JPG, PNG, WebP, HEIC/HEIF, atau ZIP berisi gambar.');
             }
 
-            // 6. Siapkan Folder Server jika Opsi "Simpan ke Folder" Diaktifkan
-            $serverDestinationDir = null;
-            $serverRelativeFolder = null;
-            if ($saveToFolder) {
-                $cleanFolder = preg_replace('/[^a-zA-Z0-9_\-\s]/', '', $targetFolderName);
-                $cleanFolder = trim(preg_replace('/\s+/', '_', $cleanFolder));
-                if ($cleanFolder === '') {
-                    $cleanFolder = 'Watermark_' . date('Ymd_His');
-                }
-
-                $serverDestinationDir = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'watermark_hasil' . DIRECTORY_SEPARATOR . $cleanFolder;
-                if (! is_dir($serverDestinationDir) && ! @mkdir($serverDestinationDir, 0775, true) && ! is_dir($serverDestinationDir)) {
-                    return $sendError(500, 'Gagal membuat folder penyimpanan di server: ' . $cleanFolder);
-                }
-                $serverRelativeFolder = '/uploads/watermark_hasil/' . $cleanFolder;
-            }
-
-            // 7. Proses Watermark untuk Setiap Gambar Menggunakan TimeMarkWatermarkService
+            // 6. Proses Watermark untuk Setiap Gambar Menggunakan TimeMarkWatermarkService
             $watermarkService = new \App\Libraries\TimeMarkWatermarkService();
             $processedResults = [];
             $totalImages = count($imageFilesToProcess);
@@ -1320,14 +1326,43 @@ class Dokumentasi extends BaseController
             $outputTempDir = $tempWorkingDir . DIRECTORY_SEPARATOR . 'output';
             @mkdir($outputTempDir, 0775, true);
 
+            $usedFileNames = [];
+
             foreach ($imageFilesToProcess as $index => $item) {
                 $sourceImgPath = $item['path'];
                 $origName = $item['original_name'];
+                $subDir = $item['sub_dir'] ?? null;
                 $baseNameWithoutExt = pathinfo($origName, PATHINFO_FILENAME);
                 $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
 
-                $outFileName = 'watermark_' . $baseNameWithoutExt . '_' . ($index + 1) . '.' . ($ext === 'png' ? 'png' : 'jpg');
-                $outTempPath = $outputTempDir . DIRECTORY_SEPARATOR . $outFileName;
+                $targetExt = in_array($ext, ['png', 'jpg', 'jpeg', 'webp'], true) ? $ext : 'jpg';
+                $cleanBaseName = preg_replace('/^watermark[_\-\s]*/i', '', $baseNameWithoutExt);
+                $candidateName = ($cleanBaseName !== '' ? $cleanBaseName : 'foto') . '.' . $targetExt;
+
+                // Cegah tabrakan nama jika ada foto dengan nama yang sama di subfolder yang sama
+                $pathKey = ($subDir !== null && $subDir !== '') ? ($subDir . '/' . $candidateName) : $candidateName;
+                if (isset($usedFileNames[$pathKey])) {
+                    $usedFileNames[$pathKey]++;
+                    $outFileName = ($cleanBaseName !== '' ? $cleanBaseName : 'foto') . '_' . $usedFileNames[$pathKey] . '.' . $targetExt;
+                } else {
+                    $usedFileNames[$pathKey] = 1;
+                    $outFileName = $candidateName;
+                }
+
+                // Tentukan lokasi file output sementara dan struktur path di dalam arsip ZIP
+                if ($subDir !== null && $subDir !== '') {
+                    $targetOutputDir = $outputTempDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $subDir);
+                    if (! is_dir($targetOutputDir)) {
+                        @mkdir($targetOutputDir, 0775, true);
+                    }
+                    $outTempPath = $targetOutputDir . DIRECTORY_SEPARATOR . $outFileName;
+                    $relativeZipPath = $subDir . '/' . $outFileName;
+                } else {
+                    $outTempPath = $outputTempDir . DIRECTORY_SEPARATOR . $outFileName;
+                    $relativeZipPath = $outFileName;
+                }
+
+                $needFullUri = (! $isBatchMode && $totalImages === 1);
 
                 $processOptions = [
                     'template'          => $template,
@@ -1336,6 +1371,7 @@ class Dokumentasi extends BaseController
                     'manual_time'       => $manualTime,
                     'offset_hours'      => $offsetHours,
                     'offset_minutes'    => $offsetMinutes,
+                    'use_exif_date'     => $useExifDate,
                     'use_exif_time'     => $useExifTime,
                     'use_exif_location' => $useExifLocation,
                     'update_exif'       => $updateExif,
@@ -1344,30 +1380,39 @@ class Dokumentasi extends BaseController
                     'notes'             => $catatan !== '' ? $catatan : null,
                     'save_to_path'      => $outTempPath,
                     'output_quality'    => 92,
+                    'need_full_uri'     => $needFullUri,
+                    'generate_thumb'    => true,
+                    'thumb_width'       => 360,
+                    'thumb_quality'     => 68,
                 ];
 
                 $res = $watermarkService->processImage($sourceImgPath, $processOptions);
+
+                // Jika berkas berasal dari ekstrak ZIP sementara, hapus source file yang sudah selesai diproses
+                // untuk menghemat ruang disk seketika (Rule #3)
+                if ($isZip && is_file($sourceImgPath)) {
+                    @unlink($sourceImgPath);
+                }
+
                 if (! $res['success']) {
                     $lastFailError = $res['error'] ?? ('Gagal memproses foto ' . $origName);
                     continue;
                 }
 
-                // Jika disimpan ke folder server, copy dari temp ke direktori server
-                $savedServerFile = null;
-                if ($serverDestinationDir !== null) {
-                    $serverFilePath = $serverDestinationDir . DIRECTORY_SEPARATOR . $outFileName;
-                    @copy($outTempPath, $serverFilePath);
-                    $savedServerFile = $serverRelativeFolder . '/' . $outFileName;
-                }
-
                 $processedResults[] = [
-                    'file_name'   => $outFileName,
-                    'orig_name'   => $origName,
-                    'data_uri'    => ($totalImages <= 10) ? $res['data_uri'] : null, // kirim preview untuk max 10 gambar agar ringan
-                    'server_file' => $savedServerFile,
-                    'meta'        => $res['meta'],
-                    'temp_path'   => $outTempPath,
+                    'file_name'        => $outFileName,
+                    'relative_zip_path'=> $relativeZipPath,
+                    'sub_dir'          => $subDir,
+                    'orig_name'        => $origName,
+                    'data_uri'         => $res['thumb_data_uri'] ?? $res['data_uri'], // Thumbnail responsif (~8 KB) selalu disertakan untuk galeri visual instan
+                    'full_uri'         => $res['data_uri'] ?? null,
+                    'meta'             => $res['meta'],
+                    'temp_path'        => $outTempPath,
                 ];
+
+                if (function_exists('gc_collect_cycles')) {
+                    gc_collect_cycles();
+                }
             }
 
             if (empty($processedResults)) {
@@ -1375,8 +1420,9 @@ class Dokumentasi extends BaseController
                 return $sendError(422, $errMsg);
             }
 
-            // 8. Buat ZIP Download untuk Batch Mode
+            // 8. Buat ZIP Download untuk Batch Mode (Mempertahankan Struktur Subfolder Asli)
             $zipDownloadUrl = null;
+            $batchToken = null;
             if ($isBatchMode || count($processedResults) > 1) {
                 $batchToken = date('YmdHis') . '_' . bin2hex(random_bytes(4));
                 $downloadsDir = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'watermark_hasil' . DIRECTORY_SEPARATOR . 'downloads';
@@ -1389,7 +1435,8 @@ class Dokumentasi extends BaseController
                 if ($zipBatch->open($zipOutPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
                     foreach ($processedResults as $pRes) {
                         if (is_file($pRes['temp_path'])) {
-                            $zipBatch->addFile($pRes['temp_path'], $pRes['file_name']);
+                            $zipEntryName = $pRes['relative_zip_path'] ?? $pRes['file_name'];
+                            $zipBatch->addFile($pRes['temp_path'], $zipEntryName);
                         }
                     }
                     $zipBatch->close();
@@ -1399,8 +1446,8 @@ class Dokumentasi extends BaseController
 
             // Single Preview Data
             $singleImageData = null;
-            if (! $isBatchMode && isset($processedResults[0]['data_uri'])) {
-                $singleImageData = $processedResults[0]['data_uri'];
+            if (! $isBatchMode && isset($processedResults[0])) {
+                $singleImageData = $processedResults[0]['full_uri'] ?? $processedResults[0]['data_uri'];
             }
 
             return $this->response->setJSON([
@@ -1410,15 +1457,17 @@ class Dokumentasi extends BaseController
                 'total_processed'  => count($processedResults),
                 'image_data'       => $singleImageData,
                 'download_zip_url' => $zipDownloadUrl,
-                'server_folder'    => $serverRelativeFolder,
                 'images'           => array_map(static fn ($r) => [
-                    'file_name'   => $r['file_name'],
-                    'orig_name'   => $r['orig_name'],
-                    'data_uri'    => $r['data_uri'],
-                    'server_file' => $r['server_file'],
-                    'date'        => $r['meta']['datetime']['date'] ?? '',
-                    'time'        => $r['meta']['datetime']['time'] ?? '',
-                    'day'         => $r['meta']['datetime']['day'] ?? '',
+                    'file_name'    => $r['file_name'],
+                    'relative_path'=> $r['relative_zip_path'] ?? $r['file_name'],
+                    'sub_dir'      => $r['sub_dir'] ?? null,
+                    'orig_name'    => $r['orig_name'],
+                    'data_uri'     => $r['data_uri'],
+                    'view_url'     => $batchToken ? site_url('/admin/dokumentasi/watermark-foto/download-batch-item/' . $batchToken . '?entry=' . rawurlencode($r['relative_zip_path'] ?? $r['file_name'])) : null,
+                    'download_url' => $batchToken ? site_url('/admin/dokumentasi/watermark-foto/download-batch-item/' . $batchToken . '?download=1&entry=' . rawurlencode($r['relative_zip_path'] ?? $r['file_name'])) : null,
+                    'date'         => $r['meta']['datetime']['date'] ?? '',
+                    'time'         => $r['meta']['datetime']['time'] ?? '',
+                    'day'          => $r['meta']['datetime']['day'] ?? '',
                 ], $processedResults),
                 'csrf_token'       => csrf_token(),
                 'csrf_hash'        => csrf_hash(),
@@ -1436,6 +1485,10 @@ class Dokumentasi extends BaseController
      */
     public function downloadBatchZip(string $token)
     {
+        if (! $this->canAccessWatermarkMenu()) {
+            return redirect()->to('/admin/dashboard')->with('error', 'Akses ditolak (Rule #4).');
+        }
+
         if (! preg_match('/^[a-zA-Z0-9_]+$/', $token)) {
             return redirect()->to('/admin/dokumentasi/watermark-foto')->with('error', 'Token download tidak valid.');
         }
@@ -1447,6 +1500,74 @@ class Dokumentasi extends BaseController
 
         $downloadName = 'foto-timemark-' . date('YmdHis') . '.zip';
         return $this->response->download($zipPath, null)->setFileName($downloadName);
+    }
+
+    /**
+     * Preview atau download satu berkas foto spesifik dari arsip batch ZIP (mendukung subfolder).
+     */
+    public function downloadBatchItem(string $token, string $fileName = '')
+    {
+        if (! $this->canAccessWatermarkMenu()) {
+            return redirect()->to('/admin/dashboard')->with('error', 'Akses ditolak (Rule #4).');
+        }
+
+        if (! preg_match('/^[a-zA-Z0-9_]+$/', $token)) {
+            return redirect()->to('/admin/dokumentasi/watermark-foto')->with('error', 'Token download tidak valid.');
+        }
+
+        $zipPath = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'watermark_hasil' . DIRECTORY_SEPARATOR . 'downloads' . DIRECTORY_SEPARATOR . 'watermark_batch_' . $token . '.zip';
+        if (! is_file($zipPath) || ! is_readable($zipPath)) {
+            return redirect()->to('/admin/dokumentasi/watermark-foto')->with('error', 'Arsip foto sudah kedaluwarsa atau tidak ditemukan.');
+        }
+
+        $rawEntry = (string) ($this->request->getGet('entry') ?? ($fileName !== '' ? $fileName : $this->request->getGet('file')));
+        $rawEntry = str_replace('\\', '/', rawurldecode($rawEntry));
+        $parts = array_filter(explode('/', $rawEntry), static fn ($p) => $p !== '' && $p !== '.' && $p !== '..');
+        $cleanEntry = implode('/', $parts);
+
+        if ($cleanEntry === '') {
+            return redirect()->to('/admin/dokumentasi/watermark-foto')->with('error', 'Nama berkas tidak valid.');
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath) === true) {
+            $content = $zip->getFromName($cleanEntry);
+
+            // Fallback: cari berdasarkan basename jika path relatif berubah
+            if ($content === false) {
+                $base = basename($cleanEntry);
+                for ($i = 0; $i < $zip->numFiles; $i++) {
+                    $stat = $zip->statIndex($i);
+                    if ($stat && basename($stat['name']) === $base) {
+                        $content = $zip->getFromIndex($i);
+                        $cleanEntry = $stat['name'];
+                        break;
+                    }
+                }
+            }
+
+            $zip->close();
+
+            if ($content !== false) {
+                $ext = strtolower(pathinfo($cleanEntry, PATHINFO_EXTENSION));
+                $contentType = match ($ext) {
+                    'png' => 'image/png',
+                    'webp' => 'image/webp',
+                    default => 'image/jpeg',
+                };
+
+                $downloadFileName = basename($cleanEntry);
+                $disposition = ($this->request->getGet('download') === '1') ? 'attachment' : 'inline';
+
+                return $this->response
+                    ->setHeader('Content-Type', $contentType)
+                    ->setHeader('Content-Disposition', $disposition . '; filename="' . $downloadFileName . '"')
+                    ->setHeader('Cache-Control', 'private, max-age=86400')
+                    ->setBody($content);
+            }
+        }
+
+        return redirect()->to('/admin/dokumentasi/watermark-foto')->with('error', 'Foto tidak ditemukan di dalam arsip.');
     }
 
     // =========================================================================

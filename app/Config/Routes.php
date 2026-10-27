@@ -427,6 +427,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('dokumentasi/watermark-foto/proses', 'Admin\\Dokumentasi::prosesWatermark');
 	$routes->post('dokumentasi/watermark-foto/extract-meta', 'Admin\\Dokumentasi::extractMeta');
 	$routes->get('dokumentasi/watermark-foto/download-batch-zip/(:segment)', 'Admin\\Dokumentasi::downloadBatchZip/$1');
+	$routes->get('dokumentasi/watermark-foto/download-batch-item/(:segment)', 'Admin\\Dokumentasi::downloadBatchItem/$1');
+	$routes->get('dokumentasi/watermark-foto/download-batch-item/(:segment)/(:any)', 'Admin\\Dokumentasi::downloadBatchItem/$1/$2');
 
 	$routes->get('acara', 'Admin\\Event::index');
 	$routes->match(['get', 'post'], 'acara/tambah', 'Admin\\Event::create');

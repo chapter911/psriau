@@ -813,22 +813,26 @@ graph TD
     F --> G
 
     G --> SIZE_CHK{"Pemeriksaan Ukuran Berkas"}
-    SIZE_CHK -->|Ukuran Normal &lt; 100MB| EXIF_IN["Deteksi Metadata EXIF Foto (Dual Pipeline: Browser exifr &amp; Fallback Server)"]
+    SIZE_CHK -->|Ukuran Normal &lt; 100MB| EXIF_IN["Deteksi Metadata EXIF Foto (Dual Pipeline: Browser exifr &amp; JSZip, Fallback Server)"]
     SIZE_CHK -->|Ukuran Besar &gt; 100MB| WARN_SIZE["Peringatan Dini Ukuran: Rekomendasi Split Batch 20-30 Foto"]
     WARN_SIZE --> EXIF_IN
     EXIF_IN --> PREV["Interactive Live Simulator: Pratinjau Watermark Real-Time di Kanvas Kanan"]
 
     G --> W2["Langkah 2: Pengaturan Waktu, Lokasi &amp; Metadata EXIF"]
     W2 --> EDIT_META["Pengeditan Metadata Bebas: Sesuaikan Tanggal, Jam, Lokasi, GPS &amp; Catatan"]
-    EDIT_META --> L{"Pengaturan Waktu &amp; Tanggal"}
-    L -->|Deteksi EXIF| M["Gunakan Tanggal &amp; Jam Asli Foto / Pulihkan ke EXIF"]
-    L -->|Ubah Manual| N["Ketik Tanggal &amp; Jam Manual atau Tombol 'Set Sekarang'"]
+    EDIT_META --> L{"Pengaturan Waktu &amp; Tanggal Independen"}
+    L -->|Opsi 1: Asli EXIF| M["Gunakan Tanggal &amp; Jam Asli Kamera per Foto (+ Offset)"]
+    L -->|Opsi 2: Ganti Tanggal Saja| N1["Ganti Tanggal Saja: Tanggal Diubah Manual, Jam Tetap Jam Pemotretan Asli Masing-Masing Foto"]
+    L -->|Opsi 3: Ganti Jam Saja| N2["Ganti Jam Saja: Jam Diubah Manual/Sekarang, Tanggal Tetap Tanggal Asli Kamera"]
+    L -->|Opsi 4: Ubah Keduanya| N3["Ganti Tanggal &amp; Jam Sekaligus ke Nilai Manual"]
     M --> O{"Terapkan Penyesuaian Jam (Offset)"}
-    N --> O
+    N1 --> O
+    N2 --> O
+    N3 --> O
     O -->|Tombol Cepat| P["Pilih Offset: -1j, +0j, +1j, +2j, +3j, +5j, atau Kustom"]
 
     P --> Q{"Penentuan Lokasi &amp; Koordinat GPS"}
-    Q -->|Otomatis Reverse Geocoding| Q0["Nama Alamat Lengkap &amp; Koordinat dari EXIF Foto"]
+    Q -->|Otomatis Reverse Geocoding| Q0["Nama Alamat Lengkap &amp; Koordinat dari EXIF Foto / ZIP"]
     Q -->|Popup Peta Leaflet| Q2["Pilih Titik di Peta Interaktif Leaflet &amp; OpenStreetMap"]
     Q -->|Deteksi Cepat| Q1["Deteksi Koordinat via Tombol 'GPS Saya'"]
     Q -->|Edit Manual| Q_MAN["Ketik Bebas Nama Lokasi / Alamat &amp; Koordinat"]
@@ -842,21 +846,15 @@ graph TD
     EXIF_TOGGLE -->|Centang Aktif| EXIF_ON["Sinkronisasi Aktif: Tanggal, GPS &amp; Deskripsi Ditulis ke File JPEG"]
     EXIF_TOGGLE -->|Nonaktif| EXIF_OFF["Hanya Watermark Visual Tanpa Mengubah Tag EXIF File"]
 
-    PREV --> W3["Langkah 3: Opsi Simpan Server &amp; Logo Kustom"]
-    W3 --> R{"Opsi Penyimpanan Server"}
-    R -->|Centang Simpan ke Server| S["Tentukan Nama Folder (Default: /uploads/watermark_hasil/Dokumentasi_YYYYMMDD)"]
-    R -->|Tidak Disimpan ke Server| T["Hanya Diproses Sementara di Memori/Temp"]
-
-    S --> U["Klik 'Proses Watermark Sekarang'"]
-    T --> U
+    PREV --> W3["Langkah 3: Logo Kustom &amp; Eksekusi Proses"]
+    W3 --> U["Klik 'Proses Watermark Sekarang'"]
 
     U --> PROG["Monitoring Upload: Progress Bar Real-Time Persentase &amp; MB"]
-    PROG --> V["Sistem Merender Watermark Resolusi Tinggi &amp; Menyematkan Tag EXIF Biner (PEL)"]
+    PROG --> V["Sistem Merender Watermark Resolusi Tinggi, Auto Reverse Geocoding Alamat &amp; Menyematkan Tag EXIF Biner (PEL)"]
     V --> VIEW["Dual-View: Otomatis Beralih ke Tab 'Hasil Akhir'"]
     VIEW --> W{"Hasil Pemrosesan"}
-    W -->|Foto Tunggal| X["Pratinjau Resolusi Penuh &amp; Unduh Foto Ber-EXIF Lengkap"]
-    W -->|Banyak Foto / ZIP| Y["Kemasan Otomatis: Unduh Semua (ZIP) + Galeri Mini Grid"]
-    S -.-> Z["Salinan Permanen Ber-EXIF Tersimpan di Folder Server"]
+    W -->|Foto Tunggal| X["Pratinjau Resolusi Penuh &amp; Unduh Foto (Nama Berkas Asli Bersih Tanpa Awalan 'watermark_')"]
+    W -->|Banyak Foto / ZIP| Y["Kemasan Otomatis: Unduh Semua (Struktur Sub-Folder &amp; Berkas Asli Terjaga 100%) + Galeri Grid Thumbnail (Klik Zoom &amp; Unduh Satuan)"]
                 </pre>
             </div>
         </div>
@@ -1717,7 +1715,7 @@ graph TD
                                 <ul>
                                     <li><strong>Langkah 1 (Foto &amp; Format):</strong> Memilih salah satu dari 4 gaya template TimeMark dan memilih/tarik-lepas file foto (JPG, PNG, WebP, iPhone HEIC, atau ZIP).</li>
                                     <li><strong>Langkah 2 (Waktu &amp; Lokasi):</strong> Pengaturan deteksi EXIF kamera, tombol penyesuaian offset jam (+1j, +2j, +3j, +5j, -1j, kustom), dan penentuan titik lokasi kegiatan serta koordinat GPS via popup peta interaktif Leaflet.</li>
-                                    <li><strong>Langkah 3 (Simpan &amp; Proses):</strong> Penentuan folder penyimpanan server <code>/uploads/watermark_hasil/</code>, unggah logo instansi kustom opsional, serta tinjauan ringkasan sebelum memproses.</li>
+                                    <li><strong>Langkah 3 (Logo &amp; Proses):</strong> Opsi unggah logo instansi kustom opsional, tinjauan ringkasan konfigurasi sebelum memproses, serta tombol eksekusi pemrosesan watermark.</li>
                                 </ul>
                             </li>
                             <li><strong>Interactive Live Preview Simulator (Real-Time Canvas):</strong>
@@ -1734,12 +1732,19 @@ graph TD
                                     <li><strong>Gaya Clean Bottom Strip:</strong> Banner horizontal elegan di sepanjang tepi bawah foto dengan garis aksen emas dan tata letak minimalis yang tidak menutupi objek foto.</li>
                                 </ul>
                             </li>
-                            <li><strong>Ekstraksi EXIF Otomatis &amp; Fleksibilitas Pengeditan Waktu (Dual Pipeline):</strong>
+                            <li><strong>Ekstraksi EXIF Otomatis &amp; Fleksibilitas Pengeditan Waktu Independen (Ganti Tanggal Saja / Jam Saja):</strong>
                                 <ul>
                                     <li><strong>Deteksi Instan Client-Side (exifr):</strong> Menggunakan pustaka <code>exifr</code> pada peramban yang dipatch khusus agar mengenali kontainer <code>ftyp</code> iPhone modern. Metadata <em>DateTimeOriginal</em> dan <em>GPS</em> langsung dibaca dari berkas asli sebelum konversi kanvas.</li>
                                     <li><strong>Fallback Ekstraksi Server-Side Otomatis:</strong> Apabila berkas foto memiliki format unik atau peramban tidak dapat mem-parsing (misal kesalahan <em>Unknown file format</em>), sistem secara otomatis mengalihkan ekstraksi ke server melalui endpoint <code>/admin/dokumentasi/watermark-foto/extract-meta</code> yang didukung parser biner TIFF dan modul konversi server, sehingga EXIF tetap terbaca 100%.</li>
-                                    <li><strong>Pengeditan Tanggal &amp; Jam Bebas:</strong> Pengguna dapat dengan bebas mengubah tanggal dan jam foto melalui input yang tersedia, atau menekan tombol <strong>"Set Sekarang"</strong> untuk menggunakan waktu terkini.</li>
-                                    <li><strong>Pulihkan Waktu EXIF:</strong> Jika tanggal/jam telah diubah dan pengguna ingin mengembalikan ke waktu asli kamera, cukup tekan tombol <strong>"Pulihkan Waktu EXIF"</strong>.</li>
+                                    <li><strong>Pengeditan Mandiri (Ganti Tanggal Saja / Jam Saja):</strong> Pengguna dapat secara independen memilih untuk:
+                                        <ul class="mt-1">
+                                            <li><strong>Ganti Tanggal Saja:</strong> Mengubah tanggal kegiatan (misal menyesuaikan tanggal Surat Tugas / SPT), sementara jam pemotretan asli masing-masing foto (atau seluruh berkas di dalam ZIP) tetap dipertahankan sesuai kronologi pemotretan kamera.</li>
+                                            <li><strong>Ganti Jam Saja:</strong> Mengubah jam pemotretan ke jam tertentu atau menekan tombol <strong>"Sekarang"</strong>, sementara tanggal asli foto tetap dipertahankan.</li>
+                                            <li><strong>Ganti Tanggal &amp; Jam Sekaligus:</strong> Mengubah kedua komponen secara manual jika foto tidak memiliki EXIF atau ingin diseragamkan total.</li>
+                                            <li><strong>Ikuti EXIF Asli (Default):</strong> Mempertahankan tanggal dan jam pemotretan asli per foto, ditambah penyesuaian offset jika dibutuhkan.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Tombol Pemulih EXIF Mandiri:</strong> Tersedia tombol cepat pemulih tanggal asli (<strong>EXIF Tanggal</strong>), jam asli (<strong>EXIF Jam</strong>), maupun tombol <strong>"Pulihkan Waktu EXIF (Semua)"</strong>.</li>
                                     <li><strong>Tombol Penyesuaian Offset Cepat:</strong> Tersedia tombol cepat (<strong>-1j, +0j, +1j, +2j, +3j, +5j</strong>, atau offset kustom jam/menit) untuk mengoreksi zona waktu atau deviasi jam kamera.</li>
                                 </ul>
                             </li>
@@ -1763,15 +1768,28 @@ graph TD
                                 <ul>
                                     <li><strong>Dukungan Format Luas:</strong> Mendukung berkas foto standar (<strong>JPG, JPEG, PNG, WebP</strong>) serta format resolusi tinggi Apple iPhone / iOS (<strong>HEIC dan HEIF</strong>).</li>
                                     <li><strong>Konversi Ganda (Client-Side &amp; Server-Side):</strong> Berkas foto HEIC iPhone otomatis dikonversi ke JPEG secara instan melalui WebAssembly <code>heic-to</code> pada peramban sehingga pratinjau dan metadata langsung terbaca. Di sisi server, sistem didukung konverter multi-strategi (<code>sips</code> macOS, <code>heif-convert</code> Linux, atau ImageMagick).</li>
-                                    <li><strong>Dukungan Arsip ZIP:</strong> Dapat mengunggah satu file arsip <strong>.ZIP</strong> (yang berisi foto JPEG, PNG, maupun berkas HEIC). Sistem secara otomatis mengekstrak, mengonversi foto HEIC, dan merender watermark untuk seluruh isi arsip sekaligus.</li>
+                                    <li><strong>Dukungan Arsip ZIP, Preservasi Sub-Folder &amp; Auto Reverse Geocoding Alamat:</strong> Dapat mengunggah satu file arsip <strong>.ZIP</strong> (yang berisi foto JPEG, PNG, maupun berkas HEIC). Sistem secara otomatis membaca sampel foto dari ZIP di browser melalui <code>JSZip</code> untuk mengisi formulir dan pratinjau simulator. Di sisi server, setiap foto di dalam ZIP secara cerdas diekstrak koordinat GPS-nya dan di-<em>reverse geocode</em> secara otomatis menjadi nama jalan, kelurahan, kecamatan, dan kabupaten/kota resmi sehingga stempel watermark memuat nama lokasi lengkap dan koordinat GPS riil. Selain itu, seluruh susunan hierarki <strong>folder, sub-folder, hingga sub-sub folder</strong> yang ada di dalam berkas ZIP asli dipertahankan secara utuh pada berkas ZIP unduhan.</li>
                                     <li><strong>Monitoring Upload Real-Time:</strong> Saat mengunggah berkas besar, sistem menampilkan indikator progress bar persentase (0%–100%) dan perhitungan megabyte (MB) yang terunggah secara langsung.</li>
-                                    <li><strong>Manajemen Ukuran Berkas &amp; Pencegahan HTTP2 Protocol Error:</strong> Berkas ZIP dengan ukuran sangat besar (seperti 400 MB) dapat melampaui batas request server hosting atau memicu timeout (<code>ERR_HTTP2_PROTOCOL_ERROR</code>). Sistem menyediakan deteksi dini ukuran berkas dan merekomendasikan pengguna membagi foto ke dalam beberapa arsip ZIP / batch lebih kecil (sekitar 20–30 foto per unggahan, 50–100 MB) untuk performa tercepat dan terstabil.</li>
+                                    <li><strong>Manajemen Ukuran Berkas, Kapasitas Hard Disk &amp; Konfigurasi Batas Upload:</strong> Berkas ZIP dengan ukuran sangat besar (seperti 350–400 MB) dapat menimbulkan kendala transfer (<code>Warning: POST Content-Length exceeds the limit</code> atau <code>ERR_HTTP2_PROTOCOL_ERROR / Connection Reset</code>).
+                                        <ul class="mt-1">
+                                            <li><strong>Kapasitas Ruang Hard Disk (Disk Space):</strong> Pemrosesan ZIP 350 MB membutuhkan ruang disk sementara minimal 1.5–2 GB (mencakup buffer request PHP, ekstraksi puluhan/ratusan foto asli, penyimpanan foto hasil watermark, dan kompresi arsip ZIP unduhan). Jika sisa disk server/komputer lokal menipis (&lt; 1 GB tersisa), sistem operasi atau server dapat memutus koneksi secara paksa (broken pipe). Pastikan ruang hard disk memiliki ruang bebas minimal 3–5 GB (kosongkan Trash / direktori sementara).</li>
+                                            <li><strong>Optimasi Memori Browser &amp; Pembersihan Disk Seketika:</strong> Pada peramban, pembacaan struktur JSZip otomatis dilewati jika berkas ZIP &gt; 40 MB agar peramban tidak mengalami lonjakan RAM atau macet. Di sisi server, setiap file foto mentah yang diekstrak langsung dihapus (<em>immediate unlink</em>) tepat setelah selesai diproses agar beban ruang penyimpanan disk tetap stabil dan hemat.</li>
+                                            <li><strong>Diagnostik Kesalahan Akurat (Tanpa Masking):</strong> Penanganan galat (error handler) membedakan secara cerdas antara pesan balasan spesifik dari server (status 413, 422, 507, 500) dan kasus putus koneksi riil (status 0 / timeout / ERR_HTTP2_PROTOCOL_ERROR). Ukuran total berkas dihitung secara presisi untuk semua tipe unggahan sehingga informasi yang ditampilkan akurat (bukan 0 B).</li>
+                                            <li><strong>Pada Server Hosting (Production):</strong> Dikelola melalui <code>.htaccess</code> dengan arahan <code>upload_max_filesize 512M</code> dan <code>post_max_size 512M</code>.</li>
+                                            <li><strong>Pada Server Lokal (<code>php spark serve</code>):</strong> Web server bawaan PHP mengabaikan <code>.htaccess</code> dan membaca file <code>php.ini</code> langsung (disetel <code>post_max_size = 512M</code> dan <code>upload_max_filesize = 512M</code> di <code>/opt/homebrew/etc/php/8.3/php.ini</code>). <em>Perlu restart server lokal (Ctrl+C lalu jalankan ulang) jika ada perubahan php.ini.</em></li>
+                                            <li><strong>Rekomendasi Praktis Terbaik:</strong> Sangat disarankan mengunggah foto dalam kelompok berkas wajar (misal 50–100 MB atau 20–30 foto per batch file ZIP) agar proses unggah cepat, lancar, dan aman dari risiko jaringan terputus.</li>
+                                        </ul>
+                                    </li>
                                 </ul>
                             </li>
-                            <li><strong>Penyimpanan Folder Server &amp; Unduh Massal (ZIP):</strong>
+                            <li><strong>Unduh Hasil Langsung &amp; Unduh Massal (ZIP) Tanpa Awalan "watermark_":</strong>
                                 <ul>
-                                    <li><strong>Unduh ZIP Langsung:</strong> Untuk pemrosesan banyak foto / ZIP, sistem otomatis mengemas seluruh foto hasil watermark ke dalam 1 file ZIP yang siap diunduh sekali klik. Setiap foto di dalam ZIP telah memuat tag EXIF yang diperbarui.</li>
-                                    <li><strong>Opsi Simpan ke Folder Server:</strong> Centang opsi simpan ke server untuk menyimpan salinan hasil foto ke direktori <code>/uploads/watermark_hasil/{nama_folder}/</code> sehingga foto tersimpan permanen dan dapat diakses kapan saja.</li>
+                                    <li><strong>Nama Berkas Asli Dipertahankan (Clean Filename):</strong> Seluruh berkas yang diekspor atau diunduh (baik foto tunggal maupun di dalam arsip ZIP) tetap menggunakan nama berkas aslinya tanpa tambahan awalan teks <code>watermark_</code>, sehingga penamaan file dokumentasi tetap rapi dan konsisten dengan penamaan kamera awal.</li>
+                                    <li><strong>Struktur Folder &amp; Sub-Folder Utuh (Full Directory Tree Preserved):</strong> Jika di dalam berkas ZIP yang diunggah terdapat folder, sub-folder, atau sub-sub folder kegiatan, saat berkas ZIP hasil diunduh dan diekstrak, seluruh susunan folder tersebut tetap ada persis seperti semula tanpa digabung atau diacak.</li>
+                                    <li><strong>Galeri Foto Visual Responsif (Semua Foto 100% Terlihat):</strong> Seluruh foto hasil pemrosesan (termasuk batch massal hingga ratusan foto sekaligus) selalu menampilkan visual foto ber-watermark secara instan di Galeri Foto Hasil menggunakan thumbnail terkompresi super ringan (~8 KB) lengkap dengan badge nama folder asal. Tidak ada lagi kartu placeholder kosong.</li>
+                                    <li><strong>Unduh Foto Tunggal:</strong> Menampilkan pratinjau foto resolusi asli yang telah dibubuhi watermark TimeMark dan disematkan metadata EXIF lengkap, siap diunduh sekali klik ke perangkat dengan nama berkas asli yang bersih.</li>
+                                    <li><strong>Pratinjau Zoom &amp; Unduh Satuan dari Batch:</strong> Pengguna dapat mengeklik foto mana saja di galeri hasil untuk melihat pratinjau resolusi tinggi dalam modal zoom, serta mengunduh foto satuan tersebut secara terpisah langsung dari arsip ZIP tanpa perlu mengekstrak seluruh arsip.</li>
+                                    <li><strong>Unduh ZIP Otomatis:</strong> Untuk pemrosesan banyak foto atau berkas arsip ZIP, sistem otomatis mengemas seluruh foto hasil watermark ke dalam 1 file ZIP yang siap diunduh langsung. Setiap foto di dalam ZIP telah memuat tag EXIF yang diperbarui, penamaan berkas asli yang bersih tanpa awalan <code>watermark_</code>, dan struktur subfolder yang terjaga rapi.</li>
                                 </ul>
                             </li>
                             <li><strong>Proteksi Otorisasi Hak Akses (menu_akses):</strong>

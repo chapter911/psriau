@@ -15,6 +15,11 @@ class TimeMarkWatermarkService
     private const FONT_EXTRABOLD = 'ExtraBold';
 
     /**
+     * Cache in-memory hasil reverse geocoding koordinat GPS untuk efisiensi tinggi pada batch foto.
+     */
+    private static array $geocodeCache = [];
+
+    /**
      * Memproses satu file gambar dan menerapkan watermark sesuai template pilihan.
      *
      * @param string $sourcePath Path file gambar asli
@@ -81,32 +86,43 @@ class TimeMarkWatermarkService
         $height = imagesy($sourceImage);
 
         // 2. Tentukan Tanggal & Jam dengan dukungan EXIF dan Offset
+        $useExifDate = (bool) ($options['use_exif_date'] ?? ($options['use_exif_time'] ?? true));
         $useExifTime = (bool) ($options['use_exif_time'] ?? true);
         $offsetHours = (int) ($options['offset_hours'] ?? 0);
         $offsetMinutes = (int) ($options['offset_minutes'] ?? 0);
         $manualDate = trim((string) ($options['manual_date'] ?? ''));
         $manualTime = trim((string) ($options['manual_time'] ?? ''));
 
-        $dateTimeMeta = $this->resolveDateTime($exifData, $sourcePath, $useExifTime, $offsetHours, $offsetMinutes, $manualDate, $manualTime);
+        $dateTimeMeta = $this->resolveDateTime($exifData, $sourcePath, $useExifDate, $useExifTime, $offsetHours, $offsetMinutes, $manualDate, $manualTime);
 
         // 3. Tentukan Koordinat GPS (Prioritas: input user -> EXIF foto)
         $useExifLocation = (bool) ($options['use_exif_location'] ?? true);
         $coordinates = trim((string) ($options['coordinates'] ?? ''));
         $exifCoords = null;
+        $exifDecimal = null;
         if (is_array($exifData)) {
             $exifCoords = $this->extractGpsCoordinates($exifData);
+            $exifDecimal = $this->extractGpsDecimal($exifData);
         }
         if ($coordinates === '' && $useExifLocation && $exifCoords !== null) {
             $coordinates = $exifCoords;
         }
 
-        // 4. Data Teks Lokasi (Prioritas: input user/geocoded -> koordinat -> default)
+        // 4. Data Teks Lokasi / Alamat (Prioritas: input user -> reverse geocode EXIF GPS -> default)
         $lokasi = trim((string) ($options['location'] ?? ''));
+        if ($lokasi === '' && $useExifLocation && $exifDecimal !== null) {
+            // Lakukan reverse geocoding otomatis dari koordinat GPS foto asli
+            $geocodedAddress = $this->reverseGeocode($exifDecimal['lat'], $exifDecimal['lng']);
+            if ($geocodedAddress !== null && $geocodedAddress !== '') {
+                $lokasi = $geocodedAddress;
+            }
+        }
+
         if ($lokasi === '') {
             if ($useExifLocation && $exifCoords !== null) {
-                $lokasi = $exifCoords;
+                $lokasi = 'Lokasi Koordinat ' . $exifCoords;
             } elseif ($coordinates !== '') {
-                $lokasi = $coordinates;
+                $lokasi = 'Lokasi Koordinat ' . $coordinates;
             } else {
                 $lokasi = 'Balai Pelaksanaan Prasarana Permukiman Wilayah Riau';
             }
@@ -163,48 +179,85 @@ class TimeMarkWatermarkService
             }
         }
 
-        // Generate base64 Data URI untuk preview instan di browser
-        $rawBytes = false;
-        if ($savedPath !== null && is_file($savedPath)) {
-            $rawBytes = @file_get_contents($savedPath);
-        }
+        // 8. Generate Thumbnail Ringan (~6-12 KB) untuk Galeri Preview
+        $thumbDataUri = null;
+        $generateThumb = (bool) ($options['generate_thumb'] ?? true);
+        if ($generateThumb && $width > 0 && $height > 0) {
+            $maxThumbWidth = (int) ($options['thumb_width'] ?? 360);
+            $thumbQuality = max(50, min(90, (int) ($options['thumb_quality'] ?? 68)));
+            $thumbWidth = min($width, $maxThumbWidth);
+            $thumbHeight = (int) max(1, round(($height / $width) * $thumbWidth));
 
-        if ($rawBytes === false || $rawBytes === '') {
-            ob_start();
-            if ($mimeType === 'image/png') {
-                imagepng($sourceImage);
-            } elseif ($mimeType === 'image/webp') {
-                imagewebp($sourceImage, null, $outputQuality);
-            } else {
-                imagejpeg($sourceImage, null, $outputQuality);
+            $thumbImage = imagecreatetruecolor($thumbWidth, $thumbHeight);
+            if ($thumbImage !== false) {
+                imagecopyresampled($thumbImage, $sourceImage, 0, 0, 0, 0, $thumbWidth, $thumbHeight, $width, $height);
+                ob_start();
+                imagejpeg($thumbImage, null, $thumbQuality);
+                $thumbBytes = ob_get_clean();
+                imagedestroy($thumbImage);
+
+                if ($thumbBytes !== false && $thumbBytes !== '') {
+                    $thumbDataUri = 'data:image/jpeg;base64,' . base64_encode($thumbBytes);
+                }
             }
-            $rawBytes = ob_get_clean();
         }
 
+        // 9. Generate Base64 Data URI Resolusi Penuh (hanya jika diminta, default true)
+        $needFullDataUri = (bool) ($options['need_full_uri'] ?? true);
+        $dataUri = null;
+
+        if ($needFullDataUri) {
+            $rawBytes = false;
+            if ($savedPath !== null && is_file($savedPath)) {
+                $rawBytes = @file_get_contents($savedPath);
+            }
+
+            if ($rawBytes === false || $rawBytes === '') {
+                ob_start();
+                if ($mimeType === 'image/png') {
+                    imagepng($sourceImage);
+                } elseif ($mimeType === 'image/webp') {
+                    imagewebp($sourceImage, null, $outputQuality);
+                } else {
+                    imagejpeg($sourceImage, null, $outputQuality);
+                }
+                $rawBytes = ob_get_clean();
+            }
+
+            if ($rawBytes !== false && $rawBytes !== '') {
+                $dataUri = 'data:' . $mimeType . ';base64,' . base64_encode($rawBytes);
+            }
+        }
+
+        // Hancurkan resource source image setelah selesai digunakan
         if (is_resource($sourceImage) || (is_object($sourceImage) && $sourceImage instanceof \GdImage)) {
             imagedestroy($sourceImage);
         }
 
-        if ($rawBytes === false || $rawBytes === '') {
-            return ['success' => false, 'error' => 'Gagal merender output gambar ber-watermark.', 'data_uri' => null, 'saved_path' => $savedPath, 'meta' => []];
+        // Fallback jika dataUri null tetapi thumbDataUri tersedia
+        if ($dataUri === null && $thumbDataUri !== null) {
+            $dataUri = $thumbDataUri;
         }
 
-        $dataUri = 'data:' . $mimeType . ';base64,' . base64_encode($rawBytes);
+        if ($dataUri === null && ($savedPath === null || ! is_file($savedPath))) {
+            return ['success' => false, 'error' => 'Gagal merender output gambar ber-watermark.', 'data_uri' => null, 'thumb_data_uri' => null, 'saved_path' => $savedPath, 'meta' => []];
+        }
 
-            return [
-                'success' => true,
-                'error' => null,
-                'data_uri' => $dataUri,
-                'saved_path' => $savedPath,
-                'meta' => [
-                    'width' => $width,
-                    'height' => $height,
-                    'template' => $template,
-                    'datetime' => $dateTimeMeta,
-                    'coordinates' => $coordinates,
-                    'location' => $lokasi,
-                ],
-            ];
+        return [
+            'success'        => true,
+            'error'          => null,
+            'data_uri'       => $dataUri,
+            'thumb_data_uri' => $thumbDataUri,
+            'saved_path'     => $savedPath,
+            'meta'           => [
+                'width'       => $width,
+                'height'      => $height,
+                'template'    => $template,
+                'datetime'    => $dateTimeMeta,
+                'coordinates' => $coordinates,
+                'location'    => $lokasi,
+            ],
+        ];
         } finally {
             if ($isHeicTemp && is_file($actualProcessPath)) {
                 @unlink($actualProcessPath);
@@ -213,60 +266,92 @@ class TimeMarkWatermarkService
     }
 
     /**
-     * Resolusi DateTime dengan prioritas EXIF -> filemtime -> manual input, lalu ditambah offset.
+     * Resolusi DateTime dengan kemampuan mengubah tanggal saja, jam saja, atau keduanya secara independen.
      */
-    public function resolveDateTime($exifData, string $filePath, bool $useExif, int $offsetHours, int $offsetMinutes, string $manualDate = '', string $manualTime = ''): array
-    {
-        $dt = null;
+    public function resolveDateTime(
+        $exifData,
+        string $filePath,
+        $useExifDate = true,
+        $useExifTime = true,
+        $offsetHours = 0,
+        $offsetMinutes = 0,
+        string $manualDate = '',
+        string $manualTime = ''
+    ): array {
+        // Deteksi kompatibilitas pemanggilan argumen lama
+        if (is_int($useExifTime) && is_int($offsetHours)) {
+            $actualUseExifDate = (bool) $useExifDate;
+            $actualUseExifTime = (bool) $useExifDate;
+            $actualOffsetHours = (int) $useExifTime;
+            $actualOffsetMinutes = (int) $offsetHours;
+            $actualManualDate = is_string($offsetMinutes) ? $offsetMinutes : '';
+            $actualManualTime = is_string($manualDate) ? $manualDate : '';
+        } else {
+            $actualUseExifDate = (bool) $useExifDate;
+            $actualUseExifTime = (bool) $useExifTime;
+            $actualOffsetHours = (int) $offsetHours;
+            $actualOffsetMinutes = (int) $offsetMinutes;
+            $actualManualDate = $manualDate;
+            $actualManualTime = $manualTime;
+        }
 
-        // 1. Coba ambil dari EXIF jika diaktifkan
-        if ($useExif && is_array($exifData)) {
+        // 1. Ekstrak DateTime dasar dari EXIF kamera jika tersedia
+        $baseDt = null;
+        if (is_array($exifData)) {
             $exifDateStr = $exifData['DateTimeOriginal'] ?? $exifData['DateTimeDigitized'] ?? $exifData['DateTime'] ?? null;
             if (is_string($exifDateStr) && trim($exifDateStr) !== '') {
-                // Format umum EXIF: "YYYY:MM:DD HH:MM:SS"
+                // Format standar EXIF: "YYYY:MM:DD HH:MM:SS"
                 $formatted = preg_replace('/^(\d{4}):(\d{2}):(\d{2})/', '$1-$2-$3', trim($exifDateStr));
                 try {
-                    $dt = new \DateTime($formatted);
+                    $baseDt = new \DateTime($formatted);
                 } catch (\Throwable $e) {
-                    $dt = null;
+                    $baseDt = null;
                 }
             }
         }
 
-        // 2. Jika tidak ada di EXIF dan ada input manual dari user
-        if ($dt === null && $manualDate !== '' && $manualTime !== '') {
-            try {
-                $dt = new \DateTime($manualDate . ' ' . $manualTime);
-            } catch (\Throwable $e) {
-                $dt = null;
-            }
-        } elseif ($dt === null && $manualDate !== '') {
-            try {
-                $dt = new \DateTime($manualDate . ' ' . date('H:i:s'));
-            } catch (\Throwable $e) {
-                $dt = null;
-            }
-        }
-
-        // 3. Fallback ke file timestamp
-        if ($dt === null && is_file($filePath)) {
+        // Fallback jika tidak ada di EXIF: gunakan filemtime atau waktu sekarang
+        if ($baseDt === null && is_file($filePath)) {
             $mtime = @filemtime($filePath);
             if ($mtime !== false && $mtime > 0) {
-                $dt = new \DateTime();
-                $dt->setTimestamp($mtime);
+                $baseDt = new \DateTime();
+                $baseDt->setTimestamp($mtime);
             }
         }
+        if ($baseDt === null) {
+            $baseDt = new \DateTime();
+        }
 
-        // 4. Default ke waktu saat ini
-        if ($dt === null) {
-            $dt = new \DateTime();
+        // 2. Tentukan komponen Tanggal (Date):
+        // Jika useExifDate nonaktif dan user mengisi manualDate, gunakan manualDate!
+        // Jika useExifDate aktif, gunakan tanggal asli dari EXIF ($baseDt).
+        if (! $actualUseExifDate && $actualManualDate !== '') {
+            $finalDateStr = $actualManualDate;
+        } else {
+            $finalDateStr = $baseDt->format('Y-m-d');
+        }
+
+        // 3. Tentukan komponen Jam (Time):
+        // Jika useExifTime nonaktif dan user mengisi manualTime, gunakan manualTime!
+        // Jika useExifTime aktif, gunakan jam asli dari EXIF ($baseDt).
+        if (! $actualUseExifTime && $actualManualTime !== '') {
+            $finalTimeStr = (strlen($actualManualTime) === 5) ? ($actualManualTime . ':00') : $actualManualTime;
+        } else {
+            $finalTimeStr = $baseDt->format('H:i:s');
+        }
+
+        // 4. Gabungkan Tanggal & Jam menjadi DateTime
+        try {
+            $dt = new \DateTime($finalDateStr . ' ' . $finalTimeStr);
+        } catch (\Throwable $e) {
+            $dt = clone $baseDt;
         }
 
         // 5. Terapkan Offset Jam & Menit
-        if ($offsetHours !== 0 || $offsetMinutes !== 0) {
-            $signHours = $offsetHours >= 0 ? '+' : '';
-            $signMinutes = $offsetMinutes >= 0 ? '+' : '';
-            $modifier = "{$signHours}{$offsetHours} hours {$signMinutes}{$offsetMinutes} minutes";
+        if ($actualOffsetHours !== 0 || $actualOffsetMinutes !== 0) {
+            $signHours = $actualOffsetHours >= 0 ? '+' : '';
+            $signMinutes = $actualOffsetMinutes >= 0 ? '+' : '';
+            $modifier = "{$signHours}{$actualOffsetHours} hours {$signMinutes}{$actualOffsetMinutes} minutes";
             $dt->modify($modifier);
         }
 
@@ -352,6 +437,77 @@ class TimeMarkWatermarkService
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /**
+     * Melakukan reverse geocoding koordinat GPS menjadi nama jalan / alamat resmi Indonesia ala TimeMark.
+     * Menggunakan cache in-memory untuk efisiensi tinggi pada pemrosesan foto massal (batch/ZIP).
+     */
+    public function reverseGeocode(float $lat, float $lng): ?string
+    {
+        // Cache per rounded coordinates ~100m radius
+        $cacheKey = round($lat, 3) . ',' . round($lng, 3);
+        if (array_key_exists($cacheKey, self::$geocodeCache)) {
+            return self::$geocodeCache[$cacheKey];
+        }
+
+        try {
+            $url = sprintf('https://nominatim.openstreetmap.org/reverse?format=json&lat=%.6f&lon=%.6f&zoom=18&addressdetails=1', $lat, $lng);
+            $context = stream_context_create([
+                'http' => [
+                    'method'        => 'GET',
+                    'header'        => "User-Agent: PSRiau-TimeMarkWatermark/1.0 (contact: info@satkerpps-riau.online)\r\nAccept-Language: id-ID,id;q=0.9,en;q=0.8\r\n",
+                    'timeout'       => 3,
+                    'ignore_errors' => true,
+                ],
+            ]);
+
+            $jsonRaw = @file_get_contents($url, false, $context);
+            if ($jsonRaw !== false && $jsonRaw !== '') {
+                $data = @json_decode($jsonRaw, true);
+                if (is_array($data) && isset($data['address'])) {
+                    $addr = $data['address'];
+                    $parts = [];
+                    // Format terstruktur: Jalan/POI -> Desa/Kelurahan -> Kecamatan -> Kab/Kota -> Provinsi
+                    $road = $addr['road'] ?? ($addr['pedestrian'] ?? ($addr['highway'] ?? null));
+                    if (! empty($road)) {
+                        $parts[] = $road;
+                    }
+                    $subdistrict = $addr['village'] ?? ($addr['suburb'] ?? ($addr['hamlet'] ?? null));
+                    if (! empty($subdistrict)) {
+                        $parts[] = $subdistrict;
+                    }
+                    $district = $addr['municipality'] ?? ($addr['city_district'] ?? ($addr['subdistrict'] ?? null));
+                    if (! empty($district)) {
+                        $parts[] = $district;
+                    }
+                    $city = $addr['county'] ?? ($addr['city'] ?? ($addr['town'] ?? null));
+                    if (! empty($city)) {
+                        $parts[] = $city;
+                    }
+                    $state = $addr['state'] ?? null;
+                    if (! empty($state)) {
+                        $parts[] = $state;
+                    }
+
+                    if (! empty($parts)) {
+                        $formattedAddress = implode(', ', $parts);
+                        self::$geocodeCache[$cacheKey] = $formattedAddress;
+                        return $formattedAddress;
+                    }
+
+                    if (! empty($data['display_name'])) {
+                        self::$geocodeCache[$cacheKey] = $data['display_name'];
+                        return $data['display_name'];
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Abaikan kesalahan koneksi luar, fallback gracefully
+        }
+
+        self::$geocodeCache[$cacheKey] = null;
+        return null;
     }
 
     /**
