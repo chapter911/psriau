@@ -103,7 +103,7 @@ class LupaAbsen extends BaseController
         $recordsFiltered = (int) $builder->countAllResults(false);
 
         // Order
-        $orderColumns = ['id', 'nip', 'nama', 'tanggal_absen', 'jam_absen', 'jenis_absen', 'alasan_detail', 'status', 'id'];
+        $orderColumns = ['id', 'nip', 'nama', 'tanggal_absen', 'jenis_absen', 'alasan_detail', 'status', 'id'];
         $orderColumn = $orderColumns[$orderIndex] ?? $orderColumns[0];
         $builder->orderBy($orderColumn, $orderDirection);
 
@@ -130,7 +130,6 @@ class LupaAbsen extends BaseController
             $cleanAlasan = $this->stripJamFromAlasan($rawAlasan);
             $row['alasan_raw'] = $cleanAlasan;
             $row['jam_absen'] = $jamNormalized ?? '';
-            $row['jam_formatted'] = $jamNormalized !== null ? $jamNormalized : '-';
             $row['alasan_detail'] = $this->formatAlasanWithJam($cleanAlasan, $jamNormalized);
 
             $jenis = strtolower(trim((string) ($row['jenis_absen'] ?? '')));
@@ -291,10 +290,8 @@ class LupaAbsen extends BaseController
 
         $tanggalAbsen = trim((string) $this->request->getPost('tanggal_absen'));
         $jamAbsenRaw = trim((string) $this->request->getPost('jam_absen'));
-        if ($jamAbsenRaw === '' && $this->request->getPost('jam_hour') !== null && $this->request->getPost('jam_minute') !== null) {
-            $jamAbsenRaw = sprintf('%02d:%02d', (int) $this->request->getPost('jam_hour'), (int) $this->request->getPost('jam_minute'));
-        }
-        $jamAbsen = $this->normalizeJam24($jamAbsenRaw);
+        $jamAbsen = $jamAbsenRaw !== '' ? $this->normalizeJam24($jamAbsenRaw) : null;
+        $existingHasJam = $this->normalizeJam24((string) ($existing['jam_absen'] ?? '')) !== null;
         $jenisAbsen = strtolower(trim((string) $this->request->getPost('jenis_absen')));
         $alasanDetail = $this->stripJamFromAlasan(trim((string) $this->request->getPost('alasan_detail')));
         $kopSuratId = (int) $this->request->getPost('kop_surat_id');
@@ -304,7 +301,9 @@ class LupaAbsen extends BaseController
         if ($tanggalAbsen === '') {
             $errors[] = 'Tanggal absen wajib diisi.';
         }
-        if ($jamAbsen === null) {
+        if ($jamAbsenRaw !== '' && $jamAbsen === null) {
+            $errors[] = 'Format jam absen harus 24 jam (HH:mm).';
+        } elseif ($existingHasJam && $jamAbsen === null) {
             $errors[] = 'Jam absen wajib diisi dalam format 24 jam (HH:mm).';
         }
         if (! in_array($jenisAbsen, ['masuk', 'pulang'], true)) {

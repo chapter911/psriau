@@ -87,7 +87,6 @@
                         <th>NIP</th>
                         <th>Nama</th>
                         <th>Tanggal</th>
-                        <th>Jam (24J)</th>
                         <th>Jenis</th>
                         <th>Alasan</th>
                         <th>Status</th>
@@ -157,9 +156,10 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="jam_absen">Jam Absen (Format 24 Jam) <span class="text-danger">*</span></label>
+                        <label for="jam_absen">Jam Absen (Format 24 Jam) <span class="text-danger" id="jamRequiredMark">*</span></label>
                         <div class="jam-24-wrapper">
                             <select class="form-control no-select2" id="jam_hour" name="jam_hour" aria-label="Jam (00-23)" onchange="syncJamFromSelects()">
+                                <option value="">--</option>
                                 <?php for ($h = 0; $h <= 23; $h++): ?>
                                     <?php $hStr = sprintf('%02d', $h); ?>
                                     <option value="<?= $hStr; ?>" <?= $h === 16 ? 'selected' : ''; ?>><?= $hStr; ?></option>
@@ -167,6 +167,7 @@
                             </select>
                             <span class="jam-24-sep">:</span>
                             <select class="form-control no-select2" id="jam_minute" name="jam_minute" aria-label="Menit (00-59)" onchange="syncJamFromSelects()">
+                                <option value="">--</option>
                                 <?php for ($m = 0; $m <= 59; $m++): ?>
                                     <?php $mStr = sprintf('%02d', $m); ?>
                                     <option value="<?= $mStr; ?>" <?= $m === 0 ? 'selected' : ''; ?>><?= $mStr; ?></option>
@@ -246,8 +247,21 @@
 
 <?= $this->section('pageScripts'); ?>
 <script>
+var isEditingLegacyWithoutJam = false;
+
+function clearJam24() {
+    document.getElementById('jam_hour').value = '';
+    document.getElementById('jam_minute').value = '';
+    document.getElementById('jam_absen').value = '';
+    updatePdfReasonPreview();
+}
+
 function setJam24(jamStr) {
     var clean = (jamStr || '').trim().replace('.', ':');
+    if (clean === '') {
+        clearJam24();
+        return;
+    }
     var match = clean.match(/^(\d{1,2}):(\d{2})/);
     if (!match) {
         return;
@@ -263,14 +277,29 @@ function setJam24(jamStr) {
 }
 
 function syncJamFromSelects() {
-    var h = document.getElementById('jam_hour').value || '00';
-    var m = document.getElementById('jam_minute').value || '00';
+    var h = document.getElementById('jam_hour').value;
+    var m = document.getElementById('jam_minute').value;
+    if (h === '' && m === '') {
+        document.getElementById('jam_absen').value = '';
+        updatePdfReasonPreview();
+        return;
+    }
+    h = h || '00';
+    m = m || '00';
+    document.getElementById('jam_hour').value = h;
+    document.getElementById('jam_minute').value = m;
     document.getElementById('jam_absen').value = h + ':' + m;
     updatePdfReasonPreview();
 }
 
 function handleJamTextInput(inputEl) {
     var val = inputEl.value.replace(/[^0-9:.]/g, '').replace('.', ':');
+    if (val === '') {
+        document.getElementById('jam_hour').value = '';
+        document.getElementById('jam_minute').value = '';
+        updatePdfReasonPreview();
+        return;
+    }
     if (/^\d{3,4}$/.test(val)) {
         val = val.slice(0, 2) + ':' + val.slice(2, 4);
     }
@@ -289,6 +318,10 @@ function handleJamTextInput(inputEl) {
 
 function normalizeJamTextInput(inputEl) {
     var val = (inputEl.value || '').trim().replace('.', ':');
+    if (val === '' && isEditingLegacyWithoutJam) {
+        clearJam24();
+        return;
+    }
     var match = val.match(/^(\d{1,2}):(\d{1,2})$/);
     if (match) {
         setJam24(match[1] + ':' + (match[2].length === 1 ? '0' + match[2] : match[2]));
@@ -319,11 +352,16 @@ function updatePdfReasonPreview() {
 }
 
 function openCreateModal() {
+    isEditingLegacyWithoutJam = false;
     // Reset form
     document.getElementById('formLupaAbsen').reset();
     document.getElementById('alasan_custom').style.display = 'none';
     document.getElementById('alasan_custom').value = '';
     document.getElementById('alasan_select').value = '';
+    document.getElementById('jam_absen').required = true;
+    if (document.getElementById('jamRequiredMark')) {
+        document.getElementById('jamRequiredMark').style.display = 'inline';
+    }
     
     // Reset form action
     var actionUrl = '<?= site_url('admin/surat/lupa-absen/buat'); ?>';
@@ -336,7 +374,7 @@ function openCreateModal() {
     var today = new Date().toISOString().split('T')[0];
     document.getElementById('tanggal_absen').value = today;
 
-    // Default jam 16:00 (24-hour format)
+    // Default jam 16:00 (24-hour format) for new submission
     setJam24('16:00');
     updatePdfReasonPreview();
 
@@ -363,7 +401,7 @@ function openEditModal(data) {
         document.getElementById('kop_surat_id').value = data.kop_surat_id || '';
     }
 
-    // Populate jam_absen (24h)
+    // Populate jam_absen (24h) - keep empty for legacy records without jam
     var jamVal = data.jam_absen || '';
     if (!jamVal && data.alasan_detail) {
         var mJam = String(data.alasan_detail).match(/Pukul\s+(\d{1,2}[:.]\d{2})/i);
@@ -372,9 +410,19 @@ function openEditModal(data) {
         }
     }
     if (jamVal) {
+        isEditingLegacyWithoutJam = false;
+        document.getElementById('jam_absen').required = true;
+        if (document.getElementById('jamRequiredMark')) {
+            document.getElementById('jamRequiredMark').style.display = 'inline';
+        }
         setJam24(jamVal);
     } else {
-        setJam24(data.jenis_absen === 'masuk' ? '07:30' : '16:00');
+        isEditingLegacyWithoutJam = true;
+        document.getElementById('jam_absen').required = false;
+        if (document.getElementById('jamRequiredMark')) {
+            document.getElementById('jamRequiredMark').style.display = 'none';
+        }
+        clearJam24();
     }
     
     // Populate alasan
@@ -408,12 +456,12 @@ function updateAlasanTemplate() {
 
     if (jenis === 'masuk') {
         select.value = 'Lupa Absen Masuk';
-        if (!currentJam || currentJam === '16:00') {
+        if (!isEditingLegacyWithoutJam && (!currentJam || currentJam === '16:00')) {
             setJam24('07:30');
         }
     } else if (jenis === 'pulang') {
         select.value = 'Lupa Absen Pulang';
-        if (!currentJam || currentJam === '07:30') {
+        if (!isEditingLegacyWithoutJam && (!currentJam || currentJam === '07:30')) {
             setJam24('16:00');
         }
     }
@@ -464,7 +512,6 @@ $(document).ready(function() {
             { data: 'nip', className: 'text-center' },
             { data: 'nama' },
             { data: 'tanggal_formatted', className: 'text-center' },
-            { data: 'jam_formatted', className: 'text-center font-weight-bold' },
             { data: 'jenis_formatted', className: 'text-center' },
             { data: 'alasan_detail' },
             { data: 'status_badge', className: 'text-center', sortable: false, searchable: false },
