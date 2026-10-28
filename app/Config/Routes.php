@@ -407,6 +407,13 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/disposisi/(:num)/tolak', 'Admin\DisposisiPerjalananDinas::tolak/$1');
 	$routes->get('surat/perjalanan-dinas/disposisi/(:num)/kirim-email', 'Admin\DisposisiPerjalananDinas::kirimEmail/$1');
 
+	// Surat Routes - Nota Dinas Perjalanan Dinas
+	$routes->get('surat/perjalanan-dinas/nota-dinas', 'Admin\NotaDinasPerjalananDinas::index');
+	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/nota-dinas/buat', 'Admin\NotaDinasPerjalananDinas::buat');
+	$routes->match(['get', 'post'], 'surat/perjalanan-dinas/nota-dinas/(:num)/ubah', 'Admin\NotaDinasPerjalananDinas::ubah/$1');
+	$routes->get('surat/perjalanan-dinas/nota-dinas/(:num)/pdf', 'Admin\NotaDinasPerjalananDinas::pdf/$1');
+	$routes->get('surat/perjalanan-dinas/nota-dinas/(:num)/hapus', 'Admin\NotaDinasPerjalananDinas::hapus/$1');
+
 	$routes->get('kontrak/export/word/(:segment)/(:num)', 'Admin\\Kontrak::exportDocumentWord/$1/$2');
 	$routes->get('kontrak/export/(:any)/(:num)', 'Admin\\Kontrak::exportDocument/$1/$2');
 	$routes->post('slide/tambah', 'Admin\\HomeSetting::createSlide');

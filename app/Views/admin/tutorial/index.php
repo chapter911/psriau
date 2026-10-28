@@ -276,13 +276,13 @@ graph TD
     </div>
     <?php endif; ?>
 
-    <!-- FLOWCHART 1: STAF / PELAKSANA - PENGAJUAN DISPOSISI & PELAPORAN PERJADIN -->
+    <!-- FLOWCHART 1: STAF / PELAKSANA - PENGAJUAN DISPOSISI, NOTA DINAS & PELAPORAN PERJADIN -->
     <?php if ($canRenderForUser(['staf_pelaksana'])): ?>
     <div class="flowchart-card role-section" data-roles="staf_pelaksana,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="font-weight-bold mb-1 text-info"><i class="fas fa-user-edit mr-2"></i> Alur Kerja Staf / Pelaksana Kegiatan Perjalanan Dinas</h5>
-                <small class="text-muted">Proses dari pengajuan disposisi awal hingga penguncian laporan hasil kegiatan & bukti tiket/nota.</small>
+                <small class="text-muted">Proses dari pembuatan Nota Dinas permohonan SPT, pengajuan disposisi awal hingga penguncian laporan hasil kegiatan & bukti tiket/nota.</small>
             </div>
             <div>
                 <span class="badge badge-info">Staf / Pelaksana</span>
@@ -300,10 +300,13 @@ graph TD
     F --> G[Isi Seluruh Data Tab Umum Terlebih Dahulu]
     G --> H[Unggah Foto Kegiatan & Dokumentasi Tiket/Nota di Tab Berikutnya]
     H --> I[Klik Simpan Final untuk Kunci Laporan]
+    N1[Buka Menu Nota Dinas Perjadin] --> N2[Klik Buat Nota Dinas]
+    N2 --> N3[Isi Paragraf Surat Rujukan, Pilih Pegawai dari Master Pegawai, Periode & Tujuan]
+    N3 --> N4[Simpan & Cetak PDF Nota Dinas SPT dengan Kolom Periode & Tujuan Merge Vertikal]
                 </pre>
             </div>
             <div class="alert alert-info mb-0">
-                <i class="fas fa-info-circle mr-1"></i> <strong>Catatan Staf:</strong> Pada menu Laporan Perjalanan Dinas, Anda hanya dapat melihat data laporan yang melibatkan Anda sebagai pelaksana.
+                <i class="fas fa-info-circle mr-1"></i> <strong>Catatan Staf:</strong> Pada menu Laporan Perjalanan Dinas, Anda hanya dapat melihat data laporan yang melibatkan Anda sebagai pelaksana. Untuk membuat surat permohonan penerbitan SPT mandiri dari PPK ke Kepala Satker, gunakan sub-menu <strong>Nota Dinas</strong>.
             </div>
         </div>
     </div>
@@ -930,7 +933,7 @@ graph TD
         <div class="card menu-tutorial-card mb-3 role-section" data-roles="staf_pelaksana,all">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 font-weight-bold text-info">
-                    <i class="fas fa-envelope-open-text mr-2"></i> Modul Staf / Pelaksana: Disposisi, Laporan Perjadin, Lupa Absen & Pengajuan Cuti
+                    <i class="fas fa-envelope-open-text mr-2"></i> Modul Staf / Pelaksana: Disposisi, Laporan Perjadin, Nota Dinas, Lupa Absen & Pengajuan Cuti
                 </h5>
             </div>
             <div class="card-body bg-light">
@@ -965,6 +968,23 @@ graph TD
                                     <li>Setelah Tab Umum lengkap, buka tab <strong>Dokumentasi Kegiatan</strong> (foto kegiatan) & tab <strong>Dokumentasi Tiket & Pendukung</strong> (tiket/nota).</li>
                                     <li>Klik <strong>Simpan Final</strong> untuk mengunci laporan.</li>
                                     <li>Gunakan kolom <strong>Dokumen SPT</strong> pada tabel Laporan Perjalanan Dinas (`/admin/surat/perjalanan-dinas`) untuk mengunduh/melihat berkas SPT TTD terverifikasi.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-file-alt mr-1"></i> Nota Dinas Perjalanan Dinas</h6>
+                                <p class="small text-muted mb-2"><code>/admin/surat/perjalanan-dinas/nota-dinas</code></p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Buka menu <strong>Surat-surat &rarr; Perjalanan Dinas &rarr; Nota Dinas</strong> (sub-menu urutan terakhir).</li>
+                                    <li>Klik <strong>Buat Nota Dinas</strong>.</li>
+                                    <li>Isi Nomor &amp; Tanggal Nota Dinas (opsional, jika dikosongkan dapat diisi manual saat cetak). Header <em>Yth.</em>, <em>Dari</em>, dan <em>Hal</em> sudah terisi otomatis sesuai format standar Satker PPS Riau.</li>
+                                    <li>Ketik atau sesuaikan <strong>Paragraf Pembuka</strong> (contoh: <em>Menunjuk Surat dari PT...</em>).</li>
+                                    <li>Pilih satu atau beberapa <strong>Pegawai</strong> dari Master Pegawai (Nama, NIP, dan Pangkat/Golongan diambil otomatis), serta isi <strong>Periode Mulai/Selesai</strong> dan <strong>Tujuan</strong>.</li>
+                                    <li>Pilih <strong>Pejabat Pembuat Komitmen</strong> penandatangan, lalu klik <strong>Simpan</strong>.</li>
+                                    <li>Klik tombol merah <strong>Cetak</strong> untuk mengunduh PDF Nota Dinas dengan kolom <em>Periode Perjalanan</em> dan <em>Tujuan</em> yang otomatis digabung (<em>merge vertikal</em>). Hak akses tambah, ubah, hapus, dan cetak mengikuti pengaturan tabel <code>menu_akses</code> (ID <code>10-03-04</code>).</li>
                                 </ol>
                             </div>
                         </div>
