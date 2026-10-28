@@ -28,21 +28,27 @@ $formatPangkatGolongan = static function (string $golongan): string {
     return $golongan;
 };
 
-// Format Periode Perjalanan
-$tglMulaiRaw   = trim((string) ($data['periode_mulai'] ?? ''));
-$tglSelesaiRaw = trim((string) ($data['periode_selesai'] ?? ''));
-$periodeText   = '';
-if ($tglMulaiRaw !== '' && $tglSelesaiRaw !== '') {
-    if ($tglMulaiRaw === $tglSelesaiRaw) {
-        $periodeText = function_exists('tanggal_indonesia') ? tanggal_indonesia($tglMulaiRaw) : date('d-m-Y', strtotime($tglMulaiRaw));
-    } else {
-        $m = function_exists('tanggal_indonesia') ? tanggal_indonesia($tglMulaiRaw) : date('d-m-Y', strtotime($tglMulaiRaw));
-        $s = function_exists('tanggal_indonesia') ? tanggal_indonesia($tglSelesaiRaw) : date('d-m-Y', strtotime($tglSelesaiRaw));
-        $periodeText = $m . ' s/d ' . $s;
+// Format Periode Perjalanan helper per row
+$formatPeriode = static function (string $mulaiRaw, string $selesaiRaw): string {
+    $mulaiRaw   = trim($mulaiRaw);
+    $selesaiRaw = trim($selesaiRaw);
+    if ($mulaiRaw !== '' && $selesaiRaw !== '') {
+        if ($mulaiRaw === $selesaiRaw) {
+            return function_exists('tanggal_indonesia') ? tanggal_indonesia($mulaiRaw) : date('d-m-Y', strtotime($mulaiRaw));
+        }
+        $m = function_exists('tanggal_indonesia') ? tanggal_indonesia($mulaiRaw) : date('d-m-Y', strtotime($mulaiRaw));
+        $s = function_exists('tanggal_indonesia') ? tanggal_indonesia($selesaiRaw) : date('d-m-Y', strtotime($selesaiRaw));
+        return $m . ' s/d ' . $s;
     }
-} elseif ($tglMulaiRaw !== '') {
-    $periodeText = function_exists('tanggal_indonesia') ? tanggal_indonesia($tglMulaiRaw) : date('d-m-Y', strtotime($tglMulaiRaw));
-}
+    if ($mulaiRaw !== '') {
+        return function_exists('tanggal_indonesia') ? tanggal_indonesia($mulaiRaw) : date('d-m-Y', strtotime($mulaiRaw));
+    }
+    return '';
+};
+
+$fallbackMulai   = trim((string) ($data['periode_mulai'] ?? ''));
+$fallbackSelesai = trim((string) ($data['periode_selesai'] ?? ''));
+$fallbackTujuan  = trim((string) ($data['tujuan'] ?? ''));
 
 // Format Tanggal Nota Dinas
 $tglNotaRaw  = trim((string) ($data['tanggal_nota_dinas'] ?? ''));
@@ -56,7 +62,6 @@ $kepadaYth = trim((string) ($data['kepada_yth'] ?? '')) ?: 'Kepala Satuan Kerja 
 $dari      = trim((string) ($data['dari'] ?? '')) ?: 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis Riau';
 $hal       = trim((string) ($data['hal'] ?? '')) ?: 'Permohonan Penerbitan Surat Tugas Pelaksanaan Kegiatan';
 $isiNota   = trim((string) ($data['isi_nota_dinas'] ?? ''));
-$tujuan    = trim((string) ($data['tujuan'] ?? ''));
 $ppkNama   = trim((string) ($ppk['nama'] ?? '')) ?: 'Nurhidayat Nugroho, S.Ars.';
 ?>
 <!DOCTYPE html>
@@ -235,11 +240,15 @@ $ppkNama   = trim((string) ($ppk['nama'] ?? '')) ?: 'Nurhidayat Nugroho, S.Ars.'
                 <?php
                 $totalRows = count($pelaksana);
                 if ($totalRows > 0):
-                    foreach ($pelaksana as $idx => $p):
-                        $pNama = trim((string) ($p['nama'] ?? ''));
-                        $pNip  = trim((string) ($p['nip'] ?? ''));
-                        $pGol  = $formatPangkatGolongan((string) ($p['golongan'] ?? ''));
-                        $showNip = function_exists('should_show_nip') ? should_show_nip($p) : ($pNip !== '' && $pNip !== '-');
+                    foreach ($pelaksana as $p):
+                        $pNama    = trim((string) ($p['nama'] ?? ''));
+                        $pNip     = trim((string) ($p['nip'] ?? ''));
+                        $pGol     = $formatPangkatGolongan((string) ($p['golongan'] ?? ''));
+                        $showNip  = function_exists('should_show_nip') ? should_show_nip($p) : ($pNip !== '' && $pNip !== '-');
+                        $pMulai   = ! empty($p['periode_mulai']) ? (string) $p['periode_mulai'] : $fallbackMulai;
+                        $pSelesai = ! empty($p['periode_selesai']) ? (string) $p['periode_selesai'] : $fallbackSelesai;
+                        $pPeriode = $formatPeriode($pMulai, $pSelesai);
+                        $pTujuan  = isset($p['tujuan']) && trim((string) $p['tujuan']) !== '' ? trim((string) $p['tujuan']) : $fallbackTujuan;
                 ?>
                     <tr>
                         <td style="text-align: left; vertical-align: top; line-height: 1.35;">
@@ -251,14 +260,12 @@ $ppkNama   = trim((string) ($ppk['nama'] ?? '')) ?: 'Nurhidayat Nugroho, S.Ars.'
                                 <div><?= esc($pGol); ?></div>
                             <?php endif; ?>
                         </td>
-                        <?php if ($idx === 0): ?>
-                            <td rowspan="<?= $totalRows; ?>" style="text-align: center; vertical-align: middle;">
-                                <?= esc($periodeText); ?>
-                            </td>
-                            <td rowspan="<?= $totalRows; ?>" style="text-align: center; vertical-align: middle;">
-                                <?= nl2br(esc($tujuan)); ?>
-                            </td>
-                        <?php endif; ?>
+                        <td style="text-align: center; vertical-align: middle;">
+                            <?= esc($pPeriode); ?>
+                        </td>
+                        <td style="text-align: center; vertical-align: middle;">
+                            <?= nl2br(esc($pTujuan)); ?>
+                        </td>
                     </tr>
                 <?php
                     endforeach;
@@ -266,8 +273,8 @@ $ppkNama   = trim((string) ($ppk['nama'] ?? '')) ?: 'Nurhidayat Nugroho, S.Ars.'
                 ?>
                     <tr>
                         <td style="height: 45px;">&nbsp;</td>
-                        <td style="text-align: center; vertical-align: middle;"><?= esc($periodeText); ?></td>
-                        <td style="text-align: center; vertical-align: middle;"><?= nl2br(esc($tujuan)); ?></td>
+                        <td style="text-align: center; vertical-align: middle;"><?= esc($formatPeriode($fallbackMulai, $fallbackSelesai)); ?></td>
+                        <td style="text-align: center; vertical-align: middle;"><?= nl2br(esc($fallbackTujuan)); ?></td>
                     </tr>
                 <?php endif; ?>
             </tbody>
@@ -298,4 +305,3 @@ $ppkNama   = trim((string) ($ppk['nama'] ?? '')) ?: 'Nurhidayat Nugroho, S.Ars.'
 
 </body>
 </html>
-

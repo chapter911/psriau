@@ -301,8 +301,8 @@ graph TD
     G --> H[Unggah Foto Kegiatan & Dokumentasi Tiket/Nota di Tab Berikutnya]
     H --> I[Klik Simpan Final untuk Kunci Laporan]
     N1[Buka Menu Nota Dinas Perjadin] --> N2[Klik Buat Nota Dinas]
-    N2 --> N3[Isi Paragraf Surat Rujukan, Pilih Pegawai dari Master Pegawai, Periode & Tujuan]
-    N3 --> N4[Simpan & Cetak PDF Nota Dinas SPT dengan Kolom Periode & Tujuan Merge Vertikal]
+    N2 --> N3[Isi Paragraf Surat Rujukan & Tambah Baris Pegawai dengan Periode & Tujuan Masing-Masing]
+    N3 --> N4[Simpan & Cetak PDF Nota Dinas SPT]
                 </pre>
             </div>
             <div class="alert alert-info mb-0">
@@ -982,9 +982,9 @@ graph TD
                                     <li>Klik <strong>Buat Nota Dinas</strong>.</li>
                                     <li>Isi Nomor &amp; Tanggal Nota Dinas (opsional, jika dikosongkan dapat diisi manual saat cetak). Header <em>Yth.</em>, <em>Dari</em>, dan <em>Hal</em> sudah terisi otomatis sesuai format standar Satker PPS Riau.</li>
                                     <li>Ketik atau sesuaikan <strong>Paragraf Pembuka</strong> (contoh: <em>Menunjuk Surat dari PT...</em>).</li>
-                                    <li>Pilih satu atau beberapa <strong>Pegawai</strong> dari Master Pegawai (Nama, NIP, dan Pangkat/Golongan diambil otomatis), serta isi <strong>Periode Mulai/Selesai</strong> dan <strong>Tujuan</strong>.</li>
+                                    <li>Pada bagian <strong>Usulan Pegawai, Periode &amp; Tujuan Perjalanan</strong>, klik <strong>+ Tambah Baris Pegawai</strong> untuk memilih masing-masing pegawai dari Master Pegawai (Nama, NIP, dan Pangkat/Golongan diambil otomatis) beserta <strong>Periode Mulai/Selesai</strong> dan <strong>Tujuan Perjalanan</strong> masing-masing pegawai.</li>
                                     <li>Pilih <strong>Pejabat Pembuat Komitmen</strong> penandatangan, lalu klik <strong>Simpan</strong>.</li>
-                                    <li>Klik tombol merah <strong>Cetak</strong> untuk mengunduh PDF Nota Dinas dengan kolom <em>Periode Perjalanan</em> dan <em>Tujuan</em> yang otomatis digabung (<em>merge vertikal</em>). Hak akses tambah, ubah, hapus, dan cetak mengikuti pengaturan tabel <code>menu_akses</code> (ID <code>10-03-04</code>).</li>
+                                    <li>Klik tombol merah <strong>Cetak</strong> untuk mengunduh PDF Nota Dinas dengan rincian Nama, Periode Perjalanan, dan Tujuan per baris pegawai. Hak akses tambah, ubah, hapus, dan cetak mengikuti pengaturan tabel <code>menu_akses</code> (ID <code>10-03-04</code>).</li>
                                 </ol>
                             </div>
                         </div>

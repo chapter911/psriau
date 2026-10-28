@@ -54,6 +54,18 @@
         flex-shrink: 0 !important;
         margin: 0 !important;
     }
+
+    .pegawai-item-row {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+        position: relative;
+    }
+    .pegawai-item-row:last-child {
+        margin-bottom: 0;
+    }
 </style>
 
 <div class="card">
@@ -125,7 +137,7 @@
 
 <!-- Modal Form Nota Dinas -->
 <div class="modal fade" id="modalNotaDinas" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">Tambah Nota Dinas Perjalanan Dinas</h5>
@@ -181,48 +193,25 @@
                         <div class="card-body py-3">
                             <div class="form-group mb-0">
                                 <label for="isi_nota_dinas" class="mb-1">Paragraf Pembuka (Menunjuk Surat...) <span class="text-danger">*</span></label>
-                                <textarea class="form-control" name="isi_nota_dinas" id="isi_nota_dinas" rows="4" required><?= esc($defaultIsi); ?></textarea>
+                                <textarea class="form-control" name="isi_nota_dinas" id="isi_nota_dinas" rows="3" required><?= esc($defaultIsi); ?></textarea>
                                 <small class="text-muted">Ketik atau sesuaikan isi surat rujukan sebelum tabel daftar pegawai yang diusulkan.</small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Pegawai, Periode & Tujuan -->
+                    <!-- Pegawai, Periode & Tujuan Masing-Masing -->
                     <div class="card card-outline card-success mb-3">
-                        <div class="card-header py-2">
-                            <h6 class="card-title mb-0 text-bold"><i class="fas fa-users mr-1"></i> Usulan Pegawai, Periode & Tujuan Perjalanan</h6>
+                        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                            <h6 class="card-title mb-0 text-bold"><i class="fas fa-users mr-1"></i> Usulan Pegawai, Periode & Tujuan Perjalanan (Masing-Masing Pegawai)</h6>
+                            <button type="button" class="btn btn-success btn-xs px-2 py-1 font-weight-bold" id="btnAddPegawaiRow">
+                                <i class="fas fa-plus mr-1"></i> Tambah Baris Pegawai
+                            </button>
                         </div>
                         <div class="card-body py-3">
-                            <div class="form-group">
-                                <label for="pelaksana_ids" class="mb-1">Pilih Pegawai (Master Pegawai) <span class="text-danger">*</span></label>
-                                <select class="form-control select2-pegawai" name="pelaksana_id[]" id="pelaksana_ids" multiple="multiple" required style="width: 100%;">
-                                    <?php foreach ($pegawaiOptions as $p): ?>
-                                        <option value="<?= $p['id']; ?>"><?= esc($p['display_label']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <small class="text-muted">Nama, NIP, dan Pangkat/Golongan akan diambil otomatis dari Master Pegawai.</small>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="periode_mulai">Periode Mulai <span class="text-danger">*</span></label>
-                                        <input type="date" class="form-control" name="periode_mulai" id="periode_mulai" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="periode_selesai">Periode Selesai <span class="text-danger">*</span></label>
-                                        <input type="date" class="form-control" name="periode_selesai" id="periode_selesai" required>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group mb-0">
-                                <label for="tujuan_textarea">Tujuan Perjalanan <span class="text-danger">*</span></label>
-                                <textarea class="form-control" name="tujuan" id="tujuan_textarea" rows="2" placeholder="Contoh: Kab. Kampar / Lokasi Kegiatan..." required></textarea>
-                                <small class="text-muted">Kolom Periode Perjalanan dan Tujuan akan digabung (merge vertikal) pada tabel cetakan PDF.</small>
-                            </div>
+                            <div id="pegawaiRowsContainer"></div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-info-circle mr-1"></i> Setiap pegawai memiliki Periode Perjalanan dan Tujuan masing-masing. Nama, NIP, dan Pangkat/Golongan diambil otomatis dari Master Pegawai.
+                            </small>
                         </div>
                     </div>
 
@@ -234,7 +223,7 @@
                         <div class="card-body py-3">
                             <div class="form-group mb-0">
                                 <label for="ppk_pegawai_id" class="mb-1">Pejabat Pembuat Komitmen <span class="text-danger">*</span></label>
-                                <select class="form-control select2-pegawai" name="ppk_pegawai_id" id="ppk_pegawai_id" required style="width: 100%;">
+                                <select class="form-control select2-ppk" name="ppk_pegawai_id" id="ppk_pegawai_id" required style="width: 100%;">
                                     <option value="">-- Pilih Pejabat PPK --</option>
                                     <?php foreach ($pegawaiOptions as $p): ?>
                                         <option value="<?= $p['id']; ?>" <?= ($p['id'] == 2) ? 'selected' : ''; ?>><?= esc($p['display_label']); ?></option>
@@ -253,6 +242,14 @@
         </div>
     </div>
 </div>
+
+<!-- Template Option Pegawai (Hidden) -->
+<template id="pegawaiOptionTemplate">
+    <option value="">-- Pilih Pegawai dari Master Pegawai --</option>
+    <?php foreach ($pegawaiOptions as $p): ?>
+        <option value="<?= (int) $p['id']; ?>"><?= esc($p['display_label']); ?></option>
+    <?php endforeach; ?>
+</template>
 
 <!-- Modal Konfirmasi Hapus -->
 <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -278,10 +275,99 @@
 <?= $this->section('pageScripts'); ?>
 <script>
 var defaultIsiNotaDinas = <?= json_encode($defaultIsi, JSON_UNESCAPED_UNICODE); ?>;
+var pegawaiRowCounter = 0;
+
+function addPegawaiRow(initialData) {
+    pegawaiRowCounter++;
+    var idx = pegawaiRowCounter;
+    var data = initialData || {};
+    var selectedId = data.id ? String(data.id) : '';
+    var pMulai = data.periode_mulai || '';
+    var pSelesai = data.periode_selesai || '';
+    var pTujuan = data.tujuan || '';
+
+    var optionsHtml = document.getElementById('pegawaiOptionTemplate').innerHTML;
+
+    var $row = $(
+        '<div class="pegawai-item-row" data-row-idx="' + idx + '">' +
+            '<div class="d-flex justify-content-between align-items-center mb-2">' +
+                '<span class="badge badge-secondary px-2 py-1 row-number-badge">Pegawai #1</span>' +
+                '<button type="button" class="btn btn-outline-danger btn-xs btn-remove-pegawai-row" title="Hapus Baris">' +
+                    '<i class="fas fa-times mr-1"></i> Hapus' +
+                '</button>' +
+            '</div>' +
+            '<div class="form-row">' +
+                '<div class="form-group col-md-5 mb-2 mb-md-0">' +
+                    '<label class="mb-1 small font-weight-bold">Nama Pegawai <span class="text-danger">*</span></label>' +
+                    '<select class="form-control select2-row-pegawai" name="pelaksana_id[]" required style="width: 100%;">' +
+                        optionsHtml +
+                    '</select>' +
+                '</div>' +
+                '<div class="form-group col-md-2 mb-2 mb-md-0">' +
+                    '<label class="mb-1 small font-weight-bold">Periode Mulai <span class="text-danger">*</span></label>' +
+                    '<input type="date" class="form-control item-periode-mulai" name="item_periode_mulai[]" required>' +
+                '</div>' +
+                '<div class="form-group col-md-2 mb-2 mb-md-0">' +
+                    '<label class="mb-1 small font-weight-bold">Periode Selesai <span class="text-danger">*</span></label>' +
+                    '<input type="date" class="form-control item-periode-selesai" name="item_periode_selesai[]" required>' +
+                '</div>' +
+                '<div class="form-group col-md-3 mb-0">' +
+                    '<label class="mb-1 small font-weight-bold">Tujuan Perjalanan <span class="text-danger">*</span></label>' +
+                    '<input type="text" class="form-control item-tujuan" name="item_tujuan[]" placeholder="Contoh: Kab. Kampar" required>' +
+                '</div>' +
+            '</div>' +
+        '</div>'
+    );
+
+    $('#pegawaiRowsContainer').append($row);
+
+    var $select = $row.find('.select2-row-pegawai');
+    $select.select2({
+        theme: 'bootstrap4',
+        dropdownParent: $('#modalNotaDinas'),
+        placeholder: '-- Pilih Pegawai --'
+    });
+
+    if (selectedId) {
+        $select.val(selectedId).trigger('change');
+    }
+
+    var $mulaiInput = $row.find('.item-periode-mulai');
+    var $selesaiInput = $row.find('.item-periode-selesai');
+    var $tujuanInput = $row.find('.item-tujuan');
+
+    $mulaiInput.val(pMulai);
+    $selesaiInput.val(pSelesai);
+    if (pMulai) {
+        $selesaiInput.attr('min', pMulai);
+    }
+    $tujuanInput.val(pTujuan);
+
+    renumberPegawaiRows();
+}
+
+function renumberPegawaiRows() {
+    var $rows = $('#pegawaiRowsContainer .pegawai-item-row');
+    var total = $rows.length;
+    $rows.each(function(index) {
+        $(this).find('.row-number-badge').text('Pegawai #' + (index + 1));
+        $(this).find('.btn-remove-pegawai-row').toggle(total > 1);
+    });
+}
+
+function clearPegawaiRows() {
+    $('#pegawaiRowsContainer .select2-row-pegawai').each(function() {
+        if ($(this).data('select2')) {
+            $(this).select2('destroy');
+        }
+    });
+    $('#pegawaiRowsContainer').empty();
+    pegawaiRowCounter = 0;
+}
 
 function openCreateModal() {
     document.getElementById('formNotaDinas').reset();
-    $('.select2-pegawai').val(null).trigger('change');
+    clearPegawaiRows();
 
     document.getElementById('nomor_nota_dinas').value = '';
     document.getElementById('tanggal_nota_dinas').value = '';
@@ -289,22 +375,22 @@ function openCreateModal() {
     document.getElementById('dari').value = 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis Riau';
     document.getElementById('hal').value = 'Permohonan Penerbitan Surat Tugas Pelaksanaan Kegiatan';
     document.getElementById('isi_nota_dinas').value = defaultIsiNotaDinas;
-    document.getElementById('tujuan_textarea').value = '';
 
     $('#ppk_pegawai_id').val('2').trigger('change');
+
+    // Add 1 default blank employee row
+    addPegawaiRow();
 
     var actionUrl = '<?= site_url('admin/surat/perjalanan-dinas/nota-dinas/buat'); ?>';
     document.getElementById('formNotaDinas').setAttribute('action', actionUrl);
 
     $('#modalNotaDinas .modal-title').text('Tambah Nota Dinas Perjalanan Dinas');
-    $('#periode_selesai').removeAttr('min');
-
     $('#modalNotaDinas').modal('show');
 }
 
 function openEditModal(data) {
     document.getElementById('formNotaDinas').reset();
-    $('.select2-pegawai').val(null).trigger('change');
+    clearPegawaiRows();
 
     var actionUrl = '<?= site_url('admin/surat/perjalanan-dinas/nota-dinas'); ?>/' + data.id + '/ubah';
     document.getElementById('formNotaDinas').setAttribute('action', actionUrl);
@@ -317,49 +403,76 @@ function openEditModal(data) {
     document.getElementById('dari').value = data.dari || 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis Riau';
     document.getElementById('hal').value = data.hal || 'Permohonan Penerbitan Surat Tugas Pelaksanaan Kegiatan';
     document.getElementById('isi_nota_dinas').value = data.isi_nota_dinas || defaultIsiNotaDinas;
-    document.getElementById('periode_mulai').value = data.periode_mulai || '';
-    document.getElementById('periode_selesai').value = data.periode_selesai || '';
-    document.getElementById('tujuan_textarea').value = data.tujuan || '';
-
-    if (data.periode_mulai) {
-        $('#periode_selesai').attr('min', data.periode_mulai);
-    }
 
     $('#ppk_pegawai_id').val(data.ppk_pegawai_id || '2').trigger('change');
 
     var pelaksana = data.pelaksana_raw || [];
-    var selectedIds = [];
-    for (var i = 0; i < pelaksana.length; i++) {
-        selectedIds.push(pelaksana[i].id);
+    if (pelaksana.length > 0) {
+        for (var i = 0; i < pelaksana.length; i++) {
+            addPegawaiRow({
+                id: pelaksana[i].id,
+                periode_mulai: pelaksana[i].periode_mulai || data.periode_mulai || '',
+                periode_selesai: pelaksana[i].periode_selesai || data.periode_selesai || '',
+                tujuan: pelaksana[i].tujuan || data.tujuan || ''
+            });
+        }
+    } else {
+        addPegawaiRow();
     }
-    $('#pelaksana_ids').val(selectedIds).trigger('change');
 
     $('#modalNotaDinas').modal('show');
 }
 
 $(document).ready(function() {
-    $('#periode_mulai').on('change', function() {
-        var startVal = $(this).val();
-        $('#periode_selesai').attr('min', startVal);
+    $('#btnAddPegawaiRow').on('click', function() {
+        // Pre-fill new row's dates/tujuan from the last row for convenience if available
+        var $lastRow = $('#pegawaiRowsContainer .pegawai-item-row').last();
+        var defaultMulai = $lastRow.length ? ($lastRow.find('.item-periode-mulai').val() || '') : '';
+        var defaultSelesai = $lastRow.length ? ($lastRow.find('.item-periode-selesai').val() || '') : '';
+        var defaultTujuan = $lastRow.length ? ($lastRow.find('.item-tujuan').val() || '') : '';
 
-        var endVal = $('#periode_selesai').val();
+        addPegawaiRow({
+            id: '',
+            periode_mulai: defaultMulai,
+            periode_selesai: defaultSelesai,
+            tujuan: defaultTujuan
+        });
+    });
+
+    $(document).on('click', '.btn-remove-pegawai-row', function() {
+        var $rows = $('#pegawaiRowsContainer .pegawai-item-row');
+        if ($rows.length <= 1) {
+            return;
+        }
+        var $row = $(this).closest('.pegawai-item-row');
+        var $sel = $row.find('.select2-row-pegawai');
+        if ($sel.data('select2')) {
+            $sel.select2('destroy');
+        }
+        $row.remove();
+        renumberPegawaiRows();
+    });
+
+    // Sync start & end date per row
+    $(document).on('change', '.item-periode-mulai', function() {
+        var $row = $(this).closest('.pegawai-item-row');
+        var startVal = $(this).val();
+        var $endInput = $row.find('.item-periode-selesai');
+        $endInput.attr('min', startVal);
+
+        var endVal = $endInput.val();
         if (!endVal || endVal < startVal) {
-            $('#periode_selesai').val(startVal);
+            $endInput.val(startVal);
         }
     });
 
-    $('#periode_selesai').on('change', function() {
-        var startVal = $('#periode_mulai').val();
+    $(document).on('change', '.item-periode-selesai', function() {
+        var $row = $(this).closest('.pegawai-item-row');
+        var startVal = $row.find('.item-periode-mulai').val();
         var endVal = $(this).val();
         if (startVal && endVal && endVal < startVal) {
             $(this).val(startVal);
         }
-    });
-
-    $('#pelaksana_ids').select2({
-        theme: 'bootstrap4',
-        dropdownParent: $('#modalNotaDinas'),
-        placeholder: '-- Pilih Pegawai dari Master Pegawai --'
     });
 
     $('#ppk_pegawai_id').select2({
@@ -507,4 +620,3 @@ $(document).ready(function() {
 });
 </script>
 <?= $this->endSection(); ?>
-

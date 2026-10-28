@@ -70,10 +70,10 @@ class NotaDinasPerjalananDinas extends BaseController
         $pelaksanaId = (int) $this->request->getGet('filter_pelaksana');
 
         if ($startDate !== '') {
-            $builder->where('periode_mulai >=', $startDate);
+            $builder->where('periode_selesai >=', $startDate);
         }
         if ($endDate !== '') {
-            $builder->where('periode_selesai <=', $endDate);
+            $builder->where('periode_mulai <=', $endDate);
         }
         if ($pelaksanaId > 0) {
             $builder->groupStart()
@@ -103,29 +103,81 @@ class NotaDinasPerjalananDinas extends BaseController
         foreach ($rows as $row) {
             $pelaksanaList = json_decode((string) ($row['pelaksana_json'] ?? '[]'), true);
             $pelaksanaNames = [];
-            $tooltipNames = [];
+            $tooltipLines   = [];
+            $periodeLines   = [];
+            $tujuanLines    = [];
+
+            $fallbackMulai   = (string) ($row['periode_mulai'] ?? '');
+            $fallbackSelesai = (string) ($row['periode_selesai'] ?? '');
+            $fallbackTujuan  = (string) ($row['tujuan'] ?? '');
+
             if (! empty($pelaksanaList) && is_array($pelaksanaList)) {
-                foreach ($pelaksanaList as $idx => $p) {
-                    $num = $idx + 1;
+                foreach ($pelaksanaList as $idx => &$p) {
+                    $num  = $idx + 1;
                     $nama = trim((string) ($p['nama'] ?? ''));
+                    if (empty($p['periode_mulai']) && $fallbackMulai !== '') {
+                        $p['periode_mulai'] = $fallbackMulai;
+                    }
+                    if (empty($p['periode_selesai']) && $fallbackSelesai !== '') {
+                        $p['periode_selesai'] = $fallbackSelesai;
+                    }
+                    if (! isset($p['tujuan']) || trim((string) $p['tujuan']) === '') {
+                        $p['tujuan'] = $fallbackTujuan;
+                    }
+
+                    $pm = ! empty($p['periode_mulai']) ? date('d-m-Y', strtotime((string) $p['periode_mulai'])) : '-';
+                    $ps = ! empty($p['periode_selesai']) ? date('d-m-Y', strtotime((string) $p['periode_selesai'])) : '-';
+                    $pPeriode = ($pm === $ps) ? $pm : ($pm . ' s/d ' . $ps);
+                    $pTujuan  = trim((string) ($p['tujuan'] ?? '-'));
+
                     if ($nama !== '') {
                         $pelaksanaNames[] = $num . '. ' . $nama;
-                        $tooltipNames[] = $num . '. ' . $nama . (! empty($p['nip']) ? ' (NIP ' . $p['nip'] . ')' : '');
+                        $tooltipLines[]   = $num . '. ' . $nama
+                            . (! empty($p['nip']) ? ' (NIP ' . $p['nip'] . ')' : '')
+                            . ' — ' . $pPeriode . ' (' . $pTujuan . ')';
+                        $periodeLines[]   = $num . '. ' . $pPeriode;
+                        $tujuanLines[]    = $num . '. ' . $pTujuan;
                     }
                 }
+                unset($p);
             }
+
             if (! empty($pelaksanaNames)) {
                 $singleLineText = implode(', ', $pelaksanaNames);
-                $tooltipText = implode('<br>', $tooltipNames);
-                $pelaksanaHtml = '<div class="pelaksana-single-line" data-toggle="tooltip" data-html="true" data-placement="top" title="' . esc($tooltipText, 'attr') . '">' . esc($singleLineText) . '</div>';
+                $tooltipText    = implode('<br>', array_map('esc', $tooltipLines));
+                $pelaksanaHtml  = '<div class="pelaksana-single-line" data-toggle="tooltip" data-html="true" data-placement="top" title="' . esc($tooltipText, 'attr') . '">' . esc($singleLineText) . '</div>';
             } else {
                 $pelaksanaHtml = '-';
             }
 
-            $tglMulai   = ! empty($row['periode_mulai']) ? date('d-m-Y', strtotime($row['periode_mulai'])) : '-';
-            $tglSelesai = ! empty($row['periode_selesai']) ? date('d-m-Y', strtotime($row['periode_selesai'])) : '-';
-            $periodeLabel = $tglMulai === $tglSelesai ? $tglMulai : $tglMulai . ' s/d ' . $tglSelesai;
-            $periodeHtml  = '<span style="white-space: nowrap !important; display: inline-block;">' . esc($periodeLabel) . '</span>';
+            // Format Periode column (shows each or range with tooltip)
+            $uniquePeriodes = array_unique(array_map(static function ($p) {
+                $pm = ! empty($p['periode_mulai']) ? date('d-m-Y', strtotime((string) $p['periode_mulai'])) : '-';
+                $ps = ! empty($p['periode_selesai']) ? date('d-m-Y', strtotime((string) $p['periode_selesai'])) : '-';
+                return ($pm === $ps) ? $pm : ($pm . ' s/d ' . $ps);
+            }, is_array($pelaksanaList) ? $pelaksanaList : []));
+
+            if (count($uniquePeriodes) === 1) {
+                $periodeDisplay = (string) reset($uniquePeriodes);
+            } elseif (count($uniquePeriodes) > 1) {
+                $periodeDisplay = implode(', ', $periodeLines);
+            } else {
+                $tglMulai   = ! empty($row['periode_mulai']) ? date('d-m-Y', strtotime($row['periode_mulai'])) : '-';
+                $tglSelesai = ! empty($row['periode_selesai']) ? date('d-m-Y', strtotime($row['periode_selesai'])) : '-';
+                $periodeDisplay = $tglMulai === $tglSelesai ? $tglMulai : $tglMulai . ' s/d ' . $tglSelesai;
+            }
+            $periodeTooltip = ! empty($periodeLines) ? implode('<br>', array_map('esc', $periodeLines)) : esc($periodeDisplay);
+            $periodeHtml    = '<div class="pelaksana-single-line" data-toggle="tooltip" data-html="true" data-placement="top" title="' . esc($periodeTooltip, 'attr') . '">' . esc($periodeDisplay) . '</div>';
+
+            // Format Tujuan column
+            $uniqueTujuans = array_unique(array_filter(array_map(static fn ($p) => trim((string) ($p['tujuan'] ?? '')), is_array($pelaksanaList) ? $pelaksanaList : [])));
+            if (count($uniqueTujuans) === 1) {
+                $tujuanDisplay = (string) reset($uniqueTujuans);
+            } elseif (count($uniqueTujuans) > 1) {
+                $tujuanDisplay = implode(', ', $tujuanLines);
+            } else {
+                $tujuanDisplay = (string) ($row['tujuan'] ?? '-');
+            }
 
             $tglNota = ! empty($row['tanggal_nota_dinas']) ? date('d-m-Y', strtotime($row['tanggal_nota_dinas'])) : '-';
 
@@ -155,7 +207,7 @@ class NotaDinasPerjalananDinas extends BaseController
                 'periode_html'       => $periodeHtml,
                 'periode_mulai'      => (string) ($row['periode_mulai'] ?? ''),
                 'periode_selesai'    => (string) ($row['periode_selesai'] ?? ''),
-                'tujuan'             => (string) ($row['tujuan'] ?? ''),
+                'tujuan'             => $tujuanDisplay,
                 'ppk_pegawai_id'     => (int) ($row['ppk_pegawai_id'] ?? 0),
                 'action_html'        => $actionHtml,
             ];
@@ -186,65 +238,20 @@ class NotaDinasPerjalananDinas extends BaseController
             return redirect()->to(site_url(self::MENU_LINK));
         }
 
-        $pelaksanaIds = $this->request->getPost('pelaksana_id');
-        if (is_array($pelaksanaIds)) {
-            $pelaksanaIds = array_filter(array_map('intval', $pelaksanaIds));
-            $pelaksanaIds = array_values(array_unique($pelaksanaIds));
-        } else {
-            $pelaksanaIds = [];
-        }
-
-        $nomorNotaDinas   = trim((string) $this->request->getPost('nomor_nota_dinas'));
-        $kepadaYth        = trim((string) $this->request->getPost('kepada_yth'));
-        $dari             = trim((string) $this->request->getPost('dari'));
-        $hal              = trim((string) $this->request->getPost('hal'));
-        $tanggalNotaDinas = trim((string) $this->request->getPost('tanggal_nota_dinas'));
-        $isiNotaDinas     = trim((string) $this->request->getPost('isi_nota_dinas'));
-        $periodeMulai     = trim((string) $this->request->getPost('periode_mulai'));
-        $periodeSelesai   = trim((string) $this->request->getPost('periode_selesai'));
-        $tujuan           = trim((string) $this->request->getPost('tujuan'));
-        $ppkPegawaiId     = (int) $this->request->getPost('ppk_pegawai_id');
-
-        if ($kepadaYth === '') {
-            $kepadaYth = 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
-        }
-        if ($dari === '') {
-            $dari = 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis Riau';
-        }
-        if ($hal === '') {
-            $hal = 'Permohonan Penerbitan Surat Tugas Pelaksanaan Kegiatan';
-        }
-
-        $errors = [];
-        if (empty($pelaksanaIds)) {
-            $errors[] = 'Pegawai yang diusulkan minimal harus dipilih 1 orang.';
-        }
-        if ($isiNotaDinas === '') {
-            $errors[] = 'Isi Nota Dinas wajib diisi.';
-        }
-        if ($periodeMulai === '') {
-            $errors[] = 'Periode Mulai Perjalanan wajib diisi.';
-        }
-        if ($periodeSelesai === '') {
-            $errors[] = 'Periode Selesai Perjalanan wajib diisi.';
-        }
-        if ($periodeMulai !== '' && $periodeSelesai !== '' && $periodeSelesai < $periodeMulai) {
-            $errors[] = 'Periode Selesai tidak boleh kurang dari Periode Mulai.';
-        }
-        if ($tujuan === '') {
-            $errors[] = 'Tujuan Perjalanan wajib diisi.';
-        }
-        if ($ppkPegawaiId <= 0) {
-            $errors[] = 'Pejabat Pembuat Komitmen (Penandatangan) wajib dipilih.';
-        }
+        [$pelaksanaRows, $minMulai, $maxSelesai, $summaryTujuan, $errors] = $this->parseAndValidateSubmission();
 
         if ($errors !== []) {
             return redirect()->to(site_url(self::MENU_LINK))->with('error', implode(' ', $errors));
         }
 
-        $pegawaiOptions = $this->loadPegawaiOptions();
-        $pelaksanaRows  = $this->buildPegawaiRowsByIds($pegawaiOptions, $pelaksanaIds);
-        $username       = trim((string) session()->get('username'));
+        $nomorNotaDinas   = trim((string) $this->request->getPost('nomor_nota_dinas'));
+        $kepadaYth        = trim((string) $this->request->getPost('kepada_yth')) ?: 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
+        $dari             = trim((string) $this->request->getPost('dari')) ?: 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis Riau';
+        $hal              = trim((string) $this->request->getPost('hal')) ?: 'Permohonan Penerbitan Surat Tugas Pelaksanaan Kegiatan';
+        $tanggalNotaDinas = trim((string) $this->request->getPost('tanggal_nota_dinas'));
+        $isiNotaDinas     = trim((string) $this->request->getPost('isi_nota_dinas'));
+        $ppkPegawaiId     = (int) $this->request->getPost('ppk_pegawai_id');
+        $username         = trim((string) session()->get('username'));
 
         $model = new NotaDinasPerjalananDinasModel();
         $data = [
@@ -255,9 +262,9 @@ class NotaDinasPerjalananDinas extends BaseController
             'tanggal_nota_dinas' => $tanggalNotaDinas !== '' ? $tanggalNotaDinas : null,
             'isi_nota_dinas'     => $isiNotaDinas,
             'pelaksana_json'     => json_encode($pelaksanaRows, JSON_UNESCAPED_UNICODE),
-            'periode_mulai'      => $periodeMulai,
-            'periode_selesai'    => $periodeSelesai,
-            'tujuan'             => $tujuan,
+            'periode_mulai'      => $minMulai,
+            'periode_selesai'    => $maxSelesai,
+            'tujuan'             => $summaryTujuan,
             'ppk_pegawai_id'     => $ppkPegawaiId,
             'created_by'         => $username,
             'created_at'         => date('Y-m-d H:i:s'),
@@ -294,65 +301,20 @@ class NotaDinasPerjalananDinas extends BaseController
             return redirect()->to(site_url(self::MENU_LINK));
         }
 
-        $pelaksanaIds = $this->request->getPost('pelaksana_id');
-        if (is_array($pelaksanaIds)) {
-            $pelaksanaIds = array_filter(array_map('intval', $pelaksanaIds));
-            $pelaksanaIds = array_values(array_unique($pelaksanaIds));
-        } else {
-            $pelaksanaIds = [];
-        }
-
-        $nomorNotaDinas   = trim((string) $this->request->getPost('nomor_nota_dinas'));
-        $kepadaYth        = trim((string) $this->request->getPost('kepada_yth'));
-        $dari             = trim((string) $this->request->getPost('dari'));
-        $hal              = trim((string) $this->request->getPost('hal'));
-        $tanggalNotaDinas = trim((string) $this->request->getPost('tanggal_nota_dinas'));
-        $isiNotaDinas     = trim((string) $this->request->getPost('isi_nota_dinas'));
-        $periodeMulai     = trim((string) $this->request->getPost('periode_mulai'));
-        $periodeSelesai   = trim((string) $this->request->getPost('periode_selesai'));
-        $tujuan           = trim((string) $this->request->getPost('tujuan'));
-        $ppkPegawaiId     = (int) $this->request->getPost('ppk_pegawai_id');
-
-        if ($kepadaYth === '') {
-            $kepadaYth = 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
-        }
-        if ($dari === '') {
-            $dari = 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis Riau';
-        }
-        if ($hal === '') {
-            $hal = 'Permohonan Penerbitan Surat Tugas Pelaksanaan Kegiatan';
-        }
-
-        $errors = [];
-        if (empty($pelaksanaIds)) {
-            $errors[] = 'Pegawai yang diusulkan minimal harus dipilih 1 orang.';
-        }
-        if ($isiNotaDinas === '') {
-            $errors[] = 'Isi Nota Dinas wajib diisi.';
-        }
-        if ($periodeMulai === '') {
-            $errors[] = 'Periode Mulai Perjalanan wajib diisi.';
-        }
-        if ($periodeSelesai === '') {
-            $errors[] = 'Periode Selesai Perjalanan wajib diisi.';
-        }
-        if ($periodeMulai !== '' && $periodeSelesai !== '' && $periodeSelesai < $periodeMulai) {
-            $errors[] = 'Periode Selesai tidak boleh kurang dari Periode Mulai.';
-        }
-        if ($tujuan === '') {
-            $errors[] = 'Tujuan Perjalanan wajib diisi.';
-        }
-        if ($ppkPegawaiId <= 0) {
-            $errors[] = 'Pejabat Pembuat Komitmen (Penandatangan) wajib dipilih.';
-        }
+        [$pelaksanaRows, $minMulai, $maxSelesai, $summaryTujuan, $errors] = $this->parseAndValidateSubmission();
 
         if ($errors !== []) {
             return redirect()->to(site_url(self::MENU_LINK))->with('error', implode(' ', $errors));
         }
 
-        $pegawaiOptions = $this->loadPegawaiOptions();
-        $pelaksanaRows  = $this->buildPegawaiRowsByIds($pegawaiOptions, $pelaksanaIds);
-        $username       = trim((string) session()->get('username'));
+        $nomorNotaDinas   = trim((string) $this->request->getPost('nomor_nota_dinas'));
+        $kepadaYth        = trim((string) $this->request->getPost('kepada_yth')) ?: 'Kepala Satuan Kerja Pelaksanaan Prasarana Strategis Riau';
+        $dari             = trim((string) $this->request->getPost('dari')) ?: 'Pejabat Pembuat Komitmen Pelaksanaan Prasarana Strategis Riau';
+        $hal              = trim((string) $this->request->getPost('hal')) ?: 'Permohonan Penerbitan Surat Tugas Pelaksanaan Kegiatan';
+        $tanggalNotaDinas = trim((string) $this->request->getPost('tanggal_nota_dinas'));
+        $isiNotaDinas     = trim((string) $this->request->getPost('isi_nota_dinas'));
+        $ppkPegawaiId     = (int) $this->request->getPost('ppk_pegawai_id');
+        $username         = trim((string) session()->get('username'));
 
         $data = [
             'nomor_nota_dinas'   => $nomorNotaDinas !== '' ? $nomorNotaDinas : null,
@@ -362,9 +324,9 @@ class NotaDinasPerjalananDinas extends BaseController
             'tanggal_nota_dinas' => $tanggalNotaDinas !== '' ? $tanggalNotaDinas : null,
             'isi_nota_dinas'     => $isiNotaDinas,
             'pelaksana_json'     => json_encode($pelaksanaRows, JSON_UNESCAPED_UNICODE),
-            'periode_mulai'      => $periodeMulai,
-            'periode_selesai'    => $periodeSelesai,
-            'tujuan'             => $tujuan,
+            'periode_mulai'      => $minMulai,
+            'periode_selesai'    => $maxSelesai,
+            'tujuan'             => $summaryTujuan,
             'ppk_pegawai_id'     => $ppkPegawaiId,
             'updated_by'         => $username,
             'updated_at'         => date('Y-m-d H:i:s'),
@@ -375,6 +337,100 @@ class NotaDinasPerjalananDinas extends BaseController
         }
 
         return redirect()->to(site_url(self::MENU_LINK))->with('success', 'Nota Dinas Perjalanan Dinas berhasil diperbarui.');
+    }
+
+    /**
+     * Parse per-employee rows (pelaksana_id[], item_periode_mulai[], item_periode_selesai[], item_tujuan[])
+     */
+    private function parseAndValidateSubmission(): array
+    {
+        $pelaksanaIds   = $this->request->getPost('pelaksana_id');
+        $periodeMulais  = $this->request->getPost('item_periode_mulai');
+        $periodeSelesais = $this->request->getPost('item_periode_selesai');
+        $tujuans        = $this->request->getPost('item_tujuan');
+
+        $isiNotaDinas = trim((string) $this->request->getPost('isi_nota_dinas'));
+        $ppkPegawaiId = (int) $this->request->getPost('ppk_pegawai_id');
+
+        $errors = [];
+        if ($isiNotaDinas === '') {
+            $errors[] = 'Isi Nota Dinas wajib diisi.';
+        }
+        if ($ppkPegawaiId <= 0) {
+            $errors[] = 'Pejabat Pembuat Komitmen (Penandatangan) wajib dipilih.';
+        }
+
+        if (! is_array($pelaksanaIds) || empty($pelaksanaIds)) {
+            $errors[] = 'Pegawai yang diusulkan minimal harus dipilih 1 orang.';
+            return [[], null, null, '', $errors];
+        }
+
+        $pegawaiOptions = $this->loadPegawaiOptions();
+        $rowsById = [];
+        foreach ($pegawaiOptions as $row) {
+            $rowsById[(int) ($row['id'] ?? 0)] = $row;
+        }
+
+        $pelaksanaRows = [];
+        $minMulai      = null;
+        $maxSelesai    = null;
+        $tujuanList    = [];
+
+        foreach ($pelaksanaIds as $idx => $rawPid) {
+            $rowNum = $idx + 1;
+            $pid    = (int) $rawPid;
+            $pMulai   = is_array($periodeMulais) ? trim((string) ($periodeMulais[$idx] ?? '')) : '';
+            $pSelesai = is_array($periodeSelesais) ? trim((string) ($periodeSelesais[$idx] ?? '')) : '';
+            $pTujuan  = is_array($tujuans) ? trim((string) ($tujuans[$idx] ?? '')) : '';
+
+            if ($pid <= 0 || ! isset($rowsById[$pid])) {
+                $errors[] = "Baris #{$rowNum}: Pegawai wajib dipilih.";
+                continue;
+            }
+            if ($pMulai === '') {
+                $errors[] = "Baris #{$rowNum}: Periode Mulai wajib diisi.";
+            }
+            if ($pSelesai === '') {
+                $errors[] = "Baris #{$rowNum}: Periode Selesai wajib diisi.";
+            }
+            if ($pMulai !== '' && $pSelesai !== '' && $pSelesai < $pMulai) {
+                $errors[] = "Baris #{$rowNum}: Periode Selesai tidak boleh kurang dari Periode Mulai.";
+            }
+            if ($pTujuan === '') {
+                $errors[] = "Baris #{$rowNum}: Tujuan Perjalanan wajib diisi.";
+            }
+
+            $emp = $rowsById[$pid];
+            $pelaksanaRows[] = [
+                'id'              => (int) ($emp['id'] ?? 0),
+                'nama'            => (string) ($emp['nama'] ?? ''),
+                'nip'             => (string) ($emp['nip'] ?? ''),
+                'jabatan'         => (string) ($emp['jabatan_label'] ?? ''),
+                'golongan'        => (string) ($emp['golongan'] ?? ''),
+                'jenis_pegawai'   => (string) ($emp['jenis_pegawai'] ?? ''),
+                'periode_mulai'   => $pMulai,
+                'periode_selesai' => $pSelesai,
+                'tujuan'          => $pTujuan,
+            ];
+
+            if ($pMulai !== '' && ($minMulai === null || $pMulai < $minMulai)) {
+                $minMulai = $pMulai;
+            }
+            if ($pSelesai !== '' && ($maxSelesai === null || $pSelesai > $maxSelesai)) {
+                $maxSelesai = $pSelesai;
+            }
+            if ($pTujuan !== '') {
+                $tujuanList[] = $pTujuan;
+            }
+        }
+
+        if (empty($pelaksanaRows) && empty($errors)) {
+            $errors[] = 'Pegawai yang diusulkan minimal harus dipilih 1 orang.';
+        }
+
+        $summaryTujuan = implode(', ', array_unique($tujuanList));
+
+        return [$pelaksanaRows, $minMulai, $maxSelesai, $summaryTujuan, $errors];
     }
 
     public function hapus(int $id)
@@ -536,33 +592,6 @@ class NotaDinasPerjalananDinas extends BaseController
             $row['display_label'] = $display;
             return $row;
         }, $rows);
-    }
-
-    private function buildPegawaiRowsByIds(array $pegawaiRows, array $ids): array
-    {
-        $rowsById = [];
-        foreach ($pegawaiRows as $row) {
-            $rowsById[(int) ($row['id'] ?? 0)] = $row;
-        }
-
-        $rows = [];
-        foreach ($ids as $id) {
-            if (! isset($rowsById[(int) $id])) {
-                continue;
-            }
-
-            $row = $rowsById[(int) $id];
-            $rows[] = [
-                'id'            => (int) ($row['id'] ?? 0),
-                'nama'          => (string) ($row['nama'] ?? ''),
-                'nip'           => (string) ($row['nip'] ?? ''),
-                'jabatan'       => (string) ($row['jabatan_label'] ?? ''),
-                'golongan'      => (string) ($row['golongan'] ?? ''),
-                'jenis_pegawai' => (string) ($row['jenis_pegawai'] ?? ''),
-            ];
-        }
-
-        return $this->sortPelaksanaByStrukturOrganisasi($rows);
     }
 
     private function getPegawaiSignatureData(int $id): array
@@ -882,4 +911,3 @@ class NotaDinasPerjalananDinas extends BaseController
         }
     }
 }
-
