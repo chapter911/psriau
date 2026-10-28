@@ -2,12 +2,13 @@
 
 <?= $this->section('content'); ?>
 <?php
-    $canAdd         = (bool) ($can_add ?? false);
-    $canEdit        = (bool) ($can_edit ?? false);
-    $canDelete      = (bool) ($can_delete ?? false);
-    $canExport      = (bool) ($can_export ?? false);
-    $pegawaiOptions = $pegawai_options ?? [];
-    $defaultIsi     = 'Menunjuk Surat dari PT. Toleransi Aceh, KSO PT. Bripona Jaya Abadi Nomor: 35/PT.TA-PT.BJA.KSO/MDRS-R4/X/2026 tanggal 14 Oktober 2026 perihal Permohonan Serah Terima Pertama (PHO), bersama ini dengan hormat kami usulkan pegawai di bawah ini untuk mengikuti kegiatan tersebut:';
+    $canAdd           = (bool) ($can_add ?? false);
+    $canEdit          = (bool) ($can_edit ?? false);
+    $canDelete        = (bool) ($can_delete ?? false);
+    $canExport        = (bool) ($can_export ?? false);
+    $pegawaiOptions   = $pegawai_options ?? [];
+    $kabupatenOptions = $kabupaten_options ?? [];
+    $defaultIsi       = 'Menunjuk Surat dari PT. Toleransi Aceh, KSO PT. Bripona Jaya Abadi Nomor: 35/PT.TA-PT.BJA.KSO/MDRS-R4/X/2026 tanggal 14 Oktober 2026 perihal Permohonan Serah Terima Pertama (PHO), bersama ini dengan hormat kami usulkan pegawai di bawah ini untuk mengikuti kegiatan tersebut:';
 ?>
 <style>
     .tooltip {
@@ -87,17 +88,26 @@
             </div>
             <div class="card-body">
                 <div class="form-row">
-                    <div class="form-group col-md-3">
+                    <div class="form-group col-md-2">
                         <label for="filter_start_date" class="font-weight-bold mb-1">Periode Mulai</label>
                         <input type="date" class="form-control form-control-sm" id="filter_start_date" value="<?= date('Y-01-01'); ?>">
                     </div>
-                    <div class="form-group col-md-3">
+                    <div class="form-group col-md-2">
                         <label for="filter_end_date" class="font-weight-bold mb-1">Periode Selesai</label>
                         <input type="date" class="form-control form-control-sm" id="filter_end_date" value="<?= date('Y-m-t'); ?>">
                     </div>
-                    <div class="form-group col-md-6">
+                    <div class="form-group col-md-4">
+                        <label for="filter_kota" class="font-weight-bold mb-1">Kota/Kabupaten Tujuan</label>
+                        <select class="form-control form-control-sm no-select2" id="filter_kota" data-placeholder="Semua Kota/Kabupaten" style="width: 100%;">
+                            <option value=""></option>
+                            <?php foreach ($kabupatenOptions as $kota): ?>
+                                <option value="<?= esc($kota); ?>"><?= esc($kota); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
                         <label for="filter_pelaksana" class="font-weight-bold mb-1">Pegawai Diusulkan</label>
-                        <select class="form-control form-control-sm select2-filter" id="filter_pelaksana" data-placeholder="Semua Pegawai" style="width: 100%;">
+                        <select class="form-control form-control-sm no-select2" id="filter_pelaksana" data-placeholder="Semua Pegawai" style="width: 100%;">
                             <option value=""></option>
                             <?php foreach ($pegawaiOptions as $peg): ?>
                                 <option value="<?= (int) ($peg['id'] ?? 0); ?>"><?= esc($peg['nama'] ?? ''); ?><?= ! empty($peg['nip']) ? ' - NIP ' . esc($peg['nip']) : ''; ?></option>
@@ -136,7 +146,7 @@
 </div>
 
 <!-- Modal Form Nota Dinas -->
-<div class="modal fade" id="modalNotaDinas" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="modalNotaDinas" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
@@ -210,7 +220,7 @@
                         <div class="card-body py-3">
                             <div id="pegawaiRowsContainer"></div>
                             <small class="text-muted d-block mt-2">
-                                <i class="fas fa-info-circle mr-1"></i> Setiap pegawai memiliki Periode Perjalanan dan Tujuan masing-masing. Nama, NIP, dan Pangkat/Golongan diambil otomatis dari Master Pegawai.
+                                <i class="fas fa-info-circle mr-1"></i> Setiap pegawai memiliki Periode Perjalanan dan Kabupaten/Kota Tujuan masing-masing. Nama, NIP, dan Pangkat/Golongan diambil otomatis dari Master Pegawai.
                             </small>
                         </div>
                     </div>
@@ -223,7 +233,7 @@
                         <div class="card-body py-3">
                             <div class="form-group mb-0">
                                 <label for="ppk_pegawai_id" class="mb-1">Pejabat Pembuat Komitmen <span class="text-danger">*</span></label>
-                                <select class="form-control select2-ppk" name="ppk_pegawai_id" id="ppk_pegawai_id" required style="width: 100%;">
+                                <select class="form-control no-select2" name="ppk_pegawai_id" id="ppk_pegawai_id" required style="width: 100%;">
                                     <option value="">-- Pilih Pejabat PPK --</option>
                                     <?php foreach ($pegawaiOptions as $p): ?>
                                         <option value="<?= $p['id']; ?>" <?= ($p['id'] == 2) ? 'selected' : ''; ?>><?= esc($p['display_label']); ?></option>
@@ -248,6 +258,14 @@
     <option value="">-- Pilih Pegawai dari Master Pegawai --</option>
     <?php foreach ($pegawaiOptions as $p): ?>
         <option value="<?= (int) $p['id']; ?>"><?= esc($p['display_label']); ?></option>
+    <?php endforeach; ?>
+</template>
+
+<!-- Template Option Kabupaten (Hidden) -->
+<template id="kabupatenOptionTemplate">
+    <option value="">-- Pilih Kabupaten / Kota --</option>
+    <?php foreach ($kabupatenOptions as $kab): ?>
+        <option value="<?= esc($kab); ?>"><?= esc($kab); ?></option>
     <?php endforeach; ?>
 </template>
 
@@ -287,6 +305,7 @@ function addPegawaiRow(initialData) {
     var pTujuan = data.tujuan || '';
 
     var optionsHtml = document.getElementById('pegawaiOptionTemplate').innerHTML;
+    var kabupatenHtml = document.getElementById('kabupatenOptionTemplate').innerHTML;
 
     var $row = $(
         '<div class="pegawai-item-row" data-row-idx="' + idx + '">' +
@@ -298,22 +317,24 @@ function addPegawaiRow(initialData) {
             '</div>' +
             '<div class="form-row">' +
                 '<div class="form-group col-md-5 mb-2 mb-md-0">' +
-                    '<label class="mb-1 small font-weight-bold">Nama Pegawai <span class="text-danger">*</span></label>' +
-                    '<select class="form-control select2-row-pegawai" name="pelaksana_id[]" required style="width: 100%;">' +
+                    '<label for="pelaksana_id_' + idx + '" class="mb-1 small font-weight-bold">Nama Pegawai <span class="text-danger">*</span></label>' +
+                    '<select class="form-control select2-row-pegawai no-select2" name="pelaksana_id[]" id="pelaksana_id_' + idx + '" required style="width: 100%;">' +
                         optionsHtml +
                     '</select>' +
                 '</div>' +
                 '<div class="form-group col-md-2 mb-2 mb-md-0">' +
-                    '<label class="mb-1 small font-weight-bold">Periode Mulai <span class="text-danger">*</span></label>' +
-                    '<input type="date" class="form-control item-periode-mulai" name="item_periode_mulai[]" required>' +
+                    '<label for="item_periode_mulai_' + idx + '" class="mb-1 small font-weight-bold">Periode Mulai <span class="text-danger">*</span></label>' +
+                    '<input type="date" class="form-control item-periode-mulai" name="item_periode_mulai[]" id="item_periode_mulai_' + idx + '" required>' +
                 '</div>' +
                 '<div class="form-group col-md-2 mb-2 mb-md-0">' +
-                    '<label class="mb-1 small font-weight-bold">Periode Selesai <span class="text-danger">*</span></label>' +
-                    '<input type="date" class="form-control item-periode-selesai" name="item_periode_selesai[]" required>' +
+                    '<label for="item_periode_selesai_' + idx + '" class="mb-1 small font-weight-bold">Periode Selesai <span class="text-danger">*</span></label>' +
+                    '<input type="date" class="form-control item-periode-selesai" name="item_periode_selesai[]" id="item_periode_selesai_' + idx + '" required>' +
                 '</div>' +
                 '<div class="form-group col-md-3 mb-0">' +
-                    '<label class="mb-1 small font-weight-bold">Tujuan Perjalanan <span class="text-danger">*</span></label>' +
-                    '<input type="text" class="form-control item-tujuan" name="item_tujuan[]" placeholder="Contoh: Kab. Kampar" required>' +
+                    '<label for="item_tujuan_' + idx + '" class="mb-1 small font-weight-bold">Tujuan (Kabupaten/Kota) <span class="text-danger">*</span></label>' +
+                    '<select class="form-control select2-row-tujuan no-select2" name="item_tujuan[]" id="item_tujuan_' + idx + '" required style="width: 100%;">' +
+                        kabupatenHtml +
+                    '</select>' +
                 '</div>' +
             '</div>' +
         '</div>'
@@ -321,27 +342,41 @@ function addPegawaiRow(initialData) {
 
     $('#pegawaiRowsContainer').append($row);
 
-    var $select = $row.find('.select2-row-pegawai');
-    $select.select2({
+    var $selectPegawai = $row.find('.select2-row-pegawai');
+    $selectPegawai.select2({
         theme: 'bootstrap4',
-        dropdownParent: $('#modalNotaDinas'),
+        dropdownParent: $('#modalNotaDinas .modal-content'),
+        width: '100%',
         placeholder: '-- Pilih Pegawai --'
     });
 
     if (selectedId) {
-        $select.val(selectedId).trigger('change');
+        $selectPegawai.val(selectedId).trigger('change');
+    }
+
+    var $selectTujuan = $row.find('.select2-row-tujuan');
+    if (pTujuan && $selectTujuan.find('option[value="' + pTujuan.replace(/"/g, '\\"') + '"]').length === 0) {
+        $selectTujuan.append(new Option(pTujuan, pTujuan, true, true));
+    }
+    $selectTujuan.select2({
+        theme: 'bootstrap4',
+        dropdownParent: $('#modalNotaDinas .modal-content'),
+        width: '100%',
+        placeholder: '-- Pilih Kabupaten / Kota --'
+    });
+
+    if (pTujuan) {
+        $selectTujuan.val(pTujuan).trigger('change');
     }
 
     var $mulaiInput = $row.find('.item-periode-mulai');
     var $selesaiInput = $row.find('.item-periode-selesai');
-    var $tujuanInput = $row.find('.item-tujuan');
 
     $mulaiInput.val(pMulai);
     $selesaiInput.val(pSelesai);
     if (pMulai) {
         $selesaiInput.attr('min', pMulai);
     }
-    $tujuanInput.val(pTujuan);
 
     renumberPegawaiRows();
 }
@@ -356,8 +391,8 @@ function renumberPegawaiRows() {
 }
 
 function clearPegawaiRows() {
-    $('#pegawaiRowsContainer .select2-row-pegawai').each(function() {
-        if ($(this).data('select2')) {
+    $('#pegawaiRowsContainer .select2-row-pegawai, #pegawaiRowsContainer .select2-row-tujuan').each(function() {
+        if ($(this).hasClass('select2-hidden-accessible')) {
             $(this).select2('destroy');
         }
     });
@@ -424,12 +459,16 @@ function openEditModal(data) {
 }
 
 $(document).ready(function() {
+    // Prevent Bootstrap 4 modal from stealing focus from Select2 search input
+    if ($.fn.modal && $.fn.modal.Constructor) {
+        $.fn.modal.Constructor.prototype._enforceFocus = function() {};
+    }
+
     $('#btnAddPegawaiRow').on('click', function() {
-        // Pre-fill new row's dates/tujuan from the last row for convenience if available
         var $lastRow = $('#pegawaiRowsContainer .pegawai-item-row').last();
         var defaultMulai = $lastRow.length ? ($lastRow.find('.item-periode-mulai').val() || '') : '';
         var defaultSelesai = $lastRow.length ? ($lastRow.find('.item-periode-selesai').val() || '') : '';
-        var defaultTujuan = $lastRow.length ? ($lastRow.find('.item-tujuan').val() || '') : '';
+        var defaultTujuan = $lastRow.length ? ($lastRow.find('.select2-row-tujuan').val() || '') : '';
 
         addPegawaiRow({
             id: '',
@@ -445,10 +484,11 @@ $(document).ready(function() {
             return;
         }
         var $row = $(this).closest('.pegawai-item-row');
-        var $sel = $row.find('.select2-row-pegawai');
-        if ($sel.data('select2')) {
-            $sel.select2('destroy');
-        }
+        $row.find('.select2-row-pegawai, .select2-row-tujuan').each(function() {
+            if ($(this).hasClass('select2-hidden-accessible')) {
+                $(this).select2('destroy');
+            }
+        });
         $row.remove();
         renumberPegawaiRows();
     });
@@ -475,19 +515,38 @@ $(document).ready(function() {
         }
     });
 
+    if ($('#ppk_pegawai_id').hasClass('select2-hidden-accessible')) {
+        $('#ppk_pegawai_id').select2('destroy');
+    }
     $('#ppk_pegawai_id').select2({
         theme: 'bootstrap4',
-        dropdownParent: $('#modalNotaDinas')
+        dropdownParent: $('#modalNotaDinas .modal-content'),
+        width: '100%'
     });
 
     var $filterStartDate = $('#filter_start_date');
     var $filterEndDate   = $('#filter_end_date');
+    var $filterKota      = $('#filter_kota');
     var $filterPelaksana = $('#filter_pelaksana');
 
-    $('#filter_pelaksana').select2({
+    if ($filterKota.hasClass('select2-hidden-accessible')) {
+        $filterKota.select2('destroy');
+    }
+    $filterKota.select2({
+        theme: 'bootstrap4',
+        placeholder: 'Semua Kota/Kabupaten',
+        allowClear: true,
+        width: '100%'
+    });
+
+    if ($filterPelaksana.hasClass('select2-hidden-accessible')) {
+        $filterPelaksana.select2('destroy');
+    }
+    $filterPelaksana.select2({
         theme: 'bootstrap4',
         placeholder: 'Semua Pegawai',
-        allowClear: true
+        allowClear: true,
+        width: '100%'
     });
 
     var table = $('#tableNotaDinas').DataTable({
@@ -499,6 +558,7 @@ $(document).ready(function() {
             data: function (d) {
                 d.filter_start_date = $filterStartDate.val();
                 d.filter_end_date   = $filterEndDate.val();
+                d.filter_kota       = $filterKota.val();
                 d.filter_pelaksana  = $filterPelaksana.val();
             }
         },
@@ -609,11 +669,13 @@ $(document).ready(function() {
 
     $filterStartDate.on('change', function () { table.ajax.reload(); });
     $filterEndDate.on('change', function () { table.ajax.reload(); });
+    $filterKota.on('change', function () { table.ajax.reload(); });
     $filterPelaksana.on('change', function () { table.ajax.reload(); });
 
     $('#btn-reset-filter').on('click', function () {
         $filterStartDate.val('<?= date('Y-01-01'); ?>');
         $filterEndDate.val('<?= date('Y-m-t'); ?>');
+        $filterKota.val(null).trigger('change');
         $filterPelaksana.val(null).trigger('change');
         table.ajax.reload();
     });

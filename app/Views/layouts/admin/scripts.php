@@ -214,7 +214,7 @@
                     return;
                 }
 
-                if ($select.hasClass('no-select2') || $select.data('select2')) {
+                if ($select.hasClass('no-select2') || $select.hasClass('select2-hidden-accessible') || $select.data('select2')) {
                     return;
                 }
 

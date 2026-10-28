@@ -31,14 +31,16 @@ class NotaDinasPerjalananDinas extends BaseController
 
         $perms = $this->resolveMenuPermissions(self::MENU_LINK);
         $pegawaiRows = $this->loadPegawaiOptions();
+        $kabupatenOptions = $this->loadKabupatenOptions();
 
         return view('admin/surat/nota_dinas_perjalanan_dinas', [
-            'title'           => 'Nota Dinas Perjalanan Dinas',
-            'can_add'         => $perms['can_add'],
-            'can_edit'        => $perms['can_edit'],
-            'can_delete'      => $perms['can_delete'],
-            'can_export'      => $perms['can_export'],
-            'pegawai_options' => $pegawaiRows,
+            'title'             => 'Nota Dinas Perjalanan Dinas',
+            'can_add'           => $perms['can_add'],
+            'can_edit'          => $perms['can_edit'],
+            'can_delete'        => $perms['can_delete'],
+            'can_export'        => $perms['can_export'],
+            'pegawai_options'   => $pegawaiRows,
+            'kabupaten_options' => $kabupatenOptions,
         ]);
     }
 
@@ -67,6 +69,7 @@ class NotaDinasPerjalananDinas extends BaseController
 
         $startDate   = trim((string) $this->request->getGet('filter_start_date'));
         $endDate     = trim((string) $this->request->getGet('filter_end_date'));
+        $kota        = trim((string) $this->request->getGet('filter_kota'));
         $pelaksanaId = (int) $this->request->getGet('filter_pelaksana');
 
         if ($startDate !== '') {
@@ -74,6 +77,12 @@ class NotaDinasPerjalananDinas extends BaseController
         }
         if ($endDate !== '') {
             $builder->where('periode_mulai <=', $endDate);
+        }
+        if ($kota !== '') {
+            $builder->groupStart()
+                ->like('tujuan', $kota)
+                ->orLike('pelaksana_json', $kota)
+                ->groupEnd();
         }
         if ($pelaksanaId > 0) {
             $builder->groupStart()
@@ -592,6 +601,47 @@ class NotaDinasPerjalananDinas extends BaseController
             $row['display_label'] = $display;
             return $row;
         }, $rows);
+    }
+
+    private function loadKabupatenOptions(): array
+    {
+        $db = db_connect();
+
+        if ($db->tableExists('mst_kabupaten')) {
+            $rows = $db->table('mst_kabupaten')
+                ->select('nama_kabupaten')
+                ->where('nama_kabupaten IS NOT NULL', null, false)
+                ->where('nama_kabupaten !=', '')
+                ->groupBy('nama_kabupaten')
+                ->orderBy('nama_kabupaten', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            $options = array_values(array_filter(array_map(static function (array $row): string {
+                return trim((string) ($row['nama_kabupaten'] ?? ''));
+            }, $rows), static fn (string $value): bool => $value !== ''));
+
+            if ($options !== []) {
+                return $options;
+            }
+        }
+
+        if (! $db->tableExists('mst_sekolah')) {
+            return [];
+        }
+
+        $rows = $db->table('mst_sekolah')
+            ->select('kabupaten')
+            ->where('kabupaten IS NOT NULL', null, false)
+            ->where('kabupaten !=', '')
+            ->groupBy('kabupaten')
+            ->orderBy('kabupaten', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        return array_values(array_filter(array_map(static function (array $row): string {
+            return trim((string) ($row['kabupaten'] ?? ''));
+        }, $rows), static fn (string $value): bool => $value !== ''));
     }
 
     private function getPegawaiSignatureData(int $id): array
