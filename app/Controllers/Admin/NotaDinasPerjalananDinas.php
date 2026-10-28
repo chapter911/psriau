@@ -647,7 +647,7 @@ class NotaDinasPerjalananDinas extends BaseController
     private function getPegawaiSignatureData(int $id): array
     {
         if ($id <= 0) {
-            return ['nama' => 'Nurhidayat Nugroho, S.Ars.', 'nip' => '', 'jabatan' => 'Pejabat Pembuat Komitmen'];
+            return ['nama' => 'Nurhidayat Nugroho, S.Ars.', 'nip' => '199012212018021001', 'jabatan' => 'Pejabat Pembuat Komitmen', 'jenis_pegawai' => 'pns'];
         }
         $db = db_connect();
         $row = $db->table('mst_pegawai')
@@ -658,7 +658,7 @@ class NotaDinasPerjalananDinas extends BaseController
             ->getRowArray();
 
         if (! is_array($row)) {
-            return ['nama' => 'Nurhidayat Nugroho, S.Ars.', 'nip' => '', 'jabatan' => 'Pejabat Pembuat Komitmen'];
+            return ['nama' => 'Nurhidayat Nugroho, S.Ars.', 'nip' => '199012212018021001', 'jabatan' => 'Pejabat Pembuat Komitmen', 'jenis_pegawai' => 'pns'];
         }
 
         return [

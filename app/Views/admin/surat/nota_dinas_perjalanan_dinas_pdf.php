@@ -63,6 +63,8 @@ $dari      = trim((string) ($data['dari'] ?? '')) ?: 'Pejabat Pembuat Komitmen P
 $hal       = trim((string) ($data['hal'] ?? '')) ?: 'Permohonan Penerbitan Surat Tugas Pelaksanaan Kegiatan';
 $isiNota   = trim((string) ($data['isi_nota_dinas'] ?? ''));
 $ppkNama   = trim((string) ($ppk['nama'] ?? '')) ?: 'Nurhidayat Nugroho, S.Ars.';
+$ppkNip    = $formatNip((string) ($ppk['nip'] ?? ''));
+$showPpkNip = function_exists('should_show_nip') ? should_show_nip($ppk) : ($ppkNip !== '' && $ppkNip !== '-');
 ?>
 <!DOCTYPE html>
 <html>
@@ -299,6 +301,9 @@ $ppkNama   = trim((string) ($ppk['nama'] ?? '')) ?: 'Nurhidayat Nugroho, S.Ars.'
                 <div>Pelaksanaan Prasarana Strategis Riau</div>
                 <div style="height: 68px;"></div>
                 <div><?= esc($ppkNama); ?></div>
+                <?php if ($showPpkNip && $ppkNip !== ''): ?>
+                    <div>NIP. <?= esc($ppkNip); ?></div>
+                <?php endif; ?>
             </td>
         </tr>
     </table>
