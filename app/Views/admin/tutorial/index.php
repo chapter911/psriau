@@ -894,6 +894,53 @@ graph TD
         </div>
     </div>
 
+    <!-- FLOWCHART 14: SWAKELOLA - SIKLUS ADMINISTRASI 5 TAHAPAN (LHA NO. 9) -->
+    <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,keuangan,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-clipboard-check text-primary mr-2"></i>Flowchart: Alur Kerja Modul Swakelola Tipe I &amp; Pemenuhan 28 Dokumen Checklist (LHA No. 9)
+            </h5>
+            <div>
+                <span class="badge badge-primary">SWAKELOLA</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu Utama: Swakelola"] --> B{"Pilih Submenu"}
+    B -->|Paket Kegiatan| C["Akses Daftar Paket (/admin/swakelola/paket)"]
+    B -->|Checklist Dokumen| D["Akses 28 Checklist (/admin/swakelola/dokumen)"]
+    B -->|Realisasi Anggaran| E["Akses Buku Kas SPM (/admin/swakelola/realisasi)"]
+    B -->|Rekapitulasi &amp; Laporan| F["Akses Rekap RAB vs Realisasi (/admin/swakelola/laporan)"]
+
+    C --> C1["Monitoring Pagu DIPA, Realisasi SP2D Definitif, Status Kegiatan, PPK &amp; Kasatker"]
+    C1 --> C2["Shortcut 1-Klik Langsung ke Checklist Dokumen, Detail Realisasi, atau Laporan"]
+
+    D --> D1["Pengelompokan Otomatis 5 Tahapan Standar LKPP &amp; LHA No. 9"]
+    D1 --> T1["Tahap A: Perencanaan (5 Dokumen: DIPA/POK, RUP SiRUP, KAK, RAB, Identifikasi Kebutuhan)"]
+    D1 --> T2["Tahap B: Persiapan (6 Dokumen: SK Tim KPA, Uraian Tugas, Rencana Kerja/Jadwal, KAK/RAB Final, BA Persiapan, Rencana Kebutuhan)"]
+    D1 --> T3["Tahap C: Pelaksanaan (7 Dokumen: Surat Tugas, Logbook/Daftar Hadir, Laporan Progres, Bukti Belanja, Kuitansi, Dokumentasi Foto, Pengeluaran Sah)"]
+    D1 --> T4["Tahap D: Pengawasan (4 Dokumen: Laporan Was, BA Pemeriksaan Mutu/Vol, Rekon Fisik-Keu, Evaluasi Deviasi)"]
+    D1 --> T5["Tahap E: Pertanggungjawaban (6 Dokumen: Laporan Akhir, BAST Pelaksana ke PPK, BAPHP, Rekap RAB vs Realisasi, BA Pajak, BA Persediaan Habis Pakai)"]
+    
+    T1 --> DL["1-Klik Unduh Berkas Word (.docx) atau Berkas Scan PDF Resmi"]
+    T2 --> DL
+    T3 --> DL
+    T4 --> DL
+    T5 --> DL
+
+    E --> E1["Pencatatan Rincian Voucher SPM &amp; SP2D KPPN Pekanbaru"]
+    E1 --> E2["Pengelompokan Akun Otomatis: 521211 Belanja Bahan, 524111 Perjadin Biasa, 524113 Perjadin Dalam Kota"]
+
+    F --> F1["Matriks Perbandingan Real-Time: Pagu RAB vs Realisasi SP2D Definitif"]
+    F --> F2["Akuntabilitas Kas Negara: Penjelasan Efisiensi Belanja Riil Sisa Pagu Rp 271,8 Juta"]
+    F --> F3["Export Checklist Lengkap (.xlsx) dengan Status &amp; Tautan Berkas"]
+                </pre>
+            </div>
+        </div>
+    </div>
+
     <!-- PANDUAN PENGGUNAAN SISTEM (ACCORDION STYLE) -->
     <div class="mt-4">
         <!-- MODUL KEUANGAN & SURAT TUGAS -->
@@ -1847,6 +1894,55 @@ graph TD
                             <li><strong>Proteksi Otorisasi Hak Akses (menu_akses):</strong>
                                 <ul>
                                     <li>Akses menu dan fitur pemrosesan terintegrasi penuh dengan tabel <code>menu_akses</code> (izin <code>FiturAdd</code> dan <code>FiturEdit</code>), mencegah akses tak terotorisasi secara aman.</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODUL SWAKELOLA (LHA NO. 9) -->
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,keuangan,editor,all">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-clipboard-check mr-2"></i> Modul Swakelola: Tata Kelola Administrasi 5 Tahapan, 28 Dokumen Checklist &amp; Realisasi Belanja
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-primary"><i class="fas fa-tasks mr-1"></i> Pengelolaan Administrasi Swakelola Tipe I Sesuai Perlem LKPP 3/2021 &amp; LHA No. 9</h6>
+                        <p class="small text-muted mb-2"><code>/admin/swakelola/paket</code> | <code>/admin/swakelola/dokumen</code> | <code>/admin/swakelola/realisasi</code> | <code>/admin/swakelola/laporan</code></p>
+                        <p class="small text-dark mb-2">
+                            Modul Swakelola dirancang untuk menjamin tertib administrasi penyelenggaraan Swakelola Tipe I di lingkungan Satuan Kerja Pelaksanaan Prasarana Strategis Riau (khususnya tindak lanjut temuan LHA No. 9 terkait Administrasi Kegiatan Pembangunan Gedung SPPG Provinsi Riau TA 2025).
+                        </p>
+                        <ol class="pl-3 small mb-0" style="line-height: 1.8;">
+                            <li><strong>Submenu Paket Kegiatan (<code>/admin/swakelola/paket</code>):</strong>
+                                <ul>
+                                    <li>Menampilkan seluruh daftar kegiatan Swakelola Satker per Tahun Anggaran lengkap dengan Kode Anggaran POK, Nilai Pagu DIPA, Realisasi Terbayar, Nama PPK, dan Nama Kasatker.</li>
+                                    <li>Tersedia tombol pintas (shortcut) untuk langsung menuju halaman <strong>Dokumen Checklist</strong>, <strong>Realisasi SPM</strong>, atau <strong>Rekapitulasi RAB</strong>.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Submenu Checklist Dokumen (<code>/admin/swakelola/dokumen</code>):</strong>
+                                <ul>
+                                    <li>Menyajikan pemantauan 28 dokumen wajib yang dikelompokkan secara rapi ke dalam 5 tahapan:
+                                        <strong>Tahap A (Perencanaan)</strong>, <strong>Tahap B (Persiapan)</strong>, <strong>Tahap C (Pelaksanaan)</strong>, <strong>Tahap D (Pengawasan &amp; Pengendalian)</strong>, dan <strong>Tahap E (Serah Terima &amp; Pertanggungjawaban)</strong>.</li>
+                                    <li>Setiap item dokumen dilengkapi indikator status (badge hijau <code>Ada</code>), nama berkas digital resmi, serta uraian keterangan.</li>
+                                    <li>Pengguna dapat mengunduh berkas resmi (.docx / .pdf) secara langsung dengan mengeklik tombol <strong>Unduh</strong> pada masing-masing baris dokumen.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Submenu Realisasi Anggaran (<code>/admin/swakelola/realisasi</code>):</strong>
+                                <ul>
+                                    <li>Mencatat seluruh bukti pembayaran definitif Surat Perintah Membayar (SPM) dan SP2D dari KPPN Pekanbaru.</li>
+                                    <li>Dikelompokkan otomatis per mata anggaran: <strong>Akun 521211 (Belanja Bahan)</strong>, <strong>Akun 524111 (Belanja Perjalanan Dinas Biasa)</strong>, dan <strong>Akun 524113 (Belanja Perjalanan Dinas Dalam Kota)</strong>.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Submenu Rekapitulasi &amp; Laporan (<code>/admin/swakelola/laporan</code>):</strong>
+                                <ul>
+                                    <li>Menyajikan matriks perbandingan antara Pagu Anggaran pada RAB/DIPA dengan Realisasi Aktual per akun belanja.</li>
+                                    <li>Menjelaskan akuntabilitas sisa pagu anggaran efisiensi yang tidak terserap dan tetap aman di Kas Negara (RKUN).</li>
+                                    <li>Tersedia tombol <strong>Download Checklist Lengkap (.xlsx)</strong> untuk mengunduh rekap matriks kelengkapan seluruh 28 dokumen dalam format spreadsheet Excel siap pakai untuk audit.</li>
                                 </ul>
                             </li>
                         </ol>

@@ -584,6 +584,17 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('kompu/pengaturan/user-access', 'Admin\Kompu::saveUserAccess');
 	$routes->post('kompu/pengaturan/role-permissions', 'Admin\Kompu::saveRolePermissions');
 	$routes->post('kompu/pengaturan/test-email', 'Admin\Kompu::testEmail');
+
+	// Modul Swakelola (LHA No. 9)
+	$routes->get('swakelola', static fn() => redirect()->to('/admin/swakelola/paket'));
+	$routes->get('swakelola/paket', 'Admin\Swakelola::paketIndex');
+	$routes->get('swakelola/dokumen', 'Admin\Swakelola::dokumenIndex');
+	$routes->get('swakelola/dokumen/preview/(:num)', 'Admin\Swakelola::ajaxGetDokumenInfo/$1');
+	$routes->get('swakelola/dokumen/view/(:num)', 'Admin\Swakelola::viewInlineDokumen/$1');
+	$routes->get('swakelola/dokumen/download/(:num)', 'Admin\Swakelola::downloadDokumen/$1');
+	$routes->get('swakelola/realisasi', 'Admin\Swakelola::realisasiIndex');
+	$routes->get('swakelola/laporan', 'Admin\Swakelola::laporanIndex');
+	$routes->get('swakelola/laporan/export-excel', 'Admin\Swakelola::exportChecklistExcel');
 });
 
 
