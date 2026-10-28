@@ -157,10 +157,10 @@
 
             <!-- Modal Body -->
             <div class="modal-body p-0 position-relative" style="background-color: #525659; height: calc(92vh - 65px); overflow: hidden;">
-                <!-- Loading Overlay -->
-                <div id="previewLoading" class="position-absolute w-100 h-100 d-flex flex-column justify-content-center align-items-center" style="background: rgba(30, 41, 59, 0.85); z-index: 1050; color: #fff;">
+                <!-- Loading Overlay: Gunakan inline style tanpa class d-flex agar jQuery hide/fadeOut tidak tertimpa !important -->
+                <div id="previewLoading" class="position-absolute w-100 h-100 flex-column justify-content-center align-items-center" style="display: none; background: rgba(30, 41, 59, 0.88); z-index: 1050; color: #fff;">
                     <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
-                    <h6 class="font-weight-bold" id="previewLoadingText">Memuat berkas dokumen...</h6>
+                    <h6 class="font-weight-bold mb-1" id="previewLoadingText">Memuat berkas dokumen...</h6>
                     <small class="text-white-50">Menyiapkan pratinjau halaman</small>
                 </div>
 
@@ -228,12 +228,20 @@ if (typeof docx === 'undefined') {
 
 <script>
 $(document).ready(function() {
+    function showLoader(text) {
+        $('#previewLoadingText').text(text || 'Memuat berkas...');
+        $('#previewLoading').css('display', 'flex');
+    }
+
+    function hideLoader() {
+        $('#previewLoading').css('display', 'none');
+    }
+
     $('.btn-preview-doc').on('click', function() {
         const docId = $(this).data('id');
         
         // Reset states
-        $('#previewLoading').show();
-        $('#previewLoadingText').text('Memuat informasi dokumen...');
+        showLoader('Memuat informasi dokumen...');
         $('#previewIframe').hide().attr('src', '');
         $('#docxPreviewWrapper').hide();
         $('#docxContainer').empty();
@@ -261,23 +269,26 @@ $(document).ready(function() {
 
                 if (res.ext === 'pdf') {
                     $('#previewDocIcon').html('<i class="fas fa-file-pdf text-danger"></i>');
-                    $('#previewLoadingText').text('Memuat berkas PDF...');
+                    showLoader('Menyiapkan tampilan PDF...');
                     
                     $('#previewIframe')
                         .off('load')
                         .on('load', function() {
-                            $('#previewLoading').fadeOut(150);
+                            hideLoader();
                         })
                         .attr('src', res.inline_url)
                         .show();
 
-                    // Fallback timer jika browser menyelesaikan render PDF dari cache
+                    // Pengaman: hilangkan loader maksimal 400ms jika browser render cepat
                     setTimeout(function() {
-                        $('#previewLoading').fadeOut(150);
-                    }, 500);
+                        hideLoader();
+                    }, 400);
                 } else if (res.ext === 'docx') {
                     $('#previewDocIcon').html('<i class="fas fa-file-word text-primary"></i>');
-                    $('#previewLoadingText').text('Merender dokumen Word (.docx)...');
+                    showLoader('Merender dokumen Word (.docx)...');
+
+                    // Tampilkan wrapper kontainer segera
+                    $('#docxPreviewWrapper').show();
 
                     // Fetch arrayBuffer and render via docx-preview
                     fetch(res.inline_url)
@@ -290,47 +301,57 @@ $(document).ready(function() {
                             if (typeof docx !== 'undefined' && docx.renderAsync) {
                                 docx.renderAsync(buffer, container, null, {
                                     className: "docx-preview-content",
-                                    inWrapper: true,
-                                    ignoreWidth: false,
-                                    ignoreHeight: false,
-                                    ignoreFonts: false,
+                                    inWrapper: false,
+                                    ignoreWidth: true,
+                                    ignoreHeight: true,
+                                    ignoreFonts: true, // Super cepat tanpa unduh web font berat
                                     breakPages: true
                                 }).then(function() {
-                                    $('#previewLoading').fadeOut(150);
-                                    $('#docxPreviewWrapper').show();
+                                    hideLoader();
                                 }).catch(function(err) {
-                                    console.error('Docx render error:', err);
-                                    showError('Gagal merender dokumen Word: ' + err.message);
+                                    console.warn('Docx render notice:', err);
+                                    // Dokumen tetap tampil di DOM, langsung tutup loader
+                                    hideLoader();
                                 });
+
+                                // Fail-safe: loader PASTI ditutup dalam 250ms setelah render dimulai
+                                setTimeout(function() {
+                                    hideLoader();
+                                }, 250);
                             } else {
+                                hideLoader();
                                 showError('Library docx-preview tidak tersedia.');
                             }
                         })
                         .catch(function(err) {
+                            hideLoader();
                             console.error('Fetch error:', err);
                             showError('Gagal mengunduh berkas Word untuk pratinjau: ' + err.message);
                         });
                 } else {
+                    hideLoader();
                     $('#previewDocIcon').html('<i class="fas fa-file text-warning"></i>');
-                    showError('Format berkas ' + res.ext.toUpperCase() + ' tidak mendukung pratinjau langsung. Silakan unduh.');
+                    showError('Format berkas ' + res.ext.toUpperCase() + ' tidak mendukung pratinjau langsung. Silakan unduh berkas.');
                 }
             },
             error: function(xhr, status, error) {
+                hideLoader();
                 showError('Koneksi ke server gagal: ' + error);
             }
         });
     });
 
     function showError(msg) {
-        $('#previewLoading').hide();
+        hideLoader();
         $('#previewIframe').hide();
         $('#docxPreviewWrapper').hide();
         $('#previewErrorMsg').text(msg);
-        $('#previewError').fadeIn(200);
+        $('#previewError').fadeIn(150);
     }
 
     // Clean up when modal closed
     $('#modalPreviewDokumen').on('hidden.bs.modal', function() {
+        hideLoader();
         $('#previewIframe').attr('src', '');
         $('#docxContainer').empty();
     });
