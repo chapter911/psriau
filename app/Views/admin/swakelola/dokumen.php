@@ -263,10 +263,18 @@ $(document).ready(function() {
                     $('#previewDocIcon').html('<i class="fas fa-file-pdf text-danger"></i>');
                     $('#previewLoadingText').text('Memuat berkas PDF...');
                     
-                    $('#previewIframe').attr('src', res.inline_url).show();
-                    $('#previewIframe').on('load', function() {
+                    $('#previewIframe')
+                        .off('load')
+                        .on('load', function() {
+                            $('#previewLoading').fadeOut(150);
+                        })
+                        .attr('src', res.inline_url)
+                        .show();
+
+                    // Fallback timer jika browser menyelesaikan render PDF dari cache
+                    setTimeout(function() {
                         $('#previewLoading').fadeOut(150);
-                    });
+                    }, 500);
                 } else if (res.ext === 'docx') {
                     $('#previewDocIcon').html('<i class="fas fa-file-word text-primary"></i>');
                     $('#previewLoadingText').text('Merender dokumen Word (.docx)...');
