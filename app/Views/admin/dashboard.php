@@ -92,6 +92,128 @@
     background: linear-gradient(145deg, #dc2626, #b91c1c);
 }
 
+.metric-icon.bmn {
+    background: linear-gradient(145deg, #0284c7, #0369a1);
+}
+
+.metric-icon.pegawai {
+    background: linear-gradient(145deg, #f59e0b, #d97706);
+}
+
+.metric-icon.paket {
+    background: linear-gradient(145deg, #8b5cf6, #7c3aed);
+}
+
+/* Field Activity Photo Gallery Styles */
+.field-photo-card {
+    border: 1px solid #e7ecf3;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.field-photo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    border-color: #0d5aa7;
+}
+
+.field-photo-img-wrap {
+    height: 145px;
+    overflow: hidden;
+    background: #0f172a;
+    position: relative;
+}
+
+.field-photo-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+}
+
+.field-photo-card:hover .field-photo-img-wrap img {
+    transform: scale(1.06);
+}
+
+.field-photo-badge {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(15, 23, 42, 0.75);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+}
+
+/* Audit Feed Styles */
+.audit-item {
+    padding: 0.7rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.audit-item:last-child {
+    border-bottom: none;
+}
+
+.audit-icon-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.audit-badge-add {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.audit-badge-edit {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.audit-badge-delete {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.room-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #334155;
+    transition: all 0.2s ease;
+}
+
+.room-badge:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
 .metric-value {
     font-size: 1.7rem;
     font-weight: 700;
@@ -388,6 +510,124 @@
         </div>
     </div>
 
+    <!-- Executive KPI Summary Cards Bar (5 Cards Grid) -->
+    <div class="row mt-1 mb-2">
+        <!-- 1. Aset BMN Satker -->
+        <div class="col-xl-2 col-lg-4 col-md-6 col-12 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <div class="metric-top">
+                        <strong class="text-truncate">Aset BMN</strong>
+                        <span class="metric-icon bmn"><i class="fas fa-boxes-stacked"></i></span>
+                    </div>
+                    <div class="metric-value text-info"><?= number_format((int) ($inventarisStats['total'] ?? 0)); ?></div>
+                    <p class="metric-label mb-2">Barang Milik Negara</p>
+                    <div class="metric-split flex-column" style="gap: 3px;">
+                        <span class="small py-1 px-2" style="background: #e0f2fe; color: #0369a1;">
+                            <i class="fas fa-check-circle text-success mr-1"></i> <?= number_format((int) ($inventarisStats['baik'] ?? 0)); ?> Baik
+                        </span>
+                        <span class="small py-1 px-2" style="background: #fef3c7; color: #b45309;">
+                            <i class="fas fa-hand-holding text-warning mr-1"></i> <?= number_format((int) ($inventarisStats['dipinjam'] ?? 0)); ?> Dipinjam
+                        </span>
+                    </div>
+                    <a href="<?= site_url('/admin/inventaris/barang'); ?>" class="btn btn-xs btn-outline-info btn-block mt-3 font-weight-bold" style="border-radius: 6px;">Kelola Aset</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Pegawai & SDM Satker -->
+        <div class="col-xl-2 col-lg-4 col-md-6 col-12 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <div class="metric-top">
+                        <strong class="text-truncate">Pegawai Satker</strong>
+                        <span class="metric-icon pegawai"><i class="fas fa-users"></i></span>
+                    </div>
+                    <div class="metric-value text-warning"><?= number_format((int) ($pegawaiStats['total'] ?? 0)); ?></div>
+                    <p class="metric-label mb-2">Personel Aktif</p>
+                    <div class="metric-split flex-column" style="gap: 3px;">
+                        <span class="small py-1 px-2">
+                            <i class="fas fa-id-badge text-primary mr-1"></i> <?= (int) ($pegawaiStats['pns'] ?? 0); ?> PNS | <?= (int) ($pegawaiStats['pppk'] ?? 0); ?> PPPK
+                        </span>
+                        <span class="small py-1 px-2">
+                            <i class="fas fa-user-tie text-secondary mr-1"></i> <?= (int) ($pegawaiStats['lainnya'] ?? 0); ?> Non-ASN
+                        </span>
+                    </div>
+                    <a href="<?= site_url('/admin/master/pegawai'); ?>" class="btn btn-xs btn-outline-warning text-dark btn-block mt-3 font-weight-bold" style="border-radius: 6px;">Data Pegawai</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Prasarana Sekolah -->
+        <div class="col-xl-3 col-lg-4 col-md-6 col-12 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <div class="metric-top">
+                        <strong class="text-truncate">Prasarana Sekolah</strong>
+                        <span class="metric-icon school"><i class="fas fa-school"></i></span>
+                    </div>
+                    <div class="metric-value text-purple" style="color: #7c3aed;"><?= number_format((int) $schoolCount); ?></div>
+                    <p class="metric-label mb-2">Sekolah Terdaftar</p>
+                    <div class="metric-split flex-column" style="gap: 3px;">
+                        <span class="small py-1 px-2" style="background: #ede9fe; color: #6d28d9;">
+                            <i class="fas fa-clipboard-check text-success mr-1"></i> <?= number_format((int) $schoolWithSurvey); ?> Telah Disurvei
+                            <strong class="ml-1">(<?= $schoolCount > 0 ? round(($schoolWithSurvey / $schoolCount) * 100, 1) : 0; ?>%)</strong>
+                        </span>
+                    </div>
+                    <a href="<?= site_url('/admin/master/sekolah'); ?>" class="btn btn-xs btn-outline-primary btn-block mt-3 font-weight-bold" style="border-radius: 6px;">Kelola Sekolah</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Laporan Lapangan -->
+        <div class="col-xl-2 col-lg-6 col-md-6 col-12 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <div class="metric-top">
+                        <strong class="text-truncate">Laporan Lapangan</strong>
+                        <span class="metric-icon laporan"><i class="fas fa-file-invoice"></i></span>
+                    </div>
+                    <div class="metric-value text-primary"><?= number_format((int) ($harianReportCount + $mingguanReportCount)); ?></div>
+                    <p class="metric-label mb-2">Laporan Pekerjaan</p>
+                    <div class="metric-split flex-column" style="gap: 3px;">
+                        <span class="small py-1 px-2">
+                            <i class="fas fa-calendar-day text-info mr-1"></i> <?= number_format((int) $harianReportCount); ?> Harian
+                        </span>
+                        <span class="small py-1 px-2">
+                            <i class="fas fa-calendar-week text-success mr-1"></i> <?= number_format((int) $mingguanReportCount); ?> Mingguan
+                        </span>
+                    </div>
+                    <a href="<?= site_url('/admin/laporan/harian'); ?>" class="btn btn-xs btn-outline-primary btn-block mt-3 font-weight-bold" style="border-radius: 6px;">Lihat Laporan</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Paket & Kontrak -->
+        <div class="col-xl-3 col-lg-6 col-md-12 col-12 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <div class="metric-top">
+                        <strong class="text-truncate">Paket & Pekerjaan</strong>
+                        <span class="metric-icon paket"><i class="fas fa-briefcase"></i></span>
+                    </div>
+                    <div class="metric-value" style="color: #6366f1;"><?= number_format((int) ($paketStats['total_paket'] ?? 0)); ?></div>
+                    <p class="metric-label mb-2">Paket Terdaftar</p>
+                    <div class="metric-split flex-column" style="gap: 3px;">
+                        <span class="small py-1 px-2">
+                            <i class="fas fa-award text-success mr-1"></i> <?= number_format((int) ($paketStats['total_bast'] ?? 0)); ?> BAST
+                            <span class="mx-1">|</span>
+                            <i class="fas fa-handshake text-info mr-1"></i> <?= number_format((int) ($paketStats['total_swakelola'] ?? 0)); ?> Swakelola
+                        </span>
+                        <span class="small py-1 px-2">
+                            <i class="fas fa-camera text-primary mr-1"></i> <?= number_format((int) ($paketStats['total_foto'] ?? 0)); ?> Foto Lapangan
+                        </span>
+                    </div>
+                    <a href="<?= site_url('/admin/kontrak/paket'); ?>" class="btn btn-xs btn-outline-secondary btn-block mt-3 font-weight-bold" style="border-radius: 6px;">Daftar Paket</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Row: Calendar (col-4) & SIMAK Documentation (col-8) -->
     <div class="row">
         <!-- Col 4: Kalender Terpadu & Jadwal Kegiatan -->
@@ -515,77 +755,129 @@
         </div>
     </div>
 
-    <!-- School & Survey Section -->
-    <h5 class="mt-3" style="color: #1f2f43; font-weight: 700;">🏫 Data Sekolah & Survei</h5>
-    <div class="row">
-        <div class="col-lg-4 col-md-6 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Total Sekolah</strong>
-                        <span class="metric-icon school"><i class="fas fa-school"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) $schoolCount); ?></div>
-                    <p class="metric-label">Sekolah terdaftar dalam sistem.</p>
-                    <div class="metric-split">
-                        <span><i class="fas fa-check-circle mr-1" style="color: #059669;"></i> Tersurvei:
-                            <?= esc((string) $schoolWithSurvey); ?></span>
-                    </div>
-                    <a href="<?= site_url('/admin/master/sekolah'); ?>"
-                        class="btn btn-sm btn-outline-primary mt-3">Kelola Sekolah</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4 col-md-6 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Laporan Harian</strong>
-                        <span class="metric-icon laporan"><i class="fas fa-calendar-check"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) $harianReportCount); ?></div>
-                    <p class="metric-label">Laporan harian yang terbuat.</p>
-                    <a href="<?= site_url('/admin/laporan/harian'); ?>"
-                        class="btn btn-sm btn-outline-primary mt-3">Lihat Laporan</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4 col-md-12 col-12 mb-3">
-            <div class="card metric-card h-100">
-                <div class="card-body">
-                    <div class="metric-top">
-                        <strong>Laporan Mingguan</strong>
-                        <span class="metric-icon survey"><i class="fas fa-chart-line"></i></span>
-                    </div>
-                    <div class="metric-value"><?= esc((string) $mingguanReportCount); ?></div>
-                    <p class="metric-label">Laporan mingguan ringkasan.</p>
-                    <a href="<?= site_url('/admin/laporan/mingguan'); ?>"
-                        class="btn btn-sm btn-outline-primary mt-3">Lihat Laporan</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts & Activities Row -->
-    <div class="row mt-3">
-        <div class="col-lg-12 col-12 mb-3">
+    <!-- Row 2: Inventarisasi Aset BMN (Col-6) & Klasifikasi Kerusakan Sekolah (Col-6) -->
+    <div class="row mt-2">
+        <!-- Col 6: Ringkasan Aset BMN & Pinjam Pakai -->
+        <div class="col-lg-6 col-12 mb-3">
             <div class="card panel-card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title mb-0">Klasifikasi Kerusakan Sekolah</h3>
+                <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #e9eef5;">
+                    <h6 class="mb-0 font-weight-bold text-dark d-flex align-items-center" style="font-size: 0.95rem;">
+                        <i class="fas fa-boxes-stacked text-info mr-2"></i> Inventarisasi & Aset BMN Satker
+                    </h6>
+                    <a href="<?= site_url('/admin/inventaris/barang'); ?>" class="btn btn-xs btn-outline-info font-weight-bold" style="border-radius: 6px; font-size: 0.72rem;">
+                        <i class="fas fa-external-link-alt mr-1"></i> Detail Aset
+                    </a>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-3">
+                    <!-- Top Mini Summary Pills -->
+                    <div class="row mb-3 text-center">
+                        <div class="col-4">
+                            <div class="p-2 rounded border" style="background: #f0f9ff;">
+                                <div class="font-weight-bold text-primary" style="font-size: 1.3rem;">
+                                    <?= number_format((int) ($inventarisStats['total'] ?? 0)); ?>
+                                </div>
+                                <small class="text-muted font-weight-bold" style="font-size: 0.72rem;">Total Aset BMN</small>
+                                <div><span class="badge badge-success font-weight-bold" style="font-size: 0.65rem;">100% Kondisi Baik</span></div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 rounded border" style="background: #fefce8;">
+                                <div class="font-weight-bold text-warning" style="font-size: 1.3rem;">
+                                    <?= number_format((int) ($inventarisStats['dipinjam'] ?? 0)); ?>
+                                </div>
+                                <small class="text-muted font-weight-bold" style="font-size: 0.72rem;">Sedang Dipinjam</small>
+                                <div><span class="badge badge-warning text-dark font-weight-bold" style="font-size: 0.65rem;">Pinjam Pakai Aktif</span></div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 rounded border" style="background: #f0fdf4;">
+                                <div class="font-weight-bold text-success" style="font-size: 1.3rem;">
+                                    <?= number_format((int) ($inventarisStats['diperbaharui'] ?? 0)); ?>
+                                </div>
+                                <small class="text-muted font-weight-bold" style="font-size: 0.72rem;">Diperbaharui</small>
+                                <div><span class="badge badge-light border text-muted font-weight-bold" style="font-size: 0.65rem;">Perpanjangan</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kategori Aset Distribution -->
+                    <h6 class="font-weight-bold text-dark mb-2" style="font-size: 0.82rem;">
+                        <i class="fas fa-chart-pie text-secondary mr-1"></i> Sebaran Kategori Aset Utama
+                    </h6>
+                    <?php 
+                        $totalBmn = (int) ($inventarisStats['total'] ?? 0);
+                        if (!empty($inventarisStats['kategori'])):
+                            foreach ($inventarisStats['kategori'] as $kat):
+                                $pct = $totalBmn > 0 ? round((int)$kat['c'] / $totalBmn * 100, 1) : 0;
+                    ?>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center small font-weight-bold mb-1">
+                            <span class="text-truncate" style="max-width: 75%; font-size: 0.78rem;"><?= esc((string) $kat['kat']); ?></span>
+                            <span class="text-muted" style="font-size: 0.75rem;"><?= number_format((int) $kat['c']); ?> item (<?= $pct; ?>%)</span>
+                        </div>
+                        <div class="progress" style="height: 6px; background: #e2e8f0; border-radius: 999px;">
+                            <div class="progress-bar" role="progressbar" style="width: <?= $pct; ?>%; background: linear-gradient(90deg, #0284c7, #38bdf8); border-radius: 999px;"></div>
+                        </div>
+                    </div>
+                    <?php endforeach; else: ?>
+                    <p class="text-muted small">Data kategori belum tersedia.</p>
+                    <?php endif; ?>
+
+                    <!-- Ruangan Penempatan Aset -->
+                    <h6 class="font-weight-bold text-dark mt-3 mb-2" style="font-size: 0.82rem;">
+                        <i class="fas fa-door-open text-secondary mr-1"></i> Distribusi Aset per Ruangan
+                    </h6>
+                    <div class="d-flex flex-wrap" style="gap: 6px;">
+                        <?php if (!empty($inventarisStats['ruangan'])): ?>
+                            <?php foreach ($inventarisStats['ruangan'] as $ruang): ?>
+                                <span class="room-badge">
+                                    <span><?= esc((string) $ruang['nama_ruangan']); ?></span>
+                                    <span class="badge badge-primary ml-2"><?= number_format((int) $ruang['c']); ?></span>
+                                </span>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <span class="text-muted small">Data ruangan belum tersedia.</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Action Footer -->
+                    <div class="mt-3 pt-2 border-top d-flex flex-wrap justify-content-between align-items-center" style="gap: 6px;">
+                        <a href="<?= site_url('/admin/inventaris/pinjam-pakai'); ?>" class="btn btn-xs btn-outline-warning text-dark font-weight-bold" style="border-radius: 6px;">
+                            <i class="fas fa-hand-holding mr-1"></i> Data Pinjam Pakai
+                        </a>
+                        <a href="<?= site_url('/admin/inventaris/dbr'); ?>" class="btn btn-xs btn-outline-secondary font-weight-bold" style="border-radius: 6px;">
+                            <i class="fas fa-th-list mr-1"></i> Inventaris DBR Ruangan
+                        </a>
+                        <a href="<?= site_url('/admin/inventaris/pemeliharaan'); ?>" class="btn btn-xs btn-outline-success font-weight-bold" style="border-radius: 6px;">
+                            <i class="fas fa-wrench mr-1"></i> Pemeliharaan Aset
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Col 6: Klasifikasi Kerusakan Sekolah -->
+        <div class="col-lg-6 col-12 mb-3">
+            <div class="card panel-card h-100">
+                <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #e9eef5;">
+                    <h6 class="mb-0 font-weight-bold text-dark d-flex align-items-center" style="font-size: 0.95rem;">
+                        <i class="fas fa-chart-pie text-danger mr-2"></i> Klasifikasi Kerusakan Sekolah
+                    </h6>
+                    <a href="<?= site_url('/admin/master/sekolah'); ?>" class="btn btn-xs btn-outline-primary font-weight-bold" style="border-radius: 6px; font-size: 0.72rem;">
+                        <i class="fas fa-school mr-1"></i> Data Sekolah
+                    </a>
+                </div>
+                <div class="card-body p-3">
                     <?php if (!empty($damageClassification)): ?>
-                    <div class="chart-container">
+                    <div class="chart-container" style="min-height: 200px; height: 210px; margin-bottom: 0.75rem;">
                         <canvas id="damageChart"></canvas>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-sm mb-0">
-                            <thead>
+                        <table class="table table-sm table-hover mb-0" style="font-size: 0.8rem;">
+                            <thead class="bg-light">
                                 <tr>
-                                    <th>Klasifikasi</th>
-                                    <th>Jumlah</th>
+                                    <th>Klasifikasi Kerusakan</th>
+                                    <th class="text-center">Jumlah</th>
                                     <th>Persentase</th>
                                 </tr>
                             </thead>
@@ -596,16 +888,17 @@
                                         $percentage = $totalDamage > 0 ? round((int)$item['count'] / $totalDamage * 100, 1) : 0;
                                 ?>
                                 <tr>
-                                    <td><strong><?= esc((string) ($item['survey_klasifikasi_kerusakan'] ?? '-')); ?></strong>
-                                    </td>
-                                    <td><?= esc((string) $item['count']); ?></td>
+                                    <td><strong><?= esc((string) ($item['survey_klasifikasi_kerusakan'] ?? '-')); ?></strong></td>
+                                    <td class="text-center font-weight-bold text-primary"><?= esc((string) $item['count']); ?></td>
                                     <td>
-                                        <div class="progress" style="height: 6px; background: #e8edf4;">
-                                            <div class="progress-bar" role="progressbar"
-                                                style="width: <?= esc((string) $percentage); ?>%; background: linear-gradient(90deg, #0d5aa7, #2563eb);">
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 mr-2" style="height: 6px; background: #e8edf4; border-radius: 999px;">
+                                                <div class="progress-bar" role="progressbar"
+                                                    style="width: <?= esc((string) $percentage); ?>%; background: linear-gradient(90deg, #0d5aa7, #2563eb); border-radius: 999px;">
+                                                </div>
                                             </div>
+                                            <small class="font-weight-bold text-muted"><?= esc((string) $percentage); ?>%</small>
                                         </div>
-                                        <small><?= esc((string) $percentage); ?>%</small>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -613,7 +906,7 @@
                         </table>
                     </div>
                     <?php else: ?>
-                    <div class="alert alert-info mb-0">
+                    <div class="alert alert-info mb-0 small">
                         <i class="fas fa-info-circle mr-2"></i> Belum ada data klasifikasi kerusakan sekolah.
                     </div>
                     <?php endif; ?>
@@ -622,14 +915,143 @@
         </div>
     </div>
 
-    <!-- Quick Actions & Checklist -->
-    <div class="row mt-3">
-        <div class="col-lg-7 col-12 mb-3">
+    <!-- Row 3: Galeri Dokumentasi Kegiatan Lapangan Terkini (Col-12) -->
+    <div class="row mt-2">
+        <div class="col-12 mb-3">
             <div class="card panel-card">
-                <div class="card-header">
-                    <h3 class="card-title mb-0">⚡ Aksi Cepat</h3>
+                <div class="card-header bg-white py-2 px-3 d-flex flex-wrap justify-content-between align-items-center" style="border-bottom: 1px solid #e9eef5; gap: 8px;">
+                    <div>
+                        <h6 class="mb-0 font-weight-bold text-dark d-flex align-items-center" style="font-size: 0.95rem;">
+                            <i class="fas fa-camera text-primary mr-2"></i> Dokumentasi Kegiatan Lapangan Terkini
+                        </h6>
+                        <small class="text-muted" style="font-size: 0.72rem;">Dokumentasi foto kegiatan lapangan real-time dari pelaksana proyek Satker PPS</small>
+                    </div>
+                    <div>
+                        <a href="<?= site_url('/admin/dokumentasi/kegiatan-lapangan'); ?>" class="btn btn-xs btn-primary font-weight-bold" style="border-radius: 6px; font-size: 0.75rem;">
+                            <i class="fas fa-images mr-1"></i> Buka Semua Galeri
+                        </a>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-3">
+                    <?php if (!empty($latestFieldPhotos)): ?>
+                    <div class="row">
+                        <?php foreach ($latestFieldPhotos as $photo): ?>
+                            <?php 
+                                $photoUrl = base_url((string) ($photo['photo_path'] ?? ''));
+                                $activityDate = !empty($photo['activity_date']) ? date('d M Y', strtotime($photo['activity_date'])) : '-';
+                                $photoTitle = (string) ($photo['title'] ?? 'Kegiatan Lapangan');
+                                $locationText = (string) ($photo['location'] ?? 'Wilayah Satker PPS Riau');
+                            ?>
+                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
+                                <div class="field-photo-card js-photo-preview" 
+                                     data-src="<?= esc($photoUrl); ?>" 
+                                     data-title="<?= esc($photoTitle); ?>" 
+                                     data-meta="<?= esc($activityDate . ' — ' . $locationText); ?>">
+                                    <div class="field-photo-img-wrap">
+                                        <img src="<?= esc($photoUrl); ?>" alt="<?= esc($photoTitle); ?>" loading="lazy">
+                                        <span class="field-photo-badge">
+                                            <i class="far fa-calendar-alt mr-1"></i> <?= esc($activityDate); ?>
+                                        </span>
+                                    </div>
+                                    <div class="p-2 flex-grow-1 d-flex flex-column justify-content-between bg-white">
+                                        <h6 class="font-weight-bold text-dark text-truncate mb-1" style="font-size: 0.8rem;" title="<?= esc($photoTitle); ?>">
+                                            <?= esc($photoTitle); ?>
+                                        </h6>
+                                        <small class="text-muted text-truncate d-block" style="font-size: 0.72rem;" title="<?= esc($locationText); ?>">
+                                            <i class="fas fa-map-marker-alt text-danger mr-1"></i> <?= esc($locationText); ?>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php else: ?>
+                    <div class="alert alert-light border text-center py-3 mb-0">
+                        <i class="fas fa-images text-muted mr-1"></i> Belum ada foto dokumentasi lapangan yang diunggah.
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 4: Log Aktivitas Sistem Terkini (Col-7) & Aksi Cepat (Col-5) -->
+    <div class="row mt-2">
+        <!-- Col 7: Log Aktivitas Sistem Terkini -->
+        <div class="col-lg-7 col-12 mb-3">
+            <div class="card panel-card h-100">
+                <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #e9eef5;">
+                    <div>
+                        <h6 class="mb-0 font-weight-bold text-dark d-flex align-items-center" style="font-size: 0.95rem;">
+                            <i class="fas fa-shield-alt text-success mr-2"></i> Log Aktivitas Pengguna Terkini
+                        </h6>
+                        <small class="text-muted" style="font-size: 0.72rem;">Catatan riwayat aksi penambahan, perubahan & penghapusan data</small>
+                    </div>
+                    <a href="<?= site_url('/admin/history/edit'); ?>" class="btn btn-xs btn-outline-secondary font-weight-bold" style="border-radius: 6px; font-size: 0.72rem;">
+                        <i class="fas fa-history mr-1"></i> Riwayat Lengkap
+                    </a>
+                </div>
+                <div class="card-body p-3">
+                    <?php if (!empty($recentAuditLogs)): ?>
+                        <div class="audit-feed">
+                            <?php foreach ($recentAuditLogs as $audit): ?>
+                                <?php 
+                                    $actionType = strtolower(trim((string) ($audit['action_type'] ?? '')));
+                                    $iconClass = 'fas fa-pen';
+                                    $badgeClass = 'audit-badge-edit';
+                                    $badgeLabel = 'Ubah';
+                                    if ($actionType === 'add' || $actionType === 'create') {
+                                        $iconClass = 'fas fa-plus';
+                                        $badgeClass = 'audit-badge-add';
+                                        $badgeLabel = 'Tambah';
+                                    } elseif ($actionType === 'delete' || $actionType === 'hapus') {
+                                        $iconClass = 'fas fa-trash';
+                                        $badgeClass = 'audit-badge-delete';
+                                        $badgeLabel = 'Hapus';
+                                    }
+                                    $timeStr = !empty($audit['happened_at']) ? date('d M Y H:i', strtotime($audit['happened_at'])) : date('d M Y H:i', strtotime($audit['created_at'] ?? 'now'));
+                                ?>
+                                <div class="audit-item">
+                                    <div class="audit-icon-wrap <?= $badgeClass; ?>">
+                                        <i class="<?= $iconClass; ?>"></i>
+                                    </div>
+                                    <div class="flex-grow-1" style="min-width: 0;">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <div class="text-truncate mr-2">
+                                                <strong class="text-dark" style="font-size: 0.82rem;"><?= esc((string) ($audit['username'] ?? 'User')); ?></strong>
+                                                <span class="badge badge-light border text-muted ml-1" style="font-size: 0.66rem;"><?= esc((string) ($audit['role'] ?? '-')); ?></span>
+                                            </div>
+                                            <span class="text-muted small flex-shrink-0" style="font-size: 0.7rem;">
+                                                <i class="far fa-clock mr-1"></i> <?= esc($timeStr); ?> WIB
+                                            </span>
+                                        </div>
+                                        <div class="small text-muted text-truncate" style="font-size: 0.75rem;">
+                                            <span class="badge <?= $badgeClass; ?> px-1 py-0 mr-1 font-weight-bold" style="font-size: 0.65rem;"><?= $badgeLabel; ?></span>
+                                            <span class="text-monospace">/<?= esc((string) ($audit['module_path'] ?? '-')); ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-light border text-center py-3 mb-0 small">
+                            <i class="fas fa-info-circle text-muted mr-1"></i> Belum ada rekaman riwayat audit aktivitas sistem.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Col 5: Aksi Cepat & Pintasan Menu -->
+        <div class="col-lg-5 col-12 mb-3">
+            <div class="card panel-card h-100">
+                <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #e9eef5;">
+                    <h6 class="mb-0 font-weight-bold text-dark d-flex align-items-center" style="font-size: 0.95rem;">
+                        <i class="fas fa-bolt text-warning mr-2"></i> Aksi Cepat & Pintasan
+                    </h6>
+                    <span class="badge badge-light border text-muted" style="font-size: 0.72rem;">Operasional Satker</span>
+                </div>
+                <div class="card-body p-3">
                     <div class="quick-grid">
                         <a class="quick-link" href="<?= site_url('/admin/acara/tambah'); ?>">
                             <i class="fas fa-plus"></i> Tambah Acara
@@ -643,30 +1065,31 @@
                         <a class="quick-link" href="<?= site_url('/admin/laporan/harian'); ?>">
                             <i class="fas fa-file-alt"></i> Laporan Harian
                         </a>
-                        <a class="quick-link" href="<?= site_url('/admin/pengaturan-home'); ?>">
-                            <i class="fas fa-sliders-h"></i> Atur Homepage
+                        <a class="quick-link" href="<?= site_url('/admin/inventaris/barang'); ?>">
+                            <i class="fas fa-boxes-stacked"></i> Aset BMN
                         </a>
-                        <a class="quick-link" href="<?= site_url('/admin/pengaturan/menus'); ?>">
-                            <i class="fas fa-bars"></i> Atur Menu
+                        <a class="quick-link" href="<?= site_url('/admin/inventaris/pinjam-pakai'); ?>">
+                            <i class="fas fa-hand-holding"></i> Pinjam Pakai
+                        </a>
+                        <a class="quick-link" href="<?= site_url('/admin/kontrak/simak/konstruksi'); ?>">
+                            <i class="fas fa-folder-open"></i> SIMAK Berkas
+                        </a>
+                        <a class="quick-link" href="<?= site_url('/admin/surat/cuti'); ?>">
+                            <i class="fas fa-umbrella-beach"></i> Cuti Pegawai
                         </a>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="col-lg-5 col-12 mb-3">
-            <div class="card panel-card">
-                <div class="card-header">
-                    <h3 class="card-title mb-0">✓ Checklist Harian Admin</h3>
-                </div>
-                <div class="card-body">
-                    <ul class="mb-0 pl-3">
-                        <li class="mb-2">Verifikasi konten acara dan post Instagram statu publikasi.</li>
-                        <li class="mb-2">Cek data survei dan laporan harian terbaru.</li>
-                        <li class="mb-2">Verifikasi slider homepage menampilkan konten terbaru.</li>
-                        <li class="mb-2">Review akses pengguna dan izin menu jika ada perubahan.</li>
-                        <li>Arsipkan atau buat laporan mingguan ringkasan.</li>
-                    </ul>
+                    <!-- Checklist Harian Ringkas -->
+                    <div class="mt-3 pt-2 border-top">
+                        <h6 class="font-weight-bold text-dark mb-2" style="font-size: 0.8rem;">
+                            <i class="fas fa-clipboard-check text-success mr-1"></i> Standar Operasional Harian
+                        </h6>
+                        <ul class="mb-0 pl-3 small text-muted" style="font-size: 0.75rem; line-height: 1.6;">
+                            <li>Verifikasi status publikasi acara & postingan media sosial satker.</li>
+                            <li>Pantau kelengkapan laporan harian dan data hasil survei sekolah.</li>
+                            <li>Tinjau peminjaman aset BMN dan kelengkapan dokumen SIMAK.</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1050,6 +1473,28 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // Field Photo Preview Modal Handler
+    document.querySelectorAll('.js-photo-preview').forEach(card => {
+        card.addEventListener('click', function(e) {
+            e.preventDefault();
+            const src = this.getAttribute('data-src') || '';
+            const title = this.getAttribute('data-title') || 'Dokumentasi Lapangan';
+            const meta = this.getAttribute('data-meta') || '';
+
+            const imgEl = document.getElementById('photoPreviewImg');
+            const titleEl = document.getElementById('photoPreviewTitle');
+            const metaEl = document.getElementById('photoPreviewMeta');
+
+            if (imgEl) imgEl.setAttribute('src', src);
+            if (titleEl) titleEl.textContent = title;
+            if (metaEl) metaEl.innerHTML = `<i class="fas fa-info-circle text-primary mr-1"></i> ${meta}`;
+
+            if (typeof $ !== 'undefined') {
+                $('#modal-dashboard-photo-preview').modal('show');
+            }
+        });
+    });
 });
 </script>
 
@@ -1070,6 +1515,34 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="modal-footer bg-light py-2" id="modalEventFooter">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Preview Foto Dokumentasi Lapangan -->
+<div class="modal fade" id="modal-dashboard-photo-preview" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 14px; overflow: hidden; border: none; box-shadow: 0 15px 35px rgba(0,0,0,0.3);">
+            <div class="modal-header py-2 px-3 text-white" style="background: #0f4c81;">
+                <h6 class="modal-title font-weight-bold mb-0" id="photoPreviewTitle">
+                    Detail Foto Kegiatan
+                </h6>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-0 text-center bg-dark" style="min-height: 280px; display: flex; align-items: center; justify-content: center;">
+                <img id="photoPreviewImg" src="" alt="Preview Dokumentasi" style="max-height: 70vh; max-width: 100%; object-fit: contain;">
+            </div>
+            <div class="modal-footer bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                <div class="small font-weight-bold text-dark text-truncate mr-2" id="photoPreviewMeta"></div>
+                <div class="d-flex align-items-center" style="gap: 6px;">
+                    <a href="<?= site_url('/admin/dokumentasi/kegiatan-lapangan'); ?>" class="btn btn-primary btn-sm font-weight-bold">
+                        <i class="fas fa-folder-open mr-1"></i> Buka Modul Dokumentasi
+                    </a>
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Tutup</button>
+                </div>
             </div>
         </div>
     </div>

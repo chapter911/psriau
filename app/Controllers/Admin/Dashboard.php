@@ -83,6 +83,21 @@ class Dashboard extends BaseController
         $calendarEvents = $this->getCalendarEventsData($db);
         $calendarStats = $this->getCalendarSummaryStats($calendarEvents);
 
+        // Inventory & Asset Statistics (BMN)
+        $inventarisStats = $this->getInventarisStats($db);
+
+        // Employee Headcount Statistics
+        $pegawaiStats = $this->getPegawaiStats($db);
+
+        // Packages, BAST & Swakelola Statistics
+        $paketStats = $this->getPaketStats($db);
+
+        // Recent Field Activity Photos
+        $latestFieldPhotos = $this->getLatestFieldPhotos($db, 6);
+
+        // Recent System Audit Trail
+        $recentAuditLogs = $this->getRecentAuditLogs($db, 6);
+
         return view('admin/dashboard', [
             'pageTitle' => 'Dashboard Admin',
             // Schools
@@ -98,6 +113,15 @@ class Dashboard extends BaseController
             // Calendar
             'calendarEvents' => $calendarEvents,
             'calendarStats' => $calendarStats,
+            // Inventory & Assets
+            'inventarisStats' => $inventarisStats,
+            // Employees
+            'pegawaiStats' => $pegawaiStats,
+            // Packages & Field Work
+            'paketStats' => $paketStats,
+            'latestFieldPhotos' => $latestFieldPhotos,
+            // Audit Trails
+            'recentAuditLogs' => $recentAuditLogs,
         ]);
     }
 
@@ -1239,5 +1263,212 @@ class Dashboard extends BaseController
         }
 
         return (float) $normalized;
+    }
+
+    /**
+     * Get inventory and BMN asset summary statistics
+     */
+    private function getInventarisStats($db): array
+    {
+        $stats = [
+            'total'          => 0,
+            'baik'           => 0,
+            'rusak_ringan'   => 0,
+            'rusak_berat'    => 0,
+            'dipinjam'       => 0,
+            'diperbaharui'   => 0,
+            'dikembalikan'   => 0,
+            'pinjam_total'   => 0,
+            'kategori'       => [],
+            'ruangan'        => [],
+        ];
+
+        if ($db->tableExists('trn_inventaris_satker')) {
+            try {
+                $row = $db->table('trn_inventaris_satker')
+                    ->select("COUNT(*) as total, 
+                        SUM(CASE WHEN LOWER(kondisi) = 'baik' THEN 1 ELSE 0 END) as baik,
+                        SUM(CASE WHEN LOWER(kondisi) LIKE '%ringan%' THEN 1 ELSE 0 END) as rusak_ringan,
+                        SUM(CASE WHEN LOWER(kondisi) LIKE '%berat%' THEN 1 ELSE 0 END) as rusak_berat")
+                    ->get()
+                    ->getRowArray();
+
+                if ($row) {
+                    $stats['total']        = (int) ($row['total'] ?? 0);
+                    $stats['baik']         = (int) ($row['baik'] ?? 0);
+                    $stats['rusak_ringan'] = (int) ($row['rusak_ringan'] ?? 0);
+                    $stats['rusak_berat']  = (int) ($row['rusak_berat'] ?? 0);
+                }
+
+                $katRows = $db->table('trn_inventaris_satker')
+                    ->select("COALESCE(NULLIF(kategori, ''), 'Lainnya') as kat, COUNT(*) as c")
+                    ->groupBy('kat')
+                    ->orderBy('c', 'DESC')
+                    ->limit(5)
+                    ->get()
+                    ->getResultArray();
+                $stats['kategori'] = $katRows ?? [];
+            } catch (\Throwable $e) {
+                // Keep default
+            }
+
+            if ($db->tableExists('mst_ruangan')) {
+                try {
+                    $ruangRows = $db->table('mst_ruangan r')
+                        ->select('r.nama_ruangan, COUNT(i.id) as c')
+                        ->join('trn_inventaris_satker i', 'r.id = i.ruangan_id', 'left')
+                        ->groupBy('r.id, r.nama_ruangan')
+                        ->orderBy('c', 'DESC')
+                        ->limit(5)
+                        ->get()
+                        ->getResultArray();
+                    $stats['ruangan'] = $ruangRows ?? [];
+                } catch (\Throwable $e) {
+                    $stats['ruangan'] = [];
+                }
+            }
+        }
+
+        if ($db->tableExists('trn_inventaris_pinjam_pakai')) {
+            try {
+                $pinjamRow = $db->table('trn_inventaris_pinjam_pakai')
+                    ->select("COUNT(*) as total,
+                        SUM(CASE WHEN status = 'dipinjam' THEN 1 ELSE 0 END) as dipinjam,
+                        SUM(CASE WHEN status = 'diperbaharui' THEN 1 ELSE 0 END) as diperbaharui,
+                        SUM(CASE WHEN status = 'dikembalikan' THEN 1 ELSE 0 END) as dikembalikan")
+                    ->get()
+                    ->getRowArray();
+
+                if ($pinjamRow) {
+                    $stats['pinjam_total'] = (int) ($pinjamRow['total'] ?? 0);
+                    $stats['dipinjam']     = (int) ($pinjamRow['dipinjam'] ?? 0);
+                    $stats['diperbaharui'] = (int) ($pinjamRow['diperbaharui'] ?? 0);
+                    $stats['dikembalikan'] = (int) ($pinjamRow['dikembalikan'] ?? 0);
+                }
+            } catch (\Throwable $e) {
+                // Keep default
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Get employee headcount statistics
+     */
+    private function getPegawaiStats($db): array
+    {
+        $stats = [
+            'total'   => 0,
+            'pns'     => 0,
+            'pppk'    => 0,
+            'lainnya' => 0,
+        ];
+
+        if ($db->tableExists('mst_pegawai')) {
+            try {
+                $row = $db->table('mst_pegawai')
+                    ->select("COUNT(*) as total,
+                        SUM(CASE WHEN LOWER(jenis_pegawai) = 'pns' THEN 1 ELSE 0 END) as pns,
+                        SUM(CASE WHEN LOWER(jenis_pegawai) = 'pppk' THEN 1 ELSE 0 END) as pppk,
+                        SUM(CASE WHEN LOWER(jenis_pegawai) NOT IN ('pns', 'pppk') THEN 1 ELSE 0 END) as lainnya")
+                    ->where('is_active', 1)
+                    ->get()
+                    ->getRowArray();
+
+                if ($row) {
+                    $stats['total']   = (int) ($row['total'] ?? 0);
+                    $stats['pns']     = (int) ($row['pns'] ?? 0);
+                    $stats['pppk']    = (int) ($row['pppk'] ?? 0);
+                    $stats['lainnya'] = (int) ($row['lainnya'] ?? 0);
+                }
+            } catch (\Throwable $e) {
+                // Keep default
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Get contracts, BAST, and swakelola package summary
+     */
+    private function getPaketStats($db): array
+    {
+        $stats = [
+            'total_paket'     => 0,
+            'total_bast'      => 0,
+            'total_swakelola' => 0,
+            'total_foto'      => 0,
+        ];
+
+        if ($db->tableExists('mst_paket')) {
+            try {
+                $stats['total_paket'] = (int) $db->table('mst_paket')->where('is_active', 1)->countAllResults();
+            } catch (\Throwable $e) {}
+        }
+
+        if ($db->tableExists('trn_bast')) {
+            try {
+                $stats['total_bast'] = (int) $db->table('trn_bast')->countAllResults();
+            } catch (\Throwable $e) {}
+        }
+
+        if ($db->tableExists('trn_swakelola_paket')) {
+            try {
+                $stats['total_swakelola'] = (int) $db->table('trn_swakelola_paket')->countAllResults();
+            } catch (\Throwable $e) {}
+        }
+
+        if ($db->tableExists('kegiatan_lapangan_photos')) {
+            try {
+                $stats['total_foto'] = (int) $db->table('kegiatan_lapangan_photos')->countAllResults();
+            } catch (\Throwable $e) {}
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Get latest field activity photos with activity details
+     */
+    private function getLatestFieldPhotos($db, int $limit = 6): array
+    {
+        if (! $db->tableExists('kegiatan_lapangan_photos') || ! $db->tableExists('kegiatan_lapangan')) {
+            return [];
+        }
+
+        try {
+            return $db->table('kegiatan_lapangan_photos p')
+                ->select('p.id, p.activity_id, p.photo_path, p.photo_name, k.title, k.activity_date, k.location')
+                ->join('kegiatan_lapangan k', 'p.activity_id = k.id', 'inner')
+                ->orderBy('p.id', 'DESC')
+                ->limit($limit)
+                ->get()
+                ->getResultArray() ?? [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Get latest system audit trail entries
+     */
+    private function getRecentAuditLogs($db, int $limit = 6): array
+    {
+        if (! $db->tableExists('audit_histories')) {
+            return [];
+        }
+
+        try {
+            return $db->table('audit_histories')
+                ->select('id, action_type, module_path, table_name, username, role, happened_at, created_at')
+                ->orderBy('id', 'DESC')
+                ->limit($limit)
+                ->get()
+                ->getResultArray() ?? [];
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 }

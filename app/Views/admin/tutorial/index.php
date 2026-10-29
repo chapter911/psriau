@@ -175,12 +175,12 @@
     <!-- MAIN SECTION: FLOWCHART VISUAL DIAGRAMS -->
     <h4 class="font-weight-bold text-dark mb-3"><i class="fas fa-diagram-project text-primary mr-2"></i> Diagram Flowchart Alur Kerja</h4>
 
-    <!-- FLOWCHART 0: DASHBOARD - KALENDER TERPADU KEGIATAN & LIBUR -->
+    <!-- FLOWCHART 0: DASHBOARD EKSEKUTIF & OPERASIONAL TERPADU -->
     <div class="flowchart-card role-section" data-roles="all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
-                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-calendar-days mr-2"></i> Alur Pemantauan Kalender Terpadu di Dashboard</h5>
-                <small class="text-muted">Monitoring jadwal hari libur nasional, cuti bersama, pegawai cuti, dan perjalanan dinas terintegrasi via FullCalendar.</small>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-gauge-high mr-2"></i> Alur Dashboard Eksekutif &amp; Monitoring Terpadu</h5>
+                <small class="text-muted">Struktur informasi terpadu: Ringkasan KPI BMN &amp; Pegawai, Kalender Agenda, Dokumen SIMAK, Inventarisasi Aset, Galeri Lapangan, dan Log Aktivitas.</small>
             </div>
             <div>
                 <span class="badge badge-primary">Semua Role</span>
@@ -190,15 +190,28 @@
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A[Buka Halaman Dashboard Admin] --> B[Lihat Kalender Terpadu FullCalendar]
-    B --> C{Filter Tampilan Kategori}
-    C -->|Merah| D[Hari Libur Nasional]
-    C -->|Oranye/Amber| E[Cuti Bersama]
-    C -->|Biru/Cyan| F[Pegawai Sedang Cuti]
-    C -->|Hijau Emerald| G[Pegawai Sedang Perjalanan Dinas]
-    B --> H[Klik Jadwal / Tanggal Tertentu]
-    H --> I[Muncul Modal Detail: Nama Pegawai, NIP, Jabatan, Tanggal & Tujuan]
-    I --> J[Akses Tombol Pintas ke Modul Terkait]
+    A["Buka Halaman Dashboard Admin (/admin/dashboard)"] --> B["Hero Banner &amp; 5 Kartu KPI Eksekutif"]
+    B --> B1["Aset BMN Satker (Total Barang, Kondisi Baik, Status Dipinjam)"]
+    B --> B2["Pegawai &amp; SDM (PNS, PPPK, Non-ASN)"]
+    B --> B3["Prasarana Sekolah &amp; Persentase Hasil Survei"]
+    B --> B4["Laporan Pekerjaan (Harian &amp; Mingguan)"]
+    B --> B5["Paket &amp; Kontrak (BAST &amp; Swakelola)"]
+    
+    A --> C["Row 1: Kalender Terpadu &amp; Dokumentasi SIMAK"]
+    C --> C1["FullCalendar Terpadu: Filter Libur, Cuti Bersama, Cuti Pegawai &amp; Perjadin"]
+    C --> C2["SIMAK Dokumentasi: Bar Chart Persentase Dokumen Konstruksi &amp; Konsultasi"]
+    
+    A --> D["Row 2: Inventarisasi Aset BMN &amp; Kerusakan Sekolah"]
+    D --> D1["Statistik Aset BMN: Sebaran Kategori, Penempatan Ruangan &amp; Pinjam Pakai"]
+    D --> D2["Klasifikasi Kerusakan Sekolah: Donut Chart &amp; Tabel Persentase"]
+    
+    A --> E["Row 3: Galeri Dokumentasi Kegiatan Lapangan"]
+    E --> E1["Thumbnail Foto Proyek Terbaru &amp; Badge Tanggal/Lokasi"]
+    E1 --> E2["Klik Foto: Modal Preview Resolusi Penuh &amp; Tautan Modul Dokumentasi"]
+    
+    A --> F["Row 4: Log Aktivitas Sistem &amp; Aksi Cepat"]
+    F --> F1["Audit Trail Terkini: Riwayat Tambah, Ubah, Hapus Data Pengguna Real-Time"]
+    F --> F2["Pintasan Menu Cepat: Akses Kilat ke Modul-modul Operasional Utama"]
                 </pre>
             </div>
         </div>
@@ -487,6 +500,47 @@ graph TD
     B --> C[Audit Log & Riwayat Login]
     C --> D[Konfigurasi KOP Surat & Pengaturan Sistem Global]
     D --> E["Unduh File Word (.docx) Template Kop Surat Resmi"]
+                </pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOWCHART 5B: KEAMANAN LOGIN, RATE LIMITING & AUDIT TRAIL -->
+    <div class="flowchart-card role-section" data-roles="super_administrator,admin,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="font-weight-bold mb-1 text-danger"><i class="fas fa-user-lock mr-2"></i> Alur Keamanan Otentikasi, Rate Limiting &amp; Monitoring Riwayat Login</h5>
+                <small class="text-muted">Mekanisme proteksi brute-force (maks 5 percobaan gagal per 15 menit), parameterized query (anti SQL Injection), verifikasi hash password, dan pencatatan audit log lengkap.</small>
+            </div>
+            <div>
+                <span class="badge badge-danger">Keamanan &amp; Audit</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Pengguna / Bot Submit Form Login (Web /masuk atau API /api/auth/login)"] --> B{"Pengecekan Rate Limiting Throttler (IP Address)"}
+    B -- "Gagal &gt; 5x dalam 15 Menit" --> C["BLOKIR SEMENTARA (HTTP 429 / Flash Error)"]
+    C --> C1["Catat Log Gagal: 'Terlalu banyak percobaan (Rate Limit)'"]
+    C --> C2["Tampilkan Pesan Peringatan Waktu Tunggu (Menit/Detik)"]
+    
+    B -- "Percobaan &lt;= 5x (Aman)" --> D["Validasi Input (Username &amp; Password Wajib Diisi)"]
+    D -- "Input Kosong" --> D1["Catat Log Gagal: 'Input login tidak lengkap'"]
+    
+    D -- "Valid" --> E["Cari Akun via Parameterized Query (Anti SQL Injection)"]
+    E --> F{"Verifikasi Password Hash (password_verify)"}
+    F -- "Salah / Tidak Ditemukan" --> F1["Catat Log Gagal: 'Kredensial tidak valid'"]
+    F1 --> F2["Konsumsi Kuota Token Throttle IP &amp; Tampilkan Notifikasi Error"]
+    
+    F -- "Cocok" --> G{"Status Akun &amp; Izin Akses Platform"}
+    G -- "Nonaktif" --> G1["Catat Log: 'Akun nonaktif'"]
+    G -- "Akses Web/Mobile Nonaktif" --> G2["Catat Log: 'Tidak memiliki akses platform'"]
+    
+    G -- "Aktif &amp; Berizin" --> H["LOGIN SUKSES"]
+    H --> H1["Reset Kuota Throttler IP (Token Bucket Kembali Penuh)"]
+    H --> H2["Simpan Sesi / Terbitkan Token API"]
+    H --> H3["Catat Log Sukses ke Audit Riwayat Login (/admin/history/login)"]
                 </pre>
             </div>
         </div>
@@ -1160,9 +1214,14 @@ graph TD
                     <div class="col-md-6 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="font-weight-bold text-primary"><i class="fas fa-calendar-days mr-1"></i> Dashboard & Kalender Terpadu Satker PPS</h6>
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-gauge-high mr-1"></i> Dashboard Eksekutif &amp; Monitoring Terpadu</h6>
                                 <p class="small text-muted mb-2"><code>/admin/dashboard</code></p>
-                                <p class="small mb-0">Halaman utama dashboard menyajikan <strong>FullCalendar Terpadu (Col-4 Sidebar Layout)</strong> yang mengombinasikan 4 kategori jadwal: Hari Libur Nasional (merah), Cuti Bersama (oranye/amber), Pegawai Cuti (biru/cyan), dan Perjalanan Dinas (hijau). Dilengkapi filter interaktif, counter pegawai cuti & dinas aktif hari ini, tampilan Bulan/List, serta modal detail lengkap saat tanggal/agenda diklik.</p>
+                                <p class="small mb-0">Halaman utama dashboard menyajikan pemantauan terpadu komprehensif yang tersusun berurutan:
+                                    <br>1. <strong>5 Kartu Metrik Eksekutif</strong>: Ringkasan Aset BMN, Pegawai Aktif (PNS/PPPK/Non-ASN), Prasarana Sekolah &amp; Survei, Laporan Lapangan, dan Paket BAST/Swakelola.
+                                    <br>2. <strong>Kalender Terpadu &amp; SIMAK</strong>: Integrasi FullCalendar (Libur, Cuti, Perjadin) berdampingan dengan Bar Chart kelengkapan berkas SIMAK Konstruksi &amp; Konsultasi.
+                                    <br>3. <strong>Inventarisasi Aset BMN &amp; Kerusakan Sekolah</strong>: Sebaran kategori aset, aset dipinjam pakai, dan distribusi ruangan bersanding dengan donut chart tingkat kerusakan sekolah.
+                                    <br>4. <strong>Galeri Kegiatan Lapangan Terkini</strong>: Thumbnail foto proyek real-time dengan dialog modal pratinjau foto resolusi penuh.
+                                    <br>5. <strong>Log Aktivitas Pengguna (Live Audit Feed) &amp; Pintasan Menu</strong>: Rekaman riwayat aksi penambahan/perubahan/penghapusan data pengguna real-time serta akses cepat ke modul operasional utama.</p>
                             </div>
                         </div>
                     </div>
@@ -1190,6 +1249,20 @@ graph TD
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-file-image mr-1"></i> Master Kop Surat & Unduh Template Word (.docx)</h6>
                                 <p class="small text-muted mb-2"><code>/admin/master/kop-surat</code></p>
                                 <p class="small mb-0">Pengelolaan berkas kop surat resmi Satker PPS Riau (unggah gambar banner, pratinjau resolusi penuh, dan aktivasi kop instansi). Dilengkapi fitur <strong>Unduh File Word (.docx)</strong> baik langsung melalui tombol di header halaman (mengunduh kop surat aktif), tombol baris tabel per kop surat, maupun tombol aksi di dalam modal pratinjau. Dokumen Word yang diunduh berformat A4 dengan margin standar kedinasan (Top 1.5 cm, Left/Right/Bottom 2.0 cm), gambar banner kop surat proporsional resolusi tajam, serta draf surat kedinasan lengkap (Nomor, Sifat, Lampiran, Hal, Tanggal, Tujuan Yth., Salam Pembuka, Poin Isi Surat, Penutup, Blok Tanda Tangan Kasatker, dan Tembusan) yang <em>100% editable</em> di Microsoft Word.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-danger"><i class="fas fa-shield-alt mr-1"></i> Keamanan Login, Rate Limiting &amp; Riwayat Login</h6>
+                                <p class="small text-muted mb-2"><code>/admin/history/login</code></p>
+                                <p class="small mb-1">Audit trail keamanan autentikasi dan sistem pertahanan otomatis terhadap serangan brute force dan SQL injection:</p>
+                                <ul class="pl-3 small mb-0">
+                                    <li><strong>Rate Limiting / Login Throttling (CodeIgniter Throttler):</strong> Membatasi maksimal 5 kali kegagalan login per 15 menit dari satu alamat IP address (berlaku untuk form login Web maupun API). Jika terdeteksi percobaan beruntun, sistem secara otomatis memblokir sementara dan menampilkan estimasi waktu tunggu (menit/detik). Kuota throttle otomatis di-reset saat login berhasil.</li>
+                                    <li><strong>Anti SQL Injection &amp; Password Hashing:</strong> Autentikasi menggunakan parameterized query PDO dan fungsi kriptografi <code>password_verify()</code> sehingga kebal dari payload bypass login (seperti <code>' OR 1=1</code>).</li>
+                                    <li><strong>Monitoring Audit Lengkap:</strong> Merekam seluruh percobaan login (Waktu, Status Sukses/Gagal, Username Input, IP Address, User Agent, Referer, Payload Request, dan Alasan Gagal seperti Kredensial Tidak Valid, Input Tidak Lengkap, Akun Nonaktif, atau Rate Limited).</li>
+                                </ul>
                             </div>
                         </div>
                     </div>

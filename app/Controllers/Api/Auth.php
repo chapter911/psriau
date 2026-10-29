@@ -32,6 +32,30 @@ class Auth extends BaseController
 
         $deviceName = $deviceName ?: 'API Token';
 
+        // Rate Limiting / Brute-force Protection via Throttler (Maks 5 percobaan gagal per 15 menit per IP)
+        $ip = (string) ($this->request->getIPAddress() ?? '');
+        $throttleKey = md5('login_api_' . $ip);
+        try {
+            $throttler = service('throttler');
+            if ($throttler->check($throttleKey, 5, 900) === false) {
+                $seconds = $throttler->getTokenTime();
+                $minutes = (int) ceil($seconds / 60);
+                $context = $this->buildLoginContext($usernameInput, $passwordInput);
+                $this->logLoginAttempt(false, 'rate_limited', $context, null);
+
+                return $this->response
+                    ->setStatusCode(ResponseInterface::HTTP_TOO_MANY_REQUESTS)
+                    ->setHeader('Retry-After', (string) $seconds)
+                    ->setJSON([
+                        'status' => 'error',
+                        'message' => "Terlalu banyak percobaan login gagal dari IP Anda ({$ip}). Silakan coba lagi dalam {$minutes} menit ({$seconds} detik).",
+                        'retry_after' => $seconds,
+                    ]);
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'API Login Throttler error: ' . $e->getMessage());
+        }
+
         // 1. Validation
         if ($usernameInput === '' || $passwordInput === '') {
             $context = $this->buildLoginContext($usernameInput, $passwordInput);
@@ -95,6 +119,13 @@ class Auth extends BaseController
         // 6. Log Success
         $context = $this->buildLoginContext($usernameInput, $passwordInput);
         $this->logLoginAttempt(true, null, $context, $user);
+
+        // Reset throttle counter on success
+        try {
+            service('throttler')->remove($throttleKey);
+        } catch (\Throwable $e) {
+            // Ignore throttler cache reset error
+        }
 
         return $this->response->setJSON([
             'status' => 'success',

@@ -18,6 +18,9 @@ $reasonLabel = static function (?string $reason): string {
         'validation_failed' => 'Input login tidak lengkap',
         'invalid_credentials' => 'Kredensial tidak valid',
         'inactive_account' => 'Akun nonaktif',
+        'no_web_access' => 'Tidak memiliki akses Web',
+        'no_mobile_access' => 'Tidak memiliki akses Mobile',
+        'rate_limited' => 'Terlalu banyak percobaan (Rate Limit)',
         '', '-' => '-',
         default => ucwords(str_replace(['_', '-'], ' ', $normalized)),
     };

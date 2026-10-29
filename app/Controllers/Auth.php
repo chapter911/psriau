@@ -22,6 +22,25 @@ class Auth extends BaseController
         $usernameInput = trim((string) $this->request->getPost('username'));
         $context = $this->buildLoginContext($usernameInput);
 
+        // Rate Limiting / Brute-force Protection via Throttler (Maks 5 percobaan gagal per 15 menit per IP)
+        $ip = (string) ($this->request->getIPAddress() ?? '');
+        $throttleKey = md5('login_web_' . $ip);
+        try {
+            $throttler = service('throttler');
+            if ($throttler->check($throttleKey, 5, 900) === false) {
+                $seconds = $throttler->getTokenTime();
+                $minutes = (int) ceil($seconds / 60);
+                $this->logLoginAttempt(false, 'rate_limited', $context, null);
+
+                return redirect()->back()->withInput()->with(
+                    'error',
+                    "Terlalu banyak percobaan login gagal dari IP Anda ({$ip}). Demi keamanan sistem, silakan tunggu {$minutes} menit ({$seconds} detik) sebelum mencoba kembali."
+                );
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Login Throttler error: ' . $e->getMessage());
+        }
+
         $rules = [
             'username' => 'required',
             'password' => 'required',
@@ -47,6 +66,13 @@ class Auth extends BaseController
         if ((int) ($user['akses_web'] ?? 1) !== 1) {
             $this->logLoginAttempt(false, 'no_web_access', $context, $user);
             return redirect()->back()->withInput()->with('error', 'Akun Anda tidak memiliki akses ke platform Web.');
+        }
+
+        // Reset hitungan throttle jika login berhasil
+        try {
+            service('throttler')->remove($throttleKey);
+        } catch (\Throwable $e) {
+            // Abaikan kesalahan reset cache throttler
         }
 
         session()->set([
