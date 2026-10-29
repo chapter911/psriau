@@ -205,20 +205,14 @@ if (typeof docx === 'undefined') {
 </script>
 
 <style>
-/* Word document styling emulation */
+/* Word document styling emulation - preserve native docx-preview borders & justification */
+#docxContainer {
+    font-family: Arial, sans-serif;
+    color: #000;
+}
 #docxContainer table {
-    border-collapse: collapse !important;
-    width: 100% !important;
-    margin: 12px 0 !important;
-}
-#docxContainer table, #docxContainer th, #docxContainer td {
-    border: 1px solid #d0d0d0 !important;
-    padding: 6px 10px !important;
-    font-size: 0.9rem !important;
-}
-#docxContainer p {
-    margin-bottom: 0.5rem !important;
-    line-height: 1.5 !important;
+    border-collapse: collapse;
+    max-width: 100%;
 }
 #docxContainer img {
     max-width: 100% !important;

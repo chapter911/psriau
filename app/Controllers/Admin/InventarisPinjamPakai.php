@@ -49,14 +49,15 @@ class InventarisPinjamPakai extends BaseController
         if ($db->tableExists('cfg_inventaris_kop_surat')) {
             if (! empty($date)) {
                 $row = $db->table('cfg_inventaris_kop_surat')
-                    ->where('is_active', 1)
                     ->groupStart()
                         ->where('berlaku_dari <=', $date)
                         ->orWhere('berlaku_dari IS NULL')
+                        ->orWhere('berlaku_dari', '')
                     ->groupEnd()
                     ->groupStart()
                         ->where('berlaku_sampai >=', $date)
                         ->orWhere('berlaku_sampai IS NULL')
+                        ->orWhere('berlaku_sampai', '')
                     ->groupEnd()
                     ->orderBy('berlaku_dari', 'DESC')
                     ->orderBy('id', 'DESC')

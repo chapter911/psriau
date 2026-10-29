@@ -236,9 +236,9 @@ if (! function_exists('tanggal_lengkap_indonesia')) {
 
 if (! function_exists('kop_surat_url')) {
     /**
-     * Ambil file kop surat aktif.
+     * Ambil file kop surat aktif atau sesuai tahun/tanggal pembuatan dokumen (2025 = kop lama, 2026 = kop baru).
      */
-    function kop_surat_url(?int $kopSuratId = null): string
+    function kop_surat_url(?int $kopSuratId = null, ?string $dateOrYear = null): string
     {
         try {
             $db = db_connect();
@@ -264,6 +264,27 @@ if (! function_exists('kop_surat_url')) {
                         ->get()
                         ->getRowArray();
                 }
+            }
+
+            if (! is_array($row) && $dateOrYear !== null && trim($dateOrYear) !== '' && $db->tableExists('cfg_inventaris_kop_surat')) {
+                $trimmed = trim($dateOrYear);
+                $dateNormalized = preg_match('/^\d{4}$/', $trimmed) ? ($trimmed . '-06-15') : substr($trimmed, 0, 10);
+                $row = $db->table('cfg_inventaris_kop_surat')
+                    ->groupStart()
+                        ->where('berlaku_dari <=', $dateNormalized)
+                        ->orWhere('berlaku_dari IS NULL')
+                        ->orWhere('berlaku_dari', '')
+                    ->groupEnd()
+                    ->groupStart()
+                        ->where('berlaku_sampai >=', $dateNormalized)
+                        ->orWhere('berlaku_sampai IS NULL')
+                        ->orWhere('berlaku_sampai', '')
+                    ->groupEnd()
+                    ->orderBy('berlaku_dari', 'DESC')
+                    ->orderBy('id', 'DESC')
+                    ->limit(1)
+                    ->get()
+                    ->getRowArray();
             }
 
             if (! is_array($row) && $db->tableExists('kop_surat')) {
@@ -311,11 +332,11 @@ if (! function_exists('kop_surat_url')) {
 
 if (! function_exists('kop_surat_img_tag')) {
     /**
-     * Render tag img kop surat aktif.
+     * Render tag img kop surat aktif atau sesuai tahun/tanggal pembuatan dokumen.
      */
-    function kop_surat_img_tag(string $class = '', string $style = '', string $alt = 'Kop Surat', ?int $kopSuratId = null): string
+    function kop_surat_img_tag(string $class = '', string $style = '', string $alt = 'Kop Surat', ?int $kopSuratId = null, ?string $dateOrYear = null): string
     {
-        $url = kop_surat_url($kopSuratId);
+        $url = kop_surat_url($kopSuratId, $dateOrYear);
         if ($url === '') {
             return '';
         }
@@ -405,17 +426,18 @@ if (! function_exists('inventaris_kop_surat_url')) {
                 }
             }
 
-            // 2. Jika ID tidak ada, cari berdasarkan tanggal pinjam / berlaku
+            // 2. Jika ID tidak ada, cari berdasarkan tanggal pinjam / berlaku (2025 = kop lama, 2026 = kop baru)
             if (! is_array($row) && ! empty($date) && $db->tableExists('cfg_inventaris_kop_surat')) {
                 $row = $db->table('cfg_inventaris_kop_surat')
-                    ->where('is_active', 1)
                     ->groupStart()
                         ->where('berlaku_dari <=', $date)
                         ->orWhere('berlaku_dari IS NULL')
+                        ->orWhere('berlaku_dari', '')
                     ->groupEnd()
                     ->groupStart()
                         ->where('berlaku_sampai >=', $date)
                         ->orWhere('berlaku_sampai IS NULL')
+                        ->orWhere('berlaku_sampai', '')
                     ->groupEnd()
                     ->orderBy('berlaku_dari', 'DESC')
                     ->orderBy('id', 'DESC')
