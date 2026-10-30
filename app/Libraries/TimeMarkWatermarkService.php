@@ -1108,12 +1108,32 @@ class TimeMarkWatermarkService
      */
     private function sanitizeTextForFont(string $text): string
     {
-        // 1. Hapus emoji non-BMP (U+10000 s/d U+10FFFF)
+        if ($text === '') {
+            return '';
+        }
+
+        // 1. Pastikan string adalah valid UTF-8, buang byte invalid
+        if (! mb_check_encoding($text, 'UTF-8')) {
+            $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+        }
+
+        // 2. Hapus karakter pengganti Unicode U+FFFD (?) dan pola mojibake umum (misal: "ð???", "ðŸ“", dsb)
+        $text = str_replace(["\xEF\xBF\xBD", "\u{FFFD}", 'ð???', 'ð??? ', 'ðŸ“', 'ðŸ', '📍', '📝', '🌐', '🏷️', '🏷', '⏱️', '⏱'], '', $text);
+
+        // 3. Hapus emoji non-BMP (U+10000 s/d U+10FFFF)
         $clean = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $text);
-        // 2. Hapus emoji BMP umum
-        $clean = preg_replace('/[\x{2600}-\x{27BF}\x{1F300}-\x{1F64F}\x{1F680}-\x{1F6FF}]/u', '', $clean);
-        // 3. Hapus sisa karakter mojibake jika ada
-        $clean = str_replace(['ð???', 'ð??? ', 'ðŸ“', 'ðŸ', '📍', '📝', '🌐'], '', $clean);
+        if ($clean === null) {
+            $clean = $text;
+        }
+
+        // 4. Hapus emoji BMP umum
+        $clean2 = preg_replace('/[\x{2600}-\x{27BF}\x{1F300}-\x{1F64F}\x{1F680}-\x{1F6FF}\x{FE00}-\x{FE0F}]/u', '', $clean);
+        if ($clean2 !== null) {
+            $clean = $clean2;
+        }
+
+        // 5. Hapus sisa mojibake karakter latin khusus di awal teks (misal "ð???" atau sisa awalan byte non-ASCII rusak)
+        $clean = preg_replace('/^[ð\x{00F0}\x{FFFD}\?]{1,6}\s*/u', '', $clean);
 
         return trim($clean);
     }
@@ -1648,6 +1668,250 @@ class TimeMarkWatermarkService
             log_message('error', 'Gagal menyematkan metadata EXIF pada ' . $filePath . ': ' . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Menghitung jarak antara dua koordinat GPS menggunakan formula Haversine (dalam satuan meter).
+     */
+    public function haversineDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadius = 6371000.0; // Radius bumi dalam meter
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLng / 2) * sin($dLng / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(max(0.0, 1 - $a)));
+        return $earthRadius * $c;
+    }
+
+    /**
+     * Mengelompokkan daftar berkas foto berdasarkan kedekatan lokasi koordinat GPS (GPS Clustering).
+     * Foto-foto dengan koordinat GPS dalam radius toleransi ($radiusMeters) akan dikelompokkan ke cluster yang sama.
+     * Setiap kelompok otomatis diberi nama folder bersih yang menyertakan nomor urut dan nama lokasi / alamat (misal: Lokasi_01_Pekanbaru).
+     * Foto tanpa koordinat GPS akan dikelompokkan ke dalam folder khusus Tanpa_Koordinat_GPS.
+     *
+     * @param array $imageItems Daftar item berkas foto ['path' => ..., 'original_name' => ..., ...]
+     * @param float $radiusMeters Radius toleransi pengelompokan (meter), default 100m
+     * @param bool $useExifLocation Utamakan membaca GPS dari EXIF foto asli
+     * @param string|null $fallbackCoordStr Koordinat default dari input form jika EXIF kosong
+     * @return array ['clusters' => [...], 'items' => [...]]
+     */
+    public function clusterImagesByCoordinates(
+        array $imageItems,
+        float $radiusMeters = 100.0,
+        bool $useExifLocation = true,
+        ?string $fallbackCoordStr = null
+    ): array {
+        $fallbackCoords = null;
+        if (! empty($fallbackCoordStr)) {
+            $fallbackCoords = $this->parseCoordinateString($fallbackCoordStr);
+        }
+
+        $rawClusters = [];
+        $noGpsItems = [];
+
+        foreach ($imageItems as $item) {
+            $filePath = $item['path'];
+            $gpsDecimal = null;
+            $gpsDms = null;
+
+            if ($useExifLocation) {
+                $exif = $this->readExifData($filePath);
+                if (is_array($exif)) {
+                    $gpsDecimal = $this->extractGpsDecimal($exif);
+                    $gpsDms = $this->extractGpsCoordinates($exif);
+                }
+            }
+
+            // Fallback ke koordinat manual jika EXIF tidak memiliki GPS
+            if ($gpsDecimal === null && $fallbackCoords !== null) {
+                $gpsDecimal = $fallbackCoords;
+                $gpsDms = sprintf('%.6f° %s, %.6f° %s', abs($fallbackCoords['lat']), $fallbackCoords['lat'] >= 0 ? 'N' : 'S', abs($fallbackCoords['lng']), $fallbackCoords['lng'] >= 0 ? 'E' : 'W');
+            }
+
+            $item['_gps'] = $gpsDecimal;
+            $item['_gps_dms'] = $gpsDms;
+
+            if ($gpsDecimal === null) {
+                $noGpsItems[] = $item;
+                continue;
+            }
+
+            // Cari cluster terdekat yang jaraknya <= radiusMeters
+            $matchedIdx = -1;
+            $minDist = PHP_FLOAT_MAX;
+
+            foreach ($rawClusters as $cIdx => $cluster) {
+                $dist = $this->haversineDistance($cluster['centroid_lat'], $cluster['centroid_lng'], $gpsDecimal['lat'], $gpsDecimal['lng']);
+                if ($dist <= $radiusMeters && $dist < $minDist) {
+                    $minDist = $dist;
+                    $matchedIdx = $cIdx;
+                }
+            }
+
+            if ($matchedIdx >= 0) {
+                $rawClusters[$matchedIdx]['items'][] = $item;
+                // Update centroid moving average
+                $cnt = count($rawClusters[$matchedIdx]['items']);
+                $rawClusters[$matchedIdx]['centroid_lat'] = ($rawClusters[$matchedIdx]['centroid_lat'] * ($cnt - 1) + $gpsDecimal['lat']) / $cnt;
+                $rawClusters[$matchedIdx]['centroid_lng'] = ($rawClusters[$matchedIdx]['centroid_lng'] * ($cnt - 1) + $gpsDecimal['lng']) / $cnt;
+            } else {
+                $rawClusters[] = [
+                    'centroid_lat' => $gpsDecimal['lat'],
+                    'centroid_lng' => $gpsDecimal['lng'],
+                    'first_dms'    => $gpsDms,
+                    'items'        => [$item],
+                ];
+            }
+        }
+
+        $finalClusters = [];
+        $allProcessedItems = [];
+        $clusterNum = 1;
+
+        // Proses cluster GPS
+        foreach ($rawClusters as $cluster) {
+            $cLat = round($cluster['centroid_lat'], 6);
+            $cLng = round($cluster['centroid_lng'], 6);
+            $cId = (string) $clusterNum;
+
+            // Coba dapatkan nama lokasi via reverse geocode
+            $geocoded = $this->reverseGeocode($cLat, $cLng);
+            $cleanLocationSlug = '';
+
+            if (! empty($geocoded)) {
+                $parts = explode(',', $geocoded);
+                $cleanLocationSlug = trim($parts[0]);
+                if (isset($parts[1]) && strlen($cleanLocationSlug) < 15) {
+                    $cleanLocationSlug .= '_' . trim($parts[1]);
+                }
+            }
+
+            // Sanitasi karakter slug agar aman di semua filesystem
+            $cleanLocationSlug = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $cleanLocationSlug);
+            $cleanLocationSlug = preg_replace('/_+/', '_', trim($cleanLocationSlug, '_'));
+            if (strlen($cleanLocationSlug) > 25) {
+                $cleanLocationSlug = substr($cleanLocationSlug, 0, 25);
+            }
+
+            if ($cleanLocationSlug === '') {
+                $cleanLocationSlug = sprintf('%.4f_%.4f', $cLat, $cLng);
+            }
+
+            $folderName = sprintf('Lokasi_%02d_%s', $clusterNum, $cleanLocationSlug);
+            $dmsText = sprintf('%.6f° %s, %.6f° %s', abs($cLat), $cLat >= 0 ? 'N' : 'S', abs($cLng), $cLng >= 0 ? 'E' : 'W');
+            $displayName = ! empty($geocoded) ? $geocoded : $dmsText;
+
+            $clusterMeta = [
+                'id'          => $cId,
+                'folder_name' => $folderName,
+                'name'        => sprintf('Lokasi %d: %s', $clusterNum, ! empty($geocoded) ? $geocoded : $dmsText),
+                'coords_text' => $dmsText,
+                'lat'         => $cLat,
+                'lng'         => $cLng,
+                'count'       => count($cluster['items']),
+            ];
+            $finalClusters[] = $clusterMeta;
+
+            foreach ($cluster['items'] as $item) {
+                $item['sub_dir'] = $folderName;
+                $item['cluster_id'] = $cId;
+                $item['cluster_name'] = $clusterMeta['name'];
+                $item['cluster_folder'] = $folderName;
+                $allProcessedItems[] = $item;
+            }
+
+            $clusterNum++;
+        }
+
+        // Proses item tanpa GPS
+        if (! empty($noGpsItems)) {
+            $folderName = 'Tanpa_Koordinat_GPS';
+            $clusterMeta = [
+                'id'          => 'no_gps',
+                'folder_name' => $folderName,
+                'name'        => 'Foto Tanpa Koordinat GPS',
+                'coords_text' => '-',
+                'lat'         => null,
+                'lng'         => null,
+                'count'       => count($noGpsItems),
+            ];
+            $finalClusters[] = $clusterMeta;
+
+            foreach ($noGpsItems as $item) {
+                $item['sub_dir'] = $folderName;
+                $item['cluster_id'] = 'no_gps';
+                $item['cluster_name'] = 'Foto Tanpa Koordinat GPS';
+                $item['cluster_folder'] = $folderName;
+                $allProcessedItems[] = $item;
+            }
+        }
+
+        return [
+            'clusters' => $finalClusters,
+            'items'    => $allProcessedItems,
+        ];
+    }
+
+    /**
+     * Menghasilkan thumbnail responsif ringan (base64 Data URI) dari berkas foto asli.
+     */
+    public function generateThumbnailDataUri(string $filePath, int $maxWidth = 360, int $quality = 68): ?string
+    {
+        if (! is_file($filePath) || ! is_readable($filePath)) {
+            return null;
+        }
+
+        try {
+            $isHeic = in_array(strtolower(pathinfo($filePath, PATHINFO_EXTENSION)), ['heic', 'heif'], true);
+            $img = null;
+
+            if ($isHeic) {
+                // Konversi HEIC sementara untuk thumbnail jika diperlukan
+                $converted = $this->convertHeicToJpeg($filePath);
+                if ($converted !== null && is_file($converted)) {
+                    $img = @imagecreatefromjpeg($converted);
+                    @unlink($converted);
+                }
+            } else {
+                $raw = @file_get_contents($filePath);
+                if ($raw !== false && $raw !== '') {
+                    $img = @imagecreatefromstring($raw);
+                }
+            }
+
+            if ($img === null || $img === false) {
+                return null;
+            }
+
+            $w = imagesx($img);
+            $h = imagesy($img);
+            if ($w <= 0 || $h <= 0) {
+                imagedestroy($img);
+                return null;
+            }
+
+            $thumbW = min($w, $maxWidth);
+            $thumbH = (int) max(1, round(($h / $w) * $thumbW));
+
+            $thumb = imagecreatetruecolor($thumbW, $thumbH);
+            imagecopyresampled($thumb, $img, 0, 0, 0, 0, $thumbW, $thumbH, $w, $h);
+            imagedestroy($img);
+
+            ob_start();
+            imagejpeg($thumb, null, $quality);
+            $bytes = ob_get_clean();
+            imagedestroy($thumb);
+
+            if ($bytes !== false && $bytes !== '') {
+                return 'data:image/jpeg;base64,' . base64_encode($bytes);
+            }
+        } catch (\Throwable $e) {
+            // Abaikan kegagalan thumbnail
+        }
+
+        return null;
     }
 }
 

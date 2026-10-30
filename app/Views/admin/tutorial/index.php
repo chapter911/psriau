@@ -895,18 +895,31 @@ graph TD
     B -->|Format 3| E["Gaya Modern Badge: Kartu Melayang Elegan di Sudut Foto"]
     B -->|Format 4| F["Gaya Bottom Strip: Banner Bawah Bersih &amp; Garis Aksen Emas"]
 
-    C --> G["Unggah Foto Dokumentasi (JPG, PNG, WebP, iPhone HEIC, atau ZIP)"]
+    C --> G{"Metode Unggah Foto Dokumentasi"}
     D --> G
     E --> G
     F --> G
 
-    G --> SIZE_CHK{"Pemeriksaan Ukuran Berkas"}
+    G -->|Pilih Berkas Foto| G1["Unggah Foto Satuan / Multi-Foto (JPG, PNG, WebP, HEIC/HEIF)"]
+    G -->|Pilih Satu Folder| G2["Pilih Folder Langsung dari Laptop/PC (webkitdirectory)"]
+    G -->|Tarik &amp; Lepas Folder| G3["Drag-and-Drop Folder (Rekursif File System API)"]
+    G -->|Arsip ZIP| G4["Unggah File Arsip .ZIP"]
+
+    G1 --> SIZE_CHK{"Pemeriksaan Ukuran Berkas"}
+    G2 --> SIZE_CHK
+    G3 --> SIZE_CHK
+    G4 --> SIZE_CHK
+
     SIZE_CHK -->|Ukuran Normal &lt; 100MB| EXIF_IN["Deteksi Metadata EXIF Foto (Dual Pipeline: Browser exifr &amp; JSZip, Fallback Server)"]
     SIZE_CHK -->|Ukuran Besar &gt; 100MB| WARN_SIZE["Peringatan Dini Ukuran: Rekomendasi Split Batch 20-30 Foto"]
     WARN_SIZE --> EXIF_IN
     EXIF_IN --> PREV["Interactive Live Simulator: Pratinjau Watermark Real-Time di Kanvas Kanan"]
 
-    G --> W2["Langkah 2: Pengaturan Waktu, Lokasi &amp; Metadata EXIF"]
+    G1 --> W2["Langkah 2: Pengaturan Waktu, Lokasi &amp; Pengelompokan"]
+    G2 --> W2
+    G3 --> W2
+    G4 --> W2
+
     W2 --> EDIT_META["Pengeditan Metadata Bebas: Sesuaikan Tanggal, Jam, Lokasi, GPS &amp; Catatan"]
     EDIT_META --> L{"Pengaturan Waktu &amp; Tanggal Independen"}
     L -->|Opsi 1: Asli EXIF| M["Gunakan Tanggal &amp; Jam Asli Kamera per Foto (+ Offset)"]
@@ -930,6 +943,10 @@ graph TD
     Q3 --> PREV
     Q_MAN --> PREV
 
+    W2 --> CLUSTER_OPT{"Kelompokkan Berdasarkan Lokasi Koordinat (GPS Clustering)"}
+    CLUSTER_OPT -->|Aktif| CLUSTER_ON["Clustering Otomatis (Haversine 50m/100m/250m/500m/1km): Pisahkan Foto ke Subfolder Lokasi Riil"]
+    CLUSTER_OPT -->|Nonaktif| CLUSTER_OFF["Gunakan Susunan Folder Asli / Standar"]
+
     W2 --> EXIF_TOGGLE{"Opsi Penulisan Metadata EXIF Berkas (PEL)"}
     EXIF_TOGGLE -->|Centang Aktif| EXIF_ON["Sinkronisasi Aktif: Tanggal, GPS &amp; Deskripsi Ditulis ke File JPEG"]
     EXIF_TOGGLE -->|Nonaktif| EXIF_OFF["Hanya Watermark Visual Tanpa Mengubah Tag EXIF File"]
@@ -937,12 +954,67 @@ graph TD
     PREV --> W3["Langkah 3: Logo Kustom &amp; Eksekusi Proses"]
     W3 --> U["Klik 'Proses Watermark Sekarang'"]
 
-    U --> PROG["Monitoring Upload: Progress Bar Real-Time Persentase &amp; MB"]
-    PROG --> V["Sistem Merender Watermark Resolusi Tinggi, Auto Reverse Geocoding Alamat &amp; Menyematkan Tag EXIF Biner (PEL)"]
+    U --> CHK_MODE{"Jumlah Foto Terpilih?"}
+    CHK_MODE -->|1 s/d 5 Foto atau Arsip .ZIP| MONO["Unggah Standar (Monolithic POST)"]
+    CHK_MODE -->|Lebih dari 5 Foto / Folder Penuh| CHUNK["Engine Pemrosesan Bertahap (Chunked Processing: 5 Foto per Tahap)"]
+
+    MONO --> PROG["Monitoring Upload: Progress Bar Real-Time Persentase &amp; MB"]
+    CHUNK --> PROG_CHUNK["Monitoring Bertahap: Progress Bar 'Tahap X dari Total' &amp; Persentase Berjalan"]
+
+    PROG --> V["Sistem Merender Watermark Resolusi Tinggi, Auto Reverse Geocoding Alamat, Sanitasi Teks Anti-Mojibake &amp; Tag EXIF Biner (PEL)"]
+    PROG_CHUNK --> V
     V --> VIEW["Dual-View: Otomatis Beralih ke Tab 'Hasil Akhir'"]
     VIEW --> W{"Hasil Pemrosesan"}
     W -->|Foto Tunggal| X["Pratinjau Resolusi Penuh &amp; Unduh Foto (Nama Berkas Asli Bersih Tanpa Awalan 'watermark_')"]
-    W -->|Banyak Foto / ZIP| Y["Kemasan Otomatis: Unduh Semua (Struktur Sub-Folder &amp; Berkas Asli Terjaga 100%) + Galeri Grid Thumbnail (Klik Zoom &amp; Unduh Satuan)"]
+    W -->|Banyak Foto / ZIP / Folder| Y["Kemasan Otomatis: Unduh Semua (Struktur Sub-Folder Lokasi GPS &amp; Berkas Asli Terjaga 100%) + Galeri Grid Thumbnail Berkelompok"]
+                </pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOWCHART 13B: DOKUMENTASI - ORGANISIR FOTO GPS (PENGELOMPOKAN SUB-FOLDER TANPA WATERMARK) -->
+    <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-layer-group text-primary mr-2"></i>Flowchart: Alur Kerja Organisir &amp; Pengelompokan Foto GPS (100% Lossless, Tanpa Watermark, GPS Clustering &amp; Peta Leaflet)
+            </h5>
+            <div>
+                <span class="badge badge-success">Dokumentasi</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu: Dokumentasi &gt; Organisir Foto GPS (/admin/dokumentasi/organisir-foto-gps)"] --> U1["Pilih Berkas Foto Lapangan / Folder Survei"]
+    U1 --> U2{"Metode Pemilihan Berkas"}
+    U2 -->|Pilih Berkas Foto| F1["Multi-Pilih Foto (JPG, PNG, WebP, iPhone HEIC/HEIF)"]
+    U2 -->|Pilih Satu Folder| F2["Direktori Penuh (webkitdirectory): Baca Subfolder Rekursif"]
+    U2 -->|Tarik &amp; Lepas| F3["Drag &amp; Drop Foto / Folder Langsung ke Dropzone"]
+
+    F1 --> RAD["Atur Toleransi Radius Titik Lokasi GPS (25m s/d 1000m, Default 100m)"]
+    F2 --> RAD
+    F3 --> RAD
+
+    RAD --> CHK{"Verifikasi Hak Akses &amp; Jumlah Foto"}
+    CHK -->|Hak Akses Terverifikasi| EXEC["Klik 'Mulai Organisir Foto GPS'"]
+    CHK -->|Tanpa Izin menu_akses| DENIED["Akses Ditolak (Rule #4)"]
+
+    EXEC --> CHUNK_ENGINE["Chunked Execution Engine (Auto-Slicing 5 Foto per Tahap)"]
+    CHUNK_ENGINE --> CHUNK_LOOP["Kirim Chunk POST ke /proses-chunk &amp; Update Progress Bar Persentase"]
+    CHUNK_LOOP --> EXIF_EXTRACT["Ekstraksi EXIF GPS Kamera Asli &amp; Reverse Geocoding Nama Alamat"]
+    EXIF_EXTRACT --> HAVERSINE["Hitung Matriks Jarak Haversine &amp; GPS Clustering Otomatis"]
+    HAVERSINE --> LOSSLESS["Lossless File Handling: Duplikasi Berkas Asli (100% Piksel &amp; EXIF Utuh, Tanpa Watermark)"]
+
+    LOSSLESS --> PACK["Kemas ke Sub-Folder: Lokasi_01_{Alamat}/, Lokasi_02_{Alamat}/, atau Tanpa_Koordinat_GPS/"]
+    PACK --> FINAL{"Tahap Terakhir (is_last_chunk = 1)?"}
+    FINAL -->|Belum| CHUNK_LOOP
+    FINAL -->|Selesai| ZIP["Generate Arsip ZIP (foto-terorganisir-gps-*.zip) &amp; Buat Thumbnail Ringan (~8KB)"]
+
+    ZIP --> RES["Tampilan Hasil Terpadu (Dual Output)"]
+    RES --> MAP["Peta Interaktif Leaflet: Marker Pin Tiap Titik Cluster Lokasi &amp; Jumlah Foto"]
+    RES --> GAL["Galeri Visual Berdasarkan Header Folder Lokasi + Modal Zoom &amp; Unduh Foto Satuan"]
+    RES --> DL_ZIP["Unduh Sekali Klik Seluruh Folder Terorganisir (.ZIP)"]
                 </pre>
             </div>
         </div>
@@ -1885,8 +1957,8 @@ graph TD
                         <ol class="pl-3 small mb-0 text-secondary">
                             <li><strong>Antarmuka Studio Modern Berbasis Tab Langkah (Step Wizard):</strong>
                                 <ul>
-                                    <li><strong>Langkah 1 (Foto &amp; Format):</strong> Memilih salah satu dari 4 gaya template TimeMark dan memilih/tarik-lepas file foto (JPG, PNG, WebP, iPhone HEIC, atau ZIP).</li>
-                                    <li><strong>Langkah 2 (Waktu &amp; Lokasi):</strong> Pengaturan deteksi EXIF kamera, tombol penyesuaian offset jam (+1j, +2j, +3j, +5j, -1j, kustom), dan penentuan titik lokasi kegiatan serta koordinat GPS via popup peta interaktif Leaflet.</li>
+                                    <li><strong>Langkah 1 (Foto &amp; Format):</strong> Memilih salah satu dari 4 gaya template TimeMark dan memilih/tarik-lepas file foto (JPG, PNG, WebP, iPhone HEIC, arsip ZIP, atau <strong>pilih satu folder langsung</strong>).</li>
+                                    <li><strong>Langkah 2 (Waktu, Lokasi &amp; Pengelompokan):</strong> Pengaturan deteksi EXIF kamera, tombol penyesuaian offset jam (+1j, +2j, +3j, +5j, -1j, kustom), penentuan titik lokasi kegiatan serta koordinat GPS via popup peta interaktif Leaflet, serta opsi <strong>Pengelompokan Berdasarkan Lokasi Koordinat (GPS Clustering)</strong>.</li>
                                     <li><strong>Langkah 3 (Logo &amp; Proses):</strong> Opsi unggah logo instansi kustom opsional, tinjauan ringkasan konfigurasi sebelum memproses, serta tombol eksekusi pemrosesan watermark.</li>
                                 </ul>
                             </li>
@@ -1928,6 +2000,23 @@ graph TD
                                     <li><strong>Pilihan Peta Interaktif Leaflet:</strong> Pengguna dapat membuka jendela popup peta interaktif untuk menggeser pin lokasi secara visual atau memanfaatkan tombol <strong>"GPS Saya"</strong> untuk mendeteksi GPS perangkat secara langsung.</li>
                                 </ul>
                             </li>
+                            <li><strong>Fitur Cerdas Pengelompokan Berdasarkan Lokasi Koordinat (GPS Coordinate Clustering):</strong>
+                                <ul>
+                                    <li><strong>Otomatisasi Subfolder Lokasi Survei Lapangan:</strong> Untuk kegiatan survei atau inspeksi lapangan yang mencakup beberapa titik/spot pekerjaan sekaligus dalam satu hari, sistem menyediakan saklar cerdas <em>"Kelompokkan Hasil Berdasarkan Lokasi Koordinat (GPS Clustering)"</em> pada Langkah 2.</li>
+                                    <li><strong>Algoritma Jarak Spasial Haversine:</strong> Sistem menghitung selisih jarak geografis antar foto secara presisi menggunakan formula trigonometri bola bumi (<em>Haversine Great-Circle Distance</em>) berdasarkan koordinat GPS EXIF asli masing-masing berkas foto.</li>
+                                    <li><strong>Pilihan Radius Toleransi Fleksibel:</strong> Pengguna dapat memilih radius toleransi pengelompokan yang paling sesuai dengan karakteristik survei:
+                                        <ul class="mt-1">
+                                            <li><strong>50 Meter:</strong> Titik akurat / spot yang sama (misal STA jalan yang berdekatan atau satu bangunan gedung).</li>
+                                            <li><strong>100 Meter (Rekomendasi Standar):</strong> Area kerja lapangan / lingkungan survei langsung.</li>
+                                            <li><strong>250 Meter:</strong> Kawasan pekerjaan / segmen proyek infrastruktur permukiman.</li>
+                                            <li><strong>500 Meter:</strong> Zona proyek / satu blok perumahan atau kawasan terpadu.</li>
+                                            <li><strong>1.000 Meter (1 Km):</strong> Radius kelurahan / desa untuk survei makro kewilayahan.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Penamaan Folder Cerdas Berdasarkan Alamat Riil:</strong> Tiap kelompok lokasi otomatis diberi nama folder resmi yang memadukan nomor urut kelompok dan nama lokasi hasil reverse geocoding (misal: <code>Lokasi_01_Wonorejo_Pekanbaru/</code>, <code>Lokasi_02_Jalan_Raja_Kecik_Siak/</code>). Foto yang tidak memiliki koordinat GPS secara otomatis disatukan ke dalam folder khusus <code>Tanpa_Koordinat_GPS/</code>.</li>
+                                    <li><strong>Pengelompokan Rapi pada Galeri Visual &amp; Berkas ZIP:</strong> Di panel Hasil Akhir, foto dikelompokkan dalam kartu header lokasi yang jelas memuat nama alamat, titik koordinat, dan jumlah foto. Di dalam berkas arsip ZIP unduhan, seluruh foto otomatis dikemas ke dalam folder-folder lokasi tersebut tanpa perlu pemilahan manual.</li>
+                                </ul>
+                            </li>
                             <li><strong>Penulisan &amp; Sinkronisasi Metadata EXIF Berkas Foto Hasil (PEL Library):</strong>
                                 <ul>
                                     <li><strong>Tulis EXIF Biner ke File JPEG:</strong> Berbeda dengan watermark gambar konvensional yang menghapus EXIF, sistem ini didukung library murni PHP <code>lsolesen/pel</code> yang menuliskan kembali tag EXIF internal berstandar internasional ke berkas JPEG hasil.</li>
@@ -1936,8 +2025,9 @@ graph TD
                                     <li><strong>Saklar Kontrol:</strong> Tersedia saklar <em>"Tulis &amp; Sinkronkan Metadata EXIF ke Berkas Foto"</em> yang dapat dinonaktifkan jika pengguna hanya ingin stempel visual tanpa memodifikasi metadata internal file.</li>
                                 </ul>
                             </li>
-                            <li><strong>Unggah Fleksibel &amp; Monitoring Progress Upload (Single, Multi-Foto, HEIC, ZIP):</strong>
+                            <li><strong>Unggah Fleksibel &amp; Monitoring Progress Upload (Single, Multi-Foto, Folder, HEIC, ZIP):</strong>
                                 <ul>
+                                    <li><strong>Pilih Satu Folder Langsung dari Komputer (Folder Directory Picker &amp; Drag-and-Drop Folder):</strong> Pengguna tidak perlu lagi repot mengompresi foto ke arsip ZIP secara manual jika ingin memproses satu folder penuh. Cukup klik tombol biru <strong>"Pilih Satu Folder"</strong> (didukung atribut HTML5 <code>webkitdirectory</code>) atau tarik &amp; lepas (drag-and-drop) seluruh folder kegiatan langsung ke kotak dropzone. Sistem secara rekursif membaca seluruh hierarki folder, memfilter hanya berkas gambar valid (JPG, PNG, WebP, HEIC), otomatis mengabaikan file sistem tersembunyi (seperti <code>.DS_Store</code> dan <code>Thumbs.db</code>), serta menampilkan nama folder terpilih beserta jumlah foto siap olah.</li>
                                     <li><strong>Dukungan Format Luas:</strong> Mendukung berkas foto standar (<strong>JPG, JPEG, PNG, WebP</strong>) serta format resolusi tinggi Apple iPhone / iOS (<strong>HEIC dan HEIF</strong>).</li>
                                     <li><strong>Konversi Ganda (Client-Side &amp; Server-Side):</strong> Berkas foto HEIC iPhone otomatis dikonversi ke JPEG secara instan melalui WebAssembly <code>heic-to</code> pada peramban sehingga pratinjau dan metadata langsung terbaca. Di sisi server, sistem didukung konverter multi-strategi (<code>sips</code> macOS, <code>heif-convert</code> Linux, atau ImageMagick).</li>
                                     <li><strong>Dukungan Arsip ZIP, Preservasi Sub-Folder &amp; Auto Reverse Geocoding Alamat:</strong> Dapat mengunggah satu file arsip <strong>.ZIP</strong> (yang berisi foto JPEG, PNG, maupun berkas HEIC). Sistem secara otomatis membaca sampel foto dari ZIP di browser melalui <code>JSZip</code> untuk mengisi formulir dan pratinjau simulator. Di sisi server, setiap foto di dalam ZIP secara cerdas diekstrak koordinat GPS-nya dan di-<em>reverse geocode</em> secara otomatis menjadi nama jalan, kelurahan, kecamatan, dan kabupaten/kota resmi sehingga stempel watermark memuat nama lokasi lengkap dan koordinat GPS riil. Selain itu, seluruh susunan hierarki <strong>folder, sub-folder, hingga sub-sub folder</strong> yang ada di dalam berkas ZIP asli dipertahankan secara utuh pada berkas ZIP unduhan.</li>
@@ -1957,8 +2047,8 @@ graph TD
                             <li><strong>Unduh Hasil Langsung &amp; Unduh Massal (ZIP) Tanpa Awalan "watermark_":</strong>
                                 <ul>
                                     <li><strong>Nama Berkas Asli Dipertahankan (Clean Filename):</strong> Seluruh berkas yang diekspor atau diunduh (baik foto tunggal maupun di dalam arsip ZIP) tetap menggunakan nama berkas aslinya tanpa tambahan awalan teks <code>watermark_</code>, sehingga penamaan file dokumentasi tetap rapi dan konsisten dengan penamaan kamera awal.</li>
-                                    <li><strong>Struktur Folder &amp; Sub-Folder Utuh (Full Directory Tree Preserved):</strong> Jika di dalam berkas ZIP yang diunggah terdapat folder, sub-folder, atau sub-sub folder kegiatan, saat berkas ZIP hasil diunduh dan diekstrak, seluruh susunan folder tersebut tetap ada persis seperti semula tanpa digabung atau diacak.</li>
-                                    <li><strong>Galeri Foto Visual Responsif (Semua Foto 100% Terlihat):</strong> Seluruh foto hasil pemrosesan (termasuk batch massal hingga ratusan foto sekaligus) selalu menampilkan visual foto ber-watermark secara instan di Galeri Foto Hasil menggunakan thumbnail terkompresi super ringan (~8 KB) lengkap dengan badge nama folder asal. Tidak ada lagi kartu placeholder kosong.</li>
+                                    <li><strong>Struktur Folder &amp; Sub-Folder Utuh / Pengelompokan Lokasi (Full Directory Tree Preserved):</strong> Jika diunggah dengan struktur subfolder atau menggunakan fitur pengelompokan koordinat GPS, saat berkas ZIP hasil diunduh dan diekstrak, seluruh susunan folder tersebut (misal per kelompok lokasi atau folder kegiatan asli) tetap tertata rapi persis seperti semula.</li>
+                                    <li><strong>Galeri Foto Visual Responsif Berkelompok (Semua Foto 100% Terlihat):</strong> Seluruh foto hasil pemrosesan (termasuk batch massal hingga ratusan foto sekaligus) selalu menampilkan visual foto ber-watermark secara instan di Galeri Foto Hasil menggunakan thumbnail terkompresi super ringan (~8 KB) lengkap dengan badge nama folder asal dan header kelompok lokasi GPS jika diaktifkan. Tidak ada lagi kartu placeholder kosong.</li>
                                     <li><strong>Unduh Foto Tunggal:</strong> Menampilkan pratinjau foto resolusi asli yang telah dibubuhi watermark TimeMark dan disematkan metadata EXIF lengkap, siap diunduh sekali klik ke perangkat dengan nama berkas asli yang bersih.</li>
                                     <li><strong>Pratinjau Zoom &amp; Unduh Satuan dari Batch:</strong> Pengguna dapat mengeklik foto mana saja di galeri hasil untuk melihat pratinjau resolusi tinggi dalam modal zoom, serta mengunduh foto satuan tersebut secara terpisah langsung dari arsip ZIP tanpa perlu mengekstrak seluruh arsip.</li>
                                     <li><strong>Unduh ZIP Otomatis:</strong> Untuk pemrosesan banyak foto atau berkas arsip ZIP, sistem otomatis mengemas seluruh foto hasil watermark ke dalam 1 file ZIP yang siap diunduh langsung. Setiap foto di dalam ZIP telah memuat tag EXIF yang diperbarui, penamaan berkas asli yang bersih tanpa awalan <code>watermark_</code>, dan struktur subfolder yang terjaga rapi.</li>
@@ -1966,7 +2056,77 @@ graph TD
                             </li>
                             <li><strong>Proteksi Otorisasi Hak Akses (menu_akses):</strong>
                                 <ul>
-                                    <li>Akses menu dan fitur pemrosesan terintegrasi penuh dengan tabel <code>menu_akses</code> (izin <code>FiturAdd</code> dan <code>FiturEdit</code>), mencegah akses tak terotorisasi secara aman.</li>
+                                    <li>Akses menu dan fitur pemrosesan terintegrasi penuh dengan tabel <code>menu_akses</code> (izin <code>FiturAdd</code> dan <code>FiturEdit</code>), mencegah akses tak terotorisasi secara aman (Rule #4).</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODUL DOKUMENTASI: ORGANISIR FOTO GPS (PENGELOMPOKAN SUB-FOLDER TANPA WATERMARK) -->
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,editor,all">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-layer-group mr-2"></i> Modul Dokumentasi: Organisir &amp; Pengelompokan Foto GPS (Lossless, Tanpa Watermark)
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-primary"><i class="fas fa-folder-tree mr-1"></i> Alur Kerja &amp; Fitur Unggulan Organisir Foto GPS</h6>
+                        <p class="small text-muted mb-2"><code>/admin/dokumentasi/organisir-foto-gps</code></p>
+                        <ol class="pl-3 small mb-0 text-secondary">
+                            <li><strong>100% Lossless, Asli &amp; Tanpa Watermark:</strong>
+                                <ul>
+                                    <li>Menu ini khusus didedikasikan untuk merapikan dan mengelompokkan ribuan foto dokumentasi survei lapangan ke dalam folder lokasi masing-masing <strong>tanpa menambahkan stempel visual watermark</strong>.</li>
+                                    <li>Berkas foto tidak dirender ulang melalui kanvas grafis (lossless binary copy), sehingga resolusi asli, ketajaman piksel, dan metadata kamera tetap terjaga 100% utuh tanpa penurunan kualitas.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Metode Pemilihan Berkas Fleksibel (File, Folder Picker &amp; Drag-Drop):</strong>
+                                <ul>
+                                    <li><strong>Pilih Satu Folder Langsung:</strong> Tombol <em>"Pilih Satu Folder"</em> memanfaatkan atribut <code>webkitdirectory</code> peramban untuk membaca seluruh foto di dalam suatu direktori di komputer tanpa perlu membuat ZIP terlebih dahulu.</li>
+                                    <li><strong>Tarik &amp; Lepas (Drag-and-Drop):</strong> Pengguna dapat menyeret berkas foto atau satu folder kerja survei langsung ke dalam kotak dropzone.</li>
+                                    <li><strong>Dukungan Multi-Format:</strong> Mendukung format foto umum (JPG, JPEG, PNG, WebP) serta format Apple iPhone (HEIC/HEIF).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Algoritma GPS Clustering Berbasis Jarak Haversine:</strong>
+                                <ul>
+                                    <li>Sistem membaca koordinat lintang (Latitude) dan bujur (Longitude) dari metadata EXIF kamera tiap foto.</li>
+                                    <li>Menghitung jarak spasial di permukaan bumi menggunakan formula matematis <em>Haversine</em> dengan radius toleransi yang dapat disesuaikan (25 m, 100 m standar, 250 m, 500 m, hingga 1 km).</li>
+                                    <li>Foto-foto survei yang diambil di sekitar titik lokasi yang berdekatan otomatis disatukan ke dalam satu subfolder cluster yang sama.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Penamaan Subfolder Otomatis &amp; Informatif:</strong>
+                                <ul>
+                                    <li>Setiap kelompok lokasi otomatis diberi nama folder resmi yang memadukan nomor urut kelompok dan nama lokasi riil hasil reverse geocoding (misal: <code>Lokasi_01_Pekanbaru/</code>, <code>Lokasi_02_Siak/</code>).</li>
+                                    <li>Foto yang tidak memiliki koordinat GPS (misal foto unduhan WhatsApp atau kamera tanpa GPS aktif) secara otomatis dipisahkan ke dalam subfolder <code>Tanpa_Koordinat_GPS/</code> sehingga tidak bercampur dengan foto survei akurat.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Engine Pemrosesan Bertahap (Chunked Upload Engine):</strong>
+                                <ul>
+                                    <li>Untuk menangani puluhan hingga ratusan foto lapangan berukuran besar, sistem secara otomatis memecah pengiriman menjadi <strong>5 foto per tahap</strong>.</li>
+                                    <li>Mencegah galat batas memori PHP (<code>memory_limit</code>), batas unggah hosting (<code>post_max_size</code>), serta putus koneksi jaringan (<code>ERR_HTTP2_PROTOCOL_ERROR / Connection Reset</code>).</li>
+                                    <li>Dilengkapi indikator bilah kemajuan (Progress Bar) yang menampilkan persentase dan tahapan yang sedang berlangsung secara real-time.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Peta Interaktif Sebaran Titik Lokasi (Leaflet Map):</strong>
+                                <ul>
+                                    <li>Setelah pemrosesan selesai, sistem menampilkan peta interaktif yang memetakan pin penanda di setiap titik cluster lokasi kegiatan yang terdeteksi.</li>
+                                    <li>Setiap pin penanda dapat diklik untuk melihat nama folder, koordinat GPS, dan jumlah foto yang diambil di lokasi tersebut.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Galeri Visual &amp; Unduh Arsip ZIP Sekali Klik:</strong>
+                                <ul>
+                                    <li>Seluruh foto hasil pengelompokan ditampilkan dalam galeri visual rapi per kelompok subfolder lengkap dengan thumbnail responsif.</li>
+                                    <li>Tersedia fitur modal zoom foto beresolusi tinggi serta tombol unduh foto satuan.</li>
+                                    <li>Tombol <strong>"Unduh ZIP Semua Folder"</strong> mengemas seluruh hierarki subfolder lokasi ke dalam berkas <code>foto-terorganisir-gps-*.zip</code> yang siap disimpan atau diarsipkan.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Proteksi Otorisasi Hak Akses (menu_akses):</strong>
+                                <ul>
+                                    <li>Hak akses menu dikendalikan secara ketat melalui tabel <code>menu_akses</code> (Izin FiturAdd &amp; FiturEdit) sesuai standar keamanan aplikasi (Rule #4).</li>
                                 </ul>
                             </li>
                         </ol>

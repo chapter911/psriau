@@ -432,10 +432,19 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	// Watermark Foto
 	$routes->get('dokumentasi/watermark-foto', 'Admin\\Dokumentasi::watermarkFoto');
 	$routes->post('dokumentasi/watermark-foto/proses', 'Admin\\Dokumentasi::prosesWatermark');
+	$routes->post('dokumentasi/watermark-foto/proses-chunk', 'Admin\\Dokumentasi::prosesWatermarkChunk');
 	$routes->post('dokumentasi/watermark-foto/extract-meta', 'Admin\\Dokumentasi::extractMeta');
 	$routes->get('dokumentasi/watermark-foto/download-batch-zip/(:segment)', 'Admin\\Dokumentasi::downloadBatchZip/$1');
 	$routes->get('dokumentasi/watermark-foto/download-batch-item/(:segment)', 'Admin\\Dokumentasi::downloadBatchItem/$1');
 	$routes->get('dokumentasi/watermark-foto/download-batch-item/(:segment)/(:any)', 'Admin\\Dokumentasi::downloadBatchItem/$1/$2');
+
+	// Organisir & Pengelompokan Foto GPS (Tanpa Watermark)
+	$routes->get('dokumentasi/organisir-foto-gps', 'Admin\\Dokumentasi::organisirFotoGps');
+	$routes->post('dokumentasi/organisir-foto-gps/proses', 'Admin\\Dokumentasi::prosesOrganisirGps');
+	$routes->post('dokumentasi/organisir-foto-gps/proses-chunk', 'Admin\\Dokumentasi::prosesOrganisirGpsChunk');
+	$routes->get('dokumentasi/organisir-foto-gps/download-batch-zip/(:segment)', 'Admin\\Dokumentasi::downloadOrganisirZip/$1');
+	$routes->get('dokumentasi/organisir-foto-gps/download-batch-item/(:segment)', 'Admin\\Dokumentasi::downloadOrganisirItem/$1');
+	$routes->get('dokumentasi/organisir-foto-gps/download-batch-item/(:segment)/(:any)', 'Admin\\Dokumentasi::downloadOrganisirItem/$1/$2');
 
 	$routes->get('acara', 'Admin\\Event::index');
 	$routes->match(['get', 'post'], 'acara/tambah', 'Admin\\Event::create');

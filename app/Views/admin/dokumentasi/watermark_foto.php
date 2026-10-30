@@ -169,14 +169,20 @@
                             <div class="dropzone-icon mb-2">
                                 <i class="fas fa-images fa-2x text-primary"></i>
                             </div>
-                            <h6 class="font-weight-bold mb-1 text-dark" style="font-size: 0.95rem;">Tarik &amp; Lepas Foto ke Sini</h6>
+                            <h6 class="font-weight-bold mb-1 text-dark" style="font-size: 0.95rem;">Tarik &amp; Lepas Foto atau Folder ke Sini</h6>
                             <p class="text-muted small mb-2" style="font-size: 11px;">
-                                Format didukung: <strong>JPG, PNG, WebP, iPhone (HEIC/HEIF)</strong>, multi-foto, atau arsip <strong>.ZIP</strong>
+                                Format didukung: <strong>JPG, PNG, WebP, iPhone (HEIC/HEIF)</strong>, arsip <strong>.ZIP</strong>, atau <strong>pilih folder langsung</strong>
                             </p>
-                            <button type="button" class="btn btn-outline-primary btn-sm px-3 shadow-xs" onclick="$('#fileInput').click()">
-                                <i class="fas fa-folder-open mr-1"></i> Pilih Berkas Foto
-                            </button>
+                            <div class="d-flex justify-content-center align-items-center flex-wrap">
+                                <button type="button" class="btn btn-outline-primary btn-sm px-3 shadow-xs m-1" onclick="$('#fileInput').click()">
+                                    <i class="fas fa-images mr-1"></i> Pilih Berkas Foto
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm px-3 shadow-xs m-1" id="btnPilihFolder" onclick="$('#folderInput').click()">
+                                    <i class="fas fa-folder-open mr-1"></i> Pilih Satu Folder
+                                </button>
+                            </div>
                             <input type="file" id="fileInput" name="foto_upload[]" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.HEIC,.heif,.HEIF,.zip" class="d-none">
+                            <input type="file" id="folderInput" webkitdirectory directory multiple class="d-none">
                         </div>
 
                         <div id="fileSelectedList" class="alert alert-light border py-2 px-3 small text-muted mb-2" style="display: none;"></div>
@@ -365,7 +371,46 @@
                             </div>
                         </div>
 
-                        <!-- 2.3 Penulisan & Sinkronisasi Metadata EXIF Berkas Foto -->
+                        <!-- 2.3 Pengelompokan Berdasarkan Lokasi Koordinat (GPS Clustering) -->
+                        <div class="card border border-info bg-white rounded-lg p-3 mb-3 shadow-xs">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="font-weight-bold text-dark small">
+                                    <i class="fas fa-layer-group text-info mr-1"></i> Kelompokkan Hasil Berdasarkan Lokasi Koordinat (GPS Clustering)
+                                </span>
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="groupByCoords" name="group_by_coords" value="1">
+                                    <label class="custom-control-label font-weight-bold small text-info" for="groupByCoords" style="cursor: pointer;">Aktifkan</label>
+                                </div>
+                            </div>
+                            <p class="small text-muted mb-2" style="font-size: 11px;">
+                                Otomatis memisahkan foto-foto survei ke dalam <strong>sub-folder lokasi terpisah</strong> di dalam file ZIP dan galeri berdasarkan kedekatan koordinat GPS (misal: <em>Lokasi_01_Pekanbaru/</em>, <em>Lokasi_02_Siak/</em>, <em>Tanpa_Koordinat_GPS/</em>).
+                            </p>
+
+                            <div id="clusteringSettingsBox" style="display: none;" class="pt-2 border-top">
+                                <label for="clusterRadius" class="small font-weight-bold text-dark mb-1" style="font-size: 11px;">
+                                    <i class="fas fa-ruler-combined text-primary mr-1"></i> Radius Toleransi Titik Lokasi:
+                                </label>
+                                <div class="row align-items-center">
+                                    <div class="col-8">
+                                        <select class="form-control form-control-sm" id="clusterRadius" name="cluster_radius">
+                                            <option value="50">50 Meter (Titik Akurat / Spot Sama)</option>
+                                            <option value="100" selected>100 Meter (Area Survei / Lapangan - Standar)</option>
+                                            <option value="250">250 Meter (Kawasan / Segmen Pekerjaan)</option>
+                                            <option value="500">500 Meter (Zona Proyek / Blok)</option>
+                                            <option value="1000">1.000 Meter (1 Km / Radius Kelurahan)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-4">
+                                        <span class="badge badge-light border text-info w-100 py-1 text-center font-weight-bold" id="clusterRadiusBadge">Radius 100m</span>
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-1" style="font-size: 10px;">
+                                    <i class="fas fa-info-circle text-info mr-1"></i> Foto dengan selisih jarak GPS di bawah radius ini akan disatukan dalam folder lokasi yang sama.
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- 2.4 Penulisan & Sinkronisasi Metadata EXIF Berkas Foto -->
                         <div class="card border border-primary-light bg-white rounded-lg p-3 mb-3 shadow-xs">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="font-weight-bold text-dark small">
@@ -427,6 +472,7 @@
                                 <div class="col-6 mb-1">File Terpilih: <strong class="text-dark" id="summaryFiles">0 Berkas</strong></div>
                                 <div class="col-12 mb-1">Mode Waktu: <strong class="text-dark" id="summaryWaktuMode">EXIF Kamera Asli</strong></div>
                                 <div class="col-12 mb-1">Penyesuaian Jam: <strong class="text-dark" id="summaryOffset">+0 Jam</strong></div>
+                                <div class="col-12 mb-1">Kelompok Koordinat: <strong class="text-dark" id="summaryCluster">Nonaktif (Folder Standar)</strong></div>
                                 <div class="col-12 mb-1">Tulis EXIF Berkas: <strong class="text-success" id="summaryExif">Ya (Tanggal, GPS &amp; Catatan)</strong></div>
                             </div>
                         </div>
@@ -611,7 +657,10 @@
                         <div id="batchResultContainer" style="display: none;">
                             <div class="alert alert-success d-flex align-items-center justify-content-between p-3 mb-3">
                                 <div>
-                                    <h6 class="font-weight-bold mb-0"><i class="fas fa-check-circle mr-1"></i> <span id="batchCountText">0</span> Foto Berhasil Diproses!</h6>
+                                    <h6 class="font-weight-bold mb-0">
+                                        <i class="fas fa-check-circle mr-1"></i> <span id="batchCountText">0</span> Foto Berhasil Diproses!
+                                        <span id="batchClusterInfoBadge" class="badge badge-primary ml-1 d-none font-weight-normal" style="font-size: 11px;"></span>
+                                    </h6>
                                 </div>
                             </div>
 
@@ -1019,6 +1068,62 @@ $(function() {
         return (bytes / Math.pow(1024, i)).toFixed(i >= 2 ? 1 : 0) + ' ' + units[i];
     }
 
+    var selectedFolderName = null;
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return $('<div>').text(str).html();
+    }
+
+    function isSupportedImage(f) {
+        if (!f || !f.name) return false;
+        var name = f.name.toLowerCase();
+        if (name.startsWith('._') || name === '.ds_store' || name === 'thumbs.db') return false;
+        return /\.(jpe?g|png|webp|heic|heif|zip)$/i.test(name);
+    }
+
+    function readEntryRecursive(entry, path) {
+        path = path || '';
+        if (entry.isFile) {
+            return new Promise(function(resolve) {
+                entry.file(function(file) {
+                    file.customRelativePath = path + file.name;
+                    resolve([file]);
+                }, function() {
+                    resolve([]);
+                });
+            });
+        } else if (entry.isDirectory) {
+            var dirReader = entry.createReader();
+            var allEntries = [];
+            function readDir() {
+                return new Promise(function(resolve) {
+                    dirReader.readEntries(function(results) {
+                        if (!results || results.length === 0) {
+                            resolve(allEntries);
+                        } else {
+                            allEntries = allEntries.concat(Array.from(results));
+                            readDir().then(resolve);
+                        }
+                    }, function() {
+                        resolve(allEntries);
+                    });
+                });
+            }
+            return readDir().then(function(childEntries) {
+                var promises = childEntries.map(function(child) {
+                    return readEntryRecursive(child, path + entry.name + '/');
+                });
+                return Promise.all(promises).then(function(nested) {
+                    var flat = [];
+                    nested.forEach(function(arr) { flat = flat.concat(arr); });
+                    return flat;
+                });
+            });
+        }
+        return Promise.resolve([]);
+    }
+
     // Patch exifr HEIC parser agar mengenali box ftyp iPhone modern (panjang box > 50 & brand compatible)
     if (typeof exifr !== 'undefined' && exifr.fileParsers && exifr.fileParsers.has('heic')) {
         try {
@@ -1111,6 +1216,7 @@ $(function() {
     // -------------------------------------------------------------------------
     var $dropzone = $('#dropzoneArea');
     var $fileInput = $('#fileInput');
+    var $folderInput = $('#folderInput');
 
     $dropzone.on('dragover dragenter', function(e) {
         e.preventDefault();
@@ -1126,14 +1232,68 @@ $(function() {
 
     $dropzone.on('drop', function(e) {
         var dt = e.originalEvent.dataTransfer;
-        if (dt && dt.files && dt.files.length > 0) {
+        if (!dt) return;
+
+        var items = dt.items;
+        if (items && items.length > 0 && typeof items[0].webkitGetAsEntry === 'function') {
+            var entryPromises = [];
+            var detectedFolder = null;
+            for (var i = 0; i < items.length; i++) {
+                var entry = items[i].webkitGetAsEntry();
+                if (entry) {
+                    if (entry.isDirectory && !detectedFolder) {
+                        detectedFolder = entry.name;
+                    }
+                    entryPromises.push(readEntryRecursive(entry, ''));
+                }
+            }
+            Promise.all(entryPromises).then(function(results) {
+                var allFiles = [];
+                results.forEach(function(arr) { allFiles = allFiles.concat(arr); });
+                var validFiles = allFiles.filter(isSupportedImage);
+                if (validFiles.length > 0) {
+                    handleSelectedFiles(validFiles, detectedFolder);
+                } else if (allFiles.length > 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Format Tidak Didukung',
+                        text: 'Folder atau berkas yang ditarik tidak memuat foto berformat JPG, PNG, WebP, atau HEIC.'
+                    });
+                } else if (dt.files && dt.files.length > 0) {
+                    handleSelectedFiles(dt.files);
+                }
+            });
+            return;
+        }
+
+        if (dt.files && dt.files.length > 0) {
             handleSelectedFiles(dt.files);
         }
     });
 
     $fileInput.on('change', function() {
         if (this.files && this.files.length > 0) {
-            handleSelectedFiles(this.files);
+            handleSelectedFiles(this.files, null);
+        }
+    });
+
+    $folderInput.on('change', function() {
+        if (this.files && this.files.length > 0) {
+            var rawList = Array.from(this.files);
+            var validFiles = rawList.filter(isSupportedImage);
+            if (validFiles.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Folder Kosong / Tidak Memuat Foto',
+                    text: 'Folder yang dipilih tidak memuat berkas foto berformat JPG, PNG, WebP, atau HEIC.'
+                });
+                return;
+            }
+            var rootFolder = null;
+            if (validFiles[0].webkitRelativePath) {
+                rootFolder = validFiles[0].webkitRelativePath.split('/')[0];
+            }
+            handleSelectedFiles(validFiles, rootFolder);
         }
     });
 
@@ -1244,9 +1404,13 @@ $(function() {
         });
     }
 
-    function handleSelectedFiles(filesList) {
+    function handleSelectedFiles(filesList, folderName) {
         var rawFiles = Array.from(filesList);
         var heicFiles = rawFiles.filter(isHeic);
+
+        if (folderName !== undefined) {
+            selectedFolderName = folderName;
+        }
 
         // Simpan file foto mentah asli pertama sebelum konversi kanvas browser
         rawOriginalFirstFile = rawFiles.find(function(f) {
@@ -1318,16 +1482,19 @@ $(function() {
             });
 
             Promise.all(convertPromises).then(function(processedList) {
-                applyFilesList(processedList);
+                applyFilesList(processedList, folderName);
             });
             return;
         }
 
-        applyFilesList(rawFiles);
+        applyFilesList(rawFiles, folderName);
     }
 
-    function applyFilesList(files) {
+    function applyFilesList(files, folderName) {
         selectedFiles = files;
+        if (folderName !== undefined) {
+            selectedFolderName = folderName;
+        }
         var total = selectedFiles.length;
         var hasZip = false;
         var fileNames = [];
@@ -1347,7 +1514,10 @@ $(function() {
 
         var sizeFormatted = formatFileSize(totalSizeBytes);
 
-        if (total === 1 && hasZip) {
+        if (selectedFolderName) {
+            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary badge-success').addClass('badge-info').html('<i class="fas fa-folder mr-1"></i> ' + escapeHtml(selectedFolderName) + ' (' + total + ' Foto, ' + sizeFormatted + ')');
+            $('#summaryFiles').html('Folder <strong>' + escapeHtml(selectedFolderName) + '</strong> (' + total + ' Foto, ' + sizeFormatted + ')');
+        } else if (total === 1 && hasZip) {
             $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary badge-success').addClass('badge-warning').html('<i class="fas fa-file-archive mr-1"></i> 1 Arsip ZIP (' + sizeFormatted + ')');
             $('#summaryFiles').text('1 File ZIP (' + sizeFormatted + ')');
         } else if (total === 1 && hasRawHeic) {
@@ -1366,7 +1536,8 @@ $(function() {
             previewText += ' dan ' + (total - 3) + ' file lainnya';
         }
         previewText += ' <span class="badge badge-secondary ml-1">' + sizeFormatted + '</span>';
-        $('#fileSelectedList').html('<strong><i class="fas fa-check-circle text-success mr-1"></i> File Siap:</strong> ' + previewText).fadeIn();
+        var folderNotice = selectedFolderName ? '<div class="text-primary font-weight-bold mb-1"><i class="fas fa-folder-open mr-1"></i> Folder Terpilih: ' + escapeHtml(selectedFolderName) + ' (' + total + ' Foto Ditemukan)</div>' : '';
+        $('#fileSelectedList').html(folderNotice + '<strong><i class="fas fa-check-circle text-success mr-1"></i> File Siap:</strong> ' + previewText).fadeIn();
 
         // Peringatan jika total ukuran berkas di atas 100 MB
         if (totalSizeBytes > 100 * 1024 * 1024) {
@@ -1820,8 +1991,33 @@ $(function() {
             summaryWaktu = 'Tanggal & Jam Manual';
         }
         $('#summaryWaktuMode').text(summaryWaktu);
+
+        var isClustered = $('#groupByCoords').is(':checked');
+        if (isClustered) {
+            var rVal = $('#clusterRadius').val() || '100';
+            $('#summaryCluster').html('<span class="text-info font-weight-bold"><i class="fas fa-layer-group mr-1"></i>Aktif (Radius ' + rVal + 'm)</span>');
+        } else {
+            $('#summaryCluster').text('Nonaktif (Folder Standar)');
+        }
+
         updateOffsetBadge(h, m);
     }
+
+    // Toggle switch pengelompokan koordinat GPS
+    $('#groupByCoords').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#clusteringSettingsBox').slideDown(150);
+        } else {
+            $('#clusteringSettingsBox').slideUp(150);
+        }
+        updateSummaryCard();
+    });
+
+    $('#clusterRadius').on('change', function() {
+        var val = $(this).val();
+        $('#clusterRadiusBadge').text('Radius ' + val + 'm');
+        updateSummaryCard();
+    });
 
     // Logo label update
     $('#logo').on('change', function() {
@@ -1874,13 +2070,25 @@ $(function() {
             totalSize += (f.size || 0);
         });
 
-        if (selectedFiles.length === 1 && selectedFiles[0].name.toLowerCase().endsWith('.zip')) {
+        var isZip = (selectedFiles.length === 1 && selectedFiles[0].name.toLowerCase().endsWith('.zip'));
+
+        // Jika jumlah foto > 5 dan bukan zip, jalankan pemrosesan bertahap / parsial secara otomatis (5 foto per tahap)
+        if (selectedFiles.length > 5 && !isZip) {
+            executeUploadChunked(selectedFiles, 5);
+            return;
+        }
+
+        if (isZip) {
             formData.append('zip_file', selectedFiles[0]);
         } else if (selectedFiles.length === 1) {
             formData.append('foto', selectedFiles[0]);
+            var singleRel = selectedFiles[0].customRelativePath || selectedFiles[0].webkitRelativePath || selectedFiles[0].name;
+            formData.append('foto_path', singleRel);
         } else {
             for (var i = 0; i < selectedFiles.length; i++) {
                 formData.append('fotos[]', selectedFiles[i]);
+                var multiRel = selectedFiles[i].customRelativePath || selectedFiles[i].webkitRelativePath || selectedFiles[i].name;
+                formData.append('foto_paths[]', multiRel);
             }
         }
 
@@ -1890,6 +2098,8 @@ $(function() {
         formData.append('use_exif_time', $('#useExifTime').is(':checked') ? '1' : '0');
         formData.append('use_exif_location', $('#useExifLocation').is(':checked') ? '1' : '0');
         formData.append('update_exif', $('#updateExif').is(':checked') ? '1' : '0');
+        formData.append('group_by_coords', $('#groupByCoords').is(':checked') ? '1' : '0');
+        formData.append('cluster_radius', $('#clusterRadius').val() || '100');
         formData.append('offset_hours', $('#offsetHours').val() || '0');
         formData.append('offset_minutes', $('#offsetMinutes').val() || '0');
         formData.append('manual_date', $('#manualDate').val() || '');
@@ -2007,91 +2217,18 @@ $(function() {
                         }
                         $('#singlePreviewImage').attr('src', resp.image_data);
                         $('#singleResultContainer').fadeIn();
-                    } else if (resp.mode === 'batch' || resp.images) {
-                        $('#batchCountText').text(resp.total_processed);
 
-                        if (resp.download_zip_url) {
-                            currentZipDownloadUrl = resp.download_zip_url;
-                            $('#linkDownloadBatchZip').attr('href', resp.download_zip_url);
-                            $('#batchZipDownloadAction').show();
-                        } else {
-                            $('#batchZipDownloadAction').hide();
-                        }
-
-                        var $grid = $('#batchGalleryGrid');
-                        $grid.empty();
-
-                        resp.images.forEach(function(img) {
-                            var thumbSrc = img.data_uri || '';
-                            var col = $('<div>').addClass('col-4 col-sm-3 mb-3');
-                            var card = $('<div>').addClass('border rounded overflow-hidden shadow-sm bg-light text-center p-1 position-relative');
-
-                            if (thumbSrc) {
-                                var imageEl = $('<img>').attr('src', thumbSrc)
-                                    .attr('alt', img.orig_name || img.file_name)
-                                    .attr('loading', 'lazy')
-                                    .addClass('img-fluid rounded cursor-pointer')
-                                    .css({ 'height': '110px', 'width': '100%', 'object-fit': 'cover', 'display': 'block' })
-                                    .on('click', function() {
-                                        var cleanTitle = (img.orig_name || img.file_name).replace(/^watermark[_\-\s]*/i, '');
-                                        $('#modalZoomImg').attr('src', thumbSrc);
-                                        $('#modalZoomTitle').text(cleanTitle);
-                                        var metaText = 'Waktu: ' + (img.day || '') + ' ' + (img.date || '') + ' ' + (img.time || '');
-                                        if (img.sub_dir) {
-                                            metaText += ' | Folder: ' + img.sub_dir;
-                                        }
-                                        $('#modalZoomMeta').text(metaText);
-                                        var downloadUrl = img.download_url || thumbSrc;
-                                        $('#modalZoomDownload').attr('href', downloadUrl).attr('download', cleanTitle);
-                                        if (img.view_url) {
-                                            var hiRes = new Image();
-                                            hiRes.onload = function() {
-                                                $('#modalZoomImg').attr('src', hiRes.src);
-                                            };
-                                            hiRes.src = img.view_url;
-                                        }
-                                        $('#modalZoomPhoto').modal('show');
-                                    });
-                                card.append(imageEl);
-                            } else {
-                                card.append('<div class="py-4 text-muted"><i class="fas fa-file-image fa-2x"></i></div>');
-                            }
-
-                            if (img.sub_dir) {
-                                var folderBadge = $('<div>').addClass('badge badge-light border text-truncate text-secondary w-100 mt-1')
-                                    .css({ 'font-size': '9.5px', 'max-width': '100%', 'padding': '2px 4px' })
-                                    .attr('title', 'Folder: ' + img.sub_dir)
-                                    .html('<i class="fas fa-folder text-warning mr-1"></i>' + img.sub_dir);
-                                card.append(folderBadge);
-                            }
-
-                            var cleanDisplayName = (img.orig_name || img.file_name).replace(/^watermark[_\-\s]*/i, '');
-                            var caption = $('<div>').addClass('text-truncate font-weight-bold mt-1 text-dark')
-                                .css('font-size', '11px')
-                                .attr('title', cleanDisplayName)
-                                .text(cleanDisplayName);
-                            card.append(caption);
-
-                            var timeText = (img.date && img.time) ? (img.date + ' ' + img.time) : '';
-                            if (timeText) {
-                                card.append($('<small>').addClass('text-muted d-block').css('font-size', '10px').text(timeText));
-                            }
-
-                            col.append(card);
-                            $grid.append(col);
+                        // Notifikasi Tunggal (Rule #1: tidak double)
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: resp.message || 'Watermark foto berhasil diproses.',
+                            timer: 2500,
+                            showConfirmButton: false
                         });
-
-                        $('#batchResultContainer').fadeIn();
+                    } else if (resp.mode === 'batch' || resp.images) {
+                        renderBatchResults(resp);
                     }
-
-                    // Notifikasi Tunggal (Rule #1: tidak double)
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: resp.message || 'Watermark foto berhasil diproses.',
-                        timer: 2500,
-                        showConfirmButton: false
-                    });
                 } else {
                     $('#loadingContainer').hide();
                     $('#placeholderContainer').show();
@@ -2173,6 +2310,286 @@ $(function() {
         });
     }
 
+    /**
+     * Memproses foto secara bertahap / parsial (Chunked Upload).
+     * Mencegah timeout, memory limit, dan connection reset saat memproses puluhan/ratusan foto.
+     */
+    function executeUploadChunked(files, chunkSize) {
+        chunkSize = chunkSize || 5;
+        var totalFiles = files.length;
+        var totalChunks = Math.ceil(totalFiles / chunkSize);
+        var batchId = 'bm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+
+        isProcessing = true;
+        switchToResultView();
+        var $btn = $('#btnProses');
+        var originalBtnHtml = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Memproses Parsial (0/' + totalFiles + ')...');
+
+        $('#placeholderContainer').hide();
+        $('#singleResultContainer').hide();
+        $('#batchResultContainer').hide();
+        $('#loadingTitleText').text('Sedang Memproses Foto Secara Bertahap...');
+        $('#uploadProgressBar').css('width', '2%').text('0%').removeClass('bg-success').addClass('bg-primary');
+        $('#uploadProgressText').text('Memulai pemrosesan tahap 1 dari ' + totalChunks + '...');
+        $('#loadingContainer').fadeIn(150);
+
+        var currentChunk = 0;
+
+        function processNextChunk() {
+            if (currentChunk >= totalChunks) {
+                return;
+            }
+
+            var startIdx = currentChunk * chunkSize;
+            var endIdx = Math.min(startIdx + chunkSize, totalFiles);
+            var chunkSlice = files.slice(startIdx, endIdx);
+            var isLast = (currentChunk === totalChunks - 1);
+
+            var chunkFormData = new FormData();
+            chunkFormData.append('batch_id', batchId);
+            chunkFormData.append('chunk_index', currentChunk);
+            chunkFormData.append('total_chunks', totalChunks);
+            chunkFormData.append('is_last_chunk', isLast ? '1' : '0');
+
+            // Form parameters
+            chunkFormData.append('template', $('input[name="template"]:checked').val() || 'classic');
+            chunkFormData.append('use_exif_date', $('#useExifDate').is(':checked') ? '1' : '0');
+            chunkFormData.append('use_exif_time', $('#useExifTime').is(':checked') ? '1' : '0');
+            chunkFormData.append('use_exif_location', $('#useExifLocation').is(':checked') ? '1' : '0');
+            chunkFormData.append('update_exif', $('#updateExif').is(':checked') ? '1' : '0');
+            chunkFormData.append('group_by_coords', $('#groupByCoords').is(':checked') ? '1' : '0');
+            chunkFormData.append('cluster_radius', $('#clusterRadius').val() || '100');
+            chunkFormData.append('offset_hours', $('#offsetHours').val() || '0');
+            chunkFormData.append('offset_minutes', $('#offsetMinutes').val() || '0');
+            chunkFormData.append('manual_date', $('#manualDate').val() || '');
+            chunkFormData.append('manual_time', $('#manualTime').val() || '');
+            chunkFormData.append('lokasi', $('#lokasi').val() || '');
+            chunkFormData.append('koordinat', $('#koordinat').val() || '');
+            chunkFormData.append('catatan', $('#catatan').val() || '');
+
+            // Logo on chunk 0
+            if (currentChunk === 0) {
+                var logoInput = document.getElementById('logo');
+                if (logoInput && logoInput.files && logoInput.files.length > 0) {
+                    chunkFormData.append('logo', logoInput.files[0]);
+                }
+            }
+
+            // Append chunk files
+            for (var i = 0; i < chunkSlice.length; i++) {
+                chunkFormData.append('fotos[]', chunkSlice[i]);
+                var rel = chunkSlice[i].customRelativePath || chunkSlice[i].webkitRelativePath || chunkSlice[i].name;
+                chunkFormData.append('foto_paths[]', rel);
+            }
+
+            // CSRF
+            chunkFormData.append('<?= csrf_token() ?>', $('input[name="<?= csrf_token() ?>"]').val());
+
+            var progressPercent = Math.round(((currentChunk) / totalChunks) * 100);
+            $('#uploadProgressBar').css('width', Math.max(5, progressPercent) + '%').text(progressPercent + '%');
+            $('#uploadProgressText').text('Tahap ' + (currentChunk + 1) + ' dari ' + totalChunks + ': Mengunggah & memberi watermark foto ' + (startIdx + 1) + '–' + endIdx + ' dari ' + totalFiles + ' foto...');
+            $btn.html('<i class="fas fa-spinner fa-spin mr-2"></i> Tahap ' + (currentChunk + 1) + '/' + totalChunks + ' (' + endIdx + '/' + totalFiles + ' Foto)...');
+
+            $.ajax({
+                url: '<?= site_url('/admin/dokumentasi/watermark-foto/proses-chunk') ?>',
+                type: 'POST',
+                data: chunkFormData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(resp) {
+                    if (resp.csrf_hash) {
+                        $('input[name="<?= csrf_token() ?>"]').val(resp.csrf_hash);
+                    }
+
+                    if (resp.status !== 'ok') {
+                        isProcessing = false;
+                        $('#loadingContainer').hide();
+                        $btn.prop('disabled', false).html(originalBtnHtml);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Memproses Tahap ' + (currentChunk + 1),
+                            text: resp.message || 'Terjadi kesalahan saat memproses batch foto.'
+                        });
+                        return;
+                    }
+
+                    if (!resp.is_finished) {
+                        currentChunk++;
+                        var nextPercent = Math.round(((currentChunk) / totalChunks) * 100);
+                        $('#uploadProgressBar').css('width', nextPercent + '%').text(nextPercent + '%');
+                        processNextChunk();
+                    } else {
+                        // Selesai seluruh tahapan!
+                        isProcessing = false;
+                        $btn.prop('disabled', false).html(originalBtnHtml);
+                        $('#uploadProgressBar').css('width', '100%').text('100%').removeClass('bg-primary').addClass('bg-success');
+                        $('#uploadProgressText').text('Selesai! Mengemas berkas galeri hasil...');
+
+                        setTimeout(function() {
+                            $('#loadingContainer').hide();
+                            renderBatchResults(resp);
+                        }, 400);
+                    }
+                },
+                error: function(xhr) {
+                    isProcessing = false;
+                    $('#loadingContainer').hide();
+                    $btn.prop('disabled', false).html(originalBtnHtml);
+                    var errMsg = 'Terjadi kesalahan jaringan atau server saat memproses tahap ' + (currentChunk + 1) + '.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Koneksi Terputus di Tahap ' + (currentChunk + 1),
+                        html: errMsg
+                    });
+                }
+            });
+        }
+
+        processNextChunk();
+    }
+
+    /**
+     * Render galeri hasil batch foto dan pengelompokan subfolder lokasi.
+     */
+    function renderBatchResults(resp) {
+        $('#btnResetAll').show();
+        var countTotal = resp.total_processed || (resp.images ? resp.images.length : 1);
+        $('#resultCountBadge').text(countTotal).removeClass('d-none');
+        $('#batchCountText').text(countTotal);
+
+        if (resp.download_zip_url) {
+            currentZipDownloadUrl = resp.download_zip_url;
+            $('#linkDownloadBatchZip').attr('href', resp.download_zip_url);
+            $('#batchZipDownloadAction').show();
+        } else {
+            $('#batchZipDownloadAction').hide();
+        }
+
+        var $grid = $('#batchGalleryGrid');
+        $grid.empty();
+
+        function renderPhotoCard(img, container) {
+            var thumbSrc = img.data_uri || '';
+            var col = $('<div>').addClass('col-4 col-sm-3 mb-3');
+            var card = $('<div>').addClass('border rounded overflow-hidden shadow-sm bg-light text-center p-1 position-relative');
+
+            if (thumbSrc) {
+                var imageEl = $('<img>').attr('src', thumbSrc)
+                    .attr('alt', img.orig_name || img.file_name)
+                    .attr('loading', 'lazy')
+                    .addClass('img-fluid rounded cursor-pointer')
+                    .css({ 'height': '110px', 'width': '100%', 'object-fit': 'cover', 'display': 'block' })
+                    .on('click', function() {
+                        var cleanTitle = (img.orig_name || img.file_name).replace(/^watermark[_\-\s]*/i, '');
+                        $('#modalZoomImg').attr('src', thumbSrc);
+                        $('#modalZoomTitle').text(cleanTitle);
+                        var metaText = 'Waktu: ' + (img.day || '') + ' ' + (img.date || '') + ' ' + (img.time || '');
+                        if (img.sub_dir) {
+                            metaText += ' | Folder: ' + img.sub_dir;
+                        }
+                        if (img.cluster_name) {
+                            metaText += ' | ' + img.cluster_name;
+                        }
+                        $('#modalZoomMeta').text(metaText);
+                        var downloadUrl = img.download_url || thumbSrc;
+                        $('#modalZoomDownload').attr('href', downloadUrl).attr('download', cleanTitle);
+                        if (img.view_url) {
+                            var hiRes = new Image();
+                            hiRes.onload = function() {
+                                $('#modalZoomImg').attr('src', hiRes.src);
+                            };
+                            hiRes.src = img.view_url;
+                        }
+                        $('#modalZoomPhoto').modal('show');
+                    });
+                card.append(imageEl);
+            } else {
+                card.append('<div class="py-4 text-muted"><i class="fas fa-file-image fa-2x"></i></div>');
+            }
+
+            if (img.sub_dir) {
+                var folderBadge = $('<div>').addClass('badge badge-light border text-truncate text-secondary w-100 mt-1')
+                    .css({ 'font-size': '9.5px', 'max-width': '100%', 'padding': '2px 4px' })
+                    .attr('title', 'Folder: ' + img.sub_dir)
+                    .html('<i class="fas fa-folder text-warning mr-1"></i>' + escapeHtml(img.sub_dir));
+                card.append(folderBadge);
+            }
+
+            var cleanDisplayName = (img.orig_name || img.file_name).replace(/^watermark[_\-\s]*/i, '');
+            var caption = $('<div>').addClass('text-truncate font-weight-bold mt-1 text-dark')
+                .css('font-size', '11px')
+                .attr('title', cleanDisplayName)
+                .text(cleanDisplayName);
+            card.append(caption);
+
+            var timeText = (img.date && img.time) ? (img.date + ' ' + img.time) : '';
+            if (timeText) {
+                card.append($('<small>').addClass('text-muted d-block').css('font-size', '10px').text(timeText));
+            }
+
+            col.append(card);
+            container.append(col);
+        }
+
+        if (resp.is_grouped && resp.clusters && resp.clusters.length > 0) {
+            $('#batchClusterInfoBadge').removeClass('d-none').html('<i class="fas fa-layer-group mr-1"></i> ' + resp.clusters.length + ' Folder Lokasi');
+
+            resp.clusters.forEach(function(cluster) {
+                var clusterImgs = resp.images.filter(function(im) {
+                    return String(im.cluster_id) === String(cluster.id);
+                });
+                if (clusterImgs.length === 0) return;
+
+                var isNoGps = (cluster.id === 'no_gps');
+                var headerCol = $('<div>').addClass('col-12 mt-2 mb-2');
+                var headerCard = $('<div>').addClass('d-flex align-items-center justify-content-between p-2 rounded border shadow-xs')
+                    .css({
+                        'border-left': '4px solid ' + (isNoGps ? '#6c757d' : '#0A66C2') + ' !important',
+                        'background-color': isNoGps ? '#f8f9fa' : '#f0f7ff'
+                    });
+
+                var leftBox = $('<div>').addClass('text-truncate mr-2');
+                var icon = isNoGps ? 'fas fa-map-marker-slash text-secondary' : 'fas fa-map-marked-alt text-danger';
+                leftBox.append($('<span>').addClass('font-weight-bold text-dark small').html('<i class="' + icon + ' mr-1"></i> ' + escapeHtml(cluster.name)));
+                if (cluster.coords_text && cluster.coords_text !== '-') {
+                    leftBox.append($('<small>').addClass('text-muted ml-2 font-monospace d-none d-md-inline').text('(' + cluster.coords_text + ')'));
+                }
+                leftBox.append($('<span>').addClass('badge ' + (isNoGps ? 'badge-secondary' : 'badge-warning text-dark') + ' ml-2').html('<i class="fas fa-folder mr-1"></i>' + escapeHtml(cluster.folder_name)));
+
+                headerCard.append(leftBox);
+                headerCard.append($('<span>').addClass('badge badge-primary badge-pill px-2 py-1').text(clusterImgs.length + ' Foto'));
+                headerCol.append(headerCard);
+                $grid.append(headerCol);
+
+                clusterImgs.forEach(function(img) {
+                    renderPhotoCard(img, $grid);
+                });
+            });
+        } else {
+            $('#batchClusterInfoBadge').addClass('d-none');
+            resp.images.forEach(function(img) {
+                renderPhotoCard(img, $grid);
+            });
+        }
+
+        $('#batchResultContainer').fadeIn();
+
+        // Notifikasi Tunggal (Rule #1: tidak double)
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: resp.message || 'Watermark foto berhasil diproses.',
+            timer: 2500,
+            showConfirmButton: false
+        });
+    }
+
     // -------------------------------------------------------------------------
     // 7. DOWNLOAD SINGLE & RESET
     // -------------------------------------------------------------------------
@@ -2215,7 +2632,13 @@ $(function() {
         $('#btnTimeFromExif').addClass('d-none').hide();
         updateDateTimeStatusText();
         $('#fileInput').val('');
-        $('#fileCountBadge').removeClass('badge-primary badge-success badge-warning').addClass('badge-secondary').text('Belum ada file');
+        $('#folderInput').val('');
+        selectedFolderName = null;
+        $('#groupByCoords').prop('checked', false);
+        $('#clusteringSettingsBox').hide();
+        $('#summaryCluster').text('Nonaktif (Folder Standar)');
+        $('#batchClusterInfoBadge').addClass('d-none');
+        $('#fileCountBadge').removeClass('badge-primary badge-success badge-warning badge-info').addClass('badge-secondary').text('Belum ada file');
         $('#fileSelectedList').empty().hide();
         $('#singleResultContainer').hide();
         $('#batchResultContainer').hide();

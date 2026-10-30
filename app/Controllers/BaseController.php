@@ -250,6 +250,13 @@ abstract class BaseController extends Controller
                             'active_pattern' => 'admin/dokumentasi/watermark-foto*',
                             'children'       => [],
                         ],
+                        [
+                            'label'          => 'Organisir Foto GPS',
+                            'url'            => '/admin/dokumentasi/organisir-foto-gps',
+                            'icon'           => 'fas fa-layer-group',
+                            'active_pattern' => 'admin/dokumentasi/organisir-foto-gps*',
+                            'children'       => [],
+                        ],
                     ],
                 ],
                 [

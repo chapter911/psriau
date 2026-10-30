@@ -1179,6 +1179,9 @@ class Dokumentasi extends BaseController
         $lokasi = trim((string) $this->request->getPost('lokasi'));
         $koordinat = trim((string) $this->request->getPost('koordinat'));
         $catatan = trim((string) $this->request->getPost('catatan'));
+        $groupByCoords = (int) ($this->request->getPost('group_by_coords') ?? 0) === 1;
+        $clusterRadius = (float) ($this->request->getPost('cluster_radius') ?? 100.0);
+        $fotoPaths = (array) ($this->request->getPost('foto_paths') ?? []);
 
         // Jika opsi ambil koordinat EXIF tidak aktif dan lokasi kosong, gunakan default
         if (! $useExifLocation && $lokasi === '' && $koordinat === '') {
@@ -1288,11 +1291,25 @@ class Dokumentasi extends BaseController
                         if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
                             $name = 'photo_' . (++$idx) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
                             $multiFile->move($inputDir, $name);
+
+                            // Periksa jika ada path relatif dari pemilihan folder (webkitRelativePath / dropzone)
+                            $subDir = null;
+                            $relPath = $multiFile->getClientName();
+                            if (! empty($fotoPaths[$idx - 1])) {
+                                $customRel = str_replace('\\', '/', trim((string) $fotoPaths[$idx - 1]));
+                                $customRel = ltrim($customRel, '/');
+                                $d = dirname($customRel);
+                                if ($d !== '.' && $d !== '/') {
+                                    $subDir = $d;
+                                    $relPath = $customRel;
+                                }
+                            }
+
                             $imageFilesToProcess[] = [
                                 'path'          => $inputDir . DIRECTORY_SEPARATOR . $name,
                                 'original_name' => $multiFile->getClientName(),
-                                'sub_dir'       => null,
-                                'relative_path' => $multiFile->getClientName(),
+                                'sub_dir'       => $subDir,
+                                'relative_path' => $relPath,
                             ];
                         }
                     }
@@ -1303,11 +1320,23 @@ class Dokumentasi extends BaseController
                 if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
                     $name = 'single_' . bin2hex(random_bytes(4)) . '.' . $ext;
                     $fotoSingle->move($inputDir, $name);
+
+                    $subDir = null;
+                    $singleRelPath = trim((string) ($this->request->getPost('foto_path') ?? ''));
+                    if ($singleRelPath !== '') {
+                        $customRel = str_replace('\\', '/', $singleRelPath);
+                        $customRel = ltrim($customRel, '/');
+                        $d = dirname($customRel);
+                        if ($d !== '.' && $d !== '/') {
+                            $subDir = $d;
+                        }
+                    }
+
                     $imageFilesToProcess[] = [
                         'path'          => $inputDir . DIRECTORY_SEPARATOR . $name,
                         'original_name' => $fotoSingle->getClientName(),
-                        'sub_dir'       => null,
-                        'relative_path' => $fotoSingle->getClientName(),
+                        'sub_dir'       => $subDir,
+                        'relative_path' => $singleRelPath !== '' ? $singleRelPath : $fotoSingle->getClientName(),
                     ];
                 }
             }
@@ -1318,9 +1347,23 @@ class Dokumentasi extends BaseController
 
             // 6. Proses Watermark untuk Setiap Gambar Menggunakan TimeMarkWatermarkService
             $watermarkService = new \App\Libraries\TimeMarkWatermarkService();
+            $clustersSummary = [];
+
+            // Jika fitur pengelompokan berdasarkan koordinat GPS diaktifkan
+            if ($groupByCoords && ! empty($imageFilesToProcess)) {
+                $clusteringResult = $watermarkService->clusterImagesByCoordinates(
+                    $imageFilesToProcess,
+                    $clusterRadius,
+                    $useExifLocation,
+                    $koordinat !== '' ? $koordinat : null
+                );
+                $imageFilesToProcess = $clusteringResult['items'];
+                $clustersSummary = $clusteringResult['clusters'];
+            }
+
             $processedResults = [];
             $totalImages = count($imageFilesToProcess);
-            $isBatchMode = ($totalImages > 1 || $isZip);
+            $isBatchMode = ($totalImages > 1 || $isZip || $groupByCoords);
             $lastFailError = null;
 
             $outputTempDir = $tempWorkingDir . DIRECTORY_SEPARATOR . 'output';
@@ -1403,6 +1446,8 @@ class Dokumentasi extends BaseController
                     'file_name'        => $outFileName,
                     'relative_zip_path'=> $relativeZipPath,
                     'sub_dir'          => $subDir,
+                    'cluster_id'       => $item['cluster_id'] ?? null,
+                    'cluster_name'     => $item['cluster_name'] ?? null,
                     'orig_name'        => $origName,
                     'data_uri'         => $res['thumb_data_uri'] ?? $res['data_uri'], // Thumbnail responsif (~8 KB) selalu disertakan untuk galeri visual instan
                     'full_uri'         => $res['data_uri'] ?? null,
@@ -1420,7 +1465,7 @@ class Dokumentasi extends BaseController
                 return $sendError(422, $errMsg);
             }
 
-            // 8. Buat ZIP Download untuk Batch Mode (Mempertahankan Struktur Subfolder Asli)
+            // 8. Buat ZIP Download untuk Batch Mode (Mempertahankan Struktur Subfolder Asli & Pengelompokan Lokasi)
             $zipDownloadUrl = null;
             $batchToken = null;
             if ($isBatchMode || count($processedResults) > 1) {
@@ -1452,15 +1497,20 @@ class Dokumentasi extends BaseController
 
             return $this->response->setJSON([
                 'status'           => 'ok',
-                'message'          => count($processedResults) . ' foto berhasil diberi watermark ala TimeMark!',
+                'message'          => count($processedResults) . ' foto berhasil diberi watermark ala TimeMark!' . ($groupByCoords ? ' (Dikelompokkan ke ' . count($clustersSummary) . ' folder lokasi)' : ''),
                 'mode'             => $isBatchMode ? 'batch' : 'single',
                 'total_processed'  => count($processedResults),
+                'is_grouped'       => $groupByCoords,
+                'cluster_radius'   => $clusterRadius,
+                'clusters'         => $clustersSummary,
                 'image_data'       => $singleImageData,
                 'download_zip_url' => $zipDownloadUrl,
                 'images'           => array_map(static fn ($r) => [
                     'file_name'    => $r['file_name'],
                     'relative_path'=> $r['relative_zip_path'] ?? $r['file_name'],
                     'sub_dir'      => $r['sub_dir'] ?? null,
+                    'cluster_id'   => $r['cluster_id'] ?? null,
+                    'cluster_name' => $r['cluster_name'] ?? null,
                     'orig_name'    => $r['orig_name'],
                     'data_uri'     => $r['data_uri'],
                     'view_url'     => $batchToken ? site_url('/admin/dokumentasi/watermark-foto/download-batch-item/' . $batchToken . '?entry=' . rawurlencode($r['relative_zip_path'] ?? $r['file_name'])) : null,
@@ -1568,6 +1618,757 @@ class Dokumentasi extends BaseController
         }
 
         return redirect()->to('/admin/dokumentasi/watermark-foto')->with('error', 'Foto tidak ditemukan di dalam arsip.');
+    }
+
+    /**
+     * Memproses foto secara bertahap / parsial (chunked processing) untuk menu Watermark Foto.
+     * Mencegah timeout, memory limit, dan connection reset saat memproses puluhan/ratusan foto.
+     */
+    public function prosesWatermarkChunk()
+    {
+        $sendError = function (int $statusCode, string $message, ?string $csrfHash = null) {
+            return $this->response->setStatusCode($statusCode)->setJSON([
+                'status'     => 'error',
+                'message'    => $message,
+                'csrf_token' => csrf_token(),
+                'csrf_hash'  => $csrfHash ?? csrf_hash(),
+            ]);
+        };
+
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
+
+        if (! $this->canAccessWatermarkMenu()) {
+            return $sendError(403, 'Akses ditolak. Anda tidak memiliki izin untuk mengakses menu Watermark Foto.');
+        }
+
+        $perms = $this->getWatermarkPermissions();
+        if (! $perms['add'] && ! $perms['edit']) {
+            return $sendError(403, 'Akses ditolak. Role Anda tidak memiliki izin untuk memproses foto.');
+        }
+
+        $batchId = trim((string) $this->request->getPost('batch_id'));
+        if (! preg_match('/^[a-zA-Z0-9_\-]+$/', $batchId)) {
+            return $sendError(422, 'ID Batch pemrosesan tidak valid.');
+        }
+
+        $chunkIndex = (int) ($this->request->getPost('chunk_index') ?? 0);
+        $totalChunks = (int) ($this->request->getPost('total_chunks') ?? 1);
+        $isLastChunk = (int) ($this->request->getPost('is_last_chunk') ?? 0) === 1;
+
+        // Parameter Form
+        $template = trim((string) $this->request->getPost('template'));
+        if (! in_array($template, ['classic', 'table', 'badge', 'strip'], true)) {
+            $template = 'classic';
+        }
+
+        $useExifDate = (int) ($this->request->getPost('use_exif_date') ?? 1) === 1;
+        $useExifTime = (int) ($this->request->getPost('use_exif_time') ?? 1) === 1;
+        $useExifLocation = (int) ($this->request->getPost('use_exif_location') ?? 1) === 1;
+        $updateExif = (int) ($this->request->getPost('update_exif') ?? 1) === 1;
+        $groupByCoords = (int) ($this->request->getPost('group_by_coords') ?? 0) === 1;
+        $clusterRadius = (float) ($this->request->getPost('cluster_radius') ?? 100.0);
+        $offsetHours = (int) ($this->request->getPost('offset_hours') ?? 0);
+        $offsetMinutes = (int) ($this->request->getPost('offset_minutes') ?? 0);
+        $manualDate = trim((string) $this->request->getPost('manual_date'));
+        $manualTime = trim((string) $this->request->getPost('manual_time'));
+        $lokasi = trim((string) $this->request->getPost('lokasi'));
+        $koordinat = trim((string) $this->request->getPost('koordinat'));
+        $catatan = trim((string) $this->request->getPost('catatan'));
+        $fotoPaths = (array) ($this->request->getPost('foto_paths') ?? []);
+
+        if (! $useExifLocation && $lokasi === '' && $koordinat === '') {
+            $lokasi = 'Kantor Balai PPS Riau';
+        }
+
+        $tempWorkingDir = ROOTPATH . 'do_not_upload/temp/watermark_' . $batchId;
+        $inputDir = $tempWorkingDir . DIRECTORY_SEPARATOR . 'input';
+        $outputTempDir = $tempWorkingDir . DIRECTORY_SEPARATOR . 'output';
+        $manifestPath = $tempWorkingDir . DIRECTORY_SEPARATOR . 'manifest.json';
+
+        if (! is_dir($tempWorkingDir)) {
+            @mkdir($tempWorkingDir, 0775, true);
+            @mkdir($inputDir, 0775, true);
+            @mkdir($outputTempDir, 0775, true);
+        }
+
+        // Custom logo
+        $logoFile = $this->request->getFile('logo');
+        $customLogoPath = null;
+        $existingLogo = $tempWorkingDir . DIRECTORY_SEPARATOR . 'custom_logo';
+        if ($logoFile !== null && $logoFile->isValid() && ! $logoFile->hasMoved()) {
+            $logoExt = strtolower($logoFile->getClientExtension());
+            if (in_array($logoExt, ['png', 'jpg', 'jpeg', 'webp'], true)) {
+                $logoFile->move($tempWorkingDir, 'custom_logo.' . $logoExt);
+                $customLogoPath = $tempWorkingDir . DIRECTORY_SEPARATOR . 'custom_logo.' . $logoExt;
+            }
+        } elseif (is_file($existingLogo . '.png')) {
+            $customLogoPath = $existingLogo . '.png';
+        } elseif (is_file($existingLogo . '.jpg')) {
+            $customLogoPath = $existingLogo . '.jpg';
+        }
+
+        // Read manifest
+        $manifest = ['items' => []];
+        if (is_file($manifestPath)) {
+            $manifestRaw = @file_get_contents($manifestPath);
+            if ($manifestRaw) {
+                $decoded = json_decode($manifestRaw, true);
+                if (is_array($decoded)) {
+                    $manifest = $decoded;
+                }
+            }
+        }
+
+        // Process files in this chunk
+        $fotosMultiple = $this->request->getFileMultiple('fotos');
+        $fotoSingle = $this->request->getFile('foto');
+        $filesToProcess = [];
+
+        if (! empty($fotosMultiple)) {
+            $fIdx = 0;
+            foreach ($fotosMultiple as $mFile) {
+                if ($mFile->isValid() && ! $mFile->hasMoved()) {
+                    $ext = strtolower($mFile->getClientExtension());
+                    if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
+                        $sName = 'chunk_' . $chunkIndex . '_' . (++$fIdx) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                        $mFile->move($inputDir, $sName);
+
+                        $subDir = null;
+                        $relPath = $mFile->getClientName();
+                        if (! empty($fotoPaths[$fIdx - 1])) {
+                            $customRel = str_replace('\\', '/', trim((string) $fotoPaths[$fIdx - 1]));
+                            $customRel = ltrim($customRel, '/');
+                            $d = dirname($customRel);
+                            if ($d !== '.' && $d !== '/') {
+                                $subDir = $d;
+                                $relPath = $customRel;
+                            }
+                        }
+
+                        $filesToProcess[] = [
+                            'path'          => $inputDir . DIRECTORY_SEPARATOR . $sName,
+                            'original_name' => $mFile->getClientName(),
+                            'sub_dir'       => $subDir,
+                            'relative_path' => $relPath,
+                        ];
+                    }
+                }
+            }
+        } elseif ($fotoSingle !== null && $fotoSingle->isValid() && ! $fotoSingle->hasMoved()) {
+            $ext = strtolower($fotoSingle->getClientExtension());
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
+                $sName = 'single_chunk_' . $chunkIndex . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                $fotoSingle->move($inputDir, $sName);
+                $singleRel = trim((string) ($this->request->getPost('foto_path') ?? ''));
+                $subDir = null;
+                if ($singleRel !== '') {
+                    $customRel = str_replace('\\', '/', $singleRel);
+                    $customRel = ltrim($customRel, '/');
+                    $d = dirname($customRel);
+                    if ($d !== '.' && $d !== '/') {
+                        $subDir = $d;
+                    }
+                }
+                $filesToProcess[] = [
+                    'path'          => $inputDir . DIRECTORY_SEPARATOR . $sName,
+                    'original_name' => $fotoSingle->getClientName(),
+                    'sub_dir'       => $subDir,
+                    'relative_path' => $singleRel !== '' ? $singleRel : $fotoSingle->getClientName(),
+                ];
+            }
+        }
+
+        $watermarkService = new \App\Libraries\TimeMarkWatermarkService();
+
+        foreach ($filesToProcess as $item) {
+            $sourceImgPath = $item['path'];
+            $origName = $item['original_name'];
+            $baseNameWithoutExt = pathinfo($origName, PATHINFO_FILENAME);
+            $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+            $targetExt = in_array($ext, ['png', 'jpg', 'jpeg', 'webp'], true) ? $ext : 'jpg';
+            $cleanBaseName = preg_replace('/^watermark[_\-\s]*/i', '', $baseNameWithoutExt);
+            $outFileName = ($cleanBaseName !== '' ? $cleanBaseName : 'foto') . '_' . bin2hex(random_bytes(3)) . '.' . $targetExt;
+            $outTempPath = $outputTempDir . DIRECTORY_SEPARATOR . $outFileName;
+
+            $processOptions = [
+                'template'          => $template,
+                'logo_path'         => $customLogoPath,
+                'manual_date'       => $manualDate,
+                'manual_time'       => $manualTime,
+                'offset_hours'      => $offsetHours,
+                'offset_minutes'    => $offsetMinutes,
+                'use_exif_date'     => $useExifDate,
+                'use_exif_time'     => $useExifTime,
+                'use_exif_location' => $useExifLocation,
+                'update_exif'       => $updateExif,
+                'location'          => $lokasi,
+                'coordinates'       => $koordinat !== '' ? $koordinat : null,
+                'notes'             => $catatan !== '' ? $catatan : null,
+                'save_to_path'      => $outTempPath,
+                'output_quality'    => 92,
+                'need_full_uri'     => false,
+                'generate_thumb'    => true,
+                'thumb_width'       => 360,
+                'thumb_quality'     => 68,
+            ];
+
+            $res = $watermarkService->processImage($sourceImgPath, $processOptions);
+            @unlink($sourceImgPath); // Immediate cleanup of input source file (Rule #3)
+
+            if ($res['success']) {
+                $manifest['items'][] = [
+                    'file_name'        => $outFileName,
+                    'orig_name'        => $origName,
+                    'sub_dir'          => $item['sub_dir'],
+                    'relative_path'    => $item['relative_path'],
+                    'data_uri'         => $res['thumb_data_uri'] ?? $res['data_uri'],
+                    'meta'             => $res['meta'],
+                    'temp_path'        => $outTempPath,
+                ];
+            }
+        }
+
+        // Save updated manifest
+        file_put_contents($manifestPath, json_encode($manifest));
+
+        // If NOT last chunk, reply with progress
+        if (! $isLastChunk) {
+            return $this->response->setJSON([
+                'status'           => 'ok',
+                'is_finished'      => false,
+                'chunk_index'      => $chunkIndex,
+                'processed_count'  => count($manifest['items']),
+                'total_chunks'     => $totalChunks,
+                'csrf_token'       => csrf_token(),
+                'csrf_hash'        => csrf_hash(),
+            ]);
+        }
+
+        // --- FINAL STAGE (is_last_chunk = true) ---
+        try {
+            $allItems = $manifest['items'];
+            if (empty($allItems)) {
+                return $sendError(422, 'Tidak ada foto yang berhasil diproses.');
+            }
+
+            $clustersSummary = [];
+
+            // Jika fitur pengelompokan koordinat GPS aktif:
+            if ($groupByCoords) {
+                $itemsForClustering = array_map(static fn ($it) => [
+                    'path'          => $it['temp_path'],
+                    'original_name' => $it['orig_name'],
+                    'sub_dir'       => $it['sub_dir'],
+                    'relative_path' => $it['relative_path'],
+                    '_raw_item'     => $it,
+                ], $allItems);
+
+                $clusteringResult = $watermarkService->clusterImagesByCoordinates(
+                    $itemsForClustering,
+                    $clusterRadius,
+                    $useExifLocation,
+                    $koordinat !== '' ? $koordinat : null
+                );
+
+                $clustersSummary = $clusteringResult['clusters'];
+                $newAllItems = [];
+
+                foreach ($clusteringResult['items'] as $cItem) {
+                    $raw = $cItem['_raw_item'];
+                    $folderName = $cItem['sub_dir'];
+                    $targetDir = $outputTempDir . DIRECTORY_SEPARATOR . $folderName;
+                    if (! is_dir($targetDir)) {
+                        @mkdir($targetDir, 0775, true);
+                    }
+                    $cleanTargetName = preg_replace('/^watermark[_\-\s]*/i', '', $raw['orig_name']);
+                    $finalPath = $targetDir . DIRECTORY_SEPARATOR . $cleanTargetName;
+
+                    if (is_file($raw['temp_path'])) {
+                        @rename($raw['temp_path'], $finalPath);
+                    }
+
+                    $raw['temp_path'] = $finalPath;
+                    $raw['sub_dir'] = $folderName;
+                    $raw['relative_zip_path'] = $folderName . '/' . $cleanTargetName;
+                    $raw['cluster_id'] = $cItem['cluster_id'];
+                    $raw['cluster_name'] = $cItem['cluster_name'];
+                    $newAllItems[] = $raw;
+                }
+                $allItems = $newAllItems;
+            } else {
+                foreach ($allItems as &$it) {
+                    $cleanTargetName = preg_replace('/^watermark[_\-\s]*/i', '', $it['orig_name']);
+                    $it['relative_zip_path'] = (! empty($it['sub_dir'])) ? ($it['sub_dir'] . '/' . $cleanTargetName) : $cleanTargetName;
+                }
+                unset($it);
+            }
+
+            // Create ZIP archive
+            $batchToken = date('YmdHis') . '_' . bin2hex(random_bytes(4));
+            $downloadsDir = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'watermark_hasil' . DIRECTORY_SEPARATOR . 'downloads';
+            if (! is_dir($downloadsDir)) {
+                @mkdir($downloadsDir, 0775, true);
+            }
+
+            $zipOutPath = $downloadsDir . DIRECTORY_SEPARATOR . 'watermark_batch_' . $batchToken . '.zip';
+            $zipBatch = new \ZipArchive();
+            if ($zipBatch->open($zipOutPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+                foreach ($allItems as $pRes) {
+                    if (is_file($pRes['temp_path'])) {
+                        $zipEntryName = $pRes['relative_zip_path'] ?? $pRes['file_name'];
+                        $zipBatch->addFile($pRes['temp_path'], $zipEntryName);
+                    }
+                }
+                $zipBatch->close();
+            }
+
+            $zipDownloadUrl = site_url('/admin/dokumentasi/watermark-foto/download-batch-zip/' . $batchToken);
+
+            return $this->response->setJSON([
+                'status'           => 'ok',
+                'is_finished'      => true,
+                'message'          => count($allItems) . ' foto berhasil diproses secara bertahap!' . ($groupByCoords ? ' (' . count($clustersSummary) . ' folder lokasi)' : ''),
+                'mode'             => 'batch',
+                'total_processed'  => count($allItems),
+                'is_grouped'       => $groupByCoords,
+                'cluster_radius'   => $clusterRadius,
+                'clusters'         => $clustersSummary,
+                'download_zip_url' => $zipDownloadUrl,
+                'images'           => array_map(static fn ($r) => [
+                    'file_name'    => basename($r['temp_path']),
+                    'relative_path'=> $r['relative_zip_path'] ?? basename($r['temp_path']),
+                    'sub_dir'      => $r['sub_dir'] ?? null,
+                    'cluster_id'   => $r['cluster_id'] ?? null,
+                    'cluster_name' => $r['cluster_name'] ?? null,
+                    'orig_name'    => $r['orig_name'],
+                    'data_uri'     => $r['data_uri'],
+                    'view_url'     => site_url('/admin/dokumentasi/watermark-foto/download-batch-item/' . $batchToken . '?entry=' . rawurlencode($r['relative_zip_path'] ?? basename($r['temp_path']))),
+                    'download_url' => site_url('/admin/dokumentasi/watermark-foto/download-batch-item/' . $batchToken . '?download=1&entry=' . rawurlencode($r['relative_zip_path'] ?? basename($r['temp_path']))),
+                    'date'         => $r['meta']['datetime']['date'] ?? '',
+                    'time'         => $r['meta']['datetime']['time'] ?? '',
+                    'day'          => $r['meta']['datetime']['day'] ?? '',
+                ], $allItems),
+                'csrf_token'       => csrf_token(),
+                'csrf_hash'        => csrf_hash(),
+            ]);
+        } finally {
+            $this->cleanUpDirectory($tempWorkingDir); // Rule #3 clean temporary files
+        }
+    }
+
+    // =========================================================================
+    // MODUL: ORGANISIR & PENGELOMPOKAN FOTO GPS (TANPA WATERMARK)
+    // =========================================================================
+
+    /**
+     * Tampilan utama menu Organisir Foto GPS.
+     */
+    public function organisirFotoGps()
+    {
+        if (! $this->canAccessOrganisirMenu()) {
+            return redirect()->to('/admin/dashboard')->with('error', 'Akses ditolak. Anda tidak memiliki izin untuk mengakses menu Organisir Foto GPS (Rule #4).');
+        }
+
+        $perms = $this->getOrganisirPermissions();
+
+        $data = [
+            'title'       => 'Organisir & Pengelompokan Foto GPS',
+            'subtitle'    => 'Kelompokkan berkas foto kegiatan lapangan ke dalam sub-folder lokasi secara otomatis berdasarkan koordinat GPS kamera asli (100% Asli, Bersih & Tanpa Watermark)',
+            'permissions' => $perms,
+        ];
+
+        return view('admin/dokumentasi/organisir_foto_gps', $data);
+    }
+
+    /**
+     * Pemrosesan chunked / bertahap untuk Organisir Foto GPS (Lossless, Tanpa Watermark).
+     */
+    public function prosesOrganisirGpsChunk()
+    {
+        $sendError = function (int $statusCode, string $message, ?string $csrfHash = null) {
+            return $this->response->setStatusCode($statusCode)->setJSON([
+                'status'     => 'error',
+                'message'    => $message,
+                'csrf_token' => csrf_token(),
+                'csrf_hash'  => $csrfHash ?? csrf_hash(),
+            ]);
+        };
+
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
+
+        if (! $this->canAccessOrganisirMenu()) {
+            return $sendError(403, 'Akses ditolak (Rule #4).');
+        }
+
+        $perms = $this->getOrganisirPermissions();
+        if (! $perms['add'] && ! $perms['edit']) {
+            return $sendError(403, 'Role Anda tidak memiliki izin untuk memproses foto.');
+        }
+
+        $batchId = trim((string) $this->request->getPost('batch_id'));
+        if (! preg_match('/^[a-zA-Z0-9_\-]+$/', $batchId)) {
+            return $sendError(422, 'ID Batch tidak valid.');
+        }
+
+        $chunkIndex = (int) ($this->request->getPost('chunk_index') ?? 0);
+        $totalChunks = (int) ($this->request->getPost('total_chunks') ?? 1);
+        $isLastChunk = (int) ($this->request->getPost('is_last_chunk') ?? 0) === 1;
+        $clusterRadius = (float) ($this->request->getPost('cluster_radius') ?? 100.0);
+        $fotoPaths = (array) ($this->request->getPost('foto_paths') ?? []);
+
+        $tempWorkingDir = ROOTPATH . 'do_not_upload/temp/organisir_' . $batchId;
+        $sourceDir = $tempWorkingDir . DIRECTORY_SEPARATOR . 'source';
+        $manifestPath = $tempWorkingDir . DIRECTORY_SEPARATOR . 'manifest.json';
+
+        if (! is_dir($tempWorkingDir)) {
+            @mkdir($tempWorkingDir, 0775, true);
+            @mkdir($sourceDir, 0775, true);
+        }
+
+        $manifest = ['items' => []];
+        if (is_file($manifestPath)) {
+            $raw = @file_get_contents($manifestPath);
+            if ($raw) {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) $manifest = $decoded;
+            }
+        }
+
+        $fotosMultiple = $this->request->getFileMultiple('fotos');
+        $fotoSingle = $this->request->getFile('foto');
+        $watermarkService = new \App\Libraries\TimeMarkWatermarkService();
+
+        if (! empty($fotosMultiple)) {
+            $fIdx = 0;
+            foreach ($fotosMultiple as $mFile) {
+                if ($mFile->isValid() && ! $mFile->hasMoved()) {
+                    $ext = strtolower($mFile->getClientExtension());
+                    if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
+                        $safeName = 'org_' . $chunkIndex . '_' . (++$fIdx) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                        $mFile->move($sourceDir, $safeName);
+                        $savedPath = $sourceDir . DIRECTORY_SEPARATOR . $safeName;
+
+                        $relPath = $mFile->getClientName();
+                        $subDir = null;
+                        if (! empty($fotoPaths[$fIdx - 1])) {
+                            $customRel = str_replace('\\', '/', trim((string) $fotoPaths[$fIdx - 1]));
+                            $customRel = ltrim($customRel, '/');
+                            $d = dirname($customRel);
+                            if ($d !== '.' && $d !== '/') {
+                                $subDir = $d;
+                                $relPath = $customRel;
+                            }
+                        }
+
+                        $manifest['items'][] = [
+                            'path'          => $savedPath,
+                            'original_name' => $mFile->getClientName(),
+                            'sub_dir'       => $subDir,
+                            'relative_path' => $relPath,
+                        ];
+                    }
+                }
+            }
+        } elseif ($fotoSingle !== null && $fotoSingle->isValid() && ! $fotoSingle->hasMoved()) {
+            $ext = strtolower($fotoSingle->getClientExtension());
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
+                $safeName = 'org_single_' . $chunkIndex . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                $fotoSingle->move($sourceDir, $safeName);
+                $savedPath = $sourceDir . DIRECTORY_SEPARATOR . $safeName;
+                $singleRel = trim((string) ($this->request->getPost('foto_path') ?? ''));
+
+                $manifest['items'][] = [
+                    'path'          => $savedPath,
+                    'original_name' => $fotoSingle->getClientName(),
+                    'sub_dir'       => null,
+                    'relative_path' => $singleRel !== '' ? $singleRel : $fotoSingle->getClientName(),
+                ];
+            }
+        }
+
+        file_put_contents($manifestPath, json_encode($manifest));
+
+        if (! $isLastChunk) {
+            return $this->response->setJSON([
+                'status'          => 'ok',
+                'is_finished'     => false,
+                'chunk_index'     => $chunkIndex,
+                'processed_count' => count($manifest['items']),
+                'total_chunks'    => $totalChunks,
+                'csrf_token'      => csrf_token(),
+                'csrf_hash'       => csrf_hash(),
+            ]);
+        }
+
+        // Final stage: Cluster by coordinates, copy files losslessly, and build ZIP
+        try {
+            $allItems = $manifest['items'];
+            if (empty($allItems)) {
+                return $sendError(422, 'Tidak ada foto valid yang ditemukan.');
+            }
+
+            $clusteringResult = $watermarkService->clusterImagesByCoordinates(
+                $allItems,
+                $clusterRadius,
+                true,
+                null
+            );
+
+            $outputDir = $tempWorkingDir . DIRECTORY_SEPARATOR . 'output';
+            @mkdir($outputDir, 0775, true);
+
+            $processedResults = [];
+            $batchToken = date('YmdHis') . '_' . bin2hex(random_bytes(4));
+
+            foreach ($clusteringResult['items'] as $cItem) {
+                $clusterFolder = $cItem['sub_dir'];
+                $targetClusterDir = $outputDir . DIRECTORY_SEPARATOR . $clusterFolder;
+                if (! is_dir($targetClusterDir)) {
+                    @mkdir($targetClusterDir, 0775, true);
+                }
+
+                $cleanBaseName = $cItem['original_name'];
+                $destPath = $targetClusterDir . DIRECTORY_SEPARATOR . $cleanBaseName;
+
+                // Handle collision if duplicate filename in same cluster
+                if (is_file($destPath)) {
+                    $ext = pathinfo($cleanBaseName, PATHINFO_EXTENSION);
+                    $fn = pathinfo($cleanBaseName, PATHINFO_FILENAME);
+                    $destPath = $targetClusterDir . DIRECTORY_SEPARATOR . $fn . '_' . bin2hex(random_bytes(2)) . '.' . $ext;
+                    $cleanBaseName = basename($destPath);
+                }
+
+                // Copy losslessly (preserving 100% exact pixels and EXIF)
+                if (is_file($cItem['path'])) {
+                    @copy($cItem['path'], $destPath);
+                    @unlink($cItem['path']); // free space immediately (Rule #3)
+                }
+
+                // Generate lightweight thumbnail for UI gallery
+                $thumbDataUri = $watermarkService->generateThumbnailDataUri($destPath, 360, 68);
+
+                $processedResults[] = [
+                    'file_name'        => $cleanBaseName,
+                    'relative_zip_path'=> $clusterFolder . '/' . $cleanBaseName,
+                    'sub_dir'          => $clusterFolder,
+                    'cluster_id'       => $cItem['cluster_id'],
+                    'cluster_name'     => $cItem['cluster_name'],
+                    'orig_name'        => $cItem['original_name'],
+                    'data_uri'         => $thumbDataUri,
+                    'temp_path'        => $destPath,
+                ];
+            }
+
+            // Create ZIP
+            $downloadsDir = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'organisir_hasil' . DIRECTORY_SEPARATOR . 'downloads';
+            if (! is_dir($downloadsDir)) {
+                @mkdir($downloadsDir, 0775, true);
+            }
+
+            $zipOutPath = $downloadsDir . DIRECTORY_SEPARATOR . 'organisir_batch_' . $batchToken . '.zip';
+            $zipBatch = new \ZipArchive();
+            if ($zipBatch->open($zipOutPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+                foreach ($processedResults as $pRes) {
+                    if (is_file($pRes['temp_path'])) {
+                        $zipBatch->addFile($pRes['temp_path'], $pRes['relative_zip_path']);
+                    }
+                }
+                $zipBatch->close();
+            }
+
+            $zipDownloadUrl = site_url('/admin/dokumentasi/organisir-foto-gps/download-batch-zip/' . $batchToken);
+
+            return $this->response->setJSON([
+                'status'           => 'ok',
+                'is_finished'      => true,
+                'message'          => count($processedResults) . ' foto berhasil dikelompokkan ke ' . count($clusteringResult['clusters']) . ' folder lokasi (Tanpa Watermark)!',
+                'mode'             => 'batch',
+                'total_processed'  => count($processedResults),
+                'is_grouped'       => true,
+                'cluster_radius'   => $clusterRadius,
+                'clusters'         => $clusteringResult['clusters'],
+                'download_zip_url' => $zipDownloadUrl,
+                'images'           => array_map(static fn ($r) => [
+                    'file_name'    => $r['file_name'],
+                    'relative_path'=> $r['relative_zip_path'],
+                    'sub_dir'      => $r['sub_dir'],
+                    'cluster_id'   => $r['cluster_id'],
+                    'cluster_name' => $r['cluster_name'],
+                    'orig_name'    => $r['orig_name'],
+                    'data_uri'     => $r['data_uri'],
+                    'view_url'     => site_url('/admin/dokumentasi/organisir-foto-gps/download-batch-item/' . $batchToken . '?entry=' . rawurlencode($r['relative_zip_path'])),
+                    'download_url' => site_url('/admin/dokumentasi/organisir-foto-gps/download-batch-item/' . $batchToken . '?download=1&entry=' . rawurlencode($r['relative_zip_path'])),
+                ], $processedResults),
+                'csrf_token'       => csrf_token(),
+                'csrf_hash'        => csrf_hash(),
+            ]);
+        } finally {
+            $this->cleanUpDirectory($tempWorkingDir); // Rule #3
+        }
+    }
+
+    /**
+     * Download hasil arsip ZIP dari menu Organisir Foto GPS.
+     */
+    public function downloadOrganisirZip(string $token)
+    {
+        if (! $this->canAccessOrganisirMenu()) {
+            return redirect()->to('/admin/dashboard')->with('error', 'Akses ditolak (Rule #4).');
+        }
+
+        if (! preg_match('/^[a-zA-Z0-9_]+$/', $token)) {
+            return redirect()->to('/admin/dokumentasi/organisir-foto-gps')->with('error', 'Token download tidak valid.');
+        }
+
+        $zipPath = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'organisir_hasil' . DIRECTORY_SEPARATOR . 'downloads' . DIRECTORY_SEPARATOR . 'organisir_batch_' . $token . '.zip';
+        if (! is_file($zipPath) || ! is_readable($zipPath)) {
+            return redirect()->to('/admin/dokumentasi/organisir-foto-gps')->with('error', 'File download ZIP sudah kedaluwarsa atau tidak ditemukan.');
+        }
+
+        $downloadName = 'foto-terorganisir-gps-' . date('YmdHis') . '.zip';
+        return $this->response->download($zipPath, null)->setFileName($downloadName);
+    }
+
+    /**
+     * Preview atau download satu berkas foto dari arsip Organisir Foto GPS.
+     */
+    public function downloadOrganisirItem(string $token, string $fileName = '')
+    {
+        if (! $this->canAccessOrganisirMenu()) {
+            return redirect()->to('/admin/dashboard')->with('error', 'Akses ditolak (Rule #4).');
+        }
+
+        if (! preg_match('/^[a-zA-Z0-9_]+$/', $token)) {
+            return redirect()->to('/admin/dokumentasi/organisir-foto-gps')->with('error', 'Token download tidak valid.');
+        }
+
+        $zipPath = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'organisir_hasil' . DIRECTORY_SEPARATOR . 'downloads' . DIRECTORY_SEPARATOR . 'organisir_batch_' . $token . '.zip';
+        if (! is_file($zipPath) || ! is_readable($zipPath)) {
+            return redirect()->to('/admin/dokumentasi/organisir-foto-gps')->with('error', 'Arsip foto tidak ditemukan.');
+        }
+
+        $rawEntry = (string) ($this->request->getGet('entry') ?? ($fileName !== '' ? $fileName : $this->request->getGet('file')));
+        $rawEntry = str_replace('\\', '/', rawurldecode($rawEntry));
+        $parts = array_filter(explode('/', $rawEntry), static fn ($p) => $p !== '' && $p !== '.' && $p !== '..');
+        $cleanEntry = implode('/', $parts);
+
+        if ($cleanEntry === '') {
+            return redirect()->to('/admin/dokumentasi/organisir-foto-gps')->with('error', 'Nama berkas tidak valid.');
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath) === true) {
+            $content = $zip->getFromName($cleanEntry);
+            if ($content === false) {
+                $base = basename($cleanEntry);
+                for ($i = 0; $i < $zip->numFiles; $i++) {
+                    $stat = $zip->statIndex($i);
+                    if ($stat && basename($stat['name']) === $base) {
+                        $content = $zip->getFromIndex($i);
+                        break;
+                    }
+                }
+            }
+            $zip->close();
+
+            if ($content !== false) {
+                $ext = strtolower(pathinfo($cleanEntry, PATHINFO_EXTENSION));
+                $contentType = match ($ext) {
+                    'png' => 'image/png',
+                    'webp' => 'image/webp',
+                    default => 'image/jpeg',
+                };
+
+                $downloadFileName = basename($cleanEntry);
+                $disposition = ($this->request->getGet('download') === '1') ? 'attachment' : 'inline';
+
+                return $this->response
+                    ->setHeader('Content-Type', $contentType)
+                    ->setHeader('Content-Disposition', $disposition . '; filename="' . $downloadFileName . '"')
+                    ->setHeader('Cache-Control', 'private, max-age=86400')
+                    ->setBody($content);
+            }
+        }
+
+        return redirect()->to('/admin/dokumentasi/organisir-foto-gps')->with('error', 'Foto tidak ditemukan.');
+    }
+
+    private function canAccessOrganisirMenu(): bool
+    {
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return true;
+        }
+
+        $role = (string) (session()->get('role') ?? '');
+        $roleId = $this->resolveWatermarkRoleId($role, $db);
+        if ($roleId === null) {
+            return false;
+        }
+
+        $menuId = $this->resolveWatermarkMenuId('admin/dokumentasi/organisir-foto-gps', $db);
+        if ($menuId === null) {
+            return true;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        return (int) $db->table('menu_akses')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->countAllResults() > 0;
+    }
+
+    private function getOrganisirPermissions(): array
+    {
+        $default = [
+            'add'      => true,
+            'edit'     => true,
+            'export'   => true,
+            'delete'   => false,
+            'import'   => false,
+            'approval' => false,
+        ];
+
+        $rawRole = (string) (session()->get('role') ?? '');
+        $normalizedRole = strtolower(trim($rawRole));
+
+        if (in_array($normalizedRole, ['super administrator', 'super_administrator', 'superadmin', 'super-admin', 'admin', 'administrator'], true)) {
+            return $default;
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return $default;
+        }
+
+        $roleId = $this->resolveWatermarkRoleId($rawRole, $db);
+        $menuId = $this->resolveWatermarkMenuId('admin/dokumentasi/organisir-foto-gps', $db);
+        if ($roleId === null || $menuId === null) {
+            return $default;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        $row = $db->table('menu_akses')
+            ->select('FiturAdd, FiturEdit, FiturDelete, FiturExport, FiturImport, FiturApproval')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($row)) {
+            return $default;
+        }
+
+        return [
+            'add'      => (int) ($row['FiturAdd'] ?? 0) === 1,
+            'edit'     => (int) ($row['FiturEdit'] ?? 0) === 1,
+            'export'   => (int) ($row['FiturExport'] ?? 0) === 1,
+            'delete'   => (int) ($row['FiturDelete'] ?? 0) === 1,
+            'import'   => (int) ($row['FiturImport'] ?? 0) === 1,
+            'approval' => (int) ($row['FiturApproval'] ?? 0) === 1,
+        ];
     }
 
     // =========================================================================
