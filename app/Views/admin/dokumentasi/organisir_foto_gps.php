@@ -1,6 +1,7 @@
-<?= $this->extend('admin/layout/template'); ?>
+<?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
+<link rel="stylesheet" href="<?= esc(media_url('assets/leaflet/leaflet.css')); ?>">
 <div class="container-fluid">
     <!-- Header Page -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -196,11 +197,8 @@
     </div>
 </div>
 
-<!-- Leaflet CSS & JS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Leaflet JS -->
+<script src="<?= esc(media_url('assets/leaflet/leaflet.js')); ?>"></script>
 
 <script>
 $(function() {
