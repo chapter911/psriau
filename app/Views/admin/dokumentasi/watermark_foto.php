@@ -407,6 +407,24 @@
                                 <small class="text-muted d-block mt-1" style="font-size: 10px;">
                                     <i class="fas fa-info-circle text-info mr-1"></i> Foto dengan selisih jarak GPS di bawah radius ini akan disatukan dalam folder lokasi yang sama.
                                 </small>
+
+                                <div class="form-group mt-3 mb-1 pt-2 border-top">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label for="wmGroupingMode" class="small font-weight-bold text-dark mb-0" style="font-size: 11px;">
+                                            <i class="fas fa-sitemap text-primary mr-1"></i> Format Hierarki Folder ZIP:
+                                        </label>
+                                        <span class="badge badge-primary px-2 py-0 font-weight-bold" id="wmGroupingModeBadge" style="font-size: 10px;">Standar (2 Tingkat)</span>
+                                    </div>
+                                    <select class="form-control form-control-sm font-weight-bold text-dark" id="wmGroupingMode" name="grouping_mode">
+                                        <option value="kab_kec" selected>Kabupaten &rsaquo; Kecamatan (Standar Rekomendasi)</option>
+                                        <option value="kab_kec_kel">Kabupaten &rsaquo; Kecamatan &rsaquo; Kelurahan / Desa (3 Tingkat - Sangat Detail)</option>
+                                        <option value="kab_kec_spot">Kabupaten &rsaquo; Kecamatan &rsaquo; Spot Radius GPS (3 Tingkat - Berdasarkan STA / Titik)</option>
+                                        <option value="kab">Kabupaten / Kota Saja (1 Tingkat - Ringkas)</option>
+                                    </select>
+                                    <small id="wmGroupingModeHelp" class="text-primary d-block mt-1" style="font-size: 10px;">
+                                        <i class="fas fa-info-circle mr-1"></i> Struktur: <code>Kabupaten_Kampar/Kecamatan_Tambang/foto.jpg</code>
+                                    </small>
+                                </div>
                             </div>
                         </div>
 
@@ -634,13 +652,97 @@
 
                     <!-- VIEW 2: HASIL PEMROSESAN (HIDDEN BY DEFAULT UNTIL PROCESSED) -->
                     <div id="resultSection" style="display: none;">
-                        <!-- LOADING STATE & PROGRESS BAR -->
-                        <div id="loadingContainer" class="text-center py-5" style="display: none;">
-                            <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
-                            <h6 class="font-weight-bold text-dark mb-1" id="loadingTitleText">Sedang Memproses Watermark Foto...</h6>
-                            <p class="text-muted small mb-2" id="uploadProgressText">Menerapkan format watermark, ekstraksi EXIF, dan mengompilasi berkas.</p>
-                            <div class="progress mx-auto mb-2" style="max-width: 380px; height: 18px; border-radius: 9px; background-color: #e9ecef;">
-                                <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary font-weight-bold" role="progressbar" style="width: 0%; font-size: 11px;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        <!-- LOADING STATE & PROGRESS BAR (DETAIL REAL-TIME MONITOR) -->
+                        <div id="loadingContainer" class="py-3" style="display: none;">
+                            <!-- Header Status & Stopwatch -->
+                            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                                <div>
+                                    <h6 class="font-weight-bold text-dark mb-0" id="loadingTitleText">
+                                        <i class="fas fa-spinner fa-spin text-primary mr-2"></i>Sedang Memproses Watermark Foto...
+                                    </h6>
+                                    <span class="badge badge-info badge-pill mt-1" id="wmLoadingStageBadge">Tahap 1 dari 1 Batch</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="badge badge-light border px-2 py-1 font-monospace text-muted" id="wmTimerElapsedText">
+                                        <i class="fas fa-stopwatch mr-1"></i>00:00
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- 4 Stat Metrics Cards -->
+                            <div class="row mb-3">
+                                <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                    <div class="bg-light border rounded p-2 text-center shadow-xs">
+                                        <div class="text-muted" style="font-size: 10px; text-transform: uppercase;">Total Foto</div>
+                                        <div class="font-weight-bold text-dark h6 mb-0" id="wmStatTotalFoto">0</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                    <div class="bg-light border rounded p-2 text-center shadow-xs" style="border-left: 3px solid #28a745 !important;">
+                                        <div class="text-muted" style="font-size: 10px; text-transform: uppercase;">Terproses</div>
+                                        <div class="font-weight-bold text-success h6 mb-0" id="wmStatProcessedFoto">0</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="bg-light border rounded p-2 text-center shadow-xs" style="border-left: 3px solid #fd7e14 !important;">
+                                        <div class="text-muted" style="font-size: 10px; text-transform: uppercase;">Sisa Antrean</div>
+                                        <div class="font-weight-bold text-warning h6 mb-0" id="wmStatRemainingFoto">0</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="bg-light border rounded p-2 text-center shadow-xs" style="border-left: 3px solid #0284c7 !important;">
+                                        <div class="text-muted" style="font-size: 10px; text-transform: uppercase;">Wilayah Terdeteksi</div>
+                                        <div class="font-weight-bold text-primary h6 mb-0" id="wmStatWilayahDitemukan">0</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Geocoding / Location Recognition Progress Banner -->
+                            <div class="alert alert-light border d-flex align-items-center py-2 px-3 mb-3 shadow-xs" style="background-color: #f0fdf4; border-left: 4px solid #16a34a !important;">
+                                <div class="mr-3 text-success">
+                                    <i class="fas fa-map-marked-alt fa-2x fa-pulse"></i>
+                                </div>
+                                <div class="text-truncate flex-grow-1">
+                                    <div class="small font-weight-bold text-dark mb-0">
+                                        <span class="badge badge-success mr-1">Progress Lokasi Watermark</span> Identifikasi Nama Wilayah:
+                                    </div>
+                                    <div class="small text-primary text-truncate font-monospace mt-1" id="wmLiveGeocodeStatusText">
+                                        Menunggu pembacaan koordinat GPS berkas...
+                                    </div>
+                                </div>
+                                <div class="ml-2 text-right d-none d-sm-block">
+                                    <span class="badge badge-primary font-weight-bold" id="wmBadgeTotalWilayah">0 Wilayah</span>
+                                </div>
+                            </div>
+
+                            <!-- Progress Bar & Percentage -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small font-weight-bold text-dark" id="uploadProgressText">Menyiapkan pengunggahan berkas...</span>
+                                    <span class="small font-weight-bold text-primary" id="wmProgressPercentText">0%</span>
+                                </div>
+                                <div class="progress" style="height: 18px; border-radius: 9px; background-color: #e9ecef;">
+                                    <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary font-weight-bold" role="progressbar" style="width: 0%; font-size: 11px;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                                </div>
+                            </div>
+
+                            <!-- Live Activity Log Console -->
+                            <div class="card border mb-2 shadow-none">
+                                <div class="card-header py-1 px-3 bg-light d-flex justify-content-between align-items-center">
+                                    <span class="small font-weight-bold text-dark" style="font-size: 11.5px;">
+                                        <i class="fas fa-terminal text-secondary mr-1"></i> Log Aktivitas Watermark:
+                                    </span>
+                                    <span class="badge badge-secondary badge-pill" style="font-size: 9.5px;" id="wmLogItemCount">0 item</span>
+                                </div>
+                                <div class="card-body p-2" id="wmProcessingLogBox" style="background-color: #0f172a; color: #38bdf8; height: 150px; overflow-y: auto; font-family: monospace; font-size: 11px; line-height: 1.5; border-radius: 0 0 4px 4px;">
+                                    <div class="text-muted">[00:00] Menyiapkan antrean pemrosesan foto...</div>
+                                </div>
+                            </div>
+
+                            <div class="text-center">
+                                <small class="text-muted" style="font-size: 11px;">
+                                    <i class="fas fa-info-circle mr-1"></i> Pemrosesan batch dipecah menjadi 5 foto per tahap untuk performa optimal.
+                                </small>
                             </div>
                         </div>
 
@@ -1882,34 +1984,59 @@ $(function() {
         var coordsInput = $('#koordinat').val() || '';
         var notesInput = $('#catatan').val() || 'Dokumentasi Lapangan';
 
-        var effectiveLoc = locInput.trim() !== '' ? locInput : (coordsInput ? coordsInput : 'Kantor Balai PPS Riau');
         var effectiveCoords = coordsInput.trim() !== '' ? coordsInput : (lastExifCoordinates ? lastExifCoordinates : '0.507068° N, 101.447779° E');
+        var effectiveLoc = locInput.trim() !== '' ? locInput : (coordsInput ? coordsInput : 'Kota Pekanbaru, Riau');
+
+        // Pisahkan nama kabupaten & kecamatan jika format terstruktur
+        var kabText = '';
+        var kecText = '';
+        var mKecKab = effectiveLoc.match(/^(Kecamatan\s+[^,]+),\s*(Kabupaten\s+[^,]+|Kota\s+[^,]+)/i);
+        var mKabKec = effectiveLoc.match(/^(Kabupaten\s+[^,]+|Kota\s+[^,]+),\s*(Kecamatan\s+[^,]+)/i);
+        if (mKecKab) {
+            kecText = mKecKab[1].trim();
+            kabText = mKecKab[2].trim();
+        } else if (mKabKec) {
+            kabText = mKabKec[1].trim();
+            kecText = mKabKec[2].trim();
+        }
 
         // 1. Classic Template
         $('#simClassicClock').text(timeStr);
         $('#simClassicDay').text(dayName);
         $('#simClassicDate').text(dateFormatted + ' | WIB');
-        $('#simClassicLocation').text(effectiveLoc);
+        if (kabText && kecText) {
+            $('#simClassicLocation').html('<i class="fas fa-map-marker-alt text-warning mr-1"></i> ' + $('<div>').text(kabText).html() + '<div class="small text-white">' + $('<div>').text(kecText).html() + '</div>');
+        } else {
+            $('#simClassicLocation').html('<i class="fas fa-map-marker-alt text-warning mr-1"></i> ' + $('<div>').text(effectiveLoc).html());
+        }
         $('#simClassicCoords').text(effectiveCoords);
         $('#simClassicNotes').text(notesInput);
 
         // 2. Table Template
         $('#simTableTime').text(timeStr + ' WIB');
         $('#simTableDate').text(dateFormatted);
-        $('#simTableLocation').text(effectiveLoc);
+        if (kabText && kecText) {
+            $('#simTableLocation').html($('<div>').text(kabText).html() + '<br><small class="text-warning">' + $('<div>').text(kecText).html() + '</small>');
+        } else {
+            $('#simTableLocation').text(effectiveLoc);
+        }
         $('#simTableCoords').text(effectiveCoords);
         $('#simTableNotes').text(notesInput);
 
         // 3. Badge Template
         $('#simBadgeClock').text(timeStr);
         $('#simBadgeDate').text(fullDateStr);
-        $('#simBadgeLocationText').text(effectiveLoc);
+        if (kabText && kecText) {
+            $('#simBadgeLocationText').html('<i class="fas fa-map-marker-alt text-warning mr-1"></i> ' + $('<div>').text(kabText).html() + ' - ' + $('<div>').text(kecText).html());
+        } else {
+            $('#simBadgeLocationText').html('<i class="fas fa-map-marker-alt text-warning mr-1"></i> ' + $('<div>').text(effectiveLoc).html());
+        }
         $('#simBadgeCoords').text(effectiveCoords);
 
         // 4. Strip Template
         $('#simStripClock').text(timeStr + ' WIB');
         $('#simStripDate').text(dateFormatted + ' | PPS Riau');
-        $('#simStripLocation').text(effectiveLoc);
+        $('#simStripLocation').text((kabText && kecText) ? (kabText + ' - ' + kecText) : effectiveLoc);
         $('#simStripCoords').text(effectiveCoords);
 
         // Ganti overlay aktif sesuai radio template
@@ -2019,6 +2146,27 @@ $(function() {
         updateSummaryCard();
     });
 
+    $('#wmGroupingMode').on('change', function() {
+        var mode = $(this).val();
+        var $badge = $('#wmGroupingModeBadge');
+        var $help = $('#wmGroupingModeHelp');
+
+        if (mode === 'kab_kec_kel') {
+            $badge.removeClass().addClass('badge badge-success px-2 py-0 font-weight-bold').text('Detail (3 Tingkat)');
+            $help.html('<i class="fas fa-info-circle mr-1"></i> Struktur: <code>Kabupaten_Meranti/Kecamatan_Tasik_Putri_Puyu/Desa_Mengkirau/foto.jpg</code>');
+        } else if (mode === 'kab_kec_spot') {
+            $badge.removeClass().addClass('badge badge-warning text-dark px-2 py-0 font-weight-bold').text('Spot Radius (3 Tingkat)');
+            $help.html('<i class="fas fa-info-circle mr-1"></i> Struktur: <code>Kabupaten_Siak/Kecamatan_Siak/Spot_01_0.9780_101.9961/foto.jpg</code>');
+        } else if (mode === 'kab') {
+            $badge.removeClass().addClass('badge badge-secondary px-2 py-0 font-weight-bold').text('Ringkas (1 Tingkat)');
+            $help.html('<i class="fas fa-info-circle mr-1"></i> Struktur: <code>Kabupaten_Bengkalis/foto.jpg</code>');
+        } else {
+            $badge.removeClass().addClass('badge badge-primary px-2 py-0 font-weight-bold').text('Standar (2 Tingkat)');
+            $help.html('<i class="fas fa-info-circle mr-1"></i> Struktur: <code>Kabupaten_Kampar/Kecamatan_Tambang/foto.jpg</code>');
+        }
+        updateSummaryCard();
+    });
+
     // Logo label update
     $('#logo').on('change', function() {
         var fileName = $(this).val().split('\\').pop();
@@ -2100,6 +2248,7 @@ $(function() {
         formData.append('update_exif', $('#updateExif').is(':checked') ? '1' : '0');
         formData.append('group_by_coords', $('#groupByCoords').is(':checked') ? '1' : '0');
         formData.append('cluster_radius', $('#clusterRadius').val() || '100');
+        formData.append('grouping_mode', $('#wmGroupingMode').val() || 'kab_kec');
         formData.append('offset_hours', $('#offsetHours').val() || '0');
         formData.append('offset_minutes', $('#offsetMinutes').val() || '0');
         formData.append('manual_date', $('#manualDate').val() || '');
@@ -2310,6 +2459,39 @@ $(function() {
         });
     }
 
+    var wmStopwatchInterval = null;
+    var wmElapsedSeconds = 0;
+    var wmLogCount = 0;
+
+    function startWmProgressStopwatch() {
+        wmElapsedSeconds = 0;
+        clearInterval(wmStopwatchInterval);
+        $('#wmTimerElapsedText').html('<i class="fas fa-stopwatch mr-1"></i>00:00');
+        wmStopwatchInterval = setInterval(function() {
+            wmElapsedSeconds++;
+            var mm = String(Math.floor(wmElapsedSeconds / 60)).padStart(2, '0');
+            var ss = String(wmElapsedSeconds % 60).padStart(2, '0');
+            $('#wmTimerElapsedText').html('<i class="fas fa-stopwatch mr-1"></i>' + mm + ':' + ss);
+        }, 1000);
+    }
+
+    function stopWmProgressStopwatch() {
+        clearInterval(wmStopwatchInterval);
+    }
+
+    function addWmLogEntry(text, colorClass) {
+        wmLogCount++;
+        var mm = String(Math.floor(wmElapsedSeconds / 60)).padStart(2, '0');
+        var ss = String(wmElapsedSeconds % 60).padStart(2, '0');
+        var timeBadge = '<span class="text-secondary">[' + mm + ':' + ss + ']</span> ';
+        var cls = colorClass || 'text-info';
+        var line = $('<div>').addClass(cls).html(timeBadge + text);
+        var $box = $('#wmProcessingLogBox');
+        $box.append(line);
+        $box.scrollTop($box.prop('scrollHeight'));
+        $('#wmLogItemCount').text(wmLogCount + ' item');
+    }
+
     /**
      * Memproses foto secara bertahap / parsial (Chunked Upload).
      * Mencegah timeout, memory limit, dan connection reset saat memproses puluhan/ratusan foto.
@@ -2329,10 +2511,26 @@ $(function() {
         $('#placeholderContainer').hide();
         $('#singleResultContainer').hide();
         $('#batchResultContainer').hide();
-        $('#loadingTitleText').text('Sedang Memproses Foto Secara Bertahap...');
+
+        // Reset Metric Cards & Console
+        wmLogCount = 0;
+        var wmDetectedWilayahSet = {};
+        $('#wmProcessingLogBox').empty();
+        $('#wmStatTotalFoto').text(totalFiles);
+        $('#wmStatProcessedFoto').text(0);
+        $('#wmStatRemainingFoto').text(totalFiles);
+        $('#wmStatWilayahDitemukan').text(0);
+        $('#wmBadgeTotalWilayah').text('0 Wilayah');
+        $('#wmProgressPercentText').text('0%');
+        $('#wmLoadingStageBadge').text('Tahap 1 dari ' + totalChunks + ' Batch');
+        $('#loadingTitleText').html('<i class="fas fa-spinner fa-spin text-primary mr-2"></i>Sedang Memproses Watermark Foto...');
         $('#uploadProgressBar').css('width', '2%').text('0%').removeClass('bg-success').addClass('bg-primary');
         $('#uploadProgressText').text('Memulai pemrosesan tahap 1 dari ' + totalChunks + '...');
+        $('#wmLiveGeocodeStatusText').html('<i class="fas fa-search-location fa-spin text-primary mr-1"></i> Menyiapkan antrean & koneksi identifikasi wilayah GPS...');
         $('#loadingContainer').fadeIn(150);
+
+        startWmProgressStopwatch();
+        addWmLogEntry('Menginisialisasi pemrosesan ' + totalFiles + ' foto dalam ' + totalChunks + ' batch (5 foto/batch)...', 'text-warning');
 
         var currentChunk = 0;
 
@@ -2360,6 +2558,7 @@ $(function() {
             chunkFormData.append('update_exif', $('#updateExif').is(':checked') ? '1' : '0');
             chunkFormData.append('group_by_coords', $('#groupByCoords').is(':checked') ? '1' : '0');
             chunkFormData.append('cluster_radius', $('#clusterRadius').val() || '100');
+            chunkFormData.append('grouping_mode', $('#wmGroupingMode').val() || 'kab_kec');
             chunkFormData.append('offset_hours', $('#offsetHours').val() || '0');
             chunkFormData.append('offset_minutes', $('#offsetMinutes').val() || '0');
             chunkFormData.append('manual_date', $('#manualDate').val() || '');
@@ -2388,8 +2587,13 @@ $(function() {
 
             var progressPercent = Math.round(((currentChunk) / totalChunks) * 100);
             $('#uploadProgressBar').css('width', Math.max(5, progressPercent) + '%').text(progressPercent + '%');
+            $('#wmProgressPercentText').text(progressPercent + '%');
+            $('#wmLoadingStageBadge').text('Tahap ' + (currentChunk + 1) + ' dari ' + totalChunks + ' Batch');
             $('#uploadProgressText').text('Tahap ' + (currentChunk + 1) + ' dari ' + totalChunks + ': Mengunggah & memberi watermark foto ' + (startIdx + 1) + '–' + endIdx + ' dari ' + totalFiles + ' foto...');
+            $('#wmLiveGeocodeStatusText').html('<i class="fas fa-search-location text-info mr-1"></i> Tahap ' + (currentChunk + 1) + ': Mengidentifikasi nama lokasi & wilayah watermark...');
             $btn.html('<i class="fas fa-spinner fa-spin mr-2"></i> Tahap ' + (currentChunk + 1) + '/' + totalChunks + ' (' + endIdx + '/' + totalFiles + ' Foto)...');
+
+            addWmLogEntry('⟳ Memproses Batch ' + (currentChunk + 1) + '/' + totalChunks + ' (' + chunkSlice.length + ' foto)...', 'text-info');
 
             $.ajax({
                 url: '<?= site_url('/admin/dokumentasi/watermark-foto/proses-chunk') ?>',
@@ -2406,8 +2610,10 @@ $(function() {
 
                     if (resp.status !== 'ok') {
                         isProcessing = false;
+                        stopWmProgressStopwatch();
                         $('#loadingContainer').hide();
                         $btn.prop('disabled', false).html(originalBtnHtml);
+                        addWmLogEntry('✗ Gagal di Tahap ' + (currentChunk + 1) + ': ' + (resp.message || 'Kesalahan server'), 'text-danger');
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal Memproses Tahap ' + (currentChunk + 1),
@@ -2416,32 +2622,84 @@ $(function() {
                         return;
                     }
 
+                    var doneNow = resp.processed_count || (startIdx + chunkSlice.length);
+                    $('#wmStatProcessedFoto').text(doneNow);
+                    $('#wmStatRemainingFoto').text(Math.max(0, totalFiles - doneNow));
+
+                    if (resp.processed_files && resp.processed_files.length > 0) {
+                        resp.processed_files.forEach(function(item) {
+                            var fname = typeof item === 'object' ? item.file_name : item;
+                            var hasGps = typeof item === 'object' ? item.has_gps : false;
+                            var kab = (typeof item === 'object' && item.kabupaten) ? item.kabupaten : null;
+                            var kec = (typeof item === 'object' && item.kecamatan) ? item.kecamatan : null;
+                            var kel = (typeof item === 'object' && item.kelurahan && item.kelurahan !== '-') ? item.kelurahan : null;
+                            var locName = (typeof item === 'object' && item.location) ? item.location : null;
+                            var coords = (typeof item === 'object' && item.coordinates) ? item.coordinates : null;
+
+                            if (hasGps && kab && kab !== 'Tanpa Koordinat GPS') {
+                                var wKey = kab + '__' + (kec || '') + '__' + (kel || '');
+                                wmDetectedWilayahSet[wKey] = true;
+                                var countW = Object.keys(wmDetectedWilayahSet).length;
+                                $('#wmStatWilayahDitemukan').text(countW);
+                                $('#wmBadgeTotalWilayah').text(countW + ' Wilayah');
+
+                                var locChain = escapeHtml(kab);
+                                if (kec && kec !== '-') locChain += ' &rsaquo; ' + escapeHtml(kec);
+                                if (kel && kel !== '-') locChain += ' &rsaquo; ' + escapeHtml(kel);
+
+                                addWmLogEntry('✓ <span class="text-white font-weight-bold">' + escapeHtml(fname) + '</span><br>' +
+                                    '<span class="text-success ml-3"><i class="fas fa-map-marker-alt text-danger mr-1"></i> <strong>' + locChain + '</strong></span>' +
+                                    (coords ? ' <span class="text-muted small font-monospace">(' + escapeHtml(coords) + ')</span>' : ''), 'text-light');
+
+                                $('#wmLiveGeocodeStatusText').html('<i class="fas fa-check-circle text-success mr-1"></i> Teridentifikasi: <strong>' + locChain + '</strong> <span class="text-muted">(' + escapeHtml(fname) + ')</span>');
+                            } else {
+                                addWmLogEntry('✓ <span class="text-white font-weight-bold">' + escapeHtml(fname) + '</span> &mdash; ' +
+                                    '<span class="text-info">' + escapeHtml(locName || 'Watermark diterapkan') + '</span>', 'text-light');
+
+                                $('#wmLiveGeocodeStatusText').html('<i class="fas fa-check-circle text-info mr-1"></i> Watermark diterapkan untuk ' + escapeHtml(fname));
+                            }
+                        });
+                    } else {
+                        chunkSlice.forEach(function(f) {
+                            addWmLogEntry('✓ ' + escapeHtml(f.name) + ' — Watermark berhasil diterapkan', 'text-light');
+                        });
+                    }
+
                     if (!resp.is_finished) {
                         currentChunk++;
                         var nextPercent = Math.round(((currentChunk) / totalChunks) * 100);
                         $('#uploadProgressBar').css('width', nextPercent + '%').text(nextPercent + '%');
+                        $('#wmProgressPercentText').text(nextPercent + '%');
                         processNextChunk();
                     } else {
                         // Selesai seluruh tahapan!
                         isProcessing = false;
+                        stopWmProgressStopwatch();
                         $btn.prop('disabled', false).html(originalBtnHtml);
+                        $('#wmStatProcessedFoto').text(totalFiles);
+                        $('#wmStatRemainingFoto').text(0);
                         $('#uploadProgressBar').css('width', '100%').text('100%').removeClass('bg-primary').addClass('bg-success');
+                        $('#wmProgressPercentText').text('100%');
                         $('#uploadProgressText').text('Selesai! Mengemas berkas galeri hasil...');
+
+                        addWmLogEntry('🎉 Seluruh watermark foto berhasil dibuat & dikelompokkan!', 'text-success font-weight-bold');
 
                         setTimeout(function() {
                             $('#loadingContainer').hide();
                             renderBatchResults(resp);
-                        }, 400);
+                        }, 500);
                     }
                 },
                 error: function(xhr) {
                     isProcessing = false;
+                    stopWmProgressStopwatch();
                     $('#loadingContainer').hide();
                     $btn.prop('disabled', false).html(originalBtnHtml);
                     var errMsg = 'Terjadi kesalahan jaringan atau server saat memproses tahap ' + (currentChunk + 1) + '.';
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errMsg = xhr.responseJSON.message;
                     }
+                    addWmLogEntry('✗ Putus koneksi pada Batch ' + (currentChunk + 1) + ': ' + errMsg, 'text-danger');
                     Swal.fire({
                         icon: 'error',
                         title: 'Koneksi Terputus di Tahap ' + (currentChunk + 1),
@@ -2547,23 +2805,44 @@ $(function() {
                 if (clusterImgs.length === 0) return;
 
                 var isNoGps = (cluster.id === 'no_gps');
+                var kabName = isNoGps ? 'Tanpa Koordinat GPS' : (cluster.kabupaten || 'Kabupaten Riau');
+                var kecName = isNoGps ? '-' : (cluster.kecamatan || 'Kecamatan');
+                var kelName = isNoGps ? '-' : (cluster.kelurahan || '-');
+
                 var headerCol = $('<div>').addClass('col-12 mt-2 mb-2');
-                var headerCard = $('<div>').addClass('d-flex align-items-center justify-content-between p-2 rounded border shadow-xs')
+                var headerCard = $('<div>').addClass('d-flex flex-column flex-md-row align-items-md-center justify-content-between p-2 rounded border shadow-xs')
                     .css({
                         'border-left': '4px solid ' + (isNoGps ? '#6c757d' : '#0A66C2') + ' !important',
                         'background-color': isNoGps ? '#f8f9fa' : '#f0f7ff'
                     });
 
-                var leftBox = $('<div>').addClass('text-truncate mr-2');
+                var leftBox = $('<div>').addClass('mr-2 mb-2 mb-md-0');
                 var icon = isNoGps ? 'fas fa-map-marker-slash text-secondary' : 'fas fa-map-marked-alt text-danger';
-                leftBox.append($('<span>').addClass('font-weight-bold text-dark small').html('<i class="' + icon + ' mr-1"></i> ' + escapeHtml(cluster.name)));
-                if (cluster.coords_text && cluster.coords_text !== '-') {
-                    leftBox.append($('<small>').addClass('text-muted ml-2 font-monospace d-none d-md-inline').text('(' + cluster.coords_text + ')'));
-                }
-                leftBox.append($('<span>').addClass('badge ' + (isNoGps ? 'badge-secondary' : 'badge-warning text-dark') + ' ml-2').html('<i class="fas fa-folder mr-1"></i>' + escapeHtml(cluster.folder_name)));
 
-                headerCard.append(leftBox);
-                headerCard.append($('<span>').addClass('badge badge-primary badge-pill px-2 py-1').text(clusterImgs.length + ' Foto'));
+                var locParts = '<span class="text-primary">' + escapeHtml(kabName) + '</span>';
+                if (kecName !== '-') {
+                    locParts += ' &rsaquo; <span>' + escapeHtml(kecName) + '</span>';
+                }
+                if (kelName !== '-') {
+                    locParts += ' &rsaquo; <span class="text-success font-weight-bold">' + escapeHtml(kelName) + '</span>';
+                }
+
+                var titleDiv = $('<div>').addClass('font-weight-bold text-dark small').html(
+                    '<i class="' + icon + ' mr-1"></i> ' + locParts
+                );
+                leftBox.append(titleDiv);
+
+                var metaDiv = $('<div>').addClass('mt-1 d-flex align-items-center flex-wrap');
+                metaDiv.append($('<span>').addClass('badge ' + (isNoGps ? 'badge-secondary' : 'badge-warning text-dark') + ' mr-2').html('<i class="fas fa-folder mr-1"></i>' + escapeHtml(cluster.folder_name)));
+                if (cluster.coords_text && cluster.coords_text !== '-') {
+                    metaDiv.append($('<small>').addClass('text-muted font-monospace').text('(' + cluster.coords_text + ')'));
+                }
+                leftBox.append(metaDiv);
+
+                var rightBox = $('<div>').addClass('d-flex align-items-center');
+                rightBox.append($('<span>').addClass('badge badge-primary badge-pill px-3 py-1 font-weight-bold').text(clusterImgs.length + ' Foto'));
+
+                headerCard.append(leftBox).append(rightBox);
                 headerCol.append(headerCard);
                 $grid.append(headerCol);
 
@@ -2750,7 +3029,7 @@ $(function() {
 
     function reverseGeocode(lat, lng, updateInput) {
         if (geocodeTimeout) clearTimeout(geocodeTimeout);
-        $('#selectedAddressText').html('<i class="fas fa-spinner fa-spin text-primary"></i> Mengambil nama tempat...');
+        $('#selectedAddressText').html('<i class="fas fa-spinner fa-spin text-primary"></i> Mengidentifikasi wilayah (Kabupaten &amp; Kecamatan)...');
 
         geocodeTimeout = setTimeout(function() {
             var url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1';
@@ -2762,15 +3041,21 @@ $(function() {
                 success: function(data) {
                     if (data && data.address) {
                         var a = data.address;
-                        var parts = [
-                            a.building || a.amenity || a.office || a.shop || a.leisure || a.tourism || '',
-                            a.road || a.street || '',
-                            a.suburb || a.village || a.neighbourhood || '',
-                            a.city || a.town || a.county || a.state_district || '',
-                            a.state || ''
-                        ].filter(Boolean);
+                        var rawKab = a.county || a.city || a.town || a.city_district || a.state_district || '';
+                        var rawKec = a.municipality || a.city_district || a.subdistrict || a.suburb || a.township || '';
 
-                        currentSelectedAddress = parts.length > 0 ? parts.join(', ') : (data.display_name || '');
+                        var cleanKab = rawKab.replace(/^(Kabupaten|Kab\.?|Kota)\s+/i, '').trim();
+                        var cleanKec = rawKec.replace(/^(Kecamatan|Kec\.?|Distrik)\s+/i, '').trim();
+
+                        var prefixKab = (/kota/i.test(rawKab) && !/kabupaten/i.test(rawKab)) ? 'Kota ' : 'Kabupaten ';
+                        var displayKab = cleanKab ? (prefixKab + cleanKab) : (a.state || 'Wilayah Riau');
+                        var displayKec = cleanKec ? ('Kecamatan ' + cleanKec) : '';
+
+                        if (displayKec) {
+                            currentSelectedAddress = displayKec + ', ' + displayKab;
+                        } else {
+                            currentSelectedAddress = displayKab;
+                        }
                     } else if (data && data.display_name) {
                         currentSelectedAddress = data.display_name;
                     } else {
@@ -2952,15 +3237,20 @@ $(function() {
                 success: function(data) {
                     if (data && data.address) {
                         var a = data.address;
-                        var parts = [
-                            a.building || a.amenity || a.office || '',
-                            a.road || a.street || '',
-                            a.suburb || a.village || '',
-                            a.city || a.town || a.county || '',
-                            a.state || ''
-                        ].filter(Boolean);
-                        if (parts.length > 0) {
-                            $('#lokasi').val(parts.join(', '));
+                        var rawKab = a.county || a.city || a.town || a.city_district || a.state_district || '';
+                        var rawKec = a.municipality || a.city_district || a.subdistrict || a.suburb || a.township || '';
+
+                        var cleanKab = rawKab.replace(/^(Kabupaten|Kab\.?|Kota)\s+/i, '').trim();
+                        var cleanKec = rawKec.replace(/^(Kecamatan|Kec\.?|Distrik)\s+/i, '').trim();
+
+                        var prefixKab = (/kota/i.test(rawKab) && !/kabupaten/i.test(rawKab)) ? 'Kota ' : 'Kabupaten ';
+                        var displayKab = cleanKab ? (prefixKab + cleanKab) : (a.state || 'Wilayah Riau');
+                        var displayKec = cleanKec ? ('Kecamatan ' + cleanKec) : '';
+
+                        if (displayKec) {
+                            $('#lokasi').val(displayKec + ', ' + displayKab);
+                        } else {
+                            $('#lokasi').val(displayKab);
                         }
                     }
                     updateLiveSimulator();

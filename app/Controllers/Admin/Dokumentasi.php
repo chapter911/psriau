@@ -1181,6 +1181,8 @@ class Dokumentasi extends BaseController
         $catatan = trim((string) $this->request->getPost('catatan'));
         $groupByCoords = (int) ($this->request->getPost('group_by_coords') ?? 0) === 1;
         $clusterRadius = (float) ($this->request->getPost('cluster_radius') ?? 100.0);
+        $groupingMode = trim((string) ($this->request->getPost('grouping_mode') ?? 'kab_kec'));
+        $groupingMode = trim((string) ($this->request->getPost('grouping_mode') ?? 'kab_kec'));
         $fotoPaths = (array) ($this->request->getPost('foto_paths') ?? []);
 
         // Jika opsi ambil koordinat EXIF tidak aktif dan lokasi kosong, gunakan default
@@ -1355,7 +1357,8 @@ class Dokumentasi extends BaseController
                     $imageFilesToProcess,
                     $clusterRadius,
                     $useExifLocation,
-                    $koordinat !== '' ? $koordinat : null
+                    $koordinat !== '' ? $koordinat : null,
+                    $groupingMode
                 );
                 $imageFilesToProcess = $clusteringResult['items'];
                 $clustersSummary = $clusteringResult['clusters'];
@@ -1427,6 +1430,7 @@ class Dokumentasi extends BaseController
                     'generate_thumb'    => true,
                     'thumb_width'       => 360,
                     'thumb_quality'     => 68,
+                    'grouping_mode'     => $groupingMode,
                 ];
 
                 $res = $watermarkService->processImage($sourceImgPath, $processOptions);
@@ -1668,6 +1672,7 @@ class Dokumentasi extends BaseController
         $updateExif = (int) ($this->request->getPost('update_exif') ?? 1) === 1;
         $groupByCoords = (int) ($this->request->getPost('group_by_coords') ?? 0) === 1;
         $clusterRadius = (float) ($this->request->getPost('cluster_radius') ?? 100.0);
+        $groupingMode = trim((string) ($this->request->getPost('grouping_mode') ?? 'kab_kec'));
         $offsetHours = (int) ($this->request->getPost('offset_hours') ?? 0);
         $offsetMinutes = (int) ($this->request->getPost('offset_minutes') ?? 0);
         $manualDate = trim((string) $this->request->getPost('manual_date'));
@@ -1781,6 +1786,8 @@ class Dokumentasi extends BaseController
 
         $watermarkService = new \App\Libraries\TimeMarkWatermarkService();
 
+        $chunkProcessedDetails = [];
+
         foreach ($filesToProcess as $item) {
             $sourceImgPath = $item['path'];
             $origName = $item['original_name'];
@@ -1811,12 +1818,30 @@ class Dokumentasi extends BaseController
                 'generate_thumb'    => true,
                 'thumb_width'       => 360,
                 'thumb_quality'     => 68,
+                'grouping_mode'     => $groupingMode,
             ];
 
             $res = $watermarkService->processImage($sourceImgPath, $processOptions);
             @unlink($sourceImgPath); // Immediate cleanup of input source file (Rule #3)
 
             if ($res['success']) {
+                $wil = $res['meta']['wilayah'] ?? null;
+                $hasGps = ! empty($res['meta']['coordinates']);
+                $kab = $wil ? $wil['kabupaten'] : ($hasGps ? 'Wilayah Riau' : 'Tanpa Koordinat GPS');
+                $kec = $wil ? $wil['kecamatan'] : '-';
+                $kel = $wil ? ($wil['kelurahan'] ?? '-') : '-';
+                $locName = $res['meta']['location'] ?? 'Lokasi Terdaftar';
+
+                $chunkProcessedDetails[] = [
+                    'file_name'   => $origName,
+                    'has_gps'     => $hasGps,
+                    'coordinates' => $res['meta']['coordinates'] ?? null,
+                    'kabupaten'   => $kab,
+                    'kecamatan'   => $kec,
+                    'kelurahan'   => $kel,
+                    'location'    => $locName,
+                ];
+
                 $manifest['items'][] = [
                     'file_name'        => $outFileName,
                     'orig_name'        => $origName,
@@ -1825,6 +1850,11 @@ class Dokumentasi extends BaseController
                     'data_uri'         => $res['thumb_data_uri'] ?? $res['data_uri'],
                     'meta'             => $res['meta'],
                     'temp_path'        => $outTempPath,
+                    'has_gps'          => $hasGps,
+                    'kabupaten'        => $kab,
+                    'kecamatan'        => $kec,
+                    'kelurahan'        => $kel,
+                    'location_name'    => $locName,
                 ];
             }
         }
@@ -1832,7 +1862,7 @@ class Dokumentasi extends BaseController
         // Save updated manifest
         file_put_contents($manifestPath, json_encode($manifest));
 
-        // If NOT last chunk, reply with progress
+        // If NOT last chunk, reply with progress and processed files list with location details
         if (! $isLastChunk) {
             return $this->response->setJSON([
                 'status'           => 'ok',
@@ -1840,6 +1870,7 @@ class Dokumentasi extends BaseController
                 'chunk_index'      => $chunkIndex,
                 'processed_count'  => count($manifest['items']),
                 'total_chunks'     => $totalChunks,
+                'processed_files'  => $chunkProcessedDetails,
                 'csrf_token'       => csrf_token(),
                 'csrf_hash'        => csrf_hash(),
             ]);
@@ -1868,7 +1899,8 @@ class Dokumentasi extends BaseController
                     $itemsForClustering,
                     $clusterRadius,
                     $useExifLocation,
-                    $koordinat !== '' ? $koordinat : null
+                    $koordinat !== '' ? $koordinat : null,
+                    $groupingMode
                 );
 
                 $clustersSummary = $clusteringResult['clusters'];
@@ -1893,6 +1925,9 @@ class Dokumentasi extends BaseController
                     $raw['relative_zip_path'] = $folderName . '/' . $cleanTargetName;
                     $raw['cluster_id'] = $cItem['cluster_id'];
                     $raw['cluster_name'] = $cItem['cluster_name'];
+                    $raw['kabupaten'] = $cItem['kabupaten'] ?? ($raw['kabupaten'] ?? 'Kabupaten Riau');
+                    $raw['kecamatan'] = $cItem['kecamatan'] ?? ($raw['kecamatan'] ?? '-');
+                    $raw['kelurahan'] = $cItem['kelurahan'] ?? ($raw['kelurahan'] ?? '-');
                     $newAllItems[] = $raw;
                 }
                 $allItems = $newAllItems;
@@ -1949,6 +1984,7 @@ class Dokumentasi extends BaseController
                     'time'         => $r['meta']['datetime']['time'] ?? '',
                     'day'          => $r['meta']['datetime']['day'] ?? '',
                 ], $allItems),
+                'processed_files'  => $chunkProcessedDetails,
                 'csrf_token'       => csrf_token(),
                 'csrf_hash'        => csrf_hash(),
             ]);
@@ -2016,6 +2052,7 @@ class Dokumentasi extends BaseController
         $totalChunks = (int) ($this->request->getPost('total_chunks') ?? 1);
         $isLastChunk = (int) ($this->request->getPost('is_last_chunk') ?? 0) === 1;
         $clusterRadius = (float) ($this->request->getPost('cluster_radius') ?? 100.0);
+        $groupingMode = trim((string) ($this->request->getPost('grouping_mode') ?? 'kab_kec'));
         $fotoPaths = (array) ($this->request->getPost('foto_paths') ?? []);
 
         $tempWorkingDir = ROOTPATH . 'do_not_upload/temp/organisir_' . $batchId;
@@ -2040,6 +2077,8 @@ class Dokumentasi extends BaseController
         $fotoSingle = $this->request->getFile('foto');
         $watermarkService = new \App\Libraries\TimeMarkWatermarkService();
 
+        $chunkUploadedFiles = [];
+
         if (! empty($fotosMultiple)) {
             $fIdx = 0;
             foreach ($fotosMultiple as $mFile) {
@@ -2062,11 +2101,47 @@ class Dokumentasi extends BaseController
                             }
                         }
 
+                        // Ekstraksi EXIF GPS dan reverse geocode langsung saat batch/chunk diunggah
+                        $exif = $watermarkService->readExifData($savedPath);
+                        $gpsDecimal = is_array($exif) ? $watermarkService->extractGpsDecimal($exif) : null;
+                        $gpsDms = is_array($exif) ? $watermarkService->extractGpsCoordinates($exif) : null;
+                        $cleanCoords = $watermarkService->sanitizeCoordinates($gpsDms);
+
+                        $wilayah = null;
+                        if ($gpsDecimal !== null) {
+                            $wilayah = $watermarkService->reverseGeocodeStructured($gpsDecimal['lat'], $gpsDecimal['lng'], $groupingMode);
+                        }
+
+                        $hasGps = ($gpsDecimal !== null);
+                        $kabupaten = $wilayah ? $wilayah['kabupaten'] : 'Tanpa Koordinat GPS';
+                        $kecamatan = $wilayah ? $wilayah['kecamatan'] : '-';
+                        $kelurahan = $wilayah ? ($wilayah['kelurahan'] ?? '-') : '-';
+                        $detectedSubDir = $wilayah ? $wilayah['folder_path'] : 'Tanpa_Koordinat_GPS';
+                        $locDisplay = $wilayah ? $wilayah['display'] : 'Tanpa Koordinat GPS';
+
                         $manifest['items'][] = [
                             'path'          => $savedPath,
                             'original_name' => $mFile->getClientName(),
-                            'sub_dir'       => $subDir,
+                            'sub_dir'       => $detectedSubDir,
                             'relative_path' => $relPath,
+                            'has_gps'       => $hasGps,
+                            'gps_decimal'   => $gpsDecimal,
+                            'gps_dms'       => $cleanCoords,
+                            'wilayah'       => $wilayah,
+                            'kabupaten'     => $kabupaten,
+                            'kecamatan'     => $kecamatan,
+                            'kelurahan'     => $kelurahan,
+                            'location_name' => $locDisplay,
+                        ];
+
+                        $chunkUploadedFiles[] = [
+                            'file_name'   => $mFile->getClientName(),
+                            'has_gps'     => $hasGps,
+                            'coordinates' => $cleanCoords,
+                            'kabupaten'   => $kabupaten,
+                            'kecamatan'   => $kecamatan,
+                            'kelurahan'   => $kelurahan,
+                            'location'    => $locDisplay,
                         ];
                     }
                 }
@@ -2079,11 +2154,46 @@ class Dokumentasi extends BaseController
                 $savedPath = $sourceDir . DIRECTORY_SEPARATOR . $safeName;
                 $singleRel = trim((string) ($this->request->getPost('foto_path') ?? ''));
 
+                $exif = $watermarkService->readExifData($savedPath);
+                $gpsDecimal = is_array($exif) ? $watermarkService->extractGpsDecimal($exif) : null;
+                $gpsDms = is_array($exif) ? $watermarkService->extractGpsCoordinates($exif) : null;
+                $cleanCoords = $watermarkService->sanitizeCoordinates($gpsDms);
+
+                $wilayah = null;
+                if ($gpsDecimal !== null) {
+                    $wilayah = $watermarkService->reverseGeocodeStructured($gpsDecimal['lat'], $gpsDecimal['lng'], $groupingMode);
+                }
+
+                $hasGps = ($gpsDecimal !== null);
+                $kabupaten = $wilayah ? $wilayah['kabupaten'] : 'Tanpa Koordinat GPS';
+                $kecamatan = $wilayah ? $wilayah['kecamatan'] : '-';
+                $kelurahan = $wilayah ? ($wilayah['kelurahan'] ?? '-') : '-';
+                $detectedSubDir = $wilayah ? $wilayah['folder_path'] : 'Tanpa_Koordinat_GPS';
+                $locDisplay = $wilayah ? $wilayah['display'] : 'Tanpa Koordinat GPS';
+
                 $manifest['items'][] = [
                     'path'          => $savedPath,
                     'original_name' => $fotoSingle->getClientName(),
-                    'sub_dir'       => null,
+                    'sub_dir'       => $detectedSubDir,
                     'relative_path' => $singleRel !== '' ? $singleRel : $fotoSingle->getClientName(),
+                    'has_gps'       => $hasGps,
+                    'gps_decimal'   => $gpsDecimal,
+                    'gps_dms'       => $cleanCoords,
+                    'wilayah'       => $wilayah,
+                    'kabupaten'     => $kabupaten,
+                    'kecamatan'     => $kecamatan,
+                    'kelurahan'     => $kelurahan,
+                    'location_name' => $locDisplay,
+                ];
+
+                $chunkUploadedFiles[] = [
+                    'file_name'   => $fotoSingle->getClientName(),
+                    'has_gps'     => $hasGps,
+                    'coordinates' => $cleanCoords,
+                    'kabupaten'   => $kabupaten,
+                    'kecamatan'   => $kecamatan,
+                    'kelurahan'   => $kelurahan,
+                    'location'    => $locDisplay,
                 ];
             }
         }
@@ -2097,6 +2207,7 @@ class Dokumentasi extends BaseController
                 'chunk_index'     => $chunkIndex,
                 'processed_count' => count($manifest['items']),
                 'total_chunks'    => $totalChunks,
+                'processed_files' => $chunkUploadedFiles,
                 'csrf_token'      => csrf_token(),
                 'csrf_hash'       => csrf_hash(),
             ]);
@@ -2113,7 +2224,8 @@ class Dokumentasi extends BaseController
                 $allItems,
                 $clusterRadius,
                 true,
-                null
+                null,
+                $groupingMode
             );
 
             $outputDir = $tempWorkingDir . DIRECTORY_SEPARATOR . 'output';
@@ -2155,6 +2267,9 @@ class Dokumentasi extends BaseController
                     'sub_dir'          => $clusterFolder,
                     'cluster_id'       => $cItem['cluster_id'],
                     'cluster_name'     => $cItem['cluster_name'],
+                    'kabupaten'        => $cItem['kabupaten'] ?? 'Kabupaten Riau',
+                    'kecamatan'        => $cItem['kecamatan'] ?? '-',
+                    'kelurahan'        => $cItem['kelurahan'] ?? '-',
                     'orig_name'        => $cItem['original_name'],
                     'data_uri'         => $thumbDataUri,
                     'temp_path'        => $destPath,
@@ -2196,11 +2311,15 @@ class Dokumentasi extends BaseController
                     'sub_dir'      => $r['sub_dir'],
                     'cluster_id'   => $r['cluster_id'],
                     'cluster_name' => $r['cluster_name'],
+                    'kabupaten'    => $r['kabupaten'],
+                    'kecamatan'    => $r['kecamatan'],
+                    'kelurahan'    => $r['kelurahan'],
                     'orig_name'    => $r['orig_name'],
                     'data_uri'     => $r['data_uri'],
                     'view_url'     => site_url('/admin/dokumentasi/organisir-foto-gps/download-batch-item/' . $batchToken . '?entry=' . rawurlencode($r['relative_zip_path'])),
                     'download_url' => site_url('/admin/dokumentasi/organisir-foto-gps/download-batch-item/' . $batchToken . '?download=1&entry=' . rawurlencode($r['relative_zip_path'])),
                 ], $processedResults),
+                'processed_files'  => $chunkUploadedFiles,
                 'csrf_token'       => csrf_token(),
                 'csrf_hash'        => csrf_hash(),
             ]);

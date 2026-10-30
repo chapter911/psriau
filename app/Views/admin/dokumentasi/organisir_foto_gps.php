@@ -59,6 +59,28 @@
                         <!-- Daftar Berkas Terpilih Ringkasan -->
                         <div id="fileSelectedList" class="alert alert-light border py-2 px-3 small text-muted mb-3" style="display: none; max-height: 140px; overflow-y: auto;"></div>
 
+                        <!-- Format Hierarki Pengelompokan Folder -->
+                        <div class="card bg-light border p-3 rounded-lg mb-3 shadow-none">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label for="groupingMode" class="small font-weight-bold text-dark mb-0">
+                                    <i class="fas fa-sitemap text-primary mr-1"></i> Format Hierarki Pengelompokan Folder:
+                                </label>
+                                <span class="badge badge-primary px-2 py-1 font-weight-bold" id="groupingModeBadge">Standar (2 Tingkat)</span>
+                            </div>
+                            <p class="text-muted small mb-2" style="font-size: 11px;">
+                                Pilih struktur susunan subfolder lokasi untuk penyimpanan foto di galeri dan berkas ZIP unduhan.
+                            </p>
+                            <select class="custom-select custom-select-sm font-weight-bold text-dark" id="groupingMode" name="grouping_mode">
+                                <option value="kab_kec" selected>Kabupaten &rsaquo; Kecamatan (Standar Rekomendasi)</option>
+                                <option value="kab_kec_kel">Kabupaten &rsaquo; Kecamatan &rsaquo; Kelurahan / Desa (3 Tingkat - Sangat Detail)</option>
+                                <option value="kab_kec_spot">Kabupaten &rsaquo; Kecamatan &rsaquo; Spot Radius GPS (3 Tingkat - Berdasarkan STA / Titik)</option>
+                                <option value="kab">Kabupaten / Kota Saja (1 Tingkat - Ringkas)</option>
+                            </select>
+                            <div id="groupingModeHelp" class="mt-2 text-primary small" style="font-size: 10.5px;">
+                                <i class="fas fa-info-circle mr-1"></i> Contoh susunan: <code>Kabupaten_Kampar/Kecamatan_Tambang/foto.jpg</code>
+                            </div>
+                        </div>
+
                         <!-- Pengaturan Toleransi Radius GPS -->
                         <div class="card bg-light border p-3 rounded-lg mb-3 shadow-none">
                             <div class="d-flex justify-content-between align-items-center mb-1">
@@ -128,17 +150,98 @@
                         </p>
                     </div>
 
-                    <!-- Loading / Progress State -->
-                    <div id="loadingState" style="display: none;" class="py-5 text-center">
-                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
-                            <span class="sr-only">Loading...</span>
+                    <!-- Loading / Progress State (Detail Real-Time Monitor) -->
+                    <div id="loadingState" style="display: none;" class="py-3">
+                        <!-- Header Status & Stopwatch -->
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                            <div>
+                                <h6 class="font-weight-bold text-dark mb-0" id="loadingTitleText">
+                                    <i class="fas fa-spinner fa-spin text-primary mr-2"></i>Sedang Mengorganisir Foto GPS...
+                                </h6>
+                                <span class="badge badge-info badge-pill mt-1" id="loadingStageBadge">Tahap 1 dari 1 Batch</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="badge badge-light border px-2 py-1 font-monospace text-muted" id="timerElapsedText">
+                                    <i class="fas fa-stopwatch mr-1"></i>00:00
+                                </span>
+                            </div>
                         </div>
-                        <h6 class="font-weight-bold text-dark mb-1" id="loadingTitleText">Sedang Memproses Foto Secara Bertahap...</h6>
-                        <p class="text-muted small mb-3" id="loadingProgressText">Menyiapkan pengunggahan berkas...</p>
-                        <div class="progress progress-sm mx-auto mb-2" style="width: 80%; height: 16px; border-radius: 8px;">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+
+                        <!-- 4 Stat Metrics Cards -->
+                        <div class="row mb-3">
+                            <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                <div class="bg-light border rounded p-2 text-center shadow-xs">
+                                    <div class="text-muted" style="font-size: 10px; text-transform: uppercase;">Total Foto</div>
+                                    <div class="font-weight-bold text-dark h6 mb-0" id="statTotalFoto">0</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                <div class="bg-light border rounded p-2 text-center shadow-xs" style="border-left: 3px solid #28a745 !important;">
+                                    <div class="text-muted" style="font-size: 10px; text-transform: uppercase;">Terproses</div>
+                                    <div class="font-weight-bold text-success h6 mb-0" id="statProcessedFoto">0</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="bg-light border rounded p-2 text-center shadow-xs" style="border-left: 3px solid #fd7e14 !important;">
+                                    <div class="text-muted" style="font-size: 10px; text-transform: uppercase;">Sisa Antrean</div>
+                                    <div class="font-weight-bold text-warning h6 mb-0" id="statRemainingFoto">0</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="bg-light border rounded p-2 text-center shadow-xs" style="border-left: 3px solid #0284c7 !important;">
+                                    <div class="text-muted" style="font-size: 10px; text-transform: uppercase;">Wilayah Terdeteksi</div>
+                                    <div class="font-weight-bold text-primary h6 mb-0" id="statWilayahDitemukan">0</div>
+                                </div>
+                            </div>
                         </div>
-                        <small class="text-muted" style="font-size: 11px;">Pemrosesan otomatis dipecah menjadi 5 foto per tahap agar aman dan bebas dari batas memori/timeout hosting.</small>
+
+                        <!-- Live Geocoding / Location Recognition Progress Banner -->
+                        <div class="alert alert-light border d-flex align-items-center py-2 px-3 mb-3 shadow-xs" style="background-color: #f0fdf4; border-left: 4px solid #16a34a !important;">
+                            <div class="mr-3 text-success">
+                                <i class="fas fa-map-marked-alt fa-2x fa-pulse"></i>
+                            </div>
+                            <div class="text-truncate flex-grow-1">
+                                <div class="small font-weight-bold text-dark mb-0">
+                                    <span class="badge badge-success mr-1">Progress Lokasi GPS</span> Identifikasi Nama Wilayah:
+                                </div>
+                                <div class="small text-primary text-truncate font-monospace mt-1" id="liveGeocodeStatusText">
+                                    Menunggu pembacaan koordinat GPS berkas...
+                                </div>
+                            </div>
+                            <div class="ml-2 text-right d-none d-sm-block">
+                                <span class="badge badge-primary font-weight-bold" id="badgeTotalWilayah">0 Wilayah</span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar & Percentage -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small font-weight-bold text-dark" id="loadingProgressText">Menyiapkan pengunggahan berkas...</span>
+                                <span class="small font-weight-bold text-primary" id="progressPercentText">0%</span>
+                            </div>
+                            <div class="progress" style="height: 18px; border-radius: 9px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="progressBar" role="progressbar" style="width: 0%; font-size: 11px; font-weight: bold;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                            </div>
+                        </div>
+
+                        <!-- Live Activity Log Console -->
+                        <div class="card border mb-2 shadow-none">
+                            <div class="card-header py-1 px-3 bg-light d-flex justify-content-between align-items-center">
+                                <span class="small font-weight-bold text-dark" style="font-size: 11.5px;">
+                                    <i class="fas fa-terminal text-secondary mr-1"></i> Log Aktivitas Pemrosesan:
+                                </span>
+                                <span class="badge badge-secondary badge-pill" style="font-size: 9.5px;" id="logItemCount">0 item</span>
+                            </div>
+                            <div class="card-body p-2" id="processingLogBox" style="background-color: #0f172a; color: #38bdf8; height: 160px; overflow-y: auto; font-family: monospace; font-size: 11px; line-height: 1.5; border-radius: 0 0 4px 4px;">
+                                <div class="text-muted">[00:00] Menyiapkan antrean pemrosesan foto...</div>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <small class="text-muted" style="font-size: 11px;">
+                                <i class="fas fa-info-circle mr-1"></i> Pemrosesan otomatis dipecah bertahap (5 foto/batch) agar aman dan bebas batas memori/timeout hosting.
+                            </small>
+                        </div>
                     </div>
 
                     <!-- Result Container -->
@@ -196,7 +299,9 @@
         </div>
     </div>
 </div>
+<?= $this->endSection(); ?>
 
+<?= $this->section('pageScripts'); ?>
 <!-- Leaflet JS -->
 <script src="<?= esc(media_url('assets/leaflet/leaflet.js')); ?>"></script>
 
@@ -224,6 +329,27 @@ $(function() {
     // Radius Slider Event
     $('#clusterRadius').on('input change', function() {
         $('#clusterRadiusValue').text($(this).val() + ' Meter');
+    });
+
+    // Grouping Mode Change Event
+    $('#groupingMode').on('change', function() {
+        var mode = $(this).val();
+        var $badge = $('#groupingModeBadge');
+        var $help = $('#groupingModeHelp');
+
+        if (mode === 'kab_kec_kel') {
+            $badge.removeClass().addClass('badge badge-success px-2 py-1 font-weight-bold').text('Detail (3 Tingkat)');
+            $help.html('<i class="fas fa-info-circle mr-1"></i> Contoh susunan: <code>Kabupaten_Meranti/Kecamatan_Tasik_Putri_Puyu/Desa_Mengkirau/foto.jpg</code> (Otomatis fallback ke wilayah sekitar jika nama desa tidak terdaftar)');
+        } else if (mode === 'kab_kec_spot') {
+            $badge.removeClass().addClass('badge badge-warning text-dark px-2 py-1 font-weight-bold').text('Spot Radius (3 Tingkat)');
+            $help.html('<i class="fas fa-info-circle mr-1"></i> Contoh susunan: <code>Kabupaten_Siak/Kecamatan_Siak/Spot_01_0.9780_101.9961/foto.jpg</code> (Foto dalam radius meter akan disatukan per spot)');
+        } else if (mode === 'kab') {
+            $badge.removeClass().addClass('badge badge-secondary px-2 py-1 font-weight-bold').text('Ringkas (1 Tingkat)');
+            $help.html('<i class="fas fa-info-circle mr-1"></i> Contoh susunan: <code>Kabupaten_Bengkalis/foto.jpg</code>');
+        } else {
+            $badge.removeClass().addClass('badge badge-primary px-2 py-1 font-weight-bold').text('Standar (2 Tingkat)');
+            $help.html('<i class="fas fa-info-circle mr-1"></i> Contoh susunan: <code>Kabupaten_Kampar/Kecamatan_Tambang/foto.jpg</code>');
+        }
     });
 
     // Dropzone Events
@@ -389,14 +515,47 @@ $(function() {
             return;
         }
 
-        executeChunkedOrganize(selectedFiles, 5);
+        executeChunkedOrganize(selectedFiles, 10);
     });
 
+    var stopwatchInterval = null;
+    var elapsedSeconds = 0;
+    var logItemCount = 0;
+
+    function startProgressStopwatch() {
+        elapsedSeconds = 0;
+        clearInterval(stopwatchInterval);
+        $('#timerElapsedText').html('<i class="fas fa-stopwatch mr-1"></i>00:00');
+        stopwatchInterval = setInterval(function() {
+            elapsedSeconds++;
+            var mm = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+            var ss = String(elapsedSeconds % 60).padStart(2, '0');
+            $('#timerElapsedText').html('<i class="fas fa-stopwatch mr-1"></i>' + mm + ':' + ss);
+        }, 1000);
+    }
+
+    function stopProgressStopwatch() {
+        clearInterval(stopwatchInterval);
+    }
+
+    function addLogEntry(text, colorClass) {
+        logItemCount++;
+        var mm = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+        var ss = String(elapsedSeconds % 60).padStart(2, '0');
+        var timeBadge = '<span class="text-secondary">[' + mm + ':' + ss + ']</span> ';
+        var cls = colorClass || 'text-info';
+        var line = $('<div>').addClass(cls).html(timeBadge + text);
+        var $box = $('#processingLogBox');
+        $box.append(line);
+        $box.scrollTop($box.prop('scrollHeight'));
+        $('#logItemCount').text(logItemCount + ' item');
+    }
+
     /**
-     * Chunked upload processor: slices files into 5 photos per stage.
+     * Chunked upload processor: slices files into 10 photos per stage.
      */
     function executeChunkedOrganize(files, chunkSize) {
-        chunkSize = chunkSize || 5;
+        chunkSize = chunkSize || 10;
         var totalFiles = files.length;
         var totalChunks = Math.ceil(totalFiles / chunkSize);
         var batchId = 'org_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
@@ -409,11 +568,28 @@ $(function() {
         $('#placeholderState').hide();
         $('#resultState').hide();
         $('#loadingState').fadeIn(150);
-        $('#loadingTitleText').text('Sedang Memproses Foto Secara Bertahap...');
+
+        // Reset Metric Cards & Console
+        logItemCount = 0;
+        var detectedWilayahSet = {};
+        $('#processingLogBox').empty();
+        $('#statTotalFoto').text(totalFiles);
+        $('#statProcessedFoto').text(0);
+        $('#statRemainingFoto').text(totalFiles);
+        $('#statWilayahDitemukan').text(0);
+        $('#badgeTotalWilayah').text('0 Wilayah');
+        $('#progressPercentText').text('0%');
+        $('#loadingStageBadge').text('Tahap 1 dari ' + totalChunks + ' Batch');
+        $('#loadingTitleText').html('<i class="fas fa-spinner fa-spin text-primary mr-2"></i>Sedang Mengorganisir Foto GPS...');
         $('#progressBar').css('width', '2%').text('0%').removeClass('bg-success').addClass('bg-primary');
         $('#loadingProgressText').text('Memulai pemrosesan tahap 1 dari ' + totalChunks + '...');
+        $('#liveGeocodeStatusText').html('<i class="fas fa-search-location fa-spin text-primary mr-1"></i> Menyiapkan antrean & koneksi identifikasi wilayah GPS...');
+
+        startProgressStopwatch();
+        addLogEntry('Menginisialisasi antrean ' + totalFiles + ' foto dalam ' + totalChunks + ' batch (5 foto/batch)...', 'text-warning');
 
         var currentChunk = 0;
+        var processedCount = 0;
 
         function processNextChunk() {
             if (currentChunk >= totalChunks) return;
@@ -429,6 +605,7 @@ $(function() {
             chunkFormData.append('total_chunks', totalChunks);
             chunkFormData.append('is_last_chunk', isLast ? '1' : '0');
             chunkFormData.append('cluster_radius', radiusMeters);
+            chunkFormData.append('grouping_mode', $('#groupingMode').val() || 'kab_kec');
 
             for (var i = 0; i < chunkSlice.length; i++) {
                 chunkFormData.append('fotos[]', chunkSlice[i]);
@@ -440,8 +617,13 @@ $(function() {
 
             var progressPercent = Math.round(((currentChunk) / totalChunks) * 100);
             $('#progressBar').css('width', Math.max(5, progressPercent) + '%').text(progressPercent + '%');
+            $('#progressPercentText').text(progressPercent + '%');
+            $('#loadingStageBadge').text('Tahap ' + (currentChunk + 1) + ' dari ' + totalChunks + ' Batch');
             $('#loadingProgressText').text('Tahap ' + (currentChunk + 1) + ' dari ' + totalChunks + ': Mengunggah & membaca GPS foto ' + (startIdx + 1) + '–' + endIdx + ' dari ' + totalFiles + ' foto...');
+            $('#liveGeocodeStatusText').html('<i class="fas fa-search-location text-info mr-1"></i> Tahap ' + (currentChunk + 1) + ': Mengidentifikasi nama lokasi & wilayah administratif...');
             $btn.html('<i class="fas fa-spinner fa-spin mr-2"></i> Tahap ' + (currentChunk + 1) + '/' + totalChunks + ' (' + endIdx + '/' + totalFiles + ' Foto)...');
+
+            addLogEntry('⟳ Mengunggah Batch ' + (currentChunk + 1) + '/' + totalChunks + ' (' + chunkSlice.length + ' foto)...', 'text-info');
 
             $.ajax({
                 url: '<?= site_url('/admin/dokumentasi/organisir-foto-gps/proses-chunk') ?>',
@@ -458,9 +640,11 @@ $(function() {
 
                     if (resp.status !== 'ok') {
                         isProcessing = false;
+                        stopProgressStopwatch();
                         $('#loadingState').hide();
                         $('#placeholderState').show();
                         $btn.prop('disabled', false).html('<i class="fas fa-layer-group mr-2"></i> Mulai Organisir Foto GPS');
+                        addLogEntry('✗ Gagal di Tahap ' + (currentChunk + 1) + ': ' + (resp.message || 'Kesalahan server'), 'text-danger');
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal di Tahap ' + (currentChunk + 1),
@@ -469,26 +653,79 @@ $(function() {
                         return;
                     }
 
+                    // Perbarui hitungan statistik
+                    var doneNow = resp.processed_count || (startIdx + chunkSlice.length);
+                    processedCount = doneNow;
+                    $('#statProcessedFoto').text(doneNow);
+                    $('#statRemainingFoto').text(Math.max(0, totalFiles - doneNow));
+
+                    // Log setiap berkas yang selesai di batch ini dengan nama lokasi teridentifikasi
+                    if (resp.processed_files && resp.processed_files.length > 0) {
+                        resp.processed_files.forEach(function(item) {
+                            var fname = typeof item === 'object' ? item.file_name : item;
+                            var hasGps = typeof item === 'object' ? item.has_gps : false;
+                            var kab = (typeof item === 'object' && item.kabupaten) ? item.kabupaten : null;
+                            var kec = (typeof item === 'object' && item.kecamatan) ? item.kecamatan : null;
+                            var kel = (typeof item === 'object' && item.kelurahan && item.kelurahan !== '-') ? item.kelurahan : null;
+                            var coords = (typeof item === 'object' && item.coordinates) ? item.coordinates : null;
+
+                            if (hasGps && kab && kab !== 'Tanpa Koordinat GPS') {
+                                var wKey = kab + '__' + (kec || '') + '__' + (kel || '');
+                                detectedWilayahSet[wKey] = true;
+                                var countW = Object.keys(detectedWilayahSet).length;
+                                $('#statWilayahDitemukan').text(countW);
+                                $('#badgeTotalWilayah').text(countW + ' Wilayah');
+
+                                var locChain = escapeHtml(kab);
+                                if (kec && kec !== '-') locChain += ' &rsaquo; ' + escapeHtml(kec);
+                                if (kel && kel !== '-') locChain += ' &rsaquo; ' + escapeHtml(kel);
+
+                                addLogEntry('✓ <span class="text-white font-weight-bold">' + escapeHtml(fname) + '</span><br>' +
+                                    '<span class="text-success ml-3"><i class="fas fa-map-marker-alt text-danger mr-1"></i> <strong>' + locChain + '</strong></span>' +
+                                    (coords ? ' <span class="text-muted small font-monospace">(' + escapeHtml(coords) + ')</span>' : ''), 'text-light');
+
+                                $('#liveGeocodeStatusText').html('<i class="fas fa-check-circle text-success mr-1"></i> Terdeteksi: <strong>' + locChain + '</strong> <span class="text-muted">(' + escapeHtml(fname) + ')</span>');
+                            } else {
+                                addLogEntry('⚠️ <span class="text-white font-weight-bold">' + escapeHtml(fname) + '</span><br>' +
+                                    '<span class="text-warning ml-3"><i class="fas fa-map-marker-slash mr-1"></i> Tidak memiliki EXIF GPS &rarr; Folder: <code>Tanpa_Koordinat_GPS/</code></span>', 'text-light');
+
+                                $('#liveGeocodeStatusText').html('<i class="fas fa-info-circle text-warning mr-1"></i> ' + escapeHtml(fname) + ' tanpa koordinat GPS &rarr; disimpan ke Tanpa_Koordinat_GPS');
+                            }
+                        });
+                    } else {
+                        chunkSlice.forEach(function(f) {
+                            addLogEntry('✓ ' + escapeHtml(f.name) + ' — GPS terbaca & diarsipkan', 'text-light');
+                        });
+                    }
+
                     if (!resp.is_finished) {
                         currentChunk++;
                         var nextPercent = Math.round(((currentChunk) / totalChunks) * 100);
                         $('#progressBar').css('width', nextPercent + '%').text(nextPercent + '%');
+                        $('#progressPercentText').text(nextPercent + '%');
                         processNextChunk();
                     } else {
                         // Selesai seluruh tahapan!
                         isProcessing = false;
+                        stopProgressStopwatch();
                         $btn.prop('disabled', false).html('<i class="fas fa-layer-group mr-2"></i> Mulai Organisir Foto GPS');
+                        $('#statProcessedFoto').text(totalFiles);
+                        $('#statRemainingFoto').text(0);
                         $('#progressBar').css('width', '100%').text('100%').removeClass('bg-primary').addClass('bg-success');
-                        $('#loadingProgressText').text('Selesai! Mengelompokkan subfolder lokasi...');
+                        $('#progressPercentText').text('100%');
+                        $('#loadingProgressText').text('Selesai! Menyusun folder Kabupaten / Kecamatan...');
+
+                        addLogEntry('🎉 Seluruh foto selesai diorganisir ke subfolder Kabupaten & Kecamatan!', 'text-success font-weight-bold');
 
                         setTimeout(function() {
                             $('#loadingState').hide();
                             renderOrganizedResults(resp);
-                        }, 400);
+                        }, 500);
                     }
                 },
                 error: function(xhr) {
                     isProcessing = false;
+                    stopProgressStopwatch();
                     $('#loadingState').hide();
                     $('#placeholderState').show();
                     $btn.prop('disabled', false).html('<i class="fas fa-layer-group mr-2"></i> Mulai Organisir Foto GPS');
@@ -496,6 +733,7 @@ $(function() {
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errMsg = xhr.responseJSON.message;
                     }
+                    addLogEntry('✗ Putus koneksi pada Batch ' + (currentChunk + 1) + ': ' + errMsg, 'text-danger');
                     Swal.fire({
                         icon: 'error',
                         title: 'Koneksi Terputus di Tahap ' + (currentChunk + 1),
@@ -514,7 +752,7 @@ $(function() {
     function renderOrganizedResults(resp) {
         $('#btnReset').show();
         if (resp.download_zip_url) {
-            $('#btnDownloadZip').attr('href', resp.download_zip_url).show();
+            $('#btnDownloadZip').attr('href', resp.download_zip_url).html('<i class="fas fa-file-archive mr-1"></i> Unduh ZIP (Terkelompok Kabupaten / Kecamatan)').show();
         } else {
             $('#btnDownloadZip').hide();
         }
@@ -540,13 +778,17 @@ $(function() {
 
         var mapBounds = [];
 
-        // 2. Render Tiap Folder Cluster
+        // 2. Render Tiap Folder Cluster (Terkelompok Hierarkis Kabupaten & Kecamatan)
         clusters.forEach(function(cluster) {
             var isNoGps = (cluster.id === 'no_gps');
             var clusterImgs = resp.images.filter(function(im) {
                 return String(im.cluster_id) === String(cluster.id);
             });
             if (clusterImgs.length === 0) return;
+
+            var kabName = isNoGps ? 'Tanpa Koordinat GPS' : (cluster.kabupaten || 'Kabupaten Riau');
+            var kecName = isNoGps ? '-' : (cluster.kecamatan || 'Kecamatan');
+            var kelName = isNoGps ? '-' : (cluster.kelurahan || '-');
 
             // Tambah Pin ke Peta jika memiliki koordinat
             if (!isNoGps && cluster.lat !== null && cluster.lng !== null) {
@@ -555,33 +797,52 @@ $(function() {
                 mapBounds.push([lat, lng]);
 
                 var marker = L.marker([lat, lng]);
-                var popupHtml = '<div style="font-family: sans-serif; font-size: 12px; min-width: 160px;">' +
-                    '<div class="font-weight-bold text-primary mb-1"><i class="fas fa-folder text-warning mr-1"></i> ' + escapeHtml(cluster.folder_name) + '</div>' +
-                    '<div class="text-muted small mb-1">' + escapeHtml(cluster.name) + '</div>' +
+                var popupHtml = '<div style="font-family: sans-serif; font-size: 12px; min-width: 190px;">' +
+                    '<div class="font-weight-bold text-primary mb-1 border-bottom pb-1"><i class="fas fa-map-marker-alt text-danger mr-1"></i> ' + escapeHtml(kabName) + '</div>' +
+                    (kecName !== '-' ? '<div class="mb-1 text-dark" style="font-size: 11.5px;"><strong>Kecamatan:</strong> ' + escapeHtml(kecName) + '</div>' : '') +
+                    (kelName !== '-' ? '<div class="mb-1 text-success" style="font-size: 11.5px;"><strong>Kelurahan / Desa:</strong> ' + escapeHtml(kelName) + '</div>' : '') +
+                    '<div class="text-muted small mb-1"><strong>Folder ZIP:</strong> <code class="text-primary">' + escapeHtml(cluster.folder_name) + '</code></div>' +
                     '<div class="badge badge-info">' + clusterImgs.length + ' Foto</div>' +
                     '</div>';
                 marker.bindPopup(popupHtml);
                 clusterMarkersLayer.addLayer(marker);
             }
 
-            // Header Subfolder
+            // Header Subfolder: Tampilkan Jelas Kabupaten, Kecamatan & Kelurahan
             var headerCol = $('<div>').addClass('col-12 mt-3 mb-2');
-            var headerCard = $('<div>').addClass('d-flex align-items-center justify-content-between p-2 rounded border shadow-xs')
+            var headerCard = $('<div>').addClass('d-flex flex-column flex-md-row align-items-md-center justify-content-between p-2 rounded border shadow-xs')
                 .css({
                     'border-left': '4px solid ' + (isNoGps ? '#6c757d' : '#0A66C2') + ' !important',
                     'background-color': isNoGps ? '#f8f9fa' : '#f0f7ff'
                 });
 
-            var leftBox = $('<div>').addClass('text-truncate mr-2');
+            var leftBox = $('<div>').addClass('mr-2 mb-2 mb-md-0');
             var icon = isNoGps ? 'fas fa-map-marker-slash text-secondary' : 'fas fa-map-marked-alt text-danger';
-            leftBox.append($('<span>').addClass('font-weight-bold text-dark small').html('<i class="' + icon + ' mr-1"></i> ' + escapeHtml(cluster.name)));
-            if (cluster.coords_text && cluster.coords_text !== '-') {
-                leftBox.append($('<small>').addClass('text-muted ml-2 font-monospace d-none d-md-inline').text('(' + cluster.coords_text + ')'));
-            }
-            leftBox.append($('<span>').addClass('badge ' + (isNoGps ? 'badge-secondary' : 'badge-warning text-dark') + ' ml-2').html('<i class="fas fa-folder mr-1"></i>' + escapeHtml(cluster.folder_name)));
 
-            headerCard.append(leftBox);
-            headerCard.append($('<span>').addClass('badge badge-primary badge-pill px-2 py-1').text(clusterImgs.length + ' Foto'));
+            var locParts = '<span class="text-primary">' + escapeHtml(kabName) + '</span>';
+            if (kecName !== '-') {
+                locParts += ' &rsaquo; <span>' + escapeHtml(kecName) + '</span>';
+            }
+            if (kelName !== '-') {
+                locParts += ' &rsaquo; <span class="text-success font-weight-bold">' + escapeHtml(kelName) + '</span>';
+            }
+
+            var titleDiv = $('<div>').addClass('font-weight-bold text-dark small').html(
+                '<i class="' + icon + ' mr-1"></i> ' + locParts
+            );
+            leftBox.append(titleDiv);
+
+            var metaDiv = $('<div>').addClass('mt-1 d-flex align-items-center flex-wrap');
+            metaDiv.append($('<span>').addClass('badge ' + (isNoGps ? 'badge-secondary' : 'badge-warning text-dark') + ' mr-2').html('<i class="fas fa-folder mr-1"></i>' + escapeHtml(cluster.folder_name)));
+            if (cluster.coords_text && cluster.coords_text !== '-') {
+                metaDiv.append($('<small>').addClass('text-muted font-monospace').text('(' + cluster.coords_text + ')'));
+            }
+            leftBox.append(metaDiv);
+
+            var rightBox = $('<div>').addClass('d-flex align-items-center');
+            rightBox.append($('<span>').addClass('badge badge-primary badge-pill px-3 py-1 font-weight-bold').text(clusterImgs.length + ' Foto'));
+
+            headerCard.append(leftBox).append(rightBox);
             headerCol.append(headerCard);
             $foldersBox.append(headerCol);
 
@@ -600,7 +861,7 @@ $(function() {
                         .on('click', function() {
                             $('#modalZoomImg').attr('src', thumbSrc);
                             $('#modalZoomTitle').text(img.orig_name || img.file_name);
-                            $('#modalZoomMeta').text('Sub-folder: ' + img.sub_dir);
+                            $('#modalZoomMeta').text('Lokasi: ' + kabName + (kecName !== '-' ? ' > ' + kecName : '') + (kelName !== '-' ? ' > ' + kelName : '') + ' (' + img.sub_dir + ')');
                             $('#modalZoomDownload').attr('href', img.download_url || thumbSrc).attr('download', img.orig_name || img.file_name);
                             if (img.view_url) {
                                 var hiRes = new Image();

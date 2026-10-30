@@ -933,7 +933,7 @@ graph TD
     O -->|Tombol Cepat| P["Pilih Offset: -1j, +0j, +1j, +2j, +3j, +5j, atau Kustom"]
 
     P --> Q{"Penentuan Lokasi &amp; Koordinat GPS"}
-    Q -->|Otomatis Reverse Geocoding| Q0["Nama Alamat Lengkap &amp; Koordinat dari EXIF Foto / ZIP"]
+    Q -->|Otomatis Reverse Geocoding| Q0["Identifikasi Terstruktur: Kabupaten &amp; Kecamatan Resmi + Koordinat Bersih (Bebas Mojibake)"]
     Q -->|Popup Peta Leaflet| Q2["Pilih Titik di Peta Interaktif Leaflet &amp; OpenStreetMap"]
     Q -->|Deteksi Cepat| Q1["Deteksi Koordinat via Tombol 'GPS Saya'"]
     Q -->|Edit Manual| Q_MAN["Ketik Bebas Nama Lokasi / Alamat &amp; Koordinat"]
@@ -944,7 +944,15 @@ graph TD
     Q_MAN --> PREV
 
     W2 --> CLUSTER_OPT{"Kelompokkan Berdasarkan Lokasi Koordinat (GPS Clustering)"}
-    CLUSTER_OPT -->|Aktif| CLUSTER_ON["Clustering Otomatis (Haversine 50m/100m/250m/500m/1km): Pisahkan Foto ke Subfolder Lokasi Riil"]
+    CLUSTER_OPT -->|Aktif| HIERARCHY{"Pilih Format Hierarki Folder ZIP"}
+    HIERARCHY -->|Opsi 1| H_KEL["Kabupaten &gt; Kecamatan &gt; Kelurahan / Desa (3 Tingkat)"]
+    HIERARCHY -->|Opsi 2| H_KEC["Kabupaten &gt; Kecamatan (Standar Rekomendasi)"]
+    HIERARCHY -->|Opsi 3| H_SPOT["Kabupaten &gt; Kecamatan &gt; Spot Radius GPS (STA/Titik)"]
+    HIERARCHY -->|Opsi 4| H_KAB["Kabupaten / Kota Saja (1 Tingkat)"]
+    H_KEL --> CLUSTER_ON["Clustering Otomatis (Haversine 50m/100m/250m/500m/1km): Pisahkan Foto ke Subfolder Lokasi Riil"]
+    H_KEC --> CLUSTER_ON
+    H_SPOT --> CLUSTER_ON
+    H_KAB --> CLUSTER_ON
     CLUSTER_OPT -->|Nonaktif| CLUSTER_OFF["Gunakan Susunan Folder Asli / Standar"]
 
     W2 --> EXIF_TOGGLE{"Opsi Penulisan Metadata EXIF Berkas (PEL)"}
@@ -959,14 +967,14 @@ graph TD
     CHK_MODE -->|Lebih dari 5 Foto / Folder Penuh| CHUNK["Engine Pemrosesan Bertahap (Chunked Processing: 5 Foto per Tahap)"]
 
     MONO --> PROG["Monitoring Upload: Progress Bar Real-Time Persentase &amp; MB"]
-    CHUNK --> PROG_CHUNK["Monitoring Bertahap: Progress Bar 'Tahap X dari Total' &amp; Persentase Berjalan"]
+    CHUNK --> PROG_CHUNK["Monitoring Detail Real-Time: Stopwatch Timer, 4 Metrik Stat Wilayah, Status Geocoding &amp; Live Terminal Activity Log"]
 
-    PROG --> V["Sistem Merender Watermark Resolusi Tinggi, Auto Reverse Geocoding Alamat, Sanitasi Teks Anti-Mojibake &amp; Tag EXIF Biner (PEL)"]
+    PROG --> V["Sistem Merender Watermark: Spatial Engine Offline Riau (0.01 ms), Format Terstruktur Kabupaten &amp; Kecamatan, Koordinat GPS, Sanitasi Anti-Mojibake &amp; Tag EXIF Biner (PEL)"]
     PROG_CHUNK --> V
     V --> VIEW["Dual-View: Otomatis Beralih ke Tab 'Hasil Akhir'"]
     VIEW --> W{"Hasil Pemrosesan"}
     W -->|Foto Tunggal| X["Pratinjau Resolusi Penuh &amp; Unduh Foto (Nama Berkas Asli Bersih Tanpa Awalan 'watermark_')"]
-    W -->|Banyak Foto / ZIP / Folder| Y["Kemasan Otomatis: Unduh Semua (Struktur Sub-Folder Lokasi GPS &amp; Berkas Asli Terjaga 100%) + Galeri Grid Thumbnail Berkelompok"]
+    W -->|Banyak Foto / ZIP / Folder| Y["Kemasan ZIP Terkelompok: Hierarki Subfolder Kabupaten_{Nama}/Kecamatan_{Nama}/ &amp; Galeri Grid Berkelompok"]
                 </pre>
             </div>
         </div>
@@ -992,29 +1000,37 @@ graph TD
     U2 -->|Pilih Satu Folder| F2["Direktori Penuh (webkitdirectory): Baca Subfolder Rekursif"]
     U2 -->|Tarik &amp; Lepas| F3["Drag &amp; Drop Foto / Folder Langsung ke Dropzone"]
 
-    F1 --> RAD["Atur Toleransi Radius Titik Lokasi GPS (25m s/d 1000m, Default 100m)"]
-    F2 --> RAD
-    F3 --> RAD
+    F1 --> HIERARCHY_B{"Pilih Format Hierarki Folder ZIP"}
+    F2 --> HIERARCHY_B
+    F3 --> HIERARCHY_B
+    HIERARCHY_B -->|Opsi 1| HB_KEL["Kabupaten &gt; Kecamatan &gt; Kelurahan / Desa (3 Tingkat)"]
+    HIERARCHY_B -->|Opsi 2| HB_KEC["Kabupaten &gt; Kecamatan (Standar Rekomendasi)"]
+    HIERARCHY_B -->|Opsi 3| HB_SPOT["Kabupaten &gt; Kecamatan &gt; Spot Radius GPS (STA/Titik)"]
+    HIERARCHY_B -->|Opsi 4| HB_KAB["Kabupaten / Kota Saja (1 Tingkat)"]
+    HB_KEL --> RAD["Atur Toleransi Radius Titik Lokasi GPS (25m s/d 1000m, Default 100m)"]
+    HB_KEC --> RAD
+    HB_SPOT --> RAD
+    HB_KAB --> RAD
 
     RAD --> CHK{"Verifikasi Hak Akses &amp; Jumlah Foto"}
     CHK -->|Hak Akses Terverifikasi| EXEC["Klik 'Mulai Organisir Foto GPS'"]
     CHK -->|Tanpa Izin menu_akses| DENIED["Akses Ditolak (Rule #4)"]
 
-    EXEC --> CHUNK_ENGINE["Chunked Execution Engine (Auto-Slicing 5 Foto per Tahap)"]
-    CHUNK_ENGINE --> CHUNK_LOOP["Kirim Chunk POST ke /proses-chunk &amp; Update Progress Bar Persentase"]
-    CHUNK_LOOP --> EXIF_EXTRACT["Ekstraksi EXIF GPS Kamera Asli &amp; Reverse Geocoding Nama Alamat"]
+    EXEC --> CHUNK_ENGINE["Chunked Execution Engine (Auto-Slicing 10 Foto per Tahap)"]
+    CHUNK_ENGINE --> CHUNK_LOOP["Kirim Chunk POST &amp; Update Live Monitor (Stopwatch, 4 Metrik Stat Wilayah, Status Geocoding &amp; Terminal Activity Log)"]
+    CHUNK_LOOP --> EXIF_EXTRACT["Ekstraksi EXIF GPS &amp; Spatial Engine Offline Riau (Instant ~0.01ms, Sub-millisecond Wilayah Resmi Kabupaten &amp; Kecamatan)"]
     EXIF_EXTRACT --> HAVERSINE["Hitung Matriks Jarak Haversine &amp; GPS Clustering Otomatis"]
     HAVERSINE --> LOSSLESS["Lossless File Handling: Duplikasi Berkas Asli (100% Piksel &amp; EXIF Utuh, Tanpa Watermark)"]
 
-    LOSSLESS --> PACK["Kemas ke Sub-Folder: Lokasi_01_{Alamat}/, Lokasi_02_{Alamat}/, atau Tanpa_Koordinat_GPS/"]
+    LOSSLESS --> PACK["Kemas ke Sub-Folder Hierarkis Sesuai Mode Pilihan atau Tanpa_Koordinat_GPS/"]
     PACK --> FINAL{"Tahap Terakhir (is_last_chunk = 1)?"}
     FINAL -->|Belum| CHUNK_LOOP
-    FINAL -->|Selesai| ZIP["Generate Arsip ZIP (foto-terorganisir-gps-*.zip) &amp; Buat Thumbnail Ringan (~8KB)"]
+    FINAL -->|Selesai| ZIP["Generate Arsip ZIP (foto-terorganisir-gps-*.zip) Berisi Subfolder Hierarkis &amp; Thumbnail Ringan"]
 
     ZIP --> RES["Tampilan Hasil Terpadu (Dual Output)"]
-    RES --> MAP["Peta Interaktif Leaflet: Marker Pin Tiap Titik Cluster Lokasi &amp; Jumlah Foto"]
-    RES --> GAL["Galeri Visual Berdasarkan Header Folder Lokasi + Modal Zoom &amp; Unduh Foto Satuan"]
-    RES --> DL_ZIP["Unduh Sekali Klik Seluruh Folder Terorganisir (.ZIP)"]
+    RES --> MAP["Peta Interaktif Leaflet: Marker Pin Rincian Kabupaten, Kecamatan, Kelurahan &amp; Jumlah Foto"]
+    RES --> GAL["Galeri Visual Berdasarkan Header Hierarkis Wilayah + Modal Zoom &amp; Unduh Foto Asli"]
+    RES --> DL_ZIP["Unduh ZIP Arsip (Terkelompok Hierarkis)"]
                 </pre>
             </div>
         </div>
@@ -2013,8 +2029,33 @@ graph TD
                                             <li><strong>1.000 Meter (1 Km):</strong> Radius kelurahan / desa untuk survei makro kewilayahan.</li>
                                         </ul>
                                     </li>
-                                    <li><strong>Penamaan Folder Cerdas Berdasarkan Alamat Riil:</strong> Tiap kelompok lokasi otomatis diberi nama folder resmi yang memadukan nomor urut kelompok dan nama lokasi hasil reverse geocoding (misal: <code>Lokasi_01_Wonorejo_Pekanbaru/</code>, <code>Lokasi_02_Jalan_Raja_Kecik_Siak/</code>). Foto yang tidak memiliki koordinat GPS secara otomatis disatukan ke dalam folder khusus <code>Tanpa_Koordinat_GPS/</code>.</li>
-                                    <li><strong>Pengelompokan Rapi pada Galeri Visual &amp; Berkas ZIP:</strong> Di panel Hasil Akhir, foto dikelompokkan dalam kartu header lokasi yang jelas memuat nama alamat, titik koordinat, dan jumlah foto. Di dalam berkas arsip ZIP unduhan, seluruh foto otomatis dikemas ke dalam folder-folder lokasi tersebut tanpa perlu pemilahan manual.</li>
+                                    <li><strong>Format Hierarki Pengelompokan Folder Fleksibel (4 Mode Opsi):</strong> Pengguna dapat memilih sendiri struktur susunan subfolder pengelompokan yang paling sesuai dengan kebutuhan laporan survei:
+                                        <ul class="mt-1">
+                                            <li><strong>Kabupaten &rsaquo; Kecamatan &rsaquo; Kelurahan / Desa (3 Tingkat - Sangat Detail):</strong> Struktur subfolder <code>Kabupaten_{Nama}/Kecamatan_{Nama}/Desa_{Nama}/</code>. Sangat cocok untuk survei permukiman, sanitasi, PKT/IBM, bedah rumah, atau sensus per desa. Jika nama desa tidak tercatat pada titik koordinat, sistem secara otomatis menerapkan <em>smart fallback</em> ke wilayah sekitar.</li>
+                                            <li><strong>Kabupaten &rsaquo; Kecamatan (2 Tingkat - Standar Rekomendasi):</strong> Struktur subfolder <code>Kabupaten_{Nama}/Kecamatan_{Nama}/</code>. Format paling stabil, ringkas, dan super cepat (~0.01 ms) karena didukung basis data spasial offline Provinsi Riau.</li>
+                                            <li><strong>Kabupaten &rsaquo; Kecamatan &rsaquo; Spot Radius GPS (3 Tingkat - Berdasarkan STA / Titik):</strong> Struktur subfolder <code>Kabupaten_{Nama}/Kecamatan_{Nama}/Spot_{NN}_{Lat}_{Lng}/</code>. Mengelompokkan foto-foto survei yang berdekatan dalam toleransi radius meter (misal 100m) di dalam kecamatan yang sama, sangat ideal untuk proyek jalan dan jembatan dengan banyak patok STA.</li>
+                                            <li><strong>Kabupaten / Kota Saja (1 Tingkat - Ringkas):</strong> Struktur subfolder <code>Kabupaten_{Nama}/</code> untuk pemilahan makro kewilayahan.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Pengelompokan Rapi pada Galeri Visual &amp; Berkas ZIP:</strong> Di panel Hasil Akhir, foto dikelompokkan dalam kartu header lokasi yang memuat nama Kabupaten/Kota, Kecamatan, Kelurahan/Desa, koordinat GPS, dan jumlah foto. Di dalam berkas arsip ZIP unduhan, seluruh foto otomatis dikemas ke dalam susunan folder wilayah tersebut tanpa perlu pemilahan manual.</li>
+                                    <li><strong>Format Stempel Watermark Terstruktur (Kabupaten, Kecamatan &amp; Kelurahan Resmi):</strong> Teks stempel lokasi pada foto kini secara otomatis terstruktur menjadi baris <strong>Kabupaten / Kota</strong>, <strong>Kecamatan</strong>, dan <strong>Kelurahan / Desa</strong> resmi dari hasil reverse geocoding koordinat GPS foto asli, disertai baris angka koordinat GPS yang bersih.</li>
+                                    <li><strong>Spatial Engine Terintegrasi &amp; Optimasi Kecepatan Ekstrem (Sub-Millisecond Geocoding):</strong>
+                                        <ul class="mt-1">
+                                            <li><strong>Dataset Spasial Offline Riau (160+ Kecamatan, 12 Kabupaten/Kota):</strong> Untuk mencegah pelambatan atau freeze akibat pembatasan koneksi internet (rate limit HTTP 429 <em>Too Many Requests</em> pada OpenStreetMap saat memproses banyak foto), sistem kini dilengkapi basis data spasial offline mandiri mencakup seluruh 12 Kabupaten/Kota dan 160+ Kecamatan di Provinsi Riau.</li>
+                                            <li><strong>Kecepatan Instan ~0.01 ms (100.000x Lebih Cepat):</strong> Pencarian wilayah dilakukan melalui perhitungan jarak spasial Haversine di memori lokal, hanya membutuhkan waktu &lt; 0.1 milidetik per foto (dibandingkan request internet luar yang memakan 1.5–3 detik per berkas).</li>
+                                            <li><strong>Cache Persisten Multi-Tier:</strong> Dilengkapi penyimpanan cache bertingkat (Memory RAM &rarr; File JSON Disk Persisten &rarr; Toleransi Jarak Proksimitas 350 meter) sehingga foto-foto kegiatan yang berdekatan tidak perlu dihitung berulang kali.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Pembersihan Menyeluruh Mojibake Karakter (Anti-Karakter Rusak 'ð???'):</strong> Sistem menerapkan pembersihan ketat (sanitasi multi-tahap) pada string koordinat GPS dan teks lokasi, membuang byte mojibake (seperti <code>ð???</code> atau sisa awalan byte non-ASCII rusak akibat salah interpretasi unicode emoji pin), serta merender ikon pin penanda peta secara vektor native murni GD tanpa ketergantungan font eksternal.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Monitor Kemajuan Real-Time Lengkap (Stopwatch, Counter Statistik, Progress Nama Lokasi &amp; Live Log Console):</strong>
+                                <ul>
+                                    <li><strong>Stopwatch Waktu Berjalan (Elapsed Time):</strong> Menampilkan penghitung waktu presisi detik demi detik (<code>00:00</code>) selama proses berlangsung.</li>
+                                    <li><strong>4 Kartu Metrik Statistik:</strong> Memantau secara dinamis jumlah <strong>Total Foto</strong>, foto yang <strong>Terproses</strong> (hijau), <strong>Sisa Antrean</strong> (oranye), serta <strong>Wilayah Terdeteksi</strong> (jumlah Kabupaten/Kecamatan unik yang berhasil diidentifikasi dari koordinat GPS).</li>
+                                    <li><strong>Bilah Status Identifikasi Nama Wilayah (Live Reverse Geocoding Tracker):</strong> Menampilkan indikator real-time dengan status pulsing yang memperlihatkan nama Kabupaten dan Kecamatan dari foto yang sedang aktif diproses secara bertahap.</li>
+                                    <li><strong>Bilah Kemajuan (Progress Bar) Animasi:</strong> Menampilkan persentase akurat (0% s/d 100%) dan nomor tahapan batch yang sedang diproses.</li>
+                                    <li><strong>Konsol Log Aktivitas Real-Time (Terminal Feed):</strong> Kotak terminal dengan pengguliran otomatis (auto-scroll) yang mencatat setiap berkas foto yang berhasil diunggah, diekstrak koordinat GPS-nya, nama Kabupaten/Kecamatan yang berhasil diperoleh, dan pembubuhan watermark secara langsung.</li>
                                 </ul>
                             </li>
                             <li><strong>Penulisan &amp; Sinkronisasi Metadata EXIF Berkas Foto Hasil (PEL Library):</strong>
@@ -2098,30 +2139,41 @@ graph TD
                                     <li>Foto-foto survei yang diambil di sekitar titik lokasi yang berdekatan otomatis disatukan ke dalam satu subfolder cluster yang sama.</li>
                                 </ul>
                             </li>
-                            <li><strong>Penamaan Subfolder Otomatis &amp; Informatif:</strong>
+                            <li><strong>Format Hierarki Pengelompokan Folder Fleksibel (4 Mode Pilihan):</strong>
                                 <ul>
-                                    <li>Setiap kelompok lokasi otomatis diberi nama folder resmi yang memadukan nomor urut kelompok dan nama lokasi riil hasil reverse geocoding (misal: <code>Lokasi_01_Pekanbaru/</code>, <code>Lokasi_02_Siak/</code>).</li>
-                                    <li>Foto yang tidak memiliki koordinat GPS (misal foto unduhan WhatsApp atau kamera tanpa GPS aktif) secara otomatis dipisahkan ke dalam subfolder <code>Tanpa_Koordinat_GPS/</code> sehingga tidak bercampur dengan foto survei akurat.</li>
+                                    <li>Pengguna bebas memilih struktur pengorganisasian berkas foto sesuai karakter survei lapangan:
+                                        <ul class="mt-1">
+                                            <li><strong>Kabupaten &rsaquo; Kecamatan &rsaquo; Kelurahan / Desa (3 Tingkat - Sangat Detail):</strong> Membentuk susunan subfolder <code>Kabupaten_{Nama}/Kecamatan_{Nama}/Desa_{Nama}/</code> untuk pemilahan mikro tingkat desa (dilengkapi <em>smart fallback</em> jika nama desa tidak terdaftar pada koordinat luar permukiman).</li>
+                                            <li><strong>Kabupaten &rsaquo; Kecamatan (2 Tingkat - Standar Rekomendasi):</strong> Membentuk susunan <code>Kabupaten_{Nama}/Kecamatan_{Nama}/</code> yang paling cepat, rapi, dan stabil berkat <em>Spatial Engine Offline Riau</em>.</li>
+                                            <li><strong>Kabupaten &rsaquo; Kecamatan &rsaquo; Spot Radius GPS (3 Tingkat - Berdasarkan STA / Titik):</strong> Membentuk susunan <code>Kabupaten_{Nama}/Kecamatan_{Nama}/Spot_{NN}_{Lat}_{Lng}/</code> untuk memisahkan spot pekerjaan fisik yang berbeda dalam satu kecamatan.</li>
+                                            <li><strong>Kabupaten / Kota Saja (1 Tingkat - Ringkas):</strong> Memisahkan berkas foto langsung per kabupaten/kota <code>Kabupaten_{Nama}/</code>.</li>
+                                        </ul>
+                                    </li>
+                                    <li>Foto yang tidak memiliki koordinat GPS secara otomatis dipisahkan ke dalam subfolder khusus <code>Tanpa_Koordinat_GPS/</code> sehingga arsip tetap tertib.</li>
                                 </ul>
                             </li>
-                            <li><strong>Engine Pemrosesan Bertahap (Chunked Upload Engine):</strong>
+                            <li><strong>Monitor Kemajuan Real-Time Lengkap (Stopwatch, Counter Statistik &amp; Live Terminal Feed):</strong>
                                 <ul>
-                                    <li>Untuk menangani puluhan hingga ratusan foto lapangan berukuran besar, sistem secara otomatis memecah pengiriman menjadi <strong>5 foto per tahap</strong>.</li>
-                                    <li>Mencegah galat batas memori PHP (<code>memory_limit</code>), batas unggah hosting (<code>post_max_size</code>), serta putus koneksi jaringan (<code>ERR_HTTP2_PROTOCOL_ERROR / Connection Reset</code>).</li>
-                                    <li>Dilengkapi indikator bilah kemajuan (Progress Bar) yang menampilkan persentase dan tahapan yang sedang berlangsung secara real-time.</li>
+                                    <li>Untuk menangani puluhan hingga ratusan foto lapangan berukuran besar, sistem memecah pengiriman menjadi <strong>10 foto per tahap</strong> (Chunked Execution) yang dioptimasi untuk transfer cepat tanpa re-encoding gambar.</li>
+                                    <li><strong>Kecepatan Eksekusi Instan:</strong> Berkat integrasi <em>Spatial Engine Offline Riau</em>, proses klasifikasi koordinat ke dalam Kabupaten &amp; Kecamatan selesai dalam fraksi milidetik per foto tanpa antrean request internet eksternal.</li>
+                                    <li><strong>Stopwatch Waktu Berjalan:</strong> Menghitung durasi pemrosesan detik demi detik secara transparan (<code>00:00</code>).</li>
+                                    <li><strong>4 Kartu Metrik Statistik:</strong> Memantau secara dinamis jumlah <strong>Total Foto</strong>, foto yang <strong>Terproses</strong> (hijau), <strong>Sisa Antrean</strong> (oranye), serta <strong>Wilayah Terdeteksi</strong> (jumlah Kabupaten &amp; Kecamatan unik yang ditemukan).</li>
+                                    <li><strong>Bilah Status Identifikasi Nama Wilayah (Live Geocoding):</strong> Menampilkan status langsung (live indicator) proses penguraian koordinat GPS ke dalam nama administratif Kabupaten dan Kecamatan secara bertahap per-foto.</li>
+                                    <li><strong>Bilah Kemajuan (Progress Bar) Animasi:</strong> Dilengkapi persentase dan informasi tahapan batch yang sedang diproses.</li>
+                                    <li><strong>Konsol Log Aktivitas Real-Time:</strong> Terminal gelap dengan autoscroll yang mencatat nama setiap berkas foto beserta koordinat GPS dan nama Kabupaten/Kecamatan yang berhasil diidentifikasi.</li>
                                 </ul>
                             </li>
                             <li><strong>Peta Interaktif Sebaran Titik Lokasi (Leaflet Map):</strong>
                                 <ul>
                                     <li>Setelah pemrosesan selesai, sistem menampilkan peta interaktif yang memetakan pin penanda di setiap titik cluster lokasi kegiatan yang terdeteksi.</li>
-                                    <li>Setiap pin penanda dapat diklik untuk melihat nama folder, koordinat GPS, dan jumlah foto yang diambil di lokasi tersebut.</li>
+                                    <li>Setiap pin penanda dapat diklik untuk melihat rincian <strong>Kabupaten / Kota</strong>, <strong>Kecamatan</strong>, nama folder ZIP, dan jumlah foto yang diambil di lokasi tersebut.</li>
                                 </ul>
                             </li>
-                            <li><strong>Galeri Visual &amp; Unduh Arsip ZIP Sekali Klik:</strong>
+                            <li><strong>Galeri Visual &amp; Unduh Arsip ZIP Terkelompok Sekali Klik:</strong>
                                 <ul>
-                                    <li>Seluruh foto hasil pengelompokan ditampilkan dalam galeri visual rapi per kelompok subfolder lengkap dengan thumbnail responsif.</li>
-                                    <li>Tersedia fitur modal zoom foto beresolusi tinggi serta tombol unduh foto satuan.</li>
-                                    <li>Tombol <strong>"Unduh ZIP Semua Folder"</strong> mengemas seluruh hierarki subfolder lokasi ke dalam berkas <code>foto-terorganisir-gps-*.zip</code> yang siap disimpan atau diarsipkan.</li>
+                                    <li>Seluruh foto hasil pengelompokan ditampilkan dalam galeri visual rapi per kelompok Kabupaten &gt; Kecamatan lengkap dengan thumbnail responsif.</li>
+                                    <li>Tersedia fitur modal zoom foto beresolusi tinggi serta tombol unduh foto satuan asli.</li>
+                                    <li>Tombol <strong>"Unduh ZIP (Terkelompok Kabupaten / Kecamatan)"</strong> mengemas seluruh hierarki subfolder wilayah ke dalam berkas <code>foto-terorganisir-gps-*.zip</code> yang siap disimpan atau diarsipkan.</li>
                                 </ul>
                             </li>
                             <li><strong>Proteksi Otorisasi Hak Akses (menu_akses):</strong>

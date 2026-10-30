@@ -154,6 +154,8 @@ error_state.png
 !/public/uploads/laporan/perjalanan_dinas/index.html
 /public/uploads/watermark_hasil/*
 !/public/uploads/watermark_hasil/.gitkeep
+/public/uploads/organisir_hasil/*
+!/public/uploads/organisir_hasil/.gitkeep
 google-service-account.json
 /do_not_upload/
 /public/uploads/kop_surat/1783654593_c375dd16d7f5cac3e1d7.png
