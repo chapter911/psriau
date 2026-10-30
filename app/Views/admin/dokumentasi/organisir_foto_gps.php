@@ -411,6 +411,14 @@ $(function() {
     function readAllDirectoryEntries(entries, callback) {
         var files = [];
         var pendingCount = 0;
+        var callbackCalled = false;
+
+        function checkDone() {
+            if (pendingCount === 0 && !callbackCalled) {
+                callbackCalled = true;
+                callback(files);
+            }
+        }
 
         function traverseEntry(entry, pathPrefix) {
             pathPrefix = pathPrefix || '';
@@ -423,10 +431,10 @@ $(function() {
                         files.push(file);
                     }
                     pendingCount--;
-                    if (pendingCount === 0) callback(files);
+                    checkDone();
                 }, function() {
                     pendingCount--;
-                    if (pendingCount === 0) callback(files);
+                    checkDone();
                 });
             } else if (entry.isDirectory) {
                 var dirReader = entry.createReader();
@@ -440,11 +448,11 @@ $(function() {
                             readEntries();
                         } else {
                             pendingCount--;
-                            if (pendingCount === 0) callback(files);
+                            checkDone();
                         }
                     }, function() {
                         pendingCount--;
-                        if (pendingCount === 0) callback(files);
+                        checkDone();
                     });
                 };
                 readEntries();
@@ -456,11 +464,33 @@ $(function() {
         }
     }
 
+    var duplicateFilesSkipped = 0;
+
     function handleNewFiles(files) {
-        var validFiles = files.filter(function(f) {
+        var validFiles = [];
+        var seenSignatures = {};
+        duplicateFilesSkipped = 0;
+
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i];
+            if (!f || !f.name) continue;
+            // Abaikan berkas sistem macOS / file bayangan tersembunyi
+            if (f.name.indexOf('._') === 0 || f.name === '.DS_Store') continue;
+
             var ext = f.name.split('.').pop().toLowerCase();
-            return ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'].indexOf(ext) !== -1;
-        });
+            if (['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'].indexOf(ext) === -1) {
+                continue;
+            }
+
+            // Identifikasi duplikasi file: nama + ukuran byte + waktu modifikasi (signature identik)
+            var sig = f.name + '__' + f.size + '__' + (f.lastModified || 0);
+            if (seenSignatures[sig]) {
+                duplicateFilesSkipped++;
+                continue; // Lewati berkas duplikat identik agar hasil rapi dan tidak dobel
+            }
+            seenSignatures[sig] = true;
+            validFiles.push(f);
+        }
 
         if (validFiles.length === 0) {
             Swal.fire({
@@ -484,11 +514,19 @@ $(function() {
         }
 
         var totalBytes = selectedFiles.reduce(function(acc, f) { return acc + (f.size || 0); }, 0);
-        $('#fileCountBadge').removeClass('badge-secondary').addClass('badge-primary').text(count + ' Foto (' + formatFileSize(totalBytes) + ')');
+        var badgeText = count + ' Foto (' + formatFileSize(totalBytes) + ')';
+        if (duplicateFilesSkipped > 0) {
+            badgeText += ' • ' + duplicateFilesSkipped + ' duplikat dilewati';
+        }
+        $('#fileCountBadge').removeClass('badge-secondary').addClass('badge-primary').text(badgeText);
 
         var $list = $('#fileSelectedList');
         $list.empty().show();
-        var html = '<div class="font-weight-bold text-dark mb-1"><i class="fas fa-check-circle text-success mr-1"></i> ' + count + ' Berkas Foto Terpilih:</div><ul class="mb-0 pl-3">';
+        var html = '<div class="font-weight-bold text-dark mb-1"><i class="fas fa-check-circle text-success mr-1"></i> ' + count + ' Berkas Foto Terpilih:</div>';
+        if (duplicateFilesSkipped > 0) {
+            html += '<div class="alert alert-info py-1 px-2 mb-2 small text-info" style="font-size: 11px;"><i class="fas fa-filter mr-1"></i> <strong>' + duplicateFilesSkipped + ' foto duplikat identik</strong> otomatis dilewati agar rapi dan tidak ada file ganda di folder hasil.</div>';
+        }
+        html += '<ul class="mb-0 pl-3">';
         var maxShow = Math.min(5, count);
         for (var i = 0; i < maxShow; i++) {
             var rel = selectedFiles[i].customRelativePath || selectedFiles[i].webkitRelativePath || selectedFiles[i].name;

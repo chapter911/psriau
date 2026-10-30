@@ -1000,9 +1000,11 @@ graph TD
     U2 -->|Pilih Satu Folder| F2["Direktori Penuh (webkitdirectory): Baca Subfolder Rekursif"]
     U2 -->|Tarik &amp; Lepas| F3["Drag &amp; Drop Foto / Folder Langsung ke Dropzone"]
 
-    F1 --> HIERARCHY_B{"Pilih Format Hierarki Folder ZIP"}
-    F2 --> HIERARCHY_B
-    F3 --> HIERARCHY_B
+    F1 --> DEDUP["Smart Anti-Duplikasi: Deteksi &amp; Filter Berkas Identik (Client Signature &amp; Server MD5)"]
+    F2 --> DEDUP
+    F3 --> DEDUP
+
+    DEDUP --> HIERARCHY_B{"Pilih Format Hierarki Folder ZIP"}
     HIERARCHY_B -->|Opsi 1| HB_KEL["Kabupaten &gt; Kecamatan &gt; Kelurahan / Desa (3 Tingkat)"]
     HIERARCHY_B -->|Opsi 2| HB_KEC["Kabupaten &gt; Kecamatan (Standar Rekomendasi)"]
     HIERARCHY_B -->|Opsi 3| HB_SPOT["Kabupaten &gt; Kecamatan &gt; Spot Radius GPS (STA/Titik)"]
@@ -2125,10 +2127,11 @@ graph TD
                                     <li>Berkas foto tidak dirender ulang melalui kanvas grafis (lossless binary copy), sehingga resolusi asli, ketajaman piksel, dan metadata kamera tetap terjaga 100% utuh tanpa penurunan kualitas.</li>
                                 </ul>
                             </li>
-                            <li><strong>Metode Pemilihan Berkas Fleksibel (File, Folder Picker &amp; Drag-Drop):</strong>
+                            <li><strong>Metode Pemilihan Berkas Fleksibel &amp; Smart Anti-Duplikasi Otomatis:</strong>
                                 <ul>
                                     <li><strong>Pilih Satu Folder Langsung:</strong> Tombol <em>"Pilih Satu Folder"</em> memanfaatkan atribut <code>webkitdirectory</code> peramban untuk membaca seluruh foto di dalam suatu direktori di komputer tanpa perlu membuat ZIP terlebih dahulu.</li>
                                     <li><strong>Tarik &amp; Lepas (Drag-and-Drop):</strong> Pengguna dapat menyeret berkas foto atau satu folder kerja survei langsung ke dalam kotak dropzone.</li>
+                                    <li><strong>Smart Anti-Duplikasi Otomatis (Deduplication Guard):</strong> Apabila folder kerja memuat foto yang sama di subfolder yang berbeda (misalnya salinan cadangan OneDrive/Google Drive), sistem secara otomatis mendeteksi dan mengabaikan berkas duplikat identik (berdasarkan signature file &amp; MD5 hash), sehingga hasil folder dan ZIP bersih tanpa berkas ganda berimbuhan kode acak.</li>
                                     <li><strong>Dukungan Multi-Format:</strong> Mendukung format foto umum (JPG, JPEG, PNG, WebP) serta format Apple iPhone (HEIC/HEIF).</li>
                                 </ul>
                             </li>

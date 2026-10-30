@@ -1593,7 +1593,23 @@ $(function() {
     }
 
     function applyFilesList(files, folderName) {
-        selectedFiles = files;
+        var validFiles = [];
+        var seenSignatures = {};
+        var wmDupsSkipped = 0;
+
+        files.forEach(function(f) {
+            if (!f || !f.name) return;
+            if (f.name.indexOf('._') === 0 || f.name === '.DS_Store') return;
+            var sig = f.name + '__' + f.size + '__' + (f.lastModified || 0);
+            if (seenSignatures[sig]) {
+                wmDupsSkipped++;
+                return;
+            }
+            seenSignatures[sig] = true;
+            validFiles.push(f);
+        });
+
+        selectedFiles = validFiles;
         if (folderName !== undefined) {
             selectedFolderName = folderName;
         }
@@ -1615,9 +1631,10 @@ $(function() {
         });
 
         var sizeFormatted = formatFileSize(totalSizeBytes);
+        var dupBadgeText = wmDupsSkipped > 0 ? ' • ' + wmDupsSkipped + ' duplikat dilewati' : '';
 
         if (selectedFolderName) {
-            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary badge-success').addClass('badge-info').html('<i class="fas fa-folder mr-1"></i> ' + escapeHtml(selectedFolderName) + ' (' + total + ' Foto, ' + sizeFormatted + ')');
+            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary badge-success').addClass('badge-info').html('<i class="fas fa-folder mr-1"></i> ' + escapeHtml(selectedFolderName) + ' (' + total + ' Foto, ' + sizeFormatted + ')' + dupBadgeText);
             $('#summaryFiles').html('Folder <strong>' + escapeHtml(selectedFolderName) + '</strong> (' + total + ' Foto, ' + sizeFormatted + ')');
         } else if (total === 1 && hasZip) {
             $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary badge-success').addClass('badge-warning').html('<i class="fas fa-file-archive mr-1"></i> 1 Arsip ZIP (' + sizeFormatted + ')');
@@ -1629,7 +1646,7 @@ $(function() {
             $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-success').addClass('badge-primary').html('<i class="fas fa-image mr-1"></i> 1 Foto (' + sizeFormatted + ')');
             $('#summaryFiles').text('1 Foto (' + sizeFormatted + ')');
         } else {
-            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary').addClass('badge-success').html('<i class="fas fa-images mr-1"></i> ' + total + ' Foto (' + sizeFormatted + ')');
+            $('#fileCountBadge').removeClass('badge-secondary badge-warning badge-primary').addClass('badge-success').html('<i class="fas fa-images mr-1"></i> ' + total + ' Foto (' + sizeFormatted + ')' + dupBadgeText);
             $('#summaryFiles').text(total + ' Foto (' + sizeFormatted + ')');
         }
 
@@ -1638,6 +1655,9 @@ $(function() {
             previewText += ' dan ' + (total - 3) + ' file lainnya';
         }
         previewText += ' <span class="badge badge-secondary ml-1">' + sizeFormatted + '</span>';
+        if (wmDupsSkipped > 0) {
+            previewText += '<br><small class="text-info font-weight-bold"><i class="fas fa-filter mr-1"></i> ' + wmDupsSkipped + ' foto duplikat identik otomatis dilewati</small>';
+        }
         var folderNotice = selectedFolderName ? '<div class="text-primary font-weight-bold mb-1"><i class="fas fa-folder-open mr-1"></i> Folder Terpilih: ' + escapeHtml(selectedFolderName) + ' (' + total + ' Foto Ditemukan)</div>' : '';
         $('#fileSelectedList').html(folderNotice + '<strong><i class="fas fa-check-circle text-success mr-1"></i> File Siap:</strong> ' + previewText).fadeIn();
 

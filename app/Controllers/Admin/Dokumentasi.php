@@ -1374,9 +1374,22 @@ class Dokumentasi extends BaseController
 
             $usedFileNames = [];
 
+            $seenHashes = [];
+
             foreach ($imageFilesToProcess as $index => $item) {
                 $sourceImgPath = $item['path'];
                 $origName = $item['original_name'];
+
+                // Cek de-duplikasi otomatis berkas identik
+                $fileHash = @md5_file($sourceImgPath);
+                if (! empty($fileHash) && isset($seenHashes[$fileHash])) {
+                    @unlink($sourceImgPath);
+                    continue;
+                }
+                if (! empty($fileHash)) {
+                    $seenHashes[$fileHash] = true;
+                }
+
                 $subDir = $item['sub_dir'] ?? null;
                 $baseNameWithoutExt = pathinfo($origName, PATHINFO_FILENAME);
                 $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
@@ -1714,13 +1727,19 @@ class Dokumentasi extends BaseController
         }
 
         // Read manifest
-        $manifest = ['items' => []];
+        $manifest = [
+            'items'  => [],
+            'hashes' => [],
+        ];
         if (is_file($manifestPath)) {
             $manifestRaw = @file_get_contents($manifestPath);
             if ($manifestRaw) {
                 $decoded = json_decode($manifestRaw, true);
                 if (is_array($decoded)) {
                     $manifest = $decoded;
+                    if (! isset($manifest['hashes'])) {
+                        $manifest['hashes'] = [];
+                    }
                 }
             }
         }
@@ -1738,6 +1757,17 @@ class Dokumentasi extends BaseController
                     if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
                         $sName = 'chunk_' . $chunkIndex . '_' . (++$fIdx) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
                         $mFile->move($inputDir, $sName);
+                        $savedInputPath = $inputDir . DIRECTORY_SEPARATOR . $sName;
+
+                        // Cek de-duplikasi otomatis berkas identik
+                        $fileHash = @md5_file($savedInputPath);
+                        if (! empty($fileHash) && isset($manifest['hashes'][$fileHash])) {
+                            @unlink($savedInputPath);
+                            continue;
+                        }
+                        if (! empty($fileHash)) {
+                            $manifest['hashes'][$fileHash] = $mFile->getClientName();
+                        }
 
                         $subDir = null;
                         $relPath = $mFile->getClientName();
@@ -1752,7 +1782,7 @@ class Dokumentasi extends BaseController
                         }
 
                         $filesToProcess[] = [
-                            'path'          => $inputDir . DIRECTORY_SEPARATOR . $sName,
+                            'path'          => $savedInputPath,
                             'original_name' => $mFile->getClientName(),
                             'sub_dir'       => $subDir,
                             'relative_path' => $relPath,
@@ -1765,22 +1795,34 @@ class Dokumentasi extends BaseController
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'], true)) {
                 $sName = 'single_chunk_' . $chunkIndex . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
                 $fotoSingle->move($inputDir, $sName);
-                $singleRel = trim((string) ($this->request->getPost('foto_path') ?? ''));
-                $subDir = null;
-                if ($singleRel !== '') {
-                    $customRel = str_replace('\\', '/', $singleRel);
-                    $customRel = ltrim($customRel, '/');
-                    $d = dirname($customRel);
-                    if ($d !== '.' && $d !== '/') {
-                        $subDir = $d;
+                $savedInputPath = $inputDir . DIRECTORY_SEPARATOR . $sName;
+
+                // Cek de-duplikasi otomatis berkas identik
+                $fileHash = @md5_file($savedInputPath);
+                if (! empty($fileHash) && isset($manifest['hashes'][$fileHash])) {
+                    @unlink($savedInputPath);
+                } else {
+                    if (! empty($fileHash)) {
+                        $manifest['hashes'][$fileHash] = $fotoSingle->getClientName();
                     }
+
+                    $singleRel = trim((string) ($this->request->getPost('foto_path') ?? ''));
+                    $subDir = null;
+                    if ($singleRel !== '') {
+                        $customRel = str_replace('\\', '/', $singleRel);
+                        $customRel = ltrim($customRel, '/');
+                        $d = dirname($customRel);
+                        if ($d !== '.' && $d !== '/') {
+                            $subDir = $d;
+                        }
+                    }
+                    $filesToProcess[] = [
+                        'path'          => $savedInputPath,
+                        'original_name' => $fotoSingle->getClientName(),
+                        'sub_dir'       => $subDir,
+                        'relative_path' => $singleRel !== '' ? $singleRel : $fotoSingle->getClientName(),
+                    ];
                 }
-                $filesToProcess[] = [
-                    'path'          => $inputDir . DIRECTORY_SEPARATOR . $sName,
-                    'original_name' => $fotoSingle->getClientName(),
-                    'sub_dir'       => $subDir,
-                    'relative_path' => $singleRel !== '' ? $singleRel : $fotoSingle->getClientName(),
-                ];
             }
         }
 
@@ -1915,6 +1957,17 @@ class Dokumentasi extends BaseController
                     }
                     $cleanTargetName = preg_replace('/^watermark[_\-\s]*/i', '', $raw['orig_name']);
                     $finalPath = $targetDir . DIRECTORY_SEPARATOR . $cleanTargetName;
+
+                    if (is_file($finalPath)) {
+                        if (filesize($raw['temp_path']) === filesize($finalPath) && md5_file($raw['temp_path']) === md5_file($finalPath)) {
+                            @unlink($raw['temp_path']);
+                            continue;
+                        }
+                        $ext = pathinfo($cleanTargetName, PATHINFO_EXTENSION);
+                        $fn = pathinfo($cleanTargetName, PATHINFO_FILENAME);
+                        $cleanTargetName = $fn . '_' . bin2hex(random_bytes(2)) . '.' . $ext;
+                        $finalPath = $targetDir . DIRECTORY_SEPARATOR . $cleanTargetName;
+                    }
 
                     if (is_file($raw['temp_path'])) {
                         @rename($raw['temp_path'], $finalPath);
@@ -2064,12 +2117,20 @@ class Dokumentasi extends BaseController
             @mkdir($sourceDir, 0775, true);
         }
 
-        $manifest = ['items' => []];
+        $manifest = [
+            'items'  => [],
+            'hashes' => [],
+        ];
         if (is_file($manifestPath)) {
             $raw = @file_get_contents($manifestPath);
             if ($raw) {
                 $decoded = json_decode($raw, true);
-                if (is_array($decoded)) $manifest = $decoded;
+                if (is_array($decoded)) {
+                    $manifest = $decoded;
+                    if (! isset($manifest['hashes'])) {
+                        $manifest['hashes'] = [];
+                    }
+                }
             }
         }
 
@@ -2088,6 +2149,17 @@ class Dokumentasi extends BaseController
                         $safeName = 'org_' . $chunkIndex . '_' . (++$fIdx) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
                         $mFile->move($sourceDir, $safeName);
                         $savedPath = $sourceDir . DIRECTORY_SEPARATOR . $safeName;
+
+                        // Cek de-duplikasi otomatis berkas identik via checksum MD5
+                        $fileHash = @md5_file($savedPath);
+                        if (! empty($fileHash) && isset($manifest['hashes'][$fileHash])) {
+                            // Berkas identik persis dengan yang sudah pernah diunggah/diproses sebelumnya
+                            @unlink($savedPath);
+                            continue;
+                        }
+                        if (! empty($fileHash)) {
+                            $manifest['hashes'][$fileHash] = $mFile->getClientName();
+                        }
 
                         $relPath = $mFile->getClientName();
                         $subDir = null;
@@ -2152,49 +2224,60 @@ class Dokumentasi extends BaseController
                 $safeName = 'org_single_' . $chunkIndex . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
                 $fotoSingle->move($sourceDir, $safeName);
                 $savedPath = $sourceDir . DIRECTORY_SEPARATOR . $safeName;
-                $singleRel = trim((string) ($this->request->getPost('foto_path') ?? ''));
 
-                $exif = $watermarkService->readExifData($savedPath);
-                $gpsDecimal = is_array($exif) ? $watermarkService->extractGpsDecimal($exif) : null;
-                $gpsDms = is_array($exif) ? $watermarkService->extractGpsCoordinates($exif) : null;
-                $cleanCoords = $watermarkService->sanitizeCoordinates($gpsDms);
+                // Cek de-duplikasi otomatis berkas identik via checksum MD5
+                $fileHash = @md5_file($savedPath);
+                if (! empty($fileHash) && isset($manifest['hashes'][$fileHash])) {
+                    @unlink($savedPath);
+                } else {
+                    if (! empty($fileHash)) {
+                        $manifest['hashes'][$fileHash] = $fotoSingle->getClientName();
+                    }
 
-                $wilayah = null;
-                if ($gpsDecimal !== null) {
-                    $wilayah = $watermarkService->reverseGeocodeStructured($gpsDecimal['lat'], $gpsDecimal['lng'], $groupingMode);
+                    $singleRel = trim((string) ($this->request->getPost('foto_path') ?? ''));
+
+                    $exif = $watermarkService->readExifData($savedPath);
+                    $gpsDecimal = is_array($exif) ? $watermarkService->extractGpsDecimal($exif) : null;
+                    $gpsDms = is_array($exif) ? $watermarkService->extractGpsCoordinates($exif) : null;
+                    $cleanCoords = $watermarkService->sanitizeCoordinates($gpsDms);
+
+                    $wilayah = null;
+                    if ($gpsDecimal !== null) {
+                        $wilayah = $watermarkService->reverseGeocodeStructured($gpsDecimal['lat'], $gpsDecimal['lng'], $groupingMode);
+                    }
+
+                    $hasGps = ($gpsDecimal !== null);
+                    $kabupaten = $wilayah ? $wilayah['kabupaten'] : 'Tanpa Koordinat GPS';
+                    $kecamatan = $wilayah ? $wilayah['kecamatan'] : '-';
+                    $kelurahan = $wilayah ? ($wilayah['kelurahan'] ?? '-') : '-';
+                    $detectedSubDir = $wilayah ? $wilayah['folder_path'] : 'Tanpa_Koordinat_GPS';
+                    $locDisplay = $wilayah ? $wilayah['display'] : 'Tanpa Koordinat GPS';
+
+                    $manifest['items'][] = [
+                        'path'          => $savedPath,
+                        'original_name' => $fotoSingle->getClientName(),
+                        'sub_dir'       => $detectedSubDir,
+                        'relative_path' => $singleRel !== '' ? $singleRel : $fotoSingle->getClientName(),
+                        'has_gps'       => $hasGps,
+                        'gps_decimal'   => $gpsDecimal,
+                        'gps_dms'       => $cleanCoords,
+                        'wilayah'       => $wilayah,
+                        'kabupaten'     => $kabupaten,
+                        'kecamatan'     => $kecamatan,
+                        'kelurahan'     => $kelurahan,
+                        'location_name' => $locDisplay,
+                    ];
+
+                    $chunkUploadedFiles[] = [
+                        'file_name'   => $fotoSingle->getClientName(),
+                        'has_gps'     => $hasGps,
+                        'coordinates' => $cleanCoords,
+                        'kabupaten'   => $kabupaten,
+                        'kecamatan'   => $kecamatan,
+                        'kelurahan'   => $kelurahan,
+                        'location'    => $locDisplay,
+                    ];
                 }
-
-                $hasGps = ($gpsDecimal !== null);
-                $kabupaten = $wilayah ? $wilayah['kabupaten'] : 'Tanpa Koordinat GPS';
-                $kecamatan = $wilayah ? $wilayah['kecamatan'] : '-';
-                $kelurahan = $wilayah ? ($wilayah['kelurahan'] ?? '-') : '-';
-                $detectedSubDir = $wilayah ? $wilayah['folder_path'] : 'Tanpa_Koordinat_GPS';
-                $locDisplay = $wilayah ? $wilayah['display'] : 'Tanpa Koordinat GPS';
-
-                $manifest['items'][] = [
-                    'path'          => $savedPath,
-                    'original_name' => $fotoSingle->getClientName(),
-                    'sub_dir'       => $detectedSubDir,
-                    'relative_path' => $singleRel !== '' ? $singleRel : $fotoSingle->getClientName(),
-                    'has_gps'       => $hasGps,
-                    'gps_decimal'   => $gpsDecimal,
-                    'gps_dms'       => $cleanCoords,
-                    'wilayah'       => $wilayah,
-                    'kabupaten'     => $kabupaten,
-                    'kecamatan'     => $kecamatan,
-                    'kelurahan'     => $kelurahan,
-                    'location_name' => $locDisplay,
-                ];
-
-                $chunkUploadedFiles[] = [
-                    'file_name'   => $fotoSingle->getClientName(),
-                    'has_gps'     => $hasGps,
-                    'coordinates' => $cleanCoords,
-                    'kabupaten'   => $kabupaten,
-                    'kecamatan'   => $kecamatan,
-                    'kelurahan'   => $kelurahan,
-                    'location'    => $locDisplay,
-                ];
             }
         }
 
@@ -2246,6 +2329,12 @@ class Dokumentasi extends BaseController
 
                 // Handle collision if duplicate filename in same cluster
                 if (is_file($destPath)) {
+                    // Cek apakah berkas 100% identik dengan yang sudah ada di destinasi
+                    if (filesize($cItem['path']) === filesize($destPath) && md5_file($cItem['path']) === md5_file($destPath)) {
+                        @unlink($cItem['path']);
+                        continue;
+                    }
+
                     $ext = pathinfo($cleanBaseName, PATHINFO_EXTENSION);
                     $fn = pathinfo($cleanBaseName, PATHINFO_FILENAME);
                     $destPath = $targetClusterDir . DIRECTORY_SEPARATOR . $fn . '_' . bin2hex(random_bytes(2)) . '.' . $ext;
