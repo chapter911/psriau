@@ -470,7 +470,7 @@ class CreateSwakelolaModule extends Migration
             ['B', 6, 'Surat Keputusan Penyelenggara Swakelola oleh PA/KPA', 'Ada', 'B. 1. SK Penetapan Penyelenggara Swakelola SPPG oleh KPA.docx', 'SK KPA No. 28/KPTS/SATKER-PPS.RIAU/2025'],
             ['B', 7, 'Susunan Tim Persiapan, Tim Pelaksana dan Tim Pengawas beserta tugasnya', 'Ada', 'B. 2. Susunan Tim Persiapan, Pelaksana, Pengawas dan Uraian Tugas.docx', 'Lampiran SK rincian tugas tim'],
             ['B', 8, 'Rencana Kegiatan dan Jadwal Pelaksanaan', 'Ada', 'B. 3. Rencana Kegiatan dan Jadwal Pelaksanaan Administrasi SPPG.docx', 'Matriks jadwal pelaksanaan kurva waktu'],
-            ['B', 9, 'KAK final dan RAB rinci', 'Ada', 'B. 4. a. KAK Final & B. 4. b. RAB Final Administrasi SPPG.docx', 'Disahkan PPK dan Tim Persiapan'],
+            ['B', 9, 'KAK final dan RAB rinci', 'Ada', 'B. 4. KAK Final dan RAB Rinci Administrasi SPPG.docx', 'Disahkan PPK dan Tim Persiapan'],
             ['B', 10, 'Dokumen pembahasan atau hasil persiapan kegiatan', 'Ada', 'B. 5. BA Pembahasan Persiapan Swakelola Administrasi SPPG.docx', 'BA Pembahasan No. 01/BA-PERSIAPAN/2025'],
             ['B', 11, 'Rencana kebutuhan tenaga kerja, bahan, peralatan dan tenaga ahli', 'Ada', 'B. 6. Rencana Kebutuhan Tenaga Kerja, Bahan, Peralatan, dan Tenaga Ahli.docx', 'Rincian kebutuhan personil & bahan operasional'],
             // Tahap C

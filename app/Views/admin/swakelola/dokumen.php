@@ -80,34 +80,76 @@
                             </thead>
                             <tbody>
                                 <?php foreach ($group['items'] as $doc): ?>
+                                    <?php $subFiles = $doc['sub_files'] ?? [['label' => $doc['file_name'], 'file_name' => $doc['file_name']]]; ?>
                                     <tr>
-                                        <td class="text-center font-weight-bold"><?= $doc['nomor_urut']; ?></td>
-                                        <td class="font-weight-bold text-dark" style="font-size: 0.9rem;">
+                                        <td class="text-center font-weight-bold align-middle"><?= $doc['nomor_urut']; ?></td>
+                                        <td class="font-weight-bold text-dark align-middle" style="font-size: 0.9rem;">
                                             <?= esc($doc['nama_dokumen']); ?>
+                                            <?php if (count($subFiles) > 1): ?>
+                                                <span class="badge badge-primary ml-1"><?= count($subFiles); ?> Berkas</span>
+                                            <?php endif; ?>
                                         </td>
-                                        <td class="text-center">
+                                        <td class="text-center align-middle">
                                             <span class="badge badge-success px-2 py-1">
                                                 <i class="fas fa-check mr-1"></i> <?= esc($doc['status']); ?>
                                             </span>
                                         </td>
-                                        <td>
-                                            <?php 
-                                                $ext = strtolower(pathinfo($doc['file_name'], PATHINFO_EXTENSION));
-                                                $iconClass = ($ext === 'pdf') ? 'fa-file-pdf text-danger' : 'fa-file-word text-primary';
-                                            ?>
-                                            <small class="font-weight-bold">
-                                                <i class="fas <?= $iconClass; ?> mr-1"></i> <?= esc($doc['file_name']); ?>
-                                            </small>
+                                        <td class="align-middle">
+                                            <?php if (count($subFiles) === 1): ?>
+                                                <?php
+                                                    $sf = $subFiles[0];
+                                                    $ext = strtolower(pathinfo($sf['file_name'], PATHINFO_EXTENSION));
+                                                    $iconClass = ($ext === 'pdf') ? 'fa-file-pdf text-danger' : 'fa-file-word text-primary';
+                                                ?>
+                                                <small class="font-weight-bold">
+                                                    <i class="fas <?= $iconClass; ?> mr-1"></i> <?= esc($sf['label']); ?>
+                                                </small>
+                                            <?php else: ?>
+                                                <div class="py-1">
+                                                    <?php foreach ($subFiles as $idxSf => $sf): ?>
+                                                        <?php
+                                                            $ext = strtolower(pathinfo($sf['file_name'], PATHINFO_EXTENSION));
+                                                            $iconClass = ($ext === 'pdf') ? 'fa-file-pdf text-danger' : 'fa-file-word text-primary';
+                                                        ?>
+                                                        <div class="d-flex justify-content-between align-items-center <?= $idxSf < count($subFiles) - 1 ? 'mb-2 pb-1 border-bottom' : ''; ?>">
+                                                            <small class="font-weight-bold mr-2">
+                                                                <i class="fas <?= $iconClass; ?> mr-1"></i> <?= esc($sf['label']); ?>
+                                                            </small>
+                                                            <div class="btn-group btn-group-sm flex-shrink-0">
+                                                                <button type="button"
+                                                                    class="btn btn-xs btn-info btn-preview-doc py-0 px-2"
+                                                                    data-id="<?= $doc['id']; ?>"
+                                                                    data-file="<?= esc($sf['file_name'], 'attr'); ?>"
+                                                                    data-title="<?= esc($doc['nama_dokumen'] . ' — ' . $sf['label'], 'attr'); ?>"
+                                                                    title="Preview <?= esc($sf['label'], 'attr'); ?>">
+                                                                    <i class="fas fa-eye mr-1"></i> Preview
+                                                                </button>
+                                                                <a href="<?= base_url('admin/swakelola/dokumen/download/' . $doc['id']) . '?file=' . rawurlencode($sf['file_name']); ?>"
+                                                                    class="btn btn-xs btn-outline-primary py-0 px-2"
+                                                                    title="Unduh <?= esc($sf['label'], 'attr'); ?>">
+                                                                    <i class="fas fa-download"></i>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            <?php endif; ?>
                                         </td>
-                                        <td>
+                                        <td class="align-middle">
                                             <small class="text-muted"><?= esc($doc['keterangan']); ?></small>
                                         </td>
-                                        <td class="text-center">
+                                        <td class="text-center align-middle">
+                                            <?php $primaryFile = $subFiles[0]['file_name'] ?? $doc['file_name']; ?>
                                             <div class="btn-group btn-group-sm">
-                                                <button type="button" class="btn btn-info btn-preview-doc" data-id="<?= $doc['id']; ?>" title="Lihat Pratinjau Dokumen">
+                                                <button type="button"
+                                                    class="btn btn-info btn-preview-doc"
+                                                    data-id="<?= $doc['id']; ?>"
+                                                    data-file="<?= esc($primaryFile, 'attr'); ?>"
+                                                    data-title="<?= esc($doc['nama_dokumen'], 'attr'); ?>"
+                                                    title="Lihat Pratinjau Dokumen Utama">
                                                     <i class="fas fa-eye mr-1"></i> Preview
                                                 </button>
-                                                <a href="<?= base_url('admin/swakelola/dokumen/download/' . $doc['id']); ?>" class="btn btn-outline-primary" title="Unduh Berkas Resmi">
+                                                <a href="<?= base_url('admin/swakelola/dokumen/download/' . $doc['id']) . '?file=' . rawurlencode($primaryFile); ?>" class="btn btn-outline-primary" title="Unduh Berkas Resmi">
                                                     <i class="fas fa-download"></i>
                                                 </a>
                                             </div>
@@ -231,8 +273,10 @@ $(document).ready(function() {
         $('#previewLoading').css('display', 'none');
     }
 
-    $('.btn-preview-doc').on('click', function() {
-        const docId = $(this).data('id');
+    $(document).on('click', '.btn-preview-doc', function() {
+        const docId = $(this).data('id') || 0;
+        const customFile = $(this).attr('data-file') || '';
+        const customTitle = $(this).attr('data-title') || '';
         
         // Reset states
         showLoader('Memuat informasi dokumen...');
@@ -247,6 +291,10 @@ $(document).ready(function() {
         $.ajax({
             url: '<?= base_url('admin/swakelola/dokumen/preview'); ?>/' + docId,
             type: 'GET',
+            data: {
+                file: customFile,
+                title: customTitle
+            },
             dataType: 'json',
             success: function(res) {
                 if (res.status !== 'success') {
@@ -258,19 +306,25 @@ $(document).ready(function() {
                 $('#previewModalTitle').text(res.nomor_urut + '. ' + res.nama_dokumen);
                 $('#previewDocSubtitle').text(res.file_name);
                 $('#previewBtnDownload').attr('href', res.download_url);
-                $('#previewBtnNewTab').attr('href', res.inline_url);
+                $('#previewBtnNewTab').attr('href', res.file_url || res.inline_url);
                 $('#previewErrorDownloadBtn').attr('href', res.download_url);
+
+                if (!res.file_exists) {
+                    showError('Berkas fisik (' + res.file_name + ') belum ditemukan di server.');
+                    return;
+                }
 
                 if (res.ext === 'pdf') {
                     $('#previewDocIcon').html('<i class="fas fa-file-pdf text-danger"></i>');
                     showLoader('Menyiapkan tampilan PDF...');
                     
+                    const pdfSrc = res.file_url || res.inline_url;
                     $('#previewIframe')
                         .off('load')
                         .on('load', function() {
                             hideLoader();
                         })
-                        .attr('src', res.inline_url)
+                        .attr('src', pdfSrc)
                         .show();
 
                     // Pengaman: hilangkan loader maksimal 400ms jika browser render cepat

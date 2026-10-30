@@ -51,7 +51,21 @@ class Swakelola extends BaseController
 
         $paket     = $this->paketModel->find($paketId);
         $paketList = $this->paketModel->findAll();
+
+        // Auto-heal nomor_urut 9 (hindari karakter & pada nama file di database lama)
+        $db = \Config\Database::connect();
+        if ($db->tableExists('trn_swakelola_dokumen')) {
+            $db->table('trn_swakelola_dokumen')
+                ->where('nomor_urut', 9)
+                ->where('file_name', 'B. 4. a. KAK Final & B. 4. b. RAB Final Administrasi SPPG.docx')
+                ->update([
+                    'file_name' => 'B. 4. KAK Final dan RAB Rinci Administrasi SPPG.docx',
+                    'file_path' => 'public/uploads/swakelola/sppg/B. 4. KAK Final dan RAB Rinci Administrasi SPPG.docx',
+                ]);
+        }
+
         $dokumenList = $this->dokumenModel->getByPaketId($paketId);
+        $multiFileMap = $this->getMultiFilesMap();
 
         // Group by Tahapan
         $grouped = [
@@ -64,6 +78,13 @@ class Swakelola extends BaseController
 
         $totalAda = 0;
         foreach ($dokumenList as $doc) {
+            $no = (int) ($doc['nomor_urut'] ?? 0);
+            $doc['sub_files'] = $multiFileMap[$no] ?? [
+                [
+                    'label'     => $doc['file_name'],
+                    'file_name' => $doc['file_name'],
+                ],
+            ];
             $t = $doc['tahap'];
             if (isset($grouped[$t])) {
                 $grouped[$t]['items'][] = $doc;
@@ -89,14 +110,60 @@ class Swakelola extends BaseController
     }
 
     /**
+     * Daftar rincian sub-berkas untuk item checklist yang memiliki lebih dari 1 dokumen pendukung
+     */
+    private function getMultiFilesMap(): array
+    {
+        return [
+            9 => [
+                ['label' => 'B. 4. a. KAK Final Administrasi SPPG.docx', 'file_name' => 'B. 4. a. KAK Final Administrasi SPPG.docx'],
+                ['label' => 'B. 4. b. RAB Final Administrasi SPPG.docx', 'file_name' => 'B. 4. b. RAB Final Administrasi SPPG.docx'],
+                ['label' => 'B. 4. Gabungan KAK Final & RAB Rinci SPPG.docx', 'file_name' => 'B. 4. KAK Final dan RAB Rinci Administrasi SPPG.docx'],
+            ],
+            15 => [
+                ['label' => 'C. 4. Bukti Pembelian Bahan ATK Bulan November (SPM 00415A).pdf', 'file_name' => 'ATK BULAN NOVEMBER (SPM 00415A).pdf'],
+                ['label' => 'C. 4. Bukti Pembelian Bahan ATK Bulan Desember (SPM 00498A).pdf', 'file_name' => 'ATK SPPG DESEMBER (SPM 00498A) OK.pdf'],
+                ['label' => 'C. 4. Bukti Kuitansi Dokumentasi & Pelaporan (TUP 1).pdf', 'file_name' => 'TUP 1 (KWI DOKUMENTASI DAN PELAPORAN).pdf'],
+            ],
+            16 => [
+                ['label' => 'C. 5. Invoice, Kuitansi & Pajak Supplies Komputer Nov (SPM 00414A).pdf', 'file_name' => 'SUPLIES KOMPUTER BULAN NOVEMBER (SPM 00414A) (1).pdf'],
+                ['label' => 'C. 5. Invoice, Kuitansi & Pajak Supplies Komputer Des (SPM 00497A).pdf', 'file_name' => 'SUPLIES KOMPUTER BULAN DESEMBER (SPM 00497A).pdf'],
+            ],
+            18 => [
+                ['label' => 'C. 7. 1. SPPD Monitoring Kampar Oktober (SPM 00445A).pdf', 'file_name' => 'SPPD SPPG KAMPAR OKTOBER (SPM 00445A).pdf'],
+                ['label' => 'C. 7. 2. SPPD Koordinasi Jakarta November (SPM 00449A).pdf', 'file_name' => 'SPPD JAKARTA NOVEMBER (SPM 00449A).pdf'],
+                ['label' => 'C. 7. 3. SPPD Dalam Kota Pekanbaru November (SPM 00450A).pdf', 'file_name' => '1. SPPD NOVEMBER SPPG (SPM 00450A).pdf'],
+                ['label' => 'C. 7. 4. SPPD Monitoring Dumai & Siak November (SPM 00483A).pdf', 'file_name' => 'SPPD DUMAI SIAK SPPG NOV (SPM 00483A).pdf'],
+                ['label' => 'C. 7. 5. SPPD Koordinasi Jakarta November Thp 2 (SPM 00485A).pdf', 'file_name' => 'SPPD JAKARTA NOVEMBER (SPM 00485A).pdf'],
+                ['label' => 'C. 7. 6. SPPD Monitoring Dumai Desember (SPM 00489A).pdf', 'file_name' => 'SPPD DUMAI DESEMBER (SPM 00489A).pdf'],
+                ['label' => 'C. 7. 7. SPPD Koordinasi Wilayah Medan Desember (SPM 00535A).pdf', 'file_name' => 'SPPD MEDAN DESEMBER (SPM 00535A) OK.pdf'],
+                ['label' => 'C. 7. 8. SPPD Monitoring SPPG Desember (SPM 00536A).pdf', 'file_name' => 'SPPD SPPG DESEMBER (SPM 00536A).pdf'],
+                ['label' => 'C. 7. 9. SPPD Monitoring Kampar Desember (SPM 00556A).pdf', 'file_name' => 'SPPD SPPG KAMPAR (SPM 00556A).pdf'],
+                ['label' => 'C. 7. 10. SPPD Monitoring Siak Desember (SPM 00557A).pdf', 'file_name' => 'SPPD SPPG SIAK (SPM 00557A).pdf'],
+                ['label' => 'C. 7. 11. Kuitansi & Bukti Pengeluaran Perjadin (TUP 1).pdf', 'file_name' => 'TUP 1 (KWI PERJADIN).pdf'],
+            ],
+        ];
+    }
+
+    /**
      * Helper cari lokasi berkas fisik (mendukung public/uploads dan fallback audit)
      */
     private function resolveDocumentPath(string $fileName, ?string $dbPath = null): ?string
     {
+        $safeFileName = basename(trim($fileName));
         $candidates = [];
 
         // 1. Lokasi permanen di public/uploads
-        $candidates[] = FCPATH . 'uploads/swakelola/sppg/' . $fileName;
+        $candidates[] = FCPATH . 'uploads/swakelola/sppg/' . $safeFileName;
+        $candidates[] = ROOTPATH . 'public/uploads/swakelola/sppg/' . $safeFileName;
+
+        // Fallback untuk nama lama item B.4
+        if (strpos($safeFileName, 'B. 4.') === 0) {
+            $candidates[] = FCPATH . 'uploads/swakelola/sppg/B. 4. KAK Final dan RAB Rinci Administrasi SPPG.docx';
+            $candidates[] = ROOTPATH . 'public/uploads/swakelola/sppg/B. 4. KAK Final dan RAB Rinci Administrasi SPPG.docx';
+            $candidates[] = FCPATH . 'uploads/swakelola/sppg/B. 4. a. KAK Final Administrasi SPPG.docx';
+            $candidates[] = ROOTPATH . 'public/uploads/swakelola/sppg/B. 4. a. KAK Final Administrasi SPPG.docx';
+        }
 
         // 2. Berdasarkan database path jika ada
         if (! empty($dbPath)) {
@@ -105,7 +172,7 @@ class Swakelola extends BaseController
         }
 
         // 3. Fallback do_not_upload/audit
-        $candidates[] = ROOTPATH . 'do_not_upload/audit/hasil_sppg/' . $fileName;
+        $candidates[] = ROOTPATH . 'do_not_upload/audit/hasil_sppg/' . $safeFileName;
 
         foreach ($candidates as $path) {
             if (file_exists($path) && is_file($path)) {
@@ -117,22 +184,39 @@ class Swakelola extends BaseController
     }
 
     /**
-     * Download Berkas Dokumen
+     * Deteksi MIME type secara aman untuk PDF, DOCX, XLSX
+     */
+    private function detectSafeMimeType(string $filePath): string
+    {
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        return match ($ext) {
+            'pdf'  => 'application/pdf',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            default => (function_exists('mime_content_type') ? (@mime_content_type($filePath) ?: 'application/octet-stream') : 'application/octet-stream'),
+        };
+    }
+
+    /**
+     * Download Berkas Dokumen (mendukung parameter opsional ?file=...)
      */
     public function downloadDokumen(int $id)
     {
-        $doc = $this->dokumenModel->find($id);
-        if (! $doc) {
+        $requestedFile = trim((string) ($this->request->getGet('file') ?? ''));
+        $doc = $id > 0 ? $this->dokumenModel->find($id) : null;
+
+        if (! $doc && $requestedFile === '') {
             return redirect()->back()->with('error', 'Dokumen tidak ditemukan.');
         }
 
-        $filePath = $this->resolveDocumentPath($doc['file_name'], $doc['file_path'] ?? null);
+        $targetFileName = $requestedFile !== '' ? basename($requestedFile) : (string) ($doc['file_name'] ?? '');
+        $filePath = $this->resolveDocumentPath($targetFileName, $requestedFile === '' ? ($doc['file_path'] ?? null) : null);
 
         if (! $filePath) {
             return redirect()->back()->with('error', 'Berkas fisik/digital dokumen belum tersedia di server.');
         }
 
-        $mimeType = mime_content_type($filePath);
+        $mimeType = $this->detectSafeMimeType($filePath);
         return $this->response->download($filePath, null)->setContentType($mimeType);
     }
 
@@ -141,22 +225,25 @@ class Swakelola extends BaseController
      */
     public function viewInlineDokumen(int $id)
     {
-        $doc = $this->dokumenModel->find($id);
-        if (! $doc) {
+        $requestedFile = trim((string) ($this->request->getGet('file') ?? ''));
+        $doc = $id > 0 ? $this->dokumenModel->find($id) : null;
+
+        if (! $doc && $requestedFile === '') {
             return $this->response->setStatusCode(404, 'Dokumen tidak ditemukan');
         }
 
-        $filePath = $this->resolveDocumentPath($doc['file_name'], $doc['file_path'] ?? null);
+        $targetFileName = $requestedFile !== '' ? basename($requestedFile) : (string) ($doc['file_name'] ?? '');
+        $filePath = $this->resolveDocumentPath($targetFileName, $requestedFile === '' ? ($doc['file_path'] ?? null) : null);
         if (! $filePath) {
             return $this->response->setStatusCode(404, 'Berkas fisik tidak ditemukan di server');
         }
 
-        $mimeType = mime_content_type($filePath);
+        $mimeType = $this->detectSafeMimeType($filePath);
         $fileContent = file_get_contents($filePath);
 
         return $this->response
             ->setHeader('Content-Type', $mimeType)
-            ->setHeader('Content-Disposition', 'inline; filename="' . addslashes($doc['file_name']) . '"')
+            ->setHeader('Content-Disposition', 'inline; filename="' . addslashes(basename($filePath)) . '"')
             ->setHeader('Cache-Control', 'public, max-age=3600')
             ->setBody($fileContent);
     }
@@ -166,32 +253,38 @@ class Swakelola extends BaseController
      */
     public function ajaxGetDokumenInfo(int $id)
     {
-        $doc = $this->dokumenModel->find($id);
-        if (! $doc) {
+        $requestedFile = trim((string) ($this->request->getGet('file') ?? ''));
+        $customTitle   = trim((string) ($this->request->getGet('title') ?? ''));
+        $doc = $id > 0 ? $this->dokumenModel->find($id) : null;
+
+        if (! $doc && $requestedFile === '') {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Dokumen tidak ditemukan.']);
         }
 
-        $filePath = $this->resolveDocumentPath($doc['file_name'], $doc['file_path'] ?? null);
+        $targetFileName = $requestedFile !== '' ? basename($requestedFile) : (string) ($doc['file_name'] ?? '');
+        $filePath = $this->resolveDocumentPath($targetFileName, $requestedFile === '' ? ($doc['file_path'] ?? null) : null);
         $fileExists = ($filePath !== null);
-        $ext = strtolower(pathinfo($doc['file_name'], PATHINFO_EXTENSION));
+        $resolvedFileName = $fileExists ? basename($filePath) : $targetFileName;
+        $ext = strtolower(pathinfo($resolvedFileName, PATHINFO_EXTENSION));
 
-        $publicUrl = base_url('uploads/swakelola/sppg/' . rawurlencode($doc['file_name']));
-        $inlineUrl = base_url('admin/swakelola/dokumen/view/' . $doc['id']);
-        $downloadUrl = base_url('admin/swakelola/dokumen/download/' . $doc['id']);
+        $querySuffix = $requestedFile !== '' ? ('?file=' . rawurlencode($resolvedFileName)) : '';
+        $publicUrl   = base_url('uploads/swakelola/sppg/' . rawurlencode($resolvedFileName));
+        $inlineUrl   = base_url('admin/swakelola/dokumen/view/' . $id) . $querySuffix;
+        $downloadUrl = base_url('admin/swakelola/dokumen/download/' . $id) . $querySuffix;
 
         return $this->response->setJSON([
             'status'       => 'success',
-            'id'           => $doc['id'],
-            'nomor_urut'   => $doc['nomor_urut'],
-            'tahap'        => $doc['tahap'],
-            'nama_dokumen' => $doc['nama_dokumen'],
-            'file_name'    => $doc['file_name'],
+            'id'           => $doc['id'] ?? 0,
+            'nomor_urut'   => $doc['nomor_urut'] ?? '-',
+            'tahap'        => $doc['tahap'] ?? '-',
+            'nama_dokumen' => $customTitle !== '' ? $customTitle : ($doc['nama_dokumen'] ?? $resolvedFileName),
+            'file_name'    => $resolvedFileName,
             'file_exists'  => $fileExists,
             'ext'          => $ext,
             'file_url'     => $publicUrl,
             'inline_url'   => $inlineUrl,
             'download_url' => $downloadUrl,
-            'keterangan'   => $doc['keterangan'],
+            'keterangan'   => $doc['keterangan'] ?? '',
             'file_size'    => $fileExists ? filesize($filePath) : 0,
         ]);
     }

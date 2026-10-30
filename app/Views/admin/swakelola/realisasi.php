@@ -94,7 +94,21 @@
                                         Rp <?= number_format((float)$r['jumlah_bayar'], 0, ',', '.'); ?>
                                     </td>
                                     <td>
-                                        <small class="text-muted"><i class="fas fa-file-pdf text-danger mr-1"></i> <?= esc($r['file_bukti']); ?></small>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-dark font-weight-bold mr-2">
+                                                <i class="fas fa-file-pdf text-danger mr-1"></i> <?= esc($r['file_bukti']); ?>
+                                            </small>
+                                            <?php if (! empty($r['file_bukti'])): ?>
+                                                <div class="btn-group btn-group-sm flex-shrink-0">
+                                                    <a href="<?= base_url('uploads/swakelola/sppg/' . rawurlencode($r['file_bukti'])); ?>" target="_blank" class="btn btn-xs btn-info py-0 px-2" title="Buka Pratinjau PDF">
+                                                        <i class="fas fa-eye mr-1"></i> Lihat
+                                                    </a>
+                                                    <a href="<?= base_url('admin/swakelola/dokumen/download/18') . '?file=' . rawurlencode($r['file_bukti']); ?>" class="btn btn-xs btn-outline-primary py-0 px-2" title="Unduh Bukti SPM">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
