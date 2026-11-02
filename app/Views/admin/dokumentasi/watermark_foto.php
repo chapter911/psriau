@@ -157,7 +157,45 @@
                             </div>
                         </div>
 
-                        <!-- 1.2 Area Unggah Foto / File ZIP -->
+                        <!-- 1.2 Ukuran Watermark -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="font-weight-bold text-dark small mb-0">
+                                <i class="fas fa-compress-arrows-alt text-primary mr-1"></i> Ukuran Watermark:
+                            </label>
+                            <span class="badge badge-light border text-muted" id="activeSizeBadge">Sedang (Standar)</span>
+                        </div>
+
+                        <div class="row mb-3">
+                            <!-- Size: Small -->
+                            <div class="col-4">
+                                <label class="size-card w-100 p-2 border rounded text-center cursor-pointer position-relative mb-0 shadow-xs" data-val="small">
+                                    <input type="radio" name="watermark_size" value="small" class="d-none">
+                                    <div class="font-weight-bold text-dark small"><i class="fas fa-compress-alt mr-1"></i> Kecil</div>
+                                    <div class="text-muted" style="font-size: 10px;">~25% tinggi foto</div>
+                                    <span class="badge badge-primary check-badge-size d-none position-absolute" style="top: 4px; right: 4px;"><i class="fas fa-check"></i></span>
+                                </label>
+                            </div>
+                            <!-- Size: Medium -->
+                            <div class="col-4">
+                                <label class="size-card active w-100 p-2 border rounded text-center cursor-pointer position-relative mb-0 shadow-xs" data-val="medium">
+                                    <input type="radio" name="watermark_size" value="medium" checked class="d-none">
+                                    <div class="font-weight-bold text-primary small"><i class="fas fa-check-circle mr-1"></i> Sedang</div>
+                                    <div class="text-muted" style="font-size: 10px;">Standar &amp; Rapi</div>
+                                    <span class="badge badge-primary check-badge-size position-absolute" style="top: 4px; right: 4px;"><i class="fas fa-check"></i></span>
+                                </label>
+                            </div>
+                            <!-- Size: Large -->
+                            <div class="col-4">
+                                <label class="size-card w-100 p-2 border rounded text-center cursor-pointer position-relative mb-0 shadow-xs" data-val="large">
+                                    <input type="radio" name="watermark_size" value="large" class="d-none">
+                                    <div class="font-weight-bold text-dark small"><i class="fas fa-expand-alt mr-1"></i> Besar</div>
+                                    <div class="text-muted" style="font-size: 10px;">Menonjol</div>
+                                    <span class="badge badge-primary check-badge-size d-none position-absolute" style="top: 4px; right: 4px;"><i class="fas fa-check"></i></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 1.3 Area Unggah Foto / File ZIP -->
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <label class="font-weight-bold text-dark small mb-0">
                                 <i class="fas fa-cloud-upload-alt text-primary mr-1"></i> Unggah Foto Dokumentasi:
@@ -487,8 +525,9 @@
                             <h6 class="font-weight-bold text-dark small mb-2"><i class="fas fa-clipboard-check text-success mr-1"></i> Ringkasan Pengaturan Watermark:</h6>
                             <div class="row small text-muted">
                                 <div class="col-6 mb-1">Format: <strong class="text-dark" id="summaryTemplate">Klasik PU</strong></div>
+                                <div class="col-6 mb-1">Ukuran: <strong class="text-dark" id="summarySize">Sedang (Standar)</strong></div>
                                 <div class="col-6 mb-1">File Terpilih: <strong class="text-dark" id="summaryFiles">0 Berkas</strong></div>
-                                <div class="col-12 mb-1">Mode Waktu: <strong class="text-dark" id="summaryWaktuMode">EXIF Kamera Asli</strong></div>
+                                <div class="col-6 mb-1">Mode Waktu: <strong class="text-dark" id="summaryWaktuMode">EXIF Kamera Asli</strong></div>
                                 <div class="col-12 mb-1">Penyesuaian Jam: <strong class="text-dark" id="summaryOffset">+0 Jam</strong></div>
                                 <div class="col-12 mb-1">Kelompok Koordinat: <strong class="text-dark" id="summaryCluster">Nonaktif (Folder Standar)</strong></div>
                                 <div class="col-12 mb-1">Tulis EXIF Berkas: <strong class="text-success" id="summaryExif">Ya (Tanggal, GPS &amp; Catatan)</strong></div>
@@ -990,6 +1029,23 @@
     background-color: #f0f7ff;
     box-shadow: 0 4px 10px rgba(10, 102, 194, 0.12);
 }
+
+/* Size Cards */
+.size-card {
+    transition: all 0.2s ease-in-out;
+    background-color: #fff;
+    border-color: #e2e8f0 !important;
+}
+.size-card:hover {
+    border-color: var(--app-primary, #0A66C2) !important;
+    transform: translateY(-2px);
+}
+.size-card.active {
+    border-color: var(--app-primary, #0A66C2) !important;
+    border-width: 2px !important;
+    background-color: #f0f7ff;
+    box-shadow: 0 4px 10px rgba(10, 102, 194, 0.12);
+}
 .cursor-pointer {
     cursor: pointer;
 }
@@ -1040,6 +1096,23 @@
 }
 .sim-template-box {
     animation: fadeInOverlay 0.3s ease;
+    transform-origin: bottom left;
+    transition: transform 0.25s ease;
+}
+.simulator-overlay-wrapper.wm-size-small .sim-template-box:not(.sim-strip) {
+    transform: scale(0.80);
+}
+.simulator-overlay-wrapper.wm-size-medium .sim-template-box:not(.sim-strip) {
+    transform: scale(1.0);
+}
+.simulator-overlay-wrapper.wm-size-large .sim-template-box:not(.sim-strip) {
+    transform: scale(1.25);
+}
+.simulator-overlay-wrapper.wm-size-small .sim-strip-banner {
+    padding: 4px 8px !important;
+}
+.simulator-overlay-wrapper.wm-size-large .sim-strip-banner {
+    padding: 14px 16px !important;
 }
 @keyframes fadeInOverlay {
     from { opacity: 0; transform: translateY(6px); }
@@ -1309,6 +1382,32 @@ $(function() {
         var val = $(this).data('val');
         $('#activeTemplateBadge').text(templateLabels[val] || val);
         $('#summaryTemplate').text(templateLabels[val] || val);
+
+        updateLiveSimulator();
+    });
+
+    // -------------------------------------------------------------------------
+    // 2.1 WATERMARK SIZE SELECTION
+    // -------------------------------------------------------------------------
+    var sizeLabels = {
+        'small': 'Kecil (~25%)',
+        'medium': 'Sedang (Standar)',
+        'large': 'Besar (Menonjol)'
+    };
+
+    $('.size-card').on('click', function() {
+        $('.size-card').removeClass('active');
+        $('.size-card').find('.check-badge-size').addClass('d-none');
+        $('.size-card').find('.font-weight-bold').removeClass('text-primary').addClass('text-dark');
+        
+        $(this).addClass('active');
+        $(this).find('input[type="radio"]').prop('checked', true);
+        $(this).find('.check-badge-size').removeClass('d-none');
+        $(this).find('.font-weight-bold').removeClass('text-dark').addClass('text-primary');
+
+        var sVal = $(this).data('val') || 'medium';
+        $('#activeSizeBadge').text(sizeLabels[sVal] || sVal);
+        $('#summarySize').text(sizeLabels[sVal] || sVal);
 
         updateLiveSimulator();
     });
@@ -2067,6 +2166,12 @@ $(function() {
         else if (selectedTemplate === 'badge') $('#simBadgeOverlay').removeClass('d-none');
         else if (selectedTemplate === 'strip') $('#simStripOverlay').removeClass('d-none');
 
+        // Ganti kelas ukuran watermark simulator
+        var selectedSize = $('input[name="watermark_size"]:checked').val() || 'medium';
+        $('#simulatorOverlayWrapper')
+            .removeClass('wm-size-small wm-size-medium wm-size-large')
+            .addClass('wm-size-' + selectedSize);
+
         updateExifSummaryDisplay();
     }
 
@@ -2126,6 +2231,8 @@ $(function() {
     function updateSummaryCard() {
         var tpl = $('input[name="template"]:checked').val() || 'classic';
         $('#summaryTemplate').text(templateLabels[tpl] || tpl);
+        var sz = $('input[name="watermark_size"]:checked').val() || 'medium';
+        $('#summarySize').text(sizeLabels[sz] || sz);
         var total = selectedFiles.length;
         var isDateExif = $('#useExifDate').is(':checked');
         var isTimeExif = $('#useExifTime').is(':checked');
@@ -2262,6 +2369,7 @@ $(function() {
 
         // Form Fields
         formData.append('template', $('input[name="template"]:checked').val() || 'classic');
+        formData.append('watermark_size', $('input[name="watermark_size"]:checked').val() || 'medium');
         formData.append('use_exif_date', $('#useExifDate').is(':checked') ? '1' : '0');
         formData.append('use_exif_time', $('#useExifTime').is(':checked') ? '1' : '0');
         formData.append('use_exif_location', $('#useExifLocation').is(':checked') ? '1' : '0');
@@ -2572,6 +2680,7 @@ $(function() {
 
             // Form parameters
             chunkFormData.append('template', $('input[name="template"]:checked').val() || 'classic');
+            chunkFormData.append('watermark_size', $('input[name="watermark_size"]:checked').val() || 'medium');
             chunkFormData.append('use_exif_date', $('#useExifDate').is(':checked') ? '1' : '0');
             chunkFormData.append('use_exif_time', $('#useExifTime').is(':checked') ? '1' : '0');
             chunkFormData.append('use_exif_location', $('#useExifLocation').is(':checked') ? '1' : '0');

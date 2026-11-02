@@ -888,17 +888,24 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A["Buka Menu: Dokumentasi &gt; Watermark Foto (/admin/dokumentasi/watermark-foto)"] --> W1["Langkah 1: Format &amp; Unggah Foto"]
+    A["Buka Menu: Dokumentasi &gt; Watermark Foto (/admin/dokumentasi/watermark-foto)"] --> W1["Langkah 1: Format, Ukuran &amp; Unggah Foto"]
     W1 --> B{"Pilih Format Template TimeMark"}
     B -->|Format 1| C["Gaya Klasik PU: Jam Besar, Garis Kuning, Kapsul Logo PU"]
     B -->|Format 2| D["Gaya Grid Inspeksi: Tabel Resmi PU Kotak Lapangan &amp; GPS"]
     B -->|Format 3| E["Gaya Modern Badge: Kartu Melayang Elegan di Sudut Foto"]
     B -->|Format 4| F["Gaya Bottom Strip: Banner Bawah Bersih &amp; Garis Aksen Emas"]
 
-    C --> G{"Metode Unggah Foto Dokumentasi"}
-    D --> G
-    E --> G
-    F --> G
+    C --> SZ{"Pilih Ukuran Watermark"}
+    D --> SZ
+    E --> SZ
+    F --> SZ
+    SZ -->|Kecil| SZ1["Ukuran Kecil: ~25% Tinggi Foto (Kompak, Objek Bangunan Terlihat Luas)"]
+    SZ -->|Sedang| SZ2["Ukuran Sedang: ~29% Tinggi Foto (Standar Rekomendasi, Rapi &amp; Proporsional)"]
+    SZ -->|Besar| SZ3["Ukuran Besar: ~38% Tinggi Foto (Menonjol &amp; Tegas untuk Cetak/Resolusi Tinggi)"]
+
+    SZ1 --> G{"Metode Unggah Foto Dokumentasi"}
+    SZ2 --> G
+    SZ3 --> G
 
     G -->|Pilih Berkas Foto| G1["Unggah Foto Satuan / Multi-Foto (JPG, PNG, WebP, HEIC/HEIF)"]
     G -->|Pilih Satu Folder| G2["Pilih Folder Langsung dari Laptop/PC (webkitdirectory)"]
@@ -1975,7 +1982,7 @@ graph TD
                         <ol class="pl-3 small mb-0 text-secondary">
                             <li><strong>Antarmuka Studio Modern Berbasis Tab Langkah (Step Wizard):</strong>
                                 <ul>
-                                    <li><strong>Langkah 1 (Foto &amp; Format):</strong> Memilih salah satu dari 4 gaya template TimeMark dan memilih/tarik-lepas file foto (JPG, PNG, WebP, iPhone HEIC, arsip ZIP, atau <strong>pilih satu folder langsung</strong>).</li>
+                                    <li><strong>Langkah 1 (Foto, Format &amp; Ukuran):</strong> Memilih salah satu dari 4 gaya template TimeMark, menentukan ukuran watermark proporsional (Kecil, Sedang/Standar, Besar), dan memilih/tarik-lepas file foto (JPG, PNG, WebP, iPhone HEIC, arsip ZIP, atau <strong>pilih satu folder langsung</strong>).</li>
                                     <li><strong>Langkah 2 (Waktu, Lokasi &amp; Pengelompokan):</strong> Pengaturan deteksi EXIF kamera, tombol penyesuaian offset jam (+1j, +2j, +3j, +5j, -1j, kustom), penentuan titik lokasi kegiatan serta koordinat GPS via popup peta interaktif Leaflet, serta opsi <strong>Pengelompokan Berdasarkan Lokasi Koordinat (GPS Clustering)</strong>.</li>
                                     <li><strong>Langkah 3 (Logo &amp; Proses):</strong> Opsi unggah logo instansi kustom opsional, tinjauan ringkasan konfigurasi sebelum memproses, serta tombol eksekusi pemrosesan watermark.</li>
                                 </ul>
@@ -1992,6 +1999,14 @@ graph TD
                                     <li><strong>Gaya Grid Inspeksi Proyek:</strong> Format tabel/grid resmi kotak inspeksi lapangan yang memuat baris Waktu &amp; Tanggal, Lokasi, Koordinat GPS, dan Catatan Proyek.</li>
                                     <li><strong>Gaya Modern Floating Badge:</strong> Kartu melayang (floating card) berlatar semi-transparan modern dengan tag instansi, jam digital besar, dan pin GPS di sudut foto.</li>
                                     <li><strong>Gaya Clean Bottom Strip:</strong> Banner horizontal elegan di sepanjang tepi bawah foto dengan garis aksen emas dan tata letak minimalis yang tidak menutupi objek foto.</li>
+                                    <li><strong>Pilihan Skala Ukuran Watermark Proporsional (Kecil, Sedang, Besar):</strong>
+                                        <ul class="mt-1">
+                                            <li><strong>Kecil (~25% tinggi foto):</strong> Format ramping dan kompak, dirancang khusus agar tidak menutupi fitur fisik bangunan atau objek konstruksi pada foto mendatar (landscape).</li>
+                                            <li><strong>Sedang (~29% tinggi foto - Rekomendasi/Standar):</strong> Ukuran default yang proporsional, rapi, dan seimbang antara keterbacaan teks informasi dan luas area foto proyek.</li>
+                                            <li><strong>Besar (~38% tinggi foto):</strong> Format tegas dan jelas yang sangat ideal untuk foto beresolusi super tinggi atau kebutuhan cetak laporan fisik.</li>
+                                            <li><strong>Kalkulasi Skala Adaptif Berbasis Aspek Rasio:</strong> Sistem secara cerdas mengkalkulasi rasio tinggi foto sehingga foto format widescreen (16:9 / panorama) tidak lagi mengalami pembesaran teks vertikal yang berlebihan.</li>
+                                        </ul>
+                                    </li>
                                 </ul>
                             </li>
                             <li><strong>Ekstraksi EXIF Otomatis &amp; Fleksibilitas Pengeditan Waktu Independen (Ganti Tanggal Saja / Jam Saja):</strong>

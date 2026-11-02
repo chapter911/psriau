@@ -587,9 +587,21 @@ class TimeMarkWatermarkService
         // 5. Muat Logo
         $logoImage = $this->loadLogoImage($options['logo_path'] ?? null);
 
-        // 6. Terapkan Template Pilihan
+        // 6. Terapkan Template Pilihan & Ukuran
         $template = strtolower(trim((string) ($options['template'] ?? 'classic')));
-        $scale = max(0.4, $width / 1080);
+        
+        $sizeSetting = strtolower(trim((string) ($options['watermark_size'] ?? $options['size'] ?? 'medium')));
+        $sizeMultipliers = [
+            'small'  => 0.65,
+            'medium' => 0.80,
+            'large'  => 1.05,
+        ];
+        $sizeMultiplier = $sizeMultipliers[$sizeSetting] ?? 0.80;
+
+        // Normalisasi dimensi acuan adaptif (agar foto landscape 16:9 / 4:3 tidak menghasilkan watermark raksasa)
+        $effectiveDim = min($width, (int) ($height * 1.5));
+        $baseScale = max(0.40, $effectiveDim / 1080);
+        $scale = $baseScale * $sizeMultiplier;
 
         switch ($template) {
             case 'table':
@@ -1177,16 +1189,16 @@ class TimeMarkWatermarkService
         $colorNavy = imagecolorallocate($image, 12, 53, 106); // PU Dark Navy
         $colorCapsuleBg = imagecolorallocate($image, 255, 255, 255);
 
-        $shadowOffset = (int) max(1, 2 * $scale);
-        $paddingX = (int) (60 * $scale);
-        $paddingY = (int) (60 * $scale);
+        $shadowOffset = (int) max(1, 1.5 * $scale);
+        $paddingX = (int) max(16, 40 * $scale);
+        $paddingY = (int) max(16, 40 * $scale);
 
-        // Sizes
-        $timeFontSize = (int) max(24, 76 * $scale);
-        $dateFontSize = (int) max(11, 23 * $scale);
-        $addressFontSize = (int) max(11, 21 * $scale);
-        $addressLineHeight = (int) ($addressFontSize * 1.4);
-        $capsuleFontSize = (int) max(8, 12 * $scale);
+        // Sizes (Disesuaikan proporsional, rapi, dan tidak menutupi objek foto lapangan)
+        $timeFontSize = (int) max(20, 58 * $scale);
+        $dateFontSize = (int) max(9.5, 19 * $scale);
+        $addressFontSize = (int) max(9, 16.5 * $scale);
+        $addressLineHeight = (int) ($addressFontSize * 1.38);
+        $capsuleFontSize = (int) max(7.5, 11 * $scale);
 
         // Siapkan baris alamat & koordinat (terstruktur Kabupaten & Kecamatan, bebas mojibake)
         $cleanLokasi = $this->sanitizeTextForFont($lokasi);
@@ -1260,7 +1272,7 @@ class TimeMarkWatermarkService
 
         // Render Jam, Vertical Bar, dan Tanggal
         $yAddressTop = $yAddressBottom - $addressBlockHeight + $addressFontSize;
-        $sectionSpacing = (int) (38 * $scale);
+        $sectionSpacing = (int) max(10, 22 * $scale);
         $yTime = $yAddressTop - $sectionSpacing;
 
         $timeText = $dt['time'];
@@ -1271,8 +1283,8 @@ class TimeMarkWatermarkService
         $this->drawTextWithShadow($image, $timeFontSize, 0, $paddingX, $yTime, $colorWhite, $colorDark, $fontBold, $timeText, $shadowOffset);
 
         // Bar Vertikal
-        $barX1 = $paddingX + $timeWidth + (22 * $scale);
-        $barX2 = $barX1 + (6 * $scale);
+        $barX1 = $paddingX + $timeWidth + (16 * $scale);
+        $barX2 = $barX1 + (int) max(2, 4.5 * $scale);
         $barTop = $yTime + $timeBox[7] - (2 * $scale);
         $barBottom = $yTime + $timeBox[1] + (2 * $scale);
 
@@ -1282,7 +1294,7 @@ class TimeMarkWatermarkService
         // Tanggal & Hari
         $dateStr = $dt['date'];
         $dayStr = $dt['day'];
-        $dateX = (int) ($barX2 + (22 * $scale));
+        $dateX = (int) ($barX2 + (16 * $scale));
 
         $dateBox = @imagettfbbox($dateFontSize, 0, $fontMedium, $dateStr);
         $dateHeight = $dateBox[1] - $dateBox[7];
@@ -1295,24 +1307,24 @@ class TimeMarkWatermarkService
 
         // Render Logo Capsule (Atas Jam)
         $yTimeTop = $yTime + $timeBox[7];
-        $capsuleSpacing = (int) (32 * $scale);
+        $capsuleSpacing = (int) max(10, 18 * $scale);
         $capsuleBottom = $yTimeTop - $capsuleSpacing;
-        $capsuleHeight = (int) max(36, 62 * $scale);
+        $capsuleHeight = (int) max(28, 52 * $scale);
         $capsuleTop = $capsuleBottom - $capsuleHeight;
         $capsuleLeft = $paddingX;
 
-        $logoSize = (int) max(22, 42 * $scale);
-        $logoX = $capsuleLeft + (14 * $scale);
+        $logoSize = (int) max(18, 34 * $scale);
+        $logoX = $capsuleLeft + (10 * $scale);
         $logoY = $capsuleTop + (($capsuleHeight - $logoSize) / 2);
 
         $hasLogo = ($logoImage !== null);
-        $textX = $hasLogo ? ($logoX + $logoSize + (14 * $scale)) : ($capsuleLeft + (18 * $scale));
+        $textX = $hasLogo ? ($logoX + $logoSize + (10 * $scale)) : ($capsuleLeft + (14 * $scale));
 
         $cBox1 = @imagettfbbox($capsuleFontSize, 0, $fontBold, "KEMENTERIAN");
         $cBox2 = @imagettfbbox($capsuleFontSize, 0, $fontBold, "PEKERJAAN UMUM");
         $cTextWidth = max($cBox1[2] - $cBox1[0], $cBox2[2] - $cBox2[0]);
         $cTextHeight = $cBox1[1] - $cBox1[7];
-        $capsuleRight = $textX + $cTextWidth + (20 * $scale);
+        $capsuleRight = $textX + $cTextWidth + (18 * $scale);
 
         $this->drawFilledRoundedRectangle($image, (int) ($capsuleLeft + $shadowOffset), (int) ($capsuleTop + $shadowOffset), (int) ($capsuleRight + $shadowOffset), (int) ($capsuleBottom + $shadowOffset), (int) ($capsuleHeight / 2), $colorDark);
         $this->drawFilledRoundedRectangle($image, (int) $capsuleLeft, (int) $capsuleTop, (int) $capsuleRight, (int) $capsuleBottom, (int) ($capsuleHeight / 2), $colorCapsuleBg);
@@ -1321,7 +1333,7 @@ class TimeMarkWatermarkService
             $this->copyResampledImage($image, $logoImage, (int) $logoX, (int) $logoY, $logoSize, $logoSize);
         }
 
-        $capsuleLineSpacing = (int) (3 * $scale);
+        $capsuleLineSpacing = (int) max(1, 2 * $scale);
         $totalTextHeight = (2 * $cTextHeight) + $capsuleLineSpacing;
         $textY = $capsuleTop + (($capsuleHeight - $totalTextHeight) / 2) + $cTextHeight;
 
@@ -1338,16 +1350,16 @@ class TimeMarkWatermarkService
         $fontMedium = $this->getFont(self::FONT_MEDIUM);
         $fontRegular = $this->getFont(self::FONT_REGULAR);
 
-        $paddingX = (int) (40 * $scale);
-        $paddingY = (int) (40 * $scale);
-        $cardWidth = (int) min($width - (2 * $paddingX), 720 * $scale);
+        $paddingX = (int) max(16, 32 * $scale);
+        $paddingY = (int) max(16, 32 * $scale);
+        $cardWidth = (int) min($width - (2 * $paddingX), 580 * $scale);
 
         // Ukuran font
-        $headerFontSize = (int) max(11, 16 * $scale);
-        $labelFontSize = (int) max(10, 14 * $scale);
-        $valueFontSize = (int) max(10, 15 * $scale);
-        $rowHeight = (int) max(28, 38 * $scale);
-        $headerHeight = (int) max(38, 52 * $scale);
+        $headerFontSize = (int) max(10, 14 * $scale);
+        $labelFontSize = (int) max(8.5, 12 * $scale);
+        $valueFontSize = (int) max(8.5, 13 * $scale);
+        $rowHeight = (int) max(22, 32 * $scale);
+        $headerHeight = (int) max(28, 42 * $scale);
 
         // Siapkan baris data tabel (bersihkan emoji & format terstruktur Kabupaten - Kecamatan)
         $cleanLokasi = $this->sanitizeTextForFont($lokasi);
@@ -1473,15 +1485,15 @@ class TimeMarkWatermarkService
         $fontMedium = $this->getFont(self::FONT_MEDIUM);
         $fontRegular = $this->getFont(self::FONT_REGULAR);
 
-        $paddingX = (int) (50 * $scale);
-        $paddingY = (int) (50 * $scale);
-        $cardWidth = (int) min($width - (2 * $paddingX), 520 * $scale);
+        $paddingX = (int) max(16, 36 * $scale);
+        $paddingY = (int) max(16, 36 * $scale);
+        $cardWidth = (int) min($width - (2 * $paddingX), 440 * $scale);
 
         // Font sizes
-        $timeFontSize = (int) max(28, 68 * $scale);
-        $dateFontSize = (int) max(11, 19 * $scale);
-        $textFontSize = (int) max(10, 16 * $scale);
-        $tagFontSize = (int) max(8, 12 * $scale);
+        $timeFontSize = (int) max(18, 52 * $scale);
+        $dateFontSize = (int) max(9, 16 * $scale);
+        $textFontSize = (int) max(8.5, 13 * $scale);
+        $tagFontSize = (int) max(7, 10 * $scale);
 
         $innerPad = (int) (24 * $scale);
         $contentWidth = $cardWidth - (2 * $innerPad);
@@ -1609,7 +1621,7 @@ class TimeMarkWatermarkService
         $fontMedium = $this->getFont(self::FONT_MEDIUM);
         $fontRegular = $this->getFont(self::FONT_REGULAR);
 
-        $stripHeight = (int) max(70, 115 * $scale);
+        $stripHeight = (int) max(50, 92 * $scale);
         $stripY1 = $height - $stripHeight;
         $stripY2 = $height;
 
@@ -1625,12 +1637,12 @@ class TimeMarkWatermarkService
         $borderThick = (int) max(2, 4 * $scale);
         imagefilledrectangle($image, 0, $stripY1, $width, $stripY1 + $borderThick, $colorTopBorder);
 
-        $paddingX = (int) (35 * $scale);
+        $paddingX = (int) max(16, 28 * $scale);
         $leftSectionWidth = (int) ($width * 0.32);
 
         // Sisi Kiri: Waktu Besar + Tanggal
-        $timeFontSize = (int) max(20, 48 * $scale);
-        $dateFontSize = (int) max(10, 16 * $scale);
+        $timeFontSize = (int) max(16, 38 * $scale);
+        $dateFontSize = (int) max(8.5, 13 * $scale);
 
         $timeText = $dt['time'];
         $timeBox = @imagettfbbox($timeFontSize, 0, $fontBold, $timeText);

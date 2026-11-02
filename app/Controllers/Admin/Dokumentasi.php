@@ -1168,6 +1168,11 @@ class Dokumentasi extends BaseController
             $template = 'classic';
         }
 
+        $watermarkSize = trim((string) $this->request->getPost('watermark_size'));
+        if (! in_array($watermarkSize, ['small', 'medium', 'large'], true)) {
+            $watermarkSize = 'medium';
+        }
+
         $useExifDate = (int) ($this->request->getPost('use_exif_date') ?? 1) === 1;
         $useExifTime = (int) ($this->request->getPost('use_exif_time') ?? 1) === 1;
         $useExifLocation = (int) ($this->request->getPost('use_exif_location') ?? 1) === 1;
@@ -1425,6 +1430,7 @@ class Dokumentasi extends BaseController
 
                 $processOptions = [
                     'template'          => $template,
+                    'watermark_size'    => $watermarkSize,
                     'logo_path'         => $customLogoPath,
                     'manual_date'       => $manualDate,
                     'manual_time'       => $manualTime,
@@ -1679,6 +1685,11 @@ class Dokumentasi extends BaseController
             $template = 'classic';
         }
 
+        $watermarkSize = trim((string) $this->request->getPost('watermark_size'));
+        if (! in_array($watermarkSize, ['small', 'medium', 'large'], true)) {
+            $watermarkSize = 'medium';
+        }
+
         $useExifDate = (int) ($this->request->getPost('use_exif_date') ?? 1) === 1;
         $useExifTime = (int) ($this->request->getPost('use_exif_time') ?? 1) === 1;
         $useExifLocation = (int) ($this->request->getPost('use_exif_location') ?? 1) === 1;
@@ -1842,6 +1853,7 @@ class Dokumentasi extends BaseController
 
             $processOptions = [
                 'template'          => $template,
+                'watermark_size'    => $watermarkSize,
                 'logo_path'         => $customLogoPath,
                 'manual_date'       => $manualDate,
                 'manual_time'       => $manualTime,
