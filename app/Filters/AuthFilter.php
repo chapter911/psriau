@@ -313,6 +313,16 @@ class AuthFilter implements FilterInterface
             return;
         }
 
+        // Throttle rapid repeated views on the same path within 15 seconds
+        if ($action === 'view') {
+            $lastView = session()->get('last_audit_view');
+            $now = time();
+            if (is_array($lastView) && ($lastView['path'] ?? '') === $path && ($now - (int) ($lastView['time'] ?? 0)) < 15) {
+                return;
+            }
+            session()->set('last_audit_view', ['path' => $path, 'time' => $now]);
+        }
+
         $db = Database::connect();
         if (! $db->tableExists('audit_histories')) {
             return;
@@ -320,11 +330,15 @@ class AuthFilter implements FilterInterface
 
         $target = $this->resolveAuditTarget($db, $request, $path);
         $before = null;
-        if (is_array($target) && isset($target['table'], $target['pk'], $target['id']) && $target['table'] !== '' && $target['pk'] !== '' && $target['id'] !== '') {
+        if (in_array($action, ['edit', 'delete'], true) && is_array($target) && isset($target['table'], $target['pk'], $target['id']) && $target['table'] !== '' && $target['pk'] !== '' && $target['id'] !== '') {
             if ($db->tableExists($target['table'])) {
                 $before = $db->table($target['table'])->where($target['pk'], $target['id'])->get()->getRowArray();
             }
         }
+
+        $requestPayload = $action === 'view'
+            ? $this->sanitizeRequestPayload((array) $request->getGet())
+            : $this->sanitizeRequestPayload((array) $request->getPost());
 
         $this->auditContext = [
             'action' => $action,
@@ -332,7 +346,7 @@ class AuthFilter implements FilterInterface
             'role' => $role,
             'target' => $target,
             'before' => $before,
-            'request' => $this->sanitizeRequestPayload((array) $request->getPost()),
+            'request' => $requestPayload,
             'user_id' => (int) session()->get('userId'),
             'username' => (string) session()->get('fullName') ?: (string) session()->get('username'),
         ];
@@ -350,16 +364,18 @@ class AuthFilter implements FilterInterface
                 return;
             }
 
+            $action = (string) ($this->auditContext['action'] ?? 'edit');
             $target = $this->auditContext['target'] ?? null;
             $after = null;
-            if (($this->auditContext['action'] ?? null) === 'edit' && is_array($target) && isset($target['table'], $target['pk'], $target['id']) && $target['table'] !== '' && $target['pk'] !== '' && $target['id'] !== '') {
+
+            if (in_array($action, ['edit', 'create'], true) && is_array($target) && isset($target['table'], $target['pk'], $target['id']) && $target['table'] !== '' && $target['pk'] !== '' && $target['id'] !== '') {
                 if ($db->tableExists($target['table'])) {
                     $after = $db->table($target['table'])->where($target['pk'], $target['id'])->get()->getRowArray();
                 }
             }
 
             $db->table('audit_histories')->insert([
-                'action_type' => (string) ($this->auditContext['action'] ?? 'edit'),
+                'action_type' => $action,
                 'module_path' => (string) ($this->auditContext['path'] ?? ''),
                 'table_name' => is_array($target) ? (string) ($target['table'] ?? '') : null,
                 'record_id' => is_array($target) ? (string) ($target['id'] ?? '') : null,
@@ -384,20 +400,64 @@ class AuthFilter implements FilterInterface
     private function resolveAuditAction(RequestInterface $request, string $path): ?string
     {
         $method = strtoupper((string) $request->getMethod());
+        $normalized = trim(strtolower($path), '/');
+
+        // Check for page view (GET request to admin page)
+        if ($method === 'GET') {
+            if ($this->isDataTableRequest($request)) {
+                return null;
+            }
+            if ($request->isAJAX()) {
+                return null;
+            }
+            // Skip static assets and media files
+            if (preg_match('/\.(png|jpg|jpeg|gif|svg|webp|pdf|docx|xlsx|xls|csv|css|js|map|ico|woff|woff2|ttf)$/i', $normalized)) {
+                return null;
+            }
+            // Skip export, download, stream, template endpoints
+            if (strpos($normalized, '/export') !== false || strpos($normalized, '/download') !== false || strpos($normalized, '/stream') !== false || strpos($normalized, '/template') !== false) {
+                return null;
+            }
+            // Skip internal ajax endpoints
+            if (strpos($normalized, '/ajax') !== false || strpos($normalized, '/json') !== false) {
+                return null;
+            }
+            return 'view';
+        }
+
         if (! in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
             return null;
         }
 
-        $normalized = trim(strtolower($path), '/');
-        if (strpos($normalized, '/hapus') !== false || strpos($normalized, '/delete') !== false) {
+        // Exclude ajax datatables or search requests in POST
+        if ($this->isDataTableRequest($request) || $request->isAJAX()) {
+            if (strpos($normalized, '/datatable') !== false || strpos($normalized, '/list') !== false || strpos($normalized, '/search') !== false) {
+                return null;
+            }
+        }
+
+        if (strpos($normalized, '/hapus') !== false || strpos($normalized, '/delete') !== false || strpos($normalized, '/destroy') !== false || $method === 'DELETE') {
             return 'delete';
         }
 
-        if (strpos($normalized, '/ubah') !== false || strpos($normalized, '/update') !== false || strpos($normalized, '/status') !== false || strpos($normalized, '/save') !== false) {
+        if (strpos($normalized, '/tambah') !== false || strpos($normalized, '/create') !== false || strpos($normalized, '/store') !== false || strpos($normalized, '/add') !== false || strpos($normalized, '/import') !== false) {
+            return 'create';
+        }
+
+        if (strpos($normalized, '/ubah') !== false || strpos($normalized, '/update') !== false || strpos($normalized, '/status') !== false || strpos($normalized, '/edit') !== false) {
             return 'edit';
         }
 
-        return null;
+        if (strpos($normalized, '/save') !== false || strpos($normalized, '/simpan') !== false) {
+            $post = (array) $request->getPost();
+            $id = $post['id'] ?? $post['report_id'] ?? $post['user_id'] ?? null;
+            if ($id !== null && trim((string) $id) !== '') {
+                return 'edit';
+            }
+            return 'create';
+        }
+
+        return 'edit';
     }
 
     private function resolveAuditTarget($db, RequestInterface $request, string $path): ?array
@@ -421,6 +481,31 @@ class AuthFilter implements FilterInterface
             'admin/konsultan-individual/laporan-bulanan' => ['table' => 'trn_konsultan_laporan_bulanan', 'pk' => 'id'],
             'admin/kontrak/surket-kinerja-ta' => ['table' => 'trn_surket_kinerja_ta', 'pk' => 'id'],
             'admin/kontrak/bast' => ['table' => 'trn_bast', 'pk' => 'id'],
+            // Added module mappings:
+            'admin/inventaris/satker' => ['table' => 'trn_inventaris_satker', 'pk' => 'id'],
+            'admin/inventaris/dbr' => ['table' => 'mst_ruangan', 'pk' => 'id'],
+            'admin/inventaris/pinjam-pakai' => ['table' => 'trn_inventaris_pinjam_pakai', 'pk' => 'id'],
+            'admin/inventaris/tidak-terdata' => ['table' => 'trn_inventaris_tidak_terdata', 'pk' => 'id'],
+            'admin/inventaris/audit' => ['table' => 'trn_inventaris_audit', 'pk' => 'id'],
+            'admin/inventaris/pemeliharaan' => ['table' => 'trn_inventaris_pemeliharaan', 'pk' => 'id'],
+            'admin/surat/perjalanan-dinas/disposisi' => ['table' => 'disposisi_perjalanan_dinas', 'pk' => 'id'],
+            'admin/surat/perjalanan-dinas/nota-dinas' => ['table' => 'nota_dinas_perjalanan_dinas', 'pk' => 'id'],
+            'admin/surat/perjalanan-dinas' => ['table' => 'laporan_perjalanan_dinas', 'pk' => 'id'],
+            'admin/surat/cuti' => ['table' => 'surat_cuti', 'pk' => 'id'],
+            'admin/surat/lupa-absen' => ['table' => 'lupa_absen', 'pk' => 'id'],
+            'admin/swakelola' => ['table' => 'trn_swakelola_paket', 'pk' => 'id'],
+            'admin/kompu/sosmed' => ['table' => 'trn_kompu_sosmed', 'pk' => 'id'],
+            'admin/master/sekolah' => ['table' => 'mst_sekolah', 'pk' => 'id'],
+            'admin/master/pegawai' => ['table' => 'mst_pegawai', 'pk' => 'id'],
+            'admin/master/jabatan' => ['table' => 'mst_jabatan', 'pk' => 'id'],
+            'admin/master/mata-anggaran' => ['table' => 'mst_mata_anggaran', 'pk' => 'id'],
+            'admin/master/tanggal-merah' => ['table' => 'mst_tanggal_merah', 'pk' => 'id'],
+            'admin/master/paket' => ['table' => 'mst_paket', 'pk' => 'id'],
+            'admin/master/transportasi' => ['table' => 'mst_transportasi', 'pk' => 'id'],
+            'admin/master/dasar-spt' => ['table' => 'mst_dasar_spt', 'pk' => 'id'],
+            'admin/master/biaya' => ['table' => 'mst_biaya_harian', 'pk' => 'id'],
+            'admin/master/simak' => ['table' => 'mst_simak_konstruksi_item', 'pk' => 'id'],
+            'admin/dokumentasi/kegiatan-lapangan' => ['table' => 'kegiatan_lapangan', 'pk' => 'id'],
         ];
 
         $table = null;
@@ -438,13 +523,15 @@ class AuthFilter implements FilterInterface
         }
 
         $id = null;
-        if (preg_match('#/([a-z0-9_\-]+)/(?:ubah|hapus|delete|status)$#i', $normalized, $m)) {
+        if (preg_match('#/([a-z0-9_\-]+)/(?:ubah|hapus|delete|status|edit|destroy)$#i', $normalized, $m)) {
             $id = $m[1];
         } elseif (preg_match('#/kontrak/ki/(\d+)/(\d+)/ubah$#', $normalized, $m)) {
             $id = $m[2];
+        } elseif (preg_match('#/([0-9]+)$#', $normalized, $m)) {
+            $id = $m[1];
         } else {
             $post = (array) $request->getPost();
-            foreach (['id', 'report_id', 'user_id'] as $key) {
+            foreach (['id', 'report_id', 'user_id', 'paket_id', 'item_id', 'pegawai_id'] as $key) {
                 if (! isset($post[$key])) {
                     continue;
                 }

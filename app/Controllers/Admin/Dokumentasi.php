@@ -2515,6 +2515,31 @@ class Dokumentasi extends BaseController
         return redirect()->to('/admin/dokumentasi/organisir-foto-gps')->with('error', 'Foto tidak ditemukan.');
     }
 
+    // =========================================================================
+    // MODUL: PEMBERSIH WATERMARK FOTO (AI INPAINTING STUDIO)
+    // =========================================================================
+
+    /**
+     * Tampilan utama Studio Pembersih Watermark Foto.
+     */
+    public function hapusWatermark()
+    {
+        if (! $this->canAccessHapusWatermarkMenu()) {
+            return redirect()->to('/admin/dashboard')->with('error', 'Akses ditolak. Anda tidak memiliki izin untuk mengakses menu Pembersih Watermark (Rule #4).');
+        }
+
+        $perms = $this->getHapusWatermarkPermissions();
+
+        $data = [
+            'title'       => 'Pembersih Watermark Foto (AI Inpainting)',
+            'subtitle'    => 'Hapus dan bersihkan stempel watermark pada foto dokumentasi lapangan secara instan menggunakan kuas cerdas atau preset zona otomatis (100% Client-Side di Browser)',
+            'pageTitle'   => 'Pembersih Watermark Foto',
+            'permissions' => $perms,
+        ];
+
+        return view('admin/dokumentasi/hapus_watermark', $data);
+    }
+
     private function canAccessOrganisirMenu(): bool
     {
         $db = db_connect();
@@ -2594,6 +2619,82 @@ class Dokumentasi extends BaseController
     // =========================================================================
     // HAK AKSES & PERMISSION HELPER (RULE #4)
     // =========================================================================
+
+    private function canAccessHapusWatermarkMenu(): bool
+    {
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return true;
+        }
+
+        $role = (string) (session()->get('role') ?? '');
+        $roleId = $this->resolveWatermarkRoleId($role, $db);
+        if ($roleId === null) {
+            return false;
+        }
+
+        $menuId = $this->resolveWatermarkMenuId('admin/dokumentasi/hapus-watermark', $db);
+        if ($menuId === null) {
+            return true;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        return (int) $db->table('menu_akses')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->countAllResults() > 0;
+    }
+
+    private function getHapusWatermarkPermissions(): array
+    {
+        $default = [
+            'add'      => true,
+            'edit'     => true,
+            'export'   => true,
+            'delete'   => false,
+            'import'   => false,
+            'approval' => false,
+        ];
+
+        $rawRole = (string) (session()->get('role') ?? '');
+        $normalizedRole = strtolower(trim($rawRole));
+
+        if (in_array($normalizedRole, ['super administrator', 'super_administrator', 'superadmin', 'super-admin', 'admin', 'administrator'], true)) {
+            return $default;
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return $default;
+        }
+
+        $roleId = $this->resolveWatermarkRoleId($rawRole, $db);
+        $menuId = $this->resolveWatermarkMenuId('admin/dokumentasi/hapus-watermark', $db);
+        if ($roleId === null || $menuId === null) {
+            return $default;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        $row = $db->table('menu_akses')
+            ->select('FiturAdd, FiturEdit, FiturDelete, FiturExport, FiturImport, FiturApproval')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($row)) {
+            return $default;
+        }
+
+        return [
+            'add'      => (int) ($row['FiturAdd'] ?? 0) === 1,
+            'edit'     => (int) ($row['FiturEdit'] ?? 0) === 1,
+            'export'   => (int) ($row['FiturExport'] ?? 0) === 1,
+            'delete'   => (int) ($row['FiturDelete'] ?? 0) === 1,
+            'import'   => (int) ($row['FiturImport'] ?? 0) === 1,
+            'approval' => (int) ($row['FiturApproval'] ?? 0) === 1,
+        ];
+    }
 
     private function canAccessWatermarkMenu(): bool
     {

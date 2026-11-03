@@ -987,7 +987,7 @@
                         </h6>
                         <small class="text-muted" style="font-size: 0.72rem;">Catatan riwayat aksi penambahan, perubahan & penghapusan data</small>
                     </div>
-                    <a href="<?= site_url('/admin/history/edit'); ?>" class="btn btn-xs btn-outline-secondary font-weight-bold" style="border-radius: 6px; font-size: 0.72rem;">
+                    <a href="<?= site_url('/admin/history'); ?>" class="btn btn-xs btn-outline-secondary font-weight-bold" style="border-radius: 6px; font-size: 0.72rem;">
                         <i class="fas fa-history mr-1"></i> Riwayat Lengkap
                     </a>
                 </div>

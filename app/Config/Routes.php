@@ -104,6 +104,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('utility/user-group', 'Admin\\Utility::userGroup');
 	$routes->get('utility/user-group/access/(:num)', 'Admin\\Utility::userGroupAccess/$1');
 	$routes->post('utility/user-group/access/save', 'Admin\\Utility::userGroupAccessSave');
+	$routes->get('history', 'Admin\\History::index');
+	$routes->get('history/activity', 'Admin\\History::index');
 	$routes->get('history/login', 'Admin\\History::login');
 	$routes->get('history/edit', 'Admin\\History::edit');
 	$routes->get('history/delete', 'Admin\\History::delete');
@@ -445,6 +447,9 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('dokumentasi/organisir-foto-gps/download-batch-zip/(:segment)', 'Admin\\Dokumentasi::downloadOrganisirZip/$1');
 	$routes->get('dokumentasi/organisir-foto-gps/download-batch-item/(:segment)', 'Admin\\Dokumentasi::downloadOrganisirItem/$1');
 	$routes->get('dokumentasi/organisir-foto-gps/download-batch-item/(:segment)/(:any)', 'Admin\\Dokumentasi::downloadOrganisirItem/$1/$2');
+
+	// Pembersih Watermark (Inpainting Studio)
+	$routes->get('dokumentasi/hapus-watermark', 'Admin\\Dokumentasi::hapusWatermark');
 
 	$routes->get('acara', 'Admin\\Event::index');
 	$routes->match(['get', 'post'], 'acara/tambah', 'Admin\\Event::create');

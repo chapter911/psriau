@@ -545,6 +545,45 @@ graph TD
             </div>
         </div>
     </div>
+    <!-- FLOWCHART 5C: ACTIVITY HISTORY & AUDIT TRAIL ENGINE -->
+    <div class="flowchart-card role-section" data-roles="super_administrator,admin,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-history mr-2"></i> Alur Rekam Jejak Aktivitas Pengguna (Activity History &amp; Audit Trail)</h5>
+                <small class="text-muted">Intersepsi global otomatis via AuthFilter: Pencatatan kunjungan halaman (View), penambahan data (Create), perubahan data (Edit), dan penghapusan data (Delete).</small>
+            </div>
+            <div>
+                <span class="badge badge-primary">Audit Log Real-Time</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Pengguna Berinteraksi di Panel Admin (/admin/*)"] --> B{"Metode &amp; Tipe Request HTTP"}
+    
+    B -- "GET (Buka Halaman Modul)" --> C{"Evaluasi Kunjungan Halaman"}
+    C -- "Akses Pertama / Berpindah Menu" --> C1["Catat Aksi 'View' ke audit_histories"]
+    C -- "Refresh Berulang &lt; 15 Detik / File Aset / AJAX" --> C2["Lewati (Cegah Duplikasi Log)"]
+    
+    B -- "POST / PUT / PATCH / DELETE" --> D{"Deteksi Operasi Data"}
+    D -- "Tambah Data (/tambah, /create, /store)" --> D1["Catat Aksi 'Create' + Simpan Request Payload"]
+    D -- "Ubah Data (/ubah, /update, /status)" --> D2["Catat Aksi 'Edit' + Ambil Data 'Before' &amp; 'After'"]
+    D -- "Hapus Data (/hapus, /delete, /destroy)" --> D3["Catat Aksi 'Delete' + Ambil Snapshot 'Before'"]
+    
+    C1 --> E["Penyimpanan Database (audit_histories)"]
+    D1 --> E
+    D2 --> E
+    D3 --> E
+    
+    E --> F["Tersaji di Activity History (/admin/history)"]
+    F --> F1["Widget Dashboard: Log Aktivitas Pengguna Terkini"]
+    F --> F2["Tabel Kronologis Interaktif &amp; Filter Multikriteria"]
+    F --> F3["Modal Viewer Rincian JSON (Request, Before &amp; After Diff)"]
+                </pre>
+            </div>
+        </div>
+    </div>
     <!-- FLOWCHART 6: JADWAL & KLASEMEN GATEBALL -->
     <div class="flowchart-card role-section" data-roles="all,admin,super_administrator,staf_pelaksana,ppk_kasatker">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
@@ -1045,6 +1084,48 @@ graph TD
         </div>
     </div>
 
+    <!-- FLOWCHART: PEMBERSIH WATERMARK FOTO (AI INPAINTING STUDIO) -->
+    <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-eraser text-primary mr-2"></i>Flowchart: Alur Kerja Studio Pembersih Watermark Foto (AI Inpainting, Preset Zona TimeMark &amp; Batch Massal)
+            </h5>
+            <div>
+                <span class="badge badge-success">Dokumentasi</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu: Dokumentasi &gt; Pembersih Watermark (/admin/dokumentasi/hapus-watermark)"] --> MODE{"Pilih Mode Pembersihan"}
+    
+    MODE -->|Mode Satuan| S1["Mode Satuan: Studio Kanvas Interaktif"]
+    MODE -->|Mode Massal| B1["Mode Massal / Batch: Rutinitas Banyak Foto"]
+
+    S1 --> S_UP["Unggah 1 Foto (JPG, PNG, WebP, iPhone HEIC)"]
+    S_UP --> S_MASK{"Tentukan Area Masker Watermark"}
+    S_MASK -->|Preset Cepat| S_P1["Pilih Preset: Kiri Bawah (TimeMark Klasik), Kanan Bawah, Tepi Bawah, Kiri Atas"]
+    S_MASK -->|Kuas Manual| S_P2["Gunakan Kuas Interaktif: Atur Ukuran Kuas &amp; Bauran Tepi (Feathering)"]
+    S_P1 --> S_RUN["Klik 'Bersihkan Watermark Sekarang'"]
+    S_P2 --> S_RUN
+    S_RUN --> INPAINT_ENGINE["Client-Side Inpainting Engine (HTML5 Canvas &amp; Multi-Pass Edge Interpolation)"]
+    INPAINT_ENGINE --> S_RES["Tampilkan Hasil Bersih &amp; Sebelum/Sesudah (Split Slider)"]
+    S_RES --> S_DL["Unduh Foto Bersih (JPG Kualitas Tinggi)"]
+
+    B1 --> B_UP["Unggah Puluhan Foto Sekaligus / 1 Folder / Berkas ZIP"]
+    B_UP --> B_ZONE{"Pilih Zona Watermark Seragam"}
+    B_ZONE -->|Preset Seragam| B_P1["Atur Posisi (Kiri Bawah) &amp; Slider Lebar/Tinggi Zona (%) pada Foto Sampel"]
+    B_P1 --> B_START["Klik 'Bersihkan Semua Foto (Batch Inpaint)'"]
+    B_START --> B_LOOP["Looping Rekonstruksi Foto Satu per Satu di Browser"]
+    B_LOOP --> B_PROG["Live Progress Bar &amp; Indikator Sisa Waktu"]
+    B_PROG --> B_FINISH["Kemas Seluruh Hasil ke 1 Berkas ZIP via JSZip Client-Side"]
+    B_FINISH --> B_RES["Galeri Thumbnail Grid Hasil Bersih &amp; Unduh Semua (ZIP)"]
+                </pre>
+            </div>
+        </div>
+    </div>
+
     <!-- FLOWCHART 14: SWAKELOLA - SIKLUS ADMINISTRASI 5 TAHAPAN (LHA NO. 9) -->
     <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,keuangan,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
@@ -1346,6 +1427,21 @@ graph TD
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-file-image mr-1"></i> Master Kop Surat & Unduh Template Word (.docx)</h6>
                                 <p class="small text-muted mb-2"><code>/admin/master/kop-surat</code></p>
                                 <p class="small mb-0">Pengelolaan berkas kop surat resmi Satker PPS Riau (unggah gambar banner, pratinjau resolusi penuh, dan aktivasi kop instansi). Dilengkapi fitur <strong>Unduh File Word (.docx)</strong> baik langsung melalui tombol di header halaman (mengunduh kop surat aktif), tombol baris tabel per kop surat, maupun tombol aksi di dalam modal pratinjau. Dokumen Word yang diunduh berformat A4 dengan margin standar kedinasan (Top 1.5 cm, Left/Right/Bottom 2.0 cm), gambar banner kop surat proporsional resolusi tajam, serta draf surat kedinasan lengkap (Nomor, Sifat, Lampiran, Hal, Tanggal, Tujuan Yth., Salam Pembuka, Poin Isi Surat, Penutup, Blok Tanda Tangan Kasatker, dan Tembusan) yang <em>100% editable</em> di Microsoft Word.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-history mr-1"></i> Activity History (Log Aktivitas Pengguna)</h6>
+                                <p class="small text-muted mb-2"><code>/admin/history</code></p>
+                                <p class="small mb-1">Pusat pemantauan rekam jejak aktivitas operasional seluruh pengguna sistem secara real-time dan terpadu:</p>
+                                <ul class="pl-3 small mb-0">
+                                    <li><strong>4 Kategori Aktivitas:</strong> Mencatat Tambah Data (🟢 <em>Create</em>), Perubahan Data (🟡 <em>Edit</em>), Penghapusan Data (🔴 <em>Delete</em>), serta Kunjungan Halaman (🟣 <em>View</em>).</li>
+                                    <li><strong>Snapshot Perubahan Data (Before &amp; After):</strong> Pada setiap aksi edit atau hapus, sistem merekam perbandingan nilai sebelum dan sesudah perubahan data dalam format JSON yang dapat ditinjau via modal interaktif.</li>
+                                    <li><strong>Deteksi Kunjungan Halaman Cerdas:</strong> Menangkap perpindahan menu halaman oleh pengguna sekaligus menerapkan proteksi anti-spam (refresh halaman berulang &lt; 15 detik dan request AJAX/aset tidak diduplikasi ke log).</li>
+                                    <li><strong>Filter Komprehensif:</strong> Mendukung filter cepat berdasarkan tipe aktivitas (semua, khusus perubahan data, per aksi), pencarian nama pengguna/role, modul/path, dan rentang tanggal.</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -2197,6 +2293,52 @@ graph TD
                             <li><strong>Proteksi Otorisasi Hak Akses (menu_akses):</strong>
                                 <ul>
                                     <li>Hak akses menu dikendalikan secara ketat melalui tabel <code>menu_akses</code> (Izin FiturAdd &amp; FiturEdit) sesuai standar keamanan aplikasi (Rule #4).</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODUL DOKUMENTASI: PEMBERSIH WATERMARK FOTO (AI INPAINTING STUDIO) -->
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,editor,all">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-eraser mr-2"></i> Modul Dokumentasi: Studio Pembersih Watermark Foto (AI Inpainting Client-Side)
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-primary"><i class="fas fa-magic mr-1"></i> Alur Kerja &amp; Fitur Unggulan Pembersih Watermark</h6>
+                        <p class="small text-muted mb-2"><code>/admin/dokumentasi/hapus-watermark</code></p>
+                        <ol class="pl-3 small mb-0 text-secondary">
+                            <li><strong>100% Client-Side di Browser (Nol Beban Server, Bebas Kuota &amp; Privasi Terjaga):</strong>
+                                <ul>
+                                    <li>Seluruh proses rekonstruksi citra (*inpainting*) dieksekusi secara lokal oleh peramban pengguna melalui komputasi HTML5 Canvas.</li>
+                                    <li>Foto tidak dikirim ke server luar atau API pihak ketiga berbayar, menjaga kerahasiaan dokumen teknis instansi secara mutlak.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Mode Satuan (Interactive Canvas Studio):</strong>
+                                <ul>
+                                    <li><strong>Kuas Masker Interaktif (Brush &amp; Eraser):</strong> Memungkinkan pengguna menandai watermark secara bebas dengan kuas merah atau menghapus masker di luar target.</li>
+                                    <li><strong>Preset Zona Instan:</strong> Opsi sekali klik untuk menandai area standar stempel TimeMark (<em>Sudut Kiri Bawah, Kanan Bawah, Tepi Bawah/Strip, Kiri Atas</em>) dilengkapi slider persentase lebar dan tinggi.</li>
+                                    <li><strong>Pengaturan Kehalusan Tepi (Edge Feathering):</strong> Slider 2px hingga 15px untuk memastikan batas area yang direkonstruksi membaur alami dengan piksel sekitarnya tanpa garis potong tajam.</li>
+                                    <li><strong>Perbandingan Visual Sebelum vs Sesudah:</strong> Tombol toggle dan split slider untuk meninjau kebersihan hasil sebelum diunduh.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Mode Massal / Batch (Khusus Rutinitas Puluhan Foto Lapangan):</strong>
+                                <ul>
+                                    <li><strong>Dukungan Unggah Cepat:</strong> Multi-berkas, satu folder langsung (<code>webkitdirectory</code>), atau arsip <code>.ZIP</code>.</li>
+                                    <li><strong>Zona Watermark Seragam:</strong> Cukup tentukan posisi dan dimensi kotak watermark pada visualizer sampel, seluruh foto dalam antrean batch akan dibersihkan pada koordinat yang sama.</li>
+                                    <li><strong>Pemrosesan Beruntun dengan Progress Bar:</strong> Sistem memproses foto satu per satu dengan indikator persentase, nama berkas aktif, dan estimasi waktu selesai.</li>
+                                    <li><strong>Kompresi &amp; Unduh ZIP Otomatis (JSZip):</strong> Seluruh foto yang berhasil dibersihkan otomatis dikemas menjadi satu berkas <code>foto_bersih_batch_*.zip</code> siap unduh sekali klik.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Otorisasi Hak Akses (menu_akses):</strong>
+                                <ul>
+                                    <li>Akses menu dikendalikan melalui tabel <code>menu_akses</code> (Izin FiturAdd &amp; FiturEdit) sesuai standar keamanan aplikasi (Rule #4).</li>
                                 </ul>
                             </li>
                         </ol>
