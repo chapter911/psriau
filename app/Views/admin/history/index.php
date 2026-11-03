@@ -3,20 +3,27 @@
 <?= $this->section('content'); ?>
 <?php
 $rows = $rows ?? [];
+$userList = $user_list ?? [];
 $stats = $stats ?? ['total' => 0, 'create' => 0, 'edit' => 0, 'delete' => 0, 'view' => 0, 'today' => 0];
 $tableReady = (bool) ($table_ready ?? false);
 $filters = is_array($filters ?? null) ? $filters : [
-    'type'      => '',
-    'username'  => '',
-    'module'    => '',
-    'date_from' => '',
-    'date_to'   => '',
+    'type'               => '',
+    'username'           => '',
+    'exclude_user'       => '',
+    'include_superadmin' => false,
+    'module'             => '',
+    'date_from'          => '',
+    'date_to'            => '',
 ];
+
+$includeSuperadmin = (bool) ($filters['include_superadmin'] ?? false);
+$currentType = (string) ($filters['type'] ?? '');
+$isTodayFilter = ($filters['date_from'] ?? '') === date('Y-m-d') && ($filters['date_to'] ?? '') === date('Y-m-d');
 
 $formatDateTime = static function (?string $value): array {
     $trimmed = trim((string) $value);
     if ($trimmed === '' || $trimmed === '-') {
-        return ['full' => '-', 'date' => '-', 'time' => '-'];
+        return ['full' => '-', 'date' => '-', 'time' => '-', 'raw' => ''];
     }
 
     try {
@@ -25,9 +32,10 @@ $formatDateTime = static function (?string $value): array {
             'full' => $dt->format('d/m/Y H:i:s'),
             'date' => $dt->format('d/m/Y'),
             'time' => $dt->format('H:i:s') . ' WIB',
+            'raw'  => $dt->format('Y-m-d H:i:s'),
         ];
     } catch (Throwable $e) {
-        return ['full' => $trimmed, 'date' => $trimmed, 'time' => ''];
+        return ['full' => $trimmed, 'date' => $trimmed, 'time' => '', 'raw' => $trimmed];
     }
 };
 
@@ -75,6 +83,29 @@ $resolveModuleLabel = static function (?string $path, ?string $table): string {
 
     return '/' . $p;
 };
+
+// Helper URL builder for clickable stat cards
+$buildCardUrl = static function (array $overrides) use ($filters): string {
+    $params = [
+        'type'               => $filters['type'] ?? '',
+        'username'           => $filters['username'] ?? '',
+        'exclude_user'       => $filters['exclude_user'] ?? '',
+        'module'             => $filters['module'] ?? '',
+        'date_from'          => $filters['date_from'] ?? '',
+        'date_to'            => $filters['date_to'] ?? '',
+        'include_superadmin' => ($filters['include_superadmin'] ?? false) ? '1' : '',
+    ];
+
+    $merged = array_merge($params, $overrides);
+    $clean = [];
+    foreach ($merged as $k => $v) {
+        if ($v !== '' && $v !== null) {
+            $clean[$k] = $v;
+        }
+    }
+
+    return site_url('admin/history' . (! empty($clean) ? '?' . http_build_query($clean) : ''));
+};
 ?>
 
 <style>
@@ -84,6 +115,43 @@ $resolveModuleLabel = static function (?string $path, ?string $table): string {
 .badge-action-delete { background-color: #dc3545; color: #fff; }
 .badge-action-view { background-color: #6f42c1; color: #fff; }
 .badge-action-login { background-color: #17a2b8; color: #fff; }
+
+/* Clickable card styles */
+.card-filter-link {
+    text-decoration: none !important;
+    display: block;
+    height: 100%;
+    color: inherit;
+}
+.card-filter-link .small-box {
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    cursor: pointer;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+.card-filter-link:hover .small-box {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22) !important;
+    filter: brightness(1.04);
+}
+.card-filter-link.is-active .small-box {
+    box-shadow: 0 0 0 3px #17a2b8, 0 8px 18px rgba(0, 0, 0, 0.3) !important;
+    transform: scale(1.02);
+}
+.card-filter-link.is-active .small-box::after {
+    content: "✓ Aktif";
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+}
 .json-viewer-box {
     background-color: #f8f9fa;
     border: 1px solid #e9ecef;
@@ -98,61 +166,96 @@ $resolveModuleLabel = static function (?string $path, ?string $table): string {
 }
 </style>
 
-<!-- Stat Cards -->
+<!-- Clickable Stat Cards -->
 <div class="row mb-3">
+    <!-- Card 1: Total Aktivitas -->
     <div class="col-6 col-md-4 col-xl-2 mb-2">
-        <div class="small-box bg-info mb-0 h-100">
-            <div class="inner py-2 px-3">
-                <h4 class="font-weight-bold mb-1"><?= number_format((int) ($stats['total'] ?? 0)); ?></h4>
-                <p class="mb-0 text-white-50" style="font-size: 0.8rem;">Total Aktivitas</p>
+        <a href="<?= $buildCardUrl(['type' => '', 'date_from' => '', 'date_to' => '']); ?>" 
+           class="card-filter-link <?= ($currentType === '' && ! $isTodayFilter) ? 'is-active' : ''; ?>"
+           title="Klik untuk melihat semua aktivitas">
+            <div class="small-box bg-info mb-0 h-100">
+                <div class="inner py-2 px-3">
+                    <h4 class="font-weight-bold mb-1"><?= number_format((int) ($stats['total'] ?? 0)); ?></h4>
+                    <p class="mb-0 text-white-50" style="font-size: 0.8rem;">Total Aktivitas</p>
+                </div>
+                <div class="icon"><i class="fas fa-list-check"></i></div>
             </div>
-            <div class="icon"><i class="fas fa-list-check"></i></div>
-        </div>
+        </a>
     </div>
+
+    <!-- Card 2: Tambah Data -->
     <div class="col-6 col-md-4 col-xl-2 mb-2">
-        <div class="small-box bg-success mb-0 h-100">
-            <div class="inner py-2 px-3">
-                <h4 class="font-weight-bold mb-1"><?= number_format((int) ($stats['create'] ?? 0)); ?></h4>
-                <p class="mb-0 text-white-50" style="font-size: 0.8rem;">Tambah Data</p>
+        <a href="<?= $buildCardUrl(['type' => 'create']); ?>" 
+           class="card-filter-link <?= ($currentType === 'create') ? 'is-active' : ''; ?>"
+           title="Klik untuk memfilter Tambah Data (Create)">
+            <div class="small-box bg-success mb-0 h-100">
+                <div class="inner py-2 px-3">
+                    <h4 class="font-weight-bold mb-1"><?= number_format((int) ($stats['create'] ?? 0)); ?></h4>
+                    <p class="mb-0 text-white-50" style="font-size: 0.8rem;">Tambah Data</p>
+                </div>
+                <div class="icon"><i class="fas fa-plus-circle"></i></div>
             </div>
-            <div class="icon"><i class="fas fa-plus-circle"></i></div>
-        </div>
+        </a>
     </div>
+
+    <!-- Card 3: Ubah Data -->
     <div class="col-6 col-md-4 col-xl-2 mb-2">
-        <div class="small-box bg-warning mb-0 h-100">
-            <div class="inner py-2 px-3">
-                <h4 class="font-weight-bold mb-1 text-white"><?= number_format((int) ($stats['edit'] ?? 0)); ?></h4>
-                <p class="mb-0 text-white" style="font-size: 0.8rem;">Ubah Data</p>
+        <a href="<?= $buildCardUrl(['type' => 'edit']); ?>" 
+           class="card-filter-link <?= ($currentType === 'edit') ? 'is-active' : ''; ?>"
+           title="Klik untuk memfilter Ubah Data (Edit)">
+            <div class="small-box bg-warning mb-0 h-100">
+                <div class="inner py-2 px-3">
+                    <h4 class="font-weight-bold mb-1 text-white"><?= number_format((int) ($stats['edit'] ?? 0)); ?></h4>
+                    <p class="mb-0 text-white" style="font-size: 0.8rem;">Ubah Data</p>
+                </div>
+                <div class="icon"><i class="fas fa-edit"></i></div>
             </div>
-            <div class="icon"><i class="fas fa-edit"></i></div>
-        </div>
+        </a>
     </div>
+
+    <!-- Card 4: Hapus Data -->
     <div class="col-6 col-md-4 col-xl-2 mb-2">
-        <div class="small-box bg-danger mb-0 h-100">
-            <div class="inner py-2 px-3">
-                <h4 class="font-weight-bold mb-1"><?= number_format((int) ($stats['delete'] ?? 0)); ?></h4>
-                <p class="mb-0 text-white-50" style="font-size: 0.8rem;">Hapus Data</p>
+        <a href="<?= $buildCardUrl(['type' => 'delete']); ?>" 
+           class="card-filter-link <?= ($currentType === 'delete') ? 'is-active' : ''; ?>"
+           title="Klik untuk memfilter Hapus Data (Delete)">
+            <div class="small-box bg-danger mb-0 h-100">
+                <div class="inner py-2 px-3">
+                    <h4 class="font-weight-bold mb-1"><?= number_format((int) ($stats['delete'] ?? 0)); ?></h4>
+                    <p class="mb-0 text-white-50" style="font-size: 0.8rem;">Hapus Data</p>
+                </div>
+                <div class="icon"><i class="fas fa-trash-alt"></i></div>
             </div>
-            <div class="icon"><i class="fas fa-trash-alt"></i></div>
-        </div>
+        </a>
     </div>
+
+    <!-- Card 5: Kunjungan Halaman -->
     <div class="col-6 col-md-4 col-xl-2 mb-2">
-        <div class="small-box stat-box-purple mb-0 h-100">
-            <div class="inner py-2 px-3">
-                <h4 class="font-weight-bold mb-1"><?= number_format((int) ($stats['view'] ?? 0)); ?></h4>
-                <p class="mb-0 text-white-50" style="font-size: 0.8rem;">Akses Halaman</p>
+        <a href="<?= $buildCardUrl(['type' => 'view']); ?>" 
+           class="card-filter-link <?= ($currentType === 'view') ? 'is-active' : ''; ?>"
+           title="Klik untuk memfilter Kunjungan Halaman (View)">
+            <div class="small-box stat-box-purple mb-0 h-100">
+                <div class="inner py-2 px-3">
+                    <h4 class="font-weight-bold mb-1"><?= number_format((int) ($stats['view'] ?? 0)); ?></h4>
+                    <p class="mb-0 text-white-50" style="font-size: 0.8rem;">Akses Halaman</p>
+                </div>
+                <div class="icon"><i class="fas fa-eye"></i></div>
             </div>
-            <div class="icon"><i class="fas fa-eye"></i></div>
-        </div>
+        </a>
     </div>
+
+    <!-- Card 6: Hari Ini -->
     <div class="col-6 col-md-4 col-xl-2 mb-2">
-        <div class="small-box bg-primary mb-0 h-100">
-            <div class="inner py-2 px-3">
-                <h4 class="font-weight-bold mb-1"><?= number_format((int) ($stats['today'] ?? 0)); ?></h4>
-                <p class="mb-0 text-white-50" style="font-size: 0.8rem;">Hari Ini</p>
+        <a href="<?= $buildCardUrl(['date_from' => date('Y-m-d'), 'date_to' => date('Y-m-d')]); ?>" 
+           class="card-filter-link <?= ($isTodayFilter) ? 'is-active' : ''; ?>"
+           title="Klik untuk melihat aktivitas hari ini">
+            <div class="small-box bg-primary mb-0 h-100">
+                <div class="inner py-2 px-3">
+                    <h4 class="font-weight-bold mb-1"><?= number_format((int) ($stats['today'] ?? 0)); ?></h4>
+                    <p class="mb-0 text-white-50" style="font-size: 0.8rem;">Hari Ini</p>
+                </div>
+                <div class="icon"><i class="fas fa-calendar-day"></i></div>
             </div>
-            <div class="icon"><i class="fas fa-calendar-day"></i></div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -164,7 +267,7 @@ $resolveModuleLabel = static function (?string $path, ?string $table): string {
                 <i class="fas fa-history text-primary mr-2"></i> Activity History (Log Aktivitas Pengguna)
             </h5>
             <small class="text-muted d-block mt-1">
-                Catatan kronologis perubahan data (Tambah, Ubah, Hapus) dan kunjungan halaman oleh seluruh pengguna sistem secara real-time.
+                Catatan kronologis perubahan data (Tambah, Ubah, Hapus) dan kunjungan halaman oleh pengguna sistem secara real-time.
             </small>
         </div>
         <div class="mt-2 mt-md-0">
@@ -182,7 +285,8 @@ $resolveModuleLabel = static function (?string $path, ?string $table): string {
         <?php else: ?>
             <!-- Filter Form -->
             <form method="get" action="<?= site_url('admin/history'); ?>" class="p-3 mb-4 bg-light rounded border">
-                <div class="form-row align-items-end">
+                <!-- Baris 1: Filter Utama -->
+                <div class="form-row align-items-end mb-2">
                     <div class="form-group col-12 col-md-3 mb-2 mb-md-0">
                         <label for="filter_type" class="small font-weight-bold text-muted mb-1">Tipe Aktivitas</label>
                         <select class="form-control form-control-sm" id="filter_type" name="type">
@@ -195,20 +299,36 @@ $resolveModuleLabel = static function (?string $path, ?string $table): string {
                         </select>
                     </div>
                     <div class="form-group col-12 col-md-2 mb-2 mb-md-0">
-                        <label for="filter_username" class="small font-weight-bold text-muted mb-1">Pengguna / Role</label>
-                        <input type="text" class="form-control form-control-sm" id="filter_username" name="username" value="<?= esc((string) ($filters['username'] ?? '')); ?>" placeholder="Nama / Username">
+                        <label for="filter_username" class="small font-weight-bold text-muted mb-1">Cari Pengguna</label>
+                        <input type="text" class="form-control form-control-sm" id="filter_username" name="username" value="<?= esc((string) ($filters['username'] ?? '')); ?>" list="userListSearchOptions" placeholder="Nama / Username">
+                        <datalist id="userListSearchOptions">
+                            <?php foreach ($userList as $u): ?>
+                                <option value="<?= esc($u['full_name']); ?>"><?= esc($u['username']); ?> (<?= esc($u['role']); ?>)</option>
+                            <?php endforeach; ?>
+                        </datalist>
+                    </div>
+                    <div class="form-group col-12 col-md-2 mb-2 mb-md-0">
+                        <label for="filter_exclude_user" class="small font-weight-bold text-danger mb-1">
+                            <i class="fas fa-user-slash mr-1"></i> Kecualikan User
+                        </label>
+                        <input type="text" class="form-control form-control-sm border-danger" id="filter_exclude_user" name="exclude_user" value="<?= esc((string) ($filters['exclude_user'] ?? '')); ?>" list="userListExcludeOptions" placeholder="Sembunyikan user ini">
+                        <datalist id="userListExcludeOptions">
+                            <?php foreach ($userList as $u): ?>
+                                <option value="<?= esc($u['full_name']); ?>"><?= esc($u['username']); ?></option>
+                            <?php endforeach; ?>
+                        </datalist>
                     </div>
                     <div class="form-group col-12 col-md-2 mb-2 mb-md-0">
                         <label for="filter_module" class="small font-weight-bold text-muted mb-1">Modul / Path</label>
                         <input type="text" class="form-control form-control-sm" id="filter_module" name="module" value="<?= esc((string) ($filters['module'] ?? '')); ?>" placeholder="Cari modul / path">
                     </div>
-                    <div class="form-group col-6 col-md-2 mb-2 mb-md-0">
-                        <label for="filter_date_from" class="small font-weight-bold text-muted mb-1">Dari Tanggal</label>
-                        <input type="date" class="form-control form-control-sm" id="filter_date_from" name="date_from" value="<?= esc((string) ($filters['date_from'] ?? '')); ?>">
+                    <div class="form-group col-6 col-md-1 mb-2 mb-md-0">
+                        <label for="filter_date_from" class="small font-weight-bold text-muted mb-1">Dari Tgl</label>
+                        <input type="date" class="form-control form-control-sm px-1" id="filter_date_from" name="date_from" value="<?= esc((string) ($filters['date_from'] ?? '')); ?>">
                     </div>
-                    <div class="form-group col-6 col-md-2 mb-2 mb-md-0">
-                        <label for="filter_date_to" class="small font-weight-bold text-muted mb-1">Sampai Tanggal</label>
-                        <input type="date" class="form-control form-control-sm" id="filter_date_to" name="date_to" value="<?= esc((string) ($filters['date_to'] ?? '')); ?>">
+                    <div class="form-group col-6 col-md-1 mb-2 mb-md-0">
+                        <label for="filter_date_to" class="small font-weight-bold text-muted mb-1">Sampai Tgl</label>
+                        <input type="date" class="form-control form-control-sm px-1" id="filter_date_to" name="date_to" value="<?= esc((string) ($filters['date_to'] ?? '')); ?>">
                     </div>
                     <div class="form-group col-12 col-md-1 mb-0 d-flex">
                         <button type="submit" class="btn btn-primary btn-sm flex-fill mr-1" title="Terapkan Filter">
@@ -219,6 +339,23 @@ $resolveModuleLabel = static function (?string $path, ?string $table): string {
                         </a>
                     </div>
                 </div>
+
+                <!-- Baris 2: Opsi Tambahan (Toggle Super Administrator) -->
+                <div class="d-flex flex-wrap align-items-center justify-content-between pt-2 border-top">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="include_superadmin" name="include_superadmin" value="1" <?= $includeSuperadmin ? 'checked' : ''; ?> onchange="this.form.submit()">
+                        <label class="custom-control-label small font-weight-bold text-secondary" for="include_superadmin" style="cursor: pointer;">
+                            <i class="fas fa-user-shield text-primary mr-1"></i> Sertakan Log Super Administrator
+                        </label>
+                        <small class="text-muted ml-2 d-none d-md-inline">(Secara default dinonaktifkan agar log fokus pada staf/operator).</small>
+                    </div>
+
+                    <?php if (! empty($filters['exclude_user'])): ?>
+                        <div class="badge badge-warning text-dark py-1 px-2 mt-1 mt-md-0">
+                            <i class="fas fa-filter mr-1"></i> User Dikecualikan: <strong><?= esc($filters['exclude_user']); ?></strong>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </form>
 
             <!-- Table -->
@@ -226,13 +363,13 @@ $resolveModuleLabel = static function (?string $path, ?string $table): string {
                 <table class="table table-bordered table-hover w-100 js-datatable" id="tableActivityHistory" data-order='[[0,"desc"]]'>
                     <thead class="thead-light">
                         <tr>
-                            <th style="width: 140px;">Waktu</th>
-                            <th style="width: 160px;">Pengguna</th>
-                            <th style="width: 90px;" class="text-center">Aksi</th>
+                            <th style="width: 150px;">Waktu</th>
+                            <th style="width: 170px;">Pengguna</th>
+                            <th style="width: 95px;" class="text-center">Aksi</th>
                             <th style="min-width: 200px;">Modul / Halaman</th>
                             <th style="width: 140px;">Target Data</th>
                             <th style="width: 120px;">IP Address</th>
-                            <th style="width: 110px;" class="text-center">Rincian</th>
+                            <th style="width: 100px;" class="text-center">Rincian</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -271,7 +408,8 @@ $resolveModuleLabel = static function (?string $path, ?string $table): string {
                             $moduleLabel = $resolveModuleLabel($row['module_path'] ?? null, $row['table_name'] ?? null);
                             ?>
                             <tr>
-                                <td>
+                                <!-- Kolom 0: Menggunakan data-order & data-sort ISO agar pengurutan tanggal kronologis sempurna -->
+                                <td data-order="<?= esc($dt['raw']); ?>" data-sort="<?= esc($dt['raw']); ?>">
                                     <div class="font-weight-bold text-dark" style="font-size: 0.82rem;"><?= esc($dt['date']); ?></div>
                                     <small class="text-muted"><i class="far fa-clock mr-1"></i><?= esc($dt['time']); ?></small>
                                 </td>
@@ -454,4 +592,3 @@ $resolveModuleLabel = static function (?string $path, ?string $table): string {
 })();
 </script>
 <?= $this->endSection(); ?>
-

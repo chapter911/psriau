@@ -12,19 +12,22 @@ class History extends BaseController
      */
     public function index()
     {
-        $db = db_connect();
+        $db = db_connect('default');
 
         if (! $db->tableExists('audit_histories')) {
             return view('admin/history/index', [
                 'title'       => 'Activity History',
                 'table_ready' => false,
                 'rows'        => [],
+                'user_list'   => [],
                 'filters'     => [
-                    'type'      => '',
-                    'username'  => '',
-                    'module'    => '',
-                    'date_from' => '',
-                    'date_to'   => '',
+                    'type'               => '',
+                    'username'           => '',
+                    'exclude_user'       => '',
+                    'include_superadmin' => false,
+                    'module'             => '',
+                    'date_from'          => '',
+                    'date_to'            => '',
                 ],
                 'stats'       => [
                     'total'     => 0,
@@ -39,9 +42,11 @@ class History extends BaseController
 
         $type = strtolower(trim((string) ($this->request->getGet('type') ?? $this->request->getGet('action') ?? '')));
         $username = trim((string) $this->request->getGet('username'));
+        $excludeUser = trim((string) $this->request->getGet('exclude_user'));
         $module = trim((string) $this->request->getGet('module'));
         $dateFrom = trim((string) $this->request->getGet('date_from'));
         $dateTo = trim((string) $this->request->getGet('date_to'));
+        $includeSuperAdmin = $this->request->getGet('include_superadmin') === '1';
 
         if (! in_array($type, ['', 'all', 'data_changes', 'create', 'edit', 'delete', 'view'], true)) {
             $type = '';
@@ -55,7 +60,21 @@ class History extends BaseController
             $dateTo = '';
         }
 
+        // Helper to apply base user/role exclusions to queries
+        $applyBaseUserFilters = static function ($builder) use ($includeSuperAdmin, $excludeUser) {
+            if (! $includeSuperAdmin) {
+                $builder->where('role !=', 'super_administrator');
+            }
+            if ($excludeUser !== '') {
+                $builder->groupStart()
+                    ->notLike('username', $excludeUser)
+                    ->notLike('role', $excludeUser)
+                    ->groupEnd();
+            }
+        };
+
         $table = $db->table('audit_histories');
+        $applyBaseUserFilters($table);
 
         if ($type === 'data_changes') {
             $table->whereIn('action_type', ['create', 'add', 'edit', 'update', 'delete', 'hapus']);
@@ -99,25 +118,45 @@ class History extends BaseController
             ->get()
             ->getResultArray();
 
+        // Calculate stats respecting base user filters
+        $getStatsBuilder = function () use ($db, $applyBaseUserFilters) {
+            $builder = $db->table('audit_histories');
+            $applyBaseUserFilters($builder);
+            return $builder;
+        };
+
         $stats = [
-            'total'  => (int) $db->table('audit_histories')->countAllResults(),
-            'create' => (int) $db->table('audit_histories')->whereIn('action_type', ['create', 'add'])->countAllResults(),
-            'edit'   => (int) $db->table('audit_histories')->whereIn('action_type', ['edit', 'update'])->countAllResults(),
-            'delete' => (int) $db->table('audit_histories')->whereIn('action_type', ['delete', 'hapus'])->countAllResults(),
-            'view'   => (int) $db->table('audit_histories')->where('action_type', 'view')->countAllResults(),
-            'today'  => (int) $db->table('audit_histories')->where('DATE(happened_at)', date('Y-m-d'))->countAllResults(),
+            'total'  => (int) $getStatsBuilder()->countAllResults(),
+            'create' => (int) $getStatsBuilder()->whereIn('action_type', ['create', 'add'])->countAllResults(),
+            'edit'   => (int) $getStatsBuilder()->whereIn('action_type', ['edit', 'update'])->countAllResults(),
+            'delete' => (int) $getStatsBuilder()->whereIn('action_type', ['delete', 'hapus'])->countAllResults(),
+            'view'   => (int) $getStatsBuilder()->where('action_type', 'view')->countAllResults(),
+            'today'  => (int) $getStatsBuilder()->where('DATE(happened_at)', date('Y-m-d'))->countAllResults(),
         ];
+
+        // Fetch user list for exclude options
+        $userList = [];
+        if ($db->tableExists('users')) {
+            $userList = $db->table('users')
+                ->select('username, full_name, role')
+                ->orderBy('full_name', 'ASC')
+                ->get()
+                ->getResultArray();
+        }
 
         return view('admin/history/index', [
             'title'       => 'Activity History',
             'table_ready' => true,
             'rows'        => $rows,
+            'user_list'   => $userList,
             'filters'     => [
-                'type'      => $type,
-                'username'  => $username,
-                'module'    => $module,
-                'date_from' => $dateFrom,
-                'date_to'   => $dateTo,
+                'type'               => $type,
+                'username'           => $username,
+                'exclude_user'       => $excludeUser,
+                'include_superadmin' => $includeSuperAdmin,
+                'module'             => $module,
+                'date_from'          => $dateFrom,
+                'date_to'            => $dateTo,
             ],
             'stats'       => $stats,
         ]);

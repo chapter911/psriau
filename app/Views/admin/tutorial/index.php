@@ -578,8 +578,10 @@ graph TD
     
     E --> F["Tersaji di Activity History (/admin/history)"]
     F --> F1["Widget Dashboard: Log Aktivitas Pengguna Terkini"]
-    F --> F2["Tabel Kronologis Interaktif &amp; Filter Multikriteria"]
-    F --> F3["Modal Viewer Rincian JSON (Request, Before &amp; After Diff)"]
+    F --> F2["Filter Cepat 1-Klik via Stat Cards (Total, Tambah, Ubah, Hapus, Akses, Hari Ini)"]
+    F --> F3["Opsi Sembunyikan Super Admin (Default) &amp; Fitur Kecualikan User Tertentu"]
+    F --> F4["Tabel Kronologis Presisi Berbasis ISO Timestamp (Anti-Salah Urutan DD/MM/YYYY)"]
+    F --> F5["Modal Viewer Rincian JSON (Request, Before &amp; After Diff)"]
                 </pre>
             </div>
         </div>
@@ -1438,9 +1440,11 @@ graph TD
                                 <p class="small mb-1">Pusat pemantauan rekam jejak aktivitas operasional seluruh pengguna sistem secara real-time dan terpadu:</p>
                                 <ul class="pl-3 small mb-0">
                                     <li><strong>4 Kategori Aktivitas:</strong> Mencatat Tambah Data (🟢 <em>Create</em>), Perubahan Data (🟡 <em>Edit</em>), Penghapusan Data (🔴 <em>Delete</em>), serta Kunjungan Halaman (🟣 <em>View</em>).</li>
+                                    <li><strong>Stat Cards Interaktif 1-Klik:</strong> 6 kartu metrik ringkasan di bagian atas dapat langsung ditekan untuk memfilter tabel secara instan (Total, Tambah Data, Ubah Data, Hapus Data, Akses Halaman, dan Hari Ini), lengkap dengan efek hover dan indikator badge aktif.</li>
+                                    <li><strong>Penyaringan Cerdas Super Administrator:</strong> Secara default, log aktivitas role <em>Super Administrator</em> disembunyikan agar admin dapat berfokus meninjau aktivitas staf dan operator. Tersedia tombol *switch toggle* untuk menampilkan kembali aktivitas Super Admin sewaktu-waktu dibutuhkan.</li>
+                                    <li><strong>Fitur Kecualikan User Tertentu:</strong> Dilengkapi kolom input filter untuk mengecualikan (*exclude*) aktivitas dari pengguna tertentu berbasis NIP/nama.</li>
+                                    <li><strong>Pengurutan Kronologis Presisi:</strong> Kolom tanggal menggunakan atribut standar ISO <code>data-order</code> sehingga pengurutan DataTables selalu akurat secara kronologis (tidak tertukar oleh urutan string hari/bulan).</li>
                                     <li><strong>Snapshot Perubahan Data (Before &amp; After):</strong> Pada setiap aksi edit atau hapus, sistem merekam perbandingan nilai sebelum dan sesudah perubahan data dalam format JSON yang dapat ditinjau via modal interaktif.</li>
-                                    <li><strong>Deteksi Kunjungan Halaman Cerdas:</strong> Menangkap perpindahan menu halaman oleh pengguna sekaligus menerapkan proteksi anti-spam (refresh halaman berulang &lt; 15 detik dan request AJAX/aset tidak diduplikasi ke log).</li>
-                                    <li><strong>Filter Komprehensif:</strong> Mendukung filter cepat berdasarkan tipe aktivitas (semua, khusus perubahan data, per aksi), pencarian nama pengguna/role, modul/path, dan rentang tanggal.</li>
                                 </ul>
                             </div>
                         </div>
