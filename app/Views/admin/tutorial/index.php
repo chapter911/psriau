@@ -1159,7 +1159,7 @@ graph TD
     D1 --> T4["Tahap D: Pengawasan (4 Dokumen: Laporan Was, BA Pemeriksaan Mutu/Vol, Rekon Fisik-Keu, Evaluasi Deviasi)"]
     D1 --> T5["Tahap E: Pertanggungjawaban (6 Dokumen: Laporan Akhir, BAST Pelaksana ke PPK, BAPHP, Rekap POK Rev 16 vs Realisasi, BA Pajak, BA Persediaan)"]
     
-    T1 --> DL["Pratinjau Modal Langsung (PDF/Word), Unduh Berkas &amp; Upload/Perbarui Dokumen (Sesuai FiturAdd/FiturEdit menu_akses)"]
+    T1 --> DL["Pratinjau Modal Langsung (PDF/Word dengan Standarisasi Tabel Tanda Tangan 3-Baris Sinkron: Tanggal, Jabatan &amp; Nama/NIP Sejajar Presisi), Unduh Berkas &amp; Upload/Perbarui Dokumen (Sesuai FiturAdd/FiturEdit menu_akses)"]
     T2 --> DL
     T3 --> DL
     T4 --> DL
@@ -2383,7 +2383,7 @@ graph TD
                                     <li>Dilengkapi <strong>Paket Switcher (Tab &amp; Dropdown Paket 1 s/d Paket 4)</strong> di bagian atas halaman untuk berpindah antar paket secara instan.</li>
                                     <li>Menyajikan pemantauan 28 dokumen wajib yang dikelompokkan secara rapi ke dalam 5 tahapan:
                                         <strong>Tahap A (Perencanaan)</strong>, <strong>Tahap B (Persiapan)</strong>, <strong>Tahap C (Pelaksanaan)</strong>, <strong>Tahap D (Pengawasan &amp; Pengendalian)</strong>, dan <strong>Tahap E (Serah Terima &amp; Pertanggungjawaban)</strong>.</li>
-                                    <li>Mendukung multi-berkas pada satu item checklist untuk seluruh 4 paket (khususnya berkas DIPA/POK, KAK, RAB, SK Pembentukan Tim, SPK/Surat Tugas, Bukti Belanja Bahan, Kuitansi/Pajak Honor &amp; Gaji, Dokumentasi Lapangan, serta SPPD/PTUP), pratinjau langsung (<strong>Preview</strong> PDF &amp; Word <code>.docx</code> dengan penempatan KOP Satker resmi &amp; blok tanda tangan 2-kolom rata tengah sejajar), serta <strong>Upload / Perbarui Berkas Dokumen</strong> (<code>.pdf</code> / <code>.docx</code> / <code>.xlsx</code>) pada setiap baris item sesuai hak akses <code>FiturAdd</code> / <code>FiturEdit</code> di <code>menu_akses</code>.</li>
+                                    <li>Mendukung multi-berkas pada satu item checklist untuk seluruh 4 paket (khususnya berkas DIPA/POK, KAK, RAB, SK Pembentukan Tim, SPK/Surat Tugas, Bukti Belanja Bahan, Kuitansi/Pajak Honor &amp; Gaji, Dokumentasi Lapangan, serta SPPD/PTUP), pratinjau langsung (<strong>Preview</strong> PDF &amp; Word <code>.docx</code> dengan penempatan KOP Satker resmi &amp; <strong>standarisasi tabel blok tanda tangan multi-baris sinkron</strong>: Baris 1 Tanggal/Header, Baris 2 Jabatan Penandatangan dengan baseline sejajar horizontal, dan Baris 3 Ruang TTD + Nama Tebal Bergaris Bawah + NIP pada horizontal baseline yang presisi tanpa pergeseran baris), serta <strong>Upload / Perbarui Berkas Dokumen</strong> (<code>.pdf</code> / <code>.docx</code> / <code>.xlsx</code>) pada setiap baris item sesuai hak akses <code>FiturAdd</code> / <code>FiturEdit</code> di <code>menu_akses</code>.</li>
                                 </ul>
                             </li>
                             <li><strong>Submenu Realisasi Anggaran (<code>/admin/swakelola/realisasi</code>):</strong>
