@@ -461,7 +461,7 @@ class CreateSwakelolaModule extends Migration
         // 28 Checklist Documents
         $docs = [
             // Tahap A
-            ['A', 1, 'DIPA dan Revisi Anggaran (POK)', 'Ada', 'A. 1. Petikan DIPA dan Revisi Anggaran POK SPPG TA 2025.docx', 'Petikan resmi POK Satker Pagu Rp 413.000.000,-'],
+            ['A', 1, 'DIPA dan Revisi Anggaran (POK)', 'Ada', 'A. 1. 16_2025_RINCIAN KERTAS KERJA SATKER PPS RIAU_Rev 16 POK.pdf', 'Rincian Kertas Kerja Satker (POK) Revisi 16 Tgl 23 Des 2025 & Petikan POK SPPG Pagu Rp 413.000.000,-'],
             ['A', 2, 'RUP/SIRUP paket Swakelola', 'Ada', 'A. 2. Lembar RUP dan Pengumuman SiRUP Paket Swakelola SPPG.docx', 'Format pengumuman SiRUP LKPP Swakelola'],
             ['A', 3, 'KAK (Tujuan, Ruang Lingkup, Keluaran dan Spesifikasi)', 'Ada', 'A. 3. KAK Administrasi SPPG Provinsi Riau.pdf', 'Disahkan PPK dan Kasatker'],
             ['A', 4, 'RAB (Perkiraan Biaya dan Dasar Perhitungan)', 'Ada', 'A. 4. RAB Administrasi SPPG Provinsi Riau.pdf', 'Pagu Rp 413.000.000,-'],
@@ -477,21 +477,21 @@ class CreateSwakelolaModule extends Migration
             ['C', 12, 'Surat Perintah atau Dokumen Penugasan', 'Ada', 'C. 1. Surat Perintah Penugasan Tim Pelaksana Swakelola.docx', 'Surat Perintah PPK No. 15/SPP-SWK/2025'],
             ['C', 13, 'Daftar Hadir, Catatan Tenaga Kerja dan Bukti pelaksanaan Kegiatan', 'Ada', 'C. 2. Laporan Pelaksanaan, Daftar Hadir dan Catatan Tenaga Kerja.docx', 'Rekapitulasi logbook & penugasan staf'],
             ['C', 14, 'Laporan progres pekerjaan dan penggunaan anggaran secara berkala', 'Ada', 'C. 3. Laporan Progres Fisik dan Penggunaan Anggaran Berkala.docx', 'Laporan progres bulanan Okt, Nov, Des 2025'],
-            ['C', 15, 'Bukti pembelian bahan/barang dari Penyedia', 'Ada', 'C. 4. Bukti Pembelian Bahan dan Barang dari Penyedia (ATK SPM 00415A).pdf', 'Kuitansi & faktur belanja bahan'],
-            ['C', 16, 'Invoice/Kuitansi, Bukti Pembayaran, dan Dokumen Pajak sesuai ketentuan', 'Ada', 'C. 5. Invoice Kuitansi dan Dokumen Pajak (Supplies SPM 00414A).pdf', 'SPM, SP2D, bukti setor pajak PPN/PPh'],
-            ['C', 17, 'Dokumentasi fisik kegiatan dan hasil pekerjaan', 'Ada', 'C. 6. Dokumentasi Fisik Kegiatan dan Hasil Pekerjaan SPPG.docx', 'Album foto survei Kampar, Dumai, Siak, Jakarta'],
-            ['C', 18, 'Bukti pengeluaran yang sah dan dapat ditelusuri', 'Ada', 'C. 7. Bukti Pengeluaran Sah yang Dapat Ditelusuri (SPPD SPM 00445A).pdf', 'SPPD & rincian biaya riil'],
+            ['C', 15, 'Bukti pembelian bahan/barang dari Penyedia', 'Ada', 'C. 4. Bukti Pembelian Bahan dan Barang dari Penyedia (ATK SPM 00415A).pdf', 'Kuitansi & faktur belanja bahan CV. Sinar Cahaya Lestari'],
+            ['C', 16, 'Invoice/Kuitansi, Bukti Pembayaran, dan Dokumen Pajak sesuai ketentuan', 'Ada', 'C. 5. Invoice Kuitansi dan Dokumen Pajak (Supplies SPM 00414A).pdf', 'SPM, SP2D, bukti setor pajak PPN/PPh Pasal 22'],
+            ['C', 17, 'Dokumentasi fisik kegiatan dan hasil pekerjaan', 'Ada', 'C. 6. Dokumentasi Fisik Kegiatan dan Hasil Pekerjaan SPPG.docx', 'Album foto survei Kampar, Dumai, Siak, Pekanbaru, Jakarta & Medan'],
+            ['C', 18, 'Bukti pengeluaran yang sah dan dapat ditelusuri', 'Ada', 'C. 7. Bukti Pengeluaran Sah yang Dapat Ditelusuri (SPPD SPM 00445A).pdf', '11 Berkas SPPD, SPT, Nominatif & Rincian Biaya Riil'],
             // Tahap D
             ['D', 19, 'Laporan atau Catatan Pengawasan Tim Pengawas', 'Ada', 'D. 1. Laporan Catatan Pengawasan Tim Pengawas Swakelola SPPG.docx', 'Laporan berkala hasil pengawasan Tim Was'],
             ['D', 20, 'Bukti Pemeriksaan kesesuaian volume, mutu, waktu dan keluaran', 'Ada', 'D. 2. Bukti Pemeriksaan Kesesuaian Volume, Mutu, Waktu dan Keluaran.docx', 'Lembar checklist pemeriksaan kesesuaian'],
             ['D', 21, 'Rekonsiliasi realisasi fisik dan keuangan', 'Ada', 'D. 3. Berita Acara Rekonsiliasi Realisasi Fisik dan Keuangan.docx', 'BA Rekon Fisik 100% & Keu Rp 141.159.100,-'],
-            ['D', 22, 'Catatan penyimpangan dan bukti tindak lanjut', 'Ada', 'D. 4. Catatan Penyimpangan Evaluasi dan Bukti Tindak Lanjut.docx', 'Evaluasi efisiensi sisa pagu Rp 271,8 jt'],
+            ['D', 22, 'Catatan penyimpangan dan bukti tindak lanjut', 'Ada', 'D. 4. Catatan Penyimpangan Evaluasi dan Bukti Tindak Lanjut.docx', 'Evaluasi efisiensi sisa pagu Rp 271,84 jt'],
             // Tahap E
             ['E', 23, 'Laporan akhir pelaksanaan Swakelola', 'Ada', 'E. 1. Laporan Akhir Pelaksanaan Swakelola Administrasi SPPG.docx', 'Laporan akhir komprehensif Bab I s/d Bab IV'],
             ['E', 24, 'BAST hasil pekerjaan dari Tim Pelaksana kepada PPK', 'Ada', 'E. 2. Berita Acara Serah Terima (BAST) Hasil Pekerjaan dari Tim Pelaksana kepada PPK.docx', 'BAST No. 01/BAST-SWK/PPK-PPS/2025'],
             ['E', 25, 'Dokumen pemeriksaan/verifikasi hasil pekerjaan', 'Ada', 'E. 3. Berita Acara Pemeriksaan Hasil Pekerjaan (BAPHP).docx', 'BAPHP Tim Pengawas sebelum BAST'],
-            ['E', 26, 'Rekapitulasi realisasi anggaran dibandingkan dengan RAB', 'Ada', 'E. 4. Rekapitulasi Realisasi Anggaran Dibandingkan dengan RAB.docx', 'Matriks perbandingan RAB vs Realisasi'],
-            ['E', 27, 'Bukti penyelesaian pembayaran dan perpajakan yang relevan', 'Ada', 'E. 5. Bukti Penyelesaian Pembayaran dan Perpajakan.docx', 'BA pelunasan SP2D dan pajak lunas'],
+            ['E', 26, 'Rekapitulasi realisasi anggaran dibandingkan dengan RAB', 'Ada', 'E. 4. Rekapitulasi Realisasi Anggaran Dibandingkan dengan RAB.docx', 'Matriks perbandingan RAB/POK Rev 16 vs Realisasi'],
+            ['E', 27, 'Bukti penyelesaian pembayaran dan perpajakan yang relevan', 'Ada', 'E. 5. Bukti Penyelesaian Pembayaran dan Perpajakan.docx', 'BA pelunasan 16 SP2D dan pajak PPN/PPh22 lunas'],
             ['E', 28, 'Dokumen pencatatan aset/persediaan jika keluaran menghasilkan aset/persediaan', 'Ada', 'E. 6. Dokumen Pencatatan Persediaan Barang Habis Pakai dan Aset.docx', 'BA pencatatan barang persediaan habis pakai'],
         ];
 
@@ -510,20 +510,24 @@ class CreateSwakelolaModule extends Migration
             ]);
         }
 
-        // Realisasi Belanja
+        // Realisasi Belanja (16 Transaksi SPM/SP2D/PTUP Asli = Rp 141.159.100,-)
         $realisasi = [
-            ['521211', 'Belanja Bahan - ATK Bulan November', '00415A', '2025-12-03', '259991330451774', 18264400.00, 'ATK BULAN NOVEMBER (SPM 00415A).pdf'],
-            ['521211', 'Belanja Bahan - Supplies Komputer Bulan November', '00414A', '2025-12-03', '259991330451773', 18344100.00, 'SUPLIES KOMPUTER BULAN NOVEMBER (SPM 00414A) (1).pdf'],
-            ['521211', 'Belanja Bahan - ATK SPPG Desember', '00498A', '2025-12-15', '259991330489012', 12500000.00, 'ATK SPPG DESEMBER (SPM 00498A) OK.pdf'],
-            ['521211', 'Belanja Bahan - Supplies Komputer SPPG Desember', '00497A', '2025-12-15', '259991330489011', 11980000.00, 'SUPLIES KOMPUTER BULAN DESEMBER (SPM 00497A).pdf'],
-            ['524111', 'Perjadin Biasa - Monitoring Kampar Oktober', '00445A', '2025-12-03', '259991330451846', 6240000.00, 'SPPD SPPG KAMPAR OKTOBER (SPM 00445A).pdf'],
-            ['524111', 'Perjadin Biasa - Koordinasi Jakarta November', '00449A', '2025-12-03', '259991330451850', 18264400.00, 'SPPD JAKARTA NOVEMBER (SPM 00449A).pdf'],
-            ['524111', 'Perjadin Biasa - Monitoring Dumai & Siak November', '00483A', '2025-12-10', '259991330472110', 21450000.00, 'SPPD DUMAI SIAK SPPG NOV (SPM 00483A).pdf'],
-            ['524111', 'Perjadin Biasa - Koordinasi Jakarta November Tahap 2', '00485A', '2025-12-10', '259991330472115', 14500000.00, 'SPPD JAKARTA NOVEMBER (SPM 00485A).pdf'],
-            ['524111', 'Perjadin Biasa - Monitoring Dumai Desember', '00489A', '2025-12-12', '259991330480100', 8200000.00, 'SPPD DUMAI DESEMBER (SPM 00489A).pdf'],
-            ['524111', 'Perjadin Biasa - Koordinasi Penyelenggaraan Wilayah Medan', '00535A', '2025-12-18', '259991330495120', 4816200.00, 'SPPD MEDAN DESEMBER (SPM 00535A) OK.pdf'],
-            ['524111', 'Perjadin Biasa - Monitoring SPPG Desember', '00536A', '2025-12-18', '259991330495125', 3800000.00, 'SPPD SPPG DESEMBER (SPM 00536A).pdf'],
-            ['524113', 'Perjadin Dalam Kota - Tim PPK Lapangan November', '00450A', '2025-12-03', '259991330451775', 3000000.00, '1. SPPD NOVEMBER SPPG (SPM 00450A).pdf'],
+            ['521211', 'Belanja Bahan - Pembelian ATK Kegiatan Pembangunan Gedung SPPG Bulan November 2025 (CV. Sinar Cahaya Lestari, Kwi No. 128 Tgl 20/11/2025)', '00415A', '2025-12-01', '259991311235904', 4943000.00, 'ATK BULAN NOVEMBER (SPM 00415A).pdf'],
+            ['521211', 'Belanja Bahan - Pembelian Supplies Komputer Kegiatan Pembangunan Gedung SPPG Bulan November 2025 (CV. Sinar Cahaya Lestari, Kwi No. 129 Tgl 20/11/2025)', '00414A', '2025-12-01', '259991311235905', 3843000.00, 'SUPLIES KOMPUTER BULAN NOVEMBER (SPM 00414A) (1).pdf'],
+            ['521211', 'Belanja Bahan - Pembelian Supplies Komputer Kegiatan Pembangunan Gedung SPPG Bulan Desember 2025 (CV. Sinar Cahaya Lestari, Kwi No. 164 Tgl 08/12/2025)', '00497A', '2025-12-09', '259991311369736', 5850000.00, 'SUPLIES KOMPUTER BULAN DESEMBER (SPM 00497A).pdf'],
+            ['521211', 'Belanja Bahan - Pembelian ATK Kegiatan Pembangunan Gedung SPPG Bulan Desember 2025 (CV. Sinar Cahaya Lestari, Kwi No. 163 Tgl 08/12/2025)', '00498A', '2025-12-09', '259991311369737', 4947000.00, 'ATK SPPG DESEMBER (SPM 00498A) OK.pdf'],
+            ['521211', 'Belanja Bahan - Pertanggungjawaban TUP (PTUP) Biaya Dokumentasi dan Pelaporan Kegiatan SPPG (Item POK 000875)', '00597A (PTUP)', '2025-12-31', '259991702155733', 8700000.00, 'TUP 1 (KWI DOKUMENTASI DAN PELAPORAN).pdf'],
+            ['524111', 'Perjadin Biasa - Monitoring Lokasi SPPG Kab. Kampar untuk 4 Pegawai (ST No. 290/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 25/11/2025)', '00445A', '2025-12-03', '259991330451846', 6240000.00, 'SPPD SPPG KAMPAR OKTOBER (SPM 00445A).pdf'],
+            ['524111', 'Perjadin Biasa - Koordinasi & Konsultasi Kegiatan SPPG ke Jakarta untuk 3 Pegawai (ST No. 285/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 25/11/2025)', '00449A', '2025-12-03', '259991330451774', 18264400.00, 'SPPD JAKARTA NOVEMBER (SPM 00449A).pdf'],
+            ['524111', 'Perjadin Biasa - Monitoring Lokasi SPPG Kota Dumai & Kab. Siak untuk 11 Pegawai (ST No. 295/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 25/11/2025)', '00483A', '2025-12-09', '259991330477567', 9236000.00, 'SPPD DUMAI SIAK SPPG NOV (SPM 00483A).pdf'],
+            ['524111', 'Perjadin Biasa - Koordinasi & Konsultasi Kegiatan SPPG ke Jakarta Tahap II untuk 4 Pegawai (ST No. 299/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 28/11/2025)', '00485A', '2025-12-09', '259991330477566', 26466600.00, 'SPPD JAKARTA NOVEMBER (SPM 00485A).pdf'],
+            ['524111', 'Perjadin Biasa - Monitoring Lokasi SPPG Kota Dumai untuk 3 Pegawai (ST No. 303/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 01/12/2025)', '00489A', '2025-12-09', '259991330478411', 7473000.00, 'SPPD DUMAI DESEMBER (SPM 00489A).pdf'],
+            ['524111', 'Perjadin Biasa - Koordinasi Regional Kegiatan SPPG ke Medan untuk 2 Pegawai (ST No. 313/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 03/12/2025)', '00535A', '2025-12-16', '259991330513926', 8900100.00, 'SPPD MEDAN DESEMBER (SPM 00535A) OK.pdf'],
+            ['524111', 'Perjadin Biasa - Monitoring Lapangan Gedung SPPG untuk 4 Pegawai (ST No. 311/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 03/12/2025)', '00536A', '2025-12-16', '259991330513968', 4160000.00, 'SPPD SPPG DESEMBER (SPM 00536A).pdf'],
+            ['524111', 'Perjadin Biasa - Monitoring Lokasi SPPG Kab. Kampar untuk 3 Pegawai (ST No. 335/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 09/12/2025)', '00556A', '2025-12-22', '259991330531985', 6670000.00, 'SPPD SPPG KAMPAR (SPM 00556A).pdf'],
+            ['524111', 'Perjadin Biasa - Monitoring Lokasi SPPG Kab. Siak untuk 3 Pegawai (ST No. 334/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 09/12/2025)', '00557A', '2025-12-22', '259991330532060', 6890000.00, 'SPPD SPPG SIAK (SPM 00557A).pdf'],
+            ['524111', 'Perjadin Biasa - Pertanggungjawaban TUP (PTUP) Tim PPK ke Lokasi SPPG Riau (Sewa Kendaraan Rp 4.286.000 + UH Rp 9.990.000 + Penginapan Rp 4.000.000)', '00597A (PTUP)', '2025-12-31', '259991702155733', 18276000.00, 'TUP 1 (KWI PERJADIN).pdf'],
+            ['524113', 'Perjadin Dalam Kota - Uang Harian > 8 Jam Tim PPK Lapangan Riau untuk 2 Pegawai (ST No. 291/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 25/11/2025)', '00450A', '2025-12-03', '259991330451775', 300000.00, '1. SPPD NOVEMBER SPPG (SPM 00450A).pdf'],
         ];
 
         foreach ($realisasi as $r) {

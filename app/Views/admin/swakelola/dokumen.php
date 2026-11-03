@@ -23,26 +23,14 @@
                 <div class="badge badge-success px-3 py-2 font-weight-bold mb-2" style="font-size: 1rem; border-radius: 8px;">
                     <i class="fas fa-clipboard-check mr-1"></i> Status: <?= $totalAda; ?> / <?= $totalCount; ?> Dokumen Lengkap (<?= $persenAda; ?>%)
                 </div>
-                <a href="<?= base_url('admin/swakelola/laporan/export-excel'); ?>" class="btn btn-outline-light btn-sm font-weight-bold">
-                    <i class="fas fa-file-excel mr-1"></i> Export Checklist (.xlsx)
-                </a>
+                <?php if (! empty($permissions['export'])): ?>
+                    <a href="<?= base_url('admin/swakelola/laporan/export-excel'); ?>" class="btn btn-outline-light btn-sm font-weight-bold">
+                        <i class="fas fa-file-excel mr-1"></i> Export Checklist (.xlsx)
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
     </div>
-
-    <!-- Alert Notifikasi -->
-    <?php if (session()->getFlashdata('success')): ?>
-        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="fas fa-check-circle mr-2"></i> <?= session()->getFlashdata('success'); ?>
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-        </div>
-    <?php endif; ?>
-    <?php if (session()->getFlashdata('error')): ?>
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <i class="fas fa-exclamation-triangle mr-2"></i> <?= session()->getFlashdata('error'); ?>
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-        </div>
-    <?php endif; ?>
 
     <!-- Navigation Tabs / Sections -->
     <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">

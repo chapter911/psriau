@@ -15,26 +15,14 @@
                 </p>
             </div>
             <div class="mt-3 mt-md-0">
-                <a href="<?= base_url('admin/swakelola/laporan/export-excel'); ?>" class="btn btn-success font-weight-bold shadow-sm px-3 py-2" style="border-radius: 8px;">
-                    <i class="fas fa-file-excel mr-1"></i> Download Checklist Lengkap (.xlsx)
-                </a>
+                <?php if (! empty($permissions['export'])): ?>
+                    <a href="<?= base_url('admin/swakelola/laporan/export-excel'); ?>" class="btn btn-success font-weight-bold shadow-sm px-3 py-2" style="border-radius: 8px;">
+                        <i class="fas fa-file-excel mr-1"></i> Download Checklist Lengkap (.xlsx)
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
     </div>
-
-    <!-- Alert / Notifikasi -->
-    <?php if (session()->getFlashdata('success')): ?>
-        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="fas fa-check-circle mr-2"></i> <?= session()->getFlashdata('success'); ?>
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-        </div>
-    <?php endif; ?>
-    <?php if (session()->getFlashdata('error')): ?>
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <i class="fas fa-exclamation-triangle mr-2"></i> <?= session()->getFlashdata('error'); ?>
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-        </div>
-    <?php endif; ?>
 
     <!-- Table Paket Swakelola -->
     <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">

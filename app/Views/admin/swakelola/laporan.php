@@ -20,9 +20,11 @@
                 </div>
             </div>
             <div class="mt-3 mt-md-0 d-flex flex-wrap gap-2">
-                <a href="<?= base_url('admin/swakelola/laporan/export-excel'); ?>" class="btn btn-success font-weight-bold shadow-sm px-3 py-2 mr-2" style="border-radius: 8px;">
-                    <i class="fas fa-file-excel mr-1"></i> Download Checklist Lengkap (.xlsx)
-                </a>
+                <?php if (! empty($permissions['export'])): ?>
+                    <a href="<?= base_url('admin/swakelola/laporan/export-excel'); ?>" class="btn btn-success font-weight-bold shadow-sm px-3 py-2 mr-2" style="border-radius: 8px;">
+                        <i class="fas fa-file-excel mr-1"></i> Download Checklist Lengkap (.xlsx)
+                    </a>
+                <?php endif; ?>
                 <a href="<?= base_url('admin/swakelola/dokumen'); ?>" class="btn btn-outline-light font-weight-bold shadow-sm px-3 py-2" style="border-radius: 8px;">
                     <i class="fas fa-check-double mr-1"></i> Lihat 28 Dokumen
                 </a>
@@ -30,14 +32,14 @@
         </div>
     </div>
 
-    <!-- Matriks Perbandingan RAB vs Realisasi -->
+    <!-- Matriks Perbandingan RAB / POK Rev 16 vs Realisasi -->
     <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
         <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">
-                <i class="fas fa-table mr-2"></i> Matriks Perbandingan Anggaran Biaya (RAB) vs Realisasi Aktual (SPM/SP2D)
+                <i class="fas fa-table mr-2"></i> Matriks Perbandingan Pagu POK Revisi 16 vs Realisasi Aktual (16 SPM/SP2D/PTUP)
             </h6>
             <span class="badge badge-info px-3 py-2" style="border-radius: 20px;">
-                Sumber: DIPA POK & Berkas SPM Tahun 2025
+                Sumber: POK Rev 16 (23 Des 2025) &amp; 16 Berkas SPM/PTUP TA 2025
             </span>
         </div>
         <div class="card-body p-0">

@@ -1152,24 +1152,24 @@ graph TD
     C1 --> C2["Shortcut 1-Klik Langsung ke Checklist Dokumen, Detail Realisasi, atau Laporan"]
 
     D --> D1["Pengelompokan Otomatis 5 Tahapan Standar LKPP &amp; LHA No. 9"]
-    D1 --> T1["Tahap A: Perencanaan (5 Dokumen: DIPA/POK, RUP SiRUP, KAK, RAB, Identifikasi Kebutuhan)"]
+    D1 --> T1["Tahap A: Perencanaan (5 Dokumen: POK Rev 16 &amp; Petikan DIPA, RUP SiRUP, KAK, RAB, Identifikasi Kebutuhan)"]
     D1 --> T2["Tahap B: Persiapan (6 Dokumen: SK Tim KPA, Uraian Tugas, Rencana Kerja/Jadwal, KAK/RAB Final, BA Persiapan, Rencana Kebutuhan)"]
-    D1 --> T3["Tahap C: Pelaksanaan (7 Dokumen: Surat Tugas, Logbook/Daftar Hadir, Laporan Progres, Bukti Belanja, Kuitansi, Dokumentasi Foto, Pengeluaran Sah)"]
+    D1 --> T3["Tahap C: Pelaksanaan (7 Dokumen: Surat Tugas, Logbook/Daftar Hadir, Laporan Progres, Bukti Belanja CV. Sinar Cahaya Lestari, Kuitansi/Pajak, Dokumentasi Foto, 11 Berkas SPPD/PTUP)"]
     D1 --> T4["Tahap D: Pengawasan (4 Dokumen: Laporan Was, BA Pemeriksaan Mutu/Vol, Rekon Fisik-Keu, Evaluasi Deviasi)"]
-    D1 --> T5["Tahap E: Pertanggungjawaban (6 Dokumen: Laporan Akhir, BAST Pelaksana ke PPK, BAPHP, Rekap RAB vs Realisasi, BA Pajak, BA Persediaan Habis Pakai)"]
+    D1 --> T5["Tahap E: Pertanggungjawaban (6 Dokumen: Laporan Akhir, BAST Pelaksana ke PPK, BAPHP, Rekap POK Rev 16 vs Realisasi, BA Pajak, BA Persediaan Habis Pakai)"]
     
-    T1 --> DL["1-Klik Unduh Berkas Word (.docx) atau Berkas Scan PDF Resmi"]
+    T1 --> DL["Pratinjau Modal Langsung (PDF/Word) &amp; 1-Klik Unduh Berkas Resmi"]
     T2 --> DL
     T3 --> DL
     T4 --> DL
     T5 --> DL
 
-    E --> E1["Pencatatan Rincian Voucher SPM &amp; SP2D KPPN Pekanbaru"]
-    E1 --> E2["Pengelompokan Akun Otomatis: 521211 Belanja Bahan, 524111 Perjadin Biasa, 524113 Perjadin Dalam Kota"]
+    E --> E1["Pencatatan 16 Transaksi SPM, SP2D &amp; PTUP KPPN Pekanbaru (Total Rp 141.159.100)"]
+    E1 --> E2["Pengelompokan Akun POK Rev 16: 521211 (Rp 28,28 Jt), 524111 (Rp 112,58 Jt), 524113 (Rp 300 Rb)"]
 
-    F --> F1["Matriks Perbandingan Real-Time: Pagu RAB vs Realisasi SP2D Definitif"]
-    F --> F2["Akuntabilitas Kas Negara: Penjelasan Efisiensi Belanja Riil Sisa Pagu Rp 271,8 Juta"]
-    F --> F3["Export Checklist Lengkap (.xlsx) dengan Status &amp; Tautan Berkas"]
+    F --> F1["Matriks Perbandingan Real-Time: Pagu POK Rev 16 (Rp 413 Jt) vs Realisasi SP2D/PTUP (Rp 141,16 Jt)"]
+    F --> F2["Akuntabilitas Kas Negara: Penjelasan Efisiensi Belanja Riil Sisa Pagu Rp 271.840.900 (65,82%)"]
+    F --> F3["Export Checklist Lengkap (.xlsx) Sesuai Hak Akses FiturExport (menu_akses)"]
                 </pre>
             </div>
         </div>
@@ -2377,21 +2377,21 @@ graph TD
                                 <ul>
                                     <li>Menyajikan pemantauan 28 dokumen wajib yang dikelompokkan secara rapi ke dalam 5 tahapan:
                                         <strong>Tahap A (Perencanaan)</strong>, <strong>Tahap B (Persiapan)</strong>, <strong>Tahap C (Pelaksanaan)</strong>, <strong>Tahap D (Pengawasan &amp; Pengendalian)</strong>, dan <strong>Tahap E (Serah Terima &amp; Pertanggungjawaban)</strong>.</li>
-                                    <li>Setiap item dokumen dilengkapi indikator status (badge hijau <code>Ada</code>), nama berkas digital resmi, serta uraian keterangan.</li>
-                                    <li>Pengguna dapat mengunduh berkas resmi (.docx / .pdf) secara langsung dengan mengeklik tombol <strong>Unduh</strong> pada masing-masing baris dokumen.</li>
+                                    <li>Mendukung multi-berkas pada satu item checklist (seperti Item <strong>A.1</strong> yang memuat PDF asli <em>Rincian Kertas Kerja Satker Rev 16 POK</em> beserta dokumen Petikan/Rekonsiliasi POK, Item <strong>B.4</strong> KAK Final &amp; RAB Final, Item <strong>C.4</strong> &amp; <strong>C.5</strong> bukti belanja bahan CV. Sinar Cahaya Lestari beserta rekapitulasi pajak, serta Item <strong>C.7</strong> yang memuat 11 berkas PDF SPPD/PTUP asli beserta daftar nominatif).</li>
+                                    <li>Pengguna dapat menampilkan pratinjau dokumen (PDF &amp; Word <code>.docx</code>) secara langsung di dalam modal maupun mengunduh berkas resmi melalui tombol <strong>Preview</strong> dan <strong>Unduh</strong>.</li>
                                 </ul>
                             </li>
                             <li><strong>Submenu Realisasi Anggaran (<code>/admin/swakelola/realisasi</code>):</strong>
                                 <ul>
-                                    <li>Mencatat seluruh bukti pembayaran definitif Surat Perintah Membayar (SPM) dan SP2D dari KPPN Pekanbaru.</li>
-                                    <li>Dikelompokkan otomatis per mata anggaran: <strong>Akun 521211 (Belanja Bahan)</strong>, <strong>Akun 524111 (Belanja Perjalanan Dinas Biasa)</strong>, dan <strong>Akun 524113 (Belanja Perjalanan Dinas Dalam Kota)</strong>.</li>
+                                    <li>Mencatat dan menyinkronkan otomatis seluruh <strong>16 bukti pembayaran definitif SPM, SP2D, dan PTUP</strong> KPPN Pekanbaru dengan nilai realisasi kumulatif <strong>Rp 141.159.100,00</strong>.</li>
+                                    <li>Dikelompokkan otomatis per mata anggaran sesuai POK Revisi 16: <strong>Akun 521211 — Belanja Bahan</strong> (5 transaksi senilai Rp 28.283.000,00), <strong>Akun 524111 — Belanja Perjalanan Dinas Biasa</strong> (10 transaksi senilai Rp 112.576.100,00), dan <strong>Akun 524113 — Belanja Perjalanan Dinas Dalam Kota</strong> (1 transaksi senilai Rp 300.000,00).</li>
                                 </ul>
                             </li>
                             <li><strong>Submenu Rekapitulasi &amp; Laporan (<code>/admin/swakelola/laporan</code>):</strong>
                                 <ul>
-                                    <li>Menyajikan matriks perbandingan antara Pagu Anggaran pada RAB/DIPA dengan Realisasi Aktual per akun belanja.</li>
-                                    <li>Menjelaskan akuntabilitas sisa pagu anggaran efisiensi yang tidak terserap dan tetap aman di Kas Negara (RKUN).</li>
-                                    <li>Tersedia tombol <strong>Download Checklist Lengkap (.xlsx)</strong> untuk mengunduh rekap matriks kelengkapan seluruh 28 dokumen dalam format spreadsheet Excel siap pakai untuk audit.</li>
+                                    <li>Menyajikan matriks perbandingan antara Pagu Anggaran pada <strong>POK Revisi 16 Tanggal 23 Desember 2025</strong> (Pagu Rp 413.000.000,00: Akun <code>521211</code> Rp 74.100.000,00; Akun <code>524111</code> Rp 326.900.000,00; Akun <code>524113</code> Rp 12.000.000,00) terhadap Realisasi Aktual SP2D/PTUP (Rp 141.159.100,00 atau 34,18%).</li>
+                                    <li>Menjelaskan rekonsiliasi dari struktur RAB Awal ke POK Revisi 16 serta akuntabilitas sisa pagu efisiensi sebesar <strong>Rp 271.840.900,00</strong> (65,82%) yang tetap aman di Kas Negara (RKUN).</li>
+                                    <li>Tersedia tombol <strong>Download Checklist Lengkap (.xlsx)</strong> (mengikuti hak akses <code>FiturExport</code> pada tabel <code>menu_akses</code>) untuk mengunduh matriks kelengkapan seluruh 28 dokumen dalam format spreadsheet Excel siap pakai untuk audit.</li>
                                 </ul>
                             </li>
                         </ol>
