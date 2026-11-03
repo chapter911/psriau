@@ -230,8 +230,9 @@ class CreateSwakelolaModule extends Migration
             }
         }
 
-        // 5. Seed initial SPPG packet data
+        // 5. Seed initial SPPG & Madrasah PHTC Riau packet data
         $this->seedInitialSppgData();
+        $this->seedInitialMadrasahData();
     }
 
     public function down()
@@ -528,6 +529,147 @@ class CreateSwakelolaModule extends Migration
             ['524111', 'Perjadin Biasa - Monitoring Lokasi SPPG Kab. Siak untuk 3 Pegawai (ST No. 334/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 09/12/2025)', '00557A', '2025-12-22', '259991330532060', 6890000.00, 'SPPD SPPG SIAK (SPM 00557A).pdf'],
             ['524111', 'Perjadin Biasa - Pertanggungjawaban TUP (PTUP) Tim PPK ke Lokasi SPPG Riau (Sewa Kendaraan Rp 4.286.000 + UH Rp 9.990.000 + Penginapan Rp 4.000.000)', '00597A (PTUP)', '2025-12-31', '259991702155733', 18276000.00, 'TUP 1 (KWI PERJADIN).pdf'],
             ['524113', 'Perjadin Dalam Kota - Uang Harian > 8 Jam Tim PPK Lapangan Riau untuk 2 Pegawai (ST No. 291/SPT/SATKER/PPS-RIAU/Gs7/2025 Tgl 25/11/2025)', '00450A', '2025-12-03', '259991330451775', 300000.00, '1. SPPD NOVEMBER SPPG (SPM 00450A).pdf'],
+        ];
+
+        foreach ($realisasi as $r) {
+            $db->table('trn_swakelola_realisasi')->insert([
+                'paket_id'       => $paketId,
+                'kode_akun'      => $r[0],
+                'uraian_belanja' => $r[1],
+                'nomor_spm'      => $r[2],
+                'tanggal_spm'    => $r[3],
+                'nomor_sp2d'     => $r[4],
+                'jumlah_bayar'   => $r[5],
+                'file_bukti'     => $r[6],
+                'created_at'     => $now,
+                'updated_at'     => $now,
+            ]);
+        }
+    }
+
+    private function seedInitialMadrasahData(): void
+    {
+        $db = $this->db;
+        $now = date('Y-m-d H:i:s');
+
+        $existing = $db->table('trn_swakelola_paket')->where('kode_paket', '06.691285.GM.7717.RBI.003.900.AB')->countAllResults();
+        if ($existing > 0) {
+            return;
+        }
+
+        $paketData = [
+            'kode_paket'         => '06.691285.GM.7717.RBI.003.900.AB',
+            'nama_kegiatan'      => 'Administrasi Kegiatan Rehabilitasi dan Renovasi Madrasah PHTC Provinsi Riau',
+            'tahun_anggaran'     => 2025,
+            'pagu_anggaran'      => 569100000.00,
+            'realisasi_anggaran' => 322773000.00,
+            'tipe_swakelola'     => 'Tipe I',
+            'ppk_nama'           => 'Nurhidayat Nugroho, S.Ars.',
+            'ppk_nip'            => '19901221 201802 1 001',
+            'kasatker_nama'      => 'Muhammad Yudi Prasetya, S.T.',
+            'kasatker_nip'       => '19800626 200604 1 016',
+            'lokasi'             => 'Provinsi Riau (12 Kabupaten / Kota)',
+            'jangka_waktu'       => 'Juli s/d Desember 2025 (6 Bulan)',
+            'status'             => 'Selesai',
+            'created_at'         => $now,
+            'updated_at'         => $now,
+        ];
+
+        $db->table('trn_swakelola_paket')->insert($paketData);
+        $paketId = (int) $db->insertID();
+
+        // 28 Checklist Documents
+        $docs = [
+            ['A', 1, 'DIPA dan Revisi Anggaran (POK)', 'Ada', 'A. 1. 16_2025_RINCIAN KERTAS KERJA SATKER PPS RIAU_Rev 16 POK.pdf', 'Rincian Kertas Kerja Satker (POK) Revisi 16 Tgl 23 Des 2025 & Petikan POK Madrasah PHTC Riau Pagu Rp 569.100.000,-'],
+            ['A', 2, 'RUP/SIRUP paket Swakelola', 'Ada', 'A. 2. Lembar RUP dan Pengumuman SiRUP Paket Swakelola Madrasah PHTC Riau.docx', 'Lembar Penetapan RUP & Pengumuman SiRUP LKPP Swakelola'],
+            ['A', 3, 'KAK (Tujuan, Ruang Lingkup, Keluaran dan Spesifikasi)', 'Ada', 'A. 3. KAK Administrasi Madrasah PHTC Provinsi Riau.pdf', 'Disahkan PPK dan Kasatker'],
+            ['A', 4, 'RAB (Perkiraan Biaya dan Dasar Perhitungan)', 'Ada', 'A. 4. RAB Administrasi Madrasah PHTC Provinsi Riau.pdf', 'Pagu Rp 569.100.000,- (5 Akun Belanja POK Rev 16)'],
+            ['A', 5, 'Dokumen Identifikasi Kebutuhan dan Dasar Pemilihan Swakelola', 'Ada', 'A. 5. DOKUMEN IDENTIFIKASI KEBUTUHAN DAN DASAR PEMILIHAN SWAKELOLA.docx', 'Dasar hukum pemilihan Swakelola Tipe I'],
+            ['B', 6, 'Surat Keputusan Penyelenggara Swakelola oleh PA/KPA', 'Ada', 'B. 1. SK Penetapan Penyelenggara Swakelola Madrasah PHTC Riau oleh KPA.docx', 'SK KPA No. 22/KPTS/SATKER-PPS.RIAU/2025'],
+            ['B', 7, 'Susunan Tim Persiapan, Tim Pelaksana dan Tim Pengawas beserta tugasnya', 'Ada', 'B. 2. Susunan Tim Persiapan, Pelaksana, Pengawas dan Uraian Tugas.docx', 'Lampiran SK Penetapan Tim Swakelola & Uraian Tugas'],
+            ['B', 8, 'Rencana Kegiatan dan Jadwal Pelaksanaan', 'Ada', 'B. 3. Rencana Kegiatan dan Jadwal Pelaksanaan Administrasi Madrasah PHTC Riau.docx', 'Matriks jadwal kurva waktu Juli s.d. Desember 2025 (6 Bulan)'],
+            ['B', 9, 'KAK final dan RAB rinci', 'Ada', 'B. 4. KAK Final dan RAB Rinci Administrasi Madrasah PHTC Riau.docx', 'Disahkan PPK dan Tim Persiapan'],
+            ['B', 10, 'Dokumen pembahasan atau hasil persiapan kegiatan', 'Ada', 'B. 5. BA Pembahasan Persiapan Swakelola Administrasi Madrasah PHTC Riau.docx', 'BA Pembahasan No. 02/BA-PERSIAPAN/SWK-MDR/2025'],
+            ['B', 11, 'Rencana kebutuhan tenaga kerja, bahan, peralatan dan tenaga ahli', 'Ada', 'B. 6. Rencana Kebutuhan Tenaga Kerja, Bahan, Peralatan, dan Tenaga Ahli.docx', 'Rencana kebutuhan SDM, ATK, supplies, perjadin & narsum'],
+            ['C', 12, 'Surat Perintah atau Dokumen Penugasan', 'Ada', 'C. 1. Surat Perintah Penugasan Tim Pelaksana Swakelola.docx', 'Surat Perintah PPK No. 12/SPP-SWK/PPK-PPS/2025'],
+            ['C', 13, 'Daftar Hadir, Catatan Tenaga Kerja dan Bukti pelaksanaan Kegiatan', 'Ada', 'C. 2. Laporan Pelaksanaan, Daftar Hadir dan Catatan Tenaga Kerja.docx', 'Rekapitulasi logbook bulanan dan presensi tim pelaksana'],
+            ['C', 14, 'Laporan progres pekerjaan dan penggunaan anggaran secara berkala', 'Ada', 'C. 3. Laporan Progres Fisik dan Penggunaan Anggaran Berkala.docx', 'Laporan progres bulanan Juli s.d. Desember 2025'],
+            ['C', 15, 'Bukti pembelian bahan/barang dari Penyedia', 'Ada', 'C. 4. Bukti Pembelian Bahan dan Barang dari Penyedia (ATK SPM 00255A).pdf', '6 Berkas SPM/Kuitansi/BAST/Faktur Pembelian ATK & Supplies CV. Sinar Cahaya Lestari'],
+            ['C', 16, 'Invoice/Kuitansi, Bukti Pembayaran, dan Dokumen Pajak sesuai ketentuan', 'Ada', 'C. 5. Invoice Kuitansi dan Dokumen Pajak (Honor Narsum SPM 00350A).pdf', '12 Berkas SPM/Kuitansi/SSP Pajak (2 SPM Honor Narsum TP4D + 10 SPM Gaji Staf Pendukung)'],
+            ['C', 17, 'Dokumentasi fisik kegiatan dan hasil pekerjaan', 'Ada', 'C. 6. Dokumentasi Fisik Kegiatan dan Hasil Pekerjaan Madrasah PHTC Riau.docx', 'Album foto survei & monitoring lapangan madrasah di 12 Kabupaten/Kota Provinsi Riau'],
+            ['C', 18, 'Bukti pengeluaran yang sah dan dapat ditelusuri', 'Ada', 'C. 7. Bukti Pengeluaran Sah yang Dapat Ditelusuri (SPPD SPM 00270A).pdf', '25 Berkas Lengkap SPPD, SPT, Nominatif & Bukti Riil Perjadin Biasa & Dalam Kota'],
+            ['D', 19, 'Laporan atau Catatan Pengawasan Tim Pengawas', 'Ada', 'D. 1. Laporan Catatan Pengawasan Tim Pengawas Swakelola Madrasah PHTC Riau.docx', 'Laporan berkala hasil audit dan pengawasan fisik/keuangan Tim Was'],
+            ['D', 20, 'Bukti Pemeriksaan kesesuaian volume, mutu, waktu dan keluaran', 'Ada', 'D. 2. Bukti Pemeriksaan Kesesuaian Volume, Mutu, Waktu dan Keluaran.docx', 'Lembar checklist verifikasi kesesuaian output & spesifikasi teknis'],
+            ['D', 21, 'Rekonsiliasi realisasi fisik dan keuangan', 'Ada', 'D. 3. Berita Acara Rekonsiliasi Realisasi Fisik dan Keuangan.docx', 'BA Rekonsiliasi Fisik 100% & Keuangan Rp 322.773.000,- (56,72%)'],
+            ['D', 22, 'Catatan penyimpangan dan bukti tindak lanjut', 'Ada', 'D. 4. Catatan Penyimpangan Evaluasi dan Bukti Tindak Lanjut.docx', 'Evaluasi efisiensi anggaran penghematan sisa pagu Rp 246.327.000,-'],
+            ['E', 23, 'Laporan akhir pelaksanaan Swakelola', 'Ada', 'E. 1. Laporan Akhir Pelaksanaan Swakelola Administrasi Madrasah PHTC Riau.docx', 'Laporan akhir komprehensif Bab I s/d Bab IV kegiatan rehabilitasi madrasah'],
+            ['E', 24, 'BAST hasil pekerjaan dari Tim Pelaksana kepada PPK', 'Ada', 'E. 2. Berita Acara Serah Terima (BAST) Hasil Pekerjaan dari Tim Pelaksana kepada PPK.docx', 'BAST No. 03/BAST-SWK/PPK-PPS/2025'],
+            ['E', 25, 'Dokumen pemeriksaan/verifikasi hasil pekerjaan', 'Ada', 'E. 3. Berita Acara Pemeriksaan Hasil Pekerjaan (BAPHP).docx', 'BAPHP No. 03/BAPHP-SWK/WAS-PPS/2025 Tim Pengawas'],
+            ['E', 26, 'Rekapitulasi realisasi anggaran dibandingkan dengan RAB', 'Ada', 'E. 4. Rekapitulasi Realisasi Anggaran Dibandingkan dengan RAB.docx', 'Matriks rekonsiliasi 5 akun POK Rev 16 vs 43 SPM realisasi definitif'],
+            ['E', 27, 'Bukti penyelesaian pembayaran dan perpajakan yang relevan', 'Ada', 'E. 5. Bukti Penyelesaian Pembayaran dan Perpajakan.docx', 'BA penyelesaian pembayaran 43 SP2D dan pelunasan seluruh kewajiban perpajakan'],
+            ['E', 28, 'Dokumen pencatatan aset/persediaan jika keluaran menghasilkan aset/persediaan', 'Ada', 'E. 6. Dokumen Pencatatan Persediaan Barang Habis Pakai dan Aset.docx', 'BA pencatatan barang persediaan habis pakai ATK dan supplies komputer'],
+        ];
+
+        foreach ($docs as $d) {
+            $db->table('trn_swakelola_dokumen')->insert([
+                'paket_id'     => $paketId,
+                'tahap'        => $d[0],
+                'nomor_urut'   => $d[1],
+                'nama_dokumen' => $d[2],
+                'status'       => $d[3],
+                'file_name'    => $d[4],
+                'file_path'    => 'public/uploads/swakelola/madrasah_riau/' . $d[4],
+                'keterangan'   => $d[5],
+                'created_at'   => $now,
+                'updated_at'   => $now,
+            ]);
+        }
+
+        // Realisasi Belanja (43 Transaksi SPM/SP2D/PTUP Asli = Rp 322.773.000,-)
+        $realisasi = [
+            ['521213', 'Belanja Honor Output Kegiatan - Honorarium Narasumber TP4D Kejati Riau Bulan Oktober 2025 (50 OJ)', '00350A', '2025-10-31', '259991330369850', 45000000.00, '1. HONOR NARSUM TP4D OKTOBER (SPM 00350A).pdf'],
+            ['521213', 'Belanja Honor Output Kegiatan - Honorarium Narasumber TP4D Kejati Riau Bulan November 2025 (30 OJ)', '00464A', '2025-12-04', '259991330462001', 27000000.00, '2. HONOR TP4D NOVEMBER (SPM 00464A).pdf'],
+            ['521811', 'Belanja Bahan Persediaan Konsumsi - Pembelian ATK Juli 2025 Penggantian Uang Persediaan (GUP September)', '00279A (GUP)', '2025-09-24', '259991110599182', 1545000.00, '1. GUP SEPTEMBER (SPM 00279A) ATK JULI OKE.pdf'],
+            ['521811', 'Belanja Bahan Persediaan Konsumsi - Pembelian ATK & Computer Supplies Bulan Agustus 2025 (CV. Sinar Cahaya Lestari)', '00255A', '2025-09-17', '259991310986701', 5760000.00, '2. ATK DAN SUPPLIES AGUSTUS (SPM 00255A) OK.pdf'],
+            ['521811', 'Belanja Bahan Persediaan Konsumsi - Pembelian ATK & Computer Supplies Bulan September 2025 (CV. Sinar Cahaya Lestari)', '00294A', '2025-10-06', '259991311046210', 5760000.00, '3. ATK DAN SUPPLIES SEPTEMBER (SPM 00294A) OK.pdf'],
+            ['521811', 'Belanja Bahan Persediaan Konsumsi - Pembelian ATK & Computer Supplies Bulan Oktober 2025 (CV. Sinar Cahaya Lestari)', '00321A', '2025-10-21', '259991311100412', 5760000.00, '4. ATK DAN SUPPLIES  OKTOBER (SPM 00321 A) OK .pdf'],
+            ['521811', 'Belanja Bahan Persediaan Konsumsi - Pembelian ATK & Computer Supplies Bulan November 2025 (CV. Sinar Cahaya Lestari)', '00371A', '2025-11-13', '259991311195670', 5760000.00, '5. ATK DAN SUPLIES NOVEMBER (SPM 00371A) OK.pdf'],
+            ['521811', 'Belanja Bahan Persediaan Konsumsi - Pembelian ATK & Computer Supplies Bulan Desember 2025 (CV. Sinar Cahaya Lestari)', '00499A', '2025-12-09', '259991311369738', 6781000.00, '6. ATK SUPLIES DESEMBER (SPM 00499A) OK.pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Pendukung Teknis Bulan Juli & Agustus 2025 a.n. Revano (2 OB @ Rp 6.000.000)', '00241A', '2025-09-09', '259991320492100', 12000000.00, '1. GAJI BULAN JULI DAN AGUSTUS (SPM 00241A) OKE.pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Pendukung Teknis Bulan Agustus 2025 a.n. Ade Putra (1 OB @ Rp 6.000.000)', '00242A', '2025-09-09', '259991320492101', 6000000.00, '2. GAJI BULAN AGUSTUS (SPM 00242A).pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Pendukung Teknis Bulan September 2025 a.n. Ade Putra (1 OB @ Rp 6.000.000)', '00256A', '2025-09-17', '259991320509822', 6000000.00, '3. GAJI BULAN SEPTEMBER (SPM 00256A) OKE.pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Pendukung Teknis Bulan September 2025 a.n. Revano (1 OB @ Rp 6.000.000)', '00257A', '2025-09-17', '259991320509823', 6000000.00, '4. GAJI BULAN SEPTEMBER (SPM 00257A) OKE.pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Pendukung Teknis Bulan Oktober 2025 a.n. Revano (1 OB @ Rp 6.000.000)', '00338A', '2025-10-27', '259991320584711', 6000000.00, '5. GAJI BULAN OKTOBER (SPM 00338A) OK.pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Pendukung Teknis Bulan Oktober 2025 a.n. Ade Putra (1 OB @ Rp 6.000.000)', '00337A', '2025-10-27', '259991320584710', 6000000.00, '6. GAJI BULAN OKTOBER (SPM 00337A).pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Pendukung Teknis Bulan November 2025 a.n. Ade Putra (1 OB @ Rp 6.000.000)', '00429A', '2025-12-01', '259991320674890', 6000000.00, '7. GAJI BULAN NOVEMBER (SPM 00429).pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Pendukung Teknis Bulan November 2025 a.n. Revano (1 OB @ Rp 6.000.000)', '00428A', '2025-12-01', '259991320674889', 6000000.00, '8. GAJI BULAN NOVEMBER (SPM 00428A).pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Pendukung Teknis Bulan Desember 2025 a.n. Ade Putra (1 OB @ Rp 6.000.000)', '00481A', '2025-12-09', '259991320700543', 6000000.00, '9. GAJI DESEMBER (SPM 00481A) OK.pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Pendukung Teknis Bulan Desember 2025 a.n. Revano (1 OB @ Rp 6.000.000)', '00480A', '2025-12-09', '259991320700542', 6000000.00, '10. GAJI DESEMBER (SPM 00480A).pdf'],
+            ['524111', 'Perjadin Biasa - Rekon MC-0 Madrasah PHTC Kab. Siak untuk 4 Pegawai (MAN 1 Siak Tgl 18-19 Sep 2025)', '00270A', '2025-09-22', '259991330286411', 5090000.00, 'SPPD SIAK PHTC 1 SEPTEMBER (SPM 00270A) OK.pdf'],
+            ['524111', 'Perjadin Biasa - Workshop Pengendalian Pelaksanaan Program Madrasah ke Provinsi Banten untuk 3 Pegawai', '00287A', '2025-10-02', '259991330302145', 13910000.00, 'SPPD OKTOBER BANTEN (SPM 00287A) OK.pdf'],
+            ['524111', 'Perjadin Biasa - Bimtek Implementasi SIPBJ V2 & SPSE 4.5 Madrasah ke Kota Medan untuk 3 Pegawai', '00310A', '2025-10-15', '259991330331002', 14860000.00, 'SPPD MEDAN OKTOBER (SPM 00310A).pdf'],
+            ['524111', 'Perjadin Biasa - Monev Lapangan Progres Fisik Madrasah PHTC Kab. Siak Tahap 1 untuk 4 Pegawai', '00311A', '2025-10-15', '259991330331003', 4900000.00, 'SPPD SIAK PHTC 1 OKTOBER (SPM 00311A) OK.pdf'],
+            ['524111', 'Perjadin Biasa - Monitoring Mutu Konstruksi Madrasah Kab. Siak untuk 3 Pegawai (PPK, Pengawas, Pelaksana)', '00313A', '2025-10-15', '259991330331005', 3960000.00, 'SPPD SIAK OKTOBER (SPM 00313A).pdf'],
+            ['524111', 'Perjadin Biasa - Koordinasi Pelaksanaan Kegiatan Madrasah PHTC ke Banda Aceh untuk 1 Pegawai', '00315A', '2025-10-16', '259991330333420', 5560000.00, 'SPPD ACEH OKTOBER (SPM 00315A).pdf'],
+            ['524111', 'Perjadin Biasa - Koordinasi Teknis Program Madrasah ke Provinsi Banten Bulan November untuk 2 Pegawai', '00388A', '2025-11-19', '259991330419812', 11230000.00, 'SPPD BANTEN NOVEMBER (SPM 00388A).pdf'],
+            ['524111', 'Perjadin Biasa - Monev Lapangan Progres Fisik Madrasah PHTC Kab. Siak Tahap 2 untuk 4 Pegawai', '00444A', '2025-12-03', '259991330451845', 7550000.00, 'SPPD SIAK PHTC 1 NOVEMBER (SPM 00444A).pdf'],
+            ['524111', 'Perjadin Biasa - Konsultasi & Evaluasi Teknis Progres Madrasah ke Kementerian PUPR Jakarta untuk 3 Pegawai', '00447A', '2025-12-03', '259991330451772', 18250000.00, 'SPPD JAKARTA NOVEMBER (SPM 00447A).pdf'],
+            ['524111', 'Perjadin Biasa - Monev Akhir & Rekonsiliasi Lapangan Madrasah PHTC Kab. Siak Bulan Desember untuk 2 Pegawai', '00532A', '2025-12-16', '259991330513923', 3030000.00, 'SPPD SIAK DESEMBER (SPM 00532A).pdf'],
+            ['524111', 'Perjadin Biasa - Rapat Koordinasi Evaluasi Akhir Kegiatan Madrasah ke Provinsi Banten untuk 1 Pegawai', '00544A', '2025-12-17', '259991330521098', 5610000.00, 'SPPD BANTEN DESMBER (SPM 00544A).pdf'],
+            ['524111', 'Perjadin Biasa - Koordinasi Pelaporan dan Audit Teknis Madrasah ke Banten & Semarang untuk 1 Pegawai', '00558A', '2025-12-22', '259991330532061', 6130000.00, 'SPPD BANTEN SEMARANG DESEMBER (SPM 00558A).pdf'],
+            ['524111', 'Perjadin Biasa - Koordinasi Finalisasi Serah Terima Hasil Pekerjaan Madrasah ke Banten untuk 3 Pegawai', '00562A', '2025-12-22', '259991330532065', 16837000.00, 'SPPD DESEMBER BANTEN (SPM 00562A).pdf'],
+            ['524111', 'Perjadin Biasa - Pertanggungjawaban TUP (PTUP) Monev Lapangan Tim PPK & Was Madrasah PHTC Subkomponen AB', '00599A (PTUP)', '2025-12-31', '259991702155735', 22090000.00, 'TUP 3 SPPD PHTC 1 (SPM 00599A).pdf'],
+            ['524113', 'Perjadin Dalam Kota - Monitoring & Koordinasi Lapangan Kota Pekanbaru Bulan September untuk 7 Pegawai', '00271A', '2025-09-22', '259991330286412', 1050000.00, 'SPPD PKU SEPTEMBER PHTC 1  (SPM 00271A).pdf'],
+            ['524113', 'Perjadin Dalam Kota - Monitoring Lapangan Madrasah Kota Pekanbaru Bulan Oktober Tahap 1 untuk 4 Pegawai', '00309A', '2025-10-15', '259991330331001', 600000.00, 'SPPD PKU OKTOBER PHTC 1 (SPM 00309A) OK.pdf'],
+            ['524113', 'Perjadin Dalam Kota - Monitoring Lapangan Madrasah Kota Pekanbaru Bulan Oktober Tahap 2 untuk 5 Pegawai', '00312A', '2025-10-15', '259991330331004', 750000.00, 'SPPD PEKANBARU OKTOBER PHTC 1 (SPM 00312A).pdf'],
+            ['524113', 'Perjadin Dalam Kota - Monitoring Lapangan Madrasah Kota Pekanbaru Bulan Oktober Tahap 3 untuk 5 Pegawai', '00349A', '2025-10-31', '259991330369849', 750000.00, 'SPPD PKU OKTOBER PHTC 1  (SPM 00349A) OK.pdf'],
+            ['524113', 'Perjadin Dalam Kota - Monitoring Lapangan Madrasah Kota Pekanbaru Bulan November Tahap 1 untuk 4 Pegawai', '00405A', '2025-11-26', '259991330438101', 600000.00, 'SPPD PKU NOVEMBER PHTC 1 (SPM 00405A) OK.pdf'],
+            ['524113', 'Perjadin Dalam Kota - Monitoring Lapangan Madrasah Kota Pekanbaru Bulan November Tahap 2 untuk 2 Pegawai', '00406A', '2025-11-26', '259991330438102', 300000.00, 'SPPD PKU NOVEMBER PHTC 1 (SPM 00406A).pdf'],
+            ['524113', 'Perjadin Dalam Kota - Monitoring Lapangan Madrasah Kota Pekanbaru Bulan November Tahap 3 untuk 3 Pegawai', '00443A', '2025-12-03', '259991330451844', 450000.00, 'SPPD PKU NOVEMBER PHTC 1 (SPM 00443A).pdf'],
+            ['524113', 'Perjadin Dalam Kota - Monitoring Lapangan Madrasah Kota Pekanbaru Bulan Desember Tahap 1 untuk 2 Pegawai', '00491A', '2025-12-09', '259991330478413', 300000.00, 'SPPD PKU DESEMBER PHTC 1 (SPM 00491A).pdf'],
+            ['524113', 'Perjadin Dalam Kota - Monitoring Lapangan Madrasah Kota Pekanbaru Bulan Desember Tahap 2 untuk 4 Pegawai', '00493A', '2025-12-09', '259991330478415', 600000.00, 'SPPD PKU DESEMBER PHTC 1 (SPM 00493A).pdf'],
+            ['524113', 'Perjadin Dalam Kota - Monitoring Lapangan Madrasah Kota Pekanbaru Bulan Desember Tahap 3 untuk 2 Pegawai', '00559A', '2025-12-22', '259991330532062', 300000.00, 'SPPD PKU DESEMBER PHTC 1 (SPM 00559A) OK.pdf'],
+            ['524113', 'Perjadin Dalam Kota - Pelaksanaan Monitoring Evaluasi Akhir Lapangan Kota Pekanbaru untuk 7 Pegawai & Pendamping Kejaksaan', '00561A', '2025-12-22', '259991330532064', 8700000.00, 'SPPD PEKANBARU  DESEMBER (SPM 00561A).pdf'],
         ];
 
         foreach ($realisasi as $r) {
