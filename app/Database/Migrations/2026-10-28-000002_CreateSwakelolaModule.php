@@ -447,7 +447,7 @@ class CreateSwakelolaModule extends Migration
             'ppk_nama'           => 'Nurhidayat Nugroho, S.Ars.',
             'ppk_nip'            => '19901221 201802 1 001',
             'kasatker_nama'      => 'Muhammad Yudi Prasetya, S.T.',
-            'kasatker_nip'       => '19800214 201412 1 002',
+            'kasatker_nip'       => '19800626 200604 1 016',
             'lokasi'             => 'Provinsi Riau (Pekanbaru, Kampar, Dumai, Siak)',
             'jangka_waktu'       => 'September s/d Desember 2025 (4 bulan)',
             'status'             => 'Selesai',

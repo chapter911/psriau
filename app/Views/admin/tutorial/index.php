@@ -1128,11 +1128,11 @@ graph TD
         </div>
     </div>
 
-    <!-- FLOWCHART 14: SWAKELOLA - SIKLUS ADMINISTRASI 5 TAHAPAN (LHA NO. 9) -->
+    <!-- FLOWCHART 14: SWAKELOLA - SIKLUS ADMINISTRASI 5 TAHAPAN & 4 PAKET (LHA NO. 9) -->
     <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,keuangan,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <h5 class="mb-0 font-weight-bold text-dark">
-                <i class="fas fa-clipboard-check text-primary mr-2"></i>Flowchart: Alur Kerja Modul Swakelola Tipe I &amp; Pemenuhan 28 Dokumen Checklist (LHA No. 9)
+                <i class="fas fa-clipboard-check text-primary mr-2"></i>Flowchart: Alur Kerja Modul Swakelola Multi-Paket (4 Paket Mandat LHA No. 9) &amp; Pemenuhan 28 Dokumen Checklist
             </h5>
             <div>
                 <span class="badge badge-primary">SWAKELOLA</span>
@@ -1143,33 +1143,34 @@ graph TD
                 <pre class="mermaid">
 graph TD
     A["Buka Menu Utama: Swakelola"] --> B{"Pilih Submenu"}
-    B -->|Paket Kegiatan| C["Akses Daftar Paket (/admin/swakelola/paket)"]
-    B -->|Checklist Dokumen| D["Akses 28 Checklist (/admin/swakelola/dokumen)"]
-    B -->|Realisasi Anggaran| E["Akses Buku Kas SPM (/admin/swakelola/realisasi)"]
-    B -->|Rekapitulasi &amp; Laporan| F["Akses Rekap RAB vs Realisasi (/admin/swakelola/laporan)"]
+    B -->|Paket Kegiatan| C["Daftar 4 Paket LHA No. 9 (/admin/swakelola/paket)"]
+    B -->|Checklist Dokumen| D["28 Checklist Dokumen (/admin/swakelola/dokumen)"]
+    B -->|Realisasi Anggaran| E["Realisasi SPM &amp; SP2D (/admin/swakelola/realisasi)"]
+    B -->|Rekapitulasi &amp; Laporan| F["Rekap RAB vs Realisasi (/admin/swakelola/laporan)"]
 
-    C --> C1["Monitoring Pagu DIPA, Realisasi SP2D Definitif, Status Kegiatan, PPK &amp; Kasatker"]
-    C1 --> C2["Shortcut 1-Klik Langsung ke Checklist Dokumen, Detail Realisasi, atau Laporan"]
+    C --> C1["Monitoring 4 Paket LHA No. 9: Paket 1 PHTC Thp 3 (PIC: Amsal), Paket 2 SPPG Riau (PIC: bg Agung), Paket 3 Madrasah Riau (PIC: bg Jefri), Paket 4 Madrasah Riau 5 (PIC: bg Syahridwan)"]
+    C1 --> C2["Indikator Progres Kelengkapan (X / 28 Dokumen), Pagu POK Rev 16, Realisasi SP2D &amp; Shortcut 1-Klik per Paket"]
 
-    D --> D1["Pengelompokan Otomatis 5 Tahapan Standar LKPP &amp; LHA No. 9"]
+    D --> PS["Paket Switcher (Tab &amp; Dropdown Paket 1 s/d Paket 4)"]
+    PS --> D1["Pengelompokan 28 Dokumen ke 5 Tahapan Standar LKPP &amp; LHA No. 9"]
     D1 --> T1["Tahap A: Perencanaan (5 Dokumen: POK Rev 16 &amp; Petikan DIPA, RUP SiRUP, KAK, RAB, Identifikasi Kebutuhan)"]
     D1 --> T2["Tahap B: Persiapan (6 Dokumen: SK Tim KPA, Uraian Tugas, Rencana Kerja/Jadwal, KAK/RAB Final, BA Persiapan, Rencana Kebutuhan)"]
-    D1 --> T3["Tahap C: Pelaksanaan (7 Dokumen: Surat Tugas, Logbook/Daftar Hadir, Laporan Progres, Bukti Belanja CV. Sinar Cahaya Lestari, Kuitansi/Pajak, Dokumentasi Foto, 11 Berkas SPPD/PTUP)"]
+    D1 --> T3["Tahap C: Pelaksanaan (7 Dokumen: Surat Tugas, Logbook/Daftar Hadir, Laporan Progres, Bukti Belanja Penyedia, Kuitansi/Pajak, Dokumentasi Foto, SPPD/PTUP)"]
     D1 --> T4["Tahap D: Pengawasan (4 Dokumen: Laporan Was, BA Pemeriksaan Mutu/Vol, Rekon Fisik-Keu, Evaluasi Deviasi)"]
-    D1 --> T5["Tahap E: Pertanggungjawaban (6 Dokumen: Laporan Akhir, BAST Pelaksana ke PPK, BAPHP, Rekap POK Rev 16 vs Realisasi, BA Pajak, BA Persediaan Habis Pakai)"]
+    D1 --> T5["Tahap E: Pertanggungjawaban (6 Dokumen: Laporan Akhir, BAST Pelaksana ke PPK, BAPHP, Rekap POK Rev 16 vs Realisasi, BA Pajak, BA Persediaan)"]
     
-    T1 --> DL["Pratinjau Modal Langsung (PDF/Word) &amp; 1-Klik Unduh Berkas Resmi"]
+    T1 --> DL["Pratinjau Modal Langsung (PDF/Word), Unduh Berkas &amp; Upload/Perbarui Dokumen (Sesuai FiturAdd/FiturEdit menu_akses)"]
     T2 --> DL
     T3 --> DL
     T4 --> DL
     T5 --> DL
 
-    E --> E1["Pencatatan 16 Transaksi SPM, SP2D &amp; PTUP KPPN Pekanbaru (Total Rp 141.159.100)"]
-    E1 --> E2["Pengelompokan Akun POK Rev 16: 521211 (Rp 28,28 Jt), 524111 (Rp 112,58 Jt), 524113 (Rp 300 Rb)"]
+    E --> E_SW["Paket Switcher &amp; Pencatatan Transaksi SPM, SP2D &amp; PTUP per Paket"]
+    E_SW --> E1["Paket 2 SPPG Terverifikasi 16 SPM/PTUP (Rp 141.159.100) + Form Tambah/Edit/Hapus SPM &amp; Upload PDF Bukti untuk Paket 1, 3 &amp; 4"]
+    E1 --> E2["Kalkulasi Otomatis Realisasi per Akun POK Revisi 16 (521211, 521213, 521811, 522191, 524111, 524113, 524114)"]
 
-    F --> F1["Matriks Perbandingan Real-Time: Pagu POK Rev 16 (Rp 413 Jt) vs Realisasi SP2D/PTUP (Rp 141,16 Jt)"]
-    F --> F2["Akuntabilitas Kas Negara: Penjelasan Efisiensi Belanja Riil Sisa Pagu Rp 271.840.900 (65,82%)"]
-    F --> F3["Export Checklist Lengkap (.xlsx) Sesuai Hak Akses FiturExport (menu_akses)"]
+    F --> F1["Matriks Perbandingan Real-Time per Paket: Pagu POK Rev 16 vs Realisasi SP2D/PTUP &amp; Sisa Pagu Efisiensi"]
+    F1 --> F3["Export Checklist Lengkap (.xlsx) Dinamis untuk Masing-Masing Paket (Sesuai Hak Akses FiturExport menu_akses)"]
                 </pre>
             </div>
         </div>
@@ -2355,43 +2356,47 @@ graph TD
         <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,keuangan,editor,all">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 font-weight-bold text-primary">
-                    <i class="fas fa-clipboard-check mr-2"></i> Modul Swakelola: Tata Kelola Administrasi 5 Tahapan, 28 Dokumen Checklist &amp; Realisasi Belanja
+                    <i class="fas fa-clipboard-check mr-2"></i> Modul Swakelola Multi-Paket (4 Paket Mandat LHA No. 9): 5 Tahapan, 28 Dokumen Checklist &amp; Realisasi Belanja
                 </h5>
             </div>
             <div class="card-body bg-light">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body">
-                        <h6 class="font-weight-bold text-primary"><i class="fas fa-tasks mr-1"></i> Pengelolaan Administrasi Swakelola Tipe I Sesuai Perlem LKPP 3/2021 &amp; LHA No. 9</h6>
+                        <h6 class="font-weight-bold text-primary"><i class="fas fa-tasks mr-1"></i> Pengelolaan Terpadu 4 Paket Swakelola Tipe I Sesuai Perlem LKPP 3/2021, POK Revisi 16 &amp; LHA No. 9</h6>
                         <p class="small text-muted mb-2"><code>/admin/swakelola/paket</code> | <code>/admin/swakelola/dokumen</code> | <code>/admin/swakelola/realisasi</code> | <code>/admin/swakelola/laporan</code></p>
                         <p class="small text-dark mb-2">
-                            Modul Swakelola dirancang untuk menjamin tertib administrasi penyelenggaraan Swakelola Tipe I di lingkungan Satuan Kerja Pelaksanaan Prasarana Strategis Riau (khususnya tindak lanjut temuan LHA No. 9 terkait Administrasi Kegiatan Pembangunan Gedung SPPG Provinsi Riau TA 2025).
+                            Modul Swakelola dirancang untuk menampung dan memantau seluruh <strong>4 Paket Kegiatan Swakelola Tipe I</strong> sesuai arahan pimpinan atas tindak lanjut temuan LHA No. 9 di lingkungan Satuan Kerja Pelaksanaan Prasarana Strategis Riau TA 2025:
+                            <strong>(1) Paket Rapat Koordinasi Survey dan Perencanaan Teknis Madrasah PHTC Tahap 3</strong> (PIC: Amsal Anwari, S.T. — Pagu Rp 90.000.000,00),
+                            <strong>(2) Administrasi Kegiatan Pembangunan Gedung SPPG Provinsi Riau</strong> (PIC: Agung Kesuma — Pagu Rp 413.000.000,00, Realisasi Rp 141.159.100,00, 28/28 Dokumen Lengkap 100%),
+                            <strong>(3) Administrasi Kegiatan Rehabilitasi dan Renovasi Madrasah PHTC Provinsi Riau</strong> (PIC: Jefri — Pagu Rp 569.100.000,00), dan
+                            <strong>(4) Administrasi Kegiatan Rehabilitasi dan Renovasi Madrasah PHTC Provinsi Riau 5</strong> (PIC: Muhammad Syahridwan, S.T. — Pagu Rp 192.100.000,00).
                         </p>
                         <ol class="pl-3 small mb-0" style="line-height: 1.8;">
                             <li><strong>Submenu Paket Kegiatan (<code>/admin/swakelola/paket</code>):</strong>
                                 <ul>
-                                    <li>Menampilkan seluruh daftar kegiatan Swakelola Satker per Tahun Anggaran lengkap dengan Kode Anggaran POK, Nilai Pagu DIPA, Realisasi Terbayar, Nama PPK, dan Nama Kasatker.</li>
-                                    <li>Tersedia tombol pintas (shortcut) untuk langsung menuju halaman <strong>Dokumen Checklist</strong>, <strong>Realisasi SPM</strong>, atau <strong>Rekapitulasi RAB</strong>.</li>
+                                    <li>Menampilkan seluruh 4 paket Swakelola mandat LHA No. 9 lengkap dengan Nomor Paket, Kode MAK (POK Revisi 16), Nama PIC Penanggung Jawab, Progres Kelengkapan Dokumen (<code>X / 28 Dokumen</code>), Nilai Pagu POK Rev 16, Realisasi SP2D Terbayar, Nama PPK, dan Nama Kasatker.</li>
+                                    <li>Tersedia tombol pintas (shortcut) pada setiap baris paket untuk langsung menuju halaman <strong>Dokumen Checklist</strong>, <strong>Realisasi SPM</strong>, atau <strong>Rekapitulasi RAB</strong> paket tersebut.</li>
                                 </ul>
                             </li>
                             <li><strong>Submenu Checklist Dokumen (<code>/admin/swakelola/dokumen</code>):</strong>
                                 <ul>
+                                    <li>Dilengkapi <strong>Paket Switcher (Tab &amp; Dropdown Paket 1 s/d Paket 4)</strong> di bagian atas halaman untuk berpindah antar paket secara instan.</li>
                                     <li>Menyajikan pemantauan 28 dokumen wajib yang dikelompokkan secara rapi ke dalam 5 tahapan:
                                         <strong>Tahap A (Perencanaan)</strong>, <strong>Tahap B (Persiapan)</strong>, <strong>Tahap C (Pelaksanaan)</strong>, <strong>Tahap D (Pengawasan &amp; Pengendalian)</strong>, dan <strong>Tahap E (Serah Terima &amp; Pertanggungjawaban)</strong>.</li>
-                                    <li>Mendukung multi-berkas pada satu item checklist (seperti Item <strong>A.1</strong> yang memuat PDF asli <em>Rincian Kertas Kerja Satker Rev 16 POK</em> beserta dokumen Petikan/Rekonsiliasi POK, Item <strong>B.4</strong> KAK Final &amp; RAB Final, Item <strong>C.4</strong> &amp; <strong>C.5</strong> bukti belanja bahan CV. Sinar Cahaya Lestari beserta rekapitulasi pajak, serta Item <strong>C.7</strong> yang memuat 11 berkas PDF SPPD/PTUP asli beserta daftar nominatif).</li>
-                                    <li>Pengguna dapat menampilkan pratinjau dokumen (PDF &amp; Word <code>.docx</code>) secara langsung di dalam modal maupun mengunduh berkas resmi melalui tombol <strong>Preview</strong> dan <strong>Unduh</strong>.</li>
+                                    <li>Mendukung multi-berkas pada satu item checklist (khususnya pada Paket 2 SPPG dan Paket 1 PHTC Tahap 3), pratinjau langsung (<strong>Preview</strong> PDF &amp; Word <code>.docx</code> dengan penempatan blok tanda tangan rata tengah &amp; sejajar), serta <strong>Upload / Perbarui Berkas Dokumen</strong> (<code>.pdf</code> / <code>.docx</code> / <code>.xlsx</code>) pada setiap baris item sesuai hak akses <code>FiturAdd</code> / <code>FiturEdit</code> di <code>menu_akses</code>.</li>
                                 </ul>
                             </li>
                             <li><strong>Submenu Realisasi Anggaran (<code>/admin/swakelola/realisasi</code>):</strong>
                                 <ul>
-                                    <li>Mencatat dan menyinkronkan otomatis seluruh <strong>16 bukti pembayaran definitif SPM, SP2D, dan PTUP</strong> KPPN Pekanbaru dengan nilai realisasi kumulatif <strong>Rp 141.159.100,00</strong>.</li>
-                                    <li>Dikelompokkan otomatis per mata anggaran sesuai POK Revisi 16: <strong>Akun 521211 — Belanja Bahan</strong> (5 transaksi senilai Rp 28.283.000,00), <strong>Akun 524111 — Belanja Perjalanan Dinas Biasa</strong> (10 transaksi senilai Rp 112.576.100,00), dan <strong>Akun 524113 — Belanja Perjalanan Dinas Dalam Kota</strong> (1 transaksi senilai Rp 300.000,00).</li>
+                                    <li>Dilengkapi <strong>Paket Switcher</strong> serta ringkasan kartu KPI realisasi per mata anggaran sesuai struktur akun POK Revisi 16 masing-masing paket (<code>521211</code>, <code>521213</code>, <code>521811</code>, <code>522191</code>, <code>524111</code>, <code>524113</code>, <code>524114</code>).</li>
+                                    <li>Untuk <strong>Paket 2 (SPPG)</strong>, sistem menyinkronkan otomatis seluruh <strong>16 bukti pembayaran definitif SPM, SP2D, dan PTUP</strong> KPPN Pekanbaru senilai <strong>Rp 141.159.100,00</strong>.</li>
+                                    <li>Tersedia fitur <strong>Tambah, Edit, dan Hapus Realisasi SPM</strong> beserta unggah berkas PDF bukti pengeluaran (mengikuti hak akses <code>FiturAdd</code>, <code>FiturEdit</code>, dan <code>FiturDelete</code> pada tabel <code>menu_akses</code>) yang secara otomatis menghitung ulang total realisasi paket.</li>
                                 </ul>
                             </li>
                             <li><strong>Submenu Rekapitulasi &amp; Laporan (<code>/admin/swakelola/laporan</code>):</strong>
                                 <ul>
-                                    <li>Menyajikan matriks perbandingan antara Pagu Anggaran pada <strong>POK Revisi 16 Tanggal 23 Desember 2025</strong> (Pagu Rp 413.000.000,00: Akun <code>521211</code> Rp 74.100.000,00; Akun <code>524111</code> Rp 326.900.000,00; Akun <code>524113</code> Rp 12.000.000,00) terhadap Realisasi Aktual SP2D/PTUP (Rp 141.159.100,00 atau 34,18%).</li>
-                                    <li>Menjelaskan rekonsiliasi dari struktur RAB Awal ke POK Revisi 16 serta akuntabilitas sisa pagu efisiensi sebesar <strong>Rp 271.840.900,00</strong> (65,82%) yang tetap aman di Kas Negara (RKUN).</li>
-                                    <li>Tersedia tombol <strong>Download Checklist Lengkap (.xlsx)</strong> (mengikuti hak akses <code>FiturExport</code> pada tabel <code>menu_akses</code>) untuk mengunduh matriks kelengkapan seluruh 28 dokumen dalam format spreadsheet Excel siap pakai untuk audit.</li>
+                                    <li>Menyajikan matriks perbandingan real-time per paket antara Pagu Anggaran pada <strong>POK Revisi 16 Tanggal 23 Desember 2025</strong> terhadap Realisasi Aktual SP2D/PTUP beserta sisa pagu efisiensi kas negara.</li>
+                                    <li>Tersedia tombol <strong>Download Checklist Lengkap (.xlsx)</strong> (mengikuti hak akses <code>FiturExport</code> pada tabel <code>menu_akses</code>) untuk mengunduh spreadsheet checklist 28 dokumen dari paket mana pun yang sedang dipilih.</li>
                                 </ul>
                             </li>
                         </ol>

@@ -606,7 +606,10 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('swakelola/dokumen/preview/(:num)', 'Admin\Swakelola::ajaxGetDokumenInfo/$1');
 	$routes->get('swakelola/dokumen/view/(:num)', 'Admin\Swakelola::viewInlineDokumen/$1');
 	$routes->get('swakelola/dokumen/download/(:num)', 'Admin\Swakelola::downloadDokumen/$1');
+	$routes->post('swakelola/dokumen/(:num)/upload', 'Admin\Swakelola::uploadDokumen/$1');
 	$routes->get('swakelola/realisasi', 'Admin\Swakelola::realisasiIndex');
+	$routes->post('swakelola/realisasi/simpan', 'Admin\Swakelola::saveRealisasi');
+	$routes->post('swakelola/realisasi/(:num)/hapus', 'Admin\Swakelola::deleteRealisasi/$1');
 	$routes->get('swakelola/laporan', 'Admin\Swakelola::laporanIndex');
 	$routes->get('swakelola/laporan/export-excel', 'Admin\Swakelola::exportChecklistExcel');
 });

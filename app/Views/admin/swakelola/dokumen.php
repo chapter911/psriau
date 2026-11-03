@@ -1,12 +1,59 @@
 <?= $this->extend('layouts/admin'); ?>
 
 <?= $this->section('content'); ?>
+<?php
+$canUploadDoc = ! empty($permissions['edit']) || ! empty($permissions['add']);
+$activePaketId = (int) ($paket['id'] ?? 0);
+?>
 <div class="container-fluid">
+
+    <!-- Paket Switcher Bar (Paket 1 s/d Paket 4 LHA No. 9) -->
+    <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px;">
+        <div class="card-body py-3 px-4 d-flex flex-wrap justify-content-between align-items-center">
+            <div class="d-flex align-items-center mb-2 mb-lg-0">
+                <span class="font-weight-bold text-dark mr-3">
+                    <i class="fas fa-layer-group text-primary mr-1"></i> Pilih Paket LHA No. 9:
+                </span>
+                <div class="nav nav-pills flex-wrap">
+                    <?php foreach ($paketList as $pItem):
+                        $isAct = ((int) $pItem['id'] === $activePaketId);
+                        $lhaNo = (int) ($pItem['lha_no'] ?? 1);
+                    ?>
+                        <a href="<?= base_url('admin/swakelola/dokumen?paket_id=' . $pItem['id']); ?>"
+                           class="btn btn-sm <?= $isAct ? 'btn-primary font-weight-bold shadow-sm' : 'btn-outline-secondary'; ?> mr-2 mb-1"
+                           style="border-radius: 20px;">
+                            Paket <?= $lhaNo; ?> (<?= esc($pItem['pic_label'] ?? $pItem['pic_nama']); ?>)
+                            <span class="badge <?= $isAct ? 'badge-light text-primary' : 'badge-secondary'; ?> ml-1">
+                                <?= (int) ($pItem['dokumen_ada'] ?? 0); ?>/<?= (int) ($pItem['dokumen_total'] ?? 28); ?>
+                            </span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <select class="form-control form-control-sm" style="min-width: 260px; border-radius: 8px;" onchange="if(this.value) window.location.href=this.value;">
+                    <?php foreach ($paketList as $pItem):
+                        $isAct = ((int) $pItem['id'] === $activePaketId);
+                        $lhaNo = (int) ($pItem['lha_no'] ?? 1);
+                    ?>
+                        <option value="<?= base_url('admin/swakelola/dokumen?paket_id=' . $pItem['id']); ?>" <?= $isAct ? 'selected' : ''; ?>>
+                            Paket <?= $lhaNo; ?> — <?= esc($pItem['nama_kegiatan']); ?> (PIC: <?= esc($pItem['pic_label'] ?? '-'); ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+    </div>
 
     <!-- Top Banner -->
     <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #ffffff;">
         <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center">
             <div>
+                <div class="mb-1">
+                    <span class="badge badge-warning text-dark font-weight-bold px-2 py-1 mr-2">
+                        PAKET <?= (int) ($paket['lha_no'] ?? 1); ?> — PIC: <?= esc($paket['pic_nama'] ?? '-'); ?>
+                    </span>
+                </div>
                 <h4 class="font-weight-bold mb-1 text-white">
                     <i class="fas fa-check-double mr-2 text-warning"></i> Checklist 28 Dokumen Swakelola Tipe I
                 </h4>
@@ -14,20 +61,25 @@
                     <?= esc($paket['nama_kegiatan'] ?? 'Kegiatan Swakelola'); ?> — TA <?= esc($paket['tahun_anggaran'] ?? '2025'); ?>
                 </p>
                 <div class="mt-2 text-white-50 small">
-                    <span class="mr-3"><i class="fas fa-barcode mr-1"></i> Kode: <strong><?= esc($paket['kode_paket'] ?? '-'); ?></strong></span>
-                    <span class="mr-3"><i class="fas fa-money-bill-wave mr-1"></i> Pagu: <strong>Rp <?= number_format((float)($paket['pagu_anggaran'] ?? 0), 0, ',', '.'); ?></strong></span>
+                    <span class="mr-3"><i class="fas fa-barcode mr-1"></i> Kode MAK: <strong><?= esc($paket['kode_paket'] ?? '-'); ?></strong></span>
+                    <span class="mr-3"><i class="fas fa-money-bill-wave mr-1"></i> Pagu POK Rev 16: <strong>Rp <?= number_format((float)($paket['pagu_anggaran'] ?? 0), 0, ',', '.'); ?></strong></span>
                     <span><i class="fas fa-check-circle mr-1 text-success"></i> Realisasi: <strong>Rp <?= number_format((float)($paket['realisasi_anggaran'] ?? 0), 0, ',', '.'); ?></strong></span>
                 </div>
             </div>
             <div class="mt-3 mt-md-0 d-flex flex-column align-items-end">
-                <div class="badge badge-success px-3 py-2 font-weight-bold mb-2" style="font-size: 1rem; border-radius: 8px;">
+                <div class="badge <?= $totalAda >= $totalCount ? 'badge-success' : 'badge-info'; ?> px-3 py-2 font-weight-bold mb-2" style="font-size: 1rem; border-radius: 8px;">
                     <i class="fas fa-clipboard-check mr-1"></i> Status: <?= $totalAda; ?> / <?= $totalCount; ?> Dokumen Lengkap (<?= $persenAda; ?>%)
                 </div>
-                <?php if (! empty($permissions['export'])): ?>
-                    <a href="<?= base_url('admin/swakelola/laporan/export-excel'); ?>" class="btn btn-outline-light btn-sm font-weight-bold">
-                        <i class="fas fa-file-excel mr-1"></i> Export Checklist (.xlsx)
+                <div class="d-flex">
+                    <?php if (! empty($permissions['export'])): ?>
+                        <a href="<?= base_url('admin/swakelola/laporan/export-excel?paket_id=' . $activePaketId); ?>" class="btn btn-outline-light btn-sm font-weight-bold mr-2">
+                            <i class="fas fa-file-excel mr-1"></i> Export Checklist (.xlsx)
+                        </a>
+                    <?php endif; ?>
+                    <a href="<?= base_url('admin/swakelola/realisasi?paket_id=' . $activePaketId); ?>" class="btn btn-warning text-dark btn-sm font-weight-bold">
+                        <i class="fas fa-receipt mr-1"></i> Realisasi SPM
                     </a>
-                <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -60,15 +112,18 @@
                                 <tr style="font-size: 0.85rem;">
                                     <th class="text-center" style="width: 45px;">No</th>
                                     <th>Nama Dokumen Kelengkapan</th>
-                                    <th class="text-center" style="width: 90px;">Status</th>
+                                    <th class="text-center" style="width: 100px;">Status</th>
                                     <th>Nama Berkas Digital</th>
                                     <th>Keterangan / Uraian</th>
-                                    <th class="text-center" style="width: 170px;">Aksi</th>
+                                    <th class="text-center" style="width: 215px;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($group['items'] as $doc): ?>
-                                    <?php $subFiles = $doc['sub_files'] ?? [['label' => $doc['file_name'], 'file_name' => $doc['file_name']]]; ?>
+                                    <?php
+                                        $subFiles = $doc['sub_files'] ?? [];
+                                        $isAda    = ($doc['status'] ?? '') === 'Ada' && ! empty($subFiles);
+                                    ?>
                                     <tr>
                                         <td class="text-center font-weight-bold align-middle"><?= $doc['nomor_urut']; ?></td>
                                         <td class="font-weight-bold text-dark align-middle" style="font-size: 0.9rem;">
@@ -78,12 +133,22 @@
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-center align-middle">
-                                            <span class="badge badge-success px-2 py-1">
-                                                <i class="fas fa-check mr-1"></i> <?= esc($doc['status']); ?>
-                                            </span>
+                                            <?php if (($doc['status'] ?? '') === 'Ada'): ?>
+                                                <span class="badge badge-success px-2 py-1">
+                                                    <i class="fas fa-check mr-1"></i> Ada
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge badge-warning text-dark px-2 py-1">
+                                                    <i class="fas fa-clock mr-1"></i> Belum Ada
+                                                </span>
+                                            <?php endif; ?>
                                         </td>
                                         <td class="align-middle">
-                                            <?php if (count($subFiles) === 1): ?>
+                                            <?php if (empty($subFiles)): ?>
+                                                <small class="text-muted font-italic">
+                                                    <i class="fas fa-info-circle mr-1"></i> Belum ada berkas diunggah
+                                                </small>
+                                            <?php elseif (count($subFiles) === 1): ?>
                                                 <?php
                                                     $sf = $subFiles[0];
                                                     $ext = strtolower(pathinfo($sf['file_name'], PATHINFO_EXTENSION));
@@ -127,19 +192,35 @@
                                             <small class="text-muted"><?= esc($doc['keterangan']); ?></small>
                                         </td>
                                         <td class="text-center align-middle">
-                                            <?php $primaryFile = $subFiles[0]['file_name'] ?? $doc['file_name']; ?>
                                             <div class="btn-group btn-group-sm">
-                                                <button type="button"
-                                                    class="btn btn-info btn-preview-doc"
-                                                    data-id="<?= $doc['id']; ?>"
-                                                    data-file="<?= esc($primaryFile, 'attr'); ?>"
-                                                    data-title="<?= esc($doc['nama_dokumen'], 'attr'); ?>"
-                                                    title="Lihat Pratinjau Dokumen Utama">
-                                                    <i class="fas fa-eye mr-1"></i> Preview
-                                                </button>
-                                                <a href="<?= base_url('admin/swakelola/dokumen/download/' . $doc['id']) . '?file=' . rawurlencode($primaryFile); ?>" class="btn btn-outline-primary" title="Unduh Berkas Resmi">
-                                                    <i class="fas fa-download"></i>
-                                                </a>
+                                                <?php if (! empty($subFiles)): ?>
+                                                    <?php $primaryFile = $subFiles[0]['file_name'] ?? $doc['file_name']; ?>
+                                                    <button type="button"
+                                                        class="btn btn-info btn-preview-doc"
+                                                        data-id="<?= $doc['id']; ?>"
+                                                        data-file="<?= esc($primaryFile, 'attr'); ?>"
+                                                        data-title="<?= esc($doc['nama_dokumen'], 'attr'); ?>"
+                                                        title="Lihat Pratinjau Dokumen Utama">
+                                                        <i class="fas fa-eye mr-1"></i> Preview
+                                                    </button>
+                                                    <a href="<?= base_url('admin/swakelola/dokumen/download/' . $doc['id']) . '?file=' . rawurlencode($primaryFile); ?>" class="btn btn-outline-primary" title="Unduh Berkas Resmi">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
+                                                <?php endif; ?>
+                                                <?php if ($canUploadDoc): ?>
+                                                    <button type="button"
+                                                        class="btn btn-outline-success btn-upload-doc"
+                                                        data-id="<?= $doc['id']; ?>"
+                                                        data-urut="<?= $doc['nomor_urut']; ?>"
+                                                        data-tahap="<?= esc($doc['tahap'], 'attr'); ?>"
+                                                        data-nama="<?= esc($doc['nama_dokumen'], 'attr'); ?>"
+                                                        data-status="<?= esc($doc['status'], 'attr'); ?>"
+                                                        data-file="<?= esc($doc['file_name'] ?? '', 'attr'); ?>"
+                                                        data-ket="<?= esc($doc['keterangan'] ?? '', 'attr'); ?>"
+                                                        title="Unggah / Perbarui Berkas Dokumen">
+                                                        <i class="fas fa-upload"></i> <?= empty($subFiles) ? 'Upload' : ''; ?>
+                                                    </button>
+                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     </tr>
@@ -154,6 +235,58 @@
     </div>
 
 </div>
+
+<!-- MODAL UPLOAD / EDIT DOKUMEN CHECKLIST -->
+<?php if ($canUploadDoc): ?>
+<div class="modal fade" id="modalUploadDokumen" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow border-0" style="border-radius: 12px;">
+            <form id="formUploadDokumen" method="post" action="" enctype="multipart/form-data">
+                <?= csrf_field(); ?>
+                <div class="modal-header bg-primary text-white py-3">
+                    <h6 class="modal-title font-weight-bold">
+                        <i class="fas fa-cloud-upload-alt mr-2"></i> Unggah / Perbarui Dokumen Checklist
+                    </h6>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border mb-3 py-2 px-3">
+                        <small class="text-muted d-block">Item Checklist:</small>
+                        <strong class="text-dark" id="uploadDocLabel">-</strong>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold small">Pilih Berkas Digital (.pdf / .docx / .xlsx)</label>
+                        <input type="file" name="file_dokumen" class="form-control-file border p-2 rounded" accept=".pdf,.docx,.xlsx,.doc,.xls">
+                        <small class="text-muted d-block mt-1" id="uploadCurrentFile">Biarkan kosong jika hanya mengubah keterangan/status.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold small">Status Kelengkapan</label>
+                        <select name="status" id="uploadDocStatus" class="form-control form-control-sm">
+                            <option value="Ada">Ada (Lengkap)</option>
+                            <option value="Belum Ada">Belum Ada</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="font-weight-bold small">Keterangan / Nomor Dokumen</label>
+                        <textarea name="keterangan" id="uploadDocKeterangan" rows="3" class="form-control form-control-sm" placeholder="Contoh: SK KPA Nomor ... atau Keterangan dokumen"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-sm btn-primary font-weight-bold">
+                        <i class="fas fa-save mr-1"></i> Simpan &amp; Unggah
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- MODAL PREVIEW DOKUMEN -->
 <div class="modal fade" id="modalPreviewDokumen" tabindex="-1" role="dialog" aria-labelledby="modalPreviewTitle" aria-hidden="true">
@@ -187,7 +320,6 @@
 
             <!-- Modal Body -->
             <div class="modal-body p-0 position-relative" style="background-color: #525659; height: calc(92vh - 65px); overflow: hidden;">
-                <!-- Loading Overlay: Gunakan inline style tanpa class d-flex agar jQuery hide/fadeOut tidak tertimpa !important -->
                 <div id="previewLoading" class="position-absolute w-100 h-100 flex-column justify-content-center align-items-center" style="display: none; background: rgba(30, 41, 59, 0.88); z-index: 1050; color: #fff;">
                     <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
                     <h6 class="font-weight-bold mb-1" id="previewLoadingText">Memuat berkas dokumen...</h6>
@@ -235,7 +367,6 @@ if (typeof docx === 'undefined') {
 </script>
 
 <style>
-/* Word document styling emulation - preserve native docx-preview borders & justification */
 #docxContainer {
     font-family: Arial, sans-serif;
     color: #000;
@@ -252,6 +383,27 @@ if (typeof docx === 'undefined') {
 
 <script>
 $(document).ready(function() {
+    $(document).on('click', '.btn-upload-doc', function() {
+        const id     = $(this).data('id');
+        const urut   = $(this).data('urut');
+        const tahap  = $(this).data('tahap');
+        const nama   = $(this).data('nama');
+        const status = $(this).data('status') || 'Ada';
+        const file   = $(this).data('file') || '';
+        const ket    = $(this).data('ket') || '';
+
+        $('#formUploadDokumen').attr('action', '<?= base_url('admin/swakelola/dokumen'); ?>/' + id + '/upload');
+        $('#uploadDocLabel').text('[Tahap ' + tahap + ' - No. ' + urut + '] ' + nama);
+        $('#uploadDocStatus').val(status);
+        $('#uploadDocKeterangan').val(ket);
+        if (file) {
+            $('#uploadCurrentFile').text('Berkas saat ini: ' + file + ' (Pilih file baru untuk mengganti)');
+        } else {
+            $('#uploadCurrentFile').text('Belum ada berkas terunggah. Silakan pilih berkas PDF/DOCX.');
+        }
+        $('#modalUploadDokumen').modal('show');
+    });
+
     function showLoader(text) {
         $('#previewLoadingText').text(text || 'Memuat berkas...');
         $('#previewLoading').css('display', 'flex');
@@ -266,7 +418,6 @@ $(document).ready(function() {
         const customFile = $(this).attr('data-file') || '';
         const customTitle = $(this).attr('data-title') || '';
         
-        // Reset states
         showLoader('Memuat informasi dokumen...');
         $('#previewIframe').hide().attr('src', '');
         $('#docxPreviewWrapper').hide();
@@ -275,7 +426,6 @@ $(document).ready(function() {
         
         $('#modalPreviewDokumen').modal('show');
 
-        // Fetch document info via AJAX
         $.ajax({
             url: '<?= base_url('admin/swakelola/dokumen/preview'); ?>/' + docId,
             type: 'GET',
@@ -290,7 +440,6 @@ $(document).ready(function() {
                     return;
                 }
 
-                // Set header info
                 $('#previewModalTitle').text(res.nomor_urut + '. ' + res.nama_dokumen);
                 $('#previewDocSubtitle').text(res.file_name);
                 $('#previewBtnDownload').attr('href', res.download_url);
@@ -315,7 +464,6 @@ $(document).ready(function() {
                         .attr('src', pdfSrc)
                         .show();
 
-                    // Pengaman: hilangkan loader maksimal 400ms jika browser render cepat
                     setTimeout(function() {
                         hideLoader();
                     }, 400);
@@ -323,10 +471,8 @@ $(document).ready(function() {
                     $('#previewDocIcon').html('<i class="fas fa-file-word text-primary"></i>');
                     showLoader('Merender dokumen Word (.docx)...');
 
-                    // Tampilkan wrapper kontainer segera
                     $('#docxPreviewWrapper').show();
 
-                    // Fetch arrayBuffer and render via docx-preview
                     fetch(res.inline_url)
                         .then(function(response) {
                             if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -340,17 +486,15 @@ $(document).ready(function() {
                                     inWrapper: false,
                                     ignoreWidth: true,
                                     ignoreHeight: true,
-                                    ignoreFonts: true, // Super cepat tanpa unduh web font berat
+                                    ignoreFonts: true,
                                     breakPages: true
                                 }).then(function() {
                                     hideLoader();
                                 }).catch(function(err) {
                                     console.warn('Docx render notice:', err);
-                                    // Dokumen tetap tampil di DOM, langsung tutup loader
                                     hideLoader();
                                 });
 
-                                // Fail-safe: loader PASTI ditutup dalam 250ms setelah render dimulai
                                 setTimeout(function() {
                                     hideLoader();
                                 }, 250);
@@ -385,7 +529,6 @@ $(document).ready(function() {
         $('#previewError').fadeIn(150);
     }
 
-    // Clean up when modal closed
     $('#modalPreviewDokumen').on('hidden.bs.modal', function() {
         hideLoader();
         $('#previewIframe').attr('src', '');
