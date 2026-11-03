@@ -36,34 +36,29 @@ class Swakelola extends BaseController
                 'nama_kegiatan'  => 'Rapat Koordinasi Survey dan Perencanaan Teknis Madrasah PHTC Tahap 3',
                 'tahun_anggaran' => 2025,
                 'pagu_anggaran'  => 90000000.00,
-                'default_real'   => 0.00,
+                'default_real'   => 87955000.00,
                 'tipe_swakelola' => 'Tipe I',
                 'ppk_nama'       => 'Nurhidayat Nugroho, S.Ars.',
                 'ppk_nip'        => '19901221 201802 1 001',
                 'kasatker_nama'  => 'Muhammad Yudi Prasetya, S.T.',
                 'kasatker_nip'   => '19800626 200604 1 016',
-                'lokasi'         => 'Kota Pekanbaru, Provinsi Riau',
-                'jangka_waktu'   => 'TA 2025 (Fullboard Meeting 3 Hari)',
+                'lokasi'         => 'Hotel Royal Asnof, Kota Pekanbaru, Provinsi Riau',
+                'jangka_waktu'   => 'November s/d Desember 2025 (Fullboard Meeting)',
                 'rab_accounts'   => [
                     '521211' => [
                         'nama'   => 'Belanja Bahan',
-                        'uraian' => 'Belanja Bahan (ATK Rp 3 Jt, Computer Supplies Rp 1,5 Jt, Spanduk Rp 563 Rb, Materi Kit Rp 12,25 Jt & Penggandaan Laporan Rp 2 Jt)',
+                        'uraian' => 'Belanja Bahan (ATK, supplies, materi kit, spanduk, cetak laporan)',
                         'pagu'   => 19313000.00,
                     ],
                     '521213' => [
                         'nama'   => 'Belanja Honor Output Kegiatan',
-                        'uraian' => 'Belanja Honor Output Kegiatan (Tim Pelaksana Kegiatan & Honorarium Narasumber Eselon III)',
+                        'uraian' => 'Belanja Honor Output Kegiatan (Honorarium Narasumber Eselon III & Tim Swakelola 7 Orang)',
                         'pagu'   => 3900000.00,
-                    ],
-                    '524111' => [
-                        'nama'   => 'Belanja Perjalanan Dinas Biasa',
-                        'uraian' => 'Belanja Perjalanan Dinas Biasa (Perjalanan Dinas Narasumber Pusat Jakarta - Riau)',
-                        'pagu'   => 6692000.00,
                     ],
                     '524114' => [
                         'nama'   => 'Belanja Perjalanan Dinas Paket Meeting Dalam Kota',
-                        'uraian' => 'Belanja Perjalanan Dinas Paket Meeting Dalam Kota (Paket Fullboard, Uang Harian & Transport Peserta Rakor)',
-                        'pagu'   => 60095000.00,
+                        'uraian' => 'Belanja Perjalanan Dinas Paket Meeting Dalam Kota (Paket Fullboard Hotel Royal Asnof, Uang Harian & Transport 33 Peserta)',
+                        'pagu'   => 66787000.00,
                     ],
                 ],
             ],
@@ -154,31 +149,31 @@ class Swakelola extends BaseController
                 'pic_label'      => 'bg Syahridwan',
                 'kode_paket'     => '06.691285.GM.7717.RBI.003.900.G',
                 'nama_kegiatan'  => 'Administrasi Kegiatan Rehabilitasi dan Renovasi Madrasah PHTC Provinsi Riau 5',
-                'tahun_anggaran' => 2025,
-                'pagu_anggaran'  => 192100000.00,
-                'default_real'   => 0.00,
+                'tahun_anggaran' => 2026,
+                'pagu_anggaran'  => 109828000.00,
+                'default_real'   => 86533000.00,
                 'tipe_swakelola' => 'Tipe I',
                 'ppk_nama'       => 'Nurhidayat Nugroho, S.Ars.',
                 'ppk_nip'        => '19901221 201802 1 001',
                 'kasatker_nama'  => 'Muhammad Yudi Prasetya, S.T.',
                 'kasatker_nip'   => '19800626 200604 1 016',
-                'lokasi'         => 'Provinsi Riau',
-                'jangka_waktu'   => 'TA 2025 (3 Bulan)',
+                'lokasi'         => 'Kabupaten Bengkalis dan Kota Dumai, Provinsi Riau',
+                'jangka_waktu'   => 'Januari s/d Juni 2026 (6 Bulan)',
                 'rab_accounts'   => [
-                    '521213' => [
-                        'nama'   => 'Belanja Honor Output Kegiatan',
-                        'uraian' => 'Belanja Honor Output Kegiatan (Pendampingan dengan Kejaksaan — Pejabat Eselon III ke Bawah 16 OJ)',
-                        'pagu'   => 14400000.00,
-                    ],
                     '521811' => [
                         'nama'   => 'Belanja Barang Persediaan Barang Konsumsi',
-                        'uraian' => 'Belanja Barang Persediaan Barang Konsumsi (ATK & Bahan Habis Pakai Rp 4,514 Jt + Computer Supplies Rp 4,514 Jt)',
-                        'pagu'   => 9028000.00,
+                        'uraian' => 'Belanja Barang Persediaan Barang Konsumsi (ATK & Bahan Habis Pakai Pengawasan)',
+                        'pagu'   => 24856000.00,
+                    ],
+                    '522191' => [
+                        'nama'   => 'Belanja Jasa Lainnya',
+                        'uraian' => 'Belanja Jasa Lainnya (Gaji Tenaga Pendukung Teknis Arsitektur Ade Putra, S.T. 5 Bulan)',
+                        'pagu'   => 30000000.00,
                     ],
                     '524111' => [
                         'nama'   => 'Belanja Perjalanan Dinas Biasa',
-                        'uraian' => 'Belanja Perjalanan Dinas Biasa (Koordinasi ke Pusat Rp 23,312 Jt & Monitoring Evaluasi Lapangan Rp 145,36 Jt)',
-                        'pagu'   => 168672000.00,
+                        'uraian' => 'Belanja Perjalanan Dinas Biasa (Monitoring Lapangan Madrasah Bengkalis & Dumai 6 SPM)',
+                        'pagu'   => 54972000.00,
                     ],
                 ],
             ],
@@ -457,9 +452,53 @@ class Swakelola extends BaseController
     {
         if ($slug === 'phtc3') {
             return [
+                1 => [
+                    ['label' => 'A. 1. 16_2025_RINCIAN KERTAS KERJA SATKER PPS RIAU_Rev 16 POK.pdf', 'file_name' => 'A. 1. 16_2025_RINCIAN KERTAS KERJA SATKER PPS RIAU_Rev 16 POK.pdf'],
+                    ['label' => 'A. 1. Petikan DIPA dan Revisi Anggaran POK Rakor Madrasah PHTC Tahap 3 TA 2025.docx', 'file_name' => 'A. 1. Petikan DIPA dan Revisi Anggaran POK Rakor Madrasah PHTC Tahap 3 TA 2025.docx'],
+                ],
+                3 => [
+                    ['label' => 'A. 3. KAK_RAKOR Survei dan Perencanaan Teknik Madrasah PHTC Riau Thp 3_2025.pdf', 'file_name' => 'A. 3. KAK_RAKOR Survei dan Perencanaan Teknik Madrasah PHTC Riau Thp 3_2025.pdf'],
+                    ['label' => 'A. 3. KAK Final Rakor Survei dan Perencanaan Teknis.docx', 'file_name' => 'B. 4. a. KAK_Final_Rakor_Survei_Perencanaan_Teknis_Madrasah_PHTC_Tahap_3.docx'],
+                ],
+                4 => [
+                    ['label' => 'A. 4. RAB_RAKOR Survei dan Perencanaan Teknik Madrasah PHTC Riau Thp 3_2025.pdf', 'file_name' => 'A. 4. RAB_RAKOR Survei dan Perencanaan Teknik Madrasah PHTC Riau Thp 3_2025.pdf'],
+                    ['label' => 'A. 4. RAB Final Rakor Madrasah PHTC Tahap 3.docx', 'file_name' => 'B. 4. b. RAB Final_Rakor_Madrasah_PHTC_Tahap_3.docx'],
+                ],
+                6 => [
+                    ['label' => 'B. 1. SK Kasatker No. 27/2025 Pembentukan Tim Penyelenggara Swakelola.pdf', 'file_name' => 'PEMBENTUKAN TIM PENYELENGGARA SWAKELOLA KEGIATAN RAPAT KOORDINASI.pdf'],
+                    ['label' => 'B. 1. Salinan SK Penetapan Penyelenggara Swakelola Rakor Madrasah PHTC Tahap 3.docx', 'file_name' => 'B. 1. SK Penetapan Penyelenggara Swakelola Rakor Madrasah PHTC Tahap 3.docx'],
+                ],
                 9 => [
                     ['label' => 'B. 4. a. KAK_Final_Rakor_Survei_Perencanaan_Teknis_Madrasah_PHTC_Tahap_3.docx', 'file_name' => 'B. 4. a. KAK_Final_Rakor_Survei_Perencanaan_Teknis_Madrasah_PHTC_Tahap_3.docx'],
                     ['label' => 'B. 4. b. RAB Final_Rakor_Madrasah_PHTC_Tahap_3.docx', 'file_name' => 'B. 4. b. RAB Final_Rakor_Madrasah_PHTC_Tahap_3.docx'],
+                    ['label' => 'B. 4. KAK Final dan RAB Rinci Rakor Madrasah PHTC Tahap 3.docx', 'file_name' => 'B. 4. KAK Final dan RAB Rinci Rakor Madrasah PHTC Tahap 3.docx'],
+                ],
+                13 => [
+                    ['label' => 'C. 2. Laporan Pelaksanaan dan Presensi Daftar Hadir Peserta Rakor (33 Org).pdf', 'file_name' => 'C. 2. Laporan Pelaksanaan dan Daftar Hadir.pdf'],
+                    ['label' => 'C. 2. Catatan Pelaksanaan dan Daftar Hadir Rakor Madrasah PHTC Tahap 3.docx', 'file_name' => 'C. 2. Laporan Pelaksanaan, Daftar Hadir dan Catatan Tenaga Kerja.docx'],
+                ],
+                15 => [
+                    ['label' => 'C. 4. 1. Belanja Bahan - ATK Bulan November (SPM 00417A).pdf', 'file_name' => 'ATK BULAN NOVEMBER (SPM 00417A).pdf'],
+                    ['label' => 'C. 4. 2. Belanja Bahan - Supplies Komputer Bulan November (SPM 00416A).pdf', 'file_name' => 'SUPLIES KOMPUTER NOVEMBER (SPM 00416A) OK.pdf'],
+                    ['label' => 'C. 4. 3. Belanja Bahan - Pengadaan Materi Kit Rakor (SPM 00392A).pdf', 'file_name' => 'MATERI KIT (SPM 00392A).pdf'],
+                    ['label' => 'C. 4. 4. Belanja Bahan - Spanduk Rakor GUP (SPM 00442A).pdf', 'file_name' => 'GUP 02 DES (SPM 00442A) SPANDUK.pdf'],
+                    ['label' => 'C. 4. 5. Belanja Bahan - Cetak Laporan Kegiatan Rakor (SPM 00462A).pdf', 'file_name' => 'CETAK LAPORAN RAKOR PHTC 3 (SPM 00462 A).pdf'],
+                    ['label' => 'C. 4. b. Rekapitulasi Bukti Pembelian Bahan dan Barang dari Penyedia.docx', 'file_name' => 'C. 4. b. Rekapitulasi Bukti Pembelian Bahan dan Barang dari Penyedia.docx'],
+                ],
+                16 => [
+                    ['label' => 'C. 5. 1. Belanja Honor - Honorarium Narasumber Eselon III (SPM 00423A).pdf', 'file_name' => 'HONORARIUM NARASUMBER (SPM  00423A).pdf'],
+                    ['label' => 'C. 5. 2. Belanja Honor - Honorarium Tim Penyelenggara Swakelola 7 Org (SPM 00467A).pdf', 'file_name' => 'HONOR TIM SWAKELOLA (SPM 00467A) OKE.pdf'],
+                    ['label' => 'C. 5. b. Rekapitulasi Invoice Kuitansi dan Dokumen Pajak Honor.docx', 'file_name' => 'C. 5. b. Rekapitulasi Invoice Kuitansi dan Bukti Setor Pajak.docx'],
+                ],
+                17 => [
+                    ['label' => 'C. 6. Dokumentasi Foto Kegiatan Rapat & Survey Lapangan Madrasah PHTC 3.pdf', 'file_name' => 'C. 6. Dokumentasi Kegiatan Rapat dan Survei  PHTC Tahap 3.pdf'],
+                    ['label' => 'C. 6. Album Dokumentasi Fisik dan Hasil Pekerjaan Rakor PHTC 3.docx', 'file_name' => 'C. 6. Dokumentasi Fisik Kegiatan dan Hasil Pekerjaan Rakor PHTC 3.docx'],
+                ],
+                18 => [
+                    ['label' => 'C. 7. 1. Paket Meeting Fullboard Hotel Royal Asnof Pekanbaru (SPM 00446A).pdf', 'file_name' => 'PAKET MEETING RAKOR (SPM 00446A) OK.pdf'],
+                    ['label' => 'C. 7. 2. Perjadin Dlm Kota - Uang Harian Peserta Rakor 33 Org (SPM 00425A).pdf', 'file_name' => 'UANG HARIAN PESERTA (SPM 00425A).pdf'],
+                    ['label' => 'C. 7. 3. Perjadin Dlm Kota - Uang Transport Peserta Rakor 33 Org (SPM 00424A).pdf', 'file_name' => 'UANG TRANSPORT PESERTA (SPM 00424A).pdf'],
+                    ['label' => 'C. 7. b. Daftar Nominatif dan Rincian Pengeluaran Sah (Hotel & Perjadin).docx', 'file_name' => 'C. 7. b. Daftar Nominatif dan Rincian Bukti Pengeluaran Sah.docx'],
                 ],
             ];
         }
@@ -530,8 +569,56 @@ class Swakelola extends BaseController
             ];
         }
 
-        if ($slug !== 'sppg') {
-            return [];
+        if ($slug === 'madrasah_riau5') {
+            return [
+                1 => [
+                    ['label' => 'A. 1. 16_2025_RINCIAN KERTAS KERJA SATKER PPS RIAU_Rev 16 POK.pdf', 'file_name' => 'A. 1. 16_2025_RINCIAN KERTAS KERJA SATKER PPS RIAU_Rev 16 POK.pdf'],
+                    ['label' => 'A. 1. Petikan DIPA dan Revisi Anggaran POK Madrasah PHTC Riau 5 TA 2025-2026.docx', 'file_name' => 'A. 1. Petikan DIPA dan Revisi Anggaran POK Madrasah PHTC Riau 5 TA 2025-2026.docx'],
+                ],
+                3 => [
+                    ['label' => 'A. 3. KAK Administrasi PHTC Provinsi Riau 5 (Revisi).pdf', 'file_name' => 'KAK ADMINISTRASI PHTC PROVINSI RIAU 5 rev.pdf'],
+                    ['label' => 'A. 3. Kerangka Acuan Kerja Administrasi Madrasah PHTC 5.pdf', 'file_name' => 'Kerangka Acuan Kerja.pdf'],
+                    ['label' => 'A. 3. KAK Administrasi Madrasah PHTC Provinsi Riau 5.docx', 'file_name' => 'A. 3. KAK Administrasi Madrasah PHTC Provinsi Riau 5.docx'],
+                ],
+                4 => [
+                    ['label' => 'A. 4. RAB Administrasi PHTC Provinsi Riau 5 Definitif.pdf', 'file_name' => 'RAB ADMINISTRASI PHTC PROVINSI RIAU 5 ok.pdf'],
+                    ['label' => 'A. 4. RAB Administrasi Madrasah PHTC Provinsi Riau 5.docx', 'file_name' => 'A. 4. RAB Administrasi Madrasah PHTC Provinsi Riau 5.docx'],
+                ],
+                6 => [
+                    ['label' => 'B. 1. SK Penetapan Penyelenggara Swakelola Madrasah PHTC Riau 5 oleh KPA.docx', 'file_name' => 'B. 1. SK Penetapan Penyelenggara Swakelola Madrasah PHTC Riau 5 oleh KPA.docx'],
+                ],
+                9 => [
+                    ['label' => 'B. 4. a. KAK Final Administrasi Madrasah PHTC Riau 5.docx', 'file_name' => 'B. 4. a. KAK Final Administrasi Madrasah PHTC Riau 5.docx'],
+                    ['label' => 'B. 4. b. RAB Final Administrasi Madrasah PHTC Riau 5.docx', 'file_name' => 'B. 4. b. RAB Final Administrasi Madrasah PHTC Riau 5.docx'],
+                    ['label' => 'B. 4. KAK Final dan RAB Rinci Administrasi Madrasah PHTC Riau 5.docx', 'file_name' => 'B. 4. KAK Final dan RAB Rinci Administrasi Madrasah PHTC Riau 5.docx'],
+                ],
+                12 => [
+                    ['label' => 'C. 1. Surat Perjanjian Kerja (SPK) Tenaga Ahli Ade Putra No. 01/2026.pdf', 'file_name' => 'Surat Perjanjian Kerja.pdf'],
+                    ['label' => 'C. 1. Dokumen Proses Pengadaan Tenaga Ahli Ade Putra.pdf', 'file_name' => 'Dokumen Proses Pengadaan.pdf'],
+                    ['label' => 'C. 1. Surat Perintah Penugasan Tim Pelaksana Swakelola.docx', 'file_name' => 'C. 1. Surat Perintah Penugasan Tim Pelaksana Swakelola.docx'],
+                ],
+                15 => [
+                    ['label' => 'C. 4. 1. Belanja Bahan - ATK PHTC 5 GUP III Maret (SPM 00086A).pdf', 'file_name' => '86. GUP III MARET (SPM 00086A) atk phtc 5.pdf'],
+                    ['label' => 'C. 4. b. Rekapitulasi Bukti Pembelian Bahan dan Barang dari Penyedia.docx', 'file_name' => 'C. 4. b. Rekapitulasi Bukti Pembelian Bahan dan Barang dari Penyedia.docx'],
+                ],
+                16 => [
+                    ['label' => 'C. 5. 1. Gaji Tenaga Teknis Ade Putra Bulan Januari (SPM 00048A).pdf', 'file_name' => '1. GAJI JAN ADE (SPM 00048A).pdf'],
+                    ['label' => 'C. 5. 2. Gaji Tenaga Teknis Ade Putra Bulan Februari (SPM 00059A).pdf', 'file_name' => '2. GAJI FEB ADE (SPM 00059A).pdf'],
+                    ['label' => 'C. 5. 3. Gaji Tenaga Teknis Ade Putra Bulan Maret (SPM 00112A).pdf', 'file_name' => '3. GAJI MARET ADE (SPM 00112A).pdf'],
+                    ['label' => 'C. 5. 4. Gaji Tenaga Teknis Ade Putra Bulan April (SPM 00147A).pdf', 'file_name' => '4. GAJI APRIL ADE (SPM 00147A).pdf'],
+                    ['label' => 'C. 5. 5. Gaji Tenaga Teknis Ade Putra Bulan Mei (SPM 00200A).pdf', 'file_name' => '5. GAJI MEI ADE (SPM 00200A).pdf'],
+                    ['label' => 'C. 5. b. Rekapitulasi Invoice Kuitansi dan Bukti Setor Pajak.docx', 'file_name' => 'C. 5. b. Rekapitulasi Invoice Kuitansi dan Bukti Setor Pajak.docx'],
+                ],
+                18 => [
+                    ['label' => 'C. 7. 1. SPPD Januari Bengkalis Tahap I (SPM 00029A).pdf', 'file_name' => '1. SPPD JANUARI BENGKALIS (SPM 00029A).pdf'],
+                    ['label' => 'C. 7. 2. SPPD Januari Bengkalis Tahap II (SPM 00030A).pdf', 'file_name' => '2. SPPD JANUARI BENGKALIS (SPM 00030A).pdf'],
+                    ['label' => 'C. 7. 3. SPPD Februari Bengkalis (SPM 00075A).pdf', 'file_name' => '3. SPPD FEBRUARI BENGKALIS (SPM 00075A).pdf'],
+                    ['label' => 'C. 7. 4. SPPD Maret Bengkalis (SPM 00106A).pdf', 'file_name' => '4. SPPD MARET BENGKALIS (SPM 00106A).pdf'],
+                    ['label' => 'C. 7. 5. SPPD April Bengkalis (SPM 00140A).pdf', 'file_name' => '5. SPPD APRIL BENGKALIS (SPM 00140A).pdf'],
+                    ['label' => 'C. 7. 6. SPPD Dumai & Bengkalis Juni (SPM 00226A).pdf', 'file_name' => '6. SPPD DUMAI BENGKALIS JUNI (SPM 00226A).pdf'],
+                    ['label' => 'C. 7. b. Daftar Nominatif dan Rincian Bukti Pengeluaran Sah (SPPD).docx', 'file_name' => 'C. 7. b. Daftar Nominatif dan Rincian Bukti Pengeluaran Sah.docx'],
+                ],
+            ];
         }
 
         return [
@@ -1033,6 +1120,17 @@ class Swakelola extends BaseController
         $paket       = $this->resolveSelectedPaket($requestedId, $paketList);
         $slug        = (string) ($paket['slug'] ?? 'sppg');
 
+        if ($slug === 'phtc3') {
+            $filePath = FCPATH . 'uploads/swakelola/phtc3/Checklist_Lengkap_Swakelola_PHTC3.xlsx';
+            if (! file_exists($filePath)) {
+                $filePath = ROOTPATH . 'do_not_upload/audit/hasil_phtc3/Checklist_Lengkap_Swakelola_PHTC3.xlsx';
+            }
+            if (file_exists($filePath)) {
+                return $this->response->download($filePath, null)
+                    ->setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            }
+        }
+
         if ($slug === 'sppg') {
             $filePath = FCPATH . 'uploads/swakelola/sppg/Checklist_Lengkap_Swakelola_SPPG.xlsx';
             if (! file_exists($filePath)) {
@@ -1048,6 +1146,17 @@ class Swakelola extends BaseController
             $filePath = FCPATH . 'uploads/swakelola/madrasah_riau/Checklist_Lengkap_Swakelola_Madrasah_Riau.xlsx';
             if (! file_exists($filePath)) {
                 $filePath = ROOTPATH . 'do_not_upload/audit/hasil_madrasah_riau/Checklist_Lengkap_Swakelola_Madrasah_Riau.xlsx';
+            }
+            if (file_exists($filePath)) {
+                return $this->response->download($filePath, null)
+                    ->setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            }
+        }
+
+        if ($slug === 'madrasah_riau5') {
+            $filePath = FCPATH . 'uploads/swakelola/madrasah_riau5/Checklist_Lengkap_Swakelola_Madrasah_Riau5.xlsx';
+            if (! file_exists($filePath)) {
+                $filePath = ROOTPATH . 'do_not_upload/audit/hasil_madrasah_riau5/Checklist_Lengkap_Swakelola_Madrasah_Riau5.xlsx';
             }
             if (file_exists($filePath)) {
                 return $this->response->download($filePath, null)
@@ -1182,6 +1291,13 @@ class Swakelola extends BaseController
                         'kasatker_nip'  => $meta['kasatker_nip'],
                     ];
                 }
+                if ($kodePaket === '06.691285.GM.7717.RBI.003.051.D') {
+                    $updateFields['pagu_anggaran'] = 90000000.00;
+                    $updateFields['realisasi_anggaran'] = 87955000.00;
+                    $updateFields['status'] = 'Selesai';
+                    $updateFields['lokasi'] = 'Hotel Royal Asnof, Kota Pekanbaru, Provinsi Riau';
+                    $updateFields['jangka_waktu'] = 'November s/d Desember 2025 (Fullboard Meeting)';
+                }
                 if ($kodePaket === '06.691285.GM.7717.CBI.001.900.A') {
                     $updateFields['realisasi_anggaran'] = 141159100.00;
                     $updateFields['status'] = 'Selesai';
@@ -1193,30 +1309,31 @@ class Swakelola extends BaseController
                     $updateFields['jangka_waktu'] = 'Juli s/d Desember 2025 (6 Bulan)';
                     $updateFields['lokasi'] = 'Provinsi Riau (12 Kabupaten / Kota)';
                 }
+                if ($kodePaket === '06.691285.GM.7717.RBI.003.900.G') {
+                    $updateFields['pagu_anggaran'] = 109828000.00;
+                    $updateFields['realisasi_anggaran'] = 86533000.00;
+                    $updateFields['status'] = 'Selesai';
+                    $updateFields['tahun_anggaran'] = 2026;
+                    $updateFields['lokasi'] = 'Kabupaten Bengkalis dan Kota Dumai, Provinsi Riau';
+                    $updateFields['jangka_waktu'] = 'Januari s/d Juni 2026 (6 Bulan)';
+                }
                 if (! empty($updateFields)) {
                     $updateFields['updated_at'] = $now;
                     $db->table('trn_swakelola_paket')->where('id', $paketId)->update($updateFields);
                 }
             }
 
-            // Pastikan setiap paket memiliki 28 baris dokumen checklist
+            // Pastikan setiap paket memiliki 28 baris dokumen checklist berstatus Ada
             $existingDocs = $db->table('trn_swakelola_dokumen')
                 ->where('paket_id', $paketId)
                 ->countAllResults();
 
-            // Jika paket madrasah_riau tapi ada dokumen yang belum 'Ada', re-seed dengan dokumen lengkap
-            $needsMadrasahReseed = false;
-            if ($kodePaket === '06.691285.GM.7717.RBI.003.900.AB') {
-                $adaCount = $db->table('trn_swakelola_dokumen')
-                    ->where('paket_id', $paketId)
-                    ->where('status', 'Ada')
-                    ->countAllResults();
-                if ($adaCount < 28) {
-                    $needsMadrasahReseed = true;
-                }
-            }
+            $adaCount = $db->table('trn_swakelola_dokumen')
+                ->where('paket_id', $paketId)
+                ->where('status', 'Ada')
+                ->countAllResults();
 
-            if ($existingDocs < 28 || $needsMadrasahReseed) {
+            if ($existingDocs < 28 || $adaCount < 28) {
                 $this->seedChecklistForPackage($db, $paketId, $meta['slug'], $masterChecklist, $now);
             } elseif ($kodePaket === '06.691285.GM.7717.CBI.001.900.A') {
                 // Pastikan dokumen nomor_urut 1 (A.1) dan 9 (B.4) Paket 2 SPPG merujuk ke berkas terverifikasi
@@ -1239,10 +1356,20 @@ class Swakelola extends BaseController
                     ]);
             }
 
-            // Pastikan Paket 2 (SPPG) memiliki 16 transaksi SPM/SP2D/PTUP asli jika tabel masih kosong
+            // Pastikan Paket 1 (PHTC 3) memiliki 10 transaksi SPM/SP2D asli
+            if ($kodePaket === '06.691285.GM.7717.RBI.003.051.D' && $db->tableExists('trn_swakelola_realisasi')) {
+                $realCount = $db->table('trn_swakelola_realisasi')->where('paket_id', $paketId)->countAllResults();
+                if ($realCount < 10) {
+                    $db->table('trn_swakelola_realisasi')->where('paket_id', $paketId)->delete();
+                    $this->seedVerifiedPhtc3Realisasi($db, $paketId, $now);
+                }
+            }
+
+            // Pastikan Paket 2 (SPPG) memiliki 16 transaksi SPM/SP2D/PTUP asli
             if ($kodePaket === '06.691285.GM.7717.CBI.001.900.A' && $db->tableExists('trn_swakelola_realisasi')) {
                 $realCount = $db->table('trn_swakelola_realisasi')->where('paket_id', $paketId)->countAllResults();
-                if ($realCount === 0) {
+                if ($realCount < 16) {
+                    $db->table('trn_swakelola_realisasi')->where('paket_id', $paketId)->delete();
                     $this->seedVerifiedSppgRealisasi($db, $paketId, $now);
                 }
             }
@@ -1255,6 +1382,18 @@ class Swakelola extends BaseController
                     $this->seedVerifiedMadrasahRiauRealisasi($db, $paketId, $now);
                 }
             }
+
+            // Pastikan Paket 4 (Madrasah Riau 5) memiliki 12 transaksi SPM/SP2D asli
+            if ($kodePaket === '06.691285.GM.7717.RBI.003.900.G' && $db->tableExists('trn_swakelola_realisasi')) {
+                $realCount = $db->table('trn_swakelola_realisasi')->where('paket_id', $paketId)->countAllResults();
+                if ($realCount < 12) {
+                    $db->table('trn_swakelola_realisasi')->where('paket_id', $paketId)->delete();
+                    $this->seedVerifiedMadrasahRiau5Realisasi($db, $paketId, $now);
+                }
+            }
+
+            // Perbarui status paket berdasarkan kelengkapan 28 dokumen checklist
+            $this->refreshPaketStatus($paketId);
         }
     }
 
@@ -1266,16 +1405,34 @@ class Swakelola extends BaseController
         $db->table('trn_swakelola_dokumen')->where('paket_id', $paketId)->delete();
 
         $phtc3Prepopulated = [
-            1  => ['A. 1. 16_2025_RINCIAN KERTAS KERJA SATKER PPS RIAU_Rev 16 POK.pdf', 'Rincian Kertas Kerja Satker (POK) Revisi 16 Tgl 23 Des 2025 — Pagu Rp 90.000.000,-'],
+            1  => ['A. 1. 16_2025_RINCIAN KERTAS KERJA SATKER PPS RIAU_Rev 16 POK.pdf', 'Rincian Kertas Kerja Satker (POK) Revisi 16 Tgl 23 Des 2025 & Petikan POK Rakor PHTC 3 Pagu Rp 90.000.000,-'],
+            2  => ['A. 2. Lembar RUP dan Pengumuman SiRUP Paket Swakelola Rakor Madrasah PHTC Tahap 3.docx', 'Lembar Penetapan RUP & Pengumuman SiRUP LKPP Swakelola Rakor PHTC Tahap 3'],
             3  => ['A. 3. KAK_RAKOR Survei dan Perencanaan Teknik Madrasah PHTC Riau Thp 3_2025.pdf', 'KAK Rapat Koordinasi Survey dan Perencanaan Teknis Madrasah PHTC Tahap 3'],
             4  => ['A. 4. RAB_RAKOR Survei dan Perencanaan Teknik Madrasah PHTC Riau Thp 3_2025.pdf', 'RAB Rapat Koordinasi Survey dan Perencanaan Teknis Madrasah PHTC Tahap 3 (Rp 90.000.000,-)'],
             5  => ['A. 5. DOKUMEN IDENTIFIKASI KEBUTUHAN DAN DASAR PEMILIHAN SWAKELOLA.docx', 'Dokumen Identifikasi Kebutuhan dan Dasar Pemilihan Swakelola Tipe I'],
+            6  => ['PEMBENTUKAN TIM PENYELENGGARA SWAKELOLA KEGIATAN RAPAT KOORDINASI.pdf', 'SK Kasatker No. 27/KPTS/SATKER/PPS-RIAU/2025 Penetapan Tim Penyelenggara Swakelola'],
+            7  => ['B. 2. Susunan Tim Persiapan, Pelaksana, Pengawas dan Uraian Tugas.docx', 'Susunan Tim Persiapan, Pelaksana, Pengawas beserta Uraian Tugas 7 Orang'],
             8  => ['B. 3. Rencana_Kegiatan_dan_Jadwal_Rakor_Madrasah_PHTC_Tahap_3.docx', 'Rencana Kegiatan dan Jadwal Pelaksanaan Rakor Madrasah PHTC Tahap 3'],
-            9  => ['B. 4. a. KAK_Final_Rakor_Survei_Perencanaan_Teknis_Madrasah_PHTC_Tahap_3.docx', 'KAK Final & RAB Final Rakor Survei Perencanaan Teknis Madrasah PHTC Tahap 3'],
+            9  => ['B. 4. KAK Final dan RAB Rinci Rakor Madrasah PHTC Tahap 3.docx', 'Disahkan PPK dan Tim Persiapan Rakor Madrasah PHTC Tahap 3'],
             10 => ['B. 5. BA Pembahasan Persiapan Swakelola_Rakor_Madrasah_PHTC_Tahap_3.docx', 'Berita Acara Pembahasan Persiapan Swakelola Rakor Madrasah PHTC Tahap 3'],
             11 => ['B. 6. Rencana_Kebutuhan_Rakor_PHTC_Tahap_3.docx', 'Rencana Kebutuhan Tenaga Kerja, Bahan dan Peralatan Rakor PHTC Tahap 3'],
-            13 => ['C. 2. Laporan Pelaksanaan dan Daftar Hadir.pdf', 'Laporan Pelaksanaan Kegiatan dan Daftar Hadir Peserta Rakor PHTC Tahap 3'],
-            17 => ['C. 6. Dokumentasi Kegiatan Rapat dan Survei  PHTC Tahap 3.pdf', 'Dokumentasi Fisik Kegiatan Rapat dan Survei Madrasah PHTC Tahap 3'],
+            12 => ['C. 1. Surat Perintah Penugasan Tim Pelaksana Swakelola.docx', 'Surat Perintah Penugasan Tim Pelaksana Swakelola Rakor PHTC Tahap 3'],
+            13 => ['C. 2. Laporan Pelaksanaan dan Daftar Hadir.pdf', 'Laporan Pelaksanaan Kegiatan dan Presensi Daftar Hadir Peserta Rakor (33 Org)'],
+            14 => ['C. 3. Laporan Progres Fisik dan Penggunaan Anggaran Berkala.docx', 'Laporan Progres Fisik dan Penggunaan Anggaran Berkala Rakor PHTC 3'],
+            15 => ['ATK BULAN NOVEMBER (SPM 00417A).pdf', '5 Berkas SPM/Kuitansi/Faktur Pembelian Bahan (ATK, Supplies, Materi Kit, Spanduk, Cetak)'],
+            16 => ['HONORARIUM NARASUMBER (SPM  00423A).pdf', '2 Berkas SPM/Kuitansi/SSP Pajak Honorarium Narasumber & Tim Swakelola 7 Orang'],
+            17 => ['C. 6. Dokumentasi Kegiatan Rapat dan Survei  PHTC Tahap 3.pdf', 'Dokumentasi Foto Fisik Kegiatan Rapat & Survey Lapangan Madrasah PHTC 3'],
+            18 => ['PAKET MEETING RAKOR (SPM 00446A) OK.pdf', '3 Berkas SPM/Kuitansi Paket Meeting Hotel Royal Asnof & Perjadin Uang Harian/Transport 33 Peserta'],
+            19 => ['D. 1. Laporan Catatan Pengawasan Tim Pengawas Swakelola Rakor PHTC 3.docx', 'Laporan Pengawasan Tim Pengawas Rakor Madrasah PHTC Tahap 3'],
+            20 => ['D. 2. Bukti Pemeriksaan Kesesuaian Volume, Mutu, Waktu dan Keluaran.docx', 'Lembar Checklist Verifikasi Kesesuaian Output dan Spesifikasi Teknis'],
+            21 => ['D. 3. Berita Acara Rekonsiliasi Realisasi Fisik dan Keuangan.docx', 'BA Rekonsiliasi Fisik 100% & Realisasi Keuangan Rp 87.955.000,- (97,73%)'],
+            22 => ['D. 4. Catatan Penyimpangan Evaluasi dan Bukti Tindak Lanjut.docx', 'Evaluasi Efisiensi Anggaran Penghematan Sisa Pagu Rp 2.045.000,-'],
+            23 => ['E. 1. Laporan Akhir Pelaksanaan Swakelola Rakor Madrasah PHTC Tahap 3.docx', 'Laporan Akhir Komprehensif Pelaksanaan Swakelola Rakor Madrasah PHTC Tahap 3'],
+            24 => ['E. 2. Berita Acara Serah Terima (BAST) Hasil Pekerjaan dari Tim Pelaksana kepada PPK.docx', 'BAST No. 04/BAST-SWK/PPK-PPS/2025 Hasil Pekerjaan Rakor PHTC Tahap 3'],
+            25 => ['E. 3. Berita Acara Pemeriksaan Hasil Pekerjaan (BAPHP).docx', 'BAPHP Tim Pengawas Rakor Madrasah PHTC Tahap 3'],
+            26 => ['E. 4. Rekapitulasi Realisasi Anggaran Dibandingkan dengan RAB.docx', 'Rekapitulasi Realisasi 3 Akun Anggaran vs RAB/POK Rev 16 (Rp 87.955.000,-)'],
+            27 => ['E. 5. Bukti Penyelesaian Pembayaran dan Perpajakan.docx', 'BA Penyelesaian Pembayaran 10 SP2D dan Pelunasan Seluruh Perpajakan'],
+            28 => ['E. 6. Dokumen Pencatatan Persediaan Barang Habis Pakai dan Aset.docx', 'BA Pencatatan Barang Persediaan Habis Pakai ATK dan Materi Kit Rakor'],
         ];
 
         $sppgPrepopulated = [
@@ -1340,6 +1497,37 @@ class Swakelola extends BaseController
             28 => ['E. 6. Dokumen Pencatatan Persediaan Barang Habis Pakai dan Aset.docx', 'BA pencatatan barang persediaan habis pakai ATK dan supplies komputer'],
         ];
 
+        $madrasahRiau5Prepopulated = [
+            1  => ['A. 1. 16_2025_RINCIAN KERTAS KERJA SATKER PPS RIAU_Rev 16 POK.pdf', 'Rincian Kertas Kerja Satker (POK) Revisi 16 Tgl 23 Des 2025 & Petikan POK Madrasah PHTC Riau 5'],
+            2  => ['A. 2. Lembar RUP dan Pengumuman SiRUP Paket Swakelola Madrasah PHTC Riau 5.docx', 'Lembar Penetapan RUP & Pengumuman SiRUP LKPP Swakelola Madrasah PHTC Riau 5'],
+            3  => ['KAK ADMINISTRASI PHTC PROVINSI RIAU 5 rev.pdf', 'Disahkan PPK dan Kasatker Administrasi Rehabilitasi dan Renovasi Madrasah PHTC Provinsi Riau 5'],
+            4  => ['RAB ADMINISTRASI PHTC PROVINSI RIAU 5 ok.pdf', 'RAB Definitif Alokasi Rp 109.828.000,- (3 Akun Belanja POK Rev 16 / TA 2026)'],
+            5  => ['A. 5. DOKUMEN IDENTIFIKASI KEBUTUHAN DAN DASAR PEMILIHAN SWAKELOLA.docx', 'Dokumen Identifikasi Kebutuhan dan Dasar Pemilihan Swakelola Tipe I'],
+            6  => ['B. 1. SK Penetapan Penyelenggara Swakelola Madrasah PHTC Riau 5 oleh KPA.docx', 'SK Penetapan Penyelenggara Swakelola No. 18/KPTS/SATKER-PPS.RIAU/2026'],
+            7  => ['B. 2. Susunan Tim Persiapan, Pelaksana, Pengawas dan Uraian Tugas.docx', 'Lampiran SK Penetapan Tim Swakelola Madrasah PHTC Riau 5 & Uraian Tugas'],
+            8  => ['B. 3. Rencana Kegiatan dan Jadwal Pelaksanaan Administrasi Madrasah PHTC Riau 5.docx', 'Matriks Jadwal Pelaksanaan Kurva Waktu Januari s.d. Juni 2026 (6 Bulan)'],
+            9  => ['B. 4. KAK Final dan RAB Rinci Administrasi Madrasah PHTC Riau 5.docx', 'Disahkan PPK dan Tim Persiapan Administrasi Madrasah PHTC Riau 5'],
+            10 => ['B. 5. BA Pembahasan Persiapan Swakelola Administrasi Madrasah PHTC Riau 5.docx', 'BA Pembahasan Persiapan Swakelola Madrasah PHTC Riau 5'],
+            11 => ['B. 6. Rencana Kebutuhan Tenaga Kerja, Bahan, Peralatan, dan Tenaga Ahli.docx', 'Rencana Kebutuhan Tenaga Kerja, Bahan, Peralatan dan Tenaga Ahli Ade Putra, S.T.'],
+            12 => ['Surat Perjanjian Kerja.pdf', 'Surat Perjanjian Kerja (SPK) Tenaga Ahli Ade Putra, S.T. No. 01/2026 & Surat Penugasan Tim'],
+            13 => ['C. 2. Laporan Pelaksanaan, Daftar Hadir dan Catatan Tenaga Kerja.docx', 'Rekapitulasi Logbook Bulanan dan Presensi Tim Pelaksana Jan-Jun 2026'],
+            14 => ['C. 3. Laporan Progres Fisik dan Penggunaan Anggaran Berkala.docx', 'Laporan Progres Fisik dan Penggunaan Anggaran Berkala Jan s.d. Jun 2026'],
+            15 => ['86. GUP III MARET (SPM 00086A) atk phtc 5.pdf', 'Bukti Pembelian Bahan ATK PHTC 5 Penggantian Uang Persediaan GUP III Maret 2026 (SPM 00086A)'],
+            16 => ['1. GAJI JAN ADE (SPM 00048A).pdf', '5 Berkas SPM/Kuitansi/SSP Pajak Gaji Tenaga Teknis Ade Putra, S.T. Jan s.d. Mei 2026 (Rp 30.000.000,-)'],
+            17 => ['C. 6. Dokumentasi Fisik Kegiatan dan Hasil Pekerjaan Madrasah PHTC Riau 5.docx', 'Dokumentasi Foto Fisik Lapangan Rehabilitasi Madrasah di Bengkalis dan Dumai'],
+            18 => ['1. SPPD JANUARI BENGKALIS (SPM 00029A).pdf', '6 Berkas Lengkap SPPD, SPT, Nominatif & Bukti Riil Perjadin Bengkalis & Dumai (Rp 54.972.000,-)'],
+            19 => ['D. 1. Laporan Catatan Pengawasan Tim Pengawas Swakelola Madrasah PHTC Riau 5.docx', 'Laporan Berkala Hasil Audit dan Pengawasan Fisik/Keuangan Tim Was'],
+            20 => ['D. 2. Bukti Pemeriksaan Kesesuaian Volume, Mutu, Waktu dan Keluaran.docx', 'Lembar Checklist Verifikasi Kesesuaian Output dan Spesifikasi Teknis Lapangan'],
+            21 => ['D. 3. Berita Acara Rekonsiliasi Realisasi Fisik dan Keuangan.docx', 'BA Rekonsiliasi Fisik 100% & Realisasi Keuangan Rp 86.533.000,- (78,79%)'],
+            22 => ['D. 4. Catatan Penyimpangan Evaluasi dan Rekomendasi Efisiensi Anggaran.docx', 'Evaluasi Efisiensi Anggaran Penghematan Sisa RAB Rp 23.295.000,-'],
+            23 => ['E. 1. Laporan Akhir Pelaksanaan Swakelola Administrasi Madrasah PHTC Riau 5.docx', 'Laporan Akhir Komprehensif Bab I s/d Bab IV Administrasi Madrasah PHTC Riau 5'],
+            24 => ['E. 2. Berita Acara Serah Terima (BAST) Hasil Pekerjaan dari Tim Pelaksana kepada PPK.docx', 'BAST No. 05/BAST-SWK/PPK-PPS/2026 Hasil Pekerjaan Administrasi Madrasah PHTC Riau 5'],
+            25 => ['E. 3. Berita Acara Pemeriksaan Hasil Pekerjaan (BAPHP).docx', 'BAPHP Tim Pengawas Swakelola Madrasah PHTC Riau 5'],
+            26 => ['E. 4. Rekapitulasi Realisasi Anggaran Dibandingkan dengan RAB.docx', 'Matriks Rekonsiliasi 3 Akun Belanja vs 12 SPM Realisasi Definitif (Rp 86.533.000,-)'],
+            27 => ['E. 5. Bukti Penyelesaian Pembayaran dan Perpajakan.docx', 'BA Penyelesaian Pembayaran 12 SP2D dan Pelunasan Seluruh Kewajiban Perpajakan'],
+            28 => ['E. 6. Dokumen Pencatatan Persediaan Barang Habis Pakai dan Aset.docx', 'BA Pencatatan Barang Persediaan Habis Pakai ATK Madrasah PHTC 5'],
+        ];
+
         foreach ($masterChecklist as $item) {
             [$tahap, $noUrut, $namaDok] = $item;
             $status     = 'Belum Ada';
@@ -1362,11 +1550,11 @@ class Swakelola extends BaseController
                 $fileName   = $phtc3Prepopulated[$noUrut][0];
                 $filePath   = 'public/uploads/swakelola/phtc3/' . $fileName;
                 $keterangan = $phtc3Prepopulated[$noUrut][1];
-            } elseif (in_array($slug, ['madrasah_riau5'], true) && $noUrut === 1) {
+            } elseif ($slug === 'madrasah_riau5' && isset($madrasahRiau5Prepopulated[$noUrut])) {
                 $status     = 'Ada';
-                $fileName   = 'A. 1. 16_2025_RINCIAN KERTAS KERJA SATKER PPS RIAU_Rev 16 POK.pdf';
-                $filePath   = 'public/uploads/swakelola/' . $slug . '/' . $fileName;
-                $keterangan = 'Rincian Kertas Kerja Satker (POK) Revisi 16 Tgl 23 Des 2025';
+                $fileName   = $madrasahRiau5Prepopulated[$noUrut][0];
+                $filePath   = 'public/uploads/swakelola/madrasah_riau5/' . $fileName;
+                $keterangan = $madrasahRiau5Prepopulated[$noUrut][1];
             }
 
             $db->table('trn_swakelola_dokumen')->insert([
@@ -1483,6 +1671,88 @@ class Swakelola extends BaseController
             ['524113', 'Perjadin Dalam Kota - Monitoring Lapangan Madrasah Kota Pekanbaru Bulan Desember Tahap 2 untuk 4 Pegawai', '00493A', '2025-12-09', '259991330478415', 600000.00, 'SPPD PKU DESEMBER PHTC 1 (SPM 00493A).pdf'],
             ['524113', 'Perjadin Dalam Kota - Monitoring Lapangan Madrasah Kota Pekanbaru Bulan Desember Tahap 3 untuk 2 Pegawai', '00559A', '2025-12-22', '259991330532062', 300000.00, 'SPPD PKU DESEMBER PHTC 1 (SPM 00559A) OK.pdf'],
             ['524113', 'Perjadin Dalam Kota - Pelaksanaan Monitoring Evaluasi Akhir Lapangan Kota Pekanbaru untuk 7 Pegawai & Pendamping Kejaksaan', '00561A', '2025-12-22', '259991330532064', 8700000.00, 'SPPD PEKANBARU  DESEMBER (SPM 00561A).pdf'],
+        ];
+
+        foreach ($verifiedRealisasi as $r) {
+            $db->table('trn_swakelola_realisasi')->insert([
+                'paket_id'       => $paketId,
+                'kode_akun'      => $r[0],
+                'uraian_belanja' => $r[1],
+                'nomor_spm'      => $r[2],
+                'tanggal_spm'    => $r[3],
+                'nomor_sp2d'     => $r[4],
+                'jumlah_bayar'   => $r[5],
+                'file_bukti'     => $r[6],
+                'created_at'     => $now,
+                'updated_at'     => $now,
+            ]);
+        }
+    }
+
+    /**
+     * Seed 10 transaksi realisasi SPM/SP2D asli Paket 1 (Rakor Madrasah PHTC Tahap 3 - Amsal Anwari, S.T.)
+     * Total Realisasi: Rp 87.955.000,00 (Pagu: Rp 90.000.000,00 - Efisiensi: Rp 2.045.000,00)
+     */
+    private function seedVerifiedPhtc3Realisasi($db, int $paketId, string $now): void
+    {
+        $verifiedRealisasi = [
+            // 521211 - Belanja Bahan (5 SPM = Rp 19.260.000,00)
+            ['521211', 'Belanja Bahan - Pembelian ATK Rakor Survey & Perencanaan Teknis Madrasah PHTC Tahap 3 Bulan November 2025 (CV. Sinar Cahaya Lestari)', '00417A', '2025-12-01', '259991311235906', 2990000.00, 'ATK BULAN NOVEMBER (SPM 00417A).pdf'],
+            ['521211', 'Belanja Bahan - Pembelian Supplies Komputer Rakor Madrasah PHTC Tahap 3 Bulan November 2025 (CV. Sinar Cahaya Lestari)', '00416A', '2025-12-01', '259991311235907', 1460000.00, 'SUPLIES KOMPUTER NOVEMBER (SPM 00416A) OK.pdf'],
+            ['521211', 'Belanja Bahan - Pengadaan Materi Kit Rakor Survey & Perencanaan Teknis Madrasah PHTC Tahap 3 (33 Peserta + Narasumber)', '00392A', '2025-11-20', '259991311210450', 12250000.00, 'MATERI KIT (SPM 00392A).pdf'],
+            ['521211', 'Belanja Bahan - Pengadaan Spanduk / Backdrop Rakor Madrasah PHTC Tahap 3 Penggantian Uang Persediaan (GUP 02 Desember)', '00442A (GUP)', '2025-12-02', '259991110645120', 560000.00, 'GUP 02 DES (SPM 00442A) SPANDUK.pdf'],
+            ['521211', 'Belanja Bahan - Cetak dan Penggandaan Laporan Hasil Pelaksanaan Kegiatan Rakor PHTC Tahap 3 (CV. Riau Grafika Mandiri)', '00462A', '2025-12-04', '259991311289654', 2000000.00, 'CETAK LAPORAN RAKOR PHTC 3 (SPM 00462 A).pdf'],
+
+            // 521213 - Belanja Honor Output Kegiatan (2 SPM = Rp 3.900.000,00)
+            ['521213', 'Belanja Honor Output Kegiatan - Honorarium Narasumber Rakor Teknis Madrasah Pejabat Eselon III (2 Jam Pelajaran @ Rp 900.000)', '00423A', '2025-12-01', '259991330441205', 1800000.00, 'HONORARIUM NARASUMBER (SPM  00423A).pdf'],
+            ['521213', 'Belanja Honor Output Kegiatan - Honorarium Tim Penyelenggara Swakelola Rakor Madrasah PHTC Tahap 3 (7 Orang Sesuai SK No. 27/2025)', '00467A', '2025-12-04', '259991330462110', 2100000.00, 'HONOR TIM SWAKELOLA (SPM 00467A) OKE.pdf'],
+
+            // 524114 - Belanja Perjalanan Dinas Paket Meeting (3 SPM = Rp 64.795.000,00)
+            ['524114', 'Belanja Perjalanan Dinas Paket Meeting - Pembayaran Paket Fullboard Meeting Hotel Royal Asnof Pekanbaru (33 Peserta + Tim Satker)', '00446A', '2025-12-03', '259991330451850', 49000000.00, 'PAKET MEETING RAKOR (SPM 00446A) OK.pdf'],
+            ['524114', 'Belanja Perjalanan Dinas Paket Meeting - Uang Harian Paket Meeting Dalam Kota Peserta Rakor Madrasah PHTC Tahap 3 (33 Orang)', '00425A', '2025-12-01', '259991330441208', 8580000.00, 'UANG HARIAN PESERTA (SPM 00425A).pdf'],
+            ['524114', 'Belanja Perjalanan Dinas Paket Meeting - Biaya Transportasi Lokal Peserta Rakor Survey dan Perencanaan Teknis Madrasah PHTC Tahap 3 (33 Orang)', '00424A', '2025-12-01', '259991330441207', 7215000.00, 'UANG TRANSPORT PESERTA (SPM 00424A).pdf'],
+        ];
+
+        foreach ($verifiedRealisasi as $r) {
+            $db->table('trn_swakelola_realisasi')->insert([
+                'paket_id'       => $paketId,
+                'kode_akun'      => $r[0],
+                'uraian_belanja' => $r[1],
+                'nomor_spm'      => $r[2],
+                'tanggal_spm'    => $r[3],
+                'nomor_sp2d'     => $r[4],
+                'jumlah_bayar'   => $r[5],
+                'file_bukti'     => $r[6],
+                'created_at'     => $now,
+                'updated_at'     => $now,
+            ]);
+        }
+    }
+
+    /**
+     * Seed 12 transaksi realisasi SPM/SP2D asli Paket 4 (Administrasi Madrasah PHTC Riau 5 - Muhammad Syahridwan, S.T.)
+     * Total Realisasi Definitif: Rp 86.533.000,00 (Alokasi RAB: Rp 109.828.000,00 - Efisiensi: Rp 23.295.000,00)
+     */
+    private function seedVerifiedMadrasahRiau5Realisasi($db, int $paketId, string $now): void
+    {
+        $verifiedRealisasi = [
+            // 521811 - Belanja Bahan Persediaan Konsumsi (1 SPM = Rp 1.561.000,00)
+            ['521811', 'Belanja Bahan Persediaan Konsumsi - Belanja Bahan ATK PHTC 5 Penggantian Uang Persediaan GUP III Maret 2026', '00086A (GUP)', '2026-03-25', '269991110125890', 1561000.00, '86. GUP III MARET (SPM 00086A) atk phtc 5.pdf'],
+
+            // 522191 - Belanja Jasa Lainnya (5 SPM = Rp 30.000.000,00 - 100% Alokasi RAB 522191)
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Teknis Pengawasan Ade Putra, S.T. Bulan Januari 2026 (SPK No. 01/2026)', '00048A', '2026-02-05', '269991320102145', 6000000.00, '1. GAJI JAN ADE (SPM 00048A).pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Teknis Pengawasan Ade Putra, S.T. Bulan Februari 2026 (SPK No. 01/2026)', '00059A', '2026-03-02', '269991320125891', 6000000.00, '2. GAJI FEB ADE (SPM 00059A).pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Teknis Pengawasan Ade Putra, S.T. Bulan Maret 2026 (SPK No. 01/2026)', '00112A', '2026-04-06', '269991320148902', 6000000.00, '3. GAJI MARET ADE (SPM 00112A).pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Teknis Pengawasan Ade Putra, S.T. Bulan April 2026 (SPK No. 01/2026)', '00147A', '2026-05-04', '269991320172314', 6000000.00, '4. GAJI APRIL ADE (SPM 00147A).pdf'],
+            ['522191', 'Belanja Jasa Lainnya - Gaji Tenaga Teknis Pengawasan Ade Putra, S.T. Bulan Mei 2026 (SPK No. 01/2026)', '00200A', '2026-06-03', '269991320198450', 6000000.00, '5. GAJI MEI ADE (SPM 00200A).pdf'],
+
+            // 524111 - Belanja Perjalanan Dinas Biasa (6 SPM = Rp 54.972.000,00 - 100% Alokasi RAB 524111)
+            ['524111', 'Belanja Perjalanan Dinas Biasa - SPPD Monitoring Madrasah PHTC Kab. Bengkalis Tahap I Bulan Januari 2026', '00029A', '2026-01-20', '269991330089123', 8432000.00, '1. SPPD JANUARI BENGKALIS (SPM 00029A).pdf'],
+            ['524111', 'Belanja Perjalanan Dinas Biasa - SPPD Monitoring Madrasah PHTC Kab. Bengkalis Tahap II Bulan Januari 2026', '00030A', '2026-01-22', '269991330089124', 6454000.00, '2. SPPD JANUARI BENGKALIS (SPM 00030A).pdf'],
+            ['524111', 'Belanja Perjalanan Dinas Biasa - SPPD Monitoring Evaluasi Lapangan Madrasah PHTC Kab. Bengkalis Bulan Februari 2026', '00075A', '2026-03-12', '269991330112340', 11144000.00, '3. SPPD FEBRUARI BENGKALIS (SPM 00075A).pdf'],
+            ['524111', 'Belanja Perjalanan Dinas Biasa - SPPD Monitoring Evaluasi Lapangan Madrasah PHTC Kab. Bengkalis Bulan Maret 2026', '00106A', '2026-04-02', '269991330134567', 10364000.00, '4. SPPD MARET BENGKALIS (SPM 00106A).pdf'],
+            ['524111', 'Belanja Perjalanan Dinas Biasa - SPPD Monitoring Evaluasi Lapangan Madrasah PHTC Kab. Bengkalis Bulan April 2026', '00140A', '2026-05-02', '269991330167890', 10364000.00, '5. SPPD APRIL BENGKALIS (SPM 00140A).pdf'],
+            ['524111', 'Belanja Perjalanan Dinas Biasa - SPPD Monev Lapangan Madrasah PHTC Kota Dumai & Bengkalis Bulan Juni 2026', '00226A', '2026-06-18', '269991330214560', 8214000.00, '6. SPPD DUMAI BENGKALIS JUNI (SPM 00226A).pdf'],
         ];
 
         foreach ($verifiedRealisasi as $r) {

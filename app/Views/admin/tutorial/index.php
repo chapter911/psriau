@@ -1148,8 +1148,8 @@ graph TD
     B -->|Realisasi Anggaran| E["Realisasi SPM &amp; SP2D (/admin/swakelola/realisasi)"]
     B -->|Rekapitulasi &amp; Laporan| F["Rekap RAB vs Realisasi (/admin/swakelola/laporan)"]
 
-    C --> C1["Monitoring 4 Paket LHA No. 9: Paket 1 PHTC Thp 3 (PIC: Amsal), Paket 2 SPPG Riau (PIC: bg Agung), Paket 3 Madrasah Riau (PIC: bg Jefri), Paket 4 Madrasah Riau 5 (PIC: bg Syahridwan)"]
-    C1 --> C2["Indikator Progres Kelengkapan (X / 28 Dokumen), Pagu POK Rev 16, Realisasi SP2D &amp; Shortcut 1-Klik per Paket"]
+    C --> C1["Monitoring 4 Paket LHA No. 9: Seluruh 4 Paket Terverifikasi Selesai 100% (28/28 Dokumen Lengkap): Paket 1 PHTC Thp 3 (PIC: Amsal), Paket 2 SPPG Riau (PIC: bg Agung), Paket 3 Madrasah Riau (PIC: bg Jefri), Paket 4 Madrasah Riau 5 (PIC: bg Syahridwan)"]
+    C1 --> C2["Indikator Progres Kelengkapan (28/28 Dokumen - 100%), Pagu POK Rev 16/RAB, Realisasi SP2D &amp; Shortcut 1-Klik per Paket"]
 
     D --> PS["Paket Switcher (Tab &amp; Dropdown Paket 1 s/d Paket 4)"]
     PS --> D1["Pengelompokan 28 Dokumen ke 5 Tahapan Standar LKPP &amp; LHA No. 9"]
@@ -1166,11 +1166,11 @@ graph TD
     T5 --> DL
 
     E --> E_SW["Paket Switcher &amp; Pencatatan Transaksi SPM, SP2D &amp; PTUP per Paket"]
-    E_SW --> E1["Paket 2 SPPG (16 SPM/PTUP Rp 141.159.100, 28/28 Dok) &amp; Paket 3 Madrasah Riau (43 SPM/PTUP Rp 322.773.000, 28/28 Dok) Terverifikasi Selesai 100% + Form Tambah/Edit/Hapus SPM &amp; Upload PDF Bukti"]
+    E_SW --> E1["Total 81 Transaksi SPM/SP2D/PTUP Terverifikasi Asli (Rp 638.420.100): Paket 1 PHTC 3 (10 SPM Rp 87.955.000), Paket 2 SPPG (16 SPM Rp 141.159.100), Paket 3 Madrasah Riau (43 SPM Rp 322.773.000), Paket 4 Madrasah Riau 5 (12 SPM Rp 86.533.000)"]
     E1 --> E2["Kalkulasi Otomatis Realisasi per Akun POK Revisi 16 (521211, 521213, 521811, 522191, 524111, 524113, 524114)"]
 
-    F --> F1["Matriks Perbandingan Real-Time per Paket: Pagu POK Rev 16 vs Realisasi SP2D/PTUP &amp; Sisa Pagu Efisiensi"]
-    F1 --> F3["Export Checklist Lengkap (.xlsx) Dinamis untuk Masing-Masing Paket (Sesuai Hak Akses FiturExport menu_akses)"]
+    F --> F1["Matriks Perbandingan Real-Time per Paket: Pagu POK Rev 16/RAB vs Realisasi SP2D/PTUP &amp; Sisa Pagu Efisiensi"]
+    F1 --> F3["Export Checklist Lengkap (.xlsx) Multi-Sheet Dinamis untuk Masing-Masing Paket (Sesuai Hak Akses FiturExport menu_akses)"]
                 </pre>
             </div>
         </div>
@@ -2365,16 +2365,16 @@ graph TD
                         <h6 class="font-weight-bold text-primary"><i class="fas fa-tasks mr-1"></i> Pengelolaan Terpadu 4 Paket Swakelola Tipe I Sesuai Perlem LKPP 3/2021, POK Revisi 16 &amp; LHA No. 9</h6>
                         <p class="small text-muted mb-2"><code>/admin/swakelola/paket</code> | <code>/admin/swakelola/dokumen</code> | <code>/admin/swakelola/realisasi</code> | <code>/admin/swakelola/laporan</code></p>
                         <p class="small text-dark mb-2">
-                            Modul Swakelola dirancang untuk menampung dan memantau seluruh <strong>4 Paket Kegiatan Swakelola Tipe I</strong> sesuai arahan pimpinan atas tindak lanjut temuan LHA No. 9 di lingkungan Satuan Kerja Pelaksanaan Prasarana Strategis Riau TA 2025:
-                            <strong>(1) Paket Rapat Koordinasi Survey dan Perencanaan Teknis Madrasah PHTC Tahap 3</strong> (PIC: Amsal Anwari, S.T. — Pagu Rp 90.000.000,00),
-                            <strong>(2) Administrasi Kegiatan Pembangunan Gedung SPPG Provinsi Riau</strong> (PIC: Agung Kesuma — Pagu Rp 413.000.000,00, Realisasi Definitif Rp 141.159.100,00, 28/28 Dokumen Lengkap 100% Selesai, 16 Transaksi SPM/SP2D/PTUP),
-                            <strong>(3) Administrasi Kegiatan Rehabilitasi dan Renovasi Madrasah PHTC Provinsi Riau</strong> (PIC: Jefri / bg Jefri — Pagu Rp 569.100.000,00, Realisasi Definitif Rp 322.773.000,00 [56,72%], 28/28 Dokumen Lengkap 100% Selesai, 43 Transaksi SPM/SP2D/PTUP Terverifikasi, Efisiensi Rp 246.327.000,00), dan
-                            <strong>(4) Administrasi Kegiatan Rehabilitasi dan Renovasi Madrasah PHTC Provinsi Riau 5</strong> (PIC: Muhammad Syahridwan, S.T. — Pagu Rp 192.100.000,00).
+                            Modul Swakelola dirancang untuk menampung dan memantau seluruh <strong>4 Paket Kegiatan Swakelola Tipe I</strong> sesuai arahan pimpinan atas tindak lanjut temuan LHA No. 9 di lingkungan Satuan Kerja Pelaksanaan Prasarana Strategis Riau TA 2025/2026. <strong>Seluruh 4 Paket kini telah mencapai progres kelengkapan dokumen 100% Selesai (112/112 Dokumen Ada)</strong> serta <strong>81 Transaksi Definitif SPM/SP2D/PTUP Terverifikasi</strong> senilai <strong>Rp 638.420.100,00</strong>:
+                            <br><strong>(1) Paket Rapat Koordinasi Survey dan Perencanaan Teknis Madrasah PHTC Tahap 3</strong> (PIC: Amsal Anwari, S.T. — Pagu Rp 90.000.000,00, Realisasi Definitif Rp 87.955.000,00 [97,73%], 10 SPM Terverifikasi, Efisiensi Rp 2.045.000,00, 28/28 Dokumen Lengkap 100% Selesai),
+                            <br><strong>(2) Administrasi Kegiatan Pembangunan Gedung SPPG Provinsi Riau</strong> (PIC: Agung Kesuma — Pagu Rp 413.000.000,00, Realisasi Definitif Rp 141.159.100,00 [34,18%], 16 SPM/SP2D/PTUP Terverifikasi, Efisiensi Rp 271.840.900,00, 28/28 Dokumen Lengkap 100% Selesai),
+                            <br><strong>(3) Administrasi Kegiatan Rehabilitasi dan Renovasi Madrasah PHTC Provinsi Riau</strong> (PIC: Jefri / bg Jefri — Pagu Rp 569.100.000,00, Realisasi Definitif Rp 322.773.000,00 [56,72%], 43 Transaksi SPM/SP2D/PTUP Terverifikasi, Efisiensi Rp 246.327.000,00, 28/28 Dokumen Lengkap 100% Selesai), dan
+                            <br><strong>(4) Administrasi Kegiatan Rehabilitasi dan Renovasi Madrasah PHTC Provinsi Riau 5</strong> (PIC: Muhammad Syahridwan, S.T. — Alokasi RAB Definitif Rp 109.828.000,00, Realisasi Definitif Rp 86.533.000,00 [78,79%], 12 Transaksi SPM/SP2D Terverifikasi, Efisiensi Rp 23.295.000,00, 28/28 Dokumen Lengkap 100% Selesai).
                         </p>
                         <ol class="pl-3 small mb-0" style="line-height: 1.8;">
                             <li><strong>Submenu Paket Kegiatan (<code>/admin/swakelola/paket</code>):</strong>
                                 <ul>
-                                    <li>Menampilkan seluruh 4 paket Swakelola mandat LHA No. 9 lengkap dengan Nomor Paket, Kode MAK (POK Revisi 16), Nama PIC Penanggung Jawab, Progres Kelengkapan Dokumen (<code>X / 28 Dokumen</code>), Nilai Pagu POK Rev 16, Realisasi SP2D Terbayar, Nama PPK, dan Nama Kasatker.</li>
+                                    <li>Menampilkan seluruh 4 paket Swakelola mandat LHA No. 9 lengkap dengan Nomor Paket, Kode MAK (POK Revisi 16), Nama PIC Penanggung Jawab, Progres Kelengkapan Dokumen (<code>28 / 28 Dokumen (100%)</code>), Nilai Pagu POK Rev 16 / RAB, Realisasi SP2D Terbayar, Status Paket (<code>Selesai</code>), Nama PPK, dan Nama Kasatker.</li>
                                     <li>Tersedia tombol pintas (shortcut) pada setiap baris paket untuk langsung menuju halaman <strong>Dokumen Checklist</strong>, <strong>Realisasi SPM</strong>, atau <strong>Rekapitulasi RAB</strong> paket tersebut.</li>
                                 </ul>
                             </li>
@@ -2383,20 +2383,24 @@ graph TD
                                     <li>Dilengkapi <strong>Paket Switcher (Tab &amp; Dropdown Paket 1 s/d Paket 4)</strong> di bagian atas halaman untuk berpindah antar paket secara instan.</li>
                                     <li>Menyajikan pemantauan 28 dokumen wajib yang dikelompokkan secara rapi ke dalam 5 tahapan:
                                         <strong>Tahap A (Perencanaan)</strong>, <strong>Tahap B (Persiapan)</strong>, <strong>Tahap C (Pelaksanaan)</strong>, <strong>Tahap D (Pengawasan &amp; Pengendalian)</strong>, dan <strong>Tahap E (Serah Terima &amp; Pertanggungjawaban)</strong>.</li>
-                                    <li>Mendukung multi-berkas pada satu item checklist (khususnya pada Paket 2 SPPG, Paket 3 Madrasah Riau untuk No. 1, 9, 15, 16, 18, dan Paket 1 PHTC Tahap 3), pratinjau langsung (<strong>Preview</strong> PDF &amp; Word <code>.docx</code> dengan penempatan blok tanda tangan rata tengah &amp; sejajar), serta <strong>Upload / Perbarui Berkas Dokumen</strong> (<code>.pdf</code> / <code>.docx</code> / <code>.xlsx</code>) pada setiap baris item sesuai hak akses <code>FiturAdd</code> / <code>FiturEdit</code> di <code>menu_akses</code>.</li>
+                                    <li>Mendukung multi-berkas pada satu item checklist untuk seluruh 4 paket (khususnya berkas DIPA/POK, KAK, RAB, SK Pembentukan Tim, SPK/Surat Tugas, Bukti Belanja Bahan, Kuitansi/Pajak Honor &amp; Gaji, Dokumentasi Lapangan, serta SPPD/PTUP), pratinjau langsung (<strong>Preview</strong> PDF &amp; Word <code>.docx</code> dengan penempatan KOP Satker resmi &amp; blok tanda tangan 2-kolom rata tengah sejajar), serta <strong>Upload / Perbarui Berkas Dokumen</strong> (<code>.pdf</code> / <code>.docx</code> / <code>.xlsx</code>) pada setiap baris item sesuai hak akses <code>FiturAdd</code> / <code>FiturEdit</code> di <code>menu_akses</code>.</li>
                                 </ul>
                             </li>
                             <li><strong>Submenu Realisasi Anggaran (<code>/admin/swakelola/realisasi</code>):</strong>
                                 <ul>
-                                    <li>Dilengkapi <strong>Paket Switcher</strong> serta ringkasan kartu KPI realisasi per mata anggaran sesuai struktur akun POK Revisi 16 masing-masing paket (<code>521211</code>, <code>521213</code>, <code>521811</code>, <code>522191</code>, <code>524111</code>, <code>524113</code>, <code>524114</code>).</li>
-                                    <li>Untuk <strong>Paket 2 (SPPG)</strong> (16 SPM/PTUP senilai Rp 141.159.100,00) dan <strong>Paket 3 (Madrasah Riau)</strong> (43 SPM/PTUP senilai Rp 322.773.000,00 across 5 akun POK Rev 16), sistem menyinkronkan otomatis seluruh <strong>bukti pembayaran definitif SPM, SP2D, dan PTUP</strong> KPPN Pekanbaru.</li>
+                                    <li>Dilengkapi <strong>Paket Switcher</strong> serta ringkasan kartu KPI realisasi per mata anggaran sesuai struktur akun POK Revisi 16 / RAB masing-masing paket (<code>521211</code>, <code>521213</code>, <code>521811</code>, <code>522191</code>, <code>524111</code>, <code>524113</code>, <code>524114</code>).</li>
+                                    <li>Sistem menyinkronkan otomatis <strong>81 bukti pembayaran definitif SPM, SP2D, dan PTUP KPPN Pekanbaru</strong>:
+                                        Paket 1 PHTC 3 (10 SPM senilai Rp 87.955.000,00),
+                                        Paket 2 SPPG (16 SPM/PTUP senilai Rp 141.159.100,00),
+                                        Paket 3 Madrasah Riau (43 SPM/PTUP senilai Rp 322.773.000,00 across 5 akun POK Rev 16), dan
+                                        Paket 4 Madrasah Riau 5 (12 SPM senilai Rp 86.533.000,00 across 3 akun RAB).</li>
                                     <li>Tersedia fitur <strong>Tambah, Edit, dan Hapus Realisasi SPM</strong> beserta unggah berkas PDF bukti pengeluaran (mengikuti hak akses <code>FiturAdd</code>, <code>FiturEdit</code>, dan <code>FiturDelete</code> pada tabel <code>menu_akses</code>) yang secara otomatis menghitung ulang total realisasi paket.</li>
                                 </ul>
                             </li>
                             <li><strong>Submenu Rekapitulasi &amp; Laporan (<code>/admin/swakelola/laporan</code>):</strong>
                                 <ul>
-                                    <li>Menyajikan matriks perbandingan real-time per paket antara Pagu Anggaran pada <strong>POK Revisi 16 Tanggal 23 Desember 2025</strong> terhadap Realisasi Aktual SP2D/PTUP beserta sisa pagu efisiensi kas negara.</li>
-                                    <li>Tersedia tombol <strong>Download Checklist Lengkap (.xlsx)</strong> (mengikuti hak akses <code>FiturExport</code> pada tabel <code>menu_akses</code>) untuk mengunduh spreadsheet checklist 28 dokumen dari paket mana pun yang sedang dipilih (termasuk spreadsheet multi-sheet terverifikasi untuk Paket 2 SPPG dan Paket 3 Madrasah Riau).</li>
+                                    <li>Menyajikan matriks perbandingan real-time per paket antara Pagu Anggaran pada <strong>POK Revisi 16 Tanggal 23 Desember 2025 / RAB</strong> terhadap Realisasi Aktual SP2D/PTUP beserta sisa pagu efisiensi kas negara.</li>
+                                    <li>Tersedia tombol <strong>Download Checklist Lengkap (.xlsx)</strong> (mengikuti hak akses <code>FiturExport</code> pada tabel <code>menu_akses</code>) untuk mengunduh spreadsheet checklist 28 dokumen dari paket mana pun yang sedang dipilih dalam format OpenXML multi-sheet siap pakai (<code>Checklist_Lengkap_Swakelola_PHTC3.xlsx</code>, <code>Checklist_Lengkap_Swakelola_SPPG.xlsx</code>, <code>Checklist_Lengkap_Swakelola_Madrasah_Riau.xlsx</code>, dan <code>Checklist_Lengkap_Swakelola_Madrasah_Riau5.xlsx</code>).</li>
                                 </ul>
                             </li>
                         </ol>
