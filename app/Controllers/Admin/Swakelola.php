@@ -241,7 +241,7 @@ class Swakelola extends BaseController
         return $this->response
             ->setHeader('Content-Type', $mimeType)
             ->setHeader('Content-Disposition', 'inline; filename="' . addslashes(basename($filePath)) . '"')
-            ->setHeader('Cache-Control', 'public, max-age=3600')
+            ->setHeader('Cache-Control', 'no-cache, must-revalidate')
             ->setBody($fileContent);
     }
 
@@ -263,11 +263,14 @@ class Swakelola extends BaseController
         $fileExists = ($filePath !== null);
         $resolvedFileName = $fileExists ? basename($filePath) : $targetFileName;
         $ext = strtolower(pathinfo($resolvedFileName, PATHINFO_EXTENSION));
+        $ver = $fileExists ? (string) @filemtime($filePath) : (string) time();
 
-        $querySuffix = $requestedFile !== '' ? ('?file=' . rawurlencode($resolvedFileName)) : '';
-        $publicUrl   = base_url('uploads/swakelola/sppg/' . rawurlencode($resolvedFileName));
+        $querySuffix = $requestedFile !== ''
+            ? ('?file=' . rawurlencode($resolvedFileName) . '&v=' . $ver)
+            : ('?v=' . $ver);
+        $publicUrl   = base_url('uploads/swakelola/sppg/' . rawurlencode($resolvedFileName)) . '?v=' . $ver;
         $inlineUrl   = base_url('admin/swakelola/dokumen/view/' . $id) . $querySuffix;
-        $downloadUrl = base_url('admin/swakelola/dokumen/download/' . $id) . $querySuffix;
+        $downloadUrl = base_url('admin/swakelola/dokumen/download/' . $id) . ($requestedFile !== '' ? ('?file=' . rawurlencode($resolvedFileName)) : '');
 
         return $this->response->setJSON([
             'status'       => 'success',
