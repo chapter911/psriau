@@ -953,8 +953,18 @@
 
                     <div class="form-group mb-3">
                         <label class="font-weight-bold small text-dark">Pilih Kode Barang / Nama Barang / Merk Tipe <span class="text-danger">*</span></label>
-                        <select id="mass-kode-barang-select" class="form-control select2" required style="width: 100%;">
+                        <select name="kode_barang_select" id="mass-kode-barang-select" class="form-control select2" required style="width: 100%;">
                             <option value="">-- Pilih Barang --</option>
+                            <option value="ALL"
+                                    data-kode="ALL"
+                                    data-nama="Semua Jenis Barang"
+                                    data-merk=""
+                                    data-total="<?= (int) ($summary['total'] ?? 0); ?>"
+                                    data-unallocated="<?= (int) ($summary['belum_ditentukan'] ?? 0); ?>"
+                                    data-text-belum="★ PILIH SEMUA BARANG (<?= number_format((int) ($summary['belum_ditentukan'] ?? 0)); ?> unit belum berlokasi)"
+                                    data-text-semua="★ PILIH SEMUA BARANG (<?= number_format((int) ($summary['total'] ?? 0)); ?> unit total)">
+                                ★ PILIH SEMUA BARANG (<?= number_format((int) ($summary['belum_ditentukan'] ?? 0)); ?> unit belum berlokasi)
+                            </option>
                             <?php foreach (($uniqueKodeBarangList ?? []) as $kb): ?>
                                 <?php
                                     $merkPart = (! empty($kb['merk_tipe']) && stripos($kb['nama_barang'], $kb['merk_tipe']) === false) ? ' (' . $kb['merk_tipe'] . ')' : '';
@@ -1308,13 +1318,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!$opt.val()) return;
             originalMassOptions.push({
                 val: $opt.val(),
-                kode: $opt.data('kode') || '',
-                nama: $opt.data('nama') || '',
-                merk: $opt.data('merk') || '',
-                total: parseInt($opt.data('total') || '0', 10),
-                unallocated: parseInt($opt.data('unallocated') || '0', 10),
-                textBelum: $opt.data('text-belum') || $opt.text(),
-                textSemua: $opt.data('text-semua') || $opt.text()
+                kode: $opt.attr('data-kode') || '',
+                nama: $opt.attr('data-nama') || '',
+                merk: $opt.attr('data-merk') || '',
+                total: parseInt($opt.attr('data-total') || '0', 10),
+                unallocated: parseInt($opt.attr('data-unallocated') || '0', 10),
+                textBelum: $opt.attr('data-text-belum') || $opt.text(),
+                textSemua: $opt.attr('data-text-semua') || $opt.text()
             });
         });
 
@@ -1324,16 +1334,31 @@ document.addEventListener('DOMContentLoaded', function() {
             $select.append(new Option('-- Pilih Barang --', ''));
 
             originalMassOptions.forEach(function(item) {
+                if (item.val === 'ALL') {
+                    if (filterMode === 'belum' && item.unallocated <= 0) return;
+                    var textAll = (filterMode === 'belum') ? item.textBelum : item.textSemua;
+                    var optAll = new Option(textAll, item.val);
+                    optAll.setAttribute('data-kode', 'ALL');
+                    optAll.setAttribute('data-nama', 'Semua Jenis Barang');
+                    optAll.setAttribute('data-merk', '');
+                    optAll.setAttribute('data-total', item.total);
+                    optAll.setAttribute('data-unallocated', item.unallocated);
+                    optAll.setAttribute('data-text-belum', item.textBelum);
+                    optAll.setAttribute('data-text-semua', item.textSemua);
+                    $select.append(optAll);
+                    return;
+                }
+
                 if (filterMode === 'belum' && item.unallocated <= 0) return;
                 var text = (filterMode === 'belum') ? item.textBelum : item.textSemua;
                 var opt = new Option(text, item.val);
-                $(opt).data('kode', item.kode)
-                      .data('nama', item.nama)
-                      .data('merk', item.merk)
-                      .data('total', item.total)
-                      .data('unallocated', item.unallocated)
-                      .data('text-belum', item.textBelum)
-                      .data('text-semua', item.textSemua);
+                opt.setAttribute('data-kode', item.kode);
+                opt.setAttribute('data-nama', item.nama);
+                opt.setAttribute('data-merk', item.merk);
+                opt.setAttribute('data-total', item.total);
+                opt.setAttribute('data-unallocated', item.unallocated);
+                opt.setAttribute('data-text-belum', item.textBelum);
+                opt.setAttribute('data-text-semua', item.textSemua);
                 $select.append(opt);
             });
 
@@ -1364,19 +1389,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // AJAX range fetch for Batch Update Modal (Specific to Kode, Nama, and Merk/Tipe)
         $('#mass-kode-barang-select').on('change', function() {
+            var selectedVal = $(this).val() || '';
             var $selected = $(this).find(':selected');
-            var kode = $selected.data('kode') || '';
-            var nama = $selected.data('nama') || '';
-            var merk = $selected.data('merk') || '';
+            var kode = $selected.attr('data-kode') || '';
+            var nama = $selected.attr('data-nama') || '';
+            var merk = $selected.attr('data-merk') || '';
+
+            if (selectedVal === 'ALL') {
+                kode = 'ALL';
+                nama = 'Semua Jenis Barang';
+                merk = '';
+            } else if (!kode && selectedVal) {
+                var parts = selectedVal.split(':::');
+                kode = parts[0] || '';
+                nama = parts[1] || '';
+                merk = parts[2] || '';
+            }
 
             $('#mass-kode-barang').val(kode);
             $('#mass-hidden-nama').val(nama);
             $('#mass-hidden-merk').val(merk);
 
-            if (!kode) {
+            if (!selectedVal) {
                 $('#mass-info-box').slideUp();
                 $('#mass-nup-awal').val('');
                 $('#mass-nup-akhir').val('');
+                $('#mass_lingkup_sebagian').prop('disabled', false);
                 return;
             }
 
@@ -1391,18 +1429,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     var d = res.data;
                     var labelTotal = (filterSumber === 'belum') ? ' (Belum Berlokasi)' : '';
                     $('#mass-info-total').text((d.total_unit || 0) + ' Unit' + labelTotal);
-                    var minNup = d.min_nup !== null ? d.min_nup : 0;
-                    var maxNup = d.max_nup !== null ? d.max_nup : 0;
-                    $('#mass-info-nup-range').text(minNup + ' s/d ' + maxNup);
+                    
+                    if (d.is_all || kode === 'ALL') {
+                        $('#mass-info-nup-range').text('Seluruh Unit Terdata');
+                        $('#mass_lingkup_semua').prop('checked', true);
+                        $('#mass_lingkup_sebagian').prop('disabled', true);
+                        $('#mass-rentang-wrapper').slideUp();
+                    } else {
+                        var minNup = d.min_nup !== null ? d.min_nup : 0;
+                        var maxNup = d.max_nup !== null ? d.max_nup : 0;
+                        $('#mass-info-nup-range').text(minNup + ' s/d ' + maxNup);
+                        $('#mass_lingkup_sebagian').prop('disabled', false);
+                        $('#mass-rentang-wrapper').slideDown();
+                        if (minNup > 0) $('#mass-nup-awal').val(minNup);
+                        if (maxNup > 0) $('#mass-nup-akhir').val(maxNup);
+                    }
+
                     $('#mass-info-belum').text((d.count_belum || d.total_belum || 0) + ' Belum');
                     $('#mass-info-kantor').text((d.count_kantor || d.total_kantor || 0) + ' Kantor');
                     $('#mass-info-mobiler').text((d.count_mobiler || d.total_mobiler || 0) + ' Mobiler');
                     $('#mass-info-lainnya').text((d.count_lainnya || d.total_lainnya || 0) + ' Lainnya');
                     
-                    if (minNup > 0) $('#mass-nup-awal').val(minNup);
-                    if (maxNup > 0) $('#mass-nup-akhir').val(maxNup);
                     updateLingkupNupUI();
-                    
                     $('#mass-info-box').slideDown();
                 }
             });
@@ -1441,19 +1489,33 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         $('#form-mass-update').on('submit', function(e) {
-            var $selected = $('#mass-kode-barang-select').find(':selected');
-            var kode = $selected.data('kode') || '';
-            var nama = $selected.data('nama') || '';
-            var merk = $selected.data('merk') || '';
-
-            $('#mass-kode-barang').val(kode);
-            $('#mass-hidden-nama').val(nama);
-            $('#mass-hidden-merk').val(merk);
-
-            if (!kode) {
+            var selectedVal = $('#mass-kode-barang-select').val() || '';
+            if (!selectedVal) {
                 e.preventDefault();
                 alert('Silakan pilih barang terlebih dahulu.');
                 return false;
+            }
+
+            if (selectedVal === 'ALL') {
+                $('#mass-kode-barang').val('ALL');
+                $('#mass-hidden-nama').val('Semua Jenis Barang');
+                $('#mass-hidden-merk').val('');
+            } else {
+                var $selected = $('#mass-kode-barang-select').find(':selected');
+                var kode = $selected.attr('data-kode') || '';
+                var nama = $selected.attr('data-nama') || '';
+                var merk = $selected.attr('data-merk') || '';
+
+                if (!kode) {
+                    var parts = selectedVal.split(':::');
+                    kode = parts[0] || '';
+                    nama = parts[1] || '';
+                    merk = parts[2] || '';
+                }
+
+                $('#mass-kode-barang').val(kode);
+                $('#mass-hidden-nama').val(nama);
+                $('#mass-hidden-merk').val(merk);
             }
         });
 
