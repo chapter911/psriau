@@ -1723,6 +1723,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                             return;
                         } else {
+                            if (res.csrfHash) {
+                                var csrfInputs = document.querySelectorAll('input[name="<?= csrf_token() ?>"]');
+                                csrfInputs.forEach(function(inp) { inp.value = res.csrfHash; });
+                            }
                             showImportError(res.message || 'Gagal memproses file Excel.');
                         }
                     } catch (err) {
@@ -1733,6 +1737,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     try {
                         var errObj = JSON.parse(xhr.responseText);
                         if (errObj.message) errMsg = errObj.message;
+                        if (errObj.csrfHash) {
+                            var csrfInputs = document.querySelectorAll('input[name="<?= csrf_token() ?>"]');
+                            csrfInputs.forEach(function(inp) { inp.value = errObj.csrfHash; });
+                        }
                     } catch (e) {}
                     showImportError(errMsg);
                 }

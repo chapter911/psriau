@@ -8,6 +8,7 @@ use CodeIgniter\HTTP\RedirectResponse;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\IReadFilter;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -642,22 +643,27 @@ class InventarisSatker extends BaseController
         set_time_limit(300);
 
         try {
-            $spreadsheet = IOFactory::load($file->getTempName());
-            $sheet = $spreadsheet->getSheetByName('Master Aset') ?: $spreadsheet->getActiveSheet();
-            $highestRow = $sheet->getHighestRow();
+            $tempFilePath = $file->getTempName();
 
-            if ($highestRow < 2) {
-                if ($this->request->isAJAX()) {
-                    return $this->response->setJSON(['status' => 'error', 'message' => 'File Excel tidak memiliki data aset yang cukup.'])->setStatusCode(400);
+            // 1. Pass 1: Baca Metadata & Header Baris (Rows 1-10) dengan Memori Ringan
+            $headerFilter = new class(10) implements IReadFilter {
+                private int $maxRow;
+                public function __construct(int $maxRow = 10) { $this->maxRow = $maxRow; }
+                public function readCell(string $columnAddress, int $row, string $worksheetName = ''): bool {
+                    return $row <= $this->maxRow;
                 }
-                return redirect()->to('/admin/inventaris/barang')->with('error', 'File Excel tidak memiliki data aset yang cukup.');
-            }
+            };
 
-            $db = db_connect();
-            $userId = (int) (session()->get('userId') ?? 0);
-            $now = date('Y-m-d H:i:s');
+            $readerHeader = IOFactory::createReaderForFile($tempFilePath);
+            $readerHeader->setReadDataOnly(true);
+            $readerHeader->setReadFilter($headerFilter);
+            $ssHeader = $readerHeader->load($tempFilePath);
+            $sheetHeader = $ssHeader->getSheetByName('Master Aset') ?: $ssHeader->getActiveSheet();
 
-            // 1. Deteksi Baris Header & Mapping Kolom Dinamis (Mendukung File SIMAN Resmi & Template Ekspor Aplikasi)
+            $highestColHeader = $sheetHeader->getHighestColumn();
+            $highestColIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColHeader);
+            $highestRowHeader = $sheetHeader->getHighestRow();
+
             $colMap = [
                 'kode_barang'     => 'E',
                 'nup'             => 'F',
@@ -681,16 +687,13 @@ class InventarisSatker extends BaseController
                 'keterangan'      => '',
             ];
 
-            $startRow = 3; // Default untuk file resmi SIMAN Kemenkeu (header baris 1, data baris 3)
+            $startRow = 3;
 
-            $highestColumn = $sheet->getHighestColumn();
-            $highestColIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
-
-            for ($row = 1; $row <= min(8, $highestRow); $row++) {
+            for ($row = 1; $row <= min(10, $highestRowHeader); $row++) {
                 $rowHeaders = [];
                 for ($col = 1; $col <= $highestColIdx; $col++) {
                     $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
-                    $val = strtolower(trim((string) $sheet->getCell($letter . $row)->getValue()));
+                    $val = strtolower(trim((string) $sheetHeader->getCell($letter . $row)->getValue()));
                     if ($val !== '') {
                         $rowHeaders[$letter] = $val;
                     }
@@ -698,13 +701,13 @@ class InventarisSatker extends BaseController
 
                 $detected = [];
                 foreach ($rowHeaders as $letter => $val) {
-                    if (preg_match('/kode\s*barang|^kode$|kd_?brg/i', $val)) {
+                    if (preg_match('/^kode\s*barang$|^kd_?brg$/i', $val)) {
                         $detected['kode_barang'] = $letter;
-                    } elseif (preg_match('/^nup$|no\.?\s*nup/i', $val)) {
+                    } elseif (preg_match('/^nup$|^no\.?\s*nup$/i', $val)) {
                         $detected['nup'] = $letter;
-                    } elseif (preg_match('/kode\s*register|no\.?\s*register/i', $val)) {
+                    } elseif (preg_match('/^kode\s*register$|^no\.?\s*register$/i', $val)) {
                         $detected['kode_register'] = $letter;
-                    } elseif (preg_match('/nama\s*barang|^nama$|uraian\s*barang/i', $val)) {
+                    } elseif (preg_match('/^nama\s*barang$|^uraian\s*barang$/i', $val)) {
                         $detected['nama_barang'] = $letter;
                     } elseif (preg_match('/kategori|jenis\s*bmn/i', $val)) {
                         $detected['kategori'] = $letter;
@@ -728,7 +731,7 @@ class InventarisSatker extends BaseController
                         $detected['nilai_perolehan'] = $letter;
                     } elseif (preg_match('/nilai\s*buku/i', $val)) {
                         $detected['nilai_buku'] = $letter;
-                    } elseif (preg_match('/status\s*bmn|^status$/i', $val)) {
+                    } elseif (preg_match('/^status\s*bmn$|^status$/i', $val) && ! preg_match('/idle|sbsn|kemitraan|penggunaan|pmk/i', $val)) {
                         $detected['status_bmn'] = $letter;
                     } elseif (preg_match('/no\.?\s*psp/i', $val)) {
                         $detected['no_psp'] = $letter;
@@ -744,9 +747,9 @@ class InventarisSatker extends BaseController
                 if (isset($detected['kode_barang']) && (isset($detected['nama_barang']) || isset($detected['nup']))) {
                     $colMap = array_merge($colMap, $detected);
                     $startRow = $row + 1;
-                    if ($startRow <= $highestRow) {
-                        $nextVal = trim((string) $sheet->getCell($colMap['kode_barang'] . $startRow)->getValue());
-                        $nextName = ! empty($colMap['nama_barang']) ? trim((string) $sheet->getCell($colMap['nama_barang'] . $startRow)->getValue()) : '';
+                    if ($startRow <= $highestRowHeader) {
+                        $nextVal = trim((string) $sheetHeader->getCell($colMap['kode_barang'] . $startRow)->getValue());
+                        $nextName = ! empty($colMap['nama_barang']) ? trim((string) $sheetHeader->getCell($colMap['nama_barang'] . $startRow)->getValue()) : '';
                         if ($nextVal === '' && $nextName === '') {
                             $startRow++;
                         }
@@ -755,7 +758,43 @@ class InventarisSatker extends BaseController
                 }
             }
 
-            // 2. Normalisasi Helper
+            unset($ssHeader, $sheetHeader, $readerHeader);
+            gc_collect_cycles();
+
+            // 2. Pass 2: Muat Data Aset Hanya untuk Kolom yang Diperlukan (Column Filter & Read Data Only)
+            $neededCols = array_values(array_unique(array_filter($colMap)));
+            $columnFilter = new class($neededCols, $startRow) implements IReadFilter {
+                private array $columns;
+                private int $startRow;
+                public function __construct(array $columns, int $startRow = 1) {
+                    $this->columns = array_flip($columns);
+                    $this->startRow = $startRow;
+                }
+                public function readCell(string $columnAddress, int $row, string $worksheetName = ''): bool {
+                    if ($row < $this->startRow) return false;
+                    return isset($this->columns[$columnAddress]);
+                }
+            };
+
+            $readerData = IOFactory::createReaderForFile($tempFilePath);
+            $readerData->setReadDataOnly(true);
+            $readerData->setReadFilter($columnFilter);
+            $spreadsheet = $readerData->load($tempFilePath);
+            $sheet = $spreadsheet->getSheetByName('Master Aset') ?: $spreadsheet->getActiveSheet();
+            $highestRow = $sheet->getHighestRow();
+
+            if ($highestRow < 2) {
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['status' => 'error', 'message' => 'File Excel tidak memiliki data aset yang cukup.'])->setStatusCode(400);
+                }
+                return redirect()->to('/admin/inventaris/barang')->with('error', 'File Excel tidak memiliki data aset yang cukup.');
+            }
+
+            $db = db_connect();
+            $userId = (int) (session()->get('userId') ?? 0);
+            $now = date('Y-m-d H:i:s');
+
+            // 3. Normalisasi Helper
             $normalizeKode = static function ($val): string {
                 return strtoupper(trim((string) $val));
             };
@@ -771,7 +810,7 @@ class InventarisSatker extends BaseController
                 return strtolower($n);
             };
 
-            // 3. Muat Data Yang Sudah Ada di Database (Map Composite Key: kode_barang + nup)
+            // 4. Muat Data Yang Sudah Ada di Database untuk Matching Cepat
             $existingRows = $db->table('trn_inventaris_satker')
                 ->select('id, kode_barang, nup, kode_register, ruangan_id, lokasi_ruangan, peruntukan')
                 ->get()
@@ -796,8 +835,14 @@ class InventarisSatker extends BaseController
                 }
             }
 
+            // 5. Transaksi Database & Batch Upsert
+            $db->transBegin();
+
             $importedCount = 0;
             $updatedCount  = 0;
+            $insertBatch   = [];
+            $updateBatch   = [];
+            $batchSize     = 250;
 
             for ($r = $startRow; $r <= $highestRow; $r++) {
                 $getVal = static function ($field) use ($sheet, $colMap, $r): string {
@@ -832,10 +877,12 @@ class InventarisSatker extends BaseController
 
                 // Parsing nilai finansial
                 $colNilaiPerolehan = $colMap['nilai_perolehan'] ?? '';
-                $nilaiPerolehan = ($colNilaiPerolehan !== '') ? (float) ($sheet->getCell($colNilaiPerolehan . $r)->getValue() ?? 0) : 0.0;
+                $rawNilaiPerolehan = ($colNilaiPerolehan !== '') ? $sheet->getCell($colNilaiPerolehan . $r)->getValue() : 0;
+                $nilaiPerolehan = is_numeric($rawNilaiPerolehan) ? (float) $rawNilaiPerolehan : (float) preg_replace('/[^\d.]/', '', (string) $rawNilaiPerolehan);
 
                 $colNilaiBuku = $colMap['nilai_buku'] ?? '';
-                $nilaiBuku = ($colNilaiBuku !== '') ? (float) ($sheet->getCell($colNilaiBuku . $r)->getValue() ?? 0) : 0.0;
+                $rawNilaiBuku = ($colNilaiBuku !== '') ? $sheet->getCell($colNilaiBuku . $r)->getValue() : 0;
+                $nilaiBuku = is_numeric($rawNilaiBuku) ? (float) $rawNilaiBuku : (float) preg_replace('/[^\d.]/', '', (string) $rawNilaiBuku);
 
                 // Format merk_tipe jika tidak tersedia kolom gabungan
                 if ($merkTipe === '') {
@@ -887,7 +934,7 @@ class InventarisSatker extends BaseController
                 $tglPerolehan   = null;
                 $tahunPerolehan = is_numeric($rawTahun) ? (int) $rawTahun : null;
 
-                if (is_numeric($rawTgl) && $rawTgl > 10000) {
+                if (is_numeric($rawTgl) && $rawTgl > 10000 && $rawTgl < 100000) {
                     try {
                         $dt = ExcelDate::excelToDateTimeObject($rawTgl);
                         $tglPerolehan = $dt->format('Y-m-d');
@@ -910,20 +957,38 @@ class InventarisSatker extends BaseController
                 // Normalisasi NUP untuk matching dan penyimpanan
                 $cleanNup = $normalizeNup($nup);
                 $saveNup  = ($cleanNup !== '') ? $cleanNup : null;
+                $mapKey   = $normalizeKode($kodeBarang) . '___' . $cleanNup;
 
-                $mapKey = $normalizeKode($kodeBarang) . '___' . $cleanNup;
+                // ATURAN UPSERT CERDAS:
+                // 1) Cocokkan berdasarkan kode_register fisik jika tersedia di DB
+                // 2) Atau cocokkan berdasarkan kombinasi kode_barang + NUP
+                $existingId = null;
+                $existingItem = null;
 
-                // ATURAN UPSERT:
-                // Jika Kode Barang dan NUP sama -> UPDATE SAJA
-                // Jika Kode Barang atau NUP beda -> INSERT
-                if (isset($existingMap[$mapKey])) {
+                if ($kodeRegister !== '' && isset($usedRegisters[$kodeRegister])) {
+                    $existingId = $usedRegisters[$kodeRegister];
+                    foreach ($existingMap as $mk => $item) {
+                        if ($item['id'] === $existingId) {
+                            $existingItem = $item;
+                            break;
+                        }
+                    }
+                } elseif (isset($existingMap[$mapKey])) {
+                    $candidate = $existingMap[$mapKey];
+                    if ($kodeRegister !== '' && $candidate['kode_register'] !== '' && $candidate['kode_register'] !== $kodeRegister) {
+                        $existingId = null; // Aset berbeda dari sub-satker lain dengan NUP sama
+                    } else {
+                        $existingId = $candidate['id'];
+                        $existingItem = $candidate;
+                    }
+                }
+
+                if ($existingId !== null && $existingItem !== null) {
                     // ========================================================
-                    // KODE BARANG & NUP SAMA -> UPDATE SAJA
+                    // DATA COCOK -> UPDATE ASET YANG SUDAH ADA
                     // ========================================================
-                    $existingItem = $existingMap[$mapKey];
-                    $existingId   = $existingItem['id'];
-
                     $updateData = [
+                        'id'              => $existingId,
                         'nama_barang'     => $namaBarang,
                         'kategori'        => $kategori,
                         'kondisi'         => $kondisi,
@@ -932,29 +997,25 @@ class InventarisSatker extends BaseController
                         'status_bmn'      => $statusBmn,
                         'updated_at'      => $now,
                         'updated_by'      => $userId ?: null,
+                        'merk'            => $merk ?: null,
+                        'tipe'            => $tipe ?: null,
+                        'merk_tipe'       => $merkTipe ?: null,
+                        'satuan'          => $satuanIn ?: 'Buah',
+                        'jumlah'          => 1, // Standar BMN: 1 Kode Barang + 1 NUP = 1 Unit Fisik
+                        'no_psp'          => $noPsp ?: null,
+                        'tahun_perolehan' => $tahunPerolehan,
+                        'tgl_perolehan'   => $tglPerolehan,
+                        'keterangan'      => $keteranganIn ?: null,
                     ];
 
-                    if ($merk !== '') $updateData['merk'] = $merk;
-                    if ($tipe !== '') $updateData['tipe'] = $tipe;
-                    if ($merkTipe !== '') $updateData['merk_tipe'] = $merkTipe;
-                    if ($satuanIn !== '') $updateData['satuan'] = $satuanIn;
-                    $updateData['jumlah'] = 1; // Standar BMN: 1 Kode Barang + 1 NUP = 1 Unit Fisik
-                    if ($noPsp !== '') $updateData['no_psp'] = $noPsp;
-                    if ($tahunPerolehan !== null) $updateData['tahun_perolehan'] = $tahunPerolehan;
-                    if ($tglPerolehan !== null) $updateData['tgl_perolehan'] = $tglPerolehan;
-                    if ($keteranganIn !== '') $updateData['keterangan'] = $keteranganIn;
-
-                    // Peruntukan: update jika file excel secara eksplisit menyertakan kolom peruntukan ('kantor', 'mobiler', atau 'lainnya')
                     if (in_array($peruntukanIn, ['kantor', 'mobiler', 'lainnya', 'item lainnya', 'item_lainnya'], true)) {
                         $updateData['peruntukan'] = ($peruntukanIn === 'item lainnya' || $peruntukanIn === 'item_lainnya') ? 'lainnya' : $peruntukanIn;
                     }
 
-                    // Lokasi ruangan: jika aset belum masuk ke ruangan DBR (ruangan_id kosong), perbarui lokasinya
                     if (empty($existingItem['ruangan_id']) && $lokasiRuang !== '') {
                         $updateData['lokasi_ruangan'] = $lokasiRuang;
                     }
 
-                    // Kode register: update jika ada pada Excel dan tidak bentrok dengan ID aset lain
                     if ($kodeRegister !== '') {
                         if (! isset($usedRegisters[$kodeRegister]) || $usedRegisters[$kodeRegister] === $existingId) {
                             $updateData['kode_register'] = $kodeRegister;
@@ -962,11 +1023,16 @@ class InventarisSatker extends BaseController
                         }
                     }
 
-                    $db->table('trn_inventaris_satker')->where('id', $existingId)->update($updateData);
+                    $updateBatch[] = $updateData;
                     $updatedCount++;
+
+                    if (count($updateBatch) >= $batchSize) {
+                        $db->table('trn_inventaris_satker')->updateBatch($updateBatch, 'id');
+                        $updateBatch = [];
+                    }
                 } else {
                     // ========================================================
-                    // KODE BARANG / NUP BEDA -> INSERT DATA BARU
+                    // DATA BARU -> INSERT KE DATABASE
                     // ========================================================
                     $regToInsert = null;
                     if ($kodeRegister !== '' && ! isset($usedRegisters[$kodeRegister])) {
@@ -1004,25 +1070,34 @@ class InventarisSatker extends BaseController
                         'updated_by'      => $userId ?: null,
                     ];
 
-                    $db->table('trn_inventaris_satker')->insert($insertData);
-                    $newId = (int) $db->insertID();
-
-                    // Daftarkan ke map agar baris berikutnya jika sama di file yang sama akan di-update
-                    $existingMap[$mapKey] = [
-                        'id'             => $newId,
-                        'ruangan_id'     => 0,
-                        'lokasi_ruangan' => $insertData['lokasi_ruangan'],
-                        'peruntukan'     => $insertData['peruntukan'],
-                        'kode_register'  => (string) $regToInsert,
-                    ];
+                    $insertBatch[] = $insertData;
+                    $importedCount++;
 
                     if ($regToInsert !== null) {
-                        $usedRegisters[$regToInsert] = $newId;
+                        $usedRegisters[$regToInsert] = true;
                     }
 
-                    $importedCount++;
+                    if (count($insertBatch) >= $batchSize) {
+                        $db->table('trn_inventaris_satker')->insertBatch($insertBatch);
+                        $insertBatch = [];
+                    }
                 }
             }
+
+            // Flush sisa batch
+            if (! empty($insertBatch)) {
+                $db->table('trn_inventaris_satker')->insertBatch($insertBatch);
+                $insertBatch = [];
+            }
+            if (! empty($updateBatch)) {
+                $db->table('trn_inventaris_satker')->updateBatch($updateBatch, 'id');
+                $updateBatch = [];
+            }
+
+            $db->transCommit();
+
+            unset($spreadsheet, $sheet, $readerData, $existingRows, $existingMap);
+            gc_collect_cycles();
 
             $totalProses = $importedCount + $updatedCount;
             $successMsg  = "Proses import Excel selesai! {$importedCount} data baru ditambahkan dan {$updatedCount} data diperbarui berdasarkan kecocokan Kode Barang & NUP (Total: {$totalProses} aset).";
@@ -1040,6 +1115,14 @@ class InventarisSatker extends BaseController
 
             return redirect()->to('/admin/inventaris/barang')->with('message', $successMsg);
         } catch (\Throwable $e) {
+            if (isset($db) && $db instanceof \CodeIgniter\Database\BaseConnection) {
+                try {
+                    $db->transRollback();
+                } catch (\Throwable $te) {
+                    // ignore
+                }
+            }
+
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON([
                     'status'   => 'error',
