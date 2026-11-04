@@ -1681,7 +1681,7 @@ document.addEventListener('DOMContentLoaded', function() {
             scrollX: true,
             scrollCollapse: true,
             order: [[1, 'asc'], [2, 'asc']],
-            pageLength: 25,
+            pageLength: 10,
             lengthMenu: [[10, 25, 50, 100, 250], [10, 25, 50, 100, 250]],
             ajax: {
                 url: '<?= site_url('admin/inventaris/barang'); ?>',
