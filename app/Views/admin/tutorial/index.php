@@ -935,7 +935,7 @@ graph TD
     A["Buka Menu: Dokumentasi &gt; Kegiatan (/admin/dokumentasi/kegiatan-lapangan)"] --> B["Daftar Kegiatan: Tabel Server-Side, Filter &amp; Pencarian"]
     B --> F_SRC["Filter Data: Judul, Kategori (Semua/Lapangan/Rapat Internal/Rapat External/Kustom), Rentang Tanggal &amp; Lokasi"]
     
-    B --> ACT{"Aksi Pengguna (Icon Buttons &amp; Modal)"}
+    B --> ACT{"Interaksi Pengguna"}
     
     ACT -->|Tambah Kegiatan (FiturAdd)| C["Modal Tambah Kegiatan: Input Cepat &amp; Kompresi Foto di Browser"]
     C --> C1["Isi Judul Kegiatan, Tanggal &amp; Lokasi"]
@@ -949,21 +949,18 @@ graph TD
     C7 --> C8["Kompresi Otomatis di Browser &amp; Simpan via AJAX (Tanpa Reload Halaman)"]
     C8 --> B
     
-    ACT -->|Pratinjau Foto| G["Modal Galeri Foto: Carousel &amp; Thumbnail Navigasi"]
+    ACT -->|Klik Thumbnail Foto Langsung| G["Modal Galeri Foto: Carousel Resolusi Penuh &amp; Thumbnail Navigasi (Info Jumlah Foto di Bawah Foto)"]
     
-    ACT -->|Bagikan Foto (Icon fa-share-alt)| S["Modal Bagikan Galeri: Tautan Permanen Tanpa Batas Kedaluwarsa"]
-    S --> S1["Buat / Salin Tautan Publik /kegiatan-lapangan/share/{token}"]
-    S1 --> S2["Salin Format Pesan WhatsApp Resmi Sekali Klik atau Nonaktifkan Tautan"]
+    ACT -->|Kolom: Bagikan &amp; Unduh| SH_COL["Grup Aksi Publikasi &amp; Unduhan"]
+    SH_COL -->|Bagikan Foto (Icon fa-share-alt)| S["Modal Bagikan Galeri: Tautan Permanen Tanpa Batas Kedaluwarsa &amp; Salin Pesan WA"]
+    SH_COL -->|Buka Link Publik (Icon fa-external-link-alt)| PUB["Akses Langsung Halaman Galeri Publik di Tab Baru"]
+    SH_COL -->|Unduh Arsip ZIP (Icon fa-file-archive, FiturExport)| Z["Unduh Seluruh Foto dalam Format .ZIP"]
     
-    ACT -->|Buka Link Publik (Icon fa-external-link-alt)| PUB["Buka Halaman Galeri Publik Kegiatan di Tab Baru"]
-    
-    ACT -->|Ekspor Berkas (Icon fa-file-archive, FiturExport)| Z["Unduh Arsip Lengkap Seluruh Foto dalam Format ZIP"]
-    
-    ACT -->|Ubah Data (Icon fa-edit, FiturEdit)| E["Modal Ubah Kegiatan: Edit Data, Kelola/Hapus Foto Tersimpan, Tambah Foto Baru"]
+    ACT -->|Kolom: Aksi| AC_COL["Grup Aksi Pengelolaan Rekaman"]
+    AC_COL -->|Ubah Kegiatan (Icon fa-edit Kuning Kontras, FiturEdit)| E["Modal Ubah Kegiatan: Edit Data, Kelola/Hapus Foto Tersimpan, Tambah Foto Baru"]
     E --> E1["Hapus Satuan Foto Tersimpan via AJAX / Tambah Foto Baru &amp; Simpan"]
     E1 --> B
-    
-    ACT -->|Hapus Kegiatan (Icon fa-trash-alt, FiturDelete)| D["Konfirmasi SweetAlert2: Hapus Kegiatan &amp; Seluruh Berkas Foto"]
+    AC_COL -->|Hapus Kegiatan (Icon fa-trash-alt Merah, FiturDelete)| D["Konfirmasi SweetAlert2: Hapus Kegiatan &amp; Seluruh Berkas Foto"]
                 </pre>
             </div>
         </div>
@@ -2171,11 +2168,18 @@ graph TD
                             <li><strong>Antarmuka Dialog Modal Interaktif &amp; Kompresi Sisi Klien:</strong>
                                 Penambahan dan pengubahan kegiatan kini dilakukan langsung menggunakan dialog modal terpadu tanpa perlu berpindah halaman (tanpa reload halaman). Didukung kompresi otomatis foto di sisi browser pengguna (default 30% untuk efisiensi penyimpanan &amp; kecepatan transmisi data) dengan fitur <em>Drag &amp; Drop</em> hingga 200 foto. Pada mode ubah, pengguna dapat melihat daftar foto tersimpan dan menghapus foto lama satuan secara langsung via AJAX.
                             </li>
+                            <li><strong>Thumbnail Foto Interaktif Sekali Klik:</strong>
+                                Foto kegiatan pada tabel dapat langsung diklik untuk membuka modal galeri foto resolusi penuh (tanpa tombol teks 'Lihat' yang memakan ruang), disertai lencana jumlah foto yang rapi dan informatif di bawah foto (contoh: <code><i class="fas fa-camera"></i> 5 foto</code>).
+                            </li>
+                            <li><strong>Pemisahan Kolom "Bagikan &amp; Unduh" dari Kolom "Aksi":</strong>
+                                Tabel kegiatan memisahkan aksi publikasi dokumentasi dari aksi pengelolaan rekaman internal untuk tata letak yang lebih terorganisir:
+                                <ul>
+                                    <li><strong>Kolom Bagikan &amp; Unduh:</strong> Memuat tombol Bagikan Galeri Permanen (<code>fas fa-share-alt</code>), Buka Galeri Publik di Tab Baru jika tautan aktif (<code>fas fa-external-link-alt</code>), dan Unduh Seluruh Foto dalam format ZIP (<code>fas fa-file-archive</code>).</li>
+                                    <li><strong>Kolom Aksi:</strong> Khusus diperuntukkan bagi pengelolaan record data dengan warna kontras tinggi: tombol <strong>Ubah</strong> kuning solid terang (<code>btn-warning text-dark</code>) yang sangat jelas terlihat di atas latar tabel, serta tombol <strong>Hapus</strong> merah tegas (<code>btn-danger</code>) dengan konfirmasi SweetAlert2.</li>
+                                </ul>
+                            </li>
                             <li><strong>Tautan Berbagi Galeri Foto Publik Permanen:</strong>
                                 Fitur bagikan galeri foto kini dibuat <strong>permanen</strong> secara default tanpa batas waktu masa berlaku / kedaluwarsa. Dilengkapi kemudahan tombol salin link cepat, pratinjau format pesan resmi WhatsApp terstruktur sekali klik (acara, tanggal, link galeri), tombol akses langsung di tab baru, serta opsi nonaktifkan tautan kapan saja jika sewaktu-waktu ingin dicabut.
-                            </li>
-                            <li><strong>Tombol Aksi Icon Button Ringkas, Bersih &amp; Modern:</strong>
-                                Seluruh aksi pada tabel disederhanakan menggunakan tombol ikon (<em>icon button</em>) yang rapi dan dilengkapi <em>Bootstrap Tooltip</em>: Bagikan Galeri (<code>fas fa-share-alt</code>), Buka Galeri Publik (<code>fas fa-external-link-alt</code>), Unduh Arsip ZIP (<code>fas fa-file-archive</code>), Ubah Data (<code>fas fa-edit</code>), dan Hapus Data (<code>fas fa-trash-alt</code>).
                             </li>
                             <li><strong>Unduh Arsip ZIP Sekali Klik:</strong>
                                 Seluruh foto kegiatan dapat diunduh sekaligus dalam format arsip <code>.zip</code> terstruktur dan bersih.

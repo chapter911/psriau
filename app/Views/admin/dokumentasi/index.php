@@ -72,9 +72,10 @@
                     <th>Kategori</th>
                     <th>Tanggal Kegiatan</th>
                     <th>Lokasi Kegiatan</th>
-                    <th>Foto Kegiatan</th>
+                    <th class="text-center">Foto Kegiatan</th>
                     <th>Dibuat Oleh</th>
-                    <th class="text-center" style="width: 135px; min-width: 135px;">Aksi</th>
+                    <th class="text-center" style="width: 130px; min-width: 130px;">Bagikan &amp; Unduh</th>
+                    <th class="text-center" style="width: 95px; min-width: 95px;">Aksi</th>
                 </tr>
                 </thead>
                 <tbody></tbody>
@@ -1059,31 +1060,31 @@ document.addEventListener('DOMContentLoaded', function () {
                 data: null,
                 orderable: false,
                 searchable: false,
+                className: 'text-center',
                 render: function (row) {
                     const photos = Array.isArray(row.photos) ? row.photos : [];
                     const coverPhoto = row.cover_photo || '';
                     const title = row.title || '-';
                     const activityDate = row.activity_date || '-';
                     const photosJson = encodeURIComponent(JSON.stringify(photos));
+                    const photoCount = Number(row.photo_count || 0);
 
                     let thumbHtml = '';
                     if (coverPhoto !== '') {
-                        thumbHtml = '<img src="' + escapeHtml(coverPhoto) + '" alt="Foto kegiatan" style="width:50px;height:50px;object-fit:cover;border-radius:8px;border:1px solid #dee2e6;">';
+                        thumbHtml = '<img src="' + escapeHtml(coverPhoto) + '" alt="Foto kegiatan" class="activity-table-thumb">';
                     } else {
-                        thumbHtml = '<div class="d-flex align-items-center justify-content-center bg-light text-muted" style="width:50px;height:50px;border-radius:8px;border:1px solid #dee2e6;"><i class="far fa-image"></i></div>';
+                        thumbHtml = '<div class="activity-table-thumb-empty"><i class="far fa-image fa-lg"></i></div>';
                     }
 
                     return ''
-                        + '<button type="button" class="btn btn-link p-0 text-left js-open-gallery"'
+                        + '<button type="button" class="btn btn-link p-0 text-decoration-none js-open-gallery activity-photo-click-btn"'
                         + ' data-gallery="' + photosJson + '"'
                         + ' data-title="' + encodeURIComponent(title) + '"'
-                        + ' data-date="' + encodeURIComponent(activityDate) + '">'
-                        + '<div class="d-flex align-items-center" style="gap:8px;">'
+                        + ' data-date="' + encodeURIComponent(activityDate) + '"'
+                        + ' data-toggle="tooltip" data-placement="top" title="Klik foto untuk melihat galeri">'
+                        + '<div class="d-inline-flex flex-column align-items-center">'
                         + thumbHtml
-                        + '<div>'
-                        + '<div class="font-weight-bold text-dark">' + Number(row.photo_count || 0) + ' foto</div>'
-                        + '<div class="text-primary small"><i class="fas fa-eye mr-1"></i>Lihat</div>'
-                        + '</div>'
+                        + '<span class="activity-photo-count-badge mt-1"><i class="fas fa-camera mr-1"></i>' + photoCount + ' foto</span>'
                         + '</div>'
                         + '</button>';
                 }
@@ -1096,6 +1097,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             },
             {
+                // Kolom Pemisahan: Bagikan & Unduh (Publikasi Dokumentasi)
                 data: null,
                 orderable: false,
                 searchable: false,
@@ -1110,10 +1112,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     const shareIsActive = Boolean(row.share_is_active);
                     const hasPhotos = Number(row.photo_count || 0) > 0;
 
-                    let buttons = '<div class="d-inline-flex align-items-center justify-content-center" style="gap:4px;">';
+                    let buttons = '<div class="d-inline-flex align-items-center justify-content-center" style="gap:5px;">';
 
                     // 1. Tombol Bagikan Foto (Icon Button)
-                    const shareBtnClass = shareIsActive ? 'btn btn-sm btn-info text-white' : 'btn btn-sm btn-outline-info';
+                    const shareBtnClass = shareIsActive ? 'btn btn-sm btn-info text-white shadow-sm' : 'btn btn-sm btn-outline-info';
                     const shareTooltip = shareIsActive ? 'Tautan Berbagi Aktif (Permanen)' : 'Bagikan Galeri (Permanen)';
                     buttons += '<button type="button" class="' + shareBtnClass + ' js-share-photo"'
                         + ' data-id="' + id + '"'
@@ -1129,14 +1131,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     // 2. Tombol Buka Link Publik (jika sudah aktif)
                     if (shareIsActive && sharePublicUrl) {
-                        buttons += '<a class="btn btn-sm btn-outline-success" href="' + escapeHtml(sharePublicUrl) + '" target="_blank" rel="noopener noreferrer" data-toggle="tooltip" data-placement="top" title="Buka Galeri Publik">'
+                        buttons += '<a class="btn btn-sm btn-outline-success shadow-sm" href="' + escapeHtml(sharePublicUrl) + '" target="_blank" rel="noopener noreferrer" data-toggle="tooltip" data-placement="top" title="Buka Galeri Publik">'
                             + '<i class="fas fa-external-link-alt"></i>'
                             + '</a>';
                     }
 
                     // 3. Tombol Download ZIP (Icon Button)
                     if (row.can_export && hasPhotos) {
-                        buttons += '<a class="btn btn-sm btn-outline-primary" href="' + escapeHtml(row.download_zip_url || '#') + '" data-toggle="tooltip" data-placement="top" title="Download Semua Foto (.ZIP)">'
+                        buttons += '<a class="btn btn-sm btn-outline-primary shadow-sm" href="' + escapeHtml(row.download_zip_url || '#') + '" data-toggle="tooltip" data-placement="top" title="Download Semua Foto (.ZIP)">'
                             + '<i class="fas fa-file-archive"></i>'
                             + '</a>';
                     } else {
@@ -1145,28 +1147,42 @@ document.addEventListener('DOMContentLoaded', function () {
                             + '</button>';
                     }
 
-                    // 4. Tombol Ubah (Icon Button)
+                    buttons += '</div>';
+                    return buttons;
+                }
+            },
+            {
+                // Kolom Aksi Khusus Pengelolaan Rekaman (Ubah & Hapus)
+                data: null,
+                orderable: false,
+                searchable: false,
+                className: 'text-center',
+                render: function (row) {
+                    const id = row.id;
+                    let buttons = '<div class="d-inline-flex align-items-center justify-content-center" style="gap:5px;">';
+
+                    // 1. Tombol Ubah (Icon Button) - Solid Warning dengan warna teks gelap & border kontras tinggi agar sangat jelas terlihat
                     if (row.can_edit) {
-                        buttons += '<button type="button" class="btn btn-sm btn-outline-warning js-edit-kegiatan" data-id="' + id + '" data-toggle="tooltip" data-placement="top" title="Ubah Data Kegiatan">'
+                        buttons += '<button type="button" class="btn btn-sm btn-warning text-dark font-weight-bold shadow-sm js-edit-kegiatan" data-id="' + id + '" data-toggle="tooltip" data-placement="top" title="Ubah Data Kegiatan" style="border: 1px solid #d39e00;">'
                             + '<i class="fas fa-edit"></i>'
                             + '</button>';
                     }
 
-                    // 5. Tombol Hapus (Icon Button)
+                    // 2. Tombol Hapus (Icon Button) - Solid Danger agar tegas dan terlihat jelas
                     if (row.can_delete) {
                         buttons += '<form class="inline-form d-inline" method="post" action="' + escapeHtml(row.delete_url || '#') + '"'
                             + ' data-confirm-title="Hapus Kegiatan"'
                             + ' data-confirm-text="Hapus kegiatan ini beserta seluruh fotonya?"'
                             + ' data-confirm-button="Ya, hapus">'
                             + '<input type="hidden" name="' + escapeHtml(csrfTokenName) + '" value="' + escapeHtml(csrfTokenValue) + '">'
-                            + '<button type="submit" class="btn btn-sm btn-outline-danger" data-toggle="tooltip" data-placement="top" title="Hapus Kegiatan">'
+                            + '<button type="submit" class="btn btn-sm btn-danger shadow-sm" data-toggle="tooltip" data-placement="top" title="Hapus Kegiatan">'
                             + '<i class="fas fa-trash-alt"></i>'
                             + '</button>'
                             + '</form>';
                     }
 
                     buttons += '</div>';
-                    return buttons;
+                    return buttons || '<span class="text-muted small">-</span>';
                 }
             }
         ],
@@ -1523,6 +1539,73 @@ document.addEventListener('DOMContentLoaded', function () {
 <style>
     .dataTables_wrapper .dataTables_filter {
         display: none !important;
+    }
+
+    /* Thumbnail Foto Kegiatan di Tabel */
+    .activity-photo-click-btn {
+        cursor: pointer;
+        outline: none !important;
+        background: transparent;
+        border: none;
+    }
+
+    .activity-photo-click-btn:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    .activity-table-thumb {
+        width: 54px;
+        height: 54px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .activity-photo-click-btn:hover .activity-table-thumb {
+        transform: scale(1.08);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+        border-color: #007bff;
+    }
+
+    .activity-table-thumb-empty {
+        width: 54px;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8fafc;
+        color: #94a3b8;
+        border-radius: 8px;
+        border: 1px dashed #cbd5e1;
+        transition: transform 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .activity-photo-click-btn:hover .activity-table-thumb-empty {
+        transform: scale(1.08);
+        border-color: #007bff;
+        color: #007bff;
+    }
+
+    .activity-photo-count-badge {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #475569;
+        background-color: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        padding: 2px 8px;
+        border-radius: 12px;
+        display: inline-block;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .activity-photo-click-btn:hover .activity-photo-count-badge {
+        background-color: #e0f2fe;
+        color: #0284c7;
+        border-color: #bae6fd;
     }
 
     .photo-modal-content {
