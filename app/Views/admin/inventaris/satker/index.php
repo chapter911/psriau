@@ -135,7 +135,7 @@
                         <button type="button" class="btn btn-outline-primary btn-sm px-3 shadow-sm font-weight-bold" data-toggle="modal" data-target="#modal-cetak-sticker" style="border-radius: 8px;" title="Cetak Sticker Barcode / QR BMN (2 Sticker Per Baris)">
                             <i class="fas fa-qrcode text-primary mr-1.5"></i> Cetak Sticker
                         </button>
-                        <a href="<?= site_url('admin/inventaris/barang/export?' . http_build_query(['peruntukan' => $filterPeruntukan, 'kategori' => $filterKategori, 'kondisi' => $filterKondisi, 'lokasi' => $filterLokasi])); ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 8px;" title="Export Excel">
+                        <a href="<?= site_url('admin/inventaris/barang/export?' . http_build_query(['peruntukan' => $filterPeruntukan, 'kategori' => $filterKategori, 'kondisi' => $filterKondisi, 'lokasi' => $filterLokasi])); ?>" id="btn-export-excel-header" class="btn btn-outline-secondary btn-sm px-3 shadow-sm font-weight-bold" style="border-radius: 8px;" title="Export Excel">
                             <i class="fas fa-file-excel text-success mr-1.5"></i> Export Excel
                         </a>
                     <?php endif; ?>
@@ -330,7 +330,7 @@
                             <button type="submit" class="btn btn-primary btn-sm flex-fill shadow-sm font-weight-bold">
                                 <i class="fas fa-search mr-1"></i> Terapkan Filter
                             </button>
-                            <a href="<?= site_url('admin/inventaris/barang' . (! empty($filterPeruntukan) ? '?peruntukan=' . esc($filterPeruntukan) : '')); ?>" class="btn btn-outline-secondary btn-sm shadow-sm" title="Reset Filter Kategori/Kondisi/Lokasi">
+                            <a href="<?= site_url('admin/inventaris/barang' . (! empty($filterPeruntukan) ? '?peruntukan=' . esc($filterPeruntukan) : '')); ?>" id="btn-reset-filter-inventaris" class="btn btn-outline-secondary btn-sm shadow-sm" title="Reset Filter Kategori/Kondisi/Lokasi">
                                 <i class="fas fa-undo"></i>
                             </a>
                         </div>
@@ -364,7 +364,7 @@
             </div>
 
             <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover w-100 js-datatable" data-order='[[1, "asc"], [2, "asc"]]'>
+                <table id="table-inventaris-barang" class="table table-bordered table-striped table-hover w-100" style="width: 100%;">
                     <thead class="thead-light">
                         <tr style="white-space: nowrap;">
                             <th style="width: 55px;" class="text-center align-middle" data-orderable="false">
@@ -386,119 +386,6 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php $no = 1; foreach (($items ?? []) as $item): ?>
-                            <tr>
-                                <td class="text-center align-middle" style="white-space: nowrap;">
-                                    <input type="checkbox" class="check-sticker-item" value="<?= $item['id']; ?>" title="Pilih aset ini untuk cetak sticker" style="cursor: pointer;">
-                                    <span class="text-muted small ml-1"><?= $no++; ?></span>
-                                </td>
-                                <td class="align-middle font-mono font-weight-bold text-dark" data-order="<?= esc($item['kode_barang']); ?>">
-                                    <?= esc($item['kode_barang']); ?>
-                                </td>
-                                <td class="text-center align-middle" data-order="<?= (int) ($item['nup'] ?? 0); ?>">
-                                    <?php if (! empty($item['nup'])): ?>
-                                        <span class="badge badge-light border font-mono font-weight-bold px-2 py-1">
-                                            <?= esc((string) $item['nup']); ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="text-muted">-</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="text-center align-middle" data-order="<?= ($item['peruntukan'] ?? 'kantor') === 'mobiler' ? 2 : (($item['peruntukan'] ?? 'kantor') === 'lainnya' ? 3 : 1); ?>">
-                                    <?php if (($item['peruntukan'] ?? 'kantor') === 'mobiler'): ?>
-                                        <span class="badge badge-warning text-dark font-weight-bold px-2 py-1" title="Diperuntukkan untuk Mobiler Sekolah">
-                                            <i class="fas fa-school mr-1"></i> Mobiler
-                                        </span>
-                                    <?php elseif (($item['peruntukan'] ?? 'kantor') === 'lainnya'): ?>
-                                        <span class="badge font-weight-bold px-2 py-1" style="background-color: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe;" title="Diperuntukkan untuk Item Lainnya">
-                                            <i class="fas fa-layer-group mr-1"></i> Item Lainnya
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="badge badge-primary font-weight-bold px-2 py-1" title="Diperuntukkan untuk Kantor Satker">
-                                            <i class="fas fa-building mr-1"></i> Kantor
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="align-middle">
-                                    <div class="font-weight-bold text-primary"><?= esc(clean_inventaris_text($item['nama_barang'])); ?></div>
-                                    <?php if (! empty($item['keterangan'])): ?>
-                                        <small class="text-muted d-block mt-0.5"><i class="fas fa-info-circle mr-1"></i><?= esc($item['keterangan']); ?></small>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="align-middle">
-                                    <span class="badge badge-light border px-2 py-1"><?= esc($item['kategori']); ?></span>
-                                </td>
-                                <td class="align-middle"><?= esc(clean_inventaris_text($item['merk_tipe'] ?: '-')); ?></td>
-                                <td class="text-center align-middle font-weight-bold">
-                                    <?= number_format((int) ($item['jumlah'] ?? 1)); ?> <small class="text-muted font-weight-normal"><?= esc($item['satuan'] ?? 'Unit'); ?></small>
-                                </td>
-                                <td class="text-center align-middle">
-                                    <?php if ($item['kondisi'] === 'baik'): ?>
-                                        <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Baik</span>
-                                    <?php elseif ($item['kondisi'] === 'rusak_ringan'): ?>
-                                        <span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-exclamation-triangle mr-1"></i>Rusak Ringan</span>
-                                    <?php else: ?>
-                                        <span class="badge badge-danger px-2 py-1"><i class="fas fa-times-circle mr-1"></i>Rusak Berat</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="align-middle font-weight-medium">
-                                    <i class="fas fa-map-marker-alt text-muted mr-1.5" style="font-size: 0.8rem;"></i>
-                                    <?= esc($item['lokasi_ruangan'] ?: 'Belum ditentukan'); ?>
-                                </td>
-                                <td class="text-center align-middle text-muted">
-                                    <?= esc($item['tahun_perolehan'] ?: '-'); ?>
-                                </td>
-                                <?php if (! empty($can_edit) || ! empty($can_delete) || ! empty($can_export)): ?>
-                                    <td class="text-center align-middle" style="white-space: nowrap;">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <?php if (! empty($can_export)): ?>
-                                                <a href="<?= site_url('admin/inventaris/barang/cetak-sticker?id=' . $item['id']); ?>" target="_blank" class="btn btn-info btn-sm" title="Cetak Sticker BMN (1 Baris 2 Sticker)">
-                                                    <i class="fas fa-qrcode"></i>
-                                                </a>
-                                            <?php endif; ?>
-                                            <?php if (! empty($can_edit)): ?>
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-warning btn-sm btn-edit-inventaris"
-                                                    data-toggle="modal"
-                                                    data-target="#modal-edit-inventaris"
-                                                    data-id="<?= esc((string) $item['id'], 'attr'); ?>"
-                                                    data-kode="<?= esc((string) $item['kode_barang'], 'attr'); ?>"
-                                                    data-nup="<?= esc((string) ($item['nup'] ?? ''), 'attr'); ?>"
-                                                    data-register="<?= esc((string) ($item['kode_register'] ?? ''), 'attr'); ?>"
-                                                    data-peruntukan="<?= esc((string) ($item['peruntukan'] ?? 'kantor'), 'attr'); ?>"
-                                                    data-nama="<?= esc(clean_inventaris_text($item['nama_barang']), 'attr'); ?>"
-                                                    data-kategori="<?= esc((string) $item['kategori'], 'attr'); ?>"
-                                                    data-merk="<?= esc(clean_inventaris_text($item['merk_tipe'] ?? ''), 'attr'); ?>"
-                                                    data-jumlah="<?= esc((string) ($item['jumlah'] ?? 1), 'attr'); ?>"
-                                                    data-satuan="<?= esc((string) ($item['satuan'] ?? 'Unit'), 'attr'); ?>"
-                                                    data-kondisi="<?= esc((string) $item['kondisi'], 'attr'); ?>"
-                                                    data-lokasi="<?= esc((string) $item['lokasi_ruangan'], 'attr'); ?>"
-                                                    data-tahun="<?= esc((string) ($item['tahun_perolehan'] ?? ''), 'attr'); ?>"
-                                                    data-keterangan="<?= esc((string) ($item['keterangan'] ?? ''), 'attr'); ?>"
-                                                    title="Edit Barang"
-                                                >
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                            <?php if (! empty($can_delete)): ?>
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-danger btn-sm btn-delete-inventaris"
-                                                    data-toggle="modal"
-                                                    data-target="#modal-delete-inventaris"
-                                                    data-id="<?= esc((string) $item['id'], 'attr'); ?>"
-                                                    data-nama="<?= esc((string) $item['nama_barang'], 'attr'); ?>"
-                                                    title="Hapus Barang"
-                                                >
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                <?php endif; ?>
-                            </tr>
-                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
@@ -1754,6 +1641,136 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // --- DATATABLE SERVER-SIDE AJAX INITIALIZATION ---
+    var selectedStickerIds = new Set();
+    var hasActionColumn = <?= (! empty($can_edit) || ! empty($can_delete) || ! empty($can_export)) ? 'true' : 'false'; ?>;
+
+    var columnsConfig = [
+        { data: 'checkbox_html', orderable: false, searchable: false, className: 'text-center align-middle', width: '55px' },
+        { data: 'kode_barang', name: 'kode_barang', className: 'align-middle font-mono font-weight-bold text-dark', width: '120px' },
+        { data: 'nup_html', name: 'nup', className: 'text-center align-middle', width: '65px' },
+        { data: 'peruntukan_badge', name: 'peruntukan', className: 'text-center align-middle', width: '100px' },
+        { data: 'nama_barang_html', name: 'nama_barang', className: 'align-middle' },
+        { data: 'kategori_badge', name: 'kategori', className: 'align-middle', width: '130px' },
+        { data: 'merk_tipe_html', name: 'merk_tipe', className: 'align-middle', width: '140px' },
+        { data: 'jumlah_html', name: 'jumlah', className: 'text-center align-middle font-weight-bold', width: '85px' },
+        { data: 'kondisi_badge', name: 'kondisi', className: 'text-center align-middle', width: '110px' },
+        { data: 'lokasi_ruangan_html', name: 'lokasi_ruangan', className: 'align-middle font-weight-medium', width: '140px' },
+        { data: 'tahun_perolehan', name: 'tahun_perolehan', className: 'text-center align-middle text-muted', width: '70px' }
+    ];
+
+    if (hasActionColumn) {
+        columnsConfig.push({
+            data: 'action_html',
+            orderable: false,
+            searchable: false,
+            className: 'text-center align-middle',
+            width: '110px'
+        });
+    }
+
+    var $tableEl = $('#table-inventaris-barang');
+    var tableInventaris = null;
+
+    if ($tableEl.length && $.fn.DataTable) {
+        tableInventaris = $tableEl.DataTable({
+            processing: true,
+            serverSide: true,
+            responsive: false,
+            autoWidth: false,
+            scrollX: true,
+            scrollCollapse: true,
+            order: [[1, 'asc'], [2, 'asc']],
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, 250], [10, 25, 50, 100, 250]],
+            ajax: {
+                url: '<?= site_url('admin/inventaris/barang'); ?>',
+                type: 'GET',
+                data: function(d) {
+                    var filterPeruntukan = $('input[name="peruntukan"]').val() || '';
+                    var filterKategori = $('select[name="kategori"]').val() || '';
+                    var filterKondisi = $('select[name="kondisi"]').val() || '';
+                    var filterLokasi = $('select[name="lokasi"]').val() || '';
+
+                    d.peruntukan = filterPeruntukan;
+                    d.kategori = filterKategori;
+                    d.kondisi = filterKondisi;
+                    d.lokasi = filterLokasi;
+                }
+            },
+            columns: columnsConfig,
+            language: {
+                search: 'Cari:',
+                searchPlaceholder: 'Ketik nama barang, kode, NUP, merk, lokasi...',
+                lengthMenu: 'Tampilkan _MENU_ data',
+                info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+                infoEmpty: 'Tidak ada data',
+                infoFiltered: '(disaring dari _MAX_ total data)',
+                zeroRecords: '<div class="py-4 text-center text-muted"><i class="fas fa-box-open fa-3x mb-2 text-secondary"></i><br>Tidak ada data aset yang sesuai dengan kriteria pencarian/filter.</div>',
+                processing: '<div class="d-flex align-items-center justify-content-center p-3 text-primary"><i class="fas fa-spinner fa-spin fa-2x mr-2"></i><span class="font-weight-bold">Memuat data inventaris...</span></div>',
+                paginate: {
+                    first: 'Awal',
+                    last: 'Akhir',
+                    next: 'Berikutnya',
+                    previous: 'Sebelumnya'
+                }
+            },
+            drawCallback: function() {
+                var pageCheckboxes = document.querySelectorAll('.check-sticker-item');
+                pageCheckboxes.forEach(function(cb) {
+                    cb.checked = selectedStickerIds.has(cb.value);
+                });
+                updateStickerSelectionUI();
+            }
+        });
+
+        tableInventaris.on('search.dt', function() {
+            updateExportUrl();
+        });
+    }
+
+    function updateExportUrl() {
+        var $exportBtn = $('#btn-export-excel-header');
+        if (!$exportBtn.length) return;
+        var p = $('input[name="peruntukan"]').val() || '';
+        var k = $('select[name="kategori"]').val() || '';
+        var c = $('select[name="kondisi"]').val() || '';
+        var l = $('select[name="lokasi"]').val() || '';
+        var s = tableInventaris ? tableInventaris.search() : '';
+        var params = new URLSearchParams();
+        if (p) params.set('peruntukan', p);
+        if (k) params.set('kategori', k);
+        if (c) params.set('kondisi', c);
+        if (l) params.set('lokasi', l);
+        if (s) params.set('keyword', s);
+        $exportBtn.attr('href', '<?= site_url('admin/inventaris/barang/export'); ?>?' + params.toString());
+    }
+
+    var formFilter = document.getElementById('form-filter-inventaris');
+    if (formFilter) {
+        formFilter.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (tableInventaris) {
+                tableInventaris.ajax.reload();
+            }
+            updateExportUrl();
+        });
+    }
+
+    var btnResetFilter = document.getElementById('btn-reset-filter-inventaris');
+    if (btnResetFilter) {
+        btnResetFilter.addEventListener('click', function(e) {
+            e.preventDefault();
+            $('select[name="kategori"]').val('');
+            $('select[name="kondisi"]').val('');
+            $('select[name="lokasi"]').val('');
+            if (tableInventaris) {
+                tableInventaris.search('').ajax.reload();
+            }
+            updateExportUrl();
+        });
+    }
+
     // --- STICKER SELECTION & PRINT HANDLERS ---
     var checkAllStickers = document.getElementById('check-all-stickers');
     var batchToolbar = document.getElementById('batch-sticker-toolbar');
@@ -1769,8 +1786,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var boxRangeInputs = document.getElementById('box-range-inputs');
 
     function updateStickerSelectionUI() {
-        var checkedItems = document.querySelectorAll('.check-sticker-item:checked');
-        var count = checkedItems.length;
+        var count = selectedStickerIds.size;
         if (selectedCountSpan) selectedCountSpan.textContent = count;
         if (selectedCountBtnSpan) selectedCountBtnSpan.textContent = count;
         if (selectedPemeliharaanBtnSpan) selectedPemeliharaanBtnSpan.textContent = count;
@@ -1788,8 +1804,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var allCheckboxes = document.querySelectorAll('.check-sticker-item');
         if (checkAllStickers && allCheckboxes.length > 0) {
-            checkAllStickers.checked = (count === allCheckboxes.length);
-            checkAllStickers.indeterminate = (count > 0 && count < allCheckboxes.length);
+            var allChecked = true;
+            var anyChecked = false;
+            allCheckboxes.forEach(function(cb) {
+                if (cb.checked) {
+                    anyChecked = true;
+                } else {
+                    allChecked = false;
+                }
+            });
+            checkAllStickers.checked = allChecked;
+            checkAllStickers.indeterminate = (!allChecked && anyChecked);
+        } else if (checkAllStickers) {
+            checkAllStickers.checked = false;
+            checkAllStickers.indeterminate = false;
         }
     }
 
@@ -1798,6 +1826,11 @@ document.addEventListener('DOMContentLoaded', function() {
             var isChecked = this.checked;
             document.querySelectorAll('.check-sticker-item').forEach(function(cb) {
                 cb.checked = isChecked;
+                if (isChecked) {
+                    selectedStickerIds.add(cb.value);
+                } else {
+                    selectedStickerIds.delete(cb.value);
+                }
             });
             updateStickerSelectionUI();
         });
@@ -1805,12 +1838,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.addEventListener('change', function(e) {
         if (e.target && e.target.classList.contains('check-sticker-item')) {
+            if (e.target.checked) {
+                selectedStickerIds.add(e.target.value);
+            } else {
+                selectedStickerIds.delete(e.target.value);
+            }
             updateStickerSelectionUI();
         }
     });
 
     if (btnUncheckAll) {
         btnUncheckAll.addEventListener('click', function() {
+            selectedStickerIds.clear();
             document.querySelectorAll('.check-sticker-item').forEach(function(cb) {
                 cb.checked = false;
             });
@@ -1833,13 +1872,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (btnBuatPemeliharaan) {
         btnBuatPemeliharaan.addEventListener('click', function() {
-            var checkedItems = document.querySelectorAll('.check-sticker-item:checked');
-            if (checkedItems.length === 0) {
+            if (selectedStickerIds.size === 0) {
                 alert('Pilih minimal satu aset dengan mencentang checkbox untuk membuat surat pemeliharaan.');
                 return;
             }
 
-            var ids = Array.from(checkedItems).map(function(cb) { return cb.value; });
+            var ids = Array.from(selectedStickerIds);
             window.location.href = '<?= site_url("admin/inventaris/pemeliharaan/tambah"); ?>?ids=' + ids.join(',');
         });
     }
@@ -1861,14 +1899,12 @@ document.addEventListener('DOMContentLoaded', function() {
             var scopeVal = scope ? scope.value : 'filter';
 
             if (scopeVal === 'selected') {
-                var checkedItems = document.querySelectorAll('.check-sticker-item:checked');
-                if (checkedItems.length === 0) {
+                if (selectedStickerIds.size === 0) {
                     e.preventDefault();
                     alert('Silakan centang minimal 1 aset pada tabel untuk dicetak stikernya.');
                     return false;
                 }
-                var ids = [];
-                checkedItems.forEach(function(cb) { ids.push(cb.value); });
+                var ids = Array.from(selectedStickerIds);
                 if (hiddenIdsInput) hiddenIdsInput.value = ids.join(',');
 
                 var p = document.getElementById('modal-filter-peruntukan'); if (p) p.disabled = true;
@@ -1891,11 +1927,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 var re = document.getElementById('modal-range-end'); if (re) re.disabled = false;
             } else {
                 if (hiddenIdsInput) hiddenIdsInput.value = '';
-                var p = document.getElementById('modal-filter-peruntukan'); if (p) p.disabled = false;
-                var k = document.getElementById('modal-filter-kategori'); if (k) k.disabled = false;
-                var c = document.getElementById('modal-filter-kondisi'); if (c) c.disabled = false;
-                var l = document.getElementById('modal-filter-lokasi'); if (l) l.disabled = false;
-                var s = document.getElementById('modal-filter-search'); if (s) s.disabled = false;
+                var filterPeruntukan = $('input[name="peruntukan"]').val() || '';
+                var filterKategori = $('select[name="kategori"]').val() || '';
+                var filterKondisi = $('select[name="kondisi"]').val() || '';
+                var filterLokasi = $('select[name="lokasi"]').val() || '';
+                var searchVal = tableInventaris ? tableInventaris.search() : '';
+
+                var p = document.getElementById('modal-filter-peruntukan'); if (p) { p.disabled = false; p.value = filterPeruntukan; }
+                var k = document.getElementById('modal-filter-kategori'); if (k) { k.disabled = false; k.value = filterKategori; }
+                var c = document.getElementById('modal-filter-kondisi'); if (c) { c.disabled = false; c.value = filterKondisi; }
+                var l = document.getElementById('modal-filter-lokasi'); if (l) { l.disabled = false; l.value = filterLokasi; }
+                var s = document.getElementById('modal-filter-search'); if (s) { s.disabled = false; s.value = searchVal; }
                 var rk = document.getElementById('modal-range-kode'); if (rk) rk.disabled = true;
                 var rs = document.getElementById('modal-range-start'); if (rs) rs.disabled = true;
                 var re = document.getElementById('modal-range-end'); if (re) re.disabled = true;

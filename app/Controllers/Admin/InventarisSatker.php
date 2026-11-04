@@ -98,6 +98,217 @@ class InventarisSatker extends BaseController
 
         $db = db_connect();
 
+        $isDataTableAjax = $this->request->getGet('draw') !== null || ($this->request->isAJAX() && $this->request->getGet('length') !== null);
+
+        if ($isDataTableAjax) {
+            $menuPermissions = $this->resolvePermissions();
+            $canEdit   = (bool) ($menuPermissions['edit'] ?? false);
+            $canDelete = (bool) ($menuPermissions['delete'] ?? false);
+            $canExport = (bool) ($menuPermissions['export'] ?? false);
+
+            $draw   = max(0, (int) ($this->request->getGet('draw') ?? 1));
+            $start  = max(0, (int) ($this->request->getGet('start') ?? 0));
+            $length = (int) ($this->request->getGet('length') ?? 25);
+            if ($length < 1 || $length > 500) {
+                $length = 25;
+            }
+
+            $searchParam = $this->request->getGet('search');
+            $globalSearch = trim((string) (is_array($searchParam) ? ($searchParam['value'] ?? '') : $searchParam));
+
+            $filterPeruntukan = strtolower(trim((string) ($this->request->getGet('peruntukan') ?? '')));
+            $filterKategori   = trim((string) ($this->request->getGet('kategori') ?? ''));
+            $filterKondisi    = trim((string) ($this->request->getGet('kondisi') ?? ''));
+            $filterLokasi     = trim((string) ($this->request->getGet('lokasi') ?? ''));
+            $searchKeyword    = trim((string) ($this->request->getGet('keyword') ?? ''));
+
+            $builder = $db->table('trn_inventaris_satker');
+            $recordsTotal = (int) $db->table('trn_inventaris_satker')->countAllResults();
+
+            // Filters
+            if ($filterPeruntukan === 'kantor') {
+                $builder->groupStart()
+                    ->where('peruntukan', 'kantor')
+                    ->orWhere('peruntukan IS NULL', null, false)
+                    ->orWhere('peruntukan', '')
+                ->groupEnd();
+            } elseif ($filterPeruntukan === 'mobiler') {
+                $builder->where('peruntukan', 'mobiler');
+            } elseif ($filterPeruntukan === 'lainnya') {
+                $builder->where('peruntukan', 'lainnya');
+            }
+
+            if ($filterKategori !== '' && $filterKategori !== '*') {
+                $builder->where('kategori', $filterKategori);
+            }
+            if ($filterKondisi !== '' && $filterKondisi !== '*') {
+                $builder->where('kondisi', $filterKondisi);
+            }
+            if ($filterLokasi !== '' && $filterLokasi !== '*') {
+                $builder->where('lokasi_ruangan', $filterLokasi);
+            }
+
+            $term = $globalSearch !== '' ? $globalSearch : $searchKeyword;
+            if ($term !== '') {
+                $builder->groupStart()
+                    ->like('nama_barang', $term)
+                    ->orLike('kode_barang', $term)
+                    ->orLike('nup', $term)
+                    ->orLike('kode_register', $term)
+                    ->orLike('merk', $term)
+                    ->orLike('tipe', $term)
+                    ->orLike('merk_tipe', $term)
+                    ->orLike('lokasi_ruangan', $term)
+                    ->orLike('kategori', $term)
+                    ->orLike('keterangan', $term)
+                    ->groupEnd();
+            }
+
+            $recordsFiltered = (int) $builder->countAllResults(false);
+
+            // Ordering
+            $orderParam = $this->request->getGet('order');
+            $orderColIdx = (int) ($orderParam[0]['column'] ?? 1);
+            $orderDir    = strtolower((string) ($orderParam[0]['dir'] ?? 'asc')) === 'desc' ? 'DESC' : 'ASC';
+
+            $columnsMap = [
+                0 => 'id',
+                1 => 'kode_barang',
+                2 => 'nup',
+                3 => 'peruntukan',
+                4 => 'nama_barang',
+                5 => 'kategori',
+                6 => 'merk_tipe',
+                7 => 'jumlah',
+                8 => 'kondisi',
+                9 => 'lokasi_ruangan',
+                10 => 'tahun_perolehan',
+            ];
+
+            if ($orderColIdx === 2) {
+                $builder->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', $orderDir, false)
+                    ->orderBy('nup', $orderDir);
+            } elseif ($orderColIdx === 1) {
+                $builder->orderBy('kode_barang', $orderDir)
+                    ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
+                    ->orderBy('nup', 'ASC');
+            } elseif (isset($columnsMap[$orderColIdx])) {
+                $builder->orderBy($columnsMap[$orderColIdx], $orderDir)
+                    ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false);
+            } else {
+                $builder->orderBy('kode_barang', 'ASC')
+                    ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
+                    ->orderBy('nup', 'ASC');
+            }
+
+            $rows = $builder->limit($length, $start)->get()->getResultArray();
+
+            $data = [];
+            foreach ($rows as $idx => $row) {
+                $no = $start + $idx + 1;
+                $id = (int) $row['id'];
+                $kodeBarang = esc((string) $row['kode_barang']);
+                $nupStr = (string) ($row['nup'] ?? '');
+                $nupEsc = esc($nupStr);
+
+                $nupBadge = ($nupStr !== '')
+                    ? '<span class="badge badge-light border font-mono font-weight-bold px-2 py-1">' . $nupEsc . '</span>'
+                    : '<span class="text-muted">-</span>';
+
+                $peruntukanVal = (string) ($row['peruntukan'] ?? 'kantor');
+                if ($peruntukanVal === 'mobiler') {
+                    $peruntukanBadge = '<span class="badge badge-warning text-dark font-weight-bold px-2 py-1" title="Diperuntukkan untuk Mobiler Sekolah"><i class="fas fa-school mr-1"></i> Mobiler</span>';
+                } elseif ($peruntukanVal === 'lainnya') {
+                    $peruntukanBadge = '<span class="badge font-weight-bold px-2 py-1" style="background-color: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe;" title="Diperuntukkan untuk Item Lainnya"><i class="fas fa-layer-group mr-1"></i> Item Lainnya</span>';
+                } else {
+                    $peruntukanBadge = '<span class="badge badge-primary font-weight-bold px-2 py-1" title="Diperuntukkan untuk Kantor Satker"><i class="fas fa-building mr-1"></i> Kantor</span>';
+                }
+
+                $cleanNama = esc(clean_inventaris_text($row['nama_barang']));
+                $namaHtml = '<div class="font-weight-bold text-primary">' . $cleanNama . '</div>';
+                if (! empty($row['keterangan'])) {
+                    $namaHtml .= '<small class="text-muted d-block mt-0.5"><i class="fas fa-info-circle mr-1"></i>' . esc($row['keterangan']) . '</small>';
+                }
+
+                $kategoriBadge = '<span class="badge badge-light border px-2 py-1">' . esc((string) $row['kategori']) . '</span>';
+                $merkTipeHtml = esc(clean_inventaris_text($row['merk_tipe'] ?: '-'));
+                $jumlahHtml = number_format((int) ($row['jumlah'] ?? 1)) . ' <small class="text-muted font-weight-normal">' . esc((string) ($row['satuan'] ?? 'Unit')) . '</small>';
+
+                $kondisiVal = (string) ($row['kondisi'] ?? 'baik');
+                if ($kondisiVal === 'baik') {
+                    $kondisiBadge = '<span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Baik</span>';
+                } elseif ($kondisiVal === 'rusak_ringan') {
+                    $kondisiBadge = '<span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-exclamation-triangle mr-1"></i>Rusak Ringan</span>';
+                } else {
+                    $kondisiBadge = '<span class="badge badge-danger px-2 py-1"><i class="fas fa-times-circle mr-1"></i>Rusak Berat</span>';
+                }
+
+                $lokasiStr = $row['lokasi_ruangan'] ?: 'Belum ditentukan';
+                $lokasiHtml = '<i class="fas fa-map-marker-alt text-muted mr-1.5" style="font-size: 0.8rem;"></i> ' . esc($lokasiStr);
+                $tahunStr = esc((string) ($row['tahun_perolehan'] ?: '-'));
+
+                $checkboxHtml = '<input type="checkbox" class="check-sticker-item" value="' . $id . '" title="Pilih aset ini untuk cetak sticker" style="cursor: pointer;"> <span class="text-muted small ml-1">' . $no . '</span>';
+
+                $actionsHtml = '';
+                if ($canExport || $canEdit || $canDelete) {
+                    $actionsHtml .= '<div class="btn-group btn-group-sm" role="group">';
+                    if ($canExport) {
+                        $actionsHtml .= '<a href="' . site_url('admin/inventaris/barang/cetak-sticker?id=' . $id) . '" target="_blank" class="btn btn-info btn-sm" title="Cetak Sticker BMN (1 Baris 2 Sticker)"><i class="fas fa-qrcode"></i></a>';
+                    }
+                    if ($canEdit) {
+                        $actionsHtml .= '<button type="button" class="btn btn-warning btn-sm btn-edit-inventaris" '
+                            . 'data-toggle="modal" data-target="#modal-edit-inventaris" '
+                            . 'data-id="' . $id . '" '
+                            . 'data-kode="' . esc((string) $row['kode_barang'], 'attr') . '" '
+                            . 'data-nup="' . esc((string) ($row['nup'] ?? ''), 'attr') . '" '
+                            . 'data-register="' . esc((string) ($row['kode_register'] ?? ''), 'attr') . '" '
+                            . 'data-peruntukan="' . esc((string) ($row['peruntukan'] ?? 'kantor'), 'attr') . '" '
+                            . 'data-nama="' . esc(clean_inventaris_text($row['nama_barang']), 'attr') . '" '
+                            . 'data-kategori="' . esc((string) $row['kategori'], 'attr') . '" '
+                            . 'data-merk="' . esc(clean_inventaris_text($row['merk_tipe'] ?? ''), 'attr') . '" '
+                            . 'data-jumlah="' . esc((string) ($row['jumlah'] ?? 1), 'attr') . '" '
+                            . 'data-satuan="' . esc((string) ($row['satuan'] ?? 'Unit'), 'attr') . '" '
+                            . 'data-kondisi="' . esc((string) $row['kondisi'], 'attr') . '" '
+                            . 'data-lokasi="' . esc((string) $row['lokasi_ruangan'], 'attr') . '" '
+                            . 'data-tahun="' . esc((string) ($row['tahun_perolehan'] ?? ''), 'attr') . '" '
+                            . 'data-keterangan="' . esc((string) ($row['keterangan'] ?? ''), 'attr') . '" '
+                            . 'title="Edit Barang"><i class="fas fa-edit"></i></button>';
+                    }
+                    if ($canDelete) {
+                        $actionsHtml .= '<button type="button" class="btn btn-danger btn-sm btn-delete-inventaris" '
+                            . 'data-toggle="modal" data-target="#modal-delete-inventaris" '
+                            . 'data-id="' . $id . '" '
+                            . 'data-nama="' . esc((string) $row['nama_barang'], 'attr') . '" '
+                            . 'title="Hapus Barang"><i class="fas fa-trash"></i></button>';
+                    }
+                    $actionsHtml .= '</div>';
+                }
+
+                $data[] = [
+                    'id'                  => $id,
+                    'checkbox_html'       => $checkboxHtml,
+                    'kode_barang'         => $kodeBarang,
+                    'nup_html'            => $nupBadge,
+                    'peruntukan_badge'    => $peruntukanBadge,
+                    'nama_barang_html'    => $namaHtml,
+                    'kategori_badge'      => $kategoriBadge,
+                    'merk_tipe_html'      => $merkTipeHtml,
+                    'jumlah_html'         => $jumlahHtml,
+                    'kondisi_badge'       => $kondisiBadge,
+                    'lokasi_ruangan_html' => $lokasiHtml,
+                    'tahun_perolehan'     => $tahunStr,
+                    'action_html'         => $actionsHtml,
+                ];
+            }
+
+            return $this->response->setJSON([
+                'draw'            => $draw,
+                'recordsTotal'    => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data'            => $data,
+            ]);
+        }
+
         // Auto-heal: Pastikan seluruh data aset yang peruntukannya masih kosong / NULL di-defaultkan ke 'kantor'
         if ($db->fieldExists('peruntukan', 'trn_inventaris_satker')) {
             $db->table('trn_inventaris_satker')
@@ -108,50 +319,14 @@ class InventarisSatker extends BaseController
                 ->update(['peruntukan' => 'kantor']);
         }
 
-        $model = new InventarisSatkerModel();
-        $builder = $model->builder();
-
         $filterPeruntukan = strtolower(trim((string) $this->request->getGet('peruntukan')));
         $filterKategori   = trim((string) $this->request->getGet('kategori'));
         $filterKondisi    = trim((string) $this->request->getGet('kondisi'));
         $filterLokasi     = trim((string) $this->request->getGet('lokasi'));
         $searchKeyword    = trim((string) $this->request->getGet('keyword'));
 
-        if ($filterPeruntukan === 'kantor') {
-            $builder->groupStart()
-                ->where('peruntukan', 'kantor')
-                ->orWhere('peruntukan IS NULL', null, false)
-                ->orWhere('peruntukan', '')
-            ->groupEnd();
-        } elseif ($filterPeruntukan === 'mobiler') {
-            $builder->where('peruntukan', 'mobiler');
-        } elseif ($filterPeruntukan === 'lainnya') {
-            $builder->where('peruntukan', 'lainnya');
-        }
-        if ($filterKategori !== '' && $filterKategori !== '*') {
-            $builder->where('kategori', $filterKategori);
-        }
-        if ($filterKondisi !== '' && $filterKondisi !== '*') {
-            $builder->where('kondisi', $filterKondisi);
-        }
-        if ($filterLokasi !== '' && $filterLokasi !== '*') {
-            $builder->where('lokasi_ruangan', $filterLokasi);
-        }
-        if ($searchKeyword !== '') {
-            $builder->groupStart()
-                ->like('nama_barang', $searchKeyword)
-                ->orLike('kode_barang', $searchKeyword)
-                ->orLike('nup', $searchKeyword)
-                ->orLike('kode_register', $searchKeyword)
-                ->orLike('merk_tipe', $searchKeyword)
-                ->groupEnd();
-        }
-
-        $items = $builder->orderBy('kode_barang', 'ASC')
-            ->orderBy('CAST(NULLIF(nup, "") AS UNSIGNED)', 'ASC', false)
-            ->orderBy('nup', 'ASC')
-            ->get()
-            ->getResultArray();
+        // Client-side payload is empty because DataTables Server-Side AJAX will asynchronously load pages
+        $items = [];
 
         // Get unique dropdown options
 
