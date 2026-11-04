@@ -506,6 +506,7 @@ class AuthFilter implements FilterInterface
             'admin/master/biaya' => ['table' => 'mst_biaya_harian', 'pk' => 'id'],
             'admin/master/simak' => ['table' => 'mst_simak_konstruksi_item', 'pk' => 'id'],
             'admin/dokumentasi/kegiatan-lapangan' => ['table' => 'kegiatan_lapangan', 'pk' => 'id'],
+            'admin/dokumentasi/kegiatan' => ['table' => 'kegiatan_lapangan', 'pk' => 'id'],
         ];
 
         $table = null;

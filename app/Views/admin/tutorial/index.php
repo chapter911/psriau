@@ -205,8 +205,8 @@ graph TD
     D --> D1["Statistik Aset BMN: Sebaran Kategori, Penempatan Ruangan &amp; Pinjam Pakai"]
     D --> D2["Klasifikasi Kerusakan Sekolah: Donut Chart &amp; Tabel Persentase"]
     
-    A --> E["Row 3: Galeri Dokumentasi Kegiatan Lapangan"]
-    E --> E1["Thumbnail Foto Proyek Terbaru &amp; Badge Tanggal/Lokasi"]
+    A --> E["Row 3: Galeri Dokumentasi Kegiatan"]
+    E --> E1["Thumbnail Foto Proyek Terbaru &amp; Badge Tanggal/Lokasi/Kategori"]
     E1 --> E2["Klik Foto: Modal Preview Resolusi Penuh &amp; Tautan Modul Dokumentasi"]
     
     A --> F["Row 4: Log Aktivitas Sistem &amp; Aksi Cepat"]
@@ -916,6 +916,58 @@ graph TD
                 </pre>
             </div>
         </div>
+    </div>
+
+    <!-- FLOWCHART 12B: DOKUMENTASI - PENGELOLAAN DOKUMENTASI KEGIATAN -->
+    <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-images text-primary mr-2"></i>Flowchart: Alur Pengelolaan Dokumentasi Kegiatan (Kategori Lapangan/Rapat Internal/Rapat External/Kustom, Unggah &amp; Kompresi, Share Link Publik &amp; Unduh ZIP)
+            </h5>
+            <div>
+                <span class="badge badge-success">Dokumentasi</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu: Dokumentasi &gt; Kegiatan (/admin/dokumentasi/kegiatan-lapangan)"] --> B["Daftar Kegiatan: Tabel Server-Side, Filter &amp; Pencarian"]
+    B --> F_SRC["Filter Data: Judul, Kategori (Semua/Lapangan/Rapat Internal/Rapat External/Kustom), Rentang Tanggal &amp; Lokasi"]
+    
+    B --> ACT{"Aksi Pengguna (Icon Buttons &amp; Modal)"}
+    
+    ACT -->|Tambah Kegiatan (FiturAdd)| C["Modal Tambah Kegiatan: Input Cepat &amp; Kompresi Foto di Browser"]
+    C --> C1["Isi Judul Kegiatan, Tanggal &amp; Lokasi"]
+    C --> C2{"Pilih / Input Kategori"}
+    C2 -->|Pilihan Cepat Dropdown| C3["Pilih: Kegiatan Lapangan / Rapat Internal / Rapat External / Kategori Kustom Tersimpan"]
+    C2 -->|Input Manual Select2 Tags| C4["Ketik Nama Kategori Baru langsung di Select2 lalu tekan Enter"]
+    C2 -->|Mode Input Bebas| C5["Klik 'Input Manual' &gt; Ketik Teks Bebas Kategori Baru"]
+    
+    C1 --> C6["Pilih Persentase Kompresi Foto (30% s/d 100%)"]
+    C6 --> C7["Unggah Foto Dokumentasi (Drag &amp; Drop / Pilih Berkas, s/d 200 Foto)"]
+    C7 --> C8["Kompresi Otomatis di Browser &amp; Simpan via AJAX (Tanpa Reload Halaman)"]
+    C8 --> B
+    
+    ACT -->|Pratinjau Foto| G["Modal Galeri Foto: Carousel &amp; Thumbnail Navigasi"]
+    
+    ACT -->|Bagikan Foto (Icon fa-share-alt)| S["Modal Bagikan Galeri: Tautan Permanen Tanpa Batas Kedaluwarsa"]
+    S --> S1["Buat / Salin Tautan Publik /kegiatan-lapangan/share/{token}"]
+    S1 --> S2["Salin Format Pesan WhatsApp Resmi Sekali Klik atau Nonaktifkan Tautan"]
+    
+    ACT -->|Buka Link Publik (Icon fa-external-link-alt)| PUB["Buka Halaman Galeri Publik Kegiatan di Tab Baru"]
+    
+    ACT -->|Ekspor Berkas (Icon fa-file-archive, FiturExport)| Z["Unduh Arsip Lengkap Seluruh Foto dalam Format ZIP"]
+    
+    ACT -->|Ubah Data (Icon fa-edit, FiturEdit)| E["Modal Ubah Kegiatan: Edit Data, Kelola/Hapus Foto Tersimpan, Tambah Foto Baru"]
+    E --> E1["Hapus Satuan Foto Tersimpan via AJAX / Tambah Foto Baru &amp; Simpan"]
+    E1 --> B
+    
+    ACT -->|Hapus Kegiatan (Icon fa-trash-alt, FiturDelete)| D["Konfirmasi SweetAlert2: Hapus Kegiatan &amp; Seluruh Berkas Foto"]
+                </pre>
+            </div>
+        </div>
+    </div>
     <!-- FLOWCHART 13: DOKUMENTASI - WATERMARK FOTO MULTI-FORMAT ALA TIMEMARK -->
     <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,editor,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
@@ -1402,7 +1454,7 @@ graph TD
                                     <br>1. <strong>5 Kartu Metrik Eksekutif</strong>: Ringkasan Aset BMN, Pegawai Aktif (PNS/PPPK/Non-ASN), Prasarana Sekolah &amp; Survei, Laporan Lapangan, dan Paket BAST/Swakelola.
                                     <br>2. <strong>Kalender Terpadu &amp; SIMAK</strong>: Integrasi FullCalendar (Libur, Cuti, Perjadin) berdampingan dengan Bar Chart kelengkapan berkas SIMAK Konstruksi &amp; Konsultasi.
                                     <br>3. <strong>Inventarisasi Aset BMN &amp; Kerusakan Sekolah</strong>: Sebaran kategori aset, aset dipinjam pakai, dan distribusi ruangan bersanding dengan donut chart tingkat kerusakan sekolah.
-                                    <br>4. <strong>Galeri Kegiatan Lapangan Terkini</strong>: Thumbnail foto proyek real-time dengan dialog modal pratinjau foto resolusi penuh.
+                                    <br>4. <strong>Galeri Kegiatan Terkini</strong>: Thumbnail foto kegiatan real-time (kegiatan lapangan, rapat internal, rapat external, dan kategori kustom) dengan dialog modal pratinjau foto resolusi penuh.
                                     <br>5. <strong>Log Aktivitas Pengguna (Live Audit Feed) &amp; Pintasan Menu</strong>: Rekaman riwayat aksi penambahan/perubahan/penghapusan data pengguna real-time serta akses cepat ke modul operasional utama.</p>
                             </div>
                         </div>
@@ -2089,6 +2141,51 @@ graph TD
                     <li><strong>Matriks Hak Akses Role (menu_akses):</strong> Super Administrator dapat mengatur hak akses fitur (View, Add, Edit, Delete, Export) untuk masing-masing role pengguna secara dinamis dan tersimpan di database <code>menu_akses</code>.</li>
                     <li><strong>Server Email &amp; Uji Coba:</strong> Menyediakan pemantauan konfigurasi SMTP dan fitur uji coba pengiriman email langsung untuk memastikan fungsi pengiriman password selalu siap digunakan.</li>
                 </ol>
+            </div>
+        </div>
+
+        <!-- MODUL DOKUMENTASI: KEGIATAN (KEGIATAN LAPANGAN, RAPAT INTERNAL, RAPAT EXTERNAL & KATEGORI KUSTOM) -->
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,editor,all">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-images mr-2"></i> Modul Dokumentasi: Pengelolaan Dokumentasi Kegiatan Satker
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-primary"><i class="fas fa-folder-open mr-1"></i> Alur Kerja &amp; Fitur Unggulan Modul Kegiatan</h6>
+                        <p class="small text-muted mb-2"><code>/admin/dokumentasi/kegiatan-lapangan</code> (Alias: <code>/admin/dokumentasi/kegiatan</code>)</p>
+                        <ol class="pl-3 small mb-0 text-secondary">
+                            <li><strong>Pembaruan Nama Menu &amp; Standarisasi Cakupan:</strong>
+                                Menu yang sebelumnya bernama <em>Kegiatan Lapangan</em> kini diperluas dan distandarisasi menjadi <strong>Kegiatan</strong> saja untuk menampung seluruh dokumentasi visual satuan kerja, baik dokumentasi kegiatan fisik lapangan, rapat internal koordinasi, rapat dinas external bersama stakeholder/kementerian/pemda, maupun kegiatan kedinasan lainnya.
+                            </li>
+                            <li><strong>Fitur Kategori Dinamis &amp; Input Manual:</strong>
+                                <ul>
+                                    <li><strong>Opsi Default:</strong> Tersedia pilihan instan seperti <code>Kegiatan Lapangan</code>, <code>Rapat Internal</code>, dan <code>Rapat External</code>.</li>
+                                    <li><strong>Input Manual via Select2 Tags:</strong> Pengguna dapat mengetikkan nama kategori baru secara langsung pada kotak pilihan pilihan lalu menekan tombol <strong>Enter</strong>. Kategori baru akan langsung terpilih.</li>
+                                    <li><strong>Mode Input Teks Bebas:</strong> Disediakan tombol <code>Input Manual</code> untuk beralih ke kotak input teks biasa bagi pengguna yang lebih menyukai pengetikan langsung, dan dapat beralih kembali ke mode dropdown kapan saja.</li>
+                                    <li><strong>Kategori Tersimpan Otomatis:</strong> Setiap kategori baru yang tersimpan akan otomatis muncul pada opsi dropdown dan filter pencarian berikutnya.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Antarmuka Dialog Modal Interaktif &amp; Kompresi Sisi Klien:</strong>
+                                Penambahan dan pengubahan kegiatan kini dilakukan langsung menggunakan dialog modal terpadu tanpa perlu berpindah halaman (tanpa reload halaman). Didukung kompresi otomatis foto di sisi browser pengguna (default 30% untuk efisiensi penyimpanan &amp; kecepatan transmisi data) dengan fitur <em>Drag &amp; Drop</em> hingga 200 foto. Pada mode ubah, pengguna dapat melihat daftar foto tersimpan dan menghapus foto lama satuan secara langsung via AJAX.
+                            </li>
+                            <li><strong>Tautan Berbagi Galeri Foto Publik Permanen:</strong>
+                                Fitur bagikan galeri foto kini dibuat <strong>permanen</strong> secara default tanpa batas waktu masa berlaku / kedaluwarsa. Dilengkapi kemudahan tombol salin link cepat, pratinjau format pesan resmi WhatsApp terstruktur sekali klik (acara, tanggal, link galeri), tombol akses langsung di tab baru, serta opsi nonaktifkan tautan kapan saja jika sewaktu-waktu ingin dicabut.
+                            </li>
+                            <li><strong>Tombol Aksi Icon Button Ringkas, Bersih &amp; Modern:</strong>
+                                Seluruh aksi pada tabel disederhanakan menggunakan tombol ikon (<em>icon button</em>) yang rapi dan dilengkapi <em>Bootstrap Tooltip</em>: Bagikan Galeri (<code>fas fa-share-alt</code>), Buka Galeri Publik (<code>fas fa-external-link-alt</code>), Unduh Arsip ZIP (<code>fas fa-file-archive</code>), Ubah Data (<code>fas fa-edit</code>), dan Hapus Data (<code>fas fa-trash-alt</code>).
+                            </li>
+                            <li><strong>Unduh Arsip ZIP Sekali Klik:</strong>
+                                Seluruh foto kegiatan dapat diunduh sekaligus dalam format arsip <code>.zip</code> terstruktur dan bersih.
+                            </li>
+                            <li><strong>Proteksi Otorisasi Hak Akses (menu_akses):</strong>
+                                Mengikuti aturan matriks hak akses pada tabel <code>menu_akses</code> (Rule #4): tombol <em>Tambah Kegiatan</em> diproteksi oleh <code>FiturAdd</code>, aksi <em>Ubah</em> oleh <code>FiturEdit</code>, aksi <em>Hapus</em> oleh <code>FiturDelete</code>, dan aksi <em>Download ZIP</em> oleh <code>FiturExport</code>.
+                            </li>
+                        </ol>
+                    </div>
+                </div>
             </div>
         </div>
 

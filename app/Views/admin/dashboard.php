@@ -922,9 +922,9 @@
                 <div class="card-header bg-white py-2 px-3 d-flex flex-wrap justify-content-between align-items-center" style="border-bottom: 1px solid #e9eef5; gap: 8px;">
                     <div>
                         <h6 class="mb-0 font-weight-bold text-dark d-flex align-items-center" style="font-size: 0.95rem;">
-                            <i class="fas fa-camera text-primary mr-2"></i> Dokumentasi Kegiatan Lapangan Terkini
+                            <i class="fas fa-camera text-primary mr-2"></i> Dokumentasi Kegiatan Terkini
                         </h6>
-                        <small class="text-muted" style="font-size: 0.72rem;">Dokumentasi foto kegiatan lapangan real-time dari pelaksana proyek Satker PPS</small>
+                        <small class="text-muted" style="font-size: 0.72rem;">Dokumentasi foto kegiatan lapangan, rapat, dan operasional real-time Satker PPS</small>
                     </div>
                     <div>
                         <a href="<?= site_url('/admin/dokumentasi/kegiatan-lapangan'); ?>" class="btn btn-xs btn-primary font-weight-bold" style="border-radius: 6px; font-size: 0.75rem;">
@@ -939,16 +939,23 @@
                             <?php 
                                 $photoUrl = base_url((string) ($photo['photo_path'] ?? ''));
                                 $activityDate = !empty($photo['activity_date']) ? date('d M Y', strtotime($photo['activity_date'])) : '-';
-                                $photoTitle = (string) ($photo['title'] ?? 'Kegiatan Lapangan');
+                                $photoTitle = (string) ($photo['title'] ?? 'Kegiatan');
                                 $locationText = (string) ($photo['location'] ?? 'Wilayah Satker PPS Riau');
+                                $kategoriText = !empty($photo['kategori']) ? (string) $photo['kategori'] : '';
+                                $metaDisplay = ($kategoriText !== '' ? '[' . $kategoriText . '] ' : '') . $activityDate . ' — ' . $locationText;
                             ?>
                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
                                 <div class="field-photo-card js-photo-preview" 
                                      data-src="<?= esc($photoUrl); ?>" 
                                      data-title="<?= esc($photoTitle); ?>" 
-                                     data-meta="<?= esc($activityDate . ' — ' . $locationText); ?>">
-                                    <div class="field-photo-img-wrap">
+                                     data-meta="<?= esc($metaDisplay); ?>">
+                                    <div class="field-photo-img-wrap position-relative">
                                         <img src="<?= esc($photoUrl); ?>" alt="<?= esc($photoTitle); ?>" loading="lazy">
+                                        <?php if ($kategoriText !== ''): ?>
+                                            <span class="badge badge-light border text-dark position-absolute shadow-sm" style="top: 8px; left: 8px; font-size: 0.65rem; z-index: 2; border-radius: 4px;">
+                                                <?= esc($kategoriText); ?>
+                                            </span>
+                                        <?php endif; ?>
                                         <span class="field-photo-badge">
                                             <i class="far fa-calendar-alt mr-1"></i> <?= esc($activityDate); ?>
                                         </span>

@@ -237,7 +237,7 @@ abstract class BaseController extends Controller
                     'active_pattern' => null,
                     'children'       => [
                         [
-                            'label'          => 'Kegiatan Lapangan',
+                            'label'          => 'Kegiatan',
                             'url'            => '/admin/dokumentasi/kegiatan-lapangan',
                             'icon'           => 'far fa-circle',
                             'active_pattern' => 'admin/dokumentasi/kegiatan-lapangan*',

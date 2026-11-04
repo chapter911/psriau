@@ -3,24 +3,61 @@
 <?= $this->section('content'); ?>
 <div class="card card-primary">
     <div class="card-header">
-        <h3 class="card-title"><?= esc($pageTitle ?? 'Form Kegiatan Lapangan'); ?></h3>
+        <h3 class="card-title"><?= esc($pageTitle ?? 'Form Kegiatan'); ?></h3>
     </div>
     <form action="<?= site_url($actionUrl); ?>" method="post" enctype="multipart/form-data" id="kegiatanLapanganForm" data-skip-confirm="1">
         <div class="card-body">
             <?= csrf_field(); ?>
 
-            <div class="form-group">
-                <label for="title">Judul Kegiatan</label>
-                <input type="text" id="title" name="title" class="form-control" value="<?= old('title', $activity['title'] ?? ''); ?>" required>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="title">Judul Kegiatan <span class="text-danger">*</span></label>
+                    <input type="text" id="title" name="title" class="form-control" value="<?= old('title', $activity['title'] ?? ''); ?>" placeholder="Masukkan judul kegiatan..." required>
+                </div>
+                <div class="form-group col-md-6">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="kategori" class="mb-0">Kategori Kegiatan <span class="text-danger">*</span></label>
+                        <button type="button" class="btn btn-xs btn-outline-secondary" id="btnToggleManualCategory" title="Beralih antara pilihan dropdown atau ketik teks bebas">
+                            <i class="fas fa-keyboard mr-1"></i><span id="btnToggleManualText">Input Manual</span>
+                        </button>
+                    </div>
+                    <?php 
+                        $currentKategori = old('kategori', $activity['kategori'] ?? 'Kegiatan Lapangan');
+                        $catList = $categories ?? ['Kegiatan Lapangan', 'Rapat Internal', 'Rapat External'];
+                    ?>
+                    <!-- Mode Select dengan Fitur Tags / Pencarian -->
+                    <div id="categorySelectWrapper">
+                        <select id="kategori" name="kategori" class="form-control select2" data-tags="true" data-placeholder="-- Pilih atau Ketik Kategori Baru --" required>
+                            <option value="">-- Pilih atau Ketik Kategori Baru --</option>
+                            <?php foreach ($catList as $cat): ?>
+                                <option value="<?= esc($cat); ?>" <?= $currentKategori === $cat ? 'selected' : ''; ?>>
+                                    <?= esc($cat); ?>
+                                </option>
+                            <?php endforeach; ?>
+                            <?php if ($currentKategori !== '' && ! in_array($currentKategori, $catList, true)): ?>
+                                <option value="<?= esc($currentKategori); ?>" selected>
+                                    <?= esc($currentKategori); ?>
+                                </option>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                    <!-- Mode Input Bebas Teks Manual -->
+                    <div id="categoryInputWrapper" class="d-none">
+                        <input type="text" id="kategori_manual" class="form-control" placeholder="Ketik nama kategori baru secara langsung...">
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>Pilih kategori yang tersedia, atau ketik kategori baru lalu tekan Enter (atau klik tombol <em>Input Manual</em>).
+                    </small>
+                </div>
             </div>
             <div class="form-row">
                 <div class="form-group col-md-6">
-                    <label for="activity_date">Tanggal Kegiatan</label>
+                    <label for="activity_date">Tanggal Kegiatan <span class="text-danger">*</span></label>
                     <input type="date" id="activity_date" name="activity_date" class="form-control" value="<?= old('activity_date', isset($activity['activity_date']) ? date('Y-m-d', strtotime($activity['activity_date'])) : ''); ?>" required>
                 </div>
                 <div class="form-group col-md-6">
-                    <label for="location">Lokasi Kegiatan</label>
-                    <input type="text" id="location" name="location" class="form-control" value="<?= old('location', $activity['location'] ?? ''); ?>" required>
+                    <label for="location">Lokasi Kegiatan <span class="text-danger">*</span></label>
+                    <input type="text" id="location" name="location" class="form-control" value="<?= old('location', $activity['location'] ?? ''); ?>" placeholder="Masukkan lokasi pelaksanaan..." required>
                 </div>
             </div>
             <div class="form-group">
@@ -192,6 +229,81 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // Kategori: Select2 with Tags + Toggle Input Manual
+    const categorySelectWrapper = document.getElementById('categorySelectWrapper');
+    const categoryInputWrapper = document.getElementById('categoryInputWrapper');
+    const kategoriSelect = document.getElementById('kategori');
+    const kategoriManual = document.getElementById('kategori_manual');
+    const btnToggle = document.getElementById('btnToggleManualCategory');
+    const btnToggleText = document.getElementById('btnToggleManualText');
+
+    let isManualMode = false;
+
+    if (btnToggle && categorySelectWrapper && categoryInputWrapper && kategoriSelect && kategoriManual) {
+        btnToggle.addEventListener('click', function () {
+            isManualMode = !isManualMode;
+            if (isManualMode) {
+                // Pindah ke mode input teks manual
+                categorySelectWrapper.classList.add('d-none');
+                categoryInputWrapper.classList.remove('d-none');
+                kategoriManual.value = $(kategoriSelect).val() || '';
+                kategoriSelect.removeAttribute('name');
+                kategoriSelect.removeAttribute('required');
+                kategoriManual.setAttribute('name', 'kategori');
+                kategoriManual.setAttribute('required', 'required');
+                kategoriManual.focus();
+                btnToggleText.textContent = 'Pilih dari Dropdown';
+                btnToggle.classList.remove('btn-outline-secondary');
+                btnToggle.classList.add('btn-outline-primary');
+            } else {
+                // Pindah kembali ke mode select
+                const manualVal = (kategoriManual.value || '').trim();
+                if (manualVal !== '') {
+                    let exists = false;
+                    $(kategoriSelect).find('option').each(function () {
+                        if ($(this).val().toLowerCase() === manualVal.toLowerCase()) {
+                            exists = true;
+                            $(kategoriSelect).val($(this).val()).trigger('change');
+                        }
+                    });
+                    if (!exists) {
+                        const newOption = new Option(manualVal, manualVal, true, true);
+                        $(kategoriSelect).append(newOption).trigger('change');
+                    }
+                }
+                categoryInputWrapper.classList.add('d-none');
+                categorySelectWrapper.classList.remove('d-none');
+                kategoriManual.removeAttribute('name');
+                kategoriManual.removeAttribute('required');
+                kategoriSelect.setAttribute('name', 'kategori');
+                kategoriSelect.setAttribute('required', 'required');
+                btnToggleText.textContent = 'Input Manual';
+                btnToggle.classList.remove('btn-outline-primary');
+                btnToggle.classList.add('btn-outline-secondary');
+            }
+        });
+    }
+
+    if (typeof $ !== 'undefined' && $.fn && $.fn.select2 && kategoriSelect) {
+        $(kategoriSelect).select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            tags: true,
+            placeholder: '-- Pilih atau Ketik Kategori Baru --',
+            createTag: function (params) {
+                const term = $.trim(params.term);
+                if (term === '') {
+                    return null;
+                }
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                };
+            }
+        });
+    }
+
     const form = document.getElementById('kegiatanLapanganForm');
     const fileInput = document.getElementById('activity_photos');
     const pickButton = document.getElementById('btnPickPhotos');

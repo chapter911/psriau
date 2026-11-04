@@ -14,14 +14,20 @@ class Dokumentasi extends BaseController
     public function index(): string
     {
         $filterTitle = trim((string) $this->request->getGet('title'));
+        $filterKategori = trim((string) $this->request->getGet('kategori'));
         $filterDateFrom = trim((string) $this->request->getGet('date_from'));
         $filterDateTo = trim((string) $this->request->getGet('date_to'));
         $filterLocation = trim((string) $this->request->getGet('location'));
 
+        $activityModel = new KegiatanLapanganModel();
+
         return view('admin/dokumentasi/index', [
-            'pageTitle' => 'Kegiatan Lapangan',
+            'pageTitle' => 'Kegiatan',
+            'categories' => $activityModel->getCategories(),
+            'permissions' => $this->getKegiatanPermissions(),
             'filters' => [
                 'title' => $filterTitle,
+                'kategori' => $filterKategori,
                 'date_from' => $filterDateFrom,
                 'date_to' => $filterDateTo,
                 'location' => $filterLocation,
@@ -41,6 +47,7 @@ class Dokumentasi extends BaseController
         }
 
         $filterTitle = trim((string) $this->request->getGet('title'));
+        $filterKategori = trim((string) $this->request->getGet('kategori'));
         $filterDateFrom = trim((string) $this->request->getGet('date_from'));
         $filterDateTo = trim((string) $this->request->getGet('date_to'));
         $filterLocation = trim((string) $this->request->getGet('location'));
@@ -48,19 +55,24 @@ class Dokumentasi extends BaseController
 
         $orderColumns = [
             0 => 'title',
-            1 => 'activity_date',
-            2 => 'location',
-            4 => 'created_by',
-            8 => 'id',
+            1 => 'kategori',
+            2 => 'activity_date',
+            3 => 'location',
+            5 => 'created_by',
+            9 => 'id',
         ];
 
-        $orderColumnIndex = (int) ($this->request->getGet('order')[0]['column'] ?? 1);
+        $orderColumnIndex = (int) ($this->request->getGet('order')[0]['column'] ?? 2);
         $orderDirection = strtolower((string) ($this->request->getGet('order')[0]['dir'] ?? 'desc')) === 'asc' ? 'ASC' : 'DESC';
         $orderBy = $orderColumns[$orderColumnIndex] ?? 'activity_date';
 
-        $applyFilters = static function ($builder) use ($filterTitle, $filterDateFrom, $filterDateTo, $filterLocation, $globalSearch): void {
+        $applyFilters = static function ($builder) use ($filterTitle, $filterKategori, $filterDateFrom, $filterDateTo, $filterLocation, $globalSearch): void {
             if ($filterTitle !== '') {
                 $builder->like('title', $filterTitle);
+            }
+
+            if ($filterKategori !== '') {
+                $builder->where('kategori', $filterKategori);
             }
 
             if ($filterDateFrom !== '' && $filterDateTo !== '') {
@@ -79,6 +91,7 @@ class Dokumentasi extends BaseController
             if ($globalSearch !== '') {
                 $builder->groupStart()
                     ->like('title', $globalSearch)
+                    ->orLike('kategori', $globalSearch)
                     ->orLike('location', $globalSearch)
                     ->orLike('created_by', $globalSearch)
                     ->groupEnd();
@@ -138,6 +151,7 @@ class Dokumentasi extends BaseController
             }
         }
 
+        $perms = $this->getKegiatanPermissions();
         $data = [];
         foreach ($rows as $row) {
             $id = (int) ($row['id'] ?? 0);
@@ -161,6 +175,7 @@ class Dokumentasi extends BaseController
             $data[] = [
                 'id' => $id,
                 'title' => (string) ($row['title'] ?? '-'),
+                'kategori' => (string) ($row['kategori'] ?? 'Kegiatan Lapangan'),
                 'activity_date' => (string) ($row['activity_date'] ?? '-'),
                 'location' => (string) ($row['location'] ?? '-'),
                 'created_by' => (string) ($row['created_by'] ?? '-'),
@@ -176,6 +191,9 @@ class Dokumentasi extends BaseController
                 'share_status' => $shareStatus,
                 'edit_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/ubah'),
                 'delete_url' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/hapus'),
+                'can_edit' => $perms['edit'],
+                'can_delete' => $perms['delete'],
+                'can_export' => $perms['export'],
             ];
         }
 
@@ -189,14 +207,28 @@ class Dokumentasi extends BaseController
 
     public function create()
     {
+        $perms = $this->getKegiatanPermissions();
+        if (! $perms['add']) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Akses ditolak. Anda tidak memiliki izin (FiturAdd) untuk menambah kegiatan.',
+                ]);
+            }
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Akses ditolak. Anda tidak memiliki izin (FiturAdd) untuk menambah kegiatan.');
+        }
+
         if ($this->request->getMethod() === 'POST') {
             return $this->saveData();
         }
 
+        $activityModel = new KegiatanLapanganModel();
+
         return view('admin/dokumentasi/form', [
             'activity' => null,
             'photos' => [],
-            'pageTitle' => 'Tambah Kegiatan Lapangan',
+            'categories' => $activityModel->getCategories(),
+            'pageTitle' => 'Tambah Kegiatan',
             'actionUrl' => '/admin/dokumentasi/kegiatan-lapangan/tambah',
             'existingPhotoCount' => 0,
         ]);
@@ -204,12 +236,29 @@ class Dokumentasi extends BaseController
 
     public function edit(int $id)
     {
+        $perms = $this->getKegiatanPermissions();
+        if (! $perms['edit']) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Akses ditolak. Anda tidak memiliki izin (FiturEdit) untuk mengubah kegiatan.',
+                ]);
+            }
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Akses ditolak. Anda tidak memiliki izin (FiturEdit) untuk mengubah kegiatan.');
+        }
+
         $activityModel = new KegiatanLapanganModel();
         $photoModel = new KegiatanLapanganPhotoModel();
 
         $activity = $activityModel->find($id);
         if (! $activity) {
-            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Kegiatan lapangan tidak ditemukan.');
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Kegiatan tidak ditemukan.',
+                ]);
+            }
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Kegiatan tidak ditemukan.');
         }
 
         if ($this->request->getMethod() === 'POST') {
@@ -222,17 +271,91 @@ class Dokumentasi extends BaseController
             ->orderBy('id', 'ASC')
             ->findAll();
 
+        if ($this->request->isAJAX() || $this->request->getGet('format') === 'json') {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'activity' => [
+                    'id' => (int) $activity['id'],
+                    'title' => (string) ($activity['title'] ?? ''),
+                    'kategori' => (string) ($activity['kategori'] ?? 'Kegiatan Lapangan'),
+                    'activity_date' => (string) ($activity['activity_date'] ?? ''),
+                    'location' => (string) ($activity['location'] ?? ''),
+                    'created_by' => (string) ($activity['created_by'] ?? ''),
+                ],
+                'photos' => array_map(static fn (array $p): array => [
+                    'id' => (int) ($p['id'] ?? 0),
+                    'photo_path' => (string) ($p['photo_path'] ?? ''),
+                    'photo_name' => (string) ($p['photo_name'] ?? 'Foto'),
+                ], $photos),
+                'existingPhotoCount' => count($photos),
+                'actionUrl' => site_url('/admin/dokumentasi/kegiatan-lapangan/' . $id . '/ubah'),
+            ]);
+        }
+
         return view('admin/dokumentasi/form', [
             'activity' => $activity,
             'photos' => $photos,
-            'pageTitle' => 'Ubah Kegiatan Lapangan',
+            'categories' => $activityModel->getCategories(),
+            'pageTitle' => 'Ubah Kegiatan',
             'actionUrl' => '/admin/dokumentasi/kegiatan-lapangan/' . $id . '/ubah',
             'existingPhotoCount' => count($photos),
         ]);
     }
 
+    public function deletePhoto(int $photoId)
+    {
+        if (! $this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status' => 'error',
+                'message' => 'Permintaan tidak valid.',
+            ]);
+        }
+
+        $perms = $this->getKegiatanPermissions();
+        if (! $perms['edit']) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'status' => 'error',
+                'message' => 'Akses ditolak. Anda tidak memiliki izin (FiturEdit) untuk mengubah kegiatan.',
+            ]);
+        }
+
+        $photoModel = new KegiatanLapanganPhotoModel();
+        $photo = $photoModel->find($photoId);
+        if (! $photo) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status' => 'error',
+                'message' => 'Foto tidak ditemukan.',
+            ]);
+        }
+
+        $activityId = (int) ($photo['activity_id'] ?? 0);
+        $totalPhotos = $photoModel->where('activity_id', $activityId)->countAllResults();
+        if ($totalPhotos <= 1) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'status' => 'error',
+                'message' => 'Minimal harus menyisakan 1 foto untuk kegiatan ini.',
+            ]);
+        }
+
+        $this->deleteLocalImage($photo['photo_path'] ?? null);
+        $photoModel->delete($photoId);
+
+        return $this->response->setJSON([
+            'status' => 'ok',
+            'message' => 'Foto berhasil dihapus.',
+            'remaining_photos' => $totalPhotos - 1,
+            'csrf_token' => csrf_token(),
+            'csrf_hash' => csrf_hash(),
+        ]);
+    }
+
     public function delete(int $id)
     {
+        $perms = $this->getKegiatanPermissions();
+        if (! $perms['delete']) {
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Akses ditolak. Anda tidak memiliki izin (FiturDelete) untuk menghapus kegiatan.');
+        }
+
         $activityModel = new KegiatanLapanganModel();
         $photoModel = new KegiatanLapanganPhotoModel();
 
@@ -247,7 +370,7 @@ class Dokumentasi extends BaseController
             $activityModel->delete($id);
         }
 
-        return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan lapangan berhasil dihapus.');
+        return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan berhasil dihapus.');
     }
 
     public function createShare(int $id)
@@ -266,31 +389,12 @@ class Dokumentasi extends BaseController
         if (! $activity) {
             return $this->response->setStatusCode(404)->setJSON([
                 'status' => 'error',
-                'message' => 'Kegiatan lapangan tidak ditemukan.',
+                'message' => 'Kegiatan tidak ditemukan.',
             ]);
         }
 
-        $duration = trim((string) $this->request->getPost('duration'));
-        $durationMap = [
-            '1day' => '+1 day',
-            '1week' => '+1 week',
-            '1month' => '+1 month',
-            'permanent' => null,
-        ];
-
-        if (! array_key_exists($duration, $durationMap)) {
-            return $this->response->setStatusCode(422)->setJSON([
-                'status' => 'error',
-                'message' => 'Durasi berbagi tidak valid.',
-            ]);
-        }
-
+        // Tautan berbagi dibuat permanen (expires_at = null)
         $expiresAt = null;
-        $expiresAtDate = null;
-        if ($durationMap[$duration] !== null) {
-            $expiresAtDate = date('Y-m-d', strtotime($durationMap[$duration]));
-            $expiresAt = $expiresAtDate . ' 23:59:59';
-        }
 
         $existingShare = $shareModel->where('activity_id', $id)->first();
         $token = is_array($existingShare) ? (string) ($existingShare['share_token'] ?? '') : '';
@@ -321,10 +425,10 @@ class Dokumentasi extends BaseController
 
         return $this->response->setJSON([
             'status' => 'ok',
-            'message' => $isUpdate ? 'Durasi tautan berbagi berhasil diperbarui.' : 'Tautan berbagi berhasil dibuat.',
+            'message' => $isUpdate ? 'Tautan berbagi permanen berhasil diaktifkan kembali.' : 'Tautan berbagi permanen berhasil dibuat.',
             'share_url' => site_url('/kegiatan-lapangan/share/' . $token),
             'activity_date' => (string) ($activity['activity_date'] ?? ''),
-            'expires_at' => $expiresAtDate,
+            'expires_at' => null,
             'is_update' => $isUpdate,
             'csrf_token' => csrf_token(),
             'csrf_hash' => csrf_hash(),
@@ -439,11 +543,16 @@ class Dokumentasi extends BaseController
 
     public function downloadZip(int $id)
     {
+        $perms = $this->getKegiatanPermissions();
+        if (! $perms['export']) {
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Akses ditolak. Anda tidak memiliki izin (FiturExport) untuk mengunduh arsip foto kegiatan.');
+        }
+
         $activityModel = new KegiatanLapanganModel();
 
         $activity = $activityModel->find($id);
         if (! $activity) {
-            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Kegiatan lapangan tidak ditemukan.');
+            return redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('error', 'Kegiatan tidak ditemukan.');
         }
 
         $zipResult = $this->buildActivityZip((int) $id, (string) ($activity['title'] ?? 'kegiatan-lapangan'));
@@ -634,14 +743,23 @@ class Dokumentasi extends BaseController
     {
         $isAjax = $this->request->isAJAX();
         $activityTitle = trim((string) $this->request->getPost('title'));
+        $kategori = trim((string) $this->request->getPost('kategori'));
         $activityDate = trim((string) $this->request->getPost('activity_date'));
         $location = trim((string) $this->request->getPost('location'));
+
+        if ($kategori === '') {
+            $kategori = 'Kegiatan Lapangan';
+        }
 
         $validationErrors = [];
         if ($activityTitle === '') {
             $validationErrors['title'] = 'Judul kegiatan wajib diisi.';
         } elseif (mb_strlen($activityTitle) < 3) {
             $validationErrors['title'] = 'Judul kegiatan minimal 3 karakter.';
+        }
+
+        if (mb_strlen($kategori) > 100) {
+            $validationErrors['kategori'] = 'Kategori kegiatan maksimal 100 karakter.';
         }
 
         if ($location === '') {
@@ -678,6 +796,7 @@ class Dokumentasi extends BaseController
 
         $payload = [
             'title' => $activityTitle,
+            'kategori' => $kategori,
             'activity_date' => $activityDate !== '' ? $activityDate : null,
             'location' => $location,
             'created_by' => $creatorName,
@@ -716,10 +835,12 @@ class Dokumentasi extends BaseController
             return $isAjax
                 ? $this->response->setJSON([
                     'status' => 'ok',
-                    'message' => 'Kegiatan lapangan berhasil ditambahkan.',
+                    'message' => 'Kegiatan berhasil ditambahkan.',
                     'redirect' => site_url('/admin/dokumentasi/kegiatan-lapangan'),
+                    'csrf_token' => csrf_token(),
+                    'csrf_hash' => csrf_hash(),
                 ])
-                : redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan lapangan berhasil ditambahkan.');
+                : redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan berhasil ditambahkan.');
         }
 
         $existingPhotoRows = $photoModel
@@ -736,6 +857,8 @@ class Dokumentasi extends BaseController
                 ? $this->response->setStatusCode(422)->setJSON([
                     'status' => 'error',
                     'message' => $uploadedPhotos['error'],
+                    'csrf_token' => csrf_token(),
+                    'csrf_hash' => csrf_hash(),
                 ])
                 : redirect()->back()->withInput()->with('error', $uploadedPhotos['error']);
         }
@@ -745,6 +868,8 @@ class Dokumentasi extends BaseController
                 ? $this->response->setStatusCode(422)->setJSON([
                     'status' => 'error',
                     'message' => 'Minimal satu foto kegiatan harus dipilih.',
+                    'csrf_token' => csrf_token(),
+                    'csrf_hash' => csrf_hash(),
                 ])
                 : redirect()->back()->withInput()->with('error', 'Minimal satu foto kegiatan harus dipilih.');
         }
@@ -755,10 +880,12 @@ class Dokumentasi extends BaseController
         return $isAjax
             ? $this->response->setJSON([
                 'status' => 'ok',
-                'message' => 'Kegiatan lapangan berhasil diperbarui.',
+                'message' => 'Kegiatan berhasil diperbarui.',
                 'redirect' => site_url('/admin/dokumentasi/kegiatan-lapangan'),
+                'csrf_token' => csrf_token(),
+                'csrf_hash' => csrf_hash(),
             ])
-            : redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan lapangan berhasil diperbarui.');
+            : redirect()->to('/admin/dokumentasi/kegiatan-lapangan')->with('message', 'Kegiatan berhasil diperbarui.');
     }
 
     private function processUploadedPhotos(string $fieldName, int $existingPhotoCount = 0, int $activityId = 0, ?string $activityTitle = null): array
@@ -2828,6 +2955,82 @@ class Dokumentasi extends BaseController
             $row = $db->table($tbl)
                 ->select('id')
                 ->where('LOWER(link)', $normalizedLink)
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (string) $row['id'];
+            }
+        }
+
+        return null;
+    }
+
+    private function getKegiatanPermissions(): array
+    {
+        $default = [
+            'add'      => true,
+            'edit'     => true,
+            'delete'   => true,
+            'export'   => true,
+            'import'   => false,
+            'approval' => false,
+        ];
+
+        $rawRole = (string) (session()->get('role') ?? '');
+        $normalizedRole = strtolower(trim($rawRole));
+
+        if (in_array($normalizedRole, ['super administrator', 'super_administrator', 'superadmin', 'super-admin'], true)) {
+            return $default;
+        }
+
+        $db = db_connect();
+        if (! $db->tableExists('menu_akses')) {
+            return $default;
+        }
+
+        $roleId = $this->resolveWatermarkRoleId($rawRole, $db);
+        $menuId = $this->resolveKegiatanMenuId('admin/dokumentasi/kegiatan-lapangan', $db);
+        if ($roleId === null || $menuId === null) {
+            return $default;
+        }
+
+        $roleColumn = $db->fieldExists('role_id', 'menu_akses') ? 'role_id' : 'group_id';
+        $row = $db->table('menu_akses')
+            ->select('FiturAdd, FiturEdit, FiturDelete, FiturExport, FiturImport, FiturApproval')
+            ->where($roleColumn, $roleId)
+            ->where('menu_id', $menuId)
+            ->get()
+            ->getRowArray();
+
+        if (! is_array($row)) {
+            return $default;
+        }
+
+        return [
+            'add'      => (int) ($row['FiturAdd'] ?? 0) === 1,
+            'edit'     => (int) ($row['FiturEdit'] ?? 0) === 1,
+            'export'   => (int) ($row['FiturExport'] ?? 0) === 1,
+            'delete'   => (int) ($row['FiturDelete'] ?? 0) === 1,
+            'import'   => (int) ($row['FiturImport'] ?? 0) === 1,
+            'approval' => (int) ($row['FiturApproval'] ?? 0) === 1,
+        ];
+    }
+
+    private function resolveKegiatanMenuId(string $menuLink, $db): ?string
+    {
+        $normalizedLink = trim(strtolower($menuLink), '/');
+        $tables = ['menu_lv2', 'menu_lv1', 'menu_lv3'];
+
+        foreach ($tables as $tbl) {
+            if (! $db->tableExists($tbl)) {
+                continue;
+            }
+
+            $row = $db->table($tbl)
+                ->select('id')
+                ->where('LOWER(link)', $normalizedLink)
+                ->orWhere('LOWER(link)', '/' . $normalizedLink)
                 ->get()
                 ->getRowArray();
 

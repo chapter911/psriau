@@ -1439,8 +1439,13 @@ class Dashboard extends BaseController
         }
 
         try {
+            $selectCols = 'p.id, p.activity_id, p.photo_path, p.photo_name, k.title, k.activity_date, k.location';
+            if ($db->fieldExists('kategori', 'kegiatan_lapangan')) {
+                $selectCols .= ', k.kategori';
+            }
+
             return $db->table('kegiatan_lapangan_photos p')
-                ->select('p.id, p.activity_id, p.photo_path, p.photo_name, k.title, k.activity_date, k.location')
+                ->select($selectCols)
                 ->join('kegiatan_lapangan k', 'p.activity_id = k.id', 'inner')
                 ->orderBy('p.id', 'DESC')
                 ->limit($limit)

@@ -20,6 +20,9 @@ $routes->addRedirect('berita/(.*)', 'instagram/$1', 301);
 $routes->get('kegiatan-lapangan/share/(:segment)', 'Admin\\Dokumentasi::sharedGallery/$1');
 $routes->get('kegiatan-lapangan/share/(:segment)/download-zip', 'Admin\\Dokumentasi::sharedDownloadZip/$1');
 $routes->get('kegiatan-lapangan/share/(:segment)/download-photo/(:num)', 'Admin\\Dokumentasi::sharedDownloadPhoto/$1/$2');
+$routes->get('kegiatan/share/(:segment)', 'Admin\\Dokumentasi::sharedGallery/$1');
+$routes->get('kegiatan/share/(:segment)/download-zip', 'Admin\\Dokumentasi::sharedDownloadZip/$1');
+$routes->get('kegiatan/share/(:segment)/download-photo/(:num)', 'Admin\\Dokumentasi::sharedDownloadPhoto/$1/$2');
 $routes->get('simak/share/(:segment)', 'Admin\\Kontrak::sharedSimak/$1');
 $routes->post('simak/share/(:segment)/otp/request', 'Admin\\Kontrak::sharedRequestOtp/$1');
 $routes->post('simak/share/(:segment)/otp/verify', 'Admin\\Kontrak::sharedVerifyOtp/$1');
@@ -430,6 +433,18 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'dokumentasi/kegiatan-lapangan/tambah', 'Admin\\Dokumentasi::create');
 	$routes->match(['get', 'post'], 'dokumentasi/kegiatan-lapangan/(:num)/ubah', 'Admin\\Dokumentasi::edit/$1');
 	$routes->post('dokumentasi/kegiatan-lapangan/(:num)/hapus', 'Admin\\Dokumentasi::delete/$1');
+	$routes->post('dokumentasi/kegiatan-lapangan/photo/(:num)/hapus', 'Admin\\Dokumentasi::deletePhoto/$1');
+
+	// Alias rute Kegiatan (Dokumentasi Kegiatan)
+	$routes->get('dokumentasi/kegiatan', 'Admin\\Dokumentasi::index');
+	$routes->get('dokumentasi/kegiatan/data', 'Admin\\Dokumentasi::dataTable');
+	$routes->get('dokumentasi/kegiatan/(:num)/download-zip', 'Admin\\Dokumentasi::downloadZip/$1');
+	$routes->post('dokumentasi/kegiatan/(:num)/share', 'Admin\\Dokumentasi::createShare/$1');
+	$routes->post('dokumentasi/kegiatan/(:num)/share/deactivate', 'Admin\\Dokumentasi::deactivateShare/$1');
+	$routes->match(['get', 'post'], 'dokumentasi/kegiatan/tambah', 'Admin\\Dokumentasi::create');
+	$routes->match(['get', 'post'], 'dokumentasi/kegiatan/(:num)/ubah', 'Admin\\Dokumentasi::edit/$1');
+	$routes->post('dokumentasi/kegiatan/(:num)/hapus', 'Admin\\Dokumentasi::delete/$1');
+	$routes->post('dokumentasi/kegiatan/photo/(:num)/hapus', 'Admin\\Dokumentasi::deletePhoto/$1');
 
 	// Watermark Foto
 	$routes->get('dokumentasi/watermark-foto', 'Admin\\Dokumentasi::watermarkFoto');

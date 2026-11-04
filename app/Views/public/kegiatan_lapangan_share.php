@@ -7,8 +7,11 @@
             <div class="gallery-hero-inner">
                 <div class="gallery-hero-copy">
                     <div class="gallery-hero-kicker">Dokumentasi Resmi</div>
-                    <h1 class="gallery-hero-title">Galeri Kegiatan Lapangan</h1>
+                    <h1 class="gallery-hero-title">Galeri Kegiatan</h1>
                     <p class="gallery-hero-subtitle">
+                        <?php if (! empty($activity['kategori'])): ?>
+                            <span class="badge badge-light border text-dark mr-1" style="font-size: 0.85rem; vertical-align: middle;"><?= esc((string) $activity['kategori']); ?></span>
+                        <?php endif; ?>
                         <?= esc((string) ($activity['title'] ?? '-')); ?>
                         <?php if (! empty($activity['activity_date'])): ?>
                             · <?= esc((string) $activity['activity_date']); ?>
@@ -22,6 +25,8 @@
                         <span class="gallery-meta-item"><i class="fas fa-link"></i> Akses publik via tautan</span>
                         <?php if (! empty($expiresAt)): ?>
                             <span class="gallery-meta-item"><i class="fas fa-clock"></i> Aktif sampai <?= esc((string) $expiresAt); ?></span>
+                        <?php else: ?>
+                            <span class="gallery-meta-item"><i class="fas fa-infinity"></i> Akses Permanen</span>
                         <?php endif; ?>
                     </div>
                 </div>
