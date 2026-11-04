@@ -76,6 +76,18 @@
         height: 3.5px;
         background: #7c3aed;
     }
+    .inv-kpi-tile.active-belum {
+        background: #f8fafc;
+        border-color: #64748b;
+        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.15);
+    }
+    .inv-kpi-tile.active-belum::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3.5px;
+        background: #64748b;
+    }
     .inv-kpi-icon {
         width: 42px;
         height: 42px;
@@ -147,10 +159,10 @@
                 </div>
             </div>
 
-            <!-- Row 2: 5 Interactive KPI Tiles (Click to Quick Filter Peruntukan) -->
+            <!-- Row 2: 6 Interactive KPI Tiles (Click to Quick Filter Peruntukan) -->
             <div class="row" style="margin-left: -6px; margin-right: -6px;">
                 <!-- Tile 1: Semua Barang -->
-                <div class="col-12 col-sm-6 col-lg-4 col-xl px-1 mb-2 mb-xl-0">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 px-1 mb-2 mb-xl-0">
                     <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => '']))); ?>" class="inv-kpi-tile <?= empty($filterPeruntukan) ? 'active-all' : ''; ?>" title="Klik untuk menampilkan seluruh barang">
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <span class="small font-weight-bold text-muted text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem;">Semua Barang</span>
@@ -162,14 +174,14 @@
                             <?= number_format((int) ($summary['total'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
                         </div>
                         <div class="small <?= empty($filterPeruntukan) ? 'text-primary font-weight-bold' : 'text-muted'; ?> mt-1">
-                            <?= empty($filterPeruntukan) ? '● Menampilkan Semua' : 'Klik tampilkan semua'; ?>
+                            <?= empty($filterPeruntukan) ? '● Tampilkan Semua' : 'Seluruh Master Aset'; ?>
                         </div>
                     </a>
                 </div>
 
                 <!-- Tile 2: Kantor / Satker -->
-                <div class="col-12 col-sm-6 col-lg-4 col-xl px-1 mb-2 mb-xl-0">
-                    <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => 'kantor']))); ?>" class="inv-kpi-tile <?= ($filterPeruntukan === 'kantor') ? 'active-kantor' : ''; ?>" title="Klik untuk menyaring khusus aset Kantor Satker">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 px-1 mb-2 mb-xl-0">
+                    <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => 'kantor']))); ?>" class="inv-kpi-tile <?= ($filterPeruntukan === 'kantor') ? 'active-kantor' : ''; ?>" title="Klik untuk menyaring khusus aset operasional Kantor Satker (DBR)">
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <span class="small font-weight-bold text-primary text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem;">Kantor / Satker</span>
                             <div class="inv-kpi-icon" style="background-color: #dbeafe; color: #1d4ed8;">
@@ -185,8 +197,26 @@
                     </a>
                 </div>
 
-                <!-- Tile 3: Mobiler / Sekolah -->
-                <div class="col-12 col-sm-6 col-lg-4 col-xl px-1 mb-2 mb-xl-0">
+                <!-- Tile 3: Belum Ditentukan -->
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 px-1 mb-2 mb-xl-0">
+                    <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => 'belum_ditentukan']))); ?>" class="inv-kpi-tile <?= ($filterPeruntukan === 'belum_ditentukan') ? 'active-belum' : ''; ?>" title="Klik untuk menyaring aset yang belum berlokasi / belum ditentukan peruntukannya">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="small font-weight-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem; color: #475569 !important;">Belum Ditentukan</span>
+                            <div class="inv-kpi-icon" style="background-color: #f1f5f9; color: #475569;">
+                                <i class="fas fa-question-circle"></i>
+                            </div>
+                        </div>
+                        <div class="h4 font-weight-bold text-dark mb-0" style="letter-spacing: -0.5px;">
+                            <?= number_format((int) ($summary['total_belum_ditentukan'] ?? $summary['belum_ditentukan'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
+                        </div>
+                        <div class="small <?= ($filterPeruntukan === 'belum_ditentukan') ? 'font-weight-bold' : 'text-muted'; ?> mt-1" style="<?= ($filterPeruntukan === 'belum_ditentukan') ? 'color: #334155 !important;' : ''; ?>">
+                            <?= ($filterPeruntukan === 'belum_ditentukan') ? '● Filter: Belum Ditentukan' : 'Belum Berlokasi di DBR'; ?>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Tile 4: Mobiler / Sekolah -->
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 px-1 mb-2 mb-xl-0">
                     <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => 'mobiler']))); ?>" class="inv-kpi-tile <?= ($filterPeruntukan === 'mobiler') ? 'active-mobiler' : ''; ?>" title="Klik untuk menyaring khusus aset Mobiler Sekolah">
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <span class="small font-weight-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem; color: #b45309 !important;">Mobiler / Sekolah</span>
@@ -198,13 +228,13 @@
                             <?= number_format((int) ($summary['total_mobiler'] ?? $summary['mobiler'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
                         </div>
                         <div class="small <?= ($filterPeruntukan === 'mobiler') ? 'font-weight-bold' : 'text-muted'; ?> mt-1" style="<?= ($filterPeruntukan === 'mobiler') ? 'color: #b45309 !important;' : ''; ?>">
-                            <?= ($filterPeruntukan === 'mobiler') ? '● Filter: Mobiler Sekolah' : 'Sarpras Binaan Sekolah'; ?>
+                            <?= ($filterPeruntukan === 'mobiler') ? '● Filter: Mobiler' : 'Bantuan Sarpras Sekolah'; ?>
                         </div>
                     </a>
                 </div>
 
-                <!-- Tile 4: Item Lainnya -->
-                <div class="col-12 col-sm-6 col-lg-4 col-xl px-1 mb-2 mb-xl-0">
+                <!-- Tile 5: Item Lainnya -->
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 px-1 mb-2 mb-xl-0">
                     <a href="<?= site_url('admin/inventaris/barang?' . http_build_query(array_merge($_GET, ['peruntukan' => 'lainnya']))); ?>" class="inv-kpi-tile <?= ($filterPeruntukan === 'lainnya') ? 'active-lainnya' : ''; ?>" title="Klik untuk menyaring khusus Item Lainnya">
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <span class="small font-weight-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem; color: #6d28d9 !important;">Item Lainnya</span>
@@ -216,13 +246,13 @@
                             <?= number_format((int) ($summary['total_lainnya'] ?? $summary['lainnya'] ?? 0)); ?> <small class="text-muted" style="font-size: 0.82rem; font-weight: normal;">unit</small>
                         </div>
                         <div class="small <?= ($filterPeruntukan === 'lainnya') ? 'font-weight-bold' : 'text-muted'; ?> mt-1" style="<?= ($filterPeruntukan === 'lainnya') ? 'color: #6d28d9 !important;' : ''; ?>">
-                            <?= ($filterPeruntukan === 'lainnya') ? '● Filter: Item Lainnya' : 'Pendataan Aset Lainnya'; ?>
+                            <?= ($filterPeruntukan === 'lainnya') ? '● Filter: Item Lainnya' : 'Aset Khusus / Renovasi'; ?>
                         </div>
                     </a>
                 </div>
 
-                <!-- Tile 5: Kondisi Fisik -->
-                <div class="col-12 col-sm-6 col-lg-4 col-xl px-1">
+                <!-- Tile 6: Kondisi Fisik -->
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-2 px-1">
                     <div class="inv-kpi-tile" style="cursor: default;">
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <span class="small font-weight-bold text-muted text-uppercase" style="letter-spacing: 0.5px; font-size: 0.72rem;">Kondisi Fisik</span>
@@ -262,9 +292,17 @@
                     <span class="badge badge-primary ml-2 px-2 py-1">
                         <i class="fas fa-building mr-1"></i> Difilter: Kantor / Satker
                     </span>
+                <?php elseif ($filterPeruntukan === 'belum_ditentukan'): ?>
+                    <span class="badge ml-2 px-2 py-1" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+                        <i class="fas fa-question-circle mr-1"></i> Difilter: Belum Ditentukan
+                    </span>
                 <?php elseif ($filterPeruntukan === 'mobiler'): ?>
                     <span class="badge badge-warning text-dark ml-2 px-2 py-1">
                         <i class="fas fa-school mr-1"></i> Difilter: Mobiler / Sekolah
+                    </span>
+                <?php elseif ($filterPeruntukan === 'lainnya'): ?>
+                    <span class="badge ml-2 px-2 py-1" style="background-color: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe;">
+                        <i class="fas fa-layer-group mr-1"></i> Difilter: Item Lainnya
                     </span>
                 <?php else: ?>
                     <span class="badge badge-secondary ml-2 px-2 py-1">
@@ -488,15 +526,23 @@
                             <label class="font-weight-bold small text-dark d-block mb-2">Peruntukan Aset <span class="text-danger">*</span></label>
                             <div class="card p-2 mb-0" style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
                                 <div class="row align-items-center">
-                                    <div class="col-md-4 col-sm-6 mb-2 mb-md-0">
+                                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
                                         <div class="custom-control custom-radio">
-                                            <input type="radio" id="tambah_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input" checked>
+                                            <input type="radio" id="tambah_peruntukan_belum" name="peruntukan" value="belum_ditentukan" class="custom-control-input" checked>
+                                            <label class="custom-control-label font-weight-bold text-secondary" for="tambah_peruntukan_belum" style="cursor: pointer;">
+                                                <i class="fas fa-question-circle mr-1"></i> Belum Ditentukan
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                                        <div class="custom-control custom-radio">
+                                            <input type="radio" id="tambah_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input">
                                             <label class="custom-control-label font-weight-bold text-primary" for="tambah_peruntukan_kantor" style="cursor: pointer;">
                                                 <i class="fas fa-building mr-1"></i> Kantor (Satker)
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 col-sm-6 mb-2 mb-md-0">
+                                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
                                         <div class="custom-control custom-radio">
                                             <input type="radio" id="tambah_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
                                             <label class="custom-control-label font-weight-bold text-warning" for="tambah_peruntukan_mobiler" style="cursor: pointer;">
@@ -504,7 +550,7 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 col-sm-12">
+                                    <div class="col-md-3 col-sm-6">
                                         <div class="custom-control custom-radio">
                                             <input type="radio" id="tambah_peruntukan_lainnya" name="peruntukan" value="lainnya" class="custom-control-input">
                                             <label class="custom-control-label font-weight-bold" style="color: #7c3aed; cursor: pointer;" for="tambah_peruntukan_lainnya">
@@ -625,15 +671,23 @@
                             <label class="font-weight-bold small text-dark d-block mb-2">Peruntukan Aset <span class="text-danger">*</span></label>
                             <div class="card p-2 mb-0" style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
                                 <div class="row align-items-center">
-                                    <div class="col-md-4 col-sm-6 mb-2 mb-md-0">
+                                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
                                         <div class="custom-control custom-radio">
-                                            <input type="radio" id="edit_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input" checked>
+                                            <input type="radio" id="edit_peruntukan_belum" name="peruntukan" value="belum_ditentukan" class="custom-control-input">
+                                            <label class="custom-control-label font-weight-bold text-secondary" for="edit_peruntukan_belum" style="cursor: pointer;">
+                                                <i class="fas fa-question-circle mr-1"></i> Belum Ditentukan
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                                        <div class="custom-control custom-radio">
+                                            <input type="radio" id="edit_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input">
                                             <label class="custom-control-label font-weight-bold text-primary" for="edit_peruntukan_kantor" style="cursor: pointer;">
                                                 <i class="fas fa-building mr-1"></i> Kantor (Satker)
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 col-sm-6 mb-2 mb-md-0">
+                                    <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
                                         <div class="custom-control custom-radio">
                                             <input type="radio" id="edit_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
                                             <label class="custom-control-label font-weight-bold text-warning" for="edit_peruntukan_mobiler" style="cursor: pointer;">
@@ -641,7 +695,7 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 col-sm-12">
+                                    <div class="col-md-3 col-sm-6">
                                         <div class="custom-control custom-radio">
                                             <input type="radio" id="edit_peruntukan_lainnya" name="peruntukan" value="lainnya" class="custom-control-input">
                                             <label class="custom-control-label font-weight-bold" style="color: #7c3aed; cursor: pointer;" for="edit_peruntukan_lainnya">
@@ -909,6 +963,7 @@
                             <div class="col-4">
                                 <small class="text-muted d-block font-weight-bold">Peruntukan Saat Ini</small>
                                 <div class="mt-1 d-flex justify-content-center flex-wrap" style="gap: 3px;">
+                                    <span class="badge badge-secondary px-2" id="mass-info-belum">0 Belum Ditentukan</span>
                                     <span class="badge badge-primary px-2" id="mass-info-kantor">0 Kantor</span>
                                     <span class="badge badge-warning text-dark px-2" id="mass-info-mobiler">0 Mobiler</span>
                                     <span class="badge px-2" style="background-color: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe;" id="mass-info-lainnya">0 Lainnya</span>
@@ -961,31 +1016,40 @@
                         <label class="font-weight-bold small text-dark">Ubah Peruntukan Menjadi <span class="text-danger">*</span></label>
                         <div class="card p-3" style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
                             <div class="row">
-                                <div class="col-md-4 mb-2 mb-md-0">
+                                <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="mass_peruntukan_belum" name="peruntukan" value="belum_ditentukan" class="custom-control-input">
+                                        <label class="custom-control-label font-weight-bold text-secondary" for="mass_peruntukan_belum">
+                                            <i class="fas fa-question-circle mr-1"></i> Belum Ditentukan
+                                        </label>
+                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Belum berlokasi / transit inventaris</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
                                     <div class="custom-control custom-radio">
                                         <input type="radio" id="mass_peruntukan_kantor" name="peruntukan" value="kantor" class="custom-control-input" checked>
                                         <label class="custom-control-label font-weight-bold text-primary" for="mass_peruntukan_kantor">
                                             <i class="fas fa-building mr-1"></i> Kantor / Satker
                                         </label>
-                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Aset operasional kantor satker (dapat dialokasikan ke DBR)</small>
+                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Aset operasional kantor satker (DBR)</small>
                                     </div>
                                 </div>
-                                <div class="col-md-4 mb-2 mb-md-0">
+                                <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
                                     <div class="custom-control custom-radio">
                                         <input type="radio" id="mass_peruntukan_mobiler" name="peruntukan" value="mobiler" class="custom-control-input">
                                         <label class="custom-control-label font-weight-bold text-dark" for="mass_peruntukan_mobiler">
                                             <i class="fas fa-school text-warning mr-1"></i> Mobiler / Sekolah
                                         </label>
-                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Aset bantuan pendidikan prasarana sekolah</small>
+                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Aset bantuan prasarana sekolah</small>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3 col-sm-6">
                                     <div class="custom-control custom-radio">
                                         <input type="radio" id="mass_peruntukan_lainnya" name="peruntukan" value="lainnya" class="custom-control-input">
                                         <label class="custom-control-label font-weight-bold" style="color: #6d28d9;" for="mass_peruntukan_lainnya">
                                             <i class="fas fa-layer-group mr-1"></i> Item Lainnya
                                         </label>
-                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Aset khusus/peminjaman/renovasi/pengerjaan</small>
+                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Aset khusus/renovasi/pengerjaan</small>
                                     </div>
                                 </div>
                             </div>
@@ -1111,16 +1175,19 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('edit-keterangan').value = btn.getAttribute('data-keterangan') || '';
 
         // Handle Peruntukan Radio
-        var peruntukanVal = (btn.getAttribute('data-peruntukan') || 'kantor').toLowerCase();
-        if (peruntukanVal === 'mobiler') {
+        var peruntukanVal = (btn.getAttribute('data-peruntukan') || 'belum_ditentukan').toLowerCase();
+        if (peruntukanVal === 'kantor') {
+            var radioKantor = document.getElementById('edit_peruntukan_kantor');
+            if (radioKantor) radioKantor.checked = true;
+        } else if (peruntukanVal === 'mobiler') {
             var radioMobiler = document.getElementById('edit_peruntukan_mobiler');
             if (radioMobiler) radioMobiler.checked = true;
         } else if (peruntukanVal === 'lainnya') {
             var radioLainnya = document.getElementById('edit_peruntukan_lainnya');
             if (radioLainnya) radioLainnya.checked = true;
         } else {
-            var radioKantor = document.getElementById('edit_peruntukan_kantor');
-            if (radioKantor) radioKantor.checked = true;
+            var radioBelum = document.getElementById('edit_peruntukan_belum');
+            if (radioBelum) radioBelum.checked = true;
         }
 
         // Handle Satuan Select2 (Dropdown + Manual Input)
@@ -1183,8 +1250,8 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#modal-tambah-inventaris').on('show.bs.modal', function () {
             $('#tambah-lokasi').val('').trigger('change');
             $('#tambah-satuan').val('Unit').trigger('change');
-            var radioKantor = document.getElementById('tambah_peruntukan_kantor');
-            if (radioKantor) radioKantor.checked = true;
+            var radioBelum = document.getElementById('tambah_peruntukan_belum');
+            if (radioBelum) radioBelum.checked = true;
         });
 
         // AJAX range fetch for Batch Update Modal (Specific to Kode, Nama, and Merk/Tipe)
@@ -1216,6 +1283,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     var minNup = d.min_nup !== null ? d.min_nup : 0;
                     var maxNup = d.max_nup !== null ? d.max_nup : 0;
                     $('#mass-info-nup-range').text(minNup + ' s/d ' + maxNup);
+                    $('#mass-info-belum').text((d.count_belum || d.total_belum || 0) + ' Belum');
                     $('#mass-info-kantor').text((d.count_kantor || d.total_kantor || 0) + ' Kantor');
                     $('#mass-info-mobiler').text((d.count_mobiler || d.total_mobiler || 0) + ' Mobiler');
                     $('#mass-info-lainnya').text((d.count_lainnya || d.total_lainnya || 0) + ' Lainnya');

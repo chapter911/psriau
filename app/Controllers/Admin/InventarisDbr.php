@@ -66,7 +66,7 @@ class InventarisDbr extends BaseController
         }
 
         $builderBelum = $db->table('trn_inventaris_satker')
-            ->where('peruntukan', 'kantor')
+            ->whereIn('peruntukan', ['kantor', 'belum_ditentukan'])
             ->groupStart()
                 ->where('ruangan_id IS NULL', null, false)
                 ->orWhere('ruangan_id', 0)
@@ -320,7 +320,7 @@ class InventarisDbr extends BaseController
 
         $unallocatedBuilder = $db->table('trn_inventaris_satker')
             ->select('id, kode_barang, nup, kode_register, nama_barang, merk_tipe, kondisi, jumlah, satuan, nilai_perolehan, no_psp, ruangan_id, lokasi_ruangan, peruntukan')
-            ->where('peruntukan', 'kantor')
+            ->whereIn('peruntukan', ['kantor', 'belum_ditentukan'])
             ->groupStart()
                 ->where('ruangan_id IS NULL', null, false)
                 ->orWhere('ruangan_id', 0)
@@ -395,6 +395,7 @@ class InventarisDbr extends BaseController
             ->update([
                 'ruangan_id'     => $ruanganId,
                 'lokasi_ruangan' => $room['nama_ruangan'],
+                'peruntukan'     => 'kantor',
                 'updated_at'     => date('Y-m-d H:i:s'),
                 'updated_by'     => $userId ?: null,
             ]);
@@ -441,6 +442,7 @@ class InventarisDbr extends BaseController
             ->update([
                 'ruangan_id'     => null,
                 'lokasi_ruangan' => 'Belum berlokasi',
+                'peruntukan'     => 'belum_ditentukan',
                 'updated_at'     => date('Y-m-d H:i:s'),
                 'updated_by'     => $userId ?: null,
             ]);
@@ -584,6 +586,7 @@ class InventarisDbr extends BaseController
             ->update([
                 'ruangan_id'     => $ruanganId,
                 'lokasi_ruangan' => $room['nama_ruangan'],
+                'peruntukan'     => 'kantor',
                 'updated_at'     => date('Y-m-d H:i:s'),
                 'updated_by'     => $userId ?: null,
             ]);
@@ -756,6 +759,7 @@ class InventarisDbr extends BaseController
             ->update([
                 'ruangan_id'     => $ruanganId,
                 'lokasi_ruangan' => $room['nama_ruangan'],
+                'peruntukan'     => 'kantor',
                 'updated_at'     => date('Y-m-d H:i:s'),
                 'updated_by'     => $userId ?: null,
             ]);

@@ -221,11 +221,7 @@ class InventarisAudit extends BaseController
         if ($lingkupAudit === 'kantor_ruangan') {
             $builder->where('ruangan_id', $ruanganId);
         } elseif ($lingkupAudit === 'kantor_seluruh') {
-            $builder->groupStart()
-                ->where('peruntukan', 'kantor')
-                ->orWhere('peruntukan IS NULL', null, false)
-                ->orWhere('peruntukan', '')
-                ->groupEnd();
+            $builder->where('peruntukan', 'kantor');
         } elseif ($lingkupAudit === 'sekolah') {
             $builder->where('peruntukan', 'mobiler');
         }
