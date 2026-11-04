@@ -87,7 +87,7 @@
 <!-- MODAL INPUT / EDIT KEGIATAN -->
 <div class="modal fade" id="modalKegiatanForm" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
-        <div class="modal-content border-0 shadow">
+        <form id="formKegiatanAjax" method="post" enctype="multipart/form-data" class="modal-content border-0 shadow">
             <div class="modal-header bg-primary text-white py-3">
                 <h5 class="modal-title font-weight-bold" id="modalKegiatanFormTitle">
                     <i class="fas fa-calendar-alt mr-2"></i>Tambah Kegiatan
@@ -96,8 +96,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="formKegiatanAjax" method="post" enctype="multipart/form-data">
-                <div class="modal-body">
+            <div class="modal-body">
                     <?= csrf_field(); ?>
                     <input type="hidden" id="modalActivityId" value="">
 
@@ -199,8 +198,7 @@
                         <i class="fas fa-save mr-1"></i> Simpan Data
                     </button>
                 </div>
-            </form>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -1716,6 +1714,25 @@ document.addEventListener('DOMContentLoaded', function () {
         background: #eef6ff;
     }
 
+    /* Modal Kegiatan Form Scrollable Styling */
+    #modalKegiatanForm .modal-dialog-scrollable .modal-content {
+        max-height: calc(100vh - 3.5rem);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    #modalKegiatanForm .modal-dialog-scrollable .modal-body {
+        overflow-y: auto !important;
+        max-height: calc(100vh - 12rem);
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #modalKegiatanForm .modal-header,
+    #modalKegiatanForm .modal-footer {
+        flex-shrink: 0;
+    }
+
     .photo-dropzone__target {
         border-radius: 10px;
         border: 1px solid #e6ecf3;
@@ -1723,11 +1740,37 @@ document.addEventListener('DOMContentLoaded', function () {
         background: #fff;
     }
 
-    #modalSelectedPhotoPreview,
     .existing-photo-grid {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
+        max-height: 280px;
+        overflow-y: auto;
+        padding: 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background-color: #f8fafc;
+    }
+
+    #modalSelectedPhotoPreview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        max-height: 240px;
+        overflow-y: auto;
+        padding: 4px;
+    }
+
+    .existing-photo-grid::-webkit-scrollbar,
+    #modalSelectedPhotoPreview::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    .existing-photo-grid::-webkit-scrollbar-thumb,
+    #modalSelectedPhotoPreview::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
     }
 
     .selected-photo-card {
