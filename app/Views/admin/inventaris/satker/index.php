@@ -921,7 +921,34 @@
                 <div class="modal-body py-4">
                     <div class="alert alert-light border py-2 px-3 small mb-3" style="border-radius: 8px; background-color: #fcfbf6;">
                         <i class="fas fa-info-circle text-info mr-1"></i>
-                        Gunakan fitur ini untuk mengubah status peruntukan (<strong>Kantor Satker</strong> atau <strong>Mobiler Sekolah</strong>) sekaligus untuk unit barang berdasarkan <strong>Kode Barang</strong> dan <strong>Rentang Nomor Urut Pendaftaran (NUP)</strong>.
+                        Gunakan fitur ini untuk mengubah status peruntukan (<strong>Kantor Satker</strong>, <strong>Mobiler Sekolah</strong>, <strong>Item Lainnya</strong>, atau <strong>Belum Ditentukan</strong>) sekaligus untuk unit barang berdasarkan <strong>Kode Barang</strong> dan <strong>Rentang Nomor Urut Pendaftaran (NUP)</strong>.
+                    </div>
+
+                    <!-- Pilihan Sumber Barang (Hanya Belum Berlokasi vs Semua Barang) -->
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-dark">Sumber Barang yang Dipilih <span class="text-danger">*</span></label>
+                        <div class="card p-2.5 mb-1" style="background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px;">
+                            <div class="row align-items-center">
+                                <div class="col-md-6 mb-2 mb-md-0">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="mass_sumber_belum" name="filter_sumber" value="belum" class="custom-control-input" checked>
+                                        <label class="custom-control-label font-weight-bold text-dark" for="mass_sumber_belum" style="cursor: pointer;">
+                                            <i class="fas fa-filter text-primary mr-1"></i> Hanya Barang Belum Berlokasi
+                                        </label>
+                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Menyaring hanya barang yang belum masuk ruangan DBR</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="mass_sumber_semua" name="filter_sumber" value="semua" class="custom-control-input">
+                                        <label class="custom-control-label font-weight-bold text-dark" for="mass_sumber_semua" style="cursor: pointer;">
+                                            <i class="fas fa-boxes text-secondary mr-1"></i> Tampilkan Semua Barang
+                                        </label>
+                                        <small class="text-muted d-block" style="font-size: 0.74rem;">Menampilkan seluruh master aset tanpa filter lokasi</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group mb-3">
@@ -930,17 +957,19 @@
                             <option value="">-- Pilih Barang --</option>
                             <?php foreach (($uniqueKodeBarangList ?? []) as $kb): ?>
                                 <?php
-                                    $itemText = $kb['kode_barang'] . ' — ' . $kb['nama_barang'];
-                                    if (! empty($kb['merk_tipe']) && stripos($kb['nama_barang'], $kb['merk_tipe']) === false) {
-                                        $itemText .= ' (' . $kb['merk_tipe'] . ')';
-                                    }
-                                    $itemText .= ' (' . number_format((int) $kb['total_unit']) . ' unit)';
+                                    $merkPart = (! empty($kb['merk_tipe']) && stripos($kb['nama_barang'], $kb['merk_tipe']) === false) ? ' (' . $kb['merk_tipe'] . ')' : '';
+                                    $textBelum = $kb['kode_barang'] . ' — ' . $kb['nama_barang'] . $merkPart . ' (' . number_format((int) ($kb['unallocated_unit'] ?? 0)) . ' unit belum berlokasi)';
+                                    $textSemua = $kb['kode_barang'] . ' — ' . $kb['nama_barang'] . $merkPart . ' (' . number_format((int) $kb['total_unit']) . ' unit total)';
                                 ?>
                                 <option value="<?= esc($kb['kode_barang'] . ':::' . $kb['nama_barang'] . ':::' . ($kb['merk_tipe'] ?? '')); ?>"
                                         data-kode="<?= esc($kb['kode_barang']); ?>"
                                         data-nama="<?= esc($kb['nama_barang']); ?>"
-                                        data-merk="<?= esc($kb['merk_tipe'] ?? ''); ?>">
-                                    <?= esc($itemText); ?>
+                                        data-merk="<?= esc($kb['merk_tipe'] ?? ''); ?>"
+                                        data-total="<?= (int) $kb['total_unit']; ?>"
+                                        data-unallocated="<?= (int) ($kb['unallocated_unit'] ?? 0); ?>"
+                                        data-text-belum="<?= esc($textBelum); ?>"
+                                        data-text-semua="<?= esc($textSemua); ?>">
+                                    <?= esc($textBelum); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -1054,6 +1083,24 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Pilihan Ruangan Target DBR (Hanya Aktif Bila Peruntukan = Kantor) -->
+                    <div id="mass-target-ruangan-wrapper" class="form-group mt-3 mb-0">
+                        <label class="font-weight-bold small text-dark mb-1">
+                            <i class="fas fa-door-open text-primary mr-1"></i> Alokasikan Langsung ke Ruangan Kantor DBR (Opsional)
+                        </label>
+                        <select name="target_ruangan_id" id="mass-target-ruangan" class="form-control select2" style="width: 100%;">
+                            <option value="">-- Tetap di Gudang Transit (Alokasikan Nanti via Scan QR / DBR) --</option>
+                            <?php foreach (($masterRuanganList ?? []) as $r): ?>
+                                <option value="<?= (int) $r['id']; ?>" data-nama="<?= esc($r['nama_ruangan']); ?>">
+                                    <?= esc($r['kode_ruangan'] . ' — ' . $r['nama_ruangan'] . (! empty($r['lokasi_lantai']) ? ' (' . $r['lokasi_lantai'] . ')' : '')); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.74rem;">
+                            <i class="fas fa-info-circle text-info mr-1"></i> Jika ruangan dipilih, aset otomatis langsung terdaftar di DBR ruangan tersebut. Jika dikosongkan, aset berstatus Kantor dan masuk antrean DBR siap alokasi.
+                        </small>
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-3" style="border-top: 1px solid #e9eef5;">
@@ -1254,6 +1301,67 @@ document.addEventListener('DOMContentLoaded', function() {
             if (radioBelum) radioBelum.checked = true;
         });
 
+        // Cache original options for Kode Barang mass update
+        var originalMassOptions = [];
+        $('#mass-kode-barang-select option').each(function() {
+            var $opt = $(this);
+            if (!$opt.val()) return;
+            originalMassOptions.push({
+                val: $opt.val(),
+                kode: $opt.data('kode') || '',
+                nama: $opt.data('nama') || '',
+                merk: $opt.data('merk') || '',
+                total: parseInt($opt.data('total') || '0', 10),
+                unallocated: parseInt($opt.data('unallocated') || '0', 10),
+                textBelum: $opt.data('text-belum') || $opt.text(),
+                textSemua: $opt.data('text-semua') || $opt.text()
+            });
+        });
+
+        function populateMassKodeBarang(filterMode) {
+            var $select = $('#mass-kode-barang-select');
+            $select.empty();
+            $select.append(new Option('-- Pilih Barang --', ''));
+
+            originalMassOptions.forEach(function(item) {
+                if (filterMode === 'belum' && item.unallocated <= 0) return;
+                var text = (filterMode === 'belum') ? item.textBelum : item.textSemua;
+                var opt = new Option(text, item.val);
+                $(opt).data('kode', item.kode)
+                      .data('nama', item.nama)
+                      .data('merk', item.merk)
+                      .data('total', item.total)
+                      .data('unallocated', item.unallocated)
+                      .data('text-belum', item.textBelum)
+                      .data('text-semua', item.textSemua);
+                $select.append(opt);
+            });
+
+            $select.val('').trigger('change');
+        }
+
+        $('input[name="filter_sumber"]').on('change', function() {
+            var mode = $('input[name="filter_sumber"]:checked').val() || 'belum';
+            populateMassKodeBarang(mode);
+            $('#mass-info-box').slideUp();
+            $('#mass-nup-awal').val('');
+            $('#mass-nup-akhir').val('');
+        });
+
+        function updateTargetRuanganUI() {
+            var peruntukan = $('input[name="peruntukan"]:checked').val();
+            if (peruntukan === 'kantor') {
+                $('#mass-target-ruangan-wrapper').slideDown();
+            } else {
+                $('#mass-target-ruangan-wrapper').slideUp();
+                $('#mass-target-ruangan').val('').trigger('change');
+            }
+        }
+
+        $('input[name="peruntukan"]').on('change', function() {
+            updateTargetRuanganUI();
+        });
+
         // AJAX range fetch for Batch Update Modal (Specific to Kode, Nama, and Merk/Tipe)
         $('#mass-kode-barang-select').on('change', function() {
             var $selected = $(this).find(':selected');
@@ -1272,14 +1380,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            var filterSumber = $('input[name="filter_sumber"]:checked').val() || 'belum';
             $.getJSON('<?= site_url('admin/inventaris/barang/nup-range-by-kode'); ?>', { 
                 kode_barang: kode,
                 nama_barang: nama,
-                merk_tipe: merk
+                merk_tipe: merk,
+                only_unallocated: (filterSumber === 'belum' ? 1 : 0)
             }, function(res) {
                 if (res && (res.success || res.status === 'success') && res.data) {
                     var d = res.data;
-                    $('#mass-info-total').text((d.total_unit || 0) + ' Unit');
+                    var labelTotal = (filterSumber === 'belum') ? ' (Belum Berlokasi)' : '';
+                    $('#mass-info-total').text((d.total_unit || 0) + ' Unit' + labelTotal);
                     var minNup = d.min_nup !== null ? d.min_nup : 0;
                     var maxNup = d.max_nup !== null ? d.max_nup : 0;
                     $('#mass-info-nup-range').text(minNup + ' s/d ' + maxNup);
@@ -1320,8 +1431,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         $('#modal-update-peruntukan-massal').on('show.bs.modal', function () {
+            $('#mass_sumber_belum').prop('checked', true);
             $('#mass_lingkup_semua').prop('checked', true);
+            $('#mass_peruntukan_kantor').prop('checked', true);
             updateLingkupNupUI();
+            updateTargetRuanganUI();
+            populateMassKodeBarang('belum');
+            $('#mass-target-ruangan').val('').trigger('change');
         });
 
         $('#form-mass-update').on('submit', function(e) {
@@ -1344,6 +1460,9 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#modal-update-peruntukan-massal').on('shown.bs.modal', function () {
             if ($.fn.select2) {
                 $('#mass-kode-barang-select').select2({
+                    dropdownParent: $('#modal-update-peruntukan-massal')
+                });
+                $('#mass-target-ruangan').select2({
                     dropdownParent: $('#modal-update-peruntukan-massal')
                 });
             }
