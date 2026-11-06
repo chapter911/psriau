@@ -333,9 +333,7 @@
         <div class="collapse show" id="collapseFilterBar">
             <div class="px-3 py-3" style="background-color: #f8fafc; border-bottom: 1px solid #dee2e6;">
                 <form method="get" action="<?= site_url('admin/inventaris/barang'); ?>" id="form-filter-inventaris">
-                    <?php if (! empty($filterPeruntukan)): ?>
-                        <input type="hidden" name="peruntukan" value="<?= esc($filterPeruntukan); ?>">
-                    <?php endif; ?>
+                    <input type="hidden" name="peruntukan" id="filter-peruntukan" value="<?= esc($filterPeruntukan); ?>">
                     <div class="row align-items-end" style="margin-left: -6px; margin-right: -6px;">
                         <div class="col-12 col-sm-6 col-md-3 px-1 mb-2 mb-md-0">
                             <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-tag mr-1 text-primary"></i> Kategori Aset</label>
@@ -1142,7 +1140,7 @@
                 <div class="modal-body p-4">
                     <div class="alert alert-light border small text-muted mb-3" style="border-radius: 8px;">
                         <i class="fas fa-info-circle text-primary mr-1"></i>
-                        Sticker dicetak pada lembar A4 Portrait dengan format <strong>1 baris terdiri atas 2 sticker</strong> sesuai standar resmi Kementerian Pekerjaan Umum.
+                        Sticker dicetak pada lembar A4 dengan format standar resmi Kementerian Pekerjaan Umum. Anda dapat memilih orientasi <strong>Portrait (2 sticker per baris)</strong> atau <strong>Landscape (3 sticker per baris)</strong> sesuai kebutuhan lembar stiker.
                     </div>
 
                     <label class="font-weight-bold text-dark small text-uppercase mb-2" style="letter-spacing: 0.5px;">Pilih Cakupan Cetak:</label>
@@ -1171,16 +1169,8 @@
                         </label>
                     </div>
 
-                    <!-- Hidden fields for Filter Scope -->
-                    <input type="hidden" name="peruntukan" id="modal-filter-peruntukan" value="<?= esc($filterPeruntukan); ?>">
-                    <input type="hidden" name="kategori" id="modal-filter-kategori" value="<?= esc($filterKategori); ?>">
-                    <input type="hidden" name="kondisi" id="modal-filter-kondisi" value="<?= esc($filterKondisi); ?>">
-                    <input type="hidden" name="lokasi" id="modal-filter-lokasi" value="<?= esc($filterLokasi); ?>">
-                    <input type="hidden" name="search" id="modal-filter-search" value="<?= esc($searchKeyword); ?>">
-                    <input type="hidden" name="ids" id="modal-hidden-ids" value="">
-
                     <!-- Range Box (hanya tampil jika scope-range dipilih) -->
-                    <div id="box-range-inputs" class="p-3 bg-light border rounded mb-2 d-none" style="border-radius: 8px;">
+                    <div id="box-range-inputs" class="p-3 bg-light border rounded mb-3 d-none" style="border-radius: 8px;">
                         <div class="form-group mb-2">
                             <label class="small font-weight-bold mb-1">Kode Barang:</label>
                             <input type="text" name="kode_barang" id="modal-range-kode" class="form-control form-control-sm font-mono" placeholder="Contoh: 3050201002">
@@ -1196,6 +1186,37 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Pilihan Orientasi Cetak -->
+                    <label class="font-weight-bold text-dark small text-uppercase mb-2" style="letter-spacing: 0.5px;">Pilih Orientasi Cetak (Kertas A4):</label>
+                    <div class="row mb-2">
+                        <div class="col-6">
+                            <div class="custom-control custom-radio p-2.5 rounded h-100" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                                <input type="radio" id="orientation-portrait" name="orientation" class="custom-control-input" value="portrait" checked>
+                                <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="orientation-portrait" style="cursor: pointer;">
+                                    <i class="fas fa-file-alt mr-1 text-primary"></i> Portrait (Tegak)
+                                    <small class="text-muted d-block font-weight-normal mt-1">2 sticker / baris (Standar resmi PU, ~14 sticker/lembar).</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="custom-control custom-radio p-2.5 rounded h-100" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                                <input type="radio" id="orientation-landscape" name="orientation" class="custom-control-input" value="landscape">
+                                <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="orientation-landscape" style="cursor: pointer;">
+                                    <i class="fas fa-file-alt fa-rotate-270 mr-1 text-success"></i> Landscape (Mendatar)
+                                    <small class="text-muted d-block font-weight-normal mt-1">3 sticker / baris (Kertas mendatar, ~12–15 sticker/lembar).</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden fields for Filter Scope -->
+                    <input type="hidden" name="peruntukan" id="modal-filter-peruntukan" value="<?= esc($filterPeruntukan); ?>">
+                    <input type="hidden" name="kategori" id="modal-filter-kategori" value="<?= esc($filterKategori); ?>">
+                    <input type="hidden" name="kondisi" id="modal-filter-kondisi" value="<?= esc($filterKondisi); ?>">
+                    <input type="hidden" name="lokasi" id="modal-filter-lokasi" value="<?= esc($filterLokasi); ?>">
+                    <input type="hidden" name="search" id="modal-filter-search" value="<?= esc($searchKeyword); ?>">
+                    <input type="hidden" name="ids" id="modal-hidden-ids" value="">
                 </div>
                 <div class="modal-footer bg-light py-2.5 px-4" style="border-top: 1px solid #e2e8f0;">
                     <button type="button" class="btn btn-secondary btn-sm px-3" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
@@ -1374,7 +1395,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         function updateTargetRuanganUI() {
-            var peruntukan = $('input[name="peruntukan"]:checked').val();
+            var peruntukan = $('#modal-update-peruntukan-massal input[name="peruntukan"]:checked').val();
             if (peruntukan === 'kantor') {
                 $('#mass-target-ruangan-wrapper').slideDown();
             } else {
@@ -1383,7 +1404,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        $('input[name="peruntukan"]').on('change', function() {
+        $('#modal-update-peruntukan-massal input[name="peruntukan"]').on('change', function() {
             updateTargetRuanganUI();
         });
 
@@ -1936,7 +1957,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 url: '<?= site_url('admin/inventaris/barang'); ?>',
                 type: 'GET',
                 data: function(d) {
-                    var filterPeruntukan = $('input[name="peruntukan"]').val() || '';
+                    var filterPeruntukan = $('#filter-peruntukan').val() || '';
                     var filterKategori = $('select[name="kategori"]').val() || '';
                     var filterKondisi = $('select[name="kondisi"]').val() || '';
                     var filterLokasi = $('select[name="lokasi"]').val() || '';
@@ -1981,7 +2002,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateExportUrl() {
         var $exportBtn = $('#btn-export-excel-header');
         if (!$exportBtn.length) return;
-        var p = $('input[name="peruntukan"]').val() || '';
+        var p = $('#filter-peruntukan').val() || '';
         var k = $('select[name="kategori"]').val() || '';
         var c = $('select[name="kondisi"]').val() || '';
         var l = $('select[name="lokasi"]').val() || '';
@@ -2176,7 +2197,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var re = document.getElementById('modal-range-end'); if (re) re.disabled = false;
             } else {
                 if (hiddenIdsInput) hiddenIdsInput.value = '';
-                var filterPeruntukan = $('input[name="peruntukan"]').val() || '';
+                var filterPeruntukan = $('#filter-peruntukan').val() || '';
                 var filterKategori = $('select[name="kategori"]').val() || '';
                 var filterKondisi = $('select[name="kondisi"]').val() || '';
                 var filterLokasi = $('select[name="lokasi"]').val() || '';

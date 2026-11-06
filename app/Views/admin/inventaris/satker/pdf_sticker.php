@@ -4,6 +4,8 @@ if (! function_exists('esc')) {
         return htmlspecialchars((string) $data, ENT_QUOTES, 'UTF-8');
     }
 }
+$isLandscape = ($orientation ?? 'portrait') === 'landscape';
+$perRow = $isLandscape ? 3 : 2;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -12,8 +14,8 @@ if (! function_exists('esc')) {
     <title>Cetak Sticker BMN - <?= date('Y-m-d'); ?></title>
     <style>
         @page {
-            size: A4 portrait;
-            margin: 7mm 6mm 7mm 6mm;
+            size: A4 <?= $isLandscape ? 'landscape' : 'portrait'; ?>;
+            margin: <?= $isLandscape ? '6mm 6mm 6mm 6mm' : '7mm 6mm 7mm 6mm'; ?>;
         }
         * {
             box-sizing: border-box;
@@ -28,16 +30,16 @@ if (! function_exists('esc')) {
             line-height: 1.15;
         }
 
-        /* Tabel Halaman Utama: 2 Kolom Per Baris Fixed Layout */
+        /* Tabel Halaman Utama: 2 Kolom (Portrait) atau 3 Kolom (Landscape) */
         .sticker-page-table {
             width: 100%;
             table-layout: fixed;
             border-collapse: separate;
-            border-spacing: 3.5mm 3.5mm;
+            border-spacing: <?= $isLandscape ? '2.5mm 3mm' : '3.5mm 3.5mm'; ?>;
         }
         .sticker-cell {
-            width: 50%;
-            max-width: 95.5mm;
+            width: <?= $isLandscape ? '33.333%' : '50%'; ?>;
+            max-width: <?= $isLandscape ? '92.5mm' : '95.5mm'; ?>;
             vertical-align: top;
             padding: 0;
         }
@@ -66,10 +68,10 @@ if (! function_exists('esc')) {
             height: 11.5mm;
         }
         .header-logo-td {
-            width: 11mm;
+            width: 10.5mm;
             vertical-align: middle;
             text-align: left;
-            padding-left: 2.2mm;
+            padding-left: 2mm;
         }
         .pu-logo {
             width: 8.5mm;
@@ -82,11 +84,11 @@ if (! function_exists('esc')) {
             padding: 1.2mm 0;
         }
         .header-spacer-td {
-            width: 11mm;
+            width: 10.5mm;
             padding: 0;
         }
         .instansi-title {
-            font-size: 8pt;
+            font-size: <?= $isLandscape ? '7.8pt' : '8pt'; ?>;
             font-weight: normal;
             color: #000000;
             line-height: 1.15;
@@ -94,7 +96,7 @@ if (! function_exists('esc')) {
             white-space: nowrap;
         }
         .instansi-code {
-            font-size: 7.2pt;
+            font-size: <?= $isLandscape ? '7pt' : '7.2pt'; ?>;
             font-weight: normal;
             color: #000000;
             line-height: 1.15;
@@ -111,9 +113,9 @@ if (! function_exists('esc')) {
             height: 24.8mm;
         }
         .body-info-td {
-            width: 72%;
+            width: <?= $isLandscape ? '70%' : '72%'; ?>;
             vertical-align: top;
-            padding: 1.8mm 1.5mm 1mm 2.2mm;
+            padding: 1.6mm 1.2mm 1mm 2mm;
             overflow: hidden;
         }
         .info-top-table {
@@ -124,7 +126,7 @@ if (! function_exists('esc')) {
         }
         .cell-kode-barang {
             width: 55%;
-            font-size: 8pt;
+            font-size: <?= $isLandscape ? '7.8pt' : '8pt'; ?>;
             font-weight: normal;
             color: #000000;
             vertical-align: top;
@@ -132,7 +134,7 @@ if (! function_exists('esc')) {
         }
         .cell-nup {
             width: 45%;
-            font-size: 8pt;
+            font-size: <?= $isLandscape ? '7.8pt' : '8pt'; ?>;
             font-weight: normal;
             color: #000000;
             vertical-align: top;
@@ -140,16 +142,16 @@ if (! function_exists('esc')) {
             white-space: nowrap;
         }
         .cell-nama-barang {
-            font-size: 7.8pt;
+            font-size: <?= $isLandscape ? '7.5pt' : '7.8pt'; ?>;
             font-weight: normal;
             color: #000000;
             line-height: 1.15;
             word-wrap: break-word;
             word-break: break-word;
-            margin-bottom: 1.8mm;
+            margin-bottom: 1.5mm;
         }
         .cell-merk-tipe {
-            font-size: 7.2pt;
+            font-size: <?= $isLandscape ? '7pt' : '7.2pt'; ?>;
             font-weight: normal;
             color: #000000;
             line-height: 1.15;
@@ -159,20 +161,20 @@ if (! function_exists('esc')) {
 
         /* Area Kanan (Kode Digital: QR Code) */
         .body-qr-td {
-            width: 28%;
+            width: <?= $isLandscape ? '30%' : '28%'; ?>;
             vertical-align: middle;
             text-align: right;
-            padding: 1.5mm 2.2mm 1mm 0;
+            padding: 1.5mm 2mm 1mm 0;
         }
         .qr-image {
-            width: 19.5mm;
-            height: 19.5mm;
+            width: <?= $isLandscape ? '18.5mm' : '19.5mm'; ?>;
+            height: <?= $isLandscape ? '18.5mm' : '19.5mm'; ?>;
             display: block;
             margin-left: auto;
         }
         .qr-placeholder {
-            width: 19.5mm;
-            height: 19.5mm;
+            width: <?= $isLandscape ? '18.5mm' : '19.5mm'; ?>;
+            height: <?= $isLandscape ? '18.5mm' : '19.5mm'; ?>;
             border: 1px dashed #cccccc;
             display: block;
             margin-left: auto;
@@ -183,11 +185,12 @@ if (! function_exists('esc')) {
 
     <table class="sticker-page-table" cellpadding="0" cellspacing="0">
         <colgroup>
-            <col style="width: 50%;">
-            <col style="width: 50%;">
+            <?php for ($c = 0; $c < $perRow; $c++): ?>
+                <col style="width: <?= $isLandscape ? '33.333%' : '50%'; ?>;">
+            <?php endfor; ?>
         </colgroup>
         <?php
-        $chunks = array_chunk($stickers ?? [], 2);
+        $chunks = array_chunk($stickers ?? [], $perRow);
         foreach ($chunks as $row):
         ?>
             <tr>
@@ -200,9 +203,9 @@ if (! function_exists('esc')) {
                             <!-- Bagian Atas (Identitas Instansi) -->
                             <table class="header-table" cellpadding="0" cellspacing="0">
                                 <colgroup>
-                                    <col style="width: 11mm;">
-                                    <col style="width: 73mm;">
-                                    <col style="width: 11mm;">
+                                    <col style="width: 10.5mm;">
+                                    <col style="width: auto;">
+                                    <col style="width: 10.5mm;">
                                 </colgroup>
                                 <tr>
                                     <td class="header-logo-td">
@@ -221,8 +224,8 @@ if (! function_exists('esc')) {
                             <!-- Bagian Bawah (Data Spesifikasi Aset & Verifikasi) -->
                             <table class="body-table" cellpadding="0" cellspacing="0">
                                 <colgroup>
-                                    <col style="width: 72%;">
-                                    <col style="width: 28%;">
+                                    <col style="width: <?= $isLandscape ? '70%' : '72%'; ?>;">
+                                    <col style="width: <?= $isLandscape ? '30%' : '28%'; ?>;">
                                 </colgroup>
                                 <tr>
                                     <!-- Area Kiri (Informasi Barang) -->
@@ -256,10 +259,17 @@ if (! function_exists('esc')) {
                     </td>
                 <?php endforeach; ?>
 
-                <?php if (count($row) === 1): ?>
-                    <!-- Sel kosong penyeimbang jika baris ganjil -->
+                <?php
+                $countInRow = count($row);
+                if ($countInRow < $perRow):
+                    for ($e = 0; $e < ($perRow - $countInRow); $e++):
+                ?>
+                    <!-- Sel kosong penyeimbang jika baris tidak penuh -->
                     <td class="sticker-cell empty-cell"></td>
-                <?php endif; ?>
+                <?php
+                    endfor;
+                endif;
+                ?>
             </tr>
         <?php endforeach; ?>
     </table>
