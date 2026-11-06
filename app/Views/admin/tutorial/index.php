@@ -2544,7 +2544,7 @@ graph TD
                                     <li>Dilengkapi <strong>Filter &amp; Pencarian Multi-Kriteria</strong>: Filter dinamis berdasarkan Paket Swakelola, Nama Personel, Kota/Tujuan Penugasan, Status Master Pegawai, Akun MAK, dan Nomor SPM.</li>
                                     <li>Dilengkapi tombol <strong>Pratinjau Langsung Bukti PDF</strong> untuk membuka dokumen fisik asli (Surat Tugas SPT, Surat Perjalanan Dinas SPD, Kuitansi, dan Daftar Nominatif) secara 1-klik langsung dari folder repositori berkas.</li>
                                     <li>Fitur <strong>Sinkronisasi Master Pegawai</strong> (hak akses <code>FiturEdit</code> / <code>FiturAdd</code>) untuk memperbarui data pencocokan sewaktu-waktu saat master pegawai diperbarui.</li>
-                                    <li>Fitur <strong>Export Excel (.xlsx)</strong> dan <strong>Cetak / PDF</strong> berformat resmi Satker PPS Riau yang dilengkapi lembar tanda tangan PPK dan Kasatker (mengikuti hak akses <code>FiturExport</code> pada tabel <code>menu_akses</code>).</li>
+                                    <li>Fitur <strong>Export Excel (.xlsx)</strong> dan <strong>Cetak / PDF</strong> berformat resmi Satker PPS Riau yang secara transparan menyertakan <strong>Nama File Bukti / Sumber Berkas Dokumen Fisik</strong> dan <strong>Lokasi Folder Repositori Berkas</strong> di setiap baris penugasan untuk auditabilitas menyeluruh, serta dilengkapi lembar tanda tangan PPK dan Kasatker (mengikuti hak akses <code>FiturExport</code> pada tabel <code>menu_akses</code>).</li>
                                 </ul>
                             </li>
                         </ol>

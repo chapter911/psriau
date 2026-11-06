@@ -183,7 +183,7 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 30px;">No.</th>
+                <th style="width: 25px;">No.</th>
                 <th>Nama Personel &amp; NIP</th>
                 <th>Status Master</th>
                 <th>Paket Kegiatan &amp; MAK</th>
@@ -191,13 +191,14 @@
                 <th>Jadwal &amp; Durasi</th>
                 <th>Dasar SPT / SPD</th>
                 <th>No. SPM &amp; SP2D</th>
-                <th style="width: 90px;">Biaya (Rp)</th>
+                <th style="width: 80px;">Biaya (Rp)</th>
+                <th>Sumber Berkas (File PDF)</th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($records)): ?>
                 <tr>
-                    <td colspan="9" class="text-center" style="padding: 20px;">Tidak ada data personel perjadin.</td>
+                    <td colspan="10" class="text-center" style="padding: 20px;">Tidak ada data personel perjadin.</td>
                 </tr>
             <?php else: ?>
                 <?php $no = 1; foreach ($records as $r):
@@ -205,6 +206,8 @@
                     $nipDisplay = ! empty($r['master_nip']) ? $r['master_nip'] : ($r['nip'] ?? '-');
                     $golDisplay = ! empty($r['master_golongan']) ? $r['master_golongan'] : ($r['golongan'] ?? '-');
                     $jabDisplay = ! empty($r['master_jabatan']) ? $r['master_jabatan'] : ($r['jabatan'] ?? '-');
+                    $fileBukti  = (string) ($r['file_bukti'] ?? '');
+                    $slug       = (string) ($r['paket_slug'] ?? 'sppg');
                 ?>
                     <tr>
                         <td class="text-center font-bold"><?= $no++; ?></td>
@@ -242,6 +245,14 @@
                         <td class="text-right font-bold">
                             <?= number_format((float) ($r['nilai_biaya'] ?? 0), 0, ',', '.'); ?>
                         </td>
+                        <td>
+                            <?php if ($fileBukti !== ''): ?>
+                                <strong style="color: #0f172a; font-size: 8.5px;"><?= esc($fileBukti); ?></strong><br>
+                                <span style="color: #64748b; font-size: 7.5px;">Folder: uploads/swakelola/<?= esc($slug); ?>/</span>
+                            <?php else: ?>
+                                <span style="color: #94a3b8;">-</span>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -252,6 +263,7 @@
                 <td class="text-right">
                     Rp <?= number_format((float) ($stats['total_biaya'] ?? 0), 0, ',', '.'); ?>
                 </td>
+                <td></td>
             </tr>
         </tfoot>
     </table>

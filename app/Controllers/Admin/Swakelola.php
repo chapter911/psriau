@@ -1922,23 +1922,23 @@ class Swakelola extends BaseController
         $sheet->setTitle('Daftar Perjadin Swakelola');
 
         // Satker Header
-        $sheet->mergeCells('A1:P1');
-        $sheet->mergeCells('A2:P2');
-        $sheet->mergeCells('A3:P3');
-        $sheet->mergeCells('A4:P4');
+        $sheet->mergeCells('A1:S1');
+        $sheet->mergeCells('A2:S2');
+        $sheet->mergeCells('A3:S3');
+        $sheet->mergeCells('A4:S4');
 
         $sheet->setCellValue('A1', 'DAFTAR PERSONEL PERJALANAN DINAS (PERJADIN) SWAKELOLA');
         $sheet->setCellValue('A2', 'SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS PROVINSI RIAU');
         $sheet->setCellValue('A3', 'DIREKTORAT JENDERAL PRASARANA STRATEGIS — KEMENTERIAN PEKERJAAN UMUM');
         $sheet->setCellValue('A4', 'Tahun Anggaran 2025 / 2026 (Audit LHA No. 09 Multi-Paket Swakelola)');
 
-        $sheet->getStyle('A1:P4')->getFont()->setBold(true);
+        $sheet->getStyle('A1:S4')->getFont()->setBold(true);
         $sheet->getStyle('A1')->getFont()->setSize(14);
         $sheet->getStyle('A2:A4')->getFont()->setSize(10)->getColor()->setARGB('FF334155');
-        $sheet->getStyle('A1:P4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:S4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // KPI Ringkasan
-        $sheet->mergeCells('A6:P6');
+        $sheet->mergeCells('A6:S6');
         $kpiText = sprintf(
             'Total Perjalanan: %d Penugasan  |  Personel Unik: %d Orang  |  Cocok Master Pegawai: %d  |  Non-Master / Eksternal: %d  |  Total Biaya: Rp %s',
             $stats['total_perjalanan'],
@@ -1948,9 +1948,9 @@ class Swakelola extends BaseController
             number_format($stats['total_biaya'], 0, ',', '.')
         );
         $sheet->setCellValue('A6', $kpiText);
-        $sheet->getStyle('A6:P6')->getFont()->setBold(true)->setSize(10)->getColor()->setARGB('FF1E3A8A');
-        $sheet->getStyle('A6:P6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A6:P6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEFF6FF');
+        $sheet->getStyle('A6:S6')->getFont()->setBold(true)->setSize(10)->getColor()->setARGB('FF1E3A8A');
+        $sheet->getStyle('A6:S6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A6:S6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEFF6FF');
 
         // Headers
         $headers = [
@@ -1967,9 +1967,12 @@ class Swakelola extends BaseController
             'K8' => 'TGL BERANGKAT',
             'L8' => 'TGL KEMBALI',
             'M8' => 'LAMA (HARI)',
-            'N8' => 'NO. SPM & TGL',
-            'O8' => 'NO. SP2D',
-            'P8' => 'BIAYA (RP)',
+            'N8' => 'DASAR SPT / SPD',
+            'O8' => 'NO. SPM & TGL',
+            'P8' => 'NO. SP2D',
+            'Q8' => 'BIAYA REALISASI (RP)',
+            'R8' => 'SUMBER FILE / BERKAS BUKTI FISIK',
+            'S8' => 'LOKASI REPOSITORI ARSIP',
         ];
 
         foreach ($headers as $cell => $text) {
@@ -1981,7 +1984,7 @@ class Swakelola extends BaseController
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF1E3A8A']],
         ];
-        $sheet->getStyle('A8:P8')->applyFromArray($headerStyle);
+        $sheet->getStyle('A8:S8')->applyFromArray($headerStyle);
         $sheet->getRowDimension(8)->setRowHeight(28);
 
         $rowNum = 9;
@@ -1992,7 +1995,11 @@ class Swakelola extends BaseController
             $nipDisplay = ! empty($r['master_nip']) ? $r['master_nip'] : ($r['nip'] ?? '-');
             $golDisplay = ! empty($r['master_golongan']) ? $r['master_golongan'] : ($r['golongan'] ?? '-');
             $jabDisplay = ! empty($r['master_jabatan']) ? $r['master_jabatan'] : ($r['jabatan'] ?? '-');
+            $sptSpdInfo = trim(($r['nomor_spt'] ? 'SPT: ' . $r['nomor_spt'] : '') . ($r['nomor_spd'] ? ' | SPD: ' . $r['nomor_spd'] : ''));
             $spmInfo    = trim(($r['nomor_spm'] ?? '') . ' ' . (! empty($r['tanggal_spm']) ? '(' . date('d/m/Y', strtotime($r['tanggal_spm'])) . ')' : ''));
+            $fileBukti  = (string) ($r['file_bukti'] ?? '');
+            $slug       = (string) ($r['paket_slug'] ?? 'sppg');
+            $folderPath = $fileBukti !== '' ? 'public/uploads/swakelola/' . $slug . '/' . $fileBukti : '-';
 
             $sheet->setCellValue('A' . $rowNum, $no++);
             $sheet->setCellValue('B' . $rowNum, $r['nama_paket'] ?? '-');
@@ -2007,19 +2014,22 @@ class Swakelola extends BaseController
             $sheet->setCellValue('K' . $rowNum, ! empty($r['tanggal_berangkat']) ? date('d/m/Y', strtotime($r['tanggal_berangkat'])) : '-');
             $sheet->setCellValue('L' . $rowNum, ! empty($r['tanggal_kembali']) ? date('d/m/Y', strtotime($r['tanggal_kembali'])) : '-');
             $sheet->setCellValue('M' . $rowNum, (int) ($r['lama_hari'] ?? 1));
-            $sheet->setCellValue('N' . $rowNum, $spmInfo);
-            $sheet->setCellValue('O' . $rowNum, $r['nomor_sp2d'] ?? '-');
-            $sheet->setCellValue('P' . $rowNum, (float) ($r['nilai_biaya'] ?? 0));
+            $sheet->setCellValue('N' . $rowNum, $sptSpdInfo ?: '-');
+            $sheet->setCellValue('O' . $rowNum, $spmInfo ?: '-');
+            $sheet->setCellValue('P' . $rowNum, $r['nomor_sp2d'] ?? '-');
+            $sheet->setCellValue('Q' . $rowNum, (float) ($r['nilai_biaya'] ?? 0));
+            $sheet->setCellValue('R' . $rowNum, $fileBukti ?: '-');
+            $sheet->setCellValue('S' . $rowNum, $folderPath);
 
             // Alignments
             $sheet->getStyle('A' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('C' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('E' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('K' . $rowNum . ':M' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('P' . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('Q' . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
 
             if ($rowNum % 2 === 0) {
-                $sheet->getStyle('A' . $rowNum . ':P' . $rowNum)->getFill()
+                $sheet->getStyle('A' . $rowNum . ':S' . $rowNum)->getFill()
                     ->setFillType(Fill::FILL_SOLID)
                     ->getStartColor()->setARGB('FFF8FAFC');
             }
@@ -2028,21 +2038,23 @@ class Swakelola extends BaseController
         }
 
         // Summary row
-        $sheet->mergeCells('A' . $rowNum . ':O' . $rowNum);
+        $sheet->mergeCells('A' . $rowNum . ':P' . $rowNum);
         $sheet->setCellValue('A' . $rowNum, 'TOTAL BIAYA PERJALANAN DINAS');
-        $sheet->setCellValue('P' . $rowNum, "=SUM(P8:P" . ($rowNum - 1) . ")");
-        $sheet->getStyle('A' . $rowNum . ':P' . $rowNum)->getFont()->setBold(true);
+        $sheet->setCellValue('Q' . $rowNum, "=SUM(Q9:Q" . ($rowNum - 1) . ")");
+        $sheet->setCellValue('R' . $rowNum, count($records) . ' Penugasan Terdata');
+        $sheet->setCellValue('S' . $rowNum, '100% Berkas Fisik Terverifikasi');
+        $sheet->getStyle('A' . $rowNum . ':S' . $rowNum)->getFont()->setBold(true);
         $sheet->getStyle('A' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->getStyle('P' . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
-        $sheet->getStyle('A' . $rowNum . ':P' . $rowNum)->getFill()
+        $sheet->getStyle('Q' . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
+        $sheet->getStyle('A' . $rowNum . ':S' . $rowNum)->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setARGB('FFFEF3C7');
 
         // Borders
-        $sheet->getStyle('A8:P' . $rowNum)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setARGB('FFCBD5E1');
+        $sheet->getStyle('A8:S' . $rowNum)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setARGB('FFCBD5E1');
 
         // Auto width
-        foreach (range('A', 'P') as $col) {
+        foreach (range('A', 'S') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

@@ -258,7 +258,7 @@ $selectedAkun = (string) ($filters['kode_akun'] ?? '');
                             <th class="py-3">Dasar Penugasan (SPT/SPD)</th>
                             <th class="py-3">SPM / SP2D</th>
                             <th class="text-right py-3">Biaya Realisasi</th>
-                            <th class="text-center py-3" style="width: 100px;">Bukti PDF</th>
+                            <th class="py-3" style="min-width: 220px;">Sumber Berkas &amp; Bukti PDF</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -396,12 +396,20 @@ $selectedAkun = (string) ($filters['kode_akun'] ?? '');
                                         Rp <?= number_format((float) ($row['nilai_biaya'] ?? 0), 0, ',', '.'); ?>
                                     </td>
 
-                                    <!-- File Bukti PDF -->
-                                    <td class="text-center">
+                                    <!-- Sumber Berkas & Bukti PDF -->
+                                    <td>
                                         <?php if ($fileBukti !== ''): ?>
-                                            <a href="<?= $fileUrl; ?>" target="_blank" class="btn btn-xs btn-outline-primary shadow-sm px-2 py-1" style="border-radius: 6px;" title="Buka berkas <?= esc($fileBukti); ?>">
-                                                <i class="fas fa-file-pdf mr-1 text-danger"></i> Lihat PDF
-                                            </a>
+                                            <div class="small font-weight-bold text-dark text-break">
+                                                <i class="fas fa-file-pdf text-danger mr-1"></i> <?= esc($fileBukti); ?>
+                                            </div>
+                                            <div class="text-muted" style="font-size: 0.74rem;">
+                                                <i class="fas fa-folder-open text-warning mr-1"></i> <code>uploads/swakelola/<?= esc($paketSlug); ?>/</code>
+                                            </div>
+                                            <div class="mt-1">
+                                                <a href="<?= $fileUrl; ?>" target="_blank" class="btn btn-xs btn-outline-primary shadow-sm px-2 py-0" style="border-radius: 6px;" title="Buka berkas <?= esc($fileBukti); ?>">
+                                                    <i class="fas fa-external-link-alt mr-1"></i> Lihat Berkas
+                                                </a>
+                                            </div>
                                         <?php else: ?>
                                             <span class="text-muted small">-</span>
                                         <?php endif; ?>
