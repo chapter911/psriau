@@ -74,6 +74,55 @@ class SwakelolaPerjadinPersonelModel extends Model
     }
 
     /**
+     * Resolve package metadata (LHA no, slug, and PIC info)
+     */
+    public static function resolvePaketMeta(string $kodePaket, ?int $paketId = null, string $namaPaket = ''): array
+    {
+        if (str_contains($kodePaket, '051.D') || $paketId === 1 || str_contains($namaPaket, 'PHTC Tahap 3') || str_contains($namaPaket, 'Survey dan Perencanaan')) {
+            return [
+                'lha_no'     => 1,
+                'paket_slug' => 'phtc3',
+                'pic_nama'   => 'Amsal Anwari, S.T.',
+                'pic_label'  => 'Amsal',
+            ];
+        }
+
+        if (str_contains($kodePaket, 'CBI.001.900.A') || $paketId === 2 || str_contains($namaPaket, 'SPPG')) {
+            return [
+                'lha_no'     => 2,
+                'paket_slug' => 'sppg',
+                'pic_nama'   => 'Agung Kesuma',
+                'pic_label'  => 'bg Agung',
+            ];
+        }
+
+        if (str_contains($kodePaket, 'RBI.003.900.AB') || $paketId === 3 || (str_contains($namaPaket, 'Madrasah PHTC') && ! str_contains($namaPaket, 'Riau 5') && ! str_contains($namaPaket, 'Tahap 3'))) {
+            return [
+                'lha_no'     => 3,
+                'paket_slug' => 'madrasah_riau',
+                'pic_nama'   => 'Jefri / bg Jefri',
+                'pic_label'  => 'bg Jefri',
+            ];
+        }
+
+        if (str_contains($kodePaket, 'RBI.003.900.G') || $paketId === 4 || str_contains($namaPaket, 'Riau 5')) {
+            return [
+                'lha_no'     => 4,
+                'paket_slug' => 'madrasah_riau5',
+                'pic_nama'   => 'Muhammad Syahridwan, S.T.',
+                'pic_label'  => 'bg Syahridwan',
+            ];
+        }
+
+        return [
+            'lha_no'     => 1,
+            'paket_slug' => 'sppg',
+            'pic_nama'   => '-',
+            'pic_label'  => '-',
+        ];
+    }
+
+    /**
      * Get filtered records with joined package & master pegawai details
      */
     public function getFilteredPersonel(array $filters = []): array
@@ -82,11 +131,6 @@ class SwakelolaPerjadinPersonelModel extends Model
         $builder->select('trn_swakelola_perjadin_personel.*');
 
         $db = $this->db;
-
-        if ($db->tableExists('trn_swakelola_paket')) {
-            $builder->select('p.pic_nama, p.pic_label, p.lha_no, p.slug as paket_slug');
-            $builder->join('trn_swakelola_paket p', 'p.id = trn_swakelola_perjadin_personel.paket_id', 'left');
-        }
 
         if ($db->tableExists('mst_pegawai')) {
             $builder->select('peg.nama as master_nama, peg.nip as master_nip, peg.golongan as master_golongan');
@@ -100,7 +144,22 @@ class SwakelolaPerjadinPersonelModel extends Model
         }
 
         if (! empty($filters['paket_id'])) {
-            $builder->where('trn_swakelola_perjadin_personel.paket_id', (int) $filters['paket_id']);
+            $pid = (int) $filters['paket_id'];
+            $kodePaket = match ($pid) {
+                1 => '06.691285.GM.7717.RBI.003.051.D',
+                2 => '06.691285.GM.7717.CBI.001.900.A',
+                3 => '06.691285.GM.7717.RBI.003.900.AB',
+                4 => '06.691285.GM.7717.RBI.003.900.G',
+                default => '',
+            };
+            if ($kodePaket !== '') {
+                $builder->groupStart()
+                    ->where('trn_swakelola_perjadin_personel.paket_id', $pid)
+                    ->orWhere('trn_swakelola_perjadin_personel.kode_paket', $kodePaket)
+                    ->groupEnd();
+            } else {
+                $builder->where('trn_swakelola_perjadin_personel.paket_id', $pid);
+            }
         }
 
         if (! empty($filters['nama_personel'])) {
@@ -131,7 +190,22 @@ class SwakelolaPerjadinPersonelModel extends Model
         $builder->orderBy('trn_swakelola_perjadin_personel.nomor_spt', 'ASC');
         $builder->orderBy('trn_swakelola_perjadin_personel.nama_personel', 'ASC');
 
-        return $builder->get()->getResultArray();
+        $rows = $builder->get()->getResultArray();
+
+        foreach ($rows as &$r) {
+            $meta = self::resolvePaketMeta(
+                (string) ($r['kode_paket'] ?? ''),
+                isset($r['paket_id']) ? (int) $r['paket_id'] : null,
+                (string) ($r['nama_paket'] ?? '')
+            );
+            $r['lha_no']     = $meta['lha_no'];
+            $r['paket_slug'] = $meta['paket_slug'];
+            $r['pic_nama']   = $meta['pic_nama'];
+            $r['pic_label']  = $meta['pic_label'];
+        }
+        unset($r);
+
+        return $rows;
     }
 
     /**
