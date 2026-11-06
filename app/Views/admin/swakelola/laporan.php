@@ -69,6 +69,9 @@ $docTot        = (int) ($paket['dokumen_total'] ?? 28);
                 </div>
             </div>
             <div class="mt-3 mt-md-0 d-flex flex-wrap gap-2">
+                <a href="<?= base_url('admin/swakelola/perjadin?paket_id=' . $activePaketId); ?>" class="btn btn-warning text-dark font-weight-bold shadow-sm px-3 py-2 mr-2" style="border-radius: 8px;">
+                    <i class="fas fa-plane-departure mr-1"></i> Daftar Perjadin
+                </a>
                 <?php if (! empty($permissions['export'])): ?>
                     <a href="<?= base_url('admin/swakelola/laporan/export-excel?paket_id=' . $activePaketId); ?>" class="btn btn-success font-weight-bold shadow-sm px-3 py-2 mr-2" style="border-radius: 8px;">
                         <i class="fas fa-file-excel mr-1"></i> Download Checklist Lengkap (.xlsx)

@@ -67,6 +67,9 @@ $activeSlug    = (string) ($paket['slug'] ?? 'sppg');
                 </div>
             </div>
             <div class="mt-3 mt-md-0 d-flex flex-wrap">
+                <a href="<?= base_url('admin/swakelola/perjadin?paket_id=' . $activePaketId); ?>" class="btn btn-outline-light font-weight-bold shadow-sm px-3 py-2 mr-2" style="border-radius: 8px;">
+                    <i class="fas fa-users mr-1"></i> Personel Perjadin
+                </a>
                 <?php if ($canAdd): ?>
                     <button type="button" class="btn btn-light text-success font-weight-bold shadow-sm px-3 py-2 mr-2" style="border-radius: 8px;" id="btnAddRealisasi">
                         <i class="fas fa-plus-circle mr-1"></i> Tambah Realisasi SPM
@@ -151,6 +154,11 @@ $activeSlug    = (string) ($paket['slug'] ?? 'sppg');
                                     </td>
                                     <td class="text-center font-weight-bold text-primary align-middle">
                                         <?= esc($r['nomor_spm']); ?>
+                                        <?php if (in_array((string) $r['kode_akun'], ['524111', '524113', '524114'], true)): ?>
+                                            <a href="<?= base_url('admin/swakelola/perjadin?spm=' . rawurlencode($r['nomor_spm'])); ?>" class="badge badge-info text-white mt-1 d-block py-1" style="font-size: 0.72rem;" title="Lihat personel Perjadin untuk SPM ini">
+                                                <i class="fas fa-users mr-1"></i> Personel Perjadin
+                                            </a>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-center text-muted align-middle">
                                         <?= ! empty($r['tanggal_spm']) ? date('d/m/Y', strtotime($r['tanggal_spm'])) : '-'; ?>

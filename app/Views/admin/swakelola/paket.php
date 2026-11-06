@@ -124,6 +124,9 @@
                                             <a href="<?= base_url('admin/swakelola/realisasi?paket_id=' . $p['id']); ?>" class="btn btn-outline-success" title="Realisasi SPM &amp; Kuitansi">
                                                 <i class="fas fa-receipt mr-1"></i> Realisasi
                                             </a>
+                                            <a href="<?= base_url('admin/swakelola/perjadin?paket_id=' . $p['id']); ?>" class="btn btn-outline-warning text-dark" title="Daftar Personel Perjadin">
+                                                <i class="fas fa-plane-departure mr-1"></i> Perjadin
+                                            </a>
                                             <a href="<?= base_url('admin/swakelola/laporan?paket_id=' . $p['id']); ?>" class="btn btn-outline-info" title="Rekapitulasi RAB vs Realisasi">
                                                 <i class="fas fa-chart-pie"></i>
                                             </a>

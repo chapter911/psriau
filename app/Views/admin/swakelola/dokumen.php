@@ -71,6 +71,9 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                     <i class="fas fa-clipboard-check mr-1"></i> Status: <?= $totalAda; ?> / <?= $totalCount; ?> Dokumen Lengkap (<?= $persenAda; ?>%)
                 </div>
                 <div class="d-flex">
+                    <a href="<?= base_url('admin/swakelola/perjadin?paket_id=' . $activePaketId); ?>" class="btn btn-outline-warning text-white btn-sm font-weight-bold mr-2">
+                        <i class="fas fa-plane-departure mr-1"></i> Daftar Perjadin
+                    </a>
                     <?php if (! empty($permissions['export'])): ?>
                         <a href="<?= base_url('admin/swakelola/laporan/export-excel?paket_id=' . $activePaketId); ?>" class="btn btn-outline-light btn-sm font-weight-bold mr-2">
                             <i class="fas fa-file-excel mr-1"></i> Export Checklist (.xlsx)

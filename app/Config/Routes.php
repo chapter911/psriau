@@ -627,6 +627,10 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('swakelola/realisasi/(:num)/hapus', 'Admin\Swakelola::deleteRealisasi/$1');
 	$routes->get('swakelola/laporan', 'Admin\Swakelola::laporanIndex');
 	$routes->get('swakelola/laporan/export-excel', 'Admin\Swakelola::exportChecklistExcel');
+	$routes->get('swakelola/perjadin', 'Admin\Swakelola::perjadinIndex');
+	$routes->get('swakelola/perjadin/export-excel', 'Admin\Swakelola::exportPerjadinExcel');
+	$routes->get('swakelola/perjadin/export-pdf', 'Admin\Swakelola::exportPerjadinPdf');
+	$routes->post('swakelola/perjadin/sync-master', 'Admin\Swakelola::syncPerjadinMasterPegawai');
 });
 
 

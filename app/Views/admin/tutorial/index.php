@@ -1197,6 +1197,7 @@ graph TD
     B -->|Checklist Dokumen| D["28 Checklist Dokumen (/admin/swakelola/dokumen)"]
     B -->|Realisasi Anggaran| E["Realisasi SPM &amp; SP2D (/admin/swakelola/realisasi)"]
     B -->|Rekapitulasi &amp; Laporan| F["Rekap RAB vs Realisasi (/admin/swakelola/laporan)"]
+    B -->|Daftar Perjadin| G["Daftar Personel Perjadin (/admin/swakelola/perjadin)"]
 
     C --> C1["Monitoring 4 Paket LHA No. 9: Seluruh 4 Paket Terverifikasi Selesai 100% (28/28 Dokumen Lengkap): Paket 1 PHTC Thp 3 (PIC: Amsal), Paket 2 SPPG Riau (PIC: bg Agung), Paket 3 Madrasah Riau (PIC: bg Jefri), Paket 4 Madrasah Riau 5 (PIC: bg Syahridwan)"]
     C1 --> C2["Indikator Progres Kelengkapan (28/28 Dokumen - 100%), Pagu POK Rev 16/RAB, Realisasi SP2D &amp; Shortcut 1-Klik per Paket"]
@@ -1217,10 +1218,15 @@ graph TD
 
     E --> E_SW["Paket Switcher &amp; Pencatatan Transaksi SPM, SP2D &amp; PTUP per Paket"]
     E_SW --> E1["Total 81 Transaksi SPM/SP2D/PTUP Terverifikasi Asli (Rp 638.420.100): Paket 1 PHTC 3 (10 SPM Rp 87.955.000), Paket 2 SPPG (16 SPM Rp 141.159.100), Paket 3 Madrasah Riau (43 SPM Rp 322.773.000), Paket 4 Madrasah Riau 5 (12 SPM Rp 86.533.000)"]
-    E1 --> E2["Kalkulasi Otomatis Realisasi per Akun POK Revisi 16 (521211, 521213, 521811, 522191, 524111, 524113, 524114)"]
+    E1 --> E2["Kalkulasi Otomatis Realisasi per Akun POK Revisi 16 (521211, 521213, 521811, 522191, 524111, 524113, 524114) &amp; Tautan Pintas ke Personel Perjadin"]
 
     F --> F1["Matriks Perbandingan Real-Time per Paket: Pagu POK Rev 16/RAB vs Realisasi SP2D/PTUP &amp; Sisa Pagu Efisiensi"]
     F1 --> F3["Export Checklist Lengkap (.xlsx) Multi-Sheet Dinamis untuk Masing-Masing Paket (Sesuai Hak Akses FiturExport menu_akses)"]
+
+    G --> G1["Inventarisasi Personel Perjalanan Dinas (Akun 524111, 524113, 524114) dari Seluruh 4 Paket Swakelola"]
+    G1 --> G2["Pencocokan Otomatis dengan Database Master Pegawai (NIP, Nama Resmi, Golongan, Jabatan)"]
+    G2 --> G3["Dukungan Personel Non-Master / Eksternal (Kemenag, Kejaksaan TP4D, Tenaga Pendukung Tetap Lengkap Dicatat)"]
+    G3 --> G4["Filter Multi-Kriteria, Pratinjau PDF Berkas Fisik SPPD/SPT/Kuitansi, Sinkronisasi Master Pegawai &amp; Export Excel/PDF"]
                 </pre>
             </div>
         </div>
@@ -2527,6 +2533,18 @@ graph TD
                                 <ul>
                                     <li>Menyajikan matriks perbandingan real-time per paket antara Pagu Anggaran pada <strong>POK Revisi 16 Tanggal 23 Desember 2025 / RAB</strong> terhadap Realisasi Aktual SP2D/PTUP beserta sisa pagu efisiensi kas negara.</li>
                                     <li>Tersedia tombol <strong>Download Checklist Lengkap (.xlsx)</strong> (mengikuti hak akses <code>FiturExport</code> pada tabel <code>menu_akses</code>) untuk mengunduh spreadsheet checklist 28 dokumen dari paket mana pun yang sedang dipilih dalam format OpenXML multi-sheet siap pakai (<code>Checklist_Lengkap_Swakelola_PHTC3.xlsx</code>, <code>Checklist_Lengkap_Swakelola_SPPG.xlsx</code>, <code>Checklist_Lengkap_Swakelola_Madrasah_Riau.xlsx</code>, dan <code>Checklist_Lengkap_Swakelola_Madrasah_Riau5.xlsx</code>).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Submenu Daftar Perjadin (<code>/admin/swakelola/perjadin</code>):</strong>
+                                <ul>
+                                    <li>Menampilkan daftar komprehensif seluruh personel yang ditugaskan dalam perjalanan dinas swakelola (Belanja Perjadin Biasa <code>524111</code>, Belanja Perjadin Dalam Kota <code>524113</code>, dan Paket Meeting Dalam Kota <code>524114</code>) dari seluruh 4 paket kegiatan swakelola (SPPG, Madrasah PHTC Riau, Madrasah Riau 5, dan PHTC 3).</li>
+                                    <li><strong>Pencocokan Otomatis dengan Master Pegawai</strong>: Sistem secara cerdas dan otomatis mencocokkan identitas personel berdasarkan NIP terverifikasi maupun nama lengkap terhadap tabel <code>mst_pegawai</code>, menampilkan badge hijau <code>Master Pegawai</code> serta menyinkronkan data resmi NIP, Golongan, dan Jabatan fungsional.</li>
+                                    <li><strong>Penanganan Personel Non-Master / Eksternal</strong>: Sesuai aturan operasional, seluruh personel non-master (tenaga pendukung lapangan, utusan Kemenag Kabupaten/Kota, Tim TP4D Kejaksaan, narasumber luar) <strong>tetap dicatat dan ditampilkan secara utuh</strong> dengan badge abu-abu <code>Non-Master / Eksternal</code> tanpa ada data yang dihilangkan.</li>
+                                    <li>Dilengkapi <strong>5 Kartu Metrik KPI Eksekutif</strong>: Total Penugasan Perjalanan, Jumlah Personel Unik (individu berbeda), Jumlah Personel Cocok Master Pegawai, Jumlah Personel Non-Master/Eksternal, dan Total Realisasi Biaya Perjadin Definitif SP2D.</li>
+                                    <li>Dilengkapi <strong>Filter &amp; Pencarian Multi-Kriteria</strong>: Filter dinamis berdasarkan Paket Swakelola, Nama Personel, Kota/Tujuan Penugasan, Status Master Pegawai, Akun MAK, dan Nomor SPM.</li>
+                                    <li>Dilengkapi tombol <strong>Pratinjau Langsung Bukti PDF</strong> untuk membuka dokumen fisik asli (Surat Tugas SPT, Surat Perjalanan Dinas SPD, Kuitansi, dan Daftar Nominatif) secara 1-klik langsung dari folder repositori berkas.</li>
+                                    <li>Fitur <strong>Sinkronisasi Master Pegawai</strong> (hak akses <code>FiturEdit</code> / <code>FiturAdd</code>) untuk memperbarui data pencocokan sewaktu-waktu saat master pegawai diperbarui.</li>
+                                    <li>Fitur <strong>Export Excel (.xlsx)</strong> dan <strong>Cetak / PDF</strong> berformat resmi Satker PPS Riau yang dilengkapi lembar tanda tangan PPK dan Kasatker (mengikuti hak akses <code>FiturExport</code> pada tabel <code>menu_akses</code>).</li>
                                 </ul>
                             </li>
                         </ol>

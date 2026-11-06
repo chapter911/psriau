@@ -6,6 +6,13 @@ use App\Controllers\BaseController;
 use App\Models\SwakelolaPaketModel;
 use App\Models\SwakelolaDokumenModel;
 use App\Models\SwakelolaRealisasiModel;
+use App\Models\SwakelolaPerjadinPersonelModel;
+use App\Models\Data\SwakelolaPerjadinData;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use CodeIgniter\HTTP\ResponseInterface;
 
 class Swakelola extends BaseController
@@ -13,12 +20,14 @@ class Swakelola extends BaseController
     protected SwakelolaPaketModel $paketModel;
     protected SwakelolaDokumenModel $dokumenModel;
     protected SwakelolaRealisasiModel $realisasiModel;
+    protected SwakelolaPerjadinPersonelModel $perjadinPersonelModel;
 
     public function __construct()
     {
-        $this->paketModel     = new SwakelolaPaketModel();
-        $this->dokumenModel   = new SwakelolaDokumenModel();
-        $this->realisasiModel = new SwakelolaRealisasiModel();
+        $this->paketModel             = new SwakelolaPaketModel();
+        $this->dokumenModel           = new SwakelolaDokumenModel();
+        $this->realisasiModel         = new SwakelolaRealisasiModel();
+        $this->perjadinPersonelModel = new SwakelolaPerjadinPersonelModel();
     }
 
     /**
@@ -1844,5 +1853,568 @@ class Swakelola extends BaseController
             'import'   => ((int) ($akses['FiturImport'] ?? 0)) === 1,
             'approval' => ((int) ($akses['FiturApproval'] ?? 0)) === 1,
         ];
+    }
+
+    /**
+     * Sub-Menu 5: Daftar Personel Perjalanan Dinas Swakelola
+     */
+    public function perjadinIndex()
+    {
+        $this->syncVerifiedSppgData();
+        $this->ensurePerjadinModuleReady();
+
+        $permissions = $this->resolveMenuAksesPermissions('admin/swakelola/perjadin');
+        $paketList   = $this->getEnrichedPaketList();
+
+        $filters = [
+            'paket_id'      => (int) ($this->request->getGet('paket_id') ?? 0),
+            'nama_personel' => (string) ($this->request->getGet('nama_personel') ?? ''),
+            'kota_tujuan'   => (string) ($this->request->getGet('kota_tujuan') ?? ''),
+            'status_match'  => (string) ($this->request->getGet('status_match') ?? ''),
+            'spm'           => (string) ($this->request->getGet('spm') ?? ''),
+            'kode_akun'     => (string) ($this->request->getGet('kode_akun') ?? ''),
+        ];
+
+        $records            = $this->perjadinPersonelModel->getFilteredPersonel($filters);
+        $stats              = $this->perjadinPersonelModel->getSummaryStats($filters);
+        $uniquePersonel     = $this->perjadinPersonelModel->getUniquePersonel();
+        $uniqueDestinations = $this->perjadinPersonelModel->getUniqueDestinations();
+
+        return view('admin/swakelola/perjadin', [
+            'title'              => 'Daftar Personel Perjalanan Dinas Swakelola',
+            'records'            => $records,
+            'stats'              => $stats,
+            'filters'            => $filters,
+            'paketList'          => $paketList,
+            'uniquePersonel'     => $uniquePersonel,
+            'uniqueDestinations' => $uniqueDestinations,
+            'permissions'        => $permissions,
+        ]);
+    }
+
+    /**
+     * Export Daftar Personel Perjadin ke Excel (.xlsx)
+     */
+    public function exportPerjadinExcel()
+    {
+        $this->syncVerifiedSppgData();
+        $this->ensurePerjadinModuleReady();
+
+        $permissions = $this->resolveMenuAksesPermissions('admin/swakelola/perjadin');
+        if (empty($permissions['export'])) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mengekspor data ini.');
+        }
+
+        $filters = [
+            'paket_id'      => (int) ($this->request->getGet('paket_id') ?? 0),
+            'nama_personel' => (string) ($this->request->getGet('nama_personel') ?? ''),
+            'kota_tujuan'   => (string) ($this->request->getGet('kota_tujuan') ?? ''),
+            'status_match'  => (string) ($this->request->getGet('status_match') ?? ''),
+            'spm'           => (string) ($this->request->getGet('spm') ?? ''),
+            'kode_akun'     => (string) ($this->request->getGet('kode_akun') ?? ''),
+        ];
+
+        $records = $this->perjadinPersonelModel->getFilteredPersonel($filters);
+        $stats   = $this->perjadinPersonelModel->getSummaryStats($filters);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Daftar Perjadin Swakelola');
+
+        // Satker Header
+        $sheet->mergeCells('A1:P1');
+        $sheet->mergeCells('A2:P2');
+        $sheet->mergeCells('A3:P3');
+        $sheet->mergeCells('A4:P4');
+
+        $sheet->setCellValue('A1', 'DAFTAR PERSONEL PERJALANAN DINAS (PERJADIN) SWAKELOLA');
+        $sheet->setCellValue('A2', 'SATUAN KERJA PELAKSANAAN PRASARANA STRATEGIS PROVINSI RIAU');
+        $sheet->setCellValue('A3', 'DIREKTORAT JENDERAL PRASARANA STRATEGIS — KEMENTERIAN PEKERJAAN UMUM');
+        $sheet->setCellValue('A4', 'Tahun Anggaran 2025 / 2026 (Audit LHA No. 09 Multi-Paket Swakelola)');
+
+        $sheet->getStyle('A1:P4')->getFont()->setBold(true);
+        $sheet->getStyle('A1')->getFont()->setSize(14);
+        $sheet->getStyle('A2:A4')->getFont()->setSize(10)->getColor()->setARGB('FF334155');
+        $sheet->getStyle('A1:P4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // KPI Ringkasan
+        $sheet->mergeCells('A6:P6');
+        $kpiText = sprintf(
+            'Total Perjalanan: %d Penugasan  |  Personel Unik: %d Orang  |  Cocok Master Pegawai: %d  |  Non-Master / Eksternal: %d  |  Total Biaya: Rp %s',
+            $stats['total_perjalanan'],
+            $stats['personel_unik'],
+            $stats['matched'],
+            $stats['unmatched'],
+            number_format($stats['total_biaya'], 0, ',', '.')
+        );
+        $sheet->setCellValue('A6', $kpiText);
+        $sheet->getStyle('A6:P6')->getFont()->setBold(true)->setSize(10)->getColor()->setARGB('FF1E3A8A');
+        $sheet->getStyle('A6:P6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A6:P6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEFF6FF');
+
+        // Headers
+        $headers = [
+            'A8' => 'NO.',
+            'B8' => 'NAMA PAKET KEGIATAN',
+            'C8' => 'AKUN MAK',
+            'D8' => 'NAMA PERSONEL',
+            'E8' => 'STATUS MASTER',
+            'F8' => 'NIP',
+            'G8' => 'GOLONGAN',
+            'H8' => 'JABATAN / PERAN',
+            'I8' => 'INSTANSI',
+            'J8' => 'KOTA TUJUAN',
+            'K8' => 'TGL BERANGKAT',
+            'L8' => 'TGL KEMBALI',
+            'M8' => 'LAMA (HARI)',
+            'N8' => 'NO. SPM & TGL',
+            'O8' => 'NO. SP2D',
+            'P8' => 'BIAYA (RP)',
+        ];
+
+        foreach ($headers as $cell => $text) {
+            $sheet->setCellValue($cell, $text);
+        }
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF'], 'size' => 10],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF1E3A8A']],
+        ];
+        $sheet->getStyle('A8:P8')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(8)->setRowHeight(28);
+
+        $rowNum = 9;
+        $no = 1;
+        foreach ($records as $r) {
+            $isMatched = ((int) ($r['is_matched_master'] ?? 0) === 1);
+            $statusLabel = $isMatched ? 'Master Pegawai' : 'Non-Master / Eksternal';
+            $nipDisplay = ! empty($r['master_nip']) ? $r['master_nip'] : ($r['nip'] ?? '-');
+            $golDisplay = ! empty($r['master_golongan']) ? $r['master_golongan'] : ($r['golongan'] ?? '-');
+            $jabDisplay = ! empty($r['master_jabatan']) ? $r['master_jabatan'] : ($r['jabatan'] ?? '-');
+            $spmInfo    = trim(($r['nomor_spm'] ?? '') . ' ' . (! empty($r['tanggal_spm']) ? '(' . date('d/m/Y', strtotime($r['tanggal_spm'])) . ')' : ''));
+
+            $sheet->setCellValue('A' . $rowNum, $no++);
+            $sheet->setCellValue('B' . $rowNum, $r['nama_paket'] ?? '-');
+            $sheet->setCellValue('C' . $rowNum, $r['kode_akun'] ?? '-');
+            $sheet->setCellValue('D' . $rowNum, $r['nama_personel'] ?? '-');
+            $sheet->setCellValue('E' . $rowNum, $statusLabel);
+            $sheet->setCellValue('F' . $rowNum, $nipDisplay);
+            $sheet->setCellValue('G' . $rowNum, $golDisplay);
+            $sheet->setCellValue('H' . $rowNum, $jabDisplay);
+            $sheet->setCellValue('I' . $rowNum, $r['instansi'] ?? 'Satker PPS Riau');
+            $sheet->setCellValue('J' . $rowNum, $r['kota_tujuan'] ?? '-');
+            $sheet->setCellValue('K' . $rowNum, ! empty($r['tanggal_berangkat']) ? date('d/m/Y', strtotime($r['tanggal_berangkat'])) : '-');
+            $sheet->setCellValue('L' . $rowNum, ! empty($r['tanggal_kembali']) ? date('d/m/Y', strtotime($r['tanggal_kembali'])) : '-');
+            $sheet->setCellValue('M' . $rowNum, (int) ($r['lama_hari'] ?? 1));
+            $sheet->setCellValue('N' . $rowNum, $spmInfo);
+            $sheet->setCellValue('O' . $rowNum, $r['nomor_sp2d'] ?? '-');
+            $sheet->setCellValue('P' . $rowNum, (float) ($r['nilai_biaya'] ?? 0));
+
+            // Alignments
+            $sheet->getStyle('A' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('C' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('K' . $rowNum . ':M' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('P' . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
+
+            if ($rowNum % 2 === 0) {
+                $sheet->getStyle('A' . $rowNum . ':P' . $rowNum)->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('FFF8FAFC');
+            }
+
+            $rowNum++;
+        }
+
+        // Summary row
+        $sheet->mergeCells('A' . $rowNum . ':O' . $rowNum);
+        $sheet->setCellValue('A' . $rowNum, 'TOTAL BIAYA PERJALANAN DINAS');
+        $sheet->setCellValue('P' . $rowNum, "=SUM(P8:P" . ($rowNum - 1) . ")");
+        $sheet->getStyle('A' . $rowNum . ':P' . $rowNum)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('P' . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
+        $sheet->getStyle('A' . $rowNum . ':P' . $rowNum)->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('FFFEF3C7');
+
+        // Borders
+        $sheet->getStyle('A8:P' . $rowNum)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setARGB('FFCBD5E1');
+
+        // Auto width
+        foreach (range('A', 'P') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'Daftar_Personel_Perjadin_Swakelola_' . date('Ymd_His') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+        $writer->save('php://output');
+        exit;
+    }
+
+    /**
+     * Tampilan cetak / PDF Daftar Personel Perjadin
+     */
+    public function exportPerjadinPdf()
+    {
+        $this->syncVerifiedSppgData();
+        $this->ensurePerjadinModuleReady();
+
+        $permissions = $this->resolveMenuAksesPermissions('admin/swakelola/perjadin');
+        if (empty($permissions['export'])) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mencetak laporan ini.');
+        }
+
+        $filters = [
+            'paket_id'      => (int) ($this->request->getGet('paket_id') ?? 0),
+            'nama_personel' => (string) ($this->request->getGet('nama_personel') ?? ''),
+            'kota_tujuan'   => (string) ($this->request->getGet('kota_tujuan') ?? ''),
+            'status_match'  => (string) ($this->request->getGet('status_match') ?? ''),
+            'spm'           => (string) ($this->request->getGet('spm') ?? ''),
+            'kode_akun'     => (string) ($this->request->getGet('kode_akun') ?? ''),
+        ];
+
+        $records = $this->perjadinPersonelModel->getFilteredPersonel($filters);
+        $stats   = $this->perjadinPersonelModel->getSummaryStats($filters);
+
+        return view('admin/swakelola/perjadin_pdf', [
+            'title'   => 'Cetak Daftar Personel Perjalanan Dinas Swakelola',
+            'records' => $records,
+            'stats'   => $stats,
+            'filters' => $filters,
+        ]);
+    }
+
+    /**
+     * Trigger sinkronisasi pencocokan Personel Perjadin dengan Master Pegawai
+     */
+    public function syncPerjadinMasterPegawai()
+    {
+        $this->ensurePerjadinModuleReady();
+
+        $permissions = $this->resolveMenuAksesPermissions('admin/swakelola/perjadin');
+        if (empty($permissions['edit']) && empty($permissions['add'])) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk menyinkronkan data.');
+        }
+
+        $result = $this->perjadinPersonelModel->syncWithMasterPegawai();
+
+        // Note Rule 1: Single notification, no duplication
+        $msg = sprintf(
+            'Sinkronisasi Master Pegawai selesai: %d data berhasil dicocokkan dengan Master Pegawai, %d personel non-master/eksternal tetap dicatat dalam daftar.',
+            $result['matched'],
+            $result['unmatched']
+        );
+
+        return redirect()->to('/admin/swakelola/perjadin')->with('success', $msg);
+    }
+
+    /**
+     * Memastikan tabel trn_swakelola_perjadin_personel, menu_lv2, dan menu_akses telah siap
+     */
+    private function ensurePerjadinModuleReady(): void
+    {
+        $db = \Config\Database::connect();
+        $forge = \Config\Database::forge();
+
+        // 1. Ensure Table trn_swakelola_perjadin_personel
+        if (! $db->tableExists('trn_swakelola_perjadin_personel')) {
+            $forge->addField([
+                'id' => [
+                    'type'           => 'INT',
+                    'constraint'     => 11,
+                    'unsigned'       => true,
+                    'auto_increment' => true,
+                ],
+                'paket_id' => [
+                    'type'       => 'INT',
+                    'constraint' => 11,
+                    'unsigned'   => true,
+                ],
+                'realisasi_id' => [
+                    'type'       => 'INT',
+                    'constraint' => 11,
+                    'unsigned'   => true,
+                    'null'       => true,
+                ],
+                'kode_paket' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 100,
+                ],
+                'nama_paket' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 255,
+                ],
+                'kode_akun' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 20,
+                ],
+                'nomor_spt' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 100,
+                    'null'       => true,
+                ],
+                'tanggal_spt' => [
+                    'type' => 'DATE',
+                    'null' => true,
+                ],
+                'nomor_spd' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 100,
+                    'null'       => true,
+                ],
+                'nama_personel' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 150,
+                ],
+                'nip' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 50,
+                    'null'       => true,
+                ],
+                'jabatan' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 150,
+                    'null'       => true,
+                ],
+                'instansi' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 150,
+                    'default'    => 'Satker Pelaksanaan Prasarana Strategis Riau',
+                ],
+                'golongan' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 50,
+                    'null'       => true,
+                ],
+                'pegawai_id' => [
+                    'type'       => 'INT',
+                    'constraint' => 11,
+                    'unsigned'   => true,
+                    'null'       => true,
+                ],
+                'is_matched_master' => [
+                    'type'       => 'TINYINT',
+                    'constraint' => 1,
+                    'default'    => 0,
+                ],
+                'kota_tujuan' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 150,
+                ],
+                'tanggal_berangkat' => [
+                    'type' => 'DATE',
+                    'null' => true,
+                ],
+                'tanggal_kembali' => [
+                    'type' => 'DATE',
+                    'null' => true,
+                ],
+                'lama_hari' => [
+                    'type'       => 'INT',
+                    'constraint' => 4,
+                    'default'    => 1,
+                ],
+                'maksud_tugas' => [
+                    'type' => 'TEXT',
+                    'null' => true,
+                ],
+                'nomor_spm' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 50,
+                    'null'       => true,
+                ],
+                'tanggal_spm' => [
+                    'type' => 'DATE',
+                    'null' => true,
+                ],
+                'nomor_sp2d' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 50,
+                    'null'       => true,
+                ],
+                'nilai_biaya' => [
+                    'type'       => 'DECIMAL',
+                    'constraint' => '15,2',
+                    'default'    => 0.00,
+                ],
+                'file_bukti' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 255,
+                    'null'       => true,
+                ],
+                'keterangan' => [
+                    'type' => 'TEXT',
+                    'null' => true,
+                ],
+                'created_at' => [
+                    'type' => 'DATETIME',
+                    'null' => true,
+                ],
+                'updated_at' => [
+                    'type' => 'DATETIME',
+                    'null' => true,
+                ],
+            ]);
+            $forge->addKey('id', true);
+            $forge->addKey('paket_id');
+            $forge->addKey('pegawai_id');
+            $forge->addKey('kode_akun');
+            $forge->addKey('nomor_spm');
+            $forge->createTable('trn_swakelola_perjadin_personel', true);
+        }
+
+        // 2. Ensure Menu Lv2 'Daftar Perjadin'
+        if ($db->tableExists('menu_lv1') && $db->tableExists('menu_lv2')) {
+            $swakelolaRow = $db->table('menu_lv1')
+                ->where('LOWER(label)', 'swakelola')
+                ->get()
+                ->getRowArray();
+            $swakelolaId = $swakelolaRow['id'] ?? null;
+
+            if ($swakelolaId !== null) {
+                $menuLv2 = $db->table('menu_lv2')
+                    ->where('LOWER(link)', 'admin/swakelola/perjadin')
+                    ->get()
+                    ->getRowArray();
+
+                if (! $menuLv2) {
+                    $nextId = $this->generateNextChildMenuId('menu_lv2', (string) $swakelolaId);
+                    $db->table('menu_lv2')->insert([
+                        'id'        => $nextId,
+                        'header'    => (string) $swakelolaId,
+                        'label'     => 'Daftar Perjadin',
+                        'link'      => 'admin/swakelola/perjadin',
+                        'icon'      => 'fas fa-plane-departure',
+                        'ordering'  => 5,
+                        'is_active' => 1,
+                    ]);
+                    $menuId = $nextId;
+                } else {
+                    $menuId = (string) $menuLv2['id'];
+                }
+
+                // 3. Ensure menu_akses entries
+                if ($db->tableExists('menu_akses')) {
+                    $roles = [1, 2, 3, 5, 6];
+                    foreach ($roles as $rId) {
+                        $hasAkses = $db->table('menu_akses')
+                            ->where('role_id', $rId)
+                            ->where('menu_id', $menuId)
+                            ->countAllResults();
+
+                        if ($hasAkses === 0) {
+                            $isSuperOrAdmin = in_array($rId, [1, 2], true);
+                            $isKeuangan     = ($rId === 5);
+                            $isTataUsaha    = in_array($rId, [3, 6], true);
+
+                            $db->table('menu_akses')->insert([
+                                'role_id'       => $rId,
+                                'menu_id'       => $menuId,
+                                'FiturAdd'      => ($isSuperOrAdmin || $isTataUsaha || $isKeuangan) ? 1 : 0,
+                                'FiturEdit'     => ($isSuperOrAdmin || $isTataUsaha || $isKeuangan) ? 1 : 0,
+                                'FiturDelete'   => $isSuperOrAdmin ? 1 : 0,
+                                'FiturExport'   => 1,
+                                'FiturImport'   => $isSuperOrAdmin ? 1 : 0,
+                                'FiturApproval' => ($isSuperOrAdmin || $isKeuangan) ? 1 : 0,
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Seed Verified Perjadin Dataset if empty
+        $currentCount = $db->table('trn_swakelola_perjadin_personel')->countAllResults();
+        if ($currentCount === 0) {
+            $dataset = SwakelolaPerjadinData::all();
+
+            $paketMap = [];
+            if ($db->tableExists('trn_swakelola_paket')) {
+                $pRows = $db->table('trn_swakelola_paket')->get()->getResultArray();
+                foreach ($pRows as $p) {
+                    $paketMap[$p['kode_paket']] = (int) $p['id'];
+                }
+            }
+
+            $realisasiMap = [];
+            if ($db->tableExists('trn_swakelola_realisasi')) {
+                $rRows = $db->table('trn_swakelola_realisasi')->get()->getResultArray();
+                foreach ($rRows as $r) {
+                    $key = ($r['nomor_spm'] ?? '') . '_' . ($r['kode_akun'] ?? '');
+                    $realisasiMap[$key] = (int) $r['id'];
+                }
+            }
+
+            $now = date('Y-m-d H:i:s');
+            foreach ($dataset as $row) {
+                $kodePaket   = $row['kode_paket'] ?? '';
+                $paketId     = $paketMap[$kodePaket] ?? 1;
+                $spmKey      = ($row['nomor_spm'] ?? '') . '_' . ($row['kode_akun'] ?? '');
+                $realisasiId = $realisasiMap[$spmKey] ?? null;
+
+                $db->table('trn_swakelola_perjadin_personel')->insert([
+                    'paket_id'          => $paketId,
+                    'realisasi_id'      => $realisasiId,
+                    'kode_paket'        => $kodePaket,
+                    'nama_paket'        => $row['nama_paket'] ?? '',
+                    'kode_akun'         => $row['kode_akun'] ?? '',
+                    'nomor_spt'         => $row['nomor_spt'] ?? null,
+                    'tanggal_spt'       => $row['tanggal_spt'] ?? null,
+                    'nomor_spd'         => $row['nomor_spd'] ?? null,
+                    'nama_personel'     => $row['nama_personel'] ?? '',
+                    'nip'               => $row['nip'] ?? null,
+                    'jabatan'           => $row['jabatan'] ?? null,
+                    'instansi'          => $row['instansi'] ?? 'Satker Pelaksanaan Prasarana Strategis Riau',
+                    'golongan'          => $row['golongan'] ?? null,
+                    'pegawai_id'        => null,
+                    'is_matched_master' => 0,
+                    'kota_tujuan'       => $row['kota_tujuan'] ?? 'Kota Pekanbaru',
+                    'tanggal_berangkat' => $row['tanggal_berangkat'] ?? null,
+                    'tanggal_kembali'   => $row['tanggal_kembali'] ?? null,
+                    'lama_hari'         => $row['lama_hari'] ?? 1,
+                    'maksud_tugas'      => $row['maksud_tugas'] ?? null,
+                    'nomor_spm'         => $row['nomor_spm'] ?? null,
+                    'tanggal_spm'       => $row['tanggal_spm'] ?? null,
+                    'nomor_sp2d'        => $row['nomor_sp2d'] ?? null,
+                    'nilai_biaya'       => $row['nilai_biaya'] ?? 0.00,
+                    'file_bukti'        => $row['file_bukti'] ?? null,
+                    'keterangan'        => $row['keterangan'] ?? null,
+                    'created_at'        => $now,
+                    'updated_at'        => $now,
+                ]);
+            }
+
+            // Run initial sync with master pegawai
+            $this->perjadinPersonelModel->syncWithMasterPegawai();
+        }
+    }
+
+    /**
+     * Helper generate child menu id for menu_lv2
+     */
+    private function generateNextChildMenuId(string $table, string $headerId): string
+    {
+        $db = \Config\Database::connect();
+        $prefix = rtrim($headerId, '-') . '-';
+        $rows = $db->table($table)
+            ->select('id')
+            ->like('id', $prefix, 'after')
+            ->get()
+            ->getResultArray();
+
+        $max = 0;
+        foreach ($rows as $r) {
+            $val = substr((string) $r['id'], strlen($prefix));
+            if (is_numeric($val) && (int) $val > $max) {
+                $max = (int) $val;
+            }
+        }
+
+        return $prefix . str_pad((string) ($max + 1), 2, '0', STR_PAD_LEFT);
     }
 }
