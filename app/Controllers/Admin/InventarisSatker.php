@@ -1716,6 +1716,12 @@ class InventarisSatker extends BaseController
             $orientation = 'portrait';
         }
 
+        // Parameter pilihan ukuran kertas (A4 atau A3)
+        $paper = strtoupper(trim((string) ($this->request->getPost('paper') ?? $this->request->getGet('paper') ?? 'A4')));
+        if (! in_array($paper, ['A4', 'A3'], true)) {
+            $paper = 'A4';
+        }
+
         // Parameter input fleksibel
         $singleId  = $this->request->getGet('id') ?? $this->request->getPost('id');
         $rawIds    = $this->request->getPost('ids') ?? $this->request->getGet('ids');
@@ -1884,6 +1890,7 @@ class InventarisSatker extends BaseController
             'logoBase64'  => $logoBase64,
             'kodeUakpb'   => '145060900691285000KP',
             'orientation' => $orientation,
+            'paper'       => $paper,
         ];
 
         $html = view('admin/inventaris/satker/pdf_sticker', $data);
@@ -1894,7 +1901,7 @@ class InventarisSatker extends BaseController
 
         $dompdf = new Dompdf($dompdfOptions);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', $orientation);
+        $dompdf->setPaper($paper, $orientation);
         $dompdf->render();
 
         $filename = 'Sticker_BMN_' . date('Ymd_His') . '.pdf';

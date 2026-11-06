@@ -4,8 +4,22 @@ if (! function_exists('esc')) {
         return htmlspecialchars((string) $data, ENT_QUOTES, 'UTF-8');
     }
 }
+
+$paper = strtoupper($paper ?? 'A4');
+if (! in_array($paper, ['A4', 'A3'], true)) {
+    $paper = 'A4';
+}
 $isLandscape = ($orientation ?? 'portrait') === 'landscape';
-$perRow = $isLandscape ? 3 : 2;
+
+if ($paper === 'A3') {
+    $perRow = $isLandscape ? 4 : 3;
+} else {
+    $perRow = $isLandscape ? 3 : 2;
+}
+
+$isCompact = ($perRow > 2);
+$cellWidthPercent = round(100 / $perRow, 3) . '%';
+$cellMaxWidth = ($perRow === 3) ? '92.5mm' : '95.5mm';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -14,7 +28,7 @@ $perRow = $isLandscape ? 3 : 2;
     <title>Cetak Sticker BMN - <?= date('Y-m-d'); ?></title>
     <style>
         @page {
-            size: A4 <?= $isLandscape ? 'landscape' : 'portrait'; ?>;
+            size: <?= $paper; ?> <?= $isLandscape ? 'landscape' : 'portrait'; ?>;
             margin: <?= $isLandscape ? '6mm 6mm 6mm 6mm' : '7mm 6mm 7mm 6mm'; ?>;
         }
         * {
@@ -30,16 +44,16 @@ $perRow = $isLandscape ? 3 : 2;
             line-height: 1.15;
         }
 
-        /* Tabel Halaman Utama: 2 Kolom (Portrait) atau 3 Kolom (Landscape) */
+        /* Tabel Halaman Utama: 2 Kolom (A4 Port), 3 Kolom (A4 Land / A3 Port), atau 4 Kolom (A3 Land) */
         .sticker-page-table {
             width: 100%;
             table-layout: fixed;
             border-collapse: separate;
-            border-spacing: <?= $isLandscape ? '2.5mm 3mm' : '3.5mm 3.5mm'; ?>;
+            border-spacing: <?= $isCompact ? '2.5mm 3mm' : '3.5mm 3.5mm'; ?>;
         }
         .sticker-cell {
-            width: <?= $isLandscape ? '33.333%' : '50%'; ?>;
-            max-width: <?= $isLandscape ? '92.5mm' : '95.5mm'; ?>;
+            width: <?= $cellWidthPercent; ?>;
+            max-width: <?= $cellMaxWidth; ?>;
             vertical-align: top;
             padding: 0;
         }
@@ -88,7 +102,7 @@ $perRow = $isLandscape ? 3 : 2;
             padding: 0;
         }
         .instansi-title {
-            font-size: <?= $isLandscape ? '7.8pt' : '8pt'; ?>;
+            font-size: <?= $isCompact ? '7.8pt' : '8pt'; ?>;
             font-weight: normal;
             color: #000000;
             line-height: 1.15;
@@ -96,7 +110,7 @@ $perRow = $isLandscape ? 3 : 2;
             white-space: nowrap;
         }
         .instansi-code {
-            font-size: <?= $isLandscape ? '7pt' : '7.2pt'; ?>;
+            font-size: <?= $isCompact ? '7pt' : '7.2pt'; ?>;
             font-weight: normal;
             color: #000000;
             line-height: 1.15;
@@ -113,7 +127,7 @@ $perRow = $isLandscape ? 3 : 2;
             height: 24.8mm;
         }
         .body-info-td {
-            width: <?= $isLandscape ? '70%' : '72%'; ?>;
+            width: <?= $isCompact ? '70%' : '72%'; ?>;
             vertical-align: top;
             padding: 1.6mm 1.2mm 1mm 2mm;
             overflow: hidden;
@@ -126,7 +140,7 @@ $perRow = $isLandscape ? 3 : 2;
         }
         .cell-kode-barang {
             width: 55%;
-            font-size: <?= $isLandscape ? '7.8pt' : '8pt'; ?>;
+            font-size: <?= $isCompact ? '7.8pt' : '8pt'; ?>;
             font-weight: normal;
             color: #000000;
             vertical-align: top;
@@ -134,7 +148,7 @@ $perRow = $isLandscape ? 3 : 2;
         }
         .cell-nup {
             width: 45%;
-            font-size: <?= $isLandscape ? '7.8pt' : '8pt'; ?>;
+            font-size: <?= $isCompact ? '7.8pt' : '8pt'; ?>;
             font-weight: normal;
             color: #000000;
             vertical-align: top;
@@ -142,7 +156,7 @@ $perRow = $isLandscape ? 3 : 2;
             white-space: nowrap;
         }
         .cell-nama-barang {
-            font-size: <?= $isLandscape ? '7.5pt' : '7.8pt'; ?>;
+            font-size: <?= $isCompact ? '7.5pt' : '7.8pt'; ?>;
             font-weight: normal;
             color: #000000;
             line-height: 1.15;
@@ -151,7 +165,7 @@ $perRow = $isLandscape ? 3 : 2;
             margin-bottom: 1.5mm;
         }
         .cell-merk-tipe {
-            font-size: <?= $isLandscape ? '7pt' : '7.2pt'; ?>;
+            font-size: <?= $isCompact ? '7pt' : '7.2pt'; ?>;
             font-weight: normal;
             color: #000000;
             line-height: 1.15;
@@ -161,20 +175,20 @@ $perRow = $isLandscape ? 3 : 2;
 
         /* Area Kanan (Kode Digital: QR Code) */
         .body-qr-td {
-            width: <?= $isLandscape ? '30%' : '28%'; ?>;
+            width: <?= $isCompact ? '30%' : '28%'; ?>;
             vertical-align: middle;
             text-align: right;
             padding: 1.5mm 2mm 1mm 0;
         }
         .qr-image {
-            width: <?= $isLandscape ? '18.5mm' : '19.5mm'; ?>;
-            height: <?= $isLandscape ? '18.5mm' : '19.5mm'; ?>;
+            width: <?= $isCompact ? '18.5mm' : '19.5mm'; ?>;
+            height: <?= $isCompact ? '18.5mm' : '19.5mm'; ?>;
             display: block;
             margin-left: auto;
         }
         .qr-placeholder {
-            width: <?= $isLandscape ? '18.5mm' : '19.5mm'; ?>;
-            height: <?= $isLandscape ? '18.5mm' : '19.5mm'; ?>;
+            width: <?= $isCompact ? '18.5mm' : '19.5mm'; ?>;
+            height: <?= $isCompact ? '18.5mm' : '19.5mm'; ?>;
             border: 1px dashed #cccccc;
             display: block;
             margin-left: auto;
@@ -186,7 +200,7 @@ $perRow = $isLandscape ? 3 : 2;
     <table class="sticker-page-table" cellpadding="0" cellspacing="0">
         <colgroup>
             <?php for ($c = 0; $c < $perRow; $c++): ?>
-                <col style="width: <?= $isLandscape ? '33.333%' : '50%'; ?>;">
+                <col style="width: <?= $cellWidthPercent; ?>;">
             <?php endfor; ?>
         </colgroup>
         <?php
@@ -224,8 +238,8 @@ $perRow = $isLandscape ? 3 : 2;
                             <!-- Bagian Bawah (Data Spesifikasi Aset & Verifikasi) -->
                             <table class="body-table" cellpadding="0" cellspacing="0">
                                 <colgroup>
-                                    <col style="width: <?= $isLandscape ? '70%' : '72%'; ?>;">
-                                    <col style="width: <?= $isLandscape ? '30%' : '28%'; ?>;">
+                                    <col style="width: <?= $isCompact ? '70%' : '72%'; ?>;">
+                                    <col style="width: <?= $isCompact ? '30%' : '28%'; ?>;">
                                 </colgroup>
                                 <tr>
                                     <!-- Area Kiri (Informasi Barang) -->

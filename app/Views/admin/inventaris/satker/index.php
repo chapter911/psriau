@@ -1140,7 +1140,7 @@
                 <div class="modal-body p-4">
                     <div class="alert alert-light border small text-muted mb-3" style="border-radius: 8px;">
                         <i class="fas fa-info-circle text-primary mr-1"></i>
-                        Sticker dicetak pada lembar A4 dengan format standar resmi Kementerian Pekerjaan Umum. Anda dapat memilih orientasi <strong>Portrait (2 sticker per baris)</strong> atau <strong>Landscape (3 sticker per baris)</strong> sesuai kebutuhan lembar stiker.
+                        Sticker dicetak dengan format standar resmi Kementerian Pekerjaan Umum. Anda dapat memilih ukuran kertas <strong>A4</strong> atau <strong>A3</strong> serta orientasi <strong>Portrait</strong> maupun <strong>Landscape</strong> sesuai spesifikasi kertas label dan printer Anda.
                     </div>
 
                     <label class="font-weight-bold text-dark small text-uppercase mb-2" style="letter-spacing: 0.5px;">Pilih Cakupan Cetak:</label>
@@ -1187,24 +1187,39 @@
                         </div>
                     </div>
 
-                    <!-- Pilihan Orientasi Cetak -->
-                    <label class="font-weight-bold text-dark small text-uppercase mb-2" style="letter-spacing: 0.5px;">Pilih Orientasi Cetak (Kertas A4):</label>
+                    <!-- Pilihan Format Kertas & Orientasi Cetak -->
                     <div class="row mb-2">
-                        <div class="col-6">
-                            <div class="custom-control custom-radio p-2.5 rounded h-100" style="background: #f8fafc; border: 1px solid #cbd5e1;">
-                                <input type="radio" id="orientation-portrait" name="orientation" class="custom-control-input" value="portrait" checked>
-                                <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="orientation-portrait" style="cursor: pointer;">
-                                    <i class="fas fa-file-alt mr-1 text-primary"></i> Portrait (Tegak)
-                                    <small class="text-muted d-block font-weight-normal mt-1">2 sticker / baris (Standar resmi PU, ~14 sticker/lembar).</small>
+                        <div class="col-12 col-md-6 mb-2 mb-md-0">
+                            <label class="font-weight-bold text-dark small text-uppercase mb-1.5" style="letter-spacing: 0.5px;">Ukuran Kertas:</label>
+                            <div class="custom-control custom-radio p-2.5 rounded mb-2" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                                <input type="radio" id="paper-a4" name="paper" class="custom-control-input" value="A4" checked>
+                                <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="paper-a4" style="cursor: pointer;">
+                                    <i class="fas fa-file mr-1 text-primary"></i> Kertas A4
+                                    <small class="text-muted d-block font-weight-normal mt-0.5">210 &times; 297 mm (Standar umum printer kantor).</small>
+                                </label>
+                            </div>
+                            <div class="custom-control custom-radio p-2.5 rounded" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                                <input type="radio" id="paper-a3" name="paper" class="custom-control-input" value="A3">
+                                <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="paper-a3" style="cursor: pointer;">
+                                    <i class="fas fa-file-invoice mr-1 text-info"></i> Kertas A3
+                                    <small class="text-muted d-block font-weight-normal mt-0.5">297 &times; 420 mm (Format besar, kapasitas 2x lipat).</small>
                                 </label>
                             </div>
                         </div>
-                        <div class="col-6">
-                            <div class="custom-control custom-radio p-2.5 rounded h-100" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                        <div class="col-12 col-md-6">
+                            <label class="font-weight-bold text-dark small text-uppercase mb-1.5" style="letter-spacing: 0.5px;">Orientasi Cetak:</label>
+                            <div class="custom-control custom-radio p-2.5 rounded mb-2" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                                <input type="radio" id="orientation-portrait" name="orientation" class="custom-control-input" value="portrait" checked>
+                                <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="orientation-portrait" style="cursor: pointer;">
+                                    <i class="fas fa-file-alt mr-1 text-primary"></i> Portrait (Tegak)
+                                    <small class="text-muted d-block font-weight-normal mt-0.5">A4: 2 kolom (~14 stiker) | A3: 3 kolom (~30 stiker).</small>
+                                </label>
+                            </div>
+                            <div class="custom-control custom-radio p-2.5 rounded" style="background: #f8fafc; border: 1px solid #cbd5e1;">
                                 <input type="radio" id="orientation-landscape" name="orientation" class="custom-control-input" value="landscape">
                                 <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="orientation-landscape" style="cursor: pointer;">
                                     <i class="fas fa-file-alt fa-rotate-270 mr-1 text-success"></i> Landscape (Mendatar)
-                                    <small class="text-muted d-block font-weight-normal mt-1">3 sticker / baris (Kertas mendatar, ~12–15 sticker/lembar).</small>
+                                    <small class="text-muted d-block font-weight-normal mt-0.5">A4: 3 kolom (~15 stiker) | A3: 4 kolom (~28 stiker).</small>
                                 </label>
                             </div>
                         </div>
