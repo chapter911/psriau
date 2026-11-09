@@ -1057,6 +1057,8 @@ class InventarisSatker extends BaseController
             $sheet = $spreadsheet->getSheetByName('Master Aset') ?: $spreadsheet->getActiveSheet();
             $highestRow = $sheet->getHighestRow();
 
+            log_message('error', 'PROD_DIAG: highestRow=' . $highestRow . ', highestRowHeader=' . $highestRowHeader . ', hasParseHuge=' . (method_exists($readerData, 'setParseHuge') ? 'yes' : 'no') . ', colMap=' . json_encode($colMap) . ', neededCols=' . json_encode($neededCols));
+
             if ($highestRow < 2) {
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON(['status' => 'error', 'message' => 'File Excel tidak memiliki data aset yang cukup.'])->setStatusCode(400);
