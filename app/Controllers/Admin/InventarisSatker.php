@@ -921,6 +921,32 @@ class InventarisSatker extends BaseController
                 }
             };
 
+            $zipDiag = new \ZipArchive();
+            if ($zipDiag->open($tempFilePath) === true) {
+                $zipReport = [];
+                for ($zi = 0; $zi < $zipDiag->numFiles; $zi++) {
+                    $entryName = $zipDiag->getNameIndex($zi);
+                    if (str_ends_with($entryName, '.xml') || str_ends_with($entryName, '.rels')) {
+                        $content = $zipDiag->getFromIndex($zi);
+                        libxml_use_internal_errors(true);
+                        $sx = simplexml_load_string($content, 'SimpleXMLElement', LIBXML_PARSEHUGE);
+                        $errs = libxml_get_errors();
+                        $errMsgs = [];
+                        foreach ($errs as $e) {
+                            $errMsgs[] = "c={$e->code},l={$e->line}," . trim($e->message);
+                        }
+                        libxml_clear_errors();
+                        $zipReport[$entryName] = [
+                            'len' => strlen($content),
+                            'parsed' => ($sx !== false),
+                            'errs' => $errMsgs,
+                        ];
+                    }
+                }
+                $zipDiag->close();
+                log_message('error', 'ZIP_DIAG_REPORT: ' . json_encode($zipReport));
+            }
+
             libxml_use_internal_errors(true);
             $tempFileSize = file_exists($tempFilePath) ? filesize($tempFilePath) : -1;
 
