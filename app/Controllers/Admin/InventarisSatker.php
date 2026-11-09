@@ -1064,11 +1064,21 @@ class InventarisSatker extends BaseController
             $readerData->setReadDataOnly(true);
             $readerData->setReadFilter($columnFilter);
 
+            libxml_use_internal_errors(true);
             $spreadsheet = $readerData->load($tempFilePath);
             $sheet = $spreadsheet->getSheetByName('Master Aset') ?: $spreadsheet->getActiveSheet();
             $highestRow = $sheet->getHighestRow();
 
-            log_message('error', 'PROD_DIAG: highestRow=' . $highestRow . ', highestRowHeader=' . $highestRowHeader . ', hasParseHuge=' . (method_exists($readerData, 'setParseHuge') ? 'yes' : 'no') . ', colMap=' . json_encode($colMap) . ', neededCols=' . json_encode($neededCols));
+            $xmlErrorsPass2 = [];
+            foreach (libxml_get_errors() as $err) {
+                $xmlErrorsPass2[] = "code={$err->code}, line={$err->line}, msg=" . trim($err->message);
+            }
+            libxml_clear_errors();
+
+            $sampleE3 = (string) $sheet->getCell('E3')->getValue();
+            $memPeak = round(memory_get_peak_usage(true) / 1024 / 1024, 2);
+
+            log_message('error', 'PROD_DIAG_PASS2: highestRow=' . $highestRow . ', sampleE3=' . $sampleE3 . ', memPeak=' . $memPeak . 'MB, xmlErrors=' . json_encode($xmlErrorsPass2));
 
             if ($highestRow < 2) {
                 if ($this->request->isAJAX()) {
