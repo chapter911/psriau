@@ -921,6 +921,9 @@ class InventarisSatker extends BaseController
                 }
             };
 
+            libxml_use_internal_errors(true);
+            $tempFileSize = file_exists($tempFilePath) ? filesize($tempFilePath) : -1;
+
             $readerHeader = IOFactory::createReaderForFile($tempFilePath);
             if (method_exists($readerHeader, 'setParseHuge')) {
                 $readerHeader->setParseHuge(true);
@@ -930,9 +933,17 @@ class InventarisSatker extends BaseController
             $ssHeader = $readerHeader->load($tempFilePath);
             $sheetHeader = $ssHeader->getSheetByName('Master Aset') ?: $ssHeader->getActiveSheet();
 
+            $xmlErrors = [];
+            foreach (libxml_get_errors() as $err) {
+                $xmlErrors[] = trim($err->message);
+            }
+            libxml_clear_errors();
+
             $highestColHeader = $sheetHeader->getHighestColumn();
             $highestColIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColHeader);
             $highestRowHeader = $sheetHeader->getHighestRow();
+
+            log_message('error', 'PROD_DIAG_HEADER: size=' . $tempFileSize . ', libxml_ver=' . (defined('LIBXML_DOTTED_VERSION') ? LIBXML_DOTTED_VERSION : 'unknown') . ', sheets=' . json_encode($ssHeader->getSheetNames()) . ', highestRow=' . $highestRowHeader . ', highestCol=' . $highestColHeader . ', xmlErrors=' . json_encode($xmlErrors));
 
             $colMap = [
                 'kode_barang'     => 'E',
