@@ -935,7 +935,7 @@ class InventarisSatker extends BaseController
 
             $xmlErrors = [];
             foreach (libxml_get_errors() as $err) {
-                $xmlErrors[] = trim($err->message);
+                $xmlErrors[] = "code={$err->code}, line={$err->line}, msg=" . trim($err->message);
             }
             libxml_clear_errors();
 
