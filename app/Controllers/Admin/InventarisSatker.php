@@ -922,6 +922,9 @@ class InventarisSatker extends BaseController
             };
 
             $readerHeader = IOFactory::createReaderForFile($tempFilePath);
+            if (method_exists($readerHeader, 'setParseHuge')) {
+                $readerHeader->setParseHuge(true);
+            }
             $readerHeader->setReadDataOnly(true);
             $readerHeader->setReadFilter($headerFilter);
             $ssHeader = $readerHeader->load($tempFilePath);
@@ -1033,35 +1036,28 @@ class InventarisSatker extends BaseController
             $columnFilter = new class($neededCols, $startRow) implements IReadFilter {
                 private array $columns;
                 private int $startRow;
-                private int $logCount = 0;
                 public function __construct(array $columns, int $startRow = 1) {
                     $this->columns = array_flip($columns);
                     $this->startRow = $startRow;
                 }
                 public function readCell(string $columnAddress, int $row, string $worksheetName = ''): bool {
-                    if ($this->logCount < 10) {
-                        $this->logCount++;
-                        log_message('error', "READCELL #{$this->logCount}: col=" . var_export($columnAddress, true) . ", row=$row, ws=" . var_export($worksheetName, true));
-                    }
                     if ($row < $this->startRow) return false;
                     return isset($this->columns[$columnAddress]);
                 }
             };
 
             $readerData = IOFactory::createReaderForFile($tempFilePath);
+            if (method_exists($readerData, 'setParseHuge')) {
+                $readerData->setParseHuge(true);
+            }
             $readerData->setReadDataOnly(true);
             $readerData->setReadFilter($columnFilter);
-
-            log_message('error', 'PHP SPREADSHEET VERSION: ' . (\Composer\InstalledVersions::isInstalled('phpoffice/phpspreadsheet') ? \Composer\InstalledVersions::getVersion('phpoffice/phpspreadsheet') : 'unknown') . ', readerData class: ' . get_class($readerData));
 
             $spreadsheet = $readerData->load($tempFilePath);
             $sheet = $spreadsheet->getSheetByName('Master Aset') ?: $spreadsheet->getActiveSheet();
             $highestRow = $sheet->getHighestRow();
 
-            log_message('error', 'IMPORT DEBUG: highestRowHeader=' . $highestRowHeader . ', highestColIdx=' . $highestColIdx . ', startRow=' . $startRow . ', colMap=' . json_encode($colMap) . ', neededCols=' . json_encode($neededCols) . ', sheetTitle=' . $sheet->getTitle() . ', highestRow=' . $highestRow);
-
             if ($highestRow < 2) {
-                log_message('error', 'IMPORT FAILED: highestRow=' . $highestRow . ' < 2. Sheet=' . $sheet->getTitle() . ', SheetCount=' . $spreadsheet->getSheetCount() . ', SheetNames=' . json_encode($spreadsheet->getSheetNames()));
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON(['status' => 'error', 'message' => 'File Excel tidak memiliki data aset yang cukup.'])->setStatusCode(400);
                 }

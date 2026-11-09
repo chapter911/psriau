@@ -396,6 +396,9 @@ class InventarisSmokeTest extends BaseCommand
         if (file_exists($simanFilePath)) {
             try {
                 $reader = IOFactory::createReaderForFile($simanFilePath);
+                if (method_exists($reader, 'setParseHuge')) {
+                    $reader->setParseHuge(true);
+                }
                 $reader->setReadDataOnly(true);
                 $spreadsheet = $reader->load($simanFilePath);
                 $sheet = $spreadsheet->getSheetByName('Master Aset') ?: $spreadsheet->getActiveSheet();

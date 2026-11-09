@@ -39,6 +39,9 @@ class ImportSimanDbr extends BaseCommand
         CLI::write("\n[LANGKAH 1] Membaca dan mengimpor data dari daftar-aset-1.xlsx...", "cyan");
 
         $reader = IOFactory::createReaderForFile($simanFile);
+        if (method_exists($reader, 'setParseHuge')) {
+            $reader->setParseHuge(true);
+        }
         $reader->setReadDataOnly(true);
         $spreadsheet = $reader->load($simanFile);
         $sheet = $spreadsheet->getSheetByName('Master Aset') ?: $spreadsheet->getActiveSheet();
