@@ -281,7 +281,7 @@
             <strong>Kepala Satuan Kerja PPS Riau</strong>
             <div class="sig-space"></div>
             <strong><u>Muhammad Yudi Prasetya, S.T.</u></strong><br>
-            NIP. 19800626 200604 1 016
+            NIP. 19800214 201412 1 002
         </div>
     </div>
 </div>

@@ -1204,13 +1204,13 @@ graph TD
 
     D --> PS["Paket Switcher (Tab &amp; Dropdown Paket 1 s/d Paket 4)"]
     PS --> D1["Pengelompokan 28 Dokumen ke 5 Tahapan Standar LKPP &amp; LHA No. 9"]
-    D1 --> T1["Tahap A: Perencanaan (5 Dokumen: POK Rev 16 &amp; Petikan DIPA, RUP SiRUP, KAK, RAB, Identifikasi Kebutuhan)"]
-    D1 --> T2["Tahap B: Persiapan (6 Dokumen: SK Tim KPA, Uraian Tugas, Rencana Kerja/Jadwal, KAK/RAB Final, BA Persiapan, Rencana Kebutuhan)"]
-    D1 --> T3["Tahap C: Pelaksanaan (7 Dokumen: Surat Tugas, Logbook/Daftar Hadir, Laporan Progres, Bukti Belanja Penyedia, Kuitansi/Pajak, Dokumentasi Foto, SPPD/PTUP)"]
-    D1 --> T4["Tahap D: Pengawasan (4 Dokumen: Laporan Was, BA Pemeriksaan Mutu/Vol, Rekon Fisik-Keu, Evaluasi Deviasi)"]
-    D1 --> T5["Tahap E: Pertanggungjawaban (6 Dokumen: Laporan Akhir, BAST Pelaksana ke PPK, BAPHP, Rekap POK Rev 16 vs Realisasi, BA Pajak, BA Persediaan)"]
+    D1 --> T1["Tahap A: Perencanaan (5 Dokumen &amp; Sub-Berkas: POK Rev 16 &amp; Petikan DIPA, RUP SiRUP, KAK, RAB &amp; Penetapan Tipe I, Identifikasi Kebutuhan)"]
+    D1 --> T2["Tahap B: Persiapan (6 Dokumen &amp; Sub-Berkas: SK Tim KPA, Uraian Tugas, Rencana Kerja/Jadwal, KAK/RAB Final Terpisah &amp; Gabungan, BA Persiapan, Rencana Kebutuhan)"]
+    D1 --> T3["Tahap C: Pelaksanaan (7 Dokumen &amp; Multi-Berkas: Surat Tugas/SPK, Logbook/SPD/Daftar Hadir, Laporan Progres &amp; C.8 Penggunaan Bahan/SDM, Bukti Belanja Penyedia, Kuitansi/Pajak, Album 8 Foto Fisik C.6, SPPD/PTUP)"]
+    D1 --> T4["Tahap D: Pengawasan (4 Dokumen &amp; Sub-Berkas: Laporan Pengawasan &amp; Catatan Was, Lembar Checklist Pemeriksaan, Rekon Fisik-Keu &amp; BA Hasil Was, Evaluasi Deviasi &amp; Rekomendasi)"]
+    D1 --> T5["Tahap E: Pertanggungjawaban (6 Dokumen &amp; Sub-Berkas: Laporan Akhir &amp; Rekap SP2D KPPN, BAST Format Resmi ke PPK + Lampiran Output, BAPHP Format Resmi Checklist Sesuai/Tidak Sesuai &amp; 4 Penandatangan PPK/Tim Teknis, Rekap POK Rev 16 vs Realisasi, BA Pajak &amp; SP2D, BA Persediaan &amp; Daftar Arsip)"]
     
-    T1 --> DL["Pratinjau Modal Langsung (PDF/Word dengan Standarisasi Tabel Tanda Tangan 3-Baris Sinkron: Tanggal, Jabatan &amp; Nama/NIP Sejajar Presisi), Unduh Berkas &amp; Upload/Perbarui Dokumen (Sesuai FiturAdd/FiturEdit menu_akses)"]
+    T1 --> DL["Badge Progres per Tahap, Label Tipe Berkas (PDF/DOCX), Pratinjau Modal Lengkap Ukuran/Uraian (KOP Satker &amp; TTD Sinkron), Unduh &amp; Upload (Sesuai FiturAdd/FiturEdit menu_akses)"]
     T2 --> DL
     T3 --> DL
     T4 --> DL
@@ -2567,9 +2567,10 @@ graph TD
                             <li><strong>Submenu Checklist Dokumen (<code>/admin/swakelola/dokumen</code>):</strong>
                                 <ul>
                                     <li>Dilengkapi <strong>Paket Switcher (Tab &amp; Dropdown Paket 1 s/d Paket 4)</strong> di bagian atas halaman untuk berpindah antar paket secara instan.</li>
-                                    <li>Menyajikan pemantauan 28 dokumen wajib yang dikelompokkan secara rapi ke dalam 5 tahapan:
+                                    <li>Menyajikan pemantauan 28 dokumen wajib yang dikelompokkan secara rapi ke dalam 5 tahapan dengan indikator progres per tahap (<code>Item Lengkap</code> &amp; total <code>Berkas Digital</code>):
                                         <strong>Tahap A (Perencanaan)</strong>, <strong>Tahap B (Persiapan)</strong>, <strong>Tahap C (Pelaksanaan)</strong>, <strong>Tahap D (Pengawasan &amp; Pengendalian)</strong>, dan <strong>Tahap E (Serah Terima &amp; Pertanggungjawaban)</strong>.</li>
-                                    <li>Mendukung multi-berkas pada satu item checklist untuk seluruh 4 paket (khususnya berkas DIPA/POK, KAK, RAB, SK Pembentukan Tim, SPK/Surat Tugas, Bukti Belanja Bahan, Kuitansi/Pajak Honor &amp; Gaji, Dokumentasi Lapangan, serta SPPD/PTUP), pratinjau langsung (<strong>Preview</strong> PDF &amp; Word <code>.docx</code> dengan penempatan KOP Satker resmi &amp; <strong>standarisasi tabel blok tanda tangan multi-baris sinkron</strong>: Baris 1 Tanggal/Header, Baris 2 Jabatan Penandatangan dengan baseline sejajar horizontal, dan Baris 3 Ruang TTD + Nama Tebal Bergaris Bawah + NIP pada horizontal baseline yang presisi tanpa pergeseran baris), serta <strong>Upload / Perbarui Berkas Dokumen</strong> (<code>.pdf</code> / <code>.docx</code> / <code>.xlsx</code>) pada setiap baris item sesuai hak akses <code>FiturAdd</code> / <code>FiturEdit</code> di <code>menu_akses</code>.</li>
+                                    <li>Seluruh 4 paket kini telah distandarisasi setara kedalaman audit <strong>Paket 2 (SPPG)</strong> berbasis multi-tabel, dasar hukum Perpres 16/2018 jo. Perpres 46/2025 &amp; PerLKPP 3/2021, album 8 foto kegiatan pada <code>C.6</code> untuk seluruh paket, serta <strong>Format Resmi Poin 24 (BAST) &amp; Poin 25 (BAPHP)</strong> Satker PPS Riau (identitas PIHAK PERTAMA/PPK &amp; PIHAK KEDUA/Pelaksana, tabel pemeriksaan <em>Sesuai / Tidak Sesuai</em> dengan centang, dan matriks 4 penandatangan PPK &amp; Tim Pengawas/Tim Teknis PPK).</li>
+                                    <li>Mendukung multi-berkas pada setiap item checklist untuk seluruh 4 paket beserta badge tipe berkas (<code>PDF</code> / <code>DOCX</code>), pratinjau langsung (<strong>Preview</strong> PDF &amp; Word <code>.docx</code> lengkap dengan info ukuran berkas, uraian, KOP Satker resmi &amp; standarisasi blok tanda tangan multi-baris sinkron), serta <strong>Upload / Perbarui Berkas Dokumen</strong> sesuai hak akses <code>FiturAdd</code> / <code>FiturEdit</code> di <code>menu_akses</code>.</li>
                                 </ul>
                             </li>
                             <li><strong>Submenu Realisasi Anggaran (<code>/admin/swakelola/realisasi</code>):</strong>

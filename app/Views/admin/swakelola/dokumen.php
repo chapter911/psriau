@@ -100,14 +100,30 @@ $activePaketId = (int) ($paket['id'] ?? 0);
         <div class="card-body p-3">
 
             <?php foreach ($grouped as $code => $group): ?>
+                <?php
+                    $tahapTotal = count($group['items']);
+                    $tahapAda   = 0;
+                    $tahapFiles = 0;
+                    foreach ($group['items'] as $gItem) {
+                        if (($gItem['status'] ?? '') === 'Ada') {
+                            $tahapAda++;
+                        }
+                        $tahapFiles += count($gItem['sub_files'] ?? []);
+                    }
+                ?>
                 <div class="card border mb-4 shadow-none" style="border-radius: 8px; overflow: hidden;">
-                    <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                    <div class="card-header bg-light py-2 px-3 d-flex flex-wrap justify-content-between align-items-center">
                         <span class="font-weight-bold text-dark" style="font-size: 0.95rem;">
                             <i class="fas fa-folder-open mr-2 text-primary"></i> <?= esc($group['label']); ?>
                         </span>
-                        <span class="badge badge-info px-2 py-1 font-weight-normal">
-                            <?= count($group['items']); ?> Dokumen
-                        </span>
+                        <div class="d-flex align-items-center mt-1 mt-sm-0">
+                            <span class="badge <?= $tahapAda >= $tahapTotal ? 'badge-success' : 'badge-warning text-dark'; ?> px-2 py-1 mr-2">
+                                <i class="fas fa-check-circle mr-1"></i> <?= $tahapAda; ?>/<?= $tahapTotal; ?> Item Lengkap
+                            </span>
+                            <span class="badge badge-info px-2 py-1 font-weight-normal">
+                                <i class="fas fa-copy mr-1"></i> <?= $tahapFiles; ?> Berkas Digital
+                            </span>
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover table-sm mb-0">
@@ -156,8 +172,10 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                                                     $sf = $subFiles[0];
                                                     $ext = strtolower(pathinfo($sf['file_name'], PATHINFO_EXTENSION));
                                                     $iconClass = ($ext === 'pdf') ? 'fa-file-pdf text-danger' : 'fa-file-word text-primary';
+                                                    $extBadge = ($ext === 'pdf') ? 'badge-danger' : 'badge-primary';
                                                 ?>
-                                                <small class="font-weight-bold">
+                                                <small class="font-weight-bold d-inline-flex align-items-center flex-wrap">
+                                                    <span class="badge <?= $extBadge; ?> mr-1 text-uppercase" style="font-size: 0.65rem;"><?= esc($ext); ?></span>
                                                     <i class="fas <?= $iconClass; ?> mr-1"></i> <?= esc($sf['label']); ?>
                                                 </small>
                                             <?php else: ?>
@@ -166,9 +184,11 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                                                         <?php
                                                             $ext = strtolower(pathinfo($sf['file_name'], PATHINFO_EXTENSION));
                                                             $iconClass = ($ext === 'pdf') ? 'fa-file-pdf text-danger' : 'fa-file-word text-primary';
+                                                            $extBadge = ($ext === 'pdf') ? 'badge-danger' : 'badge-primary';
                                                         ?>
                                                         <div class="d-flex justify-content-between align-items-center <?= $idxSf < count($subFiles) - 1 ? 'mb-2 pb-1 border-bottom' : ''; ?>">
                                                             <small class="font-weight-bold mr-2">
+                                                                <span class="badge <?= $extBadge; ?> mr-1 text-uppercase" style="font-size: 0.65rem;"><?= esc($ext); ?></span>
                                                                 <i class="fas <?= $iconClass; ?> mr-1"></i> <?= esc($sf['label']); ?>
                                                             </small>
                                                             <div class="btn-group btn-group-sm flex-shrink-0">
@@ -443,8 +463,10 @@ $(document).ready(function() {
                     return;
                 }
 
+                const sizeKb = res.file_size ? (res.file_size > 1048576 ? (res.file_size / 1048576).toFixed(2) + ' MB' : Math.max(1, Math.round(res.file_size / 1024)) + ' KB') : '-';
+                const ketText = res.keterangan ? ' • ' + res.keterangan : '';
                 $('#previewModalTitle').text(res.nomor_urut + '. ' + res.nama_dokumen);
-                $('#previewDocSubtitle').text(res.file_name);
+                $('#previewDocSubtitle').text(res.file_name + ' (' + sizeKb + ')' + ketText);
                 $('#previewBtnDownload').attr('href', res.download_url);
                 $('#previewBtnNewTab').attr('href', res.file_url || res.inline_url);
                 $('#previewErrorDownloadBtn').attr('href', res.download_url);
