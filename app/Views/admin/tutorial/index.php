@@ -1232,6 +1232,44 @@ graph TD
         </div>
     </div>
 
+    <!-- FLOWCHART 15: ATK & SUPPLIES (TANDA TANGAN BASAH & 6 DOKUMEN SPJ) -->
+    <div class="card flowchart-card mb-4 role-section" data-roles="admin,super_administrator,keuangan,ppk_kasatker,staf_pelaksana,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-boxes text-primary mr-2"></i>Flowchart: Modul ATK &amp; Supplies (Pengadaan, 6 Dokumen SPJ &amp; Verifikasi Tanda Tangan Basah)
+            </h5>
+            <div>
+                <span class="badge badge-primary">ATK &amp; SUPPLIES</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Buka Menu Utama: ATK &amp; Supplies"] --> B{"Pilih Submenu"}
+    B -->|Katalog Barang &amp; Harga| K1["Kelola Master Item &amp; Harga Satuan (/admin/atk/katalog)"]
+    B -->|Penyedia / Vendor| V1["Kelola Data Penyedia &amp; Direktur (/admin/atk/penyedia)"]
+    B -->|Pengadaan &amp; SPJ| P1["Buat Pengadaan Baru per Bulan &amp; Kategori: ATK / Supplies Komputer (/admin/atk/pengadaan)"]
+    B -->|Rekapitulasi &amp; Laporan| R1["Pantau Rekap Bulanan &amp; Cetak PDF / Export Excel (/admin/atk/laporan)"]
+
+    P1 --> P2["Pilih Item dari Katalog (Harga Otomatis) &amp; Masukkan Volume"]
+    P2 --> P3["Sistem Hitung Subtotal, Total &amp; Terbilang Otomatis (Status: Draft)"]
+    P3 --> P4["Cetak 6 Dokumen SPJ (PDF / Excel 6-Sheet): Usulan PPK, SPB, BAST, Lamp. BASTP, Faktur, Kuitansi LS"]
+    P4 --> P5["Penandatanganan Basah oleh PPK, Bendahara Pengeluaran &amp; Penyedia"]
+    P5 --> P6["Upload Scan/Foto Dokumen Bertanda Tangan Basah"]
+    P6 --> P7{"Opsi Verifikasi Upload"}
+    P7 -- "Tandai Anggap Disetujui" --> S1["Status: Disetujui (TTD Basah)"]
+    P7 -- "Menunggu Verifikasi" --> S2["Status: Menunggu TTD / Verifikasi"]
+    S2 --> V2{"Review Pejabat Berwenang (FiturApproval)"}
+    S1 --> V2
+    V2 -- "Setujui / Tandai Lunas" --> S3["Status: Disetujui / Lunas Dibayar"]
+    V2 -- "Tolak / Minta Revisi" --> S4["Status: Ditolak (Catat Alasan Revisi)"]
+    S4 --> P5
+                </pre>
+            </div>
+        </div>
+    </div>
+
     <!-- PANDUAN PENGGUNAAN SISTEM (ACCORDION STYLE) -->
     <div class="mt-4">
         <!-- MODUL KEUANGAN & SURAT TUGAS -->
@@ -2563,6 +2601,35 @@ graph TD
                                     <li>Fitur <strong>Export Excel (.xlsx)</strong> dan <strong>Cetak / PDF</strong> berformat resmi Satker PPS Riau yang secara transparan menyertakan <strong>Nama File Bukti / Sumber Berkas Dokumen Fisik</strong> dan <strong>Lokasi Folder Repositori Berkas</strong> di setiap baris penugasan untuk auditabilitas menyeluruh, serta dilengkapi lembar tanda tangan PPK dan Kasatker (mengikuti hak akses <code>FiturExport</code> pada tabel <code>menu_akses</code>).</li>
                                 </ul>
                             </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODUL ATK & SUPPLIES -->
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="admin,super_administrator,keuangan,ppk_kasatker,staf_pelaksana,all">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-boxes mr-2"></i> Modul ATK &amp; Supplies: Pengadaan Rutin, 6 Dokumen SPJ &amp; Arsip Tanda Tangan Basah
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-primary"><i class="fas fa-file-invoice mr-1"></i> Pengelolaan Pengadaan Alat Tulis Kantor &amp; Supplies Komputer (MAK 521211)</h6>
+                        <p class="small text-muted mb-2"><code>/admin/atk/pengadaan</code> | <code>/admin/atk/katalog</code> | <code>/admin/atk/penyedia</code> | <code>/admin/atk/laporan</code></p>
+                        <ol class="pl-3 small mb-0" style="line-height: 1.8;">
+                            <li><strong>Submenu Katalog Barang &amp; Harga (<code>/admin/atk/katalog</code>):</strong> Menyimpan daftar harga referensi barang ATK dan Supplies Komputer per penyedia dan tahun anggaran (termasuk fitur Import/Export Excel sesuai hak akses <code>FiturImport</code> / <code>FiturExport</code> di <code>menu_akses</code>).</li>
+                            <li><strong>Submenu Penyedia / Vendor (<code>/admin/atk/penyedia</code>):</strong> Mengelola data perusahaan rekanan beserta alamat, kontak, dan nama pimpinan penandatangan faktur/BAST.</li>
+                            <li><strong>Submenu Pengadaan &amp; SPJ (<code>/admin/atk/pengadaan</code>):</strong>
+                                <ul>
+                                    <li>Membuat transaksi pengadaan per bulan dengan kategori terpisah (<strong>ATK</strong> atau <strong>Supplies Komputer</strong>), memilih barang dari katalog, dan sistem otomatis menghitung total serta teks <em>Terbilang</em>.</li>
+                                    <li>Mencetak seluruh <strong>6 Dokumen SPJ</strong> dalam format <strong>PDF</strong> (satuan maupun bundel gabungan) dan <strong>Excel 6-Sheet</strong> (<code>USULAN PPK</code>, <code>SURAT PESANAN BARANG (PISAH)</code>, <code>BAST</code>, <code>Faktur PISAH</code>, <code>Kwi LS</code>, dan <code>Lamp. BASTP</code>).</li>
+                                    <li><strong>Alur Tanda Tangan Basah &amp; Approval:</strong> Dokumen yang telah dicetak dan ditandatangani secara basah diunggah hasil pindainya (PDF/JPG/PNG) pada halaman detail pengadaan. Pengunggahan dapat langsung menandai status sebagai <strong>Disetujui (TTD Basah)</strong>, namun pejabat berwenang (<code>FiturApproval</code>) tetap dapat melakukan peninjauan dan memilih <strong>Tolak / Revisi</strong> dengan alasan jika berkas belum sesuai.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Submenu Rekapitulasi &amp; Laporan (<code>/admin/atk/laporan</code>):</strong> Menampilkan rekapitulasi belanja ATK vs Supplies Komputer per bulan dalam satu tahun anggaran lengkap dengan fitur ekspor Excel dan cetak PDF.</li>
                         </ol>
                     </div>
                 </div>

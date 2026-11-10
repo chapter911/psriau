@@ -631,6 +631,40 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('swakelola/perjadin/export-excel', 'Admin\Swakelola::exportPerjadinExcel');
 	$routes->get('swakelola/perjadin/export-pdf', 'Admin\Swakelola::exportPerjadinPdf');
 	$routes->post('swakelola/perjadin/sync-master', 'Admin\Swakelola::syncPerjadinMasterPegawai');
+
+	// Modul ATK & Supplies
+	$routes->get('atk', static fn() => redirect()->to('/admin/atk/pengadaan'));
+	$routes->get('atk/pengadaan', 'Admin\AtkSupplies::pengadaanIndex');
+	$routes->post('atk/pengadaan/tambah', 'Admin\AtkSupplies::pengadaanStore');
+	$routes->get('atk/pengadaan/export-excel', 'Admin\AtkSupplies::exportExcelBatch');
+	$routes->get('atk/pengadaan/(:num)', 'Admin\AtkSupplies::pengadaanDetail/$1');
+	$routes->post('atk/pengadaan/(:num)/ubah', 'Admin\AtkSupplies::pengadaanUpdate/$1');
+	$routes->post('atk/pengadaan/(:num)/hapus', 'Admin\AtkSupplies::pengadaanDelete/$1');
+	$routes->post('atk/pengadaan/(:num)/upload-ttd', 'Admin\AtkSupplies::uploadDokumenTtd/$1');
+	$routes->post('atk/pengadaan/(:num)/setujui', 'Admin\AtkSupplies::setujui/$1');
+	$routes->post('atk/pengadaan/(:num)/tolak', 'Admin\AtkSupplies::tolak/$1');
+	$routes->get('atk/pengadaan/(:num)/cetak-pdf/(:segment)', 'Admin\AtkSupplies::cetakPdf/$1/$2');
+	$routes->get('atk/pengadaan/(:num)/cetak-pdf', 'Admin\AtkSupplies::cetakPdf/$1');
+	$routes->get('atk/pengadaan/(:num)/export-excel', 'Admin\AtkSupplies::exportExcel/$1');
+	$routes->get('atk/pengadaan/dokumen/(:num)/view', 'Admin\AtkSupplies::viewDokumenTtd/$1');
+	$routes->post('atk/pengadaan/dokumen/(:num)/hapus', 'Admin\AtkSupplies::deleteDokumenTtd/$1');
+
+	$routes->get('atk/katalog', 'Admin\AtkSupplies::katalogIndex');
+	$routes->post('atk/katalog/tambah', 'Admin\AtkSupplies::katalogStore');
+	$routes->post('atk/katalog/(:num)/ubah', 'Admin\AtkSupplies::katalogUpdate/$1');
+	$routes->post('atk/katalog/(:num)/hapus', 'Admin\AtkSupplies::katalogDelete/$1');
+	$routes->post('atk/katalog/import', 'Admin\AtkSupplies::katalogImport');
+	$routes->get('atk/katalog/template', 'Admin\AtkSupplies::katalogTemplate');
+	$routes->get('atk/katalog/export', 'Admin\AtkSupplies::katalogExportExcel');
+
+	$routes->get('atk/penyedia', 'Admin\AtkSupplies::penyediaIndex');
+	$routes->post('atk/penyedia/tambah', 'Admin\AtkSupplies::penyediaStore');
+	$routes->post('atk/penyedia/(:num)/ubah', 'Admin\AtkSupplies::penyediaUpdate/$1');
+	$routes->post('atk/penyedia/(:num)/hapus', 'Admin\AtkSupplies::penyediaDelete/$1');
+
+	$routes->get('atk/laporan', 'Admin\AtkSupplies::laporanIndex');
+	$routes->get('atk/laporan/export-excel', 'Admin\AtkSupplies::laporanExportExcel');
+	$routes->get('atk/laporan/export-pdf', 'Admin\AtkSupplies::laporanExportPdf');
 });
 
 
