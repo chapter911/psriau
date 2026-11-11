@@ -579,8 +579,8 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                 <iframe id="previewIframe" src="" style="width: 100%; height: 100%; border: none; display: none;"></iframe>
 
                 <!-- Div Container for DOCX render -->
-                <div id="docxPreviewWrapper" style="width: 100%; height: 100%; overflow-y: auto; padding: 25px; display: none;">
-                    <div id="docxContainer" style="max-width: 850px; margin: 0 auto; background: #ffffff; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); border-radius: 4px; min-height: 100%;"></div>
+                <div id="docxPreviewWrapper" style="width: 100%; height: 100%; overflow-y: auto; padding: 25px; display: none; overscroll-behavior: contain;">
+                    <div id="docxContainer" style="max-width: 850px; margin: 0 auto;"></div>
                 </div>
 
                 <!-- Fallback / Error message -->
@@ -619,6 +619,15 @@ if (typeof docx === 'undefined') {
 #docxContainer {
     font-family: Arial, sans-serif;
     color: #000;
+}
+#docxContainer section.docx-preview-content {
+    background: #ffffff;
+    padding: 40px 44px;
+    margin: 0 auto 24px auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
 }
 #docxContainer table {
     border-collapse: collapse;
