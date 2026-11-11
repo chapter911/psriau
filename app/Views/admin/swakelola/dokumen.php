@@ -223,6 +223,19 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                                                                     title="Unduh <?= esc($sf['label'], 'attr'); ?>">
                                                                     <i class="fas fa-download"></i>
                                                                 </a>
+                                                                <?php if ($canUploadDoc && $ext === 'docx'): ?>
+                                                                    <button type="button"
+                                                                        class="btn btn-xs btn-outline-warning text-dark btn-edit-signers py-0 px-2"
+                                                                        data-id="<?= $doc['id']; ?>"
+                                                                        data-urut="<?= $doc['nomor_urut']; ?>"
+                                                                        data-tahap="<?= esc($doc['tahap'], 'attr'); ?>"
+                                                                        data-nama="<?= esc($doc['nama_dokumen'], 'attr'); ?>"
+                                                                        data-file="<?= esc($sf['file_name'], 'attr'); ?>"
+                                                                        data-label="<?= esc($sf['label'], 'attr'); ?>"
+                                                                        title="Atur TTD khusus berkas <?= esc($sf['label'], 'attr'); ?>">
+                                                                        <i class="fas fa-pen-nib mr-1"></i> TTD
+                                                                    </button>
+                                                                <?php endif; ?>
                                                             </div>
                                                         </div>
                                                     <?php endforeach; ?>
@@ -808,9 +821,14 @@ $(document).ready(function() {
                         targetSel.append('<option value="__all__">Semua berkas .docx pada poin ini (' + files.length + ' berkas)</option>');
                     }
                     files.forEach(function(f) {
-                        targetSel.append('<option value="' + escHtml(f.file_name) + '">' + escHtml(f.file_name) + '</option>');
+                        const optLabel = f.label && f.label !== f.file_name
+                            ? (f.label + ' [' + f.file_name + ']')
+                            : f.file_name;
+                        targetSel.append('<option value="' + escHtml(f.file_name) + '">' + escHtml(optLabel) + '</option>');
                     });
-                    if (files.length > 1) {
+                    if (fileOverride) {
+                        targetSel.val(fileOverride);
+                    } else if (files.length > 1) {
                         targetSel.val('__all__');
                     }
                 }
@@ -824,18 +842,23 @@ $(document).ready(function() {
         });
     }
 
+    let currentSignerBaseSubtitle = '';
+
     $(document).on('click', '.btn-edit-signers', function() {
-        const id    = $(this).data('id');
-        const urut  = $(this).data('urut');
-        const tahap = $(this).data('tahap');
-        const nama  = $(this).data('nama');
+        const id         = $(this).data('id');
+        const urut       = $(this).data('urut');
+        const tahap      = $(this).data('tahap');
+        const nama       = $(this).data('nama');
+        const targetFile = $(this).attr('data-file') || '';
+        const targetLbl  = $(this).attr('data-label') || targetFile;
 
         $('#signerDocId').val(id);
         lastUpdatedTitle = urut + '. ' + nama;
-        $('#signerPointSubtitle').text('[Tahap ' + tahap + ' - Poin ' + urut + '] ' + nama);
+        currentSignerBaseSubtitle = '[Tahap ' + tahap + ' - Poin ' + urut + '] ' + nama;
+        $('#signerPointSubtitle').text(targetLbl ? (currentSignerBaseSubtitle + ' — Berkas: ' + targetLbl) : currentSignerBaseSubtitle);
         $('#signerCopySourceSelect').val('');
         $('#modalEditSigners').modal('show');
-        loadSignersForDoc(id, '', false);
+        loadSignersForDoc(id, targetFile, false);
     });
 
     $('#signerLayoutMode').on('change', function() {
@@ -846,8 +869,16 @@ $(document).ready(function() {
     $('#signerTargetFile').on('change', function() {
         const docId = $('#signerDocId').val();
         const val   = $(this).val();
-        if (docId && val && val !== '__all__') {
-            loadSignersForDoc(docId, val, true);
+        if (val && val !== '__all__') {
+            $('#signerPointSubtitle').text(currentSignerBaseSubtitle + ' — Berkas: ' + val);
+            if (docId) {
+                loadSignersForDoc(docId, val, true);
+            }
+        } else {
+            $('#signerPointSubtitle').text(currentSignerBaseSubtitle + ' — Semua Berkas (.docx)');
+            if (docId) {
+                loadSignersForDoc(docId, '', true);
+            }
         }
     });
 
