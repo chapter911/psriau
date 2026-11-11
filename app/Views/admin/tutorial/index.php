@@ -841,8 +841,10 @@ graph TD
     PKT_ACT -->|Tombol 'UPDATE' Syarat Umum SPK| MOD_SU["Modal Update Syarat Umum SPK &amp; Tim Teknis PPK"]
     MOD_SU --> SU_TAB1["Tab Laporan / Produk / Tugas (Per Jabatan)"]
     MOD_SU --> SU_TAB2["Tab Tim Teknis PPK (BAPHP) - Per Paket (Nama &amp; Jabatan Dinamis, default: Tim Pengawas Swakelola)"]
+    MOD_SU --> SU_TAB3["Tab Uraian Pekerjaan (BAPHP) - Per Paket (Daftar Pekerjaan Dinamis)"]
     SU_TAB1 --> SU_SAVE["Klik 'Simpan' -> POST /admin/kontrak/syarat-umum/save"]
     SU_TAB2 --> SU_SAVE
+    SU_TAB3 --> SU_SAVE
     PKT_ACT -->|Tombol 'DETAIL'| B["Halaman Daftar Kontrak KI Paket (/admin/kontrak/ki/{paketId})"]
     B --> C["Kelola Kontrak KI Paket"]
     C --> V1["Opsi Tampilan: Beralih Antara 'Tampilan Utama' &amp; 'Show All' Kolom"]
@@ -2100,6 +2102,7 @@ graph TD
                                     <li>Pada halaman <code>/admin/kontrak/paket</code>, klik tombol kuning <strong>UPDATE</strong> di kolom <strong>SYARAT UMUM (SPK)</strong> untuk membuka modal pengaturan paket.</li>
                                     <li><strong>Tab Laporan, Produk, dan Tugas (Per Jabatan):</strong> Pilih <em>Jabatan</em> terlebih dahulu lalu isi/perbarui syarat umum SPK lengkap dengan preview otomatis.</li>
                                     <li><strong>Tab Tim Teknis PPK (BAPHP):</strong> Berlaku untuk <strong>seluruh personil dalam satu paket</strong> (tidak perlu memilih Jabatan). Tersedia 3 baris input <strong>Nama</strong> &amp; <strong>Jabatan</strong> (default jabatan: <em>Tim Pengawas Swakelola</em>) secara default serta tombol <strong>+ Tambah Tim Teknis PPK</strong> / hapus baris secara dinamis. Data yang disimpan otomatis tampil pada tabel penandatangan dokumen <strong>BAPHP</strong> di bawah Pejabat Penandatangan Kontrak.</li>
+                                    <li><strong>Tab Uraian Pekerjaan (BAPHP):</strong> Berlaku untuk <strong>seluruh personil dalam satu paket</strong> (tidak perlu memilih Jabatan). Digunakan untuk menginput, menambah, mengubah, atau menghapus daftar uraian pekerjaan yang otomatis tampil bernomor urut (<code>1, 2, 3, dst.</code>) pada tabel Hasil Pemeriksaan dokumen <strong>BAPHP</strong>.</li>
                                 </ul>
                             </li>
                             <li><strong>Pengaturan Tampilan Kolom:</strong>
@@ -2134,7 +2137,7 @@ graph TD
                                 <ul>
                                     <li><strong>Export Dokumen Satuan (PDF, Word, Excel):</strong> Pada kolom <strong>ACTION</strong> di tabel kontrak, klik dropdown hijau <strong>Export</strong>. Menu terbagi rapi menjadi 3 kelompok format:
                                         <ul>
-                                            <li><strong>Bagian PDF:</strong> Mengunduh dokumen resmi format PDF (Penawaran, Pakta Integritas, Kualifikasi, Kesediaan, SPBBJ, BAPHP, BAST, SPMK, SPK). Khusus dokumen <strong>BAPHP</strong> hanya mencantumkan dasar SPK/Kontrak (poin 1) serta otomatis mengisi daftar penandatangan Tim Teknis PPK dari pengaturan paket; sedangkan dokumen <strong>BAST</strong> otomatis menggunakan format tanggal terbilang lengkap berbasis <code>tanggal_akhir - 1 hari</code> (mis. <em>Senin, tanggal Enam bulan Oktober tahun Dua Ribu Dua Puluh Lima (06-10-2025)</em>), penomoran otomatis berformat <code>{NoUrut}/BAST/{KodePaket}/PPK/PPS-RIAU/{Tahun}</code> apabila kolom <code>nomor_bast</code> kosong, dan menampilkan nama paket pada baris <em>Jabatan</em> PIHAK KEDUA (mis. <em>Team Leader {Nama Paket}</em>).</li>
+                                            <li><strong>Bagian PDF:</strong> Mengunduh dokumen resmi format PDF (Penawaran, Pakta Integritas, Kualifikasi, Kesediaan, SPBBJ, BAPHP, BAST, SPMK, SPK). Khusus dokumen <strong>BAPHP</strong> hanya mencantumkan dasar SPK/Kontrak (poin 1) serta otomatis mengisi daftar penandatangan Tim Teknis PPK dari pengaturan paket dengan kotak kolom tanda tangan yang diperbesar agar nyaman ditandatangani; sedangkan dokumen <strong>BAST</strong> otomatis menggunakan format tanggal terbilang lengkap berbasis <code>tanggal_akhir - 1 hari</code> (mis. <em>Senin, tanggal Enam bulan Oktober tahun Dua Ribu Dua Puluh Lima (06-10-2025)</em>), penomoran otomatis berformat <code>{NoUrut}/BAST/{KodePaket}/PPK/PPS-RIAU/{Tahun}</code> apabila kolom <code>nomor_bast</code> kosong, dan menampilkan nama paket pada baris <em>Jabatan</em> PIHAK KEDUA (mis. <em>Team Leader {Nama Paket}</em>).</li>
                                             <li><strong>Bagian Word (.doc):</strong> Mengunduh dokumen yang sama dalam format Microsoft Word (.doc / MHTML multipart self-contained) yang dapat langsung diedit di aplikasi Word, lengkap dengan gambar kop surat embedded yang jernih, margin halaman A4 presisi, spasi paragraf teratur, tabel borderless, dan posisi tanda tangan yang rapi sesuai tampilan PDF asli.</li>
                                             <li><strong>Bagian Excel:</strong> Mengunduh berkas tabel kalkulasi dalam format Excel .xlsx (BOQ dan Evaluasi).</li>
                                         </ul>

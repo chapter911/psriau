@@ -173,6 +173,9 @@
                                 <li class="nav-item">
                                     <a class="nav-link" id="tim-teknis-tab" data-toggle="tab" href="#tim-teknis" role="tab" aria-controls="tim-teknis" aria-selected="false">Tim Teknis PPK (BAPHP)</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="uraian-baphp-tab" data-toggle="tab" href="#uraian-baphp" role="tab" aria-controls="uraian-baphp" aria-selected="false">Uraian Pekerjaan (BAPHP)</a>
+                                </li>
                             </ul>
 
                             <div id="syarat-umum-format-toolbar" class="d-flex justify-content-end mt-2">
@@ -212,6 +215,19 @@
                                         <?php if (($can_edit ?? false) === true): ?>
                                             <button type="button" class="btn btn-outline-primary btn-sm mt-2 js-add-tim-teknis">
                                                 <i class="fas fa-plus mr-1"></i> Tambah Tim Teknis PPK
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="uraian-baphp" role="tabpanel" aria-labelledby="uraian-baphp-tab">
+                                    <div class="mt-3">
+                                        <div class="alert alert-info py-2 px-3 small mb-3">
+                                            Daftar <strong>Uraian Pekerjaan</strong> ini berlaku per paket dan akan tampil otomatis dengan penomoran berurutan (1, 2, 3, dst.) pada tabel Hasil Pemeriksaan dokumen <strong>BAPHP</strong>.
+                                        </div>
+                                        <div id="uraian-pekerjaan-baphp-list"></div>
+                                        <?php if (($can_edit ?? false) === true): ?>
+                                            <button type="button" class="btn btn-outline-primary btn-sm mt-2 js-add-uraian-baphp">
+                                                <i class="fas fa-plus mr-1"></i> Tambah Uraian Pekerjaan
                                             </button>
                                         <?php endif; ?>
                                     </div>
@@ -286,6 +302,26 @@
                     $(this).closest('.tim-teknis-row').remove();
                 }
                 self.renumberTimTeknisRows();
+                self.updatePreviewForActiveTab();
+            });
+
+            $(document).on('input', '.js-uraian-baphp-input', function () {
+                self.updatePreviewForActiveTab();
+            });
+
+            $(document).on('click', '.js-add-uraian-baphp', function () {
+                self.appendUraianBaphpRow('');
+                self.updatePreviewForActiveTab();
+            });
+
+            $(document).on('click', '.js-remove-uraian-baphp', function () {
+                var $rows = $('#uraian-pekerjaan-baphp-list .uraian-baphp-row');
+                if ($rows.length <= 1) {
+                    $rows.find('.js-uraian-baphp-input').val('');
+                } else {
+                    $(this).closest('.uraian-baphp-row').remove();
+                }
+                self.renumberUraianBaphpRows();
                 self.updatePreviewForActiveTab();
             });
 
@@ -399,6 +435,7 @@
                             });
                         }
                         self.renderTimTeknisInputs(data.tim_teknis_ppk || []);
+                        self.renderUraianBaphpInputs(data.uraian_pekerjaan_baphp || []);
                         $('#syaratUmumTab a[href="#laporan"]').tab('show');
                         self.toggleControlsForActiveTab();
                         $('#modal-syarat-umum').modal('show');
@@ -448,8 +485,9 @@
 
             var activePaneId = this.getActivePaneId();
             var jabatan = $('#jabatan_filter').val();
+            var isPaketOnlyTab = (activePaneId === '#tim-teknis' || activePaneId === '#uraian-baphp');
 
-            if (activePaneId !== '#tim-teknis' && !jabatan) {
+            if (!isPaketOnlyTab && !jabatan) {
                 Swal.fire('Warning', 'Pilih jabatan terlebih dahulu', 'warning');
                 return;
             }
@@ -476,6 +514,8 @@
                 has_tim_teknis_ppk: 1,
                 tim_teknis_ppk_nama: timTeknisPayload.nama,
                 tim_teknis_ppk_jabatan: timTeknisPayload.jabatan,
+                has_uraian_pekerjaan_baphp: 1,
+                uraian_pekerjaan_baphp: this.getUraianBaphpValues(),
                 laporan_modal: $('#laporan-editor').val(),
                 hasil_modal: $('#hasil-editor').val(),
                 tugas_tanggung_jawab_modal: $('#tugas-editor').val(),
@@ -658,9 +698,10 @@
         },
 
         toggleControlsForActiveTab: function () {
-            var isTimTeknis = this.getActivePaneId() === '#tim-teknis';
-            $('#syarat-umum-jabatan-group').toggle(!isTimTeknis);
-            $('#syarat-umum-format-toolbar').toggleClass('d-flex', !isTimTeknis).toggle(!isTimTeknis);
+            var activePaneId = this.getActivePaneId();
+            var isPaketOnlyTab = (activePaneId === '#tim-teknis' || activePaneId === '#uraian-baphp');
+            $('#syarat-umum-jabatan-group').toggle(!isPaketOnlyTab);
+            $('#syarat-umum-format-toolbar').toggleClass('d-flex', !isPaketOnlyTab).toggle(!isPaketOnlyTab);
         },
 
         renderTimTeknisInputs: function (list) {
@@ -733,18 +774,68 @@
             };
         },
 
+        renderUraianBaphpInputs: function (list) {
+            var $container = $('#uraian-pekerjaan-baphp-list');
+            $container.empty();
+
+            var items = Array.isArray(list) ? list.slice() : [];
+            if (!items.length) {
+                items = [''];
+            }
+
+            var self = this;
+            items.forEach(function (text) {
+                self.appendUraianBaphpRow(text || '');
+            });
+        },
+
+        appendUraianBaphpRow: function (value) {
+            var $container = $('#uraian-pekerjaan-baphp-list');
+            var index = $container.find('.uraian-baphp-row').length + 1;
+            var readonlyAttr = canEditPaket ? '' : ' readonly';
+            var removeBtn = canEditPaket
+                ? '<div class="input-group-append"><button type="button" class="btn btn-outline-danger js-remove-uraian-baphp" title="Hapus"><i class="fas fa-times"></i></button></div>'
+                : '';
+
+            var $row = $(
+                '<div class="form-group mb-2 uraian-baphp-row border rounded p-2 bg-white">' +
+                    '<label class="small font-weight-bold mb-1 uraian-baphp-label">Uraian Pekerjaan ' + index + '</label>' +
+                    '<div class="input-group input-group-sm">' +
+                        '<textarea rows="2" maxlength="255" class="form-control js-uraian-baphp-input" name="uraian_pekerjaan_baphp[]" placeholder="Masukkan uraian pekerjaan BAPHP..."' + readonlyAttr + '></textarea>' +
+                        removeBtn +
+                    '</div>' +
+                '</div>'
+            );
+            $row.find('.js-uraian-baphp-input').val(String(value || ''));
+            $container.append($row);
+        },
+
+        renumberUraianBaphpRows: function () {
+            $('#uraian-pekerjaan-baphp-list .uraian-baphp-row').each(function (idx) {
+                $(this).find('.uraian-baphp-label').text('Uraian Pekerjaan ' + (idx + 1));
+            });
+        },
+
+        getUraianBaphpValues: function () {
+            var values = [];
+            $('#uraian-pekerjaan-baphp-list .js-uraian-baphp-input').each(function () {
+                values.push(String($(this).val() || '').trim());
+            });
+            return values;
+        },
+
         updatePreviewForActiveTab: function () {
             var activePaneId = this.getActivePaneId();
-            if (activePaneId === '#tim-teknis') {
-                var escapeHtml = function (value) {
-                    return String(value)
-                        .replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;')
-                        .replace(/"/g, '&quot;')
-                        .replace(/'/g, '&#039;');
-                };
+            var escapeHtml = function (value) {
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            };
 
+            if (activePaneId === '#tim-teknis') {
                 var vals = this.getTimTeknisValues();
                 var filledRows = [];
                 vals.nama.forEach(function (nama, i) {
@@ -773,6 +864,32 @@
                     '<table class="table table-bordered table-sm bg-white mb-0 small">' +
                         '<thead class="thead-light"><tr><th width="10%" class="text-center">No</th><th>Nama</th><th>Jabatan</th></tr></thead>' +
                         '<tbody>' + rowsHtml + '</tbody>' +
+                    '</table>'
+                );
+                return;
+            }
+
+            if (activePaneId === '#uraian-baphp') {
+                var uraianList = this.getUraianBaphpValues().filter(function (v) { return v !== ''; });
+                var uraianRowsHtml = '';
+                if (!uraianList.length) {
+                    uraianRowsHtml = '<tr><td colspan="4" class="text-center text-muted">Belum ada uraian pekerjaan yang diisi.</td></tr>';
+                } else {
+                    uraianList.forEach(function (text, idx) {
+                        uraianRowsHtml += '<tr>' +
+                            '<td class="text-center">' + (idx + 1) + '</td>' +
+                            '<td>' + escapeHtml(text) + '</td>' +
+                            '<td class="text-center">&#10003;</td>' +
+                            '<td></td>' +
+                        '</tr>';
+                    });
+                }
+
+                $('#preview-syarat-umum').html(
+                    '<div class="small font-weight-bold mb-2">Preview Tabel Uraian Pekerjaan BAPHP:</div>' +
+                    '<table class="table table-bordered table-sm bg-white mb-0 small">' +
+                        '<thead class="thead-light"><tr><th width="10%" class="text-center">No</th><th>Uraian Pekerjaan</th><th width="15%" class="text-center">Sesuai</th><th width="20%">Ket.</th></tr></thead>' +
+                        '<tbody>' + uraianRowsHtml + '</tbody>' +
                     '</table>'
                 );
                 return;
@@ -923,6 +1040,7 @@
             $('#hasil-editor').val('');
             $('#tugas-editor').val('');
             this.renderTimTeknisInputs([]);
+            this.renderUraianBaphpInputs([]);
             this.toggleControlsForActiveTab();
             $('#preview-syarat-umum').html('<span class="text-muted">Preview akan tampil di sini.</span>');
         }

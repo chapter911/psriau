@@ -1202,9 +1202,25 @@ class Kontrak extends BaseController
             }
         }
 
+        $uraianPekerjaanBaphp = [];
+        if ($db->tableExists('trn_kontrak_ki_pekerjaan_baphp')) {
+            $pekerjaanBuilder = $db->table('trn_kontrak_ki_pekerjaan_baphp')
+                ->select('pekerjaan')
+                ->where('id_kontrak_paket', (string) $paketId)
+                ->orderBy('id', 'ASC');
+            $this->applyNotDeletedWhere($pekerjaanBuilder, 'trn_kontrak_ki_pekerjaan_baphp');
+            foreach ($pekerjaanBuilder->get()->getResultArray() as $pRow) {
+                $pekerjaanText = trim((string) ($pRow['pekerjaan'] ?? ''));
+                if ($pekerjaanText !== '') {
+                    $uraianPekerjaanBaphp[] = $pekerjaanText;
+                }
+            }
+        }
+
         return $this->response->setJSON([
             'jabatan' => $jabatans,
             'tim_teknis_ppk' => $timTeknisPpk,
+            'uraian_pekerjaan_baphp' => $uraianPekerjaanBaphp,
             'csrfHash' => csrf_hash(),
         ]);
     }
@@ -1271,8 +1287,9 @@ class Kontrak extends BaseController
         $paketId = (int) $this->request->getPost('paket_id');
         $jabatan = trim((string) $this->request->getPost('jabatan'));
         $hasTimTeknis = (string) $this->request->getPost('has_tim_teknis_ppk') === '1';
+        $hasUraianBaphp = (string) $this->request->getPost('has_uraian_pekerjaan_baphp') === '1';
 
-        if ($paketId <= 0 || ($jabatan === '' && ! $hasTimTeknis)) {
+        if ($paketId <= 0 || ($jabatan === '' && ! $hasTimTeknis && ! $hasUraianBaphp)) {
             return $this->response->setStatusCode(400)->setJSON(['error' => 'Invalid parameters']);
         }
 
@@ -1316,13 +1333,6 @@ class Kontrak extends BaseController
 
         $cleanTimTeknis = [];
         if ($hasTimTeknis) {
-            if (! $this->tableHasColumn('trn_kontrak_paket', 'tim_teknis_ppk')) {
-                return $this->response->setStatusCode(500)->setJSON([
-                    'error' => 'Kolom tim_teknis_ppk belum tersedia. Jalankan php spark migrate.',
-                    'csrfHash' => csrf_hash(),
-                ]);
-            }
-
             $defaultJabatan = 'Tim Pengawas Swakelola';
             $rawNamaList = $this->request->getPost('tim_teknis_ppk_nama');
             $rawJabatanList = $this->request->getPost('tim_teknis_ppk_jabatan');
@@ -1359,32 +1369,125 @@ class Kontrak extends BaseController
                 }
             }
 
-            $paketPayload = [
-                'tim_teknis_ppk' => ! empty($cleanTimTeknis)
-                    ? json_encode($cleanTimTeknis, JSON_UNESCAPED_UNICODE)
-                    : null,
-            ];
-            if ($this->tableHasColumn('trn_kontrak_paket', 'updated_by')) {
-                $paketPayload['updated_by'] = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
-            }
-            if ($this->tableHasColumn('trn_kontrak_paket', 'updated_date')) {
-                $paketPayload['updated_date'] = date('Y-m-d');
-            }
-            if ($this->tableHasColumn('trn_kontrak_paket', 'updated_at')) {
-                $paketPayload['updated_at'] = date('Y-m-d H:i:s');
-            }
+            if ($this->tableHasColumn('trn_kontrak_paket', 'tim_teknis_ppk')) {
+                $paketPayload = [
+                    'tim_teknis_ppk' => ! empty($cleanTimTeknis)
+                        ? json_encode($cleanTimTeknis, JSON_UNESCAPED_UNICODE)
+                        : null,
+                ];
+                if ($this->tableHasColumn('trn_kontrak_paket', 'updated_by')) {
+                    $paketPayload['updated_by'] = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+                }
+                if ($this->tableHasColumn('trn_kontrak_paket', 'updated_date')) {
+                    $paketPayload['updated_date'] = date('Y-m-d');
+                }
+                if ($this->tableHasColumn('trn_kontrak_paket', 'updated_at')) {
+                    $paketPayload['updated_at'] = date('Y-m-d H:i:s');
+                }
 
-            $db->table('trn_kontrak_paket')->where('id', $paketId)->update($paketPayload);
+                $db->table('trn_kontrak_paket')->where('id', $paketId)->update($paketPayload);
+            } elseif (! empty($cleanTimTeknis)) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'error' => 'Kolom tim_teknis_ppk belum tersedia. Jalankan php spark migrate.',
+                    'csrfHash' => csrf_hash(),
+                ]);
+            }
         }
 
-        $message = $jabatan !== '' && $hasTimTeknis
-            ? 'Syarat umum & Tim Teknis PPK berhasil disimpan'
-            : ($hasTimTeknis ? 'Tim Teknis PPK berhasil disimpan' : 'Syarat umum berhasil disimpan');
+        $cleanUraianBaphp = [];
+        if ($hasUraianBaphp) {
+            if (! $db->tableExists('trn_kontrak_ki_pekerjaan_baphp')) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'error' => 'Tabel trn_kontrak_ki_pekerjaan_baphp belum tersedia.',
+                    'csrfHash' => csrf_hash(),
+                ]);
+            }
+
+            $rawUraianList = $this->request->getPost('uraian_pekerjaan_baphp');
+            if (is_array($rawUraianList)) {
+                foreach ($rawUraianList as $uraianItem) {
+                    $trimmedUraian = trim((string) $uraianItem);
+                    if ($trimmedUraian !== '') {
+                        $cleanUraianBaphp[] = mb_substr($trimmedUraian, 0, 255);
+                    }
+                }
+            }
+
+            $db->transStart();
+            if ($this->tableHasColumn('trn_kontrak_ki_pekerjaan_baphp', 'deleted_at')) {
+                $softDeletePayload = ['deleted_at' => date('Y-m-d H:i:s')];
+                if ($this->tableHasColumn('trn_kontrak_ki_pekerjaan_baphp', 'deleted_by')) {
+                    $softDeletePayload['deleted_by'] = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+                }
+                $db->table('trn_kontrak_ki_pekerjaan_baphp')
+                    ->where('id_kontrak_paket', (string) $paketId)
+                    ->where('deleted_at', null)
+                    ->update($softDeletePayload);
+            } else {
+                $db->table('trn_kontrak_ki_pekerjaan_baphp')
+                    ->where('id_kontrak_paket', (string) $paketId)
+                    ->delete();
+            }
+
+            if (! empty($cleanUraianBaphp)) {
+                $idCol = $db->query("SHOW COLUMNS FROM `trn_kontrak_ki_pekerjaan_baphp` LIKE 'id'")->getRowArray();
+                $isAutoIncrement = is_array($idCol) && stripos((string) ($idCol['Extra'] ?? ''), 'auto_increment') !== false;
+                $nextId = 1;
+                if (! $isAutoIncrement) {
+                    $maxRow = $db->query('SELECT COALESCE(MAX(id), 0) AS max_id FROM `trn_kontrak_ki_pekerjaan_baphp`')->getRowArray();
+                    $nextId = (int) ($maxRow['max_id'] ?? 0) + 1;
+                }
+
+                $now = date('Y-m-d H:i:s');
+                $actor = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+
+                foreach ($cleanUraianBaphp as $pekerjaanText) {
+                    $rowPayload = [
+                        'id_kontrak_paket' => (string) $paketId,
+                        'pekerjaan' => $pekerjaanText,
+                    ];
+                    if (! $isAutoIncrement) {
+                        $rowPayload['id'] = $nextId++;
+                    }
+                    if ($this->tableHasColumn('trn_kontrak_ki_pekerjaan_baphp', 'is_all_personel')) {
+                        $rowPayload['is_all_personel'] = 1;
+                    }
+                    if ($this->tableHasColumn('trn_kontrak_ki_pekerjaan_baphp', 'create_time')) {
+                        $rowPayload['create_time'] = $now;
+                    }
+                    if ($this->tableHasColumn('trn_kontrak_ki_pekerjaan_baphp', 'created_at')) {
+                        $rowPayload['created_at'] = $now;
+                    }
+                    if ($this->tableHasColumn('trn_kontrak_ki_pekerjaan_baphp', 'updated_at')) {
+                        $rowPayload['updated_at'] = $now;
+                    }
+                    if ($this->tableHasColumn('trn_kontrak_ki_pekerjaan_baphp', 'updated_by')) {
+                        $rowPayload['updated_by'] = $actor;
+                    }
+
+                    $db->table('trn_kontrak_ki_pekerjaan_baphp')->insert($rowPayload);
+                }
+            }
+            $db->transComplete();
+        }
+
+        $savedParts = [];
+        if ($jabatan !== '') {
+            $savedParts[] = 'Syarat Umum';
+        }
+        if ($hasTimTeknis) {
+            $savedParts[] = 'Tim Teknis PPK';
+        }
+        if ($hasUraianBaphp) {
+            $savedParts[] = 'Uraian Pekerjaan BAPHP';
+        }
+        $message = (! empty($savedParts) ? implode(', ', $savedParts) : 'Data') . ' berhasil disimpan';
 
         return $this->response->setJSON([
             'success' => true,
             'message' => $message,
             'tim_teknis_ppk' => $cleanTimTeknis,
+            'uraian_pekerjaan_baphp' => $cleanUraianBaphp,
             'csrfHash' => csrf_hash(),
         ]);
     }

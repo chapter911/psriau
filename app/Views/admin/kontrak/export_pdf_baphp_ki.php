@@ -99,6 +99,13 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
             padding: 4px;
         }
         .signature-name { margin-top: 60px; }
+        .ttd-table td {
+            vertical-align: middle;
+            padding: 6px 6px;
+        }
+        .ttd-cell {
+            height: 48px;
+        }
     </style>
 </head>
 <body>
@@ -139,10 +146,10 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($pekerjaan_baphp as $d) { ?>
+            <?php $noPekerjaan = 1; foreach ($pekerjaan_baphp as $d) { ?>
                 <tr>
-                    <td class="text-center">1</td>
-                    <td><?= $d->pekerjaan ?></td>
+                    <td class="text-center"><?= $noPekerjaan++; ?></td>
+                    <td><?= htmlspecialchars((string) ($d->pekerjaan ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td class="text-center check-mark">&#10003;</td>
                     <td></td>
                     <td></td>
@@ -160,21 +167,21 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
         Demikian Berita Acara Pemeriksaan Hasil Pekerjaan ini dibuat dan apabila dikemudian hari terdapat kekeliruan di dalamnya maka akan ditinjau dan diperbaiki sebagaimana mestinya.
     </div>
 
-    <table class="content-table" style="margin-bottom: 15px;">
+    <table class="content-table ttd-table" style="margin-bottom: 15px;">
         <thead style="background-color: #f0f0f0;">
             <tr>
-                <th width="5%" style=" vertical-align: middle; text-align: center;">No</th>
-                <th width="30%" style=" vertical-align: middle; text-align: center;">Nama</th>
-                <th width="35%" style=" vertical-align: middle; text-align: center;">Jabatan</th>
-                <th width="25%" style=" vertical-align: middle; text-align: center;">Tanda Tangan</th>
+                <th width="5%" style="vertical-align: middle; text-align: center;">No</th>
+                <th width="33%" style="vertical-align: middle; text-align: center;">Nama</th>
+                <th width="32%" style="vertical-align: middle; text-align: center;">Jabatan</th>
+                <th width="30%" style="vertical-align: middle; text-align: center;">Tanda Tangan</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td>1</td>
+                <td class="text-center">1</td>
                 <td><?= htmlspecialchars((string) ($data->pejabat_ppk ?? '-'), ENT_QUOTES, 'UTF-8'); ?></td>
                 <td>Pejabat Penandatangan Kontrak</td>
-                <td></td>
+                <td class="ttd-cell" height="48"><div style="height: 42px; line-height: 42px;">&nbsp;</div></td>
             </tr>
             <?php
             $defaultJabatanTimTeknis = 'Tim Pengawas Swakelola';
@@ -207,10 +214,10 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
             foreach ($timTeknisList as $rowTimTeknis):
             ?>
                 <tr>
-                    <td><?= $noTtd++; ?></td>
+                    <td class="text-center"><?= $noTtd++; ?></td>
                     <td><?= htmlspecialchars($rowTimTeknis['nama'], ENT_QUOTES, 'UTF-8'); ?></td>
                     <td><?= htmlspecialchars($rowTimTeknis['jabatan'], ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td></td>
+                    <td class="ttd-cell" height="48"><div style="height: 42px; line-height: 42px;">&nbsp;</div></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
