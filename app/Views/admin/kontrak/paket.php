@@ -268,19 +268,20 @@
                 self.updatePreviewForActiveTab();
             });
 
-            $(document).on('input', '.js-tim-teknis-input', function () {
+            $(document).on('input', '.js-tim-teknis-nama, .js-tim-teknis-jabatan', function () {
                 self.updatePreviewForActiveTab();
             });
 
             $(document).on('click', '.js-add-tim-teknis', function () {
-                self.appendTimTeknisRow('');
+                self.appendTimTeknisRow('', 'Tim Pengawas Swakelola');
                 self.updatePreviewForActiveTab();
             });
 
             $(document).on('click', '.js-remove-tim-teknis', function () {
                 var $rows = $('#tim-teknis-ppk-list .tim-teknis-row');
                 if ($rows.length <= 1) {
-                    $rows.find('.js-tim-teknis-input').val('');
+                    $rows.find('.js-tim-teknis-nama').val('');
+                    $rows.find('.js-tim-teknis-jabatan').val('Tim Pengawas Swakelola');
                 } else {
                     $(this).closest('.tim-teknis-row').remove();
                 }
@@ -468,11 +469,13 @@
                 });
             }
 
+            var timTeknisPayload = this.getTimTeknisValues();
             var data = $.extend({
                 paket_id: this.paketId,
                 jabatan: jabatan || '',
                 has_tim_teknis_ppk: 1,
-                tim_teknis_ppk: this.getTimTeknisValues(),
+                tim_teknis_ppk_nama: timTeknisPayload.nama,
+                tim_teknis_ppk_jabatan: timTeknisPayload.jabatan,
                 laporan_modal: $('#laporan-editor').val(),
                 hasil_modal: $('#hasil-editor').val(),
                 tugas_tanggung_jawab_modal: $('#tugas-editor').val(),
@@ -664,18 +667,23 @@
             var $container = $('#tim-teknis-ppk-list');
             $container.empty();
 
+            var defaultJabatan = 'Tim Pengawas Swakelola';
             var items = Array.isArray(list) ? list.slice() : [];
             while (items.length < 3) {
-                items.push('');
+                items.push({ nama: '', jabatan: defaultJabatan });
             }
 
             var self = this;
-            items.forEach(function (name) {
-                self.appendTimTeknisRow(name || '');
+            items.forEach(function (item) {
+                if (item && typeof item === 'object') {
+                    self.appendTimTeknisRow(item.nama || '', item.jabatan || defaultJabatan);
+                } else {
+                    self.appendTimTeknisRow(item || '', defaultJabatan);
+                }
             });
         },
 
-        appendTimTeknisRow: function (value) {
+        appendTimTeknisRow: function (nama, jabatan) {
             var $container = $('#tim-teknis-ppk-list');
             var index = $container.find('.tim-teknis-row').length + 1;
             var readonlyAttr = canEditPaket ? '' : ' readonly';
@@ -684,15 +692,23 @@
                 : '';
 
             var $row = $(
-                '<div class="form-group mb-2 tim-teknis-row">' +
+                '<div class="form-group mb-2 tim-teknis-row border rounded p-2 bg-white">' +
                     '<label class="small font-weight-bold mb-1 tim-teknis-label">Tim Teknis PPK ' + index + '</label>' +
-                    '<div class="input-group input-group-sm">' +
-                        '<input type="text" class="form-control js-tim-teknis-input" name="tim_teknis_ppk[]" placeholder="Masukkan nama lengkap Tim Teknis PPK..."' + readonlyAttr + '>' +
-                        removeBtn +
+                    '<div class="form-row align-items-center">' +
+                        '<div class="col-md-6 mb-1 mb-md-0">' +
+                            '<input type="text" class="form-control form-control-sm js-tim-teknis-nama" name="tim_teknis_ppk_nama[]" placeholder="Nama lengkap Tim Teknis PPK..."' + readonlyAttr + '>' +
+                        '</div>' +
+                        '<div class="col-md-6">' +
+                            '<div class="input-group input-group-sm">' +
+                                '<input type="text" class="form-control js-tim-teknis-jabatan" name="tim_teknis_ppk_jabatan[]" placeholder="Tim Pengawas Swakelola"' + readonlyAttr + '>' +
+                                removeBtn +
+                            '</div>' +
+                        '</div>' +
                     '</div>' +
                 '</div>'
             );
-            $row.find('.js-tim-teknis-input').val(String(value || ''));
+            $row.find('.js-tim-teknis-nama').val(String(nama || ''));
+            $row.find('.js-tim-teknis-jabatan').val(String(jabatan || 'Tim Pengawas Swakelola'));
             $container.append($row);
         },
 
@@ -703,11 +719,18 @@
         },
 
         getTimTeknisValues: function () {
-            var values = [];
-            $('#tim-teknis-ppk-list .js-tim-teknis-input').each(function () {
-                values.push(String($(this).val() || '').trim());
+            var namaList = [];
+            var jabatanList = [];
+            $('#tim-teknis-ppk-list .tim-teknis-row').each(function () {
+                var namaVal = String($(this).find('.js-tim-teknis-nama').val() || '').trim();
+                var jabatanVal = String($(this).find('.js-tim-teknis-jabatan').val() || '').trim() || 'Tim Pengawas Swakelola';
+                namaList.push(namaVal);
+                jabatanList.push(jabatanVal);
             });
-            return values;
+            return {
+                nama: namaList,
+                jabatan: jabatanList
+            };
         },
 
         updatePreviewForActiveTab: function () {
@@ -722,14 +745,27 @@
                         .replace(/'/g, '&#039;');
                 };
 
-                var names = this.getTimTeknisValues().filter(function (v) { return v !== ''; });
-                if (!names.length) {
-                    names = ['', '', ''];
+                var vals = this.getTimTeknisValues();
+                var filledRows = [];
+                vals.nama.forEach(function (nama, i) {
+                    if (nama !== '') {
+                        filledRows.push({
+                            nama: nama,
+                            jabatan: vals.jabatan[i] || 'Tim Pengawas Swakelola'
+                        });
+                    }
+                });
+                if (!filledRows.length) {
+                    filledRows = [
+                        { nama: '', jabatan: 'Tim Pengawas Swakelola' },
+                        { nama: '', jabatan: 'Tim Pengawas Swakelola' },
+                        { nama: '', jabatan: 'Tim Pengawas Swakelola' }
+                    ];
                 }
 
                 var rowsHtml = '<tr><td class="text-center">1</td><td><em>(Pejabat PPK Kontrak)</em></td><td>Pejabat Penandatangan Kontrak</td></tr>';
-                names.forEach(function (nama, idx) {
-                    rowsHtml += '<tr><td class="text-center">' + (idx + 2) + '</td><td>' + (nama ? escapeHtml(nama) : '<span class="text-muted">(Kosong)</span>') + '</td><td>Tim Teknis PPK</td></tr>';
+                filledRows.forEach(function (row, idx) {
+                    rowsHtml += '<tr><td class="text-center">' + (idx + 2) + '</td><td>' + (row.nama ? escapeHtml(row.nama) : '<span class="text-muted">(Kosong)</span>') + '</td><td>' + escapeHtml(row.jabatan) + '</td></tr>';
                 });
 
                 $('#preview-syarat-umum').html(

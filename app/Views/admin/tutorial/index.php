@@ -840,7 +840,7 @@ graph TD
     A["Buka Menu: Kontrak > Paket (/admin/kontrak/paket)"] --> PKT_ACT{"Pilih Aksi pada Paket"}
     PKT_ACT -->|Tombol 'UPDATE' Syarat Umum SPK| MOD_SU["Modal Update Syarat Umum SPK &amp; Tim Teknis PPK"]
     MOD_SU --> SU_TAB1["Tab Laporan / Produk / Tugas (Per Jabatan)"]
-    MOD_SU --> SU_TAB2["Tab Tim Teknis PPK (BAPHP) - Per Paket (3+ Nama Dinamis)"]
+    MOD_SU --> SU_TAB2["Tab Tim Teknis PPK (BAPHP) - Per Paket (Nama &amp; Jabatan Dinamis, default: Tim Pengawas Swakelola)"]
     SU_TAB1 --> SU_SAVE["Klik 'Simpan' -> POST /admin/kontrak/syarat-umum/save"]
     SU_TAB2 --> SU_SAVE
     PKT_ACT -->|Tombol 'DETAIL'| B["Halaman Daftar Kontrak KI Paket (/admin/kontrak/ki/{paketId})"]
@@ -2099,7 +2099,7 @@ graph TD
                                 <ul>
                                     <li>Pada halaman <code>/admin/kontrak/paket</code>, klik tombol kuning <strong>UPDATE</strong> di kolom <strong>SYARAT UMUM (SPK)</strong> untuk membuka modal pengaturan paket.</li>
                                     <li><strong>Tab Laporan, Produk, dan Tugas (Per Jabatan):</strong> Pilih <em>Jabatan</em> terlebih dahulu lalu isi/perbarui syarat umum SPK lengkap dengan preview otomatis.</li>
-                                    <li><strong>Tab Tim Teknis PPK (BAPHP):</strong> Berlaku untuk <strong>seluruh personil dalam satu paket</strong> (tidak perlu memilih Jabatan). Tersedia 3 kolom input nama secara default serta tombol <strong>+ Tambah Tim Teknis PPK</strong> / hapus baris secara dinamis. Nama yang disimpan otomatis tampil pada tabel penandatangan dokumen <strong>BAPHP</strong> di bawah Pejabat Penandatangan Kontrak.</li>
+                                    <li><strong>Tab Tim Teknis PPK (BAPHP):</strong> Berlaku untuk <strong>seluruh personil dalam satu paket</strong> (tidak perlu memilih Jabatan). Tersedia 3 baris input <strong>Nama</strong> &amp; <strong>Jabatan</strong> (default jabatan: <em>Tim Pengawas Swakelola</em>) secara default serta tombol <strong>+ Tambah Tim Teknis PPK</strong> / hapus baris secara dinamis. Data yang disimpan otomatis tampil pada tabel penandatangan dokumen <strong>BAPHP</strong> di bawah Pejabat Penandatangan Kontrak.</li>
                                 </ul>
                             </li>
                             <li><strong>Pengaturan Tampilan Kolom:</strong>

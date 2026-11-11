@@ -1323,12 +1323,38 @@ class Kontrak extends BaseController
                 ]);
             }
 
-            $rawTimTeknis = $this->request->getPost('tim_teknis_ppk');
-            if (is_array($rawTimTeknis)) {
-                foreach ($rawTimTeknis as $namaTim) {
-                    $trimmed = trim((string) $namaTim);
-                    if ($trimmed !== '') {
-                        $cleanTimTeknis[] = $trimmed;
+            $defaultJabatan = 'Tim Pengawas Swakelola';
+            $rawNamaList = $this->request->getPost('tim_teknis_ppk_nama');
+            $rawJabatanList = $this->request->getPost('tim_teknis_ppk_jabatan');
+
+            if (is_array($rawNamaList)) {
+                foreach ($rawNamaList as $idx => $namaTim) {
+                    $trimmedNama = trim((string) $namaTim);
+                    $trimmedJabatan = is_array($rawJabatanList) ? trim((string) ($rawJabatanList[$idx] ?? '')) : '';
+                    if ($trimmedNama !== '') {
+                        $cleanTimTeknis[] = [
+                            'nama' => $trimmedNama,
+                            'jabatan' => $trimmedJabatan !== '' ? $trimmedJabatan : $defaultJabatan,
+                        ];
+                    }
+                }
+            } else {
+                $rawTimTeknis = $this->request->getPost('tim_teknis_ppk');
+                if (is_array($rawTimTeknis)) {
+                    foreach ($rawTimTeknis as $item) {
+                        if (is_array($item)) {
+                            $trimmedNama = trim((string) ($item['nama'] ?? ''));
+                            $trimmedJabatan = trim((string) ($item['jabatan'] ?? ''));
+                        } else {
+                            $trimmedNama = trim((string) $item);
+                            $trimmedJabatan = '';
+                        }
+                        if ($trimmedNama !== '') {
+                            $cleanTimTeknis[] = [
+                                'nama' => $trimmedNama,
+                                'jabatan' => $trimmedJabatan !== '' ? $trimmedJabatan : $defaultJabatan,
+                            ];
+                        }
                     }
                 }
             }
@@ -7433,11 +7459,21 @@ class Kontrak extends BaseController
             return [];
         }
 
+        $defaultJabatan = 'Tim Pengawas Swakelola';
         $result = [];
         foreach ($decoded as $item) {
-            $name = trim((string) $item);
+            if (is_array($item)) {
+                $name = trim((string) ($item['nama'] ?? ''));
+                $jabatan = trim((string) ($item['jabatan'] ?? ''));
+            } else {
+                $name = trim((string) $item);
+                $jabatan = '';
+            }
             if ($name !== '') {
-                $result[] = $name;
+                $result[] = [
+                    'nama' => $name,
+                    'jabatan' => $jabatan !== '' ? $jabatan : $defaultJabatan,
+                ];
             }
         }
 

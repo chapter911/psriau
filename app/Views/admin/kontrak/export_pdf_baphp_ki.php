@@ -177,25 +177,39 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
                 <td></td>
             </tr>
             <?php
+            $defaultJabatanTimTeknis = 'Tim Pengawas Swakelola';
             $timTeknisList = [];
             if (!empty($tim_teknis_ppk) && is_array($tim_teknis_ppk)) {
-                foreach ($tim_teknis_ppk as $namaTimTeknis) {
-                    $namaTrim = trim((string) $namaTimTeknis);
+                foreach ($tim_teknis_ppk as $item) {
+                    if (is_array($item)) {
+                        $namaTrim = trim((string) ($item['nama'] ?? ''));
+                        $jabatanTrim = trim((string) ($item['jabatan'] ?? ''));
+                    } else {
+                        $namaTrim = trim((string) $item);
+                        $jabatanTrim = '';
+                    }
                     if ($namaTrim !== '') {
-                        $timTeknisList[] = $namaTrim;
+                        $timTeknisList[] = [
+                            'nama' => $namaTrim,
+                            'jabatan' => $jabatanTrim !== '' ? $jabatanTrim : $defaultJabatanTimTeknis,
+                        ];
                     }
                 }
             }
             if (empty($timTeknisList)) {
-                $timTeknisList = ['', '', ''];
+                $timTeknisList = [
+                    ['nama' => '', 'jabatan' => $defaultJabatanTimTeknis],
+                    ['nama' => '', 'jabatan' => $defaultJabatanTimTeknis],
+                    ['nama' => '', 'jabatan' => $defaultJabatanTimTeknis],
+                ];
             }
             $noTtd = 2;
-            foreach ($timTeknisList as $namaTimTeknis):
+            foreach ($timTeknisList as $rowTimTeknis):
             ?>
                 <tr>
                     <td><?= $noTtd++; ?></td>
-                    <td><?= htmlspecialchars($namaTimTeknis, ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td>Tim Teknis PPK</td>
+                    <td><?= htmlspecialchars($rowTimTeknis['nama'], ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td><?= htmlspecialchars($rowTimTeknis['jabatan'], ENT_QUOTES, 'UTF-8'); ?></td>
                     <td></td>
                 </tr>
             <?php endforeach; ?>
