@@ -429,8 +429,8 @@ graph TD
     <?php endif; ?>
 
     <!-- FLOWCHART 3: KEUANGAN - VERIFIKASI BIAYA & CETAK KWITANSI/SPPD -->
-    <?php if ($canRenderForUser(['admin', 'super_administrator'])): ?>
-    <div class="flowchart-card role-section" data-roles="admin,super_administrator,all">
+    <?php if ($canRenderForUser(['admin', 'super_administrator', 'keuangan'])): ?>
+    <div class="flowchart-card role-section" data-roles="admin,super_administrator,keuangan,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="font-weight-bold mb-1 text-success"><i class="fas fa-calculator mr-2"></i> Alur Kerja Tim Keuangan / Verifikator</h5>
@@ -496,9 +496,10 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A[Buka Manajemen User & Role] --> B[Atur Hak Akses RBAC & Menu Akses]
-    B --> C[Audit Log & Riwayat Login]
-    C --> D[Konfigurasi KOP Surat & Pengaturan Sistem Global]
+    A[Buka Manajemen User &amp; Role] --> B["Atur Role Aktif (access_roles) &amp; Hak Akses Menu (menu_akses RBAC)"]
+    B --> B1["AuthFilter Memvalidasi Seluruh Role Aktif (Admin, Editor, Keuangan/Bendahara, Tata Usaha) Sesuai menu_akses"]
+    B1 --> C[Audit Log &amp; Riwayat Login]
+    C --> D[Konfigurasi KOP Surat &amp; Pengaturan Sistem Global]
     D --> E["Unduh File Word (.docx) Template Kop Surat Resmi"]
                 </pre>
             </div>

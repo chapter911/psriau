@@ -270,6 +270,28 @@ class AuthFilter implements FilterInterface
             $normalized[] = 'super_administrator';
             $normalized[] = 'super-admin';
             $normalized[] = 'superadmin';
+            $normalized[] = 'keuangan';
+            $normalized[] = 'admin_tata_usaha';
+
+            try {
+                $db = Database::connect();
+                if ($db->tableExists('access_roles')) {
+                    $rows = $db->table('access_roles')
+                        ->select('role_key')
+                        ->where('is_active', 1)
+                        ->get()
+                        ->getResultArray();
+
+                    foreach ($rows as $row) {
+                        $roleKey = strtolower(trim((string) ($row['role_key'] ?? '')));
+                        if ($roleKey !== '') {
+                            $normalized[] = $roleKey;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Keep static fallback roles above when DB is unavailable.
+            }
         }
 
         return array_values(array_unique($normalized));
