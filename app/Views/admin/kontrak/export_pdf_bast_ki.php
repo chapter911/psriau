@@ -4,12 +4,64 @@ helper('custom');
 date_default_timezone_set('Asia/Jakarta');
 
 $nama_kedua = $data->nama ?? '-';
-$jabatan_kedua = $data->jabatan ?? '-';
+$jabatan_kedua = trim((string) ($data->jabatan ?? '-'));
+if ($jabatan_kedua === '') {
+    $jabatan_kedua = '-';
+}
+$nama_paket_str = trim((string) ($data->nama_paket ?? ''));
+$jabatan_kedua_lengkap = $jabatan_kedua;
+if ($jabatan_kedua !== '-' && $nama_paket_str !== '' && stripos($jabatan_kedua, $nama_paket_str) === false) {
+    $jabatan_kedua_lengkap = $jabatan_kedua . ' ' . $nama_paket_str;
+}
 $alamat_kedua = $data->alamat ?? '-';
 $nomor_spk = $data->nomor_kontrak ?? '-';
 $tanggal_spk = tanggal_indonesia($data->tanggal_kontrak ?? $data->tanggal_surat_penawaran ?? date('Y-m-d'));
-$nomor_baphp = $data->nomor_baphp ?? 'BAPHP/ADM-PTSR/' . date('m', strtotime($data->tanggal_surat_penawaran ?? $data->tanggal_kontrak ?? date('Y-m-d'))) . '/PPK/PPS-RIAU/XI/' . date('Y', strtotime($data->tanggal_surat_penawaran ?? $data->tanggal_kontrak ?? date('Y-m-d')));
-$tanggal_baphp = tanggal_indonesia($data->tanggal_surat_penawaran ?? $data->tanggal_kontrak ?? date('Y-m-d'));
+
+if (!function_exists('hari_indonesia')) {
+    function hari_indonesia($tanggal)
+    {
+        $map = [1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 7 => 'Minggu'];
+        return $map[intval(date('N', strtotime($tanggal)))] ?? '';
+    }
+}
+
+if (!function_exists('bulan_indonesia')) {
+    function bulan_indonesia($tanggal)
+    {
+        $map = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+        return $map[intval(date('n', strtotime($tanggal)))] ?? '';
+    }
+}
+
+$tanggal_bast_base = (!empty($data->tanggal_akhir) && $data->tanggal_akhir !== '0000-00-00')
+    ? $data->tanggal_akhir
+    : ((!empty($data->tanggal_surat_penawaran) && $data->tanggal_surat_penawaran !== '0000-00-00')
+        ? $data->tanggal_surat_penawaran
+        : ((!empty($data->tanggal_kontrak) && $data->tanggal_kontrak !== '0000-00-00') ? $data->tanggal_kontrak : date('Y-m-d')));
+$tanggal_bast_raw = date('Y-m-d', strtotime($tanggal_bast_base . ' -1 day'));
+$tanggal_bast_terbilang = sprintf(
+    '%s, tanggal %s bulan %s tahun %s (%s)',
+    hari_indonesia($tanggal_bast_raw),
+    ucwords(strtolower(terbilang_angka(intval(date('d', strtotime($tanggal_bast_raw)))))),
+    bulan_indonesia($tanggal_bast_raw),
+    ucwords(strtolower(terbilang_angka(intval(date('Y', strtotime($tanggal_bast_raw)))))),
+    date('d-m-Y', strtotime($tanggal_bast_raw))
+);
+
+$tahun_bast = !empty($data->tahun_anggaran) ? (string) $data->tahun_anggaran : date('Y', strtotime($tanggal_bast_raw));
+$no_urut_bast = str_pad((string) max(1, (int) ($bast_no_urut ?? 1)), 2, '0', STR_PAD_LEFT);
+$kode_paket_bast = trim((string) ($bast_kode_paket ?? 'KI'));
+if ($kode_paket_bast === '') {
+    $kode_paket_bast = 'KI';
+}
+$nomor_bast = !empty(trim((string) ($data->nomor_bast ?? '')))
+    ? trim((string) $data->nomor_bast)
+    : "{$no_urut_bast}/BAST/{$kode_paket_bast}/PPK/PPS-RIAU/{$tahun_bast}";
+
+$nomor_baphp = !empty(trim((string) ($data->nomor_baphp ?? '')))
+    ? trim((string) $data->nomor_baphp)
+    : 'BAPHP/TL-PTSR/01/PPK/PPS-RIAU/' . date('m', strtotime($tanggal_bast_raw)) . '/' . date('Y', strtotime($tanggal_bast_raw));
+$tanggal_baphp = tanggal_indonesia($tanggal_bast_raw);
 ?>
 
 <!DOCTYPE html>
@@ -78,10 +130,10 @@ $tanggal_baphp = tanggal_indonesia($data->tanggal_surat_penawaran ?? $data->tang
 
     <div class="text-center bold" style="font-size: 12pt; margin-bottom: 6px;">BERITA ACARA SERAH TERIMA PERTAMA HASIL PEKERJAAN (BAST)</div>
 
-    <div class="text-center mb-2">Nomor: <?= htmlspecialchars($data->nomor_bast, ENT_QUOTES, 'UTF-8'); ?></div>
+    <div class="text-center mb-2">Nomor: <?= htmlspecialchars($nomor_bast, ENT_QUOTES, 'UTF-8'); ?></div>
 
     <div class="text-justify mb-2">
-        Pada hari ini, tanggal <?= tanggal_indonesia($data->tanggal_surat_penawaran ?? $data->tanggal_kontrak ?? date('Y-m-d')); ?>, yang bertandatangan di bawah ini:
+        Pada hari ini <?= $tanggal_bast_terbilang; ?>, yang bertandatangan di bawah ini:
     </div>
 
     <table class="data-table mb-2">
@@ -120,7 +172,7 @@ $tanggal_baphp = tanggal_indonesia($data->tanggal_surat_penawaran ?? $data->tang
         <tr>
             <td>Jabatan</td>
             <td>:</td>
-            <td><?= htmlspecialchars($jabatan_kedua, ENT_QUOTES, 'UTF-8'); ?></td>
+            <td><?= htmlspecialchars($jabatan_kedua_lengkap, ENT_QUOTES, 'UTF-8'); ?></td>
         </tr>
         <tr>
             <td>Berkedudukan di</td>
@@ -136,7 +188,7 @@ $tanggal_baphp = tanggal_indonesia($data->tanggal_surat_penawaran ?? $data->tang
     <div class="bold mb-1">Berdasarkan:</div>
     <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: 15px;">
         <li>Surat Perintah Kerja (SPK)/Kontrak Nomor <?= htmlspecialchars($nomor_spk, ENT_QUOTES, 'UTF-8'); ?> tanggal <?= $tanggal_spk; ?></li>
-        <li>Berita Acara Pemeriksaan Hasil Pekerjaan Nomor: <?= htmlspecialchars($data->nomor_baphp, ENT_QUOTES, 'UTF-8'); ?> tanggal <?= $tanggal_baphp; ?></li>
+        <li>Berita Acara Pemeriksaan Hasil Pekerjaan Nomor: <?= htmlspecialchars($nomor_baphp, ENT_QUOTES, 'UTF-8'); ?> tanggal <?= $tanggal_baphp; ?></li>
     </ol>
 
     <div class="text-justify mb-2">

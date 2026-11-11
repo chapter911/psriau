@@ -79,17 +79,21 @@ class Kontrak extends BaseController
         $this->applyNotDeletedWhere($builder, 'trn_kontrak_paket');
         $pakets = $builder->orderBy('id', 'ASC')->get()->getResultArray();
 
+        $permissions = $this->resolveMenuPermissions('admin/kontrak/paket');
+
         return view('admin/kontrak/paket', [
             'title' => 'Daftar Paket',
             'data' => $pakets,
-            'can_edit' => $this->canManageKontrak(),
+            'can_add' => (bool) ($permissions['add'] ?? false),
+            'can_edit' => (bool) ($permissions['edit'] ?? false),
             'kopSuratList' => db_connect()->table('kop_surat')->orderBy('is_active', 'DESC')->orderBy('id', 'DESC')->get()->getResultArray(),
         ]);
     }
 
     public function updatePaketKopSurat(int $paketId)
     {
-        if (! $this->canManageKontrak()) {
+        $permissions = $this->resolveMenuPermissions('admin/kontrak/paket');
+        if (! ($permissions['edit'] ?? false)) {
             return redirect()->to(site_url('admin/kontrak/paket'))->with('error', 'Anda tidak memiliki akses untuk mengubah kop surat paket.');
         }
 
@@ -141,7 +145,8 @@ class Kontrak extends BaseController
 
     public function createPaket()
     {
-        if (! $this->canManageKontrak()) {
+        $permissions = $this->resolveMenuPermissions('admin/kontrak/paket');
+        if (! ($permissions['add'] ?? false)) {
             return redirect()->to(site_url('admin/kontrak/paket'))->with('error', 'Anda tidak memiliki akses untuk menambah paket.');
         }
 
@@ -644,6 +649,9 @@ class Kontrak extends BaseController
         if ($this->tableHasColumn('trn_kontrak_paket', 'kop_surat_id')) {
             $paketSelect[] = 'kop_surat_id';
         }
+        if ($this->tableHasColumn('trn_kontrak_paket', 'tim_teknis_ppk')) {
+            $paketSelect[] = 'tim_teknis_ppk';
+        }
 
         $paketBuilder = $db->table('trn_kontrak_paket')->select($paketSelect);
         $this->applyNotDeletedWhere($paketBuilder, 'trn_kontrak_paket');
@@ -652,6 +660,10 @@ class Kontrak extends BaseController
         if (! is_array($paket)) {
             return redirect()->to(site_url('admin/kontrak/paket'))->with('error', 'Paket tidak ditemukan.');
         }
+
+        $timTeknisPpkList = $this->decodeTimTeknisPpk($paket['tim_teknis_ppk'] ?? null);
+        $bastKodePaket = $this->generateKodePaketBast((string) ($paket['nama_paket'] ?? ''), $paketId);
+        $kiSequenceMap = isset($activeDocs['bast']) ? $this->getKiSequenceMapInPaket($paketId) : [];
 
         $selectedDocs = (array) ($this->request->getPost('documents') ?? []);
         $targetMembers = (string) ($this->request->getPost('target_members') ?? 'all');
@@ -811,6 +823,12 @@ class Kontrak extends BaseController
                     } else {
                         $viewData['pekerjaan_baphp'] = [];
                     }
+                    $viewData['tim_teknis_ppk'] = $timTeknisPpkList;
+                }
+
+                if ($docType === 'bast') {
+                    $viewData['bast_no_urut'] = $kiSequenceMap[(int) ($kiData['id'] ?? 0)] ?? 1;
+                    $viewData['bast_kode_paket'] = $bastKodePaket;
                 }
 
                 $docTitle = $cfg['name'];
@@ -1174,8 +1192,19 @@ class Kontrak extends BaseController
         $this->applyNotDeletedWhere($jabatanBuilder, 'trn_kontrak_ki', 'k.deleted_at');
         $jabatans = $jabatanBuilder->orderBy('k.jabatan', 'ASC')->get()->getResultArray();
 
+        $timTeknisPpk = [];
+        if ($this->tableHasColumn('trn_kontrak_paket', 'tim_teknis_ppk')) {
+            $paketBuilder = $db->table('trn_kontrak_paket')->select('tim_teknis_ppk')->where('id', $paketId);
+            $this->applyNotDeletedWhere($paketBuilder, 'trn_kontrak_paket');
+            $paketRow = $paketBuilder->get()->getRowArray();
+            if (is_array($paketRow)) {
+                $timTeknisPpk = $this->decodeTimTeknisPpk($paketRow['tim_teknis_ppk'] ?? null);
+            }
+        }
+
         return $this->response->setJSON([
             'jabatan' => $jabatans,
+            'tim_teknis_ppk' => $timTeknisPpk,
             'csrfHash' => csrf_hash(),
         ]);
     }
@@ -1230,7 +1259,8 @@ class Kontrak extends BaseController
 
     public function saveSyaratUmumByJabatan()
     {
-        if (! $this->canManageKontrak()) {
+        $permissions = $this->resolveMenuPermissions('admin/kontrak/paket');
+        if (! ($permissions['edit'] ?? false)) {
             return $this->response->setStatusCode(403)->setJSON(['error' => 'Unauthorized']);
         }
 
@@ -1239,51 +1269,96 @@ class Kontrak extends BaseController
         }
 
         $paketId = (int) $this->request->getPost('paket_id');
-        $jabatan = (string) $this->request->getPost('jabatan');
+        $jabatan = trim((string) $this->request->getPost('jabatan'));
+        $hasTimTeknis = (string) $this->request->getPost('has_tim_teknis_ppk') === '1';
 
-        if ($paketId <= 0 || empty($jabatan)) {
+        if ($paketId <= 0 || ($jabatan === '' && ! $hasTimTeknis)) {
             return $this->response->setStatusCode(400)->setJSON(['error' => 'Invalid parameters']);
         }
 
         $db = db_connect();
 
-        if (! $db->tableExists('trn_syarat_umum_kontrak_ki')) {
-            return $this->response->setStatusCode(500)->setJSON(['error' => 'Syarat umum table not ready']);
-        }
+        if ($jabatan !== '') {
+            if (! $db->tableExists('trn_syarat_umum_kontrak_ki')) {
+                return $this->response->setStatusCode(500)->setJSON(['error' => 'Syarat umum table not ready']);
+            }
 
-        $laporanModal = trim((string) $this->request->getPost('laporan_modal'));
-        $hasilModal = trim((string) $this->request->getPost('hasil_modal'));
-        $tugasModal = trim((string) $this->request->getPost('tugas_tanggung_jawab_modal'));
+            $laporanModal = trim((string) $this->request->getPost('laporan_modal'));
+            $hasilModal = trim((string) $this->request->getPost('hasil_modal'));
+            $tugasModal = trim((string) $this->request->getPost('tugas_tanggung_jawab_modal'));
 
-        $data = [
-            'paket_id' => $paketId,
-            'jabatan_name' => $jabatan,
-            'laporan' => $this->sanitizeRichText($this->request->getPost('laporan')),
-            'hasil' => $this->sanitizeRichText($this->request->getPost('hasil')),
-            'tugas_tanggung_jawab' => $this->sanitizeRichText($this->request->getPost('tugas_tanggung_jawab')),
-            'laporan_modal' => $laporanModal !== '' ? $laporanModal : (string) $this->request->getPost('laporan'),
-            'hasil_modal' => $hasilModal !== '' ? $hasilModal : (string) $this->request->getPost('hasil'),
-            'tugas_tanggung_jawab_modal' => $tugasModal !== '' ? $tugasModal : (string) $this->request->getPost('tugas_tanggung_jawab'),
-        ];
+            $data = [
+                'paket_id' => $paketId,
+                'jabatan_name' => $jabatan,
+                'laporan' => $this->sanitizeRichText($this->request->getPost('laporan')),
+                'hasil' => $this->sanitizeRichText($this->request->getPost('hasil')),
+                'tugas_tanggung_jawab' => $this->sanitizeRichText($this->request->getPost('tugas_tanggung_jawab')),
+                'laporan_modal' => $laporanModal !== '' ? $laporanModal : (string) $this->request->getPost('laporan'),
+                'hasil_modal' => $hasilModal !== '' ? $hasilModal : (string) $this->request->getPost('hasil'),
+                'tugas_tanggung_jawab_modal' => $tugasModal !== '' ? $tugasModal : (string) $this->request->getPost('tugas_tanggung_jawab'),
+            ];
 
-        $exists = $db->table('trn_syarat_umum_kontrak_ki')
-            ->where('paket_id', $paketId)
-            ->where('jabatan_name', $jabatan)
-            ->get()
-            ->getRowArray();
-
-        if (is_array($exists)) {
-            $db->table('trn_syarat_umum_kontrak_ki')
+            $exists = $db->table('trn_syarat_umum_kontrak_ki')
                 ->where('paket_id', $paketId)
                 ->where('jabatan_name', $jabatan)
-                ->update($data);
-        } else {
-            $db->table('trn_syarat_umum_kontrak_ki')->insert($data);
+                ->get()
+                ->getRowArray();
+
+            if (is_array($exists)) {
+                $db->table('trn_syarat_umum_kontrak_ki')
+                    ->where('paket_id', $paketId)
+                    ->where('jabatan_name', $jabatan)
+                    ->update($data);
+            } else {
+                $db->table('trn_syarat_umum_kontrak_ki')->insert($data);
+            }
         }
+
+        $cleanTimTeknis = [];
+        if ($hasTimTeknis) {
+            if (! $this->tableHasColumn('trn_kontrak_paket', 'tim_teknis_ppk')) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'error' => 'Kolom tim_teknis_ppk belum tersedia. Jalankan php spark migrate.',
+                    'csrfHash' => csrf_hash(),
+                ]);
+            }
+
+            $rawTimTeknis = $this->request->getPost('tim_teknis_ppk');
+            if (is_array($rawTimTeknis)) {
+                foreach ($rawTimTeknis as $namaTim) {
+                    $trimmed = trim((string) $namaTim);
+                    if ($trimmed !== '') {
+                        $cleanTimTeknis[] = $trimmed;
+                    }
+                }
+            }
+
+            $paketPayload = [
+                'tim_teknis_ppk' => ! empty($cleanTimTeknis)
+                    ? json_encode($cleanTimTeknis, JSON_UNESCAPED_UNICODE)
+                    : null,
+            ];
+            if ($this->tableHasColumn('trn_kontrak_paket', 'updated_by')) {
+                $paketPayload['updated_by'] = (string) (session()->get('username') ?: session()->get('name') ?: 'system');
+            }
+            if ($this->tableHasColumn('trn_kontrak_paket', 'updated_date')) {
+                $paketPayload['updated_date'] = date('Y-m-d');
+            }
+            if ($this->tableHasColumn('trn_kontrak_paket', 'updated_at')) {
+                $paketPayload['updated_at'] = date('Y-m-d H:i:s');
+            }
+
+            $db->table('trn_kontrak_paket')->where('id', $paketId)->update($paketPayload);
+        }
+
+        $message = $jabatan !== '' && $hasTimTeknis
+            ? 'Syarat umum & Tim Teknis PPK berhasil disimpan'
+            : ($hasTimTeknis ? 'Tim Teknis PPK berhasil disimpan' : 'Syarat umum berhasil disimpan');
 
         return $this->response->setJSON([
             'success' => true,
-            'message' => 'Syarat umum berhasil disimpan',
+            'message' => $message,
+            'tim_teknis_ppk' => $cleanTimTeknis,
             'csrfHash' => csrf_hash(),
         ]);
     }
@@ -7346,6 +7421,96 @@ class Kontrak extends BaseController
         }
     }
 
+    private function decodeTimTeknisPpk(?string $raw): array
+    {
+        $rawStr = trim((string) ($raw ?? ''));
+        if ($rawStr === '') {
+            return [];
+        }
+
+        $decoded = json_decode($rawStr, true);
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($decoded as $item) {
+            $name = trim((string) $item);
+            if ($name !== '') {
+                $result[] = $name;
+            }
+        }
+
+        return $result;
+    }
+
+    private function getKiSequenceMapInPaket(int $paketId): array
+    {
+        if ($paketId <= 0) {
+            return [];
+        }
+
+        $builder = db_connect()->table('trn_kontrak_ki')
+            ->select('id')
+            ->where('paket', (string) $paketId)
+            ->orderBy('id', 'ASC');
+        $this->applyNotDeletedWhere($builder, 'trn_kontrak_ki');
+        $rows = $builder->get()->getResultArray();
+
+        $map = [];
+        $seq = 1;
+        foreach ($rows as $row) {
+            $map[(int) ($row['id'] ?? 0)] = $seq++;
+        }
+
+        return $map;
+    }
+
+    private function generateKodePaketBast(string $namaPaket, int $paketId = 0): string
+    {
+        $normalized = strtoupper(trim($namaPaket));
+        if ($normalized === '') {
+            return $paketId > 0 ? 'PKT-' . $paketId : 'KI';
+        }
+
+        $clean = preg_replace('/[^A-Z0-9\s\-]/', ' ', $normalized);
+        $tokens = preg_split('/[\s\-]+/', (string) $clean, -1, PREG_SPLIT_NO_EMPTY);
+        if (! is_array($tokens) || empty($tokens)) {
+            return $paketId > 0 ? 'PKT-' . $paketId : 'KI';
+        }
+
+        $stopWords = [
+            'DAN', 'DI', 'KE', 'DARI', 'YANG', 'UNTUK', 'PADA', 'PROVINSI',
+            'KABUPATEN', 'KOTA', 'PEKERJAAN', 'JASA', 'TAHUN', 'ANGGARAN', 'TA',
+            'REHABILITASI', 'RENOVASI', 'PEMBANGUNAN', 'PENINGKATAN',
+            'KONSULTAN', 'KONSULTANSI', 'INDIVIDUAL', 'PERORANGAN',
+            'SATUAN', 'KERJA', 'PELAKSANAAN', 'PRASARANA', 'STRATEGIS',
+        ];
+
+        $meaningful = array_values(array_filter($tokens, static function (string $token) use ($stopWords): bool {
+            return ! in_array($token, $stopWords, true);
+        }));
+
+        if (empty($meaningful)) {
+            $meaningful = $tokens;
+        }
+
+        if (count($meaningful) > 3) {
+            $last = end($meaningful);
+            $head = array_slice($meaningful, 0, 2);
+            if ($last !== false && ! in_array($last, $head, true)) {
+                $head[] = $last;
+            }
+            $meaningful = $head;
+        }
+
+        $code = implode('-', $meaningful);
+        if (strlen($code) > 20) {
+            $code = rtrim(substr($code, 0, 20), '-');
+        }
+
+        return $code !== '' ? $code : ($paketId > 0 ? 'PKT-' . $paketId : 'KI');
+    }
 
     public function exportDocument(string $type, int $kiId, string $forcedFormat = '')
     {
@@ -7375,6 +7540,9 @@ class Kontrak extends BaseController
         $paketSelect = ['nama_paket'];
         if ($this->tableHasColumn('trn_kontrak_paket', 'kop_surat_id')) {
             $paketSelect[] = 'kop_surat_id';
+        }
+        if ($this->tableHasColumn('trn_kontrak_paket', 'tim_teknis_ppk')) {
+            $paketSelect[] = 'tim_teknis_ppk';
         }
 
         $paket = $db->table('trn_kontrak_paket')
@@ -7437,13 +7605,22 @@ class Kontrak extends BaseController
                 }
             }
 
-            if ($type === 'baphp' && $db->tableExists('trn_kontrak_ki_pekerjaan_baphp')) {
-                $pekerjaanBuilder = $db->table('trn_kontrak_ki_pekerjaan_baphp')
-                    ->select('pekerjaan')
-                    ->where('id_kontrak_paket', (string) $paketId)
-                    ->orderBy('id', 'ASC');
-                $this->applyNotDeletedWhere($pekerjaanBuilder, 'trn_kontrak_ki_pekerjaan_baphp');
-                $viewData['pekerjaan_baphp'] = $pekerjaanBuilder->get()->getResult();
+            if ($type === 'baphp') {
+                if ($db->tableExists('trn_kontrak_ki_pekerjaan_baphp')) {
+                    $pekerjaanBuilder = $db->table('trn_kontrak_ki_pekerjaan_baphp')
+                        ->select('pekerjaan')
+                        ->where('id_kontrak_paket', (string) $paketId)
+                        ->orderBy('id', 'ASC');
+                    $this->applyNotDeletedWhere($pekerjaanBuilder, 'trn_kontrak_ki_pekerjaan_baphp');
+                    $viewData['pekerjaan_baphp'] = $pekerjaanBuilder->get()->getResult();
+                }
+                $viewData['tim_teknis_ppk'] = $this->decodeTimTeknisPpk($paket['tim_teknis_ppk'] ?? null);
+            }
+
+            if ($type === 'bast') {
+                $kiSequenceMap = $this->getKiSequenceMapInPaket((int) $paketId);
+                $viewData['bast_no_urut'] = $kiSequenceMap[$kiId] ?? 1;
+                $viewData['bast_kode_paket'] = $this->generateKodePaketBast((string) ($paket['nama_paket'] ?? ''), (int) $paketId);
             }
 
             if (! isset($viewData['pekerjaan_baphp'])) {

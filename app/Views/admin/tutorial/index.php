@@ -837,8 +837,14 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A["Buka Menu: Kontrak > Paket (/admin/kontrak/paket)"] --> B["Pilih Paket &amp; Klik Tombol 'DETAIL'"]
-    B --> C["Halaman Daftar Kontrak KI Paket (/admin/kontrak/ki/{paketId})"]
+    A["Buka Menu: Kontrak > Paket (/admin/kontrak/paket)"] --> PKT_ACT{"Pilih Aksi pada Paket"}
+    PKT_ACT -->|Tombol 'UPDATE' Syarat Umum SPK| MOD_SU["Modal Update Syarat Umum SPK &amp; Tim Teknis PPK"]
+    MOD_SU --> SU_TAB1["Tab Laporan / Produk / Tugas (Per Jabatan)"]
+    MOD_SU --> SU_TAB2["Tab Tim Teknis PPK (BAPHP) - Per Paket (3+ Nama Dinamis)"]
+    SU_TAB1 --> SU_SAVE["Klik 'Simpan' -> POST /admin/kontrak/syarat-umum/save"]
+    SU_TAB2 --> SU_SAVE
+    PKT_ACT -->|Tombol 'DETAIL'| B["Halaman Daftar Kontrak KI Paket (/admin/kontrak/ki/{paketId})"]
+    B --> C["Kelola Kontrak KI Paket"]
     C --> V1["Opsi Tampilan: Beralih Antara 'Tampilan Utama' &amp; 'Show All' Kolom"]
     C --> V2["Opsi Import: Klik 'Import Excel' (.xls / .xlsx) dengan Format Baku"]
     C --> V3["Opsi Tambah: Klik 'Tambah Data' (Modal Form 5 Tab Lengkap)"]
@@ -867,7 +873,7 @@ graph TD
     DB --> DONE["Data Kontrak KI Berhasil Diperbarui &amp; Tampil di Tabel"]
     
     TBL --> ACT2["Kolom ACTION: Tombol 'Export' Dropdown"]
-    ACT2 --> EXP["Export Berkas Satuan: Pilihan PDF, Word (.doc), atau Excel (.xlsx)"]
+    ACT2 --> EXP["Export Berkas Satuan: PDF, Word (.doc), Excel (.xlsx) (BAPHP otomatis memuat Tim Teknis PPK Paket; BAST otomatis format tanggal terbilang &amp; nomor surat)"]
                 </pre>
             </div>
         </div>
@@ -2089,6 +2095,13 @@ graph TD
                         <p class="small text-muted mb-2"><code>/admin/kontrak/ki/{paket_id}</code></p>
                         <ol class="pl-3 small mb-0">
                             <li><strong>Akses Menu:</strong> Buka menu samping <strong>Kontrak &gt; Paket</strong> (<code>/admin/kontrak/paket</code>), lalu pada paket pekerjaan yang diinginkan klik tombol hijau <strong>DETAIL</strong> untuk masuk ke daftar kontrak KI paket tersebut (<code>/admin/kontrak/ki/{id}</code>).</li>
+                            <li><strong>Pengaturan Syarat Umum SPK &amp; Tim Teknis PPK (BAPHP) per Paket:</strong>
+                                <ul>
+                                    <li>Pada halaman <code>/admin/kontrak/paket</code>, klik tombol kuning <strong>UPDATE</strong> di kolom <strong>SYARAT UMUM (SPK)</strong> untuk membuka modal pengaturan paket.</li>
+                                    <li><strong>Tab Laporan, Produk, dan Tugas (Per Jabatan):</strong> Pilih <em>Jabatan</em> terlebih dahulu lalu isi/perbarui syarat umum SPK lengkap dengan preview otomatis.</li>
+                                    <li><strong>Tab Tim Teknis PPK (BAPHP):</strong> Berlaku untuk <strong>seluruh personil dalam satu paket</strong> (tidak perlu memilih Jabatan). Tersedia 3 kolom input nama secara default serta tombol <strong>+ Tambah Tim Teknis PPK</strong> / hapus baris secara dinamis. Nama yang disimpan otomatis tampil pada tabel penandatangan dokumen <strong>BAPHP</strong> di bawah Pejabat Penandatangan Kontrak.</li>
+                                </ul>
+                            </li>
                             <li><strong>Pengaturan Tampilan Kolom:</strong>
                                 <ul>
                                     <li>Klik tombol <strong>"Tampilan Utama"</strong> untuk menyaring tabel agar hanya menampilkan informasi inti (Nomor Kontrak, Tanggal, Personil, NIK/NPWP, Jabatan, DIPA).</li>
@@ -2121,7 +2134,7 @@ graph TD
                                 <ul>
                                     <li><strong>Export Dokumen Satuan (PDF, Word, Excel):</strong> Pada kolom <strong>ACTION</strong> di tabel kontrak, klik dropdown hijau <strong>Export</strong>. Menu terbagi rapi menjadi 3 kelompok format:
                                         <ul>
-                                            <li><strong>Bagian PDF:</strong> Mengunduh dokumen resmi format PDF (Penawaran, Pakta Integritas, Kualifikasi, Kesediaan, SPBBJ, BAPHP, BAST, SPMK, SPK).</li>
+                                            <li><strong>Bagian PDF:</strong> Mengunduh dokumen resmi format PDF (Penawaran, Pakta Integritas, Kualifikasi, Kesediaan, SPBBJ, BAPHP, BAST, SPMK, SPK). Khusus dokumen <strong>BAPHP</strong> hanya mencantumkan dasar SPK/Kontrak (poin 1) serta otomatis mengisi daftar penandatangan Tim Teknis PPK dari pengaturan paket; sedangkan dokumen <strong>BAST</strong> otomatis menggunakan format tanggal terbilang lengkap berbasis <code>tanggal_akhir - 1 hari</code> (mis. <em>Senin, tanggal Enam bulan Oktober tahun Dua Ribu Dua Puluh Lima (06-10-2025)</em>), penomoran otomatis berformat <code>{NoUrut}/BAST/{KodePaket}/PPK/PPS-RIAU/{Tahun}</code> apabila kolom <code>nomor_bast</code> kosong, dan menampilkan nama paket pada baris <em>Jabatan</em> PIHAK KEDUA (mis. <em>Team Leader {Nama Paket}</em>).</li>
                                             <li><strong>Bagian Word (.doc):</strong> Mengunduh dokumen yang sama dalam format Microsoft Word (.doc / MHTML multipart self-contained) yang dapat langsung diedit di aplikasi Word, lengkap dengan gambar kop surat embedded yang jernih, margin halaman A4 presisi, spasi paragraf teratur, tabel borderless, dan posisi tanda tangan yang rapi sesuai tampilan PDF asli.</li>
                                             <li><strong>Bagian Excel:</strong> Mengunduh berkas tabel kalkulasi dalam format Excel .xlsx (BOQ dan Evaluasi).</li>
                                         </ul>

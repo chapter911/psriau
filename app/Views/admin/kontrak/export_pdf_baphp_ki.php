@@ -4,7 +4,6 @@ helper('custom');
 date_default_timezone_set('Asia/Jakarta');
 
 $jabatan = ucwords(strtolower($data->jabatan));
-$nomor_baphp = $data->nomor_baphp ?? 'BAPHP/TL-PTSR/01/PPK/PPS-RIAU/' . date('m', strtotime($data->tanggal_surat_penawaran ?? $data->tanggal_kontrak ?? date('Y-m-d'))) . '/' . date('Y', strtotime($data->tanggal_surat_penawaran ?? $data->tanggal_kontrak ?? date('Y-m-d')));
 $nomor_spk = $data->nomor_kontrak ?? '-';
 $tanggal_spk = tanggal_indonesia($data->tanggal_kontrak ?? $data->tanggal_surat_penawaran ?? date('Y-m-d'));
 $nomor_surat = $data->nomor_surat_penawaran ?? '-';
@@ -26,7 +25,15 @@ if (!function_exists('bulan_indonesia')) {
     }
 }
 
-$tanggal_pemeriksaan_raw = date('Y-m-d', strtotime(($data->tanggal_akhir ?? $data->tanggal_surat_penawaran ?? $data->tanggal_kontrak ?? date('Y-m-d')) . ' -1 day'));
+$tanggal_pemeriksaan_base = (!empty($data->tanggal_akhir) && $data->tanggal_akhir !== '0000-00-00')
+    ? $data->tanggal_akhir
+    : ((!empty($data->tanggal_surat_penawaran) && $data->tanggal_surat_penawaran !== '0000-00-00')
+        ? $data->tanggal_surat_penawaran
+        : ((!empty($data->tanggal_kontrak) && $data->tanggal_kontrak !== '0000-00-00') ? $data->tanggal_kontrak : date('Y-m-d')));
+$tanggal_pemeriksaan_raw = date('Y-m-d', strtotime($tanggal_pemeriksaan_base . ' -1 day'));
+$nomor_baphp = !empty(trim((string) ($data->nomor_baphp ?? '')))
+    ? trim((string) $data->nomor_baphp)
+    : 'BAPHP/TL-PTSR/01/PPK/PPS-RIAU/' . date('m', strtotime($tanggal_pemeriksaan_raw)) . '/' . date('Y', strtotime($tanggal_pemeriksaan_raw));
 $tanggal_pemeriksaan = sprintf(
     '%s, tanggal %s bulan %s tahun %s (%s)',
     hari_indonesia($tanggal_pemeriksaan_raw),
@@ -112,7 +119,6 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
     <div class="mb-1">Berdasarkan:</div>
     <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: 15px; padding-left: 22px;">
         <li>Surat Perintah Kerja (SPK)/Kontrak nomor <?= htmlspecialchars($nomor_spk, ENT_QUOTES, 'UTF-8'); ?>, tanggal <?= $tanggal_spk; ?></li>
-        <li>Surat yang bersangkutan nomor <?= htmlspecialchars($data->nomor_surat_permohonan, ENT_QUOTES, 'UTF-8'); ?>, tanggal <?= tanggal_indonesia($data->tanggal_surat_permohonan); ?></li>
     </ol>
 
     <div class="mb-2">
@@ -166,28 +172,33 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
         <tbody>
             <tr>
                 <td>1</td>
-                <td><?= htmlspecialchars($data->pejabat_ppk, ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?= htmlspecialchars((string) ($data->pejabat_ppk ?? '-'), ENT_QUOTES, 'UTF-8'); ?></td>
                 <td>Pejabat Penandatangan Kontrak</td>
                 <td></td>
             </tr>
-            <tr>
-                <td>2</td>
-                <td></td>
-                <td>Tim Teknis PPK</td>
-                <td></td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td></td>
-                <td>Tim Teknis PPK</td>
-                <td></td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td></td>
-                <td>Tim Teknis PPK</td>
-                <td></td>
-            </tr>
+            <?php
+            $timTeknisList = [];
+            if (!empty($tim_teknis_ppk) && is_array($tim_teknis_ppk)) {
+                foreach ($tim_teknis_ppk as $namaTimTeknis) {
+                    $namaTrim = trim((string) $namaTimTeknis);
+                    if ($namaTrim !== '') {
+                        $timTeknisList[] = $namaTrim;
+                    }
+                }
+            }
+            if (empty($timTeknisList)) {
+                $timTeknisList = ['', '', ''];
+            }
+            $noTtd = 2;
+            foreach ($timTeknisList as $namaTimTeknis):
+            ?>
+                <tr>
+                    <td><?= $noTtd++; ?></td>
+                    <td><?= htmlspecialchars($namaTimTeknis, ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td>Tim Teknis PPK</td>
+                    <td></td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
 </body>

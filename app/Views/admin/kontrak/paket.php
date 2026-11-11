@@ -4,7 +4,7 @@
 <div class="card">
     <div class="card-header">
         <h2 class="card-title">Daftar Paket</h2>
-        <?php if (($can_edit ?? false) === true): ?>
+        <?php if (($can_add ?? $can_edit ?? false) === true): ?>
             <div class="float-right">
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-tambah-paket">Tambah Paket</button>
             </div>
@@ -72,7 +72,7 @@
     </div>
 </div>
 
-<?php if (($can_edit ?? false) === true): ?>
+<?php if (($can_add ?? $can_edit ?? false) === true): ?>
 <div class="modal fade" id="modal-tambah-paket" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -151,9 +151,9 @@
                 <?= csrf_field(); ?>
                 <div class="modal-body">
                     <input type="hidden" id="paket_id" name="paket_id">
-                    <div class="form-group">
+                    <div class="form-group" id="syarat-umum-jabatan-group">
                         <label for="jabatan_filter">Jabatan</label>
-                        <select class="form-control" id="jabatan_filter" name="jabatan_filter" required>
+                        <select class="form-control" id="jabatan_filter" name="jabatan_filter">
                             <option value="">-- Pilih Jabatan --</option>
                         </select>
                     </div>
@@ -170,9 +170,12 @@
                                 <li class="nav-item">
                                     <a class="nav-link" id="tugas-tab" data-toggle="tab" href="#tugas" role="tab" aria-controls="tugas" aria-selected="false">Tugas dan Tanggung Jawab</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="tim-teknis-tab" data-toggle="tab" href="#tim-teknis" role="tab" aria-controls="tim-teknis" aria-selected="false">Tim Teknis PPK (BAPHP)</a>
+                                </li>
                             </ul>
 
-                            <div class="d-flex justify-content-end mt-2">
+                            <div id="syarat-umum-format-toolbar" class="d-flex justify-content-end mt-2">
                                 <div class="btn-group btn-group-sm mr-2" role="group" aria-label="Format teks">
                                     <button type="button" class="btn btn-outline-dark js-inline-format" data-format="bold" title="Bold"><strong>B</strong></button>
                                     <button type="button" class="btn btn-outline-dark js-inline-format" data-format="italic" title="Italic"><em>I</em></button>
@@ -198,6 +201,19 @@
                                     <div class="form-group mb-0 mt-3">
                                         <textarea id="tugas-editor" class="form-control form-syarat-umum-editor" name="tugas_tanggung_jawab" rows="13" placeholder="Contoh:&#10;TUGAS DAN TANGGUNG JAWAB&#10;Sub Judul&#10;1. Tugas pertama&#10;2. Tugas kedua&#10;a. Rincian tugas"></textarea>
                                         <small class="form-text text-muted">Jika ada sub poin, gunakan format huruf seperti: a. b. c.</small>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="tim-teknis" role="tabpanel" aria-labelledby="tim-teknis-tab">
+                                    <div class="mt-3">
+                                        <div class="alert alert-info py-2 px-3 small mb-3">
+                                            Daftar nama <strong>Tim Teknis PPK</strong> ini berlaku per paket dan akan tampil otomatis pada tabel penandatangan dokumen <strong>BAPHP</strong>.
+                                        </div>
+                                        <div id="tim-teknis-ppk-list"></div>
+                                        <?php if (($can_edit ?? false) === true): ?>
+                                            <button type="button" class="btn btn-outline-primary btn-sm mt-2 js-add-tim-teknis">
+                                                <i class="fas fa-plus mr-1"></i> Tambah Tim Teknis PPK
+                                            </button>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
@@ -227,6 +243,7 @@
     'use strict';
 
     var csrfTokenName = '<?= csrf_token(); ?>';
+    var canEditPaket = <?= ($can_edit ?? false) ? 'true' : 'false'; ?>;
 
     var SyaratUmumModal = {
         paketId: null,
@@ -251,7 +268,28 @@
                 self.updatePreviewForActiveTab();
             });
 
+            $(document).on('input', '.js-tim-teknis-input', function () {
+                self.updatePreviewForActiveTab();
+            });
+
+            $(document).on('click', '.js-add-tim-teknis', function () {
+                self.appendTimTeknisRow('');
+                self.updatePreviewForActiveTab();
+            });
+
+            $(document).on('click', '.js-remove-tim-teknis', function () {
+                var $rows = $('#tim-teknis-ppk-list .tim-teknis-row');
+                if ($rows.length <= 1) {
+                    $rows.find('.js-tim-teknis-input').val('');
+                } else {
+                    $(this).closest('.tim-teknis-row').remove();
+                }
+                self.renumberTimTeknisRows();
+                self.updatePreviewForActiveTab();
+            });
+
             $('#syaratUmumTab a[data-toggle="tab"]').on('shown.bs.tab', function () {
+                self.toggleControlsForActiveTab();
                 self.updatePreviewForActiveTab();
             });
 
@@ -359,7 +397,9 @@
                                 $('#jabatan_filter').append('<option value="' + value.jabatan + '">' + value.jabatan + '</option>');
                             });
                         }
+                        self.renderTimTeknisInputs(data.tim_teknis_ppk || []);
                         $('#syaratUmumTab a[href="#laporan"]').tab('show');
+                        self.toggleControlsForActiveTab();
                         $('#modal-syarat-umum').modal('show');
                     },
                     error: function () {
@@ -405,9 +445,10 @@
                 return;
             }
 
+            var activePaneId = this.getActivePaneId();
             var jabatan = $('#jabatan_filter').val();
 
-            if (!jabatan) {
+            if (activePaneId !== '#tim-teknis' && !jabatan) {
                 Swal.fire('Warning', 'Pilih jabatan terlebih dahulu', 'warning');
                 return;
             }
@@ -429,7 +470,9 @@
 
             var data = $.extend({
                 paket_id: this.paketId,
-                jabatan: jabatan,
+                jabatan: jabatan || '',
+                has_tim_teknis_ppk: 1,
+                tim_teknis_ppk: this.getTimTeknisValues(),
                 laporan_modal: $('#laporan-editor').val(),
                 hasil_modal: $('#hasil-editor').val(),
                 tugas_tanggung_jawab_modal: $('#tugas-editor').val(),
@@ -453,17 +496,21 @@
 
                     if (result.success) {
                         $('#modal-syarat-umum').modal('hide');
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Berhasil', result.message || 'Data berhasil disimpan', 'success');
+                        }
                     } else {
                         Swal.fire('Error', result.error || 'Gagal menyimpan syarat umum', 'error');
                     }
                 },
-                error: function () {
+                error: function (xhr) {
                     SyaratUmumModal.isSaving = false;
                     SyaratUmumModal.setSaveButtonsState(false);
                     if (typeof Swal !== 'undefined') {
                         Swal.close();
                     }
-                    Swal.fire('Error', 'Gagal menyimpan syarat umum', 'error');
+                    var errMsg = (xhr && xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Gagal menyimpan syarat umum';
+                    Swal.fire('Error', errMsg, 'error');
                 }
             });
         },
@@ -607,8 +654,94 @@
             ].join('\n');
         },
 
+        toggleControlsForActiveTab: function () {
+            var isTimTeknis = this.getActivePaneId() === '#tim-teknis';
+            $('#syarat-umum-jabatan-group').toggle(!isTimTeknis);
+            $('#syarat-umum-format-toolbar').toggleClass('d-flex', !isTimTeknis).toggle(!isTimTeknis);
+        },
+
+        renderTimTeknisInputs: function (list) {
+            var $container = $('#tim-teknis-ppk-list');
+            $container.empty();
+
+            var items = Array.isArray(list) ? list.slice() : [];
+            while (items.length < 3) {
+                items.push('');
+            }
+
+            var self = this;
+            items.forEach(function (name) {
+                self.appendTimTeknisRow(name || '');
+            });
+        },
+
+        appendTimTeknisRow: function (value) {
+            var $container = $('#tim-teknis-ppk-list');
+            var index = $container.find('.tim-teknis-row').length + 1;
+            var readonlyAttr = canEditPaket ? '' : ' readonly';
+            var removeBtn = canEditPaket
+                ? '<div class="input-group-append"><button type="button" class="btn btn-outline-danger js-remove-tim-teknis" title="Hapus"><i class="fas fa-times"></i></button></div>'
+                : '';
+
+            var $row = $(
+                '<div class="form-group mb-2 tim-teknis-row">' +
+                    '<label class="small font-weight-bold mb-1 tim-teknis-label">Tim Teknis PPK ' + index + '</label>' +
+                    '<div class="input-group input-group-sm">' +
+                        '<input type="text" class="form-control js-tim-teknis-input" name="tim_teknis_ppk[]" placeholder="Masukkan nama lengkap Tim Teknis PPK..."' + readonlyAttr + '>' +
+                        removeBtn +
+                    '</div>' +
+                '</div>'
+            );
+            $row.find('.js-tim-teknis-input').val(String(value || ''));
+            $container.append($row);
+        },
+
+        renumberTimTeknisRows: function () {
+            $('#tim-teknis-ppk-list .tim-teknis-row').each(function (idx) {
+                $(this).find('.tim-teknis-label').text('Tim Teknis PPK ' + (idx + 1));
+            });
+        },
+
+        getTimTeknisValues: function () {
+            var values = [];
+            $('#tim-teknis-ppk-list .js-tim-teknis-input').each(function () {
+                values.push(String($(this).val() || '').trim());
+            });
+            return values;
+        },
+
         updatePreviewForActiveTab: function () {
             var activePaneId = this.getActivePaneId();
+            if (activePaneId === '#tim-teknis') {
+                var escapeHtml = function (value) {
+                    return String(value)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+                };
+
+                var names = this.getTimTeknisValues().filter(function (v) { return v !== ''; });
+                if (!names.length) {
+                    names = ['', '', ''];
+                }
+
+                var rowsHtml = '<tr><td class="text-center">1</td><td><em>(Pejabat PPK Kontrak)</em></td><td>Pejabat Penandatangan Kontrak</td></tr>';
+                names.forEach(function (nama, idx) {
+                    rowsHtml += '<tr><td class="text-center">' + (idx + 2) + '</td><td>' + (nama ? escapeHtml(nama) : '<span class="text-muted">(Kosong)</span>') + '</td><td>Tim Teknis PPK</td></tr>';
+                });
+
+                $('#preview-syarat-umum').html(
+                    '<div class="small font-weight-bold mb-2">Preview Tabel Penandatangan BAPHP:</div>' +
+                    '<table class="table table-bordered table-sm bg-white mb-0 small">' +
+                        '<thead class="thead-light"><tr><th width="10%" class="text-center">No</th><th>Nama</th><th>Jabatan</th></tr></thead>' +
+                        '<tbody>' + rowsHtml + '</tbody>' +
+                    '</table>'
+                );
+                return;
+            }
+
             var textareaSelector = activePaneId + ' textarea.form-syarat-umum-editor';
             var rawValue = $(textareaSelector).val() || '';
             var formatted = this.formatSyaratUmumHtml(rawValue);
@@ -753,6 +886,8 @@
             $('#laporan-editor').val('');
             $('#hasil-editor').val('');
             $('#tugas-editor').val('');
+            this.renderTimTeknisInputs([]);
+            this.toggleControlsForActiveTab();
             $('#preview-syarat-umum').html('<span class="text-muted">Preview akan tampil di sini.</span>');
         }
     };
