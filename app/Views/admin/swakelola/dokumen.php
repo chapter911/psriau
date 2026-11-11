@@ -342,24 +342,24 @@ $activePaketId = (int) ($paket['id'] ?? 0);
 
 <!-- MODAL ATUR PENANDA TANGAN DINAMIS PER POIN (.DOCX) -->
 <?php if ($canUploadDoc): ?>
-<div class="modal fade" id="modalEditSigners" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
-        <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
-            <form id="formEditSigners" method="post" action="">
-                <input type="hidden" id="signerCsrfInput" name="<?= csrf_token(); ?>" value="<?= csrf_hash(); ?>">
-                <input type="hidden" id="signerDocId" value="">
-                <div class="modal-header bg-dark text-white py-3 px-4">
-                    <div>
-                        <h6 class="modal-title font-weight-bold mb-0 text-white">
-                            <i class="fas fa-pen-nib text-warning mr-2"></i> Atur Penanda Tangan Dokumen (Dinamis per Poin)
-                        </h6>
-                        <small class="text-white-50" id="signerPointSubtitle">-</small>
-                    </div>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+<div class="modal fade" id="modalEditSigners" tabindex="-1" role="dialog" aria-hidden="true" style="overscroll-behavior: contain;">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document" style="max-height: calc(100vh - 2rem); margin: 1rem auto;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; max-height: calc(100vh - 2rem); display: flex; flex-direction: column; overflow: hidden;">
+            <div class="modal-header bg-dark text-white py-3 px-4" style="flex-shrink: 0;">
+                <div>
+                    <h6 class="modal-title font-weight-bold mb-0 text-white">
+                        <i class="fas fa-pen-nib text-warning mr-2"></i> Atur Penanda Tangan Dokumen (Dinamis per Poin)
+                    </h6>
+                    <small class="text-white-50" id="signerPointSubtitle">-</small>
                 </div>
-                <div class="modal-body p-4">
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4" style="flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;">
+                <form id="formEditSigners" method="post" action="">
+                    <input type="hidden" id="signerCsrfInput" name="<?= csrf_token(); ?>" value="<?= csrf_hash(); ?>">
+                    <input type="hidden" id="signerDocId" value="">
                     <div id="signerModalAlert" class="alert alert-danger py-2 px-3 small mb-3" style="display: none;"></div>
 
                     <!-- Baris Pengaturan Umum & Salin Poin -->
@@ -420,17 +420,17 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                             <div class="spinner-border spinner-border-sm text-primary mr-2"></div> Membaca penanda tangan dari dokumen Word (.docx)...
                         </div>
                     </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light py-2 px-4 d-flex justify-content-between align-items-center" style="flex-shrink: 0;">
+                <small class="text-muted">Perubahan akan menulis ulang blok tanda tangan pada berkas <code>.docx</code> secara otomatis.</small>
+                <div>
+                    <button type="button" class="btn btn-sm btn-secondary mr-1" data-dismiss="modal">Batal</button>
+                    <button type="submit" form="formEditSigners" class="btn btn-sm btn-primary font-weight-bold" id="btnSaveSigners">
+                        <i class="fas fa-save mr-1"></i> Simpan &amp; Terapkan ke Dokumen
+                    </button>
                 </div>
-                <div class="modal-footer bg-light py-2 px-4 d-flex justify-content-between align-items-center">
-                    <small class="text-muted">Perubahan akan menulis ulang blok tanda tangan pada berkas <code>.docx</code> secara otomatis.</small>
-                    <div>
-                        <button type="button" class="btn btn-sm btn-secondary mr-1" data-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-sm btn-primary font-weight-bold" id="btnSaveSigners">
-                            <i class="fas fa-save mr-1"></i> Simpan &amp; Terapkan ke Dokumen
-                        </button>
-                    </div>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
@@ -686,6 +686,11 @@ $(document).ready(function() {
     });
 
     <?php if ($canUploadDoc): ?>
+    $('#modalEditSigners').appendTo('body');
+    $('#modalEditSigners').on('shown.bs.modal', function() {
+        $(this).find('.modal-body').scrollTop(0);
+    });
+
     let signerPegawaiList = [];
     let signerCurrentList = [];
     let lastUpdatedDocId  = 0;
