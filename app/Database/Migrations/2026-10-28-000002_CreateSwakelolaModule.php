@@ -138,6 +138,10 @@ class CreateSwakelolaModule extends Migration
                     'constraint' => 255,
                     'null'       => true,
                 ],
+                'sub_files_json' => [
+                    'type' => 'LONGTEXT',
+                    'null' => true,
+                ],
                 'keterangan' => [
                     'type' => 'TEXT',
                     'null' => true,

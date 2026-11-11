@@ -351,19 +351,7 @@ class Swakelola extends BaseController
         $copySourcePoints = [];
         foreach ($dokumenList as $doc) {
             $no = (int) ($doc['nomor_urut'] ?? 0);
-            $hasFile = ! empty($doc['file_name']) && $doc['status'] === 'Ada';
-            if (isset($multiFileMap[$no]) && $hasFile) {
-                $doc['sub_files'] = $multiFileMap[$no];
-            } elseif (! empty($doc['file_name'])) {
-                $doc['sub_files'] = [
-                    [
-                        'label'     => $doc['file_name'],
-                        'file_name' => $doc['file_name'],
-                    ],
-                ];
-            } else {
-                $doc['sub_files'] = [];
-            }
+            $doc['sub_files'] = $this->resolveSubFilesForDoc($doc, $slug, $multiFileMap);
 
             $docxList = [];
             foreach ($doc['sub_files'] as $sf) {
@@ -453,24 +441,226 @@ class Swakelola extends BaseController
                 $safeName = $prefix . $safeName;
             }
 
+            $oldFileName = (string) ($doc['file_name'] ?? '');
             $file->move($targetDir, $safeName, true);
+            $auditDir = ROOTPATH . 'do_not_upload/audit/hasil_' . $slug;
+            if (is_dir($auditDir) && is_file($targetDir . '/' . $safeName)) {
+                @copy($targetDir . '/' . $safeName, $auditDir . '/' . $safeName);
+            }
             $fileName  = $safeName;
             $filePath  = 'public/uploads/swakelola/' . $slug . '/' . $safeName;
             $newStatus = 'Ada';
+
+            if (! empty($doc['sub_files_json'])) {
+                $decoded = json_decode((string) $doc['sub_files_json'], true);
+                if (is_array($decoded)) {
+                    $updatedSlot = false;
+                    foreach ($decoded as &$sfItem) {
+                        if (is_array($sfItem) && ($sfItem['file_name'] ?? '') === $oldFileName) {
+                            $sfItem['file_name'] = $safeName;
+                            $sfItem['label']     = $safeName;
+                            $updatedSlot         = true;
+                            break;
+                        }
+                    }
+                    unset($sfItem);
+                    if (! $updatedSlot) {
+                        $decoded[] = ['label' => $safeName, 'file_name' => $safeName];
+                    }
+                    $subFilesJsonUpdate = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
+            }
         }
 
-        $this->dokumenModel->update($id, [
+        $updData = [
             'status'     => $newStatus,
             'file_name'  => $fileName !== '' ? $fileName : null,
             'file_path'  => $filePath !== '' ? $filePath : null,
             'keterangan' => $keterangan,
-        ]);
+        ];
+        if (isset($subFilesJsonUpdate)) {
+            $updData['sub_files_json'] = $subFilesJsonUpdate;
+        }
+        $this->dokumenModel->update($id, $updData);
 
         // Perbarui status paket otomatis jika 28/28 dokumen sudah Ada
         $this->refreshPaketStatus($paketId);
 
         return redirect()->to('/admin/swakelola/dokumen?paket_id=' . $paketId)
             ->with('success', 'Dokumen "' . $doc['nama_dokumen'] . '" berhasil diperbarui.');
+    }
+
+    /**
+     * Resolve daftar sub-berkas aktif per item checklist (mengutamakan sub_files_json kustom bila ada)
+     */
+    private function resolveSubFilesForDoc(array $doc, string $slug, ?array $multiFileMap = null): array
+    {
+        if (! empty($doc['sub_files_json'])) {
+            $decoded = json_decode((string) $doc['sub_files_json'], true);
+            if (is_array($decoded) && ! empty($decoded)) {
+                $valid = [];
+                foreach ($decoded as $item) {
+                    if (! is_array($item)) {
+                        continue;
+                    }
+                    $fn = trim((string) ($item['file_name'] ?? ''));
+                    if ($fn === '') {
+                        continue;
+                    }
+                    $valid[] = [
+                        'label'     => trim((string) ($item['label'] ?? '')) !== '' ? trim((string) $item['label']) : $fn,
+                        'file_name' => $fn,
+                    ];
+                }
+                if (! empty($valid)) {
+                    return $valid;
+                }
+            }
+        }
+
+        $multiFileMap ??= $this->getMultiFilesMap($slug);
+        $no      = (int) ($doc['nomor_urut'] ?? 0);
+        $hasFile = ! empty($doc['file_name']) && ($doc['status'] ?? '') === 'Ada';
+
+        if (isset($multiFileMap[$no]) && $hasFile) {
+            return $multiFileMap[$no];
+        }
+        if (! empty($doc['file_name'])) {
+            return [
+                [
+                    'label'     => (string) $doc['file_name'],
+                    'file_name' => (string) $doc['file_name'],
+                ],
+            ];
+        }
+
+        return [];
+    }
+
+    /**
+     * Update / Ganti Sub-Berkas Digital (termasuk PDF) atau Tambah Sub-Berkas Baru pada Poin Checklist
+     */
+    public function replaceSubfile(int $id)
+    {
+        $permissions = $this->resolveMenuAksesPermissions('admin/swakelola/dokumen');
+        if (empty($permissions['edit']) && empty($permissions['add'])) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk memperbarui atau mengganti berkas.');
+        }
+
+        $doc = $this->dokumenModel->find($id);
+        if (! $doc) {
+            return redirect()->back()->with('error', 'Item dokumen checklist tidak ditemukan.');
+        }
+
+        $paketId    = (int) ($doc['paket_id'] ?? 0);
+        $paketList  = $this->getEnrichedPaketList();
+        $paket      = $this->resolveSelectedPaket($paketId, $paketList);
+        $slug       = (string) ($paket['slug'] ?? 'sppg');
+
+        $targetFile = basename(trim((string) ($this->request->getPost('target_file') ?? '')));
+        $actionMode = trim((string) ($this->request->getPost('action_mode') ?? 'replace_new'));
+        $customLbl  = trim((string) ($this->request->getPost('custom_label') ?? ''));
+        $file       = $this->request->getFile('replacement_file');
+
+        if (! $file || ! $file->isValid() || $file->hasMoved()) {
+            return redirect()->to('/admin/swakelola/dokumen?paket_id=' . $paketId)
+                ->with('error', 'Silakan pilih berkas yang valid untuk diunggah.');
+        }
+
+        $ext = strtolower((string) $file->getClientExtension());
+        if (! in_array($ext, ['pdf', 'docx', 'xlsx', 'doc', 'xls'], true)) {
+            return redirect()->to('/admin/swakelola/dokumen?paket_id=' . $paketId)
+                ->with('error', 'Format berkas harus berupa PDF, Word (.docx), atau Excel (.xlsx).');
+        }
+
+        $targetDir = FCPATH . 'uploads/swakelola/' . $slug;
+        if (! is_dir($targetDir)) {
+            @mkdir($targetDir, 0775, true);
+        }
+
+        $auditDir       = ROOTPATH . 'do_not_upload/audit/hasil_' . $slug;
+        $currentSubList = $this->resolveSubFilesForDoc($doc, $slug);
+        $finalFileName  = '';
+
+        if ($actionMode === 'replace_keep' && $targetFile !== '' && strtolower(pathinfo($targetFile, PATHINFO_EXTENSION)) === $ext) {
+            // Timpa berkas lama dengan tetap memakai nama file lama
+            $finalFileName = $targetFile;
+            $file->move($targetDir, $finalFileName, true);
+            if ($customLbl !== '') {
+                foreach ($currentSubList as &$sf) {
+                    if ($sf['file_name'] === $targetFile) {
+                        $sf['label'] = $customLbl;
+                    }
+                }
+                unset($sf);
+            }
+        } else {
+            // Gunakan nama berkas baru atau tambah sub-berkas baru
+            $origName = (string) $file->getClientName();
+            $safeName = preg_replace('/[^a-zA-Z0-9_\-\.\s\(\)]/', '_', basename($origName));
+            if ($safeName === '' || $safeName === '.' || $safeName === '..') {
+                $safeName = $doc['tahap'] . '. ' . $doc['nomor_urut'] . '. Berkas_' . time() . '.' . $ext;
+            }
+            $file->move($targetDir, $safeName, true);
+            $finalFileName = $safeName;
+            $newLabel      = $customLbl !== '' ? $customLbl : $finalFileName;
+
+            if ($actionMode === 'append') {
+                $currentSubList[] = [
+                    'label'     => $newLabel,
+                    'file_name' => $finalFileName,
+                ];
+            } else {
+                $replaced = false;
+                foreach ($currentSubList as &$sf) {
+                    if ($targetFile !== '' && $sf['file_name'] === $targetFile) {
+                        $sf['file_name'] = $finalFileName;
+                        $sf['label']     = $newLabel;
+                        $replaced        = true;
+                        break;
+                    }
+                }
+                unset($sf);
+                if (! $replaced) {
+                    $currentSubList[] = [
+                        'label'     => $newLabel,
+                        'file_name' => $finalFileName,
+                    ];
+                }
+            }
+        }
+
+        if (is_dir($auditDir) && is_file($targetDir . '/' . $finalFileName)) {
+            @copy($targetDir . '/' . $finalFileName, $auditDir . '/' . $finalFileName);
+        }
+
+        $updatePayload = [
+            'status'         => 'Ada',
+            'sub_files_json' => json_encode($currentSubList, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ];
+
+        // Sinkronkan juga kolom file_name utama bila sub-berkas pertama / utama diganti
+        if ($actionMode !== 'append' && ($doc['file_name'] === $targetFile || empty($doc['file_name']) || count($currentSubList) === 1)) {
+            $updatePayload['file_name'] = $finalFileName;
+            $updatePayload['file_path'] = 'public/uploads/swakelola/' . $slug . '/' . $finalFileName;
+        }
+
+        $this->dokumenModel->update($id, $updatePayload);
+
+        // Sinkronkan juga referensi file_bukti di realisasi SPM bila sebelumnya menunjuk ke targetFile
+        $db = \Config\Database::connect();
+        if ($actionMode === 'replace_new' && $targetFile !== '' && $targetFile !== $finalFileName && $db->tableExists('trn_swakelola_realisasi')) {
+            $db->table('trn_swakelola_realisasi')
+                ->where('paket_id', $paketId)
+                ->where('file_bukti', $targetFile)
+                ->update(['file_bukti' => $finalFileName]);
+        }
+
+        $this->refreshPaketStatus($paketId);
+
+        $actionVerb = $actionMode === 'append' ? 'ditambahkan' : 'diperbarui';
+        return redirect()->to('/admin/swakelola/dokumen?paket_id=' . $paketId)
+            ->with('success', 'Berkas "' . $finalFileName . '" berhasil ' . $actionVerb . ' pada Poin ' . (int) $doc['nomor_urut'] . '.');
     }
 
     /**
@@ -1267,18 +1457,7 @@ class Swakelola extends BaseController
      */
     private function resolvePointDocxFiles(array $doc, string $slug): array
     {
-        $noUrut       = (int) ($doc['nomor_urut'] ?? 0);
-        $multiFileMap = $this->getMultiFilesMap($slug);
-        $candidates   = [];
-
-        if (isset($multiFileMap[$noUrut])) {
-            foreach ($multiFileMap[$noUrut] as $mf) {
-                $candidates[] = [
-                    'file_name' => (string) ($mf['file_name'] ?? ''),
-                    'label'     => (string) ($mf['label'] ?? $mf['file_name'] ?? ''),
-                ];
-            }
-        }
+        $candidates = $this->resolveSubFilesForDoc($doc, $slug);
         if (! empty($doc['file_name'])) {
             $candidates[] = [
                 'file_name' => (string) $doc['file_name'],
@@ -2236,6 +2415,18 @@ class Swakelola extends BaseController
         $db = \Config\Database::connect();
         if (! $db->tableExists('trn_swakelola_paket') || ! $db->tableExists('trn_swakelola_dokumen')) {
             return;
+        }
+
+        // Pastikan kolom sub_files_json tersedia untuk penggantian/penambahan sub-berkas dinamis
+        if (! $db->fieldExists('sub_files_json', 'trn_swakelola_dokumen')) {
+            $forge = \Config\Database::forge();
+            $forge->addColumn('trn_swakelola_dokumen', [
+                'sub_files_json' => [
+                    'type'  => 'LONGTEXT',
+                    'null'  => true,
+                    'after' => 'file_path',
+                ],
+            ]);
         }
 
         $now     = date('Y-m-d H:i:s');

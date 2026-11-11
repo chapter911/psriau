@@ -20,6 +20,7 @@ class SwakelolaDokumenModel extends Model
         'status',
         'file_name',
         'file_path',
+        'sub_files_json',
         'keterangan',
         'created_at',
         'updated_at',

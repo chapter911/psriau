@@ -192,10 +192,26 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                                                     $iconClass = ($ext === 'pdf') ? 'fa-file-pdf text-danger' : 'fa-file-word text-primary';
                                                     $extBadge = ($ext === 'pdf') ? 'badge-danger' : 'badge-primary';
                                                 ?>
-                                                <small class="font-weight-bold d-inline-flex align-items-center flex-wrap">
-                                                    <span class="badge <?= $extBadge; ?> mr-1 text-uppercase" style="font-size: 0.65rem;"><?= esc($ext); ?></span>
-                                                    <i class="fas <?= $iconClass; ?> mr-1"></i> <?= esc($sf['label']); ?>
-                                                </small>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <small class="font-weight-bold d-inline-flex align-items-center flex-wrap mr-2">
+                                                        <span class="badge <?= $extBadge; ?> mr-1 text-uppercase" style="font-size: 0.65rem;"><?= esc($ext); ?></span>
+                                                        <i class="fas <?= $iconClass; ?> mr-1"></i> <?= esc($sf['label']); ?>
+                                                    </small>
+                                                    <?php if ($canUploadDoc): ?>
+                                                        <button type="button"
+                                                            class="btn btn-xs btn-outline-secondary btn-replace-subfile py-0 px-2 flex-shrink-0"
+                                                            data-id="<?= $doc['id']; ?>"
+                                                            data-urut="<?= $doc['nomor_urut']; ?>"
+                                                            data-tahap="<?= esc($doc['tahap'], 'attr'); ?>"
+                                                            data-nama="<?= esc($doc['nama_dokumen'], 'attr'); ?>"
+                                                            data-file="<?= esc($sf['file_name'], 'attr'); ?>"
+                                                            data-label="<?= esc($sf['label'], 'attr'); ?>"
+                                                            data-ext="<?= esc($ext, 'attr'); ?>"
+                                                            title="Update / Ganti Berkas <?= esc($sf['label'], 'attr'); ?>">
+                                                            <i class="fas fa-sync-alt mr-1"></i> Ganti
+                                                        </button>
+                                                    <?php endif; ?>
+                                                </div>
                                             <?php else: ?>
                                                 <div class="py-1">
                                                     <?php foreach ($subFiles as $idxSf => $sf): ?>
@@ -234,6 +250,20 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                                                                         data-label="<?= esc($sf['label'], 'attr'); ?>"
                                                                         title="Atur TTD khusus berkas <?= esc($sf['label'], 'attr'); ?>">
                                                                         <i class="fas fa-pen-nib mr-1"></i> TTD
+                                                                    </button>
+                                                                <?php endif; ?>
+                                                                <?php if ($canUploadDoc): ?>
+                                                                    <button type="button"
+                                                                        class="btn btn-xs btn-outline-secondary btn-replace-subfile py-0 px-2"
+                                                                        data-id="<?= $doc['id']; ?>"
+                                                                        data-urut="<?= $doc['nomor_urut']; ?>"
+                                                                        data-tahap="<?= esc($doc['tahap'], 'attr'); ?>"
+                                                                        data-nama="<?= esc($doc['nama_dokumen'], 'attr'); ?>"
+                                                                        data-file="<?= esc($sf['file_name'], 'attr'); ?>"
+                                                                        data-label="<?= esc($sf['label'], 'attr'); ?>"
+                                                                        data-ext="<?= esc($ext, 'attr'); ?>"
+                                                                        title="Update / Ganti Berkas <?= esc($sf['label'], 'attr'); ?>">
+                                                                        <i class="fas fa-sync-alt mr-1"></i> Ganti
                                                                     </button>
                                                                 <?php endif; ?>
                                                             </div>
@@ -443,6 +473,64 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                         <i class="fas fa-save mr-1"></i> Simpan &amp; Terapkan ke Dokumen
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- MODAL UPDATE / GANTI SUB-BERKAS DIGITAL (.PDF / .DOCX / .XLSX) -->
+<div class="modal fade" id="modalReplaceSubfile" tabindex="-1" role="dialog" aria-hidden="true" style="overscroll-behavior: contain;">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document" style="max-height: calc(100vh - 2rem); margin: 1rem auto;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; max-height: calc(100vh - 2rem); display: flex; flex-direction: column; overflow: hidden;">
+            <div class="modal-header bg-primary text-white py-3 px-4" style="flex-shrink: 0;">
+                <div>
+                    <h6 class="modal-title font-weight-bold mb-0 text-white">
+                        <i class="fas fa-sync-alt mr-2"></i> Update / Ganti Berkas Digital
+                    </h6>
+                    <small class="text-white-50" id="replacePointSubtitle">-</small>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4" style="flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain;">
+                <form id="formReplaceSubfile" method="post" action="" enctype="multipart/form-data">
+                    <?= csrf_field(); ?>
+                    <input type="hidden" name="target_file" id="replaceTargetFile" value="">
+
+                    <div class="alert alert-light border mb-3 py-2 px-3">
+                        <small class="text-muted d-block">Berkas Saat Ini yang Dipilih:</small>
+                        <strong class="text-dark d-block" id="replaceCurrentLabel">-</strong>
+                        <small class="text-muted" id="replaceCurrentFilename">-</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold small">Mode Pembaruan Berkas</label>
+                        <select name="action_mode" id="replaceActionMode" class="form-control form-control-sm">
+                            <option value="replace_new">Gantikan dengan berkas &amp; nama berkas baru yang diunggah</option>
+                            <option value="replace_keep">Update isi berkas langsung (tetap pertahankan nama berkas lama)</option>
+                            <option value="append">Tambahkan sebagai sub-berkas baru (tanpa menghapus berkas lama)</option>
+                        </select>
+                        <small class="text-muted d-block mt-1">
+                            Pilih <strong>Update isi berkas langsung</strong> jika nomor/nama berkas PDF pada Daftar Realisasi SPM harus tetap sama, atau pilih <strong>Gantikan dengan berkas baru</strong> jika nama file ikut diganti.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold small">Pilih Berkas Pengganti / Baru (<span id="replaceAcceptHint">.pdf / .docx / .xlsx</span>) <span class="text-danger">*</span></label>
+                        <input type="file" name="replacement_file" id="replaceFileInput" class="form-control-file border p-2 rounded" accept=".pdf,.docx,.xlsx,.doc,.xls" required>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="font-weight-bold small">Label Tampilan di Kolom Nama Berkas Digital <span class="text-muted font-weight-normal">(opsional)</span></label>
+                        <input type="text" name="custom_label" id="replaceCustomLabel" class="form-control form-control-sm" placeholder="Kosongkan untuk otomatis memakai nama berkas yang diunggah">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light py-2 px-4" style="flex-shrink: 0;">
+                <button type="button" class="btn btn-sm btn-secondary mr-1" data-dismiss="modal">Batal</button>
+                <button type="submit" form="formReplaceSubfile" class="btn btn-sm btn-primary font-weight-bold">
+                    <i class="fas fa-upload mr-1"></i> Simpan &amp; Perbarui Berkas
+                </button>
             </div>
         </div>
     </div>
@@ -1046,6 +1134,36 @@ $(document).ready(function() {
             .attr('data-file', lastUpdatedFile)
             .attr('data-title', lastUpdatedTitle);
         fakeBtn.appendTo('body').trigger('click').remove();
+    });
+
+    $('#modalReplaceSubfile').appendTo('body');
+    $(document).on('click', '.btn-replace-subfile', function() {
+        const id    = $(this).data('id');
+        const urut  = $(this).data('urut');
+        const tahap = $(this).data('tahap');
+        const nama  = $(this).data('nama');
+        const file  = $(this).attr('data-file') || '';
+        const label = $(this).attr('data-label') || file;
+        const ext   = ($(this).attr('data-ext') || '').toLowerCase();
+
+        $('#formReplaceSubfile').attr('action', '<?= base_url('admin/swakelola/dokumen'); ?>/' + id + '/replace-subfile');
+        $('#replacePointSubtitle').text('[Tahap ' + tahap + ' - Poin ' + urut + '] ' + nama);
+        $('#replaceTargetFile').val(file);
+        $('#replaceCurrentLabel').text(label);
+        $('#replaceCurrentFilename').text('Nama file fisik: ' + file);
+        $('#replaceFileInput').val('');
+        $('#replaceCustomLabel').val(label !== file ? label : '');
+        $('#replaceActionMode').val('replace_new');
+
+        if (ext === 'pdf') {
+            $('#replaceFileInput').attr('accept', '.pdf,.docx,.xlsx,.doc,.xls');
+            $('#replaceAcceptHint').text('Utama .pdf (atau .docx / .xlsx)');
+        } else {
+            $('#replaceFileInput').attr('accept', '.pdf,.docx,.xlsx,.doc,.xls');
+            $('#replaceAcceptHint').text('.pdf / .docx / .xlsx');
+        }
+
+        $('#modalReplaceSubfile').modal('show');
     });
     <?php endif; ?>
 });
