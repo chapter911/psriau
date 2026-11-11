@@ -455,13 +455,13 @@ $stMeta = $statusBadges[$st] ?? ['badge-secondary', ucfirst($st)];
                         <table class="table table-bordered table-sm" id="tblEditItems">
                             <thead class="thead-light">
                                 <tr>
-                                    <th style="width: 30%;">Katalog</th>
-                                    <th>Nama Barang</th>
-                                    <th style="width: 12%;">Satuan</th>
-                                    <th style="width: 10%;">Vol</th>
-                                    <th style="width: 14%;">Harga</th>
-                                    <th style="width: 14%;">Subtotal</th>
-                                    <th style="width: 40px;"></th>
+                                    <th style="width: 28%;">Katalog</th>
+                                    <th style="width: 26%;">Nama Barang</th>
+                                    <th style="width: 11%;">Satuan</th>
+                                    <th style="width: 9%;">Vol</th>
+                                    <th style="width: 13%;">Harga</th>
+                                    <th style="width: 10%;">Subtotal</th>
+                                    <th style="width: 36px;"></th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -497,6 +497,10 @@ $stMeta = $statusBadges[$st] ?? ['badge-secondary', ucfirst($st)];
     if (!tbody || !btnAddRow) return;
 
     const formatRp = (num) => Math.round(num || 0).toLocaleString('id-ID');
+    const catalogById = {};
+    catalog.forEach((b) => {
+        catalogById[String(b.id)] = b;
+    });
 
     const recalc = () => {
         let total = 0;
@@ -510,11 +514,23 @@ $stMeta = $statusBadges[$st] ?? ['badge-secondary', ucfirst($st)];
         if (grandTotalEl) grandTotalEl.textContent = formatRp(total);
     };
 
+    const applyCatalogSelection = (selEl) => {
+        const tr = selEl.closest('tr');
+        if (!tr) return;
+        const item = catalogById[String(selEl.value || '')];
+        if (item) {
+            tr.querySelector('.inp-nama').value = item.nama_barang || '';
+            tr.querySelector('.inp-satuan').value = item.satuan || 'Buah';
+            tr.querySelector('.inp-harga').value = Math.round(parseFloat(item.harga_satuan || '0'));
+        }
+        recalc();
+    };
+
     const buildCatalogOptions = (selectedId) => {
         let html = '<option value="">-- Katalog / Manual --</option>';
         catalog.forEach((b) => {
             const sel = String(b.id) === String(selectedId || '') ? 'selected' : '';
-            html += `<option value="${b.id}" ${sel} data-nama="${String(b.nama_barang).replace(/"/g, '&quot;')}" data-satuan="${String(b.satuan).replace(/"/g, '&quot;')}" data-harga="${b.harga_satuan}">[${b.kategori}] ${b.nama_barang} - Rp ${formatRp(b.harga_satuan)}</option>`;
+            html += `<option value="${b.id}" ${sel}>[${b.kategori}] ${b.nama_barang} - Rp ${formatRp(b.harga_satuan)}</option>`;
         });
         return html;
     };
@@ -533,15 +549,17 @@ $stMeta = $statusBadges[$st] ?? ['badge-secondary', ucfirst($st)];
         tbody.appendChild(tr);
 
         const sel = tr.querySelector('.sel-katalog');
-        sel.addEventListener('change', () => {
-            const opt = sel.options[sel.selectedIndex];
-            if (opt && opt.value) {
-                tr.querySelector('.inp-nama').value = opt.dataset.nama || '';
-                tr.querySelector('.inp-satuan').value = opt.dataset.satuan || 'Buah';
-                tr.querySelector('.inp-harga').value = Math.round(parseFloat(opt.dataset.harga || '0'));
+        sel.addEventListener('change', () => applyCatalogSelection(sel));
+        if (typeof window.jQuery !== 'undefined') {
+            window.jQuery(sel).on('change select2:select', function () {
+                applyCatalogSelection(this);
+            }).on('select2:clear', function () {
+                tr.querySelector('.inp-nama').value = '';
+                tr.querySelector('.inp-satuan').value = 'Buah';
+                tr.querySelector('.inp-harga').value = 0;
                 recalc();
-            }
-        });
+            });
+        }
         tr.querySelector('.inp-vol').addEventListener('input', recalc);
         tr.querySelector('.inp-harga').addEventListener('input', recalc);
         tr.querySelector('.btn-del-row').addEventListener('click', () => {
