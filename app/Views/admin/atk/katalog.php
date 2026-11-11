@@ -158,7 +158,7 @@
                         </div>
                         <div class="col-6 form-group">
                             <label class="small font-weight-bold">Harga Satuan (Rp)</label>
-                            <input type="number" name="harga_satuan" class="form-control form-control-sm" required min="0">
+                            <input type="text" inputmode="numeric" name="harga_satuan" class="form-control form-control-sm inp-ribuan text-right" required>
                         </div>
                     </div>
                     <div class="form-group">
@@ -219,7 +219,7 @@
                         </div>
                         <div class="col-6 form-group">
                             <label class="small font-weight-bold">Harga Satuan (Rp)</label>
-                            <input type="number" name="harga_satuan" id="ebHarga" class="form-control form-control-sm" required min="0">
+                            <input type="text" inputmode="numeric" name="harga_satuan" id="ebHarga" class="form-control form-control-sm inp-ribuan text-right" required>
                         </div>
                     </div>
                     <div class="form-group">
@@ -282,6 +282,15 @@
 
 <?= $this->section('pageScripts'); ?>
 <script>
+const formatRibuanVal = (val) => {
+    const digits = String(val || '').replace(/\D/g, '');
+    return digits === '' ? '' : parseInt(digits, 10).toLocaleString('id-ID');
+};
+document.querySelectorAll('.inp-ribuan').forEach((inp) => {
+    inp.addEventListener('input', () => {
+        inp.value = formatRibuanVal(inp.value);
+    });
+});
 document.querySelectorAll('.btn-edit-barang').forEach((btn) => {
     btn.addEventListener('click', () => {
         const id = btn.dataset.id;
@@ -291,7 +300,7 @@ document.querySelectorAll('.btn-edit-barang').forEach((btn) => {
         document.getElementById('ebTahun').value = btn.dataset.tahun || '2026';
         document.getElementById('ebNama').value = btn.dataset.nama || '';
         document.getElementById('ebSatuan').value = btn.dataset.satuan || 'Buah';
-        document.getElementById('ebHarga').value = btn.dataset.harga || '0';
+        document.getElementById('ebHarga').value = formatRibuanVal(btn.dataset.harga || '0');
         document.getElementById('ebKet').value = btn.dataset.ket || '';
         document.getElementById('ebActive').value = btn.dataset.active || '1';
         $('#modalEditBarang').modal('show');

@@ -497,6 +497,11 @@ $stMeta = $statusBadges[$st] ?? ['badge-secondary', ucfirst($st)];
     if (!tbody || !btnAddRow) return;
 
     const formatRp = (num) => Math.round(num || 0).toLocaleString('id-ID');
+    const parseDigits = (val) => parseInt(String(val || '').replace(/\D/g, ''), 10) || 0;
+    const formatInputRibuan = (inp) => {
+        const num = parseDigits(inp.value);
+        inp.value = inp.value === '' ? '' : formatRp(num);
+    };
     const catalogById = {};
     catalog.forEach((b) => {
         catalogById[String(b.id)] = b;
@@ -506,7 +511,7 @@ $stMeta = $statusBadges[$st] ?? ['badge-secondary', ucfirst($st)];
         let total = 0;
         tbody.querySelectorAll('tr').forEach((tr) => {
             const vol = parseFloat(tr.querySelector('.inp-vol')?.value || '0') || 0;
-            const harga = parseFloat(tr.querySelector('.inp-harga')?.value || '0') || 0;
+            const harga = parseDigits(tr.querySelector('.inp-harga')?.value || '0');
             const sub = vol * harga;
             total += sub;
             tr.querySelector('.txt-sub').textContent = formatRp(sub);
@@ -521,7 +526,7 @@ $stMeta = $statusBadges[$st] ?? ['badge-secondary', ucfirst($st)];
         if (item) {
             tr.querySelector('.inp-nama').value = item.nama_barang || '';
             tr.querySelector('.inp-satuan').value = item.satuan || 'Buah';
-            tr.querySelector('.inp-harga').value = Math.round(parseFloat(item.harga_satuan || '0'));
+            tr.querySelector('.inp-harga').value = formatRp(parseFloat(item.harga_satuan || '0'));
         }
         recalc();
     };
@@ -542,7 +547,7 @@ $stMeta = $statusBadges[$st] ?? ['badge-secondary', ucfirst($st)];
             <td><input type="text" name="item_nama_barang[]" class="form-control form-control-sm inp-nama" value="${prefill ? String(prefill.nama_barang).replace(/"/g, '&quot;') : ''}" required></td>
             <td><input type="text" name="item_satuan[]" class="form-control form-control-sm inp-satuan" value="${prefill ? String(prefill.satuan).replace(/"/g, '&quot;') : 'Buah'}" required></td>
             <td><input type="number" step="1" min="1" name="item_volume[]" class="form-control form-control-sm inp-vol text-center" value="${prefill ? Math.round(parseFloat(prefill.volume || 1)) : 1}" required></td>
-            <td><input type="number" step="1" min="0" name="item_harga_satuan[]" class="form-control form-control-sm inp-harga text-right" value="${prefill ? Math.round(parseFloat(prefill.harga_satuan || 0)) : 0}" required></td>
+            <td><input type="text" inputmode="numeric" name="item_harga_satuan[]" class="form-control form-control-sm inp-harga text-right" value="${prefill ? formatRp(parseFloat(prefill.harga_satuan || 0)) : '0'}" required></td>
             <td class="text-right align-middle font-weight-bold txt-sub">0</td>
             <td class="text-center align-middle"><button type="button" class="btn btn-xs btn-outline-danger btn-del-row"><i class="fas fa-times"></i></button></td>
         `;
@@ -556,12 +561,15 @@ $stMeta = $statusBadges[$st] ?? ['badge-secondary', ucfirst($st)];
             }).on('select2:clear', function () {
                 tr.querySelector('.inp-nama').value = '';
                 tr.querySelector('.inp-satuan').value = 'Buah';
-                tr.querySelector('.inp-harga').value = 0;
+                tr.querySelector('.inp-harga').value = '0';
                 recalc();
             });
         }
         tr.querySelector('.inp-vol').addEventListener('input', recalc);
-        tr.querySelector('.inp-harga').addEventListener('input', recalc);
+        tr.querySelector('.inp-harga').addEventListener('input', (e) => {
+            formatInputRibuan(e.target);
+            recalc();
+        });
         tr.querySelector('.btn-del-row').addEventListener('click', () => {
             tr.remove();
             recalc();

@@ -1069,7 +1069,7 @@ class AtkSupplies extends BaseController
                 continue;
             }
             $vol      = max(0, (float) ($volumes[$idx] ?? 1));
-            $harga    = max(0, (float) preg_replace('/[^0-9.]/', '', (string) ($hargas[$idx] ?? '0')));
+            $harga    = max(0, (float) preg_replace('/[^0-9]/', '', (string) ($hargas[$idx] ?? '0')));
             $subtotal = $vol * $harga;
             $total   += $subtotal;
 
