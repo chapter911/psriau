@@ -348,6 +348,7 @@ class Swakelola extends BaseController
         ];
 
         $totalAda = 0;
+        $copySourcePoints = [];
         foreach ($dokumenList as $doc) {
             $no = (int) ($doc['nomor_urut'] ?? 0);
             $hasFile = ! empty($doc['file_name']) && $doc['status'] === 'Ada';
@@ -364,6 +365,23 @@ class Swakelola extends BaseController
                 $doc['sub_files'] = [];
             }
 
+            $docxList = [];
+            foreach ($doc['sub_files'] as $sf) {
+                $fn = (string) ($sf['file_name'] ?? '');
+                if (strtolower(pathinfo($fn, PATHINFO_EXTENSION)) === 'docx') {
+                    $docxList[] = $fn;
+                }
+            }
+            $doc['docx_files'] = array_values(array_unique($docxList));
+            if (! empty($doc['docx_files'])) {
+                $copySourcePoints[] = [
+                    'id'         => (int) $doc['id'],
+                    'nomor_urut' => $no,
+                    'tahap'      => $doc['tahap'],
+                    'nama'       => $doc['nama_dokumen'],
+                ];
+            }
+
             $t = $doc['tahap'];
             if (isset($grouped[$t])) {
                 $grouped[$t]['items'][] = $doc;
@@ -377,14 +395,15 @@ class Swakelola extends BaseController
         $persenAda  = $totalCount > 0 ? round(($totalAda / $totalCount) * 100, 1) : 0;
 
         return view('admin/swakelola/dokumen', [
-            'title'       => 'Checklist Dokumen Swakelola',
-            'paket'       => $paket,
-            'paketList'   => $paketList,
-            'grouped'     => $grouped,
-            'totalAda'    => $totalAda,
-            'totalCount'  => $totalCount,
-            'persenAda'   => $persenAda,
-            'permissions' => $permissions,
+            'title'            => 'Checklist Dokumen Swakelola',
+            'paket'            => $paket,
+            'paketList'        => $paketList,
+            'grouped'          => $grouped,
+            'totalAda'         => $totalAda,
+            'totalCount'       => $totalCount,
+            'persenAda'        => $persenAda,
+            'permissions'      => $permissions,
+            'copySourcePoints' => $copySourcePoints,
         ]);
     }
 
@@ -1064,6 +1083,753 @@ class Swakelola extends BaseController
             'keterangan'   => $doc['keterangan'] ?? '',
             'file_size'    => $fileExists ? filesize($filePath) : 0,
         ]);
+    }
+
+    /**
+     * AJAX Ambil Daftar Penanda Tangan & Opsi Master Pegawai untuk Item Checklist (Dinamis per Poin)
+     */
+    public function ajaxGetSigners(int $id)
+    {
+        $doc = $this->dokumenModel->find($id);
+        if (! $doc) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Item dokumen checklist tidak ditemukan.']);
+        }
+
+        $slug        = $this->getSlugByPaketId((int) ($doc['paket_id'] ?? 0));
+        $docxFiles   = $this->resolvePointDocxFiles($doc, $slug);
+        $targetParam = trim((string) ($this->request->getGet('file') ?? ''));
+
+        if (empty($docxFiles)) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Poin ini belum memiliki berkas Word (.docx) yang dapat diatur penanda tangannya.',
+            ]);
+        }
+
+        $chosen = $docxFiles[0];
+        if ($targetParam !== '') {
+            foreach ($docxFiles as $df) {
+                if ($df['file_name'] === basename($targetParam)) {
+                    $chosen = $df;
+                    break;
+                }
+            }
+        }
+
+        $parsed = $this->extractSignersFromDocx($chosen['path']);
+
+        return $this->response->setJSON([
+            'status'      => 'success',
+            'id'          => (int) $doc['id'],
+            'nomor_urut'  => (int) $doc['nomor_urut'],
+            'tahap'       => (string) $doc['tahap'],
+            'nama_dokumen'=> (string) $doc['nama_dokumen'],
+            'slug'        => $slug,
+            'active_file' => $chosen['file_name'],
+            'docx_files'  => array_map(static fn(array $d): array => [
+                'file_name' => $d['file_name'],
+                'label'     => $d['label'],
+            ], $docxFiles),
+            'layout_mode' => $parsed['layout_mode'],
+            'date_text'   => $parsed['date_text'],
+            'signers'     => $parsed['signers'],
+            'pegawai'     => $this->getMasterPegawaiOptions(),
+            'csrf_hash'   => csrf_hash(),
+        ]);
+    }
+
+    /**
+     * AJAX Simpan & Terapkan Penanda Tangan Dinamis Langsung ke Berkas DOCX pada Poin Terkait
+     */
+    public function saveSigners(int $id)
+    {
+        $permissions = $this->resolveMenuAksesPermissions('admin/swakelola/dokumen');
+        if (empty($permissions['edit']) && empty($permissions['add'])) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'status'    => 'error',
+                'message'   => 'Anda tidak memiliki hak akses (FiturEdit/FiturAdd) untuk mengubah penanda tangan dokumen.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        if (! class_exists(\ZipArchive::class) || ! class_exists(\DOMDocument::class)) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'status'    => 'error',
+                'message'   => 'Ekstensi PHP ZipArchive / DOMDocument tidak tersedia di server.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $doc = $this->dokumenModel->find($id);
+        if (! $doc) {
+            return $this->response->setJSON([
+                'status'    => 'error',
+                'message'   => 'Item dokumen checklist tidak ditemukan.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $slug       = $this->getSlugByPaketId((int) ($doc['paket_id'] ?? 0));
+        $docxFiles  = $this->resolvePointDocxFiles($doc, $slug);
+        if (empty($docxFiles)) {
+            return $this->response->setJSON([
+                'status'    => 'error',
+                'message'   => 'Tidak ditemukan berkas Word (.docx) pada poin dokumen ini.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $layoutMode  = trim((string) ($this->request->getPost('layout_mode') ?? 'columns'));
+        $layoutMode  = in_array($layoutMode, ['columns', 'table'], true) ? $layoutMode : 'columns';
+        $dateText    = trim((string) ($this->request->getPost('date_text') ?? ''));
+        $targetFile  = trim((string) ($this->request->getPost('target_file') ?? '__all__'));
+        $signersJson = (string) ($this->request->getPost('signers_json') ?? '[]');
+
+        $decoded = json_decode($signersJson, true);
+        if (! is_array($decoded) || empty($decoded)) {
+            return $this->response->setJSON([
+                'status'    => 'error',
+                'message'   => 'Minimal harus ada 1 penanda tangan dengan nama yang terisi.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $cleanSigners = [];
+        foreach ($decoded as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $nama = trim((string) ($row['nama'] ?? ''));
+            if ($nama === '') {
+                continue;
+            }
+            $cleanSigners[] = [
+                'action'  => trim((string) ($row['action'] ?? '')),
+                'jabatan' => trim((string) ($row['jabatan'] ?? '')),
+                'nama'    => $nama,
+                'nip'     => trim((string) ($row['nip'] ?? '')),
+            ];
+        }
+
+        if (empty($cleanSigners)) {
+            return $this->response->setJSON([
+                'status'    => 'error',
+                'message'   => 'Nama penanda tangan wajib diisi minimal 1 orang.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $targets = $docxFiles;
+        if ($targetFile !== '' && $targetFile !== '__all__') {
+            $targets = array_values(array_filter(
+                $docxFiles,
+                static fn(array $d): bool => $d['file_name'] === basename($targetFile)
+            ));
+            if (empty($targets)) {
+                $targets = $docxFiles;
+            }
+        }
+
+        $updatedFiles = [];
+        $failedFiles  = [];
+        $auditDir     = ROOTPATH . 'do_not_upload/audit/hasil_' . $slug;
+
+        foreach ($targets as $tf) {
+            if ($this->updateDocxSigners($tf['path'], $layoutMode, $dateText, $cleanSigners)) {
+                $updatedFiles[] = $tf['file_name'];
+                if (is_dir($auditDir)) {
+                    @copy($tf['path'], $auditDir . '/' . $tf['file_name']);
+                }
+            } else {
+                $failedFiles[] = $tf['file_name'];
+            }
+        }
+
+        if (empty($updatedFiles)) {
+            return $this->response->setJSON([
+                'status'    => 'error',
+                'message'   => 'Gagal memperbarui penanda tangan pada berkas: ' . implode(', ', $failedFiles),
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        return $this->response->setJSON([
+            'status'        => 'success',
+            'message'       => 'Penanda tangan berhasil diterapkan ke ' . count($updatedFiles) . ' berkas Word (.docx) pada Poin ' . (int) $doc['nomor_urut'] . '.',
+            'updated_files' => $updatedFiles,
+            'failed_files'  => $failedFiles,
+            'csrf_hash'     => csrf_hash(),
+        ]);
+    }
+
+    /**
+     * Kumpulkan seluruh berkas fisik .docx yang terikat pada satu baris checklist
+     */
+    private function resolvePointDocxFiles(array $doc, string $slug): array
+    {
+        $noUrut       = (int) ($doc['nomor_urut'] ?? 0);
+        $multiFileMap = $this->getMultiFilesMap($slug);
+        $candidates   = [];
+
+        if (isset($multiFileMap[$noUrut])) {
+            foreach ($multiFileMap[$noUrut] as $mf) {
+                $candidates[] = [
+                    'file_name' => (string) ($mf['file_name'] ?? ''),
+                    'label'     => (string) ($mf['label'] ?? $mf['file_name'] ?? ''),
+                ];
+            }
+        }
+        if (! empty($doc['file_name'])) {
+            $candidates[] = [
+                'file_name' => (string) $doc['file_name'],
+                'label'     => (string) $doc['file_name'],
+            ];
+        }
+
+        $seen  = [];
+        $found = [];
+        foreach ($candidates as $cand) {
+            $fn = basename(trim($cand['file_name']));
+            if ($fn === '' || isset($seen[$fn])) {
+                continue;
+            }
+            if (strtolower(pathinfo($fn, PATHINFO_EXTENSION)) !== 'docx') {
+                continue;
+            }
+            $path = $this->resolveDocumentPath($fn, null, $slug);
+            if ($path !== null && is_file($path)) {
+                $seen[$fn] = true;
+                $found[]   = [
+                    'file_name' => $fn,
+                    'label'     => $cand['label'] !== '' ? $cand['label'] : $fn,
+                    'path'      => $path,
+                ];
+            }
+        }
+
+        return $found;
+    }
+
+    /**
+     * Ambil opsi pegawai dari mst_pegawai untuk pilihan cepat di editor penanda tangan
+     */
+    private function getMasterPegawaiOptions(): array
+    {
+        $db = \Config\Database::connect();
+        if (! $db->tableExists('mst_pegawai')) {
+            return [];
+        }
+
+        $builder = $db->table('mst_pegawai p')
+            ->select('p.nama, p.nip');
+
+        if ($db->tableExists('mst_jabatan')) {
+            $builder->select('COALESCE(jp.jabatan, ju.jabatan, "") AS jabatan_label', false)
+                ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left')
+                ->join('mst_jabatan jp', 'jp.id = p.jabatan_perbendaharaan_id', 'left');
+        }
+
+        $rows = $builder->orderBy('p.nama', 'ASC')->get()->getResultArray();
+        $out  = [];
+        foreach ($rows as $r) {
+            $nama = trim((string) ($r['nama'] ?? ''));
+            if ($nama === '') {
+                continue;
+            }
+            $nip = trim((string) ($r['nip'] ?? ''));
+            $out[] = [
+                'nama'    => $nama,
+                'nip'     => $nip !== '' ? (stripos($nip, 'NIP') === 0 || stripos($nip, 'NRP') === 0 ? $nip : 'NIP. ' . $nip) : '',
+                'jabatan' => trim((string) ($r['jabatan_label'] ?? '')),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Ekstrak daftar baris/kolom teks dari sel tabel OOXML
+     */
+    private function getDomCellLines(\DOMXPath $xpath, \DOMElement $cell): array
+    {
+        $lines = [];
+        foreach ($xpath->query('./w:p', $cell) as $pNode) {
+            $runs = [];
+            foreach ($xpath->query('.//w:t | .//w:br', $pNode) as $node) {
+                if ($node->localName === 'br') {
+                    $line = trim(implode('', $runs));
+                    if ($line !== '') {
+                        $lines[] = $line;
+                    }
+                    $runs = [];
+                } else {
+                    $runs[] = $node->textContent;
+                }
+            }
+            $line = trim(implode('', $runs));
+            if ($line !== '') {
+                $lines[] = $line;
+            }
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Baca struktur penanda tangan saat ini langsung dari berkas DOCX
+     */
+    private function extractSignersFromDocx(string $filePath): array
+    {
+        $default = [
+            'layout_mode' => 'columns',
+            'date_text'   => 'Pekanbaru, ' . date('d F Y'),
+            'signers'     => [],
+        ];
+
+        $zip = new \ZipArchive();
+        if ($zip->open($filePath) !== true) {
+            return $default;
+        }
+        $xmlContent = $zip->getFromName('word/document.xml');
+        $zip->close();
+
+        if (! is_string($xmlContent) || $xmlContent === '') {
+            return $default;
+        }
+
+        $dom = new \DOMDocument();
+        if (! @$dom->loadXML($xmlContent)) {
+            return $default;
+        }
+
+        $xpath = new \DOMXPath($dom);
+        $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+
+        $tblList = $xpath->query('/w:document/w:body/w:tbl');
+        if (! $tblList || $tblList->length === 0) {
+            return $default;
+        }
+
+        /** @var \DOMElement $lastTbl */
+        $lastTbl   = $tblList->item($tblList->length - 1);
+        $topBorder = $xpath->query('./w:tblPr/w:tblBorders/w:top/@w:val', $lastTbl);
+        $borderVal = ($topBorder && $topBorder->length > 0) ? $topBorder->item(0)->nodeValue : 'none';
+        $rows      = $xpath->query('./w:tr', $lastTbl);
+
+        if (! $rows || $rows->length === 0) {
+            return $default;
+        }
+
+        // Cek paragraf tanggal tepat sebelum tabel tanda tangan (untuk mode tabel berbingkai)
+        $prevDate = '';
+        $prevNode = $lastTbl->previousSibling;
+        while ($prevNode && $prevNode->nodeType !== XML_ELEMENT_NODE) {
+            $prevNode = $prevNode->previousSibling;
+        }
+        if ($prevNode instanceof \DOMElement && $prevNode->localName === 'p') {
+            $pTxt = trim($prevNode->textContent);
+            if ($pTxt !== '' && strlen($pTxt) <= 80 && preg_match('/pekanbaru|\d{4}/i', $pTxt)) {
+                $prevDate = $pTxt;
+            }
+        }
+
+        $firstRowCells = $xpath->query('./w:tc', $rows->item(0));
+        $firstHeader0  = ($firstRowCells && $firstRowCells->length > 0)
+            ? strtolower(trim(implode(' ', $this->getDomCellLines($xpath, $firstRowCells->item(0)))))
+            : '';
+
+        // Format A: Tabel berbingkai 4 kolom (No | Nama | Jabatan | Tanda Tangan)
+        if ($borderVal === 'single' || str_starts_with($firstHeader0, 'no')) {
+            $signers = [];
+            for ($ri = 1; $ri < $rows->length; $ri++) {
+                $tcs = $xpath->query('./w:tc', $rows->item($ri));
+                if (! $tcs || $tcs->length < 3) {
+                    continue;
+                }
+                $nameLines = $this->getDomCellLines($xpath, $tcs->item(1));
+                $jabLines  = $this->getDomCellLines($xpath, $tcs->item(2));
+                $nama      = $nameLines[0] ?? '';
+                $nip       = count($nameLines) > 1 ? implode("\n", array_slice($nameLines, 1)) : '';
+                $jabatan   = implode("\n", $jabLines);
+                if ($nama !== '' || $jabatan !== '') {
+                    $signers[] = [
+                        'action'  => '',
+                        'jabatan' => $jabatan,
+                        'nama'    => $nama,
+                        'nip'     => $nip,
+                    ];
+                }
+            }
+
+            return [
+                'layout_mode' => 'table',
+                'date_text'   => $prevDate,
+                'signers'     => $signers,
+            ];
+        }
+
+        // Format B: Blok Tanda Tangan Sejajar (3 baris atau 4 baris dengan baris tanggal terpisah)
+        $rowCount = $rows->length;
+        $colCount = $firstRowCells ? $firstRowCells->length : 0;
+        if ($colCount === 0 || $rowCount < 2) {
+            return $default;
+        }
+
+        $dateText  = $prevDate;
+        $actionRow = 0;
+        $roleRow   = 1;
+        $nameRow   = 2;
+
+        if ($rowCount >= 4) {
+            $r0LinesAll = [];
+            for ($ci = 0; $ci < $colCount; $ci++) {
+                $r0LinesAll[] = implode(' ', $this->getDomCellLines($xpath, $firstRowCells->item($ci)));
+            }
+            $nonEmptyR0 = array_filter($r0LinesAll, static fn(string $v): bool => trim($v) !== '');
+            if (count($nonEmptyR0) >= 1) {
+                $lastVal = trim((string) end($r0LinesAll));
+                if ($lastVal !== '' && preg_match('/pekanbaru|ditetapkan|\d{4}/i', $lastVal)) {
+                    $dateText = $lastVal;
+                }
+            }
+            $actionRow = 1;
+            $roleRow   = 2;
+            $nameRow   = 3;
+        }
+
+        $actionCells = $xpath->query('./w:tc', $rows->item(min($actionRow, $rowCount - 1)));
+        $roleCells   = $xpath->query('./w:tc', $rows->item(min($roleRow, $rowCount - 1)));
+        $nameCells   = $xpath->query('./w:tc', $rows->item(min($nameRow, $rowCount - 1)));
+
+        // Deteksi apakah Row 1 kosong (blok BAST 3 baris: [header+role, blank spacer, nama+nip])
+        $row1Empty = ($rowCount === 3);
+        if ($row1Empty && $roleCells) {
+            for ($ci = 0; $ci < $colCount; $ci++) {
+                if ($ci < $roleCells->length && ! empty($this->getDomCellLines($xpath, $roleCells->item($ci)))) {
+                    $row1Empty = false;
+                    break;
+                }
+            }
+        }
+
+        $signers = [];
+        for ($ci = 0; $ci < $colCount; $ci++) {
+            $actLines = ($actionCells && $ci < $actionCells->length)
+                ? $this->getDomCellLines($xpath, $actionCells->item($ci))
+                : [];
+            $rolLines = ($roleCells && $ci < $roleCells->length)
+                ? $this->getDomCellLines($xpath, $roleCells->item($ci))
+                : [];
+            $namLines = ($nameCells && $ci < $nameCells->length)
+                ? $this->getDomCellLines($xpath, $nameCells->item($ci))
+                : [];
+
+            if ($row1Empty) {
+                if (! empty($actLines) && preg_match('/^(pekanbaru,|ditetapkan di )/i', $actLines[0])) {
+                    if ($dateText === '') {
+                        $dateText = array_shift($actLines);
+                    } else {
+                        array_shift($actLines);
+                    }
+                }
+                $actionText = count($actLines) > 1 ? array_shift($actLines) : '';
+                $rolLines   = $actLines;
+            } else {
+                $actionText = trim(implode(' ', $actLines));
+                if ($rowCount === 3 && $actionText !== '' && preg_match('/^(pekanbaru,|ditetapkan di )/i', $actionText)) {
+                    if ($dateText === '') {
+                        $dateText = $actionText;
+                    }
+                    $actionText = '';
+                    if (! empty($rolLines) && preg_match('/^(disusun|mengetahui|menyetujui|menetapkan|diperiksa|mengesahkan)/i', $rolLines[0])) {
+                        $actionText = array_shift($rolLines);
+                    }
+                } elseif ($rowCount === 3 && str_contains($actionText, '/') && preg_match('/pekanbaru/i', $actionText)) {
+                    $actionText = '';
+                }
+            }
+
+            $nama = $namLines[0] ?? '';
+            $nip  = count($namLines) > 1 ? implode("\n", array_slice($namLines, 1)) : '';
+            $jab  = implode("\n", $rolLines);
+
+            if ($nama !== '' || $jab !== '') {
+                $signers[] = [
+                    'action'  => $actionText,
+                    'jabatan' => $jab,
+                    'nama'    => $nama,
+                    'nip'     => $nip,
+                ];
+            }
+        }
+
+        return [
+            'layout_mode' => 'columns',
+            'date_text'   => $dateText,
+            'signers'     => $signers,
+        ];
+    }
+
+    /**
+     * Terapkan blok/tabel penanda tangan baru ke dalam berkas DOCX
+     */
+    private function updateDocxSigners(string $filePath, string $layoutMode, string $dateText, array $signers): bool
+    {
+        $zip = new \ZipArchive();
+        if ($zip->open($filePath) !== true) {
+            return false;
+        }
+        $xmlContent = $zip->getFromName('word/document.xml');
+        $zip->close();
+
+        if (! is_string($xmlContent) || $xmlContent === '') {
+            return false;
+        }
+
+        $dom = new \DOMDocument();
+        if (! @$dom->loadXML($xmlContent)) {
+            return false;
+        }
+
+        $xpath = new \DOMXPath($dom);
+        $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+
+        $body = $xpath->query('/w:document/w:body')->item(0);
+        if (! $body instanceof \DOMElement) {
+            return false;
+        }
+
+        $tblList = $xpath->query('/w:document/w:body/w:tbl');
+        if (! $tblList || $tblList->length === 0) {
+            return false;
+        }
+
+        $targets = [$tblList->item($tblList->length - 1)];
+
+        // Jika dokumen BAST (memiliki tanda tangan Halaman 1 di index 2 dan Lampiran di index 4), sinkronkan keduanya
+        if (stripos(basename($filePath), 'BAST') !== false && $tblList->length >= 5) {
+            $page1Tbl = $tblList->item(2);
+            if ($page1Tbl instanceof \DOMElement) {
+                $p1Txt = strtoupper($page1Tbl->textContent);
+                if (str_contains($p1Txt, 'PPK') || str_contains($p1Txt, 'PELAKSANA')) {
+                    $targets[] = $page1Tbl;
+                }
+            }
+        }
+
+        $fragXml   = $this->buildSignersFragmentXml($layoutMode, $dateText, $signers);
+        $fragDom   = new \DOMDocument();
+        $wrapped   = '<w:root xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' . $fragXml . '</w:root>';
+        if (! @$fragDom->loadXML($wrapped)) {
+            return false;
+        }
+
+        foreach ($targets as $targetTbl) {
+            // Hapus paragraf tanggal tepat sebelum tabel tanda tangan agar tidak ganda saat ganti mode
+            $prevNode = $targetTbl->previousSibling;
+            while ($prevNode && $prevNode->nodeType !== XML_ELEMENT_NODE) {
+                $prevNode = $prevNode->previousSibling;
+            }
+            if ($prevNode instanceof \DOMElement && $prevNode->localName === 'p') {
+                $pt = trim($prevNode->textContent);
+                if ($pt !== '' && strlen($pt) <= 80 && preg_match('/^pekanbaru\s*,/i', $pt)) {
+                    $body->removeChild($prevNode);
+                }
+            }
+
+            foreach ($fragDom->documentElement->childNodes as $newChild) {
+                if ($newChild->nodeType === XML_ELEMENT_NODE) {
+                    $imported = $dom->importNode($newChild, true);
+                    $body->insertBefore($imported, $targetTbl);
+                }
+            }
+            $body->removeChild($targetTbl);
+        }
+
+        $newXml = $dom->saveXML();
+        if (! is_string($newXml) || $newXml === '') {
+            return false;
+        }
+
+        $verifyDom = new \DOMDocument();
+        if (! @$verifyDom->loadXML($newXml)) {
+            return false;
+        }
+
+        $zipWrite = new \ZipArchive();
+        if ($zipWrite->open($filePath) !== true) {
+            return false;
+        }
+        $zipWrite->addFromString('word/document.xml', $newXml);
+        return $zipWrite->close();
+    }
+
+    /**
+     * Hasilkan OOXML tabel penanda tangan (format 'columns' atau 'table')
+     */
+    private function buildSignersFragmentXml(string $layoutMode, string $dateText, array $signers): string
+    {
+        $esc = static fn(string $s): string => htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+
+        if ($layoutMode === 'table') {
+            $out = '';
+            if ($dateText !== '') {
+                $out .= '<w:p><w:pPr><w:spacing w:before="120" w:after="60" /><w:jc w:val="right" /></w:pPr>'
+                    . '<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" /><w:sz w:val="19" /><w:szCs w:val="19" /></w:rPr>'
+                    . '<w:t xml:space="preserve">' . $esc($dateText) . '</w:t></w:r></w:p>';
+            }
+
+            $widths  = [550, 3250, 3350, 2200];
+            $grid    = '<w:tblGrid>' . implode('', array_map(static fn(int $w): string => '<w:gridCol w:w="' . $w . '" />', $widths)) . '</w:tblGrid>';
+            $borders = '<w:tblBorders>'
+                . '<w:top w:val="single" w:sz="6" w:space="0" w:color="333333" />'
+                . '<w:left w:val="single" w:sz="6" w:space="0" w:color="333333" />'
+                . '<w:bottom w:val="single" w:sz="6" w:space="0" w:color="333333" />'
+                . '<w:right w:val="single" w:sz="6" w:space="0" w:color="333333" />'
+                . '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="555555" />'
+                . '<w:insideV w:val="single" w:sz="4" w:space="0" w:color="555555" />'
+                . '</w:tblBorders>';
+
+            $headers = ['No.', 'Nama Pejabat / Personel', 'Jabatan / Kedudukan', 'Tanda Tangan'];
+            $hCells  = '';
+            foreach ($headers as $i => $h) {
+                $hCells .= '<w:tc><w:tcPr><w:tcW w:w="' . $widths[$i] . '" w:type="dxa" />'
+                    . '<w:shd w:val="clear" w:color="auto" w:fill="E8EEF5" /><w:vAlign w:val="center" />'
+                    . '<w:tcMar><w:top w:w="70" w:type="dxa" /><w:bottom w:w="70" w:type="dxa" /><w:left w:w="80" w:type="dxa" /><w:right w:w="80" w:type="dxa" /></w:tcMar>'
+                    . '</w:tcPr><w:p><w:pPr><w:spacing w:before="0" w:after="0" /><w:jc w:val="center" /></w:pPr>'
+                    . '<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" /><w:b /><w:sz w:val="18" /><w:szCs w:val="18" /></w:rPr>'
+                    . '<w:t>' . $esc($h) . '</w:t></w:r></w:p></w:tc>';
+            }
+            $trs = '<w:tr><w:trPr><w:tblHeader /><w:cantSplit /></w:trPr>' . $hCells . '</w:tr>';
+
+            foreach ($signers as $idx => $s) {
+                $no = $idx + 1;
+                $namaPs = '<w:p><w:pPr><w:spacing w:before="0" w:after="10" /><w:jc w:val="left" /></w:pPr>'
+                    . '<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" /><w:b /><w:sz w:val="18" /><w:szCs w:val="18" /></w:rPr>'
+                    . '<w:t xml:space="preserve">' . $esc($s['nama']) . '</w:t></w:r></w:p>';
+                if ($s['nip'] !== '') {
+                    $namaPs .= '<w:p><w:pPr><w:spacing w:before="0" w:after="0" /><w:jc w:val="left" /></w:pPr>'
+                        . '<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" /><w:sz w:val="16" /><w:szCs w:val="16" /></w:rPr>'
+                        . '<w:t xml:space="preserve">' . $esc($s['nip']) . '</w:t></w:r></w:p>';
+                }
+
+                $jabLines = preg_split('/\r\n|\r|\n/', (string) ($s['jabatan'] ?? ''));
+                $jabPs    = '';
+                foreach ($jabLines as $jl) {
+                    $jl = trim($jl);
+                    if ($jl === '') {
+                        continue;
+                    }
+                    $jabPs .= '<w:p><w:pPr><w:spacing w:before="0" w:after="10" /><w:jc w:val="left" /></w:pPr>'
+                        . '<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" /><w:sz w:val="18" /><w:szCs w:val="18" /></w:rPr>'
+                        . '<w:t xml:space="preserve">' . $esc($jl) . '</w:t></w:r></w:p>';
+                }
+                if ($jabPs === '') {
+                    $jabPs = '<w:p><w:pPr><w:spacing w:before="0" w:after="0" /></w:pPr></w:p>';
+                }
+
+                $trs .= '<w:tr><w:trPr><w:trHeight w:val="650" w:hRule="atLeast" /><w:cantSplit /></w:trPr>'
+                    . '<w:tc><w:tcPr><w:tcW w:w="' . $widths[0] . '" w:type="dxa" /><w:vAlign w:val="center" /></w:tcPr>'
+                    . '<w:p><w:pPr><w:spacing w:before="0" w:after="0" /><w:jc w:val="center" /></w:pPr>'
+                    . '<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" /><w:sz w:val="18" /></w:rPr><w:t>' . $no . '</w:t></w:r></w:p></w:tc>'
+                    . '<w:tc><w:tcPr><w:tcW w:w="' . $widths[1] . '" w:type="dxa" /><w:vAlign w:val="center" />'
+                    . '<w:tcMar><w:top w:w="50" w:type="dxa" /><w:bottom w:w="50" w:type="dxa" /><w:left w:w="80" w:type="dxa" /><w:right w:w="80" w:type="dxa" /></w:tcMar>'
+                    . '</w:tcPr>' . $namaPs . '</w:tc>'
+                    . '<w:tc><w:tcPr><w:tcW w:w="' . $widths[2] . '" w:type="dxa" /><w:vAlign w:val="center" />'
+                    . '<w:tcMar><w:top w:w="50" w:type="dxa" /><w:bottom w:w="50" w:type="dxa" /><w:left w:w="80" w:type="dxa" /><w:right w:w="80" w:type="dxa" /></w:tcMar>'
+                    . '</w:tcPr>' . $jabPs . '</w:tc>'
+                    . '<w:tc><w:tcPr><w:tcW w:w="' . $widths[3] . '" w:type="dxa" /><w:vAlign w:val="bottom" />'
+                    . '<w:tcMar><w:top w:w="40" w:type="dxa" /><w:bottom w:w="40" w:type="dxa" /><w:left w:w="80" w:type="dxa" /><w:right w:w="80" w:type="dxa" /></w:tcMar>'
+                    . '</w:tcPr><w:p><w:pPr><w:spacing w:before="0" w:after="0" /><w:jc w:val="left" /></w:pPr>'
+                    . '<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" /><w:sz w:val="17" /></w:rPr>'
+                    . '<w:t>' . $no . '. ........................</w:t></w:r></w:p></w:tc>'
+                    . '</w:tr>';
+            }
+
+            return $out . '<w:tbl><w:tblPr><w:tblW w:w="' . array_sum($widths) . '" w:type="dxa" /><w:jc w:val="center" />' . $borders . '</w:tblPr>' . $grid . $trs . '</w:tbl>';
+        }
+
+        // Format B: Blok Sejajar (Kolom) dengan 4 baris sinkron
+        $n      = count($signers);
+        $totalW = 9354;
+        $cw     = (int) floor($totalW / $n);
+        $widths = array_fill(0, $n, $cw);
+        $widths[$n - 1] += $totalW - array_sum($widths);
+
+        $grid    = '<w:tblGrid>' . implode('', array_map(static fn(int $w): string => '<w:gridCol w:w="' . $w . '" />', $widths)) . '</w:tblGrid>';
+        $borders = '<w:tblBorders>'
+            . '<w:top w:val="none" w:sz="0" w:space="0" w:color="auto" />'
+            . '<w:left w:val="none" w:sz="0" w:space="0" w:color="auto" />'
+            . '<w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto" />'
+            . '<w:right w:val="none" w:sz="0" w:space="0" w:color="auto" />'
+            . '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto" />'
+            . '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto" />'
+            . '</w:tblBorders>';
+
+        $pCenter = static function (string $txt, bool $bold = false, bool $underline = false, int $sz = 19, int $before = 0, int $after = 20) use ($esc): string {
+            $b = $bold ? '<w:b />' : '';
+            $u = $underline ? '<w:u w:val="single" />' : '';
+            return '<w:p><w:pPr><w:spacing w:before="' . $before . '" w:after="' . $after . '" /><w:jc w:val="center" /></w:pPr>'
+                . '<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" />' . $b . $u
+                . '<w:sz w:val="' . $sz . '" /><w:szCs w:val="' . $sz . '" /></w:rPr>'
+                . '<w:t xml:space="preserve">' . $esc($txt) . '</w:t></w:r></w:p>';
+        };
+
+        $trs = '';
+        if ($dateText !== '') {
+            $row0 = '';
+            for ($i = 0; $i < $n; $i++) {
+                $val  = ($i === $n - 1) ? $dateText : '';
+                $row0 .= '<w:tc><w:tcPr><w:tcW w:w="' . $widths[$i] . '" w:type="dxa" /><w:vAlign w:val="bottom" /></w:tcPr>'
+                    . $pCenter($val, false, false, 19, 80, 10) . '</w:tc>';
+            }
+            $trs .= '<w:tr><w:trPr><w:cantSplit /></w:trPr>' . $row0 . '</w:tr>';
+        }
+
+        // Row 1: Action words (Menetapkan, / Menyusun, sejajar horizontal)
+        $hasAnyAction = false;
+        foreach ($signers as $s) {
+            if ($s['action'] !== '') {
+                $hasAnyAction = true;
+                break;
+            }
+        }
+        if ($hasAnyAction) {
+            $row1 = '';
+            foreach ($signers as $i => $s) {
+                $row1 .= '<w:tc><w:tcPr><w:tcW w:w="' . $widths[$i] . '" w:type="dxa" /><w:vAlign w:val="bottom" /></w:tcPr>'
+                    . $pCenter($s['action'], false, false, 19, $dateText !== '' ? 20 : 80, 20) . '</w:tc>';
+            }
+            $trs .= '<w:tr><w:trPr><w:cantSplit /></w:trPr>' . $row1 . '</w:tr>';
+        }
+
+        // Row 2: Jabatan lines
+        $row2 = '';
+        foreach ($signers as $i => $s) {
+            $jabLines = preg_split('/\r\n|\r|\n/', (string) ($s['jabatan'] ?? ''));
+            $jabLines = array_values(array_filter(array_map('trim', $jabLines), static fn(string $v): bool => $v !== ''));
+            $rps      = '';
+            foreach ($jabLines as $ri => $rl) {
+                $rps .= $pCenter($rl, $ri === 0, false, 19, 0, 20);
+            }
+            if ($rps === '') {
+                $rps = $pCenter('');
+            }
+            $row2 .= '<w:tc><w:tcPr><w:tcW w:w="' . $widths[$i] . '" w:type="dxa" /><w:vAlign w:val="top" /></w:tcPr>' . $rps . '</w:tc>';
+        }
+        $trs .= '<w:tr><w:trPr><w:cantSplit /></w:trPr>' . $row2 . '</w:tr>';
+
+        // Row 3: Blank signature space + Name (bold + underline) + NIP
+        $row3 = '';
+        foreach ($signers as $i => $s) {
+            $blank = '<w:p><w:pPr><w:spacing w:before="0" w:after="0" /><w:jc w:val="center" /></w:pPr><w:r><w:rPr><w:sz w:val="19" /></w:rPr><w:br /><w:br /><w:br /></w:r></w:p>';
+            $nameP = $pCenter($s['nama'], true, true, 19, 0, 30);
+            $nipP  = $s['nip'] !== '' ? $pCenter($s['nip'], false, false, 18, 0, 0) : '';
+            $row3 .= '<w:tc><w:tcPr><w:tcW w:w="' . $widths[$i] . '" w:type="dxa" /><w:vAlign w:val="top" /></w:tcPr>' . $blank . $nameP . $nipP . '</w:tc>';
+        }
+        $trs .= '<w:tr><w:trPr><w:cantSplit /></w:trPr>' . $row3 . '</w:tr>';
+
+        return '<w:tbl><w:tblPr><w:tblW w:w="' . $totalW . '" w:type="dxa" /><w:jc w:val="center" />' . $borders . '</w:tblPr>' . $grid . $trs . '</w:tbl>';
     }
 
     /**

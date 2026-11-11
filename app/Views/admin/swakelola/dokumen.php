@@ -87,6 +87,24 @@ $activePaketId = (int) ($paket['id'] ?? 0);
         </div>
     </div>
 
+    <!-- Single Inline Feedback Alert for Signer Updates -->
+    <div id="signerFeedbackBanner" class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-3" style="display: none; border-radius: 10px;" role="alert">
+        <div class="d-flex flex-wrap justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-check-circle mr-2"></i>
+                <span id="signerFeedbackText" class="font-weight-bold">Penanda tangan diperbarui.</span>
+            </div>
+            <div class="d-flex align-items-center mt-2 mt-sm-0">
+                <button type="button" class="btn btn-sm btn-light font-weight-bold text-primary mr-3" id="btnPreviewAfterSignerSave" style="display: none;">
+                    <i class="fas fa-eye mr-1"></i> Preview Hasil Sekarang
+                </button>
+                <button type="button" class="close position-static p-0 ml-2" onclick="$('#signerFeedbackBanner').fadeOut(150);" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Navigation Tabs / Sections -->
     <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
         <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
@@ -134,7 +152,7 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                                     <th class="text-center" style="width: 100px;">Status</th>
                                     <th>Nama Berkas Digital</th>
                                     <th>Keterangan / Uraian</th>
-                                    <th class="text-center" style="width: 215px;">Aksi</th>
+                                    <th class="text-center" style="width: 250px;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -230,6 +248,17 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                                                         <i class="fas fa-download"></i>
                                                     </a>
                                                 <?php endif; ?>
+                                                <?php if ($canUploadDoc && ! empty($doc['docx_files'])): ?>
+                                                    <button type="button"
+                                                        class="btn btn-outline-warning text-dark btn-edit-signers"
+                                                        data-id="<?= $doc['id']; ?>"
+                                                        data-urut="<?= $doc['nomor_urut']; ?>"
+                                                        data-tahap="<?= esc($doc['tahap'], 'attr'); ?>"
+                                                        data-nama="<?= esc($doc['nama_dokumen'], 'attr'); ?>"
+                                                        title="Atur Penanda Tangan Dokumen (.docx) pada Poin <?= $doc['nomor_urut']; ?>">
+                                                        <i class="fas fa-pen-nib"></i> TTD
+                                                    </button>
+                                                <?php endif; ?>
                                                 <?php if ($canUploadDoc): ?>
                                                     <button type="button"
                                                         class="btn btn-outline-success btn-upload-doc"
@@ -304,6 +333,102 @@ $activePaketId = (int) ($paket['id'] ?? 0);
                     <button type="submit" class="btn btn-sm btn-primary font-weight-bold">
                         <i class="fas fa-save mr-1"></i> Simpan &amp; Unggah
                     </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- MODAL ATUR PENANDA TANGAN DINAMIS PER POIN (.DOCX) -->
+<?php if ($canUploadDoc): ?>
+<div class="modal fade" id="modalEditSigners" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+            <form id="formEditSigners" method="post" action="">
+                <input type="hidden" id="signerCsrfInput" name="<?= csrf_token(); ?>" value="<?= csrf_hash(); ?>">
+                <input type="hidden" id="signerDocId" value="">
+                <div class="modal-header bg-dark text-white py-3 px-4">
+                    <div>
+                        <h6 class="modal-title font-weight-bold mb-0 text-white">
+                            <i class="fas fa-pen-nib text-warning mr-2"></i> Atur Penanda Tangan Dokumen (Dinamis per Poin)
+                        </h6>
+                        <small class="text-white-50" id="signerPointSubtitle">-</small>
+                    </div>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="signerModalAlert" class="alert alert-danger py-2 px-3 small mb-3" style="display: none;"></div>
+
+                    <!-- Baris Pengaturan Umum & Salin Poin -->
+                    <div class="row mb-3">
+                        <div class="col-md-4 mb-2">
+                            <label class="font-weight-bold small mb-1">Format Penampilan TTD</label>
+                            <select id="signerLayoutMode" class="form-control form-control-sm">
+                                <option value="columns">Blok Sejajar / Kolom (Contoh: Poin 8, 9, 24)</option>
+                                <option value="table">Tabel Berbingkai No/Nama/Jabatan/TTD (Contoh: Poin 10, 25)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="font-weight-bold small mb-1">Tempat &amp; Tanggal Pengesahan</label>
+                            <input type="text" id="signerDateText" class="form-control form-control-sm" placeholder="Contoh: Pekanbaru, 21 November 2025">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="font-weight-bold small mb-1">Terapkan ke Berkas Word (.docx)</label>
+                            <select id="signerTargetFile" class="form-control form-control-sm">
+                                <option value="__all__">Semua berkas .docx pada poin ini</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Salin dari Poin Lain -->
+                    <div class="card bg-light border mb-3" style="border-radius: 8px;">
+                        <div class="card-body py-2 px-3 d-flex flex-wrap justify-content-between align-items-center">
+                            <small class="font-weight-bold text-dark mr-2">
+                                <i class="fas fa-copy text-primary mr-1"></i> Salin Penanda Tangan dari Poin Lain:
+                            </small>
+                            <div class="d-flex align-items-center flex-grow-1 flex-md-grow-0 mt-2 mt-md-0" style="min-width: 280px;">
+                                <select id="signerCopySourceSelect" class="form-control form-control-sm mr-2">
+                                    <option value="">-- Pilih Poin Sumber --</option>
+                                    <?php foreach (($copySourcePoints ?? []) as $cp): ?>
+                                        <option value="<?= $cp['id']; ?>">
+                                            Poin <?= $cp['nomor_urut']; ?> (<?= esc($cp['tahap']); ?>) — <?= esc($cp['nama']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="button" class="btn btn-sm btn-outline-primary flex-shrink-0 font-weight-bold" id="btnCopySignersFromPoint">
+                                    <i class="fas fa-download mr-1"></i> Muat TTD
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daftar Penanda Tangan Dinamis -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="font-weight-bold small text-dark">
+                            <i class="fas fa-users text-primary mr-1"></i> Daftar Penanda Tangan (Urut Kiri &rarr; Kanan atau Baris 1 &rarr; N)
+                        </span>
+                        <button type="button" class="btn btn-sm btn-success font-weight-bold" id="btnAddSignerRow">
+                            <i class="fas fa-plus mr-1"></i> Tambah Penanda Tangan
+                        </button>
+                    </div>
+
+                    <div id="signerRowsContainer">
+                        <div class="text-center py-4 text-muted">
+                            <div class="spinner-border spinner-border-sm text-primary mr-2"></div> Membaca penanda tangan dari dokumen Word (.docx)...
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4 d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Perubahan akan menulis ulang blok tanda tangan pada berkas <code>.docx</code> secara otomatis.</small>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-secondary mr-1" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-sm btn-primary font-weight-bold" id="btnSaveSigners">
+                            <i class="fas fa-save mr-1"></i> Simpan &amp; Terapkan ke Dokumen
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -559,6 +684,334 @@ $(document).ready(function() {
         $('#previewIframe').attr('src', '');
         $('#docxContainer').empty();
     });
+
+    <?php if ($canUploadDoc): ?>
+    let signerPegawaiList = [];
+    let signerCurrentList = [];
+    let lastUpdatedDocId  = 0;
+    let lastUpdatedFile   = '';
+    let lastUpdatedTitle  = '';
+
+    function escHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function syncSignerStateFromDom() {
+        const rows = [];
+        $('#signerRowsContainer .signer-item-card').each(function() {
+            rows.push({
+                action:  $(this).find('.signer-input-action').val() || '',
+                jabatan: $(this).find('.signer-input-jabatan').val() || '',
+                nama:    $(this).find('.signer-input-nama').val() || '',
+                nip:     $(this).find('.signer-input-nip').val() || ''
+            });
+        });
+        if (rows.length > 0) {
+            signerCurrentList = rows;
+        }
+    }
+
+    function renderSignerRows() {
+        const container = $('#signerRowsContainer');
+        const mode      = $('#signerLayoutMode').val() || 'columns';
+        if (!signerCurrentList || signerCurrentList.length === 0) {
+            signerCurrentList = [{ action: 'Menetapkan,', jabatan: 'Pejabat Pembuat Komitmen (PPK)', nama: '', nip: '' }];
+        }
+
+        let pegawaiOpts = '<option value="">-- Pilih cepat dari Master Pegawai (opsional) --</option>';
+        signerPegawaiList.forEach(function(p, idx) {
+            pegawaiOpts += '<option value="' + idx + '">' + escHtml(p.nama) + (p.nip ? ' (' + escHtml(p.nip) + ')' : '') + '</option>';
+        });
+
+        let html = '';
+        signerCurrentList.forEach(function(s, idx) {
+            const actionColStyle = (mode === 'table') ? 'style="display:none;"' : '';
+            html += ''
+                + '<div class="card border mb-2 signer-item-card" data-index="' + idx + '" style="border-radius: 8px;">'
+                + '  <div class="card-header bg-light py-1 px-3 d-flex justify-content-between align-items-center">'
+                + '    <span class="badge badge-primary">Penanda Tangan #' + (idx + 1) + '</span>'
+                + '    <div class="btn-group btn-group-xs">'
+                + '      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-signer-up" data-idx="' + idx + '" ' + (idx === 0 ? 'disabled' : '') + ' title="Geser ke Atas/Kiri"><i class="fas fa-arrow-up"></i></button>'
+                + '      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-signer-down" data-idx="' + idx + '" ' + (idx === signerCurrentList.length - 1 ? 'disabled' : '') + ' title="Geser ke Bawah/Kanan"><i class="fas fa-arrow-down"></i></button>'
+                + '      <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-signer-remove" data-idx="' + idx + '" ' + (signerCurrentList.length <= 1 ? 'disabled' : '') + ' title="Hapus Penanda Tangan"><i class="fas fa-trash"></i></button>'
+                + '    </div>'
+                + '  </div>'
+                + '  <div class="card-body py-2 px-3">'
+                + '    <div class="form-row">'
+                + '      <div class="col-md-6 mb-2">'
+                + '        <label class="small font-weight-bold text-muted mb-0">Isi Cepat Master Pegawai</label>'
+                + '        <select class="form-control form-control-sm signer-select-pegawai">' + pegawaiOpts + '</select>'
+                + '      </div>'
+                + '      <div class="col-md-6 mb-2 signer-action-col" ' + actionColStyle + '>'
+                + '        <label class="small font-weight-bold mb-0">Keterangan Atas (Sejajar)</label>'
+                + '        <input type="text" class="form-control form-control-sm signer-input-action" value="' + escHtml(s.action) + '" placeholder="Contoh: Menetapkan, / Menyusun, / Mengetahui,">'
+                + '      </div>'
+                + '    </div>'
+                + '    <div class="form-row">'
+                + '      <div class="col-md-5 mb-2 mb-md-0">'
+                + '        <label class="small font-weight-bold mb-0">Jabatan / Kedudukan di TTD</label>'
+                + '        <textarea rows="2" class="form-control form-control-sm signer-input-jabatan" placeholder="Contoh: Pejabat Pembuat Komitmen (PPK)&#10;Satker Pelaksanaan Prasarana Strategis Riau,">' + escHtml(s.jabatan) + '</textarea>'
+                + '      </div>'
+                + '      <div class="col-md-4 mb-2 mb-md-0">'
+                + '        <label class="small font-weight-bold mb-0">Nama Lengkap &amp; Gelar <span class="text-danger">*</span></label>'
+                + '        <input type="text" class="form-control form-control-sm signer-input-nama" value="' + escHtml(s.nama) + '" required placeholder="Contoh: Nurhidayat Nugroho, S.Ars.">'
+                + '      </div>'
+                + '      <div class="col-md-3">'
+                + '        <label class="small font-weight-bold mb-0">NIP / NRP</label>'
+                + '        <input type="text" class="form-control form-control-sm signer-input-nip" value="' + escHtml(s.nip) + '" placeholder="NIP. 19901221 201802 1 001">'
+                + '      </div>'
+                + '    </div>'
+                + '  </div>'
+                + '</div>';
+        });
+        container.html(html);
+    }
+
+    function loadSignersForDoc(docId, fileOverride, keepTargetList) {
+        $('#signerModalAlert').hide().text('');
+        $('#signerRowsContainer').html('<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary mr-2"></div> Membaca penanda tangan dari dokumen...</div>');
+
+        $.ajax({
+            url: '<?= base_url('admin/swakelola/dokumen/signers'); ?>/' + docId,
+            type: 'GET',
+            data: fileOverride ? { file: fileOverride } : {},
+            dataType: 'json',
+            success: function(res) {
+                if (res.csrf_hash) {
+                    $('#signerCsrfInput').val(res.csrf_hash);
+                }
+                if (res.status !== 'success') {
+                    $('#signerModalAlert').text(res.message || 'Gagal membaca data penanda tangan.').show();
+                    $('#signerRowsContainer').empty();
+                    return;
+                }
+
+                signerPegawaiList = res.pegawai || [];
+                signerCurrentList = res.signers || [];
+                $('#signerLayoutMode').val(res.layout_mode || 'columns');
+                $('#signerDateText').val(res.date_text || '');
+
+                if (!keepTargetList) {
+                    const targetSel = $('#signerTargetFile');
+                    targetSel.empty();
+                    const files = res.docx_files || [];
+                    if (files.length > 1) {
+                        targetSel.append('<option value="__all__">Semua berkas .docx pada poin ini (' + files.length + ' berkas)</option>');
+                    }
+                    files.forEach(function(f) {
+                        targetSel.append('<option value="' + escHtml(f.file_name) + '">' + escHtml(f.file_name) + '</option>');
+                    });
+                    if (files.length > 1) {
+                        targetSel.val('__all__');
+                    }
+                }
+
+                renderSignerRows();
+            },
+            error: function(xhr, status, error) {
+                $('#signerModalAlert').text('Gagal menghubungi server: ' + error).show();
+                $('#signerRowsContainer').empty();
+            }
+        });
+    }
+
+    $(document).on('click', '.btn-edit-signers', function() {
+        const id    = $(this).data('id');
+        const urut  = $(this).data('urut');
+        const tahap = $(this).data('tahap');
+        const nama  = $(this).data('nama');
+
+        $('#signerDocId').val(id);
+        lastUpdatedTitle = urut + '. ' + nama;
+        $('#signerPointSubtitle').text('[Tahap ' + tahap + ' - Poin ' + urut + '] ' + nama);
+        $('#signerCopySourceSelect').val('');
+        $('#modalEditSigners').modal('show');
+        loadSignersForDoc(id, '', false);
+    });
+
+    $('#signerLayoutMode').on('change', function() {
+        syncSignerStateFromDom();
+        renderSignerRows();
+    });
+
+    $('#signerTargetFile').on('change', function() {
+        const docId = $('#signerDocId').val();
+        const val   = $(this).val();
+        if (docId && val && val !== '__all__') {
+            loadSignersForDoc(docId, val, true);
+        }
+    });
+
+    $('#btnCopySignersFromPoint').on('click', function() {
+        const srcId = $('#signerCopySourceSelect').val();
+        if (!srcId) {
+            $('#signerModalAlert').text('Silakan pilih poin sumber terlebih dahulu.').show();
+            return;
+        }
+        $('#signerModalAlert').hide();
+        $.ajax({
+            url: '<?= base_url('admin/swakelola/dokumen/signers'); ?>/' + srcId,
+            type: 'GET',
+            dataType: 'json',
+            success: function(res) {
+                if (res.csrf_hash) {
+                    $('#signerCsrfInput').val(res.csrf_hash);
+                }
+                if (res.status !== 'success') {
+                    $('#signerModalAlert').text(res.message || 'Gagal menyalin TTD dari poin sumber.').show();
+                    return;
+                }
+                signerCurrentList = res.signers || [];
+                $('#signerLayoutMode').val(res.layout_mode || 'columns');
+                if (res.date_text) {
+                    $('#signerDateText').val(res.date_text);
+                }
+                renderSignerRows();
+            }
+        });
+    });
+
+    $('#btnAddSignerRow').on('click', function() {
+        syncSignerStateFromDom();
+        signerCurrentList.push({
+            action: 'Mengetahui,',
+            jabatan: '',
+            nama: '',
+            nip: ''
+        });
+        renderSignerRows();
+    });
+
+    $(document).on('click', '.btn-signer-up', function() {
+        const idx = parseInt($(this).data('idx'), 10);
+        syncSignerStateFromDom();
+        if (idx > 0 && idx < signerCurrentList.length) {
+            const tmp = signerCurrentList[idx - 1];
+            signerCurrentList[idx - 1] = signerCurrentList[idx];
+            signerCurrentList[idx] = tmp;
+            renderSignerRows();
+        }
+    });
+
+    $(document).on('click', '.btn-signer-down', function() {
+        const idx = parseInt($(this).data('idx'), 10);
+        syncSignerStateFromDom();
+        if (idx >= 0 && idx < signerCurrentList.length - 1) {
+            const tmp = signerCurrentList[idx + 1];
+            signerCurrentList[idx + 1] = signerCurrentList[idx];
+            signerCurrentList[idx] = tmp;
+            renderSignerRows();
+        }
+    });
+
+    $(document).on('click', '.btn-signer-remove', function() {
+        const idx = parseInt($(this).data('idx'), 10);
+        syncSignerStateFromDom();
+        if (signerCurrentList.length > 1) {
+            signerCurrentList.splice(idx, 1);
+            renderSignerRows();
+        }
+    });
+
+    $(document).on('change', '.signer-select-pegawai', function() {
+        const pIdx = $(this).val();
+        if (pIdx === '') return;
+        const p = signerPegawaiList[parseInt(pIdx, 10)];
+        if (!p) return;
+        const card = $(this).closest('.signer-item-card');
+        card.find('.signer-input-nama').val(p.nama || '');
+        card.find('.signer-input-nip').val(p.nip || '');
+        if (!card.find('.signer-input-jabatan').val().trim() && p.jabatan) {
+            card.find('.signer-input-jabatan').val(p.jabatan);
+        }
+    });
+
+    $('#formEditSigners').on('submit', function(e) {
+        e.preventDefault();
+        syncSignerStateFromDom();
+        const docId      = $('#signerDocId').val();
+        const layoutMode = $('#signerLayoutMode').val();
+        const dateText   = $('#signerDateText').val();
+        const targetFile = $('#signerTargetFile').val();
+        const csrfName   = $('#signerCsrfInput').attr('name');
+        const csrfVal    = $('#signerCsrfInput').val();
+
+        const validRows = signerCurrentList.filter(function(r) {
+            return (r.nama || '').trim() !== '';
+        });
+        if (validRows.length === 0) {
+            $('#signerModalAlert').text('Minimal 1 penanda tangan harus memiliki Nama Lengkap.').show();
+            return;
+        }
+
+        const btn = $('#btnSaveSigners');
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span> Menyimpan...');
+        $('#signerModalAlert').hide();
+
+        const postData = {
+            layout_mode: layoutMode,
+            date_text: dateText,
+            target_file: targetFile,
+            signers_json: JSON.stringify(validRows)
+        };
+        postData[csrfName] = csrfVal;
+
+        $.ajax({
+            url: '<?= base_url('admin/swakelola/dokumen'); ?>/' + docId + '/signers',
+            type: 'POST',
+            data: postData,
+            dataType: 'json',
+            success: function(res) {
+                btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Simpan &amp; Terapkan ke Dokumen');
+                if (res.csrf_hash) {
+                    $('#signerCsrfInput').val(res.csrf_hash);
+                }
+                if (res.status !== 'success') {
+                    $('#signerModalAlert').text(res.message || 'Gagal menyimpan penanda tangan.').show();
+                    return;
+                }
+
+                $('#modalEditSigners').modal('hide');
+                lastUpdatedDocId = docId;
+                lastUpdatedFile  = (res.updated_files && res.updated_files.length > 0) ? res.updated_files[0] : '';
+
+                $('#signerFeedbackText').text(res.message);
+                if (lastUpdatedFile) {
+                    $('#btnPreviewAfterSignerSave').show();
+                } else {
+                    $('#btnPreviewAfterSignerSave').hide();
+                }
+                $('#signerFeedbackBanner').stop(true, true).fadeIn(180);
+                $('html, body').animate({ scrollTop: 0 }, 250);
+            },
+            error: function(xhr, status, error) {
+                btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Simpan &amp; Terapkan ke Dokumen');
+                let msg = 'Gagal menyimpan perubahan: ' + error;
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                if (xhr.responseJSON && xhr.responseJSON.csrf_hash) {
+                    $('#signerCsrfInput').val(xhr.responseJSON.csrf_hash);
+                }
+                $('#signerModalAlert').text(msg).show();
+            }
+        });
+    });
+
+    $('#btnPreviewAfterSignerSave').on('click', function() {
+        if (!lastUpdatedDocId || !lastUpdatedFile) return;
+        const fakeBtn = $('<button>')
+            .addClass('btn-preview-doc')
+            .data('id', lastUpdatedDocId)
+            .attr('data-file', lastUpdatedFile)
+            .attr('data-title', lastUpdatedTitle);
+        fakeBtn.appendTo('body').trigger('click').remove();
+    });
+    <?php endif; ?>
 });
 </script>
 <?= $this->endSection(); ?>

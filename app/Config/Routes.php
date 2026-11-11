@@ -619,6 +619,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('swakelola/paket', 'Admin\Swakelola::paketIndex');
 	$routes->get('swakelola/dokumen', 'Admin\Swakelola::dokumenIndex');
 	$routes->get('swakelola/dokumen/preview/(:num)', 'Admin\Swakelola::ajaxGetDokumenInfo/$1');
+	$routes->get('swakelola/dokumen/signers/(:num)', 'Admin\Swakelola::ajaxGetSigners/$1');
+	$routes->post('swakelola/dokumen/(:num)/signers', 'Admin\Swakelola::saveSigners/$1');
 	$routes->get('swakelola/dokumen/view/(:num)', 'Admin\Swakelola::viewInlineDokumen/$1');
 	$routes->get('swakelola/dokumen/download/(:num)', 'Admin\Swakelola::downloadDokumen/$1');
 	$routes->post('swakelola/dokumen/(:num)/upload', 'Admin\Swakelola::uploadDokumen/$1');
