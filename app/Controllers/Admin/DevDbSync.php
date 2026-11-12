@@ -261,6 +261,13 @@ class DevDbSync extends BaseController
             $sql
         );
 
+        // MariaDB mengizinkan `date DEFAULT current_timestamp()`, namun MySQL 8/9 menolaknya
+        $sql = preg_replace(
+            "/\b(date)\s+(?:NOT\s+NULL\s+)?DEFAULT\s+current_timestamp(?:\(\))?/i",
+            '$1 DEFAULT NULL',
+            $sql
+        );
+
         return $sql;
     }
 
