@@ -198,32 +198,32 @@
 </style>
 
 <div class="settings-shell mb-4">
-    <div class="settings-tabs-bar" id="appSettingsTabs" role="tablist">
-        <a class="settings-tab-pill active" data-toggle="pill" href="#tab-general" role="tab">
+    <div class="settings-tabs-bar nav nav-pills flex-nowrap" id="appSettingsTabs" role="tablist">
+        <a class="nav-link settings-tab-pill active" data-toggle="pill" href="#tab-general" role="tab" aria-selected="true">
             <i class="fas fa-sliders-h"></i> General Settings
         </a>
-        <a class="settings-tab-pill" data-toggle="pill" href="#tab-appearance" role="tab">
+        <a class="nav-link settings-tab-pill" data-toggle="pill" href="#tab-appearance" role="tab" aria-selected="false">
             <i class="fas fa-palette"></i> Appearance &amp; Branding
         </a>
-        <a class="settings-tab-pill" data-toggle="pill" href="#tab-email" role="tab">
+        <a class="nav-link settings-tab-pill" data-toggle="pill" href="#tab-email" role="tab" aria-selected="false">
             <i class="fas fa-envelope"></i> Email Settings (SMTP)
         </a>
-        <a class="settings-tab-pill" data-toggle="pill" href="#tab-storage" role="tab">
+        <a class="nav-link settings-tab-pill" data-toggle="pill" href="#tab-storage" role="tab" aria-selected="false">
             <i class="fas fa-hdd"></i> File &amp; Storage
         </a>
-        <a class="settings-tab-pill" data-toggle="pill" href="#tab-security" role="tab">
+        <a class="nav-link settings-tab-pill" data-toggle="pill" href="#tab-security" role="tab" aria-selected="false">
             <i class="fas fa-shield-alt"></i> Security &amp; Session
         </a>
-        <a class="settings-tab-pill" data-toggle="pill" href="#tab-system" role="tab">
+        <a class="nav-link settings-tab-pill" data-toggle="pill" href="#tab-system" role="tab" aria-selected="false">
             <i class="fas fa-microchip"></i> System Information &amp; Diagnostics
         </a>
-        <a class="settings-tab-pill" data-toggle="pill" href="#tab-git" role="tab">
+        <a class="nav-link settings-tab-pill" data-toggle="pill" href="#tab-git" role="tab" aria-selected="false">
             <i class="fas fa-code-branch"></i> Git &amp; Version Control
         </a>
-        <a class="settings-tab-pill" data-toggle="pill" href="#tab-database" role="tab">
+        <a class="nav-link settings-tab-pill" data-toggle="pill" href="#tab-database" role="tab" aria-selected="false">
             <i class="fas fa-database"></i> Database &amp; Merge Sync
         </a>
-        <a class="settings-tab-pill" data-toggle="pill" href="#tab-logs" role="tab">
+        <a class="nav-link settings-tab-pill" data-toggle="pill" href="#tab-logs" role="tab" aria-selected="false">
             <i class="fas fa-bug"></i> System &amp; Error Logs
             <?php if ($errCount > 0): ?>
                 <span class="badge badge-danger badge-pill ml-1"><?= $errCount; ?></span>
@@ -757,6 +757,28 @@
 
 <script>
 (() => {
+    const tabLinks = document.querySelectorAll('#appSettingsTabs .settings-tab-pill');
+    const tabPanes = document.querySelectorAll('#appSettingsTabContent .tab-pane');
+    tabLinks.forEach((link) => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href');
+            tabLinks.forEach((l) => {
+                l.classList.remove('active');
+                l.setAttribute('aria-selected', 'false');
+            });
+            link.classList.add('active');
+            link.setAttribute('aria-selected', 'true');
+            tabPanes.forEach((pane) => {
+                pane.classList.remove('show', 'active');
+            });
+            const targetPane = targetId ? document.querySelector(targetId) : null;
+            if (targetPane) {
+                targetPane.classList.add('show', 'active');
+            }
+        });
+    });
+
     const testBtn = document.getElementById('testEmailSubmitBtn');
     const resultBox = document.getElementById('testEmailResult');
     if (!testBtn) return;
