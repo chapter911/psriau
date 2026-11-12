@@ -178,6 +178,7 @@ class DevDbSync extends BaseController
         $escapedTable = '`' . str_replace('`', '``', $table) . '`';
 
         try {
+            $db->query("SET SESSION sql_mode = ''");
             $db->query('SET FOREIGN_KEY_CHECKS = 0');
 
             if ($offset === 0) {
